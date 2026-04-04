@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   scrape-rankings:
@@ -34,6 +34,19 @@ jobs:
       - name: Run weekly update
         run: |
           python -m openrouter_data.cli --base-dir . weekly-update
+
+      - name: Commit normalized datasets
+        run: |
+          if git diff --quiet -- data/normalized/openrouter; then
+            echo "No normalized dataset changes to commit"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/normalized/openrouter
+          git commit -m "chore: update normalized OpenRouter datasets"
+          git push
 
       - name: Upload raw snapshots
         uses: actions/upload-artifact@v4

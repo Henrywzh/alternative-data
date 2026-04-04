@@ -13,7 +13,7 @@ The first implemented project is a Python ingestion pipeline for OpenRouter rank
 - `src/openrouter_data/`: package, CLI, source extractors, storage, and pipeline logic
 - `tests/fixtures/`: committed parser fixtures
 - `data/raw/openrouter/`: timestamped raw snapshots and run manifests
-- `data/normalized/openrouter/`: analytics-ready CSV and Parquet outputs
+- `data/normalized/openrouter/`: analytics-ready CSV and Parquet outputs tracked in git
 - `.github/workflows/openrouter-rankings-weekly.yml`: weekly GitHub Actions job
 - `.github/workflows/repo-keepalive.yml`: scheduled keepalive commit to avoid GitHub disabling scheduled workflows after long inactivity
 
