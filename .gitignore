@@ -11,7 +11,7 @@ env/
 .ipynb_checkpoints/
 
 # Data and outputs
-data/
+data/*
 outputs/
 *.csv
 *.tsv
@@ -19,6 +19,12 @@ outputs/
 *.feather
 *.sqlite
 *.db
+!data/normalized/
+data/normalized/*
+!data/normalized/openrouter/
+data/normalized/openrouter/*
+!data/normalized/openrouter/*.csv
+!data/normalized/openrouter/*.parquet
 
 # Secrets and environment
 .env
