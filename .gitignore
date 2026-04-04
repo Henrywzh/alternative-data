@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+.python-version
+.venv/
+venv/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Data and outputs
+data/
+outputs/
+*.csv
+*.tsv
+*.parquet
+*.feather
+*.sqlite
+*.db
+
+# Secrets and environment
+.env
+.env.*
+
+# OS/editor
+.DS_Store
+.vscode/
+.idea/
