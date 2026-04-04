@@ -5,12 +5,17 @@ on:
     - cron: "0 7 * * 1"
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   scrape-rankings:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -24,15 +29,22 @@ jobs:
 
       - name: Validate extractor against live source
         run: |
-          openrouter-data --base-dir . validate
+          python -m openrouter_data.cli --base-dir . validate
 
       - name: Run weekly update
         run: |
-          openrouter-data --base-dir . weekly-update
+          python -m openrouter_data.cli --base-dir . weekly-update
 
       - name: Upload raw snapshots
         uses: actions/upload-artifact@v4
         with:
           name: openrouter-raw-snapshots
           path: data/raw/openrouter/
+          if-no-files-found: error
+
+      - name: Upload normalized datasets
+        uses: actions/upload-artifact@v4
+        with:
+          name: openrouter-normalized-datasets
+          path: data/normalized/openrouter/
           if-no-files-found: error
