@@ -1,0 +1,80 @@
+{
+  "top_models": [
+    {
+      "x": "2024-01-01",
+      "ys": {
+        "author-a/model-alpha": 120.0,
+        "author-b/model-beta": 90.0,
+        "Others": 30.0
+      }
+    },
+    {
+      "x": "2024-01-08",
+      "ys": {
+        "author-a/model-alpha": 150.0,
+        "author-c/model-gamma": 95.0,
+        "Others": 45.0
+      }
+    },
+    {
+      "x": "2024-01-15",
+      "ys": {
+        "author-c/model-gamma": 180.0,
+        "author-a/model-alpha": 165.0,
+        "Others": 60.0
+      }
+    }
+  ],
+  "market_share": [
+    {
+      "x": "2024-01-07",
+      "ys": {
+        "author-a": 55.0,
+        "author-b": 30.0,
+        "others": 15.0
+      }
+    },
+    {
+      "x": "2024-01-14",
+      "ys": {
+        "author-a": 45.0,
+        "author-c": 35.0,
+        "others": 20.0
+      }
+    },
+    {
+      "x": "2024-01-21",
+      "ys": {
+        "author-c": 40.0,
+        "author-a": 38.0,
+        "others": 22.0
+      }
+    }
+  ],
+  "categories_programming": [
+    {
+      "x": "2024-01-01",
+      "ys": {
+        "author-a/model-alpha": 18.0,
+        "author-b/model-beta": 12.0,
+        "Others": 5.0
+      }
+    },
+    {
+      "x": "2024-01-08",
+      "ys": {
+        "author-c/model-gamma": 24.0,
+        "author-a/model-alpha": 20.0,
+        "Others": 6.0
+      }
+    },
+    {
+      "x": "2024-01-15",
+      "ys": {
+        "author-c/model-gamma": 30.0,
+        "author-a/model-alpha": 21.0,
+        "Others": 7.0
+      }
+    }
+  ]
+}
