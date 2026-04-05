@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: openrouter-qa-dashboard
+    runtime: python
+    plan: starter
+    autoDeploy: true
+    rootDir: .
+    buildCommand: pip install -r requirements-dashboard.txt
+    startCommand: streamlit run dashboard/app.py --server.port $PORT --server.address 0.0.0.0
