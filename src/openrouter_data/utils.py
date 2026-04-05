@@ -10,9 +10,16 @@ from typing import Any
 NEXT_F_PATTERN = re.compile(r'self\.__next_f\.push\(\[1,"((?:[^"\\]|\\.)*)"\]\)</script>', re.DOTALL)
 
 
-def iter_next_f_objects(html: str) -> Iterable[Any]:
+def iter_next_f_decoded_strings(html: str) -> Iterable[str]:
     for encoded in NEXT_F_PATTERN.findall(html):
-        decoded = json.loads(f'"{encoded}"')
+        try:
+            yield json.loads(f'"{encoded}"')
+        except json.JSONDecodeError:
+            continue
+
+
+def iter_next_f_objects(html: str) -> Iterable[Any]:
+    for decoded in iter_next_f_decoded_strings(html):
         if ":" not in decoded:
             continue
         _, payload = decoded.split(":", 1)

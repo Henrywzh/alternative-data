@@ -8,20 +8,39 @@ from typing import Any
 @dataclass(frozen=True)
 class DatasetRecord:
     dataset_id: str
-    week_label: str
-    week_start_date: str
-    entity_id: str
-    entity_name: str
-    parent_entity_id: str | None
-    parent_entity_name: str | None
-    metric_name: str
-    metric_unit: str
-    metric_value: float
-    rank: int
     source_url: str
     source_run_id: str
     scraped_at: str
+    week_label: str | None = None
+    week_start_date: str | None = None
+    entity_id: str | None = None
+    entity_name: str | None = None
+    parent_entity_id: str | None = None
+    parent_entity_name: str | None = None
+    metric_name: str | None = None
+    metric_unit: str | None = None
+    metric_value: float | None = None
+    rank: int | None = None
     category_slug: str | None = None
+    app_id: str | None = None
+    app_name: str | None = None
+    origin_url: str | None = None
+    main_url: str | None = None
+    description: str | None = None
+    categories: str | None = None
+    group_by_origin: bool | None = None
+    is_private: bool | None = None
+    is_hidden: bool | None = None
+    created_at: str | None = None
+    scrape_date: str | None = None
+    usage_date: str | None = None
+    model_permaslug: str | None = None
+    total_tokens: float | None = None
+    snapshot_date: str | None = None
+    observed_at: str | None = None
+    period: str | None = None
+    tokens: float | None = None
+    growth_percent: float | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)

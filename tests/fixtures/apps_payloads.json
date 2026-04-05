@@ -1,0 +1,224 @@
+{
+  "openclaw_metadata": {
+    "id": 2725608,
+    "created_at": "2026-01-30T06:12:11.182424+00:00",
+    "description": "The AI that actually does things",
+    "title": "OpenClaw",
+    "main_url": null,
+    "origin_url": "https://openclaw.ai/",
+    "source_code_url": null,
+    "icon_class_name": "",
+    "favicon_url": null,
+    "categories": ["personal-agent"],
+    "related_apps": [],
+    "group_by_origin": true,
+    "is_private": false,
+    "is_hidden": false
+  },
+  "openclaw_usage": {
+    "appName": "OpenClaw",
+    "forecast": "forecast-1d",
+    "forecastFromTimestamp": 1741219200000,
+    "data": [
+      {
+        "x": "2026-03-06 00:00:00",
+        "ys": {
+          "stepfun/step-3.5-flash": 64423763540,
+          "moonshotai/kimi-k2.5-0127": 27496321256,
+          "Others": 82090175269
+        }
+      },
+      {
+        "x": "2026-03-07 00:00:00",
+        "ys": {
+          "stepfun/step-3.5-flash": 70423763540,
+          "moonshotai/kimi-k2.5-0127": 22496321256,
+          "Others": 72090175269
+        }
+      }
+    ]
+  },
+  "openclaw_top_models": {
+    "appName": "OpenClaw",
+    "appModelAnalytics": [
+      {
+        "date": "2026-04-05",
+        "model_permaslug": "stepfun/step-3.5-flash",
+        "total_tokens": 3571671369928
+      },
+      {
+        "date": "2026-04-05",
+        "model_permaslug": "moonshotai/kimi-k2.5-0127",
+        "total_tokens": 1251671369928
+      }
+    ]
+  },
+  "trending": [
+    {
+      "appAnalytics": {
+        "app_id": 2725608,
+        "total_tokens": "5651018332581",
+        "total_requests": 94803261,
+        "rank": 1,
+        "app": {
+          "id": 2725608,
+          "created_at": "2026-01-30T06:12:11.182424+00:00",
+          "description": "The AI that actually does things",
+          "title": "OpenClaw",
+          "main_url": null,
+          "origin_url": "https://openclaw.ai/",
+          "source_code_url": null,
+          "icon_class_name": "",
+          "favicon_url": null,
+          "categories": ["personal-agent"],
+          "related_apps": []
+        }
+      },
+      "growthPercent": 20
+    },
+    {
+      "appAnalytics": {
+        "app_id": 2262242,
+        "total_tokens": "1977774243068",
+        "total_requests": 27382049,
+        "rank": 2,
+        "app": {
+          "id": 2262242,
+          "created_at": "2025-04-09T15:16:20.620982+00:00",
+          "description": "AI coding agent for VS Code",
+          "title": "Kilo Code",
+          "main_url": "https://github.com/Kilo-Org/kilocode/",
+          "origin_url": "https://kilocode.ai/",
+          "source_code_url": null,
+          "icon_class_name": "dark:invert invert-0",
+          "favicon_url": "https://kilocode.ai/",
+          "categories": ["cli-agent", "ide-extension"],
+          "related_apps": [2543560]
+        }
+      },
+      "growthPercent": 12
+    }
+  ],
+  "ranking_map": {
+    "day": [
+      {
+        "app_id": 2725608,
+        "total_tokens": "660816976823",
+        "total_requests": 10108480,
+        "rank": 1,
+        "app": {
+          "id": 2725608,
+          "created_at": "2026-01-30T06:12:11.182424+00:00",
+          "description": "The AI that actually does things",
+          "title": "OpenClaw",
+          "main_url": null,
+          "origin_url": "https://openclaw.ai/",
+          "source_code_url": null,
+          "icon_class_name": "",
+          "favicon_url": null,
+          "categories": ["personal-agent"],
+          "related_apps": []
+        }
+      },
+      {
+        "app_id": 2262242,
+        "total_tokens": "225655592825",
+        "total_requests": 3251340,
+        "rank": 2,
+        "app": {
+          "id": 2262242,
+          "created_at": "2025-04-09T15:16:20.620982+00:00",
+          "description": "AI coding agent for VS Code",
+          "title": "Kilo Code",
+          "main_url": "https://github.com/Kilo-Org/kilocode/",
+          "origin_url": "https://kilocode.ai/",
+          "source_code_url": null,
+          "icon_class_name": "dark:invert invert-0",
+          "favicon_url": "https://kilocode.ai/",
+          "categories": ["cli-agent", "ide-extension"],
+          "related_apps": [2543560]
+        }
+      }
+    ],
+    "week": [
+      {
+        "app_id": 2725608,
+        "total_tokens": "5651018332581",
+        "total_requests": 94803261,
+        "rank": 1,
+        "app": {
+          "id": 2725608,
+          "created_at": "2026-01-30T06:12:11.182424+00:00",
+          "description": "The AI that actually does things",
+          "title": "OpenClaw",
+          "main_url": null,
+          "origin_url": "https://openclaw.ai/",
+          "source_code_url": null,
+          "icon_class_name": "",
+          "favicon_url": null,
+          "categories": ["personal-agent"],
+          "related_apps": []
+        }
+      },
+      {
+        "app_id": 2262242,
+        "total_tokens": "1977774243068",
+        "total_requests": 27382049,
+        "rank": 2,
+        "app": {
+          "id": 2262242,
+          "created_at": "2025-04-09T15:16:20.620982+00:00",
+          "description": "AI coding agent for VS Code",
+          "title": "Kilo Code",
+          "main_url": "https://github.com/Kilo-Org/kilocode/",
+          "origin_url": "https://kilocode.ai/",
+          "source_code_url": null,
+          "icon_class_name": "dark:invert invert-0",
+          "favicon_url": "https://kilocode.ai/",
+          "categories": ["cli-agent", "ide-extension"],
+          "related_apps": [2543560]
+        }
+      }
+    ],
+    "month": [
+      {
+        "app_id": 2725608,
+        "total_tokens": "19730801719987",
+        "total_requests": 336515343,
+        "rank": 1,
+        "app": {
+          "id": 2725608,
+          "created_at": "2026-01-30T06:12:11.182424+00:00",
+          "description": "The AI that actually does things",
+          "title": "OpenClaw",
+          "main_url": null,
+          "origin_url": "https://openclaw.ai/",
+          "source_code_url": null,
+          "icon_class_name": "",
+          "favicon_url": null,
+          "categories": ["personal-agent"],
+          "related_apps": []
+        }
+      },
+      {
+        "app_id": 2262242,
+        "total_tokens": "6142302099892",
+        "total_requests": 102121777,
+        "rank": 2,
+        "app": {
+          "id": 2262242,
+          "created_at": "2025-04-09T15:16:20.620982+00:00",
+          "description": "AI coding agent for VS Code",
+          "title": "Kilo Code",
+          "main_url": "https://github.com/Kilo-Org/kilocode/",
+          "origin_url": "https://kilocode.ai/",
+          "source_code_url": null,
+          "icon_class_name": "dark:invert invert-0",
+          "favicon_url": "https://kilocode.ai/",
+          "categories": ["cli-agent", "ide-extension"],
+          "related_apps": [2543560]
+        }
+      }
+    ]
+  }
+}

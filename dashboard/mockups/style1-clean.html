@@ -1,0 +1,1920 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OpenRouter QA — Style 1 Clean</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{--bg:#fff;--sb:#F7F8FA;--card:#fff;--brd:#E5E7EB;--text:#111827;--muted:#6B7280;--accent:#2563EB;--green:#16A34A;--red:#DC2626;--yellow:#D97706;--sw:265px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;font-size:14px;line-height:1.5}
+.sb{width:var(--sw);background:var(--sb);border-right:1px solid var(--brd);padding:20px 16px;position:fixed;top:0;left:0;height:100vh;overflow-y:auto;display:flex;flex-direction:column;gap:20px;z-index:10}
+.sb-logo{display:flex;align-items:center;gap:9px;font-weight:700;font-size:15px}
+.sb-logo em{width:30px;height:30px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:800;font-style:normal}
+.sb-sec{display:flex;flex-direction:column;gap:8px}
+.sb-lbl{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);padding:0 6px}
+.sb-nav{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;cursor:pointer;color:var(--muted);font-size:13px;transition:.12s}
+.sb-nav:hover{background:var(--brd);color:var(--text)}
+.sb-nav.on{background:#EFF6FF;color:var(--accent);font-weight:500}
+.fl{display:flex;flex-direction:column;gap:5px}
+.fl-lbl{font-size:12px;color:var(--muted)}
+select{width:100%;padding:7px 9px;border:1px solid var(--brd);border-radius:6px;background:var(--card);color:var(--text);font-size:13px;outline:none}
+.btn-r{width:100%;padding:8px;border:1px solid var(--brd);border-radius:6px;background:transparent;color:var(--muted);cursor:pointer;font-size:13px}
+.btn-r:hover{background:var(--brd);color:var(--text)}
+.fresh{font-size:11px;color:var(--muted);line-height:1.7;padding:10px;background:var(--brd);border-radius:7px;margin-top:auto}
+.fresh strong{color:var(--text);display:block;margin-bottom:2px;font-size:12px}
+.main{margin-left:var(--sw);flex:1;padding:32px;display:flex;flex-direction:column;gap:22px;min-width:0}
+.ph h1{font-size:22px;font-weight:700}
+.ph p{color:var(--muted);margin-top:3px;font-size:13px}
+/* KPI */
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.kpi{background:var(--card);border:1px solid var(--brd);border-radius:10px;padding:18px 20px}
+.kpi-lbl{font-size:12px;color:var(--muted);font-weight:500;margin-bottom:6px}
+.kpi-val{font-size:28px;font-weight:700;line-height:1;letter-spacing:-.02em}
+.kpi-val.sm{font-size:18px;margin-top:3px;word-break:break-word}
+.kpi-ft{display:flex;align-items:center;justify-content:space-between;margin-top:9px;padding-top:8px;border-top:1px solid var(--brd)}
+.kpi-sub{font-size:11px;color:var(--muted)}
+.bdg{display:inline-flex;align-items:center;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600}
+.bdg.up{background:#DCFCE7;color:var(--green)}.bdg.dn{background:#FEE2E2;color:var(--red)}.bdg.nw{background:#EFF6FF;color:var(--accent)}.bdg.nt{background:#F3F4F6;color:var(--muted)}.bdg.fl{background:#F3F4F6;color:var(--muted)}
+/* CARD */
+.card{background:var(--card);border:1px solid var(--brd);border-radius:10px;padding:22px 24px}
+.ct{font-size:16px;font-weight:600;display:flex;align-items:center;gap:7px}
+.cs{font-size:12px;color:var(--muted);margin-top:3px}
+.ch{position:relative;height:280px;margin-top:18px}
+/* MS Legend */
+.ms-leg{display:grid;grid-template-columns:1fr 1fr;margin-top:20px;border-top:1px solid var(--brd)}
+.ms-item{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--brd)}
+.ms-item:nth-child(odd){padding-right:20px;border-right:1px solid var(--brd)}
+.ms-item:nth-child(even){padding-left:20px}
+.ms-l{display:flex;align-items:center;gap:9px}
+.ms-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.ms-rk{font-size:13px;color:var(--muted);min-width:20px}
+.ms-nm{font-weight:600;font-size:13px}
+.ms-r{text-align:right}
+.ms-tok{font-size:13px;font-weight:500}
+.ms-pct{font-size:11px;color:var(--muted)}
+/* LB */
+.lb-hd{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px}
+.lb-btn{padding:6px 14px;border:1px solid var(--brd);border-radius:99px;font-size:12px;background:var(--card);cursor:pointer;color:var(--text)}
+.lb-grid{display:grid;grid-template-columns:1fr 1fr}
+.lb-row{display:flex;align-items:center;gap:11px;padding:12px 0;border-bottom:1px solid var(--brd)}
+.lb-row:nth-child(odd){padding-right:22px;border-right:1px solid var(--brd)}
+.lb-row:nth-child(even){padding-left:22px}
+.lb-rk{font-size:14px;color:var(--muted);min-width:22px}
+.lb-av{width:34px;height:34px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff}
+.lb-info{flex:1;min-width:0}
+.lb-nm{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lb-au{font-size:11px;color:var(--accent)}
+.lb-rt{text-align:right;flex-shrink:0}
+.lb-tok{font-size:13px;font-weight:500;white-space:nowrap}
+.lb-ch{font-size:11px;font-weight:600}
+.lb-ch.up{color:var(--green)}.lb-ch.dn{color:var(--red)}.lb-ch.nw{color:var(--accent)}.lb-ch.fl{color:var(--muted)}
+.show-more{text-align:center;padding:13px;color:var(--muted);font-size:13px;cursor:pointer;border-top:1px solid var(--brd)}
+.show-more:hover{color:var(--text)}
+/* Checks */
+.ck-hd{display:flex;align-items:flex-start;justify-content:space-between;cursor:pointer}
+.ck-body{margin-top:14px;display:flex;flex-direction:column;gap:7px}
+.ck-row{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:7px;background:var(--sb)}
+.ck-dot{width:8px;height:8px;border-radius:50%;margin-top:4px;flex-shrink:0}
+.ck-dot.ok{background:var(--green)}.ck-dot.warning{background:var(--yellow)}.ck-dot.error{background:var(--red)}
+.ck-lbl{font-size:13px;font-weight:500}
+.ck-det{font-size:12px;color:var(--muted);margin-top:1px}
+.ds-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+.ds-item{background:var(--sb);border:1px solid var(--brd);border-radius:7px;padding:9px 12px}
+.ds-lbl{font-size:11px;color:var(--muted)}
+.ds-cnt{font-weight:600;font-size:15px;color:var(--text);margin-top:2px}
+</style>
+</head>
+<body>
+<aside class="sb">
+  <div class="sb-logo"><em>OR</em> OpenRouter QA</div>
+  <div class="sb-sec">
+    <div class="sb-lbl">Navigation</div>
+    <div class="sb-nav on">📊 Overview</div>
+    <div class="sb-nav">📈 Rankings</div>
+    <div class="sb-nav">📱 App Intelligence</div>
+    <div class="sb-nav">✅ Health Checks</div>
+  </div>
+  <div class="sb-sec">
+    <div class="sb-lbl">Rankings Filter</div>
+    <div class="fl"><div class="fl-lbl">Week range</div>
+      <select id="wkRange"><option>All time (51 weeks)</option><option>Last 30 weeks</option><option>Last 12 weeks</option></select>
+    </div>
+    <div class="fl"><div class="fl-lbl">Model authors</div>
+      <select multiple style="height:88px" id="authFilter">
+        <option selected>Google</option><option selected>Anthropic</option><option selected>Deepseek</option>
+        <option selected>Openai</option><option selected>Meta-Llama</option><option selected>Xiaomi</option>
+      </select>
+    </div>
+  </div>
+  <div class="sb-sec">
+    <div class="sb-lbl">App Filter</div>
+    <div class="fl"><div class="fl-lbl">Date range</div>
+      <select><option>Last 31 days</option><option>Last 14 days</option><option>Last 7 days</option></select>
+    </div>
+  </div>
+  <button class="btn-r">↺ Reset all filters</button>
+  <div class="fresh" id="freshBox">
+    <strong>Data freshness</strong>
+    Loading...
+  </div>
+</aside>
+
+<main class="main">
+  <div class="ph"><h1>OpenRouter Alternative Data</h1><p>QA dashboard · Rankings & App Intelligence · 8 datasets · Real scraped data</p></div>
+
+  <div class="kpi-row" id="kpiRow">
+    <div class="kpi"><div class="kpi-lbl">Total Tokens This Week</div><div class="kpi-val" id="k1">—</div><div class="kpi-ft"><span class="kpi-sub" id="k1s">—</span><span class="bdg" id="k1b">—</span></div></div>
+    <div class="kpi"><div class="kpi-lbl">Top Model This Week</div><div class="kpi-val sm" id="k2">—</div><div class="kpi-ft"><span class="kpi-sub" id="k2s">—</span><span class="bdg nw" id="k2b">—</span></div></div>
+    <div class="kpi"><div class="kpi-lbl">Active Models</div><div class="kpi-val" id="k3">—</div><div class="kpi-ft"><span class="kpi-sub" id="k3s">—</span><span class="bdg" id="k3b">—</span></div></div>
+    <div class="kpi"><div class="kpi-lbl">Market Leader</div><div class="kpi-val sm" id="k4">—</div><div class="kpi-ft"><span class="kpi-sub" id="k4s">—</span><span class="bdg nt" id="k4b">—</span></div></div>
+  </div>
+
+  <div class="card">
+    <div class="ct">📊 Top Models</div><div class="cs">Weekly token usage across OpenRouter — top 9 models + Others (billions)</div>
+    <div class="ch"><canvas id="tmChart"></canvas></div>
+  </div>
+
+  <div class="card">
+    <div class="ct">📈 Market Share</div><div class="cs">Proportional token share by model author, weekly (%)</div>
+    <div class="ch"><canvas id="msChart"></canvas></div>
+    <div class="ms-leg" id="msLeg"></div>
+  </div>
+
+  <div class="card">
+    <div class="lb-hd">
+      <div><div class="ct">🏆 LLM Leaderboard</div><div class="cs" id="lbSubtitle">Top models on OpenRouter</div></div>
+      <button class="lb-btn">This Week ▾</button>
+    </div>
+    <div class="lb-grid" id="lb"></div>
+    <div class="show-more">Show more ▾</div>
+  </div>
+
+  <div class="card">
+    <div class="lb-hd">
+      <div><div class="ct">📱 OpenClaw OpenRouter Usage</div><div class="cs">Daily token consumption by model — real monitored app data</div></div>
+      <span id="appDateRange" style="font-size:12px;color:var(--muted)">Last 31 days</span>
+    </div>
+    <div class="ch"><canvas id="appChart"></canvas></div>
+  </div>
+
+  <div class="card">
+    <div class="ck-hd" onclick="const b=this.nextElementSibling;b.style.display=b.style.display==='none'?'flex':'none'">
+      <div><div class="ct">✅ Data Quality Checks</div><div class="cs">Schema validation, freshness & duplicate detection</div></div>
+      <span style="font-size:18px;color:var(--muted)">▾</span>
+    </div>
+    <div class="ck-body" style="display:flex">
+      <div id="ckList" style="display:flex;flex-direction:column;gap:7px"></div>
+      <div class="ds-grid" id="dsGrid"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+
+const WEEKS       = ["2025-04-07", "2025-04-14", "2025-04-21", "2025-04-28", "2025-05-05", "2025-05-12", "2025-05-19", "2025-05-26", "2025-06-02", "2025-06-09", "2025-06-16", "2025-06-23", "2025-06-30", "2025-07-07", "2025-07-14", "2025-07-21", "2025-07-28", "2025-08-04", "2025-08-11", "2025-08-18", "2025-08-25", "2025-09-01", "2025-09-08", "2025-09-15", "2025-09-22", "2025-09-29", "2025-10-06", "2025-10-13", "2025-10-20", "2025-10-27", "2025-11-03", "2025-11-10", "2025-11-17", "2025-11-24", "2025-12-01", "2025-12-08", "2025-12-15", "2025-12-22", "2025-12-29", "2026-01-05", "2026-01-12", "2026-01-19", "2026-01-26", "2026-02-02", "2026-02-09", "2026-02-16", "2026-02-23", "2026-03-02", "2026-03-09", "2026-03-16", "2026-03-23"];
+const MS_WEEKS    = ["2025-03-30", "2025-04-06", "2025-04-13", "2025-04-20", "2025-04-27", "2025-05-04", "2025-05-11", "2025-05-18", "2025-05-25", "2025-06-01", "2025-06-08", "2025-06-15", "2025-06-22", "2025-06-29", "2025-07-06", "2025-07-13", "2025-07-20", "2025-07-27", "2025-08-03", "2025-08-10", "2025-08-17", "2025-08-24", "2025-08-31", "2025-09-07", "2025-09-14", "2025-09-21", "2025-09-28", "2025-10-05", "2025-10-12", "2025-10-19", "2025-10-26", "2025-11-02", "2025-11-09", "2025-11-16", "2025-11-23", "2025-11-30", "2025-12-07", "2025-12-14", "2025-12-21", "2025-12-28", "2026-01-04", "2026-01-11", "2026-01-18", "2026-01-25", "2026-02-01", "2026-02-08", "2026-02-15", "2026-02-22", "2026-03-01", "2026-03-08", "2026-03-15", "2026-03-22", "2026-03-29"];
+const APP_DAYS    = ["2026-03-06", "2026-03-07", "2026-03-08", "2026-03-09", "2026-03-10", "2026-03-11", "2026-03-12", "2026-03-13", "2026-03-14", "2026-03-15", "2026-03-16", "2026-03-17", "2026-03-18", "2026-03-19", "2026-03-20", "2026-03-21", "2026-03-22", "2026-03-23", "2026-03-24", "2026-03-25", "2026-03-26", "2026-03-27", "2026-03-28", "2026-03-29", "2026-03-30", "2026-03-31", "2026-04-01", "2026-04-02", "2026-04-03", "2026-04-04", "2026-04-05"];
+const TM_DATASETS = [
+  {
+    "label": "grok-code-fast-1",
+    "data": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      396.4,
+      1097.6,
+      1165.2,
+      1145.7,
+      1067.2,
+      1053.4,
+      1184.1,
+      1173.7,
+      1269.9,
+      1465.6,
+      1363.1,
+      1454.0,
+      1248.2,
+      978.5,
+      878.6,
+      618.5,
+      517.3,
+      481.9,
+      409.1,
+      412.8,
+      467.8,
+      539.7,
+      421.6,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "backgroundColor": "#4285F4",
+    "borderWidth": 0
+  },
+  {
+    "label": "gemini-2.5-flash",
+    "data": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      104.3,
+      118.1,
+      182.4,
+      235.0,
+      316.0,
+      299.0,
+      260.6,
+      270.4,
+      253.2,
+      342.0,
+      443.3,
+      321.7,
+      325.2,
+      345.8,
+      364.5,
+      336.5,
+      314.5,
+      291.4,
+      318.7,
+      377.5,
+      371.2,
+      367.1,
+      377.4,
+      398.8,
+      453.2,
+      438.7,
+      377.3,
+      352.5,
+      364.2,
+      376.5,
+      364.6,
+      405.9,
+      429.5,
+      450.4,
+      0.0,
+      0.0,
+      0.0,
+      562.1,
+      0.0,
+      0.0
+    ],
+    "backgroundColor": "#FF6B6B",
+    "borderWidth": 0
+  },
+  {
+    "label": "claude-4.5-sonnet-20250929",
+    "data": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      298.1,
+      481.8,
+      507.6,
+      523.6,
+      653.7,
+      670.5,
+      604.0,
+      497.2,
+      428.1,
+      429.2,
+      430.8,
+      416.3,
+      360.8,
+      351.6,
+      530.6,
+      615.1,
+      713.1,
+      774.5,
+      705.5,
+      626.3,
+      534.1,
+      529.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "backgroundColor": "#00B5A4",
+    "borderWidth": 0
+  },
+  {
+    "label": "minimax-m2.5-20260211",
+    "data": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1438.4,
+      2570.4,
+      1625.4,
+      1865.6,
+      1748.9,
+      1301.2,
+      499.9
+    ],
+    "backgroundColor": "#FF7849",
+    "borderWidth": 0
+  },
+  {
+    "label": "gemini-3-flash-preview-20251217",
+    "data": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      229.8,
+      291.3,
+      386.5,
+      447.7,
+      537.3,
+      688.8,
+      763.8,
+      775.9,
+      858.8,
+      1027.3,
+      1043.8,
+      1016.6,
+      939.1,
+      534.3
+    ],
+    "backgroundColor": "#8B5CF6",
+    "borderWidth": 0
+  },
+  {
+    "label": "deepseek-v3.2-20251201",
+    "data": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      205.5,
+      327.4,
+      352.2,
+      311.3,
+      355.0,
+      395.6,
+      507.3,
+      664.7,
+      756.3,
+      744.9,
+      799.9,
+      832.2,
+      1037.1,
+      1136.1,
+      682.8
+    ],
+    "backgroundColor": "#EC4899",
+    "borderWidth": 0
+  },
+  {
+    "label": "claude-4-sonnet-20250522",
+    "data": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      109.6,
+      271.2,
+      244.4,
+      269.6,
+      359.6,
+      333.5,
+      323.8,
+      351.3,
+      449.8,
+      571.7,
+      602.2,
+      520.1,
+      508.6,
+      518.0,
+      559.8,
+      544.9,
+      568.4,
+      585.8,
+      578.8,
+      315.6,
+      250.5,
+      164.3,
+      154.9,
+      141.2,
+      135.1,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "backgroundColor": "#84CC16",
+    "borderWidth": 0
+  },
+  {
+    "label": "gemini-2.0-flash-001",
+    "data": [
+      259.0,
+      213.6,
+      192.6,
+      210.3,
+      226.9,
+      210.0,
+      211.3,
+      220.4,
+      231.7,
+      266.3,
+      253.0,
+      262.9,
+      237.2,
+      246.8,
+      255.5,
+      260.3,
+      272.9,
+      274.0,
+      264.0,
+      220.5,
+      202.4,
+      182.7,
+      184.4,
+      187.1,
+      161.4,
+      141.4,
+      136.6,
+      147.3,
+      145.8,
+      149.7,
+      150.9,
+      167.9,
+      187.4,
+      168.3,
+      165.3,
+      189.1,
+      184.6,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "backgroundColor": "#F59E0B",
+    "borderWidth": 0
+  },
+  {
+    "label": "kimi-k2.5-0127",
+    "data": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      359.3,
+      1158.7,
+      1295.9,
+      1036.4,
+      691.9,
+      743.8,
+      560.0,
+      0.0,
+      0.0
+    ],
+    "backgroundColor": "#06B6D4",
+    "borderWidth": 0
+  },
+  {
+    "label": "Others",
+    "data": [
+      651.5,
+      653.5,
+      689.6,
+      675.1,
+      700.2,
+      617.4,
+      695.2,
+      715.3,
+      776.4,
+      779.6,
+      813.6,
+      871.5,
+      714.6,
+      756.4,
+      862.5,
+      1048.3,
+      1311.8,
+      1431.9,
+      1303.5,
+      1430.5,
+      1533.7,
+      1603.5,
+      1866.3,
+      1809.8,
+      1566.7,
+      2026.4,
+      2008.5,
+      1828.9,
+      1955.1,
+      2060.4,
+      2266.5,
+      2403.8,
+      2897.5,
+      2968.8,
+      3023.7,
+      3062.5,
+      3295.6,
+      2968.8,
+      2919.9,
+      3152.2,
+      3540.1,
+      3454.7,
+      4093.6,
+      4582.2,
+      5962.5,
+      5639.0,
+      6540.8,
+      6982.3,
+      8258.7,
+      10035.8,
+      5429.3
+    ],
+    "backgroundColor": "#9CA3AF",
+    "borderWidth": 0
+  }
+];
+const MS_DATASETS = [
+  {
+    "label": "Google",
+    "data": [
+      29.1,
+      27.2,
+      35.3,
+      39.6,
+      37.2,
+      34.8,
+      33.1,
+      31.4,
+      32.0,
+      35.3,
+      39.4,
+      40.0,
+      44.4,
+      39.6,
+      42.3,
+      34.5,
+      31.3,
+      28.4,
+      23.1,
+      25.3,
+      24.5,
+      23.8,
+      22.7,
+      18.2,
+      18.2,
+      17.7,
+      18.2,
+      18.6,
+      18.6,
+      18.9,
+      19.7,
+      19.3,
+      18.7,
+      19.5,
+      18.4,
+      20.4,
+      23.1,
+      22.8,
+      22.5,
+      23.2,
+      24.2,
+      24.6,
+      25.2,
+      23.8,
+      22.1,
+      17.7,
+      16.0,
+      19.5,
+      19.4,
+      17.8,
+      15.4,
+      13.2,
+      11.0
+    ],
+    "backgroundColor": "#4285F4",
+    "borderWidth": 0
+  },
+  {
+    "label": "Anthropic",
+    "data": [
+      19.4,
+      22.1,
+      28.7,
+      26.7,
+      24.5,
+      20.1,
+      19.5,
+      22.0,
+      22.6,
+      20.6,
+      22.6,
+      24.7,
+      21.7,
+      21.3,
+      20.8,
+      23.2,
+      25.5,
+      24.6,
+      21.8,
+      23.3,
+      22.5,
+      20.3,
+      15.3,
+      14.2,
+      14.9,
+      13.3,
+      13.6,
+      16.7,
+      16.9,
+      18.0,
+      17.0,
+      16.4,
+      14.3,
+      12.8,
+      10.5,
+      13.3,
+      15.8,
+      14.4,
+      13.0,
+      12.5,
+      17.0,
+      19.5,
+      16.5,
+      16.7,
+      15.0,
+      13.3,
+      12.9,
+      16.1,
+      16.1,
+      15.6,
+      14.1,
+      12.8,
+      10.6
+    ],
+    "backgroundColor": "#00B5A4",
+    "borderWidth": 0
+  },
+  {
+    "label": "X-Ai",
+    "data": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.7,
+      0.6,
+      0.8,
+      0.9,
+      0.5,
+      0.6,
+      1.3,
+      1.5,
+      1.6,
+      1.7,
+      1.2,
+      2.1,
+      2.0,
+      0.0,
+      0.0,
+      0.0,
+      2.6,
+      10.5,
+      24.8,
+      24.9,
+      26.1,
+      38.0,
+      35.6,
+      27.7,
+      30.5,
+      29.7,
+      29.9,
+      27.7,
+      29.2,
+      29.3,
+      40.3,
+      30.8,
+      16.8,
+      14.9,
+      14.4,
+      13.3,
+      12.3,
+      11.9,
+      13.0,
+      11.7,
+      8.3,
+      7.6,
+      5.6,
+      6.1,
+      5.1,
+      4.3,
+      0.0,
+      3.3,
+      0.0
+    ],
+    "backgroundColor": "#FF7849",
+    "borderWidth": 0
+  },
+  {
+    "label": "Openai",
+    "data": [
+      17.8,
+      12.6,
+      7.5,
+      6.6,
+      8.7,
+      19.2,
+      24.7,
+      24.7,
+      23.7,
+      19.4,
+      8.7,
+      7.0,
+      6.8,
+      7.4,
+      6.1,
+      5.4,
+      6.2,
+      5.6,
+      7.7,
+      10.4,
+      10.8,
+      10.7,
+      10.2,
+      11.8,
+      11.0,
+      11.1,
+      11.5,
+      13.3,
+      11.4,
+      10.9,
+      9.0,
+      8.4,
+      8.9,
+      9.8,
+      9.3,
+      10.9,
+      15.4,
+      16.2,
+      10.3,
+      10.0,
+      10.7,
+      12.5,
+      12.8,
+      14.2,
+      13.0,
+      11.6,
+      10.2,
+      10.4,
+      13.0,
+      13.0,
+      10.0,
+      9.8,
+      7.4
+    ],
+    "backgroundColor": "#8B5CF6",
+    "borderWidth": 0
+  },
+  {
+    "label": "Deepseek",
+    "data": [
+      13.3,
+      11.1,
+      11.7,
+      12.7,
+      13.4,
+      12.0,
+      10.5,
+      10.6,
+      11.3,
+      14.0,
+      16.6,
+      17.0,
+      15.5,
+      18.0,
+      19.0,
+      21.9,
+      17.9,
+      15.4,
+      15.3,
+      16.0,
+      16.5,
+      15.5,
+      10.9,
+      12.3,
+      11.6,
+      9.9,
+      9.7,
+      8.3,
+      7.2,
+      6.6,
+      5.9,
+      6.5,
+      6.0,
+      5.4,
+      4.7,
+      6.2,
+      6.9,
+      7.9,
+      9.9,
+      11.2,
+      9.1,
+      8.7,
+      8.5,
+      9.5,
+      9.4,
+      8.0,
+      6.8,
+      7.5,
+      7.0,
+      7.3,
+      6.7,
+      6.6,
+      5.5
+    ],
+    "backgroundColor": "#EC4899",
+    "borderWidth": 0
+  },
+  {
+    "label": "Minimax",
+    "data": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      3.9,
+      7.0,
+      5.3,
+      3.3,
+      2.6,
+      2.2,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      2.8,
+      4.6,
+      11.3,
+      20.2,
+      14.8,
+      13.6,
+      11.3,
+      8.2,
+      10.0,
+      8.0
+    ],
+    "backgroundColor": "#84CC16",
+    "borderWidth": 0
+  },
+  {
+    "label": "Qwen",
+    "data": [
+      1.3,
+      1.2,
+      1.5,
+      1.6,
+      2.5,
+      2.9,
+      2.7,
+      2.5,
+      1.5,
+      1.6,
+      1.9,
+      1.7,
+      1.9,
+      2.0,
+      1.7,
+      1.7,
+      6.0,
+      10.8,
+      11.4,
+      10.2,
+      9.4,
+      8.5,
+      6.8,
+      5.5,
+      4.4,
+      3.5,
+      3.1,
+      6.1,
+      4.9,
+      5.1,
+      4.9,
+      4.1,
+      4.0,
+      5.6,
+      4.5,
+      4.5,
+      5.6,
+      4.6,
+      4.0,
+      3.9,
+      3.1,
+      3.1,
+      4.0,
+      3.9,
+      3.6,
+      0.0,
+      0.0,
+      0.0,
+      4.3,
+      4.0,
+      0.0,
+      0.0,
+      18.8
+    ],
+    "backgroundColor": "#F59E0B",
+    "borderWidth": 0
+  },
+  {
+    "label": "Xiaomi",
+    "data": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      6.9,
+      6.5,
+      6.0,
+      7.1,
+      7.7,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      7.7,
+      19.8,
+      17.8
+    ],
+    "backgroundColor": "#A855F7",
+    "borderWidth": 0
+  },
+  {
+    "label": "Z-Ai",
+    "data": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.3,
+      3.1,
+      3.0,
+      2.9,
+      2.2,
+      2.0,
+      1.9,
+      0.0,
+      1.4,
+      2.1,
+      3.2,
+      3.0,
+      3.0,
+      2.9,
+      3.0,
+      2.8,
+      2.4,
+      2.1,
+      2.3,
+      2.3,
+      2.3,
+      2.4,
+      3.0,
+      3.3,
+      2.5,
+      2.4,
+      3.1,
+      0.0,
+      5.2,
+      8.5,
+      6.1,
+      0.0,
+      0.0,
+      7.1,
+      6.9,
+      5.2
+    ],
+    "backgroundColor": "#06B6D4",
+    "borderWidth": 0
+  },
+  {
+    "label": "Others",
+    "data": [
+      19.1,
+      25.8,
+      15.2,
+      12.8,
+      13.0,
+      10.4,
+      8.7,
+      8.0,
+      8.3,
+      8.6,
+      9.4,
+      8.2,
+      8.1,
+      9.9,
+      8.9,
+      11.1,
+      11.0,
+      13.8,
+      17.5,
+      11.7,
+      10.8,
+      8.4,
+      7.2,
+      11.2,
+      13.7,
+      5.1,
+      6.1,
+      6.0,
+      7.5,
+      7.9,
+      6.8,
+      7.6,
+      10.8,
+      11.9,
+      7.5,
+      9.3,
+      14.0,
+      16.8,
+      16.6,
+      16.5,
+      14.3,
+      10.1,
+      9.9,
+      14.3,
+      23.9,
+      25.3,
+      19.8,
+      19.4,
+      21.5,
+      26.7,
+      30.9,
+      17.7,
+      15.7
+    ],
+    "backgroundColor": "#9CA3AF",
+    "borderWidth": 0
+  }
+];
+const MS_LEGEND   = [
+  {
+    "label": "Qwen",
+    "color": "#F59E0B",
+    "total": "14.41T",
+    "pct": "18.8%"
+  },
+  {
+    "label": "Xiaomi",
+    "color": "#A855F7",
+    "total": "12.55T",
+    "pct": "17.8%"
+  },
+  {
+    "label": "Others",
+    "color": "#9CA3AF",
+    "total": "52.20T",
+    "pct": "15.7%"
+  },
+  {
+    "label": "Google",
+    "color": "#4285F4",
+    "total": "67.83T",
+    "pct": "11.0%"
+  },
+  {
+    "label": "Anthropic",
+    "color": "#00B5A4",
+    "total": "51.80T",
+    "pct": "10.6%"
+  },
+  {
+    "label": "Minimax",
+    "color": "#84CC16",
+    "total": "18.08T",
+    "pct": "8.0%"
+  },
+  {
+    "label": "Openai",
+    "color": "#8B5CF6",
+    "total": "36.22T",
+    "pct": "7.4%"
+  },
+  {
+    "label": "Deepseek",
+    "color": "#EC4899",
+    "total": "28.78T",
+    "pct": "5.5%"
+  },
+  {
+    "label": "Z-Ai",
+    "color": "#06B6D4",
+    "total": "10.51T",
+    "pct": "5.2%"
+  },
+  {
+    "label": "X-Ai",
+    "color": "#FF7849",
+    "total": "36.77T",
+    "pct": "0.0%"
+  }
+];
+const APP_DATASETS= [
+  {
+    "label": "Others",
+    "data": [
+      82.1,
+      83.1,
+      84.7,
+      99.5,
+      99.9,
+      96.8,
+      116.1,
+      112.4,
+      108.6,
+      113.3,
+      128.8,
+      138.5,
+      140.6,
+      156.0,
+      154.1,
+      142.1,
+      142.1,
+      157.0,
+      164.2,
+      159.8,
+      149.0,
+      143.0,
+      130.8,
+      128.7,
+      135.4,
+      142.7,
+      134.5,
+      154.0,
+      137.0,
+      130.8,
+      63.2
+    ],
+    "backgroundColor": "#4285F4",
+    "borderWidth": 0
+  },
+  {
+    "label": "claude-4.6-sonnet-20260217",
+    "data": [
+      28.1,
+      27.1,
+      26.5,
+      30.3,
+      32.5,
+      34.2,
+      32.0,
+      32.7,
+      30.4,
+      30.8,
+      37.3,
+      39.7,
+      39.9,
+      39.8,
+      38.2,
+      30.1,
+      33.3,
+      39.9,
+      42.7,
+      41.2,
+      38.0,
+      38.8,
+      28.9,
+      30.3,
+      39.4,
+      40.6,
+      34.9,
+      33.1,
+      36.3,
+      30.1,
+      13.4
+    ],
+    "backgroundColor": "#00B5A4",
+    "borderWidth": 0
+  },
+  {
+    "label": "minimax-m2.5-20260211",
+    "data": [
+      43.6,
+      41.1,
+      42.9,
+      50.4,
+      51.5,
+      45.6,
+      43.7,
+      43.4,
+      33.9,
+      34.6,
+      43.3,
+      44.5,
+      40.5,
+      30.0,
+      26.1,
+      19.2,
+      17.3,
+      23.7,
+      23.0,
+      22.6,
+      22.8,
+      22.6,
+      19.1,
+      20.0,
+      20.7,
+      19.8,
+      18.1,
+      0.0,
+      17.2,
+      14.4,
+      6.3
+    ],
+    "backgroundColor": "#84CC16",
+    "borderWidth": 0
+  },
+  {
+    "label": "minimax-m2.7-20260318",
+    "data": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      25.1,
+      29.6,
+      37.4,
+      50.1,
+      62.6,
+      65.7,
+      63.9,
+      60.7,
+      51.9,
+      53.5,
+      55.3,
+      64.8,
+      66.3,
+      62.5,
+      58.5,
+      23.3,
+      12.5
+    ],
+    "backgroundColor": "#FF7849",
+    "borderWidth": 0
+  },
+  {
+    "label": "step-3.5-flash",
+    "data": [
+      64.4,
+      69.8,
+      79.2,
+      103.5,
+      117.7,
+      123.3,
+      120.6,
+      119.5,
+      116.0,
+      116.2,
+      100.6,
+      124.3,
+      136.8,
+      151.2,
+      145.5,
+      130.9,
+      129.4,
+      139.4,
+      152.2,
+      147.5,
+      128.7,
+      138.2,
+      131.6,
+      122.8,
+      117.1,
+      110.2,
+      102.6,
+      99.3,
+      99.4,
+      94.4,
+      41.2
+    ],
+    "backgroundColor": "#8B5CF6",
+    "borderWidth": 0
+  },
+  {
+    "label": "mimo-v2-pro-20260318",
+    "data": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      21.3,
+      59.5,
+      83.0,
+      96.9,
+      112.2,
+      121.0,
+      131.0,
+      158.0,
+      184.9,
+      226.3,
+      260.2,
+      277.9,
+      271.6,
+      268.9,
+      223.1,
+      70.3,
+      19.1,
+      7.5
+    ],
+    "backgroundColor": "#EC4899",
+    "borderWidth": 0
+  },
+  {
+    "label": "glm-5-turbo-20260315",
+    "data": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      56.3,
+      153.5,
+      149.7,
+      179.0,
+      160.9,
+      140.3,
+      138.7,
+      135.3,
+      138.4,
+      136.6,
+      130.0,
+      127.4,
+      134.1,
+      129.6,
+      132.5,
+      134.3,
+      99.0,
+      87.8,
+      61.6,
+      47.2,
+      24.3
+    ],
+    "backgroundColor": "#F59E0B",
+    "borderWidth": 0
+  }
+];
+const LEADERBOARD = [
+  {
+    "rank": 2,
+    "model": "mimo-v2-pro-20260318",
+    "author": "xiaomi",
+    "tokens": "3.96T",
+    "change": "\u2014",
+    "dir": "fl",
+    "color": "#4285F4"
+  },
+  {
+    "rank": 3,
+    "model": "step-3.5-flash:free",
+    "author": "stepfun",
+    "tokens": "1.49T",
+    "change": "\u2014",
+    "dir": "fl",
+    "color": "#FF6B6B"
+  },
+  {
+    "rank": 4,
+    "model": "minimax-m2.7-20260318",
+    "author": "minimax",
+    "tokens": "1.29T",
+    "change": "new",
+    "dir": "nw",
+    "color": "#00B5A4"
+  },
+  {
+    "rank": 5,
+    "model": "deepseek-v3.2-20251201",
+    "author": "deepseek",
+    "tokens": "1.24T",
+    "change": "\u2014",
+    "dir": "fl",
+    "color": "#FF7849"
+  },
+  {
+    "rank": 6,
+    "model": "claude-4.6-sonnet-20260217",
+    "author": "anthropic",
+    "tokens": "1.04T",
+    "change": "\u2014",
+    "dir": "fl",
+    "color": "#8B5CF6"
+  },
+  {
+    "rank": 7,
+    "model": "claude-4.6-opus-20260205",
+    "author": "anthropic",
+    "tokens": "995.0B",
+    "change": "\u21911",
+    "dir": "up",
+    "color": "#EC4899"
+  },
+  {
+    "rank": 8,
+    "model": "gemini-3-flash-preview-20251217",
+    "author": "google",
+    "tokens": "971.5B",
+    "change": "\u21911",
+    "dir": "up",
+    "color": "#84CC16"
+  },
+  {
+    "rank": 9,
+    "model": "glm-5-turbo-20260315",
+    "author": "z-ai",
+    "tokens": "967.6B",
+    "change": "\u21932",
+    "dir": "dn",
+    "color": "#F59E0B"
+  },
+  {
+    "rank": 10,
+    "model": "minimax-m2.5-20260211",
+    "author": "minimax",
+    "tokens": "908.9B",
+    "change": "\u21936",
+    "dir": "dn",
+    "color": "#06B6D4"
+  }
+];
+const CHECKS      = [{"s": "ok", "l": "All datasets present", "d": "8/8 files found in data/normalized/openrouter"}, {"s": "ok", "l": "No schema drift detected", "d": "All expected columns present across datasets"}, {"s": "ok", "l": "No duplicate natural keys", "d": "Deduplication verified on all 8 datasets"}, {"s": "warning", "l": "Freshness: app_usage_daily", "d": "Latest scraped_at 18h ago \u2014 expected daily cadence"}, {"s": "ok", "l": "Manifest available", "d": "run_20260405T111150Z \u2014 2026-04-05 11:11 UTC"}];
+const DS_COUNTS   = [{"l": "Top Models", "n": 510}, {"l": "Market Share", "n": 530}, {"l": "Programming", "n": 450}, {"l": "App Metadata", "n": 1}, {"l": "App Usage Daily", "n": 341}, {"l": "App Top Models", "n": 20}, {"l": "Global Rankings", "n": 600}, {"l": "Trending Apps", "n": 8}];
+const KPI = {
+  totalTokens:  "22.73T",
+  wowStr:       "↑11.7%",
+  wowDir:       "up",
+  prevTotal:    "20.35T",
+  topModel:     "mimo-v2-pro-20260318",
+  topAuthor:    "xiaomi",
+  topTokens:    "3.96T",
+  activeModels: 9,
+  activeDelta:  0,
+  leaderAuthor: "Qwen",
+  leaderPct:    "18.8%",
+  leaderTotal:  "14.41T",
+  latestWeek:   "2026-03-23",
+  latestDay:    "2026-04-05",
+};
+
+// ── POPULATE KPIs ──
+document.getElementById('k1').textContent  = KPI.totalTokens;
+document.getElementById('k1s').textContent = `vs ${KPI.prevTotal} prev week`;
+const k1b = document.getElementById('k1b');
+k1b.textContent = KPI.wowStr; k1b.className = `bdg ${KPI.wowDir}`;
+
+document.getElementById('k2').textContent  = KPI.topModel;
+document.getElementById('k2s').textContent = `by ${KPI.topAuthor} · ${KPI.topTokens} tokens`;
+document.getElementById('k2b').textContent = '#1 this week';
+
+document.getElementById('k3').textContent  = KPI.activeModels;
+document.getElementById('k3s').textContent = `tracked week of ${KPI.latestWeek}`;
+const k3b = document.getElementById('k3b');
+k3b.textContent = `${KPI.activeDelta>=0?'↑':'↓'}${Math.abs(KPI.activeDelta)}`; k3b.className=`bdg ${KPI.activeDelta>=0?'up':'dn'}`;
+
+document.getElementById('k4').textContent  = KPI.leaderAuthor;
+document.getElementById('k4s').textContent = `${KPI.leaderTotal} tokens cumulative`;
+document.getElementById('k4b').textContent = KPI.leaderPct;
+
+document.getElementById('freshBox').innerHTML = `<strong>Data freshness</strong>
+Latest scrape: 2026-04-05 11:11 UTC<br>
+Run: 20260405T111150Z-1c634ed3<br>
+Coverage: ${WEEKS[0]} → ${WEEKS[WEEKS.length-1]}<br>
+Status: <span style="color:var(--green)">✓ Fresh</span>`;
+
+document.getElementById('lbSubtitle').textContent = `Week of ${KPI.latestWeek} — top models by token usage`;
+document.getElementById('appDateRange').textContent = `${APP_DAYS[0]} → ${APP_DAYS[APP_DAYS.length-1]}`;
+
+// ── CHART DEFAULTS ──
+Chart.defaults.font.family = "'Inter',system-ui,sans-serif";
+Chart.defaults.font.size   = 11;
+
+function fmtB(v) { return v>=1000?(v/1000).toFixed(1)+'T':Math.round(v)+'B'; }
+const GRID_CLR  = '#F3F4F6';
+const TICK_CLR  = '#9CA3AF';
+const baseScales = (stacked, maxY, tickCb) => ({
+  x: { stacked, grid:{display:false}, ticks:{maxTicksLimit:12, color:TICK_CLR} },
+  y: { stacked, max:maxY, grid:{color:GRID_CLR}, border:{dash:[4,4]}, ticks:{callback:tickCb, color:TICK_CLR} }
+});
+const baseTT = { mode:'index', intersect:false, backgroundColor:'#fff', borderColor:'#E5E7EB', borderWidth:1, titleColor:'#111827', bodyColor:'#6B7280', padding:10, cornerRadius:6 };
+const baseLegend = { position:'top', labels:{boxWidth:10,boxHeight:10,padding:14,color:'#374151',font:{size:11}} };
+
+// ── TOP MODELS CHART ──
+new Chart(document.getElementById('tmChart'), {
+  type: 'bar',
+  data: { labels: WEEKS, datasets: TM_DATASETS },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    scales: baseScales(true, null, v => fmtB(v)),
+    plugins: {
+      legend: baseLegend,
+      tooltip: { ...baseTT, callbacks:{ label: c=>`${c.dataset.label}: ${fmtB(c.raw)}` } }
+    },
+    animation:{ duration:700 }
+  }
+});
+
+// ── MARKET SHARE CHART ──
+new Chart(document.getElementById('msChart'), {
+  type: 'bar',
+  data: { labels: MS_WEEKS, datasets: MS_DATASETS },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    scales: baseScales(true, 100, v => v+'%'),
+    plugins: {
+      legend: { display:false },
+      tooltip: { ...baseTT, callbacks:{ label: c=>`${c.dataset.label}: ${c.raw}%` } }
+    },
+    animation:{ duration:700 }
+  }
+});
+
+// ── MARKET SHARE LEGEND ──
+const mlEl = document.getElementById('msLeg');
+MS_LEGEND.forEach((a,i) => {
+  mlEl.innerHTML += `<div class="ms-item">
+    <div class="ms-l"><span class="ms-rk">${i+1}.</span>
+      <span class="ms-dot" style="background:${a.color}"></span>
+      <span class="ms-nm">${a.label}</span></div>
+    <div class="ms-r"><div class="ms-tok">${a.total}</div><div class="ms-pct">${a.pct}</div></div>
+  </div>`;
+});
+
+// ── LEADERBOARD ──
+const lbEl = document.getElementById('lb');
+LEADERBOARD.forEach(r => {
+  lbEl.innerHTML += `<div class="lb-row">
+    <div class="lb-rk">${r.rank}.</div>
+    <div class="lb-av" style="background:${r.color}">${r.author[0]?.toUpperCase()||'?'}</div>
+    <div class="lb-info">
+      <div class="lb-nm" title="${r.model}">${r.model}</div>
+      <div class="lb-au">by ${r.author}</div>
+    </div>
+    <div class="lb-rt">
+      <div class="lb-tok">${r.tokens} tokens</div>
+      <div class="lb-ch ${r.dir}">${r.change}</div>
+    </div>
+  </div>`;
+});
+
+// ── APP USAGE CHART ──
+new Chart(document.getElementById('appChart'), {
+  type: 'bar',
+  data: { labels: APP_DAYS, datasets: APP_DATASETS },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    scales: baseScales(true, null, v => fmtB(v)),
+    plugins: {
+      legend: baseLegend,
+      tooltip: { ...baseTT, callbacks:{ label: c=>`${c.dataset.label}: ${fmtB(c.raw)}` } }
+    },
+    animation:{ duration:600 }
+  }
+});
+
+// ── CHECKS ──
+document.getElementById('ckList').innerHTML = CHECKS.map(c => `
+  <div class="ck-row"><div class="ck-dot ${c.s}"></div>
+    <div><div class="ck-lbl">${c.l}</div><div class="ck-det">${c.d}</div></div>
+  </div>`).join('');
+
+document.getElementById('dsGrid').innerHTML = DS_COUNTS.map(d => `
+  <div class="ds-item"><div class="ds-lbl">${d.l}</div>
+    <div class="ds-cnt">${d.n.toLocaleString()}</div></div>`).join('');
+</script>
+</body>
+</html>
