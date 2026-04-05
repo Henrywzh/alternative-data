@@ -400,7 +400,7 @@ def render_top_models_chart(datasets: dict[str, DatasetLoadResult]) -> None:
         pivot_top["Others"] = pivot[other_cols].sum(axis=1)
 
     fig = make_stacked_bar(pivot_top, MODEL_COLORS, y_title="Tokens")
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True, theme=None)
 
 
 def render_market_share_section(datasets: dict[str, DatasetLoadResult]) -> None:
@@ -436,7 +436,7 @@ def render_market_share_section(datasets: dict[str, DatasetLoadResult]) -> None:
     with chart_col:
         fig = make_stacked_bar(pct_top, MODEL_COLORS, y_title="Share (%)", pct=True)
         fig.update_yaxes(range=[0, 100])
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True, theme=None)
 
     with legend_col:
         latest_wk  = ms["week_start_date"].max()
@@ -590,7 +590,7 @@ def render_app_usage_chart(datasets: dict[str, DatasetLoadResult]) -> None:
         pivot_top["Others"] = pivot[rest_cols].sum(axis=1)
 
     fig = make_stacked_bar(pivot_top, MODEL_COLORS, y_title="Tokens", height=340)
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True, theme=None)
 
 
 def render_apps_tables(datasets: dict[str, DatasetLoadResult]) -> None:
@@ -656,7 +656,7 @@ def render_apps_tables(datasets: dict[str, DatasetLoadResult]) -> None:
                 top_m = pivot_u.sum().nlargest(7).index.tolist()
                 pivot_u = pivot_u[top_m]
                 fig_u = make_stacked_bar(pivot_u, MODEL_COLORS, y_title="Tokens", height=300)
-                st.plotly_chart(fig_u, use_container_width=True)
+                st.plotly_chart(fig_u, use_container_width=True, theme=None)
 
 
 def render_checks(checks: list[CheckResult]) -> None:
