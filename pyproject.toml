@@ -11,6 +11,7 @@ requires-python = ">=3.11"
 dependencies = [
   "beautifulsoup4>=4.12",
   "pandas>=2.2",
+  "playwright>=1.52",
   "pyarrow>=16.0.0",
   "requests>=2.32",
 ]

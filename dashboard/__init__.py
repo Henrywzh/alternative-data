@@ -1,0 +1,1 @@
+"""OpenRouter QA dashboard package."""
