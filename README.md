@@ -2,7 +2,7 @@
 
 Research repo for gathering and analyzing alternative data.
 
-The first implemented projects are Python ingestion pipelines for OpenRouter rankings and app intelligence data.
+The first implemented projects are Python ingestion pipelines for OpenRouter rankings, app intelligence data, and GitHub Trending repository stats.
 
 Rankings datasets:
 
@@ -17,6 +17,9 @@ Apps datasets:
 - `app_top_models_daily_snapshot`: daily point-in-time top-model snapshots for monitored apps
 - `apps_global_ranking_snapshots`: public `/apps` global rankings by `day`, `week`, and `month`
 - `apps_trending_snapshots`: public `/apps` trending leaderboard snapshots
+- `github_trending_daily`: daily points-in-time snapshots for trending repos
+- `github_trending_weekly`: weekly points-in-time snapshots for trending repos
+- `github_trending_monthly`: monthly points-in-time snapshots for trending repos
 
 ## Project Layout
 
@@ -24,8 +27,9 @@ Apps datasets:
 - `tests/fixtures/`: committed parser fixtures
 - `data/raw/openrouter/`: timestamped raw snapshots and run manifests
 - `data/normalized/openrouter/`: analytics-ready CSV and Parquet outputs tracked in git
-- `.github/workflows/openrouter-rankings-weekly.yml`: weekly GitHub Actions job
-- `.github/workflows/openrouter-apps-daily.yml`: daily GitHub Actions job for app monitoring and public app rankings
+- `src/github_trending_data/`: package, CLI, scraper, storage, and pipeline for GitHub data
+- `data/normalized/github_trending/`: analytics-ready Parquet outputs for trending repos
+- `.github/workflows/github-trending-daily.yml`: daily GitHub Actions job for trending repos
 - `.github/workflows/repo-keepalive.yml`: scheduled keepalive commit to avoid GitHub disabling scheduled workflows after long inactivity
 
 ## Commands
@@ -76,6 +80,12 @@ Validate the live app extractor:
 
 ```bash
 openrouter-data --base-dir . apps-validate
+```
+
+Run the GitHub Trending extraction:
+
+```bash
+github-trending-data --period all --data-dir data
 ```
 
 Run the internal QA dashboard locally:
