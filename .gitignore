@@ -34,3 +34,7 @@ data/normalized/openrouter/*
 .DS_Store
 .vscode/
 .idea/
+
+# Local tool config — never push
+.claude/
+.streamlit/
