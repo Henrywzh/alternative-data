@@ -4,7 +4,6 @@ import json
 from dataclasses import dataclass
 from datetime import UTC
 from typing import Any
-from urllib.parse import quote
 
 import requests
 
@@ -19,13 +18,17 @@ class MonitoredApp:
     slug: str
     origin_url: str
     source_url: str
+    app_name: str
+    fallback_source_urls: tuple[str, ...] = ()
 
 
 MONITORED_APPS = (
     MonitoredApp(
         slug="openclaw",
         origin_url="https://openclaw.ai/",
-        source_url=f"https://openrouter.ai/apps?url={quote('https://openclaw.ai/', safe='')}",
+        source_url="https://openrouter.ai/apps/openclaw",
+        app_name="OpenClaw",
+        fallback_source_urls=("https://openrouter.ai/apps?url=https%3A%2F%2Fopenclaw.ai%2F",),
     ),
 )
 
@@ -45,13 +48,34 @@ class AppsSource(SourceExtractor):
     def fetch_snapshots(self) -> list[Snapshot]:
         snapshots = [self._fetch("apps_directory", "https://openrouter.ai/apps")]
         for app in MONITORED_APPS:
-            snapshots.append(self._fetch(f"app_{app.slug}", app.source_url))
+            snapshots.append(self._fetch_app_snapshot(app))
         return snapshots
 
     def _fetch(self, name: str, url: str) -> Snapshot:
         response = self.session.get(url, timeout=self.timeout)
         response.raise_for_status()
         return Snapshot(name=name, source_url=url, body=response.text)
+
+    def _fetch_app_snapshot(self, app: MonitoredApp) -> Snapshot:
+        candidate_urls = (app.source_url, *app.fallback_source_urls)
+        last_snapshot: Snapshot | None = None
+        for url in candidate_urls:
+            snapshot = self._fetch(f"app_{app.slug}", url)
+            last_snapshot = snapshot
+            if self._looks_like_app_detail_page(snapshot.body, app):
+                return snapshot
+        if last_snapshot is None:
+            raise ExtractionError(f"Could not fetch snapshot for app {app.slug}")
+        return last_snapshot
+
+    @staticmethod
+    def _looks_like_app_detail_page(html: str, app: MonitoredApp) -> bool:
+        required_signals = (
+            app.app_name,
+            "forecast-1d",
+            "appModelAnalytics",
+        )
+        return all(signal in html for signal in required_signals)
 
     def extract(self, snapshots: list[Snapshot], context: RunContext) -> dict[str, list[DatasetRecord]]:
         snapshot_by_name = {snapshot.name: snapshot for snapshot in snapshots}
@@ -77,7 +101,7 @@ class AppsSource(SourceExtractor):
         top_model_records: list[DatasetRecord] = []
         for app in MONITORED_APPS:
             app_snapshot = snapshot_by_name[f"app_{app.slug}"]
-            app_metadata = self._extract_app_metadata(app_snapshot.body, app.origin_url)
+            app_metadata = self._extract_app_metadata(app_snapshot.body, app)
             metadata_records.extend(self._app_metadata_records(app_metadata, app_snapshot, context))
             usage_records.extend(self._usage_records(app_metadata, app_snapshot, context))
             top_model_records.extend(self._top_model_records(app_metadata, app_snapshot, context))
@@ -211,18 +235,22 @@ class AppsSource(SourceExtractor):
                     return node
         raise ExtractionError("Could not find global ranking payload in /apps")
 
-    def _extract_app_metadata(self, html: str, origin_url: str) -> dict[str, Any]:
+    def _extract_app_metadata(self, html: str, app: MonitoredApp) -> dict[str, Any]:
         best_match: dict[str, Any] | None = None
         for payload in iter_next_f_objects(html):
             for node in walk_json(payload):
                 if not isinstance(node, dict):
                     continue
-                if node.get("origin_url") != origin_url or "id" not in node:
+                if "id" not in node:
+                    continue
+                origin_matches = node.get("origin_url") == app.origin_url
+                title_matches = node.get("title") == app.app_name
+                if not origin_matches and not title_matches:
                     continue
                 if best_match is None or len(node) > len(best_match):
                     best_match = node
         if best_match is None:
-            raise ExtractionError(f"Could not find app metadata for {origin_url}")
+            raise ExtractionError(f"Could not find app metadata for {app.origin_url}")
         return best_match
 
     def _extract_usage_chart(self, html: str, app_name: str) -> dict[str, Any]:
