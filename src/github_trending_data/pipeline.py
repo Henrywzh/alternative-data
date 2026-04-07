@@ -21,6 +21,7 @@ class GithubTrendingPipeline:
         """
         Runs the extraction pipeline for the given periods.
         """
+        has_error = False
         for period in periods:
             try:
                 logger.info(f"Starting pipeline for {period} trending repos")
@@ -29,3 +30,7 @@ class GithubTrendingPipeline:
                 logger.info(f"Successfully completed {period} extraction")
             except Exception as e:
                 logger.error(f"Error extracting {period} data: {e}", exc_info=True)
+                has_error = True
+                
+        if has_error:
+            raise RuntimeError("One or more period extractions failed")
