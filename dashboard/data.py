@@ -14,6 +14,7 @@ DATASET_REGISTRY: dict[str, dict[str, object]] = {
         "natural_keys": ["week_start_date", "entity_id"],
         "primary_date_column": "week_start_date",
         "metric_column": "metric_value",
+        "required_columns": ["week_start_date", "entity_id", "metric_value", "rank"],
     },
     "market_share": {
         "label": "Market Share",
@@ -21,6 +22,7 @@ DATASET_REGISTRY: dict[str, dict[str, object]] = {
         "natural_keys": ["week_start_date", "entity_id"],
         "primary_date_column": "week_start_date",
         "metric_column": "metric_value",
+        "required_columns": ["week_start_date", "entity_id", "metric_value", "rank"],
     },
     "categories_programming": {
         "label": "Programming",
@@ -28,6 +30,7 @@ DATASET_REGISTRY: dict[str, dict[str, object]] = {
         "natural_keys": ["week_start_date", "category_slug", "entity_id"],
         "primary_date_column": "week_start_date",
         "metric_column": "metric_value",
+        "required_columns": ["week_start_date", "category_slug", "entity_id", "metric_value", "rank"],
     },
     "app_metadata_snapshots": {
         "label": "App Metadata",
@@ -35,6 +38,7 @@ DATASET_REGISTRY: dict[str, dict[str, object]] = {
         "natural_keys": ["app_id", "scrape_date"],
         "primary_date_column": "scrape_date",
         "metric_column": None,
+        "required_columns": ["app_id", "app_name", "scrape_date"],
     },
     "app_usage_daily": {
         "label": "App Usage Daily",
@@ -42,6 +46,7 @@ DATASET_REGISTRY: dict[str, dict[str, object]] = {
         "natural_keys": ["app_id", "usage_date", "model_permaslug"],
         "primary_date_column": "usage_date",
         "metric_column": "total_tokens",
+        "required_columns": ["app_id", "usage_date", "model_permaslug", "total_tokens"],
     },
     "app_top_models_daily_snapshot": {
         "label": "App Top Models",
@@ -49,6 +54,7 @@ DATASET_REGISTRY: dict[str, dict[str, object]] = {
         "natural_keys": ["app_id", "snapshot_date", "model_permaslug"],
         "primary_date_column": "snapshot_date",
         "metric_column": "total_tokens",
+        "required_columns": ["app_id", "snapshot_date", "model_permaslug", "total_tokens"],
     },
     "apps_global_ranking_snapshots": {
         "label": "Global App Rankings",
@@ -56,6 +62,7 @@ DATASET_REGISTRY: dict[str, dict[str, object]] = {
         "natural_keys": ["snapshot_date", "period", "rank"],
         "primary_date_column": "snapshot_date",
         "metric_column": "tokens",
+        "required_columns": ["app_id", "snapshot_date", "period", "tokens", "rank"],
     },
     "apps_trending_snapshots": {
         "label": "Trending Apps",
@@ -63,6 +70,7 @@ DATASET_REGISTRY: dict[str, dict[str, object]] = {
         "natural_keys": ["snapshot_date", "rank"],
         "primary_date_column": "snapshot_date",
         "metric_column": "growth_percent",
+        "required_columns": ["app_id", "snapshot_date", "growth_percent", "rank"],
     },
 }
 
@@ -81,11 +89,14 @@ DOMAIN_ORDER = {
     ],
 }
 
-EXPECTED_COLUMNS = [
+CORE_COLUMNS = [
     "dataset_id",
     "source_url",
     "source_run_id",
     "scraped_at",
+]
+
+RANKINGS_COLUMNS = [
     "week_label",
     "week_start_date",
     "entity_id",
@@ -97,6 +108,9 @@ EXPECTED_COLUMNS = [
     "metric_value",
     "rank",
     "category_slug",
+]
+
+APPS_COLUMNS = [
     "app_id",
     "app_name",
     "origin_url",
@@ -117,6 +131,8 @@ EXPECTED_COLUMNS = [
     "tokens",
     "growth_percent",
 ]
+
+EXPECTED_COLUMNS = CORE_COLUMNS + RANKINGS_COLUMNS + APPS_COLUMNS
 
 DATE_COLUMNS = ["week_start_date", "scrape_date", "usage_date", "snapshot_date", "scraped_at", "observed_at", "created_at"]
 NUMERIC_COLUMNS = ["metric_value", "rank", "total_tokens", "tokens", "growth_percent"]
@@ -188,7 +204,15 @@ def load_dataset(dataset_id: str, base_dir: Path | None = None) -> DatasetLoadRe
         source_format = "csv"
         source_path = csv_path
 
-    missing_columns = [column for column in EXPECTED_COLUMNS if column not in frame.columns]
+    registry = DATASET_REGISTRY.get(dataset_id, {})
+    domain = registry.get("domain", "rankings")
+    
+    # Only report drift for columns that are EXPECTED for this domain.
+    # Rankings datasets shouldn't complain about missing App columns.
+    relevant_columns = CORE_COLUMNS + (RANKINGS_COLUMNS if domain == "rankings" else APPS_COLUMNS)
+    missing_columns = [column for column in relevant_columns if column not in frame.columns]
+
+    # Padding still uses the full global set to ensure logical compatibility across different views
     for column in EXPECTED_COLUMNS:
         if column not in frame.columns:
             frame[column] = pd.NA
@@ -245,12 +269,23 @@ def load_latest_manifest(
     manifest_path: Path | None = None
     manifest_scraped_at: str | None = None
 
+    manifest_glob = str(raw_root(base_dir) / "*/manifest.json")
     manifests = sorted(raw_root(base_dir).glob("*/manifest.json"))
+    
     if manifests:
         manifest_path = manifests[-1]
-        payload = json.loads(manifest_path.read_text(encoding="utf-8"))
-        latest_run_id = payload.get("run_id")
-        manifest_scraped_at = payload.get("scraped_at")
+        try:
+            payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+            latest_run_id = payload.get("run_id")
+            manifest_scraped_at = payload.get("scraped_at")
+        except (json.JSONDecodeError, IOError) as e:
+            # Handle corrupted manifests gracefully
+            manifest_path = None
+    else:
+        # Diagnostic: If no manifests found, check if the raw_root even has subdirectories
+        subdirs = list(raw_root(base_dir).iterdir()) if raw_root(base_dir).exists() else []
+        if subdirs:
+            print(f"Warning: Found {len(subdirs)} directories in raw root, but none contain manifest.json")
 
     results = datasets if datasets is not None else load_all_datasets(base_dir=base_dir)
     scraped_values = [result.latest_scraped_at for result in results.values() if result.latest_scraped_at]

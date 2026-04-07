@@ -47,18 +47,33 @@ class BasePipeline:
     def _execute(self, *, mode: str, snapshots: list[Snapshot] | None = None) -> PipelineResult:
         context = self._create_context()
         snapshots = self.source.fetch_snapshots() if snapshots is None else snapshots
-        extracted = self.source.extract(snapshots, context)
-        filtered = self._filter_for_mode(mode, extracted)
-        datasets_written = {}
-        for dataset_id in self.dataset_ids:
-            records = filtered.get(dataset_id, [])
-            if records:
-                datasets_written[dataset_id] = len(self.storage.upsert_dataset(dataset_id, records))
-            else:
-                datasets_written[dataset_id] = len(self.storage.load_dataset(dataset_id))
-        manifest = self._build_manifest(mode=mode, context=context, extracted=filtered)
+        
+        # Build a preliminary manifest so we have something on disk even if extraction fails
+        manifest = self._build_manifest(mode=mode, context=context, extracted={})
         raw_run_dir = self.storage.write_raw_run(context.run_id, snapshots, manifest)
-        return PipelineResult(run_id=context.run_id, datasets_written=datasets_written, raw_run_dir=raw_run_dir)
+
+        try:
+            extracted = self.source.extract(snapshots, context)
+            filtered = self._filter_for_mode(mode, extracted)
+            datasets_written = {}
+            for dataset_id in self.dataset_ids:
+                records = filtered.get(dataset_id, [])
+                if records:
+                    datasets_written[dataset_id] = len(self.storage.upsert_dataset(dataset_id, records))
+                else:
+                    datasets_written[dataset_id] = len(self.storage.load_dataset(dataset_id))
+            
+            # Update manifest with extraction results
+            manifest = self._build_manifest(mode=mode, context=context, extracted=filtered)
+            self.storage.write_raw_run(context.run_id, snapshots, manifest)
+            
+            return PipelineResult(run_id=context.run_id, datasets_written=datasets_written, raw_run_dir=raw_run_dir)
+        except Exception as exc:
+            # Update manifest with error status if possible
+            manifest["status"] = "failed"
+            manifest["error"] = str(exc)
+            self.storage.write_raw_run(context.run_id, snapshots, manifest)
+            raise
 
     def _build_manifest(
         self,
