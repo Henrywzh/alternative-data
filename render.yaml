@@ -6,4 +6,7 @@ services:
     autoDeploy: true
     rootDir: .
     buildCommand: pip install -r requirements-dashboard.txt
-    startCommand: streamlit run dashboard/app.py --server.port $PORT --server.address 0.0.0.0
+    startCommand: streamlit run dashboard/app.py --server.port $PORT --server.address 0.0.0.0 --server.headless true --server.enableCORS false --server.enableXsrfProtection false
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
