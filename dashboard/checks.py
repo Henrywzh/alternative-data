@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from dashboard.data import DatasetLoadResult, FreshnessInfo, dataset_ids, normalized_root
+from dashboard.data import DATASET_REGISTRY, DatasetLoadResult, FreshnessInfo, dataset_ids, normalized_root
 
 
 @dataclass(frozen=True)
