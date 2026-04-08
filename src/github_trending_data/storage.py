@@ -45,6 +45,25 @@ class GithubTrendingStorage:
         logger.info(f"Retained {len(recent_dates)} unique dates for {period} (Policy: {retention_days} days). Rows: {len(filtered)}")
         return filtered
 
+    def _write_manifest(self, run_id: str, scraped_at: str):
+        """
+        Creates a manifest.json file for the current run to satisfy health checks.
+        """
+        run_dir = self.raw_dir / run_id
+        run_dir.mkdir(parents=True, exist_ok=True)
+        
+        manifest = {
+            "run_id": run_id,
+            "scraped_at": scraped_at,
+            "source": "github_trending"
+        }
+        
+        manifest_path = run_dir / "manifest.json"
+        with open(manifest_path, "w") as f:
+            import json
+            json.dump(manifest, f, indent=2)
+        logger.info(f"Created run manifest at {manifest_path}")
+
     def save(self, period: str, repos: List[TrendingRepo]):
         """
         Saves the new repos and deduplicates/cleans older data for the given period.
@@ -54,6 +73,12 @@ class GithubTrendingStorage:
             return
             
         file_path = self.norm_dir / f"github_trending_{period}.parquet"
+        
+        # Capture run metadata from the first repo to create a manifest
+        # (All repos in this call share the same run_id and scraped_at)
+        run_id = repos[0].source_run_id
+        scraped_at = repos[0].scraped_at
+        self._write_manifest(run_id, scraped_at)
         
         # Load existing data if file exists
         if file_path.exists():
@@ -68,9 +93,9 @@ class GithubTrendingStorage:
         # Concatenate
         combined = pd.concat([existing_df, new_df], ignore_index=True)
         
-        # Deduplicate exactly matching rows (e.g. running the script twice on the same day)
-        # We drop duplicates considering scrape_date, period, author, and name to keep latest values
-        combined = combined.drop_duplicates(subset=['scrape_date', 'period', 'author', 'name'], keep='last')
+        # Deduplicate: Keep the last entry for a specific repo on a specific scrape_date
+        subset_cols = ['scrape_date', 'period', 'author', 'name']
+        combined = combined.drop_duplicates(subset=subset_cols, keep='last')
         
         # Enforce retention policy
         combined = self._enforce_retention(combined, period)
