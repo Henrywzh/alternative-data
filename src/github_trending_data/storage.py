@@ -33,9 +33,12 @@ class GithubTrendingStorage:
             
         retention_days = self.RETENTION_RULES.get(period, 5)
         
-        # Determine the unique scrape dates, sort descending, and keep top N
-        unique_dates = df['scrape_date'].unique()
-        unique_dates.sort()
+        # Pandas may return an Arrow-backed extension array here, which does not
+        # implement in-place ``sort()``. Normalize to a plain sorted Python list.
+        unique_dates = sorted(
+            value
+            for value in df["scrape_date"].dropna().astype(str).unique().tolist()
+        )
         recent_dates = unique_dates[-retention_days:]
         
         filtered = df[df['scrape_date'].isin(recent_dates)].copy()
