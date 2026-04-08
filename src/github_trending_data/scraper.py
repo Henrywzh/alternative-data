@@ -2,7 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
 import logging
-from typing import List
+from typing import List, Optional
 
 from .models import TrendingRepo
 
@@ -27,12 +27,13 @@ class GithubTrendingScraper:
         cleaned = re.sub(r'[^\d]', '', text)
         return int(cleaned) if cleaned else 0
 
-    def scrape(self, period: str) -> List[TrendingRepo]:
+    def scrape(self, period: str, run_id: Optional[str] = None) -> List[TrendingRepo]:
         """
         Scrapes GitHub trending repositories for a given period.
         
         Args:
             period: 'daily', 'weekly', or 'monthly'
+            run_id: Optional run ID to use for core metadata
         """
         if period not in ['daily', 'weekly', 'monthly']:
             raise ValueError(f"Invalid period: {period}")
@@ -43,13 +44,20 @@ class GithubTrendingScraper:
         response = self.session.get(url, timeout=15)
         response.raise_for_status()
         
-        scrape_date = datetime.now().strftime("%Y-%m-%d")
+        now = datetime.now()
+        scrape_date = now.strftime("%Y-%m-%d")
+        scraped_at = now.isoformat().replace("+00:00", "Z")
+        
+        # Use provided run_id or generate a simple one based on timestamp
+        source_run_id = run_id or now.strftime("%Y%m%dT%H%M%S")
+        dataset_id = f"github_trending_{period}"
+        
         soup = BeautifulSoup(response.text, 'html.parser')
         articles = soup.find_all('article', class_='Box-row')
         
         results = []
         for article in articles:
-            # 1. Author and Name
+            # ... (parsing logic remains same) ...
             h2 = article.find('h2', class_='h3 lh-condensed')
             if not h2:
                 continue
@@ -63,24 +71,24 @@ class GithubTrendingScraper:
             author = parts[0].strip()
             name = parts[1].strip() if len(parts) > 1 else ""
             
-            # 2. Description
             p_desc = article.find('p', class_='col-9')
             description = p_desc.text.strip() if p_desc else None
             
-            # 3. Stars gained in period
             stars_today = 0
             span_stars = article.find('span', class_='d-inline-block float-sm-right')
             if span_stars:
                 stars_today = self._parse_int(span_stars.text)
                 
-            # 4. Total stars
             total_stars = 0
-            # Look for the stargazers link
             a_star = article.find('a', href=lambda h: h and h.endswith('/stargazers'))
             if a_star:
                 total_stars = self._parse_int(a_star.text.strip())
                         
             repo = TrendingRepo(
+                dataset_id=dataset_id,
+                source_url=url,
+                source_run_id=source_run_id,
+                scraped_at=scraped_at,
                 scrape_date=scrape_date,
                 period=period,
                 author=author,
