@@ -54,12 +54,15 @@ def format_metric(value: float, metric_unit: str | None = None) -> str:
         return "-"
     if metric_unit == "share":
         return f"{value:.2f}%"
-    if abs(value) >= 1_000_000_000_000:
+    abs_v = abs(value)
+    if abs_v >= 1_000_000_000_000:
         return f"{value / 1_000_000_000_000:.2f}T"
-    if abs(value) >= 1_000_000_000:
+    if abs_v >= 1_000_000_000:
         return f"{value / 1_000_000_000:.1f}B"
-    if abs(value) >= 1_000_000:
+    if abs_v >= 1_000_000:
         return f"{value / 1_000_000:.1f}M"
+    if abs_v >= 1_000:
+        return f"{value / 1_000:.1f}K"
     return f"{value:,.0f}"
 
 
@@ -147,117 +150,119 @@ def inject_css() -> None:
         f"""
         <style>
         /* ---- global ---- */
-        .stApp {{ background: {BG}; }}
+        .stApp {{ background: transparent; }}
         .block-container {{ padding-top: 1.5rem; padding-bottom: 3rem; max-width: 1360px; }}
 
         /* ---- KPI cards ---- */
         .kpi-grid {{ display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }}
         .kpi-card {{
             flex: 1 1 200px;
-            background: {CARD};
-            border: 1px solid {BORDER};
-            border-radius: 10px;
+            background: rgba(128, 128, 128, 0.05);
+            border: 1px solid rgba(128, 128, 128, 0.2);
+            border-radius: 12px;
             padding: 1.1rem 1.3rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
         }}
         .kpi-label {{
-            font-size: 0.78rem;
+            font-size: 0.72rem;
             color: {MUTED};
             text-transform: uppercase;
-            letter-spacing: 0.06em;
+            letter-spacing: 0.1em;
             margin-bottom: 0.35rem;
+            font-weight: 600;
         }}
         .kpi-value {{
-            font-size: 1.85rem;
-            font-weight: 700;
-            color: {TEXT};
-            line-height: 1.15;
+            font-size: 2rem;
+            font-weight: 800;
+            line-height: 1.1;
         }}
-        .kpi-delta-up   {{ font-size: 0.82rem; color: {GREEN}; margin-top: 0.2rem; }}
-        .kpi-delta-down {{ font-size: 0.82rem; color: {RED};   margin-top: 0.2rem; }}
+        .kpi-delta-up   {{ font-size: 0.82rem; color: {GREEN}; margin-top: 0.2rem; font-weight: 600; }}
+        .kpi-delta-down {{ font-size: 0.82rem; color: {RED};   margin-top: 0.2rem; font-weight: 600; }}
         .kpi-delta-flat {{ font-size: 0.82rem; color: {MUTED}; margin-top: 0.2rem; }}
 
         /* ---- section headers ---- */
         .section-title {{
-            font-size: 1.15rem;
-            font-weight: 700;
-            color: {TEXT};
-            margin: 1.6rem 0 0.6rem 0;
+            font-size: 1.25rem;
+            font-weight: 800;
+            margin: 2rem 0 1rem 0;
             padding-bottom: 0.45rem;
-            border-bottom: 2px solid {BORDER};
+            border-bottom: 2px solid rgba(128, 128, 128, 0.15);
         }}
 
         /* ---- leaderboard ---- */
         .lb-card {{
             display: flex;
             align-items: center;
-            gap: 0.9rem;
-            background: {CARD};
-            border: 1px solid {BORDER};
-            border-radius: 8px;
-            padding: 0.75rem 1rem;
-            margin-bottom: 0.55rem;
+            gap: 1rem;
+            background: rgba(128, 128, 128, 0.03);
+            border: 1px solid rgba(128, 128, 128, 0.1);
+            border-radius: 10px;
+            padding: 0.75rem 1.1rem;
+            margin-bottom: 0.6rem;
+            transition: transform 0.2s;
         }}
+        .lb-card:hover {{ transform: translateX(4px); background: rgba(128, 128, 128, 0.06); }}
         .lb-rank {{
-            width: 28px; height: 28px;
-            border-radius: 50%;
+            width: 32px; height: 32px;
+            border-radius: 8px;
             background: {ACCENT};
             color: white;
-            font-size: 0.78rem;
-            font-weight: 700;
+            font-size: 0.85rem;
+            font-weight: 800;
             display: flex; align-items: center; justify-content: center;
             flex-shrink: 0;
         }}
         .lb-rank-top {{
-            background: #1D4ED8;
+            background: linear-gradient(135deg, {ACCENT}, #1D4ED8);
+            box-shadow: 0 4px 10px -2px rgba(37, 99, 235, 0.4);
         }}
         .lb-model {{ flex: 1; min-width: 0; }}
         .lb-model-name {{
-            font-weight: 600;
-            color: {TEXT};
-            font-size: 0.88rem;
+            font-weight: 700;
+            font-size: 0.95rem;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }}
         .lb-model-author {{
-            font-size: 0.76rem;
+            font-size: 0.78rem;
             color: {MUTED};
         }}
         .lb-tokens {{
-            font-size: 0.82rem;
-            color: {TEXT};
-            font-weight: 500;
+            font-size: 1rem;
+            font-weight: 700;
             text-align: right;
             flex-shrink: 0;
+            font-variant-numeric: tabular-nums;
         }}
-        .lb-badge-up   {{ background:#DCFCE7; color:{GREEN}; border-radius:4px; padding:2px 6px; font-size:0.72rem; font-weight:600; }}
-        .lb-badge-down {{ background:#FEE2E2; color:{RED};   border-radius:4px; padding:2px 6px; font-size:0.72rem; font-weight:600; }}
-        .lb-badge-new  {{ background:#DBEAFE; color:{ACCENT}; border-radius:4px; padding:2px 6px; font-size:0.72rem; font-weight:600; }}
-        .lb-badge-flat {{ background:{GRID};  color:{MUTED};  border-radius:4px; padding:2px 6px; font-size:0.72rem; font-weight:600; }}
+        .lb-badge-up   {{ background: rgba(22, 163, 74, 0.1); color: {GREEN}; border-radius:4px; padding:2px 6px; font-size:0.72rem; font-weight:700; }}
+        .lb-badge-down {{ background: rgba(220, 38, 38, 0.1); color: {RED};   border-radius:4px; padding:2px 6px; font-size:0.72rem; font-weight:700; }}
+        .lb-badge-new  {{ background: rgba(37, 99, 235, 0.1); color: {ACCENT}; border-radius:4px; padding:2px 6px; font-size:0.72rem; font-weight:700; }}
+        .lb-badge-flat {{ background: rgba(128, 128, 128, 0.1);  color: {MUTED};  border-radius:4px; padding:2px 6px; font-size:0.72rem; font-weight:700; }}
 
         /* ---- market share legend ---- */
         .ms-legend {{ margin-top: 0.5rem; }}
         .ms-row {{
             display: flex;
             align-items: center;
-            gap: 0.7rem;
-            padding: 0.45rem 0;
-            border-bottom: 1px solid {GRID};
-            font-size: 0.83rem;
+            gap: 0.8rem;
+            padding: 0.55rem 0;
+            border-bottom: 1px solid rgba(128, 128, 128, 0.08);
+            font-size: 0.88rem;
         }}
         .ms-dot {{
-            width: 10px; height: 10px;
-            border-radius: 50%;
+            width: 12px; height: 12px;
+            border-radius: 4px;
             flex-shrink: 0;
         }}
-        .ms-name {{ flex: 1; font-weight: 500; color: {TEXT}; }}
-        .ms-pct  {{ color: {ACCENT}; font-weight: 600; min-width: 48px; text-align: right; }}
-        .ms-tokens {{ color: {MUTED}; font-size: 0.76rem; min-width: 56px; text-align: right; }}
+        .ms-name {{ flex: 1; font-weight: 600; opacity: 0.95; }}
+        .ms-pct  {{ color: {ACCENT}; font-weight: 800; min-width: 52px; text-align: right; }}
+        .ms-tokens {{ color: {MUTED}; font-size: 0.8rem; min-width: 60px; text-align: right; font-variant-numeric: tabular-nums; }}
 
         /* ---- check rows ---- */
-        .chk-ok      {{ color: {GREEN}; font-weight: 600; }}
-        .chk-warning {{ color: {YELLOW}; font-weight: 600; }}
-        .chk-error   {{ color: {RED};   font-weight: 600; }}
+        .chk-ok      {{ color: {GREEN}; font-weight: 700; }}
+        .chk-warning {{ color: {YELLOW}; font-weight: 700; }}
+        .chk-error   {{ color: {RED};   font-weight: 700; }}
         </style>
         """,
         unsafe_allow_html=True,
@@ -387,15 +392,30 @@ def render_top_models_chart(datasets: dict[str, DatasetLoadResult]) -> None:
 
     tm = result.frame.copy()
     tm["week_start_date"] = tm["week_start_date"].astype(str)
+    
+    # --- Period Selector & Total ---
+    weeks = sorted(tm["week_start_date"].unique(), reverse=True)
+    sel_week = st.selectbox("Analyze week", options=weeks, index=0, key="tm_week_sel")
+    week_total = tm[tm["week_start_date"] == sel_week]["metric_value"].sum()
+    st.markdown(
+        f'<div class="kpi-card" style="margin-bottom:1rem; max-width: 300px;">'
+        f'<div class="kpi-label">Total Tokens ({sel_week})</div>'
+        f'<div class="kpi-value" style="font-size: 1.5rem;">{format_metric(week_total)}</div>'
+        f'</div>',
+        unsafe_allow_html=True
+    )
+
     pivot = (
         tm.pivot_table(index="week_start_date", columns="entity_id", values="metric_value", aggfunc="sum")
         .fillna(0)
         .sort_index()
     )
 
-    top9  = pivot.sum().nlargest(9).index.tolist()
-    other_cols = [c for c in pivot.columns if c not in top9]
-    pivot_top = pivot[top9].copy()
+    # Increase Top N from 9 to 15
+    top_n_count = 15
+    top_n_cols = pivot.sum().nlargest(top_n_count).index.tolist()
+    other_cols = [c for c in pivot.columns if c not in top_n_cols]
+    pivot_top = pivot[top_n_cols].copy()
     if other_cols:
         pivot_top["Others"] = pivot[other_cols].sum(axis=1)
 
@@ -412,22 +432,36 @@ def render_market_share_section(datasets: dict[str, DatasetLoadResult]) -> None:
     ms = result.frame.copy()
     ms["week_start_date"] = ms["week_start_date"].astype(str)
 
+    # --- Period Selector ---
+    ms_weeks = sorted(ms["week_start_date"].unique(), reverse=True)
+    sel_ms_wk = st.selectbox("Analyze week", options=ms_weeks, index=0, key="ms_week_sel")
+    ms_wk_total = ms[ms["week_start_date"] == sel_ms_wk]["metric_value"].sum()
+    st.markdown(
+        f'<div class="kpi-card" style="margin-bottom:1rem; max-width: 300px;">'
+        f'<div class="kpi-label">Total Tokens ({sel_ms_wk})</div>'
+        f'<div class="kpi-value" style="font-size: 1.5rem;">{format_metric(ms_wk_total)}</div>'
+        f'</div>',
+        unsafe_allow_html=True
+    )
+
     ms_pivot = (
         ms.pivot_table(index="week_start_date", columns="entity_id", values="metric_value", aggfunc="sum")
         .fillna(0)
         .sort_index()
     )
     # exclude the catch-all "others" column from the normalisation base if present
+    # Increase Top N from 8 to 15
+    top_n_count = 15
     named_cols  = [c for c in ms_pivot.columns if c.lower() != "others"]
     other_col   = [c for c in ms_pivot.columns if c.lower() == "others"]
-    top8_named  = ms_pivot[named_cols].sum().nlargest(8).index.tolist()
-    rest_cols   = [c for c in named_cols if c not in top8_named] + other_col
+    top_n_named = ms_pivot[named_cols].sum().nlargest(top_n_count).index.tolist()
+    rest_cols   = [c for c in named_cols if c not in top_n_named] + other_col
 
     pct_df = ms_pivot.copy()
     row_totals = pct_df.sum(axis=1)
     pct_df = pct_df.div(row_totals, axis=0).mul(100).fillna(0)
 
-    pct_top = pct_df[top8_named].copy()
+    pct_top = pct_df[top_n_named].copy()
     if rest_cols:
         pct_top["Others"] = pct_df[rest_cols].sum(axis=1)
 
@@ -439,13 +473,12 @@ def render_market_share_section(datasets: dict[str, DatasetLoadResult]) -> None:
         st.plotly_chart(fig, use_container_width=True, theme=None)
 
     with legend_col:
-        latest_wk  = ms["week_start_date"].max()
-        ms_latest  = ms[ms["week_start_date"] == latest_wk].groupby("entity_id", as_index=False)["metric_value"].sum()
+        ms_latest  = ms[ms["week_start_date"] == sel_ms_wk].groupby("entity_id", as_index=False)["metric_value"].sum()
         wk_total   = ms_latest["metric_value"].sum()
         ms_named   = ms_latest[ms_latest["entity_id"].str.lower() != "others"].sort_values("metric_value", ascending=False)
         cum_total  = ms[ms["entity_id"].str.lower() != "others"].groupby("entity_id")["metric_value"].sum()
 
-        st.markdown('<div style="font-weight:600;font-size:0.9rem;margin-bottom:0.4rem;">Latest Week Leaders</div>', unsafe_allow_html=True)
+        st.markdown(f'<div style="font-weight:700;font-size:1rem;margin-bottom:0.8rem;">Week: {sel_ms_wk} Leaders</div>', unsafe_allow_html=True)
         rows_html = '<div class="ms-legend">'
         for rank_i, (_, row) in enumerate(ms_named.head(8).iterrows()):
             color  = MODEL_COLORS[rank_i % len(MODEL_COLORS)]
@@ -576,16 +609,29 @@ def render_app_usage_chart(datasets: dict[str, DatasetLoadResult]) -> None:
 
     frame[date_col] = frame[date_col].astype(str)
 
+    # --- Period Selector & Total ---
+    days = sorted(frame[date_col].unique(), reverse=True)
+    sel_day = st.selectbox("Analyze day", options=days, index=0, key="app_day_sel")
+    day_total = frame[frame[date_col] == sel_day][val_col].sum()
+    st.markdown(
+        f'<div class="kpi-card" style="margin-bottom:1rem; max-width: 300px;">'
+        f'<div class="kpi-label">Total Tokens ({sel_day})</div>'
+        f'<div class="kpi-value" style="font-size: 1.5rem;">{format_metric(day_total)}</div>'
+        f'</div>',
+        unsafe_allow_html=True
+    )
+
     pivot = (
         frame.pivot_table(index=date_col, columns=model_col, values=val_col, aggfunc="sum")
         .fillna(0)
         .sort_index()
     )
 
-    # top 7 models
-    top7      = pivot.sum().nlargest(7).index.tolist()
-    rest_cols = [c for c in pivot.columns if c not in top7]
-    pivot_top = pivot[top7].copy()
+    # Increase Top N from 7 to 15
+    top_n_count = 15
+    top_n_cols = pivot.sum().nlargest(top_n_count).index.tolist()
+    rest_cols = [c for c in pivot.columns if c not in top_n_cols]
+    pivot_top = pivot[top_n_cols].copy()
     if rest_cols:
         pivot_top["Others"] = pivot[rest_cols].sum(axis=1)
 
@@ -608,8 +654,19 @@ def render_apps_tables(datasets: dict[str, DatasetLoadResult]) -> None:
                 frame = frame[frame["period"] == period]
             latest_date = frame["snapshot_date"].max()
             latest = frame[frame["snapshot_date"] == latest_date].sort_values("rank").head(25)
-            st.caption(f"Snapshot: {latest_date}")
             tbl = latest[["rank", "app_name", "categories", "tokens"]].copy()
+            total_top25 = tbl["tokens"].sum()
+            
+            summary_col, _ = st.columns([1, 2])
+            with summary_col:
+                st.markdown(
+                    f'<div class="kpi-card" style="margin-bottom:1rem;">'
+                    f'<div class="kpi-label">Tokens in Top 25 ({latest_date})</div>'
+                    f'<div class="kpi-value" style="font-size: 1.5rem;">{format_metric(total_top25)}</div>'
+                    f'</div>',
+                    unsafe_allow_html=True
+                )
+                
             tbl["tokens"] = tbl["tokens"].map(format_metric)
             st.dataframe(tbl.fillna(""), use_container_width=True, hide_index=True)
 
@@ -648,12 +705,21 @@ def render_apps_tables(datasets: dict[str, DatasetLoadResult]) -> None:
             if selected:
                 usage = usage[usage["app_name"].isin(selected)]
             if not usage.empty:
+                app_total = usage["total_tokens"].sum()
+                st.markdown(
+                    f'<div class="kpi-card" style="margin-bottom:1rem; max-width: 300px;">'
+                    f'<div class="kpi-label">Cumulative Selection Usage</div>'
+                    f'<div class="kpi-value" style="font-size: 1.5rem;">{format_metric(app_total)}</div>'
+                    f'</div>',
+                    unsafe_allow_html=True
+                )
+                
                 pivot_u = (
                     usage.pivot_table(index="usage_date", columns="model_permaslug", values="total_tokens", aggfunc="sum")
                     .fillna(0)
                     .sort_index()
                 )
-                top_m = pivot_u.sum().nlargest(7).index.tolist()
+                top_m = pivot_u.sum().nlargest(15).index.tolist()
                 pivot_u = pivot_u[top_m]
                 fig_u = make_stacked_bar(pivot_u, MODEL_COLORS, y_title="Tokens", height=300)
                 st.plotly_chart(fig_u, use_container_width=True, theme=None)
