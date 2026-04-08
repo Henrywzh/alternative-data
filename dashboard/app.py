@@ -189,6 +189,58 @@ def inject_css() -> None:
             border-bottom: 2px solid rgba(128, 128, 128, 0.15);
         }}
 
+        /* ---- Market Share Legend ---- */
+        .ms-legend {{ display: flex; flex-direction: column; gap: 0.4rem; margin-top: 0.5rem; }}
+        .ms-row {{ display: flex; align-items: center; gap: 0.6rem; padding: 0.35rem 0.5rem; border-radius: 6px; transition: background 0.2s; }}
+        .ms-row:hover {{ background: rgba(0,0,0,0.03); }}
+        .ms-dot {{ width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }}
+        .ms-name {{ flex: 1; font-size: 0.82rem; font-weight: 500; color: {TEXT}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }}
+        .ms-tokens {{ font-size: 0.78rem; color: {MUTED}; min-width: 50px; text-align: right; }}
+        .ms-pct {{ font-size: 0.82rem; font-weight: 700; color: {TEXT}; min-width: 45px; text-align: right; }}
+
+        /* ---- Leaderboard Cards ---- */
+        .lb-card {{
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            background: {CARD};
+            border: 1px solid {BORDER};
+            border-radius: 10px;
+            padding: 0.8rem 1rem;
+            margin-bottom: 0.6rem;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }}
+        .lb-card:hover {{ transform: translateY(-1px); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.08); }}
+        .lb-rank {{
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: {SIDEBAR};
+            color: {MUTED};
+            border-radius: 50%;
+            font-size: 0.85rem;
+            font-weight: 800;
+        }}
+        .lb-rank-top {{ background: {ACCENT}; color: white; }}
+        .lb-model {{ flex: 1; }}
+        .lb-model-name {{ font-size: 0.92rem; font-weight: 700; color: {TEXT}; line-height: 1.2; }}
+        .lb-model-author {{ font-size: 0.72rem; color: {MUTED}; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }}
+        .lb-tokens {{ font-weight: 700; font-size: 0.95rem; color: {TEXT}; }}
+        
+        /* ---- Badges ---- */
+        .lb-badge-up   {{ font-size: 0.7rem; font-weight: 800; color: {GREEN}; background: rgba(22, 163, 74, 0.1); padding: 2px 6px; border-radius: 4px; min-width: 32px; text-align: center; }}
+        .lb-badge-down {{ font-size: 0.7rem; font-weight: 800; color: {RED};   background: rgba(220, 38, 38, 0.1); padding: 2px 6px; border-radius: 4px; min-width: 32px; text-align: center; }}
+        .lb-badge-flat {{ font-size: 0.7rem; font-weight: 800; color: {MUTED}; background: rgba(107, 114, 128, 0.1); padding: 2px 6px; border-radius: 4px; min-width: 32px; text-align: center; }}
+        .lb-badge-new  {{ font-size: 0.65rem; font-weight: 900; color: white;   background: {ACCENT}; padding: 2px 6px; border-radius: 4px; }}
+
+        /* ---- Health Checks ---- */
+        .chk-ok      {{ color: {GREEN}; font-weight: 700; font-size: 0.9rem; margin-top: 0.5rem; }}
+        .chk-warning {{ color: {YELLOW}; font-weight: 700; font-size: 0.9rem; margin-top: 0.5rem; }}
+        .chk-error   {{ color: {RED}; font-weight: 700; font-size: 0.9rem; margin-top: 0.5rem; }}
+
         /* ---- Hide Streamlit elements to lock theme ---- */
         [data-testid="stToolbar"], #MainMenu, footer, header {{ visibility: hidden; display: none !important; }}
         .stDeployButton {{ display: none; }}
