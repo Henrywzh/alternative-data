@@ -164,6 +164,7 @@ APPS_COLUMNS = [
 GITHUB_COLUMNS = [
     "author",
     "name",
+    "link",
     "stars_today",
     "total_stars",
 ]
