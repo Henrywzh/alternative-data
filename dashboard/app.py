@@ -189,80 +189,15 @@ def inject_css() -> None:
             border-bottom: 2px solid rgba(128, 128, 128, 0.15);
         }}
 
-        /* ---- leaderboard ---- */
-        .lb-card {{
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            background: rgba(128, 128, 128, 0.03);
-            border: 1px solid rgba(128, 128, 128, 0.1);
-            border-radius: 10px;
-            padding: 0.75rem 1.1rem;
-            margin-bottom: 0.6rem;
-            transition: transform 0.2s;
+        /* ---- Hide Streamlit elements to lock theme ---- */
+        [data-testid="stToolbar"], #MainMenu, footer, header {{ visibility: hidden; display: none !important; }}
+        .stDeployButton {{ display: none; }}
+        
+        /* Force Light Mode background and text */
+        body, .stApp {{
+            background-color: {BG} !important;
+            color: {TEXT} !important;
         }}
-        .lb-card:hover {{ transform: translateX(4px); background: rgba(128, 128, 128, 0.06); }}
-        .lb-rank {{
-            width: 32px; height: 32px;
-            border-radius: 8px;
-            background: {ACCENT};
-            color: white;
-            font-size: 0.85rem;
-            font-weight: 800;
-            display: flex; align-items: center; justify-content: center;
-            flex-shrink: 0;
-        }}
-        .lb-rank-top {{
-            background: linear-gradient(135deg, {ACCENT}, #1D4ED8);
-            box-shadow: 0 4px 10px -2px rgba(37, 99, 235, 0.4);
-        }}
-        .lb-model {{ flex: 1; min-width: 0; }}
-        .lb-model-name {{
-            font-weight: 700;
-            font-size: 0.95rem;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }}
-        .lb-model-author {{
-            font-size: 0.78rem;
-            color: {MUTED};
-        }}
-        .lb-tokens {{
-            font-size: 1rem;
-            font-weight: 700;
-            text-align: right;
-            flex-shrink: 0;
-            font-variant-numeric: tabular-nums;
-        }}
-        .lb-badge-up   {{ background: rgba(22, 163, 74, 0.1); color: {GREEN}; border-radius:4px; padding:2px 6px; font-size:0.72rem; font-weight:700; }}
-        .lb-badge-down {{ background: rgba(220, 38, 38, 0.1); color: {RED};   border-radius:4px; padding:2px 6px; font-size:0.72rem; font-weight:700; }}
-        .lb-badge-new  {{ background: rgba(37, 99, 235, 0.1); color: {ACCENT}; border-radius:4px; padding:2px 6px; font-size:0.72rem; font-weight:700; }}
-        .lb-badge-flat {{ background: rgba(128, 128, 128, 0.1);  color: {MUTED};  border-radius:4px; padding:2px 6px; font-size:0.72rem; font-weight:700; }}
-
-        /* ---- market share legend ---- */
-        .ms-legend {{ margin-top: 0.5rem; }}
-        .ms-row {{
-            display: flex;
-            align-items: center;
-            gap: 0.8rem;
-            padding: 0.55rem 0;
-            border-bottom: 1px solid rgba(128, 128, 128, 0.08);
-            font-size: 0.88rem;
-        }}
-        .ms-dot {{
-            width: 12px; height: 12px;
-            border-radius: 4px;
-            flex-shrink: 0;
-        }}
-        .ms-name {{ flex: 1; font-weight: 600; opacity: 0.95; }}
-        .ms-pct  {{ color: {ACCENT}; font-weight: 800; min-width: 52px; text-align: right; }}
-        .ms-tokens {{ color: {MUTED}; font-size: 0.8rem; min-width: 60px; text-align: right; font-variant-numeric: tabular-nums; }}
-
-        /* ---- check rows ---- */
-        .chk-ok      {{ color: {GREEN}; font-weight: 700; }}
-        .chk-warning {{ color: {YELLOW}; font-weight: 700; }}
-        .chk-error   {{ color: {RED};   font-weight: 700; }}
         </style>
         """,
         unsafe_allow_html=True,
@@ -823,13 +758,19 @@ def render_github_trending_section(datasets: dict[str, DatasetLoadResult]) -> No
         for i, (_, row) in enumerate(latest_df.head(10).iterrows()):
             col_idx = i % 2
             with cols[col_idx]:
+                description = str(row.get('description', ''))
+                if description in ['nan', 'None', 'NULL']:
+                    description = ""
+                
+                desc_display = (description[:100] + '...') if len(description) > 100 else description
+                
                 st.markdown(
                     f"""<div class="lb-card">
                       <div class="lb-rank {'lb-rank-top' if i < 3 else ''}">{i+1}</div>
                       <div class="lb-model">
-                        <div class="lb-model-name"><a href="{row['link']}" target="_blank" style="text-decoration:none; color:inherit;">{row['name']}</a></div>
+                        <div class="lb-model-name"><a href="{row['link']}" target="_blank">{row['name']}</a></div>
                         <div class="lb-model-author">{row['author']}</div>
-                        <div style="font-size:0.75rem; color:{MUTED}; margin-top:2px;">{row['description'][:100] + '...' if row['description'] and len(row['description']) > 100 else (row['description'] or '')}</div>
+                        <div style="font-size:0.75rem; color:{MUTED}; margin-top:2px;">{desc_display}</div>
                       </div>
                       <div class="lb-tokens" style="color:{GREEN};">+{format_metric(row['stars_today'])}</div>
                       <div style="font-size:0.7rem; color:{MUTED}; min-width:50px; text-align:right;">Total: {format_metric(row['total_stars'])}</div>
