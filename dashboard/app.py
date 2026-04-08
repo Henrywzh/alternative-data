@@ -796,15 +796,30 @@ def render_checks(checks: list[CheckResult]) -> None:
             )
 
 
+@st.cache_data(ttl=3600)
+def load_state_cached(base_dir: Path) -> tuple[dict[str, DatasetLoadResult], FreshnessInfo, list[CheckResult]]:
+    """Cached version of load_state to avoid re-running on every health check/refresh."""
+    datasets = load_all_datasets(base_dir=base_dir)
+    freshness = load_latest_manifest(base_dir=base_dir, datasets=datasets)
+    checks = run_checks(datasets, freshness, base_dir=base_dir)
+    return datasets, freshness, checks
+
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
 def main() -> None:
+    # 1. Immediate call to set_page_config
     st.set_page_config(page_title="Alternative Data Dashboard", layout="wide", page_icon="📊")
+    
+    # 2. Startup logging for deployment debugging
+    print("Main script execution started: alternative-data dashboard")
+    
     inject_css()
 
-    datasets, freshness, checks = load_state()
+    # 3. Use cached state
+    datasets, freshness, checks = load_state_cached(BASE_DIR)
 
     render_header(freshness)
     
