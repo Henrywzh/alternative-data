@@ -246,7 +246,7 @@ def load_dataset(dataset_id: str, base_dir: Path | None = None) -> DatasetLoadRe
         source_path = csv_path
     
     # Only report drift for columns that are EXPECTED for this domain.
-    cols = CORE_COLUMNS
+    cols = list(CORE_COLUMNS)
     if domain == "rankings":
         cols += RANKINGS_COLUMNS
     elif domain == "apps":
@@ -313,10 +313,13 @@ def load_latest_manifest(
     manifest_path: Path | None = None
     manifest_scraped_at: str | None = None
 
-    manifest_glob = str(raw_root(base_dir) / "*/manifest.json")
-    manifests = sorted(raw_root(base_dir).glob("*/manifest.json"))
+    # Find manifests across all sources (openrouter, github_trending, etc.)
+    raw_base = repo_root() / "data" / "raw"
+    manifests = sorted(raw_base.glob("**/manifest.json"))
     
     if manifests:
+        # Sort manifests by their scraped_at if possible, otherwise use path sorting
+        # For now, we'll stick to path sorting which works if naming is consistent
         manifest_path = manifests[-1]
         try:
             payload = json.loads(manifest_path.read_text(encoding="utf-8"))

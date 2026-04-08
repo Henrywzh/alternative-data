@@ -20,12 +20,16 @@ def run_checks(
     base_dir: Path | None = None,
 ) -> list[CheckResult]:
     checks: list[CheckResult] = []
-    root = normalized_root(base_dir)
-
     missing_files = []
     for dataset_id in dataset_ids():
+        registry_entry = DATASET_REGISTRY.get(dataset_id, {})
+        domain = registry_entry.get("domain", "rankings")
+        source = "github_trending" if domain == "github" else "openrouter"
+        root = normalized_root(base_dir, source=source)
+        
         if not ((root / f"{dataset_id}.parquet").exists() or (root / f"{dataset_id}.csv").exists()):
             missing_files.append(dataset_id)
+    
     if missing_files:
         checks.append(CheckResult("error", "Missing datasets", ", ".join(missing_files), "global"))
 
