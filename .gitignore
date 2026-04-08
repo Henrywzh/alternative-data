@@ -25,6 +25,10 @@ data/normalized/*
 data/normalized/openrouter/*
 !data/normalized/openrouter/*.csv
 !data/normalized/openrouter/*.parquet
+!data/normalized/github_trending/
+data/normalized/github_trending/*
+!data/normalized/github_trending/*.csv
+!data/normalized/github_trending/*.parquet
 
 # Secrets and environment
 .env
