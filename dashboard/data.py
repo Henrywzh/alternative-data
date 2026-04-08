@@ -236,14 +236,18 @@ def load_dataset(dataset_id: str, base_dir: Path | None = None) -> DatasetLoadRe
     source_format: str | None = None
     source_path: Path | None = None
 
-    if parquet_path.exists():
-        frame = pd.read_parquet(parquet_path)
-        source_format = "parquet"
-        source_path = parquet_path
-    elif csv_path.exists():
-        frame = pd.read_csv(csv_path)
-        source_format = "csv"
-        source_path = csv_path
+    try:
+        if parquet_path.exists():
+            frame = pd.read_parquet(parquet_path)
+            source_format = "parquet"
+            source_path = parquet_path
+        elif csv_path.exists():
+            frame = pd.read_csv(csv_path)
+            source_format = "csv"
+            source_path = csv_path
+    except Exception as e:
+        print(f"Warning: Failed to load dataset {dataset_id} from {parquet_path if parquet_path.exists() else csv_path}: {e}")
+        # frame remains an empty DataFrame initialized above
     
     # Only report drift for columns that are EXPECTED for this domain.
     cols = list(CORE_COLUMNS)
