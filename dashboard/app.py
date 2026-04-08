@@ -279,7 +279,7 @@ def render_header(freshness: FreshnessInfo) -> None:
         f"""
         <div style="margin-bottom:1.2rem;">
           <h1 style="font-size:1.9rem;font-weight:800;color:{TEXT};margin:0 0 0.2rem 0;">
-            OpenRouter Intelligence
+            Alternative Data Dashboard
           </h1>
           <span style="color:{MUTED};font-size:0.88rem;">
             Last updated: {updated}
@@ -725,6 +725,119 @@ def render_apps_tables(datasets: dict[str, DatasetLoadResult]) -> None:
                 st.plotly_chart(fig_u, use_container_width=True, theme=None)
 
 
+def render_github_trending_section(datasets: dict[str, DatasetLoadResult]) -> None:
+    st.markdown('<div class="section-title">GitHub Trending Repositories</div>', unsafe_allow_html=True)
+    
+    # 1. Period Selector
+    period_label = st.radio("Trending period", options=["Daily", "Weekly", "Monthly"], horizontal=True, label_visibility="collapsed")
+    dataset_id = f"github_trending_{period_label.lower()}"
+    
+    result = datasets.get(dataset_id)
+    if not result or not render_dataset_guard(result):
+        return
+
+    df = result.frame.copy()
+    if df.empty:
+        st.info(f"No data available for {period_label.lower()}.")
+        return
+
+    # Ensure dates are strings for sorting
+    df["scrape_date"] = df["scrape_date"].astype(str)
+    latest_date = df["scrape_date"].max()
+    latest_df = df[df["scrape_date"] == latest_date].copy()
+    latest_df["stars_today"] = pd.to_numeric(latest_df["stars_today"], errors="coerce").fillna(0)
+    latest_df = latest_df.sort_values("stars_today", ascending=False)
+
+    # --- KPIs ---
+    top_repo = latest_df.iloc[0] if not latest_df.empty else None
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown(
+            f'<div class="kpi-card">'
+            f'<div class="kpi-label">Top Gainer ({period_label})</div>'
+            f'<div class="kpi-value" style="font-size: 1.3rem;">{top_repo["name"] if top_repo is not None else "—"}</div>'
+            f'<div class="kpi-delta-up">+{format_metric(top_repo["stars_today"]) if top_repo is not None else "0"} stars</div>'
+            f'</div>',
+            unsafe_allow_html=True
+        )
+    with col2:
+        total_gained = latest_df["stars_today"].sum()
+        st.markdown(
+            f'<div class="kpi-card">'
+            f'<div class="kpi-label">Total Stars Gained (Top 15)</div>'
+            f'<div class="kpi-value">{format_metric(total_gained)}</div>'
+            f'<div class="kpi-delta-flat">across trending list</div>'
+            f'</div>',
+            unsafe_allow_html=True
+        )
+    with col3:
+        unique_repos = df["name"].nunique()
+        st.markdown(
+            f'<div class="kpi-card">'
+            f'<div class="kpi-label">Unique Repos Tracked</div>'
+            f'<div class="kpi-value">{unique_repos}</div>'
+            f'<div class="kpi-delta-flat">in history</div>'
+            f'</div>',
+            unsafe_allow_html=True
+        )
+
+    # --- Charts & Leaderboard ---
+    chart_tab, list_tab = st.tabs(["Historical Growth", "Latest Leaderboard"])
+
+    with chart_tab:
+        # Plot top 5 growth over time
+        top_5_names = latest_df.head(5)["name"].tolist()
+        hist_df = df[df["name"].isin(top_5_names)].copy()
+        
+        if not hist_df.empty:
+            pivot_h = hist_df.pivot_table(index="scrape_date", columns="name", values="stars_today", aggfunc="sum").fillna(0)
+            
+            fig = go.Figure()
+            for i, repo_name in enumerate(pivot_h.columns):
+                fig.add_trace(go.Scatter(
+                    x=pivot_h.index,
+                    y=pivot_h[repo_name],
+                    name=repo_name,
+                    mode='lines+markers',
+                    line=dict(width=3, color=MODEL_COLORS[i % len(MODEL_COLORS)]),
+                    hovertemplate=f"<b>{repo_name}</b><br>%{{x}}<br>%{{y:,.0f}} stars gained<extra></extra>"
+                ))
+            
+            fig.update_layout(
+                template="plotly_white",
+                title=f"Star Growth - Top 5 {period_label} Repos",
+                xaxis_title="Scrape Date",
+                yaxis_title="Stars Gained",
+                legend=dict(orientation="h", y=-0.2),
+                height=400,
+                margin=dict(l=0, r=0, t=40, b=80)
+            )
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info("Not enough historical data to show growth.")
+
+    with list_tab:
+        st.markdown(f'<div style="font-weight:700;font-size:1.1rem;margin-bottom:1rem;">Top Gaining Repositories ({latest_date})</div>', unsafe_allow_html=True)
+        
+        cols = st.columns(2)
+        for i, (_, row) in enumerate(latest_df.head(10).iterrows()):
+            col_idx = i % 2
+            with cols[col_idx]:
+                st.markdown(
+                    f"""<div class="lb-card">
+                      <div class="lb-rank {'lb-rank-top' if i < 3 else ''}">{i+1}</div>
+                      <div class="lb-model">
+                        <div class="lb-model-name"><a href="{row['link']}" target="_blank" style="text-decoration:none; color:inherit;">{row['name']}</a></div>
+                        <div class="lb-model-author">{row['author']}</div>
+                        <div style="font-size:0.75rem; color:{MUTED}; margin-top:2px;">{row['description'][:100] + '...' if row['description'] and len(row['description']) > 100 else (row['description'] or '')}</div>
+                      </div>
+                      <div class="lb-tokens" style="color:{GREEN};">+{format_metric(row['stars_today'])}</div>
+                      <div style="font-size:0.7rem; color:{MUTED}; min-width:50px; text-align:right;">Total: {format_metric(row['total_stars'])}</div>
+                    </div>""",
+                    unsafe_allow_html=True
+                )
+
+
 def render_checks(checks: list[CheckResult]) -> None:
     ok_count   = sum(1 for c in checks if c.status == "ok")
     warn_count = sum(1 for c in checks if c.status == "warning")
@@ -747,18 +860,26 @@ def render_checks(checks: list[CheckResult]) -> None:
 # ---------------------------------------------------------------------------
 
 def main() -> None:
-    st.set_page_config(page_title="OpenRouter Intelligence", layout="wide", page_icon="📊")
+    st.set_page_config(page_title="Alternative Data Dashboard", layout="wide", page_icon="📊")
     inject_css()
 
     datasets, freshness, checks = load_state()
 
     render_header(freshness)
-    render_kpi_row(datasets)
-    render_top_models_chart(datasets)
-    render_market_share_section(datasets)
-    render_leaderboard(datasets)
-    render_app_usage_chart(datasets)
-    render_apps_tables(datasets)
+    
+    main_tabs = st.tabs(["OpenRouter Intelligence", "GitHub Trending"])
+    
+    with main_tabs[0]:
+        render_kpi_row(datasets)
+        render_top_models_chart(datasets)
+        render_market_share_section(datasets)
+        render_leaderboard(datasets)
+        render_app_usage_chart(datasets)
+        render_apps_tables(datasets)
+    
+    with main_tabs[1]:
+        render_github_trending_section(datasets)
+        
     render_checks(checks)
 
 

@@ -72,6 +72,30 @@ DATASET_REGISTRY: dict[str, dict[str, object]] = {
         "metric_column": "growth_percent",
         "required_columns": ["app_id", "snapshot_date", "growth_percent", "rank"],
     },
+    "github_trending_daily": {
+        "label": "GitHub Trending Daily",
+        "domain": "github",
+        "natural_keys": ["scrape_date", "author", "name"],
+        "primary_date_column": "scrape_date",
+        "metric_column": "stars_today",
+        "required_columns": ["scrape_date", "author", "name", "stars_today", "total_stars"],
+    },
+    "github_trending_weekly": {
+        "label": "GitHub Trending Weekly",
+        "domain": "github",
+        "natural_keys": ["scrape_date", "author", "name"],
+        "primary_date_column": "scrape_date",
+        "metric_column": "stars_today",
+        "required_columns": ["scrape_date", "author", "name", "stars_today", "total_stars"],
+    },
+    "github_trending_monthly": {
+        "label": "GitHub Trending Monthly",
+        "domain": "github",
+        "natural_keys": ["scrape_date", "author", "name"],
+        "primary_date_column": "scrape_date",
+        "metric_column": "stars_today",
+        "required_columns": ["scrape_date", "author", "name", "stars_today", "total_stars"],
+    },
 }
 
 DOMAIN_ORDER = {
@@ -86,6 +110,11 @@ DOMAIN_ORDER = {
         "app_top_models_daily_snapshot",
         "apps_global_ranking_snapshots",
         "apps_trending_snapshots",
+    ],
+    "github": [
+        "github_trending_daily",
+        "github_trending_weekly",
+        "github_trending_monthly",
     ],
 }
 
@@ -132,10 +161,17 @@ APPS_COLUMNS = [
     "growth_percent",
 ]
 
-EXPECTED_COLUMNS = CORE_COLUMNS + RANKINGS_COLUMNS + APPS_COLUMNS
+GITHUB_COLUMNS = [
+    "author",
+    "name",
+    "stars_today",
+    "total_stars",
+]
+
+EXPECTED_COLUMNS = CORE_COLUMNS + RANKINGS_COLUMNS + APPS_COLUMNS + GITHUB_COLUMNS
 
 DATE_COLUMNS = ["week_start_date", "scrape_date", "usage_date", "snapshot_date", "scraped_at", "observed_at", "created_at"]
-NUMERIC_COLUMNS = ["metric_value", "rank", "total_tokens", "tokens", "growth_percent"]
+NUMERIC_COLUMNS = ["metric_value", "rank", "total_tokens", "tokens", "growth_percent", "stars_today", "total_stars"]
 
 
 @dataclass(frozen=True)
@@ -168,14 +204,14 @@ def repo_root() -> Path:
     return Path(__file__).resolve().parent.parent
 
 
-def normalized_root(base_dir: Path | None = None) -> Path:
+def normalized_root(base_dir: Path | None = None, source: str = "openrouter") -> Path:
     base = base_dir or repo_root()
-    return base / "data" / "normalized" / "openrouter"
+    return base / "data" / "normalized" / source
 
 
-def raw_root(base_dir: Path | None = None) -> Path:
+def raw_root(base_dir: Path | None = None, source: str = "openrouter") -> Path:
     base = base_dir or repo_root()
-    return base / "data" / "raw" / "openrouter"
+    return base / "data" / "raw" / source
 
 
 def dataset_ids() -> list[str]:
@@ -187,10 +223,14 @@ def domain_dataset_ids(domain: str) -> list[str]:
 
 
 def load_dataset(dataset_id: str, base_dir: Path | None = None) -> DatasetLoadResult:
-    metadata = DATASET_REGISTRY[dataset_id]
-    base = normalized_root(base_dir)
+    registry_entry = DATASET_REGISTRY.get(dataset_id, {})
+    domain = registry_entry.get("domain", "rankings")
+
+    source = "github_trending" if domain == "github" else "openrouter"
+    base = normalized_root(base_dir, source=source)
     parquet_path = base / f"{dataset_id}.parquet"
     csv_path = base / f"{dataset_id}.csv"
+
     frame = pd.DataFrame(columns=EXPECTED_COLUMNS)
     source_format: str | None = None
     source_path: Path | None = None
@@ -203,14 +243,17 @@ def load_dataset(dataset_id: str, base_dir: Path | None = None) -> DatasetLoadRe
         frame = pd.read_csv(csv_path)
         source_format = "csv"
         source_path = csv_path
-
-    registry = DATASET_REGISTRY.get(dataset_id, {})
-    domain = registry.get("domain", "rankings")
     
     # Only report drift for columns that are EXPECTED for this domain.
-    # Rankings datasets shouldn't complain about missing App columns.
-    relevant_columns = CORE_COLUMNS + (RANKINGS_COLUMNS if domain == "rankings" else APPS_COLUMNS)
-    missing_columns = [column for column in relevant_columns if column not in frame.columns]
+    cols = CORE_COLUMNS
+    if domain == "rankings":
+        cols += RANKINGS_COLUMNS
+    elif domain == "apps":
+        cols += APPS_COLUMNS
+    elif domain == "github":
+        cols += GITHUB_COLUMNS
+
+    missing_columns = [column for column in cols if column not in frame.columns]
 
     # Padding still uses the full global set to ensure logical compatibility across different views
     for column in EXPECTED_COLUMNS:
@@ -225,12 +268,12 @@ def load_dataset(dataset_id: str, base_dir: Path | None = None) -> DatasetLoadRe
         if column in frame.columns:
             frame[column] = pd.to_numeric(frame[column], errors="coerce")
 
-    keys = metadata["natural_keys"]
+    keys = registry_entry["natural_keys"]
     duplicate_rows = 0
     if not frame.empty and all(key in frame.columns for key in keys):
         duplicate_rows = int(frame.duplicated(subset=keys).sum())
 
-    primary_date_column = metadata["primary_date_column"]
+    primary_date_column = registry_entry["primary_date_column"]
     date_values = (
         sorted(frame[primary_date_column].dropna().astype(str).unique().tolist())
         if primary_date_column in frame.columns
@@ -240,10 +283,10 @@ def load_dataset(dataset_id: str, base_dir: Path | None = None) -> DatasetLoadRe
 
     return DatasetLoadResult(
         dataset_id=dataset_id,
-        label=str(metadata["label"]),
-        domain=str(metadata["domain"]),
+        label=str(registry_entry["label"]),
+        domain=str(registry_entry["domain"]),
         primary_date_column=str(primary_date_column),
-        metric_column=str(metadata["metric_column"]) if metadata["metric_column"] is not None else None,
+        metric_column=str(registry_entry["metric_column"]) if registry_entry["metric_column"] is not None else None,
         frame=frame,
         source_format=source_format,
         source_path=source_path,
