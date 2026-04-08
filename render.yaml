@@ -2,7 +2,7 @@ services:
   - type: web
     name: alternative-data-dashboard
     runtime: python
-    plan: starter
+    plan: free
     autoDeploy: true
     rootDir: .
     buildCommand: pip install -r requirements-dashboard.txt
