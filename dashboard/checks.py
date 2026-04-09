@@ -24,7 +24,12 @@ def run_checks(
     for dataset_id in dataset_ids():
         registry_entry = DATASET_REGISTRY.get(dataset_id, {})
         domain = registry_entry.get("domain", "rankings")
-        source = "github_trending" if domain == "github" else "openrouter"
+        if domain == "github":
+            source = "github_trending"
+        elif domain == "provider_adoption":
+            source = "provider_adoption"
+        else:
+            source = "openrouter"
         root = normalized_root(base_dir, source=source)
         
         if not ((root / f"{dataset_id}.parquet").exists() or (root / f"{dataset_id}.csv").exists()):
