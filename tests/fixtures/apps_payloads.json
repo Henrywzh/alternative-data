@@ -53,6 +53,60 @@
       }
     ]
   },
+  "hermes_metadata": {
+    "id": 3067167,
+    "created_at": "2026-02-21T05:17:00.000000+00:00",
+    "description": "Hermes Agent is an open-source, self-improving AI agent by Nous Research that runs persistently with memory across sessions, and builds reusable skills from experience. It comes with 40+ built-in tools, including web search, browser automation, and vision, plus scheduled automations and subagents.",
+    "title": "Hermes Agent",
+    "main_url": null,
+    "origin_url": "https://hermes-agent.nousresearch.com/",
+    "source_code_url": null,
+    "icon_class_name": "",
+    "favicon_url": null,
+    "categories": ["cli-agent", "personal-agent"],
+    "related_apps": [],
+    "group_by_origin": true,
+    "is_private": false,
+    "is_hidden": false
+  },
+  "hermes_usage": {
+    "appName": "Hermes Agent",
+    "forecast": "forecast-1d",
+    "forecastFromTimestamp": 1741219200000,
+    "data": [
+      {
+        "x": "2026-03-06 00:00:00",
+        "ys": {
+          "nousresearch/hermes-4-70b": 14423763540,
+          "anthropic/claude-4.6-sonnet-20260217": 7496321256,
+          "Others": 22090175269
+        }
+      },
+      {
+        "x": "2026-03-07 00:00:00",
+        "ys": {
+          "nousresearch/hermes-4-70b": 16423763540,
+          "anthropic/claude-4.6-sonnet-20260217": 8496321256,
+          "Others": 21090175269
+        }
+      }
+    ]
+  },
+  "hermes_top_models": {
+    "appName": "Hermes Agent",
+    "appModelAnalytics": [
+      {
+        "date": "2026-04-05",
+        "model_permaslug": "nousresearch/hermes-4-70b",
+        "total_tokens": 846337951376
+      },
+      {
+        "date": "2026-04-05",
+        "model_permaslug": "anthropic/claude-4.6-sonnet-20260217",
+        "total_tokens": 206337951376
+      }
+    ]
+  },
   "trending": [
     {
       "appAnalytics": {

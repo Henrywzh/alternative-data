@@ -204,7 +204,7 @@ def _apps_global_ranking_frame() -> pd.DataFrame:
 
 def _apps_trending_frame() -> pd.DataFrame:
     rows = []
-    for rank, app_name, growth in [(1, "Ito", 6516.0), (2, "Nexu Link", 2596.0)]:
+    for rank, app_name, growth, tokens in [(1, "Ito", 6516.0, 39300000000.0), (2, "Nexu Link", 2596.0, 27800000000.0)]:
         row = _base_row("apps_trending_snapshots")
         row.update(
             {
@@ -212,6 +212,7 @@ def _apps_trending_frame() -> pd.DataFrame:
                 "app_name": app_name,
                 "origin_url": f"https://{app_name.lower().replace(' ', '')}.ai/",
                 "snapshot_date": "2026-04-05",
+                "tokens": tokens,
                 "growth_percent": growth,
                 "rank": rank,
             }
