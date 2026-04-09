@@ -235,6 +235,12 @@ def test_pypi_source_extracts_with_and_without_mirrors() -> None:
     assert [(point.with_mirrors, point.downloads) for point in points] == [(False, 123), (True, 456)]
 
 
+def test_provider_registry_excludes_qwen_from_active_defaults() -> None:
+    providers = get_provider_registry()
+
+    assert [provider.slug for provider in providers] == ["openai", "anthropic", "google"]
+
+
 def test_github_source_fetch_snapshots_handles_pagination_and_filters_archived() -> None:
     source = GithubSource(session=FakeSession(), max_pages_per_language=2)
 

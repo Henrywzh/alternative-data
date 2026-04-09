@@ -834,144 +834,308 @@ def render_github_trending_section(datasets: dict[str, DatasetLoadResult]) -> No
 def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult]) -> None:
     st.markdown('<div class="section-title">Provider Adoption Signals</div>', unsafe_allow_html=True)
 
-    momentum_result = datasets.get("provider_momentum_daily")
     pypi_result = datasets.get("pypi_downloads_daily")
-    github_result = datasets.get("github_repo_rollup_daily")
+    github_candidates_result = datasets.get("github_repo_candidates_daily")
+    github_rollup_result = datasets.get("github_repo_rollup_daily")
+    github_signals_result = datasets.get("github_provider_signals_daily")
 
-    if not momentum_result or not render_dataset_guard(momentum_result):
-        st.info("Run the provider-adoption pipeline to populate GitHub + PyPI momentum data.")
+    if not pypi_result or not render_dataset_guard(pypi_result):
+        st.info("Run the provider-adoption pipeline to populate GitHub + PyPI scraped data.")
         return
 
-    momentum = momentum_result.frame.copy()
-    if momentum.empty:
-        st.info("No provider momentum data available yet.")
+    pypi = pypi_result.frame.copy()
+    pypi = pypi[pypi["with_mirrors"] == False].copy()
+    if pypi.empty:
+        st.info("No PyPI provider data available yet.")
         return
 
-    momentum["signal_date"] = momentum["signal_date"].astype(str)
-    latest_date = momentum["signal_date"].max()
-    latest = momentum[momentum["signal_date"] == latest_date].copy()
-    latest = latest.sort_values("momentum_score", ascending=False)
+    pypi_grouped = (
+        pypi.groupby(["download_date", "provider_display_name"], dropna=False)["downloads"].sum().reset_index()
+        if not pypi.empty
+        else pd.DataFrame(columns=["download_date", "provider_display_name", "downloads"])
+    )
+    pypi_grouped["download_date"] = pypi_grouped["download_date"].astype(str)
+    latest_pypi_date = pypi_grouped["download_date"].max()
+    latest_pypi = pypi_grouped[pypi_grouped["download_date"] == latest_pypi_date].copy()
 
-    top_provider = latest.iloc[0] if not latest.empty else None
+    provider_order = sorted(latest_pypi["provider_display_name"].dropna().astype(str).unique().tolist())
+    if not provider_order:
+        st.info("No provider rows available yet.")
+        return
+
+    github_candidates = (
+        github_candidates_result.frame.copy()
+        if github_candidates_result and github_candidates_result.frame is not None
+        else pd.DataFrame()
+    )
+    github_rollup = (
+        github_rollup_result.frame.copy()
+        if github_rollup_result and github_rollup_result.frame is not None
+        else pd.DataFrame()
+    )
+    github_signals = (
+        github_signals_result.frame.copy()
+        if github_signals_result and github_signals_result.frame is not None
+        else pd.DataFrame()
+    )
+
+    if not github_candidates.empty:
+        github_candidates = github_candidates[github_candidates["provider_display_name"].isin(provider_order)].copy()
+        github_candidates["repo_created_date"] = github_candidates["repo_created_date"].astype(str)
+    if not github_rollup.empty:
+        github_rollup = github_rollup[github_rollup["provider_display_name"].isin(provider_order)].copy()
+        github_rollup["signal_date"] = github_rollup["signal_date"].astype(str)
+    if not github_signals.empty:
+        github_signals = github_signals[github_signals["provider_display_name"].isin(provider_order)].copy()
+        github_signals["signal_date"] = github_signals["signal_date"].astype(str)
+
+    latest_github_date = None
+    if not github_candidates.empty:
+        latest_github_date = github_candidates["repo_created_date"].max()
+
+    top_download_row = latest_pypi.sort_values("downloads", ascending=False).iloc[0] if not latest_pypi.empty else None
+    total_latest_downloads = latest_pypi["downloads"].sum() if not latest_pypi.empty else 0
+    latest_candidate_count = (
+        github_candidates[github_candidates["repo_created_date"] == latest_github_date]["repo_full_name"].nunique()
+        if latest_github_date and not github_candidates.empty
+        else 0
+    )
+
     col1, col2, col3 = st.columns(3)
     with col1:
         st.markdown(
             f'<div class="kpi-card">'
-            f'<div class="kpi-label">Top Momentum Provider</div>'
-            f'<div class="kpi-value" style="font-size: 1.3rem;">{top_provider["provider_display_name"] if top_provider is not None else "—"}</div>'
-            f'<div class="kpi-delta-flat">as of {latest_date}</div>'
+            f'<div class="kpi-label">Top PyPI Provider</div>'
+            f'<div class="kpi-value" style="font-size: 1.3rem;">{top_download_row["provider_display_name"] if top_download_row is not None else "—"}</div>'
+            f'<div class="kpi-delta-flat">latest daily downloads</div>'
             f'</div>',
             unsafe_allow_html=True,
         )
     with col2:
         st.markdown(
             f'<div class="kpi-card">'
-            f'<div class="kpi-label">Highest GitHub Repo Share</div>'
-            f'<div class="kpi-value">{format_metric(latest["github_repo_share"].max() * 100 if not latest.empty else 0, "share")}</div>'
-            f'<div class="kpi-delta-flat">latest daily window</div>'
+            f'<div class="kpi-label">Latest PyPI Downloads</div>'
+            f'<div class="kpi-value">{format_metric(total_latest_downloads)}</div>'
+            f'<div class="kpi-delta-flat">{latest_pypi_date or "n/a"}</div>'
             f'</div>',
             unsafe_allow_html=True,
         )
     with col3:
         st.markdown(
             f'<div class="kpi-card">'
-            f'<div class="kpi-label">Highest PyPI 28d Share</div>'
-            f'<div class="kpi-value">{format_metric(latest["pypi_share_28d"].max() * 100 if not latest.empty else 0, "share")}</div>'
-            f'<div class="kpi-delta-flat">tracked package share</div>'
+            f'<div class="kpi-label">Latest GitHub Repo Candidates</div>'
+            f'<div class="kpi-value">{format_metric(latest_candidate_count)}</div>'
+            f'<div class="kpi-delta-flat">{latest_github_date or "n/a"}</div>'
             f'</div>',
             unsafe_allow_html=True,
         )
 
-    chart_tab, pypi_tab, summary_tab = st.tabs(["Momentum", "PyPI Share", "Latest Summary"])
+    downloads_tab, share_tab, github_tab, summary_tab = st.tabs(
+        ["PyPI Downloads", "PyPI Share", "GitHub Signals", "Latest Summary"]
+    )
 
-    with chart_tab:
-        pivot_m = (
-            momentum.pivot_table(index="signal_date", columns="provider_display_name", values="momentum_score", aggfunc="last")
+    with downloads_tab:
+        pivot_downloads = (
+            pypi_grouped.pivot_table(index="download_date", columns="provider_display_name", values="downloads", aggfunc="last")
             .fillna(0)
             .sort_index()
         )
         fig = go.Figure()
-        for i, provider_name in enumerate(pivot_m.columns):
+        for i, provider_name in enumerate(pivot_downloads.columns):
             fig.add_trace(
                 go.Scatter(
-                    x=pivot_m.index,
-                    y=pivot_m[provider_name],
+                    x=pivot_downloads.index,
+                    y=pivot_downloads[provider_name],
                     name=provider_name,
                     mode="lines+markers",
                     line=dict(width=3, color=MODEL_COLORS[i % len(MODEL_COLORS)]),
-                    hovertemplate=f"<b>{provider_name}</b><br>%{{x}}<br>%{{y:.4f}}<extra></extra>",
+                    hovertemplate=f"<b>{provider_name}</b><br>%{{x}}<br>%{{y:,.0f}} downloads<extra></extra>",
                 )
             )
         fig.update_layout(
             template="plotly_white",
-            title="Daily Provider Momentum Score",
+            title="PyPI Daily Download History (Without Mirrors)",
             xaxis_title="Date",
-            yaxis_title="Momentum Score",
+            yaxis_title="Downloads",
             legend=dict(orientation="h", y=-0.2),
             height=360,
             margin=dict(l=0, r=0, t=40, b=80),
         )
         st.plotly_chart(fig, use_container_width=True, theme=None)
 
-    with pypi_tab:
-        if pypi_result and render_dataset_guard(pypi_result):
-            pypi = pypi_result.frame.copy()
-            pypi = pypi[pypi["with_mirrors"] == False]
-            grouped = (
-                pypi.groupby(["download_date", "provider_display_name"], dropna=False)["downloads"].sum().reset_index()
-                if not pypi.empty
-                else pd.DataFrame(columns=["download_date", "provider_display_name", "downloads"])
+    with share_tab:
+        totals = pypi_grouped.groupby("download_date")["downloads"].sum().rename("total").reset_index()
+        share = pypi_grouped.merge(totals, on="download_date", how="left")
+        share["share"] = share["downloads"] / share["total"].where(share["total"] != 0)
+        pivot_share = (
+            share.pivot_table(index="download_date", columns="provider_display_name", values="share", aggfunc="last")
+            .fillna(0)
+            .sort_index()
+        )
+        st.plotly_chart(
+            make_stacked_bar(
+                pivot_share * 100,
+                MODEL_COLORS,
+                title="PyPI Daily Download Share (Without Mirrors)",
+                y_title="Share",
+                pct=True,
+                height=340,
+            ),
+            use_container_width=True,
+            theme=None,
+        )
+
+    with github_tab:
+        if github_candidates.empty or github_rollup.empty:
+            st.info("No GitHub provider signal data available yet.")
+        else:
+            candidates_daily = (
+                github_candidates.groupby(["repo_created_date", "provider_display_name"], dropna=False)["repo_full_name"]
+                .nunique()
+                .reset_index(name="repo_candidates")
             )
-            if not grouped.empty:
-                totals = grouped.groupby("download_date")["downloads"].sum().rename("total").reset_index()
-                share = grouped.merge(totals, on="download_date", how="left")
-                share["share"] = share["downloads"] / share["total"].where(share["total"] != 0)
-                pivot_share = (
-                    share.pivot_table(index="download_date", columns="provider_display_name", values="share", aggfunc="last")
+            rollup_daily = (
+                github_rollup.groupby(["signal_date", "provider_display_name"], dropna=False)
+                .agg(
+                    signal_repos=("repo_full_name", "nunique"),
+                    manifest_repos=("has_manifest_dependency", "sum"),
+                    import_repos=("has_code_import", "sum"),
+                    env_repos=("has_env_var", "sum"),
+                    model_repos=("has_model_name", "sum"),
+                )
+                .reset_index()
+            )
+
+            col_left, col_right = st.columns(2)
+            with col_left:
+                pivot_candidates = (
+                    candidates_daily.pivot_table(
+                        index="repo_created_date",
+                        columns="provider_display_name",
+                        values="repo_candidates",
+                        aggfunc="last",
+                    )
                     .fillna(0)
                     .sort_index()
                 )
-                st.plotly_chart(
-                    make_stacked_bar(
-                        pivot_share * 100,
-                        MODEL_COLORS,
-                        title="PyPI Daily Download Share (Without Mirrors)",
-                        y_title="Share",
-                        pct=True,
-                        height=340,
-                    ),
-                    use_container_width=True,
-                    theme=None,
+                fig_candidates = go.Figure()
+                for i, provider_name in enumerate(pivot_candidates.columns):
+                    fig_candidates.add_trace(
+                        go.Scatter(
+                            x=pivot_candidates.index,
+                            y=pivot_candidates[provider_name],
+                            name=provider_name,
+                            mode="lines+markers",
+                            line=dict(width=3, color=MODEL_COLORS[i % len(MODEL_COLORS)]),
+                            hovertemplate=f"<b>{provider_name}</b><br>%{{x}}<br>%{{y:,.0f}} repos<extra></extra>",
+                        )
+                    )
+                fig_candidates.update_layout(
+                    template="plotly_white",
+                    title="GitHub New Repo Candidates by Day",
+                    xaxis_title="Date",
+                    yaxis_title="Repos",
+                    legend=dict(orientation="h", y=-0.25),
+                    height=340,
+                    margin=dict(l=0, r=0, t=40, b=80),
                 )
-            else:
-                st.info("No PyPI series available yet.")
-        else:
-            st.info("No PyPI data available yet.")
+                st.plotly_chart(fig_candidates, use_container_width=True, theme=None)
+
+            with col_right:
+                pivot_signals = (
+                    rollup_daily.pivot_table(
+                        index="signal_date",
+                        columns="provider_display_name",
+                        values="signal_repos",
+                        aggfunc="last",
+                    )
+                    .fillna(0)
+                    .sort_index()
+                )
+                fig_signals = go.Figure()
+                for i, provider_name in enumerate(pivot_signals.columns):
+                    fig_signals.add_trace(
+                        go.Scatter(
+                            x=pivot_signals.index,
+                            y=pivot_signals[provider_name],
+                            name=provider_name,
+                            mode="lines+markers",
+                            line=dict(width=3, color=MODEL_COLORS[i % len(MODEL_COLORS)]),
+                            hovertemplate=f"<b>{provider_name}</b><br>%{{x}}<br>%{{y:,.0f}} repos<extra></extra>",
+                        )
+                    )
+                fig_signals.update_layout(
+                    template="plotly_white",
+                    title="GitHub Signal-Bearing Repos by Day",
+                    xaxis_title="Date",
+                    yaxis_title="Repos",
+                    legend=dict(orientation="h", y=-0.25),
+                    height=340,
+                    margin=dict(l=0, r=0, t=40, b=80),
+                )
+                st.plotly_chart(fig_signals, use_container_width=True, theme=None)
 
     with summary_tab:
-        summary = latest[
-            [
-                "provider_display_name",
-                "momentum_score",
-                "github_new_repo_count",
-                "github_repo_share",
-                "pypi_7d_avg",
-                "pypi_28d_avg",
-                "pypi_share_28d",
-                "pypi_growth_28d",
-            ]
-        ].copy()
-        summary.columns = [
-            "Provider",
-            "Momentum Score",
-            "GitHub New Repos",
-            "GitHub Repo Share",
-            "PyPI 7d Avg",
-            "PyPI 28d Avg",
-            "PyPI 28d Share",
-            "PyPI 28d Growth",
-        ]
-        st.caption(f"Latest provider snapshot: {latest_date}")
+        pypi_window = pypi_grouped.copy()
+        pypi_window["download_date"] = pd.to_datetime(pypi_window["download_date"], errors="coerce")
+        latest_pypi_ts = pd.to_datetime(latest_pypi_date, errors="coerce")
+        trailing_start = latest_pypi_ts - pd.Timedelta(days=6) if pd.notna(latest_pypi_ts) else None
+
+        if trailing_start is not None:
+            window = pypi_window[pypi_window["download_date"] >= trailing_start].copy()
+        else:
+            window = pypi_window.copy()
+
+        pypi_7d = (
+            window.groupby("provider_display_name", dropna=False)["downloads"].mean().rename("PyPI 7d Avg").reset_index()
+            if not window.empty
+            else pd.DataFrame(columns=["provider_display_name", "PyPI 7d Avg"])
+        )
+        latest_pypi_summary = latest_pypi.rename(
+            columns={
+                "provider_display_name": "Provider",
+                "downloads": "Latest PyPI Downloads",
+            }
+        )[["Provider", "Latest PyPI Downloads"]]
+
+        summary = latest_pypi_summary.merge(
+            pypi_7d.rename(columns={"provider_display_name": "Provider"}),
+            on="Provider",
+            how="left",
+        )
+
+        if latest_github_date and not github_candidates.empty:
+            latest_candidates = (
+                github_candidates[github_candidates["repo_created_date"] == latest_github_date]
+                .groupby("provider_display_name", dropna=False)["repo_full_name"]
+                .nunique()
+                .rename("Latest GitHub Repo Candidates")
+                .reset_index()
+                .rename(columns={"provider_display_name": "Provider"})
+            )
+            summary = summary.merge(latest_candidates, on="Provider", how="left")
+
+        if latest_github_date and not github_rollup.empty:
+            latest_rollup = github_rollup[github_rollup["signal_date"] == latest_github_date].copy()
+            rollup_summary = (
+                latest_rollup.groupby("provider_display_name", dropna=False)
+                .agg(
+                    **{
+                        "Latest GitHub Signal Repos": ("repo_full_name", "nunique"),
+                        "Latest Manifest Repos": ("has_manifest_dependency", "sum"),
+                        "Latest Import Repos": ("has_code_import", "sum"),
+                        "Latest Env Repos": ("has_env_var", "sum"),
+                        "Latest Model Repos": ("has_model_name", "sum"),
+                    }
+                )
+                .reset_index()
+                .rename(columns={"provider_display_name": "Provider"})
+            )
+            summary = summary.merge(rollup_summary, on="Provider", how="left")
+
+        summary = summary.sort_values("Latest PyPI Downloads", ascending=False)
+        display_date = latest_github_date or latest_pypi_date
+        st.caption(f"Latest provider snapshot: {display_date or 'n/a'}")
         st.dataframe(summary.fillna(""), use_container_width=True, hide_index=True)
 
 

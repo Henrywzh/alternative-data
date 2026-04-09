@@ -56,7 +56,7 @@ PROVIDER_REGISTRY: tuple[ProviderConfig, ...] = (
     ProviderConfig(
         slug="qwen",
         display_name="Qwen",
-        enabled=True,
+        enabled=False,
         pypi_packages=(ProviderPackageConfig("dashscope", "sdk"),),
         manifest_patterns=("dashscope",),
         import_patterns=("import dashscope", "from dashscope import"),

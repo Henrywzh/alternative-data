@@ -39,6 +39,8 @@ def run_checks(
         checks.append(CheckResult("error", "Missing datasets", ", ".join(missing_files), "global"))
 
     for dataset_id, result in datasets.items():
+        if dataset_id == "provider_momentum_daily":
+            continue
         if result.row_count == 0:
             checks.append(CheckResult("error", f"{dataset_id} is empty", "No rows available for this dataset.", result.domain))
         if result.missing_columns:
