@@ -69,8 +69,8 @@ DATASET_REGISTRY: dict[str, dict[str, object]] = {
         "domain": "apps",
         "natural_keys": ["snapshot_date", "rank"],
         "primary_date_column": "snapshot_date",
-        "metric_column": "growth_percent",
-        "required_columns": ["app_id", "snapshot_date", "growth_percent", "rank"],
+        "metric_column": "tokens",
+        "required_columns": ["app_id", "snapshot_date", "growth_percent", "tokens", "rank"],
     },
     "github_trending_daily": {
         "label": "GitHub Trending Daily",

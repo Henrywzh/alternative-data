@@ -44,6 +44,26 @@ def build_app_detail_fixture_html(
     )
 
 
+def build_hermes_detail_fixture_html(
+    *,
+    metadata: dict | None = None,
+    usage: dict | None = None,
+    top_models: dict | None = None,
+) -> str:
+    payloads = _load_payloads()
+    metadata = payloads["hermes_metadata"] if metadata is None else metadata
+    usage = payloads["hermes_usage"] if usage is None else usage
+    top_models = payloads["hermes_top_models"] if top_models is None else top_models
+
+    return (
+        "<html><body>"
+        f"{_make_next_f_script('60', ['$', '$L60', None, metadata])}"
+        f"{_make_next_f_script('61', ['$', '$L61', None, usage])}"
+        f"{_make_next_f_script('62', ['$', '$L62', None, top_models])}"
+        "</body></html>"
+    )
+
+
 def build_apps_directory_fixture_html(
     *,
     ranking_map: dict | None = None,
@@ -63,11 +83,27 @@ def build_apps_directory_fixture_html(
     )
 
 
-def make_snapshots(directory_html: str, app_html: str) -> list[Snapshot]:
+def make_snapshots(
+    directory_html: str,
+    app_html: str,
+    hermes_html: str | None = None,
+) -> list[Snapshot]:
     return [
         Snapshot(name="apps_directory", source_url="fixture://apps", body=directory_html),
         Snapshot(name="app_openclaw", source_url="fixture://apps?url=openclaw", body=app_html),
+        Snapshot(
+            name="app_hermes-agent",
+            source_url="fixture://apps/hermes-agent",
+            body=hermes_html or build_hermes_detail_fixture_html(),
+        ),
     ]
+
+
+def make_multi_app_snapshots(directory_html: str, app_snapshots: dict[str, str]) -> list[Snapshot]:
+    snapshots = [Snapshot(name="apps_directory", source_url="fixture://apps", body=directory_html)]
+    for slug, body in app_snapshots.items():
+        snapshots.append(Snapshot(name=f"app_{slug}", source_url=f"fixture://apps/{slug}", body=body))
+    return snapshots
 
 
 def test_parse_fixture_snapshots_for_app_and_directory_datasets() -> None:
@@ -86,13 +122,14 @@ def test_parse_fixture_snapshots_for_app_and_directory_datasets() -> None:
         "apps_global_ranking_snapshots",
         "apps_trending_snapshots",
     }
-    assert len(extracted["app_metadata_snapshots"]) == 1
-    assert len(extracted["app_usage_daily"]) == 6
-    assert len(extracted["app_top_models_daily_snapshot"]) == 2
+    assert len(extracted["app_metadata_snapshots"]) == 2
+    assert len(extracted["app_usage_daily"]) == 12
+    assert len(extracted["app_top_models_daily_snapshot"]) == 4
     assert len(extracted["apps_global_ranking_snapshots"]) == 6
     assert len(extracted["apps_trending_snapshots"]) == 2
     assert extracted["apps_global_ranking_snapshots"][0].period == "day"
     assert extracted["apps_trending_snapshots"][0].growth_percent == 20.0
+    assert extracted["apps_trending_snapshots"][0].tokens == 5651018332581.0
 
 
 def test_missing_required_payload_raises_clear_error() -> None:
@@ -115,7 +152,7 @@ def test_repeated_runs_keep_metadata_and_usage_idempotent(tmp_path: Path, monkey
 
     metadata = pd.read_csv(tmp_path / "data" / "normalized" / "openrouter" / "app_metadata_snapshots.csv")
     usage = pd.read_csv(tmp_path / "data" / "normalized" / "openrouter" / "app_usage_daily.csv")
-    assert len(metadata) == 1
+    assert len(metadata) == 2
     assert usage[["app_id", "usage_date", "model_permaslug"]].duplicated().sum() == 0
 
 
@@ -233,3 +270,27 @@ def test_csv_and_parquet_outputs_stay_schema_consistent_for_app_datasets(
     csv_df = pd.read_csv(tmp_path / "data" / "normalized" / "openrouter" / "apps_trending_snapshots.csv")
     parquet_df = pd.read_parquet(tmp_path / "data" / "normalized" / "openrouter" / "apps_trending_snapshots.parquet")
     assert list(csv_df.columns) == list(parquet_df.columns)
+
+
+def test_multi_app_monitored_extraction_returns_openclaw_and_hermes() -> None:
+    source = AppsSource()
+    context = RunContext(run_id="test-multi-apps", scraped_at=pd.Timestamp("2026-04-05T01:10:00Z").to_pydatetime())
+
+    extracted = source.extract(
+        make_multi_app_snapshots(
+            build_apps_directory_fixture_html(),
+            {
+                "openclaw": build_app_detail_fixture_html(),
+                "hermes-agent": build_hermes_detail_fixture_html(),
+            },
+        ),
+        context,
+    )
+
+    metadata_apps = {record.app_name for record in extracted["app_metadata_snapshots"]}
+    usage_apps = {record.app_name for record in extracted["app_usage_daily"]}
+    top_model_apps = {record.app_name for record in extracted["app_top_models_daily_snapshot"]}
+
+    assert {"OpenClaw", "Hermes Agent"}.issubset(metadata_apps)
+    assert {"OpenClaw", "Hermes Agent"}.issubset(usage_apps)
+    assert {"OpenClaw", "Hermes Agent"}.issubset(top_model_apps)
