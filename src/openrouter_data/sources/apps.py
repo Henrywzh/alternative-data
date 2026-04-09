@@ -30,6 +30,13 @@ MONITORED_APPS = (
         app_name="OpenClaw",
         fallback_source_urls=("https://openrouter.ai/apps?url=https%3A%2F%2Fopenclaw.ai%2F",),
     ),
+    MonitoredApp(
+        slug="hermes-agent",
+        origin_url="https://hermes-agent.nousresearch.com/",
+        source_url="https://openrouter.ai/apps/hermes-agent",
+        app_name="Hermes Agent",
+        fallback_source_urls=("https://openrouter.ai/apps?url=https%3A%2F%2Fhermes-agent.nousresearch.com%2F",),
+    ),
 )
 
 
@@ -446,6 +453,7 @@ class AppsSource(SourceExtractor):
                     categories=self._serialize_categories(app.get("categories")),
                     snapshot_date=snapshot_date,
                     observed_at=context.scraped_at_iso,
+                    tokens=float(app_analytics.get("total_tokens", 0)),
                     growth_percent=float(item.get("growthPercent", 0)),
                     rank=rank,
                 )

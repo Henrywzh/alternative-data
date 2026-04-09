@@ -677,7 +677,8 @@ def render_apps_tables(datasets: dict[str, DatasetLoadResult]) -> None:
             latest_date = frame["snapshot_date"].max()
             latest = frame[frame["snapshot_date"] == latest_date].sort_values("rank").head(25)
             st.caption(f"Snapshot: {latest_date}")
-            tbl = latest[["rank", "app_name", "categories", "growth_percent"]].copy()
+            tbl = latest[["rank", "app_name", "categories", "tokens", "growth_percent"]].copy()
+            tbl["tokens"] = tbl["tokens"].map(lambda v: "-" if pd.isna(v) else format_metric(v))
             tbl["growth_percent"] = tbl["growth_percent"].map(
                 lambda v: "-" if pd.isna(v) else f"{v:,.0f}%"
             )
