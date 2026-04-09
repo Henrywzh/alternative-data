@@ -245,7 +245,11 @@ def _provider_pypi_frame() -> pd.DataFrame:
     rows = []
     for provider, package_name, date_value, downloads in [
         ("openai", "openai", "2026-04-04", 1000),
+        ("openai", "openai", "2026-04-05", 1200),
+        ("anthropic", "anthropic", "2026-04-04", 800),
         ("anthropic", "anthropic", "2026-04-05", 900),
+        ("google", "google-genai", "2026-04-04", 700),
+        ("google", "google-genai", "2026-04-05", 750),
     ]:
         row = _base_row("pypi_downloads_daily")
         row.update(
@@ -264,82 +268,106 @@ def _provider_pypi_frame() -> pd.DataFrame:
 
 
 def _provider_candidates_frame() -> pd.DataFrame:
-    row = _base_row("github_repo_candidates_daily")
-    row.update(
-        {
-            "provider": "openai",
-            "provider_display_name": "OpenAI",
-            "repo_full_name": "openai/sample-repo",
-            "repo_owner": "openai",
-            "repo_name": "sample-repo",
-            "repo_html_url": "https://github.com/openai/sample-repo",
-            "repo_created_date": "2026-04-05",
-            "repo_created_at": "2026-04-05T10:00:00Z",
-            "repo_pushed_at": "2026-04-05T11:00:00Z",
-            "repo_default_branch": "main",
-            "language_bucket": "python",
-            "stargazers_count": 4,
-            "is_fork": False,
-            "is_archived": False,
-        }
-    )
-    return pd.DataFrame([row], columns=EXPECTED_COLUMNS)
+    rows = []
+    for provider, display_name, repo_name in [
+        ("openai", "OpenAI", "openai/sample-repo"),
+        ("anthropic", "Anthropic", "anthropic/sample-repo"),
+        ("google", "Google", "google/sample-repo"),
+    ]:
+        row = _base_row("github_repo_candidates_daily")
+        owner, name = repo_name.split("/", 1)
+        row.update(
+            {
+                "provider": provider,
+                "provider_display_name": display_name,
+                "repo_full_name": repo_name,
+                "repo_owner": owner,
+                "repo_name": name,
+                "repo_html_url": f"https://github.com/{repo_name}",
+                "repo_created_date": "2026-04-05",
+                "repo_created_at": "2026-04-05T10:00:00Z",
+                "repo_pushed_at": "2026-04-05T11:00:00Z",
+                "repo_default_branch": "main",
+                "language_bucket": "python",
+                "stargazers_count": 4,
+                "is_fork": False,
+                "is_archived": False,
+            }
+        )
+        rows.append(row)
+    return pd.DataFrame(rows, columns=EXPECTED_COLUMNS)
 
 
 def _provider_signals_frame() -> pd.DataFrame:
-    row = _base_row("github_provider_signals_daily")
-    row.update(
-        {
-            "provider": "openai",
-            "provider_display_name": "OpenAI",
-            "repo_full_name": "openai/sample-repo",
-            "repo_owner": "openai",
-            "repo_name": "sample-repo",
-            "repo_html_url": "https://github.com/openai/sample-repo",
-            "repo_created_date": "2026-04-05",
-            "repo_created_at": "2026-04-05T10:00:00Z",
-            "repo_pushed_at": "2026-04-05T11:00:00Z",
-            "repo_default_branch": "main",
-            "language_bucket": "python",
-            "signal_date": "2026-04-05",
-            "signal_type": "code_import",
-            "matched_file_path": "src/main.py",
-            "matched_pattern": "from openai import",
-            "stargazers_count": 4,
-            "is_fork": False,
-            "is_archived": False,
-        }
-    )
-    return pd.DataFrame([row], columns=EXPECTED_COLUMNS)
+    rows = []
+    for provider, display_name, repo_name, signal_type, matched_pattern in [
+        ("openai", "OpenAI", "openai/sample-repo", "code_import", "from openai import"),
+        ("anthropic", "Anthropic", "anthropic/sample-repo", "env_var", "ANTHROPIC_API_KEY"),
+        ("google", "Google", "google/sample-repo", "manifest_dependency", "google-genai"),
+    ]:
+        row = _base_row("github_provider_signals_daily")
+        owner, name = repo_name.split("/", 1)
+        row.update(
+            {
+                "provider": provider,
+                "provider_display_name": display_name,
+                "repo_full_name": repo_name,
+                "repo_owner": owner,
+                "repo_name": name,
+                "repo_html_url": f"https://github.com/{repo_name}",
+                "repo_created_date": "2026-04-05",
+                "repo_created_at": "2026-04-05T10:00:00Z",
+                "repo_pushed_at": "2026-04-05T11:00:00Z",
+                "repo_default_branch": "main",
+                "language_bucket": "python",
+                "signal_date": "2026-04-05",
+                "signal_type": signal_type,
+                "matched_file_path": "src/main.py",
+                "matched_pattern": matched_pattern,
+                "stargazers_count": 4,
+                "is_fork": False,
+                "is_archived": False,
+            }
+        )
+        rows.append(row)
+    return pd.DataFrame(rows, columns=EXPECTED_COLUMNS)
 
 
 def _provider_rollup_frame() -> pd.DataFrame:
-    row = _base_row("github_repo_rollup_daily")
-    row.update(
-        {
-            "provider": "openai",
-            "provider_display_name": "OpenAI",
-            "repo_full_name": "openai/sample-repo",
-            "repo_owner": "openai",
-            "repo_name": "sample-repo",
-            "repo_html_url": "https://github.com/openai/sample-repo",
-            "repo_created_date": "2026-04-05",
-            "repo_created_at": "2026-04-05T10:00:00Z",
-            "repo_pushed_at": "2026-04-05T11:00:00Z",
-            "repo_default_branch": "main",
-            "language_bucket": "python",
-            "signal_date": "2026-04-05",
-            "has_manifest_dependency": True,
-            "has_code_import": True,
-            "has_env_var": False,
-            "has_model_name": True,
-            "matched_signal_count": 3,
-            "stargazers_count": 4,
-            "is_fork": False,
-            "is_archived": False,
-        }
-    )
-    return pd.DataFrame([row], columns=EXPECTED_COLUMNS)
+    rows = []
+    for provider, display_name, repo_name, manifest, code_import, env_var, model_name, count in [
+        ("openai", "OpenAI", "openai/sample-repo", True, True, False, True, 3),
+        ("anthropic", "Anthropic", "anthropic/sample-repo", False, False, True, False, 1),
+        ("google", "Google", "google/sample-repo", True, False, False, False, 1),
+    ]:
+        row = _base_row("github_repo_rollup_daily")
+        owner, name = repo_name.split("/", 1)
+        row.update(
+            {
+                "provider": provider,
+                "provider_display_name": display_name,
+                "repo_full_name": repo_name,
+                "repo_owner": owner,
+                "repo_name": name,
+                "repo_html_url": f"https://github.com/{repo_name}",
+                "repo_created_date": "2026-04-05",
+                "repo_created_at": "2026-04-05T10:00:00Z",
+                "repo_pushed_at": "2026-04-05T11:00:00Z",
+                "repo_default_branch": "main",
+                "language_bucket": "python",
+                "signal_date": "2026-04-05",
+                "has_manifest_dependency": manifest,
+                "has_code_import": code_import,
+                "has_env_var": env_var,
+                "has_model_name": model_name,
+                "matched_signal_count": count,
+                "stargazers_count": 4,
+                "is_fork": False,
+                "is_archived": False,
+            }
+        )
+        rows.append(row)
+    return pd.DataFrame(rows, columns=EXPECTED_COLUMNS)
 
 
 def _provider_momentum_frame() -> pd.DataFrame:
@@ -365,6 +393,23 @@ def _provider_momentum_frame() -> pd.DataFrame:
         )
         rows.append(row)
     return pd.DataFrame(rows, columns=EXPECTED_COLUMNS)
+
+
+def test_provider_adoption_scraped_datasets_load_without_momentum_dependency(tmp_path: Path) -> None:
+    root = tmp_path / "data" / "normalized" / "provider_adoption"
+    root.mkdir(parents=True)
+    _provider_pypi_frame().to_csv(root / "pypi_downloads_daily.csv", index=False)
+    _provider_candidates_frame().to_csv(root / "github_repo_candidates_daily.csv", index=False)
+    _provider_signals_frame().to_csv(root / "github_provider_signals_daily.csv", index=False)
+    _provider_rollup_frame().to_csv(root / "github_repo_rollup_daily.csv", index=False)
+
+    datasets = load_all_datasets(base_dir=tmp_path)
+    checks = run_checks(datasets, load_latest_manifest(base_dir=tmp_path), base_dir=tmp_path)
+
+    assert datasets["pypi_downloads_daily"].row_count == 6
+    assert datasets["github_repo_rollup_daily"].row_count == 3
+    assert datasets["provider_momentum_daily"].row_count == 0
+    assert all(check.title != "provider_momentum_daily is empty" for check in checks)
 
 
 def _frame_for_dataset(dataset_id: str) -> pd.DataFrame:
