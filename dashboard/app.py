@@ -73,6 +73,19 @@ def load_state() -> tuple[dict[str, DatasetLoadResult], FreshnessInfo, list[Chec
     return datasets, freshness, checks
 
 
+def build_data_signature(base_dir: Path) -> tuple[tuple[str, int, int], ...]:
+    """Return a stable fingerprint of dashboard inputs so cache invalidates on data changes."""
+    tracked_roots = [base_dir / "data" / "normalized", base_dir / "data" / "raw"]
+    signature: list[tuple[str, int, int]] = []
+    for root in tracked_roots:
+        if not root.exists():
+            continue
+        for path in sorted(p for p in root.rglob("*") if p.is_file()):
+            stat = path.stat()
+            signature.append((str(path.relative_to(base_dir)), stat.st_mtime_ns, stat.st_size))
+    return tuple(signature)
+
+
 def render_dataset_guard(result: DatasetLoadResult, show_subheader: bool = False) -> bool:
     if show_subheader:
         st.subheader(result.label)
@@ -1157,8 +1170,11 @@ def render_checks(checks: list[CheckResult]) -> None:
 
 
 @st.cache_data(ttl=3600)
-def load_state_cached(base_dir: Path) -> tuple[dict[str, DatasetLoadResult], FreshnessInfo, list[CheckResult]]:
+def load_state_cached(
+    base_dir: Path, data_signature: tuple[tuple[str, int, int], ...]
+) -> tuple[dict[str, DatasetLoadResult], FreshnessInfo, list[CheckResult]]:
     """Cached version of load_state to avoid re-running on every health check/refresh."""
+    _ = data_signature
     datasets = load_all_datasets(base_dir=base_dir)
     freshness = load_latest_manifest(base_dir=base_dir, datasets=datasets)
     checks = run_checks(datasets, freshness, base_dir=base_dir)
@@ -1179,7 +1195,7 @@ def main() -> None:
     inject_css()
 
     # 3. Use cached state
-    datasets, freshness, checks = load_state_cached(BASE_DIR)
+    datasets, freshness, checks = load_state_cached(BASE_DIR, build_data_signature(BASE_DIR))
 
     render_header(freshness)
     
