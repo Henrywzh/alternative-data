@@ -76,8 +76,10 @@ class ProviderAdoptionPipeline:
             )
             for point in points
         ]
+        existing = self.storage.load_dataset("pypi_downloads_daily")
         written = self.storage.upsert_dataset("pypi_downloads_daily", records)
-        return PipelineResult(context.run_id, {"pypi_downloads_daily": len(written)}, str(raw_run_dir))
+        deltas = {"pypi_downloads_daily": max(len(written) - len(existing), 0)}
+        return PipelineResult(context.run_id, {"pypi_downloads_daily": len(written)}, str(raw_run_dir), deltas)
 
     def run_github_daily_update(self, *, target_date: str | date | None = None, provider_slugs: list[str] | None = None) -> PipelineResult:
         providers = get_provider_registry(provider_slugs)
@@ -93,12 +95,23 @@ class ProviderAdoptionPipeline:
         signal_records = self._build_signal_records(context, matches)
         rollup_records = self._build_rollup_records(context, providers, repositories, matches, resolved_date.isoformat())
 
+        existing_candidates = self.storage.load_dataset("github_repo_candidates_daily")
+        existing_signals = self.storage.load_dataset("github_provider_signals_daily")
+        existing_rollups = self.storage.load_dataset("github_repo_rollup_daily")
+        written_candidates = self.storage.upsert_dataset("github_repo_candidates_daily", candidate_records)
+        written_signals = self.storage.upsert_dataset("github_provider_signals_daily", signal_records)
+        written_rollups = self.storage.upsert_dataset("github_repo_rollup_daily", rollup_records)
         written = {
-            "github_repo_candidates_daily": len(self.storage.upsert_dataset("github_repo_candidates_daily", candidate_records)),
-            "github_provider_signals_daily": len(self.storage.upsert_dataset("github_provider_signals_daily", signal_records)),
-            "github_repo_rollup_daily": len(self.storage.upsert_dataset("github_repo_rollup_daily", rollup_records)),
+            "github_repo_candidates_daily": len(written_candidates),
+            "github_provider_signals_daily": len(written_signals),
+            "github_repo_rollup_daily": len(written_rollups),
         }
-        return PipelineResult(context.run_id, written, str(raw_run_dir))
+        deltas = {
+            "github_repo_candidates_daily": max(len(written_candidates) - len(existing_candidates), 0),
+            "github_provider_signals_daily": max(len(written_signals) - len(existing_signals), 0),
+            "github_repo_rollup_daily": max(len(written_rollups) - len(existing_rollups), 0),
+        }
+        return PipelineResult(context.run_id, written, str(raw_run_dir), deltas)
 
     def run_derived_daily_update(self, *, target_date: str | date | None = None, provider_slugs: list[str] | None = None) -> PipelineResult:
         providers = get_provider_registry(provider_slugs)
@@ -116,8 +129,10 @@ class ProviderAdoptionPipeline:
             self._build_manifest("derived-daily-update", context, target_date=resolved_date, providers=providers),
         )
         records = self._build_momentum_records(context, providers, resolved_date)
+        existing = self.storage.load_dataset("provider_momentum_daily")
         written = self.storage.upsert_dataset("provider_momentum_daily", records)
-        return PipelineResult(context.run_id, {"provider_momentum_daily": len(written)}, str(raw_run_dir))
+        deltas = {"provider_momentum_daily": max(len(written) - len(existing), 0)}
+        return PipelineResult(context.run_id, {"provider_momentum_daily": len(written)}, str(raw_run_dir), deltas)
 
     def run_backfill(
         self,

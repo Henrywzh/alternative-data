@@ -147,6 +147,7 @@ class PipelineResult:
     run_id: str
     datasets_written: dict[str, int]
     raw_run_dir: str
+    dataset_row_deltas: dict[str, int] = field(default_factory=dict)
 
 
 def coerce_target_date(value: str | date | None) -> date:
@@ -155,4 +156,3 @@ def coerce_target_date(value: str | date | None) -> date:
     if isinstance(value, date):
         return value
     return date.fromisoformat(value)
-
