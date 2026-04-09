@@ -35,7 +35,11 @@ def _provider_slugs(value: str | None) -> list[str] | None:
 def _print_result(run_result) -> None:
     print(f"run_id={run_result.run_id}")
     for dataset_id, total_rows in run_result.datasets_written.items():
-        print(f"{dataset_id}: {total_rows} rows written")
+        new_rows = getattr(run_result, "dataset_row_deltas", {}).get(dataset_id)
+        if new_rows is None:
+            print(f"{dataset_id}: {total_rows} rows written")
+        else:
+            print(f"{dataset_id}: total_rows={total_rows} new_rows={new_rows}")
     print(f"raw_run_dir={run_result.raw_run_dir}")
 
 
