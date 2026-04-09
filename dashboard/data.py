@@ -96,6 +96,46 @@ DATASET_REGISTRY: dict[str, dict[str, object]] = {
         "metric_column": "stars_today",
         "required_columns": ["scrape_date", "author", "name", "stars_today", "total_stars"],
     },
+    "pypi_downloads_daily": {
+        "label": "PyPI Downloads Daily",
+        "domain": "provider_adoption",
+        "natural_keys": ["provider", "package_name", "with_mirrors", "download_date"],
+        "primary_date_column": "download_date",
+        "metric_column": "downloads",
+        "required_columns": ["provider", "package_name", "with_mirrors", "download_date", "downloads"],
+    },
+    "github_repo_candidates_daily": {
+        "label": "GitHub Repo Candidates",
+        "domain": "provider_adoption",
+        "natural_keys": ["provider", "repo_full_name", "repo_created_date"],
+        "primary_date_column": "repo_created_date",
+        "metric_column": "stargazers_count",
+        "required_columns": ["provider", "repo_full_name", "repo_created_date", "language_bucket", "stargazers_count"],
+    },
+    "github_provider_signals_daily": {
+        "label": "GitHub Provider Signals",
+        "domain": "provider_adoption",
+        "natural_keys": ["provider", "repo_full_name", "signal_date", "signal_type"],
+        "primary_date_column": "signal_date",
+        "metric_column": "stargazers_count",
+        "required_columns": ["provider", "repo_full_name", "signal_date", "signal_type", "matched_file_path"],
+    },
+    "github_repo_rollup_daily": {
+        "label": "GitHub Repo Rollups",
+        "domain": "provider_adoption",
+        "natural_keys": ["provider", "repo_full_name", "signal_date"],
+        "primary_date_column": "signal_date",
+        "metric_column": "matched_signal_count",
+        "required_columns": ["provider", "repo_full_name", "signal_date", "matched_signal_count"],
+    },
+    "provider_momentum_daily": {
+        "label": "Provider Momentum",
+        "domain": "provider_adoption",
+        "natural_keys": ["provider", "signal_date"],
+        "primary_date_column": "signal_date",
+        "metric_column": "momentum_score",
+        "required_columns": ["provider", "signal_date", "momentum_score", "pypi_share_28d", "github_repo_share"],
+    },
 }
 
 DOMAIN_ORDER = {
@@ -115,6 +155,13 @@ DOMAIN_ORDER = {
         "github_trending_daily",
         "github_trending_weekly",
         "github_trending_monthly",
+    ],
+    "provider_adoption": [
+        "pypi_downloads_daily",
+        "github_repo_candidates_daily",
+        "github_provider_signals_daily",
+        "github_repo_rollup_daily",
+        "provider_momentum_daily",
     ],
 }
 
@@ -169,10 +216,85 @@ GITHUB_COLUMNS = [
     "total_stars",
 ]
 
-EXPECTED_COLUMNS = CORE_COLUMNS + RANKINGS_COLUMNS + APPS_COLUMNS + GITHUB_COLUMNS
+PROVIDER_ADOPTION_COLUMNS = [
+    "provider",
+    "provider_display_name",
+    "package_name",
+    "package_type",
+    "with_mirrors",
+    "download_date",
+    "downloads",
+    "repo_full_name",
+    "repo_owner",
+    "repo_name",
+    "repo_html_url",
+    "repo_created_date",
+    "repo_created_at",
+    "repo_pushed_at",
+    "repo_default_branch",
+    "language_bucket",
+    "signal_date",
+    "signal_type",
+    "matched_file_path",
+    "matched_pattern",
+    "is_fork",
+    "is_archived",
+    "stargazers_count",
+    "has_manifest_dependency",
+    "has_code_import",
+    "has_env_var",
+    "has_model_name",
+    "matched_signal_count",
+    "pypi_7d_avg",
+    "pypi_28d_avg",
+    "pypi_share_28d",
+    "pypi_growth_28d",
+    "github_new_repo_count",
+    "github_repo_share",
+    "github_import_repo_count",
+    "github_env_repo_count",
+    "github_model_repo_count",
+    "momentum_score",
+]
 
-DATE_COLUMNS = ["week_start_date", "scrape_date", "usage_date", "snapshot_date", "scraped_at", "observed_at", "created_at"]
-NUMERIC_COLUMNS = ["metric_value", "rank", "total_tokens", "tokens", "growth_percent", "stars_today", "total_stars"]
+EXPECTED_COLUMNS = CORE_COLUMNS + RANKINGS_COLUMNS + APPS_COLUMNS + GITHUB_COLUMNS + PROVIDER_ADOPTION_COLUMNS
+
+DATE_COLUMNS = [
+    "week_start_date",
+    "scrape_date",
+    "usage_date",
+    "snapshot_date",
+    "scraped_at",
+    "observed_at",
+    "created_at",
+    "download_date",
+    "repo_created_date",
+    "repo_created_at",
+    "repo_pushed_at",
+    "signal_date",
+]
+NUMERIC_COLUMNS = [
+    "metric_value",
+    "rank",
+    "total_tokens",
+    "tokens",
+    "growth_percent",
+    "stars_today",
+    "total_stars",
+    "downloads",
+    "stargazers_count",
+    "matched_signal_count",
+    "pypi_7d_avg",
+    "pypi_28d_avg",
+    "pypi_share_28d",
+    "pypi_growth_28d",
+    "github_new_repo_count",
+    "github_repo_share",
+    "github_import_repo_count",
+    "github_env_repo_count",
+    "github_model_repo_count",
+    "momentum_score",
+]
 
 
 @dataclass(frozen=True)
@@ -227,7 +349,11 @@ def load_dataset(dataset_id: str, base_dir: Path | None = None) -> DatasetLoadRe
     registry_entry = DATASET_REGISTRY.get(dataset_id, {})
     domain = registry_entry.get("domain", "rankings")
 
-    source = "github_trending" if domain == "github" else "openrouter"
+    source = "openrouter"
+    if domain == "github":
+        source = "github_trending"
+    elif domain == "provider_adoption":
+        source = "provider_adoption"
     base = normalized_root(base_dir, source=source)
     parquet_path = base / f"{dataset_id}.parquet"
     csv_path = base / f"{dataset_id}.csv"
@@ -257,6 +383,8 @@ def load_dataset(dataset_id: str, base_dir: Path | None = None) -> DatasetLoadRe
         cols += APPS_COLUMNS
     elif domain == "github":
         cols += GITHUB_COLUMNS
+    elif domain == "provider_adoption":
+        cols += PROVIDER_ADOPTION_COLUMNS
 
     missing_columns = [column for column in cols if column not in frame.columns]
 
@@ -318,7 +446,7 @@ def load_latest_manifest(
     manifest_scraped_at: str | None = None
 
     # Find manifests across all sources (openrouter, github_trending, etc.)
-    raw_base = repo_root() / "data" / "raw"
+    raw_base = (base_dir or repo_root()) / "data" / "raw"
     manifests = sorted(raw_base.glob("**/manifest.json"))
     
     if manifests:

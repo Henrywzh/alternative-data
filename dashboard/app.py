@@ -831,6 +831,150 @@ def render_github_trending_section(datasets: dict[str, DatasetLoadResult]) -> No
                 )
 
 
+def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult]) -> None:
+    st.markdown('<div class="section-title">Provider Adoption Signals</div>', unsafe_allow_html=True)
+
+    momentum_result = datasets.get("provider_momentum_daily")
+    pypi_result = datasets.get("pypi_downloads_daily")
+    github_result = datasets.get("github_repo_rollup_daily")
+
+    if not momentum_result or not render_dataset_guard(momentum_result):
+        st.info("Run the provider-adoption pipeline to populate GitHub + PyPI momentum data.")
+        return
+
+    momentum = momentum_result.frame.copy()
+    if momentum.empty:
+        st.info("No provider momentum data available yet.")
+        return
+
+    momentum["signal_date"] = momentum["signal_date"].astype(str)
+    latest_date = momentum["signal_date"].max()
+    latest = momentum[momentum["signal_date"] == latest_date].copy()
+    latest = latest.sort_values("momentum_score", ascending=False)
+
+    top_provider = latest.iloc[0] if not latest.empty else None
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown(
+            f'<div class="kpi-card">'
+            f'<div class="kpi-label">Top Momentum Provider</div>'
+            f'<div class="kpi-value" style="font-size: 1.3rem;">{top_provider["provider_display_name"] if top_provider is not None else "—"}</div>'
+            f'<div class="kpi-delta-flat">as of {latest_date}</div>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
+    with col2:
+        st.markdown(
+            f'<div class="kpi-card">'
+            f'<div class="kpi-label">Highest GitHub Repo Share</div>'
+            f'<div class="kpi-value">{format_metric(latest["github_repo_share"].max() * 100 if not latest.empty else 0, "share")}</div>'
+            f'<div class="kpi-delta-flat">latest daily window</div>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
+    with col3:
+        st.markdown(
+            f'<div class="kpi-card">'
+            f'<div class="kpi-label">Highest PyPI 28d Share</div>'
+            f'<div class="kpi-value">{format_metric(latest["pypi_share_28d"].max() * 100 if not latest.empty else 0, "share")}</div>'
+            f'<div class="kpi-delta-flat">tracked package share</div>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
+
+    chart_tab, pypi_tab, summary_tab = st.tabs(["Momentum", "PyPI Share", "Latest Summary"])
+
+    with chart_tab:
+        pivot_m = (
+            momentum.pivot_table(index="signal_date", columns="provider_display_name", values="momentum_score", aggfunc="last")
+            .fillna(0)
+            .sort_index()
+        )
+        fig = go.Figure()
+        for i, provider_name in enumerate(pivot_m.columns):
+            fig.add_trace(
+                go.Scatter(
+                    x=pivot_m.index,
+                    y=pivot_m[provider_name],
+                    name=provider_name,
+                    mode="lines+markers",
+                    line=dict(width=3, color=MODEL_COLORS[i % len(MODEL_COLORS)]),
+                    hovertemplate=f"<b>{provider_name}</b><br>%{{x}}<br>%{{y:.4f}}<extra></extra>",
+                )
+            )
+        fig.update_layout(
+            template="plotly_white",
+            title="Daily Provider Momentum Score",
+            xaxis_title="Date",
+            yaxis_title="Momentum Score",
+            legend=dict(orientation="h", y=-0.2),
+            height=360,
+            margin=dict(l=0, r=0, t=40, b=80),
+        )
+        st.plotly_chart(fig, use_container_width=True, theme=None)
+
+    with pypi_tab:
+        if pypi_result and render_dataset_guard(pypi_result):
+            pypi = pypi_result.frame.copy()
+            pypi = pypi[pypi["with_mirrors"] == False]
+            grouped = (
+                pypi.groupby(["download_date", "provider_display_name"], dropna=False)["downloads"].sum().reset_index()
+                if not pypi.empty
+                else pd.DataFrame(columns=["download_date", "provider_display_name", "downloads"])
+            )
+            if not grouped.empty:
+                totals = grouped.groupby("download_date")["downloads"].sum().rename("total").reset_index()
+                share = grouped.merge(totals, on="download_date", how="left")
+                share["share"] = share["downloads"] / share["total"].where(share["total"] != 0)
+                pivot_share = (
+                    share.pivot_table(index="download_date", columns="provider_display_name", values="share", aggfunc="last")
+                    .fillna(0)
+                    .sort_index()
+                )
+                st.plotly_chart(
+                    make_stacked_bar(
+                        pivot_share * 100,
+                        MODEL_COLORS,
+                        title="PyPI Daily Download Share (Without Mirrors)",
+                        y_title="Share",
+                        pct=True,
+                        height=340,
+                    ),
+                    use_container_width=True,
+                    theme=None,
+                )
+            else:
+                st.info("No PyPI series available yet.")
+        else:
+            st.info("No PyPI data available yet.")
+
+    with summary_tab:
+        summary = latest[
+            [
+                "provider_display_name",
+                "momentum_score",
+                "github_new_repo_count",
+                "github_repo_share",
+                "pypi_7d_avg",
+                "pypi_28d_avg",
+                "pypi_share_28d",
+                "pypi_growth_28d",
+            ]
+        ].copy()
+        summary.columns = [
+            "Provider",
+            "Momentum Score",
+            "GitHub New Repos",
+            "GitHub Repo Share",
+            "PyPI 7d Avg",
+            "PyPI 28d Avg",
+            "PyPI 28d Share",
+            "PyPI 28d Growth",
+        ]
+        st.caption(f"Latest provider snapshot: {latest_date}")
+        st.dataframe(summary.fillna(""), use_container_width=True, hide_index=True)
+
+
 def render_checks(checks: list[CheckResult]) -> None:
     ok_count   = sum(1 for c in checks if c.status == "ok")
     warn_count = sum(1 for c in checks if c.status == "warning")
@@ -875,7 +1019,7 @@ def main() -> None:
 
     render_header(freshness)
     
-    main_tabs = st.tabs(["OpenRouter Intelligence", "GitHub Trending"])
+    main_tabs = st.tabs(["OpenRouter Intelligence", "GitHub Trending", "Provider Adoption"])
     
     with main_tabs[0]:
         render_kpi_row(datasets)
@@ -887,6 +1031,9 @@ def main() -> None:
     
     with main_tabs[1]:
         render_github_trending_section(datasets)
+
+    with main_tabs[2]:
+        render_provider_adoption_section(datasets)
         
     render_checks(checks)
 

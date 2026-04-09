@@ -1,0 +1,81 @@
+name: Provider Adoption Backfill
+
+on:
+  workflow_dispatch:
+    inputs:
+      start_date:
+        description: "Start date (YYYY-MM-DD)"
+        required: true
+        type: string
+      end_date:
+        description: "End date (YYYY-MM-DD)"
+        required: true
+        type: string
+      providers:
+        description: "Optional comma-separated provider slugs"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  provider-adoption-backfill:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.PROVIDER_ADOPTION_GITHUB_TOKEN != '' && secrets.PROVIDER_ADOPTION_GITHUB_TOKEN || github.token }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .[dev]
+
+      - name: Run bounded backfill
+        run: |
+          python -m provider_adoption_data.cli \
+            --base-dir . \
+            ${INPUT_PROVIDERS:+--providers "$INPUT_PROVIDERS"} \
+            backfill \
+            --start-date "$INPUT_START_DATE" \
+            --end-date "$INPUT_END_DATE"
+        env:
+          INPUT_START_DATE: ${{ inputs.start_date }}
+          INPUT_END_DATE: ${{ inputs.end_date }}
+          INPUT_PROVIDERS: ${{ inputs.providers }}
+
+      - name: Commit normalized datasets
+        run: |
+          if git diff --quiet -- data/normalized/provider_adoption; then
+            echo "No normalized dataset changes to commit"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/normalized/provider_adoption data/raw/provider_adoption
+          git commit -m "chore: backfill provider adoption datasets"
+          git push
+
+      - name: Upload raw snapshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: provider-adoption-backfill-raw-snapshots
+          path: data/raw/provider_adoption/
+          if-no-files-found: error
+
+      - name: Upload normalized datasets
+        uses: actions/upload-artifact@v4
+        with:
+          name: provider-adoption-backfill-normalized-datasets
+          path: data/normalized/provider_adoption/
+          if-no-files-found: error
