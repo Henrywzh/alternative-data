@@ -52,6 +52,44 @@ def _base_row(dataset_id: str) -> dict:
         "period": None,
         "tokens": None,
         "growth_percent": None,
+        "provider": None,
+        "provider_display_name": None,
+        "package_name": None,
+        "package_type": None,
+        "with_mirrors": None,
+        "download_date": None,
+        "downloads": None,
+        "repo_full_name": None,
+        "repo_owner": None,
+        "repo_name": None,
+        "repo_html_url": None,
+        "repo_created_date": None,
+        "repo_created_at": None,
+        "repo_pushed_at": None,
+        "repo_default_branch": None,
+        "language_bucket": None,
+        "signal_date": None,
+        "signal_type": None,
+        "matched_file_path": None,
+        "matched_pattern": None,
+        "is_fork": None,
+        "is_archived": None,
+        "stargazers_count": None,
+        "has_manifest_dependency": None,
+        "has_code_import": None,
+        "has_env_var": None,
+        "has_model_name": None,
+        "matched_signal_count": None,
+        "pypi_7d_avg": None,
+        "pypi_28d_avg": None,
+        "pypi_share_28d": None,
+        "pypi_growth_28d": None,
+        "github_new_repo_count": None,
+        "github_repo_share": None,
+        "github_import_repo_count": None,
+        "github_env_repo_count": None,
+        "github_model_repo_count": None,
+        "momentum_score": None,
     }
 
 
@@ -182,6 +220,153 @@ def _apps_trending_frame() -> pd.DataFrame:
     return pd.DataFrame(rows, columns=EXPECTED_COLUMNS)
 
 
+def _github_trending_frame(dataset_id: str) -> pd.DataFrame:
+    rows = []
+    for scrape_date, name, stars_today in [
+        ("2026-04-04", "repo-alpha", 120),
+        ("2026-04-05", "repo-beta", 240),
+    ]:
+        row = _base_row(dataset_id)
+        row.update(
+            {
+                "scrape_date": scrape_date,
+                "author": "openai",
+                "name": name,
+                "link": f"https://github.com/openai/{name}",
+                "stars_today": stars_today,
+                "total_stars": stars_today * 10,
+            }
+        )
+        rows.append(row)
+    return pd.DataFrame(rows, columns=EXPECTED_COLUMNS)
+
+
+def _provider_pypi_frame() -> pd.DataFrame:
+    rows = []
+    for provider, package_name, date_value, downloads in [
+        ("openai", "openai", "2026-04-04", 1000),
+        ("anthropic", "anthropic", "2026-04-05", 900),
+    ]:
+        row = _base_row("pypi_downloads_daily")
+        row.update(
+            {
+                "provider": provider,
+                "provider_display_name": provider.title(),
+                "package_name": package_name,
+                "package_type": "sdk",
+                "with_mirrors": False,
+                "download_date": date_value,
+                "downloads": downloads,
+            }
+        )
+        rows.append(row)
+    return pd.DataFrame(rows, columns=EXPECTED_COLUMNS)
+
+
+def _provider_candidates_frame() -> pd.DataFrame:
+    row = _base_row("github_repo_candidates_daily")
+    row.update(
+        {
+            "provider": "openai",
+            "provider_display_name": "OpenAI",
+            "repo_full_name": "openai/sample-repo",
+            "repo_owner": "openai",
+            "repo_name": "sample-repo",
+            "repo_html_url": "https://github.com/openai/sample-repo",
+            "repo_created_date": "2026-04-05",
+            "repo_created_at": "2026-04-05T10:00:00Z",
+            "repo_pushed_at": "2026-04-05T11:00:00Z",
+            "repo_default_branch": "main",
+            "language_bucket": "python",
+            "stargazers_count": 4,
+            "is_fork": False,
+            "is_archived": False,
+        }
+    )
+    return pd.DataFrame([row], columns=EXPECTED_COLUMNS)
+
+
+def _provider_signals_frame() -> pd.DataFrame:
+    row = _base_row("github_provider_signals_daily")
+    row.update(
+        {
+            "provider": "openai",
+            "provider_display_name": "OpenAI",
+            "repo_full_name": "openai/sample-repo",
+            "repo_owner": "openai",
+            "repo_name": "sample-repo",
+            "repo_html_url": "https://github.com/openai/sample-repo",
+            "repo_created_date": "2026-04-05",
+            "repo_created_at": "2026-04-05T10:00:00Z",
+            "repo_pushed_at": "2026-04-05T11:00:00Z",
+            "repo_default_branch": "main",
+            "language_bucket": "python",
+            "signal_date": "2026-04-05",
+            "signal_type": "code_import",
+            "matched_file_path": "src/main.py",
+            "matched_pattern": "from openai import",
+            "stargazers_count": 4,
+            "is_fork": False,
+            "is_archived": False,
+        }
+    )
+    return pd.DataFrame([row], columns=EXPECTED_COLUMNS)
+
+
+def _provider_rollup_frame() -> pd.DataFrame:
+    row = _base_row("github_repo_rollup_daily")
+    row.update(
+        {
+            "provider": "openai",
+            "provider_display_name": "OpenAI",
+            "repo_full_name": "openai/sample-repo",
+            "repo_owner": "openai",
+            "repo_name": "sample-repo",
+            "repo_html_url": "https://github.com/openai/sample-repo",
+            "repo_created_date": "2026-04-05",
+            "repo_created_at": "2026-04-05T10:00:00Z",
+            "repo_pushed_at": "2026-04-05T11:00:00Z",
+            "repo_default_branch": "main",
+            "language_bucket": "python",
+            "signal_date": "2026-04-05",
+            "has_manifest_dependency": True,
+            "has_code_import": True,
+            "has_env_var": False,
+            "has_model_name": True,
+            "matched_signal_count": 3,
+            "stargazers_count": 4,
+            "is_fork": False,
+            "is_archived": False,
+        }
+    )
+    return pd.DataFrame([row], columns=EXPECTED_COLUMNS)
+
+
+def _provider_momentum_frame() -> pd.DataFrame:
+    rows = []
+    for signal_date, provider, score in [
+        ("2026-04-04", "openai", 0.45),
+        ("2026-04-05", "anthropic", 0.57),
+    ]:
+        row = _base_row("provider_momentum_daily")
+        row.update(
+            {
+                "provider": provider,
+                "provider_display_name": provider.title(),
+                "signal_date": signal_date,
+                "momentum_score": score,
+                "github_new_repo_count": 3,
+                "github_repo_share": 0.4,
+                "pypi_7d_avg": 1000,
+                "pypi_28d_avg": 900,
+                "pypi_share_28d": 0.35,
+                "pypi_growth_28d": 0.2,
+            }
+        )
+        rows.append(row)
+    return pd.DataFrame(rows, columns=EXPECTED_COLUMNS)
+
+
 def _frame_for_dataset(dataset_id: str) -> pd.DataFrame:
     if dataset_id in domain_dataset_ids("rankings"):
         return _rankings_frame(dataset_id)
@@ -191,6 +376,14 @@ def _frame_for_dataset(dataset_id: str) -> pd.DataFrame:
         "app_top_models_daily_snapshot": _apps_top_models_frame,
         "apps_global_ranking_snapshots": _apps_global_ranking_frame,
         "apps_trending_snapshots": _apps_trending_frame,
+        "github_trending_daily": lambda: _github_trending_frame("github_trending_daily"),
+        "github_trending_weekly": lambda: _github_trending_frame("github_trending_weekly"),
+        "github_trending_monthly": lambda: _github_trending_frame("github_trending_monthly"),
+        "pypi_downloads_daily": _provider_pypi_frame,
+        "github_repo_candidates_daily": _provider_candidates_frame,
+        "github_provider_signals_daily": _provider_signals_frame,
+        "github_repo_rollup_daily": _provider_rollup_frame,
+        "provider_momentum_daily": _provider_momentum_frame,
     }
     return mapping[dataset_id]()
 
@@ -259,9 +452,15 @@ def test_load_latest_manifest_reads_latest_run(tmp_path: Path) -> None:
 
 
 def test_load_all_datasets_supports_every_registered_dataset(tmp_path: Path) -> None:
-    root = tmp_path / "data" / "normalized" / "openrouter"
-    root.mkdir(parents=True)
     for dataset_id in DATASET_REGISTRY:
+        domain = DATASET_REGISTRY[dataset_id]["domain"]
+        source = "openrouter"
+        if domain == "github":
+            source = "github_trending"
+        elif domain == "provider_adoption":
+            source = "provider_adoption"
+        root = tmp_path / "data" / "normalized" / source
+        root.mkdir(parents=True, exist_ok=True)
         _frame_for_dataset(dataset_id).to_csv(root / f"{dataset_id}.csv", index=False)
 
     datasets = load_all_datasets(base_dir=tmp_path)
@@ -269,3 +468,4 @@ def test_load_all_datasets_supports_every_registered_dataset(tmp_path: Path) -> 
     assert set(datasets) == set(DATASET_REGISTRY)
     assert datasets["apps_global_ranking_snapshots"].latest_date == "2026-04-05"
     assert datasets["top_models"].latest_date == "2026-03-16"
+    assert datasets["provider_momentum_daily"].latest_date == "2026-04-05"

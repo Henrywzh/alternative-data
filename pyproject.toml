@@ -24,6 +24,7 @@ dev = [
 [project.scripts]
 openrouter-data = "openrouter_data.cli:main"
 github-trending-data = "github_trending_data.cli:main"
+provider-adoption-data = "provider_adoption_data.cli:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
