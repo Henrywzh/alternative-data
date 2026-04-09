@@ -29,6 +29,16 @@ data/normalized/openrouter/*
 data/normalized/github_trending/*
 !data/normalized/github_trending/*.csv
 !data/normalized/github_trending/*.parquet
+!data/normalized/provider_adoption/
+data/normalized/provider_adoption/*
+!data/normalized/provider_adoption/*.csv
+!data/normalized/provider_adoption/*.parquet
+!data/raw/
+data/raw/*
+!data/raw/provider_adoption/
+data/raw/provider_adoption/*
+!data/raw/provider_adoption/**/
+!data/raw/provider_adoption/**/manifest.json
 
 # Secrets and environment
 .env
