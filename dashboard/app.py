@@ -117,6 +117,44 @@ def domain_ranges(datasets: dict[str, DatasetLoadResult]) -> dict[str, tuple[str
     return ranges
 
 
+def format_scraped_at_display(value: str | None) -> str:
+    if value is None or pd.isna(value):
+        return "n/a"
+    timestamp = pd.to_datetime(value, utc=True, errors="coerce")
+    if pd.isna(timestamp):
+        return str(value)
+    return timestamp.strftime("%Y-%m-%d %H:%M UTC")
+
+
+def rankings_week_context(datasets: dict[str, DatasetLoadResult]) -> dict[str, str | bool | None]:
+    top_models = datasets.get("top_models")
+    market_share = datasets.get("market_share")
+    programming = datasets.get("categories_programming")
+
+    model_week = top_models.latest_date if top_models else None
+    market_share_week = market_share.latest_date if market_share else None
+    programming_week = programming.latest_date if programming else None
+
+    return {
+        "model_week": model_week,
+        "market_share_week": market_share_week,
+        "programming_week": programming_week,
+        "model_scraped_at": top_models.latest_scraped_at if top_models else None,
+        "market_share_scraped_at": market_share.latest_scraped_at if market_share else None,
+        "programming_scraped_at": programming.latest_scraped_at if programming else None,
+        "has_divergent_weeks": bool(model_week and market_share_week and model_week != market_share_week),
+    }
+
+
+def rankings_bucket_warning(context: dict[str, str | bool | None]) -> str | None:
+    if not context.get("has_divergent_weeks"):
+        return None
+    return (
+        "Model rankings use week starting dates, while market share uses week ending dates. "
+        "The latest completed buckets can differ by up to 6 days on the same scrape."
+    )
+
+
 def make_stacked_bar(
     pivot_df: pd.DataFrame,
     colors: list[str],
@@ -211,6 +249,36 @@ def inject_css() -> None:
         .ms-tokens {{ font-size: 0.78rem; color: {MUTED}; min-width: 50px; text-align: right; }}
         .ms-pct {{ font-size: 0.82rem; font-weight: 700; color: {TEXT}; min-width: 45px; text-align: right; }}
 
+        .section-subtitle {{
+            color: {MUTED};
+            font-size: 0.9rem;
+            margin: -0.55rem 0 0.9rem 0;
+        }}
+        .status-caption {{
+            color: {MUTED};
+            font-size: 0.88rem;
+            margin: -0.25rem 0 0.9rem 0;
+        }}
+        .rankings-note {{
+            background: rgba(37, 99, 235, 0.06);
+            border: 1px solid rgba(37, 99, 235, 0.14);
+            border-radius: 10px;
+            padding: 0.9rem 1rem;
+            margin: 0.35rem 0 1.15rem 0;
+            color: {TEXT};
+            font-size: 0.92rem;
+            line-height: 1.5;
+        }}
+        .rankings-warning {{
+            background: rgba(217, 119, 6, 0.08);
+            border: 1px solid rgba(217, 119, 6, 0.16);
+            border-radius: 10px;
+            padding: 0.85rem 1rem;
+            margin: 0 0 1.25rem 0;
+            color: {TEXT};
+            font-size: 0.9rem;
+        }}
+
         /* ---- Leaderboard Cards ---- */
         .lb-card {{
             display: flex;
@@ -293,6 +361,7 @@ def render_header(freshness: FreshnessInfo) -> None:
 def render_kpi_row(datasets: dict[str, DatasetLoadResult]) -> None:
     tm_result = datasets.get("top_models")
     ms_result = datasets.get("market_share")
+    week_context = rankings_week_context(datasets)
 
     # --- top models KPIs ---
     total_latest = None
@@ -359,7 +428,7 @@ def render_kpi_row(datasets: dict[str, DatasetLoadResult]) -> None:
         f"""
         <div class="kpi-grid">
           <div class="kpi-card">
-            <div class="kpi-label">Total Tokens (Latest Week)</div>
+            <div class="kpi-label">Total Tokens (Latest Model Week)</div>
             <div class="kpi-value">{tokens_fmt}</div>
             {delta_html}
           </div>
@@ -376,8 +445,36 @@ def render_kpi_row(datasets: dict[str, DatasetLoadResult]) -> None:
           <div class="kpi-card">
             <div class="kpi-label">Market Leader</div>
             <div class="kpi-value" style="font-size:1.1rem;">{leader_label}</div>
-            <div class="kpi-delta-flat">latest week share</div>
+            <div class="kpi-delta-flat">latest market-share week</div>
           </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    warning = rankings_bucket_warning(week_context)
+    if warning:
+        st.markdown(f'<div class="rankings-warning">{warning}</div>', unsafe_allow_html=True)
+
+
+def render_rankings_semantics_note(datasets: dict[str, DatasetLoadResult]) -> None:
+    context = rankings_week_context(datasets)
+    model_week = context["model_week"] or "n/a"
+    programming_week = context["programming_week"] or model_week
+    market_share_week = context["market_share_week"] or "n/a"
+
+    st.markdown(
+        f"""
+        <div class="rankings-note">
+          <strong>OpenRouter week semantics</strong><br>
+          Top Models and Programming are grouped by <strong>week starting</strong> dates.
+          Market Share is grouped by <strong>week ending</strong> dates.
+          These latest completed buckets can differ by up to 6 days on the same scrape.<br><br>
+          <span style="color:{MUTED};">
+            Latest completed model week: {model_week} ·
+            Latest completed programming week: {programming_week} ·
+            Latest completed market-share week: {market_share_week}
+          </span>
         </div>
         """,
         unsafe_allow_html=True,
@@ -385,17 +482,25 @@ def render_kpi_row(datasets: dict[str, DatasetLoadResult]) -> None:
 
 
 def render_top_models_chart(datasets: dict[str, DatasetLoadResult]) -> None:
-    st.markdown('<div class="section-title">Top Models — Weekly Token Usage</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">Top Models — Weekly Token Usage (Week Starting)</div>', unsafe_allow_html=True)
+    st.markdown(
+        f'<div class="section-subtitle">Completed weekly buckets aligned to week start dates from OpenRouter rankings.</div>',
+        unsafe_allow_html=True,
+    )
     result = datasets.get("top_models")
     if not result or not render_dataset_guard(result):
         return
 
     tm = result.frame.copy()
     tm["week_start_date"] = tm["week_start_date"].astype(str)
+    st.markdown(
+        f'<div class="status-caption">Latest completed model week: {result.latest_date or "n/a"} · Scraped: {format_scraped_at_display(result.latest_scraped_at)}</div>',
+        unsafe_allow_html=True,
+    )
     
     # --- Period Selector & Total ---
     weeks = sorted(tm["week_start_date"].unique(), reverse=True)
-    sel_week = st.selectbox("Analyze week", options=weeks, index=0, key="tm_week_sel")
+    sel_week = st.selectbox("Analyze week starting", options=weeks, index=0, key="tm_week_sel")
     week_total = tm[tm["week_start_date"] == sel_week]["metric_value"].sum()
     st.markdown(
         f'<div class="kpi-card" style="margin-bottom:1rem; max-width: 300px;">'
@@ -424,17 +529,25 @@ def render_top_models_chart(datasets: dict[str, DatasetLoadResult]) -> None:
 
 
 def render_market_share_section(datasets: dict[str, DatasetLoadResult]) -> None:
-    st.markdown('<div class="section-title">Market Share — Token Distribution by Author</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">Market Share — Token Distribution by Author (Week Ending)</div>', unsafe_allow_html=True)
+    st.markdown(
+        f'<div class="section-subtitle">Completed weekly buckets aligned to week end dates from OpenRouter rankings.</div>',
+        unsafe_allow_html=True,
+    )
     result = datasets.get("market_share")
     if not result or not render_dataset_guard(result):
         return
 
     ms = result.frame.copy()
     ms["week_start_date"] = ms["week_start_date"].astype(str)
+    st.markdown(
+        f'<div class="status-caption">Latest completed market-share week: {result.latest_date or "n/a"} · Scraped: {format_scraped_at_display(result.latest_scraped_at)}</div>',
+        unsafe_allow_html=True,
+    )
 
     # --- Period Selector ---
     ms_weeks = sorted(ms["week_start_date"].unique(), reverse=True)
-    sel_ms_wk = st.selectbox("Analyze week", options=ms_weeks, index=0, key="ms_week_sel")
+    sel_ms_wk = st.selectbox("Analyze week ending", options=ms_weeks, index=0, key="ms_week_sel")
     ms_wk_total = ms[ms["week_start_date"] == sel_ms_wk]["metric_value"].sum()
     st.markdown(
         f'<div class="kpi-card" style="margin-bottom:1rem; max-width: 300px;">'
@@ -581,6 +694,51 @@ def render_leaderboard(datasets: dict[str, DatasetLoadResult]) -> None:
         st.markdown("".join(cards[:5]), unsafe_allow_html=True)
     with col_b:
         st.markdown("".join(cards[5:]), unsafe_allow_html=True)
+
+
+def render_programming_chart(datasets: dict[str, DatasetLoadResult]) -> None:
+    st.markdown('<div class="section-title">Programming — Weekly Token Usage (Week Starting)</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-subtitle">Coding-only weekly rankings from OpenRouter, aligned to week start dates.</div>',
+        unsafe_allow_html=True,
+    )
+    result = datasets.get("categories_programming")
+    if not result or not render_dataset_guard(result):
+        return
+
+    frame = result.frame.copy()
+    frame["week_start_date"] = frame["week_start_date"].astype(str)
+    st.markdown(
+        f'<div class="status-caption">Latest completed programming week: {result.latest_date or "n/a"} · Scraped: {format_scraped_at_display(result.latest_scraped_at)}</div>',
+        unsafe_allow_html=True,
+    )
+
+    weeks = sorted(frame["week_start_date"].unique(), reverse=True)
+    sel_week = st.selectbox("Analyze programming week starting", options=weeks, index=0, key="prog_week_sel")
+    week_total = frame[frame["week_start_date"] == sel_week]["metric_value"].sum()
+    st.markdown(
+        f'<div class="kpi-card" style="margin-bottom:1rem; max-width: 300px;">'
+        f'<div class="kpi-label">Programming Tokens ({sel_week})</div>'
+        f'<div class="kpi-value" style="font-size: 1.5rem;">{format_metric(week_total)}</div>'
+        f'</div>',
+        unsafe_allow_html=True
+    )
+
+    pivot = (
+        frame.pivot_table(index="week_start_date", columns="entity_id", values="metric_value", aggfunc="sum")
+        .fillna(0)
+        .sort_index()
+    )
+
+    top_n_count = 15
+    top_n_cols = pivot.sum().nlargest(top_n_count).index.tolist()
+    other_cols = [c for c in pivot.columns if c not in top_n_cols]
+    pivot_top = pivot[top_n_cols].copy()
+    if other_cols:
+        pivot_top["Others"] = pivot[other_cols].sum(axis=1)
+
+    fig = make_stacked_bar(pivot_top, MODEL_COLORS, y_title="Tokens")
+    st.plotly_chart(fig, use_container_width=True, theme=None)
 
 
 def render_app_usage_chart(datasets: dict[str, DatasetLoadResult]) -> None:
@@ -1203,10 +1361,12 @@ def main() -> None:
     main_tabs = st.tabs(["OpenRouter Intelligence", "GitHub Trending", "Provider Adoption"])
     
     with main_tabs[0]:
+        render_rankings_semantics_note(datasets)
         render_kpi_row(datasets)
         render_top_models_chart(datasets)
         render_market_share_section(datasets)
         render_leaderboard(datasets)
+        render_programming_chart(datasets)
         render_app_usage_chart(datasets)
         render_apps_tables(datasets)
     
