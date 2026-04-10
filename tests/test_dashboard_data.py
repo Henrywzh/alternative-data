@@ -5,6 +5,11 @@ from pathlib import Path
 
 import pandas as pd
 
+from dashboard.app import (
+    format_scraped_at_display,
+    rankings_bucket_warning,
+    rankings_week_context,
+)
 from dashboard.checks import run_checks
 from dashboard.data import (
     EXPECTED_COLUMNS,
@@ -515,3 +520,58 @@ def test_load_all_datasets_supports_every_registered_dataset(tmp_path: Path) -> 
     assert datasets["apps_global_ranking_snapshots"].latest_date == "2026-04-05"
     assert datasets["top_models"].latest_date == "2026-03-16"
     assert datasets["provider_momentum_daily"].latest_date == "2026-04-05"
+
+
+def test_format_scraped_at_display_formats_utc_timestamp() -> None:
+    assert format_scraped_at_display("2026-04-06T08:19:47.193085Z") == "2026-04-06 08:19 UTC"
+
+
+def test_rankings_week_context_detects_divergent_week_buckets(tmp_path: Path) -> None:
+    root = tmp_path / "data" / "normalized" / "openrouter"
+    root.mkdir(parents=True)
+
+    top_models = _rankings_frame("top_models")
+    top_models.loc[:, "week_start_date"] = ["2026-03-23", "2026-03-30"]
+    top_models.loc[:, "week_label"] = top_models["week_start_date"]
+    top_models.loc[:, "scraped_at"] = "2026-04-06T08:19:47.193085Z"
+    top_models.to_csv(root / "top_models.csv", index=False)
+
+    categories = _rankings_frame("categories_programming")
+    categories.loc[:, "week_start_date"] = ["2026-03-23", "2026-03-30"]
+    categories.loc[:, "week_label"] = categories["week_start_date"]
+    categories.loc[:, "scraped_at"] = "2026-04-06T08:19:47.193085Z"
+    categories.to_csv(root / "categories_programming.csv", index=False)
+
+    market_share = _rankings_frame("market_share")
+    market_share.loc[:, "week_start_date"] = ["2026-03-30", "2026-04-05"]
+    market_share.loc[:, "week_label"] = market_share["week_start_date"]
+    market_share.loc[:, "entity_id"] = ["openai", "anthropic"]
+    market_share.loc[:, "entity_name"] = market_share["entity_id"]
+    market_share.loc[:, "parent_entity_id"] = pd.NA
+    market_share.loc[:, "parent_entity_name"] = pd.NA
+    market_share.loc[:, "scraped_at"] = "2026-04-06T08:19:47.193085Z"
+    market_share.to_csv(root / "market_share.csv", index=False)
+
+    datasets = load_all_datasets(base_dir=tmp_path)
+    context = rankings_week_context(datasets)
+
+    assert context["model_week"] == "2026-03-30"
+    assert context["programming_week"] == "2026-03-30"
+    assert context["market_share_week"] == "2026-04-05"
+    assert context["has_divergent_weeks"] is True
+    assert context["model_scraped_at"] == "2026-04-06T08:19:47.193085Z"
+    assert rankings_bucket_warning(context) is not None
+
+
+def test_rankings_bucket_warning_is_empty_when_weeks_match() -> None:
+    context = {
+        "model_week": "2026-03-30",
+        "market_share_week": "2026-03-30",
+        "programming_week": "2026-03-30",
+        "model_scraped_at": "2026-04-06T08:19:47.193085Z",
+        "market_share_scraped_at": "2026-04-06T08:19:47.193085Z",
+        "programming_scraped_at": "2026-04-06T08:19:47.193085Z",
+        "has_divergent_weeks": False,
+    }
+
+    assert rankings_bucket_warning(context) is None
