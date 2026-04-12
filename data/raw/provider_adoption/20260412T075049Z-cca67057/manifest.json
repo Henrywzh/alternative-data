@@ -1,0 +1,19 @@
+{
+  "run_id": "20260412T075049Z-cca67057",
+  "mode": "pypi-daily-update",
+  "scraped_at": "2026-04-12T07:50:49.906943Z",
+  "target_date": "2026-04-12",
+  "providers": [
+    "openai",
+    "anthropic",
+    "google"
+  ],
+  "datasets": [
+    "pypi_downloads_daily",
+    "github_repo_candidates_daily",
+    "github_provider_signals_daily",
+    "github_repo_rollup_daily",
+    "provider_momentum_daily"
+  ],
+  "parser_version": "0.1.0"
+}
