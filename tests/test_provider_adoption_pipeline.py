@@ -194,14 +194,14 @@ class FakeNpmSource:
 
     def extract(self, snapshots, providers):
         by_package = {
-            package.package_name: (provider.slug, provider.display_name, package.package_type)
+            package.package_name: (provider.slug, provider.display_name, package.package_type, package.package_category)
             for provider in providers
             for package in provider.npm_packages
         }
         records = []
         for snapshot in snapshots:
             payload = json.loads(snapshot.body)
-            provider_slug, display_name, package_type = by_package[payload["package"]]
+            provider_slug, display_name, package_type, package_category = by_package[payload["package"]]
             for row in payload["downloads"]:
                 records.append(
                     NpmDownloadPoint(
@@ -209,6 +209,7 @@ class FakeNpmSource:
                         provider_display_name=display_name,
                         package_name=payload["package"],
                         package_type=package_type,
+                        package_category=package_category,
                         download_date=row["day"],
                         downloads=row["downloads"],
                         source_url=snapshot.source_url,
@@ -315,16 +316,30 @@ def test_npm_source_extracts_scoped_package_downloads() -> None:
         ("@anthropic-ai/sdk", 321),
         ("@anthropic-ai/sdk", 654),
     ]
+    assert all(point.package_category == "core_sdk" for point in points)
 
 
 def test_provider_registry_excludes_qwen_from_active_defaults() -> None:
     providers = get_provider_registry()
 
     assert [provider.slug for provider in providers] == ["openai", "anthropic", "google"]
-    assert {provider.slug: [package.package_name for package in provider.npm_packages] for provider in providers} == {
-        "openai": ["openai"],
-        "anthropic": ["@anthropic-ai/sdk"],
-        "google": [],
+    assert {provider.slug: [(package.package_name, package.package_category) for package in provider.npm_packages] for provider in providers} == {
+        "openai": [
+            ("openai", "core_sdk"),
+            ("@openai/agents", "agent_sdk"),
+            ("@openai/codex", "cli"),
+            ("@openai/codex-sdk", "agent_sdk"),
+        ],
+        "anthropic": [
+            ("@anthropic-ai/sdk", "core_sdk"),
+            ("@anthropic-ai/claude-agent-sdk", "agent_sdk"),
+            ("@anthropic-ai/claude-code", "cli"),
+        ],
+        "google": [
+            ("@google/genai", "core_sdk"),
+            ("@google/gemini-cli", "cli"),
+            ("@google/generative-ai", "legacy_sdk"),
+        ],
     }
 
 
@@ -378,14 +393,14 @@ def test_provider_pipeline_repeated_runs_are_idempotent_and_write_manifest(tmp_p
         github_source=FakeGithubSource(),
     )
 
-    first_pypi = pipeline.run_pypi_daily_update(target_date="2026-04-05", provider_slugs=["openai", "anthropic"])
-    second_pypi = pipeline.run_pypi_daily_update(target_date="2026-04-05", provider_slugs=["openai", "anthropic"])
-    first_npm = pipeline.run_npm_daily_update(target_date="2026-04-05", provider_slugs=["openai", "anthropic"])
-    second_npm = pipeline.run_npm_daily_update(target_date="2026-04-05", provider_slugs=["openai", "anthropic"])
-    pipeline.run_github_daily_update(target_date="2026-04-05", provider_slugs=["openai", "anthropic"])
-    pipeline.run_github_daily_update(target_date="2026-04-05", provider_slugs=["openai", "anthropic"])
-    pipeline.run_derived_daily_update(target_date="2026-04-05", provider_slugs=["openai", "anthropic"])
-    derived = pipeline.run_derived_daily_update(target_date="2026-04-05", provider_slugs=["openai", "anthropic"])
+    first_pypi = pipeline.run_pypi_daily_update(target_date="2026-04-05", provider_slugs=["openai", "anthropic", "google"])
+    second_pypi = pipeline.run_pypi_daily_update(target_date="2026-04-05", provider_slugs=["openai", "anthropic", "google"])
+    first_npm = pipeline.run_npm_daily_update(target_date="2026-04-05", provider_slugs=["openai", "anthropic", "google"])
+    second_npm = pipeline.run_npm_daily_update(target_date="2026-04-05", provider_slugs=["openai", "anthropic", "google"])
+    pipeline.run_github_daily_update(target_date="2026-04-05", provider_slugs=["openai", "anthropic", "google"])
+    pipeline.run_github_daily_update(target_date="2026-04-05", provider_slugs=["openai", "anthropic", "google"])
+    pipeline.run_derived_daily_update(target_date="2026-04-05", provider_slugs=["openai", "anthropic", "google"])
+    derived = pipeline.run_derived_daily_update(target_date="2026-04-05", provider_slugs=["openai", "anthropic", "google"])
 
     pypi = pd.read_csv(tmp_path / "data" / "normalized" / "provider_adoption" / "pypi_downloads_daily.csv")
     npm = pd.read_csv(tmp_path / "data" / "normalized" / "provider_adoption" / "npm_downloads_daily.csv")
@@ -396,7 +411,7 @@ def test_provider_pipeline_repeated_runs_are_idempotent_and_write_manifest(tmp_p
     assert first_pypi.datasets_written["pypi_downloads_daily"] == second_pypi.datasets_written["pypi_downloads_daily"]
     assert first_npm.datasets_written["npm_downloads_daily"] == second_npm.datasets_written["npm_downloads_daily"]
     assert pypi[["provider", "package_name", "with_mirrors", "download_date"]].duplicated().sum() == 0
-    assert npm[["provider", "package_name", "download_date"]].duplicated().sum() == 0
+    assert npm[["provider", "package_name", "package_category", "download_date"]].duplicated().sum() == 0
     assert rollup[["provider", "repo_full_name", "signal_date"]].duplicated().sum() == 0
     assert list(momentum_csv.columns) == list(momentum_parquet.columns)
     assert (Path(derived.raw_run_dir) / "manifest.json").exists()

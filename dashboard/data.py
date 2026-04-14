@@ -107,10 +107,10 @@ DATASET_REGISTRY: dict[str, dict[str, object]] = {
     "npm_downloads_daily": {
         "label": "npm Downloads Daily",
         "domain": "provider_adoption",
-        "natural_keys": ["provider", "package_name", "download_date"],
+        "natural_keys": ["provider", "package_name", "package_category", "download_date"],
         "primary_date_column": "download_date",
         "metric_column": "downloads",
-        "required_columns": ["provider", "package_name", "download_date", "downloads"],
+        "required_columns": ["provider", "package_name", "package_category", "download_date", "downloads"],
     },
     "github_repo_candidates_daily": {
         "label": "GitHub Repo Candidates",
@@ -230,6 +230,7 @@ PROVIDER_ADOPTION_COLUMNS = [
     "provider_display_name",
     "package_name",
     "package_type",
+    "package_category",
     "with_mirrors",
     "download_date",
     "downloads",
@@ -392,18 +393,8 @@ def load_dataset(dataset_id: str, base_dir: Path | None = None) -> DatasetLoadRe
         print(f"Warning: Failed to load dataset {dataset_id} from {parquet_path if parquet_path.exists() else csv_path}: {e}")
         # frame remains an empty DataFrame initialized above
     
-    # Only report drift for columns that are EXPECTED for this domain.
-    cols = list(CORE_COLUMNS)
-    if domain == "rankings":
-        cols += RANKINGS_COLUMNS
-    elif domain == "apps":
-        cols += APPS_COLUMNS
-    elif domain == "github":
-        cols += GITHUB_COLUMNS
-    elif domain == "provider_adoption":
-        cols += PROVIDER_ADOPTION_COLUMNS
-
-    missing_columns = [column for column in cols if column not in frame.columns]
+    required_columns = list(CORE_COLUMNS) + list(registry_entry.get("required_columns", []))
+    missing_columns = [column for column in required_columns if column not in frame.columns]
 
     # Padding still uses the full global set to ensure logical compatibility across different views
     for column in EXPECTED_COLUMNS:

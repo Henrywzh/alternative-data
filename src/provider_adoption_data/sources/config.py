@@ -9,7 +9,12 @@ PROVIDER_REGISTRY: tuple[ProviderConfig, ...] = (
         display_name="OpenAI",
         enabled=True,
         pypi_packages=(ProviderPackageConfig("openai", "sdk"),),
-        npm_packages=(ProviderPackageConfig("openai", "sdk"),),
+        npm_packages=(
+            ProviderPackageConfig("openai", "sdk", "core_sdk"),
+            ProviderPackageConfig("@openai/agents", "sdk", "agent_sdk"),
+            ProviderPackageConfig("@openai/codex", "cli", "cli"),
+            ProviderPackageConfig("@openai/codex-sdk", "sdk", "agent_sdk"),
+        ),
         manifest_patterns=("openai",),
         import_patterns=(
             "from openai import",
@@ -27,7 +32,11 @@ PROVIDER_REGISTRY: tuple[ProviderConfig, ...] = (
         display_name="Anthropic",
         enabled=True,
         pypi_packages=(ProviderPackageConfig("anthropic", "sdk"),),
-        npm_packages=(ProviderPackageConfig("@anthropic-ai/sdk", "sdk"),),
+        npm_packages=(
+            ProviderPackageConfig("@anthropic-ai/sdk", "sdk", "core_sdk"),
+            ProviderPackageConfig("@anthropic-ai/claude-agent-sdk", "sdk", "agent_sdk"),
+            ProviderPackageConfig("@anthropic-ai/claude-code", "cli", "cli"),
+        ),
         manifest_patterns=("anthropic", "@anthropic-ai/sdk"),
         import_patterns=(
             "from anthropic import",
@@ -45,7 +54,11 @@ PROVIDER_REGISTRY: tuple[ProviderConfig, ...] = (
             ProviderPackageConfig("google-genai", "sdk"),
             ProviderPackageConfig("google-generativeai", "legacy_sdk"),
         ),
-        npm_packages=(),
+        npm_packages=(
+            ProviderPackageConfig("@google/genai", "sdk", "core_sdk"),
+            ProviderPackageConfig("@google/gemini-cli", "cli", "cli"),
+            ProviderPackageConfig("@google/generative-ai", "sdk", "legacy_sdk"),
+        ),
         manifest_patterns=("google-genai", "google-generativeai", "@google/genai", "@google/generative-ai"),
         import_patterns=(
             "from google import genai",
