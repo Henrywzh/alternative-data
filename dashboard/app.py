@@ -45,6 +45,13 @@ MODEL_COLORS = [
     "#06B6D4", "#9CA3AF",
 ]
 
+NPM_CATEGORY_LABELS = {
+    "core_sdk": "Core SDK",
+    "agent_sdk": "Agent SDK",
+    "cli": "CLI",
+    "legacy_sdk": "Legacy SDK",
+}
+
 
 # ---------------------------------------------------------------------------
 # Utilities
@@ -362,14 +369,19 @@ def compute_provider_adoption_views(datasets: dict[str, DatasetLoadResult]) -> d
 
     npm = npm_result.frame.copy() if npm_result and npm_result.frame is not None else pd.DataFrame()
     if not npm.empty:
-        npm_grouped = npm.groupby(["download_date", "provider_display_name"], dropna=False)["downloads"].sum().reset_index()
-        npm_grouped["download_date"] = npm_grouped["download_date"].astype(str)
+        npm["download_date"] = npm["download_date"].astype(str)
+        npm["package_category"] = npm["package_category"].astype(str)
+        npm_categories = sorted(category for category in npm["package_category"].dropna().unique().tolist() if category and category != "<NA>")
+        npm_grouped = (
+            npm.groupby(["package_category", "download_date", "provider_display_name"], dropna=False)["downloads"].sum().reset_index()
+        )
         latest_npm_date = npm_grouped["download_date"].max()
         latest_npm = npm_grouped[npm_grouped["download_date"] == latest_npm_date].copy()
     else:
-        npm_grouped = pd.DataFrame(columns=["download_date", "provider_display_name", "downloads"])
+        npm_grouped = pd.DataFrame(columns=["package_category", "download_date", "provider_display_name", "downloads"])
         latest_npm_date = None
-        latest_npm = pd.DataFrame(columns=["download_date", "provider_display_name", "downloads"])
+        latest_npm = pd.DataFrame(columns=["package_category", "download_date", "provider_display_name", "downloads"])
+        npm_categories = []
 
     provider_order = sorted(latest_pypi["provider_display_name"].dropna().astype(str).unique().tolist()) if not latest_pypi.empty else []
     views["pypi_grouped"] = pypi_grouped
@@ -378,6 +390,7 @@ def compute_provider_adoption_views(datasets: dict[str, DatasetLoadResult]) -> d
     views["npm_grouped"] = npm_grouped
     views["latest_npm_date"] = latest_npm_date
     views["latest_npm"] = latest_npm
+    views["npm_categories"] = npm_categories
     views["provider_order"] = provider_order
 
     github_candidates_result = datasets.get("github_repo_candidates_daily")
@@ -1172,7 +1185,8 @@ def render_github_trending_section(datasets: dict[str, DatasetLoadResult], githu
 
 
 def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], provider_views: dict[str, object]) -> None:
-    st.markdown('<div class="section-title">Provider Adoption Signals</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">Provider Adoption</div>', unsafe_allow_html=True)
+    st.caption("Scraped GitHub, PyPI, and npm activity by provider")
 
     pypi_result = datasets.get("pypi_downloads_daily")
     npm_result = datasets.get("npm_downloads_daily")
@@ -1193,9 +1207,10 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
     pypi_grouped = provider_views["pypi_grouped"]
     latest_pypi_date = provider_views["latest_pypi_date"]
     latest_pypi = provider_views["latest_pypi"]
-    npm_grouped = provider_views["npm_grouped"]
+    npm_grouped_all = provider_views["npm_grouped"]
     latest_npm_date = provider_views["latest_npm_date"]
-    latest_npm = provider_views["latest_npm"]
+    latest_npm_all = provider_views["latest_npm"]
+    npm_categories = provider_views["npm_categories"]
     provider_order = provider_views["provider_order"]
     if not provider_order:
         st.info("No provider rows available yet.")
@@ -1242,6 +1257,27 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
             f'</div>',
             unsafe_allow_html=True,
         )
+
+    selected_npm_category = "core_sdk"
+    if npm_categories:
+        selected_npm_category = st.selectbox(
+            "npm package category",
+            options=npm_categories,
+            index=npm_categories.index("core_sdk") if "core_sdk" in npm_categories else 0,
+            format_func=lambda value: NPM_CATEGORY_LABELS.get(value, value.replace("_", " ").title()),
+            key="provider_adoption_npm_category",
+        )
+
+    npm_grouped = (
+        npm_grouped_all[npm_grouped_all["package_category"] == selected_npm_category].copy()
+        if not npm_grouped_all.empty
+        else pd.DataFrame(columns=["package_category", "download_date", "provider_display_name", "downloads"])
+    )
+    latest_npm = (
+        latest_npm_all[latest_npm_all["package_category"] == selected_npm_category].copy()
+        if not latest_npm_all.empty
+        else pd.DataFrame(columns=["package_category", "download_date", "provider_display_name", "downloads"])
+    )
 
     pypi_downloads_tab, pypi_share_tab, npm_downloads_tab, npm_share_tab, github_tab, summary_tab = st.tabs(
         ["PyPI Downloads", "PyPI Share", "npm Downloads", "npm Share", "GitHub Signals", "Latest Summary"]
@@ -1321,7 +1357,7 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
                 )
             fig.update_layout(
                 template="plotly_white",
-                title="npm Daily Download History",
+                title=f"{NPM_CATEGORY_LABELS.get(selected_npm_category, selected_npm_category)} npm Daily Download History",
                 xaxis_title="Date",
                 yaxis_title="Downloads",
                 legend=dict(orientation="h", y=-0.2),
@@ -1346,7 +1382,7 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
                 make_stacked_bar(
                     pivot_share * 100,
                     MODEL_COLORS,
-                    title="npm Daily Download Share",
+                    title=f"{NPM_CATEGORY_LABELS.get(selected_npm_category, selected_npm_category)} npm Daily Download Share",
                     y_title="Share",
                     pct=True,
                     height=340,
@@ -1518,6 +1554,7 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
         summary = summary.sort_values("Latest PyPI Downloads", ascending=False)
         display_date = latest_github_date or latest_npm_date or latest_pypi_date
         st.caption(f"Latest provider snapshot: {display_date or 'n/a'}")
+        st.caption(f"npm summary category: {NPM_CATEGORY_LABELS.get(selected_npm_category, selected_npm_category)}")
         st.dataframe(summary.fillna(""), use_container_width=True, hide_index=True)
 
 
