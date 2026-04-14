@@ -16,8 +16,9 @@ from dashboard.data import (
     DATASET_REGISTRY,
     DatasetLoadResult,
     FreshnessInfo,
+    dataset_source_for_domain,
     domain_dataset_ids,
-    load_all_datasets,
+    load_domain_datasets,
     load_latest_manifest,
 )
 
@@ -66,16 +67,10 @@ def format_metric(value: float, metric_unit: str | None = None) -> str:
     return f"{value:,.0f}"
 
 
-def load_state() -> tuple[dict[str, DatasetLoadResult], FreshnessInfo, list[CheckResult]]:
-    datasets = load_all_datasets(base_dir=BASE_DIR)
-    freshness = load_latest_manifest(base_dir=BASE_DIR, datasets=datasets)
-    checks = run_checks(datasets, freshness, base_dir=BASE_DIR)
-    return datasets, freshness, checks
-
-
-def build_data_signature(base_dir: Path) -> tuple[tuple[str, int, int], ...]:
-    """Return a stable fingerprint of dashboard inputs so cache invalidates on data changes."""
-    tracked_roots = [base_dir / "data" / "normalized", base_dir / "data" / "raw"]
+def build_normalized_signature(base_dir: Path, domain: str | None = None) -> tuple[tuple[str, int, int], ...]:
+    """Return a stable fingerprint of normalized dashboard inputs for cache invalidation."""
+    normalized = base_dir / "data" / "normalized"
+    tracked_roots = [normalized] if domain is None else [normalized / dataset_source_for_domain(domain)]
     signature: list[tuple[str, int, int]] = []
     for root in tracked_roots:
         if not root.exists():
@@ -84,6 +79,24 @@ def build_data_signature(base_dir: Path) -> tuple[tuple[str, int, int], ...]:
             stat = path.stat()
             signature.append((str(path.relative_to(base_dir)), stat.st_mtime_ns, stat.st_size))
     return tuple(signature)
+
+
+def build_manifest_signature(base_dir: Path, domain: str) -> tuple[tuple[str, int, int], ...]:
+    raw_dir = base_dir / "data" / "raw" / dataset_source_for_domain(domain)
+    if not raw_dir.exists():
+        return tuple()
+
+    manifests = sorted(raw_dir.rglob("manifest.json"))
+    if not manifests:
+        return tuple()
+
+    latest = max(manifests, key=lambda p: p.stat().st_mtime_ns)
+    stat = latest.stat()
+    return ((str(latest.relative_to(base_dir)), stat.st_mtime_ns, stat.st_size),)
+
+
+def build_domain_signature(base_dir: Path, domain: str) -> tuple[tuple[str, int, int], ...]:
+    return build_normalized_signature(base_dir, domain) + build_manifest_signature(base_dir, domain)
 
 
 def render_dataset_guard(result: DatasetLoadResult, show_subheader: bool = False) -> bool:
@@ -190,6 +203,221 @@ def make_stacked_bar(
     if pct:
         fig.update_yaxes(ticksuffix="%")
     return fig
+
+
+def _top_n_with_others(pivot_df: pd.DataFrame, *, top_n_count: int = 15, exclude_others_named: bool = False, pct: bool = False) -> pd.DataFrame:
+    if pivot_df.empty:
+        return pivot_df.copy()
+
+    if exclude_others_named:
+        named_cols = [c for c in pivot_df.columns if str(c).lower() != "others"]
+        other_cols = [c for c in pivot_df.columns if str(c).lower() == "others"]
+        top_n_named = pivot_df[named_cols].sum().nlargest(top_n_count).index.tolist()
+        rest_cols = [c for c in named_cols if c not in top_n_named] + other_cols
+        base = pivot_df.copy()
+        if pct:
+            row_totals = base.sum(axis=1)
+            base = base.div(row_totals, axis=0).mul(100).fillna(0)
+        top = base[top_n_named].copy()
+        if rest_cols:
+            top["Others"] = base[rest_cols].sum(axis=1)
+        return top
+
+    top_n_cols = pivot_df.sum().nlargest(top_n_count).index.tolist()
+    other_cols = [c for c in pivot_df.columns if c not in top_n_cols]
+    top = pivot_df[top_n_cols].copy()
+    if other_cols:
+        top["Others"] = pivot_df[other_cols].sum(axis=1)
+    return top
+
+
+@st.cache_data(ttl=3600)
+def load_domain_state_cached(
+    base_dir: Path,
+    domain: str,
+    domain_signature: tuple[tuple[str, int, int], ...],
+) -> tuple[dict[str, DatasetLoadResult], FreshnessInfo, list[CheckResult]]:
+    _ = domain_signature
+    datasets = load_domain_datasets(domain, base_dir=base_dir)
+    freshness = load_latest_manifest(base_dir=base_dir, datasets=datasets)
+    checks = run_checks(datasets, freshness, base_dir=base_dir)
+    return datasets, freshness, checks
+
+
+@st.cache_data(ttl=3600)
+def compute_openrouter_views(
+    datasets: dict[str, DatasetLoadResult],
+) -> dict[str, object]:
+    views: dict[str, object] = {}
+
+    for dataset_id in ["top_models", "categories_programming"]:
+        result = datasets.get(dataset_id)
+        if not result or result.frame.empty:
+            views[dataset_id] = {"weeks": [], "pivot_top": pd.DataFrame()}
+            continue
+        frame = result.frame.copy()
+        frame["week_start_date"] = frame["week_start_date"].astype(str)
+        pivot = (
+            frame.pivot_table(index="week_start_date", columns="entity_id", values="metric_value", aggfunc="sum")
+            .fillna(0)
+            .sort_index()
+        )
+        views[dataset_id] = {
+            "weeks": sorted(frame["week_start_date"].unique(), reverse=True),
+            "pivot_top": _top_n_with_others(pivot, top_n_count=15),
+        }
+
+    result = datasets.get("market_share")
+    if result and not result.frame.empty:
+        frame = result.frame.copy()
+        frame["week_start_date"] = frame["week_start_date"].astype(str)
+        pivot = (
+            frame.pivot_table(index="week_start_date", columns="entity_id", values="metric_value", aggfunc="sum")
+            .fillna(0)
+            .sort_index()
+        )
+        views["market_share"] = {
+            "weeks": sorted(frame["week_start_date"].unique(), reverse=True),
+            "pivot_pct_top": _top_n_with_others(pivot, top_n_count=15, exclude_others_named=True, pct=True),
+        }
+    else:
+        views["market_share"] = {"weeks": [], "pivot_pct_top": pd.DataFrame()}
+
+    app_result = datasets.get("app_top_models_daily_snapshot")
+    use_daily = False
+    if not app_result or app_result.frame.empty:
+        app_result = datasets.get("app_usage_daily")
+        use_daily = True
+
+    if app_result and not app_result.frame.empty:
+        frame = app_result.frame.copy()
+        date_col = "usage_date" if use_daily else "snapshot_date"
+        model_col = "model_permaslug"
+        value_col = "total_tokens"
+        frame[date_col] = frame[date_col].astype(str)
+        pivot = (
+            frame.pivot_table(index=date_col, columns=model_col, values=value_col, aggfunc="sum")
+            .fillna(0)
+            .sort_index()
+        )
+        views["app_usage"] = {
+            "date_col": date_col,
+            "value_col": value_col,
+            "days": sorted(frame[date_col].unique(), reverse=True),
+            "pivot_top": _top_n_with_others(pivot, top_n_count=15),
+        }
+    else:
+        views["app_usage"] = {"date_col": "usage_date", "value_col": "total_tokens", "days": [], "pivot_top": pd.DataFrame()}
+
+    return views
+
+
+@st.cache_data(ttl=3600)
+def compute_github_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, dict[str, object]]:
+    views: dict[str, dict[str, object]] = {}
+    for dataset_id in ["github_trending_daily", "github_trending_weekly", "github_trending_monthly"]:
+        result = datasets.get(dataset_id)
+        if not result or result.frame.empty:
+            views[dataset_id] = {"latest_date": None, "latest_df": pd.DataFrame(), "history_top5": pd.DataFrame()}
+            continue
+
+        df = result.frame.copy()
+        df["scrape_date"] = df["scrape_date"].astype(str)
+        latest_date = df["scrape_date"].max()
+        latest_df = df[df["scrape_date"] == latest_date].copy()
+        latest_df["stars_today"] = pd.to_numeric(latest_df["stars_today"], errors="coerce").fillna(0)
+        latest_df = latest_df.sort_values("stars_today", ascending=False)
+        top_5_names = latest_df.head(5)["name"].tolist()
+        hist_df = df[df["name"].isin(top_5_names)].copy()
+        history_top5 = (
+            hist_df.pivot_table(index="scrape_date", columns="name", values="stars_today", aggfunc="sum").fillna(0)
+            if not hist_df.empty
+            else pd.DataFrame()
+        )
+        views[dataset_id] = {
+            "latest_date": latest_date,
+            "latest_df": latest_df,
+            "history_top5": history_top5,
+        }
+    return views
+
+
+@st.cache_data(ttl=3600)
+def compute_provider_adoption_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, object]:
+    views: dict[str, object] = {}
+
+    pypi_result = datasets.get("pypi_downloads_daily")
+    pypi = pypi_result.frame.copy() if pypi_result and pypi_result.frame is not None else pd.DataFrame()
+    pypi = pypi[pypi["with_mirrors"] == False].copy() if not pypi.empty else pypi
+    if not pypi.empty:
+        pypi_grouped = pypi.groupby(["download_date", "provider_display_name"], dropna=False)["downloads"].sum().reset_index()
+        pypi_grouped["download_date"] = pypi_grouped["download_date"].astype(str)
+        latest_pypi_date = pypi_grouped["download_date"].max()
+        latest_pypi = pypi_grouped[pypi_grouped["download_date"] == latest_pypi_date].copy()
+    else:
+        pypi_grouped = pd.DataFrame(columns=["download_date", "provider_display_name", "downloads"])
+        latest_pypi_date = None
+        latest_pypi = pd.DataFrame(columns=["download_date", "provider_display_name", "downloads"])
+
+    provider_order = sorted(latest_pypi["provider_display_name"].dropna().astype(str).unique().tolist()) if not latest_pypi.empty else []
+    views["pypi_grouped"] = pypi_grouped
+    views["latest_pypi_date"] = latest_pypi_date
+    views["latest_pypi"] = latest_pypi
+    views["provider_order"] = provider_order
+
+    github_candidates_result = datasets.get("github_repo_candidates_daily")
+    github_rollup_result = datasets.get("github_repo_rollup_daily")
+    github_signals_result = datasets.get("github_provider_signals_daily")
+    github_candidates = github_candidates_result.frame.copy() if github_candidates_result and github_candidates_result.frame is not None else pd.DataFrame()
+    github_rollup = github_rollup_result.frame.copy() if github_rollup_result and github_rollup_result.frame is not None else pd.DataFrame()
+    github_signals = github_signals_result.frame.copy() if github_signals_result and github_signals_result.frame is not None else pd.DataFrame()
+
+    if not github_candidates.empty and provider_order:
+        github_candidates = github_candidates[github_candidates["provider_display_name"].isin(provider_order)].copy()
+        github_candidates["repo_created_date"] = github_candidates["repo_created_date"].astype(str)
+    if not github_rollup.empty and provider_order:
+        github_rollup = github_rollup[github_rollup["provider_display_name"].isin(provider_order)].copy()
+        github_rollup["signal_date"] = github_rollup["signal_date"].astype(str)
+    if not github_signals.empty and provider_order:
+        github_signals = github_signals[github_signals["provider_display_name"].isin(provider_order)].copy()
+        github_signals["signal_date"] = github_signals["signal_date"].astype(str)
+
+    latest_github_date = github_candidates["repo_created_date"].max() if not github_candidates.empty else None
+
+    views["github_candidates"] = github_candidates
+    views["github_rollup"] = github_rollup
+    views["github_signals"] = github_signals
+    views["latest_github_date"] = latest_github_date
+
+    if not github_candidates.empty:
+        candidates_daily = (
+            github_candidates.groupby(["repo_created_date", "provider_display_name"], dropna=False)["repo_full_name"]
+            .nunique()
+            .reset_index(name="repo_candidates")
+        )
+    else:
+        candidates_daily = pd.DataFrame(columns=["repo_created_date", "provider_display_name", "repo_candidates"])
+
+    if not github_rollup.empty:
+        rollup_daily = (
+            github_rollup.groupby(["signal_date", "provider_display_name"], dropna=False)
+            .agg(
+                signal_repos=("repo_full_name", "nunique"),
+                manifest_repos=("has_manifest_dependency", "sum"),
+                import_repos=("has_code_import", "sum"),
+                env_repos=("has_env_var", "sum"),
+                model_repos=("has_model_name", "sum"),
+            )
+            .reset_index()
+        )
+    else:
+        rollup_daily = pd.DataFrame(
+            columns=["signal_date", "provider_display_name", "signal_repos", "manifest_repos", "import_repos", "env_repos", "model_repos"]
+        )
+
+    views["candidates_daily"] = candidates_daily
+    views["rollup_daily"] = rollup_daily
+    return views
 
 
 # ---------------------------------------------------------------------------
@@ -358,7 +586,7 @@ def render_header(freshness: FreshnessInfo) -> None:
     )
 
 
-def render_kpi_row(datasets: dict[str, DatasetLoadResult]) -> None:
+def render_kpi_row(datasets: dict[str, DatasetLoadResult], openrouter_views: dict[str, object]) -> None:
     tm_result = datasets.get("top_models")
     ms_result = datasets.get("market_share")
     week_context = rankings_week_context(datasets)
@@ -481,7 +709,7 @@ def render_rankings_semantics_note(datasets: dict[str, DatasetLoadResult]) -> No
     )
 
 
-def render_top_models_chart(datasets: dict[str, DatasetLoadResult]) -> None:
+def render_top_models_chart(datasets: dict[str, DatasetLoadResult], openrouter_views: dict[str, object]) -> None:
     st.markdown('<div class="section-title">Top Models — Weekly Token Usage (Week Starting)</div>', unsafe_allow_html=True)
     st.markdown(
         f'<div class="section-subtitle">Completed weekly buckets aligned to week start dates from OpenRouter rankings.</div>',
@@ -499,7 +727,7 @@ def render_top_models_chart(datasets: dict[str, DatasetLoadResult]) -> None:
     )
     
     # --- Period Selector & Total ---
-    weeks = sorted(tm["week_start_date"].unique(), reverse=True)
+    weeks = openrouter_views["top_models"]["weeks"]
     sel_week = st.selectbox("Analyze week starting", options=weeks, index=0, key="tm_week_sel")
     week_total = tm[tm["week_start_date"] == sel_week]["metric_value"].sum()
     st.markdown(
@@ -510,25 +738,11 @@ def render_top_models_chart(datasets: dict[str, DatasetLoadResult]) -> None:
         unsafe_allow_html=True
     )
 
-    pivot = (
-        tm.pivot_table(index="week_start_date", columns="entity_id", values="metric_value", aggfunc="sum")
-        .fillna(0)
-        .sort_index()
-    )
-
-    # Increase Top N from 9 to 15
-    top_n_count = 15
-    top_n_cols = pivot.sum().nlargest(top_n_count).index.tolist()
-    other_cols = [c for c in pivot.columns if c not in top_n_cols]
-    pivot_top = pivot[top_n_cols].copy()
-    if other_cols:
-        pivot_top["Others"] = pivot[other_cols].sum(axis=1)
-
-    fig = make_stacked_bar(pivot_top, MODEL_COLORS, y_title="Tokens")
+    fig = make_stacked_bar(openrouter_views["top_models"]["pivot_top"], MODEL_COLORS, y_title="Tokens")
     st.plotly_chart(fig, use_container_width=True, theme=None)
 
 
-def render_market_share_section(datasets: dict[str, DatasetLoadResult]) -> None:
+def render_market_share_section(datasets: dict[str, DatasetLoadResult], openrouter_views: dict[str, object]) -> None:
     st.markdown('<div class="section-title">Market Share — Token Distribution by Author (Week Ending)</div>', unsafe_allow_html=True)
     st.markdown(
         f'<div class="section-subtitle">Completed weekly buckets aligned to week end dates from OpenRouter rankings.</div>',
@@ -546,7 +760,7 @@ def render_market_share_section(datasets: dict[str, DatasetLoadResult]) -> None:
     )
 
     # --- Period Selector ---
-    ms_weeks = sorted(ms["week_start_date"].unique(), reverse=True)
+    ms_weeks = openrouter_views["market_share"]["weeks"]
     sel_ms_wk = st.selectbox("Analyze week ending", options=ms_weeks, index=0, key="ms_week_sel")
     ms_wk_total = ms[ms["week_start_date"] == sel_ms_wk]["metric_value"].sum()
     st.markdown(
@@ -557,31 +771,10 @@ def render_market_share_section(datasets: dict[str, DatasetLoadResult]) -> None:
         unsafe_allow_html=True
     )
 
-    ms_pivot = (
-        ms.pivot_table(index="week_start_date", columns="entity_id", values="metric_value", aggfunc="sum")
-        .fillna(0)
-        .sort_index()
-    )
-    # exclude the catch-all "others" column from the normalisation base if present
-    # Increase Top N from 8 to 15
-    top_n_count = 15
-    named_cols  = [c for c in ms_pivot.columns if c.lower() != "others"]
-    other_col   = [c for c in ms_pivot.columns if c.lower() == "others"]
-    top_n_named = ms_pivot[named_cols].sum().nlargest(top_n_count).index.tolist()
-    rest_cols   = [c for c in named_cols if c not in top_n_named] + other_col
-
-    pct_df = ms_pivot.copy()
-    row_totals = pct_df.sum(axis=1)
-    pct_df = pct_df.div(row_totals, axis=0).mul(100).fillna(0)
-
-    pct_top = pct_df[top_n_named].copy()
-    if rest_cols:
-        pct_top["Others"] = pct_df[rest_cols].sum(axis=1)
-
     chart_col, legend_col = st.columns([2, 1], gap="large")
 
     with chart_col:
-        fig = make_stacked_bar(pct_top, MODEL_COLORS, y_title="Share (%)", pct=True)
+        fig = make_stacked_bar(openrouter_views["market_share"]["pivot_pct_top"], MODEL_COLORS, y_title="Share (%)", pct=True)
         fig.update_yaxes(range=[0, 100])
         st.plotly_chart(fig, use_container_width=True, theme=None)
 
@@ -696,7 +889,7 @@ def render_leaderboard(datasets: dict[str, DatasetLoadResult]) -> None:
         st.markdown("".join(cards[5:]), unsafe_allow_html=True)
 
 
-def render_programming_chart(datasets: dict[str, DatasetLoadResult]) -> None:
+def render_programming_chart(datasets: dict[str, DatasetLoadResult], openrouter_views: dict[str, object]) -> None:
     st.markdown('<div class="section-title">Programming — Weekly Token Usage (Week Starting)</div>', unsafe_allow_html=True)
     st.markdown(
         '<div class="section-subtitle">Coding-only weekly rankings from OpenRouter, aligned to week start dates.</div>',
@@ -713,7 +906,7 @@ def render_programming_chart(datasets: dict[str, DatasetLoadResult]) -> None:
         unsafe_allow_html=True,
     )
 
-    weeks = sorted(frame["week_start_date"].unique(), reverse=True)
+    weeks = openrouter_views["categories_programming"]["weeks"]
     sel_week = st.selectbox("Analyze programming week starting", options=weeks, index=0, key="prog_week_sel")
     week_total = frame[frame["week_start_date"] == sel_week]["metric_value"].sum()
     st.markdown(
@@ -724,24 +917,11 @@ def render_programming_chart(datasets: dict[str, DatasetLoadResult]) -> None:
         unsafe_allow_html=True
     )
 
-    pivot = (
-        frame.pivot_table(index="week_start_date", columns="entity_id", values="metric_value", aggfunc="sum")
-        .fillna(0)
-        .sort_index()
-    )
-
-    top_n_count = 15
-    top_n_cols = pivot.sum().nlargest(top_n_count).index.tolist()
-    other_cols = [c for c in pivot.columns if c not in top_n_cols]
-    pivot_top = pivot[top_n_cols].copy()
-    if other_cols:
-        pivot_top["Others"] = pivot[other_cols].sum(axis=1)
-
-    fig = make_stacked_bar(pivot_top, MODEL_COLORS, y_title="Tokens")
+    fig = make_stacked_bar(openrouter_views["categories_programming"]["pivot_top"], MODEL_COLORS, y_title="Tokens")
     st.plotly_chart(fig, use_container_width=True, theme=None)
 
 
-def render_app_usage_chart(datasets: dict[str, DatasetLoadResult]) -> None:
+def render_app_usage_chart(datasets: dict[str, DatasetLoadResult], openrouter_views: dict[str, object]) -> None:
     st.markdown('<div class="section-title">App Intelligence — Daily Model Usage</div>', unsafe_allow_html=True)
 
     # prefer app_top_models_daily_snapshot, fall back to app_usage_daily
@@ -756,19 +936,13 @@ def render_app_usage_chart(datasets: dict[str, DatasetLoadResult]) -> None:
 
     frame = result.frame.copy()
 
-    if use_daily:
-        date_col  = "usage_date"
-        model_col = "model_permaslug"
-        val_col   = "total_tokens"
-    else:
-        date_col  = "snapshot_date"
-        model_col = "model_permaslug"
-        val_col   = "total_tokens"
+    date_col = openrouter_views["app_usage"]["date_col"]
+    val_col = openrouter_views["app_usage"]["value_col"]
 
     frame[date_col] = frame[date_col].astype(str)
 
     # --- Period Selector & Total ---
-    days = sorted(frame[date_col].unique(), reverse=True)
+    days = openrouter_views["app_usage"]["days"]
     sel_day = st.selectbox("Analyze day", options=days, index=0, key="app_day_sel")
     day_total = frame[frame[date_col] == sel_day][val_col].sum()
     st.markdown(
@@ -779,21 +953,7 @@ def render_app_usage_chart(datasets: dict[str, DatasetLoadResult]) -> None:
         unsafe_allow_html=True
     )
 
-    pivot = (
-        frame.pivot_table(index=date_col, columns=model_col, values=val_col, aggfunc="sum")
-        .fillna(0)
-        .sort_index()
-    )
-
-    # Increase Top N from 7 to 15
-    top_n_count = 15
-    top_n_cols = pivot.sum().nlargest(top_n_count).index.tolist()
-    rest_cols = [c for c in pivot.columns if c not in top_n_cols]
-    pivot_top = pivot[top_n_cols].copy()
-    if rest_cols:
-        pivot_top["Others"] = pivot[rest_cols].sum(axis=1)
-
-    fig = make_stacked_bar(pivot_top, MODEL_COLORS, y_title="Tokens", height=340)
+    fig = make_stacked_bar(openrouter_views["app_usage"]["pivot_top"], MODEL_COLORS, y_title="Tokens", height=340)
     st.plotly_chart(fig, use_container_width=True, theme=None)
 
 
@@ -884,7 +1044,7 @@ def render_apps_tables(datasets: dict[str, DatasetLoadResult]) -> None:
                 st.plotly_chart(fig_u, use_container_width=True, theme=None)
 
 
-def render_github_trending_section(datasets: dict[str, DatasetLoadResult]) -> None:
+def render_github_trending_section(datasets: dict[str, DatasetLoadResult], github_views: dict[str, dict[str, object]]) -> None:
     st.markdown('<div class="section-title">GitHub Trending Repositories</div>', unsafe_allow_html=True)
     
     # 1. Period Selector
@@ -900,12 +1060,9 @@ def render_github_trending_section(datasets: dict[str, DatasetLoadResult]) -> No
         st.info(f"No data available for {period_label.lower()}.")
         return
 
-    # Ensure dates are strings for sorting
-    df["scrape_date"] = df["scrape_date"].astype(str)
-    latest_date = df["scrape_date"].max()
-    latest_df = df[df["scrape_date"] == latest_date].copy()
-    latest_df["stars_today"] = pd.to_numeric(latest_df["stars_today"], errors="coerce").fillna(0)
-    latest_df = latest_df.sort_values("stars_today", ascending=False)
+    period_view = github_views[dataset_id]
+    latest_date = period_view["latest_date"]
+    latest_df = period_view["latest_df"]
 
     # --- KPIs ---
     top_repo = latest_df.iloc[0] if not latest_df.empty else None
@@ -945,12 +1102,8 @@ def render_github_trending_section(datasets: dict[str, DatasetLoadResult]) -> No
 
     with chart_tab:
         # Plot top 5 growth over time
-        top_5_names = latest_df.head(5)["name"].tolist()
-        hist_df = df[df["name"].isin(top_5_names)].copy()
-        
-        if not hist_df.empty:
-            pivot_h = hist_df.pivot_table(index="scrape_date", columns="name", values="stars_today", aggfunc="sum").fillna(0)
-            
+        pivot_h = period_view["history_top5"]
+        if not pivot_h.empty:
             fig = go.Figure()
             for i, repo_name in enumerate(pivot_h.columns):
                 fig.add_trace(go.Scatter(
@@ -1003,7 +1156,7 @@ def render_github_trending_section(datasets: dict[str, DatasetLoadResult]) -> No
                 )
 
 
-def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult]) -> None:
+def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], provider_views: dict[str, object]) -> None:
     st.markdown('<div class="section-title">Provider Adoption Signals</div>', unsafe_allow_html=True)
 
     pypi_result = datasets.get("pypi_downloads_daily")
@@ -1021,49 +1174,18 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult]) -> 
         st.info("No PyPI provider data available yet.")
         return
 
-    pypi_grouped = (
-        pypi.groupby(["download_date", "provider_display_name"], dropna=False)["downloads"].sum().reset_index()
-        if not pypi.empty
-        else pd.DataFrame(columns=["download_date", "provider_display_name", "downloads"])
-    )
-    pypi_grouped["download_date"] = pypi_grouped["download_date"].astype(str)
-    latest_pypi_date = pypi_grouped["download_date"].max()
-    latest_pypi = pypi_grouped[pypi_grouped["download_date"] == latest_pypi_date].copy()
-
-    provider_order = sorted(latest_pypi["provider_display_name"].dropna().astype(str).unique().tolist())
+    pypi_grouped = provider_views["pypi_grouped"]
+    latest_pypi_date = provider_views["latest_pypi_date"]
+    latest_pypi = provider_views["latest_pypi"]
+    provider_order = provider_views["provider_order"]
     if not provider_order:
         st.info("No provider rows available yet.")
         return
 
-    github_candidates = (
-        github_candidates_result.frame.copy()
-        if github_candidates_result and github_candidates_result.frame is not None
-        else pd.DataFrame()
-    )
-    github_rollup = (
-        github_rollup_result.frame.copy()
-        if github_rollup_result and github_rollup_result.frame is not None
-        else pd.DataFrame()
-    )
-    github_signals = (
-        github_signals_result.frame.copy()
-        if github_signals_result and github_signals_result.frame is not None
-        else pd.DataFrame()
-    )
-
-    if not github_candidates.empty:
-        github_candidates = github_candidates[github_candidates["provider_display_name"].isin(provider_order)].copy()
-        github_candidates["repo_created_date"] = github_candidates["repo_created_date"].astype(str)
-    if not github_rollup.empty:
-        github_rollup = github_rollup[github_rollup["provider_display_name"].isin(provider_order)].copy()
-        github_rollup["signal_date"] = github_rollup["signal_date"].astype(str)
-    if not github_signals.empty:
-        github_signals = github_signals[github_signals["provider_display_name"].isin(provider_order)].copy()
-        github_signals["signal_date"] = github_signals["signal_date"].astype(str)
-
-    latest_github_date = None
-    if not github_candidates.empty:
-        latest_github_date = github_candidates["repo_created_date"].max()
+    github_candidates = provider_views["github_candidates"]
+    github_rollup = provider_views["github_rollup"]
+    github_signals = provider_views["github_signals"]
+    latest_github_date = provider_views["latest_github_date"]
 
     top_download_row = latest_pypi.sort_values("downloads", ascending=False).iloc[0] if not latest_pypi.empty else None
     total_latest_downloads = latest_pypi["downloads"].sum() if not latest_pypi.empty else 0
@@ -1161,22 +1283,8 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult]) -> 
         if github_candidates.empty or github_rollup.empty:
             st.info("No GitHub provider signal data available yet.")
         else:
-            candidates_daily = (
-                github_candidates.groupby(["repo_created_date", "provider_display_name"], dropna=False)["repo_full_name"]
-                .nunique()
-                .reset_index(name="repo_candidates")
-            )
-            rollup_daily = (
-                github_rollup.groupby(["signal_date", "provider_display_name"], dropna=False)
-                .agg(
-                    signal_repos=("repo_full_name", "nunique"),
-                    manifest_repos=("has_manifest_dependency", "sum"),
-                    import_repos=("has_code_import", "sum"),
-                    env_repos=("has_env_var", "sum"),
-                    model_repos=("has_model_name", "sum"),
-                )
-                .reset_index()
-            )
+            candidates_daily = provider_views["candidates_daily"]
+            rollup_daily = provider_views["rollup_daily"]
 
             col_left, col_right = st.columns(2)
             with col_left:
@@ -1328,18 +1436,6 @@ def render_checks(checks: list[CheckResult]) -> None:
             )
 
 
-@st.cache_data(ttl=3600)
-def load_state_cached(
-    base_dir: Path, data_signature: tuple[tuple[str, int, int], ...]
-) -> tuple[dict[str, DatasetLoadResult], FreshnessInfo, list[CheckResult]]:
-    """Cached version of load_state to avoid re-running on every health check/refresh."""
-    _ = data_signature
-    datasets = load_all_datasets(base_dir=base_dir)
-    freshness = load_latest_manifest(base_dir=base_dir, datasets=datasets)
-    checks = run_checks(datasets, freshness, base_dir=base_dir)
-    return datasets, freshness, checks
-
-
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -1353,8 +1449,64 @@ def main() -> None:
     
     inject_css()
 
-    # 3. Use cached state
-    datasets, freshness, checks = load_state_cached(BASE_DIR, build_data_signature(BASE_DIR))
+    # 3. Load per-domain cached state
+    openrouter_datasets, openrouter_freshness, openrouter_checks = load_domain_state_cached(
+        BASE_DIR, "rankings", build_domain_signature(BASE_DIR, "rankings")
+    )
+    apps_datasets, apps_freshness, apps_checks = load_domain_state_cached(
+        BASE_DIR, "apps", build_domain_signature(BASE_DIR, "apps")
+    )
+    github_datasets, github_freshness, github_checks = load_domain_state_cached(
+        BASE_DIR, "github", build_domain_signature(BASE_DIR, "github")
+    )
+    provider_datasets, provider_freshness, provider_checks = load_domain_state_cached(
+        BASE_DIR, "provider_adoption", build_domain_signature(BASE_DIR, "provider_adoption")
+    )
+
+    datasets = {
+        **openrouter_datasets,
+        **apps_datasets,
+        **github_datasets,
+        **provider_datasets,
+    }
+    freshness = FreshnessInfo(
+        latest_scraped_at=max(
+            [value for value in [openrouter_freshness.latest_scraped_at, apps_freshness.latest_scraped_at, github_freshness.latest_scraped_at, provider_freshness.latest_scraped_at] if value],
+            default=None,
+        ),
+        latest_run_id=next(
+            (value for value in [
+                openrouter_freshness.latest_run_id,
+                apps_freshness.latest_run_id,
+                github_freshness.latest_run_id,
+                provider_freshness.latest_run_id,
+            ] if value),
+            None,
+        ),
+        latest_manifest_path=next(
+            (value for value in [
+                openrouter_freshness.latest_manifest_path,
+                apps_freshness.latest_manifest_path,
+                github_freshness.latest_manifest_path,
+                provider_freshness.latest_manifest_path,
+            ] if value),
+            None,
+        ),
+        latest_manifest_scraped_at=max(
+            [value for value in [
+                openrouter_freshness.latest_manifest_scraped_at,
+                apps_freshness.latest_manifest_scraped_at,
+                github_freshness.latest_manifest_scraped_at,
+                provider_freshness.latest_manifest_scraped_at,
+            ] if value],
+            default=None,
+        ),
+    )
+    checks = openrouter_checks + apps_checks + github_checks + provider_checks
+
+    openrouter_views = compute_openrouter_views({**openrouter_datasets, **apps_datasets})
+    github_views = compute_github_views(github_datasets)
+    provider_views = compute_provider_adoption_views(provider_datasets)
 
     render_header(freshness)
     
@@ -1362,19 +1514,19 @@ def main() -> None:
     
     with main_tabs[0]:
         render_rankings_semantics_note(datasets)
-        render_kpi_row(datasets)
-        render_top_models_chart(datasets)
-        render_market_share_section(datasets)
+        render_kpi_row(datasets, openrouter_views)
+        render_top_models_chart(datasets, openrouter_views)
+        render_market_share_section(datasets, openrouter_views)
         render_leaderboard(datasets)
-        render_programming_chart(datasets)
-        render_app_usage_chart(datasets)
+        render_programming_chart(datasets, openrouter_views)
+        render_app_usage_chart(datasets, openrouter_views)
         render_apps_tables(datasets)
     
     with main_tabs[1]:
-        render_github_trending_section(datasets)
+        render_github_trending_section(datasets, github_views)
 
     with main_tabs[2]:
-        render_provider_adoption_section(datasets)
+        render_provider_adoption_section(datasets, provider_views)
         
     render_checks(checks)
 
