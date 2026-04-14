@@ -18,12 +18,14 @@ from provider_adoption_data.models import (
 )
 from provider_adoption_data.sources.config import get_provider_registry
 from provider_adoption_data.sources.github import GithubSource
+from provider_adoption_data.sources.npm import NpmDownloadsSource
 from provider_adoption_data.sources.pypi import PypiStatsSource
 from provider_adoption_data.storage import StorageManager
 
 
 DATASET_IDS = (
     "pypi_downloads_daily",
+    "npm_downloads_daily",
     "github_repo_candidates_daily",
     "github_provider_signals_daily",
     "github_repo_rollup_daily",
@@ -44,11 +46,13 @@ class ProviderAdoptionPipeline:
         base_dir: Path,
         *,
         pypi_source: PypiStatsSource | None = None,
+        npm_source: NpmDownloadsSource | None = None,
         github_source: GithubSource | None = None,
     ) -> None:
         self.base_dir = base_dir
         self.storage = StorageManager(base_dir)
         self.pypi_source = pypi_source or PypiStatsSource()
+        self.npm_source = npm_source or NpmDownloadsSource()
         self.github_source = github_source or GithubSource()
         self.score_weights = {"github": 0.6, "pypi": 0.4}
 
@@ -80,6 +84,42 @@ class ProviderAdoptionPipeline:
         written = self.storage.upsert_dataset("pypi_downloads_daily", records)
         deltas = {"pypi_downloads_daily": max(len(written) - len(existing), 0)}
         return PipelineResult(context.run_id, {"pypi_downloads_daily": len(written)}, str(raw_run_dir), deltas)
+
+    def run_npm_daily_update(self, *, target_date: str | date | None = None, provider_slugs: list[str] | None = None) -> PipelineResult:
+        providers = get_provider_registry(provider_slugs)
+        resolved_date = coerce_target_date(target_date)
+        context = self._create_context()
+        start_date = self._resolve_npm_start_date(resolved_date, providers)
+        snapshots = self.npm_source.fetch_snapshots(providers, start_date, resolved_date)
+        manifest = self._build_manifest(
+            "npm-daily-update",
+            context,
+            target_date=resolved_date,
+            providers=providers,
+            range_start_date=start_date,
+        )
+        raw_run_dir = self.storage.write_raw_run(context.run_id, snapshots, manifest)
+        points = self.npm_source.extract(snapshots, providers)
+
+        records = [
+            DatasetRecord(
+                dataset_id="npm_downloads_daily",
+                source_url=point.source_url,
+                source_run_id=context.run_id,
+                scraped_at=context.scraped_at_iso,
+                provider=point.provider,
+                provider_display_name=point.provider_display_name,
+                package_name=point.package_name,
+                package_type=point.package_type,
+                download_date=point.download_date,
+                downloads=point.downloads,
+            )
+            for point in points
+        ]
+        existing = self.storage.load_dataset("npm_downloads_daily")
+        written = self.storage.upsert_dataset("npm_downloads_daily", records)
+        deltas = {"npm_downloads_daily": max(len(written) - len(existing), 0)}
+        return PipelineResult(context.run_id, {"npm_downloads_daily": len(written)}, str(raw_run_dir), deltas)
 
     def run_github_daily_update(self, *, target_date: str | date | None = None, provider_slugs: list[str] | None = None) -> PipelineResult:
         providers = get_provider_registry(provider_slugs)
@@ -148,9 +188,11 @@ class ProviderAdoptionPipeline:
             raise ValueError("end_date must be greater than or equal to start_date")
 
         pypi_result = self.run_pypi_daily_update(target_date=end, provider_slugs=[provider.slug for provider in providers])
+        npm_result = self.run_npm_daily_update(target_date=end, provider_slugs=[provider.slug for provider in providers])
         totals = dict(pypi_result.datasets_written)
+        totals.update(npm_result.datasets_written)
         current = start
-        last_raw_run_dir = pypi_result.raw_run_dir
+        last_raw_run_dir = npm_result.raw_run_dir
         while current <= end:
             github_result = self.run_github_daily_update(target_date=current, provider_slugs=[provider.slug for provider in providers])
             derived_result = self.run_derived_daily_update(target_date=current, provider_slugs=[provider.slug for provider in providers])
@@ -166,6 +208,7 @@ class ProviderAdoptionPipeline:
         return {
             "providers": len(providers),
             "pypi_packages": sum(len(provider.pypi_packages) for provider in providers),
+            "npm_packages": sum(len(provider.npm_packages) for provider in providers),
             "github_languages": len(self.github_source.SEARCH_LANGUAGE_BUCKETS),
         }
 
@@ -175,8 +218,16 @@ class ProviderAdoptionPipeline:
             scraped_at=datetime.now(UTC),
         )
 
-    def _build_manifest(self, mode: str, context: RunContext, *, target_date: date, providers) -> dict:
-        return {
+    def _build_manifest(
+        self,
+        mode: str,
+        context: RunContext,
+        *,
+        target_date: date,
+        providers,
+        range_start_date: date | None = None,
+    ) -> dict:
+        manifest = {
             "run_id": context.run_id,
             "mode": mode,
             "scraped_at": context.scraped_at_iso,
@@ -185,6 +236,9 @@ class ProviderAdoptionPipeline:
             "datasets": list(DATASET_IDS),
             "parser_version": "0.1.0",
         }
+        if range_start_date is not None:
+            manifest["range_start_date"] = range_start_date.isoformat()
+        return manifest
 
     def _build_candidate_records(self, context: RunContext, providers, repositories) -> list[DatasetRecord]:
         records: list[DatasetRecord] = []
@@ -292,6 +346,17 @@ class ProviderAdoptionPipeline:
                     )
                 )
         return records
+
+    def _resolve_npm_start_date(self, target_date: date, providers) -> date:
+        pypi = self.storage.load_dataset("pypi_downloads_daily")
+        if not pypi.empty:
+            provider_slugs = [provider.slug for provider in providers]
+            filtered = pypi[pypi["provider"].isin(provider_slugs)].copy()
+            filtered["download_date"] = filtered["download_date"].astype("string")
+            date_values = filtered["download_date"].dropna().astype(str)
+            if not date_values.empty:
+                return date.fromisoformat(min(date_values))
+        return target_date - timedelta(days=180)
 
     def _build_momentum_records(self, context: RunContext, providers, target_date: date) -> list[DatasetRecord]:
         pypi = self.storage.load_dataset("pypi_downloads_daily")

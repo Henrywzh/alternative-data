@@ -37,6 +37,10 @@ jobs:
         run: |
           python -m provider_adoption_data.cli --base-dir . pypi-daily-update
 
+      - name: Run npm update
+        run: |
+          python -m provider_adoption_data.cli --base-dir . --date "$TARGET_DATE" npm-daily-update
+
       - name: Run GitHub update
         run: |
           python -m provider_adoption_data.cli --base-dir . --date "$TARGET_DATE" github-daily-update

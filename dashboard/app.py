@@ -347,6 +347,7 @@ def compute_provider_adoption_views(datasets: dict[str, DatasetLoadResult]) -> d
     views: dict[str, object] = {}
 
     pypi_result = datasets.get("pypi_downloads_daily")
+    npm_result = datasets.get("npm_downloads_daily")
     pypi = pypi_result.frame.copy() if pypi_result and pypi_result.frame is not None else pd.DataFrame()
     pypi = pypi[pypi["with_mirrors"] == False].copy() if not pypi.empty else pypi
     if not pypi.empty:
@@ -359,10 +360,24 @@ def compute_provider_adoption_views(datasets: dict[str, DatasetLoadResult]) -> d
         latest_pypi_date = None
         latest_pypi = pd.DataFrame(columns=["download_date", "provider_display_name", "downloads"])
 
+    npm = npm_result.frame.copy() if npm_result and npm_result.frame is not None else pd.DataFrame()
+    if not npm.empty:
+        npm_grouped = npm.groupby(["download_date", "provider_display_name"], dropna=False)["downloads"].sum().reset_index()
+        npm_grouped["download_date"] = npm_grouped["download_date"].astype(str)
+        latest_npm_date = npm_grouped["download_date"].max()
+        latest_npm = npm_grouped[npm_grouped["download_date"] == latest_npm_date].copy()
+    else:
+        npm_grouped = pd.DataFrame(columns=["download_date", "provider_display_name", "downloads"])
+        latest_npm_date = None
+        latest_npm = pd.DataFrame(columns=["download_date", "provider_display_name", "downloads"])
+
     provider_order = sorted(latest_pypi["provider_display_name"].dropna().astype(str).unique().tolist()) if not latest_pypi.empty else []
     views["pypi_grouped"] = pypi_grouped
     views["latest_pypi_date"] = latest_pypi_date
     views["latest_pypi"] = latest_pypi
+    views["npm_grouped"] = npm_grouped
+    views["latest_npm_date"] = latest_npm_date
+    views["latest_npm"] = latest_npm
     views["provider_order"] = provider_order
 
     github_candidates_result = datasets.get("github_repo_candidates_daily")
@@ -1160,12 +1175,13 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
     st.markdown('<div class="section-title">Provider Adoption Signals</div>', unsafe_allow_html=True)
 
     pypi_result = datasets.get("pypi_downloads_daily")
+    npm_result = datasets.get("npm_downloads_daily")
     github_candidates_result = datasets.get("github_repo_candidates_daily")
     github_rollup_result = datasets.get("github_repo_rollup_daily")
     github_signals_result = datasets.get("github_provider_signals_daily")
 
     if not pypi_result or not render_dataset_guard(pypi_result):
-        st.info("Run the provider-adoption pipeline to populate GitHub + PyPI scraped data.")
+        st.info("Run the provider-adoption pipeline to populate GitHub, PyPI, and npm scraped data.")
         return
 
     pypi = pypi_result.frame.copy()
@@ -1177,6 +1193,9 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
     pypi_grouped = provider_views["pypi_grouped"]
     latest_pypi_date = provider_views["latest_pypi_date"]
     latest_pypi = provider_views["latest_pypi"]
+    npm_grouped = provider_views["npm_grouped"]
+    latest_npm_date = provider_views["latest_npm_date"]
+    latest_npm = provider_views["latest_npm"]
     provider_order = provider_views["provider_order"]
     if not provider_order:
         st.info("No provider rows available yet.")
@@ -1224,11 +1243,11 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
             unsafe_allow_html=True,
         )
 
-    downloads_tab, share_tab, github_tab, summary_tab = st.tabs(
-        ["PyPI Downloads", "PyPI Share", "GitHub Signals", "Latest Summary"]
+    pypi_downloads_tab, pypi_share_tab, npm_downloads_tab, npm_share_tab, github_tab, summary_tab = st.tabs(
+        ["PyPI Downloads", "PyPI Share", "npm Downloads", "npm Share", "GitHub Signals", "Latest Summary"]
     )
 
-    with downloads_tab:
+    with pypi_downloads_tab:
         pivot_downloads = (
             pypi_grouped.pivot_table(index="download_date", columns="provider_display_name", values="downloads", aggfunc="last")
             .fillna(0)
@@ -1257,7 +1276,7 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
         )
         st.plotly_chart(fig, use_container_width=True, theme=None)
 
-    with share_tab:
+    with pypi_share_tab:
         totals = pypi_grouped.groupby("download_date")["downloads"].sum().rename("total").reset_index()
         share = pypi_grouped.merge(totals, on="download_date", how="left")
         share["share"] = share["downloads"] / share["total"].where(share["total"] != 0)
@@ -1278,6 +1297,63 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
             use_container_width=True,
             theme=None,
         )
+
+    with npm_downloads_tab:
+        if npm_result is None or npm_result.frame.empty or npm_grouped.empty:
+            st.info("No npm provider data available yet.")
+        else:
+            pivot_downloads = (
+                npm_grouped.pivot_table(index="download_date", columns="provider_display_name", values="downloads", aggfunc="last")
+                .fillna(0)
+                .sort_index()
+            )
+            fig = go.Figure()
+            for i, provider_name in enumerate(pivot_downloads.columns):
+                fig.add_trace(
+                    go.Scatter(
+                        x=pivot_downloads.index,
+                        y=pivot_downloads[provider_name],
+                        name=provider_name,
+                        mode="lines+markers",
+                        line=dict(width=3, color=MODEL_COLORS[i % len(MODEL_COLORS)]),
+                        hovertemplate=f"<b>{provider_name}</b><br>%{{x}}<br>%{{y:,.0f}} downloads<extra></extra>",
+                    )
+                )
+            fig.update_layout(
+                template="plotly_white",
+                title="npm Daily Download History",
+                xaxis_title="Date",
+                yaxis_title="Downloads",
+                legend=dict(orientation="h", y=-0.2),
+                height=360,
+                margin=dict(l=0, r=0, t=40, b=80),
+            )
+            st.plotly_chart(fig, use_container_width=True, theme=None)
+
+    with npm_share_tab:
+        if npm_result is None or npm_result.frame.empty or npm_grouped.empty:
+            st.info("No npm provider data available yet.")
+        else:
+            totals = npm_grouped.groupby("download_date")["downloads"].sum().rename("total").reset_index()
+            share = npm_grouped.merge(totals, on="download_date", how="left")
+            share["share"] = share["downloads"] / share["total"].where(share["total"] != 0)
+            pivot_share = (
+                share.pivot_table(index="download_date", columns="provider_display_name", values="share", aggfunc="last")
+                .fillna(0)
+                .sort_index()
+            )
+            st.plotly_chart(
+                make_stacked_bar(
+                    pivot_share * 100,
+                    MODEL_COLORS,
+                    title="npm Daily Download Share",
+                    y_title="Share",
+                    pct=True,
+                    height=340,
+                ),
+                use_container_width=True,
+                theme=None,
+            )
 
     with github_tab:
         if github_candidates.empty or github_rollup.empty:
@@ -1384,6 +1460,32 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
             how="left",
         )
 
+        npm_window = npm_grouped.copy()
+        npm_window["download_date"] = pd.to_datetime(npm_window["download_date"], errors="coerce")
+        latest_npm_ts = pd.to_datetime(latest_npm_date, errors="coerce")
+        npm_trailing_start = latest_npm_ts - pd.Timedelta(days=6) if pd.notna(latest_npm_ts) else None
+        if npm_trailing_start is not None:
+            npm_window = npm_window[npm_window["download_date"] >= npm_trailing_start].copy()
+
+        if not latest_npm.empty:
+            latest_npm_summary = latest_npm.rename(
+                columns={
+                    "provider_display_name": "Provider",
+                    "downloads": "Latest npm Downloads",
+                }
+            )[["Provider", "Latest npm Downloads"]]
+            summary = summary.merge(latest_npm_summary, on="Provider", how="left")
+
+        if not npm_window.empty:
+            npm_7d = (
+                npm_window.groupby("provider_display_name", dropna=False)["downloads"].mean().rename("npm 7d Avg").reset_index()
+            )
+            summary = summary.merge(
+                npm_7d.rename(columns={"provider_display_name": "Provider"}),
+                on="Provider",
+                how="left",
+            )
+
         if latest_github_date and not github_candidates.empty:
             latest_candidates = (
                 github_candidates[github_candidates["repo_created_date"] == latest_github_date]
@@ -1414,7 +1516,7 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
             summary = summary.merge(rollup_summary, on="Provider", how="left")
 
         summary = summary.sort_values("Latest PyPI Downloads", ascending=False)
-        display_date = latest_github_date or latest_pypi_date
+        display_date = latest_github_date or latest_npm_date or latest_pypi_date
         st.caption(f"Latest provider snapshot: {display_date or 'n/a'}")
         st.dataframe(summary.fillna(""), use_container_width=True, hide_index=True)
 

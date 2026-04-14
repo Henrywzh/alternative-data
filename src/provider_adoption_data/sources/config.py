@@ -9,6 +9,7 @@ PROVIDER_REGISTRY: tuple[ProviderConfig, ...] = (
         display_name="OpenAI",
         enabled=True,
         pypi_packages=(ProviderPackageConfig("openai", "sdk"),),
+        npm_packages=(ProviderPackageConfig("openai", "sdk"),),
         manifest_patterns=("openai",),
         import_patterns=(
             "from openai import",
@@ -26,6 +27,7 @@ PROVIDER_REGISTRY: tuple[ProviderConfig, ...] = (
         display_name="Anthropic",
         enabled=True,
         pypi_packages=(ProviderPackageConfig("anthropic", "sdk"),),
+        npm_packages=(ProviderPackageConfig("@anthropic-ai/sdk", "sdk"),),
         manifest_patterns=("anthropic", "@anthropic-ai/sdk"),
         import_patterns=(
             "from anthropic import",
@@ -43,6 +45,7 @@ PROVIDER_REGISTRY: tuple[ProviderConfig, ...] = (
             ProviderPackageConfig("google-genai", "sdk"),
             ProviderPackageConfig("google-generativeai", "legacy_sdk"),
         ),
+        npm_packages=(),
         manifest_patterns=("google-genai", "google-generativeai", "@google/genai", "@google/generative-ai"),
         import_patterns=(
             "from google import genai",
@@ -58,6 +61,7 @@ PROVIDER_REGISTRY: tuple[ProviderConfig, ...] = (
         display_name="Qwen",
         enabled=False,
         pypi_packages=(ProviderPackageConfig("dashscope", "sdk"),),
+        npm_packages=(),
         manifest_patterns=("dashscope",),
         import_patterns=("import dashscope", "from dashscope import"),
         env_var_patterns=("DASHSCOPE_API_KEY",),
