@@ -17,6 +17,7 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers.add_parser("pypi-daily-update", help="Fetch PyPI download history and write normalized outputs")
     subparsers.add_parser("npm-daily-update", help="Fetch npm download history and write normalized outputs")
     subparsers.add_parser("github-daily-update", help="Fetch GitHub provider signals for a target date")
+    subparsers.add_parser("huggingface-daily-update", help="Fetch Hugging Face model download history and write normalized outputs")
     subparsers.add_parser("derived-daily-update", help="Compute provider momentum metrics for a target date")
 
     backfill = subparsers.add_parser("backfill", help="Run GitHub/PyPI/derived updates over a bounded date range")
@@ -59,6 +60,9 @@ def main() -> None:
         return
     if args.command == "github-daily-update":
         _print_result(pipeline.run_github_daily_update(target_date=args.target_date, provider_slugs=provider_slugs))
+        return
+    if args.command == "huggingface-daily-update":
+        _print_result(pipeline.run_huggingface_daily_update(target_date=args.target_date, provider_slugs=provider_slugs))
         return
     if args.command == "derived-daily-update":
         _print_result(pipeline.run_derived_daily_update(target_date=args.target_date, provider_slugs=provider_slugs))

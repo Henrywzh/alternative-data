@@ -9,6 +9,7 @@ from dashboard.app import (
     build_domain_signature,
     build_manifest_signature,
     build_normalized_signature,
+    compute_provider_adoption_views,
     format_scraped_at_display,
     rankings_bucket_warning,
     rankings_week_context,
@@ -307,6 +308,33 @@ def _provider_npm_frame() -> pd.DataFrame:
     return pd.DataFrame(rows, columns=EXPECTED_COLUMNS)
 
 
+def _provider_hf_frame() -> pd.DataFrame:
+    rows = []
+    for provider, display_name, model_id, date_value, downloads_30d, downloads_all_time, daily_est, likes in [
+        ("openai", "OpenAI", "openai/gpt-oss-20b", "2026-04-05", 1000, 5000, None, 100),
+        ("openai", "OpenAI", "openai/gpt-oss-120b", "2026-04-06", 1200, 6200, 200, 140),
+        ("anthropic", "Anthropic", "anthropic/claude-lite", "2026-04-05", 700, 2400, None, 80),
+        ("anthropic", "Anthropic", "anthropic/claude-lite", "2026-04-06", 850, 2650, 250, 90),
+    ]:
+        row = _base_row("huggingface_models_daily")
+        row.update(
+            {
+                "provider": provider,
+                "provider_display_name": display_name,
+                "author": model_id.split("/")[0],
+                "model_id": model_id,
+                "download_date": date_value,
+                "hf_downloads_30d": downloads_30d,
+                "hf_downloads_all_time": downloads_all_time,
+                "hf_downloads_daily_est": daily_est,
+                "hf_likes": likes,
+                "hf_last_modified": f"{date_value}T12:00:00Z",
+            }
+        )
+        rows.append(row)
+    return pd.DataFrame(rows, columns=EXPECTED_COLUMNS)
+
+
 def _provider_candidates_frame() -> pd.DataFrame:
     rows = []
     for provider, display_name, repo_name in [
@@ -440,6 +468,7 @@ def test_provider_adoption_scraped_datasets_load_without_momentum_dependency(tmp
     root.mkdir(parents=True)
     _provider_pypi_frame().to_csv(root / "pypi_downloads_daily.csv", index=False)
     _provider_npm_frame().to_csv(root / "npm_downloads_daily.csv", index=False)
+    _provider_hf_frame().to_csv(root / "huggingface_models_daily.csv", index=False)
     _provider_candidates_frame().to_csv(root / "github_repo_candidates_daily.csv", index=False)
     _provider_signals_frame().to_csv(root / "github_provider_signals_daily.csv", index=False)
     _provider_rollup_frame().to_csv(root / "github_repo_rollup_daily.csv", index=False)
@@ -449,6 +478,7 @@ def test_provider_adoption_scraped_datasets_load_without_momentum_dependency(tmp
 
     assert datasets["pypi_downloads_daily"].row_count == 6
     assert datasets["npm_downloads_daily"].row_count == 9
+    assert datasets["huggingface_models_daily"].row_count == 4
     assert datasets["github_repo_rollup_daily"].row_count == 3
     assert datasets["provider_momentum_daily"].row_count == 0
     assert all(check.title != "provider_momentum_daily is empty" for check in checks)
@@ -468,12 +498,17 @@ def _frame_for_dataset(dataset_id: str) -> pd.DataFrame:
         "github_trending_monthly": lambda: _github_trending_frame("github_trending_monthly"),
         "pypi_downloads_daily": _provider_pypi_frame,
         "npm_downloads_daily": _provider_npm_frame,
+        "huggingface_models_daily": _provider_hf_frame,
         "github_repo_candidates_daily": _provider_candidates_frame,
         "github_provider_signals_daily": _provider_signals_frame,
         "github_repo_rollup_daily": _provider_rollup_frame,
         "provider_momentum_daily": _provider_momentum_frame,
     }
     return mapping[dataset_id]()
+
+
+def test_expected_columns_are_unique() -> None:
+    assert len(EXPECTED_COLUMNS) == len(set(EXPECTED_COLUMNS))
 
 
 def test_load_dataset_prefers_parquet(tmp_path: Path) -> None:
@@ -557,6 +592,28 @@ def test_load_all_datasets_supports_every_registered_dataset(tmp_path: Path) -> 
     assert datasets["apps_global_ranking_snapshots"].latest_date == "2026-04-05"
     assert datasets["top_models"].latest_date == "2026-03-16"
     assert datasets["provider_momentum_daily"].latest_date == "2026-04-05"
+
+
+def test_compute_provider_adoption_views_includes_hf_aggregates_and_latest_models(tmp_path: Path) -> None:
+    root = tmp_path / "data" / "normalized" / "provider_adoption"
+    root.mkdir(parents=True, exist_ok=True)
+    _provider_pypi_frame().to_csv(root / "pypi_downloads_daily.csv", index=False)
+    _provider_npm_frame().to_csv(root / "npm_downloads_daily.csv", index=False)
+    _provider_hf_frame().to_csv(root / "huggingface_models_daily.csv", index=False)
+    _provider_candidates_frame().to_csv(root / "github_repo_candidates_daily.csv", index=False)
+    _provider_signals_frame().to_csv(root / "github_provider_signals_daily.csv", index=False)
+    _provider_rollup_frame().to_csv(root / "github_repo_rollup_daily.csv", index=False)
+    _provider_momentum_frame().to_csv(root / "provider_momentum_daily.csv", index=False)
+
+    datasets = load_all_datasets(base_dir=tmp_path)
+    views = compute_provider_adoption_views(datasets)
+
+    assert views["latest_hf_date"] == "2026-04-06"
+    assert sorted(views["latest_hf"]["provider_display_name"].tolist()) == ["Anthropic", "OpenAI"]
+    latest_hf_models = views["latest_hf_models"]
+    assert set(latest_hf_models["model_id"]) == {"openai/gpt-oss-120b", "anthropic/claude-lite"}
+    openai_row = latest_hf_models[latest_hf_models["provider_display_name"] == "OpenAI"].iloc[0]
+    assert float(openai_row["hf_downloads_daily_est"]) == 200.0
 
 
 def test_dataset_source_for_domain_maps_expected_roots() -> None:

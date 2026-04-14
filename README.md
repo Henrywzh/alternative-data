@@ -3,7 +3,7 @@
 Research repo for gathering and analyzing alternative data.
 
 The first implemented projects are Python ingestion pipelines for OpenRouter rankings, app intelligence data, and GitHub Trending repository stats.
-The repository now also includes a provider-adoption pipeline that tracks GitHub, PyPI, and npm signals for major LLM providers.
+The repository now also includes a provider-adoption pipeline that tracks GitHub, PyPI, npm, and Hugging Face signals for major LLM providers.
 
 Rankings datasets:
 
@@ -118,6 +118,12 @@ Run the provider-adoption GitHub update for a specific date:
 provider-adoption-data --base-dir . --date 2026-04-08 github-daily-update
 ```
 
+Run the provider-adoption Hugging Face update for a specific date:
+
+```bash
+provider-adoption-data --base-dir . --date 2026-04-08 huggingface-daily-update
+```
+
 Compute the provider momentum snapshot for a specific date:
 
 ```bash
@@ -129,6 +135,8 @@ Run a bounded provider-adoption backfill:
 ```bash
 provider-adoption-data --base-dir . backfill --start-date 2026-04-01 --end-date 2026-04-08
 ```
+
+Set `HF_TOKEN` to reduce Hugging Face API rate limiting during model snapshot collection. The token is optional for public data but recommended in CI and long-running local syncs.
 
 Run the internal QA dashboard locally:
 
@@ -146,4 +154,5 @@ render blueprint apply
 ## Notes
 
 This repository is intended as a home for small, practical alternative data projects that can expand over time. The OpenRouter pipeline now supports both rankings and app sources with the same raw snapshot storage and normalized dataset workflow.
-The provider-adoption pipeline currently defaults to three active providers in v1: OpenAI, Anthropic, and Google. npm coverage in v1 is limited to the `openai` and `@anthropic-ai/sdk` packages.
+The provider-adoption pipeline now defaults to tracking OpenAI, Anthropic, Google, DeepSeek, Meta, Mistral, Qwen, Moonshot, Minimax, and ZAI. PyPI and npm coverage remain selective, while Hugging Face coverage tracks all models under each configured organization.
+The bounded backfill command does not fabricate historical Hugging Face rows; HF snapshots begin from the first real collection date onward.
