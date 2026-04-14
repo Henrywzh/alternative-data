@@ -13,6 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: ${{ secrets.PROVIDER_ADOPTION_GITHUB_TOKEN != '' && secrets.PROVIDER_ADOPTION_GITHUB_TOKEN || github.token }}
+      HF_TOKEN: ${{ secrets.PROVIDER_ADOPTION_HF_TOKEN }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -40,6 +41,10 @@ jobs:
       - name: Run npm update
         run: |
           python -m provider_adoption_data.cli --base-dir . --date "$TARGET_DATE" npm-daily-update
+
+      - name: Run Hugging Face update
+        run: |
+          python -m provider_adoption_data.cli --base-dir . --date "$TARGET_DATE" huggingface-daily-update
 
       - name: Run GitHub update
         run: |

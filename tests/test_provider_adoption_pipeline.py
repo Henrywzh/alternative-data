@@ -5,10 +5,12 @@ from datetime import date
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 from provider_adoption_data.models import (
     GithubRepository,
     GithubSignalMatch,
+    HuggingFaceModelPoint,
     NpmDownloadPoint,
     PypiDownloadPoint,
     Snapshot,
@@ -16,6 +18,7 @@ from provider_adoption_data.models import (
 from provider_adoption_data.pipeline import ProviderAdoptionPipeline
 from provider_adoption_data.sources.config import get_provider_registry
 from provider_adoption_data.sources.github import GithubSource
+from provider_adoption_data.sources.huggingface import HuggingFaceSource
 from provider_adoption_data.sources.npm import NpmDownloadsSource
 from provider_adoption_data.sources.pypi import PypiStatsSource
 
@@ -218,6 +221,57 @@ class FakeNpmSource:
         return records
 
 
+class FakeHuggingFaceResponse:
+    def __init__(self, payload, *, links=None, url: str = "https://huggingface.co/api/models") -> None:
+        self._payload = payload
+        self.links = links or {}
+        self.url = url
+        self.status_code = 200
+
+    def raise_for_status(self) -> None:
+        return None
+
+    def json(self):
+        return self._payload
+
+
+class FakeHuggingFaceSession:
+    def __init__(self, responses=None) -> None:
+        self.headers = {}
+        self._responses = list(responses or [])
+        self.requested_urls: list[str] = []
+
+    def get(self, url, timeout=30):
+        self.requested_urls.append(url)
+        if not self._responses:
+            raise AssertionError(f"Unexpected Hugging Face request: {url}")
+        return self._responses.pop(0)
+
+
+class FakeHuggingFaceSource:
+    def __init__(self, points_by_call: list[list[HuggingFaceModelPoint]]) -> None:
+        self.points_by_call = points_by_call
+        self.calls = 0
+        self._current_points: list[HuggingFaceModelPoint] = []
+
+    def fetch_snapshots(self, providers):
+        index = min(self.calls, len(self.points_by_call) - 1)
+        self._current_points = self.points_by_call[index]
+        return [
+            Snapshot(
+                name=f"huggingface_{point.provider}",
+                source_url=point.source_url,
+                body="[]",
+            )
+            for point in self._current_points
+        ]
+
+    def extract(self, snapshots, providers):
+        points = self._current_points
+        self.calls += 1
+        return points
+
+
 class FakeResponse:
     def __init__(self, payload: dict, url: str = "https://api.github.com/search/repositories") -> None:
         self._payload = payload
@@ -319,10 +373,78 @@ def test_npm_source_extracts_scoped_package_downloads() -> None:
     assert all(point.package_category == "core_sdk" for point in points)
 
 
-def test_provider_registry_excludes_qwen_from_active_defaults() -> None:
+def test_huggingface_source_fetches_paginated_snapshots_and_sets_token(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("HF_TOKEN", "hf-test-token")
+    session = FakeHuggingFaceSession(
+        responses=[
+            FakeHuggingFaceResponse(
+                [{"id": "deepseek-ai/DeepSeek-R1", "author": "deepseek-ai", "downloads": 10, "downloadsAllTime": 100}],
+                links={"next": {"url": "https://huggingface.co/api/models?author=deepseek-ai&cursor=next"}},
+            ),
+            FakeHuggingFaceResponse(
+                [{"id": "deepseek-ai/DeepSeek-V3", "author": "deepseek-ai", "downloads": 20, "downloadsAllTime": 200}]
+            ),
+        ]
+    )
+    source = HuggingFaceSource(session=session)
+
+    snapshots = source.fetch_snapshots(get_provider_registry(["deepseek"]))
+
+    assert session.headers["Authorization"] == "Bearer hf-test-token"
+    assert len(session.requested_urls) == 2
+    assert len(snapshots) == 1
+    payload = json.loads(snapshots[0].body)
+    assert [row["id"] for row in payload] == ["deepseek-ai/DeepSeek-R1", "deepseek-ai/DeepSeek-V3"]
+
+
+def test_huggingface_source_extracts_author_fallback_and_metrics() -> None:
+    source = HuggingFaceSource(session=FakeHuggingFaceSession())
+    providers = get_provider_registry(["openai"])
+    payload = [
+        {
+            "id": "openai/gpt-oss-20b",
+            "downloads": 321,
+            "downloadsAllTime": 4321,
+            "likes": 44,
+            "lastModified": "2026-04-05T12:00:00.000Z",
+        }
+    ]
+
+    points = source.extract(
+        [
+            Snapshot(
+                name="huggingface_openai_openai",
+                source_url="https://huggingface.co/api/models?author=openai&expand=author&expand=downloads",
+                body=json.dumps(payload),
+            )
+        ],
+        providers,
+    )
+
+    assert len(points) == 1
+    assert points[0].author == "openai"
+    assert points[0].model_id == "openai/gpt-oss-20b"
+    assert points[0].downloads_30d == 321
+    assert points[0].downloads_all_time == 4321
+    assert points[0].likes == 44
+    assert points[0].last_modified == "2026-04-05T12:00:00.000Z"
+
+
+def test_provider_registry_includes_hf_defaults() -> None:
     providers = get_provider_registry()
 
-    assert [provider.slug for provider in providers] == ["openai", "anthropic", "google"]
+    assert [provider.slug for provider in providers] == [
+        "openai",
+        "anthropic",
+        "google",
+        "deepseek",
+        "meta",
+        "mistral",
+        "qwen",
+        "moonshot",
+        "minimax",
+        "zai",
+    ]
     assert {provider.slug: [(package.package_name, package.package_category) for package in provider.npm_packages] for provider in providers} == {
         "openai": [
             ("openai", "core_sdk"),
@@ -340,6 +462,13 @@ def test_provider_registry_excludes_qwen_from_active_defaults() -> None:
             ("@google/gemini-cli", "cli"),
             ("@google/generative-ai", "legacy_sdk"),
         ],
+        "deepseek": [],
+        "meta": [],
+        "mistral": [("@mistralai/mistralai", "core_sdk")],
+        "qwen": [],
+        "moonshot": [],
+        "minimax": [],
+        "zai": [],
     }
 
 
@@ -415,6 +544,99 @@ def test_provider_pipeline_repeated_runs_are_idempotent_and_write_manifest(tmp_p
     assert rollup[["provider", "repo_full_name", "signal_date"]].duplicated().sum() == 0
     assert list(momentum_csv.columns) == list(momentum_parquet.columns)
     assert (Path(derived.raw_run_dir) / "manifest.json").exists()
+
+
+def test_huggingface_pipeline_first_snapshot_is_blank_and_same_day_rerun_is_idempotent(tmp_path: Path) -> None:
+    pipeline = ProviderAdoptionPipeline(
+        tmp_path,
+        hf_source=FakeHuggingFaceSource(
+            points_by_call=[
+                [
+                    HuggingFaceModelPoint(
+                        provider="openai",
+                        author="openai",
+                        model_id="openai/gpt-oss-20b",
+                        downloads_30d=100.0,
+                        downloads_all_time=1000.0,
+                        likes=10.0,
+                        last_modified="2026-04-05T12:00:00.000Z",
+                        scraped_at="2026-04-05T12:00:00Z",
+                        source_url="https://huggingface.co/api/models?author=openai",
+                    )
+                ]
+            ]
+        ),
+    )
+
+    first = pipeline.run_huggingface_daily_update(target_date="2026-04-05", provider_slugs=["openai"])
+    second = pipeline.run_huggingface_daily_update(target_date="2026-04-05", provider_slugs=["openai"])
+
+    hf = pd.read_csv(tmp_path / "data" / "normalized" / "provider_adoption" / "huggingface_models_daily.csv")
+
+    assert first.datasets_written["huggingface_models_daily"] == second.datasets_written["huggingface_models_daily"]
+    assert hf[["provider", "author", "model_id", "download_date"]].duplicated().sum() == 0
+    assert pd.isna(hf.loc[0, "hf_downloads_daily_est"])
+    assert hf.loc[0, "provider_display_name"] == "OpenAI"
+
+
+def test_huggingface_pipeline_uses_latest_prior_snapshot_only(tmp_path: Path) -> None:
+    pipeline = ProviderAdoptionPipeline(
+        tmp_path,
+        hf_source=FakeHuggingFaceSource(
+            points_by_call=[
+                [
+                    HuggingFaceModelPoint(
+                        provider="openai",
+                        author="openai",
+                        model_id="openai/gpt-oss-20b",
+                        downloads_30d=100.0,
+                        downloads_all_time=1000.0,
+                        likes=10.0,
+                        last_modified="2026-04-05T12:00:00.000Z",
+                        scraped_at="2026-04-05T12:00:00Z",
+                        source_url="https://huggingface.co/api/models?author=openai",
+                    )
+                ],
+                [
+                    HuggingFaceModelPoint(
+                        provider="openai",
+                        author="openai",
+                        model_id="openai/gpt-oss-20b",
+                        downloads_30d=120.0,
+                        downloads_all_time=1250.0,
+                        likes=12.0,
+                        last_modified="2026-04-06T12:00:00.000Z",
+                        scraped_at="2026-04-06T12:00:00Z",
+                        source_url="https://huggingface.co/api/models?author=openai",
+                    )
+                ],
+                [
+                    HuggingFaceModelPoint(
+                        provider="openai",
+                        author="openai",
+                        model_id="openai/gpt-oss-20b",
+                        downloads_30d=90.0,
+                        downloads_all_time=900.0,
+                        likes=9.0,
+                        last_modified="2026-04-04T12:00:00.000Z",
+                        scraped_at="2026-04-04T12:00:00Z",
+                        source_url="https://huggingface.co/api/models?author=openai",
+                    )
+                ],
+            ]
+        ),
+    )
+
+    pipeline.run_huggingface_daily_update(target_date="2026-04-05", provider_slugs=["openai"])
+    pipeline.run_huggingface_daily_update(target_date="2026-04-06", provider_slugs=["openai"])
+    pipeline.run_huggingface_daily_update(target_date="2026-04-04", provider_slugs=["openai"])
+
+    hf = pd.read_csv(tmp_path / "data" / "normalized" / "provider_adoption" / "huggingface_models_daily.csv")
+    by_date = hf.set_index("download_date")
+
+    assert pd.isna(by_date.loc["2026-04-04", "hf_downloads_daily_est"])
+    assert pd.isna(by_date.loc["2026-04-05", "hf_downloads_daily_est"])
+    assert float(by_date.loc["2026-04-06", "hf_downloads_daily_est"]) == 250.0
 
 
 def test_npm_start_date_aligns_to_existing_pypi_history(tmp_path: Path) -> None:

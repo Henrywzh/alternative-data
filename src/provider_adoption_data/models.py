@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
-from datetime import UTC, date, datetime
+from datetime import date, datetime, timezone
 from typing import Any
 
 
@@ -21,8 +21,8 @@ class RunContext:
     def scraped_at_iso(self) -> str:
         value = self.scraped_at
         if value.tzinfo is None:
-            value = value.replace(tzinfo=UTC)
-        return value.astimezone(UTC).isoformat().replace("+00:00", "Z")
+            value = value.replace(tzinfo=timezone.utc)
+        return value.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
 @dataclass(frozen=True)
@@ -39,10 +39,24 @@ class ProviderConfig:
     enabled: bool
     pypi_packages: tuple[ProviderPackageConfig, ...]
     npm_packages: tuple[ProviderPackageConfig, ...]
+    huggingface_orgs: tuple[str, ...]
     manifest_patterns: tuple[str, ...]
     import_patterns: tuple[str, ...]
     env_var_patterns: tuple[str, ...]
     model_patterns: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class HuggingFaceModelPoint:
+    provider: str
+    author: str
+    model_id: str
+    downloads_30d: int
+    downloads_all_time: int
+    likes: int
+    last_modified: str
+    scraped_at: str
+    source_url: str
 
 
 @dataclass(frozen=True)
@@ -119,6 +133,15 @@ class DatasetRecord:
     download_date: str | None = None
     downloads: float | None = None
 
+    # Hugging Face specific fields
+    author: str | None = None
+    model_id: str | None = None
+    hf_downloads_30d: float | None = None
+    hf_downloads_all_time: float | None = None
+    hf_downloads_daily_est: float | None = None
+    hf_likes: float | None = None
+    hf_last_modified: str | None = None
+
     repo_full_name: str | None = None
     repo_owner: str | None = None
     repo_name: str | None = None
@@ -167,7 +190,7 @@ class PipelineResult:
 
 def coerce_target_date(value: str | date | None) -> date:
     if value is None:
-        return datetime.now(UTC).date()
+        return datetime.now(timezone.utc).date()
     if isinstance(value, date):
         return value
     return date.fromisoformat(value)

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from datetime import UTC, date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from uuid import uuid4
 
@@ -18,6 +18,7 @@ from provider_adoption_data.models import (
 )
 from provider_adoption_data.sources.config import get_provider_registry
 from provider_adoption_data.sources.github import GithubSource
+from provider_adoption_data.sources.huggingface import HuggingFaceSource
 from provider_adoption_data.sources.npm import NpmDownloadsSource
 from provider_adoption_data.sources.pypi import PypiStatsSource
 from provider_adoption_data.storage import StorageManager
@@ -30,6 +31,7 @@ DATASET_IDS = (
     "github_provider_signals_daily",
     "github_repo_rollup_daily",
     "provider_momentum_daily",
+    "huggingface_models_daily",
 )
 
 
@@ -48,12 +50,14 @@ class ProviderAdoptionPipeline:
         pypi_source: PypiStatsSource | None = None,
         npm_source: NpmDownloadsSource | None = None,
         github_source: GithubSource | None = None,
+        hf_source: HuggingFaceSource | None = None,
     ) -> None:
         self.base_dir = base_dir
         self.storage = StorageManager(base_dir)
         self.pypi_source = pypi_source or PypiStatsSource()
         self.npm_source = npm_source or NpmDownloadsSource()
         self.github_source = github_source or GithubSource()
+        self.hf_source = hf_source or HuggingFaceSource()
         self.score_weights = {"github": 0.6, "pypi": 0.4}
 
     def run_pypi_daily_update(self, *, target_date: str | date | None = None, provider_slugs: list[str] | None = None) -> PipelineResult:
@@ -121,6 +125,47 @@ class ProviderAdoptionPipeline:
         written = self.storage.upsert_dataset("npm_downloads_daily", records)
         deltas = {"npm_downloads_daily": max(len(written) - len(existing), 0)}
         return PipelineResult(context.run_id, {"npm_downloads_daily": len(written)}, str(raw_run_dir), deltas)
+
+    def run_huggingface_daily_update(self, *, target_date: str | date | None = None, provider_slugs: list[str] | None = None) -> PipelineResult:
+        providers = get_provider_registry(provider_slugs)
+        resolved_date = coerce_target_date(target_date)
+        context = self._create_context()
+        snapshots = self.hf_source.fetch_snapshots(providers)
+        manifest = self._build_manifest("huggingface-daily-update", context, target_date=resolved_date, providers=providers)
+        raw_run_dir = self.storage.write_raw_run(context.run_id, snapshots, manifest)
+        points = self.hf_source.extract(snapshots, providers)
+
+        existing = self.storage.load_dataset("huggingface_models_daily")
+        latest_all_time = self._latest_hf_all_time_before_date(existing, resolved_date, providers)
+        provider_display = {provider.slug: provider.display_name for provider in providers}
+
+        records = []
+        for point in points:
+            prev_all_time = latest_all_time.get((point.provider, point.author, point.model_id))
+            daily_est = None if prev_all_time is None else float(max(0, point.downloads_all_time - prev_all_time))
+
+            records.append(
+                DatasetRecord(
+                    dataset_id="huggingface_models_daily",
+                    source_url=point.source_url,
+                    source_run_id=context.run_id,
+                    scraped_at=context.scraped_at_iso,
+                    provider=point.provider,
+                    provider_display_name=provider_display.get(point.provider),
+                    download_date=resolved_date.isoformat(),
+                    author=point.author,
+                    model_id=point.model_id,
+                    hf_downloads_30d=float(point.downloads_30d),
+                    hf_downloads_all_time=float(point.downloads_all_time),
+                    hf_downloads_daily_est=daily_est,
+                    hf_likes=float(point.likes),
+                    hf_last_modified=point.last_modified,
+                )
+            )
+
+        written = self.storage.upsert_dataset("huggingface_models_daily", records)
+        deltas = {"huggingface_models_daily": max(len(written) - len(existing), 0)}
+        return PipelineResult(context.run_id, {"huggingface_models_daily": len(written)}, str(raw_run_dir), deltas)
 
     def run_github_daily_update(self, *, target_date: str | date | None = None, provider_slugs: list[str] | None = None) -> PipelineResult:
         providers = get_provider_registry(provider_slugs)
@@ -210,13 +255,14 @@ class ProviderAdoptionPipeline:
             "providers": len(providers),
             "pypi_packages": sum(len(provider.pypi_packages) for provider in providers),
             "npm_packages": sum(len(provider.npm_packages) for provider in providers),
+            "huggingface_orgs": sum(len(provider.huggingface_orgs) for provider in providers),
             "github_languages": len(self.github_source.SEARCH_LANGUAGE_BUCKETS),
         }
 
     def _create_context(self) -> RunContext:
         return RunContext(
-            run_id=datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ") + "-" + uuid4().hex[:8],
-            scraped_at=datetime.now(UTC),
+            run_id=datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "-" + uuid4().hex[:8],
+            scraped_at=datetime.now(timezone.utc),
         )
 
     def _build_manifest(
@@ -358,6 +404,28 @@ class ProviderAdoptionPipeline:
             if not date_values.empty:
                 return date.fromisoformat(min(date_values))
         return target_date - timedelta(days=180)
+
+    @staticmethod
+    def _latest_hf_all_time_before_date(existing: pd.DataFrame, target_date: date, providers) -> dict[tuple[str, str, str], float]:
+        if existing.empty:
+            return {}
+
+        provider_slugs = {provider.slug for provider in providers}
+        target_date_iso = target_date.isoformat()
+        prior = existing[existing["provider"].isin(provider_slugs)].copy()
+        prior["download_date"] = prior["download_date"].astype("string")
+        prior = prior[prior["download_date"].notna() & (prior["download_date"] < target_date_iso)].copy()
+        if prior.empty:
+            return {}
+
+        prior["scraped_at"] = prior["scraped_at"].astype("string")
+        latest = (
+            prior.sort_values(["download_date", "scraped_at"], na_position="last")
+            .drop_duplicates(subset=["provider", "author", "model_id"], keep="last")
+            .set_index(["provider", "author", "model_id"])["hf_downloads_all_time"]
+            .dropna()
+        )
+        return {key: float(value) for key, value in latest.to_dict().items()}
 
     def _build_momentum_records(self, context: RunContext, providers, target_date: date) -> list[DatasetRecord]:
         pypi = self.storage.load_dataset("pypi_downloads_daily")

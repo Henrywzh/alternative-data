@@ -144,6 +144,14 @@ DATASET_REGISTRY: dict[str, dict[str, object]] = {
         "metric_column": "momentum_score",
         "required_columns": ["provider", "signal_date", "momentum_score", "pypi_share_28d", "github_repo_share"],
     },
+    "huggingface_models_daily": {
+        "label": "Hugging Face Models",
+        "domain": "provider_adoption",
+        "natural_keys": ["provider", "author", "model_id", "download_date"],
+        "primary_date_column": "download_date",
+        "metric_column": "hf_downloads_daily_est",
+        "required_columns": ["provider", "author", "model_id", "download_date", "hf_downloads_daily_est"],
+    },
 }
 
 DOMAIN_ORDER = {
@@ -171,6 +179,7 @@ DOMAIN_ORDER = {
         "github_provider_signals_daily",
         "github_repo_rollup_daily",
         "provider_momentum_daily",
+        "huggingface_models_daily",
     ],
 }
 
@@ -234,6 +243,12 @@ PROVIDER_ADOPTION_COLUMNS = [
     "with_mirrors",
     "download_date",
     "downloads",
+    "model_id",
+    "hf_downloads_30d",
+    "hf_downloads_all_time",
+    "hf_downloads_daily_est",
+    "hf_likes",
+    "hf_last_modified",
     "repo_full_name",
     "repo_owner",
     "repo_name",
@@ -292,6 +307,10 @@ NUMERIC_COLUMNS = [
     "stars_today",
     "total_stars",
     "downloads",
+    "hf_downloads_30d",
+    "hf_downloads_all_time",
+    "hf_downloads_daily_est",
+    "hf_likes",
     "stargazers_count",
     "matched_signal_count",
     "pypi_7d_avg",

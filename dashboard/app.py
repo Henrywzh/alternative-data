@@ -355,6 +355,8 @@ def compute_provider_adoption_views(datasets: dict[str, DatasetLoadResult]) -> d
 
     pypi_result = datasets.get("pypi_downloads_daily")
     npm_result = datasets.get("npm_downloads_daily")
+    hf_result = datasets.get("huggingface_models_daily")
+
     pypi = pypi_result.frame.copy() if pypi_result and pypi_result.frame is not None else pd.DataFrame()
     pypi = pypi[pypi["with_mirrors"] == False].copy() if not pypi.empty else pypi
     if not pypi.empty:
@@ -372,25 +374,62 @@ def compute_provider_adoption_views(datasets: dict[str, DatasetLoadResult]) -> d
         npm["download_date"] = npm["download_date"].astype(str)
         npm["package_category"] = npm["package_category"].astype(str)
         npm_categories = sorted(category for category in npm["package_category"].dropna().unique().tolist() if category and category != "<NA>")
-        npm_grouped = (
+        npm_grouped_all = (
             npm.groupby(["package_category", "download_date", "provider_display_name"], dropna=False)["downloads"].sum().reset_index()
         )
-        latest_npm_date = npm_grouped["download_date"].max()
-        latest_npm = npm_grouped[npm_grouped["download_date"] == latest_npm_date].copy()
+        latest_npm_date = npm_grouped_all["download_date"].max()
+        latest_npm_all = npm_grouped_all[npm_grouped_all["download_date"] == latest_npm_date].copy()
     else:
-        npm_grouped = pd.DataFrame(columns=["package_category", "download_date", "provider_display_name", "downloads"])
+        npm_grouped_all = pd.DataFrame(columns=["package_category", "download_date", "provider_display_name", "downloads"])
         latest_npm_date = None
-        latest_npm = pd.DataFrame(columns=["package_category", "download_date", "provider_display_name", "downloads"])
+        latest_npm_all = pd.DataFrame(columns=["package_category", "download_date", "provider_display_name", "downloads"])
         npm_categories = []
 
-    provider_order = sorted(latest_pypi["provider_display_name"].dropna().astype(str).unique().tolist()) if not latest_pypi.empty else []
+    hf = hf_result.frame.copy() if hf_result and hf_result.frame is not None else pd.DataFrame()
+    if not hf.empty:
+        hf["download_date"] = hf["download_date"].astype(str)
+        hf_grouped = (
+            hf.groupby(["download_date", "provider_display_name"], dropna=False)
+            .agg(
+                downloads_30d=("hf_downloads_30d", "sum"),
+                downloads_all_time=("hf_downloads_all_time", "sum"),
+                downloads_daily_est=("hf_downloads_daily_est", lambda values: values.sum(min_count=1)),
+                likes=("hf_likes", "sum"),
+            )
+            .reset_index()
+        )
+        latest_hf_date = hf_grouped["download_date"].max()
+        latest_hf = hf_grouped[hf_grouped["download_date"] == latest_hf_date].copy()
+        latest_hf_models = hf[hf["download_date"] == latest_hf_date].copy()
+    else:
+        hf_grouped = pd.DataFrame(columns=["download_date", "provider_display_name", "downloads_30d", "downloads_all_time", "downloads_daily_est", "likes"])
+        latest_hf_date = None
+        latest_hf = pd.DataFrame(columns=["download_date", "provider_display_name", "downloads_30d", "downloads_all_time", "downloads_daily_est", "likes"])
+        latest_hf_models = pd.DataFrame(
+            columns=["provider_display_name", "model_id", "hf_downloads_30d", "hf_downloads_all_time", "hf_downloads_daily_est", "hf_likes", "hf_last_modified"]
+        )
+
+    all_providers = set()
+    if not latest_pypi.empty:
+        all_providers.update(latest_pypi["provider_display_name"].dropna().unique())
+    if not latest_npm_all.empty:
+        all_providers.update(latest_npm_all["provider_display_name"].dropna().unique())
+    if not latest_hf.empty:
+        all_providers.update(latest_hf["provider_display_name"].dropna().unique())
+
+    provider_order = sorted(list(all_providers))
+
     views["pypi_grouped"] = pypi_grouped
     views["latest_pypi_date"] = latest_pypi_date
     views["latest_pypi"] = latest_pypi
-    views["npm_grouped"] = npm_grouped
+    views["npm_grouped"] = npm_grouped_all
     views["latest_npm_date"] = latest_npm_date
-    views["latest_npm"] = latest_npm
+    views["latest_npm"] = latest_npm_all
     views["npm_categories"] = npm_categories
+    views["hf_grouped"] = hf_grouped
+    views["latest_hf_date"] = latest_hf_date
+    views["latest_hf"] = latest_hf
+    views["latest_hf_models"] = latest_hf_models
     views["provider_order"] = provider_order
 
     github_candidates_result = datasets.get("github_repo_candidates_daily")
@@ -1186,16 +1225,17 @@ def render_github_trending_section(datasets: dict[str, DatasetLoadResult], githu
 
 def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], provider_views: dict[str, object]) -> None:
     st.markdown('<div class="section-title">Provider Adoption</div>', unsafe_allow_html=True)
-    st.caption("Scraped GitHub, PyPI, and npm activity by provider")
+    st.caption("Scraped GitHub, PyPI, npm, and Hugging Face activity by provider")
 
     pypi_result = datasets.get("pypi_downloads_daily")
     npm_result = datasets.get("npm_downloads_daily")
+    hf_result = datasets.get("huggingface_models_daily")
     github_candidates_result = datasets.get("github_repo_candidates_daily")
     github_rollup_result = datasets.get("github_repo_rollup_daily")
     github_signals_result = datasets.get("github_provider_signals_daily")
 
     if not pypi_result or not render_dataset_guard(pypi_result):
-        st.info("Run the provider-adoption pipeline to populate GitHub, PyPI, and npm scraped data.")
+        st.info("Run the provider-adoption pipeline to populate GitHub, PyPI, npm, and Hugging Face scraped data.")
         return
 
     pypi = pypi_result.frame.copy()
@@ -1220,6 +1260,10 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
     github_rollup = provider_views["github_rollup"]
     github_signals = provider_views["github_signals"]
     latest_github_date = provider_views["latest_github_date"]
+    latest_hf_date = provider_views["latest_hf_date"]
+    latest_hf = provider_views["latest_hf"]
+    hf_grouped = provider_views["hf_grouped"]
+    latest_hf_models = provider_views["latest_hf_models"]
 
     top_download_row = latest_pypi.sort_values("downloads", ascending=False).iloc[0] if not latest_pypi.empty else None
     total_latest_downloads = latest_pypi["downloads"].sum() if not latest_pypi.empty else 0
@@ -1228,13 +1272,14 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
         if latest_github_date and not github_candidates.empty
         else 0
     )
+    top_hf_row = latest_hf.sort_values("downloads_30d", ascending=False).iloc[0] if not latest_hf.empty else None
 
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4 = st.columns(4)
     with col1:
         st.markdown(
             f'<div class="kpi-card">'
             f'<div class="kpi-label">Top PyPI Provider</div>'
-            f'<div class="kpi-value" style="font-size: 1.3rem;">{top_download_row["provider_display_name"] if top_download_row is not None else "—"}</div>'
+            f'<div class="kpi-value" style="font-size: 1.1rem;">{top_download_row["provider_display_name"] if top_download_row is not None else "—"}</div>'
             f'<div class="kpi-delta-flat">latest daily downloads</div>'
             f'</div>',
             unsafe_allow_html=True,
@@ -1243,7 +1288,7 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
         st.markdown(
             f'<div class="kpi-card">'
             f'<div class="kpi-label">Latest PyPI Downloads</div>'
-            f'<div class="kpi-value">{format_metric(total_latest_downloads)}</div>'
+            f'<div class="kpi-value" style="font-size: 1.5rem;">{format_metric(total_latest_downloads)}</div>'
             f'<div class="kpi-delta-flat">{latest_pypi_date or "n/a"}</div>'
             f'</div>',
             unsafe_allow_html=True,
@@ -1251,8 +1296,17 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
     with col3:
         st.markdown(
             f'<div class="kpi-card">'
-            f'<div class="kpi-label">Latest GitHub Repo Candidates</div>'
-            f'<div class="kpi-value">{format_metric(latest_candidate_count)}</div>'
+            f'<div class="kpi-label">Top Hugging Face</div>'
+            f'<div class="kpi-value" style="font-size: 1.1rem;">{top_hf_row["provider_display_name"] if top_hf_row is not None else "—"}</div>'
+            f'<div class="kpi-delta-flat">by 30d downloads</div>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
+    with col4:
+        st.markdown(
+            f'<div class="kpi-card">'
+            f'<div class="kpi-label">Latest GH Candidates</div>'
+            f'<div class="kpi-value" style="font-size: 1.5rem;">{format_metric(latest_candidate_count)}</div>'
             f'<div class="kpi-delta-flat">{latest_github_date or "n/a"}</div>'
             f'</div>',
             unsafe_allow_html=True,
@@ -1279,9 +1333,99 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
         else pd.DataFrame(columns=["package_category", "download_date", "provider_display_name", "downloads"])
     )
 
-    pypi_downloads_tab, pypi_share_tab, npm_downloads_tab, npm_share_tab, github_tab, summary_tab = st.tabs(
-        ["PyPI Downloads", "PyPI Share", "npm Downloads", "npm Share", "GitHub Signals", "Latest Summary"]
+    hf_downloads_tab, hf_share_tab, hf_models_tab, pypi_downloads_tab, pypi_share_tab, npm_downloads_tab, npm_share_tab, github_tab, summary_tab = st.tabs(
+        ["HF Downloads", "HF Share", "HF Models", "PyPI Downloads", "PyPI Share", "npm Downloads", "npm Share", "GitHub Signals", "Latest Summary"]
     )
+
+    with hf_downloads_tab:
+        if hf_result is None or hf_result.frame.empty or hf_grouped.empty:
+            st.info("No Hugging Face model data available yet.")
+        else:
+            pivot_hf = (
+                hf_grouped.pivot_table(index="download_date", columns="provider_display_name", values="downloads_30d", aggfunc="last")
+                .fillna(0)
+                .sort_index()
+            )
+            fig = go.Figure()
+            for i, provider_name in enumerate(pivot_hf.columns):
+                fig.add_trace(
+                    go.Scatter(
+                        x=pivot_hf.index,
+                        y=pivot_hf[provider_name],
+                        name=provider_name,
+                        mode="lines+markers",
+                        line=dict(width=3, color=MODEL_COLORS[i % len(MODEL_COLORS)]),
+                        hovertemplate=f"<b>{provider_name}</b><br>%{{x}}<br>%{{y:,.0f}} 30d downloads<extra></extra>",
+                    )
+                )
+            fig.update_layout(
+                template="plotly_white",
+                title="Hugging Face Trailing 30d Downloads",
+                xaxis_title="Date",
+                yaxis_title="Downloads (30d)",
+                legend=dict(orientation="h", y=-0.2),
+                height=360,
+                margin=dict(l=0, r=0, t=40, b=80),
+            )
+            st.plotly_chart(fig, use_container_width=True, theme=None)
+
+    with hf_share_tab:
+        if hf_result is None or hf_result.frame.empty or hf_grouped.empty:
+            st.info("No Hugging Face model data available yet.")
+        else:
+            totals = hf_grouped.groupby("download_date")["downloads_30d"].sum().rename("total").reset_index()
+            share = hf_grouped.merge(totals, on="download_date", how="left")
+            share["share"] = share["downloads_30d"] / share["total"].where(share["total"] != 0)
+            pivot_share = (
+                share.pivot_table(index="download_date", columns="provider_display_name", values="share", aggfunc="last")
+                .fillna(0)
+                .sort_index()
+            )
+            st.plotly_chart(
+                make_stacked_bar(
+                    pivot_share * 100,
+                    MODEL_COLORS,
+                    title="Hugging Face Download Share (30d)",
+                    y_title="Share",
+                    pct=True,
+                    height=340,
+                ),
+                use_container_width=True,
+                theme=None,
+            )
+
+    with hf_models_tab:
+        if hf_result is None or hf_result.frame.empty or latest_hf_models.empty:
+            st.info("No Hugging Face model snapshot available yet.")
+        else:
+            available_providers = sorted(
+                provider for provider in latest_hf_models["provider_display_name"].dropna().astype(str).unique().tolist() if provider
+            )
+            selected_hf_provider = st.selectbox(
+                "Hugging Face provider",
+                options=["All"] + available_providers,
+                index=0,
+                key="provider_adoption_hf_provider",
+            )
+            table = latest_hf_models.copy()
+            if selected_hf_provider != "All":
+                table = table[table["provider_display_name"] == selected_hf_provider].copy()
+            table = table.rename(
+                columns={
+                    "provider_display_name": "Provider",
+                    "model_id": "Model",
+                    "hf_downloads_30d": "30d Downloads",
+                    "hf_downloads_all_time": "All-Time Downloads",
+                    "hf_downloads_daily_est": "Daily (Est)",
+                    "hf_likes": "Likes",
+                    "hf_last_modified": "Last Modified",
+                }
+            )[
+                ["Provider", "Model", "30d Downloads", "All-Time Downloads", "Daily (Est)", "Likes", "Last Modified"]
+            ]
+            table = table.sort_values(["30d Downloads", "All-Time Downloads"], ascending=[False, False], na_position="last")
+            st.caption(f"Latest HF snapshot: {latest_hf_date or 'n/a'}")
+            st.dataframe(table.fillna("-"), use_container_width=True, hide_index=True)
 
     with pypi_downloads_tab:
         pivot_downloads = (
@@ -1504,30 +1648,27 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
             npm_window = npm_window[npm_window["download_date"] >= npm_trailing_start].copy()
 
         if not latest_npm.empty:
-            latest_npm_summary = latest_npm.rename(
-                columns={
-                    "provider_display_name": "Provider",
-                    "downloads": "Latest npm Downloads",
-                }
-            )[["Provider", "Latest npm Downloads"]]
-            summary = summary.merge(latest_npm_summary, on="Provider", how="left")
+            cat_summary = latest_npm[latest_npm["package_category"] == selected_npm_category].copy()
+            if not cat_summary.empty:
+                cat_summary = cat_summary.rename(columns={"provider_display_name": "Provider", "downloads": "npm Daily (Selected)"})[["Provider", "npm Daily (Selected)"]]
+                summary = summary.merge(cat_summary, on="Provider", how="left")
 
-        if not npm_window.empty:
-            npm_7d = (
-                npm_window.groupby("provider_display_name", dropna=False)["downloads"].mean().rename("npm 7d Avg").reset_index()
-            )
-            summary = summary.merge(
-                npm_7d.rename(columns={"provider_display_name": "Provider"}),
-                on="Provider",
-                how="left",
-            )
+        if not latest_hf.empty:
+            hf_sum = latest_hf.rename(columns={
+                "provider_display_name": "Provider",
+                "downloads_30d": "HF 30d Downloads",
+                "downloads_all_time": "HF All-Time Downloads",
+                "downloads_daily_est": "HF Daily (Est)",
+                "likes": "HF Likes"
+            })[["Provider", "HF 30d Downloads", "HF All-Time Downloads", "HF Daily (Est)", "HF Likes"]]
+            summary = summary.merge(hf_sum, on="Provider", how="left")
 
         if latest_github_date and not github_candidates.empty:
             latest_candidates = (
                 github_candidates[github_candidates["repo_created_date"] == latest_github_date]
                 .groupby("provider_display_name", dropna=False)["repo_full_name"]
                 .nunique()
-                .rename("Latest GitHub Repo Candidates")
+                .rename("GH Candidates")
                 .reset_index()
                 .rename(columns={"provider_display_name": "Provider"})
             )
@@ -1539,11 +1680,8 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
                 latest_rollup.groupby("provider_display_name", dropna=False)
                 .agg(
                     **{
-                        "Latest GitHub Signal Repos": ("repo_full_name", "nunique"),
-                        "Latest Manifest Repos": ("has_manifest_dependency", "sum"),
-                        "Latest Import Repos": ("has_code_import", "sum"),
-                        "Latest Env Repos": ("has_env_var", "sum"),
-                        "Latest Model Repos": ("has_model_name", "sum"),
+                        "GH Signals": ("repo_full_name", "nunique"),
+                        "Import Repos": ("has_code_import", "sum"),
                     }
                 )
                 .reset_index()
@@ -1551,11 +1689,13 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
             )
             summary = summary.merge(rollup_summary, on="Provider", how="left")
 
-        summary = summary.sort_values("Latest PyPI Downloads", ascending=False)
+        # Sort: priority to HF 30d, otherwise PyPI
+        sort_col = "HF 30d Downloads" if "HF 30d Downloads" in summary.columns else "Latest PyPI Downloads"
+        summary = summary.sort_values(sort_col, ascending=False) if sort_col in summary.columns else summary
+
         display_date = latest_github_date or latest_npm_date or latest_pypi_date
         st.caption(f"Latest provider snapshot: {display_date or 'n/a'}")
-        st.caption(f"npm summary category: {NPM_CATEGORY_LABELS.get(selected_npm_category, selected_npm_category)}")
-        st.dataframe(summary.fillna(""), use_container_width=True, hide_index=True)
+        st.dataframe(summary.fillna("-"), use_container_width=True, hide_index=True)
 
 
 def render_checks(checks: list[CheckResult]) -> None:

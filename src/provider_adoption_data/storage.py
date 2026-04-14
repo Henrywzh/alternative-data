@@ -13,6 +13,7 @@ from provider_adoption_data.models import DatasetRecord, Snapshot
 NATURAL_KEYS: dict[str, list[str]] = {
     "pypi_downloads_daily": ["provider", "package_name", "with_mirrors", "download_date"],
     "npm_downloads_daily": ["provider", "package_name", "package_category", "download_date"],
+    "huggingface_models_daily": ["provider", "author", "model_id", "download_date"],
     "github_repo_candidates_daily": ["provider", "repo_full_name", "repo_created_date"],
     "github_provider_signals_daily": ["provider", "repo_full_name", "signal_date", "signal_type"],
     "github_repo_rollup_daily": ["provider", "repo_full_name", "signal_date"],
@@ -32,6 +33,13 @@ DATASET_COLUMNS = [
     "with_mirrors",
     "download_date",
     "downloads",
+    "author",
+    "model_id",
+    "hf_downloads_30d",
+    "hf_downloads_all_time",
+    "hf_downloads_daily_est",
+    "hf_likes",
+    "hf_last_modified",
     "repo_full_name",
     "repo_owner",
     "repo_name",
@@ -67,6 +75,10 @@ DATASET_COLUMNS = [
 
 NUMERIC_COLUMNS = [
     "downloads",
+    "hf_downloads_30d",
+    "hf_downloads_all_time",
+    "hf_downloads_daily_est",
+    "hf_likes",
     "stargazers_count",
     "matched_signal_count",
     "pypi_7d_avg",
@@ -98,6 +110,7 @@ TEXT_COLUMNS = [
 SORT_KEYS: dict[str, list[str]] = {
     "pypi_downloads_daily": ["download_date", "provider", "package_name", "with_mirrors"],
     "npm_downloads_daily": ["download_date", "provider", "package_category", "package_name"],
+    "huggingface_models_daily": ["download_date", "provider", "author", "model_id"],
     "github_repo_candidates_daily": ["repo_created_date", "provider", "repo_full_name"],
     "github_provider_signals_daily": ["signal_date", "provider", "repo_full_name", "signal_type"],
     "github_repo_rollup_daily": ["signal_date", "provider", "repo_full_name"],
