@@ -345,6 +345,14 @@ def domain_dataset_ids(domain: str) -> list[str]:
     return DOMAIN_ORDER[domain]
 
 
+def dataset_source_for_domain(domain: str) -> str:
+    if domain == "github":
+        return "github_trending"
+    if domain == "provider_adoption":
+        return "provider_adoption"
+    return "openrouter"
+
+
 def load_dataset(dataset_id: str, base_dir: Path | None = None) -> DatasetLoadResult:
     registry_entry = DATASET_REGISTRY.get(dataset_id, {})
     domain = registry_entry.get("domain", "rankings")
@@ -434,6 +442,10 @@ def load_dataset(dataset_id: str, base_dir: Path | None = None) -> DatasetLoadRe
 
 def load_all_datasets(base_dir: Path | None = None) -> dict[str, DatasetLoadResult]:
     return {dataset_id: load_dataset(dataset_id, base_dir=base_dir) for dataset_id in dataset_ids()}
+
+
+def load_domain_datasets(domain: str, base_dir: Path | None = None) -> dict[str, DatasetLoadResult]:
+    return {dataset_id: load_dataset(dataset_id, base_dir=base_dir) for dataset_id in domain_dataset_ids(domain)}
 
 
 def load_latest_manifest(

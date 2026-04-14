@@ -6,6 +6,9 @@ from pathlib import Path
 import pandas as pd
 
 from dashboard.app import (
+    build_domain_signature,
+    build_manifest_signature,
+    build_normalized_signature,
     format_scraped_at_display,
     rankings_bucket_warning,
     rankings_week_context,
@@ -14,9 +17,11 @@ from dashboard.checks import run_checks
 from dashboard.data import (
     EXPECTED_COLUMNS,
     DATASET_REGISTRY,
+    dataset_source_for_domain,
     domain_dataset_ids,
     load_all_datasets,
     load_dataset,
+    load_domain_datasets,
     load_latest_manifest,
 )
 
@@ -520,6 +525,53 @@ def test_load_all_datasets_supports_every_registered_dataset(tmp_path: Path) -> 
     assert datasets["apps_global_ranking_snapshots"].latest_date == "2026-04-05"
     assert datasets["top_models"].latest_date == "2026-03-16"
     assert datasets["provider_momentum_daily"].latest_date == "2026-04-05"
+
+
+def test_dataset_source_for_domain_maps_expected_roots() -> None:
+    assert dataset_source_for_domain("rankings") == "openrouter"
+    assert dataset_source_for_domain("apps") == "openrouter"
+    assert dataset_source_for_domain("github") == "github_trending"
+    assert dataset_source_for_domain("provider_adoption") == "provider_adoption"
+
+
+def test_load_domain_datasets_only_loads_requested_domain(tmp_path: Path) -> None:
+    openrouter_root = tmp_path / "data" / "normalized" / "openrouter"
+    github_root = tmp_path / "data" / "normalized" / "github_trending"
+    openrouter_root.mkdir(parents=True, exist_ok=True)
+    github_root.mkdir(parents=True, exist_ok=True)
+
+    _rankings_frame("top_models").to_csv(openrouter_root / "top_models.csv", index=False)
+    _rankings_frame("market_share").to_csv(openrouter_root / "market_share.csv", index=False)
+    _rankings_frame("categories_programming").to_csv(openrouter_root / "categories_programming.csv", index=False)
+    _github_trending_frame("github_trending_daily").to_csv(github_root / "github_trending_daily.csv", index=False)
+
+    datasets = load_domain_datasets("rankings", base_dir=tmp_path)
+
+    assert set(datasets) == {"top_models", "market_share", "categories_programming"}
+    assert datasets["top_models"].row_count == 2
+
+
+def test_signatures_ignore_unrelated_raw_files_for_rankings(tmp_path: Path) -> None:
+    normalized_openrouter = tmp_path / "data" / "normalized" / "openrouter"
+    raw_provider = tmp_path / "data" / "raw" / "provider_adoption" / "run-1"
+    raw_openrouter = tmp_path / "data" / "raw" / "openrouter" / "run-2"
+    normalized_openrouter.mkdir(parents=True, exist_ok=True)
+    raw_provider.mkdir(parents=True, exist_ok=True)
+    raw_openrouter.mkdir(parents=True, exist_ok=True)
+
+    _rankings_frame("top_models").to_csv(normalized_openrouter / "top_models.csv", index=False)
+    (raw_provider / "manifest.json").write_text(json.dumps({"run_id": "provider-run", "scraped_at": "2026-04-05T00:00:00Z"}), encoding="utf-8")
+    (raw_openrouter / "manifest.json").write_text(json.dumps({"run_id": "openrouter-run", "scraped_at": "2026-04-06T00:00:00Z"}), encoding="utf-8")
+
+    normalized_sig = build_normalized_signature(tmp_path, "rankings")
+    manifest_sig = build_manifest_signature(tmp_path, "rankings")
+    domain_sig = build_domain_signature(tmp_path, "rankings")
+
+    assert any("data/normalized/openrouter/top_models.csv" in item[0] for item in normalized_sig)
+    assert all("provider_adoption" not in item[0] for item in normalized_sig)
+    assert len(manifest_sig) == 1
+    assert "data/raw/openrouter" in manifest_sig[0][0]
+    assert all("provider_adoption" not in item[0] for item in domain_sig)
 
 
 def test_format_scraped_at_display_formats_utc_timestamp() -> None:
