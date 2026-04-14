@@ -278,6 +278,29 @@ def _provider_pypi_frame() -> pd.DataFrame:
     return pd.DataFrame(rows, columns=EXPECTED_COLUMNS)
 
 
+def _provider_npm_frame() -> pd.DataFrame:
+    rows = []
+    for provider, display_name, package_name, date_value, downloads in [
+        ("openai", "OpenAI", "openai", "2026-04-04", 1500),
+        ("openai", "OpenAI", "openai", "2026-04-05", 1700),
+        ("anthropic", "Anthropic", "@anthropic-ai/sdk", "2026-04-04", 900),
+        ("anthropic", "Anthropic", "@anthropic-ai/sdk", "2026-04-05", 1100),
+    ]:
+        row = _base_row("npm_downloads_daily")
+        row.update(
+            {
+                "provider": provider,
+                "provider_display_name": display_name,
+                "package_name": package_name,
+                "package_type": "sdk",
+                "download_date": date_value,
+                "downloads": downloads,
+            }
+        )
+        rows.append(row)
+    return pd.DataFrame(rows, columns=EXPECTED_COLUMNS)
+
+
 def _provider_candidates_frame() -> pd.DataFrame:
     rows = []
     for provider, display_name, repo_name in [
@@ -410,6 +433,7 @@ def test_provider_adoption_scraped_datasets_load_without_momentum_dependency(tmp
     root = tmp_path / "data" / "normalized" / "provider_adoption"
     root.mkdir(parents=True)
     _provider_pypi_frame().to_csv(root / "pypi_downloads_daily.csv", index=False)
+    _provider_npm_frame().to_csv(root / "npm_downloads_daily.csv", index=False)
     _provider_candidates_frame().to_csv(root / "github_repo_candidates_daily.csv", index=False)
     _provider_signals_frame().to_csv(root / "github_provider_signals_daily.csv", index=False)
     _provider_rollup_frame().to_csv(root / "github_repo_rollup_daily.csv", index=False)
@@ -418,6 +442,7 @@ def test_provider_adoption_scraped_datasets_load_without_momentum_dependency(tmp
     checks = run_checks(datasets, load_latest_manifest(base_dir=tmp_path), base_dir=tmp_path)
 
     assert datasets["pypi_downloads_daily"].row_count == 6
+    assert datasets["npm_downloads_daily"].row_count == 4
     assert datasets["github_repo_rollup_daily"].row_count == 3
     assert datasets["provider_momentum_daily"].row_count == 0
     assert all(check.title != "provider_momentum_daily is empty" for check in checks)
@@ -436,6 +461,7 @@ def _frame_for_dataset(dataset_id: str) -> pd.DataFrame:
         "github_trending_weekly": lambda: _github_trending_frame("github_trending_weekly"),
         "github_trending_monthly": lambda: _github_trending_frame("github_trending_monthly"),
         "pypi_downloads_daily": _provider_pypi_frame,
+        "npm_downloads_daily": _provider_npm_frame,
         "github_repo_candidates_daily": _provider_candidates_frame,
         "github_provider_signals_daily": _provider_signals_frame,
         "github_repo_rollup_daily": _provider_rollup_frame,

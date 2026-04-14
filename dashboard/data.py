@@ -104,6 +104,14 @@ DATASET_REGISTRY: dict[str, dict[str, object]] = {
         "metric_column": "downloads",
         "required_columns": ["provider", "package_name", "with_mirrors", "download_date", "downloads"],
     },
+    "npm_downloads_daily": {
+        "label": "npm Downloads Daily",
+        "domain": "provider_adoption",
+        "natural_keys": ["provider", "package_name", "download_date"],
+        "primary_date_column": "download_date",
+        "metric_column": "downloads",
+        "required_columns": ["provider", "package_name", "download_date", "downloads"],
+    },
     "github_repo_candidates_daily": {
         "label": "GitHub Repo Candidates",
         "domain": "provider_adoption",
@@ -158,6 +166,7 @@ DOMAIN_ORDER = {
     ],
     "provider_adoption": [
         "pypi_downloads_daily",
+        "npm_downloads_daily",
         "github_repo_candidates_daily",
         "github_provider_signals_daily",
         "github_repo_rollup_daily",

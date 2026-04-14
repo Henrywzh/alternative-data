@@ -37,6 +37,7 @@ class ProviderConfig:
     display_name: str
     enabled: bool
     pypi_packages: tuple[ProviderPackageConfig, ...]
+    npm_packages: tuple[ProviderPackageConfig, ...]
     manifest_patterns: tuple[str, ...]
     import_patterns: tuple[str, ...]
     env_var_patterns: tuple[str, ...]
@@ -84,6 +85,17 @@ class PypiDownloadPoint:
     package_name: str
     package_type: str
     with_mirrors: bool
+    download_date: str
+    downloads: int
+    source_url: str
+
+
+@dataclass(frozen=True)
+class NpmDownloadPoint:
+    provider: str
+    provider_display_name: str
+    package_name: str
+    package_type: str
     download_date: str
     downloads: int
     source_url: str

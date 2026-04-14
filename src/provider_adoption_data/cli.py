@@ -15,6 +15,7 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     subparsers.add_parser("pypi-daily-update", help="Fetch PyPI download history and write normalized outputs")
+    subparsers.add_parser("npm-daily-update", help="Fetch npm download history and write normalized outputs")
     subparsers.add_parser("github-daily-update", help="Fetch GitHub provider signals for a target date")
     subparsers.add_parser("derived-daily-update", help="Compute provider momentum metrics for a target date")
 
@@ -52,6 +53,9 @@ def main() -> None:
 
     if args.command == "pypi-daily-update":
         _print_result(pipeline.run_pypi_daily_update(target_date=args.target_date, provider_slugs=provider_slugs))
+        return
+    if args.command == "npm-daily-update":
+        _print_result(pipeline.run_npm_daily_update(target_date=args.target_date, provider_slugs=provider_slugs))
         return
     if args.command == "github-daily-update":
         _print_result(pipeline.run_github_daily_update(target_date=args.target_date, provider_slugs=provider_slugs))
