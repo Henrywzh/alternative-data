@@ -9,12 +9,14 @@ import pandas as pd
 from provider_adoption_data.models import (
     GithubRepository,
     GithubSignalMatch,
+    NpmDownloadPoint,
     PypiDownloadPoint,
     Snapshot,
 )
 from provider_adoption_data.pipeline import ProviderAdoptionPipeline
 from provider_adoption_data.sources.config import get_provider_registry
 from provider_adoption_data.sources.github import GithubSource
+from provider_adoption_data.sources.npm import NpmDownloadsSource
 from provider_adoption_data.sources.pypi import PypiStatsSource
 
 
@@ -165,6 +167,56 @@ class FakeGithubSource:
         return snapshots, records
 
 
+class FakeNpmSource:
+    def fetch_snapshots(self, providers, start_date, end_date):
+        payloads = []
+        for provider in providers:
+            for package in provider.npm_packages:
+                body = json.dumps(
+                    {
+                        "package": package.package_name,
+                        "start": start_date.isoformat(),
+                        "end": end_date.isoformat(),
+                        "downloads": [
+                            {"day": "2026-04-04", "downloads": 200},
+                            {"day": "2026-04-05", "downloads": 240},
+                        ],
+                    }
+                )
+                payloads.append(
+                    Snapshot(
+                        name=f"npm_{provider.slug}_{package.package_name}".replace("/", "_"),
+                        source_url=f"https://api.npmjs.org/downloads/range/{start_date.isoformat()}:{end_date.isoformat()}/{package.package_name}",
+                        body=body,
+                    )
+                )
+        return payloads
+
+    def extract(self, snapshots, providers):
+        by_package = {
+            package.package_name: (provider.slug, provider.display_name, package.package_type)
+            for provider in providers
+            for package in provider.npm_packages
+        }
+        records = []
+        for snapshot in snapshots:
+            payload = json.loads(snapshot.body)
+            provider_slug, display_name, package_type = by_package[payload["package"]]
+            for row in payload["downloads"]:
+                records.append(
+                    NpmDownloadPoint(
+                        provider=provider_slug,
+                        provider_display_name=display_name,
+                        package_name=payload["package"],
+                        package_type=package_type,
+                        download_date=row["day"],
+                        downloads=row["downloads"],
+                        source_url=snapshot.source_url,
+                    )
+                )
+        return records
+
+
 class FakeResponse:
     def __init__(self, payload: dict, url: str = "https://api.github.com/search/repositories") -> None:
         self._payload = payload
@@ -235,10 +287,45 @@ def test_pypi_source_extracts_with_and_without_mirrors() -> None:
     assert [(point.with_mirrors, point.downloads) for point in points] == [(False, 123), (True, 456)]
 
 
+def test_npm_source_extracts_scoped_package_downloads() -> None:
+    source = NpmDownloadsSource()
+    providers = get_provider_registry(["anthropic"])
+    payload = {
+        "package": "@anthropic-ai/sdk",
+        "start": "2026-04-01",
+        "end": "2026-04-05",
+        "downloads": [
+            {"day": "2026-04-04", "downloads": 321},
+            {"day": "2026-04-05", "downloads": 654},
+        ],
+    }
+
+    points = source.extract(
+        [
+            Snapshot(
+                name="npm_anthropic_sdk",
+                source_url="https://api.npmjs.org/downloads/range/2026-04-01:2026-04-05/@anthropic-ai%2Fsdk",
+                body=json.dumps(payload),
+            )
+        ],
+        providers,
+    )
+
+    assert [(point.package_name, point.downloads) for point in points] == [
+        ("@anthropic-ai/sdk", 321),
+        ("@anthropic-ai/sdk", 654),
+    ]
+
+
 def test_provider_registry_excludes_qwen_from_active_defaults() -> None:
     providers = get_provider_registry()
 
     assert [provider.slug for provider in providers] == ["openai", "anthropic", "google"]
+    assert {provider.slug: [package.package_name for package in provider.npm_packages] for provider in providers} == {
+        "openai": ["openai"],
+        "anthropic": ["@anthropic-ai/sdk"],
+        "google": [],
+    }
 
 
 def test_github_source_fetch_snapshots_handles_pagination_and_filters_archived() -> None:
@@ -284,22 +371,41 @@ def test_github_source_detects_signal_types_from_candidate_contents() -> None:
 
 
 def test_provider_pipeline_repeated_runs_are_idempotent_and_write_manifest(tmp_path: Path) -> None:
-    pipeline = ProviderAdoptionPipeline(tmp_path, pypi_source=FakePypiSource(), github_source=FakeGithubSource())
+    pipeline = ProviderAdoptionPipeline(
+        tmp_path,
+        pypi_source=FakePypiSource(),
+        npm_source=FakeNpmSource(),
+        github_source=FakeGithubSource(),
+    )
 
     first_pypi = pipeline.run_pypi_daily_update(target_date="2026-04-05", provider_slugs=["openai", "anthropic"])
     second_pypi = pipeline.run_pypi_daily_update(target_date="2026-04-05", provider_slugs=["openai", "anthropic"])
+    first_npm = pipeline.run_npm_daily_update(target_date="2026-04-05", provider_slugs=["openai", "anthropic"])
+    second_npm = pipeline.run_npm_daily_update(target_date="2026-04-05", provider_slugs=["openai", "anthropic"])
     pipeline.run_github_daily_update(target_date="2026-04-05", provider_slugs=["openai", "anthropic"])
     pipeline.run_github_daily_update(target_date="2026-04-05", provider_slugs=["openai", "anthropic"])
     pipeline.run_derived_daily_update(target_date="2026-04-05", provider_slugs=["openai", "anthropic"])
     derived = pipeline.run_derived_daily_update(target_date="2026-04-05", provider_slugs=["openai", "anthropic"])
 
     pypi = pd.read_csv(tmp_path / "data" / "normalized" / "provider_adoption" / "pypi_downloads_daily.csv")
+    npm = pd.read_csv(tmp_path / "data" / "normalized" / "provider_adoption" / "npm_downloads_daily.csv")
     rollup = pd.read_csv(tmp_path / "data" / "normalized" / "provider_adoption" / "github_repo_rollup_daily.csv")
     momentum_csv = pd.read_csv(tmp_path / "data" / "normalized" / "provider_adoption" / "provider_momentum_daily.csv")
     momentum_parquet = pd.read_parquet(tmp_path / "data" / "normalized" / "provider_adoption" / "provider_momentum_daily.parquet")
 
     assert first_pypi.datasets_written["pypi_downloads_daily"] == second_pypi.datasets_written["pypi_downloads_daily"]
+    assert first_npm.datasets_written["npm_downloads_daily"] == second_npm.datasets_written["npm_downloads_daily"]
     assert pypi[["provider", "package_name", "with_mirrors", "download_date"]].duplicated().sum() == 0
+    assert npm[["provider", "package_name", "download_date"]].duplicated().sum() == 0
     assert rollup[["provider", "repo_full_name", "signal_date"]].duplicated().sum() == 0
     assert list(momentum_csv.columns) == list(momentum_parquet.columns)
     assert (Path(derived.raw_run_dir) / "manifest.json").exists()
+
+
+def test_npm_start_date_aligns_to_existing_pypi_history(tmp_path: Path) -> None:
+    pipeline = ProviderAdoptionPipeline(tmp_path, pypi_source=FakePypiSource(), npm_source=FakeNpmSource(), github_source=FakeGithubSource())
+
+    pipeline.run_pypi_daily_update(target_date="2026-04-05", provider_slugs=["openai", "anthropic"])
+    start_date = pipeline._resolve_npm_start_date(date.fromisoformat("2026-04-05"), get_provider_registry(["openai", "anthropic"]))
+
+    assert start_date.isoformat() == "2026-04-04"
