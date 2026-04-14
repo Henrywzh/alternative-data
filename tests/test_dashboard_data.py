@@ -280,11 +280,16 @@ def _provider_pypi_frame() -> pd.DataFrame:
 
 def _provider_npm_frame() -> pd.DataFrame:
     rows = []
-    for provider, display_name, package_name, date_value, downloads in [
-        ("openai", "OpenAI", "openai", "2026-04-04", 1500),
-        ("openai", "OpenAI", "openai", "2026-04-05", 1700),
-        ("anthropic", "Anthropic", "@anthropic-ai/sdk", "2026-04-04", 900),
-        ("anthropic", "Anthropic", "@anthropic-ai/sdk", "2026-04-05", 1100),
+    for provider, display_name, package_name, package_category, package_type, date_value, downloads in [
+        ("openai", "OpenAI", "openai", "core_sdk", "sdk", "2026-04-04", 1500),
+        ("openai", "OpenAI", "openai", "core_sdk", "sdk", "2026-04-05", 1700),
+        ("anthropic", "Anthropic", "@anthropic-ai/sdk", "core_sdk", "sdk", "2026-04-04", 900),
+        ("anthropic", "Anthropic", "@anthropic-ai/sdk", "core_sdk", "sdk", "2026-04-05", 1100),
+        ("google", "Google", "@google/genai", "core_sdk", "sdk", "2026-04-04", 800),
+        ("google", "Google", "@google/genai", "core_sdk", "sdk", "2026-04-05", 950),
+        ("openai", "OpenAI", "@openai/agents", "agent_sdk", "sdk", "2026-04-05", 300),
+        ("anthropic", "Anthropic", "@anthropic-ai/claude-code", "cli", "cli", "2026-04-05", 200),
+        ("google", "Google", "@google/generative-ai", "legacy_sdk", "sdk", "2026-04-05", 150),
     ]:
         row = _base_row("npm_downloads_daily")
         row.update(
@@ -292,7 +297,8 @@ def _provider_npm_frame() -> pd.DataFrame:
                 "provider": provider,
                 "provider_display_name": display_name,
                 "package_name": package_name,
-                "package_type": "sdk",
+                "package_type": package_type,
+                "package_category": package_category,
                 "download_date": date_value,
                 "downloads": downloads,
             }
@@ -442,7 +448,7 @@ def test_provider_adoption_scraped_datasets_load_without_momentum_dependency(tmp
     checks = run_checks(datasets, load_latest_manifest(base_dir=tmp_path), base_dir=tmp_path)
 
     assert datasets["pypi_downloads_daily"].row_count == 6
-    assert datasets["npm_downloads_daily"].row_count == 4
+    assert datasets["npm_downloads_daily"].row_count == 9
     assert datasets["github_repo_rollup_daily"].row_count == 3
     assert datasets["provider_momentum_daily"].row_count == 0
     assert all(check.title != "provider_momentum_daily is empty" for check in checks)

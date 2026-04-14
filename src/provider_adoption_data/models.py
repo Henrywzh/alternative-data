@@ -29,6 +29,7 @@ class RunContext:
 class ProviderPackageConfig:
     package_name: str
     package_type: str
+    package_category: str = "core_sdk"
 
 
 @dataclass(frozen=True)
@@ -96,6 +97,7 @@ class NpmDownloadPoint:
     provider_display_name: str
     package_name: str
     package_type: str
+    package_category: str
     download_date: str
     downloads: int
     source_url: str
@@ -112,6 +114,7 @@ class DatasetRecord:
     provider_display_name: str | None = None
     package_name: str | None = None
     package_type: str | None = None
+    package_category: str | None = None
     with_mirrors: bool | None = None
     download_date: str | None = None
     downloads: float | None = None

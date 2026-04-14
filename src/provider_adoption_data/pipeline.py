@@ -111,6 +111,7 @@ class ProviderAdoptionPipeline:
                 provider_display_name=point.provider_display_name,
                 package_name=point.package_name,
                 package_type=point.package_type,
+                package_category=point.package_category,
                 download_date=point.download_date,
                 downloads=point.downloads,
             )

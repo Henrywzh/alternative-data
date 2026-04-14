@@ -50,16 +50,15 @@ class NpmDownloadsSource:
             )
             if provider is None:
                 continue
-            package_type = next(
-                package.package_type for package in provider.npm_packages if package.package_name == package_name
-            )
+            package = next(package for package in provider.npm_packages if package.package_name == package_name)
             for row in payload.get("downloads", []):
                 points.append(
                     NpmDownloadPoint(
                         provider=provider.slug,
                         provider_display_name=provider.display_name,
                         package_name=package_name,
-                        package_type=package_type,
+                        package_type=package.package_type,
+                        package_category=package.package_category,
                         download_date=str(row.get("day")),
                         downloads=int(row.get("downloads") or 0),
                         source_url=snapshot.source_url,
