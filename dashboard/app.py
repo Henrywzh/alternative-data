@@ -175,6 +175,40 @@ def rankings_bucket_warning(context: dict[str, str | bool | None]) -> str | None
     )
 
 
+def prepare_hf_models_table(
+    latest_hf_models: pd.DataFrame,
+    *,
+    provider_display_name: str | None,
+    limit: int = 20,
+) -> pd.DataFrame:
+    if latest_hf_models.empty or not provider_display_name or provider_display_name == "All":
+        return pd.DataFrame(columns=["Provider", "Model", "30d Downloads", "All-Time Downloads", "Daily (Est)", "Likes", "Last Modified"])
+
+    table = latest_hf_models[latest_hf_models["provider_display_name"] == provider_display_name].copy()
+    if table.empty:
+        return pd.DataFrame(columns=["Provider", "Model", "30d Downloads", "All-Time Downloads", "Daily (Est)", "Likes", "Last Modified"])
+
+    table = table.sort_values(
+        ["hf_downloads_30d", "hf_downloads_all_time"],
+        ascending=[False, False],
+        na_position="last",
+    ).head(limit)
+
+    return table.rename(
+        columns={
+            "provider_display_name": "Provider",
+            "model_id": "Model",
+            "hf_downloads_30d": "30d Downloads",
+            "hf_downloads_all_time": "All-Time Downloads",
+            "hf_downloads_daily_est": "Daily (Est)",
+            "hf_likes": "Likes",
+            "hf_last_modified": "Last Modified",
+        }
+    )[
+        ["Provider", "Model", "30d Downloads", "All-Time Downloads", "Daily (Est)", "Likes", "Last Modified"]
+    ]
+
+
 def make_stacked_bar(
     pivot_df: pd.DataFrame,
     colors: list[str],
@@ -1407,25 +1441,17 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
                 index=0,
                 key="provider_adoption_hf_provider",
             )
-            table = latest_hf_models.copy()
-            if selected_hf_provider != "All":
-                table = table[table["provider_display_name"] == selected_hf_provider].copy()
-            table = table.rename(
-                columns={
-                    "provider_display_name": "Provider",
-                    "model_id": "Model",
-                    "hf_downloads_30d": "30d Downloads",
-                    "hf_downloads_all_time": "All-Time Downloads",
-                    "hf_downloads_daily_est": "Daily (Est)",
-                    "hf_likes": "Likes",
-                    "hf_last_modified": "Last Modified",
-                }
-            )[
-                ["Provider", "Model", "30d Downloads", "All-Time Downloads", "Daily (Est)", "Likes", "Last Modified"]
-            ]
-            table = table.sort_values(["30d Downloads", "All-Time Downloads"], ascending=[False, False], na_position="last")
             st.caption(f"Latest HF snapshot: {latest_hf_date or 'n/a'}")
-            st.dataframe(table.fillna("-"), use_container_width=True, hide_index=True)
+            if selected_hf_provider == "All":
+                st.info("Choose a provider to view its top 20 Hugging Face models.")
+            else:
+                table = prepare_hf_models_table(
+                    latest_hf_models,
+                    provider_display_name=selected_hf_provider,
+                    limit=20,
+                )
+                st.caption(f"Showing top 20 models for {selected_hf_provider} by trailing 30d downloads.")
+                st.dataframe(table.fillna("-"), use_container_width=True, hide_index=True)
 
     with pypi_downloads_tab:
         pivot_downloads = (

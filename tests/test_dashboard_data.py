@@ -11,6 +11,7 @@ from dashboard.app import (
     build_normalized_signature,
     compute_provider_adoption_views,
     format_scraped_at_display,
+    prepare_hf_models_table,
     rankings_bucket_warning,
     rankings_week_context,
 )
@@ -335,6 +336,60 @@ def _provider_hf_frame() -> pd.DataFrame:
     return pd.DataFrame(rows, columns=EXPECTED_COLUMNS)
 
 
+def _provider_hf_large_frame() -> pd.DataFrame:
+    rows = []
+    for idx in range(25):
+        row = _base_row("huggingface_models_daily")
+        row.update(
+            {
+                "provider": "qwen",
+                "provider_display_name": "Qwen",
+                "author": "Qwen",
+                "model_id": f"Qwen/model-{idx:02d}",
+                "download_date": "2026-04-06",
+                "hf_downloads_30d": 1000 - idx,
+                "hf_downloads_all_time": 5000 - idx,
+                "hf_downloads_daily_est": 10 + idx,
+                "hf_likes": 100 + idx,
+                "hf_last_modified": "2026-04-06T12:00:00Z",
+            }
+        )
+        rows.append(row)
+
+    tie_high = _base_row("huggingface_models_daily")
+    tie_high.update(
+        {
+            "provider": "openai",
+            "provider_display_name": "OpenAI",
+            "author": "openai",
+            "model_id": "openai/tie-high",
+            "download_date": "2026-04-06",
+            "hf_downloads_30d": 500,
+            "hf_downloads_all_time": 9000,
+            "hf_downloads_daily_est": 50,
+            "hf_likes": 10,
+            "hf_last_modified": "2026-04-06T12:00:00Z",
+        }
+    )
+    tie_low = _base_row("huggingface_models_daily")
+    tie_low.update(
+        {
+            "provider": "openai",
+            "provider_display_name": "OpenAI",
+            "author": "openai",
+            "model_id": "openai/tie-low",
+            "download_date": "2026-04-06",
+            "hf_downloads_30d": 500,
+            "hf_downloads_all_time": 8000,
+            "hf_downloads_daily_est": 40,
+            "hf_likes": 9,
+            "hf_last_modified": "2026-04-06T12:00:00Z",
+        }
+    )
+    rows.extend([tie_low, tie_high])
+    return pd.DataFrame(rows, columns=EXPECTED_COLUMNS)
+
+
 def _provider_candidates_frame() -> pd.DataFrame:
     rows = []
     for provider, display_name, repo_name in [
@@ -614,6 +669,29 @@ def test_compute_provider_adoption_views_includes_hf_aggregates_and_latest_model
     assert set(latest_hf_models["model_id"]) == {"openai/gpt-oss-120b", "anthropic/claude-lite"}
     openai_row = latest_hf_models[latest_hf_models["provider_display_name"] == "OpenAI"].iloc[0]
     assert float(openai_row["hf_downloads_daily_est"]) == 200.0
+
+
+def test_prepare_hf_models_table_returns_empty_for_all_view() -> None:
+    table = prepare_hf_models_table(_provider_hf_frame(), provider_display_name="All")
+
+    assert table.empty
+    assert list(table.columns) == ["Provider", "Model", "30d Downloads", "All-Time Downloads", "Daily (Est)", "Likes", "Last Modified"]
+
+
+def test_prepare_hf_models_table_limits_to_top_20_for_selected_provider() -> None:
+    table = prepare_hf_models_table(_provider_hf_large_frame(), provider_display_name="Qwen", limit=20)
+
+    assert len(table) == 20
+    assert table.iloc[0]["Model"] == "Qwen/model-00"
+    assert table.iloc[-1]["Model"] == "Qwen/model-19"
+
+
+def test_prepare_hf_models_table_uses_all_time_as_tiebreaker() -> None:
+    table = prepare_hf_models_table(_provider_hf_large_frame(), provider_display_name="OpenAI", limit=20)
+
+    assert len(table) == 2
+    assert table.iloc[0]["Model"] == "openai/tie-high"
+    assert table.iloc[1]["Model"] == "openai/tie-low"
 
 
 def test_dataset_source_for_domain_maps_expected_roots() -> None:
