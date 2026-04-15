@@ -1,58 +1,59 @@
 # PROJECT_MAP
 
 ## 📅 Daily Progress
-- Refined `dashboard/app.py` so OpenRouter rankings explicitly distinguish week-start versus week-end buckets, expose scrape timestamps, and warn when the latest completed buckets diverge.
-- Added regression coverage in `tests/test_dashboard_data.py` for UTC scrape formatting and for the week-bucket context logic that drives the new dashboard messaging.
-- Refreshed normalized datasets under `data/normalized/provider_adoption/` and `data/normalized/github_trending/`, keeping the dashboard inputs current without changing the ingestion topology.
+- Added npm provider-adoption tracking to `src/provider_adoption_data/`, then expanded it with package categories so core SDKs, agent SDKs, legacy SDKs, and CLIs can be split cleanly in downstream views.
+- Added `src/provider_adoption_data/sources/huggingface.py` plus `huggingface_models_daily`, wiring Hugging Face org model telemetry into the same provider-adoption pipeline and dashboard domain.
+- Reworked `dashboard/app.py` and `dashboard/data.py` so dashboard views cache against normalized-file signatures, expose the new provider datasets, and render source-specific adoption breakdowns without expensive recomputation on every interaction.
 
 ## 🏗️ System Architecture
 ```mermaid
 graph TD
     PAD[".github/workflows/provider-adoption-daily.yml"] --> PACLI["src/provider_adoption_data/cli.py"]
-    PAB[".github/workflows/provider-adoption-backfill.yml"] --> PACLI
     PACLI --> PAPIPE["src/provider_adoption_data/pipeline.py"]
-    PAPIPE --> PAGH["src/provider_adoption_data/sources/github.py"]
-    PAPIPE --> PAPYPI["src/provider_adoption_data/sources/pypi.py"]
-    PAPIPE --> PASTORE["src/provider_adoption_data/storage.py"]
-    PASTORE --> PARAW["data/raw/provider_adoption"]
-    PASTORE --> PANORM["data/normalized/provider_adoption"]
-
-    ORW[".github/workflows/openrouter-rankings-weekly.yml"] --> ORCLI["src/openrouter_data/cli.py"]
-    ODA[".github/workflows/openrouter-apps-daily.yml"] --> ORCLI
-    ORCLI --> ORPIPE["src/openrouter_data/pipeline.py"]
-    ORPIPE --> ORRANK["src/openrouter_data/sources/rankings.py"]
-    ORPIPE --> ORAPPS["src/openrouter_data/sources/apps.py"]
-    ORPIPE --> ORSTORE["src/openrouter_data/storage.py"]
-    ORSTORE --> ORRAW["data/raw/openrouter"]
-    ORSTORE --> ORNORM["data/normalized/openrouter"]
+    PAPIPE --> PCONFIG["src/provider_adoption_data/sources/config.py"]
+    PAPIPE --> PPYPI["src/provider_adoption_data/sources/pypi.py"]
+    PAPIPE --> PNPM["src/provider_adoption_data/sources/npm.py"]
+    PAPIPE --> PHF["src/provider_adoption_data/sources/huggingface.py"]
+    PAPIPE --> PGH["src/provider_adoption_data/sources/github.py"]
+    PAPIPE --> PSTORE["src/provider_adoption_data/storage.py"]
+    PCONFIG --> PNPM
+    PCONFIG --> PHF
+    PCONFIG --> PPYPI
+    PCONFIG --> PGH
+    PSTORE --> PRAW["data/raw/provider_adoption/*/manifest.json + source payloads"]
+    PSTORE --> PNORM["data/normalized/provider_adoption/*.csv|*.parquet"]
+    PNORM --> PDATASETS["pypi_downloads_daily / npm_downloads_daily / huggingface_models_daily / github_* / provider_momentum_daily"]
 
     GTW[".github/workflows/github-trending-daily.yml"] --> GTCLI["src/github_trending_data/cli.py"]
     GTCLI --> GTPIPE["src/github_trending_data/pipeline.py"]
-    GTPIPE --> GTSCRAPE["src/github_trending_data/scraper.py"]
     GTPIPE --> GTSTORE["src/github_trending_data/storage.py"]
     GTSTORE --> GTNORM["data/normalized/github_trending"]
 
-    PANORM --> DDATA["dashboard/data.py"]
-    ORNORM --> DDATA
+    ORW["OpenRouter normalized datasets"] --> ORNORM["data/normalized/openrouter"]
+
+    PNORM --> DDATA["dashboard/data.py"]
     GTNORM --> DDATA
+    ORNORM --> DDATA
     DDATA --> DCHECKS["dashboard/checks.py"]
     DDATA --> DAPP["dashboard/app.py"]
-    DCHECKS --> DAPP
+    DAPP --> DPROV["Provider adoption views"]
+    DAPP --> DOR["OpenRouter views"]
+    DAPP --> DGT["GitHub trending views"]
 
     TPROV["tests/test_provider_adoption_pipeline.py"] --> PAPIPE
-    TRANK["tests/test_rankings_pipeline.py"] --> ORRANK
-    TAPPS["tests/test_apps_pipeline.py"] --> ORAPPS
     TDASH["tests/test_dashboard_data.py"] --> DDATA
     TDASH --> DAPP
 ```
 
 ## 🧠 Context Memo
-The dashboard change is guarding against a semantic mismatch in OpenRouter's own weekly datasets rather than a rendering bug. `top_models` and `categories_programming` are bucketed by week start, while `market_share` is bucketed by week end, so the latest "complete" week can legitimately differ by nearly a full week on the same scrape.
+The provider registry in `src/provider_adoption_data/sources/config.py` is now the control plane for cross-source mapping. Each provider can declare PyPI packages, npm packages, and Hugging Face orgs in one place, which keeps the pipeline extensible without scattering provider-specific rules across multiple source modules.
 
-The new context helpers in `dashboard/app.py` centralize that interpretation before any KPIs or labels are rendered. That prevents the UI from implying apples-to-apples weekly alignment where none exists and gives tests a stable place to assert the expected week-selection behavior.
+The npm work added `package_category` on top of `package_type` because raw package counts were too coarse once providers started shipping multiple surfaces. Splitting core SDKs from agent SDKs and CLIs lets the dashboard compare adoption by product shape instead of accidentally summing incompatible distribution channels into one number.
 
-Today's data commits are operational refreshes, not architecture changes. They matter because `dashboard/data.py` reads directly from those normalized outputs, so the project map should record that the dashboard inputs changed even when the pipeline code did not.
+The Hugging Face API does not expose a clean daily-download metric per model, so `run_huggingface_daily_update()` derives `hf_downloads_daily_est` by differencing successive all-time totals for the same `(provider, author, model_id)` before writing `huggingface_models_daily`. That approximation is deliberate: it preserves a daily time series for trend analysis while still storing the raw 30-day and all-time counters for later recalculation if the method changes.
+
+The dashboard performance work moved expensive frame preparation behind cache signatures derived from normalized files and latest manifests. That matters because the app now has more provider-adoption slices to aggregate, and recomputing every pivot on each UI interaction would make the new source expansion noticeably sluggish.
 
 ## 🔗 Obsidian Links
 - No new `.md` files were created in the last 24 hours.
-- `PROJECT_MAP.md` remains the root note that ties the workflow entry points, ingestion packages, normalized datasets, and `dashboard/app.py` into one current system view.
+- `PROJECT_MAP.md` remains the root note that ties workflow entry points, ingestion modules, normalized datasets, and dashboard consumers into one current system view.
