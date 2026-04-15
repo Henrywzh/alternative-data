@@ -1,0 +1,78 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e5]:
+        - navigation [ref=e6]:
+          - list [ref=e7]:
+            - listitem [ref=e8]:
+              - link "ADATA" [ref=e9] [cursor=pointer]:
+                - /url: https://www.adata.com/global/en/
+                - img "ADATA" [ref=e10]
+            - listitem [ref=e11]:
+              - link "TRUSTA" [ref=e12] [cursor=pointer]:
+                - /url: https://trusta.adata.com/en
+                - img "TRUSTA" [ref=e13]
+            - listitem [ref=e14]:
+              - link "XPG" [ref=e15] [cursor=pointer]:
+                - /url: https://www.xpg.com/en
+                - img "XPG" [ref=e16]
+            - listitem [ref=e17]:
+              - link "INDUSTRIAL" [ref=e18] [cursor=pointer]:
+                - /url: https://industrial.adata.com/en
+        - navigation [ref=e19]:
+          - list [ref=e20]:
+            - listitem [ref=e21]:
+              - link "ADATA_ESG Sustainability" [ref=e22] [cursor=pointer]:
+                - /url: https://esg.adata.com/en/
+                - img "ADATA_ESG" [ref=e23]
+                - generic [ref=e24]: Sustainability
+      - generic [ref=e25]:
+        - text: 
+        - link "ADATA Logo" [ref=e26] [cursor=pointer]:
+          - /url: /en/
+          - img "ADATA Logo" [ref=e27]
+        - navigation
+        - navigation [ref=e28]:
+          - list [ref=e29]:
+            - listitem [ref=e30]:
+              - link "search" [ref=e31] [cursor=pointer]:
+                - /url: /en/search/
+                - img "search" [ref=e32]
+            - listitem [ref=e33]:
+              - link "member" [ref=e34] [cursor=pointer]:
+                - /url: /en/member/
+                - img "member" [ref=e35]
+            - listitem [ref=e36]:
+              - link "Language" [ref=e37] [cursor=pointer]:
+                - /url: /en/language/
+                - img "Language" [ref=e38]
+    - generic [ref=e41]:
+      - heading "News (Global)" [level=1] [ref=e42]:
+        - text: News
+        - generic [ref=e43]: (Global)
+      - generic [ref=e44]:
+        - generic [ref=e45]:
+          - link "Home" [ref=e46] [cursor=pointer]:
+            - /url: /en/
+          - text: /
+        - generic [ref=e47]: News
+    - contentinfo [ref=e51]:
+      - generic [ref=e54]: Copyright© 2026 ADATA Technology Co., Ltd. All rights reserved.
+  - dialog "This site uses cookies." [ref=e55]:
+    - generic [ref=e56]:
+      - generic [ref=e57]:
+        - heading "This site uses cookies." [level=2] [ref=e58]
+        - paragraph [ref=e59]:
+          - text: We use cookies to improve your experience, personalize content, target advertising, and analyze traffic. To learn more, please read our
+          - link "privacy policy" [ref=e60] [cursor=pointer]:
+            - /url: https://www.adata.com/en/privacy
+          - text: ","
+          - link "Terms of Use" [ref=e61] [cursor=pointer]:
+            - /url: https://www.adata.com/en/terms
+          - text: .
+      - generic [ref=e62]:
+        - generic [ref=e63]:
+          - button "Accept all" [ref=e64] [cursor=pointer]
+          - button "Reject all" [ref=e65] [cursor=pointer]
+        - button "Manage preferences" [ref=e67] [cursor=pointer]
+  - alert [ref=e68]

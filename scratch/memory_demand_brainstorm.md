@@ -1,0 +1,68 @@
+# Predicting Memory Demand (HBM/DRAM/NAND): A Hierarchy of Alternative Data
+
+While tracking model benchmarks and context windows (our current `llm_benchmark_data` approach) is excellent for understanding the *technical drivers* of memory demand, it is fundamentally a **lagging or coincident indicator** of capital expenditure (CapEx). Models are released *after* the hardware has been purchased and deployed.
+
+To accurately predict HBM, DRAM, and NAND demand, we need to track data points closer to the **actual deployment of hardware** and the **scaling of data centers**. Here is a framework of alternative data, ranked by reliability and proximity to actual semiconductor demand.
+
+## Tier 1: Direct Infrastructure Proxies (Most Reliable)
+
+These metrics directly reflect the physical scaling of AI compute, which has a 1-to-1 mapping with memory demand.
+
+### 1. Cloud Provider Instance Availability & Spot Pricing
+*   **The Logic:** HBM/DRAM demand is driven by the deployment of AI accelerators (GPUs/TPUs). If cloud providers have excess capacity, prices drop. If supply is constrained, spot prices spike.
+*   **Alternative Data:**
+    *   **Lambda Labs / CoreWeave Availability APIs:** Scraping GPU cluster availability. If 1024-node clusters of H100s/B200s are constantly sold out, HBM demand is surging.
+    *   **AWS/GCP/Azure Spot Instance Pricing:** Tracking the inter-day volatility of `p5.48xlarge` (H100) or `p6` (Blackwell) instances.
+*   **Why it works:** Direct proxy for compute bottleneck. High utilization = more data center build-outs = more memory orders.
+
+### 2. OpenRouter / API Gateway Latency & Throughput (Tokens/s)
+*   **The Logic:** HBM is primarily an *inference bandwidth* bottleneck. If inference demand exceeds HBM capacity across the network, overall throughput (Tokens/second) will degrade globally.
+*   **Alternative Data:**
+    *   **OpenRouter Routing Metrics:** Scraping the `throughput` and `latency` metrics for top-tier models (found in our ZeroEval dataset).
+    *   **API Load Balancing Telemetry:** Tracking how often requests are queued or rate-limited.
+*   **Why it works:** If global throughput is dropping despite new model releases, it signals a severe hardware bottleneck, forcing infrastructure providers to buy higher-bandwidth memory (HBM4/DDR6).
+
+## Tier 2: Upstream Supply Chain & Power Indicators (Highly Reliable)
+
+These are physical-world constraints that precede silicon deployment.
+
+### 3. Data Center Power Consumption & Permitting
+*   **The Logic:** You can't install memory without servers, and you can't run servers without power.
+*   **Alternative Data:**
+    *   **Regional Power Grid Data (e.g., ERCOT in Texas, PJM in Virginia):** Tracking load growth in specific data center alley zip codes.
+    *   **Environmental Impact Reports / Construction Permits:** Scraping municipal databases for new cooling tower permits (liquid cooling is required for next-gen HBM-dense clusters).
+*   **Why it works:** Power constraints are currently the primary bottleneck for AI scaling. Tracking permits gives a 12-18 month leading indicator of server deployments (and thus, DRAM/NAND demand).
+
+### 4. Advanced Packaging (CoWoS) Lead Times & Utilization
+*   **The Logic:** HBM cannot be used standalone; it must be co-packaged with the GPU logic die using 2.5D/3D packaging (like TSMC's CoWoS). If CoWoS capacity is constrained, HBM shipments are constrained.
+*   **Alternative Data:**
+    *   **Supply Chain Scraping:** Parsing Taiwanese trade journals (DigiTimes), TSMC supplier job postings, or import/export logs (Panjiva/ImportGenius) for packaging equipment.
+*   **Why it works:** HBM demand = GPU demand = CoWoS capacity. Tracking the choke point (packaging) clarifies the actual memory output.
+
+## Tier 3: Workload Complexity Drivers (The "Why")
+
+This expands on our current benchmark tracker, focusing on the *type* of data being processed.
+
+### 5. Multimodal Ingestion Rates (NAND/Storage Driver)
+*   **The Logic:** Text models require HBM for KV cache, but *multimodal* (video/audio) models require massive amounts of NAND flash for training data storage and checkpointing.
+*   **Alternative Data:**
+    *   **Hugging Face Dataset Sizes:** Tracking the total terabytes of video datasets added weekly to HF.
+    *   **YouTube/TikTok Content Generation Velocity:** Scraping the volume of AI-generated video content uploaded.
+*   **Why it works:** Video generation (e.g., Sora, Veo) requires orders of magnitude more storage (NAND) than text. Tracking the shift to multimodal workloads predicts the inflection point for high-capacity enterprise SSDs.
+
+### 6. The "Agentic KV Cache" Tracker (DRAM/HBM Driver)
+*   **The Logic:** Agentic workflows (like AutoGPT or SWE-agent) use massive context windows and run in loops. This eats up KV Cache, forcing cloud providers to deploy more DRAM per server.
+*   **Alternative Data:**
+    *   **GitHub Copilot/Cursor Telemetry:** (If available) or proxy metrics like the number of PRs generated by known agent bots on GitHub.
+*   **Why it works:** Measures the *intensity* of inference, not just the raw capability of the model.
+
+---
+
+## Summary: Building the Ultimate Memory Demand Dashboard
+
+To build a truly predictive quantitative signal for HBM/DRAM/NAND, I would combine:
+
+1.  **Supply Constraint:** Cloud GPU Spot Pricing Volatility (Tier 1).
+2.  **Inference Bottleneck:** OpenRouter Global Throughput Trends (Tier 1).
+3.  **App-Layer Driver:** Context Window Expansion (Our current ZeroEval pipeline).
+4.  **Storage Driver:** Hugging Face Multimodal Dataset Growth Rate (Tier 3).

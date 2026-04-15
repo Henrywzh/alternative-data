@@ -152,6 +152,54 @@ DATASET_REGISTRY: dict[str, dict[str, object]] = {
         "metric_column": "hf_downloads_daily_est",
         "required_columns": ["provider", "author", "model_id", "download_date", "hf_downloads_daily_est"],
     },
+    "semiconductor_memory_regime_monthly": {
+        "label": "Semiconductor Market Regimes",
+        "domain": "semiconductor_memory",
+        "natural_keys": ["month"],
+        "primary_date_column": "month",
+        "metric_column": "fred_ppi_value",
+        "required_columns": ["month", "nand_regime_label", "dram_regime_label", "fred_ppi_value"],
+    },
+    "adata_marketwatch_images": {
+        "label": "Memory Market Images",
+        "domain": "semiconductor_memory",
+        "natural_keys": ["month", "image_url"],
+        "primary_date_column": "month",
+        "metric_column": None,
+        "required_columns": ["month", "image_url", "local_path", "image_type"],
+    },
+    "llm_benchmarks": {
+        "label": "LLM Benchmarks",
+        "domain": "ai_frontier",
+        "natural_keys": ["model_id"],
+        "primary_date_column": "release_date",
+        "metric_column": "gpqa",
+        "required_columns": ["model_id", "name", "organization", "release_date", "gpqa", "swe_bench", "context_window"],
+    },
+    "raw_openrouter_models": {
+        "label": "OpenRouter Catalog",
+        "domain": "compute_availability",
+        "natural_keys": ["model_id", "snapshot_ts"],
+        "primary_date_column": "snapshot_ts",
+        "metric_column": "pricing_prompt",
+        "required_columns": ["model_id", "snapshot_ts", "pricing_prompt", "pricing_completion", "context_length"],
+    },
+    "raw_lambda_instance_types": {
+        "label": "Lambda GPU Stock",
+        "domain": "compute_availability",
+        "natural_keys": ["instance_type_name", "region", "snapshot_ts"],
+        "primary_date_column": "snapshot_ts",
+        "metric_column": "gpu_count",
+        "required_columns": ["instance_type_name", "region", "snapshot_ts", "gpu_type", "gpu_count"],
+    },
+    "raw_aws_spot_price_history": {
+        "label": "AWS Spot Pricing",
+        "domain": "compute_availability",
+        "natural_keys": ["instance_type", "availability_zone", "product_description", "price_timestamp"],
+        "primary_date_column": "price_timestamp",
+        "metric_column": "spot_price",
+        "required_columns": ["instance_type", "availability_zone", "region", "price_timestamp", "spot_price"],
+    },
 }
 
 DOMAIN_ORDER = {
@@ -180,6 +228,18 @@ DOMAIN_ORDER = {
         "github_repo_rollup_daily",
         "provider_momentum_daily",
         "huggingface_models_daily",
+    ],
+    "semiconductor_memory": [
+        "semiconductor_memory_regime_monthly",
+        "adata_marketwatch_images",
+    ],
+    "ai_frontier": [
+        "llm_benchmarks",
+    ],
+    "compute_availability": [
+        "raw_openrouter_models",
+        "raw_lambda_instance_types",
+        "raw_aws_spot_price_history",
     ],
 }
 
@@ -281,8 +341,81 @@ PROVIDER_ADOPTION_COLUMNS = [
     "github_model_repo_count",
     "momentum_score",
 ]
+SEMICONDUCTOR_COLUMNS = [
+    "month",
+    "fetch_time",
+    "title",
+    "raw_text",
+    "raw_html_path",
+    "page_url",
+    "image_url",
+    "local_path",
+    "image_type",
+    "vision_extracted",
+    "vision_result_json",
+    "extracted_at",
+    "narrative_nand_supply",
+    "narrative_nand_price",
+    "narrative_dram_supply",
+    "narrative_dram_price",
+    "mentions_hbm",
+    "mentions_csp",
+    "mentions_server",
+    "mentions_ddr4",
+    "mentions_reallocate_capacity",
+    "mentions_shortage",
+    "mentions_oversupply",
+    "nand_regime_label",
+    "dram_regime_label",
+    "date",
+    "series_id",
+    "series_name",
+    "value",
+    "fred_ppi_value",
+    "fred_ppi_mom_pct",
+    "fred_ppi_3m_trend",
+    "adata_freshness_days",
+    "fred_release_lag_days",
+    "data_completeness",
+]
 
-EXPECTED_COLUMNS = CORE_COLUMNS + RANKINGS_COLUMNS + APPS_COLUMNS + GITHUB_COLUMNS + PROVIDER_ADOPTION_COLUMNS
+BENCHMARK_COLUMNS = [
+    "organization",
+    "release_date",
+    "gpqa",
+    "swe_bench",
+    "context_window",
+]
+
+COMPUTE_AVAILABILITY_COLUMNS = [
+    "snapshot_ts",
+    "model_id",
+    "model_name",
+    "created",
+    "context_length",
+    "architecture",
+    "pricing_prompt",
+    "pricing_completion",
+    "top_provider",
+    "instance_type_name",
+    "gpu_type",
+    "gpu_count",
+    "gpu_description",
+    "instance_vcpus",
+    "instance_memory_gib",
+    "region",
+    "availability_zone",
+    "instance_type",
+    "product_description",
+    "spot_price",
+    "price_timestamp",
+]
+
+EXPECTED_COLUMNS = list(dict.fromkeys(
+    CORE_COLUMNS + RANKINGS_COLUMNS + APPS_COLUMNS + GITHUB_COLUMNS +
+    PROVIDER_ADOPTION_COLUMNS + SEMICONDUCTOR_COLUMNS + BENCHMARK_COLUMNS +
+    COMPUTE_AVAILABILITY_COLUMNS
+))
 
 DATE_COLUMNS = [
     "week_start_date",
@@ -297,6 +430,11 @@ DATE_COLUMNS = [
     "repo_created_at",
     "repo_pushed_at",
     "signal_date",
+    "month",
+    "date",
+    "release_date",
+    "price_timestamp",
+    "snapshot_ts",
 ]
 NUMERIC_COLUMNS = [
     "metric_value",
@@ -323,6 +461,21 @@ NUMERIC_COLUMNS = [
     "github_env_repo_count",
     "github_model_repo_count",
     "momentum_score",
+    "fred_ppi_value",
+    "fred_ppi_mom_pct",
+    "fred_ppi_3m_trend",
+    "adata_freshness_days",
+    "fred_release_lag_days",
+    "gpqa",
+    "swe_bench",
+    "context_window",
+    "pricing_prompt",
+    "pricing_completion",
+    "gpu_count",
+    "spot_price",
+    "instance_vcpus",
+    "instance_memory_gib",
+    "context_length",
 ]
 
 
@@ -379,6 +532,12 @@ def dataset_source_for_domain(domain: str) -> str:
         return "github_trending"
     if domain == "provider_adoption":
         return "provider_adoption"
+    if domain == "semiconductor_memory":
+        return "semiconductor_memory"
+    if domain == "ai_frontier":
+        return "llm_benchmarks"
+    if domain == "compute_availability":
+        return "compute_availability"
     return "openrouter"
 
 
@@ -391,6 +550,12 @@ def load_dataset(dataset_id: str, base_dir: Path | None = None) -> DatasetLoadRe
         source = "github_trending"
     elif domain == "provider_adoption":
         source = "provider_adoption"
+    elif domain == "semiconductor_memory":
+        source = "semiconductor_memory"
+    elif domain == "ai_frontier":
+        source = "llm_benchmarks"
+    elif domain == "compute_availability":
+        source = "compute_availability"
     base = normalized_root(base_dir, source=source)
     parquet_path = base / f"{dataset_id}.parquet"
     csv_path = base / f"{dataset_id}.csv"
@@ -412,6 +577,9 @@ def load_dataset(dataset_id: str, base_dir: Path | None = None) -> DatasetLoadRe
         print(f"Warning: Failed to load dataset {dataset_id} from {parquet_path if parquet_path.exists() else csv_path}: {e}")
         # frame remains an empty DataFrame initialized above
     
+    # CRITICAL: Ensure no duplicate columns exist before padding/filtering
+    frame = frame.loc[:, ~frame.columns.duplicated()].copy()
+
     required_columns = list(CORE_COLUMNS) + list(registry_entry.get("required_columns", []))
     missing_columns = [column for column in required_columns if column not in frame.columns]
 

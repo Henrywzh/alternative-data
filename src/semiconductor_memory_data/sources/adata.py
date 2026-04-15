@@ -292,22 +292,10 @@ class AdataEDMSource:
 
     def _derive_regime(self, section_map: dict[str, str], section_keywords: tuple[str, ...]) -> str:
         """
-        Concat text from sections whose heading contains any of the section_keywords.
-        "shortage" takes precedence over "oversupply" if both match.
-        Falls back to "balanced".
+        Placeholder for regime derivation. 
+        Will be replaced by LLM-based scoring in the future.
         """
-        relevant: list[str] = []
-        for heading, text in section_map.items():
-            if any(kw.lower() in heading.lower() for kw in section_keywords):
-                relevant.append(text)
-        combined = " ".join(relevant)
-        if not combined.strip():
-            return "balanced"
-        if re.search(KEYWORD_PATTERNS["mentions_shortage"], combined, re.IGNORECASE):
-            return "shortage"
-        if re.search(KEYWORD_PATTERNS["mentions_oversupply"], combined, re.IGNORECASE):
-            return "oversupply"
-        return "balanced"
+        return "SCORING... LLM PENDING"
 
     def _extract_narrative(self, section_map: dict[str, str], section_keywords: tuple[str, ...]) -> str:
         """Return concatenated text from all sections matching any keyword."""

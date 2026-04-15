@@ -52,6 +52,8 @@ NPM_CATEGORY_LABELS = {
     "legacy_sdk": "Legacy SDK",
 }
 
+BIG_TECH_ORGS = ["openai", "google", "anthropic", "meta", "mistralai", "deepseek", "qwen"]
+
 
 # ---------------------------------------------------------------------------
 # Utilities
@@ -521,6 +523,128 @@ def compute_provider_adoption_views(datasets: dict[str, DatasetLoadResult]) -> d
     return views
 
 
+@st.cache_data(ttl=3600)
+def compute_llm_benchmark_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, object]:
+    views: dict[str, object] = {}
+    result = datasets.get("llm_benchmarks")
+    if not result or result.frame.empty:
+        return {"models_df": pd.DataFrame(), "sota_peaks": pd.DataFrame(), "innovation_velocity": 0, "frontier_avg": {}}
+
+    df = result.frame.copy()
+    df["release_date"] = pd.to_datetime(df["release_date"], errors="coerce")
+    df = df.dropna(subset=["release_date"]).sort_values("release_date")
+    
+    # 1. Compute Running Max SOTA for GPQA
+    df["gpqa_sota"] = df["gpqa"].cummax().fillna(0)
+    sota_peaks = df[df["gpqa"] >= df["gpqa_sota"]].copy()
+    
+    # 2. Innovation Velocity (Days between SOTA breaks)
+    sota_peaks["days_since_prev"] = sota_peaks["release_date"].diff().dt.days
+    velocity = sota_peaks["days_since_prev"].tail(5).mean() if len(sota_peaks) >= 2 else 0
+
+    # 3. Frontier Level (Top 5% metrics)
+    threshold = df["gpqa"].quantile(0.95) if not df.empty else 0
+    frontier_df = df[df["gpqa"] >= threshold].copy()
+    
+    frontier_avg = {
+        "context_window": frontier_df["context_window"].mean() if not frontier_df.empty else 0,
+        "gpqa": frontier_df["gpqa"].mean() if not frontier_df.empty else 0,
+        "swe_bench": frontier_df["swe_bench"].mean() if not frontier_df.empty else 0,
+        "max_gpqa": df["gpqa"].max(),
+        "max_swe": df["swe_bench"].max(),
+        "threshold": threshold,
+    }
+
+    views["models_df"] = df
+    views["sota_peaks"] = sota_peaks
+    views["innovation_velocity"] = velocity
+    views["frontier_avg"] = frontier_avg
+    return views
+
+
+@st.cache_data(ttl=3600)
+def compute_semiconductor_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, object]:
+    views: dict[str, object] = {}
+    
+    regime_result = datasets.get("semiconductor_memory_regime_monthly")
+    images_result = datasets.get("adata_marketwatch_images")
+    
+    regime_df = regime_result.frame.copy() if regime_result and not regime_result.frame.empty else pd.DataFrame()
+    images_df = images_result.frame.copy() if images_result and not images_result.frame.empty else pd.DataFrame()
+    
+    if not regime_df.empty:
+        regime_df["month"] = regime_df["month"].astype(str)
+        regime_df = regime_df.sort_values("month")
+        
+        # Simple extraction of Hynix/Micron counts if not already present or for focus
+        # In reality the DatasetRecord might already have some of this, but let's ensure focus
+        if "raw_text" in regime_df.columns:
+            regime_df["hynix_mentions"] = regime_df["raw_text"].str.count("Hynix").fillna(0)
+            regime_df["micron_mentions"] = regime_df["raw_text"].str.count("Micron").fillna(0)
+        else:
+            regime_df["hynix_mentions"] = 0
+            regime_df["micron_mentions"] = 0
+
+        latest_month = regime_df["month"].max()
+        latest_data = regime_df[regime_df["month"] == latest_month].iloc[0]
+    else:
+        latest_month = None
+        latest_data = pd.Series()
+        
+    views["regime_df"] = regime_df
+    views["latest_month"] = latest_month
+    views["latest_data"] = latest_data
+    
+    if not images_df.empty:
+        images_df["month"] = images_df["month"].astype(str)
+        
+    views["images_df"] = images_df
+    
+    return views
+
+
+@st.cache_data(ttl=3600)
+def compute_compute_availability_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, object]:
+    views: dict[str, object] = {}
+
+    # 1. AWS Spot Prices
+    spot_result = datasets.get("raw_aws_spot_price_history")
+    if spot_result and not spot_result.frame.empty:
+        df = spot_result.frame.copy()
+        df["price_timestamp"] = pd.to_datetime(df["price_timestamp"], errors="coerce")
+        df = df.sort_values("price_timestamp")
+        views["spot_df"] = df
+    else:
+        views["spot_df"] = pd.DataFrame()
+
+    # 2. Lambda Inventory
+    lambda_result = datasets.get("raw_lambda_instance_types")
+    if lambda_result and not lambda_result.frame.empty:
+        df = lambda_result.frame.copy()
+        df["snapshot_ts"] = pd.to_datetime(df["snapshot_ts"], errors="coerce")
+        latest_ts = df["snapshot_ts"].max()
+        views["lambda_latest"] = df[df["snapshot_ts"] == latest_ts].copy()
+    else:
+        views["lambda_latest"] = pd.DataFrame()
+
+    # 3. OpenRouter Models (Growth & Pricing)
+    models_result = datasets.get("raw_openrouter_models")
+    if models_result and not models_result.frame.empty:
+        df = models_result.frame.copy()
+        df["snapshot_ts"] = pd.to_datetime(df["snapshot_ts"], errors="coerce")
+        latest_ts = df["snapshot_ts"].max()
+        views["models_latest"] = df[df["snapshot_ts"] == latest_ts].copy()
+        
+        # Historical growth
+        growth = df.groupby("snapshot_ts")["model_id"].nunique().reset_index().rename(columns={"model_id": "model_count"})
+        views["models_growth"] = growth
+    else:
+        views["models_latest"] = pd.DataFrame()
+        views["models_growth"] = pd.DataFrame()
+
+    return views
+
+
 # ---------------------------------------------------------------------------
 # CSS
 # ---------------------------------------------------------------------------
@@ -538,14 +662,19 @@ def inject_css() -> None:
         .kpi-card {{
             flex: 1 1 200px;
             background: rgba(128, 128, 128, 0.05);
-            border: 1px solid rgba(128, 128, 128, 0.2);
-            border-radius: 12px;
-            padding: 1.1rem 1.3rem;
+            border: 1px solid rgba(128, 128, 128, 0.1);
+            border-radius: 8px;
+            padding: 1.25rem;
+            text-align: left;
+            transition: transform 0.2s;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
         }}
+        .kpi-card:hover {{ transform: translateY(-2px); }}
         .kpi-label {{
-            font-size: 0.72rem;
-            color: {MUTED};
+            font-size: 0.85rem;
+            color: #6B7280;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
             text-transform: uppercase;
             letter-spacing: 0.1em;
             margin-bottom: 0.35rem;
@@ -1724,6 +1853,325 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
         st.dataframe(summary.fillna("-"), use_container_width=True, hide_index=True)
 
 
+def render_semiconductor_section(datasets: dict[str, DatasetLoadResult], semi_views: dict[str, object]) -> None:
+    regime_df = semi_views.get("regime_df", pd.DataFrame())
+    images_df = semi_views.get("images_df", pd.DataFrame())
+
+    if regime_df.empty:
+        st.warning("No semiconductor memory data available.")
+        return
+
+    # --- Header with Month Selector ---
+    h_col1, h_col2 = st.columns([2, 1])
+    with h_col1:
+        st.markdown('<div class="section-title">Market Intelligence Hub</div>', unsafe_allow_html=True)
+    with h_col2:
+        available_months = sorted(regime_df["month"].unique(), reverse=True)
+        selected_month = st.selectbox("Analysis Snapshot", available_months, index=0)
+
+    current_data = regime_df[regime_df["month"] == selected_month].iloc[0]
+    current_images = images_df[images_df["month"] == selected_month] if not images_df.empty else pd.DataFrame()
+
+    # --- KPIs with Lag Handling ---
+    ppi_val = current_data.get("fred_ppi_value")
+    ppi_mom = current_data.get("fred_ppi_mom_pct")
+    nand_regime = current_data.get("nand_regime_label", "n/a")
+    dram_regime = current_data.get("dram_regime_label", "n/a")
+
+    # PPI Fallback: find latest available PPI if current month is blank
+    ppi_display_val = "—"
+    ppi_sub_label = "report period"
+    
+    if pd.notna(ppi_val):
+        ppi_display_val = f"{ppi_val:.1f}"
+    else:
+        # Search backwards for last valid PPI
+        valid_ppi_df = regime_df[regime_df["month"] <= selected_month].dropna(subset=["fred_ppi_value"]).sort_values("month")
+        if not valid_ppi_df.empty:
+            last_record = valid_ppi_df.iloc[-1]
+            ppi_display_val = f"{last_record['fred_ppi_value']:.1f}"
+            ppi_sub_label = f"As of {last_record['month']}"
+
+    delta_html = ""
+    if pd.notna(ppi_mom):
+        delta_cls = "kpi-delta-up" if ppi_mom >= 0 else "kpi-delta-down"
+        delta_icon = "↑" if ppi_mom >= 0 else "↓"
+        delta_html = f'<div class="{delta_cls}">{delta_icon} {abs(ppi_mom):.1f}% MoM</div>'
+    else:
+        delta_html = f'<div class="kpi-delta-flat">{ppi_sub_label}</div>'
+
+    # Regime Styling logic — handle "LLM PENDING"
+    def get_regime_style(label: str) -> str:
+        label_up = str(label).upper()
+        if "PENDING" in label_up:
+            return 'class="regime-pending"'
+        if label_up == 'SHORTAGE':
+            return f'style="color:{RED};"'
+        if label_up == 'OVERSUPPLY':
+            return f'style="color:{GREEN};"'
+        return ""
+
+    st.markdown(
+        f"""
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-label">Month Selector</div>
+            <div class="kpi-value">{selected_month}</div>
+            <div class="kpi-delta-flat">active snapshot</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Semiconductor PPI</div>
+            <div class="kpi-value">{ppi_display_val}</div>
+            {delta_html}
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">NAND Regime</div>
+            <div class="kpi-value regime-value" {get_regime_style(nand_regime)}>
+                {nand_regime}
+            </div>
+            <div class="kpi-delta-flat">market condition</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">DRAM Regime</div>
+            <div class="kpi-value regime-value" {get_regime_style(dram_regime)}>
+                {dram_regime}
+            </div>
+            <div class="kpi-delta-flat">market condition</div>
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    # --- Main Content ---
+    col1, col2 = st.columns([1, 1])
+
+    with col1:
+        st.markdown(f'<div class="section-title">Latest Report Analysis ({selected_month})</div>', unsafe_allow_html=True)
+        if not current_images.empty:
+            for _, row in current_images.head(2).iterrows():
+                img_path = BASE_DIR / row["local_path"]
+                if img_path.exists():
+                    st.image(str(img_path), caption=f"{row['image_type'].title()} - {row['month']}")
+                else:
+                    st.caption(f"Image not found: {row['local_path']}")
+        else:
+            st.info(f"No captured images available for the {selected_month} report.")
+
+    with col2:
+        st.markdown('<div class="section-title">Narrative Highlights</div>', unsafe_allow_html=True)
+        st.markdown(f"**NAND Supply:** {current_data.get('narrative_nand_supply', '—')}")
+        st.markdown(f"**NAND Price:** {current_data.get('narrative_nand_price', '—')}")
+        st.markdown("---")
+        st.markdown(f"**DRAM Supply:** {current_data.get('narrative_dram_supply', '—')}")
+        st.markdown(f"**DRAM Price:** {current_data.get('narrative_dram_price', '—')}")
+        
+        st.markdown('<div class="section-title">Key Mentions Focus</div>', unsafe_allow_html=True)
+        hynix_m = current_data.get("hynix_mentions", 0)
+        micron_m = current_data.get("micron_mentions", 0)
+        hbm_m = current_data.get("mentions_hbm", False)
+        
+        m_col1, m_col2, m_col3 = st.columns(3)
+        m_col1.metric("SK Hynix", int(hynix_m))
+        m_col2.metric("Micron", int(micron_m))
+        m_col3.metric("HBM Mention", "Yes" if hbm_m else "No")
+
+    # --- Archive & History ---
+    hist_tab1, hist_tab2 = st.tabs(["📊 Performance Trends", "📜 Commentary Archive"])
+    
+    with hist_tab1:
+        trend_col1, trend_col2 = st.columns(2)
+        with trend_col1:
+            fig_ppi = go.Figure()
+            fig_ppi.add_trace(go.Scatter(
+                x=regime_df["month"], y=regime_df["fred_ppi_value"],
+                mode="lines+markers", name="PPI Value",
+                line=dict(color=ACCENT, width=3)
+            ))
+            fig_ppi.update_layout(title="Semiconductor PPI Trend", template="plotly_white", height=350, margin=dict(l=0, r=0, t=40, b=10))
+            st.plotly_chart(fig_ppi, use_container_width=True)
+
+        with trend_col2:
+            fig_mentions = go.Figure()
+            fig_mentions.add_trace(go.Scatter(x=regime_df["month"], y=regime_df["hynix_mentions"], mode="lines", name="SK Hynix", line=dict(color="#00B5A4")))
+            fig_mentions.add_trace(go.Scatter(x=regime_df["month"], y=regime_df["micron_mentions"], mode="lines", name="Micron", line=dict(color="#FF7849")))
+            fig_mentions.update_layout(title="Mention Momentum", template="plotly_white", height=350, margin=dict(l=0, r=0, t=40, b=10))
+            st.plotly_chart(fig_mentions, use_container_width=True)
+
+    with hist_tab2:
+        st.markdown('<div class="section-title">Monthly Narrative Comparison</div>', unsafe_allow_html=True)
+        archive_df = regime_df.sort_values("month", ascending=False).head(12)[["month", "narrative_nand_supply", "narrative_dram_supply"]]
+        archive_df.columns = ["Month", "NAND Supply Analysis", "DRAM Supply Analysis"]
+        st.dataframe(archive_df.fillna("—"), use_container_width=True, hide_index=True)
+
+
+def render_ai_frontier_section(datasets: dict[str, DatasetLoadResult], benchmark_views: dict[str, object]) -> None:
+    models_df = benchmark_views.get("models_df", pd.DataFrame())
+    sota_peaks = benchmark_views.get("sota_peaks", pd.DataFrame())
+    frontier_avg = benchmark_views.get("frontier_avg", {})
+    velocity = benchmark_views.get("innovation_velocity", 0)
+
+    if models_df.empty:
+        st.warning("No LLM benchmark data available. Run 'cli update' for llm_benchmark_data.")
+        return
+
+    # --- Header & Filter ---
+    h_col1, h_col2 = st.columns([2, 1])
+    with h_col1:
+        st.markdown('<div class="section-title">AI Frontier & Intelligence Dynamics</div>', unsafe_allow_html=True)
+    with h_col2:
+        min_date = models_df["release_date"].min().date()
+        max_date = models_df["release_date"].max().date()
+        default_start = max_date - pd.Timedelta(days=365)
+        date_range = st.date_input(
+            "Analysis Period",
+            value=(max(min_date, default_start), max_date),
+            min_value=min_date,
+            max_value=max_date,
+        )
+
+    if len(date_range) == 2:
+        start_date, end_date = date_range
+        filtered_df = models_df[
+            (models_df["release_date"].dt.date >= start_date) & 
+            (models_df["release_date"].dt.date <= end_date)
+        ].copy()
+    else:
+        filtered_df = models_df.copy()
+
+    # Re-calculate KPIs for filtered range
+    range_max_gpqa = filtered_df["gpqa"].max()
+    range_max_swe = filtered_df["swe_bench"].max()
+    range_avg_context = filtered_df[filtered_df["gpqa"] >= filtered_df["gpqa"].quantile(0.95)]["context_window"].mean() if not filtered_df.empty else 0
+
+    # --- KPI Row ---
+    st.markdown(
+        f"""
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-label">Innovation Velocity</div>
+            <div class="kpi-value">{velocity:.1f}d</div>
+            <div class="kpi-delta-flat">Avg SOTA cycle</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Frontier Context Floor</div>
+            <div class="kpi-value">{format_metric(range_avg_context)}</div>
+            <div class="kpi-delta-up">↑ High Demand</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Peak Intelligence (GPQA)</div>
+            <div class="kpi-value">{range_max_gpqa:.1%}</div>
+            <div class="kpi-delta-flat">selected range</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Peak Agents (SWE-bench)</div>
+            <div class="kpi-value">{range_max_swe:.1%}</div>
+            <div class="kpi-delta-flat">verified coding</div>
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    # --- Charts ---
+    c_col1, c_col2 = st.columns(2)
+
+    with c_col1:
+        # SOTA Progress Chart
+        st.markdown('<div class="section-subtitle" style="margin-top:1rem;">Intelligence SOTA Path (GPQA)</div>', unsafe_allow_html=True)
+        fig_sota = go.Figure()
+        
+        # All models (smaller)
+        fig_sota.add_trace(go.Scatter(
+            x=filtered_df["release_date"], y=filtered_df["gpqa"],
+            mode="markers", name="Other Models",
+            marker=dict(size=6, color=MUTED, opacity=0.3),
+            hovertemplate="<b>%{text}</b><br>%{x}<br>Score: %{y:.3f}<extra></extra>",
+            text=filtered_df["name"]
+        ))
+        
+        # SOTA line (Peaks)
+        range_sota = sota_peaks[
+            (sota_peaks["release_date"].dt.date >= start_date) & 
+            (sota_peaks["release_date"].dt.date <= end_date)
+        ]
+        fig_sota.add_trace(go.Scatter(
+            x=range_sota["release_date"], y=range_sota["gpqa"],
+            mode="lines+markers", name="SOTA Peaks",
+            line=dict(color=ACCENT, width=3, shape="hv"),
+            marker=dict(size=10, symbol="star", color=ACCENT),
+            hovertemplate="<b>SOTA: %{text}</b><br>%{x}<br>Score: %{y:.3f}<extra></extra>",
+            text=range_sota["name"]
+        ))
+        
+        fig_sota.update_layout(template="plotly_white", height=380, margin=dict(l=0, r=0, t=20, b=40), legend=dict(orientation="h", y=-0.2))
+        st.plotly_chart(fig_sota, use_container_width=True, theme=None)
+
+    with c_col2:
+        # Context Window Scaling
+        st.markdown('<div class="section-subtitle" style="margin-top:1rem;">Memory Demand: Context Window Scaling</div>', unsafe_allow_html=True)
+        
+        # Highlight Big Tech
+        def get_color(org):
+            org_lower = str(org).lower()
+            for tech in BIG_TECH_ORGS:
+                if tech in org_lower:
+                    return ACCENT
+            return MUTED
+
+        filtered_df["color"] = filtered_df["organization"].apply(get_color)
+        filtered_df["size"] = (filtered_df["gpqa"] * 15).fillna(5)
+        
+        fig_ctx = go.Figure()
+        fig_ctx.add_trace(go.Scatter(
+            x=filtered_df["release_date"], y=filtered_df["context_window"],
+            mode="markers",
+            marker=dict(
+                size=filtered_df["size"],
+                color=filtered_df["color"],
+                opacity=0.6,
+                line=dict(width=1, color="white")
+            ),
+            text=filtered_df["name"],
+            customdata=filtered_df["organization"],
+            hovertemplate="<b>%{text}</b> (%{customdata})<br>%{x}<br>Context: %{y:,.0f} tokens<extra></extra>"
+        ))
+        
+        fig_ctx.update_layout(
+            template="plotly_white", height=380, 
+            margin=dict(l=0, r=0, t=20, b=40),
+            yaxis=dict(type="log", title="Tokens (Log Scale)")
+        )
+        st.plotly_chart(fig_ctx, use_container_width=True, theme=None)
+
+    # --- Frontier Leaderboard ---
+    st.markdown('<div class="section-title">Frontier Intelligence Leaderboard</div>', unsafe_allow_html=True)
+    table_df = filtered_df.sort_values("gpqa", ascending=False).head(30)[
+        ["name", "organization", "release_date", "gpqa", "swe_bench", "context_window"]
+    ].copy()
+    
+    table_df = table_df.rename(columns={
+        "name": "Model",
+        "organization": "Organization",
+        "release_date": "Date",
+        "gpqa": "GPQA",
+        "swe_bench": "SWE-bench",
+        "context_window": "Context"
+    })
+    
+    table_df["Date"] = table_df["Date"].dt.date
+    table_df["Context"] = table_df["Context"].apply(lambda x: format_metric(x) if pd.notna(x) else "-")
+    
+    st.dataframe(
+        table_df.style.format({
+            "GPQA": "{:.2%}",
+            "SWE-bench": "{:.2%}"
+        }).background_gradient(subset=["GPQA"], cmap="Blues"),
+        use_container_width=True,
+        hide_index=True
+    )
+
+
 def render_checks(checks: list[CheckResult]) -> None:
     ok_count   = sum(1 for c in checks if c.status == "ok")
     warn_count = sum(1 for c in checks if c.status == "warning")
@@ -1739,6 +2187,171 @@ def render_checks(checks: list[CheckResult]) -> None:
                 f'<div style="color:{MUTED};margin-bottom:0.8rem;font-size:0.85rem;">{chk.detail}</div>',
                 unsafe_allow_html=True,
             )
+
+
+def render_compute_availability_section(datasets: dict[str, DatasetLoadResult], compute_views: dict[str, object]) -> None:
+    spot_df = compute_views.get("spot_df", pd.DataFrame())
+    lambda_latest = compute_views.get("lambda_latest", pd.DataFrame())
+    models_latest = compute_views.get("models_latest", pd.DataFrame())
+    models_growth = compute_views.get("models_growth", pd.DataFrame())
+
+    st.markdown('<div class="section-title">Hardware & Compute Availability</div>', unsafe_allow_html=True)
+
+    # --- KPI Row ---
+    kpi_col1, kpi_col2, kpi_col3, kpi_col4 = st.columns(4)
+    
+    with kpi_col1:
+        # Protect against non-scalar nunique() if columns are duplicated
+        stock_val = lambda_latest["instance_type_name"].nunique()
+        stock_count = int(stock_val.max() if hasattr(stock_val, "max") else stock_val) if not lambda_latest.empty else 0
+        st.markdown(f"""
+            <div class="kpi-card">
+                <div class="kpi-label">Lambda GPU Stock</div>
+                <div class="kpi-value">{stock_count}</div>
+                <div class="kpi-delta-flat">instance types</div>
+            </div>
+        """, unsafe_allow_html=True)
+
+    with kpi_col2:
+        p5_data = spot_df[spot_df["instance_type"].str.contains("p5", na=False)]
+        avg_val = p5_data["spot_price"].mean()
+        avg_p5 = float(avg_val.max() if hasattr(avg_val, "max") else avg_val) if not p5_data.empty else 0
+        st.markdown(f"""
+            <div class="kpi-card">
+                <div class="kpi-label">Avg P5 Spot Price</div>
+                <div class="kpi-value">${avg_p5:.2f}</div>
+                <div class="kpi-delta-flat">per hour</div>
+            </div>
+        """, unsafe_allow_html=True)
+
+    with kpi_col3:
+        m_val = models_latest["model_id"].nunique()
+        model_count = int(m_val.max() if hasattr(m_val, "max") else m_val) if not models_latest.empty else 0
+        st.markdown(f"""
+            <div class="kpi-card">
+                <div class="kpi-label">Direct Model Access</div>
+                <div class="kpi-value">{model_count}</div>
+                <div class="kpi-delta-flat">OpenRouter catalog</div>
+            </div>
+        """, unsafe_allow_html=True)
+
+    with kpi_col4:
+        # Deep cleaning: select column, drop any NAs, force to float, compute mean
+        if not models_latest.empty and "pricing_prompt" in models_latest.columns:
+            # If duplicated, take only the first one to be safe
+            p_col = models_latest["pricing_prompt"]
+            if isinstance(p_col, pd.DataFrame):
+                p_col = p_col.iloc[:, 0]
+            
+            # Filter for valid positive pricing (exclude -1.0 and special markers)
+            p_clean = pd.to_numeric(p_col, errors="coerce").dropna()
+            p_valid = p_clean[p_clean > 0]
+            
+            p_avg = p_valid.mean()
+            avg_pricing = float(p_avg) * 1e6 if pd.notna(p_avg) else 0
+        else:
+            avg_pricing = 0
+
+        st.markdown(f"""
+            <div class="kpi-card">
+                <div class="kpi-label">Avg Prompt Pricing</div>
+                <div class="kpi-value">${avg_pricing:.2f}</div>
+                <div class="kpi-delta-flat">per 1M tokens</div>
+            </div>
+        """, unsafe_allow_html=True)
+
+    # --- Main Visuals ---
+    col_left, col_right = st.columns(2)
+
+    with col_left:
+        st.markdown('<div class="section-subtitle">AWS Spot Price History (H100/P5 Watchlist)</div>', unsafe_allow_html=True)
+        if not spot_df.empty:
+            fig_spot = go.Figure()
+            for instance in spot_df["instance_type"].unique():
+                inst_data = spot_df[spot_df["instance_type"] == instance]
+                for az in inst_data["availability_zone"].unique():
+                    az_data = inst_data[inst_data["availability_zone"] == az]
+                    fig_spot.add_trace(go.Scatter(
+                        x=az_data["price_timestamp"],
+                        y=az_data["spot_price"],
+                        name=f"{instance} ({az})",
+                        mode="lines",
+                        hovertemplate="<b>%{x}</b><br>$%{y:.2f}/hr<extra></extra>"
+                    ))
+            fig_spot.update_layout(
+                template="plotly_white",
+                height=400,
+                margin=dict(l=0, r=0, t=20, b=40),
+                legend=dict(orientation="h", y=-0.2),
+                xaxis_title="Time",
+                yaxis_title="Price ($/hr)"
+            )
+            st.plotly_chart(fig_spot, use_container_width=True, theme=None)
+        else:
+            st.info("No AWS Spot pricing data available.")
+
+    with col_right:
+        st.markdown('<div class="section-subtitle">Lambda Cloud Availability Listing</div>', unsafe_allow_html=True)
+        if not lambda_latest.empty:
+            display_lambda = lambda_latest[[
+                "instance_type_name", "gpu_type", "gpu_count", "region"
+            ]].copy()
+            display_lambda.columns = ["Instance", "GPU Type", "Count", "Region"]
+            st.dataframe(display_lambda, use_container_width=True, hide_index=True)
+        else:
+            st.info("No Lambda Cloud inventory data available.")
+
+    # --- Bottom Row ---
+    st.markdown('<div class="section-title">Compute Evolution</div>', unsafe_allow_html=True)
+    row2_col1, row2_col2 = st.columns(2)
+
+    with row2_col1:
+        st.markdown('<div class="section-subtitle">OpenRouter Model Catalog Growth</div>', unsafe_allow_html=True)
+        if not models_growth.empty:
+            fig_growth = go.Figure()
+            fig_growth.add_trace(go.Scatter(
+                x=models_growth["snapshot_ts"],
+                y=models_growth["model_count"],
+                fill='tozeroy',
+                line=dict(color=ACCENT, width=3)
+            ))
+            fig_growth.update_layout(
+                template="plotly_white",
+                height=340,
+                margin=dict(l=0, r=0, t=20, b=40),
+                xaxis_title="Snapshot Date",
+                yaxis_title="Models Count"
+            )
+            st.plotly_chart(fig_growth, use_container_width=True, theme=None)
+
+    with row2_col2:
+        st.markdown('<div class="section-subtitle">Context Window vs. Pricing Prompt</div>', unsafe_allow_html=True)
+        if not models_latest.empty:
+            # Filter for positive pricing to avoid log-scale errors
+            plot_df = models_latest[models_latest["pricing_prompt"] > 0].copy()
+            
+            fig_scatter = go.Figure()
+            fig_scatter.add_trace(go.Scatter(
+                x=plot_df["context_length"],
+                y=plot_df["pricing_prompt"] * 1e6,
+                mode="markers",
+                marker=dict(
+                    size=10,
+                    color=ACCENT,
+                    opacity=0.5,
+                    line=dict(width=1, color="white")
+                ),
+                text=plot_df["model_id"],
+                hovertemplate="<b>%{text}</b><br>Context: %{x:,.0f}<br>Price: $%{y:.2f}/1M<extra></extra>"
+            ))
+            fig_scatter.update_layout(
+                template="plotly_white",
+                height=340,
+                margin=dict(l=0, r=0, t=20, b=40),
+                xaxis=dict(title="Context Length", type="log"),
+                yaxis=dict(title="Price per 1M Tokens ($)", type="log")
+            )
+            st.plotly_chart(fig_scatter, use_container_width=True, theme=None)
 
 
 # ---------------------------------------------------------------------------
@@ -1767,16 +2380,36 @@ def main() -> None:
     provider_datasets, provider_freshness, provider_checks = load_domain_state_cached(
         BASE_DIR, "provider_adoption", build_domain_signature(BASE_DIR, "provider_adoption")
     )
+    semi_datasets, semi_freshness, semi_checks = load_domain_state_cached(
+        BASE_DIR, "semiconductor_memory", build_domain_signature(BASE_DIR, "semiconductor_memory")
+    )
+    benchmark_datasets, benchmark_freshness, benchmark_checks = load_domain_state_cached(
+        BASE_DIR, "ai_frontier", build_domain_signature(BASE_DIR, "ai_frontier")
+    )
+    compute_datasets, compute_freshness, compute_checks = load_domain_state_cached(
+        BASE_DIR, "compute_availability", build_domain_signature(BASE_DIR, "compute_availability")
+    )
 
     datasets = {
         **openrouter_datasets,
         **apps_datasets,
         **github_datasets,
         **provider_datasets,
+        **semi_datasets,
+        **benchmark_datasets,
+        **compute_datasets,
     }
     freshness = FreshnessInfo(
         latest_scraped_at=max(
-            [value for value in [openrouter_freshness.latest_scraped_at, apps_freshness.latest_scraped_at, github_freshness.latest_scraped_at, provider_freshness.latest_scraped_at] if value],
+            [value for value in [
+                openrouter_freshness.latest_scraped_at,
+                apps_freshness.latest_scraped_at,
+                github_freshness.latest_scraped_at,
+                provider_freshness.latest_scraped_at,
+                semi_freshness.latest_scraped_at,
+                benchmark_freshness.latest_scraped_at,
+                compute_freshness.latest_scraped_at,
+            ] if value],
             default=None,
         ),
         latest_run_id=next(
@@ -1785,6 +2418,8 @@ def main() -> None:
                 apps_freshness.latest_run_id,
                 github_freshness.latest_run_id,
                 provider_freshness.latest_run_id,
+                semi_freshness.latest_run_id,
+                benchmark_freshness.latest_run_id,
             ] if value),
             None,
         ),
@@ -1794,6 +2429,8 @@ def main() -> None:
                 apps_freshness.latest_manifest_path,
                 github_freshness.latest_manifest_path,
                 provider_freshness.latest_manifest_path,
+                semi_freshness.latest_manifest_path,
+                benchmark_freshness.latest_manifest_path,
             ] if value),
             None,
         ),
@@ -1803,19 +2440,24 @@ def main() -> None:
                 apps_freshness.latest_manifest_scraped_at,
                 github_freshness.latest_manifest_scraped_at,
                 provider_freshness.latest_manifest_scraped_at,
+                semi_freshness.latest_manifest_scraped_at,
+                benchmark_freshness.latest_manifest_scraped_at,
             ] if value],
             default=None,
         ),
     )
-    checks = openrouter_checks + apps_checks + github_checks + provider_checks
+    checks = openrouter_checks + apps_checks + github_checks + provider_checks + semi_checks + benchmark_checks
 
     openrouter_views = compute_openrouter_views({**openrouter_datasets, **apps_datasets})
     github_views = compute_github_views(github_datasets)
     provider_views = compute_provider_adoption_views(provider_datasets)
+    semi_views = compute_semiconductor_views(semi_datasets)
+    benchmark_views = compute_llm_benchmark_views(benchmark_datasets)
+    compute_views = compute_compute_availability_views(compute_datasets)
 
     render_header(freshness)
     
-    main_tabs = st.tabs(["OpenRouter Intelligence", "GitHub Trending", "Provider Adoption"])
+    main_tabs = st.tabs(["OpenRouter Intelligence", "AI Frontier & HBM", "HW & Compute", "GitHub Trending", "Provider Adoption", "Semiconductor Analysis"])
     
     with main_tabs[0]:
         render_rankings_semantics_note(datasets)
@@ -1828,10 +2470,19 @@ def main() -> None:
         render_apps_tables(datasets)
     
     with main_tabs[1]:
-        render_github_trending_section(datasets, github_views)
+        render_ai_frontier_section(datasets, benchmark_views)
 
     with main_tabs[2]:
+        render_compute_availability_section(datasets, compute_views)
+
+    with main_tabs[3]:
+        render_github_trending_section(datasets, github_views)
+
+    with main_tabs[4]:
         render_provider_adoption_section(datasets, provider_views)
+        
+    with main_tabs[5]:
+        render_semiconductor_section(datasets, semi_views)
         
     render_checks(checks)
 

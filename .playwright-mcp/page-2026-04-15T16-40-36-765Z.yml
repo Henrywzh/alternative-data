@@ -1,0 +1,369 @@
+- generic [active] [ref=e1]:
+  - link "Skip to main content" [ref=e2] [cursor=pointer]:
+    - /url: "#content-container"
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - navigation [ref=e5]:
+        - generic [ref=e6]:
+          - generic [ref=e7]:
+            - link "Federal Reserve Bank of St. Louis" [ref=e8] [cursor=pointer]:
+              - /url: https://www.stlouisfed.org
+              - img "Federal Reserve Bank of St. Louis" [ref=e9]
+            - separator [ref=e10]
+          - generic [ref=e11]:
+            - link "FRED homepage" [ref=e13] [cursor=pointer]:
+              - /url: //fred.stlouisfed.org
+              - img "FRED homepage" [ref=e14]
+            - generic [ref=e15]:
+              - generic [ref=e16]:
+                - listbox [ref=e17]:
+                  - option [selected] [ref=e18]
+                - combobox [ref=e21]:
+                  - list
+                  - searchbox "Search" [ref=e23]
+                - button "Submit Search" [ref=e24] [cursor=pointer]:
+                  - generic "Submit Search" [ref=e25]: 
+              - navigation [ref=e26]:
+                - list [ref=e27]:
+                  - listitem [ref=e28]:
+                    - button "Toggle Explore Our Apps Menu" [ref=e30] [cursor=pointer]:
+                      - img "Toggle Explore Our Apps Menu" [ref=e31]
+                  - listitem [ref=e32]:
+                    - button "Open Login Modal; User Is Not Signed In" [ref=e37] [cursor=pointer]:
+                      - generic "Open Login Modal; User Is Not Signed In" [ref=e38]: 
+        - text:  X  X
+      - text:    
+      - generic [ref=e42]:
+        - separator [ref=e43]
+        - navigation [ref=e44]:
+          - list [ref=e46]:
+            - listitem [ref=e47]:
+              - link "Release Calendar" [ref=e48] [cursor=pointer]:
+                - /url: https://fred.stlouisfed.org/releases/calendar
+            - listitem [ref=e49]:
+              - button "Tools " [ref=e51] [cursor=pointer]:
+                - text: Tools
+                - generic "Toggle Tools Menu" [ref=e52]: 
+            - listitem [ref=e53]:
+              - link "News" [ref=e54] [cursor=pointer]:
+                - /url: https://news.research.stlouisfed.org/category/fred-announcements/
+            - listitem [ref=e55]:
+              - link "Blog" [ref=e56] [cursor=pointer]:
+                - /url: https://fredblog.stlouisfed.org
+            - listitem [ref=e57]:
+              - button "About " [ref=e59] [cursor=pointer]:
+                - text: About
+                - generic [ref=e60]: 
+    - navigation "site breadcrumbs" [ref=e61]:
+      - generic [ref=e62]:
+        - link "Home" [ref=e63] [cursor=pointer]:
+          - /url: /
+        - text: ">"
+        - link "Categories" [ref=e64] [cursor=pointer]:
+          - /url: /categories
+        - text: ">"
+        - link "Prices" [ref=e65] [cursor=pointer]:
+          - /url: /categories/32455
+        - text: ">"
+        - link "Producer Price Indexes (PPI)" [ref=e66] [cursor=pointer]:
+          - /url: /categories/31
+        - text: ">"
+        - link "Industry Based" [ref=e67] [cursor=pointer]:
+          - /url: /categories/33584
+        - text: ">"
+        - link "Manufacturing" [ref=e68] [cursor=pointer]:
+          - /url: /categories/33597
+    - generic [ref=e69]:
+      - generic "PCU334413334413"
+      - generic [ref=e70]:
+        - 'heading "Add to favorites Producer Price Index by Industry: Semiconductor and Related Device Manufacturing (PCU334413334413)" [level=1] [ref=e74]':
+          - generic "Add to favorites" [ref=e76] [cursor=pointer]: 
+          - text: "Producer Price Index by Industry: Semiconductor and Related Device Manufacturing (PCU334413334413)"
+        - generic [ref=e78]:
+          - generic [ref=e79]:
+            - text: 
+            - generic [ref=e80]:
+              - button "Observations" [ref=e82] [cursor=pointer]:
+                - text: Observations
+                - generic [ref=e83]: 
+              - generic [ref=e84]: "Mar 2026: 30.229"
+              - generic "Apr 14, 2026 9:39 AM CDT" [ref=e86]: "Updated: Apr 14, 2026 9:39 AM CDT"
+              - 'link "Next Release Date: May 13, 2026" [ref=e88] [cursor=pointer]':
+                - /url: /releases/calendar?rid=46&y=2026
+                - generic "May 13, 2026" [ref=e89]: "Next Release Date: May 13, 2026"
+            - generic [ref=e90]:
+              - paragraph [ref=e91]: "Units:"
+              - generic [ref=e93]: Index Dec 1998=100,
+              - generic [ref=e94]: Not Seasonally Adjusted
+            - generic [ref=e95]:
+              - paragraph [ref=e96]: "Frequency:"
+              - generic [ref=e98]: Monthly
+          - generic [ref=e101]:
+            - generic [ref=e103]:
+              - generic "1 year date range" [ref=e104] [cursor=pointer]: 1Y
+              - generic "5 year date range" [ref=e105] [cursor=pointer]: 5Y
+              - generic "10 year date range" [ref=e106] [cursor=pointer]: 10Y
+              - generic "max date range" [ref=e107] [cursor=pointer]: Max
+              - text: 
+            - generic [ref=e109]:
+              - generic [ref=e110]:
+                - generic [ref=e111]: From
+                - textbox "Change start date" [ref=e112]: 1967-01-01
+              - generic [ref=e114]: to
+              - textbox "Change end date" [ref=e116]: 2026-03-01
+          - generic [ref=e117]:
+            - generic [ref=e118]:
+              - button "Edit Graph " [ref=e119] [cursor=pointer]:
+                - generic [ref=e120]:
+                  - text: Edit Graph
+                  - generic [ref=e121]: 
+              - text: 
+            - generic [ref=e123]:
+              - button "Download" [ref=e124] [cursor=pointer]:
+                - text: Download
+                - generic [ref=e125]: 
+              - text: 
+        - generic [ref=e128]:
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - option "Index Dec 1998=100" [selected]
+                      - option "Change, Index Dec 1998=100"
+                      - option "Change from Year Ago, Index Dec 1998=100"
+                      - option "Percent Change"
+                      - option "Percent Change from Year Ago"
+                      - option "Compounded Annual Rate of Change"
+                      - option "Continuously Compounded Rate of Change"
+                      - option "Continuously Compounded Annual Rate of Change"
+                      - option "Index (Scale value to 100 for chosen date)"
+                      - option "Monthly" [selected]
+                      - option "Quarterly"
+                      - option "Semiannual"
+                      - option "Annual"
+                      - combobox "customize your graph data by combining other series with your existing series." [ref=e131]
+                      - option "Select" [selected]
+                      - option "Change"
+                      - option "Change from Year Ago"
+                      - option "Percent Change"
+                      - option "Percent Change from Year Ago"
+                      - option "Compounded Annual Rate of Change"
+                      - option "Continuously Compounded Rate of Change"
+                      - option "Continuously Compounded Annual Rate of Change"
+                      - option "Natural Log"
+                      - option "Index (Scale value to 100 for chosen date)"
+          - generic "Full screen" [ref=e132] [cursor=pointer]:
+            - text: Fullscreen
+            - generic [ref=e133]: 
+        - generic [ref=e135]:
+          - generic [ref=e136]:
+            - generic [ref=e137]:
+              - button "Share Graph " [ref=e138] [cursor=pointer]:
+                - text: Share Graph
+                - generic [ref=e139]: 
+              - text:   
+            - generic [ref=e140]:
+              - button "Account Tools " [ref=e141] [cursor=pointer]:
+                - text: Account Tools
+                - generic [ref=e142]: 
+              - text:     
+          - generic [ref=e144]:
+            - link "Share on X" [ref=e145] [cursor=pointer]:
+              - /url: /graph/share.php
+            - link "Post on Facebook" [ref=e146] [cursor=pointer]:
+              - /url: /graph/share.php
+              - generic [ref=e147]: 
+            - link "Share on Reddit" [ref=e148] [cursor=pointer]:
+              - /url: /graph/share.php
+              - generic [ref=e149]: 
+            - link "Post to Linkedin" [ref=e150] [cursor=pointer]:
+              - /url: /graph/share.php
+              - generic [ref=e151]: 
+        - generic [ref=e153]:
+          - generic [ref=e155]:
+            - heading "Notes" [level=2] [ref=e156]
+            - generic [ref=e157]:
+              - paragraph [ref=e158]:
+                - strong [ref=e159]: "Source:"
+                - link "U.S. Bureau of Labor Statistics" [ref=e160] [cursor=pointer]:
+                  - /url: https://www.bls.gov/
+                  - text: U.S. Bureau of Labor Statistics
+                  - generic [ref=e161]: 
+              - paragraph [ref=e162]:
+                - strong [ref=e163]: "Release:"
+                - link "Producer Price Index" [ref=e164] [cursor=pointer]:
+                  - /url: http://www.bls.gov/ppi/
+                  - text: Producer Price Index
+                  - generic [ref=e165]: 
+              - paragraph [ref=e167]:
+                - strong [ref=e168]: "Units:"
+                - generic [ref=e169]: Index Dec 1998=100, Not Seasonally Adjusted
+              - paragraph [ref=e170]:
+                - strong [ref=e171]: "Frequency:"
+                - generic [ref=e172]: Monthly
+              - generic [ref=e173]:
+                - heading "Suggested Citation:" [level=4] [ref=e174]
+                - paragraph [ref=e176]: "U.S. Bureau of Labor Statistics, Producer Price Index by Industry: Semiconductor and Related Device Manufacturing [PCU334413334413], retrieved from FRED, Federal Reserve Bank of St. Louis; https://fred.stlouisfed.org/series/PCU334413334413, April 15, 2026."
+          - generic [ref=e178]:
+            - heading "Release Tables" [level=2] [ref=e179]
+            - generic [ref=e180]:
+              - generic [ref=e181]: Producer Price Index
+              - list [ref=e182]:
+                - listitem [ref=e183]:
+                  - 'link "Link to release table: Producer Price Index, Manufacturing: Computer & electronic product mfg" [ref=e184] [cursor=pointer]':
+                    - /url: //fred.stlouisfed.org/release/tables?rid=46&eid=136604#snid=136666
+                    - generic [ref=e185]: 
+                    - text: "Manufacturing: Computer & electronic product mfg"
+          - generic [ref=e187]:
+            - heading "Related Data and Content" [level=2] [ref=e188]
+            - generic [ref=e189]:
+              - heading "Data Suggestions Based On Your Search" [level=3] [ref=e190]
+              - generic [ref=e191]:
+                - generic [ref=e192]:
+                  - 'link "Producer Price Index by Industry: Semiconductor and Related Device Manufacturing: Integrated Circuit Packages" [ref=e193] [cursor=pointer]':
+                    - /url: /series/PCU3344133344131
+                    - img [ref=e194]
+                  - generic [ref=e195]:
+                    - text: ...
+                    - 'link "Producer Price Index by Industry: Semiconductor and Related Device Manufacturing: Integrated Circuit Packages" [ref=e196] [cursor=pointer]':
+                      - /url: /series/PCU3344133344131
+                      - strong [ref=e197]: "Producer Price Index by Industry: Semiconductor and Related Device Manufacturing: Integrated Circuit Packages"
+                - generic [ref=e198]:
+                  - 'link "Producer Price Index by Industry: Semiconductor and Related Device Manufacturing: Microprocessors (Including Microcontrollers)" [ref=e199] [cursor=pointer]':
+                    - /url: /series/PCU33441333441312
+                    - img [ref=e200]
+                  - generic [ref=e201]:
+                    - text: ...
+                    - 'link "Producer Price Index by Industry: Semiconductor and Related Device Manufacturing: Microprocessors (Including Microcontrollers)" [ref=e202] [cursor=pointer]':
+                      - /url: /series/PCU33441333441312
+                      - strong [ref=e203]: "Producer Price Index by Industry: Semiconductor and Related Device Manufacturing: Microprocessors (Including Microcontrollers)"
+                - generic [ref=e204]:
+                  - 'link "Producer Price Index by Industry: Semiconductor and Related Device Manufacturing: Primary Products" [ref=e205] [cursor=pointer]':
+                    - /url: /series/PCU334413334413P
+                    - img [ref=e206]
+                  - generic [ref=e207]:
+                    - text: ...
+                    - 'link "Producer Price Index by Industry: Semiconductor and Related Device Manufacturing: Primary Products" [ref=e208] [cursor=pointer]':
+                      - /url: /series/PCU334413334413P
+                      - strong [ref=e209]: "Producer Price Index by Industry: Semiconductor and Related Device Manufacturing: Primary Products"
+                - generic [ref=e210]:
+                  - 'link "Producer Price Index by Industry: Semiconductor Machinery Manufacturing" [ref=e211] [cursor=pointer]':
+                    - /url: /series/PCU333242333242
+                    - img [ref=e212]
+                  - generic [ref=e213]:
+                    - text: ...
+                    - 'link "Producer Price Index by Industry: Semiconductor Machinery Manufacturing" [ref=e214] [cursor=pointer]':
+                      - /url: /series/PCU333242333242
+                      - strong [ref=e215]: "Producer Price Index by Industry: Semiconductor Machinery Manufacturing"
+                - text: ... ... ... ...
+                - generic [ref=e216]:
+                  - button "click to see more" [ref=e217] [cursor=pointer]: See More...
+                  - separator [ref=e218]
+              - heading "Content Suggestions" [level=3] [ref=e219]
+              - generic [ref=e220]:
+                - generic [ref=e221]:
+                  - 'link "Producer Price Index by Industry: Semiconductor and Related Device Manufacturing" [ref=e222] [cursor=pointer]':
+                    - /url: https://alfred.stlouisfed.org/series?seid=PCU334413334413&utm_source=series_page&utm_medium=related_content&utm_term=related_resources&utm_campaign=alfred
+                    - img [ref=e223]
+                  - generic [ref=e224]: ALFRED Vintage Series
+                  - generic [ref=e225]:
+                    - text: ...
+                    - 'link "Producer Price Index by Industry: Semiconductor and Related Device Manufacturing" [ref=e226] [cursor=pointer]':
+                      - /url: https://alfred.stlouisfed.org/series?seid=PCU334413334413&utm_source=series_page&utm_medium=related_content&utm_term=related_resources&utm_campaign=alfred
+                      - strong [ref=e227]: "Producer Price Index by Industry: Semiconductor and Related Device Manufacturing"
+                - generic [ref=e228]:
+                  - 'link "Producer Price Index by Industry: Plastics Material and Resin Manufacturing" [ref=e229] [cursor=pointer]':
+                    - /url: /series/PCU325211325211
+                    - img [ref=e230]
+                  - generic [ref=e231]:
+                    - text: ...
+                    - 'link "Producer Price Index by Industry: Plastics Material and Resin Manufacturing" [ref=e232] [cursor=pointer]':
+                      - /url: /series/PCU325211325211
+                      - strong [ref=e233]: "Producer Price Index by Industry: Plastics Material and Resin Manufacturing"
+              - heading "Related Categories" [level=3] [ref=e234]
+              - generic [ref=e235]:
+                - link "Manufacturing" [ref=e236] [cursor=pointer]:
+                  - /url: /categories/33597
+                - link "Industry Based" [ref=e237] [cursor=pointer]:
+                  - /url: /categories/33584
+                - link "Producer Price Indexes (PPI)" [ref=e238] [cursor=pointer]:
+                  - /url: /categories/31
+                - link "Prices" [ref=e239] [cursor=pointer]:
+                  - /url: /categories/32455
+              - heading "Releases" [level=3] [ref=e241]
+              - link "More Series from Producer Price Index" [ref=e243] [cursor=pointer]:
+                - /url: /release?rid=46
+              - heading "Tags" [level=3] [ref=e245]
+              - generic:
+                - link "Semiconductors" [ref=e246] [cursor=pointer]:
+                  - /url: /tags/series?t=semiconductors
+                - link "Manufacturing" [ref=e247] [cursor=pointer]:
+                  - /url: /tags/series?t=manufacturing
+                - link "Producer Price Index" [ref=e248] [cursor=pointer]:
+                  - /url: /tags/series?t=ppi
+                - link "Inflation" [ref=e249] [cursor=pointer]:
+                  - /url: /tags/series?t=inflation
+                - link "Industry" [ref=e250] [cursor=pointer]:
+                  - /url: /tags/series?t=industry
+                - link "Price Index" [ref=e251] [cursor=pointer]:
+                  - /url: /tags/series?t=price%20index
+                - link "Indexes" [ref=e252] [cursor=pointer]:
+                  - /url: /tags/series?t=indexes
+                - link "Price" [ref=e253] [cursor=pointer]:
+                  - /url: /tags/series?t=price
+                - link "Bureau of Labor Statistics" [ref=e254] [cursor=pointer]:
+                  - /url: /tags/series?t=bls
+                - link "Monthly" [ref=e255] [cursor=pointer]:
+                  - /url: /tags/series?t=monthly
+                - link "Nation" [ref=e256] [cursor=pointer]:
+                  - /url: /tags/series?t=nation
+                - 'link "Public Domain: Citation Requested" [ref=e257] [cursor=pointer]':
+                  - /url: /tags/series?t=public%20domain%3A%20citation%20requested
+                - link "United States of America" [ref=e258] [cursor=pointer]:
+                  - /url: /tags/series?t=usa
+                - link "Not Seasonally Adjusted" [ref=e259] [cursor=pointer]:
+                  - /url: /tags/series?t=nsa
+        - text:    
+  - text:  
+  - generic [ref=e262]:
+    - generic [ref=e263]:
+      - generic [ref=e264]:
+        - heading "Subscribe to the FRED newsletter" [level=3] [ref=e265]
+        - generic [ref=e268]:
+          - textbox "email" [ref=e269]:
+            - /placeholder: Email
+          - button "Subscribe" [ref=e270] [cursor=pointer]
+      - generic [ref=e271]:
+        - heading "Follow us" [level=3] [ref=e272]
+        - generic [ref=e273]:
+          - link "Saint Louis Fed linkedin page" [ref=e275] [cursor=pointer]:
+            - /url: http://bit.ly/d056zL
+            - generic [ref=e276]: 
+            - generic [ref=e277]: Saint Louis Fed linkedin page
+          - link "Saint Louis Fed facebook page" [ref=e279] [cursor=pointer]:
+            - /url: https://www.facebook.com/stlfed
+            - generic [ref=e280]: 
+            - generic [ref=e281]: Saint Louis Fed facebook page
+          - link "Saint Louis Fed X page" [ref=e283] [cursor=pointer]:
+            - /url: http://bit.ly/9ngC3L
+            - generic [ref=e284]: 
+            - generic [ref=e285]: Saint Louis Fed X page
+          - link "Saint Louis Fed YouTube page" [ref=e287] [cursor=pointer]:
+            - /url: http://bit.ly/aY9TVF
+            - generic [ref=e288]: 
+            - generic [ref=e289]: Saint Louis Fed YouTube page
+    - generic [ref=e291]:
+      - heading "Need Help?" [level=3] [ref=e292]
+      - generic [ref=e293]:
+        - link "Questions or Comments" [ref=e295] [cursor=pointer]:
+          - /url: //fred.stlouisfed.org/contactus/
+        - link "FRED Help" [ref=e297] [cursor=pointer]:
+          - /url: //fredhelp.stlouisfed.org/
+      - separator [ref=e298]
+      - generic [ref=e299]:
+        - link "Legal" [ref=e301] [cursor=pointer]:
+          - /url: //fred.stlouisfed.org/legal/
+        - link "Privacy Notice & Policy" [ref=e303] [cursor=pointer]:
+          - /url: //research.stlouisfed.org/privacy.html
