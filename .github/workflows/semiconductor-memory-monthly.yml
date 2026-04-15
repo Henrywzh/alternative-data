@@ -1,0 +1,156 @@
+name: Semiconductor Memory Monthly
+
+on:
+  schedule:
+    # ADATA: check first 5 days of each month for new report (idempotent upsert)
+    - cron: "0 9 1-5 * *"
+    # FRED: mid-month after PPI release (~6-week lag; release typically around 14th)
+    - cron: "0 12 14-16 * *"
+  workflow_dispatch:
+    inputs:
+      command:
+        description: "Command to run"
+        required: false
+        default: "adata-update"
+        type: choice
+        options:
+          - adata-update
+          - adata-backfill
+          - fred-update
+          - derive
+          - validate
+      month:
+        description: "Month (YYYY-MM) for adata-update — leave blank for latest"
+        required: false
+        default: ""
+      start_month:
+        description: "Start month (YYYY-MM) for adata-backfill"
+        required: false
+        default: ""
+      end_month:
+        description: "End month (YYYY-MM) for adata-backfill"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  adata-update:
+    name: ADATA Monthly Update
+    runs-on: ubuntu-latest
+    # Run on scheduled trigger (days 1-5) OR manual adata-update/adata-backfill
+    if: |
+      github.event_name == 'workflow_dispatch' &&
+        (github.event.inputs.command == 'adata-update' || github.event.inputs.command == 'adata-backfill')
+      || (github.event_name == 'schedule' && contains(github.event.schedule, '1-5'))
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: python -m pip install -e .[dev]
+
+      - name: Run adata-update (scheduled)
+        if: github.event_name == 'schedule'
+        run: semiconductor-memory-data --base-dir . adata-update
+
+      - name: Run adata-update (manual)
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.command == 'adata-update'
+        run: |
+          MONTH_ARG=""
+          if [ -n "${{ github.event.inputs.month }}" ]; then
+            MONTH_ARG="--month ${{ github.event.inputs.month }}"
+          fi
+          semiconductor-memory-data --base-dir . adata-update $MONTH_ARG
+
+      - name: Run adata-backfill (manual)
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.command == 'adata-backfill'
+        run: |
+          ARGS=""
+          if [ -n "${{ github.event.inputs.start_month }}" ]; then
+            ARGS="$ARGS --start-month ${{ github.event.inputs.start_month }}"
+          fi
+          if [ -n "${{ github.event.inputs.end_month }}" ]; then
+            ARGS="$ARGS --end-month ${{ github.event.inputs.end_month }}"
+          fi
+          semiconductor-memory-data --base-dir . adata-backfill $ARGS
+
+      - name: Rebuild derived table
+        run: semiconductor-memory-data --base-dir . derive
+
+      - name: Validate
+        run: semiconductor-memory-data --base-dir . validate
+
+      - name: Commit results
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/normalized/semiconductor_memory data/raw/semiconductor_memory
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git diff --cached --stat
+          git commit -m "chore: update semiconductor memory datasets"
+          git push
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: semiconductor-memory-normalized-adata
+          path: data/normalized/semiconductor_memory/
+          if-no-files-found: warn
+
+  fred-update:
+    name: FRED PPI Update
+    runs-on: ubuntu-latest
+    # Run on scheduled trigger (days 14-16) OR manual fred-update
+    if: |
+      github.event_name == 'workflow_dispatch' && github.event.inputs.command == 'fred-update'
+      || (github.event_name == 'schedule' && contains(github.event.schedule, '14-16'))
+    env:
+      FRED_API_KEY: ${{ secrets.SEMICONDUCTOR_FRED_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: python -m pip install -e .[dev]
+
+      - name: Run fred-update
+        run: semiconductor-memory-data --base-dir . fred-update
+
+      - name: Rebuild derived table
+        run: semiconductor-memory-data --base-dir . derive
+
+      - name: Validate
+        run: semiconductor-memory-data --base-dir . validate
+
+      - name: Commit results
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/normalized/semiconductor_memory data/raw/semiconductor_memory
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git diff --cached --stat
+          git commit -m "chore: update semiconductor memory datasets"
+          git push
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: semiconductor-memory-normalized-fred
+          path: data/normalized/semiconductor_memory/
+          if-no-files-found: warn
