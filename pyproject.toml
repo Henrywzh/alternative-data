@@ -15,7 +15,12 @@ dependencies = [
   "pyarrow>=16.0.0",
   "requests>=2.32",
   "boto3>=1.34",
-]
+  "streamlit>=1.44",
+  "plotly>=5.24",
+],
+
+[tool.poetry]
+package-mode = false
 
 [project.optional-dependencies]
 dev = [
