@@ -3,7 +3,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from dashboard.data import DATASET_REGISTRY, DatasetLoadResult, FreshnessInfo, dataset_ids, normalized_root
+from dashboard.data import (
+    DATASET_REGISTRY,
+    DatasetLoadResult,
+    FreshnessInfo,
+    dataset_ids,
+    dataset_source_for_domain,
+    normalized_root,
+)
 
 
 @dataclass(frozen=True)
@@ -24,12 +31,7 @@ def run_checks(
     for dataset_id in dataset_ids():
         registry_entry = DATASET_REGISTRY.get(dataset_id, {})
         domain = registry_entry.get("domain", "rankings")
-        if domain == "github":
-            source = "github_trending"
-        elif domain == "provider_adoption":
-            source = "provider_adoption"
-        else:
-            source = "openrouter"
+        source = dataset_source_for_domain(domain)
         root = normalized_root(base_dir, source=source)
         
         if not ((root / f"{dataset_id}.parquet").exists() or (root / f"{dataset_id}.csv").exists()):

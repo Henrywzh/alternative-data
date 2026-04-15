@@ -1,0 +1,204 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e4]:
+      - link "IA_ADATALogo_nobird" [ref=e5] [cursor=pointer]:
+        - /url: https://www.adata.com/global/
+        - img "IA_ADATALogo_nobird" [ref=e6]
+      - link "Image-esg Sustainability" [ref=e7] [cursor=pointer]:
+        - /url: https://esg.adata.com/en/
+        - img "Image-esg" [ref=e8]
+        - text: Sustainability
+    - navigation [ref=e9]:
+      - generic [ref=e10]:
+        - link "ADATA-INDUSTRIAL" [ref=e11] [cursor=pointer]:
+          - /url: https://industrial.adata.com/en
+          - img "ADATA-INDUSTRIAL" [ref=e12]
+        - generic [ref=e13]:
+          - list [ref=e14]:
+            - listitem [ref=e15]:
+              - link "PRODUCTS" [ref=e16] [cursor=pointer]:
+                - /url: https://industrial.adata.com/en/category/index
+            - listitem [ref=e17]:
+              - link "APPLICATIONS" [ref=e18] [cursor=pointer]:
+                - /url: https://industrial.adata.com/en/application
+            - listitem [ref=e19]:
+              - link "TECHNOLOGY" [ref=e20] [cursor=pointer]:
+                - /url: https://industrial.adata.com/en/technology
+            - listitem [ref=e21]:
+              - link "SUCCESS CASE" [ref=e22] [cursor=pointer]:
+                - /url: https://industrial.adata.com/en/success-story
+            - listitem [ref=e23]:
+              - link "DOWNLOAD & SUPPORT" [ref=e24] [cursor=pointer]:
+                - /url: https://industrial.adata.com/en/download-support
+            - listitem [ref=e25]:
+              - link "ABOUT US" [ref=e26] [cursor=pointer]:
+                - /url: "#"
+          - generic [ref=e28]:
+            - link "IA_search" [ref=e29] [cursor=pointer]:
+              - /url: https://industrial.adata.com/en/search
+              - img "IA_search" [ref=e30]
+            - link "IA_language" [ref=e32] [cursor=pointer]:
+              - /url: "#"
+              - img "IA_language" [ref=e33]
+  - generic [ref=e34]:
+    - generic [ref=e35]: eNews
+    - heading "eNews" [level=1] [ref=e36]
+    - img "eNews" [ref=e37]
+  - navigation "breadcrumb" [ref=e38]:
+    - list [ref=e39]:
+      - listitem [ref=e40]:
+        - link "HOME" [ref=e41] [cursor=pointer]:
+          - /url: https://industrial.adata.com/en
+      - listitem [ref=e42]:
+        - text: ">"
+        - link "ABOUT US" [ref=e43] [cursor=pointer]:
+          - /url: https://industrial.adata.com/en/aboutus/about
+      - listitem [ref=e44]: "> eNews"
+  - generic [ref=e45]:
+    - generic [ref=e49]:
+      - generic [ref=e50]: Product Related
+      - combobox "Product Related" [ref=e51]:
+        - option "Select All" [selected]
+        - option "Flash Storage"
+        - option "DRAM Module"
+        - option "Application"
+        - option "PR"
+        - option "Event"
+        - option "Market Watch"
+    - generic [ref=e52]:
+      - link "Market Watch Monthly Memory & Flash Market Watch Apr 2026" [ref=e53] [cursor=pointer]:
+        - /url: https://industrial.adata.com/en/edm/MarketWatch_202604
+        - generic [ref=e54]: Market Watch
+        - heading "Monthly Memory & Flash Market Watch" [level=5] [ref=e55]
+        - paragraph [ref=e56]: Apr 2026
+      - link "Market Watch Monthly Memory & Flash Market Watch Mar 2026" [ref=e57] [cursor=pointer]:
+        - /url: https://industrial.adata.com/en/edm/MarketWatch_202603
+        - generic [ref=e58]: Market Watch
+        - heading "Monthly Memory & Flash Market Watch" [level=5] [ref=e59]
+        - paragraph [ref=e60]: Mar 2026
+      - link "Market Watch Monthly Memory & Flash Market Watch Feb 2026" [ref=e61] [cursor=pointer]:
+        - /url: https://industrial.adata.com/en/edm/MarketWatch_202602
+        - generic [ref=e62]: Market Watch
+        - heading "Monthly Memory & Flash Market Watch" [level=5] [ref=e63]
+        - paragraph [ref=e64]: Feb 2026
+      - link "Application What Is the SSD Temperature Range? Jan 2026" [ref=e65] [cursor=pointer]:
+        - /url: https://industrial.adata.com/en/edm/what-is-the-ssd-temperature-range
+        - generic [ref=e66]: Application
+        - heading "What Is the SSD Temperature Range?" [level=5] [ref=e67]
+        - paragraph [ref=e68]: Jan 2026
+      - 'link "Application Garbage Collection in Industrial SSDs: What You Need to Know Jan 2026" [ref=e69] [cursor=pointer]':
+        - /url: https://industrial.adata.com/en/edm/garbage-collection-in-industrial-ssd
+        - generic [ref=e70]: Application
+        - 'heading "Garbage Collection in Industrial SSDs: What You Need to Know" [level=5] [ref=e71]'
+        - paragraph [ref=e72]: Jan 2026
+      - link "Application Monthly Memory & Flash Market Watch Jan 2026" [ref=e73] [cursor=pointer]:
+        - /url: https://industrial.adata.com/en/edm/MarketWatch_202601
+        - generic [ref=e74]: Application
+        - heading "Monthly Memory & Flash Market Watch" [level=5] [ref=e75]
+        - paragraph [ref=e76]: Jan 2026
+      - link "Application What Is SSD Over-Provisioning Jan 2026" [ref=e77] [cursor=pointer]:
+        - /url: https://industrial.adata.com/en/edm/what-is-ssd-over-provisioning
+        - generic [ref=e78]: Application
+        - heading "What Is SSD Over-Provisioning" [level=5] [ref=e79]
+        - paragraph [ref=e80]: Jan 2026
+      - link "Application What Is SSD Power Loss Protection (PLP)? How It Works and Why It's Essential for Industrial SSDs Jan 2026" [ref=e81] [cursor=pointer]:
+        - /url: https://industrial.adata.com/en/edm/what-is-ssd-plp
+        - generic [ref=e82]: Application
+        - heading "What Is SSD Power Loss Protection (PLP)? How It Works and Why It's Essential for Industrial SSDs" [level=5] [ref=e83]
+        - paragraph [ref=e84]: Jan 2026
+      - link "Application What Is Edge Storage? A Complete Guide to Edge Computing Storage Solutions for Modern Industries Jan 2026" [ref=e85] [cursor=pointer]:
+        - /url: https://industrial.adata.com/en/edm/what-is-edge-storage
+        - generic [ref=e86]: Application
+        - heading "What Is Edge Storage? A Complete Guide to Edge Computing Storage Solutions for Modern Industries" [level=5] [ref=e87]
+        - paragraph [ref=e88]: Jan 2026
+    - navigation "Page navigation example" [ref=e89]:
+      - list [ref=e90]:
+        - listitem [ref=e91]:
+          - link "Previous":
+            - /url: "#"
+            - text: «
+        - listitem [ref=e92]:
+          - link "1" [ref=e93] [cursor=pointer]:
+            - /url: "#aa"
+        - listitem [ref=e94]:
+          - link "2" [ref=e95] [cursor=pointer]:
+            - /url: https://industrial.adata.com/en/edm?page=2
+        - listitem [ref=e96]:
+          - link "3" [ref=e97] [cursor=pointer]:
+            - /url: https://industrial.adata.com/en/edm?page=3
+        - listitem [ref=e98]:
+          - link "4" [ref=e99] [cursor=pointer]:
+            - /url: https://industrial.adata.com/en/edm?page=4
+        - listitem [ref=e100]:
+          - link "5" [ref=e101] [cursor=pointer]:
+            - /url: https://industrial.adata.com/en/edm?page=5
+        - listitem [ref=e102]:
+          - link "6" [ref=e103] [cursor=pointer]:
+            - /url: https://industrial.adata.com/en/edm?page=6
+        - listitem [ref=e104]:
+          - link "7" [ref=e105] [cursor=pointer]:
+            - /url: https://industrial.adata.com/en/edm?page=7
+        - listitem [ref=e106]:
+          - link "8" [ref=e107] [cursor=pointer]:
+            - /url: https://industrial.adata.com/en/edm?page=8
+        - listitem [ref=e108]:
+          - link "9" [ref=e109] [cursor=pointer]:
+            - /url: https://industrial.adata.com/en/edm?page=9
+        - listitem [ref=e110]:
+          - link "10" [ref=e111] [cursor=pointer]:
+            - /url: https://industrial.adata.com/en/edm?page=10
+        - listitem [ref=e112]:
+          - link "11" [ref=e113] [cursor=pointer]:
+            - /url: https://industrial.adata.com/en/edm?page=11
+        - listitem [ref=e114]:
+          - link "12" [ref=e115] [cursor=pointer]:
+            - /url: https://industrial.adata.com/en/edm?page=12
+        - listitem [ref=e116]:
+          - link "Next" [ref=e117] [cursor=pointer]:
+            - /url: https://industrial.adata.com/en/edm?page=2
+            - text: »
+  - contentinfo [ref=e119]:
+    - generic [ref=e120]:
+      - link "ADATA GROUP" [ref=e121] [cursor=pointer]:
+        - /url: https://www.adata.com/us
+      - generic [ref=e122] [cursor=pointer]: TOP
+      - generic [ref=e123]:
+        - link "linkedin" [ref=e124] [cursor=pointer]:
+          - /url: https://www.linkedin.com/company/adata-industrial/posts/?feedView=all&viewAsMember=true
+          - img "linkedin" [ref=e125]
+        - link "wechat" [ref=e126] [cursor=pointer]:
+          - /url: https://industrial.adata.com/wechat
+          - img "wechat" [ref=e127]
+        - link "youtube" [ref=e128] [cursor=pointer]:
+          - /url: https://www.youtube.com/user/ADATAGroup
+          - img "youtube" [ref=e129]
+      - generic [ref=e130]:
+        - link "Privacy Policy" [ref=e131] [cursor=pointer]:
+          - /url: https://www.adata.com/us/privacy/
+        - text: "|"
+        - link "Terms of Use" [ref=e132] [cursor=pointer]:
+          - /url: https://www.adata.com/us/terms/
+        - text: "|"
+        - link "Cookies" [ref=e133] [cursor=pointer]:
+          - /url: "#"
+    - paragraph [ref=e134]: Ⓒ 2026 ADATA Technology Co., Ltd. All Rights Reserved.
+  - link "Contact Us" [ref=e136] [cursor=pointer]:
+    - /url: "#"
+    - img "Contact Us" [ref=e137]
+  - dialog "This site uses cookies." [ref=e138]:
+    - generic [ref=e139]:
+      - generic [ref=e140]:
+        - heading "This site uses cookies." [level=2] [ref=e141]
+        - paragraph [ref=e142]:
+          - text: We use cookies to improve your experience, personalize content, target advertising, and analyze traffic. To learn more, please read our
+          - link "privacy policy" [ref=e143] [cursor=pointer]:
+            - /url: https://www.adata.com/en/privacy
+          - text: ","
+          - link "Terms of Use" [ref=e144] [cursor=pointer]:
+            - /url: https://www.adata.com/en/terms
+          - text: .
+      - generic [ref=e145]:
+        - generic [ref=e146]:
+          - button "Accept all" [ref=e147] [cursor=pointer]
+          - button "Reject all" [ref=e148] [cursor=pointer]
+        - button "Manage preferences" [ref=e150] [cursor=pointer]
