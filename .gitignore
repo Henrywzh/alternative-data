@@ -40,6 +40,12 @@ data/raw/provider_adoption/*
 !data/raw/provider_adoption/**/
 !data/raw/provider_adoption/**/manifest.json
 
+# semiconductor_memory: commit normalized CSVs/parquet + run manifests only
+!data/normalized/semiconductor_memory/
+data/normalized/semiconductor_memory/*
+!data/normalized/semiconductor_memory/*.csv
+!data/normalized/semiconductor_memory/*.parquet
+
 # Secrets and environment
 .env
 .env.*
