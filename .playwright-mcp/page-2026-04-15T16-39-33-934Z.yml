@@ -1,0 +1,197 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e4]:
+      - link "IA_ADATALogo_nobird" [ref=e5] [cursor=pointer]:
+        - /url: https://www.adata.com/global/
+        - img "IA_ADATALogo_nobird" [ref=e6]
+      - link "Image-esg Sustainability" [ref=e7] [cursor=pointer]:
+        - /url: https://esg.adata.com/en/
+        - img "Image-esg" [ref=e8]
+        - text: Sustainability
+    - navigation [ref=e9]:
+      - generic [ref=e10]:
+        - link "ADATA-INDUSTRIAL" [ref=e11] [cursor=pointer]:
+          - /url: https://industrial.adata.com/en
+          - img "ADATA-INDUSTRIAL" [ref=e12]
+        - generic [ref=e13]:
+          - list [ref=e14]:
+            - listitem [ref=e15]:
+              - link "PRODUCTS" [ref=e16] [cursor=pointer]:
+                - /url: https://industrial.adata.com/en/category/index
+            - listitem [ref=e17]:
+              - link "APPLICATIONS" [ref=e18] [cursor=pointer]:
+                - /url: https://industrial.adata.com/en/application
+            - listitem [ref=e19]:
+              - link "TECHNOLOGY" [ref=e20] [cursor=pointer]:
+                - /url: https://industrial.adata.com/en/technology
+            - listitem [ref=e21]:
+              - link "SUCCESS CASE" [ref=e22] [cursor=pointer]:
+                - /url: https://industrial.adata.com/en/success-story
+            - listitem [ref=e23]:
+              - link "DOWNLOAD & SUPPORT" [ref=e24] [cursor=pointer]:
+                - /url: https://industrial.adata.com/en/download-support
+            - listitem [ref=e25]:
+              - link "ABOUT US" [ref=e26] [cursor=pointer]:
+                - /url: "#"
+          - generic [ref=e28]:
+            - link "IA_search" [ref=e29] [cursor=pointer]:
+              - /url: https://industrial.adata.com/en/search
+              - img "IA_search" [ref=e30]
+            - link "IA_language" [ref=e32] [cursor=pointer]:
+              - /url: "#"
+              - img "IA_language" [ref=e33]
+  - heading ">ADATA INDUSTRIAL - Global Leader In Industrial-grade Memory" [level=1] [ref=e34]
+  - generic [ref=e35]:
+    - img [ref=e199] [cursor=pointer]
+    - generic [ref=e37]:
+      - link [ref=e41] [cursor=pointer]:
+        - /url: https://industrial.adata.com/en/news/A+IntelliManager
+        - generic [ref=e42]:
+          - paragraph [ref=e43]: Intelligent cloud management at your fingertips anytime, anywhere
+          - heading [level=3] [ref=e44]: A+ IntelliManager Cloud Management Platform
+        - img [ref=e46]
+      - tabpanel [ref=e47]:
+        - link "<br>" [ref=e50] [cursor=pointer]:
+          - /url: ""
+          - generic [ref=e51]:
+            - paragraph [ref=e52]
+            - heading [level=3] [ref=e53]
+          - img "<br>" [ref=e55]
+      - tabpanel [ref=e56]:
+        - link [ref=e59] [cursor=pointer]:
+          - /url: https://industrial.adata.com/en/news/A_Analyzer
+          - generic [ref=e60]:
+            - paragraph [ref=e61]: CUSTOMIZING THE BEST SSD SOLUTIONS
+            - heading [level=3] [ref=e62]: A+ ANALYZER DATA ANALYSIS TOOL
+          - img [ref=e64]
+      - tabpanel [ref=e65]:
+        - link [ref=e68] [cursor=pointer]:
+          - /url: https://industrial.adata.com/en/news/DDR5_6400_CUCSO-DIMM
+          - generic [ref=e69]:
+            - paragraph [ref=e70]: EMPOWERING HPC WITH EXTRAORDINARY SPEED & STABILITY
+            - heading [level=3] [ref=e71]: DDR5 6400 CU/CSO-DIMM
+          - img [ref=e73]
+      - tabpanel [ref=e74]:
+        - link [ref=e77] [cursor=pointer]:
+          - /url: https://industrial.adata.com/en/news/A+IntelliManager
+          - generic [ref=e78]:
+            - paragraph [ref=e79]: Intelligent cloud management at your fingertips anytime, anywhere
+            - heading [level=3] [ref=e80]: A+ IntelliManager Cloud Management Platform
+          - img [ref=e82]
+      - link [ref=e86] [cursor=pointer]:
+        - /url: ""
+        - generic [ref=e87]:
+          - paragraph [ref=e88]
+          - heading [level=3] [ref=e89]
+        - img [ref=e91]
+      - link [ref=e95] [cursor=pointer]:
+        - /url: https://industrial.adata.com/en/news/A_Analyzer
+        - generic [ref=e96]:
+          - paragraph [ref=e97]: CUSTOMIZING THE BEST SSD SOLUTIONS
+          - heading [level=3] [ref=e98]: A+ ANALYZER DATA ANALYSIS TOOL
+        - img [ref=e100]
+      - link [ref=e104] [cursor=pointer]:
+        - /url: https://industrial.adata.com/en/news/DDR5_6400_CUCSO-DIMM
+        - generic [ref=e105]:
+          - paragraph [ref=e106]: EMPOWERING HPC WITH EXTRAORDINARY SPEED & STABILITY
+          - heading [level=3] [ref=e107]: DDR5 6400 CU/CSO-DIMM
+        - img [ref=e109]
+      - link [ref=e113] [cursor=pointer]:
+        - /url: https://industrial.adata.com/en/news/A+IntelliManager
+        - generic [ref=e114]:
+          - paragraph [ref=e115]: Intelligent cloud management at your fingertips anytime, anywhere
+          - heading [level=3] [ref=e116]: A+ IntelliManager Cloud Management Platform
+        - img [ref=e118]
+    - img [ref=e200] [cursor=pointer]
+    - tablist [ref=e119]:
+      - tab "1 of 4" [selected] [ref=e120] [cursor=pointer]: "1"
+      - tab "2 of 4" [ref=e121] [cursor=pointer]: "2"
+      - tab "3 of 4" [ref=e122] [cursor=pointer]: "3"
+      - tab "4 of 4" [ref=e123] [cursor=pointer]: "4"
+  - generic [ref=e125]:
+    - generic [ref=e126]:
+      - heading "Press Release" [level=2] [ref=e128]
+      - link "More News >" [ref=e130] [cursor=pointer]:
+        - /url: https://industrial.adata.com/en/news
+      - generic [ref=e131]:
+        - generic [ref=e132]:
+          - img "ADATA Industrial to Participate in Embedded World 2026 Leading the New Era of AI-Driven Innovation" [ref=e133]
+          - generic [ref=e134]:
+            - heading "Mar.05,2026" [level=6] [ref=e135]
+            - paragraph [ref=e136]: ADATA Industrial to Participate in Embedded World 2026 Leading the New Era of AI-Driven Innovation
+            - link "Read More" [ref=e137] [cursor=pointer]:
+              - /url: https://industrial.adata.com/en/news/2026_EWDE
+        - generic [ref=e138]:
+          - img "ADATA INDUSTRIAL Unveils AI and Edge Storage Innovations at Embedded World North America 2025" [ref=e139]
+          - generic [ref=e140]:
+            - heading "Nov.04,2025" [level=6] [ref=e141]
+            - paragraph [ref=e142]: ADATA INDUSTRIAL Unveils AI and Edge Storage Innovations at Embedded World North America 2025
+            - link "Read More" [ref=e143] [cursor=pointer]:
+              - /url: https://industrial.adata.com/en/news/EWNV_2025
+    - generic [ref=e144]:
+      - heading "Featured Videos" [level=2] [ref=e146]
+      - img [ref=e148] [cursor=pointer]
+  - generic [ref=e150]:
+    - generic [ref=e151]:
+      - img "APPLICATIONS" [ref=e152]
+      - generic [ref=e153]:
+        - paragraph [ref=e154]: APPLICATIONS
+        - link "Read More" [ref=e155] [cursor=pointer]:
+          - /url: https://industrial.adata.com/en/application
+    - generic [ref=e156]:
+      - img "TECHNOLOGY" [ref=e157]
+      - generic [ref=e158]:
+        - paragraph [ref=e159]: TECHNOLOGY
+        - link "Read More" [ref=e160] [cursor=pointer]:
+          - /url: https://industrial.adata.com/en/technology
+    - generic [ref=e161]:
+      - img "SUCCESS CASE" [ref=e162]
+      - generic [ref=e163]:
+        - paragraph [ref=e164]: SUCCESS CASE
+        - link "Read More" [ref=e165] [cursor=pointer]:
+          - /url: https://industrial.adata.com/en/success-story
+  - contentinfo [ref=e167]:
+    - generic [ref=e168]:
+      - link "ADATA GROUP" [ref=e169] [cursor=pointer]:
+        - /url: https://www.adata.com/us
+      - generic [ref=e170] [cursor=pointer]: TOP
+      - generic [ref=e171]:
+        - link "linkedin" [ref=e172] [cursor=pointer]:
+          - /url: https://www.linkedin.com/company/adata-industrial/posts/?feedView=all&viewAsMember=true
+          - img "linkedin" [ref=e173]
+        - link "wechat" [ref=e174] [cursor=pointer]:
+          - /url: https://industrial.adata.com/wechat
+          - img "wechat" [ref=e175]
+        - link "youtube" [ref=e176] [cursor=pointer]:
+          - /url: https://www.youtube.com/user/ADATAGroup
+          - img "youtube" [ref=e177]
+      - generic [ref=e178]:
+        - link "Privacy Policy" [ref=e179] [cursor=pointer]:
+          - /url: https://www.adata.com/us/privacy/
+        - text: "|"
+        - link "Terms of Use" [ref=e180] [cursor=pointer]:
+          - /url: https://www.adata.com/us/terms/
+        - text: "|"
+        - link "Cookies" [ref=e181] [cursor=pointer]:
+          - /url: "#"
+    - paragraph [ref=e182]: Ⓒ 2026 ADATA Technology Co., Ltd. All Rights Reserved.
+  - link "Contact Us" [ref=e184] [cursor=pointer]:
+    - /url: "#"
+    - img "Contact Us" [ref=e185]
+  - dialog "This site uses cookies." [ref=e186]:
+    - generic [ref=e187]:
+      - generic [ref=e188]:
+        - heading "This site uses cookies." [level=2] [ref=e189]
+        - paragraph [ref=e190]:
+          - text: We use cookies to improve your experience, personalize content, target advertising, and analyze traffic. To learn more, please read our
+          - link "privacy policy" [ref=e191] [cursor=pointer]:
+            - /url: https://www.adata.com/en/privacy
+          - text: ","
+          - link "Terms of Use" [ref=e192] [cursor=pointer]:
+            - /url: https://www.adata.com/en/terms
+          - text: .
+      - generic [ref=e193]:
+        - generic [ref=e194]:
+          - button "Accept all" [ref=e195] [cursor=pointer]
+          - button "Reject all" [ref=e196] [cursor=pointer]
+        - button "Manage preferences" [ref=e198] [cursor=pointer]

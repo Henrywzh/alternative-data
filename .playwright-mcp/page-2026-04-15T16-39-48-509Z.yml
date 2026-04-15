@@ -1,0 +1,193 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e4]:
+      - link "IA_ADATALogo_nobird" [ref=e5] [cursor=pointer]:
+        - /url: https://www.adata.com/global/
+        - img "IA_ADATALogo_nobird" [ref=e6]
+      - link "Image-esg Sustainability" [ref=e7] [cursor=pointer]:
+        - /url: https://esg.adata.com/en/
+        - img "Image-esg" [ref=e8]
+        - text: Sustainability
+    - navigation [ref=e9]:
+      - generic [ref=e10]:
+        - link "ADATA-INDUSTRIAL" [ref=e11] [cursor=pointer]:
+          - /url: https://industrial.adata.com/en
+          - img "ADATA-INDUSTRIAL" [ref=e12]
+        - generic [ref=e13]:
+          - list [ref=e14]:
+            - listitem [ref=e15]:
+              - link "PRODUCTS" [ref=e16] [cursor=pointer]:
+                - /url: https://industrial.adata.com/en/category/index
+            - listitem [ref=e17]:
+              - link "APPLICATIONS" [ref=e18] [cursor=pointer]:
+                - /url: https://industrial.adata.com/en/application
+            - listitem [ref=e19]:
+              - link "TECHNOLOGY" [ref=e20] [cursor=pointer]:
+                - /url: https://industrial.adata.com/en/technology
+            - listitem [ref=e21]:
+              - link "SUCCESS CASE" [ref=e22] [cursor=pointer]:
+                - /url: https://industrial.adata.com/en/success-story
+            - listitem [ref=e23]:
+              - link "DOWNLOAD & SUPPORT" [ref=e24] [cursor=pointer]:
+                - /url: https://industrial.adata.com/en/download-support
+            - listitem [ref=e25]:
+              - link "ABOUT US" [ref=e26] [cursor=pointer]:
+                - /url: "#"
+          - generic [ref=e28]:
+            - link "IA_search" [ref=e29] [cursor=pointer]:
+              - /url: https://industrial.adata.com/en/search
+              - img "IA_search" [ref=e30]
+            - link "IA_language" [ref=e32] [cursor=pointer]:
+              - /url: "#"
+              - img "IA_language" [ref=e33]
+  - generic [ref=e34]:
+    - generic [ref=e35]: Press Release
+    - heading "Press Release" [level=1] [ref=e36]
+    - img "Press Release" [ref=e37]
+  - navigation "breadcrumb" [ref=e38]:
+    - list [ref=e39]:
+      - listitem [ref=e40]:
+        - link "HOME" [ref=e41] [cursor=pointer]:
+          - /url: https://industrial.adata.com/en
+      - listitem [ref=e42]:
+        - text: ">"
+        - link "ABOUT US" [ref=e43] [cursor=pointer]:
+          - /url: https://industrial.adata.com/en/aboutus/about
+      - listitem [ref=e44]: "> Press Release"
+  - generic [ref=e47]:
+    - generic [ref=e48]:
+      - generic [ref=e49]: Type
+      - combobox "Type" [ref=e50]:
+        - option "Type" [selected]
+        - option "Corporate"
+        - option "Products"
+    - generic [ref=e51]:
+      - generic [ref=e52]: Year
+      - combobox "Year" [ref=e53]:
+        - option "Year" [selected]
+        - option "2026"
+        - option "2025"
+        - option "2024"
+        - option "2023"
+        - option "2022"
+  - generic [ref=e54]:
+    - link "Mar.05,2026 Corporate ADATA Industrial to Participate in Embedded World 2026 Leading the New Era of AI-Driven Innovation" [ref=e55] [cursor=pointer]:
+      - /url: https://industrial.adata.com/en/news/2026_EWDE
+      - generic [ref=e56]: Mar.05,2026
+      - generic [ref=e57]: Corporate
+      - generic [ref=e58]: ADATA Industrial to Participate in Embedded World 2026 Leading the New Era of AI-Driven Innovation
+    - link "Nov.04,2025 Corporate ADATA INDUSTRIAL Unveils AI and Edge Storage Innovations at Embedded World North America 2025" [ref=e59] [cursor=pointer]:
+      - /url: https://industrial.adata.com/en/news/EWNV_2025
+      - generic [ref=e60]: Nov.04,2025
+      - generic [ref=e61]: Corporate
+      - generic [ref=e62]: ADATA INDUSTRIAL Unveils AI and Edge Storage Innovations at Embedded World North America 2025
+    - link "Mar.04,2025 Corporate ADATA Industrial to Participate in Embedded World 2025" [ref=e63] [cursor=pointer]:
+      - /url: https://industrial.adata.com/en/news/2025_EW
+      - generic [ref=e64]: Mar.04,2025
+      - generic [ref=e65]: Corporate
+      - generic [ref=e66]: ADATA Industrial to Participate in Embedded World 2025
+    - link "Feb.26,2025 Corporate ADATA Industrial Expands into Indian Market, Showcasing High-Efficiency Automated Storage Solutions" [ref=e67] [cursor=pointer]:
+      - /url: https://industrial.adata.com/en/news/2025_Automation
+      - generic [ref=e68]: Feb.26,2025
+      - generic [ref=e69]: Corporate
+      - generic [ref=e70]: ADATA Industrial Expands into Indian Market, Showcasing High-Efficiency Automated Storage Solutions
+    - link "Feb.13,2025 Products ADATA Industrial Releases A+ Analyzer Data Analysis Tool - Customizing the best SSD solutions" [ref=e71] [cursor=pointer]:
+      - /url: https://industrial.adata.com/en/news/A_Analyzer
+      - generic [ref=e72]: Feb.13,2025
+      - generic [ref=e73]: Products
+      - generic [ref=e74]: ADATA Industrial Releases A+ Analyzer Data Analysis Tool - Customizing the best SSD solutions
+    - link "Jan.16,2025 Products ADATA Industrial Releases DDR5 6400 CU-DIMM and CSO-DIMM - Empowering HPC with overclocking speed and extraordinary stability" [ref=e75] [cursor=pointer]:
+      - /url: https://industrial.adata.com/en/news/DDR5_6400_CUCSO-DIMM
+      - generic [ref=e76]: Jan.16,2025
+      - generic [ref=e77]: Products
+      - generic [ref=e78]: ADATA Industrial Releases DDR5 6400 CU-DIMM and CSO-DIMM - Empowering HPC with overclocking speed and extraordinary stability
+    - link "Dec.05,2024 Products ADATA INDUSTRIAL Partners with Advantech to Launch High-Performance Server Series, Accelerating AI and High-Performance Computing Expansion" [ref=e79] [cursor=pointer]:
+      - /url: https://industrial.adata.com/en/news/57
+      - generic [ref=e80]: Dec.05,2024
+      - generic [ref=e81]: Products
+      - generic [ref=e82]: ADATA INDUSTRIAL Partners with Advantech to Launch High-Performance Server Series, Accelerating AI and High-Performance Computing Expansion
+    - link "Nov.11,2024 Corporate ADATA Industrial Releases \"A+ IntelliManager\" Cloud Management Platform" [ref=e83] [cursor=pointer]:
+      - /url: https://industrial.adata.com/en/news/A+IntelliManager
+      - generic [ref=e84]: Nov.11,2024
+      - generic [ref=e85]: Corporate
+      - generic [ref=e86]: ADATA Industrial Releases "A+ IntelliManager" Cloud Management Platform
+    - link "Nov.06,2024 Corporate ADATA Industrial Debuts at EdgeTech+ Showcasing Innovative Industrial Automation Storage Technologies" [ref=e87] [cursor=pointer]:
+      - /url: https://industrial.adata.com/en/news/55
+      - generic [ref=e88]: Nov.06,2024
+      - generic [ref=e89]: Corporate
+      - generic [ref=e90]: ADATA Industrial Debuts at EdgeTech+ Showcasing Innovative Industrial Automation Storage Technologies
+    - link "Aug.20,2024 Corporate ADATA Industrial Joins SIDO Lyon to Offer Innovative AIoT and AI Storage Solutions" [ref=e91] [cursor=pointer]:
+      - /url: https://industrial.adata.com/en/news/52
+      - generic [ref=e92]: Aug.20,2024
+      - generic [ref=e93]: Corporate
+      - generic [ref=e94]: ADATA Industrial Joins SIDO Lyon to Offer Innovative AIoT and AI Storage Solutions
+    - navigation "Page navigation example" [ref=e95]:
+      - list [ref=e96]:
+        - listitem [ref=e97]:
+          - link "Previous":
+            - /url: "#"
+            - text: «
+        - listitem [ref=e98]:
+          - link "1" [ref=e99] [cursor=pointer]:
+            - /url: "#aa"
+        - listitem [ref=e100]:
+          - link "2" [ref=e101] [cursor=pointer]:
+            - /url: https://industrial.adata.com/en/news?page=2
+        - listitem [ref=e102]:
+          - link "3" [ref=e103] [cursor=pointer]:
+            - /url: https://industrial.adata.com/en/news?page=3
+        - listitem [ref=e104]:
+          - link "4" [ref=e105] [cursor=pointer]:
+            - /url: https://industrial.adata.com/en/news?page=4
+        - listitem [ref=e106]:
+          - link "5" [ref=e107] [cursor=pointer]:
+            - /url: https://industrial.adata.com/en/news?page=5
+        - listitem [ref=e108]:
+          - link "Next" [ref=e109] [cursor=pointer]:
+            - /url: https://industrial.adata.com/en/news?page=2
+            - text: »
+  - contentinfo [ref=e111]:
+    - generic [ref=e112]:
+      - link "ADATA GROUP" [ref=e113] [cursor=pointer]:
+        - /url: https://www.adata.com/us
+      - generic [ref=e114] [cursor=pointer]: TOP
+      - generic [ref=e115]:
+        - link "linkedin" [ref=e116] [cursor=pointer]:
+          - /url: https://www.linkedin.com/company/adata-industrial/posts/?feedView=all&viewAsMember=true
+          - img "linkedin" [ref=e117]
+        - link "wechat" [ref=e118] [cursor=pointer]:
+          - /url: https://industrial.adata.com/wechat
+          - img "wechat" [ref=e119]
+        - link "youtube" [ref=e120] [cursor=pointer]:
+          - /url: https://www.youtube.com/user/ADATAGroup
+          - img "youtube" [ref=e121]
+      - generic [ref=e122]:
+        - link "Privacy Policy" [ref=e123] [cursor=pointer]:
+          - /url: https://www.adata.com/us/privacy/
+        - text: "|"
+        - link "Terms of Use" [ref=e124] [cursor=pointer]:
+          - /url: https://www.adata.com/us/terms/
+        - text: "|"
+        - link "Cookies" [ref=e125] [cursor=pointer]:
+          - /url: "#"
+    - paragraph [ref=e126]: Ⓒ 2026 ADATA Technology Co., Ltd. All Rights Reserved.
+  - link "Contact Us" [ref=e128] [cursor=pointer]:
+    - /url: "#"
+    - img "Contact Us" [ref=e129]
+  - dialog "This site uses cookies." [ref=e130]:
+    - generic [ref=e131]:
+      - generic [ref=e132]:
+        - heading "This site uses cookies." [level=2] [ref=e133]
+        - paragraph [ref=e134]:
+          - text: We use cookies to improve your experience, personalize content, target advertising, and analyze traffic. To learn more, please read our
+          - link "privacy policy" [ref=e135] [cursor=pointer]:
+            - /url: https://www.adata.com/en/privacy
+          - text: ","
+          - link "Terms of Use" [ref=e136] [cursor=pointer]:
+            - /url: https://www.adata.com/en/terms
+          - text: .
+      - generic [ref=e137]:
+        - generic [ref=e138]:
+          - button "Accept all" [ref=e139] [cursor=pointer]
+          - button "Reject all" [ref=e140] [cursor=pointer]
+        - button "Manage preferences" [ref=e142] [cursor=pointer]
