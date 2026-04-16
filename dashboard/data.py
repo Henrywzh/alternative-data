@@ -200,6 +200,14 @@ DATASET_REGISTRY: dict[str, dict[str, object]] = {
         "metric_column": "spot_price",
         "required_columns": ["instance_type", "availability_zone", "region", "price_timestamp", "spot_price"],
     },
+    "openrouter_model_activity": {
+        "label": "Model Activity Splits",
+        "domain": "rankings",
+        "natural_keys": ["usage_date", "model_permaslug", "category_slug"],
+        "primary_date_column": "usage_date",
+        "metric_column": "prompt_tokens",
+        "required_columns": ["usage_date", "model_permaslug", "category_slug", "prompt_tokens", "completion_tokens", "request_count"],
+    },
 }
 
 DOMAIN_ORDER = {
@@ -207,6 +215,7 @@ DOMAIN_ORDER = {
         "top_models",
         "market_share",
         "categories_programming",
+        "openrouter_model_activity",
     ],
     "apps": [
         "app_metadata_snapshots",

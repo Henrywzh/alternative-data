@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import Any
 
 
@@ -41,6 +41,9 @@ class DatasetRecord:
     period: str | None = None
     tokens: float | None = None
     growth_percent: float | None = None
+    prompt_tokens: float | None = None
+    completion_tokens: float | None = None
+    request_count: int | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -60,4 +63,4 @@ class RunContext:
 
     @property
     def scraped_at_iso(self) -> str:
-        return self.scraped_at.astimezone(UTC).isoformat().replace("+00:00", "Z")
+        return self.scraped_at.replace(tzinfo=timezone.utc).isoformat().replace("+00:00", "Z")

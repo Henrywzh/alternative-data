@@ -20,6 +20,7 @@ NATURAL_KEYS: dict[str, list[str]] = {
     "app_top_models_daily_snapshot": ["app_id", "snapshot_date", "model_permaslug"],
     "apps_global_ranking_snapshots": ["snapshot_date", "period", "rank"],
     "apps_trending_snapshots": ["snapshot_date", "rank"],
+    "openrouter_model_activity": ["usage_date", "model_permaslug", "category_slug"],
 }
 
 DATASET_COLUMNS = [
@@ -57,9 +58,12 @@ DATASET_COLUMNS = [
     "period",
     "tokens",
     "growth_percent",
+    "prompt_tokens",
+    "completion_tokens",
+    "request_count",
 ]
 
-NUMERIC_COLUMNS = ["metric_value", "rank", "total_tokens", "tokens", "growth_percent"]
+NUMERIC_COLUMNS = ["metric_value", "rank", "total_tokens", "tokens", "growth_percent", "prompt_tokens", "completion_tokens", "request_count"]
 BOOL_COLUMNS = ["group_by_origin", "is_private", "is_hidden"]
 TEXT_COLUMNS = [
     column
@@ -75,6 +79,7 @@ SORT_KEYS: dict[str, list[str]] = {
     "app_top_models_daily_snapshot": ["snapshot_date", "app_id", "rank", "model_permaslug"],
     "apps_global_ranking_snapshots": ["snapshot_date", "period", "rank", "origin_url"],
     "apps_trending_snapshots": ["snapshot_date", "rank", "origin_url"],
+    "openrouter_model_activity": ["usage_date", "model_permaslug", "category_slug"],
 }
 
 
