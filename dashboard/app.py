@@ -211,6 +211,24 @@ def prepare_hf_models_table(
     ]
 
 
+def resolve_hf_metric_config(metric_label: str) -> dict[str, str]:
+    if metric_label == "All-time":
+        return {
+            "value_column": "downloads_all_time",
+            "downloads_title": "Hugging Face All-Time Downloads",
+            "downloads_axis": "Downloads (All-Time)",
+            "downloads_hover": "all-time downloads",
+            "share_title": "Hugging Face Download Share (All-Time)",
+        }
+    return {
+        "value_column": "downloads_30d",
+        "downloads_title": "Hugging Face Trailing 30d Downloads",
+        "downloads_axis": "Downloads (30d)",
+        "downloads_hover": "30d downloads",
+        "share_title": "Hugging Face Download Share (30d)",
+    }
+
+
 def make_stacked_bar(
     pivot_df: pd.DataFrame,
     colors: list[str],
@@ -1500,12 +1518,25 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
         ["HF Downloads", "HF Share", "HF Models", "PyPI Downloads", "PyPI Share", "npm Downloads", "npm Share", "GitHub Signals", "Latest Summary"]
     )
 
+    hf_metric = st.segmented_control(
+        "Hugging Face metric",
+        options=["Trailing 30d", "All-time"],
+        default="Trailing 30d",
+        key="provider_adoption_hf_metric",
+    )
+    hf_metric_config = resolve_hf_metric_config(hf_metric)
+
     with hf_downloads_tab:
         if hf_result is None or hf_result.frame.empty or hf_grouped.empty:
             st.info("No Hugging Face model data available yet.")
         else:
             pivot_hf = (
-                hf_grouped.pivot_table(index="download_date", columns="provider_display_name", values="downloads_30d", aggfunc="last")
+                hf_grouped.pivot_table(
+                    index="download_date",
+                    columns="provider_display_name",
+                    values=hf_metric_config["value_column"],
+                    aggfunc="last",
+                )
                 .fillna(0)
                 .sort_index()
             )
@@ -1518,14 +1549,14 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
                         name=provider_name,
                         mode="lines+markers",
                         line=dict(width=3, color=MODEL_COLORS[i % len(MODEL_COLORS)]),
-                        hovertemplate=f"<b>{provider_name}</b><br>%{{x}}<br>%{{y:,.0f}} 30d downloads<extra></extra>",
+                        hovertemplate=f"<b>{provider_name}</b><br>%{{x}}<br>%{{y:,.0f}} {hf_metric_config['downloads_hover']}<extra></extra>",
                     )
                 )
             fig.update_layout(
                 template="plotly_white",
-                title="Hugging Face Trailing 30d Downloads",
+                title=hf_metric_config["downloads_title"],
                 xaxis_title="Date",
-                yaxis_title="Downloads (30d)",
+                yaxis_title=hf_metric_config["downloads_axis"],
                 legend=dict(orientation="h", y=-0.2),
                 height=360,
                 margin=dict(l=0, r=0, t=40, b=80),
@@ -1536,9 +1567,10 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
         if hf_result is None or hf_result.frame.empty or hf_grouped.empty:
             st.info("No Hugging Face model data available yet.")
         else:
-            totals = hf_grouped.groupby("download_date")["downloads_30d"].sum().rename("total").reset_index()
+            value_column = hf_metric_config["value_column"]
+            totals = hf_grouped.groupby("download_date")[value_column].sum().rename("total").reset_index()
             share = hf_grouped.merge(totals, on="download_date", how="left")
-            share["share"] = share["downloads_30d"] / share["total"].where(share["total"] != 0)
+            share["share"] = share[value_column] / share["total"].where(share["total"] != 0)
             pivot_share = (
                 share.pivot_table(index="download_date", columns="provider_display_name", values="share", aggfunc="last")
                 .fillna(0)
@@ -1548,7 +1580,7 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
                 make_stacked_bar(
                     pivot_share * 100,
                     MODEL_COLORS,
-                    title="Hugging Face Download Share (30d)",
+                    title=hf_metric_config["share_title"],
                     y_title="Share",
                     pct=True,
                     height=340,
@@ -2201,9 +2233,13 @@ def render_compute_availability_section(datasets: dict[str, DatasetLoadResult], 
     kpi_col1, kpi_col2, kpi_col3, kpi_col4 = st.columns(4)
     
     with kpi_col1:
-        # Protect against non-scalar nunique() if columns are duplicated
-        stock_val = lambda_latest["instance_type_name"].nunique()
-        stock_count = int(stock_val.max() if hasattr(stock_val, "max") else stock_val) if not lambda_latest.empty else 0
+        # Protect against empty data or missing columns
+        if not lambda_latest.empty and "instance_type_name" in lambda_latest.columns:
+            stock_val = lambda_latest["instance_type_name"].nunique()
+            stock_count = int(stock_val.max() if hasattr(stock_val, "max") else stock_val)
+        else:
+            stock_count = 0
+            
         st.markdown(f"""
             <div class="kpi-card">
                 <div class="kpi-label">Lambda GPU Stock</div>
@@ -2213,9 +2249,13 @@ def render_compute_availability_section(datasets: dict[str, DatasetLoadResult], 
         """, unsafe_allow_html=True)
 
     with kpi_col2:
-        p5_data = spot_df[spot_df["instance_type"].str.contains("p5", na=False)]
-        avg_val = p5_data["spot_price"].mean()
-        avg_p5 = float(avg_val.max() if hasattr(avg_val, "max") else avg_val) if not p5_data.empty else 0
+        if not spot_df.empty and "instance_type" in spot_df.columns and "spot_price" in spot_df.columns:
+            p5_data = spot_df[spot_df["instance_type"].str.contains("p5", na=False)]
+            avg_val = p5_data["spot_price"].mean()
+            avg_p5 = float(avg_val.max() if hasattr(avg_val, "max") else avg_val) if not p5_data.empty else 0
+        else:
+            avg_p5 = 0
+
         st.markdown(f"""
             <div class="kpi-card">
                 <div class="kpi-label">Avg P5 Spot Price</div>
@@ -2225,8 +2265,12 @@ def render_compute_availability_section(datasets: dict[str, DatasetLoadResult], 
         """, unsafe_allow_html=True)
 
     with kpi_col3:
-        m_val = models_latest["model_id"].nunique()
-        model_count = int(m_val.max() if hasattr(m_val, "max") else m_val) if not models_latest.empty else 0
+        if not models_latest.empty and "model_id" in models_latest.columns:
+            m_val = models_latest["model_id"].nunique()
+            model_count = int(m_val.max() if hasattr(m_val, "max") else m_val)
+        else:
+            model_count = 0
+
         st.markdown(f"""
             <div class="kpi-card">
                 <div class="kpi-label">Direct Model Access</div>
