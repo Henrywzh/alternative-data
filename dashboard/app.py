@@ -371,6 +371,48 @@ def compute_openrouter_views(
     else:
         views["app_usage"] = {"date_col": "usage_date", "value_col": "total_tokens", "days": [], "pivot_top": pd.DataFrame()}
 
+    # --- Revenue Estimator Logic ---
+    activity_res = datasets.get("openrouter_model_activity")
+    pricing_res = datasets.get("raw_openrouter_models")
+
+    if activity_res and not activity_res.frame.empty and pricing_res and not pricing_res.frame.empty:
+        activity = activity_res.frame.copy()
+        pricing = pricing_res.frame.copy()
+
+        # Get latest pricing per model
+        latest_pricing = pricing.sort_values("snapshot_ts").groupby("model_id").tail(1)
+        
+        # Merge usage with pricing
+        merged = activity.merge(
+            latest_pricing[["model_id", "pricing_prompt", "pricing_completion", "top_provider_id"]],
+            left_on="model_permaslug",
+            right_on="model_id",
+            how="inner"
+        )
+        
+        # Filter for models where we have at least one valid price
+        merged = merged[(merged["pricing_prompt"].notna()) & (merged["pricing_prompt"] >= 0)].copy()
+        
+        # Calculate Revenue (Price is per 1M tokens)
+        merged["revenue_usd"] = (
+            (merged["prompt_tokens"] * merged["pricing_prompt"].astype(float) / 1e6) +
+            (merged["completion_tokens"] * merged["pricing_completion"].astype(float) / 1e6)
+        )
+        
+        # Group by Date and Provider
+        pivot_rev = (
+            merged.pivot_table(index="usage_date", columns="top_provider_id", values="revenue_usd", aggfunc="sum")
+            .fillna(0)
+            .sort_index()
+        )
+        
+        views["revenue_estimator"] = {
+            "pivot_rev": pivot_rev,
+            "total_revenue": merged["revenue_usd"].sum(),
+        }
+    else:
+        views["revenue_estimator"] = {"pivot_rev": pd.DataFrame(), "total_revenue": 0}
+
     return views
 
 
@@ -1075,6 +1117,67 @@ def render_market_share_section(datasets: dict[str, DatasetLoadResult], openrout
         fig = make_stacked_bar(openrouter_views["market_share"]["pivot_pct_top"], MODEL_COLORS, y_title="Share (%)", pct=True)
         fig.update_yaxes(range=[0, 100])
         st.plotly_chart(fig, use_container_width=True, theme=None)
+    st.markdown("---")
+
+
+def render_revenue_estimator(datasets: dict[str, DatasetLoadResult], openrouter_views: dict[str, object]) -> None:
+    rev_data = openrouter_views.get("revenue_estimator", {})
+    pivot_rev = rev_data.get("pivot_rev", pd.DataFrame())
+    total_revenue = rev_data.get("total_revenue", 0)
+
+    st.markdown('<div class="section-title">Provider Revenue Estimator (Experimental)</div>', unsafe_allow_html=True)
+    
+    if pivot_rev.empty:
+        st.info("No granular activity data available for revenue estimation. Run 'activity-daily-update' to populate.")
+        return
+
+    # Total Revenue Metric
+    st.markdown(
+        f"""
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-label">Est. Aggregate Revenue</div>
+            <div class="kpi-value">${total_revenue:,.0f}</div>
+            <div class="kpi-delta-up">↑ Based on Top 50 Models</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Provider Coverage</div>
+            <div class="kpi-value">{len(pivot_rev.columns)}</div>
+            <div class="kpi-delta-flat">active providers</div>
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown('<div class="section-subtitle">Estimated Daily Revenue by Provider (USD)</div>', unsafe_allow_html=True)
+    
+    # Plot Stacked Area Chart for Revenue
+    fig = go.Figure()
+    for i, provider_name in enumerate(pivot_rev.columns):
+        fig.add_trace(
+            go.Scatter(
+                x=pivot_rev.index,
+                y=pivot_rev[provider_name],
+                name=provider_name,
+                mode="lines",
+                stackgroup="one",
+                line=dict(width=0.5, color=MODEL_COLORS[i % len(MODEL_COLORS)]),
+                hovertemplate=f"<b>{provider_name}</b><br>%{{x}}<br>$%{{y:,.2f}}<extra></extra>",
+            )
+        )
+
+    fig.update_layout(
+        template="plotly_white",
+        xaxis_title="Usage Date",
+        yaxis_title="Revenue (USD)",
+        legend=dict(orientation="h", y=-0.2),
+        height=400,
+        margin=dict(l=0, r=0, t=20, b=80),
+    )
+    st.plotly_chart(fig, use_container_width=True, theme=None)
+    st.caption("Note: Revenue is estimated using public pricing and sampled activity token splits. Actual payouts may vary based on provider-specific discounts or cached tokens.")
+    st.markdown("---")
 
     with legend_col:
         ms_latest  = ms[ms["week_start_date"] == sel_ms_wk].groupby("entity_id", as_index=False)["metric_value"].sum()
@@ -2553,7 +2656,7 @@ def main() -> None:
     )
     checks = openrouter_checks + apps_checks + github_checks + provider_checks + semi_checks + benchmark_checks
 
-    openrouter_views = compute_openrouter_views({**openrouter_datasets, **apps_datasets})
+    openrouter_views = compute_openrouter_views({**openrouter_datasets, **apps_datasets, **compute_datasets})
     github_views = compute_github_views(github_datasets)
     provider_views = compute_provider_adoption_views(provider_datasets)
     semi_views = compute_semiconductor_views(semi_datasets)
@@ -2570,6 +2673,7 @@ def main() -> None:
         render_top_models_chart(datasets, openrouter_views)
         render_market_share_section(datasets, openrouter_views)
         render_leaderboard(datasets)
+        render_revenue_estimator(datasets, openrouter_views)
         render_programming_chart(datasets, openrouter_views)
         render_app_usage_chart(datasets, openrouter_views)
         render_apps_tables(datasets)
