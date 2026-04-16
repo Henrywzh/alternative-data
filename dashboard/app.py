@@ -1188,6 +1188,31 @@ def render_market_share_section(datasets: dict[str, DatasetLoadResult], openrout
         fig = make_stacked_bar(openrouter_views["market_share"]["pivot_pct_top"], MODEL_COLORS, y_title="Share (%)", pct=True)
         fig.update_yaxes(range=[0, 100])
         st.plotly_chart(fig, use_container_width=True, theme=None)
+
+    with legend_col:
+        ms_latest  = ms[ms["week_start_date"] == sel_ms_wk].groupby("entity_id", as_index=False)["metric_value"].sum()
+        wk_total   = ms_latest["metric_value"].sum()
+        ms_named   = ms_latest[ms_latest["entity_id"].str.lower() != "others"].sort_values("metric_value", ascending=False)
+        cum_total  = ms[ms["entity_id"].str.lower() != "others"].groupby("entity_id")["metric_value"].sum()
+
+        st.markdown(f'<div style="font-weight:700;font-size:1rem;margin-bottom:0.8rem;">Week: {sel_ms_wk} Leaders</div>', unsafe_allow_html=True)
+        rows_html = '<div class="ms-legend">'
+        for rank_i, (_, row) in enumerate(ms_named.head(8).iterrows()):
+            color  = MODEL_COLORS[rank_i % len(MODEL_COLORS)]
+            author = row["entity_id"]
+            pct_v  = row["metric_value"] / wk_total * 100 if wk_total > 0 else 0
+            cum_v  = format_metric(cum_total.get(author, 0))
+            rows_html += f"""
+            <div class="ms-row">
+              <span style="color:{MUTED};font-size:0.72rem;min-width:16px;">{rank_i+1}</span>
+              <span class="ms-dot" style="background:{color};"></span>
+              <span class="ms-name">{author}</span>
+              <span class="ms-tokens">{cum_v}</span>
+              <span class="ms-pct">{pct_v:.1f}%</span>
+            </div>"""
+        rows_html += "</div>"
+        st.markdown(rows_html, unsafe_allow_html=True)
+
     st.markdown("---")
 
 
@@ -1252,30 +1277,6 @@ def render_revenue_estimator(datasets: dict[str, DatasetLoadResult], openrouter_
     st.plotly_chart(fig, use_container_width=True, theme=None)
     st.caption("Note: Revenue is estimated using public pricing and sampled activity token splits. Actual payouts may vary based on provider-specific discounts or cached tokens.")
     st.markdown("---")
-
-    with legend_col:
-        ms_latest  = ms[ms["week_start_date"] == sel_ms_wk].groupby("entity_id", as_index=False)["metric_value"].sum()
-        wk_total   = ms_latest["metric_value"].sum()
-        ms_named   = ms_latest[ms_latest["entity_id"].str.lower() != "others"].sort_values("metric_value", ascending=False)
-        cum_total  = ms[ms["entity_id"].str.lower() != "others"].groupby("entity_id")["metric_value"].sum()
-
-        st.markdown(f'<div style="font-weight:700;font-size:1rem;margin-bottom:0.8rem;">Week: {sel_ms_wk} Leaders</div>', unsafe_allow_html=True)
-        rows_html = '<div class="ms-legend">'
-        for rank_i, (_, row) in enumerate(ms_named.head(8).iterrows()):
-            color  = MODEL_COLORS[rank_i % len(MODEL_COLORS)]
-            author = row["entity_id"]
-            pct_v  = row["metric_value"] / wk_total * 100 if wk_total > 0 else 0
-            cum_v  = format_metric(cum_total.get(author, 0))
-            rows_html += f"""
-            <div class="ms-row">
-              <span style="color:{MUTED};font-size:0.72rem;min-width:16px;">{rank_i+1}</span>
-              <span class="ms-dot" style="background:{color};"></span>
-              <span class="ms-name">{author}</span>
-              <span class="ms-tokens">{cum_v}</span>
-              <span class="ms-pct">{pct_v:.1f}%</span>
-            </div>"""
-        rows_html += "</div>"
-        st.markdown(rows_html, unsafe_allow_html=True)
 
 
 def render_leaderboard(datasets: dict[str, DatasetLoadResult]) -> None:
