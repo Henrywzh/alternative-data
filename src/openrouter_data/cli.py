@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from openrouter_data.pipeline import ActivityPipeline, AppsPipeline, RankingsPipeline
+from openrouter_data.pipeline import ActivityPipeline, AppsPipeline, ProviderActivityPipeline, RankingsPipeline
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -27,6 +27,11 @@ def build_parser() -> argparse.ArgumentParser:
     
     activity = subparsers.add_parser("activity-daily-update", help="Discover top models and fetch granular usage activity")
     activity.add_argument("--limit", type=int, default=50, help="Number of models to discover and scrape")
+
+    subparsers.add_parser(
+        "provider-activity-daily-update",
+        help="Fetch daily token usage from each priority provider page (self-healing 91-day window)",
+    )
 
     apps_validate = subparsers.add_parser("apps-validate", help="Validate live app extraction or parse fixture HTML")
     apps_validate.add_argument("--directory-fixture", help="Optional /apps fixture HTML path")
@@ -93,6 +98,11 @@ def main() -> None:
     if args.command == "activity-daily-update":
         pipeline = ActivityPipeline(base_dir)
         _print_result(pipeline.run_daily_update(limit=args.limit))
+        return
+
+    if args.command == "provider-activity-daily-update":
+        pipeline = ProviderActivityPipeline(base_dir)
+        _print_result(pipeline.run_daily_update())
         return
 
     parser.error(f"Unknown command: {args.command}")
