@@ -428,7 +428,7 @@ def compute_openrouter_views(
         views["app_usage"] = {"date_col": "usage_date", "value_col": "total_tokens", "days": [], "pivot_top": pd.DataFrame()}
 
     # --- Revenue Estimator Logic ---
-    activity_res = datasets.get("openrouter_model_activity")
+    activity_res = datasets.get("app_usage_daily")
     pricing_res = datasets.get("raw_openrouter_models")
 
     if activity_res and not activity_res.frame.empty and pricing_res and not pricing_res.frame.empty:
@@ -437,6 +437,30 @@ def compute_openrouter_views(
 
         # Get latest pricing per model
         latest_pricing = pricing.sort_values("snapshot_ts").groupby("model_id").tail(1)
+        pricing_model_ids = set(latest_pricing["model_id"].tolist())
+        
+        def normalize_slug(slug):
+            slug_str = str(slug)
+            if slug_str in pricing_model_ids:
+                return slug_str
+            import re
+            base = re.sub(r'-\d{4,8}$', '', slug_str)
+            if base in pricing_model_ids:
+                return base
+            if base.startswith("anthropic/claude-"):
+                m = re.match(r'anthropic/claude-([\d\.]+)-(opus|sonnet|haiku)', base)
+                if m:
+                    permuted = f"anthropic/claude-{m.group(2)}-{m.group(1)}"
+                    if permuted in pricing_model_ids:
+                        return permuted
+            if base.startswith("qwen/qwen"):
+                if "plus" in base and "qwen/qwen-plus" in pricing_model_ids:
+                    return "qwen/qwen-plus"
+                if "max" in base and "qwen/qwen-max" in pricing_model_ids:
+                    return "qwen/qwen-max"
+            return slug_str
+            
+        activity["fuzzy_slug"] = activity["model_permaslug"].apply(normalize_slug)
         
         # Merge usage with pricing. Clean activity to avoid column collisions (e.g. model_id_x/y)
         # load_dataset pads all frames with EXPECTED_COLUMNS, so we must be explicit.
@@ -444,7 +468,7 @@ def compute_openrouter_views(
         
         merged = activity[activity_cols].merge(
             latest_pricing[["model_id", "pricing_prompt", "pricing_completion", "top_provider_id"]],
-            left_on="model_permaslug",
+            left_on="fuzzy_slug",
             right_on="model_id",
             how="inner"
         )
@@ -464,14 +488,34 @@ def compute_openrouter_views(
             axis=1
         )
         
-        pivot_rev = (
-            merged.pivot_table(index="usage_date", columns="provider_label", values="revenue_usd", aggfunc="sum")
+        # Time dimensions
+        merged["usage_date_dt"] = pd.to_datetime(merged["usage_date"], errors="coerce")
+        merged = merged.dropna(subset=["usage_date_dt"]).copy()
+        merged["usage_date_str"] = merged["usage_date_dt"].dt.strftime('%Y-%m-%d')
+        merged["usage_week"] = merged["usage_date_dt"].dt.to_period('W').dt.start_time.dt.strftime('%Y-%m-%d')
+        merged["usage_month"] = merged["usage_date_dt"].dt.strftime('%Y-%m')
+        
+        pivot_rev_daily = (
+            merged.pivot_table(index="usage_date_str", columns="provider_label", values="revenue_usd", aggfunc="sum")
+            .fillna(0)
+            .sort_index()
+        )
+        pivot_rev_weekly = (
+            merged.pivot_table(index="usage_week", columns="provider_label", values="revenue_usd", aggfunc="sum")
+            .fillna(0)
+            .sort_index()
+        )
+        pivot_rev_monthly = (
+            merged.pivot_table(index="usage_month", columns="provider_label", values="revenue_usd", aggfunc="sum")
             .fillna(0)
             .sort_index()
         )
         
         views["revenue_estimator"] = {
-            "pivot_rev": pivot_rev,
+            "pivot_rev": pivot_rev_daily,
+            "pivot_rev_daily": pivot_rev_daily,
+            "pivot_rev_weekly": pivot_rev_weekly,
+            "pivot_rev_monthly": pivot_rev_monthly,
             "total_revenue": merged["revenue_usd"].sum(),
             "has_activity": not activity.empty,
             "merged_count": len(merged)
@@ -1249,33 +1293,49 @@ def render_revenue_estimator(datasets: dict[str, DatasetLoadResult], openrouter_
         unsafe_allow_html=True,
     )
 
-    st.markdown('<div class="section-subtitle">Estimated Daily Revenue by Provider (USD)</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-subtitle">Estimated Revenue by Provider (USD)</div>', unsafe_allow_html=True)
     
-    # Plot Stacked Area Chart for Revenue
-    fig = go.Figure()
-    for i, provider_name in enumerate(pivot_rev.columns):
-        fig.add_trace(
-            go.Scatter(
-                x=pivot_rev.index,
-                y=pivot_rev[provider_name],
-                name=provider_name,
-                mode="lines",
-                stackgroup="one",
-                line=dict(width=0.5, color=MODEL_COLORS[i % len(MODEL_COLORS)]),
-                hovertemplate=f"<b>{provider_name}</b><br>%{{x}}<br>$%{{y:,.2f}}<extra></extra>",
-            )
-        )
+    pivot_monthly = rev_data.get("pivot_rev_monthly", pd.DataFrame())
+    pivot_weekly  = rev_data.get("pivot_rev_weekly", pd.DataFrame())
+    pivot_daily   = rev_data.get("pivot_rev_daily", pd.DataFrame())
 
-    fig.update_layout(
-        template="plotly_white",
-        xaxis_title="Usage Date",
-        yaxis_title="Revenue (USD)",
-        legend=dict(orientation="h", y=-0.2),
-        height=400,
-        margin=dict(l=0, r=0, t=20, b=80),
-    )
-    st.plotly_chart(fig, use_container_width=True, theme=None)
-    st.caption("Note: Revenue is estimated using public pricing and sampled activity token splits. Actual payouts may vary based on provider-specific discounts or cached tokens.")
+    tab_month, tab_week, tab_day = st.tabs(["Monthly", "Weekly", "Daily"])
+    
+    def _render_rev_chart(pivot_df, date_title):
+        if pivot_df.empty:
+            st.info(f"No {date_title.lower()} data available.")
+            return
+        fig = go.Figure()
+        for i, provider_name in enumerate(pivot_df.columns):
+            fig.add_trace(
+                go.Scatter(
+                    x=pivot_df.index,
+                    y=pivot_df[provider_name],
+                    name=provider_name,
+                    mode="lines+markers",
+                    stackgroup="one",
+                    line=dict(width=0.5, color=MODEL_COLORS[i % len(MODEL_COLORS)]),
+                    hovertemplate=f"<b>{provider_name}</b><br>%{{x}}<br>$%{{y:,.2f}}<extra></extra>",
+                )
+            )
+        fig.update_layout(
+            template="plotly_white",
+            xaxis_title=date_title,
+            yaxis_title="Revenue (USD)",
+            legend=dict(orientation="h", y=-0.2),
+            height=400,
+            margin=dict(l=0, r=0, t=20, b=80),
+        )
+        st.plotly_chart(fig, use_container_width=True, theme=None)
+
+    with tab_month:
+        _render_rev_chart(pivot_monthly, "Usage Month")
+    with tab_week:
+        _render_rev_chart(pivot_weekly, "Usage Week (Starting)")
+    with tab_day:
+        _render_rev_chart(pivot_daily, "Usage Date")
+        
+    st.caption("Note: Revenue is estimated using public pricing and sampled activity token splits. Versioned models are fuzzy-matched to their closest base model to ensure coverage. Actual payouts may vary.")
     st.markdown("---")
 
 
