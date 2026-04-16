@@ -227,7 +227,7 @@ class ActivityPipeline(BasePipeline):
     def __init__(self, base_dir: Path) -> None:
         super().__init__(base_dir, ActivitySource())
 
-    def run_daily_update(self, limit: int = 50) -> PipelineResult:
+    def run_daily_update(self, limit: int = 200) -> PipelineResult:
         """Discovery phase then execute common pipeline logic."""
         # 1. Discover top N slugs
         popular_slugs = self.source.fetch_popular_slugs(limit=limit)
