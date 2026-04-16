@@ -73,7 +73,8 @@ data/normalized/semiconductor_memory/*
 
 # Local tool config — never push
 .claude/
-.streamlit/
+.streamlit/*
+! .streamlit/config.toml
 
 # Secrets / API keys
 .config
