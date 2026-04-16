@@ -40,11 +40,15 @@ data/raw/provider_adoption/*
 !data/raw/provider_adoption/**/
 !data/raw/provider_adoption/**/manifest.json
 
-# compute_availability: commit both raw(for manifest) and normalized
+# compute_availability: commit normalized files and raw run manifests
 !data/normalized/compute_availability/
 data/normalized/compute_availability/*
 !data/normalized/compute_availability/*.csv
 !data/normalized/compute_availability/*.parquet
+!data/raw/compute_availability/
+data/raw/compute_availability/**
+!data/raw/compute_availability/**/
+!data/raw/compute_availability/**/manifest.json
 
 # llm_benchmarks: commit normalized
 !data/normalized/llm_benchmarks/
