@@ -5,7 +5,7 @@ from typing import Iterable
 
 import requests
 
-from provider_adoption_data.models import ProviderConfig, PypiDownloadPoint, Snapshot
+from provider_adoption_data.models import ProviderConfig, PypiDownloadPoint, Snapshot, sanitize_filename
 
 
 class PypiStatsSource:
@@ -24,7 +24,7 @@ class PypiStatsSource:
                 response.raise_for_status()
                 snapshots.append(
                     Snapshot(
-                        name=f"pypi_{provider.slug}_{package.package_name}".replace("-", "_"),
+                        name=sanitize_filename(f"pypi_{provider.slug}_{package.package_name}"),
                         source_url=url,
                         body=response.text,
                     )
