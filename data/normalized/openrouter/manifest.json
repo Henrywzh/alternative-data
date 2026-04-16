@@ -1,0 +1,9 @@
+{
+  "datasets": {
+    "provider_daily_activity": {
+      "latest_scraped_at": "2026-04-16T17:05:44.071198Z",
+      "latest_date": "2026-04-16",
+      "row_count": 8558
+    }
+  }
+}
