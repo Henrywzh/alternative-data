@@ -802,9 +802,31 @@ def inject_css() -> None:
         [data-testid="stToolbar"], #MainMenu, footer, header {{ visibility: hidden; display: none !important; }}
         .stDeployButton {{ display: none; }}
         
-        /* Force Light Mode background and text */
-        body, .stApp {{
+        /* Force Light Mode background and text across ALL components */
+        :root {{
+            color-scheme: light !important;
+        }}
+
+        body, .stApp, .stMain, [data-testid="stHeader"], [data-testid="stAppViewContainer"], [data-testid="stHorizontalBlock"] {{
             background-color: {BG} !important;
+            color: {TEXT} !important;
+        }}
+
+        /* Ensure sidebar stays light */
+        [data-testid="stSidebar"], [data-testid="stSidebarContent"], [data-testid="stSidebarUserContent"] {{
+            background-color: {SIDEBAR} !important;
+        }}
+
+        /* Fix weird dark mode text color on widgets */
+        .stMarkdown, p, span, label, div {{
+            color: {TEXT} !important;
+        }}
+        
+        .stMetric div {{
+            color: {TEXT} !important;
+        }}
+
+        .stSubheader p {{
             color: {TEXT} !important;
         }}
         </style>
