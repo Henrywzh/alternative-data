@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 import sys
+import re
 
 import pandas as pd
 import plotly.graph_objects as go
@@ -53,7 +54,7 @@ NPM_CATEGORY_LABELS = {
     "legacy_sdk": "Legacy SDK",
 }
 
-BIG_TECH_ORGS = ["openai", "google", "anthropic", "meta", "mistralai", "deepseek", "qwen"]
+BIG_TECH_ORGS = ["openai", "google", "anthropic", "meta", "mistralai", "deepseek", "qwen", "moonshotai"]
 
 
 # ---------------------------------------------------------------------------
@@ -336,6 +337,8 @@ OPENROUTER_PROVIDER_MAP = {
     "together-ai": "Together AI",
     "microsoft": "Microsoft",
     "openrouter": "OpenRouter",
+    "moonshotai": "Moonshot AI",
+    "zhipu": "智谱AI (Z.ai)",
 }
 
 
@@ -360,6 +363,27 @@ def _derive_provider_name(model_id: str, official_provider: str | None) -> str:
         return OPENROUTER_PROVIDER_MAP.get(slug_prefix, slug_prefix.capitalize())
     
     return "Unknown"
+
+
+
+def _fuzzy_normalize_model_id(model_id: str) -> str:
+    """Normalize model IDs to match between rankings and pricing table."""
+    val = str(model_id).lower()
+    # Strip date suffixes like -20260217
+    val = re.sub(r"-(202[0-9]{5}|\d{4}-\d{2}-\d{2}|\d{2}-\d{2})$", "", val)
+    # Strip modifiers
+    val = val.replace(":thinking", "").replace(":beta", "").replace(":free", "").replace(":online", "")
+    
+    parts = val.split("/")
+    if len(parts) < 2:
+        return val
+        
+    provider, model = parts[0], parts[1]
+    # Tokenize model part
+    tokens = re.findall(r"[a-z0-9.]+", model)
+    # Join sorted to handle order swaps (e.g. claude-4.6-sonnet vs claude-sonnet-4.6)
+    normalized_model = "".join(sorted(tokens))
+    return f"{provider}/{normalized_model}"
 
 
 @st.cache_data(ttl=3600)
@@ -429,107 +453,243 @@ def compute_openrouter_views(
 
     # --- Revenue Estimator Logic ---
     activity_res = datasets.get("app_usage_daily")
+    macro_res = datasets.get("top_models")
     pricing_res = datasets.get("raw_openrouter_models")
 
     if activity_res and not activity_res.frame.empty and pricing_res and not pricing_res.frame.empty:
-        activity = activity_res.frame.copy()
         pricing = pricing_res.frame.copy()
-
+        
         # Get latest pricing per model
         latest_pricing = pricing.sort_values("snapshot_ts").groupby("model_id").tail(1)
         pricing_model_ids = set(latest_pricing["model_id"].tolist())
         
         def normalize_slug(slug):
             slug_str = str(slug)
+            if not slug_str or slug_str.lower() in ["nan", "none", "null"]:
+                return slug_str
+            
+            # 1. Strip common tags
+            slug_str = re.sub(r':(free|beta|alpha|online|chat|search)$', '', slug_str)
+            
             if slug_str in pricing_model_ids:
                 return slug_str
-            import re
-            base = re.sub(r'-\d{4,8}$', '', slug_str)
+            
+            # 2. Universal Date Stripping (e.g., -20250807, -2025-08-07, -04-02)
+            # We look for dash followed by 4-8 digits, OR YYYY-MM-DD, OR MM-DD
+            pattern = r'-(\d{4,8}|\d{4}-\d{2}-\d{2}|\d{2}-\d{2})$'
+            base = re.sub(pattern, '', slug_str)
             if base in pricing_model_ids:
                 return base
+                
+            # 3. Vendor Fallbacks
             if base.startswith("anthropic/claude-"):
                 m = re.match(r'anthropic/claude-([\d\.]+)-(opus|sonnet|haiku)', base)
                 if m:
                     permuted = f"anthropic/claude-{m.group(2)}-{m.group(1)}"
-                    if permuted in pricing_model_ids:
-                        return permuted
-            if base.startswith("qwen/qwen"):
-                if "plus" in base and "qwen/qwen-plus" in pricing_model_ids:
-                    return "qwen/qwen-plus"
-                if "max" in base and "qwen/qwen-max" in pricing_model_ids:
-                    return "qwen/qwen-max"
-            return slug_str
+                    if permuted in pricing_model_ids: return permuted
             
-        activity["fuzzy_slug"] = activity["model_permaslug"].apply(normalize_slug)
-        
-        # Merge usage with pricing. Clean activity to avoid column collisions (e.g. model_id_x/y)
-        # load_dataset pads all frames with EXPECTED_COLUMNS, so we must be explicit.
-        activity_cols = [c for c in activity.columns if c not in ["pricing_prompt", "pricing_completion", "top_provider_id", "model_id"]]
-        
-        merged = activity[activity_cols].merge(
-            latest_pricing[["model_id", "pricing_prompt", "pricing_completion", "top_provider_id"]],
-            left_on="fuzzy_slug",
-            right_on="model_id",
-            how="inner"
-        )
-        
-        # Filter for models where we have at least one valid price
-        merged = merged[(merged["pricing_prompt"].notna()) & (merged["pricing_prompt"] >= 0)].copy()
-
-        # Calculate Revenue (Price is per 1M tokens)
-        if "prompt_tokens" in merged.columns and "completion_tokens" in merged.columns and merged["prompt_tokens"].notna().any():
-            merged["revenue_usd"] = (
-                (merged["prompt_tokens"] * merged["pricing_prompt"].astype(float) / 1e6) +
-                (merged["completion_tokens"] * merged["pricing_completion"].astype(float) / 1e6)
+            if base.startswith("qwen/qwen"):
+                # Handle qwen3.6-plus -> qwen-plus if required, but first check base
+                if base in pricing_model_ids: return base
+                # generic plus/max fallback
+                if "plus" in base and "qwen/qwen-plus" in pricing_model_ids: return "qwen/qwen-plus"
+                if "max" in base and "qwen/qwen-max" in pricing_model_ids: return "qwen/qwen-max"
+                
+            return base if base in pricing_model_ids else slug_str
+            
+        def process_revenue_df(df, slug_col, tokens_col, date_col, is_macro=False):
+            df["fuzzy_slug"] = df[slug_col].apply(normalize_slug)
+            df_cols = [c for c in df.columns if c not in ["pricing_prompt", "pricing_completion", "top_provider_id", "model_id"]]
+            
+            merged = df[df_cols].merge(
+                latest_pricing[["model_id", "pricing_prompt", "pricing_completion", "top_provider_id"]],
+                left_on="fuzzy_slug", right_on="model_id", how="inner"
             )
-        elif "total_tokens" in merged.columns:
-            # Fallback for historical data that only records total_tokens.
-            # Empirical network data shows ~97.7% prompt / 2.3% completion split (driven by RAG & long-context usages).
-            merged["revenue_usd"] = (
-                (merged["total_tokens"] * 0.977 * merged["pricing_prompt"].astype(float) / 1e6) +
-                (merged["total_tokens"] * 0.023 * merged["pricing_completion"].astype(float) / 1e6)
+            merged = merged[(merged["pricing_prompt"].notna()) & (merged["pricing_prompt"] >= 0)].copy()
+            if merged.empty:
+                return pd.DataFrame()
+                
+            if not is_macro and "prompt_tokens" in merged.columns and "completion_tokens" in merged.columns and merged["prompt_tokens"].notna().any():
+                merged["revenue_usd"] = (
+                    (merged["prompt_tokens"] * merged["pricing_prompt"].astype(float)) +
+                    (merged["completion_tokens"] * merged["pricing_completion"].astype(float))
+                )
+            else:
+                merged["revenue_usd"] = (
+                    (merged[tokens_col] * 0.977 * merged["pricing_prompt"].astype(float)) +
+                    (merged[tokens_col] * 0.023 * merged["pricing_completion"].astype(float))
+                )
+                
+            merged["provider_label"] = merged.apply(
+                lambda x: _derive_provider_name(x["model_id"], x["top_provider_id"]), axis=1
             )
-        else:
-            merged["revenue_usd"] = 0
+            
+            merged["usage_date_dt"] = pd.to_datetime(merged[date_col], errors="coerce")
+            merged = merged.dropna(subset=["usage_date_dt"])
+            merged = merged[merged["revenue_usd"] > 0].copy()
+            if merged.empty:
+                return pd.DataFrame()
+            merged["usage_date_str"] = merged["usage_date_dt"].dt.strftime('%Y-%m-%d')
+            merged["usage_week"] = merged["usage_date_dt"].dt.to_period('W').dt.start_time.dt.strftime('%Y-%m-%d')
+            merged["usage_month"] = merged["usage_date_dt"].dt.strftime('%Y-%m')
+            return merged
+        
+        # 1. Micro Scope (Daily)
+        activity = activity_res.frame.copy()
+        merged_daily = process_revenue_df(activity, "model_permaslug", "total_tokens", "usage_date")
+        pivot_rev_daily = pd.DataFrame()
+        if not merged_daily.empty:
+            pivot_rev_daily = (
+                merged_daily.pivot_table(index="usage_date_str", columns="provider_label", values="revenue_usd", aggfunc="sum")
+                .fillna(0).sort_index()
+            )
 
+        # --- Smart-Scaling Revenue Engine (Hybrid) ---
+        # Strategy: 
+        # 1. Precise Model Revenue (Tier 1): Use top_models.csv with fuzzy pricing.
+        # 2. Market-Share Top-Up (Tier 2): Use market_share totals to 'scale up' to full platform volume.
         
-        # Group by Date and Provider (using derived provider for better coverage)
-        merged["provider_label"] = merged.apply(
-            lambda x: _derive_provider_name(x["model_id"], x["top_provider_id"]), 
-            axis=1
-        )
+        pivot_rev_weekly = pd.DataFrame()
+        pivot_rev_monthly = pd.DataFrame()
         
-        # Time dimensions
-        merged["usage_date_dt"] = pd.to_datetime(merged["usage_date"], errors="coerce")
-        merged = merged.dropna(subset=["usage_date_dt"]).copy()
-        merged["usage_date_str"] = merged["usage_date_dt"].dt.strftime('%Y-%m-%d')
-        merged["usage_week"] = merged["usage_date_dt"].dt.to_period('W').dt.start_time.dt.strftime('%Y-%m-%d')
-        merged["usage_month"] = merged["usage_date_dt"].dt.strftime('%Y-%m')
+        market_share_res = datasets.get("market_share")
+        if macro_res and not macro_res.frame.empty and market_share_res and not market_share_res.frame.empty:
+            macro_df = macro_res.frame.copy()
+            share_df = market_share_res.frame.copy()
+            pricing_df = latest_pricing.copy()
+            
+            # Helper: Align Sundays to the following Monday
+            def _align_to_monday(dt_series):
+                dts = pd.to_datetime(dt_series, errors="coerce")
+                # If Sunday (weekday 6), shift by 1 day
+                # Then take to_period('W').start_time to get the stable Monday
+                return dts.apply(lambda d: (d + pd.Timedelta(days=1)) if d.weekday() == 6 else d).dt.to_period('W').dt.start_time.dt.strftime('%Y-%m-%d')
+
+            # 1. Normalize Dates (Unified)
+            macro_df["usage_week"] = _align_to_monday(macro_df["week_start_date"])
+            share_df["usage_week"] = _align_to_monday(share_df["week_start_date"])
+            
+            # 2. Pre-compute Fuzzy Pricing Map
+            pricing_df["fuzzy_id"] = pricing_df["model_id"].apply(_fuzzy_normalize_model_id)
+            pricing_df["avg_p"] = (pricing_df["pricing_prompt"] * 0.977) + (pricing_df["pricing_completion"] * 0.023)
+            # Take the highest price for a fuzzy match (optimistic, works for Opus vs Sonnet)
+            fuzzy_prices = pricing_df.groupby("fuzzy_id")["avg_p"].max().to_dict()
+            
+            # 3. Provider Benchmarks (Fallback)
+            pricing_df["provider_prefix"] = pricing_df["model_id"].apply(lambda x: str(x).split("/")[0] if "/" in str(x) else "Others")
+            prov_benchmarks = pricing_df[pricing_df["avg_p"] > 0].groupby("provider_prefix")["avg_p"].median().to_dict()
+            global_avg_p = pricing_df[pricing_df["avg_p"] > 0]["avg_p"].median()
+            
+            # 4. Tier 1: Precise Model Summation
+            macro_dedup = macro_df.drop_duplicates(subset=["usage_week", "entity_id"])
+            macro_dedup["fuzzy_id"] = macro_dedup["entity_id"].apply(_fuzzy_normalize_model_id)
+            
+            def get_precise_p(row):
+                 fuzzy_id = row.get("fuzzy_id")
+                 if fuzzy_id in fuzzy_prices:
+                     return fuzzy_prices[fuzzy_id]
+                 
+                 parent_id = row.get("parent_entity_id")
+                 fallback_key = str(parent_id) if pd.notna(parent_id) else ""
+                 return prov_benchmarks.get(fallback_key, global_avg_p)
+            
+            macro_dedup["model_price"] = macro_dedup.apply(get_precise_p, axis=1)
+            macro_dedup["revenue_usd"] = macro_dedup["metric_value"] * macro_dedup["model_price"]
+            
+            # Aggregated Tier 1 (Week, Provider)
+            tier1_agg = macro_dedup.groupby(["usage_week", "parent_entity_id"]).agg({
+                "metric_value": "sum",
+                "revenue_usd": "sum"
+            }).reset_index()
+            
+            # 5. Tier 2: Market Share Top-Up
+            share_dedup = share_df.drop_duplicates(subset=["usage_week", "entity_id"])
+            
+            # Join T1 to Share
+            combined = share_dedup.merge(
+                tier1_agg, 
+                left_on=["usage_week", "entity_id"], 
+                right_on=["usage_week", "parent_entity_id"],
+                how="left"
+            ).fillna(0)
+            
+            def calculate_hybrid_rev(row):
+                total_share_tokens = float(row["metric_value_x"])
+                tier1_tokens = float(row["metric_value_y"])
+                tier1_rev = float(row["revenue_usd"])
+                
+                # Delta tokens not captured in Tier 1
+                delta_tokens = max(0, total_share_tokens - tier1_tokens)
+                
+                # Pricing for the delta: Use a 'Representativeness Guard'
+                prov_id = str(row["entity_id"]).lower()
+                prov_median = prov_benchmarks.get(prov_id, global_avg_p)
+
+                if tier1_tokens > 0:
+                    vwap = tier1_rev / tier1_tokens
+                    # Rule: If Tier 1 is very cheap (e.g. GPT-OSS), use the provider median for the delta.
+                    # If Tier 1 is premium (e.g. Opus), use the premium VWAP for the delta.
+                    delta_p = max(vwap, prov_median)
+                else:
+                    delta_p = prov_median
+                
+                return tier1_rev + (delta_tokens * delta_p)
+            
+            combined["final_revenue"] = combined.apply(calculate_hybrid_rev, axis=1)
+            
+            # Formatting and Pivoting
+            combined["usage_date_dt"] = pd.to_datetime(combined["usage_week"])
+            combined["usage_month"] = combined["usage_date_dt"].dt.strftime('%Y-%m')
+            combined["provider_label"] = combined["entity_id"].apply(lambda x: _derive_provider_name(f"{x}/model", None))
+            
+            pivot_rev_weekly = (
+                combined.pivot_table(index="usage_week", columns="provider_label", values="final_revenue", aggfunc="sum")
+                .fillna(0).sort_index()
+            )
+            
+            # --- Gap-Fill Interpolation ---
+            # OpenRouter's Market Share chart is hard-capped at Top 9 + 'Others'.
+            # When a priority provider drops below rank 9, their revenue is 0.
+            # We fill these gaps with linear interpolation (max 4 consecutive weeks).
+            # Non-Big-Tech providers are NOT interpolated to avoid phantom noise.
+            BIG_TECH_DISPLAY = [
+                "OpenAI", "Anthropic", "Google", "Meta (Llama)", "DeepSeek",
+                "Alibaba (Qwen)", "智谱AI (Z.ai)", "Moonshot AI", "xAI (Grok)",
+                "Mistral AI", "Microsoft",
+            ]
+            for col in BIG_TECH_DISPLAY:
+                if col in pivot_rev_weekly.columns:
+                    # Replace zeros with NaN so interpolate can bridge them
+                    s = pivot_rev_weekly[col].replace(0, float('nan'))
+                    # Interpolate only interior gaps (not leading/trailing NaN)
+                    s = s.interpolate(method='linear', limit=4, limit_area='inside')
+                    pivot_rev_weekly[col] = s.fillna(0)
+            
+            pivot_rev_monthly = (
+                combined.pivot_table(index="usage_month", columns="provider_label", values="final_revenue", aggfunc="sum")
+                .fillna(0).sort_index()
+            )
+            # Same interpolation for monthly (max 2 month gap)
+            for col in BIG_TECH_DISPLAY:
+                if col in pivot_rev_monthly.columns:
+                    s = pivot_rev_monthly[col].replace(0, float('nan'))
+                    s = s.interpolate(method='linear', limit=2, limit_area='inside')
+                    pivot_rev_monthly[col] = s.fillna(0)
         
-        pivot_rev_daily = (
-            merged.pivot_table(index="usage_date_str", columns="provider_label", values="revenue_usd", aggfunc="sum")
-            .fillna(0)
-            .sort_index()
-        )
-        pivot_rev_weekly = (
-            merged.pivot_table(index="usage_week", columns="provider_label", values="revenue_usd", aggfunc="sum")
-            .fillna(0)
-            .sort_index()
-        )
-        pivot_rev_monthly = (
-            merged.pivot_table(index="usage_month", columns="provider_label", values="revenue_usd", aggfunc="sum")
-            .fillna(0)
-            .sort_index()
-        )
+        # Fallback if both datasets are empty
+        if pivot_rev_weekly.empty and not merged_daily.empty:
+            pivot_rev_weekly = merged_daily.pivot_table(index="usage_week", columns="provider_label", values="revenue_usd", aggfunc="sum").fillna(0).sort_index()
+        if pivot_rev_monthly.empty and not merged_daily.empty:
+            pivot_rev_monthly = merged_daily.pivot_table(index="usage_month", columns="provider_label", values="revenue_usd", aggfunc="sum").fillna(0).sort_index()
         
         views["revenue_estimator"] = {
             "pivot_rev": pivot_rev_daily,
             "pivot_rev_daily": pivot_rev_daily,
             "pivot_rev_weekly": pivot_rev_weekly,
             "pivot_rev_monthly": pivot_rev_monthly,
-            "total_revenue": merged["revenue_usd"].sum(),
+            "total_revenue": merged_daily["revenue_usd"].sum() if not merged_daily.empty else 0,
             "has_activity": not activity.empty,
-            "merged_count": len(merged)
+            "merged_count": len(merged_daily) if not merged_daily.empty else 0
         }
     else:
         views["revenue_estimator"] = {
@@ -1346,7 +1506,14 @@ def render_revenue_estimator(datasets: dict[str, DatasetLoadResult], openrouter_
     with tab_day:
         _render_rev_chart(pivot_daily, "Usage Date")
         
-    st.caption("Note: Revenue is estimated using public pricing and sampled activity token splits. Versioned models are fuzzy-matched to their closest base model to ensure coverage. Actual payouts may vary.")
+    st.caption(
+        "Note: Revenue is estimated via a Hybrid Smart-Scaling model (Tier 1: precise model-level pricing via fuzzy matching; "
+        "Tier 2: market-share top-up for long-tail volume). "
+        "⚠️ OpenRouter's Market Share chart is platform-capped at Top 9 providers per week. "
+        "When a major provider falls outside the Top 9, their weekly revenue is estimated via linear interpolation "
+        "between observed data points (max 4-week gap). Interpolated periods may be less accurate. "
+        "Actual payouts may vary. Daily chart: micro-logs (6 weeks). Weekly/Monthly: macro-market share (12 months)."
+    )
     st.markdown("---")
 
 
@@ -1469,14 +1636,14 @@ def render_programming_chart(datasets: dict[str, DatasetLoadResult], openrouter_
 
 
 def render_app_usage_chart(datasets: dict[str, DatasetLoadResult], openrouter_views: dict[str, object]) -> None:
-    st.markdown('<div class="section-title">App Intelligence — Daily Model Usage</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">App Intelligence — Model Usage Snapshots</div>', unsafe_allow_html=True)
 
     # prefer app_top_models_daily_snapshot, fall back to app_usage_daily
     result = datasets.get("app_top_models_daily_snapshot")
-    use_daily = False
+    is_wtd = True
     if not result or result.frame.empty:
         result = datasets.get("app_usage_daily")
-        use_daily = True
+        is_wtd = False
 
     if not result or not render_dataset_guard(result):
         return
@@ -1492,9 +1659,11 @@ def render_app_usage_chart(datasets: dict[str, DatasetLoadResult], openrouter_vi
     days = openrouter_views["app_usage"]["days"]
     sel_day = st.selectbox("Analyze day", options=days, index=0, key="app_day_sel")
     day_total = frame[frame[date_col] == sel_day][val_col].sum()
+    
+    label = f"Running Week Total (as of {sel_day})" if is_wtd else f"Total Daily Tokens ({sel_day})"
     st.markdown(
-        f'<div class="kpi-card" style="margin-bottom:1rem; max-width: 300px;">'
-        f'<div class="kpi-label">Total Tokens ({sel_day})</div>'
+        f'<div class="kpi-card" style="margin-bottom:1rem; max-width: 350px;">'
+        f'<div class="kpi-label">{label}</div>'
         f'<div class="kpi-value" style="font-size: 1.5rem;">{format_metric(day_total)}</div>'
         f'</div>',
         unsafe_allow_html=True
@@ -1502,6 +1671,9 @@ def render_app_usage_chart(datasets: dict[str, DatasetLoadResult], openrouter_vi
 
     fig = make_stacked_bar(openrouter_views["app_usage"]["pivot_top"], MODEL_COLORS, y_title="Tokens", height=340)
     st.plotly_chart(fig, use_container_width=True, theme=None)
+    
+    if is_wtd:
+        st.caption("*Note: Snapshot totals represent cumulative usage for the current week (Week-to-Date) as reported at the time of the crawl.*")
 
 
 def render_apps_tables(datasets: dict[str, DatasetLoadResult]) -> None:
