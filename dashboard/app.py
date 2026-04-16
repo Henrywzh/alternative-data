@@ -803,32 +803,59 @@ def inject_css() -> None:
         [data-testid="stToolbar"], #MainMenu, footer, header {{ visibility: hidden; display: none !important; }}
         .stDeployButton {{ display: none; }}
         
-        /* Force Light Mode background and text across ALL components */
+        /* Force Light Mode variables and color-scheme across ALL components */
         :root {{
             color-scheme: light !important;
+            --primary-color: {ACCENT} !important;
+            --background-color: {BG} !important;
+            --secondary-background-color: {SIDEBAR} !important;
+            --text-color: {TEXT} !important;
         }}
 
+        /* Global overrides */
         body, .stApp, .stMain, [data-testid="stHeader"], [data-testid="stAppViewContainer"], [data-testid="stHorizontalBlock"] {{
             background-color: {BG} !important;
             color: {TEXT} !important;
         }}
 
-        /* Ensure sidebar stays light */
-        [data-testid="stSidebar"], [data-testid="stSidebarContent"], [data-testid="stSidebarUserContent"] {{
+        /* Sidebar styles */
+        [data-testid="stSidebar"], [data-testid="stSidebarContent"], [data-testid="stSidebarUserContent"], [data-testid="stSidebarNavLink"] {{
             background-color: {SIDEBAR} !important;
+            color: {TEXT} !important;
         }}
 
-        /* Fix weird dark mode text color on widgets */
-        .stMarkdown, p, span, label, div {{
+        /* Ensure all text labels and elements use the fixed text color */
+        .stMarkdown, p, span, label, div, li, h1, h2, h3 {{
+            color: {TEXT} !important;
+        }}
+
+        /* Metric overrides */
+        [data-testid="stMetricValue"], [data-testid="stMetricLabel"] {{
             color: {TEXT} !important;
         }}
         
-        .stMetric div {{
+        /* Button overrides - Force White/Light Background */
+        .stButton > button {{
+            background-color: {BG} !important;
             color: {TEXT} !important;
+            border: 1px solid {BORDER} !important;
+        }}
+        .stButton > button:hover {{
+            border-color: {ACCENT} !important;
+            color: {ACCENT} !important;
         }}
 
-        .stSubheader p {{
-            color: {TEXT} !important;
+        /* Tabs overrides */
+        .stTabs [data-baseweb="tab"] {{
+            color: {MUTED} !important;
+        }}
+        .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] {{
+            color: {ACCENT} !important;
+        }}
+
+        /* Plotly background protection */
+        .js-plotly-plot .main-svg, .plotly .main-svg {{
+            background: transparent !important;
         }}
         </style>
         """,
@@ -2159,7 +2186,13 @@ def render_ai_frontier_section(datasets: dict[str, DatasetLoadResult], benchmark
             text=range_sota["name"]
         ))
         
-        fig_sota.update_layout(template="plotly_white", height=380, margin=dict(l=0, r=0, t=20, b=40), legend=dict(orientation="h", y=-0.2))
+        fig_sota.update_layout(
+            title="Intelligence SOTA Path (GPQA)",
+            template="plotly_white", 
+            height=380, 
+            margin=dict(l=0, r=0, t=40, b=40), 
+            legend=dict(orientation="h", y=-0.2)
+        )
         st.plotly_chart(fig_sota, use_container_width=True, theme=None)
 
     with c_col2:
@@ -2193,8 +2226,10 @@ def render_ai_frontier_section(datasets: dict[str, DatasetLoadResult], benchmark
         ))
         
         fig_ctx.update_layout(
-            template="plotly_white", height=380, 
-            margin=dict(l=0, r=0, t=20, b=40),
+            title="Context Window Scaling",
+            template="plotly_white", 
+            height=380, 
+            margin=dict(l=0, r=0, t=40, b=40),
             yaxis=dict(type="log", title="Tokens (Log Scale)")
         )
         st.plotly_chart(fig_ctx, use_container_width=True, theme=None)
@@ -2349,12 +2384,11 @@ def render_compute_availability_section(datasets: dict[str, DatasetLoadResult], 
                         hovertemplate="<b>%{x}</b><br>$%{y:.2f}/hr<extra></extra>"
                     ))
             fig_spot.update_layout(
+                title="AWS Spot Price History ($/hr)",
                 template="plotly_white",
                 height=400,
-                margin=dict(l=0, r=0, t=20, b=40),
-                legend=dict(orientation="h", y=-0.2),
-                xaxis_title="Time",
-                yaxis_title="Price ($/hr)"
+                margin=dict(l=0, r=0, t=40, b=10),
+                legend=dict(orientation="h", y=-0.2)
             )
             st.plotly_chart(fig_spot, use_container_width=True, theme=None)
         else:
@@ -2386,11 +2420,10 @@ def render_compute_availability_section(datasets: dict[str, DatasetLoadResult], 
                 line=dict(color=ACCENT, width=3)
             ))
             fig_growth.update_layout(
+                title="Model Catalog Growth",
                 template="plotly_white",
-                height=340,
-                margin=dict(l=0, r=0, t=20, b=40),
-                xaxis_title="Snapshot Date",
-                yaxis_title="Models Count"
+                height=350,
+                margin=dict(l=0, r=0, t=40, b=10)
             )
             st.plotly_chart(fig_growth, use_container_width=True, theme=None)
 
@@ -2415,11 +2448,13 @@ def render_compute_availability_section(datasets: dict[str, DatasetLoadResult], 
                 hovertemplate="<b>%{text}</b><br>Context: %{x:,.0f}<br>Price: $%{y:.2f}/1M<extra></extra>"
             ))
             fig_scatter.update_layout(
+                title="Price vs. Context",
                 template="plotly_white",
-                height=340,
-                margin=dict(l=0, r=0, t=20, b=40),
-                xaxis=dict(title="Context Length", type="log"),
-                yaxis=dict(title="Price per 1M Tokens ($)", type="log")
+                height=400,
+                xaxis_title="Context Length",
+                yaxis_title="Price per 1M Tokens ($)",
+                yaxis_type="log",
+                margin=dict(l=0, r=0, t=40, b=10)
             )
             st.plotly_chart(fig_scatter, use_container_width=True, theme=None)
 
