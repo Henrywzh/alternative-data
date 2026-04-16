@@ -182,7 +182,7 @@ DATASET_REGISTRY: dict[str, dict[str, object]] = {
         "natural_keys": ["model_id", "snapshot_ts"],
         "primary_date_column": "snapshot_ts",
         "metric_column": "pricing_prompt",
-        "required_columns": ["model_id", "snapshot_ts", "pricing_prompt", "pricing_completion", "context_length"],
+        "required_columns": ["model_id", "snapshot_ts", "pricing_prompt", "pricing_completion", "context_length", "top_provider_id"],
     },
     "raw_lambda_instance_types": {
         "label": "Lambda GPU Stock",
@@ -396,16 +396,22 @@ BENCHMARK_COLUMNS = [
     "context_window",
 ]
 
+ACTIVITY_COLUMNS = [
+    "prompt_tokens",
+    "completion_tokens",
+    "request_count",
+]
+
 COMPUTE_AVAILABILITY_COLUMNS = [
     "snapshot_ts",
     "model_id",
     "model_name",
-    "created",
+    "created_at",
     "context_length",
     "architecture",
     "pricing_prompt",
     "pricing_completion",
-    "top_provider",
+    "top_provider_id",
     "instance_type_name",
     "gpu_type",
     "gpu_count",
@@ -423,7 +429,7 @@ COMPUTE_AVAILABILITY_COLUMNS = [
 EXPECTED_COLUMNS = list(dict.fromkeys(
     CORE_COLUMNS + RANKINGS_COLUMNS + APPS_COLUMNS + GITHUB_COLUMNS +
     PROVIDER_ADOPTION_COLUMNS + SEMICONDUCTOR_COLUMNS + BENCHMARK_COLUMNS +
-    COMPUTE_AVAILABILITY_COLUMNS
+    ACTIVITY_COLUMNS + COMPUTE_AVAILABILITY_COLUMNS
 ))
 
 DATE_COLUMNS = [
@@ -451,6 +457,9 @@ NUMERIC_COLUMNS = [
     "total_tokens",
     "tokens",
     "growth_percent",
+    "prompt_tokens",
+    "completion_tokens",
+    "request_count",
     "stars_today",
     "total_stars",
     "downloads",
@@ -480,11 +489,11 @@ NUMERIC_COLUMNS = [
     "context_window",
     "pricing_prompt",
     "pricing_completion",
+    "context_length",
     "gpu_count",
     "spot_price",
     "instance_vcpus",
     "instance_memory_gib",
-    "context_length",
 ]
 
 
