@@ -581,6 +581,8 @@ def load_dataset(dataset_id: str, base_dir: Path | None = None) -> DatasetLoadRe
     frame = frame.loc[:, ~frame.columns.duplicated()].copy()
 
     required_columns = list(CORE_COLUMNS) + list(registry_entry.get("required_columns", []))
+    missing_columns = [column for column in required_columns if column not in frame.columns]
+    
     # Padding using the full global set via reindex() to prevent Fragmentation Warnings
     frame = frame.reindex(columns=EXPECTED_COLUMNS)
     for column in DATE_COLUMNS:
