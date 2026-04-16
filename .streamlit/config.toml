@@ -27,5 +27,4 @@ toolbarMode = "minimal"
 headless = true
 enableCORS = false
 enableXsrfProtection = false
-port = 10000
 address = "0.0.0.0"

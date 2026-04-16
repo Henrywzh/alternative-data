@@ -581,14 +581,8 @@ def load_dataset(dataset_id: str, base_dir: Path | None = None) -> DatasetLoadRe
     frame = frame.loc[:, ~frame.columns.duplicated()].copy()
 
     required_columns = list(CORE_COLUMNS) + list(registry_entry.get("required_columns", []))
-    missing_columns = [column for column in required_columns if column not in frame.columns]
-
-    # Padding still uses the full global set to ensure logical compatibility across different views
-    for column in EXPECTED_COLUMNS:
-        if column not in frame.columns:
-            frame[column] = pd.NA
-
-    frame = frame[EXPECTED_COLUMNS].copy()
+    # Padding using the full global set via reindex() to prevent Fragmentation Warnings
+    frame = frame.reindex(columns=EXPECTED_COLUMNS)
     for column in DATE_COLUMNS:
         if column in frame.columns:
             frame[column] = frame[column].astype("string")
