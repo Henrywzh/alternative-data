@@ -6,6 +6,7 @@ import sys
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
+import matplotlib
 
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -2216,14 +2217,17 @@ def render_ai_frontier_section(datasets: dict[str, DatasetLoadResult], benchmark
     table_df["Date"] = table_df["Date"].dt.date
     table_df["Context"] = table_df["Context"].apply(lambda x: format_metric(x) if pd.notna(x) else "-")
     
-    st.dataframe(
-        table_df.style.format({
-            "GPQA": "{:.2%}",
-            "SWE-bench": "{:.2%}"
-        }).background_gradient(subset=["GPQA"], cmap="Blues"),
-        use_container_width=True,
-        hide_index=True
-    )
+    if table_df.empty:
+        st.info("No leaderboard entries for the selected range.")
+    else:
+        st.dataframe(
+            table_df.style.format({
+                "GPQA": "{:.2%}",
+                "SWE-bench": "{:.2%}"
+            }).background_gradient(subset=["GPQA"], cmap="Blues"),
+            use_container_width=True,
+            hide_index=True
+        )
 
 
 def render_checks(checks: list[CheckResult]) -> None:
