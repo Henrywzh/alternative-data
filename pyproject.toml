@@ -17,6 +17,7 @@ dependencies = [
   "boto3>=1.34",
   "streamlit>=1.44",
   "plotly>=5.24",
+  "matplotlib>=3.8",
 ]
 
 [tool.poetry]
