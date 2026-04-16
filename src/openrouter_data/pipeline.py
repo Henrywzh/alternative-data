@@ -10,6 +10,7 @@ from openrouter_data.models import DatasetRecord, RunContext, Snapshot
 from openrouter_data.sources.apps import AppsSource
 from openrouter_data.sources.activity import ActivitySource
 from openrouter_data.sources.base import SourceExtractor
+from openrouter_data.sources.provider_activity import ProviderActivitySource, PROVIDER_SLUGS, PROVIDER_ACTIVITY_DATASET_ID
 from openrouter_data.sources.rankings import RankingsSource
 from openrouter_data.storage import StorageManager
 
@@ -245,4 +246,36 @@ class ActivityPipeline(BasePipeline):
     ) -> dict[str, list[DatasetRecord]]:
         # For activity daily update, we typically keep all extracted rows for the day 
         # (duplicates are handled by StorageManager natural keys)
+        return extracted
+
+
+PROVIDER_ACTIVITY_DATASET_IDS = (PROVIDER_ACTIVITY_DATASET_ID,)
+
+
+class ProviderActivityPipeline(BasePipeline):
+    """Scrapes openrouter.ai/{provider} for all priority providers daily.
+
+    Self-healing: each run ingests the full 91-day trailing window and upserts
+    on (usage_date, model_permaslug), so missed days are automatically backfilled
+    on the next successful run.
+    """
+
+    dataset_ids = PROVIDER_ACTIVITY_DATASET_IDS
+
+    def __init__(self, base_dir: Path, provider_slugs: dict[str, str] | None = None) -> None:
+        self._provider_slugs = provider_slugs or PROVIDER_SLUGS
+        super().__init__(base_dir, ProviderActivitySource())
+
+    def run_daily_update(self) -> PipelineResult:
+        snapshots = self.source.fetch_snapshots(self._provider_slugs)
+        return self._execute(mode="provider-activity-daily-update", snapshots=snapshots)
+
+    def _filter_for_mode(
+        self,
+        mode: str,
+        extracted: dict[str, list[DatasetRecord]],
+    ) -> dict[str, list[DatasetRecord]]:
+        """Upsert semantics: keep all rows; StorageManager deduplicates on natural key."""
+        if mode != "provider-activity-daily-update":
+            raise ValueError(f"Unsupported mode: {mode}")
         return extracted

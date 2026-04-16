@@ -21,6 +21,7 @@ NATURAL_KEYS: dict[str, list[str]] = {
     "apps_global_ranking_snapshots": ["snapshot_date", "period", "rank"],
     "apps_trending_snapshots": ["snapshot_date", "rank"],
     "openrouter_model_activity": ["usage_date", "model_permaslug", "category_slug"],
+    "provider_daily_activity": ["usage_date", "model_permaslug"],
 }
 
 DATASET_COLUMNS = [
@@ -80,6 +81,7 @@ SORT_KEYS: dict[str, list[str]] = {
     "apps_global_ranking_snapshots": ["snapshot_date", "period", "rank", "origin_url"],
     "apps_trending_snapshots": ["snapshot_date", "rank", "origin_url"],
     "openrouter_model_activity": ["usage_date", "model_permaslug", "category_slug"],
+    "provider_daily_activity": ["usage_date", "model_permaslug"],
 }
 
 

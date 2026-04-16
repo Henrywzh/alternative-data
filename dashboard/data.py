@@ -208,6 +208,14 @@ DATASET_REGISTRY: dict[str, dict[str, object]] = {
         "metric_column": "prompt_tokens",
         "required_columns": ["usage_date", "model_permaslug", "category_slug", "prompt_tokens", "completion_tokens", "request_count"],
     },
+    "provider_daily_activity": {
+        "label": "Provider Daily Activity",
+        "domain": "rankings",
+        "natural_keys": ["usage_date", "model_permaslug"],
+        "primary_date_column": "usage_date",
+        "metric_column": "total_tokens",
+        "required_columns": ["usage_date", "model_permaslug", "total_tokens"],
+    },
 }
 
 DOMAIN_ORDER = {
@@ -216,6 +224,7 @@ DOMAIN_ORDER = {
         "market_share",
         "categories_programming",
         "openrouter_model_activity",
+        "provider_daily_activity",
     ],
     "apps": [
         "app_metadata_snapshots",

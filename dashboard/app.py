@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 import sys
 import re
+from datetime import datetime
 
 import pandas as pd
 import plotly.graph_objects as go
@@ -475,9 +476,14 @@ def compute_openrouter_views(
                 return slug_str
             
             # 2. Universal Date Stripping (e.g., -20250807, -2025-08-07, -04-02)
-            # We look for dash followed by 4-8 digits, OR YYYY-MM-DD, OR MM-DD
-            pattern = r'-(\d{4,8}|\d{4}-\d{2}-\d{2}|\d{2}-\d{2})$'
+            # Support both hyphenated dates and continuous digit dates like -20251201
+            pattern = r'-(\d{8}|\d{4}-\d{2}-\d{2}|\d{2}-\d{2})$'
             base = re.sub(pattern, '', slug_str)
+            
+            # --- Anthropic Special: Normalize claude-3-5 to claude-3.5, etc. ---
+            if "anthropic/" in base:
+                base = base.replace("claude-3-5", "claude-3.5").replace("claude-4-5", "claude-4.5")
+
             if base in pricing_model_ids:
                 return base
                 
@@ -575,7 +581,7 @@ def compute_openrouter_views(
             # Take the highest price for a fuzzy match (optimistic, works for Opus vs Sonnet)
             fuzzy_prices = pricing_df.groupby("fuzzy_id")["avg_p"].max().to_dict()
             
-            # 3. Provider Benchmarks (Fallback)
+            # --- GLOBAL PROVIDER BENCHMARKS (Used by both engines) ---
             pricing_df["provider_prefix"] = pricing_df["model_id"].apply(lambda x: str(x).split("/")[0] if "/" in str(x) else "Others")
             prov_benchmarks = pricing_df[pricing_df["avg_p"] > 0].groupby("provider_prefix")["avg_p"].median().to_dict()
             global_avg_p = pricing_df[pricing_df["avg_p"] > 0]["avg_p"].median()
@@ -641,12 +647,128 @@ def compute_openrouter_views(
             combined["usage_date_dt"] = pd.to_datetime(combined["usage_week"])
             combined["usage_month"] = combined["usage_date_dt"].dt.strftime('%Y-%m')
             combined["provider_label"] = combined["entity_id"].apply(lambda x: _derive_provider_name(f"{x}/model", None))
-            
-            pivot_rev_weekly = (
+            pivot_rev_weekly_legacy = (
                 combined.pivot_table(index="usage_week", columns="provider_label", values="final_revenue", aggfunc="sum")
                 .fillna(0).sort_index()
             )
+            # --- REVENUE ENGINE HANDOVER: Jan 2026 ---
+            # Strategy: We end the Legacy (estimated) engine on the week of Jan 05, 2026.
+            # The Modern (precision) engine takes over from the week of Jan 12, 2026 onwards.
+            pivot_rev_weekly_legacy = pivot_rev_weekly_legacy[pivot_rev_weekly_legacy.index <= "2026-01-05"]
+
+            # --- Modern Precise Engine (Post-Jan 17) ---
+            modern_activity_res = datasets.get("provider_daily_activity")
+            modern_pivot_weekly = pd.DataFrame()
+            modern_pivot_monthly = pd.DataFrame()
+            modern_pivot_daily = pd.DataFrame()
+            if modern_activity_res and not modern_activity_res.frame.empty:
+                modern_df = modern_activity_res.frame.copy()
+                
+                # HARD CLEANUP: Remove any existing pricing columns to avoid merge collisions (_x, _y)
+                modern_df = modern_df.drop(columns=["pricing_prompt", "pricing_completion", "model_id"], errors="ignore")
+                
+                # FUZZY MATCHING: Modern activity often has date suffixes (e.g., -2025-08-07)
+                # We must normalize to match the pricing catalog base IDs
+                modern_df["fuzzy_slug"] = modern_df["model_permaslug"].apply(normalize_slug)
+                
+                # latest_pricing already has model_id column
+                latest_pricing["model_id"] = latest_pricing["model_id"].astype(str)
+                
+                # Join with latest pricing using FUZZY slug
+                modern_with_price = modern_df.merge(
+                    latest_pricing[["model_id", "pricing_prompt", "pricing_completion"]],
+                    left_on="fuzzy_slug",
+                    right_on="model_id",
+                    how="left"
+                )
+                
+                # Ensure columns are present even if join had issues (defensive)
+                if "pricing_prompt" not in modern_with_price.columns and "pricing_prompt_y" in modern_with_price.columns:
+                    modern_with_price["pricing_prompt"] = modern_with_price["pricing_prompt_y"]
+                    modern_with_price["pricing_completion"] = modern_with_price["pricing_completion_y"]
+
+                # Exact calculation
+                modern_with_price["usage_date_dt"] = pd.to_datetime(modern_with_price["usage_date"])
+                
+                # REVENUE ENGINE DEFENSE: If pricing is missing for a specific model, 
+                # use the provider's median price from prov_benchmarks instead of $0.
+                def get_modern_price(row):
+                    # Priority 1: Exact/Fuzzy Joined Price
+                    p = pd.to_numeric(row.get("pricing_prompt"), errors="coerce")
+                    if pd.notna(p) and p > 0:
+                        return p
+                    
+                    # Priority 2: Provider Median Fallback
+                    # Use category_slug (provider ID) as it is most reliable for new data
+                    pid = str(row.get("category_slug", "Others")).lower()
+                    # Map common slugs if needed
+                    if pid == "meta-llama": pid = "meta"
+                    
+                    # Use global_avg_p if both fail (though benchmarks should be initialized)
+                    try:
+                        return prov_benchmarks.get(pid, global_avg_p)
+                    except NameError:
+                        return 1.0e-06 # extreme safety fallback
+
+                modern_with_price["p_prompt_final"] = modern_with_price.apply(get_modern_price, axis=1)
+                
+                # Calculation: OpenRouter raw metadata pricing is per-token (e.g., 0.000003).
+                # To get USD: tokens * price_per_token
+                modern_with_price["revenue_usd"] = modern_with_price["total_tokens"] * modern_with_price["p_prompt_final"]
+                
+                # Formatting
+                modern_with_price["usage_date_str"] = modern_with_price["usage_date_dt"].dt.strftime('%Y-%m-%d')
+                modern_with_price["usage_week"] = (
+                    modern_with_price["usage_date_dt"] - pd.to_timedelta((modern_with_price["usage_date_dt"].dt.weekday) % 7, unit="D")
+                ).dt.normalize().dt.strftime('%Y-%m-%d')
+                modern_with_price["usage_month"] = modern_with_price["usage_date_dt"].dt.strftime('%Y-%m')
+                modern_with_price["provider_label"] = modern_with_price["entity_name"]
+
+                modern_pivot_daily = (
+                    modern_with_price.pivot_table(index="usage_date_str", columns="provider_label", values="revenue_usd", aggfunc="sum")
+                    .fillna(0).sort_index()
+                )
+                
+                # --- Smart Rescaling for the Handover Week ---
+                # The first week (Jan 12) only has 3 days of data (Jan 16-18).
+                # We count days per week per provider and rescale to 7 days to avoid a 'dip'.
+                days_per_week = modern_with_price.groupby(["usage_week", "provider_label"])["usage_date_str"].nunique().rename("days_present")
+                
+                modern_pivot_weekly_raw = (
+                    modern_with_price.pivot_table(index="usage_week", columns="provider_label", values="revenue_usd", aggfunc="sum")
+                    .fillna(0)
+                )
+                
+                # Rescale logic: (Value / DaysPresent) * 7
+                for week in modern_pivot_weekly_raw.index:
+                    for prov in modern_pivot_weekly_raw.columns:
+                        try:
+                            num_days = days_per_week.loc[(week, prov)]
+                            if 0 < num_days < 7:
+                                modern_pivot_weekly_raw.loc[week, prov] *= (7 / num_days)
+                        except KeyError:
+                            continue
+                
+                modern_pivot_weekly = modern_pivot_weekly_raw.sort_index()
+                
+                modern_pivot_monthly = (
+                    modern_with_price.pivot_table(index="usage_month", columns="provider_label", values="revenue_usd", aggfunc="sum")
+                    .fillna(0).sort_index()
+                )
+
+            # --- Unified Concatenation ---
+            # Merge Legacy and Modern Weekly
+            pivot_rev_weekly = pd.concat([pivot_rev_weekly_legacy, modern_pivot_weekly]).fillna(0).sort_index()
+            # De-duplicate the seam if needed (though 2026-01-12 vs 2026-01-19 should be clean)
+            pivot_rev_weekly = pivot_rev_weekly.groupby(level=0).sum()
             
+            # Daily view uses modern daily
+            pivot_rev_daily = modern_pivot_daily
+
+            # --- Gap-Fill Interpolation (Legacy Only) ---
+            # Still applied to ensure the Pre-Jan-17 curves are connected.
+            # Modern data (post-Jan-17) has NO zeros for priority providers, so interpolation won't change them.
+        
             # --- Gap-Fill Interpolation ---
             # OpenRouter's Market Share chart is hard-capped at Top 9 + 'Others'.
             # When a priority provider drops below rank 9, their revenue is 0.
@@ -669,6 +791,25 @@ def compute_openrouter_views(
                 combined.pivot_table(index="usage_month", columns="provider_label", values="final_revenue", aggfunc="sum")
                 .fillna(0).sort_index()
             )
+            # --- DEEP COMBINE: Monthly Stitching ---
+            # Since the precision engine starts mid-January (Jan 16), the '2026-01' month
+            # in modern_pivot_monthly is initially incomplete. 
+            # We iterate through the legacy monthly data and SUM both segments for overlap months
+            # to provide a seamless, full-month revenue view.
+            if not modern_pivot_monthly.empty:
+                modern_months = set(modern_pivot_monthly.index)
+                legacy_only = pivot_rev_monthly[~pivot_rev_monthly.index.isin(modern_months)]
+                
+                # Overlap months (e.g., 2026-01) get a sum of both engines
+                overlap_months = pivot_rev_monthly[pivot_rev_monthly.index.isin(modern_months)]
+                
+                # Create final merged series
+                pivot_rev_monthly = pd.concat([
+                    legacy_only, 
+                    overlap_months.add(modern_pivot_monthly, fill_value=0), 
+                    modern_pivot_monthly.loc[~modern_pivot_monthly.index.isin(overlap_months.index)]
+                ])
+                pivot_rev_monthly = pivot_rev_monthly.sort_index().groupby(level=0).sum()
             # Same interpolation for monthly (max 2 month gap)
             for col in BIG_TECH_DISPLAY:
                 if col in pivot_rev_monthly.columns:
@@ -683,13 +824,16 @@ def compute_openrouter_views(
             pivot_rev_monthly = merged_daily.pivot_table(index="usage_month", columns="provider_label", values="revenue_usd", aggfunc="sum").fillna(0).sort_index()
         
         views["revenue_estimator"] = {
-            "pivot_rev": pivot_rev_daily,
-            "pivot_rev_daily": pivot_rev_daily,
+            "pivot_rev": pivot_rev_daily if not pivot_rev_daily.empty else modern_pivot_daily,
+            "pivot_rev_daily": pivot_rev_daily if not pivot_rev_daily.empty else modern_pivot_daily,
             "pivot_rev_weekly": pivot_rev_weekly,
             "pivot_rev_monthly": pivot_rev_monthly,
-            "total_revenue": merged_daily["revenue_usd"].sum() if not merged_daily.empty else 0,
-            "has_activity": not activity.empty,
-            "merged_count": len(merged_daily) if not merged_daily.empty else 0
+            "total_revenue": (
+                (merged_daily["revenue_usd"].sum() if not merged_daily.empty else 0) + 
+                (modern_with_price["revenue_usd"].sum() if "modern_with_price" in locals() and not modern_with_price.empty else 0)
+            ),
+            "has_activity": not activity.get("frame", pd.DataFrame()).empty if isinstance(activity, dict) else not activity.empty,
+            "merged_count": len(modern_with_price) if "modern_with_price" in locals() else 0
         }
     else:
         views["revenue_estimator"] = {
@@ -1439,10 +1583,7 @@ def render_revenue_estimator(datasets: dict[str, DatasetLoadResult], openrouter_
     st.markdown('<div class="section-title">Provider Revenue Estimator (Experimental)</div>', unsafe_allow_html=True)
     
     if pivot_rev.empty:
-        if rev_data.get("has_activity"):
-            st.warning("Granular activity data exists, but no pricing metadata matched these models. Check if pricing snapshots are up to date.")
-        else:
-            st.info("No granular activity data available for revenue estimation. Run 'activity-daily-update' to populate.")
+        st.info("No granular activity data or pricing metadata available for revenue estimation. Run 'activity-daily-update' to populate.")
         return
 
     # Total Revenue Metric
@@ -1476,11 +1617,20 @@ def render_revenue_estimator(datasets: dict[str, DatasetLoadResult], openrouter_
         if pivot_df.empty:
             st.info(f"No {date_title.lower()} data available.")
             return
+        # Special: Label the current month as MTD in the X-axis for clarity
         fig = go.Figure()
+        today_month = datetime.now().strftime("%Y-%m")
+        display_index = []
+        for d in pivot_df.index:
+            if date_title == "Usage Month" and str(d) == today_month:
+                display_index.append(f"{d} (MTD)")
+            else:
+                display_index.append(d)
+
         for i, provider_name in enumerate(pivot_df.columns):
             fig.add_trace(
                 go.Scatter(
-                    x=pivot_df.index,
+                    x=display_index,
                     y=pivot_df[provider_name],
                     name=provider_name,
                     mode="lines+markers",
@@ -1507,12 +1657,14 @@ def render_revenue_estimator(datasets: dict[str, DatasetLoadResult], openrouter_
         _render_rev_chart(pivot_daily, "Usage Date")
         
     st.caption(
-        "Note: Revenue is estimated via a Hybrid Smart-Scaling model (Tier 1: precise model-level pricing via fuzzy matching; "
-        "Tier 2: market-share top-up for long-tail volume). "
-        "⚠️ OpenRouter's Market Share chart is platform-capped at Top 9 providers per week. "
-        "When a major provider falls outside the Top 9, their weekly revenue is estimated via linear interpolation "
-        "between observed data points (max 4-week gap). Interpolated periods may be less accurate. "
-        "Actual payouts may vary. Daily chart: micro-logs (6 weeks). Weekly/Monthly: macro-market share (12 months)."
+        "Note: Revenue uses a Dual-Engine model. "
+        "Historical (Pre-Jan 2026): Weekly market share estimates via a Smart-Scaling Hybrid Engine. "
+        "Modern (Post-Jan 2026): High-precision daily per-model logs (Tokens * Exact Model Price). "
+        "⚠️ Methodological Notes: "
+        "(1) Jan 2026 is a 'Stitched Month' combining legacy estimates (Jan 1-15) and precise logs (Jan 16-31). "
+        "(2) Jan 12 week is rescaled by (7/3) from partial logs to maintain trend continuity. "
+        "(3) Current month is labeled MTD and will grow as data arrives. "
+        "Actual payouts may vary."
     )
     st.markdown("---")
 
@@ -2889,7 +3041,6 @@ def main() -> None:
     st.set_page_config(page_title="Alternative Data Dashboard", layout="wide", page_icon="📊")
     
     # 2. Startup logging for deployment debugging
-    print("Main script execution started: alternative-data dashboard")
     
     inject_css()
 
