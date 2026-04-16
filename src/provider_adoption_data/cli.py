@@ -42,6 +42,11 @@ def _print_result(run_result) -> None:
             print(f"{dataset_id}: {total_rows} rows written")
         else:
             print(f"{dataset_id}: total_rows={total_rows} new_rows={new_rows}")
+    raw_run_dirs = getattr(run_result, "raw_run_dirs", None)
+    if raw_run_dirs:
+        for raw_run_dir in dict.fromkeys(raw_run_dirs):
+            print(f"raw_run_dir={raw_run_dir}")
+        return
     print(f"raw_run_dir={run_result.raw_run_dir}")
 
 

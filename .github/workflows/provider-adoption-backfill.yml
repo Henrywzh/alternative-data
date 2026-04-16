@@ -40,14 +40,22 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e .[dev]
 
+      - name: Initialize raw snapshot artifact staging
+        run: |
+          mkdir -p "$RUNNER_TEMP/provider-adoption-backfill-raw-artifact"
+          : > "$RUNNER_TEMP/provider-adoption-backfill-raw-dirs.txt"
+
       - name: Run bounded backfill
         run: |
+          set -euo pipefail
+          log_file="$RUNNER_TEMP/provider-adoption-backfill.log"
           python -m provider_adoption_data.cli \
             --base-dir . \
             ${INPUT_PROVIDERS:+--providers "$INPUT_PROVIDERS"} \
             backfill \
             --start-date "$INPUT_START_DATE" \
-            --end-date "$INPUT_END_DATE"
+            --end-date "$INPUT_END_DATE" | tee "$log_file"
+          grep '^raw_run_dir=' "$log_file" >> "$RUNNER_TEMP/provider-adoption-backfill-raw-dirs.txt"
         env:
           INPUT_START_DATE: ${{ inputs.start_date }}
           INPUT_END_DATE: ${{ inputs.end_date }}
@@ -68,11 +76,23 @@ jobs:
           git commit -m "chore: backfill provider adoption datasets"
           git push
 
+      - name: Stage raw snapshots artifact
+        run: |
+          set -euo pipefail
+          artifact_root="$RUNNER_TEMP/provider-adoption-backfill-raw-artifact"
+          dirs_file="$RUNNER_TEMP/provider-adoption-backfill-raw-dirs.txt"
+
+          while IFS= read -r line; do
+            dir="${line#raw_run_dir=}"
+            [ -n "$dir" ] || continue
+            cp -R "$dir" "$artifact_root/"
+          done < <(sort -u "$dirs_file")
+
       - name: Upload raw snapshots
         uses: actions/upload-artifact@v4
         with:
           name: provider-adoption-backfill-raw-snapshots
-          path: data/raw/provider_adoption/
+          path: ${{ runner.temp }}/provider-adoption-backfill-raw-artifact/
           if-no-files-found: error
 
       - name: Upload normalized datasets

@@ -40,6 +40,7 @@ class BackfillResult:
     run_id: str
     datasets_written: dict[str, int]
     raw_run_dir: str
+    raw_run_dirs: list[str]
 
 
 class ProviderAdoptionPipeline:
@@ -237,6 +238,7 @@ class ProviderAdoptionPipeline:
         npm_result = self.run_npm_daily_update(target_date=end, provider_slugs=[provider.slug for provider in providers])
         totals = dict(pypi_result.datasets_written)
         totals.update(npm_result.datasets_written)
+        raw_run_dirs = [pypi_result.raw_run_dir, npm_result.raw_run_dir]
         current = start
         last_raw_run_dir = npm_result.raw_run_dir
         while current <= end:
@@ -246,8 +248,14 @@ class ProviderAdoptionPipeline:
                 for dataset_id, rows in result.datasets_written.items():
                     totals[dataset_id] = rows
                 last_raw_run_dir = result.raw_run_dir
+                raw_run_dirs.append(result.raw_run_dir)
             current += timedelta(days=1)
-        return BackfillResult(run_id=pypi_result.run_id, datasets_written=totals, raw_run_dir=last_raw_run_dir)
+        return BackfillResult(
+            run_id=pypi_result.run_id,
+            datasets_written=totals,
+            raw_run_dir=last_raw_run_dir,
+            raw_run_dirs=raw_run_dirs,
+        )
 
     def validate(self, *, provider_slugs: list[str] | None = None) -> dict[str, int]:
         providers = get_provider_registry(provider_slugs)

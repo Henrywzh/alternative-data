@@ -248,6 +248,7 @@ class GithubSource:
                     repo_default_branch=repository.default_branch,
                     is_fork=repository.is_fork,
                     is_archived=repository.is_archived,
+                    stargazers_count=repository.stargazers_count,
                     source_url=repository.html_url,
                 )
                 return

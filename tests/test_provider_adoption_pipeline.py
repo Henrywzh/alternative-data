@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import io
 import json
 from datetime import date
 from pathlib import Path
+from contextlib import redirect_stdout
 
 import pandas as pd
 import pytest
@@ -14,7 +16,9 @@ from provider_adoption_data.models import (
     NpmDownloadPoint,
     PypiDownloadPoint,
     Snapshot,
+    sanitize_filename,
 )
+from provider_adoption_data.cli import _print_result
 from provider_adoption_data.pipeline import ProviderAdoptionPipeline
 from provider_adoption_data.sources.config import get_provider_registry
 from provider_adoption_data.sources.github import GithubSource
@@ -514,6 +518,13 @@ def test_github_source_detects_signal_types_from_candidate_contents() -> None:
     }
 
 
+def test_sanitize_filename_replaces_artifact_invalid_characters() -> None:
+    sanitized = sanitize_filename("file_9261834245z-ui/ultracore-rft-solana-demo_test:invariant_test.js")
+
+    assert sanitized == "file_9261834245z-ui__ultracore-rft-solana-demo_test_invariant_test_js"
+    assert not any(char in sanitized for char in "\"<>|*?:\r\n")
+
+
 def test_provider_pipeline_repeated_runs_are_idempotent_and_write_manifest(tmp_path: Path) -> None:
     pipeline = ProviderAdoptionPipeline(
         tmp_path,
@@ -646,3 +657,48 @@ def test_npm_start_date_aligns_to_existing_pypi_history(tmp_path: Path) -> None:
     start_date = pipeline._resolve_npm_start_date(date.fromisoformat("2026-04-05"), get_provider_registry(["openai", "anthropic"]))
 
     assert start_date.isoformat() == "2026-04-04"
+
+
+def test_backfill_returns_all_raw_run_directories_and_preserves_last_raw_run_dir(tmp_path: Path) -> None:
+    pipeline = ProviderAdoptionPipeline(
+        tmp_path,
+        pypi_source=FakePypiSource(),
+        npm_source=FakeNpmSource(),
+        github_source=FakeGithubSource(),
+    )
+
+    result = pipeline.run_backfill(
+        start_date="2026-04-04",
+        end_date="2026-04-05",
+        provider_slugs=["openai", "anthropic"],
+    )
+
+    assert len(result.raw_run_dirs) == 6
+    assert result.raw_run_dir == result.raw_run_dirs[-1]
+    assert len(set(result.raw_run_dirs)) == len(result.raw_run_dirs)
+    assert all((Path(raw_run_dir) / "manifest.json").exists() for raw_run_dir in result.raw_run_dirs)
+
+
+def test_print_result_emits_each_backfill_raw_run_directory_once() -> None:
+    buffer = io.StringIO()
+
+    with redirect_stdout(buffer):
+        _print_result(
+            type(
+                "BackfillLikeResult",
+                (),
+                {
+                    "run_id": "run-123",
+                    "datasets_written": {"provider_momentum_daily": 2},
+                    "raw_run_dir": "/tmp/raw-2",
+                    "raw_run_dirs": ["/tmp/raw-1", "/tmp/raw-2", "/tmp/raw-2"],
+                },
+            )()
+        )
+
+    assert buffer.getvalue().splitlines() == [
+        "run_id=run-123",
+        "provider_momentum_daily: 2 rows written",
+        "raw_run_dir=/tmp/raw-1",
+        "raw_run_dir=/tmp/raw-2",
+    ]

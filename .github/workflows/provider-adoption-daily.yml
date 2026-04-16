@@ -34,25 +34,45 @@ jobs:
         run: |
           echo "TARGET_DATE=$(date -u -d 'yesterday' +%F)" >> "$GITHUB_ENV"
 
+      - name: Initialize raw snapshot artifact staging
+        run: |
+          mkdir -p "$RUNNER_TEMP/provider-adoption-raw-artifact"
+          : > "$RUNNER_TEMP/provider-adoption-raw-dirs.txt"
+
       - name: Run PyPI update
         run: |
-          python -m provider_adoption_data.cli --base-dir . pypi-daily-update
+          set -euo pipefail
+          log_file="$RUNNER_TEMP/provider-adoption-pypi.log"
+          python -m provider_adoption_data.cli --base-dir . pypi-daily-update | tee "$log_file"
+          grep '^raw_run_dir=' "$log_file" >> "$RUNNER_TEMP/provider-adoption-raw-dirs.txt"
 
       - name: Run npm update
         run: |
-          python -m provider_adoption_data.cli --base-dir . --date "$TARGET_DATE" npm-daily-update
+          set -euo pipefail
+          log_file="$RUNNER_TEMP/provider-adoption-npm.log"
+          python -m provider_adoption_data.cli --base-dir . --date "$TARGET_DATE" npm-daily-update | tee "$log_file"
+          grep '^raw_run_dir=' "$log_file" >> "$RUNNER_TEMP/provider-adoption-raw-dirs.txt"
 
       - name: Run Hugging Face update
         run: |
-          python -m provider_adoption_data.cli --base-dir . --date "$TARGET_DATE" huggingface-daily-update
+          set -euo pipefail
+          log_file="$RUNNER_TEMP/provider-adoption-hf.log"
+          python -m provider_adoption_data.cli --base-dir . --date "$TARGET_DATE" huggingface-daily-update | tee "$log_file"
+          grep '^raw_run_dir=' "$log_file" >> "$RUNNER_TEMP/provider-adoption-raw-dirs.txt"
 
       - name: Run GitHub update
         run: |
-          python -m provider_adoption_data.cli --base-dir . --date "$TARGET_DATE" github-daily-update
+          set -euo pipefail
+          log_file="$RUNNER_TEMP/provider-adoption-github.log"
+          python -m provider_adoption_data.cli --base-dir . --date "$TARGET_DATE" github-daily-update | tee "$log_file"
+          grep '^raw_run_dir=' "$log_file" >> "$RUNNER_TEMP/provider-adoption-raw-dirs.txt"
 
       - name: Run derived metrics update
         run: |
-          python -m provider_adoption_data.cli --base-dir . --date "$TARGET_DATE" derived-daily-update
+          set -euo pipefail
+          log_file="$RUNNER_TEMP/provider-adoption-derived.log"
+          python -m provider_adoption_data.cli --base-dir . --date "$TARGET_DATE" derived-daily-update | tee "$log_file"
+          grep '^raw_run_dir=' "$log_file" >> "$RUNNER_TEMP/provider-adoption-raw-dirs.txt"
 
       - name: Commit normalized datasets
         run: |
@@ -69,11 +89,23 @@ jobs:
           git commit -m "chore: update provider adoption datasets"
           git push
 
+      - name: Stage raw snapshots artifact
+        run: |
+          set -euo pipefail
+          artifact_root="$RUNNER_TEMP/provider-adoption-raw-artifact"
+          dirs_file="$RUNNER_TEMP/provider-adoption-raw-dirs.txt"
+
+          while IFS= read -r line; do
+            dir="${line#raw_run_dir=}"
+            [ -n "$dir" ] || continue
+            cp -R "$dir" "$artifact_root/"
+          done < <(sort -u "$dirs_file")
+
       - name: Upload raw snapshots
         uses: actions/upload-artifact@v4
         with:
           name: provider-adoption-raw-snapshots
-          path: data/raw/provider_adoption/
+          path: ${{ runner.temp }}/provider-adoption-raw-artifact/
           if-no-files-found: error
 
       - name: Upload normalized datasets
