@@ -382,8 +382,10 @@ def compute_openrouter_views(
         # Get latest pricing per model
         latest_pricing = pricing.sort_values("snapshot_ts").groupby("model_id").tail(1)
         
-        # Merge usage with pricing
-        merged = activity.merge(
+        # Merge usage with pricing. Clean activity to avoid column collisions (e.g. pricing_prompt_x/y)
+        activity_cols = [c for c in activity.columns if c not in ["pricing_prompt", "pricing_completion", "top_provider_id"] or c == "model_id"]
+        
+        merged = activity[activity_cols].merge(
             latest_pricing[["model_id", "pricing_prompt", "pricing_completion", "top_provider_id"]],
             left_on="model_permaslug",
             right_on="model_id",
