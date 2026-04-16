@@ -1,4 +1,5 @@
 from __future__ import annotations
+import re
 
 from dataclasses import asdict, dataclass, field
 from datetime import date, datetime, timezone
@@ -194,3 +195,14 @@ def coerce_target_date(value: str | date | None) -> date:
     if isinstance(value, date):
         return value
     return date.fromisoformat(value)
+
+
+def sanitize_filename(name: str) -> str:
+    """
+    Sanitizes a string for use as a filename in GitHub Artifacts.
+    Replaces characters illegal on Windows/NTFS (:, ", <, >, |, *, ?) and path separators.
+    """
+    # Replace path separators first for readability
+    cleaned = name.replace("/", "__").replace("\\", "__").replace(".", "_")
+    # Replace all other illegal characters with _
+    return re.sub(r"[^a-zA-Z0-9_\-]", "_", cleaned)

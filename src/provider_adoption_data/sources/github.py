@@ -3,12 +3,13 @@ from __future__ import annotations
 import base64
 import json
 import os
+import re
 from datetime import date
 from typing import Iterable
 
 import requests
 
-from provider_adoption_data.models import GithubRepository, GithubSignalMatch, ProviderConfig, Snapshot
+from provider_adoption_data.models import GithubRepository, GithubSignalMatch, ProviderConfig, Snapshot, sanitize_filename
 
 
 class GithubSource:
@@ -51,7 +52,7 @@ class GithubSource:
                 payload = response.json()
                 snapshots.append(
                     Snapshot(
-                        name=f"github_search_{language_bucket.lower()}_{page}",
+                        name=sanitize_filename(f"github_search_{language_bucket.lower()}_{page}"),
                         source_url=response.url,
                         body=json.dumps(payload),
                     )
@@ -121,7 +122,7 @@ class GithubSource:
             return None, []
         payload = response.json()
         snapshot = Snapshot(
-            name=f"tree_{repository.full_name.replace('/', '__')}",
+            name=sanitize_filename(f"tree_{repository.full_name}"),
             source_url=response.url,
             body=json.dumps(payload),
         )
@@ -151,7 +152,7 @@ class GithubSource:
             return None, None
         payload = response.json()
         snapshot = Snapshot(
-            name=f"file_{full_name.replace('/', '__')}_{path.replace('/', '__').replace('.', '_')}",
+            name=sanitize_filename(f"file_{full_name}_{path}"),
             source_url=response.url,
             body=json.dumps({"path": path, "content": payload.get("content"), "encoding": payload.get("encoding")}),
         )
@@ -247,7 +248,6 @@ class GithubSource:
                     repo_default_branch=repository.default_branch,
                     is_fork=repository.is_fork,
                     is_archived=repository.is_archived,
-                    stargazers_count=repository.stargazers_count,
                     source_url=repository.html_url,
                 )
                 return

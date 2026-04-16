@@ -8,7 +8,7 @@ from urllib.parse import parse_qs, urlencode, urlparse
 
 import requests
 
-from provider_adoption_data.models import HuggingFaceModelPoint, ProviderConfig, Snapshot
+from provider_adoption_data.models import HuggingFaceModelPoint, ProviderConfig, Snapshot, sanitize_filename
 
 
 class HuggingFaceSource:
@@ -41,7 +41,7 @@ class HuggingFaceSource:
 
                 snapshots.append(
                     Snapshot(
-                        name=f"huggingface_{provider.slug}_{org.replace('-', '_')}",
+                        name=sanitize_filename(f"huggingface_{provider.slug}_{org}"),
                         source_url=source_url,
                         body=json.dumps(payload),
                     )

@@ -7,7 +7,7 @@ from urllib.parse import quote
 
 import requests
 
-from provider_adoption_data.models import NpmDownloadPoint, ProviderConfig, Snapshot
+from provider_adoption_data.models import NpmDownloadPoint, ProviderConfig, Snapshot, sanitize_filename
 
 
 class NpmDownloadsSource:
@@ -27,7 +27,7 @@ class NpmDownloadsSource:
                 response.raise_for_status()
                 snapshots.append(
                     Snapshot(
-                        name=f"npm_{provider.slug}_{package.package_name}".replace("/", "_").replace("-", "_").replace("@", ""),
+                        name=sanitize_filename(f"npm_{provider.slug}_{package.package_name}"),
                         source_url=url,
                         body=response.text,
                     )
