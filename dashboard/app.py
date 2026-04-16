@@ -477,10 +477,21 @@ def compute_openrouter_views(
         merged = merged[(merged["pricing_prompt"].notna()) & (merged["pricing_prompt"] >= 0)].copy()
         
         # Calculate Revenue (Price is per 1M tokens)
-        merged["revenue_usd"] = (
-            (merged["prompt_tokens"] * merged["pricing_prompt"].astype(float) / 1e6) +
-            (merged["completion_tokens"] * merged["pricing_completion"].astype(float) / 1e6)
-        )
+        if "prompt_tokens" in merged.columns and "completion_tokens" in merged.columns:
+            merged["revenue_usd"] = (
+                (merged["prompt_tokens"] * merged["pricing_prompt"].astype(float) / 1e6) +
+                (merged["completion_tokens"] * merged["pricing_completion"].astype(float) / 1e6)
+            )
+        elif "total_tokens" in merged.columns:
+            # Fallback for historical data that only records total_tokens.
+            # Assuming a typical 70% prompt / 30% completion split.
+            merged["revenue_usd"] = (
+                (merged["total_tokens"] * 0.7 * merged["pricing_prompt"].astype(float) / 1e6) +
+                (merged["total_tokens"] * 0.3 * merged["pricing_completion"].astype(float) / 1e6)
+            )
+        else:
+            merged["revenue_usd"] = 0
+
         
         # Group by Date and Provider (using derived provider for better coverage)
         merged["provider_label"] = merged.apply(
