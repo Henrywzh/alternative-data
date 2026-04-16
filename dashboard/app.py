@@ -475,9 +475,9 @@ def compute_openrouter_views(
         
         # Filter for models where we have at least one valid price
         merged = merged[(merged["pricing_prompt"].notna()) & (merged["pricing_prompt"] >= 0)].copy()
-        
+
         # Calculate Revenue (Price is per 1M tokens)
-        if "prompt_tokens" in merged.columns and "completion_tokens" in merged.columns:
+        if "prompt_tokens" in merged.columns and "completion_tokens" in merged.columns and merged["prompt_tokens"].notna().any():
             merged["revenue_usd"] = (
                 (merged["prompt_tokens"] * merged["pricing_prompt"].astype(float) / 1e6) +
                 (merged["completion_tokens"] * merged["pricing_completion"].astype(float) / 1e6)
