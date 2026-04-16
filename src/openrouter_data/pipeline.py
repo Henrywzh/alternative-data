@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
 from openrouter_data.models import DatasetRecord, RunContext, Snapshot
 from openrouter_data.sources.apps import AppsSource
+from openrouter_data.sources.activity import ActivitySource
 from openrouter_data.sources.base import SourceExtractor
 from openrouter_data.sources.rankings import RankingsSource
 from openrouter_data.storage import StorageManager
@@ -21,6 +22,7 @@ APPS_DATASET_IDS = (
     "apps_global_ranking_snapshots",
     "apps_trending_snapshots",
 )
+ACTIVITY_DATASET_IDS = ("openrouter_model_activity",)
 
 
 @dataclass
@@ -40,8 +42,8 @@ class BasePipeline:
 
     def _create_context(self, *, run_id: str | None = None) -> RunContext:
         return RunContext(
-            run_id=run_id or datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ") + "-" + uuid4().hex[:8],
-            scraped_at=datetime.now(UTC),
+            run_id=run_id or datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "-" + uuid4().hex[:8],
+            scraped_at=datetime.now(timezone.utc),
         )
 
     def _execute(self, *, mode: str, snapshots: list[Snapshot] | None = None) -> PipelineResult:
@@ -217,3 +219,30 @@ class AppsPipeline(BasePipeline):
             if (record.app_id, record.usage_date, record.model_permaslug) not in seen_keys
         ] or extracted.get("app_usage_daily", [])
         return filtered
+
+
+class ActivityPipeline(BasePipeline):
+    dataset_ids = ACTIVITY_DATASET_IDS
+
+    def __init__(self, base_dir: Path) -> None:
+        super().__init__(base_dir, ActivitySource())
+
+    def run_daily_update(self, limit: int = 50) -> PipelineResult:
+        """Discovery phase then execute common pipeline logic."""
+        # 1. Discover top N slugs
+        popular_slugs = self.source.fetch_popular_slugs(limit=limit)
+        
+        # 2. Fetch snapshots for those slugs
+        snapshots = self.source.fetch_snapshots(popular_slugs)
+        
+        # 3. Standard execution
+        return self._execute(mode="activity-daily-update", snapshots=snapshots)
+
+    def _filter_for_mode(
+        self,
+        mode: str,
+        extracted: dict[str, list[DatasetRecord]],
+    ) -> dict[str, list[DatasetRecord]]:
+        # For activity daily update, we typically keep all extracted rows for the day 
+        # (duplicates are handled by StorageManager natural keys)
+        return extracted
