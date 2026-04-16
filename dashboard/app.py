@@ -484,10 +484,10 @@ def compute_openrouter_views(
             )
         elif "total_tokens" in merged.columns:
             # Fallback for historical data that only records total_tokens.
-            # Assuming a typical 70% prompt / 30% completion split.
+            # Empirical network data shows ~97.7% prompt / 2.3% completion split (driven by RAG & long-context usages).
             merged["revenue_usd"] = (
-                (merged["total_tokens"] * 0.7 * merged["pricing_prompt"].astype(float) / 1e6) +
-                (merged["total_tokens"] * 0.3 * merged["pricing_completion"].astype(float) / 1e6)
+                (merged["total_tokens"] * 0.977 * merged["pricing_prompt"].astype(float) / 1e6) +
+                (merged["total_tokens"] * 0.023 * merged["pricing_completion"].astype(float) / 1e6)
             )
         else:
             merged["revenue_usd"] = 0
