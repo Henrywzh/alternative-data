@@ -306,6 +306,62 @@ def load_domain_state_cached(
     return datasets, freshness, checks
 
 
+# --- OpenRouter Provider Mapping ---
+OPENROUTER_PROVIDER_MAP = {
+    "openai": "OpenAI",
+    "anthropic": "Anthropic",
+    "google": "Google",
+    "meta": "Meta (Llama)",
+    "mistralai": "Mistral AI",
+    "cohere": "Cohere",
+    "qwen": "Alibaba (Qwen)",
+    "z-ai": "智谱AI (Z.ai)",
+    "deepseek": "DeepSeek",
+    "google-palm": "Google (PaLM)",
+    "perplexity": "Perplexity",
+    "nvidia": "NVIDIA",
+    "databricks": "Databricks",
+    "pygmalionai": "Pygmalion AI",
+    "bytedance-seed": "ByteDance (Seed)",
+    "liquid": "Liquid AI",
+    "arcee-ai": "Arcee AI",
+    "stepfun": "StepFun",
+    "kwaipilot": "Kwai (Kwailab)",
+    "rekaai": "Reka AI",
+    "xiaomi": "Xiaomi",
+    "minimax": "MiniMax",
+    "x-ai": "xAI (Grok)",
+    "01-ai": "01.AI (Yi)",
+    "upstage": "Upstage",
+    "together-ai": "Together AI",
+    "microsoft": "Microsoft",
+    "openrouter": "OpenRouter",
+}
+
+
+def _derive_provider_name(model_id: str, official_provider: str | None) -> str:
+    """Derives a provider name from the model ID if the official provider is missing."""
+    if pd.notna(official_provider) and str(official_provider).strip() != "" and str(official_provider) != "nan":
+        # Check if official_provider is a number (like 262144 from historical bug)
+        try:
+            val = float(official_provider)
+            if val > 1000: # Likely context length or other numeric metadata leak
+                pass # fall through to derivation
+            else:
+                return str(official_provider)
+        except (ValueError, TypeError):
+            return str(official_provider)
+    
+    if pd.isna(model_id) or not isinstance(model_id, str):
+        return "Unknown"
+        
+    if "/" in model_id:
+        slug_prefix = model_id.split("/")[0].lower()
+        return OPENROUTER_PROVIDER_MAP.get(slug_prefix, slug_prefix.capitalize())
+    
+    return "Unknown"
+
+
 @st.cache_data(ttl=3600)
 def compute_openrouter_views(
     datasets: dict[str, DatasetLoadResult],
@@ -382,8 +438,9 @@ def compute_openrouter_views(
         # Get latest pricing per model
         latest_pricing = pricing.sort_values("snapshot_ts").groupby("model_id").tail(1)
         
-        # Merge usage with pricing. Clean activity to avoid column collisions (e.g. pricing_prompt_x/y)
-        activity_cols = [c for c in activity.columns if c not in ["pricing_prompt", "pricing_completion", "top_provider_id"] or c == "model_id"]
+        # Merge usage with pricing. Clean activity to avoid column collisions (e.g. model_id_x/y)
+        # load_dataset pads all frames with EXPECTED_COLUMNS, so we must be explicit.
+        activity_cols = [c for c in activity.columns if c not in ["pricing_prompt", "pricing_completion", "top_provider_id", "model_id"]]
         
         merged = activity[activity_cols].merge(
             latest_pricing[["model_id", "pricing_prompt", "pricing_completion", "top_provider_id"]],
@@ -401,9 +458,14 @@ def compute_openrouter_views(
             (merged["completion_tokens"] * merged["pricing_completion"].astype(float) / 1e6)
         )
         
-        # Group by Date and Provider
+        # Group by Date and Provider (using derived provider for better coverage)
+        merged["provider_label"] = merged.apply(
+            lambda x: _derive_provider_name(x["model_id"], x["top_provider_id"]), 
+            axis=1
+        )
+        
         pivot_rev = (
-            merged.pivot_table(index="usage_date", columns="top_provider_id", values="revenue_usd", aggfunc="sum")
+            merged.pivot_table(index="usage_date", columns="provider_label", values="revenue_usd", aggfunc="sum")
             .fillna(0)
             .sort_index()
         )
@@ -411,9 +473,16 @@ def compute_openrouter_views(
         views["revenue_estimator"] = {
             "pivot_rev": pivot_rev,
             "total_revenue": merged["revenue_usd"].sum(),
+            "has_activity": not activity.empty,
+            "merged_count": len(merged)
         }
     else:
-        views["revenue_estimator"] = {"pivot_rev": pd.DataFrame(), "total_revenue": 0}
+        views["revenue_estimator"] = {
+            "pivot_rev": pd.DataFrame(), 
+            "total_revenue": 0,
+            "has_activity": activity_res and not activity_res.frame.empty if activity_res else False,
+            "merged_count": 0
+        }
 
     return views
 
@@ -1130,7 +1199,10 @@ def render_revenue_estimator(datasets: dict[str, DatasetLoadResult], openrouter_
     st.markdown('<div class="section-title">Provider Revenue Estimator (Experimental)</div>', unsafe_allow_html=True)
     
     if pivot_rev.empty:
-        st.info("No granular activity data available for revenue estimation. Run 'activity-daily-update' to populate.")
+        if rev_data.get("has_activity"):
+            st.warning("Granular activity data exists, but no pricing metadata matched these models. Check if pricing snapshots are up to date.")
+        else:
+            st.info("No granular activity data available for revenue estimation. Run 'activity-daily-update' to populate.")
         return
 
     # Total Revenue Metric
