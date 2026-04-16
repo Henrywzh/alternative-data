@@ -1,0 +1,31 @@
+[theme]
+base = "light"
+primaryColor = "#2563EB"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F7F8FA"
+textColor = "#111827"
+font = "sans serif"
+
+[theme.light]
+primaryColor = "#2563EB"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F7F8FA"
+textColor = "#111827"
+borderColor = "#EEEEEE"
+
+[theme.dark]
+primaryColor = "#2563EB"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F7F8FA"
+textColor = "#111827"
+borderColor = "#EEEEEE"
+
+[client]
+toolbarMode = "minimal"
+
+[server]
+headless = true
+enableCORS = false
+enableXsrfProtection = false
+port = 10000
+address = "0.0.0.0"
