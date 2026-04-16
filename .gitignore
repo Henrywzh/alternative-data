@@ -40,11 +40,27 @@ data/raw/provider_adoption/*
 !data/raw/provider_adoption/**/
 !data/raw/provider_adoption/**/manifest.json
 
+# compute_availability: commit both raw(for manifest) and normalized
+!data/normalized/compute_availability/
+data/normalized/compute_availability/*
+!data/normalized/compute_availability/*.csv
+!data/normalized/compute_availability/*.parquet
+
+# llm_benchmarks: commit normalized
+!data/normalized/llm_benchmarks/
+data/normalized/llm_benchmarks/*
+!data/normalized/llm_benchmarks/*.csv
+!data/normalized/llm_benchmarks/*.parquet
+
 # semiconductor_memory: commit normalized CSVs/parquet + run manifests only
 !data/normalized/semiconductor_memory/
 data/normalized/semiconductor_memory/*
 !data/normalized/semiconductor_memory/*.csv
 !data/normalized/semiconductor_memory/*.parquet
+!data/raw/semiconductor_memory/
+!data/raw/semiconductor_memory/images/
+!data/raw/semiconductor_memory/images/**/*.JPG
+!data/raw/semiconductor_memory/images/**/*.jpg
 
 # Secrets and environment
 .env
