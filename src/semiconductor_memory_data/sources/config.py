@@ -13,11 +13,11 @@ AI_DEMAND_PPI_WEIGHTS: dict[str, float] = {
 }
 
 FRED_SERIES: dict[str, str] = {
-    "PCU33443344": "PCU33443344",
-    "PCU33423342": "PCU33423342",
-    "PCU335313335313": "PCU335313335313",
-    "PCU334111334111": "PCU334111334111",
-    "PCU3341123341121": "PCU3341123341121",
+    "PCU33443344": "Semiconductors and Other Electronic Components",
+    "PCU33423342": "Communications Equipment",
+    "PCU335313335313": "Switchgear and Power Distribution Equipment",
+    "PCU334111334111": "Electronic Computers and Servers",
+    "PCU3341123341121": "Storage Devices",
 }
 
 # ---------------------------------------------------------------------------
