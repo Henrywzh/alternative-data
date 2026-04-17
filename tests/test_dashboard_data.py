@@ -835,12 +835,48 @@ def test_compute_semiconductor_views_exposes_proxy_and_component_columns() -> No
                 row_count=len(frame),
                 latest_date="2026-04",
                 latest_scraped_at="2026-04-05T00:00:00Z",
-            )
+            ),
+            "fred_semiconductor_ppi": DatasetLoadResult(
+                dataset_id="fred_semiconductor_ppi",
+                label="FRED Semiconductor PPI",
+                domain="semiconductor_memory",
+                primary_date_column="date",
+                metric_column="value",
+                frame=pd.DataFrame(
+                    [
+                        {
+                            **_base_row("fred_semiconductor_ppi"),
+                            "date": "2026-03-01",
+                            "series_id": "PCU33443344",
+                            "series_name": "Semiconductors and Other Electronic Components",
+                            "value": 1.0,
+                        },
+                        {
+                            **_base_row("fred_semiconductor_ppi"),
+                            "date": "2026-04-01",
+                            "series_id": "PCU33443344",
+                            "series_name": "Semiconductors and Other Electronic Components",
+                            "value": 1.1,
+                        },
+                    ],
+                    columns=EXPECTED_COLUMNS,
+                ),
+                source_format="csv",
+                source_path=None,
+                missing_columns=[],
+                duplicate_rows=0,
+                first_date="2026-03-01",
+                latest_date="2026-04-01",
+                latest_scraped_at="2026-04-05T00:00:00Z",
+                row_count=2,
+            ),
         }
     )
 
     assert result["latest_month"] == "2026-04"
     assert result["base_month"] == "2026-02"
+    assert result["latest_proxy_month"] == "2026-03"
+    assert result["latest_fred_month"] == "2026-04"
     assert len(result["component_columns"]) == 5
     assert list(result["proxy_df"]["month"]) == ["2026-02", "2026-03"]
 
