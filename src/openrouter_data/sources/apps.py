@@ -296,7 +296,7 @@ class AppsSource(SourceExtractor):
         snapshot: Snapshot,
         context: RunContext,
     ) -> list[DatasetRecord]:
-        scrape_date = context.scraped_at.astimezone(UTC).date().isoformat()
+        scrape_date = context.scraped_at.astimezone(timezone.utc).date().isoformat()
         return [
             DatasetRecord(
                 dataset_id="app_metadata_snapshots",
@@ -391,7 +391,7 @@ class AppsSource(SourceExtractor):
         snapshot: Snapshot,
         context: RunContext,
     ) -> list[DatasetRecord]:
-        snapshot_date = context.scraped_at.astimezone(UTC).date().isoformat()
+        snapshot_date = context.scraped_at.astimezone(timezone.utc).date().isoformat()
         records: list[DatasetRecord] = []
         for period, rows in ranking_map.items():
             for row in rows:
@@ -426,7 +426,7 @@ class AppsSource(SourceExtractor):
         snapshot: Snapshot,
         context: RunContext,
     ) -> list[DatasetRecord]:
-        snapshot_date = context.scraped_at.astimezone(UTC).date().isoformat()
+        snapshot_date = context.scraped_at.astimezone(timezone.utc).date().isoformat()
         ordered = sorted(
             trending_apps,
             key=lambda item: (

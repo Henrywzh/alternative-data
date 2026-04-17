@@ -269,6 +269,92 @@ def make_stacked_bar(
     return fig
 
 
+def make_stacked_area_chart(
+    pivot_df: pd.DataFrame,
+    display_index: list,
+    colors: list[str],
+    x_title: str = "",
+    y_title: str = "",
+    height: int = 400,
+) -> go.Figure:
+    """Stacked area chart factory for revenue-style charts."""
+    fig = go.Figure()
+    for i, col in enumerate(pivot_df.columns):
+        fig.add_trace(go.Scatter(
+            x=display_index, y=pivot_df[col], name=col,
+            mode="lines+markers", stackgroup="one",
+            line=dict(width=0.5, color=colors[i % len(colors)]),
+            hovertemplate=f"<b>{col}</b><br>%{{x}}<br>$%{{y:,.2f}}<extra></extra>",
+        ))
+    fig.update_layout(
+        template="plotly_white", xaxis_title=x_title, yaxis_title=y_title,
+        legend=dict(orientation="h", y=-0.2), height=height,
+        margin=dict(l=0, r=0, t=20, b=80),
+    )
+    return fig
+
+
+def make_line_chart(
+    pivot_df: pd.DataFrame,
+    colors: list[str],
+    title: str = "",
+    y_title: str = "",
+    x_title: str = "Date",
+    hover_suffix: str = "",
+    height: int = 360,
+) -> go.Figure:
+    """Line chart factory — mirrors make_stacked_bar for time-series line charts."""
+    fig = go.Figure()
+    suffix = f" {hover_suffix}" if hover_suffix else ""
+    for i, col in enumerate(pivot_df.columns):
+        fig.add_trace(go.Scatter(
+            x=pivot_df.index,
+            y=pivot_df[col],
+            name=col,
+            mode="lines+markers",
+            line=dict(width=3, color=colors[i % len(colors)]),
+            hovertemplate=f"<b>{col}</b><br>%{{x}}<br>%{{y:,.0f}}{suffix}<extra></extra>",
+        ))
+    layout: dict = dict(
+        template="plotly_white",
+        xaxis_title=x_title,
+        yaxis_title=y_title,
+        legend=dict(orientation="h", y=-0.2),
+        height=height,
+        margin=dict(l=0, r=0, t=40, b=80),
+    )
+    if title:
+        layout["title"] = title
+    fig.update_layout(**layout)
+    return fig
+
+
+def kpi_card_html(
+    label: str,
+    value: str,
+    delta: str = "",
+    delta_class: str = "flat",
+    card_style: str = "",
+    value_style: str = "",
+) -> str:
+    """Return a single .kpi-card HTML block. Wrap multiple cards in a .kpi-grid div."""
+    card_attr = f' style="{card_style}"' if card_style else ""
+    value_attr = f' style="{value_style}"' if value_style else ""
+    delta_html = f'<div class="kpi-delta-{delta_class}">{delta}</div>' if delta else ""
+    return (
+        f'<div class="kpi-card"{card_attr}>'
+        f'<div class="kpi-label">{label}</div>'
+        f'<div class="kpi-value"{value_attr}>{value}</div>'
+        f'{delta_html}'
+        f'</div>'
+    )
+
+
+def kpi_grid_html(*cards: str) -> str:
+    """Wrap kpi_card_html() outputs in a .kpi-grid container."""
+    return '<div class="kpi-grid">' + "".join(cards) + "</div>"
+
+
 def _top_n_with_others(pivot_df: pd.DataFrame, *, top_n_count: int = 15, exclude_others_named: bool = False, pct: bool = False) -> pd.DataFrame:
     if pivot_df.empty:
         return pivot_df.copy()
@@ -426,33 +512,14 @@ def compute_openrouter_views(
     else:
         views["market_share"] = {"weeks": [], "pivot_pct_top": pd.DataFrame()}
 
-    app_result = datasets.get("app_top_models_daily_snapshot")
-    use_daily = False
-    if not app_result or app_result.frame.empty:
-        app_result = datasets.get("app_usage_daily")
-        use_daily = True
+    views.update(_compute_revenue_views(datasets))
+    return views
 
-    if app_result and not app_result.frame.empty:
-        frame = app_result.frame.copy()
-        date_col = "usage_date" if use_daily else "snapshot_date"
-        model_col = "model_permaslug"
-        value_col = "total_tokens"
-        frame[date_col] = frame[date_col].astype(str)
-        pivot = (
-            frame.pivot_table(index=date_col, columns=model_col, values=value_col, aggfunc="sum")
-            .fillna(0)
-            .sort_index()
-        )
-        views["app_usage"] = {
-            "date_col": date_col,
-            "value_col": value_col,
-            "days": sorted(frame[date_col].unique(), reverse=True),
-            "pivot_top": _top_n_with_others(pivot, top_n_count=15),
-        }
-    else:
-        views["app_usage"] = {"date_col": "usage_date", "value_col": "total_tokens", "days": [], "pivot_top": pd.DataFrame()}
 
-    # --- Revenue Estimator Logic ---
+def _compute_revenue_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, object]:
+    """Dual-engine revenue estimator (legacy market-share + modern per-model logs).
+    Returns {"revenue_estimator": {...}} for merging into the main views dict.
+    """
     activity_res = datasets.get("app_usage_daily")
     macro_res = datasets.get("top_models")
     pricing_res = datasets.get("raw_openrouter_models")
@@ -557,7 +624,11 @@ def compute_openrouter_views(
         
         pivot_rev_weekly = pd.DataFrame()
         pivot_rev_monthly = pd.DataFrame()
-        
+        # Token volume pivots — pre-init so they're always in scope for the return block
+        pivot_tok_daily = pd.DataFrame()
+        pivot_tok_weekly = pd.DataFrame()
+        pivot_tok_monthly = pd.DataFrame()
+
         market_share_res = datasets.get("market_share")
         if macro_res and not macro_res.frame.empty and market_share_res and not market_share_res.frame.empty:
             macro_df = macro_res.frame.copy()
@@ -656,11 +727,26 @@ def compute_openrouter_views(
             # The Modern (precision) engine takes over from the week of Jan 12, 2026 onwards.
             pivot_rev_weekly_legacy = pivot_rev_weekly_legacy[pivot_rev_weekly_legacy.index <= "2026-01-05"]
 
+            # --- Token Volume: Legacy weekly (same source, no pricing needed) ---
+            tok_legacy = macro_dedup.groupby(["usage_week", "parent_entity_id"])["metric_value"].sum().reset_index()
+            tok_legacy["provider_label"] = tok_legacy["parent_entity_id"].apply(
+                lambda x: _derive_provider_name(f"{x}/model", None)
+            )
+            pivot_tok_weekly_legacy = (
+                tok_legacy.pivot_table(index="usage_week", columns="provider_label", values="metric_value", aggfunc="sum")
+                .fillna(0).sort_index()
+            )
+            pivot_tok_weekly_legacy = pivot_tok_weekly_legacy[pivot_tok_weekly_legacy.index <= "2026-01-05"]
+
             # --- Modern Precise Engine (Post-Jan 17) ---
             modern_activity_res = datasets.get("provider_daily_activity")
             modern_pivot_weekly = pd.DataFrame()
             modern_pivot_monthly = pd.DataFrame()
             modern_pivot_daily = pd.DataFrame()
+            # Token volume pivots (modern) — initialised here, populated below
+            pivot_tok_daily = pd.DataFrame()
+            pivot_tok_weekly_modern = pd.DataFrame()
+            pivot_tok_monthly_modern = pd.DataFrame()
             if modern_activity_res and not modern_activity_res.frame.empty:
                 modern_df = modern_activity_res.frame.copy()
                 
@@ -756,6 +842,31 @@ def compute_openrouter_views(
                     .fillna(0).sort_index()
                 )
 
+                # --- Token Volume: Modern (all providers, no price filter) ---
+                # Use original modern_df (pre-pricing join) so every provider's tokens are included.
+                modern_tok = modern_df.copy()
+                modern_tok["usage_date_dt2"] = pd.to_datetime(modern_tok["usage_date"])
+                modern_tok["usage_date_str2"] = modern_tok["usage_date_dt2"].dt.strftime('%Y-%m-%d')
+                modern_tok["usage_week_tok"] = (
+                    modern_tok["usage_date_dt2"]
+                    - pd.to_timedelta(modern_tok["usage_date_dt2"].dt.weekday % 7, unit="D")
+                ).dt.normalize().dt.strftime('%Y-%m-%d')
+                modern_tok["usage_month_tok"] = modern_tok["usage_date_dt2"].dt.strftime('%Y-%m')
+                modern_tok["provider_label_tok"] = modern_tok["entity_name"]
+
+                pivot_tok_daily = (
+                    modern_tok.pivot_table(index="usage_date_str2", columns="provider_label_tok", values="total_tokens", aggfunc="sum")
+                    .fillna(0).sort_index()
+                )
+                pivot_tok_weekly_modern = (
+                    modern_tok.pivot_table(index="usage_week_tok", columns="provider_label_tok", values="total_tokens", aggfunc="sum")
+                    .fillna(0).sort_index()
+                )
+                pivot_tok_monthly_modern = (
+                    modern_tok.pivot_table(index="usage_month_tok", columns="provider_label_tok", values="total_tokens", aggfunc="sum")
+                    .fillna(0).sort_index()
+                )
+
             # --- Unified Concatenation ---
             # Merge Legacy and Modern Weekly
             pivot_rev_weekly = pd.concat([pivot_rev_weekly_legacy, modern_pivot_weekly]).fillna(0).sort_index()
@@ -816,34 +927,61 @@ def compute_openrouter_views(
                     s = pivot_rev_monthly[col].replace(0, float('nan'))
                     s = s.interpolate(method='linear', limit=2, limit_area='inside')
                     pivot_rev_monthly[col] = s.fillna(0)
-        
+
+            # --- Token Volume: Unified stitching (legacy + modern) ---
+            pivot_tok_weekly = pd.concat([pivot_tok_weekly_legacy, pivot_tok_weekly_modern]).fillna(0).sort_index()
+            pivot_tok_weekly = pivot_tok_weekly.groupby(level=0).sum()
+            # Gap-fill sparse legacy weeks for major providers
+            for col in BIG_TECH_DISPLAY:
+                if col in pivot_tok_weekly.columns:
+                    s = pivot_tok_weekly[col].replace(0, float('nan'))
+                    s = s.interpolate(method='linear', limit=4, limit_area='inside')
+                    pivot_tok_weekly[col] = s.fillna(0)
+
+            # Monthly: roll up legacy weekly to month + modern monthly
+            tok_legacy_m = (
+                tok_legacy.assign(usage_month=lambda df: pd.to_datetime(df["usage_week"]).dt.strftime('%Y-%m'))
+                .pivot_table(index="usage_month", columns="provider_label", values="metric_value", aggfunc="sum")
+                .fillna(0).sort_index()
+            )
+            tok_legacy_m = tok_legacy_m[tok_legacy_m.index <= "2026-01"]
+            pivot_tok_monthly = pd.concat([tok_legacy_m, pivot_tok_monthly_modern]).fillna(0).sort_index()
+            pivot_tok_monthly = pivot_tok_monthly.groupby(level=0).sum()
+
         # Fallback if both datasets are empty
         if pivot_rev_weekly.empty and not merged_daily.empty:
             pivot_rev_weekly = merged_daily.pivot_table(index="usage_week", columns="provider_label", values="revenue_usd", aggfunc="sum").fillna(0).sort_index()
         if pivot_rev_monthly.empty and not merged_daily.empty:
             pivot_rev_monthly = merged_daily.pivot_table(index="usage_month", columns="provider_label", values="revenue_usd", aggfunc="sum").fillna(0).sort_index()
         
-        views["revenue_estimator"] = {
-            "pivot_rev": pivot_rev_daily if not pivot_rev_daily.empty else modern_pivot_daily,
-            "pivot_rev_daily": pivot_rev_daily if not pivot_rev_daily.empty else modern_pivot_daily,
-            "pivot_rev_weekly": pivot_rev_weekly,
-            "pivot_rev_monthly": pivot_rev_monthly,
-            "total_revenue": (
-                (merged_daily["revenue_usd"].sum() if not merged_daily.empty else 0) + 
-                (modern_with_price["revenue_usd"].sum() if "modern_with_price" in locals() and not modern_with_price.empty else 0)
-            ),
-            "has_activity": not activity.get("frame", pd.DataFrame()).empty if isinstance(activity, dict) else not activity.empty,
-            "merged_count": len(modern_with_price) if "modern_with_price" in locals() else 0
+        pivot_rev_visible = pivot_rev_daily if not pivot_rev_daily.empty else modern_pivot_daily
+        return {
+            "revenue_estimator": {
+                "pivot_rev": pivot_rev_visible,
+                "pivot_rev_daily": pivot_rev_visible,
+                "pivot_rev_weekly": pivot_rev_weekly,
+                "pivot_rev_monthly": pivot_rev_monthly,
+                "total_revenue": float(pivot_rev_visible.sum().sum()) if not pivot_rev_visible.empty else 0,
+                "has_activity": not activity.get("frame", pd.DataFrame()).empty if isinstance(activity, dict) else not activity.empty,
+                "merged_count": len(modern_with_price) if "modern_with_price" in locals() else 0,
+            },
+            "token_volume": {
+                "pivot_daily":   pivot_tok_daily,
+                "pivot_weekly":  pivot_tok_weekly,
+                "pivot_monthly": pivot_tok_monthly,
+            },
         }
-    else:
-        views["revenue_estimator"] = {
-            "pivot_rev": pd.DataFrame(), 
+    return {
+        "revenue_estimator": {
+            "pivot_rev": pd.DataFrame(),
             "total_revenue": 0,
             "has_activity": activity_res and not activity_res.frame.empty if activity_res else False,
-            "merged_count": 0
-        }
-
-    return views
+            "merged_count": 0,
+        },
+        "token_volume": {
+            "pivot_daily": pd.DataFrame(), "pivot_weekly": pd.DataFrame(), "pivot_monthly": pd.DataFrame(),
+        },
+    }
 
 
 @st.cache_data(ttl=3600)
@@ -879,6 +1017,8 @@ def compute_github_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, di
 @st.cache_data(ttl=3600)
 def compute_provider_adoption_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, object]:
     views: dict[str, object] = {}
+    # Mistral and Qwen don't publish meaningful PyPI/npm packages; exclude from those charts.
+    _PYPI_NPM_EXCLUDE = {"Mistral", "Qwen"}
 
     pypi_result = datasets.get("pypi_downloads_daily")
     npm_result = datasets.get("npm_downloads_daily")
@@ -886,6 +1026,7 @@ def compute_provider_adoption_views(datasets: dict[str, DatasetLoadResult]) -> d
 
     pypi = pypi_result.frame.copy() if pypi_result and pypi_result.frame is not None else pd.DataFrame()
     pypi = pypi[pypi["with_mirrors"] == False].copy() if not pypi.empty else pypi
+    pypi = pypi[~pypi["provider_display_name"].isin(_PYPI_NPM_EXCLUDE)].copy() if not pypi.empty else pypi
     if not pypi.empty:
         pypi_grouped = pypi.groupby(["download_date", "provider_display_name"], dropna=False)["downloads"].sum().reset_index()
         pypi_grouped["download_date"] = pypi_grouped["download_date"].astype(str)
@@ -898,6 +1039,7 @@ def compute_provider_adoption_views(datasets: dict[str, DatasetLoadResult]) -> d
 
     npm = npm_result.frame.copy() if npm_result and npm_result.frame is not None else pd.DataFrame()
     if not npm.empty:
+        npm = npm[~npm["provider_display_name"].isin(_PYPI_NPM_EXCLUDE)].copy()
         npm["download_date"] = npm["download_date"].astype(str)
         npm["package_category"] = npm["package_category"].astype(str)
         npm_categories = sorted(category for category in npm["package_category"].dropna().unique().tolist() if category and category != "<NA>")
@@ -1140,13 +1282,12 @@ def compute_compute_availability_views(datasets: dict[str, DatasetLoadResult]) -
 # CSS
 # ---------------------------------------------------------------------------
 
-def inject_css() -> None:
-    st.markdown(
-        f"""
-        <style>
-        /* ---- global ---- */
-        .stApp {{ background: transparent; }}
-        .block-container {{ padding-top: 1.5rem; padding-bottom: 3rem; max-width: 1360px; }}
+# Evaluated once at import; color constants are module-level so this is safe.
+_DASHBOARD_CSS = f"""
+<style>
+/* ---- global ---- */
+.stApp {{ background: transparent; }}
+.block-container {{ padding-top: 1.5rem; padding-bottom: 3rem; max-width: 1360px; }}
 
         /* ---- KPI cards ---- */
         .kpi-grid {{ display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }}
@@ -1325,14 +1466,16 @@ def inject_css() -> None:
             color: {ACCENT} !important;
         }}
 
-        /* Plotly background protection */
-        .js-plotly-plot .main-svg, .plotly .main-svg {{
-            background: transparent !important;
-        }}
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
+/* Plotly background protection */
+.js-plotly-plot .main-svg, .plotly .main-svg {{
+    background: transparent !important;
+}}
+</style>
+"""
+
+
+def inject_css() -> None:
+    st.markdown(_DASHBOARD_CSS, unsafe_allow_html=True)
 
 
 # ---------------------------------------------------------------------------
@@ -1409,44 +1552,25 @@ def render_kpi_row(datasets: dict[str, DatasetLoadResult], openrouter_views: dic
 
     # --- render ---
     if wow_pct is not None:
-        delta_cls  = "kpi-delta-up" if wow_pct >= 0 else "kpi-delta-down"
-        delta_icon = "↑" if wow_pct >= 0 else "↓"
-        delta_html = f'<div class="{delta_cls}">{delta_icon} {abs(wow_pct):.1f}% WoW</div>'
+        tok_delta_cls  = "up" if wow_pct >= 0 else "down"
+        tok_delta_text = f"{'↑' if wow_pct >= 0 else '↓'} {abs(wow_pct):.1f}% WoW"
     else:
-        delta_html = f'<div class="kpi-delta-flat">—</div>'
+        tok_delta_cls, tok_delta_text = "flat", "—"
 
     tokens_fmt   = format_metric(total_latest) if total_latest is not None else "—"
     leader_label = f"{leader_author} ({leader_pct:.1f}%)" if leader_author and leader_pct else leader_author or "—"
     model_label  = top_model or "—"
-    # truncate long model names
     if len(model_label) > 28:
         model_label = model_label[:26] + "…"
+    wow_str = f"{'+'  if wow_pct and wow_pct >= 0 else ''}{f'{wow_pct:.1f}%' if wow_pct is not None else '—'}"
 
     st.markdown(
-        f"""
-        <div class="kpi-grid">
-          <div class="kpi-card">
-            <div class="kpi-label">Total Tokens (Latest Model Week)</div>
-            <div class="kpi-value">{tokens_fmt}</div>
-            {delta_html}
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-label">WoW Change</div>
-            <div class="kpi-value">{"+" if wow_pct and wow_pct >= 0 else ""}{f"{wow_pct:.1f}%" if wow_pct is not None else "—"}</div>
-            <div class="kpi-delta-flat">vs prior week</div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-label">Top Model</div>
-            <div class="kpi-value" style="font-size:1.1rem;">{model_label}</div>
-            <div class="kpi-delta-flat">by tokens this week</div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-label">Market Leader</div>
-            <div class="kpi-value" style="font-size:1.1rem;">{leader_label}</div>
-            <div class="kpi-delta-flat">latest market-share week</div>
-          </div>
-        </div>
-        """,
+        kpi_grid_html(
+            kpi_card_html("Total Tokens (Latest Model Week)", tokens_fmt, delta=tok_delta_text, delta_class=tok_delta_cls),
+            kpi_card_html("WoW Change", wow_str, delta="vs prior week"),
+            kpi_card_html("Top Model", model_label, delta="by tokens this week", value_style="font-size:1.1rem;"),
+            kpi_card_html("Market Leader", leader_label, delta="latest market-share week", value_style="font-size:1.1rem;"),
+        ),
         unsafe_allow_html=True,
     )
 
@@ -1501,11 +1625,9 @@ def render_top_models_chart(datasets: dict[str, DatasetLoadResult], openrouter_v
     sel_week = st.selectbox("Analyze week starting", options=weeks, index=0, key="tm_week_sel")
     week_total = tm[tm["week_start_date"] == sel_week]["metric_value"].sum()
     st.markdown(
-        f'<div class="kpi-card" style="margin-bottom:1rem; max-width: 300px;">'
-        f'<div class="kpi-label">Total Tokens ({sel_week})</div>'
-        f'<div class="kpi-value" style="font-size: 1.5rem;">{format_metric(week_total)}</div>'
-        f'</div>',
-        unsafe_allow_html=True
+        kpi_card_html(f"Total Tokens ({sel_week})", format_metric(week_total),
+                      card_style="margin-bottom:1rem; max-width:300px", value_style="font-size:1.5rem"),
+        unsafe_allow_html=True,
     )
 
     fig = make_stacked_bar(openrouter_views["top_models"]["pivot_top"], MODEL_COLORS, y_title="Tokens")
@@ -1534,11 +1656,9 @@ def render_market_share_section(datasets: dict[str, DatasetLoadResult], openrout
     sel_ms_wk = st.selectbox("Analyze week ending", options=ms_weeks, index=0, key="ms_week_sel")
     ms_wk_total = ms[ms["week_start_date"] == sel_ms_wk]["metric_value"].sum()
     st.markdown(
-        f'<div class="kpi-card" style="margin-bottom:1rem; max-width: 300px;">'
-        f'<div class="kpi-label">Total Tokens ({sel_ms_wk})</div>'
-        f'<div class="kpi-value" style="font-size: 1.5rem;">{format_metric(ms_wk_total)}</div>'
-        f'</div>',
-        unsafe_allow_html=True
+        kpi_card_html(f"Total Tokens ({sel_ms_wk})", format_metric(ms_wk_total),
+                      card_style="margin-bottom:1rem; max-width:300px", value_style="font-size:1.5rem"),
+        unsafe_allow_html=True,
     )
 
     chart_col, legend_col = st.columns([2, 1], gap="large")
@@ -1588,20 +1708,10 @@ def render_revenue_estimator(datasets: dict[str, DatasetLoadResult], openrouter_
 
     # Total Revenue Metric
     st.markdown(
-        f"""
-        <div class="kpi-grid">
-          <div class="kpi-card">
-            <div class="kpi-label">Est. Aggregate Revenue</div>
-            <div class="kpi-value">${total_revenue:,.0f}</div>
-            <div class="kpi-delta-up">↑ Based on Top 50 Models</div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-label">Provider Coverage</div>
-            <div class="kpi-value">{len(pivot_rev.columns)}</div>
-            <div class="kpi-delta-flat">active providers</div>
-          </div>
-        </div>
-        """,
+        kpi_grid_html(
+            kpi_card_html("Est. Aggregate Revenue", f"${total_revenue:,.0f}", delta="↑ Based on Top 50 Models", delta_class="up"),
+            kpi_card_html("Provider Coverage", str(len(pivot_rev.columns)), delta="active providers"),
+        ),
         unsafe_allow_html=True,
     )
 
@@ -1611,48 +1721,27 @@ def render_revenue_estimator(datasets: dict[str, DatasetLoadResult], openrouter_
     pivot_weekly  = rev_data.get("pivot_rev_weekly", pd.DataFrame())
     pivot_daily   = rev_data.get("pivot_rev_daily", pd.DataFrame())
 
-    tab_month, tab_week, tab_day = st.tabs(["Monthly", "Weekly", "Daily"])
+    tab_week, tab_month, tab_day = st.tabs(["Weekly", "Monthly", "Daily"])
     
     def _render_rev_chart(pivot_df, date_title):
         if pivot_df.empty:
             st.info(f"No {date_title.lower()} data available.")
             return
-        # Special: Label the current month as MTD in the X-axis for clarity
-        fig = go.Figure()
+        # Label the current month as MTD in the X-axis for clarity
         today_month = datetime.now().strftime("%Y-%m")
-        display_index = []
-        for d in pivot_df.index:
-            if date_title == "Usage Month" and str(d) == today_month:
-                display_index.append(f"{d} (MTD)")
-            else:
-                display_index.append(d)
-
-        for i, provider_name in enumerate(pivot_df.columns):
-            fig.add_trace(
-                go.Scatter(
-                    x=display_index,
-                    y=pivot_df[provider_name],
-                    name=provider_name,
-                    mode="lines+markers",
-                    stackgroup="one",
-                    line=dict(width=0.5, color=MODEL_COLORS[i % len(MODEL_COLORS)]),
-                    hovertemplate=f"<b>{provider_name}</b><br>%{{x}}<br>$%{{y:,.2f}}<extra></extra>",
-                )
-            )
-        fig.update_layout(
-            template="plotly_white",
-            xaxis_title=date_title,
-            yaxis_title="Revenue (USD)",
-            legend=dict(orientation="h", y=-0.2),
-            height=400,
-            margin=dict(l=0, r=0, t=20, b=80),
+        display_index = [
+            f"{d} (MTD)" if date_title == "Usage Month" and str(d) == today_month else d
+            for d in pivot_df.index
+        ]
+        st.plotly_chart(
+            make_stacked_area_chart(pivot_df, display_index, MODEL_COLORS, x_title=date_title, y_title="Revenue (USD)"),
+            use_container_width=True, theme=None,
         )
-        st.plotly_chart(fig, use_container_width=True, theme=None)
 
-    with tab_month:
-        _render_rev_chart(pivot_monthly, "Usage Month")
     with tab_week:
         _render_rev_chart(pivot_weekly, "Usage Week (Starting)")
+    with tab_month:
+        _render_rev_chart(pivot_monthly, "Usage Month")
     with tab_day:
         _render_rev_chart(pivot_daily, "Usage Date")
         
@@ -1670,7 +1759,7 @@ def render_revenue_estimator(datasets: dict[str, DatasetLoadResult], openrouter_
 
 
 def render_leaderboard(datasets: dict[str, DatasetLoadResult]) -> None:
-    st.markdown('<div class="section-title">Model Leaderboard</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">Model Leaderboard — Weekly</div>', unsafe_allow_html=True)
     result = datasets.get("top_models")
     if not result or not render_dataset_guard(result):
         return
@@ -1684,6 +1773,7 @@ def render_leaderboard(datasets: dict[str, DatasetLoadResult]) -> None:
 
     latest_wk = sorted_weeks[-1]
     prev_wk   = sorted_weeks[-2] if len(sorted_weeks) >= 2 else None
+    st.caption(f"Showing week starting {latest_wk} vs previous week")
 
     def _agg_named(frame: pd.DataFrame) -> pd.DataFrame:
         """Aggregate by entity_id, excluding catch-all 'Others' buckets."""
@@ -1755,6 +1845,136 @@ def render_leaderboard(datasets: dict[str, DatasetLoadResult]) -> None:
         st.markdown("".join(cards[5:]), unsafe_allow_html=True)
 
 
+def render_token_volume_chart(openrouter_views: dict[str, object]) -> None:
+    """Stacked area chart: raw token consumption by provider over time (daily/weekly/monthly)."""
+    st.markdown('<div class="section-title">Token Volume by Provider</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-subtitle">Raw token consumption by AI company across OpenRouter. '
+        'Legacy (pre-2026): weekly top-model rankings. Modern (2026+): daily per-provider logs.</div>',
+        unsafe_allow_html=True,
+    )
+
+    tok_data = openrouter_views.get("token_volume", {})
+    pivot_daily   = tok_data.get("pivot_daily",   pd.DataFrame())
+    pivot_weekly  = tok_data.get("pivot_weekly",  pd.DataFrame())
+    pivot_monthly = tok_data.get("pivot_monthly", pd.DataFrame())
+
+    if pivot_weekly.empty and pivot_daily.empty:
+        st.info("No token volume data available.")
+        return
+
+    # --- KPI Row ---
+    latest_tok_total, tok_wow_pct, dominant_provider = None, None, None
+    if not pivot_weekly.empty:
+        latest_row = pivot_weekly.iloc[-1]
+        latest_tok_total = float(latest_row.sum())
+        if len(pivot_weekly) >= 2:
+            prev_total = float(pivot_weekly.iloc[-2].sum())
+            if prev_total > 0:
+                tok_wow_pct = (latest_tok_total - prev_total) / prev_total * 100
+        if latest_tok_total > 0:
+            dominant_provider = latest_row.idxmax()
+
+    if tok_wow_pct is not None:
+        tok_delta_cls  = "up" if tok_wow_pct >= 0 else "down"
+        tok_delta_text = f"{'↑' if tok_wow_pct >= 0 else '↓'} {abs(tok_wow_pct):.1f}% WoW"
+    else:
+        tok_delta_cls, tok_delta_text = "flat", "—"
+
+    coverage = "Pre-2026 + Modern" if not pivot_weekly.empty and pivot_weekly.index[0] < "2026" else "Modern (2026+)"
+    wow_str = f"{'+'  if tok_wow_pct and tok_wow_pct >= 0 else ''}{f'{tok_wow_pct:.1f}%' if tok_wow_pct is not None else '—'}"
+
+    st.markdown(
+        kpi_grid_html(
+            kpi_card_html("Total Tokens (Latest Week)", format_metric(latest_tok_total) if latest_tok_total else "—", delta=tok_delta_text, delta_class=tok_delta_cls),
+            kpi_card_html("WoW Change", wow_str, delta="vs prior week"),
+            kpi_card_html("Dominant Provider", dominant_provider or "—", delta="by token share this week"),
+            kpi_card_html("Data Coverage", coverage, delta="dual-engine"),
+        ),
+        unsafe_allow_html=True,
+    )
+
+    tab_week, tab_month, tab_day = st.tabs(["Weekly", "Monthly", "Daily"])
+
+    def _render_tok_chart(pivot_df: pd.DataFrame, date_title: str) -> None:
+        if pivot_df.empty:
+            st.info(f"No {date_title.lower()} token data available.")
+            return
+        today_month = datetime.now().strftime("%Y-%m")
+        display_index = [
+            f"{d} (MTD)" if date_title == "Usage Month" and str(d) == today_month else d
+            for d in pivot_df.index
+        ]
+        st.plotly_chart(
+            make_stacked_area_chart(pivot_df, display_index, MODEL_COLORS, x_title=date_title, y_title="Tokens"),
+            use_container_width=True, theme=None,
+        )
+
+    with tab_week:
+        _render_tok_chart(pivot_weekly, "Usage Week (Starting)")
+    with tab_month:
+        _render_tok_chart(pivot_monthly, "Usage Month")
+    with tab_day:
+        _render_tok_chart(pivot_daily, "Usage Date")
+
+    st.caption(
+        "Legacy (pre-Jan 2026): weekly token sums from top-9 ranked models — providers outside top-9 show 0 for those weeks. "
+        "Modern (post-Jan 2026): full daily per-provider logs with no rank cap. "
+        "⚠️ Cross-check: Revenue ÷ Tokens ≈ implied avg price per token — compare with the Revenue Estimator above."
+    )
+
+
+def render_token_revenue_comparison(openrouter_views: dict[str, object]) -> None:
+    """Sanity-check table: implied avg price = Revenue / Tokens, by provider and period."""
+    with st.expander("📊 Revenue ÷ Token Accuracy Check (implied $/token)", expanded=False):
+        st.markdown(
+            "Divides estimated revenue by token volume for each provider to derive an **implied average price per token**. "
+            "Compare against known model pricing to spot estimation errors.",
+            unsafe_allow_html=True,
+        )
+        rev_data = openrouter_views.get("revenue_estimator", {})
+        tok_data = openrouter_views.get("token_volume", {})
+
+        rev_weekly  = rev_data.get("pivot_rev_weekly",  pd.DataFrame())
+        tok_weekly  = tok_data.get("pivot_weekly",       pd.DataFrame())
+        rev_monthly = rev_data.get("pivot_rev_monthly", pd.DataFrame())
+        tok_monthly = tok_data.get("pivot_monthly",      pd.DataFrame())
+
+        tab_w, tab_m = st.tabs(["Weekly", "Monthly"])
+
+        def _comparison_table(rev_piv: pd.DataFrame, tok_piv: pd.DataFrame, period_label: str) -> None:
+            if rev_piv.empty or tok_piv.empty:
+                st.info(f"Not enough data for {period_label} comparison.")
+                return
+            # Align columns and index
+            common_cols = sorted(set(rev_piv.columns) & set(tok_piv.columns))
+            common_idx  = sorted(set(rev_piv.index)   & set(tok_piv.index))
+            if not common_cols or not common_idx:
+                st.info("No overlapping providers/periods between revenue and token data.")
+                return
+            rev_a = rev_piv.loc[common_idx, common_cols]
+            tok_a = tok_piv.loc[common_idx, common_cols]
+            # Implied price per token ($/token); multiply by 1e6 → $/M tokens for readability
+            implied = (rev_a / tok_a.replace(0, float('nan'))).fillna(0) * 1e6
+            # Show latest 12 periods
+            display = implied.tail(12).round(4)
+            # Colour: values outside [0.001, 10] $/M tokens are suspicious
+            st.dataframe(
+                display.style.background_gradient(axis=None, cmap="RdYlGn_r", vmin=0, vmax=5),
+                use_container_width=True,
+            )
+            st.caption(
+                f"Values in **$/M tokens** (implied avg price). "
+                f"Typical range: $0.10–$5/M for mainstream models. "
+                f"Very high values suggest token undercount; very low values suggest revenue undercount."
+            )
+
+        with tab_w:
+            _comparison_table(rev_weekly, tok_weekly, "weekly")
+        with tab_m:
+            _comparison_table(rev_monthly, tok_monthly, "monthly")
+
+
 def render_programming_chart(datasets: dict[str, DatasetLoadResult], openrouter_views: dict[str, object]) -> None:
     st.markdown('<div class="section-title">Programming — Weekly Token Usage (Week Starting)</div>', unsafe_allow_html=True)
     st.markdown(
@@ -1776,56 +1996,13 @@ def render_programming_chart(datasets: dict[str, DatasetLoadResult], openrouter_
     sel_week = st.selectbox("Analyze programming week starting", options=weeks, index=0, key="prog_week_sel")
     week_total = frame[frame["week_start_date"] == sel_week]["metric_value"].sum()
     st.markdown(
-        f'<div class="kpi-card" style="margin-bottom:1rem; max-width: 300px;">'
-        f'<div class="kpi-label">Programming Tokens ({sel_week})</div>'
-        f'<div class="kpi-value" style="font-size: 1.5rem;">{format_metric(week_total)}</div>'
-        f'</div>',
-        unsafe_allow_html=True
+        kpi_card_html(f"Programming Tokens ({sel_week})", format_metric(week_total),
+                      card_style="margin-bottom:1rem; max-width:300px", value_style="font-size:1.5rem"),
+        unsafe_allow_html=True,
     )
 
     fig = make_stacked_bar(openrouter_views["categories_programming"]["pivot_top"], MODEL_COLORS, y_title="Tokens")
     st.plotly_chart(fig, use_container_width=True, theme=None)
-
-
-def render_app_usage_chart(datasets: dict[str, DatasetLoadResult], openrouter_views: dict[str, object]) -> None:
-    st.markdown('<div class="section-title">App Intelligence — Model Usage Snapshots</div>', unsafe_allow_html=True)
-
-    # prefer app_top_models_daily_snapshot, fall back to app_usage_daily
-    result = datasets.get("app_top_models_daily_snapshot")
-    is_wtd = True
-    if not result or result.frame.empty:
-        result = datasets.get("app_usage_daily")
-        is_wtd = False
-
-    if not result or not render_dataset_guard(result):
-        return
-
-    frame = result.frame.copy()
-
-    date_col = openrouter_views["app_usage"]["date_col"]
-    val_col = openrouter_views["app_usage"]["value_col"]
-
-    frame[date_col] = frame[date_col].astype(str)
-
-    # --- Period Selector & Total ---
-    days = openrouter_views["app_usage"]["days"]
-    sel_day = st.selectbox("Analyze day", options=days, index=0, key="app_day_sel")
-    day_total = frame[frame[date_col] == sel_day][val_col].sum()
-    
-    label = f"Running Week Total (as of {sel_day})" if is_wtd else f"Total Daily Tokens ({sel_day})"
-    st.markdown(
-        f'<div class="kpi-card" style="margin-bottom:1rem; max-width: 350px;">'
-        f'<div class="kpi-label">{label}</div>'
-        f'<div class="kpi-value" style="font-size: 1.5rem;">{format_metric(day_total)}</div>'
-        f'</div>',
-        unsafe_allow_html=True
-    )
-
-    fig = make_stacked_bar(openrouter_views["app_usage"]["pivot_top"], MODEL_COLORS, y_title="Tokens", height=340)
-    st.plotly_chart(fig, use_container_width=True, theme=None)
-    
-    if is_wtd:
-        st.caption("*Note: Snapshot totals represent cumulative usage for the current week (Week-to-Date) as reported at the time of the crawl.*")
 
 
 def render_apps_tables(datasets: dict[str, DatasetLoadResult]) -> None:
@@ -1838,7 +2015,8 @@ def render_apps_tables(datasets: dict[str, DatasetLoadResult]) -> None:
         if result and render_dataset_guard(result):
             frame = result.frame.copy()
             periods = sorted(frame["period"].dropna().astype(str).unique().tolist())
-            period  = st.selectbox("Period", options=periods, index=0 if periods else None, key="lb_period")
+            _week_idx = next((i for i, p in enumerate(periods) if "week" in p.lower()), 0)
+            period  = st.selectbox("Period", options=periods, index=_week_idx if periods else None, key="lb_period")
             if period:
                 frame = frame[frame["period"] == period]
             latest_date = frame["snapshot_date"].max()
@@ -1849,11 +2027,9 @@ def render_apps_tables(datasets: dict[str, DatasetLoadResult]) -> None:
             summary_col, _ = st.columns([1, 2])
             with summary_col:
                 st.markdown(
-                    f'<div class="kpi-card" style="margin-bottom:1rem;">'
-                    f'<div class="kpi-label">Tokens in Top 25 ({latest_date})</div>'
-                    f'<div class="kpi-value" style="font-size: 1.5rem;">{format_metric(total_top25)}</div>'
-                    f'</div>',
-                    unsafe_allow_html=True
+                    kpi_card_html(f"Tokens in Top 25 ({latest_date})", format_metric(total_top25),
+                                  card_style="margin-bottom:1rem", value_style="font-size:1.5rem"),
+                    unsafe_allow_html=True,
                 )
                 
             tbl["tokens"] = tbl["tokens"].map(format_metric)
@@ -1897,11 +2073,9 @@ def render_apps_tables(datasets: dict[str, DatasetLoadResult]) -> None:
             if not usage.empty:
                 app_total = usage["total_tokens"].sum()
                 st.markdown(
-                    f'<div class="kpi-card" style="margin-bottom:1rem; max-width: 300px;">'
-                    f'<div class="kpi-label">Cumulative Selection Usage</div>'
-                    f'<div class="kpi-value" style="font-size: 1.5rem;">{format_metric(app_total)}</div>'
-                    f'</div>',
-                    unsafe_allow_html=True
+                    kpi_card_html("Cumulative Selection Usage", format_metric(app_total),
+                                  card_style="margin-bottom:1rem; max-width:300px", value_style="font-size:1.5rem"),
+                    unsafe_allow_html=True,
                 )
                 
                 pivot_u = (
@@ -1940,62 +2114,39 @@ def render_github_trending_section(datasets: dict[str, DatasetLoadResult], githu
     col1, col2, col3 = st.columns(3)
     with col1:
         st.markdown(
-            f'<div class="kpi-card">'
-            f'<div class="kpi-label">Top Gainer ({period_label})</div>'
-            f'<div class="kpi-value" style="font-size: 1.3rem;">{top_repo["name"] if top_repo is not None else "—"}</div>'
-            f'<div class="kpi-delta-up">+{format_metric(top_repo["stars_today"]) if top_repo is not None else "0"} stars</div>'
-            f'</div>',
-            unsafe_allow_html=True
+            kpi_card_html(f"Top Gainer ({period_label})",
+                          top_repo["name"] if top_repo is not None else "—",
+                          delta=f"+{format_metric(top_repo['stars_today']) if top_repo is not None else '0'} stars",
+                          delta_class="up", value_style="font-size:1.3rem"),
+            unsafe_allow_html=True,
         )
     with col2:
         total_gained = latest_df["stars_today"].sum()
         st.markdown(
-            f'<div class="kpi-card">'
-            f'<div class="kpi-label">Total Stars Gained (Top 15)</div>'
-            f'<div class="kpi-value">{format_metric(total_gained)}</div>'
-            f'<div class="kpi-delta-flat">across trending list</div>'
-            f'</div>',
-            unsafe_allow_html=True
+            kpi_card_html("Total Stars Gained (Top 15)", format_metric(total_gained),
+                          delta="across trending list"),
+            unsafe_allow_html=True,
         )
     with col3:
         unique_repos = df["name"].nunique()
         st.markdown(
-            f'<div class="kpi-card">'
-            f'<div class="kpi-label">Unique Repos Tracked</div>'
-            f'<div class="kpi-value">{unique_repos}</div>'
-            f'<div class="kpi-delta-flat">in history</div>'
-            f'</div>',
-            unsafe_allow_html=True
+            kpi_card_html("Unique Repos Tracked", str(unique_repos), delta="in history"),
+            unsafe_allow_html=True,
         )
 
     # --- Charts & Leaderboard ---
     chart_tab, list_tab = st.tabs(["Historical Growth", "Latest Leaderboard"])
 
     with chart_tab:
-        # Plot top 5 growth over time
         pivot_h = period_view["history_top5"]
         if not pivot_h.empty:
-            fig = go.Figure()
-            for i, repo_name in enumerate(pivot_h.columns):
-                fig.add_trace(go.Scatter(
-                    x=pivot_h.index,
-                    y=pivot_h[repo_name],
-                    name=repo_name,
-                    mode='lines+markers',
-                    line=dict(width=3, color=MODEL_COLORS[i % len(MODEL_COLORS)]),
-                    hovertemplate=f"<b>{repo_name}</b><br>%{{x}}<br>%{{y:,.0f}} stars gained<extra></extra>"
-                ))
-            
-            fig.update_layout(
-                template="plotly_white",
-                title=f"Star Growth - Top 5 {period_label} Repos",
-                xaxis_title="Scrape Date",
-                yaxis_title="Stars Gained",
-                legend=dict(orientation="h", y=-0.2),
-                height=400,
-                margin=dict(l=0, r=0, t=40, b=80)
+            st.plotly_chart(
+                make_line_chart(pivot_h, MODEL_COLORS,
+                                title=f"Star Growth - Top 5 {period_label} Repos",
+                                x_title="Scrape Date", y_title="Stars Gained",
+                                hover_suffix="stars gained", height=400),
+                use_container_width=True,
             )
-            st.plotly_chart(fig, use_container_width=True)
         else:
             st.info("Not enough historical data to show growth.")
 
@@ -2137,8 +2288,9 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
         else pd.DataFrame(columns=["package_category", "download_date", "provider_display_name", "downloads"])
     )
 
-    hf_downloads_tab, hf_share_tab, hf_models_tab, pypi_downloads_tab, pypi_share_tab, npm_downloads_tab, npm_share_tab, github_tab, summary_tab = st.tabs(
-        ["HF Downloads", "HF Share", "HF Models", "PyPI Downloads", "PyPI Share", "npm Downloads", "npm Share", "GitHub Signals", "Latest Summary"]
+    # HF/PyPI/npm each combine downloads + share into a single tab
+    hf_tab, hf_models_tab, pypi_tab, npm_tab, github_tab, summary_tab = st.tabs(
+        ["HF", "HF Models", "PyPI", "npm", "GitHub Signals", "Latest Summary"]
     )
 
     hf_metric = st.segmented_control(
@@ -2149,10 +2301,11 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
     )
     hf_metric_config = resolve_hf_metric_config(hf_metric)
 
-    with hf_downloads_tab:
+    with hf_tab:
         if hf_result is None or hf_result.frame.empty or hf_grouped.empty:
             st.info("No Hugging Face model data available yet.")
         else:
+            # Downloads trend
             pivot_hf = (
                 hf_grouped.pivot_table(
                     index="download_date",
@@ -2163,33 +2316,16 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
                 .fillna(0)
                 .sort_index()
             )
-            fig = go.Figure()
-            for i, provider_name in enumerate(pivot_hf.columns):
-                fig.add_trace(
-                    go.Scatter(
-                        x=pivot_hf.index,
-                        y=pivot_hf[provider_name],
-                        name=provider_name,
-                        mode="lines+markers",
-                        line=dict(width=3, color=MODEL_COLORS[i % len(MODEL_COLORS)]),
-                        hovertemplate=f"<b>{provider_name}</b><br>%{{x}}<br>%{{y:,.0f}} {hf_metric_config['downloads_hover']}<extra></extra>",
-                    )
-                )
-            fig.update_layout(
-                template="plotly_white",
-                title=hf_metric_config["downloads_title"],
-                xaxis_title="Date",
-                yaxis_title=hf_metric_config["downloads_axis"],
-                legend=dict(orientation="h", y=-0.2),
-                height=360,
-                margin=dict(l=0, r=0, t=40, b=80),
+            st.plotly_chart(
+                make_line_chart(
+                    pivot_hf, MODEL_COLORS,
+                    title=hf_metric_config["downloads_title"],
+                    y_title=hf_metric_config["downloads_axis"],
+                    hover_suffix=hf_metric_config["downloads_hover"],
+                ),
+                use_container_width=True, theme=None,
             )
-            st.plotly_chart(fig, use_container_width=True, theme=None)
-
-    with hf_share_tab:
-        if hf_result is None or hf_result.frame.empty or hf_grouped.empty:
-            st.info("No Hugging Face model data available yet.")
-        else:
+            # Market share (stacked bar)
             value_column = hf_metric_config["value_column"]
             totals = hf_grouped.groupby("download_date")[value_column].sum().rename("total").reset_index()
             share = hf_grouped.merge(totals, on="download_date", how="left")
@@ -2200,16 +2336,9 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
                 .sort_index()
             )
             st.plotly_chart(
-                make_stacked_bar(
-                    pivot_share * 100,
-                    MODEL_COLORS,
-                    title=hf_metric_config["share_title"],
-                    y_title="Share",
-                    pct=True,
-                    height=340,
-                ),
-                use_container_width=True,
-                theme=None,
+                make_stacked_bar(pivot_share * 100, MODEL_COLORS,
+                                 title=hf_metric_config["share_title"], y_title="Share", pct=True, height=340),
+                use_container_width=True, theme=None,
             )
 
     with hf_models_tab:
@@ -2237,36 +2366,20 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
                 st.caption(f"Showing top 20 models for {selected_hf_provider} by trailing 30d downloads.")
                 st.dataframe(table.fillna("-"), use_container_width=True, hide_index=True)
 
-    with pypi_downloads_tab:
+    with pypi_tab:
+        # Downloads trend
         pivot_downloads = (
             pypi_grouped.pivot_table(index="download_date", columns="provider_display_name", values="downloads", aggfunc="last")
             .fillna(0)
             .sort_index()
         )
-        fig = go.Figure()
-        for i, provider_name in enumerate(pivot_downloads.columns):
-            fig.add_trace(
-                go.Scatter(
-                    x=pivot_downloads.index,
-                    y=pivot_downloads[provider_name],
-                    name=provider_name,
-                    mode="lines+markers",
-                    line=dict(width=3, color=MODEL_COLORS[i % len(MODEL_COLORS)]),
-                    hovertemplate=f"<b>{provider_name}</b><br>%{{x}}<br>%{{y:,.0f}} downloads<extra></extra>",
-                )
-            )
-        fig.update_layout(
-            template="plotly_white",
-            title="PyPI Daily Download History (Without Mirrors)",
-            xaxis_title="Date",
-            yaxis_title="Downloads",
-            legend=dict(orientation="h", y=-0.2),
-            height=360,
-            margin=dict(l=0, r=0, t=40, b=80),
+        st.plotly_chart(
+            make_line_chart(pivot_downloads, MODEL_COLORS,
+                            title="PyPI Daily Download History (Without Mirrors)",
+                            y_title="Downloads", hover_suffix="downloads"),
+            use_container_width=True, theme=None,
         )
-        st.plotly_chart(fig, use_container_width=True, theme=None)
-
-    with pypi_share_tab:
+        # Market share
         totals = pypi_grouped.groupby("download_date")["downloads"].sum().rename("total").reset_index()
         share = pypi_grouped.merge(totals, on="download_date", how="left")
         share["share"] = share["downloads"] / share["total"].where(share["total"] != 0)
@@ -2276,54 +2389,30 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
             .sort_index()
         )
         st.plotly_chart(
-            make_stacked_bar(
-                pivot_share * 100,
-                MODEL_COLORS,
-                title="PyPI Daily Download Share (Without Mirrors)",
-                y_title="Share",
-                pct=True,
-                height=340,
-            ),
-            use_container_width=True,
-            theme=None,
+            make_stacked_bar(pivot_share * 100, MODEL_COLORS,
+                             title="PyPI Daily Download Share (Without Mirrors)",
+                             y_title="Share", pct=True, height=340),
+            use_container_width=True, theme=None,
         )
 
-    with npm_downloads_tab:
+    with npm_tab:
         if npm_result is None or npm_result.frame.empty or npm_grouped.empty:
             st.info("No npm provider data available yet.")
         else:
+            _npm_label = NPM_CATEGORY_LABELS.get(selected_npm_category, selected_npm_category)
+            # Downloads trend
             pivot_downloads = (
                 npm_grouped.pivot_table(index="download_date", columns="provider_display_name", values="downloads", aggfunc="last")
                 .fillna(0)
                 .sort_index()
             )
-            fig = go.Figure()
-            for i, provider_name in enumerate(pivot_downloads.columns):
-                fig.add_trace(
-                    go.Scatter(
-                        x=pivot_downloads.index,
-                        y=pivot_downloads[provider_name],
-                        name=provider_name,
-                        mode="lines+markers",
-                        line=dict(width=3, color=MODEL_COLORS[i % len(MODEL_COLORS)]),
-                        hovertemplate=f"<b>{provider_name}</b><br>%{{x}}<br>%{{y:,.0f}} downloads<extra></extra>",
-                    )
-                )
-            fig.update_layout(
-                template="plotly_white",
-                title=f"{NPM_CATEGORY_LABELS.get(selected_npm_category, selected_npm_category)} npm Daily Download History",
-                xaxis_title="Date",
-                yaxis_title="Downloads",
-                legend=dict(orientation="h", y=-0.2),
-                height=360,
-                margin=dict(l=0, r=0, t=40, b=80),
+            st.plotly_chart(
+                make_line_chart(pivot_downloads, MODEL_COLORS,
+                                title=f"{_npm_label} npm Daily Download History",
+                                y_title="Downloads", hover_suffix="downloads"),
+                use_container_width=True, theme=None,
             )
-            st.plotly_chart(fig, use_container_width=True, theme=None)
-
-    with npm_share_tab:
-        if npm_result is None or npm_result.frame.empty or npm_grouped.empty:
-            st.info("No npm provider data available yet.")
-        else:
+            # Market share
             totals = npm_grouped.groupby("download_date")["downloads"].sum().rename("total").reset_index()
             share = npm_grouped.merge(totals, on="download_date", how="left")
             share["share"] = share["downloads"] / share["total"].where(share["total"] != 0)
@@ -2333,16 +2422,10 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
                 .sort_index()
             )
             st.plotly_chart(
-                make_stacked_bar(
-                    pivot_share * 100,
-                    MODEL_COLORS,
-                    title=f"{NPM_CATEGORY_LABELS.get(selected_npm_category, selected_npm_category)} npm Daily Download Share",
-                    y_title="Share",
-                    pct=True,
-                    height=340,
-                ),
-                use_container_width=True,
-                theme=None,
+                make_stacked_bar(pivot_share * 100, MODEL_COLORS,
+                                 title=f"{_npm_label} npm Daily Download Share",
+                                 y_title="Share", pct=True, height=340),
+                use_container_width=True, theme=None,
             )
 
     with github_tab:
@@ -2364,28 +2447,12 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
                     .fillna(0)
                     .sort_index()
                 )
-                fig_candidates = go.Figure()
-                for i, provider_name in enumerate(pivot_candidates.columns):
-                    fig_candidates.add_trace(
-                        go.Scatter(
-                            x=pivot_candidates.index,
-                            y=pivot_candidates[provider_name],
-                            name=provider_name,
-                            mode="lines+markers",
-                            line=dict(width=3, color=MODEL_COLORS[i % len(MODEL_COLORS)]),
-                            hovertemplate=f"<b>{provider_name}</b><br>%{{x}}<br>%{{y:,.0f}} repos<extra></extra>",
-                        )
-                    )
-                fig_candidates.update_layout(
-                    template="plotly_white",
-                    title="GitHub New Repo Candidates by Day",
-                    xaxis_title="Date",
-                    yaxis_title="Repos",
-                    legend=dict(orientation="h", y=-0.25),
-                    height=340,
-                    margin=dict(l=0, r=0, t=40, b=80),
+                st.plotly_chart(
+                    make_line_chart(pivot_candidates, MODEL_COLORS,
+                                    title="GitHub New Repo Candidates by Day",
+                                    y_title="Repos", hover_suffix="repos", height=340),
+                    use_container_width=True, theme=None,
                 )
-                st.plotly_chart(fig_candidates, use_container_width=True, theme=None)
 
             with col_right:
                 pivot_signals = (
@@ -2398,28 +2465,12 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
                     .fillna(0)
                     .sort_index()
                 )
-                fig_signals = go.Figure()
-                for i, provider_name in enumerate(pivot_signals.columns):
-                    fig_signals.add_trace(
-                        go.Scatter(
-                            x=pivot_signals.index,
-                            y=pivot_signals[provider_name],
-                            name=provider_name,
-                            mode="lines+markers",
-                            line=dict(width=3, color=MODEL_COLORS[i % len(MODEL_COLORS)]),
-                            hovertemplate=f"<b>{provider_name}</b><br>%{{x}}<br>%{{y:,.0f}} repos<extra></extra>",
-                        )
-                    )
-                fig_signals.update_layout(
-                    template="plotly_white",
-                    title="GitHub Signal-Bearing Repos by Day",
-                    xaxis_title="Date",
-                    yaxis_title="Repos",
-                    legend=dict(orientation="h", y=-0.25),
-                    height=340,
-                    margin=dict(l=0, r=0, t=40, b=80),
+                st.plotly_chart(
+                    make_line_chart(pivot_signals, MODEL_COLORS,
+                                    title="GitHub Signal-Bearing Repos by Day",
+                                    y_title="Repos", hover_suffix="repos", height=340),
+                    use_container_width=True, theme=None,
                 )
-                st.plotly_chart(fig_signals, use_container_width=True, theme=None)
 
     with summary_tab:
         pypi_window = pypi_grouped.copy()
@@ -2547,13 +2598,11 @@ def render_semiconductor_section(datasets: dict[str, DatasetLoadResult], semi_vi
             ppi_display_val = f"{last_record['fred_ppi_value']:.1f}"
             ppi_sub_label = f"As of {last_record['month']}"
 
-    delta_html = ""
     if pd.notna(ppi_mom):
-        delta_cls = "kpi-delta-up" if ppi_mom >= 0 else "kpi-delta-down"
-        delta_icon = "↑" if ppi_mom >= 0 else "↓"
-        delta_html = f'<div class="{delta_cls}">{delta_icon} {abs(ppi_mom):.1f}% MoM</div>'
+        ppi_delta_cls  = "up" if ppi_mom >= 0 else "down"
+        ppi_delta_text = f"{'↑' if ppi_mom >= 0 else '↓'} {abs(ppi_mom):.1f}% MoM"
     else:
-        delta_html = f'<div class="kpi-delta-flat">{ppi_sub_label}</div>'
+        ppi_delta_cls, ppi_delta_text = "flat", ppi_sub_label
 
     # Regime Styling logic — handle "LLM PENDING"
     def get_regime_style(label: str) -> str:
@@ -2566,35 +2615,18 @@ def render_semiconductor_section(datasets: dict[str, DatasetLoadResult], semi_vi
             return f'style="color:{GREEN};"'
         return ""
 
+    def _regime_card(title: str, regime: str) -> str:
+        return (f'<div class="kpi-card"><div class="kpi-label">{title}</div>'
+                f'<div class="kpi-value regime-value" {get_regime_style(regime)}>{regime}</div>'
+                f'<div class="kpi-delta-flat">market condition</div></div>')
+
     st.markdown(
-        f"""
-        <div class="kpi-grid">
-          <div class="kpi-card">
-            <div class="kpi-label">Month Selector</div>
-            <div class="kpi-value">{selected_month}</div>
-            <div class="kpi-delta-flat">active snapshot</div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-label">Semiconductor PPI</div>
-            <div class="kpi-value">{ppi_display_val}</div>
-            {delta_html}
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-label">NAND Regime</div>
-            <div class="kpi-value regime-value" {get_regime_style(nand_regime)}>
-                {nand_regime}
-            </div>
-            <div class="kpi-delta-flat">market condition</div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-label">DRAM Regime</div>
-            <div class="kpi-value regime-value" {get_regime_style(dram_regime)}>
-                {dram_regime}
-            </div>
-            <div class="kpi-delta-flat">market condition</div>
-          </div>
-        </div>
-        """,
+        kpi_grid_html(
+            kpi_card_html("Month Selector", selected_month, delta="active snapshot"),
+            kpi_card_html("Semiconductor PPI", ppi_display_val, delta=ppi_delta_text, delta_class=ppi_delta_cls),
+            _regime_card("NAND Regime", nand_regime),
+            _regime_card("DRAM Regime", dram_regime),
+        ),
         unsafe_allow_html=True,
     )
 
@@ -2635,23 +2667,39 @@ def render_semiconductor_section(datasets: dict[str, DatasetLoadResult], semi_vi
     hist_tab1, hist_tab2 = st.tabs(["📊 Performance Trends", "📜 Commentary Archive"])
     
     with hist_tab1:
+        # Time range selector — filters both PPI and mention charts
+        _ppi_range = st.radio(
+            "Time range",
+            options=["YTD", "1yr", "2yr", "5yr", "All"],
+            index=2,
+            horizontal=True,
+            key="semi_ppi_range",
+        )
+        _now = datetime.now()
+        _cutoffs = {
+            "YTD": f"{_now.year}-01",
+            "1yr": (_now - pd.DateOffset(months=12)).strftime("%Y-%m"),
+            "2yr": (_now - pd.DateOffset(months=24)).strftime("%Y-%m"),
+            "5yr": (_now - pd.DateOffset(months=60)).strftime("%Y-%m"),
+        }
+        _cutoff = _cutoffs.get(_ppi_range)
+        _plot_df = regime_df[regime_df["month"] >= _cutoff].copy() if _cutoff else regime_df.copy()
+
         trend_col1, trend_col2 = st.columns(2)
         with trend_col1:
-            fig_ppi = go.Figure()
-            fig_ppi.add_trace(go.Scatter(
-                x=regime_df["month"], y=regime_df["fred_ppi_value"],
-                mode="lines+markers", name="PPI Value",
-                line=dict(color=ACCENT, width=3)
-            ))
-            fig_ppi.update_layout(title="Semiconductor PPI Trend", template="plotly_white", height=350, margin=dict(l=0, r=0, t=40, b=10))
-            st.plotly_chart(fig_ppi, use_container_width=True)
-
+            ppi_pivot = _plot_df[["month", "fred_ppi_value"]].set_index("month").rename(columns={"fred_ppi_value": "PPI Value"})
+            st.plotly_chart(
+                make_line_chart(ppi_pivot, [ACCENT], title="Semiconductor PPI Trend", y_title="PPI", x_title="Month", height=350),
+                use_container_width=True,
+            )
         with trend_col2:
-            fig_mentions = go.Figure()
-            fig_mentions.add_trace(go.Scatter(x=regime_df["month"], y=regime_df["hynix_mentions"], mode="lines", name="SK Hynix", line=dict(color="#00B5A4")))
-            fig_mentions.add_trace(go.Scatter(x=regime_df["month"], y=regime_df["micron_mentions"], mode="lines", name="Micron", line=dict(color="#FF7849")))
-            fig_mentions.update_layout(title="Mention Momentum", template="plotly_white", height=350, margin=dict(l=0, r=0, t=40, b=10))
-            st.plotly_chart(fig_mentions, use_container_width=True)
+            mentions_pivot = _plot_df[["month", "hynix_mentions", "micron_mentions"]].set_index("month").rename(
+                columns={"hynix_mentions": "SK Hynix", "micron_mentions": "Micron"}
+            )
+            st.plotly_chart(
+                make_line_chart(mentions_pivot, ["#00B5A4", "#FF7849"], title="Mention Momentum", y_title="Mentions", x_title="Month", height=350),
+                use_container_width=True,
+            )
 
     with hist_tab2:
         st.markdown('<div class="section-title">Monthly Narrative Comparison</div>', unsafe_allow_html=True)
@@ -2701,30 +2749,12 @@ def render_ai_frontier_section(datasets: dict[str, DatasetLoadResult], benchmark
 
     # --- KPI Row ---
     st.markdown(
-        f"""
-        <div class="kpi-grid">
-          <div class="kpi-card">
-            <div class="kpi-label">Innovation Velocity</div>
-            <div class="kpi-value">{velocity:.1f}d</div>
-            <div class="kpi-delta-flat">Avg SOTA cycle</div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-label">Frontier Context Floor</div>
-            <div class="kpi-value">{format_metric(range_avg_context)}</div>
-            <div class="kpi-delta-up">↑ High Demand</div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-label">Peak Intelligence (GPQA)</div>
-            <div class="kpi-value">{range_max_gpqa:.1%}</div>
-            <div class="kpi-delta-flat">selected range</div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-label">Peak Agents (SWE-bench)</div>
-            <div class="kpi-value">{range_max_swe:.1%}</div>
-            <div class="kpi-delta-flat">verified coding</div>
-          </div>
-        </div>
-        """,
+        kpi_grid_html(
+            kpi_card_html("Innovation Velocity", f"{velocity:.1f}d", delta="Avg SOTA cycle"),
+            kpi_card_html("Frontier Context Floor", format_metric(range_avg_context), delta="↑ High Demand", delta_class="up"),
+            kpi_card_html("Peak Intelligence (GPQA)", f"{range_max_gpqa:.1%}", delta="selected range"),
+            kpi_card_html("Peak Agents (SWE-bench)", f"{range_max_swe:.1%}", delta="verified coding"),
+        ),
         unsafe_allow_html=True,
     )
 
@@ -2864,79 +2894,45 @@ def render_compute_availability_section(datasets: dict[str, DatasetLoadResult], 
     st.markdown('<div class="section-title">Hardware & Compute Availability</div>', unsafe_allow_html=True)
 
     # --- KPI Row ---
+    if not lambda_latest.empty and "instance_type_name" in lambda_latest.columns:
+        stock_val = lambda_latest["instance_type_name"].nunique()
+        stock_count = int(stock_val.max() if hasattr(stock_val, "max") else stock_val)
+    else:
+        stock_count = 0
+
+    if not spot_df.empty and "instance_type" in spot_df.columns and "spot_price" in spot_df.columns:
+        p5_data = spot_df[spot_df["instance_type"].str.contains("p5", na=False)]
+        avg_val = p5_data["spot_price"].mean()
+        avg_p5 = float(avg_val.max() if hasattr(avg_val, "max") else avg_val) if not p5_data.empty else 0
+    else:
+        avg_p5 = 0
+
+    if not models_latest.empty and "model_id" in models_latest.columns:
+        m_val = models_latest["model_id"].nunique()
+        model_count = int(m_val.max() if hasattr(m_val, "max") else m_val)
+    else:
+        model_count = 0
+
+    if not models_latest.empty and "pricing_prompt" in models_latest.columns:
+        p_col = models_latest["pricing_prompt"]
+        if isinstance(p_col, pd.DataFrame):
+            p_col = p_col.iloc[:, 0]
+        p_clean = pd.to_numeric(p_col, errors="coerce").dropna()
+        p_valid = p_clean[p_clean > 0]
+        p_avg = p_valid.mean()
+        avg_pricing = float(p_avg) * 1e6 if pd.notna(p_avg) else 0
+    else:
+        avg_pricing = 0
+
     kpi_col1, kpi_col2, kpi_col3, kpi_col4 = st.columns(4)
-    
     with kpi_col1:
-        # Protect against empty data or missing columns
-        if not lambda_latest.empty and "instance_type_name" in lambda_latest.columns:
-            stock_val = lambda_latest["instance_type_name"].nunique()
-            stock_count = int(stock_val.max() if hasattr(stock_val, "max") else stock_val)
-        else:
-            stock_count = 0
-            
-        st.markdown(f"""
-            <div class="kpi-card">
-                <div class="kpi-label">Lambda GPU Stock</div>
-                <div class="kpi-value">{stock_count}</div>
-                <div class="kpi-delta-flat">instance types</div>
-            </div>
-        """, unsafe_allow_html=True)
-
+        st.markdown(kpi_card_html("Lambda GPU Stock", str(stock_count), delta="instance types"), unsafe_allow_html=True)
     with kpi_col2:
-        if not spot_df.empty and "instance_type" in spot_df.columns and "spot_price" in spot_df.columns:
-            p5_data = spot_df[spot_df["instance_type"].str.contains("p5", na=False)]
-            avg_val = p5_data["spot_price"].mean()
-            avg_p5 = float(avg_val.max() if hasattr(avg_val, "max") else avg_val) if not p5_data.empty else 0
-        else:
-            avg_p5 = 0
-
-        st.markdown(f"""
-            <div class="kpi-card">
-                <div class="kpi-label">Avg P5 Spot Price</div>
-                <div class="kpi-value">${avg_p5:.2f}</div>
-                <div class="kpi-delta-flat">per hour</div>
-            </div>
-        """, unsafe_allow_html=True)
-
+        st.markdown(kpi_card_html("Avg P5 Spot Price", f"${avg_p5:.2f}", delta="per hour"), unsafe_allow_html=True)
     with kpi_col3:
-        if not models_latest.empty and "model_id" in models_latest.columns:
-            m_val = models_latest["model_id"].nunique()
-            model_count = int(m_val.max() if hasattr(m_val, "max") else m_val)
-        else:
-            model_count = 0
-
-        st.markdown(f"""
-            <div class="kpi-card">
-                <div class="kpi-label">Direct Model Access</div>
-                <div class="kpi-value">{model_count}</div>
-                <div class="kpi-delta-flat">OpenRouter catalog</div>
-            </div>
-        """, unsafe_allow_html=True)
-
+        st.markdown(kpi_card_html("Direct Model Access", str(model_count), delta="OpenRouter catalog"), unsafe_allow_html=True)
     with kpi_col4:
-        # Deep cleaning: select column, drop any NAs, force to float, compute mean
-        if not models_latest.empty and "pricing_prompt" in models_latest.columns:
-            # If duplicated, take only the first one to be safe
-            p_col = models_latest["pricing_prompt"]
-            if isinstance(p_col, pd.DataFrame):
-                p_col = p_col.iloc[:, 0]
-            
-            # Filter for valid positive pricing (exclude -1.0 and special markers)
-            p_clean = pd.to_numeric(p_col, errors="coerce").dropna()
-            p_valid = p_clean[p_clean > 0]
-            
-            p_avg = p_valid.mean()
-            avg_pricing = float(p_avg) * 1e6 if pd.notna(p_avg) else 0
-        else:
-            avg_pricing = 0
-
-        st.markdown(f"""
-            <div class="kpi-card">
-                <div class="kpi-label">Avg Prompt Pricing</div>
-                <div class="kpi-value">${avg_pricing:.2f}</div>
-                <div class="kpi-delta-flat">per 1M tokens</div>
-            </div>
-        """, unsafe_allow_html=True)
+        st.markdown(kpi_card_html("Avg Prompt Pricing", f"${avg_pricing:.2f}", delta="per 1M tokens"), unsafe_allow_html=True)
 
     # --- Main Visuals ---
     col_left, col_right = st.columns(2)
@@ -3076,51 +3072,22 @@ def main() -> None:
         **benchmark_datasets,
         **compute_datasets,
     }
+    _all_freshness = [
+        openrouter_freshness, apps_freshness, github_freshness,
+        provider_freshness, semi_freshness, benchmark_freshness, compute_freshness,
+    ]
     freshness = FreshnessInfo(
         latest_scraped_at=max(
-            [value for value in [
-                openrouter_freshness.latest_scraped_at,
-                apps_freshness.latest_scraped_at,
-                github_freshness.latest_scraped_at,
-                provider_freshness.latest_scraped_at,
-                semi_freshness.latest_scraped_at,
-                benchmark_freshness.latest_scraped_at,
-                compute_freshness.latest_scraped_at,
-            ] if value],
-            default=None,
+            (f.latest_scraped_at for f in _all_freshness if f.latest_scraped_at), default=None,
         ),
         latest_run_id=next(
-            (value for value in [
-                openrouter_freshness.latest_run_id,
-                apps_freshness.latest_run_id,
-                github_freshness.latest_run_id,
-                provider_freshness.latest_run_id,
-                semi_freshness.latest_run_id,
-                benchmark_freshness.latest_run_id,
-            ] if value),
-            None,
+            (f.latest_run_id for f in _all_freshness if f.latest_run_id), None,
         ),
         latest_manifest_path=next(
-            (value for value in [
-                openrouter_freshness.latest_manifest_path,
-                apps_freshness.latest_manifest_path,
-                github_freshness.latest_manifest_path,
-                provider_freshness.latest_manifest_path,
-                semi_freshness.latest_manifest_path,
-                benchmark_freshness.latest_manifest_path,
-            ] if value),
-            None,
+            (f.latest_manifest_path for f in _all_freshness if f.latest_manifest_path), None,
         ),
         latest_manifest_scraped_at=max(
-            [value for value in [
-                openrouter_freshness.latest_manifest_scraped_at,
-                apps_freshness.latest_manifest_scraped_at,
-                github_freshness.latest_manifest_scraped_at,
-                provider_freshness.latest_manifest_scraped_at,
-                semi_freshness.latest_manifest_scraped_at,
-                benchmark_freshness.latest_manifest_scraped_at,
-            ] if value],
-            default=None,
+            (f.latest_manifest_scraped_at for f in _all_freshness if f.latest_manifest_scraped_at), default=None,
         ),
     )
     checks = openrouter_checks + apps_checks + github_checks + provider_checks + semi_checks + benchmark_checks
@@ -3143,8 +3110,9 @@ def main() -> None:
         render_market_share_section(datasets, openrouter_views)
         render_leaderboard(datasets)
         render_revenue_estimator(datasets, openrouter_views)
+        render_token_volume_chart(openrouter_views)
+        render_token_revenue_comparison(openrouter_views)
         render_programming_chart(datasets, openrouter_views)
-        render_app_usage_chart(datasets, openrouter_views)
         render_apps_tables(datasets)
     
     with main_tabs[1]:
