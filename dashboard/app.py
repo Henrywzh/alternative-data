@@ -11,7 +11,10 @@ import streamlit as st
 import matplotlib
 
 if __package__ in {None, ""}:
-    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+    repo_root = Path(__file__).resolve().parent.parent
+    src_root = repo_root / "src"
+    sys.path.insert(0, str(repo_root))
+    sys.path.insert(0, str(src_root))
 
 from dashboard.checks import CheckResult, run_checks
 from dashboard.data import (
