@@ -13,8 +13,10 @@ from dashboard.app import (
     format_scraped_at_display,
     grouped_revenue_token_pivots,
     make_stacked_area_chart,
+    market_share_legend_rows,
     prepare_hf_models_table,
     regroup_provider_pivot_for_display,
+    _top_n_with_others,
     rankings_bucket_warning,
     rankings_week_context,
 )
@@ -843,6 +845,8 @@ def test_regroup_provider_pivot_for_display_weekly_monthly_merges_into_others() 
             "OpenRouter": [9.0, 10.0],
             "Others": [11.0, 12.0],
             "Arcee AI": [13.0, 14.0],
+            "Nousresearch": [15.0, 16.0],
+            "NVIDIA": [17.0, 18.0],
         },
         index=["2026-01-05", "2026-01-12"],
     )
@@ -850,8 +854,8 @@ def test_regroup_provider_pivot_for_display_weekly_monthly_merges_into_others() 
     regrouped = regroup_provider_pivot_for_display(pivot, "weekly")
 
     assert list(regrouped.columns) == ["OpenAI", "Others"]
-    assert regrouped.loc["2026-01-05", "Others"] == 45.0
-    assert regrouped.loc["2026-01-12", "Others"] == 50.0
+    assert regrouped.loc["2026-01-05", "Others"] == 77.0
+    assert regrouped.loc["2026-01-12", "Others"] == 84.0
 
 
 def test_regroup_provider_pivot_for_display_daily_uses_daily_bucket_rules() -> None:
@@ -940,3 +944,37 @@ def test_grouped_revenue_token_pivots_share_aligned_display_provider_buckets() -
     assert list(tok_grouped.columns) == ["OpenAI", "Others"]
     assert rev_grouped.loc["2026-01-05", "Others"] == 28.0
     assert tok_grouped.loc["2026-01-05", "Others"] == 280.0
+
+
+def test_top_n_with_others_preserves_existing_others_bucket() -> None:
+    pivot = pd.DataFrame(
+        {
+            "A": [100.0, 10.0],
+            "B": [90.0, 9.0],
+            "Others": [80.0, 8.0],
+            "C": [70.0, 7.0],
+        },
+        index=["w1", "w2"],
+    )
+
+    top = _top_n_with_others(pivot, top_n_count=3)
+
+    assert list(top.columns) == ["A", "B", "Others"]
+    assert top.loc["w1", "Others"] == 150.0
+    assert top.loc["w2", "Others"] == 15.0
+
+
+def test_market_share_legend_rows_use_selected_week_tokens_not_cumulative() -> None:
+    frame = pd.DataFrame(
+        {
+            "week_start_date": ["2026-04-05", "2026-04-05", "2026-04-12", "2026-04-12"],
+            "entity_id": ["qwen", "google", "qwen", "google"],
+            "metric_value": [100.0, 50.0, 1000.0, 200.0],
+        }
+    )
+
+    rows = market_share_legend_rows(frame, "2026-04-05", limit=8)
+
+    assert rows["entity_id"].tolist() == ["qwen", "google"]
+    assert rows["metric_value"].tolist() == [100.0, 50.0]
+    assert rows["share_pct"].round(1).tolist() == [66.7, 33.3]
