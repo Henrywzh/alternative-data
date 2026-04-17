@@ -9,6 +9,7 @@ from dashboard.app import (
     build_domain_signature,
     build_manifest_signature,
     build_normalized_signature,
+    compute_semiconductor_views,
     compute_provider_adoption_views,
     format_scraped_at_display,
     grouped_revenue_token_pivots,
@@ -24,6 +25,7 @@ from dashboard.checks import run_checks
 from dashboard.data import (
     EXPECTED_COLUMNS,
     DATASET_REGISTRY,
+    DatasetLoadResult,
     dataset_source_for_domain,
     domain_dataset_ids,
     load_all_datasets,
@@ -574,6 +576,13 @@ def _frame_for_dataset(dataset_id: str) -> pd.DataFrame:
             "nand_regime_label": "tightening",
             "dram_regime_label": "stable",
             "fred_ppi_value": 100.0,
+            "fred_ppi_mom_pct": 2.5,
+            "fred_ppi_3m_trend": 99.0,
+            "ppi_component_pcu33443344_rebased": 100.0,
+            "ppi_component_pcu33423342_rebased": 101.0,
+            "ppi_component_pcu335313335313_rebased": 102.0,
+            "ppi_component_pcu334111334111_rebased": 103.0,
+            "ppi_component_pcu3341123341121_rebased": 104.0,
             "image_url": "https://example.test/memory.png",
             "local_path": "/tmp/memory.png",
             "image_type": "marketwatch",
@@ -754,7 +763,7 @@ def test_compute_provider_adoption_views_rollup_daily_counts_only_signal_bearing
     views = compute_provider_adoption_views(datasets)
 
     rollup_daily = views["rollup_daily"].sort_values(["signal_date", "provider_display_name"]).reset_index(drop=True)
-    candidates_daily = views["candidates_daily"].sort_values(["repo_created_date", "provider_display_name"]).reset_index(drop=True)
+    candidates_daily = views["candidates_daily"].sort_values(["repo_created_date"]).reset_index(drop=True)
 
     openai_rollup = rollup_daily[rollup_daily["provider_display_name"] == "OpenAI"].iloc[0]
     assert int(openai_rollup["signal_repos"]) == 1
@@ -762,8 +771,78 @@ def test_compute_provider_adoption_views_rollup_daily_counts_only_signal_bearing
     assert int(openai_rollup["import_repos"]) == 1
     assert int(openai_rollup["model_repos"]) == 1
 
-    openai_candidates = candidates_daily[candidates_daily["provider_display_name"] == "OpenAI"].iloc[0]
-    assert int(openai_candidates["repo_candidates"]) == 1
+    assert list(candidates_daily.columns) == ["repo_created_date", "repo_candidates"]
+    assert int(candidates_daily.iloc[0]["repo_candidates"]) == 3
+
+
+def test_compute_semiconductor_views_exposes_proxy_and_component_columns() -> None:
+    frame = pd.DataFrame(
+        [
+            {
+                **_base_row("semiconductor_memory_regime_monthly"),
+                "month": "2026-02",
+                "fred_ppi_value": 100.0,
+                "fred_ppi_mom_pct": 1.2,
+                "fred_ppi_3m_trend": 99.5,
+                "ppi_component_pcu33443344_rebased": 100.0,
+                "ppi_component_pcu33423342_rebased": 100.0,
+                "ppi_component_pcu335313335313_rebased": 100.0,
+                "ppi_component_pcu334111334111_rebased": 100.0,
+                "ppi_component_pcu3341123341121_rebased": 100.0,
+            },
+            {
+                **_base_row("semiconductor_memory_regime_monthly"),
+                "month": "2026-03",
+                "fred_ppi_value": 103.0,
+                "fred_ppi_mom_pct": 3.0,
+                "fred_ppi_3m_trend": 101.5,
+                "ppi_component_pcu33443344_rebased": 104.0,
+                "ppi_component_pcu33423342_rebased": 102.0,
+                "ppi_component_pcu335313335313_rebased": 101.0,
+                "ppi_component_pcu334111334111_rebased": 99.0,
+                "ppi_component_pcu3341123341121_rebased": 98.0,
+            },
+            {
+                **_base_row("semiconductor_memory_regime_monthly"),
+                "month": "2026-04",
+                "fred_ppi_value": None,
+                "fred_ppi_mom_pct": None,
+                "fred_ppi_3m_trend": None,
+                "ppi_component_pcu33443344_rebased": None,
+                "ppi_component_pcu33423342_rebased": None,
+                "ppi_component_pcu335313335313_rebased": None,
+                "ppi_component_pcu334111334111_rebased": None,
+                "ppi_component_pcu3341123341121_rebased": None,
+            },
+        ],
+        columns=EXPECTED_COLUMNS,
+    )
+
+    result = compute_semiconductor_views(
+        {
+            "semiconductor_memory_regime_monthly": DatasetLoadResult(
+                dataset_id="semiconductor_memory_regime_monthly",
+                label="Semiconductor Market Regimes",
+                domain="semiconductor_memory",
+                primary_date_column="month",
+                metric_column="fred_ppi_value",
+                frame=frame,
+                source_format="csv",
+                source_path=None,
+                missing_columns=[],
+                duplicate_rows=0,
+                first_date="2026-02",
+                row_count=len(frame),
+                latest_date="2026-04",
+                latest_scraped_at="2026-04-05T00:00:00Z",
+            )
+        }
+    )
+
+    assert result["latest_month"] == "2026-04"
+    assert result["base_month"] == "2026-02"
+    assert len(result["component_columns"]) == 5
+    assert list(result["proxy_df"]["month"]) == ["2026-02", "2026-03"]
 
 
 def test_prepare_hf_models_table_returns_empty_for_all_view() -> None:

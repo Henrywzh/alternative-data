@@ -91,3 +91,7 @@ def _print_result(result: PipelineResult) -> None:
         suffix = f"  (+{new_rows} new)" if new_rows else ""
         print(f"  {dataset_id}: {total_rows} rows{suffix}")
     print(f"raw_run_dir={result.raw_run_dir}")
+
+
+if __name__ == "__main__":
+    main()
