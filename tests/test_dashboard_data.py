@@ -11,7 +11,10 @@ from dashboard.app import (
     build_normalized_signature,
     compute_provider_adoption_views,
     format_scraped_at_display,
+    grouped_revenue_token_pivots,
+    make_stacked_area_chart,
     prepare_hf_models_table,
+    regroup_provider_pivot_for_display,
     rankings_bucket_warning,
     rankings_week_context,
 )
@@ -559,7 +562,42 @@ def _frame_for_dataset(dataset_id: str) -> pd.DataFrame:
         "github_repo_rollup_daily": _provider_rollup_frame,
         "provider_momentum_daily": _provider_momentum_frame,
     }
-    return mapping[dataset_id]()
+    if dataset_id in mapping:
+        return mapping[dataset_id]()
+
+    row = _base_row(dataset_id)
+    row.update(
+        {
+            "month": "2026-04",
+            "nand_regime_label": "tightening",
+            "dram_regime_label": "stable",
+            "fred_ppi_value": 100.0,
+            "image_url": "https://example.test/memory.png",
+            "local_path": "/tmp/memory.png",
+            "image_type": "marketwatch",
+            "model_id": "openai/gpt-4.1",
+            "name": "GPT-4.1",
+            "organization": "OpenAI",
+            "release_date": "2026-04-01",
+            "gpqa": 0.5,
+            "swe_bench": 0.4,
+            "context_window": 128000,
+            "snapshot_ts": "2026-04-05T00:00:00Z",
+            "pricing_prompt": 0.000002,
+            "pricing_completion": 0.000004,
+            "context_length": 128000,
+            "top_provider_id": "openai",
+            "instance_type_name": "gpu_1x_a100_sxm4",
+            "gpu_type": "A100",
+            "gpu_count": 1,
+            "region": "us-east-1",
+            "availability_zone": "us-east-1a",
+            "instance_type": "p5.48xlarge",
+            "spot_price": 12.34,
+            "price_timestamp": "2026-04-05T00:00:00Z",
+        }
+    )
+    return pd.DataFrame([row], columns=EXPECTED_COLUMNS)
 
 
 def test_expected_columns_are_unique() -> None:
@@ -714,7 +752,7 @@ def test_load_domain_datasets_only_loads_requested_domain(tmp_path: Path) -> Non
 
     datasets = load_domain_datasets("rankings", base_dir=tmp_path)
 
-    assert set(datasets) == {"top_models", "market_share", "categories_programming"}
+    assert set(datasets) == set(domain_dataset_ids("rankings"))
     assert datasets["top_models"].row_count == 2
 
 
@@ -794,3 +832,111 @@ def test_rankings_bucket_warning_is_empty_when_weeks_match() -> None:
     }
 
     assert rankings_bucket_warning(context) is None
+
+
+def test_regroup_provider_pivot_for_display_weekly_monthly_merges_into_others() -> None:
+    pivot = pd.DataFrame(
+        {
+            "OpenAI": [100.0, 120.0],
+            "Tngtech": [5.0, 6.0],
+            "StepFun": [7.0, 8.0],
+            "OpenRouter": [9.0, 10.0],
+            "Others": [11.0, 12.0],
+            "Arcee AI": [13.0, 14.0],
+        },
+        index=["2026-01-05", "2026-01-12"],
+    )
+
+    regrouped = regroup_provider_pivot_for_display(pivot, "weekly")
+
+    assert list(regrouped.columns) == ["OpenAI", "Others"]
+    assert regrouped.loc["2026-01-05", "Others"] == 45.0
+    assert regrouped.loc["2026-01-12", "Others"] == 50.0
+
+
+def test_regroup_provider_pivot_for_display_daily_uses_daily_bucket_rules() -> None:
+    pivot = pd.DataFrame(
+        {
+            "OpenAI": [100.0],
+            "Microsoft": [20.0],
+            "Meta (Llama)": [30.0],
+            "Mistral AI": [40.0],
+            "Google": [50.0],
+        },
+        index=["2026-04-05"],
+    )
+
+    regrouped = regroup_provider_pivot_for_display(pivot, "daily")
+
+    assert list(regrouped.columns) == ["OpenAI", "Google", "Others"]
+    assert regrouped.loc["2026-04-05", "Others"] == 90.0
+
+
+def test_regroup_provider_pivot_for_display_is_noop_when_no_targets_present() -> None:
+    pivot = pd.DataFrame(
+        {
+            "OpenAI": [10.0],
+            "Anthropic": [20.0],
+        },
+        index=["2026-04-05"],
+    )
+
+    regrouped = regroup_provider_pivot_for_display(pivot, "daily")
+
+    pd.testing.assert_frame_equal(regrouped, pivot)
+
+
+def test_make_stacked_area_chart_allows_metric_specific_hover_formatting() -> None:
+    pivot = pd.DataFrame({"OpenAI": [1234.0]}, index=["2026-04-05"])
+
+    revenue_fig = make_stacked_area_chart(
+        pivot,
+        ["2026-04-05"],
+        ["#4285F4"],
+        y_title="Revenue (USD)",
+        hover_prefix="$",
+    )
+    token_fig = make_stacked_area_chart(
+        pivot,
+        ["2026-04-05"],
+        ["#4285F4"],
+        y_title="Tokens",
+        value_format=",.0f",
+        hover_suffix="tokens",
+    )
+
+    assert "$%{y:,.2f}" in revenue_fig.data[0].hovertemplate
+    assert "$" not in token_fig.data[0].hovertemplate
+    assert "%{y:,.0f} tokens" in token_fig.data[0].hovertemplate
+
+
+def test_grouped_revenue_token_pivots_share_aligned_display_provider_buckets() -> None:
+    rev_data = {
+        "pivot_rev_weekly": pd.DataFrame(
+            {
+                "OpenAI": [100.0],
+                "Microsoft": [20.0],
+                "StepFun": [5.0],
+                "Others": [3.0],
+            },
+            index=["2026-01-05"],
+        )
+    }
+    tok_data = {
+        "pivot_weekly": pd.DataFrame(
+            {
+                "OpenAI": [1000.0],
+                "Microsoft": [200.0],
+                "StepFun": [50.0],
+                "Others": [30.0],
+            },
+            index=["2026-01-05"],
+        )
+    }
+
+    rev_grouped, tok_grouped = grouped_revenue_token_pivots(rev_data, tok_data, "weekly")
+
+    assert list(rev_grouped.columns) == ["OpenAI", "Others"]
+    assert list(tok_grouped.columns) == ["OpenAI", "Others"]
+    assert rev_grouped.loc["2026-01-05", "Others"] == 28.0
+    assert tok_grouped.loc["2026-01-05", "Others"] == 280.0

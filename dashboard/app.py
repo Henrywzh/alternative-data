@@ -79,6 +79,67 @@ def format_metric(value: float, metric_unit: str | None = None) -> str:
     return f"{value:,.0f}"
 
 
+WEEKLY_MONTHLY_OTHER_PROVIDERS = {
+    "Tngtech",
+    "StepFun",
+    "Others",
+    "OpenRouter",
+    "Microsoft",
+    "NousResearch",
+    "Arcee AI",
+}
+
+DAILY_OTHER_PROVIDERS = {
+    "Microsoft",
+    "Meta (Llama)",
+    "Mistral AI",
+}
+
+
+def regroup_provider_pivot_for_display(pivot_df: pd.DataFrame, granularity: str) -> pd.DataFrame:
+    """Fold selected provider labels into a display-only Others bucket."""
+    if pivot_df.empty:
+        return pivot_df.copy()
+
+    if granularity in {"weekly", "monthly"}:
+        targets = WEEKLY_MONTHLY_OTHER_PROVIDERS
+    elif granularity == "daily":
+        targets = DAILY_OTHER_PROVIDERS
+    else:
+        raise ValueError(f"Unsupported granularity: {granularity}")
+
+    matched_cols = [col for col in pivot_df.columns if str(col) in targets]
+    if not matched_cols:
+        return pivot_df.copy()
+
+    kept_cols = [col for col in pivot_df.columns if col not in matched_cols]
+    regrouped = pivot_df[kept_cols].copy()
+    regrouped["Others"] = pivot_df[matched_cols].sum(axis=1)
+    return regrouped
+
+
+def grouped_revenue_token_pivots(
+    rev_data: dict[str, object],
+    tok_data: dict[str, object],
+    granularity: str,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Return revenue/token pivots after applying the display grouping for one granularity."""
+    rev_key = {
+        "daily": "pivot_rev_daily",
+        "weekly": "pivot_rev_weekly",
+        "monthly": "pivot_rev_monthly",
+    }[granularity]
+    tok_key = {
+        "daily": "pivot_daily",
+        "weekly": "pivot_weekly",
+        "monthly": "pivot_monthly",
+    }[granularity]
+    return (
+        regroup_provider_pivot_for_display(rev_data.get(rev_key, pd.DataFrame()), granularity),
+        regroup_provider_pivot_for_display(tok_data.get(tok_key, pd.DataFrame()), granularity),
+    )
+
+
 def build_normalized_signature(base_dir: Path, domain: str | None = None) -> tuple[tuple[str, int, int], ...]:
     """Return a stable fingerprint of normalized dashboard inputs for cache invalidation."""
     normalized = base_dir / "data" / "normalized"
@@ -276,15 +337,19 @@ def make_stacked_area_chart(
     x_title: str = "",
     y_title: str = "",
     height: int = 400,
+    value_format: str = ",.2f",
+    hover_prefix: str = "",
+    hover_suffix: str = "",
 ) -> go.Figure:
-    """Stacked area chart factory for revenue-style charts."""
+    """Stacked area chart factory for time-series metrics."""
     fig = go.Figure()
+    suffix = f" {hover_suffix}" if hover_suffix else ""
     for i, col in enumerate(pivot_df.columns):
         fig.add_trace(go.Scatter(
             x=display_index, y=pivot_df[col], name=col,
             mode="lines+markers", stackgroup="one",
             line=dict(width=0.5, color=colors[i % len(colors)]),
-            hovertemplate=f"<b>{col}</b><br>%{{x}}<br>$%{{y:,.2f}}<extra></extra>",
+            hovertemplate=f"<b>{col}</b><br>%{{x}}<br>{hover_prefix}%{{y:{value_format}}}{suffix}<extra></extra>",
         ))
     fig.update_layout(
         template="plotly_white", xaxis_title=x_title, yaxis_title=y_title,
@@ -1716,10 +1781,10 @@ def render_revenue_estimator(datasets: dict[str, DatasetLoadResult], openrouter_
     )
 
     st.markdown('<div class="section-subtitle">Estimated Revenue by Provider (USD)</div>', unsafe_allow_html=True)
-    
-    pivot_monthly = rev_data.get("pivot_rev_monthly", pd.DataFrame())
-    pivot_weekly  = rev_data.get("pivot_rev_weekly", pd.DataFrame())
-    pivot_daily   = rev_data.get("pivot_rev_daily", pd.DataFrame())
+
+    pivot_monthly = regroup_provider_pivot_for_display(rev_data.get("pivot_rev_monthly", pd.DataFrame()), "monthly")
+    pivot_weekly  = regroup_provider_pivot_for_display(rev_data.get("pivot_rev_weekly", pd.DataFrame()), "weekly")
+    pivot_daily   = regroup_provider_pivot_for_display(rev_data.get("pivot_rev_daily", pd.DataFrame()), "daily")
 
     tab_week, tab_month, tab_day = st.tabs(["Weekly", "Monthly", "Daily"])
     
@@ -1734,7 +1799,14 @@ def render_revenue_estimator(datasets: dict[str, DatasetLoadResult], openrouter_
             for d in pivot_df.index
         ]
         st.plotly_chart(
-            make_stacked_area_chart(pivot_df, display_index, MODEL_COLORS, x_title=date_title, y_title="Revenue (USD)"),
+            make_stacked_area_chart(
+                pivot_df,
+                display_index,
+                MODEL_COLORS,
+                x_title=date_title,
+                y_title="Revenue (USD)",
+                hover_prefix="$",
+            ),
             use_container_width=True, theme=None,
         )
 
@@ -1849,15 +1921,16 @@ def render_token_volume_chart(openrouter_views: dict[str, object]) -> None:
     """Stacked area chart: raw token consumption by provider over time (daily/weekly/monthly)."""
     st.markdown('<div class="section-title">Token Volume by Provider</div>', unsafe_allow_html=True)
     st.markdown(
-        '<div class="section-subtitle">Raw token consumption by AI company across OpenRouter. '
-        'Legacy (pre-2026): weekly top-model rankings. Modern (2026+): daily per-provider logs.</div>',
+        '<div class="section-subtitle">Token volume by provider across OpenRouter. '
+        'Legacy (pre-Jan 2026): rank-capped historical approximations from weekly top-model rankings. '
+        'Modern (2026+): exact daily logs for tracked priority providers only.</div>',
         unsafe_allow_html=True,
     )
 
     tok_data = openrouter_views.get("token_volume", {})
-    pivot_daily   = tok_data.get("pivot_daily",   pd.DataFrame())
-    pivot_weekly  = tok_data.get("pivot_weekly",  pd.DataFrame())
-    pivot_monthly = tok_data.get("pivot_monthly", pd.DataFrame())
+    pivot_daily = regroup_provider_pivot_for_display(tok_data.get("pivot_daily", pd.DataFrame()), "daily")
+    pivot_weekly = regroup_provider_pivot_for_display(tok_data.get("pivot_weekly", pd.DataFrame()), "weekly")
+    pivot_monthly = regroup_provider_pivot_for_display(tok_data.get("pivot_monthly", pd.DataFrame()), "monthly")
 
     if pivot_weekly.empty and pivot_daily.empty:
         st.info("No token volume data available.")
@@ -1906,7 +1979,15 @@ def render_token_volume_chart(openrouter_views: dict[str, object]) -> None:
             for d in pivot_df.index
         ]
         st.plotly_chart(
-            make_stacked_area_chart(pivot_df, display_index, MODEL_COLORS, x_title=date_title, y_title="Tokens"),
+            make_stacked_area_chart(
+                pivot_df,
+                display_index,
+                MODEL_COLORS,
+                x_title=date_title,
+                y_title="Tokens",
+                value_format=",.0f",
+                hover_suffix="tokens",
+            ),
             use_container_width=True, theme=None,
         )
 
@@ -1918,8 +1999,11 @@ def render_token_volume_chart(openrouter_views: dict[str, object]) -> None:
         _render_tok_chart(pivot_daily, "Usage Date")
 
     st.caption(
-        "Legacy (pre-Jan 2026): weekly token sums from top-9 ranked models — providers outside top-9 show 0 for those weeks. "
-        "Modern (post-Jan 2026): full daily per-provider logs with no rank cap. "
+        "Legacy (pre-Jan 2026): weekly/monthly token views are reconstructed from rank-capped top-model sources, "
+        "so this section only counts top-ranked providers from those snapshots; providers outside the cutoff can be missing, "
+        "shown as 0, or understated. "
+        "Modern (post-Jan 2026): daily token views come from exact per-provider logs, but only for the configured priority providers, "
+        "not the full OpenRouter provider universe, so some providers may still be missing from the chart. "
         "⚠️ Cross-check: Revenue ÷ Tokens ≈ implied avg price per token — compare with the Revenue Estimator above."
     )
 
@@ -1935,10 +2019,8 @@ def render_token_revenue_comparison(openrouter_views: dict[str, object]) -> None
         rev_data = openrouter_views.get("revenue_estimator", {})
         tok_data = openrouter_views.get("token_volume", {})
 
-        rev_weekly  = rev_data.get("pivot_rev_weekly",  pd.DataFrame())
-        tok_weekly  = tok_data.get("pivot_weekly",       pd.DataFrame())
-        rev_monthly = rev_data.get("pivot_rev_monthly", pd.DataFrame())
-        tok_monthly = tok_data.get("pivot_monthly",      pd.DataFrame())
+        rev_weekly, tok_weekly = grouped_revenue_token_pivots(rev_data, tok_data, "weekly")
+        rev_monthly, tok_monthly = grouped_revenue_token_pivots(rev_data, tok_data, "monthly")
 
         tab_w, tab_m = st.tabs(["Weekly", "Monthly"])
 
