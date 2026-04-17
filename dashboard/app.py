@@ -67,6 +67,13 @@ AI_DEMAND_PPI_COMPONENT_COLUMNS = {
     "PCU334111334111": "ppi_component_pcu334111334111_rebased",
     "PCU3341123341121": "ppi_component_pcu3341123341121_rebased",
 }
+AI_DEMAND_PPI_LABELS = {
+    "PCU33443344": "Semiconductors and Other Electronic Components",
+    "PCU33423342": "Communications Equipment",
+    "PCU334111334111": "Electronic Computers and Servers",
+    "PCU3341123341121": "Storage Devices",
+    "PCU335313335313": "Switchgear and Power Distribution Equipment",
+}
 
 
 # ---------------------------------------------------------------------------
@@ -1291,7 +1298,9 @@ def compute_semiconductor_views(datasets: dict[str, DatasetLoadResult]) -> dict[
     views: dict[str, object] = {}
 
     regime_result = datasets.get("semiconductor_memory_regime_monthly")
+    fred_result = datasets.get("fred_semiconductor_ppi")
     regime_df = regime_result.frame.copy() if regime_result and not regime_result.frame.empty else pd.DataFrame()
+    fred_df = fred_result.frame.copy() if fred_result and not fred_result.frame.empty else pd.DataFrame()
 
     if not regime_df.empty:
         regime_df["month"] = regime_df["month"].astype(str)
@@ -1309,12 +1318,33 @@ def compute_semiconductor_views(datasets: dict[str, DatasetLoadResult]) -> dict[
         else:
             base_candidates = proxy_df
         base_month = base_candidates["month"].iloc[0] if not base_candidates.empty else None
+        latest_proxy_month = proxy_df["month"].max() if not proxy_df.empty else None
+        latest_proxy_data = (
+            proxy_df[proxy_df["month"] == latest_proxy_month].iloc[0]
+            if latest_proxy_month is not None and not proxy_df.empty
+            else pd.Series(dtype="object")
+        )
     else:
         latest_month = None
         latest_data = pd.Series(dtype="object")
         proxy_df = pd.DataFrame()
         component_columns = []
         base_month = None
+        latest_proxy_month = None
+        latest_proxy_data = pd.Series(dtype="object")
+
+    latest_fred_month = None
+    latest_fred_series_names: list[str] = []
+    if not fred_df.empty:
+        fred_df["date"] = pd.to_datetime(fred_df["date"], errors="coerce")
+        fred_df = fred_df.dropna(subset=["date"]).copy()
+        if not fred_df.empty:
+            fred_df["month"] = fred_df["date"].dt.strftime("%Y-%m")
+            latest_fred_month = fred_df["month"].max()
+            latest_month_rows = fred_df[fred_df["month"] == latest_fred_month].copy()
+            latest_fred_series_names = sorted(
+                latest_month_rows["series_name"].fillna(latest_month_rows["series_id"]).astype(str).unique().tolist()
+            )
 
     views["regime_df"] = regime_df
     views["latest_month"] = latest_month
@@ -1322,6 +1352,10 @@ def compute_semiconductor_views(datasets: dict[str, DatasetLoadResult]) -> dict[
     views["proxy_df"] = proxy_df
     views["component_columns"] = component_columns
     views["base_month"] = base_month
+    views["latest_proxy_month"] = latest_proxy_month
+    views["latest_proxy_data"] = latest_proxy_data
+    views["latest_fred_month"] = latest_fred_month
+    views["latest_fred_series_names"] = latest_fred_series_names
 
     return views
 
@@ -2652,38 +2686,26 @@ def render_semiconductor_section(datasets: dict[str, DatasetLoadResult], semi_vi
     regime_df = semi_views.get("regime_df", pd.DataFrame())
     component_columns = semi_views.get("component_columns", [])
     base_month = semi_views.get("base_month")
+    latest_proxy_month = semi_views.get("latest_proxy_month")
+    latest_proxy_data = semi_views.get("latest_proxy_data", pd.Series(dtype="object"))
+    latest_fred_month = semi_views.get("latest_fred_month")
+    latest_fred_series_names = semi_views.get("latest_fred_series_names", [])
 
     if regime_df.empty:
         st.warning("No semiconductor memory data available.")
         return
 
-    # --- Header with Month Selector ---
-    h_col1, h_col2 = st.columns([2, 1])
-    with h_col1:
-        st.markdown('<div class="section-title">Market Intelligence Hub</div>', unsafe_allow_html=True)
-    with h_col2:
-        available_months = sorted(regime_df["month"].unique(), reverse=True)
-        selected_month = st.selectbox("Analysis Snapshot", available_months, index=0)
+    st.markdown('<div class="section-title">Market Intelligence Hub</div>', unsafe_allow_html=True)
 
-    current_data = regime_df[regime_df["month"] == selected_month].iloc[0]
+    active_month = latest_proxy_month or semi_views.get("latest_month")
+    current_data = latest_proxy_data if not latest_proxy_data.empty else semi_views.get("latest_data", pd.Series(dtype="object"))
 
     # --- PPI cards with lag handling ---
     ppi_val = current_data.get("fred_ppi_value")
     ppi_mom = current_data.get("fred_ppi_mom_pct")
     ppi_trend = current_data.get("fred_ppi_3m_trend")
 
-    # Proxy fallback: find latest available AI demand proxy if selected month is blank
     ppi_display_val = "—"
-    ppi_sub_label = "selected month"
-    if pd.isna(ppi_val):
-        valid_ppi_df = regime_df[regime_df["month"] <= selected_month].dropna(subset=["fred_ppi_value"]).sort_values("month")
-        if not valid_ppi_df.empty:
-            fallback_row = valid_ppi_df.iloc[-1]
-            ppi_val = fallback_row.get("fred_ppi_value")
-            ppi_mom = fallback_row.get("fred_ppi_mom_pct")
-            ppi_trend = fallback_row.get("fred_ppi_3m_trend")
-            ppi_sub_label = f"As of {fallback_row['month']}"
-
     if pd.notna(ppi_val):
         ppi_display_val = f"{ppi_val:.1f}"
 
@@ -2691,13 +2713,18 @@ def render_semiconductor_section(datasets: dict[str, DatasetLoadResult], semi_vi
         ppi_delta_cls = "up" if ppi_mom >= 0 else "down"
         ppi_delta_text = f"{'↑' if ppi_mom >= 0 else '↓'} {abs(ppi_mom):.1f}% MoM"
     else:
-        ppi_delta_cls, ppi_delta_text = "flat", ppi_sub_label
+        ppi_delta_cls, ppi_delta_text = "flat", "latest complete basket month"
 
     trend_display_val = f"{ppi_trend:.1f}" if pd.notna(ppi_trend) else "—"
+    snapshot_delta = "latest complete basket month"
+    if latest_fred_month and active_month and latest_fred_month > active_month:
+        updated_count = len(latest_fred_series_names)
+        noun = "series" if updated_count != 1 else "series"
+        snapshot_delta = f"Using {active_month}; {latest_fred_month} has {updated_count} updated {noun}, but the basket is incomplete"
 
     st.markdown(
         kpi_grid_html(
-            kpi_card_html("Snapshot Month", selected_month, delta="active month"),
+            kpi_card_html("Snapshot Month", active_month or "—", delta=snapshot_delta, delta_class="flat"),
             kpi_card_html("AI Demand PPI", ppi_display_val, delta=ppi_delta_text, delta_class=ppi_delta_cls),
             kpi_card_html("3M Trend", trend_display_val, delta="rebased index average", delta_class="flat"),
             kpi_card_html("Proxy Base Month", base_month or "—", delta=f"{len(AI_DEMAND_PPI_WEIGHTS)} weighted PPIs", delta_class="flat"),
@@ -2709,11 +2736,19 @@ def render_semiconductor_section(datasets: dict[str, DatasetLoadResult], semi_vi
         "[ADATA Industrial Market Watch](https://industrial.adata.com/en/edm)",
         unsafe_allow_html=False,
     )
-    weight_note = ", ".join(f"{series_id}: {int(weight * 100)}%" for series_id, weight in AI_DEMAND_PPI_WEIGHTS.items())
+    weight_note = ", ".join(
+        f"{AI_DEMAND_PPI_LABELS.get(series_id, series_id)}: {int(weight * 100)}%"
+        for series_id, weight in AI_DEMAND_PPI_WEIGHTS.items()
+    )
     st.caption(
         "AI Demand PPI is a weighted basket rebased to 100 at the first common month. "
         f"Weights: {weight_note}"
     )
+    if latest_fred_month and active_month and latest_fred_month > active_month:
+        st.info(
+            f"Latest raw PPI updates reach {latest_fred_month}, but the weighted AI Demand PPI remains on {active_month} "
+            "until all five component series have updated for the same month."
+        )
 
     _ppi_range = st.radio(
         "Time range",
@@ -2741,7 +2776,7 @@ def render_semiconductor_section(datasets: dict[str, DatasetLoadResult], semi_vi
     available_component_columns = [column for column in component_columns if column in _plot_df.columns]
     if available_component_columns:
         component_labels = {
-            AI_DEMAND_PPI_COMPONENT_COLUMNS[series_id]: series_id
+            AI_DEMAND_PPI_COMPONENT_COLUMNS[series_id]: AI_DEMAND_PPI_LABELS.get(series_id, series_id)
             for series_id in AI_DEMAND_PPI_WEIGHTS
         }
         component_pivot = _plot_df[["month", *available_component_columns]].set_index("month").rename(columns=component_labels)
