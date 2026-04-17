@@ -17,11 +17,19 @@ from semiconductor_memory_data.models import (
     Snapshot,
 )
 from semiconductor_memory_data.sources.adata import AdataEDMSource
+from semiconductor_memory_data.sources.config import AI_DEMAND_PPI_WEIGHTS
 from semiconductor_memory_data.sources.fred import FredSource
 from semiconductor_memory_data.storage import StorageManager
 
 
 PARSER_VERSION = "0.1.0"
+PPI_COMPONENT_COLUMN_MAP = {
+    "PCU33443344": "ppi_component_pcu33443344_rebased",
+    "PCU33423342": "ppi_component_pcu33423342_rebased",
+    "PCU335313335313": "ppi_component_pcu335313335313_rebased",
+    "PCU334111334111": "ppi_component_pcu334111334111_rebased",
+    "PCU3341123341121": "ppi_component_pcu3341123341121_rebased",
+}
 
 
 class SemiconductorMemoryPipeline:
@@ -230,22 +238,46 @@ class SemiconductorMemoryPipeline:
 
         now = datetime.now(timezone.utc)
 
-        # Build fred_monthly: aggregate FRED observations to month granularity
+        # Build a monthly weighted AI-demand proxy and rebased component series.
         fred_monthly: pd.DataFrame = pd.DataFrame()
         if not fred.empty:
             fred = fred.copy()
             fred["month"] = fred["date"].astype(str).str[:7]
             fred["value"] = pd.to_numeric(fred["value"], errors="coerce")
-            fred_sorted = fred.sort_values("date").reset_index(drop=True)
-            fred_sorted["fred_ppi_mom_pct"] = fred_sorted["value"].pct_change() * 100
-            fred_sorted["fred_ppi_3m_trend"] = fred_sorted["value"].rolling(3, min_periods=1).mean()
-            # Latest observation per month
-            fred_monthly = (
-                fred_sorted
-                .drop_duplicates(subset=["month"], keep="last")
-                [["month", "date", "value", "fred_ppi_mom_pct", "fred_ppi_3m_trend"]]
-                .rename(columns={"value": "fred_ppi_value"})
+            fred_latest = (
+                fred.sort_values(["series_id", "date"])
+                .drop_duplicates(subset=["series_id", "month"], keep="last")
             )
+            required_series = list(AI_DEMAND_PPI_WEIGHTS)
+            fred_wide = (
+                fred_latest
+                .pivot(index="month", columns="series_id", values="value")
+                .sort_index()
+            )
+            fred_wide = fred_wide.reindex(columns=required_series)
+            complete_months = fred_wide.dropna(subset=required_series, how="any")
+
+            if not complete_months.empty:
+                weighted_raw = sum(
+                    complete_months[series_id] * weight
+                    for series_id, weight in AI_DEMAND_PPI_WEIGHTS.items()
+                )
+                base_month = complete_months.index[0]
+                base_weighted_value = float(weighted_raw.loc[base_month])
+
+                fred_monthly = pd.DataFrame({
+                    "month": complete_months.index,
+                    "date": [f"{month}-01" for month in complete_months.index],
+                    "fred_ppi_value": (weighted_raw / base_weighted_value) * 100.0,
+                }).reset_index(drop=True)
+                fred_monthly["fred_ppi_mom_pct"] = fred_monthly["fred_ppi_value"].pct_change() * 100
+                fred_monthly["fred_ppi_3m_trend"] = fred_monthly["fred_ppi_value"].rolling(3, min_periods=1).mean()
+
+                for series_id, column_name in PPI_COMPONENT_COLUMN_MAP.items():
+                    base_component_value = float(complete_months.loc[base_month, series_id])
+                    fred_monthly[column_name] = (
+                        (complete_months[series_id] / base_component_value) * 100.0
+                    ).to_numpy()
 
         # All months from ADATA
         adata_months: pd.DataFrame = pd.DataFrame()
@@ -262,6 +294,8 @@ class SemiconductorMemoryPipeline:
             merged["fred_ppi_value"] = pd.NA
             merged["fred_ppi_mom_pct"] = pd.NA
             merged["fred_ppi_3m_trend"] = pd.NA
+            for column_name in PPI_COMPONENT_COLUMN_MAP.values():
+                merged[column_name] = pd.NA
             merged["date"] = pd.NA
         elif not fred_monthly.empty:
             merged = fred_monthly.copy()
@@ -332,6 +366,11 @@ class SemiconductorMemoryPipeline:
                     fred_ppi_value=_float_or_none(row.get("fred_ppi_value")),
                     fred_ppi_mom_pct=_float_or_none(row.get("fred_ppi_mom_pct")),
                     fred_ppi_3m_trend=_float_or_none(row.get("fred_ppi_3m_trend")),
+                    ppi_component_pcu33443344_rebased=_float_or_none(row.get("ppi_component_pcu33443344_rebased")),
+                    ppi_component_pcu33423342_rebased=_float_or_none(row.get("ppi_component_pcu33423342_rebased")),
+                    ppi_component_pcu335313335313_rebased=_float_or_none(row.get("ppi_component_pcu335313335313_rebased")),
+                    ppi_component_pcu334111334111_rebased=_float_or_none(row.get("ppi_component_pcu334111334111_rebased")),
+                    ppi_component_pcu3341123341121_rebased=_float_or_none(row.get("ppi_component_pcu3341123341121_rebased")),
                     adata_freshness_days=_float_or_none(row.get("adata_freshness_days")),
                     fred_release_lag_days=_float_or_none(row.get("fred_release_lag_days")),
                     data_completeness=_str_or_none(row.get("data_completeness")),
