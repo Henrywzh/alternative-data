@@ -86,6 +86,7 @@ WEEKLY_MONTHLY_OTHER_PROVIDERS = {
     "OpenRouter",
     "Microsoft",
     "NousResearch",
+    "NVIDIA",
     "Arcee AI",
 }
 
@@ -108,7 +109,8 @@ def regroup_provider_pivot_for_display(pivot_df: pd.DataFrame, granularity: str)
     else:
         raise ValueError(f"Unsupported granularity: {granularity}")
 
-    matched_cols = [col for col in pivot_df.columns if str(col) in targets]
+    target_keys = {target.casefold() for target in targets}
+    matched_cols = [col for col in pivot_df.columns if str(col).casefold() in target_keys]
     if not matched_cols:
         return pivot_df.copy()
 
@@ -442,8 +444,20 @@ def _top_n_with_others(pivot_df: pd.DataFrame, *, top_n_count: int = 15, exclude
     other_cols = [c for c in pivot_df.columns if c not in top_n_cols]
     top = pivot_df[top_n_cols].copy()
     if other_cols:
-        top["Others"] = pivot_df[other_cols].sum(axis=1)
+        existing_others = top["Others"].copy() if "Others" in top.columns else 0
+        top["Others"] = existing_others + pivot_df[other_cols].sum(axis=1)
     return top
+
+
+def market_share_legend_rows(frame: pd.DataFrame, week_label: str, limit: int = 8) -> pd.DataFrame:
+    """Build selected-week market-share legend rows with same-window tokens and shares."""
+    week_rows = frame[frame["week_start_date"] == week_label].groupby("entity_id", as_index=False)["metric_value"].sum()
+    week_total = float(week_rows["metric_value"].sum())
+    named = week_rows[week_rows["entity_id"].str.lower() != "others"].sort_values("metric_value", ascending=False).head(limit).copy()
+    if named.empty:
+        return named.assign(share_pct=pd.Series(dtype=float))
+    named["share_pct"] = named["metric_value"] / week_total * 100 if week_total > 0 else 0.0
+    return named
 
 
 @st.cache_data(ttl=3600)
@@ -1734,24 +1748,21 @@ def render_market_share_section(datasets: dict[str, DatasetLoadResult], openrout
         st.plotly_chart(fig, use_container_width=True, theme=None)
 
     with legend_col:
-        ms_latest  = ms[ms["week_start_date"] == sel_ms_wk].groupby("entity_id", as_index=False)["metric_value"].sum()
-        wk_total   = ms_latest["metric_value"].sum()
-        ms_named   = ms_latest[ms_latest["entity_id"].str.lower() != "others"].sort_values("metric_value", ascending=False)
-        cum_total  = ms[ms["entity_id"].str.lower() != "others"].groupby("entity_id")["metric_value"].sum()
+        ms_named = market_share_legend_rows(ms, sel_ms_wk, limit=8)
 
         st.markdown(f'<div style="font-weight:700;font-size:1rem;margin-bottom:0.8rem;">Week: {sel_ms_wk} Leaders</div>', unsafe_allow_html=True)
         rows_html = '<div class="ms-legend">'
         for rank_i, (_, row) in enumerate(ms_named.head(8).iterrows()):
             color  = MODEL_COLORS[rank_i % len(MODEL_COLORS)]
             author = row["entity_id"]
-            pct_v  = row["metric_value"] / wk_total * 100 if wk_total > 0 else 0
-            cum_v  = format_metric(cum_total.get(author, 0))
+            pct_v  = row["share_pct"]
+            week_v = format_metric(row["metric_value"])
             rows_html += f"""
             <div class="ms-row">
               <span style="color:{MUTED};font-size:0.72rem;min-width:16px;">{rank_i+1}</span>
               <span class="ms-dot" style="background:{color};"></span>
               <span class="ms-name">{author}</span>
-              <span class="ms-tokens">{cum_v}</span>
+              <span class="ms-tokens">{week_v}</span>
               <span class="ms-pct">{pct_v:.1f}%</span>
             </div>"""
         rows_html += "</div>"
