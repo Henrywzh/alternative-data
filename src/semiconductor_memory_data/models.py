@@ -131,6 +131,11 @@ class DatasetRecord:
     fred_ppi_value: float | None = None
     fred_ppi_mom_pct: float | None = None
     fred_ppi_3m_trend: float | None = None
+    ppi_component_pcu33443344_rebased: float | None = None
+    ppi_component_pcu33423342_rebased: float | None = None
+    ppi_component_pcu335313335313_rebased: float | None = None
+    ppi_component_pcu334111334111_rebased: float | None = None
+    ppi_component_pcu3341123341121_rebased: float | None = None
     adata_freshness_days: float | None = None
     fred_release_lag_days: float | None = None
     data_completeness: str | None = None  # "full"|"adata_only"|"fred_only"|"empty"

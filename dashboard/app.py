@@ -24,6 +24,7 @@ from dashboard.data import (
     load_domain_datasets,
     load_latest_manifest,
 )
+from semiconductor_memory_data.sources.config import AI_DEMAND_PPI_WEIGHTS
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -56,6 +57,13 @@ NPM_CATEGORY_LABELS = {
 }
 
 BIG_TECH_ORGS = ["openai", "google", "anthropic", "meta", "mistralai", "deepseek", "qwen", "moonshotai"]
+AI_DEMAND_PPI_COMPONENT_COLUMNS = {
+    "PCU33443344": "ppi_component_pcu33443344_rebased",
+    "PCU33423342": "ppi_component_pcu33423342_rebased",
+    "PCU335313335313": "ppi_component_pcu335313335313_rebased",
+    "PCU334111334111": "ppi_component_pcu334111334111_rebased",
+    "PCU3341123341121": "ppi_component_pcu3341123341121_rebased",
+}
 
 
 # ---------------------------------------------------------------------------
@@ -1206,12 +1214,12 @@ def compute_provider_adoption_views(datasets: dict[str, DatasetLoadResult]) -> d
 
     if not github_candidates.empty:
         candidates_daily = (
-            github_candidates.groupby(["repo_created_date", "provider_display_name"], dropna=False)["repo_full_name"]
+            github_candidates.groupby(["repo_created_date"], dropna=False)["repo_full_name"]
             .nunique()
             .reset_index(name="repo_candidates")
         )
     else:
-        candidates_daily = pd.DataFrame(columns=["repo_created_date", "provider_display_name", "repo_candidates"])
+        candidates_daily = pd.DataFrame(columns=["repo_created_date", "repo_candidates"])
 
     if not github_rollup.empty:
         signal_positive = github_rollup[github_rollup["matched_signal_count"].fillna(0) > 0].copy()
@@ -1278,41 +1286,40 @@ def compute_llm_benchmark_views(datasets: dict[str, DatasetLoadResult]) -> dict[
 @st.cache_data(ttl=3600)
 def compute_semiconductor_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, object]:
     views: dict[str, object] = {}
-    
+
     regime_result = datasets.get("semiconductor_memory_regime_monthly")
-    images_result = datasets.get("adata_marketwatch_images")
-    
     regime_df = regime_result.frame.copy() if regime_result and not regime_result.frame.empty else pd.DataFrame()
-    images_df = images_result.frame.copy() if images_result and not images_result.frame.empty else pd.DataFrame()
-    
+
     if not regime_df.empty:
         regime_df["month"] = regime_df["month"].astype(str)
         regime_df = regime_df.sort_values("month")
-        
-        # Simple extraction of Hynix/Micron counts if not already present or for focus
-        # In reality the DatasetRecord might already have some of this, but let's ensure focus
-        if "raw_text" in regime_df.columns:
-            regime_df["hynix_mentions"] = regime_df["raw_text"].str.count("Hynix").fillna(0)
-            regime_df["micron_mentions"] = regime_df["raw_text"].str.count("Micron").fillna(0)
-        else:
-            regime_df["hynix_mentions"] = 0
-            regime_df["micron_mentions"] = 0
 
         latest_month = regime_df["month"].max()
         latest_data = regime_df[regime_df["month"] == latest_month].iloc[0]
+        proxy_df = regime_df.dropna(subset=["fred_ppi_value"]).copy()
+        component_columns = [
+            column for column in AI_DEMAND_PPI_COMPONENT_COLUMNS.values()
+            if column in regime_df.columns
+        ]
+        if component_columns:
+            base_candidates = regime_df.dropna(subset=["fred_ppi_value", *component_columns]).copy()
+        else:
+            base_candidates = proxy_df
+        base_month = base_candidates["month"].iloc[0] if not base_candidates.empty else None
     else:
         latest_month = None
-        latest_data = pd.Series()
-        
+        latest_data = pd.Series(dtype="object")
+        proxy_df = pd.DataFrame()
+        component_columns = []
+        base_month = None
+
     views["regime_df"] = regime_df
     views["latest_month"] = latest_month
     views["latest_data"] = latest_data
-    
-    if not images_df.empty:
-        images_df["month"] = images_df["month"].astype(str)
-        
-    views["images_df"] = images_df
-    
+    views["proxy_df"] = proxy_df
+    views["component_columns"] = component_columns
+    views["base_month"] = base_month
+
     return views
 
 
@@ -2354,7 +2361,7 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
     with col4:
         st.markdown(
             f'<div class="kpi-card">'
-            f'<div class="kpi-label">Latest GH Candidates</div>'
+            f'<div class="kpi-label">Latest GH Candidate Pool</div>'
             f'<div class="kpi-value" style="font-size: 1.5rem;">{format_metric(latest_candidate_count)}</div>'
             f'<div class="kpi-delta-flat">{latest_github_date or "n/a"}</div>'
             f'</div>',
@@ -2532,18 +2539,14 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
             col_left, col_right = st.columns(2)
             with col_left:
                 pivot_candidates = (
-                    candidates_daily.pivot_table(
-                        index="repo_created_date",
-                        columns="provider_display_name",
-                        values="repo_candidates",
-                        aggfunc="last",
-                    )
+                    candidates_daily.set_index("repo_created_date")[["repo_candidates"]]
+                    .rename(columns={"repo_candidates": "Scanned Repo Pool"})
                     .fillna(0)
                     .sort_index()
                 )
                 st.plotly_chart(
                     make_line_chart(pivot_candidates, MODEL_COLORS,
-                                    title="GitHub New Repo Candidates by Day",
+                                    title="GitHub Scanned New Repo Pool by Day",
                                     y_title="Repos", hover_suffix="repos", height=340),
                     use_container_width=True, theme=None,
                 )
@@ -2618,17 +2621,6 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
             })[["Provider", "HF 30d Downloads", "HF All-Time Downloads", "HF Daily (Est)", "HF Likes"]]
             summary = summary.merge(hf_sum, on="Provider", how="left")
 
-        if latest_github_date and not github_candidates.empty:
-            latest_candidates = (
-                github_candidates[github_candidates["repo_created_date"] == latest_github_date]
-                .groupby("provider_display_name", dropna=False)["repo_full_name"]
-                .nunique()
-                .rename("GH Candidates")
-                .reset_index()
-                .rename(columns={"provider_display_name": "Provider"})
-            )
-            summary = summary.merge(latest_candidates, on="Provider", how="left")
-
         if latest_github_date and not github_rollup.empty:
             latest_rollup = github_rollup[github_rollup["signal_date"] == latest_github_date].copy()
             rollup_summary = (
@@ -2655,7 +2647,8 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
 
 def render_semiconductor_section(datasets: dict[str, DatasetLoadResult], semi_views: dict[str, object]) -> None:
     regime_df = semi_views.get("regime_df", pd.DataFrame())
-    images_df = semi_views.get("images_df", pd.DataFrame())
+    component_columns = semi_views.get("component_columns", [])
+    base_month = semi_views.get("base_month")
 
     if regime_df.empty:
         st.warning("No semiconductor memory data available.")
@@ -2670,136 +2663,96 @@ def render_semiconductor_section(datasets: dict[str, DatasetLoadResult], semi_vi
         selected_month = st.selectbox("Analysis Snapshot", available_months, index=0)
 
     current_data = regime_df[regime_df["month"] == selected_month].iloc[0]
-    current_images = images_df[images_df["month"] == selected_month] if not images_df.empty else pd.DataFrame()
 
-    # --- KPIs with Lag Handling ---
+    # --- PPI cards with lag handling ---
     ppi_val = current_data.get("fred_ppi_value")
     ppi_mom = current_data.get("fred_ppi_mom_pct")
-    nand_regime = current_data.get("nand_regime_label", "n/a")
-    dram_regime = current_data.get("dram_regime_label", "n/a")
+    ppi_trend = current_data.get("fred_ppi_3m_trend")
 
-    # PPI Fallback: find latest available PPI if current month is blank
+    # Proxy fallback: find latest available AI demand proxy if selected month is blank
     ppi_display_val = "—"
-    ppi_sub_label = "report period"
-    
-    if pd.notna(ppi_val):
-        ppi_display_val = f"{ppi_val:.1f}"
-    else:
-        # Search backwards for last valid PPI
+    ppi_sub_label = "selected month"
+    if pd.isna(ppi_val):
         valid_ppi_df = regime_df[regime_df["month"] <= selected_month].dropna(subset=["fred_ppi_value"]).sort_values("month")
         if not valid_ppi_df.empty:
-            last_record = valid_ppi_df.iloc[-1]
-            ppi_display_val = f"{last_record['fred_ppi_value']:.1f}"
-            ppi_sub_label = f"As of {last_record['month']}"
+            fallback_row = valid_ppi_df.iloc[-1]
+            ppi_val = fallback_row.get("fred_ppi_value")
+            ppi_mom = fallback_row.get("fred_ppi_mom_pct")
+            ppi_trend = fallback_row.get("fred_ppi_3m_trend")
+            ppi_sub_label = f"As of {fallback_row['month']}"
+
+    if pd.notna(ppi_val):
+        ppi_display_val = f"{ppi_val:.1f}"
 
     if pd.notna(ppi_mom):
-        ppi_delta_cls  = "up" if ppi_mom >= 0 else "down"
+        ppi_delta_cls = "up" if ppi_mom >= 0 else "down"
         ppi_delta_text = f"{'↑' if ppi_mom >= 0 else '↓'} {abs(ppi_mom):.1f}% MoM"
     else:
         ppi_delta_cls, ppi_delta_text = "flat", ppi_sub_label
 
-    # Regime Styling logic — handle "LLM PENDING"
-    def get_regime_style(label: str) -> str:
-        label_up = str(label).upper()
-        if "PENDING" in label_up:
-            return 'class="regime-pending"'
-        if label_up == 'SHORTAGE':
-            return f'style="color:{RED};"'
-        if label_up == 'OVERSUPPLY':
-            return f'style="color:{GREEN};"'
-        return ""
-
-    def _regime_card(title: str, regime: str) -> str:
-        return (f'<div class="kpi-card"><div class="kpi-label">{title}</div>'
-                f'<div class="kpi-value regime-value" {get_regime_style(regime)}>{regime}</div>'
-                f'<div class="kpi-delta-flat">market condition</div></div>')
+    trend_display_val = f"{ppi_trend:.1f}" if pd.notna(ppi_trend) else "—"
 
     st.markdown(
         kpi_grid_html(
-            kpi_card_html("Month Selector", selected_month, delta="active snapshot"),
-            kpi_card_html("Semiconductor PPI", ppi_display_val, delta=ppi_delta_text, delta_class=ppi_delta_cls),
-            _regime_card("NAND Regime", nand_regime),
-            _regime_card("DRAM Regime", dram_regime),
+            kpi_card_html("Snapshot Month", selected_month, delta="active month"),
+            kpi_card_html("AI Demand PPI", ppi_display_val, delta=ppi_delta_text, delta_class=ppi_delta_cls),
+            kpi_card_html("3M Trend", trend_display_val, delta="rebased index average", delta_class="flat"),
+            kpi_card_html("Proxy Base Month", base_month or "—", delta=f"{len(AI_DEMAND_PPI_WEIGHTS)} weighted PPIs", delta_class="flat"),
         ),
         unsafe_allow_html=True,
     )
 
-    # --- Main Content ---
-    col1, col2 = st.columns([1, 1])
+    st.markdown(
+        "[ADATA Industrial Market Watch](https://industrial.adata.com/en/edm)",
+        unsafe_allow_html=False,
+    )
+    weight_note = ", ".join(f"{series_id}: {int(weight * 100)}%" for series_id, weight in AI_DEMAND_PPI_WEIGHTS.items())
+    st.caption(
+        "AI Demand PPI is a weighted basket rebased to 100 at the first common month. "
+        f"Weights: {weight_note}"
+    )
 
-    with col1:
-        st.markdown(f'<div class="section-title">Latest Report Analysis ({selected_month})</div>', unsafe_allow_html=True)
-        if not current_images.empty:
-            for _, row in current_images.head(2).iterrows():
-                img_path = BASE_DIR / row["local_path"]
-                if img_path.exists():
-                    st.image(str(img_path), caption=f"{row['image_type'].title()} - {row['month']}")
-                else:
-                    st.caption(f"Image not found: {row['local_path']}")
-        else:
-            st.info(f"No captured images available for the {selected_month} report.")
+    _ppi_range = st.radio(
+        "Time range",
+        options=["YTD", "1yr", "2yr", "5yr", "All"],
+        index=2,
+        horizontal=True,
+        key="semi_ppi_range",
+    )
+    _now = datetime.now()
+    _cutoffs = {
+        "YTD": f"{_now.year}-01",
+        "1yr": (_now - pd.DateOffset(months=12)).strftime("%Y-%m"),
+        "2yr": (_now - pd.DateOffset(months=24)).strftime("%Y-%m"),
+        "5yr": (_now - pd.DateOffset(months=60)).strftime("%Y-%m"),
+    }
+    _cutoff = _cutoffs.get(_ppi_range)
+    _plot_df = regime_df[regime_df["month"] >= _cutoff].copy() if _cutoff else regime_df.copy()
 
-    with col2:
-        st.markdown('<div class="section-title">Narrative Highlights</div>', unsafe_allow_html=True)
-        st.markdown(f"**NAND Supply:** {current_data.get('narrative_nand_supply', '—')}")
-        st.markdown(f"**NAND Price:** {current_data.get('narrative_nand_price', '—')}")
-        st.markdown("---")
-        st.markdown(f"**DRAM Supply:** {current_data.get('narrative_dram_supply', '—')}")
-        st.markdown(f"**DRAM Price:** {current_data.get('narrative_dram_price', '—')}")
-        
-        st.markdown('<div class="section-title">Key Mentions Focus</div>', unsafe_allow_html=True)
-        hynix_m = current_data.get("hynix_mentions", 0)
-        micron_m = current_data.get("micron_mentions", 0)
-        hbm_m = current_data.get("mentions_hbm", False)
-        
-        m_col1, m_col2, m_col3 = st.columns(3)
-        m_col1.metric("SK Hynix", int(hynix_m))
-        m_col2.metric("Micron", int(micron_m))
-        m_col3.metric("HBM Mention", "Yes" if hbm_m else "No")
+    proxy_pivot = _plot_df[["month", "fred_ppi_value"]].set_index("month").rename(columns={"fred_ppi_value": "AI Demand PPI"})
+    st.plotly_chart(
+        make_line_chart(proxy_pivot, [ACCENT], title="AI Demand PPI Trend", y_title="Rebased Index", x_title="Month", height=350),
+        use_container_width=True,
+    )
 
-    # --- Archive & History ---
-    hist_tab1, hist_tab2 = st.tabs(["📊 Performance Trends", "📜 Commentary Archive"])
-    
-    with hist_tab1:
-        # Time range selector — filters both PPI and mention charts
-        _ppi_range = st.radio(
-            "Time range",
-            options=["YTD", "1yr", "2yr", "5yr", "All"],
-            index=2,
-            horizontal=True,
-            key="semi_ppi_range",
-        )
-        _now = datetime.now()
-        _cutoffs = {
-            "YTD": f"{_now.year}-01",
-            "1yr": (_now - pd.DateOffset(months=12)).strftime("%Y-%m"),
-            "2yr": (_now - pd.DateOffset(months=24)).strftime("%Y-%m"),
-            "5yr": (_now - pd.DateOffset(months=60)).strftime("%Y-%m"),
+    available_component_columns = [column for column in component_columns if column in _plot_df.columns]
+    if available_component_columns:
+        component_labels = {
+            AI_DEMAND_PPI_COMPONENT_COLUMNS[series_id]: series_id
+            for series_id in AI_DEMAND_PPI_WEIGHTS
         }
-        _cutoff = _cutoffs.get(_ppi_range)
-        _plot_df = regime_df[regime_df["month"] >= _cutoff].copy() if _cutoff else regime_df.copy()
-
-        trend_col1, trend_col2 = st.columns(2)
-        with trend_col1:
-            ppi_pivot = _plot_df[["month", "fred_ppi_value"]].set_index("month").rename(columns={"fred_ppi_value": "PPI Value"})
-            st.plotly_chart(
-                make_line_chart(ppi_pivot, [ACCENT], title="Semiconductor PPI Trend", y_title="PPI", x_title="Month", height=350),
-                use_container_width=True,
-            )
-        with trend_col2:
-            mentions_pivot = _plot_df[["month", "hynix_mentions", "micron_mentions"]].set_index("month").rename(
-                columns={"hynix_mentions": "SK Hynix", "micron_mentions": "Micron"}
-            )
-            st.plotly_chart(
-                make_line_chart(mentions_pivot, ["#00B5A4", "#FF7849"], title="Mention Momentum", y_title="Mentions", x_title="Month", height=350),
-                use_container_width=True,
-            )
-
-    with hist_tab2:
-        st.markdown('<div class="section-title">Monthly Narrative Comparison</div>', unsafe_allow_html=True)
-        archive_df = regime_df.sort_values("month", ascending=False).head(12)[["month", "narrative_nand_supply", "narrative_dram_supply"]]
-        archive_df.columns = ["Month", "NAND Supply Analysis", "DRAM Supply Analysis"]
-        st.dataframe(archive_df.fillna("—"), use_container_width=True, hide_index=True)
+        component_pivot = _plot_df[["month", *available_component_columns]].set_index("month").rename(columns=component_labels)
+        st.plotly_chart(
+            make_line_chart(
+                component_pivot,
+                MODEL_COLORS[:len(component_pivot.columns)],
+                title="Component PPIs (Rebased)",
+                y_title="Rebased Index",
+                x_title="Month",
+                height=380,
+            ),
+            use_container_width=True,
+        )
 
 
 def render_ai_frontier_section(datasets: dict[str, DatasetLoadResult], benchmark_views: dict[str, object]) -> None:
