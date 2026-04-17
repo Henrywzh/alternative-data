@@ -557,6 +557,24 @@ def test_provider_pipeline_repeated_runs_are_idempotent_and_write_manifest(tmp_p
     assert (Path(derived.raw_run_dir) / "manifest.json").exists()
 
 
+def test_github_signal_records_include_provider_display_name(tmp_path: Path) -> None:
+    pipeline = ProviderAdoptionPipeline(
+        tmp_path,
+        github_source=FakeGithubSource(),
+    )
+
+    pipeline.run_github_daily_update(target_date="2026-04-05", provider_slugs=["openai", "anthropic", "google"])
+
+    signals = pd.read_csv(tmp_path / "data" / "normalized" / "provider_adoption" / "github_provider_signals_daily.csv")
+    rollup = pd.read_csv(tmp_path / "data" / "normalized" / "provider_adoption" / "github_repo_rollup_daily.csv")
+
+    assert set(signals["provider_display_name"].dropna().unique()) == {"OpenAI"}
+    assert set(signals["signal_type"].unique()) == {"manifest_dependency", "code_import", "env_var", "model_name"}
+    assert int(rollup.loc[rollup["provider"] == "openai", "matched_signal_count"].iloc[0]) == 4
+    assert bool(rollup.loc[rollup["provider"] == "openai", "has_manifest_dependency"].iloc[0]) is True
+    assert bool(rollup.loc[rollup["provider"] == "anthropic", "has_manifest_dependency"].iloc[0]) is False
+
+
 def test_huggingface_pipeline_first_snapshot_is_blank_and_same_day_rerun_is_idempotent(tmp_path: Path) -> None:
     pipeline = ProviderAdoptionPipeline(
         tmp_path,
