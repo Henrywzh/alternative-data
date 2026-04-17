@@ -1214,8 +1214,9 @@ def compute_provider_adoption_views(datasets: dict[str, DatasetLoadResult]) -> d
         candidates_daily = pd.DataFrame(columns=["repo_created_date", "provider_display_name", "repo_candidates"])
 
     if not github_rollup.empty:
+        signal_positive = github_rollup[github_rollup["matched_signal_count"].fillna(0) > 0].copy()
         rollup_daily = (
-            github_rollup.groupby(["signal_date", "provider_display_name"], dropna=False)
+            signal_positive.groupby(["signal_date", "provider_display_name"], dropna=False)
             .agg(
                 signal_repos=("repo_full_name", "nunique"),
                 manifest_repos=("has_manifest_dependency", "sum"),
@@ -1785,7 +1786,7 @@ def render_revenue_estimator(datasets: dict[str, DatasetLoadResult], openrouter_
     # Total Revenue Metric
     st.markdown(
         kpi_grid_html(
-            kpi_card_html("Est. Aggregate Revenue", f"${total_revenue:,.0f}", delta="↑ Based on Top 50 Models", delta_class="up"),
+            kpi_card_html("Est. Aggregate Revenue", f"${total_revenue:,.0f}", delta="↑ Hybrid estimate from rankings + provider logs", delta_class="up"),
             kpi_card_html("Provider Coverage", str(len(pivot_rev.columns)), delta="active providers"),
         ),
         unsafe_allow_html=True,

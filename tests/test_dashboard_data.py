@@ -711,6 +711,61 @@ def test_compute_provider_adoption_views_includes_hf_aggregates_and_latest_model
     assert float(openai_row["hf_downloads_daily_est"]) == 200.0
 
 
+def test_compute_provider_adoption_views_rollup_daily_counts_only_signal_bearing_repos(tmp_path: Path) -> None:
+    root = tmp_path / "data" / "normalized" / "provider_adoption"
+    root.mkdir(parents=True, exist_ok=True)
+    _provider_pypi_frame().to_csv(root / "pypi_downloads_daily.csv", index=False)
+    _provider_npm_frame().to_csv(root / "npm_downloads_daily.csv", index=False)
+    _provider_hf_frame().to_csv(root / "huggingface_models_daily.csv", index=False)
+    _provider_candidates_frame().to_csv(root / "github_repo_candidates_daily.csv", index=False)
+    _provider_signals_frame().to_csv(root / "github_provider_signals_daily.csv", index=False)
+
+    rollup = _provider_rollup_frame()
+    zero_row = _base_row("github_repo_rollup_daily")
+    zero_row.update(
+        {
+            "provider": "openai",
+            "provider_display_name": "OpenAI",
+            "repo_full_name": "openai/zero-signal-repo",
+            "repo_owner": "openai",
+            "repo_name": "zero-signal-repo",
+            "repo_html_url": "https://github.com/openai/zero-signal-repo",
+            "repo_created_date": "2026-04-05",
+            "repo_created_at": "2026-04-05T12:00:00Z",
+            "repo_pushed_at": "2026-04-05T12:30:00Z",
+            "repo_default_branch": "main",
+            "language_bucket": "python",
+            "signal_date": "2026-04-05",
+            "has_manifest_dependency": False,
+            "has_code_import": False,
+            "has_env_var": False,
+            "has_model_name": False,
+            "matched_signal_count": 0,
+            "stargazers_count": 1,
+            "is_fork": False,
+            "is_archived": False,
+        }
+    )
+    rollup = pd.concat([rollup, pd.DataFrame([zero_row], columns=EXPECTED_COLUMNS)], ignore_index=True)
+    rollup.to_csv(root / "github_repo_rollup_daily.csv", index=False)
+    _provider_momentum_frame().to_csv(root / "provider_momentum_daily.csv", index=False)
+
+    datasets = load_all_datasets(base_dir=tmp_path)
+    views = compute_provider_adoption_views(datasets)
+
+    rollup_daily = views["rollup_daily"].sort_values(["signal_date", "provider_display_name"]).reset_index(drop=True)
+    candidates_daily = views["candidates_daily"].sort_values(["repo_created_date", "provider_display_name"]).reset_index(drop=True)
+
+    openai_rollup = rollup_daily[rollup_daily["provider_display_name"] == "OpenAI"].iloc[0]
+    assert int(openai_rollup["signal_repos"]) == 1
+    assert int(openai_rollup["manifest_repos"]) == 1
+    assert int(openai_rollup["import_repos"]) == 1
+    assert int(openai_rollup["model_repos"]) == 1
+
+    openai_candidates = candidates_daily[candidates_daily["provider_display_name"] == "OpenAI"].iloc[0]
+    assert int(openai_candidates["repo_candidates"]) == 1
+
+
 def test_prepare_hf_models_table_returns_empty_for_all_view() -> None:
     table = prepare_hf_models_table(_provider_hf_frame(), provider_display_name="All")
 

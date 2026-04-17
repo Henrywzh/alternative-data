@@ -325,6 +325,7 @@ class ProviderAdoptionPipeline:
 
     def _build_signal_records(self, context: RunContext, matches: list[GithubSignalMatch]) -> list[DatasetRecord]:
         records: list[DatasetRecord] = []
+        provider_display = {provider.slug: provider.display_name for provider in get_provider_registry()}
         for match in matches:
             owner, name = match.repo_full_name.split("/", 1)
             records.append(
@@ -334,6 +335,7 @@ class ProviderAdoptionPipeline:
                     source_run_id=context.run_id,
                     scraped_at=context.scraped_at_iso,
                     provider=match.provider,
+                    provider_display_name=provider_display.get(match.provider),
                     repo_full_name=match.repo_full_name,
                     repo_owner=owner,
                     repo_name=name,
