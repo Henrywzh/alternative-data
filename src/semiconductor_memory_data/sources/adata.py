@@ -87,8 +87,15 @@ class AdataEDMSource:
         no args               → fetch ALL discovered URLs (used by adata-backfill)
         """
         if month is not None:
-            yyyymm = month.replace("-", "")
-            url = ADATA_REPORT_BASE_URL + yyyymm
+            target_month = month.strip()
+            discovered = {
+                self._month_from_url(unquote(url)): url
+                for url in self.list_report_urls()
+            }
+            url = discovered.get(target_month)
+            if url is None:
+                yyyymm = target_month.replace("-", "")
+                url = ADATA_REPORT_BASE_URL + yyyymm
             return [self._fetch_single(url)]
 
         all_urls = self.list_report_urls()
@@ -161,7 +168,7 @@ class AdataEDMSource:
 
         h2_tag = soup.find("h2")
         month_label = h2_tag.get_text(strip=True) if h2_tag else ""
-        month = self._parse_month_label(month_label) or self._month_from_url(snapshot.source_url) or "unknown"
+        month = self._month_from_url(snapshot.source_url) or self._parse_month_label(month_label) or "unknown"
 
         raw_text = soup.get_text(separator=" ", strip=True)
         fetch_time = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
