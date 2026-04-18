@@ -6,6 +6,8 @@ from pathlib import Path
 import pandas as pd
 
 from dashboard.app import (
+    _compute_revenue_views,
+    _derive_provider_name,
     build_domain_signature,
     build_manifest_signature,
     build_normalized_signature,
@@ -138,6 +140,13 @@ def _rankings_frame(dataset_id: str) -> pd.DataFrame:
         )
         rows.append(row)
     return pd.DataFrame(rows, columns=EXPECTED_COLUMNS)
+
+
+def _write_dataset(base_dir: Path, dataset_id: str, frame: pd.DataFrame) -> None:
+    domain = DATASET_REGISTRY[dataset_id]["domain"]
+    root = base_dir / "data" / "normalized" / dataset_source_for_domain(str(domain))
+    root.mkdir(parents=True, exist_ok=True)
+    frame.to_csv(root / f"{dataset_id}.csv", index=False)
 
 
 def _apps_usage_frame() -> pd.DataFrame:
@@ -1058,6 +1067,211 @@ def test_regroup_provider_pivot_for_display_is_noop_when_no_targets_present() ->
     regrouped = regroup_provider_pivot_for_display(pivot, "daily")
 
     pd.testing.assert_frame_equal(regrouped, pivot)
+
+
+def test_derive_provider_name_normalizes_meta_llama_slug() -> None:
+    assert _derive_provider_name("meta-llama/model", None) == "Meta (Llama)"
+
+
+def test_derive_provider_name_normalizes_z_ai_slug() -> None:
+    assert _derive_provider_name("z-ai/model", None) == "智谱AI (Z.ai)"
+
+
+def test_legacy_token_volume_uses_market_share_for_providers_missing_from_top_models(tmp_path: Path) -> None:
+    top_models = pd.DataFrame(
+        [
+            {
+                **_base_row("top_models"),
+                "week_label": "2026-01-04",
+                "week_start_date": "2026-01-04",
+                "entity_id": "openai/gpt-4o-mini",
+                "entity_name": "openai/gpt-4o-mini",
+                "parent_entity_id": "openai",
+                "parent_entity_name": "openai",
+                "metric_name": "tokens",
+                "metric_unit": "tokens",
+                "metric_value": 100.0,
+                "rank": 1,
+            }
+        ],
+        columns=EXPECTED_COLUMNS,
+    )
+    market_share = pd.DataFrame(
+        [
+            {
+                **_base_row("market_share"),
+                "week_label": "2026-01-04",
+                "week_start_date": "2026-01-04",
+                "entity_id": "z-ai",
+                "entity_name": "z ai",
+                "metric_name": "token_share_pct",
+                "metric_unit": "share",
+                "metric_value": 250.0,
+                "rank": 9,
+            },
+            {
+                **_base_row("market_share"),
+                "week_label": "2026-01-04",
+                "week_start_date": "2026-01-04",
+                "entity_id": "openai",
+                "entity_name": "openai",
+                "metric_name": "token_share_pct",
+                "metric_unit": "share",
+                "metric_value": 500.0,
+                "rank": 1,
+            },
+        ],
+        columns=EXPECTED_COLUMNS,
+    )
+    provider_daily_activity = pd.DataFrame(
+        [
+            {
+                **_base_row("provider_daily_activity"),
+                "usage_date": "2026-01-16",
+                "entity_id": "z-ai",
+                "entity_name": "智谱AI (Z.ai)",
+                "category_slug": "z-ai",
+                "model_permaslug": "z-ai/glm-4.6",
+                "total_tokens": 90.0,
+            }
+        ],
+        columns=EXPECTED_COLUMNS,
+    )
+    raw_openrouter_models = pd.DataFrame(
+        [
+            {
+                **_base_row("raw_openrouter_models"),
+                "snapshot_ts": "2026-01-15T00:00:00Z",
+                "model_id": "openai/gpt-4o-mini",
+                "pricing_prompt": 0.002,
+                "pricing_completion": 0.004,
+                "context_length": 128000,
+            },
+            {
+                **_base_row("raw_openrouter_models"),
+                "snapshot_ts": "2026-01-15T00:00:00Z",
+                "model_id": "z-ai/glm-4.6",
+                "pricing_prompt": 0.001,
+                "pricing_completion": 0.002,
+                "context_length": 128000,
+            },
+        ],
+        columns=EXPECTED_COLUMNS,
+    )
+
+    _write_dataset(tmp_path, "top_models", top_models)
+    _write_dataset(tmp_path, "market_share", market_share)
+    _write_dataset(tmp_path, "app_usage_daily", _apps_usage_frame())
+    _write_dataset(tmp_path, "provider_daily_activity", provider_daily_activity)
+    _write_dataset(tmp_path, "raw_openrouter_models", raw_openrouter_models)
+
+    datasets = load_all_datasets(base_dir=tmp_path)
+    views = _compute_revenue_views(datasets)
+    token_weekly = views["token_volume"]["pivot_weekly"]
+    token_monthly = views["token_volume"]["pivot_monthly"]
+    revenue_weekly = views["revenue_estimator"]["pivot_rev_weekly"]
+
+    assert "智谱AI (Z.ai)" in token_weekly.columns
+    assert token_weekly.loc["2026-01-05", "智谱AI (Z.ai)"] == 250.0
+    assert token_monthly.loc["2026-01", "智谱AI (Z.ai)"] == 340.0
+    assert "智谱AI (Z.ai)" in revenue_weekly.columns
+    assert revenue_weekly.loc["2026-01-05", "智谱AI (Z.ai)"] > 0
+
+
+def test_market_share_legacy_and_modern_provider_logs_stitch_into_one_provider_series(tmp_path: Path) -> None:
+    top_models = pd.DataFrame(
+        [
+            {
+                **_base_row("top_models"),
+                "week_label": "2026-01-04",
+                "week_start_date": "2026-01-04",
+                "entity_id": "openai/gpt-4o-mini",
+                "entity_name": "openai/gpt-4o-mini",
+                "parent_entity_id": "openai",
+                "parent_entity_name": "openai",
+                "metric_name": "tokens",
+                "metric_unit": "tokens",
+                "metric_value": 100.0,
+                "rank": 1,
+            }
+        ],
+        columns=EXPECTED_COLUMNS,
+    )
+    market_share = pd.DataFrame(
+        [
+            {
+                **_base_row("market_share"),
+                "week_label": "2026-01-04",
+                "week_start_date": "2026-01-04",
+                "entity_id": "z-ai",
+                "entity_name": "z ai",
+                "metric_name": "token_share_pct",
+                "metric_unit": "share",
+                "metric_value": 250.0,
+                "rank": 9,
+            }
+        ],
+        columns=EXPECTED_COLUMNS,
+    )
+    provider_daily_activity = pd.DataFrame(
+        [
+            {
+                **_base_row("provider_daily_activity"),
+                "usage_date": "2026-01-16",
+                "entity_id": "z-ai",
+                "entity_name": "智谱AI (Z.ai)",
+                "category_slug": "z-ai",
+                "model_permaslug": "z-ai/glm-4.6",
+                "total_tokens": 90.0,
+            },
+            {
+                **_base_row("provider_daily_activity"),
+                "usage_date": "2026-01-17",
+                "entity_id": "z-ai",
+                "entity_name": "智谱AI (Z.ai)",
+                "category_slug": "z-ai",
+                "model_permaslug": "z-ai/glm-4.6",
+                "total_tokens": 110.0,
+            },
+        ],
+        columns=EXPECTED_COLUMNS,
+    )
+    raw_openrouter_models = pd.DataFrame(
+        [
+            {
+                **_base_row("raw_openrouter_models"),
+                "snapshot_ts": "2026-01-15T00:00:00Z",
+                "model_id": "openai/gpt-4o-mini",
+                "pricing_prompt": 0.002,
+                "pricing_completion": 0.004,
+                "context_length": 128000,
+            },
+            {
+                **_base_row("raw_openrouter_models"),
+                "snapshot_ts": "2026-01-15T00:00:00Z",
+                "model_id": "z-ai/glm-4.6",
+                "pricing_prompt": 0.001,
+                "pricing_completion": 0.002,
+                "context_length": 128000,
+            },
+        ],
+        columns=EXPECTED_COLUMNS,
+    )
+
+    _write_dataset(tmp_path, "top_models", top_models)
+    _write_dataset(tmp_path, "market_share", market_share)
+    _write_dataset(tmp_path, "app_usage_daily", _apps_usage_frame())
+    _write_dataset(tmp_path, "provider_daily_activity", provider_daily_activity)
+    _write_dataset(tmp_path, "raw_openrouter_models", raw_openrouter_models)
+
+    datasets = load_all_datasets(base_dir=tmp_path)
+    views = _compute_revenue_views(datasets)
+    token_weekly = views["token_volume"]["pivot_weekly"]
+
+    assert list(token_weekly.index) == ["2026-01-05", "2026-01-12"]
+    assert "智谱AI (Z.ai)" in token_weekly.columns
+    assert token_weekly.loc["2026-01-05", "智谱AI (Z.ai)"] == 250.0
+    assert token_weekly.loc["2026-01-12", "智谱AI (Z.ai)"] > 0
 
 
 def test_make_stacked_area_chart_allows_metric_specific_hover_formatting() -> None:

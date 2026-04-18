@@ -4,6 +4,7 @@ Research repo for gathering and analyzing alternative data.
 
 The first implemented projects are Python ingestion pipelines for OpenRouter rankings, app intelligence data, and GitHub Trending repository stats.
 The repository now also includes a provider-adoption pipeline that tracks GitHub, PyPI, npm, and Hugging Face signals for major LLM providers.
+The repository also includes a notebook-friendly research layer that builds analysis-ready marts and starter notebooks on top of the tracked datasets.
 
 Rankings datasets:
 
@@ -18,9 +19,9 @@ Apps datasets:
 - `app_top_models_daily_snapshot`: daily point-in-time top-model snapshots for monitored apps
 - `apps_global_ranking_snapshots`: public `/apps` global rankings by `day`, `week`, and `month`
 - `apps_trending_snapshots`: public `/apps` trending leaderboard snapshots
-- `github_trending_daily`: daily points-in-time snapshots for trending repos
-- `github_trending_weekly`: weekly points-in-time snapshots for trending repos
-- `github_trending_monthly`: monthly points-in-time snapshots for trending repos
+- `github_trending_daily`: cumulative daily point-in-time snapshot history for trending repos
+- `github_trending_weekly`: cumulative weekly point-in-time snapshot history for trending repos
+- `github_trending_monthly`: cumulative monthly point-in-time snapshot history for trending repos
 - `pypi_downloads_daily`: daily PyPI package download history by provider/package/mirror mode
 - `npm_downloads_daily`: daily npm package download history by provider/package
 - `github_repo_candidates_daily`: public GitHub repositories discovered in each daily date window
@@ -32,11 +33,14 @@ Apps datasets:
 
 - `src/openrouter_data/`: package, CLI, source extractors, storage, and pipeline logic
 - `src/provider_adoption_data/`: package, CLI, source extractors, storage, and pipeline logic for GitHub + PyPI + npm adoption signals
+- `src/research_data/`: analysis-facing loaders, marts, notebook helpers, and research CLI
 - `tests/fixtures/`: committed parser fixtures
 - `data/raw/openrouter/`: timestamped raw snapshots and run manifests
 - `data/normalized/openrouter/`: analytics-ready CSV and Parquet outputs tracked in git
 - `data/raw/provider_adoption/`: timestamped raw GitHub/PyPI/npm API payloads and run manifests
 - `data/normalized/provider_adoption/`: analytics-ready CSV and Parquet outputs for provider adoption signals
+- `data/normalized/marts/`: persisted analysis-ready marts for notebook use
+- `notebooks/`: starter Jupyter notebooks for data cataloging and research workflows
 - `src/github_trending_data/`: package, CLI, scraper, storage, and pipeline for GitHub data
 - `data/normalized/github_trending/`: analytics-ready Parquet outputs for trending repos
 - `.github/workflows/github-trending-daily.yml`: daily GitHub Actions job for trending repos
@@ -124,6 +128,24 @@ Run the provider-adoption Hugging Face update for a specific date:
 provider-adoption-data --base-dir . --date 2026-04-08 huggingface-daily-update
 ```
 
+Show the source and mart catalog:
+
+```bash
+research-data --base-dir . catalog
+```
+
+Build all research marts:
+
+```bash
+research-data --base-dir . build-marts --refresh
+```
+
+Build a single research mart:
+
+```bash
+research-data --base-dir . build-mart weekly_openrouter_usage --refresh
+```
+
 Compute the provider momentum snapshot for a specific date:
 
 ```bash
@@ -156,3 +178,4 @@ render blueprint apply
 This repository is intended as a home for small, practical alternative data projects that can expand over time. The OpenRouter pipeline now supports both rankings and app sources with the same raw snapshot storage and normalized dataset workflow.
 The provider-adoption pipeline now defaults to tracking OpenAI, Anthropic, Google, DeepSeek, Meta, Mistral, Qwen, Moonshot, Minimax, and ZAI. PyPI and npm coverage remain selective, while Hugging Face coverage tracks all models under each configured organization.
 The bounded backfill command does not fabricate historical Hugging Face rows; HF snapshots begin from the first real collection date onward.
+The research layer keeps scraping outputs as the source of truth and writes derived marts under `data/normalized/marts/` for fast, deterministic Jupyter analysis.

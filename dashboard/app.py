@@ -497,6 +497,7 @@ OPENROUTER_PROVIDER_MAP = {
     "anthropic": "Anthropic",
     "google": "Google",
     "meta": "Meta (Llama)",
+    "meta-llama": "Meta (Llama)",
     "mistralai": "Mistral AI",
     "cohere": "Cohere",
     "qwen": "Alibaba (Qwen)",
@@ -824,9 +825,12 @@ def _compute_revenue_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, 
             # The Modern (precision) engine takes over from the week of Jan 12, 2026 onwards.
             pivot_rev_weekly_legacy = pivot_rev_weekly_legacy[pivot_rev_weekly_legacy.index <= "2026-01-05"]
 
-            # --- Token Volume: Legacy weekly (same source, no pricing needed) ---
-            tok_legacy = macro_dedup.groupby(["usage_week", "parent_entity_id"])["metric_value"].sum().reset_index()
-            tok_legacy["provider_label"] = tok_legacy["parent_entity_id"].apply(
+            # --- Token Volume: Legacy weekly/monthly ---
+            # Use provider-level Market Share directly so providers that are visible in
+            # the legacy author-share chart are not dropped just because their individual
+            # models missed the rank-capped top-model cutoff.
+            tok_legacy = share_dedup[["usage_week", "entity_id", "metric_value"]].copy()
+            tok_legacy["provider_label"] = tok_legacy["entity_id"].apply(
                 lambda x: _derive_provider_name(f"{x}/model", None)
             )
             pivot_tok_weekly_legacy = (
@@ -1878,9 +1882,10 @@ def render_revenue_estimator(datasets: dict[str, DatasetLoadResult], openrouter_
         "Historical (Pre-Jan 2026): Weekly market share estimates via a Smart-Scaling Hybrid Engine. "
         "Modern (Post-Jan 2026): High-precision daily per-model logs (Tokens * Exact Model Price). "
         "⚠️ Methodological Notes: "
-        "(1) Jan 2026 is a 'Stitched Month' combining legacy estimates (Jan 1-15) and precise logs (Jan 16-31). "
-        "(2) Jan 12 week is rescaled by (7/3) from partial logs to maintain trend continuity. "
-        "(3) Current month is labeled MTD and will grow as data arrives. "
+        "(1) Legacy token volume now comes directly from provider-level Market Share, while legacy revenue still uses model-price inference plus provider top-up. "
+        "(2) Jan 2026 is a 'Stitched Month' combining legacy estimates (Jan 1-15) and precise logs (Jan 16-31). "
+        "(3) Jan 12 week is rescaled by (7/3) from partial logs to maintain trend continuity. "
+        "(4) Current month is labeled MTD and will grow as data arrives. "
         "Actual payouts may vary."
     )
     st.markdown("---")
@@ -2055,12 +2060,11 @@ def render_token_volume_chart(openrouter_views: dict[str, object]) -> None:
         _render_tok_chart(pivot_daily, "Usage Date")
 
     st.caption(
-        "Legacy (pre-Jan 2026): weekly/monthly token views are reconstructed from rank-capped top-model sources, "
-        "so this section only counts top-ranked providers from those snapshots; providers outside the cutoff can be missing, "
-        "shown as 0, or understated. "
+        "Legacy (pre-Jan 2026): weekly/monthly token views come from provider-level Market Share history, "
+        "so they reflect providers visible in OpenRouter's author-share chart rather than only the surviving top-model cutoff. "
         "Modern (post-Jan 2026): daily token views come from exact per-provider logs, but only for the configured priority providers, "
         "not the full OpenRouter provider universe, so some providers may still be missing from the chart. "
-        "⚠️ Cross-check: Revenue ÷ Tokens ≈ implied avg price per token — compare with the Revenue Estimator above."
+        "⚠️ Cross-check: Revenue ÷ Tokens ≈ implied avg price per token — but legacy tokens come from provider totals while legacy revenue still uses model-price inference."
     )
 
 
@@ -2069,7 +2073,7 @@ def render_token_revenue_comparison(openrouter_views: dict[str, object]) -> None
     with st.expander("📊 Revenue ÷ Token Accuracy Check (implied $/token)", expanded=False):
         st.markdown(
             "Divides estimated revenue by token volume for each provider to derive an **implied average price per token**. "
-            "Compare against known model pricing to spot estimation errors.",
+            "Compare against known model pricing to spot estimation errors, while remembering that legacy tokens come from provider totals and legacy revenue comes from a hybrid price-inference model.",
             unsafe_allow_html=True,
         )
         rev_data = openrouter_views.get("revenue_estimator", {})
