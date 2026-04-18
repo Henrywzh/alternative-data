@@ -1,7 +1,6 @@
-import os
 import logging
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import List
 import pandas as pd
 from dataclasses import asdict
 
@@ -10,12 +9,6 @@ from .models import TrendingRepo
 logger = logging.getLogger(__name__)
 
 class GithubTrendingStorage:
-    RETENTION_RULES = {
-        'daily': 5,
-        'weekly': 5,
-        'monthly': 50
-    }
-    
     def __init__(self, base_dir: Path):
         self.base_dir = Path(base_dir)
         self.raw_dir = self.base_dir / "raw" / "github_trending"
@@ -23,27 +16,6 @@ class GithubTrendingStorage:
         
         self.raw_dir.mkdir(parents=True, exist_ok=True)
         self.norm_dir.mkdir(parents=True, exist_ok=True)
-        
-    def _enforce_retention(self, df: pd.DataFrame, period: str) -> pd.DataFrame:
-        """
-        Keeps only the most recent N days based on scrape_date for the given period.
-        """
-        if df.empty:
-            return df
-            
-        retention_days = self.RETENTION_RULES.get(period, 5)
-        
-        # Pandas may return an Arrow-backed extension array here, which does not
-        # implement in-place ``sort()``. Normalize to a plain sorted Python list.
-        unique_dates = sorted(
-            value
-            for value in df["scrape_date"].dropna().astype(str).unique().tolist()
-        )
-        recent_dates = unique_dates[-retention_days:]
-        
-        filtered = df[df['scrape_date'].isin(recent_dates)].copy()
-        logger.info(f"Retained {len(recent_dates)} unique dates for {period} (Policy: {retention_days} days). Rows: {len(filtered)}")
-        return filtered
 
     def _write_manifest(self, run_id: str, scraped_at: str):
         """
@@ -96,9 +68,6 @@ class GithubTrendingStorage:
         # Deduplicate: Keep the last entry for a specific repo on a specific scrape_date
         subset_cols = ['scrape_date', 'period', 'author', 'name']
         combined = combined.drop_duplicates(subset=subset_cols, keep='last')
-        
-        # Enforce retention policy
-        combined = self._enforce_retention(combined, period)
         
         # Save to Parquet
         combined.to_parquet(file_path, index=False)
