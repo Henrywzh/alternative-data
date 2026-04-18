@@ -34,6 +34,7 @@ github-trending-data = "github_trending_data.cli:main"
 provider-adoption-data = "provider_adoption_data.cli:main"
 semiconductor-memory-data = "semiconductor_memory_data.cli:main"
 compute-availability-data = "compute_availability_data.cli:main"
+research-data = "research_data.cli:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

@@ -33,6 +33,10 @@ data/normalized/github_trending/*
 data/normalized/provider_adoption/*
 !data/normalized/provider_adoption/*.csv
 !data/normalized/provider_adoption/*.parquet
+!data/normalized/marts/
+data/normalized/marts/*
+!data/normalized/marts/*.csv
+!data/normalized/marts/*.parquet
 !data/raw/
 data/raw/*
 !data/raw/provider_adoption/
