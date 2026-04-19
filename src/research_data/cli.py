@@ -25,12 +25,15 @@ def main() -> None:
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     catalog_parser = subparsers.add_parser("catalog", help="Show the source and mart dataset catalog.")
+    catalog_parser.add_argument("--base-dir", default=".", help="Repository root to read and write data under.")
     catalog_parser.add_argument("--include-empty", action="store_true", help="Keep zero-row datasets in the output.")
 
     build_marts_parser = subparsers.add_parser("build-marts", help="Build every research mart.")
+    build_marts_parser.add_argument("--base-dir", default=".", help="Repository root to read and write data under.")
     build_marts_parser.add_argument("--refresh", action="store_true", help="Force rebuild even if mart files exist.")
 
     build_mart_parser = subparsers.add_parser("build-mart", help="Build a single named mart.")
+    build_mart_parser.add_argument("--base-dir", default=".", help="Repository root to read and write data under.")
     build_mart_parser.add_argument("mart_name", choices=sorted(MART_REGISTRY))
     build_mart_parser.add_argument("--refresh", action="store_true", help="Force rebuild even if mart files exist.")
 

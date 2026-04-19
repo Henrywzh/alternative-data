@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 from dashboard import data as dashboard_data
 from research_data.api import monthly_model_releases
+from research_data.cli import main as research_cli_main
 from research_data.catalog import catalog
 from research_data.marts import (
     build_daily_provider_economics,
@@ -330,3 +333,24 @@ def test_mart_builds_are_idempotent_and_write_csv_and_parquet(tmp_path: Path) ->
     csv_path, parquet_path = mart_paths("weekly_openrouter_usage", base_dir=tmp_path)
     assert csv_path.exists()
     assert parquet_path.exists()
+
+
+def test_research_cli_accepts_base_dir_after_subcommand(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys) -> None:
+    _seed_research_inputs(tmp_path)
+
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "research-data",
+            "build-mart",
+            "weekly_openrouter_usage",
+            "--base-dir",
+            str(tmp_path),
+        ],
+    )
+
+    research_cli_main()
+
+    captured = capsys.readouterr()
+    assert "weekly_openrouter_usage:" in captured.out
