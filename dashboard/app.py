@@ -265,6 +265,7 @@ def prepare_hf_models_table(
     latest_hf_models: pd.DataFrame,
     *,
     provider_display_name: str | None,
+    metric_label: str = "Trailing 30d",
     limit: int = 20,
 ) -> pd.DataFrame:
     if latest_hf_models.empty or not provider_display_name or provider_display_name == "All":
@@ -274,11 +275,14 @@ def prepare_hf_models_table(
     if table.empty:
         return pd.DataFrame(columns=["Provider", "Model", "30d Downloads", "All-Time Downloads", "Daily (Est)", "Likes", "Last Modified"])
 
-    table = table.sort_values(
-        ["hf_downloads_30d", "hf_downloads_all_time"],
-        ascending=[False, False],
-        na_position="last",
-    ).head(limit)
+    if metric_label == "Daily (Est)":
+        sort_columns = ["hf_downloads_daily_est", "hf_downloads_all_time"]
+    elif metric_label == "All-time":
+        sort_columns = ["hf_downloads_all_time", "hf_downloads_30d"]
+    else:
+        sort_columns = ["hf_downloads_30d", "hf_downloads_all_time"]
+
+    table = table.sort_values(sort_columns, ascending=[False, False], na_position="last").head(limit)
 
     return table.rename(
         columns={
@@ -303,6 +307,16 @@ def resolve_hf_metric_config(metric_label: str) -> dict[str, str]:
             "downloads_axis": "Downloads (All-Time)",
             "downloads_hover": "all-time downloads",
             "share_title": "Hugging Face Download Share (All-Time)",
+            "models_caption_metric": "all-time downloads",
+        }
+    if metric_label == "Daily (Est)":
+        return {
+            "value_column": "downloads_daily_est",
+            "downloads_title": "Hugging Face Daily Downloads (Est)",
+            "downloads_axis": "Downloads (Daily Est)",
+            "downloads_hover": "estimated daily downloads",
+            "share_title": "Hugging Face Download Share (Daily Est)",
+            "models_caption_metric": "estimated daily downloads",
         }
     return {
         "value_column": "downloads_30d",
@@ -310,6 +324,7 @@ def resolve_hf_metric_config(metric_label: str) -> dict[str, str]:
         "downloads_axis": "Downloads (30d)",
         "downloads_hover": "30d downloads",
         "share_title": "Hugging Face Download Share (30d)",
+        "models_caption_metric": "trailing 30d downloads",
     }
 
 
@@ -2483,7 +2498,7 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
 
     hf_metric = st.segmented_control(
         "Hugging Face metric",
-        options=["Trailing 30d", "All-time"],
+        options=["Trailing 30d", "Daily (Est)", "All-time"],
         default="Trailing 30d",
         key="provider_adoption_hf_metric",
     )
@@ -2549,9 +2564,12 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
                 table = prepare_hf_models_table(
                     latest_hf_models,
                     provider_display_name=selected_hf_provider,
+                    metric_label=hf_metric,
                     limit=20,
                 )
-                st.caption(f"Showing top 20 models for {selected_hf_provider} by trailing 30d downloads.")
+                st.caption(
+                    f"Showing top 20 models for {selected_hf_provider} by {hf_metric_config['models_caption_metric']}."
+                )
                 st.dataframe(table.fillna("-"), use_container_width=True, hide_index=True)
 
     with pypi_tab:

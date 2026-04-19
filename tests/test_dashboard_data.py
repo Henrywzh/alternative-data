@@ -18,6 +18,7 @@ from dashboard.app import (
     make_stacked_area_chart,
     market_share_legend_rows,
     prepare_hf_models_table,
+    resolve_hf_metric_config,
     regroup_provider_pivot_for_display,
     _top_n_with_others,
     rankings_bucket_warning,
@@ -911,6 +912,91 @@ def test_prepare_hf_models_table_uses_all_time_as_tiebreaker() -> None:
     assert len(table) == 2
     assert table.iloc[0]["Model"] == "openai/tie-high"
     assert table.iloc[1]["Model"] == "openai/tie-low"
+
+
+def test_prepare_hf_models_table_daily_est_sorts_nulls_last() -> None:
+    table = prepare_hf_models_table(
+        _provider_hf_frame(),
+        provider_display_name="OpenAI",
+        metric_label="Daily (Est)",
+        limit=20,
+    )
+
+    assert len(table) == 2
+    assert table.iloc[0]["Model"] == "openai/gpt-oss-120b"
+    assert table.iloc[1]["Model"] == "openai/gpt-oss-20b"
+
+
+def test_prepare_hf_models_table_all_time_uses_30d_as_tiebreaker() -> None:
+    rows = []
+    for model_id, downloads_30d in [("openai/tie-high-30d", 600), ("openai/tie-low-30d", 500)]:
+        row = _base_row("huggingface_models_daily")
+        row.update(
+            {
+                "provider": "openai",
+                "provider_display_name": "OpenAI",
+                "author": "openai",
+                "model_id": model_id,
+                "download_date": "2026-04-06",
+                "hf_downloads_30d": downloads_30d,
+                "hf_downloads_all_time": 9000,
+                "hf_downloads_daily_est": 50,
+                "hf_likes": 10,
+                "hf_last_modified": "2026-04-06T12:00:00Z",
+            }
+        )
+        rows.append(row)
+
+    table = prepare_hf_models_table(
+        pd.DataFrame(rows, columns=EXPECTED_COLUMNS),
+        provider_display_name="OpenAI",
+        metric_label="All-time",
+        limit=20,
+    )
+
+    assert len(table) == 2
+    assert table.iloc[0]["Model"] == "openai/tie-high-30d"
+    assert table.iloc[1]["Model"] == "openai/tie-low-30d"
+
+
+def test_resolve_hf_metric_config_supports_all_metric_modes() -> None:
+    trailing = resolve_hf_metric_config("Trailing 30d")
+    daily = resolve_hf_metric_config("Daily (Est)")
+    all_time = resolve_hf_metric_config("All-time")
+
+    assert trailing["value_column"] == "downloads_30d"
+    assert trailing["models_caption_metric"] == "trailing 30d downloads"
+    assert daily["value_column"] == "downloads_daily_est"
+    assert daily["downloads_title"] == "Hugging Face Daily Downloads (Est)"
+    assert daily["models_caption_metric"] == "estimated daily downloads"
+    assert all_time["value_column"] == "downloads_all_time"
+    assert all_time["models_caption_metric"] == "all-time downloads"
+
+
+def test_compute_provider_adoption_views_exposes_hf_daily_est_rollups(tmp_path: Path) -> None:
+    root = tmp_path / "data" / "normalized" / "provider_adoption"
+    root.mkdir(parents=True, exist_ok=True)
+    _provider_pypi_frame().to_csv(root / "pypi_downloads_daily.csv", index=False)
+    _provider_npm_frame().to_csv(root / "npm_downloads_daily.csv", index=False)
+    _provider_hf_frame().to_csv(root / "huggingface_models_daily.csv", index=False)
+    _provider_candidates_frame().to_csv(root / "github_repo_candidates_daily.csv", index=False)
+    _provider_signals_frame().to_csv(root / "github_provider_signals_daily.csv", index=False)
+    _provider_rollup_frame().to_csv(root / "github_repo_rollup_daily.csv", index=False)
+    _provider_momentum_frame().to_csv(root / "provider_momentum_daily.csv", index=False)
+
+    datasets = load_domain_datasets("provider_adoption", base_dir=tmp_path)
+    views = compute_provider_adoption_views(datasets)
+
+    hf_grouped = views["hf_grouped"].sort_values(["download_date", "provider_display_name"]).reset_index(drop=True)
+    openai_latest = hf_grouped[
+        (hf_grouped["download_date"] == "2026-04-06") & (hf_grouped["provider_display_name"] == "OpenAI")
+    ].iloc[0]
+    anthropic_latest = hf_grouped[
+        (hf_grouped["download_date"] == "2026-04-06") & (hf_grouped["provider_display_name"] == "Anthropic")
+    ].iloc[0]
+
+    assert float(openai_latest["downloads_daily_est"]) == 200.0
+    assert float(anthropic_latest["downloads_daily_est"]) == 250.0
 
 
 def test_dataset_source_for_domain_maps_expected_roots() -> None:
