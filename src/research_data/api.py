@@ -12,7 +12,6 @@ from .marts import (
     build_daily_provider_economics,
     build_frontier_model_registry,
     build_weekly_openrouter_usage,
-    compute_daily_provider_economics,
 )
 
 
@@ -89,16 +88,13 @@ def provider_revenue_daily(
     end: str | None = None,
     *,
     include_others: bool = True,
-    pricing_mode: str = "asof_snapshot",
     base_dir: str | Path | None = None,
     refresh: bool = False,
 ) -> pd.DataFrame:
-    if pricing_mode == "asof_snapshot":
-        frame = build_daily_provider_economics(base_dir=base_dir, refresh=refresh).copy()
-    elif pricing_mode == "latest_snapshot":
-        frame = compute_daily_provider_economics(base_dir=base_dir, pricing_mode="latest_snapshot")
-    else:
-        raise ValueError("pricing_mode must be 'asof_snapshot' or 'latest_snapshot'")
+    frame = build_daily_provider_economics(
+        base_dir=base_dir,
+        refresh=refresh,
+    ).copy()
 
     provider_filters = to_filter_list(providers)
     if provider_filters:

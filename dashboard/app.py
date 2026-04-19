@@ -5,6 +5,7 @@ import sys
 import re
 from datetime import datetime
 
+import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
@@ -27,6 +28,8 @@ from dashboard.data import (
     load_domain_datasets,
     load_latest_manifest,
 )
+from openrouter_revenue import build_price_context, canonical_model_key, estimate_usage_revenue, resolve_model_key
+from pricing_model_aliases import generate_candidate_aliases
 from semiconductor_memory_data.sources.config import AI_DEMAND_PPI_WEIGHTS
 
 
@@ -655,75 +658,56 @@ def _compute_revenue_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, 
 
     if activity_res and not activity_res.frame.empty and pricing_res and not pricing_res.frame.empty:
         pricing = pricing_res.frame.copy()
-        
-        # Get latest pricing per model
-        latest_pricing = pricing.sort_values("snapshot_ts").groupby("model_id").tail(1)
-        pricing_model_ids = set(latest_pricing["model_id"].tolist())
-        
-        def normalize_slug(slug):
-            slug_str = str(slug)
-            if not slug_str or slug_str.lower() in ["nan", "none", "null"]:
-                return slug_str
-            
-            # 1. Strip common tags
-            slug_str = re.sub(r':(free|beta|alpha|online|chat|search)$', '', slug_str)
-            
-            if slug_str in pricing_model_ids:
-                return slug_str
-            
-            # 2. Universal Date Stripping (e.g., -20250807, -2025-08-07, -04-02)
-            # Support both hyphenated dates and continuous digit dates like -20251201
-            pattern = r'-(\d{8}|\d{4}-\d{2}-\d{2}|\d{2}-\d{2})$'
-            base = re.sub(pattern, '', slug_str)
-            
-            # --- Anthropic Special: Normalize claude-3-5 to claude-3.5, etc. ---
-            if "anthropic/" in base:
-                base = base.replace("claude-3-5", "claude-3.5").replace("claude-4-5", "claude-4.5")
+        price_context = build_price_context(pricing)
+        model_price_lookup = dict(
+            zip(price_context.model_stats["canonical_model_key"], price_context.model_stats["pricing_blended"])
+        )
+        prov_benchmarks = {
+            provider: stats["pricing_blended"]
+            for provider, stats in price_context.provider_lookup.items()
+            if pd.notna(stats["pricing_blended"])
+        }
+        global_avg_p = (
+            price_context.global_stats["pricing_blended"]
+            if price_context.global_stats is not None
+            else np.nan
+        )
 
-            if base in pricing_model_ids:
-                return base
-                
-            # 3. Vendor Fallbacks
-            if base.startswith("anthropic/claude-"):
-                m = re.match(r'anthropic/claude-([\d\.]+)-(opus|sonnet|haiku)', base)
-                if m:
-                    permuted = f"anthropic/claude-{m.group(2)}-{m.group(1)}"
-                    if permuted in pricing_model_ids: return permuted
+        def normalize_slug(slug):
+            resolved = resolve_model_key(slug, price_context.alias_to_model_key, slug_strategy="canonical")
+            if resolved is not None:
+                return resolved
+            return canonical_model_key(slug) or str(slug)
             
-            if base.startswith("qwen/qwen"):
-                # Handle qwen3.6-plus -> qwen-plus if required, but first check base
-                if base in pricing_model_ids: return base
-                # generic plus/max fallback
-                if "plus" in base and "qwen/qwen-plus" in pricing_model_ids: return "qwen/qwen-plus"
-                if "max" in base and "qwen/qwen-max" in pricing_model_ids: return "qwen/qwen-max"
-                
-            return base if base in pricing_model_ids else slug_str
-            
-        def process_revenue_df(df, slug_col, tokens_col, date_col, is_macro=False):
-            df["fuzzy_slug"] = df[slug_col].apply(normalize_slug)
-            df_cols = [c for c in df.columns if c not in ["pricing_prompt", "pricing_completion", "top_provider_id", "model_id"]]
-            
-            merged = df[df_cols].merge(
-                latest_pricing[["model_id", "pricing_prompt", "pricing_completion", "top_provider_id"]],
-                left_on="fuzzy_slug", right_on="model_id", how="inner"
+        def process_revenue_df(df, slug_col, tokens_col, date_col, is_macro=False, provider_col=None):
+            working = df.copy()
+            working["model_permaslug"] = working[slug_col]
+            if provider_col and provider_col in working.columns:
+                working["provider_slug"] = working[provider_col]
+            else:
+                working["provider_slug"] = working["model_permaslug"].apply(
+                    lambda value: str(value).split("/")[0] if isinstance(value, str) and "/" in value else "Others"
+                )
+            working["total_tokens"] = pd.to_numeric(working[tokens_col], errors="coerce")
+            if not is_macro and "prompt_tokens" in working.columns and "completion_tokens" in working.columns:
+                working["prompt_tokens"] = pd.to_numeric(working["prompt_tokens"], errors="coerce").fillna(0.0)
+                working["completion_tokens"] = pd.to_numeric(working["completion_tokens"], errors="coerce").fillna(0.0)
+            else:
+                working["prompt_tokens"] = 0.0
+                working["completion_tokens"] = 0.0
+
+            merged = estimate_usage_revenue(
+                working,
+                pricing,
+                slug_strategy="canonical",
+                pricing_strategy="provider_fallback",
             )
-            merged = merged[(merged["pricing_prompt"].notna()) & (merged["pricing_prompt"] >= 0)].copy()
+            merged = merged[merged["estimated_revenue"].notna()].copy()
             if merged.empty:
                 return pd.DataFrame()
-                
-            if not is_macro and "prompt_tokens" in merged.columns and "completion_tokens" in merged.columns and merged["prompt_tokens"].notna().any():
-                merged["revenue_usd"] = (
-                    (merged["prompt_tokens"] * merged["pricing_prompt"].astype(float)) +
-                    (merged["completion_tokens"] * merged["pricing_completion"].astype(float))
-                )
-            else:
-                merged["revenue_usd"] = (
-                    (merged[tokens_col] * 0.977 * merged["pricing_prompt"].astype(float)) +
-                    (merged[tokens_col] * 0.023 * merged["pricing_completion"].astype(float))
-                )
-                
-            merged["provider_label"] = merged.apply(
-                lambda x: _derive_provider_name(x["model_id"], x["top_provider_id"]), axis=1
+            merged["revenue_usd"] = pd.to_numeric(merged["estimated_revenue"], errors="coerce")
+            merged["provider_label"] = merged["provider_slug"].apply(
+                lambda slug: _derive_provider_name(f"{slug}/model", None)
             )
             
             merged["usage_date_dt"] = pd.to_datetime(merged[date_col], errors="coerce")
@@ -762,7 +746,6 @@ def _compute_revenue_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, 
         if macro_res and not macro_res.frame.empty and market_share_res and not market_share_res.frame.empty:
             macro_df = macro_res.frame.copy()
             share_df = market_share_res.frame.copy()
-            pricing_df = latest_pricing.copy()
             
             # Helper: Align Sundays to the following Monday
             def _align_to_monday(dt_series):
@@ -775,25 +758,17 @@ def _compute_revenue_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, 
             macro_df["usage_week"] = _align_to_monday(macro_df["week_start_date"])
             share_df["usage_week"] = _align_to_monday(share_df["week_start_date"])
             
-            # 2. Pre-compute Fuzzy Pricing Map
-            pricing_df["fuzzy_id"] = pricing_df["model_id"].apply(_fuzzy_normalize_model_id)
-            pricing_df["avg_p"] = (pricing_df["pricing_prompt"] * 0.977) + (pricing_df["pricing_completion"] * 0.023)
-            # Take the highest price for a fuzzy match (optimistic, works for Opus vs Sonnet)
-            fuzzy_prices = pricing_df.groupby("fuzzy_id")["avg_p"].max().to_dict()
-            
-            # --- GLOBAL PROVIDER BENCHMARKS (Used by both engines) ---
-            pricing_df["provider_prefix"] = pricing_df["model_id"].apply(lambda x: str(x).split("/")[0] if "/" in str(x) else "Others")
-            prov_benchmarks = pricing_df[pricing_df["avg_p"] > 0].groupby("provider_prefix")["avg_p"].median().to_dict()
-            global_avg_p = pricing_df[pricing_df["avg_p"] > 0]["avg_p"].median()
-            
             # 4. Tier 1: Precise Model Summation
             macro_dedup = macro_df.drop_duplicates(subset=["usage_week", "entity_id"])
-            macro_dedup["fuzzy_id"] = macro_dedup["entity_id"].apply(_fuzzy_normalize_model_id)
+            macro_dedup["model_key"] = macro_dedup["entity_id"].apply(
+                lambda value: resolve_model_key(value, price_context.alias_to_model_key, slug_strategy="canonical")
+                or canonical_model_key(value)
+            )
             
             def get_precise_p(row):
-                 fuzzy_id = row.get("fuzzy_id")
-                 if fuzzy_id in fuzzy_prices:
-                     return fuzzy_prices[fuzzy_id]
+                 model_key = row.get("model_key")
+                 if model_key in model_price_lookup:
+                     return model_price_lookup[model_key]
                  
                  parent_id = row.get("parent_entity_id")
                  fallback_key = str(parent_id) if pd.notna(parent_id) else ""
@@ -881,58 +856,19 @@ def _compute_revenue_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, 
             pivot_tok_monthly_modern = pd.DataFrame()
             if modern_activity_res and not modern_activity_res.frame.empty:
                 modern_df = modern_activity_res.frame.copy()
-                
-                # HARD CLEANUP: Remove any existing pricing columns to avoid merge collisions (_x, _y)
-                modern_df = modern_df.drop(columns=["pricing_prompt", "pricing_completion", "model_id"], errors="ignore")
-                
-                # FUZZY MATCHING: Modern activity often has date suffixes (e.g., -2025-08-07)
-                # We must normalize to match the pricing catalog base IDs
-                modern_df["fuzzy_slug"] = modern_df["model_permaslug"].apply(normalize_slug)
-                
-                # latest_pricing already has model_id column
-                latest_pricing["model_id"] = latest_pricing["model_id"].astype(str)
-                
-                # Join with latest pricing using FUZZY slug
-                modern_with_price = modern_df.merge(
-                    latest_pricing[["model_id", "pricing_prompt", "pricing_completion"]],
-                    left_on="fuzzy_slug",
-                    right_on="model_id",
-                    how="left"
+                modern_with_price = estimate_usage_revenue(
+                    modern_df,
+                    pricing,
+                    slug_strategy="canonical",
+                    pricing_strategy="provider_fallback",
                 )
-                
-                # Ensure columns are present even if join had issues (defensive)
-                if "pricing_prompt" not in modern_with_price.columns and "pricing_prompt_y" in modern_with_price.columns:
-                    modern_with_price["pricing_prompt"] = modern_with_price["pricing_prompt_y"]
-                    modern_with_price["pricing_completion"] = modern_with_price["pricing_completion_y"]
-
-                # Exact calculation
+                modern_with_price = modern_with_price[
+                    modern_with_price["estimated_revenue"].notna()
+                ].copy()
+                modern_with_price["revenue_usd"] = pd.to_numeric(
+                    modern_with_price["estimated_revenue"], errors="coerce"
+                )
                 modern_with_price["usage_date_dt"] = pd.to_datetime(modern_with_price["usage_date"])
-                
-                # REVENUE ENGINE DEFENSE: If pricing is missing for a specific model, 
-                # use the provider's median price from prov_benchmarks instead of $0.
-                def get_modern_price(row):
-                    # Priority 1: Exact/Fuzzy Joined Price
-                    p = pd.to_numeric(row.get("pricing_prompt"), errors="coerce")
-                    if pd.notna(p) and p > 0:
-                        return p
-                    
-                    # Priority 2: Provider Median Fallback
-                    # Use category_slug (provider ID) as it is most reliable for new data
-                    pid = str(row.get("category_slug", "Others")).lower()
-                    # Map common slugs if needed
-                    if pid == "meta-llama": pid = "meta"
-                    
-                    # Use global_avg_p if both fail (though benchmarks should be initialized)
-                    try:
-                        return prov_benchmarks.get(pid, global_avg_p)
-                    except NameError:
-                        return 1.0e-06 # extreme safety fallback
-
-                modern_with_price["p_prompt_final"] = modern_with_price.apply(get_modern_price, axis=1)
-                
-                # Calculation: OpenRouter raw metadata pricing is per-token (e.g., 0.000003).
-                # To get USD: tokens * price_per_token
-                modern_with_price["revenue_usd"] = modern_with_price["total_tokens"] * modern_with_price["p_prompt_final"]
                 
                 # Formatting
                 modern_with_price["usage_date_str"] = modern_with_price["usage_date_dt"].dt.strftime('%Y-%m-%d')

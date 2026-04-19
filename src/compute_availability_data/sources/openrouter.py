@@ -7,6 +7,7 @@ from typing import Any
 import requests
 
 from compute_availability_data.models import DatasetRecord, Snapshot
+from pricing_model_aliases import derive_provider_prefix
 
 
 class OpenRouterSource:
@@ -40,6 +41,7 @@ class OpenRouterSource:
                     scraped_at=scraped_at,
                     snapshot_ts=snapshot_ts,
                     model_id=model.get("id"),
+                    canonical_slug=model.get("canonical_slug"),
                     model_name=model.get("name"),
                     created_at=float(model.get("created")) if model.get("created") else None,
                     context_length=float(model.get("context_length")) if model.get("context_length") else None,
@@ -47,6 +49,7 @@ class OpenRouterSource:
                     pricing_prompt=float(pricing.get("prompt")) if pricing.get("prompt") else None,
                     pricing_completion=float(pricing.get("completion")) if pricing.get("completion") else None,
                     top_provider_id=top_provider.get("id"),
+                    provider_prefix=derive_provider_prefix(model.get("canonical_slug") or model.get("id")),
                 )
             )
         return records

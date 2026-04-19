@@ -35,6 +35,7 @@ class DatasetRecord:
 
     # OpenRouter fields
     model_id: str | None = None
+    canonical_slug: str | None = None
     model_name: str | None = None
     created_at: float | None = None
     context_length: float | None = None
@@ -42,6 +43,7 @@ class DatasetRecord:
     pricing_prompt: float | None = None
     pricing_completion: float | None = None
     top_provider_id: str | None = None
+    provider_prefix: str | None = None
 
     # Lambda Cloud fields
     instance_type_name: str | None = None

@@ -182,7 +182,16 @@ DATASET_REGISTRY: dict[str, dict[str, object]] = {
         "natural_keys": ["model_id", "snapshot_ts"],
         "primary_date_column": "snapshot_ts",
         "metric_column": "pricing_prompt",
-        "required_columns": ["model_id", "snapshot_ts", "pricing_prompt", "pricing_completion", "context_length", "top_provider_id"],
+        "required_columns": [
+            "model_id",
+            "snapshot_ts",
+            "pricing_prompt",
+            "pricing_completion",
+            "context_length",
+            "top_provider_id",
+            "canonical_slug",
+            "provider_prefix",
+        ],
     },
     "raw_lambda_instance_types": {
         "label": "Lambda GPU Stock",
@@ -419,6 +428,7 @@ ACTIVITY_COLUMNS = [
 COMPUTE_AVAILABILITY_COLUMNS = [
     "snapshot_ts",
     "model_id",
+    "canonical_slug",
     "model_name",
     "created_at",
     "context_length",
@@ -426,6 +436,7 @@ COMPUTE_AVAILABILITY_COLUMNS = [
     "pricing_prompt",
     "pricing_completion",
     "top_provider_id",
+    "provider_prefix",
     "instance_type_name",
     "gpu_type",
     "gpu_count",
