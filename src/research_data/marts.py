@@ -5,8 +5,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from openrouter_revenue import estimate_usage_revenue
 from .clean import clean_model_id, mean_of_available, percentile_rank, to_datetime
-from .joins import attach_asof_pricing, attach_latest_pricing, latest_huggingface_snapshot, latest_pricing_snapshot
+from .joins import latest_huggingface_snapshot, latest_pricing_snapshot
 from .loaders import load_dataset
 
 
@@ -59,33 +60,6 @@ def write_mart(mart_name: str, frame: pd.DataFrame, base_dir: str | Path | None 
     return frame
 
 
-def _estimate_revenue(frame: pd.DataFrame) -> pd.DataFrame:
-    estimated = frame.copy()
-    prompt_price = pd.to_numeric(estimated["pricing_prompt"], errors="coerce")
-    completion_price = pd.to_numeric(estimated["pricing_completion"], errors="coerce")
-    prompt_tokens = pd.to_numeric(estimated["prompt_tokens"], errors="coerce").fillna(0.0)
-    completion_tokens = pd.to_numeric(estimated["completion_tokens"], errors="coerce").fillna(0.0)
-    total_tokens = pd.to_numeric(estimated["total_tokens"], errors="coerce")
-
-    has_split = (prompt_tokens + completion_tokens) > 0
-    fallback_unit_price = pd.concat([prompt_price, completion_price], axis=1).mean(axis=1, skipna=True)
-    estimated["estimated_revenue"] = np.where(
-        estimated["pricing_join_status"] != "matched",
-        np.nan,
-        np.where(
-            has_split,
-            (prompt_tokens * prompt_price.fillna(0.0)) + (completion_tokens * completion_price.fillna(0.0)),
-            total_tokens * fallback_unit_price,
-        ),
-    )
-    estimated["pricing_join_status"] = np.where(
-        estimated["pricing_join_status"] != "matched",
-        estimated["pricing_join_status"],
-        np.where(has_split, "matched_exact_split", "matched_avg_price"),
-    )
-    return estimated
-
-
 def compute_weekly_openrouter_usage(base_dir: str | Path | None = None) -> pd.DataFrame:
     standardized_frames: list[pd.DataFrame] = []
     dataset_configs = [
@@ -136,8 +110,6 @@ def compute_weekly_openrouter_usage(base_dir: str | Path | None = None) -> pd.Da
 
 def compute_daily_provider_economics(
     base_dir: str | Path | None = None,
-    *,
-    pricing_mode: str = "asof_snapshot",
 ) -> pd.DataFrame:
     activity = load_dataset("provider_daily_activity", base_dir=base_dir)
     pricing = load_dataset("raw_openrouter_models", base_dir=base_dir)
@@ -175,12 +147,12 @@ def compute_daily_provider_economics(
     activity["provider_name"] = activity["entity_name"].astype("string")
     activity["model_permaslug"] = clean_model_id(activity["model_permaslug"])
 
-    if pricing_mode == "latest_snapshot":
-        merged = attach_latest_pricing(activity, pricing)
-    else:
-        merged = attach_asof_pricing(activity, pricing)
-
-    estimated = _estimate_revenue(merged)
+    estimated = estimate_usage_revenue(
+        activity,
+        pricing,
+        slug_strategy="canonical",
+        pricing_strategy="provider_fallback",
+    )
     estimated = estimated.rename(columns={"pricing_context_length": "context_length"})
 
     output = estimated[
@@ -307,12 +279,15 @@ def build_weekly_openrouter_usage(base_dir: str | Path | None = None, refresh: b
     return write_mart("weekly_openrouter_usage", compute_weekly_openrouter_usage(base_dir=base_dir), base_dir=base_dir)
 
 
-def build_daily_provider_economics(base_dir: str | Path | None = None, refresh: bool = False) -> pd.DataFrame:
+def build_daily_provider_economics(
+    base_dir: str | Path | None = None,
+    refresh: bool = False,
+) -> pd.DataFrame:
     if not refresh:
         existing = read_mart("daily_provider_economics", base_dir=base_dir)
         if not existing.empty:
             return existing
-    computed = compute_daily_provider_economics(base_dir=base_dir, pricing_mode="asof_snapshot")
+    computed = compute_daily_provider_economics(base_dir=base_dir)
     return write_mart("daily_provider_economics", computed, base_dir=base_dir)
 
 
