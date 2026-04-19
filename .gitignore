@@ -78,6 +78,7 @@ data/normalized/semiconductor_memory/*
 .DS_Store
 .vscode/
 .idea/
+img/
 
 # Local tool config — never push
 .claude/

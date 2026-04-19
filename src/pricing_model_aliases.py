@@ -5,7 +5,7 @@ import re
 
 SUPPORTED_TAG_SUFFIX_RE = re.compile(r":(free|beta|alpha|online|chat|search)$")
 DATE_SUFFIX_RE = re.compile(
-    r"-(\d{8}|\d{4}-\d{2}-\d{2}|\d{2}-\d{2}|(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01]))$"
+    r"-(\d{8}|\d{4}-\d{2}-\d{2}|\d{2}-\d{2}|(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])|\d{2}(?:0[1-9]|1[0-2]))$"
 )
 ANTHROPIC_VERSION_RE = re.compile(r"(anthropic/claude-)(\d)-(\d)(?=[-/]|$)")
 ANTHROPIC_ORDER_RE = re.compile(r"anthropic/claude-([\d.]+)-(opus|sonnet|haiku)(?=$|[-/])")
