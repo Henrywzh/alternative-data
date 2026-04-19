@@ -8,7 +8,7 @@ import pandas as pd
 import pytest
 
 from dashboard import data as dashboard_data
-from research_data.api import monthly_model_releases
+from research_data.api import monthly_model_releases, provider_revenue_daily
 from research_data.cli import main as research_cli_main
 from research_data.catalog import catalog
 from research_data.marts import (
@@ -146,6 +146,84 @@ def _seed_research_inputs(base_dir: Path) -> None:
                 "prompt_tokens": 0.0,
                 "completion_tokens": 0.0,
             },
+            {
+                "dataset_id": "provider_daily_activity",
+                "source_url": "https://openrouter.ai/openai",
+                "source_run_id": "run-2",
+                "scraped_at": "2026-04-18T00:00:00Z",
+                "entity_id": "openai",
+                "entity_name": "OpenAI",
+                "usage_date": "2026-04-16",
+                "model_permaslug": "openai/gpt-5.4-20260305",
+                "total_tokens": 200.0,
+                "prompt_tokens": 0.0,
+                "completion_tokens": 0.0,
+            },
+            {
+                "dataset_id": "provider_daily_activity",
+                "source_url": "https://openrouter.ai/anthropic",
+                "source_run_id": "run-2",
+                "scraped_at": "2026-04-18T00:00:00Z",
+                "entity_id": "anthropic",
+                "entity_name": "Anthropic",
+                "usage_date": "2026-04-16",
+                "model_permaslug": "anthropic/claude-4.6-sonnet-20260217",
+                "total_tokens": 100.0,
+                "prompt_tokens": 60.0,
+                "completion_tokens": 40.0,
+            },
+            {
+                "dataset_id": "provider_daily_activity",
+                "source_url": "https://openrouter.ai/qwen",
+                "source_run_id": "run-2",
+                "scraped_at": "2026-04-18T00:00:00Z",
+                "entity_id": "qwen",
+                "entity_name": "Qwen",
+                "usage_date": "2026-04-16",
+                "model_permaslug": "qwen/qwen3.5-flash-20260224",
+                "total_tokens": 300.0,
+                "prompt_tokens": 0.0,
+                "completion_tokens": 0.0,
+            },
+            {
+                "dataset_id": "provider_daily_activity",
+                "source_url": "https://openrouter.ai/openai",
+                "source_run_id": "run-2",
+                "scraped_at": "2026-04-18T00:00:00Z",
+                "entity_id": "openai",
+                "entity_name": "OpenAI",
+                "usage_date": "2026-04-16",
+                "model_permaslug": "openai/new-unpriced-model",
+                "total_tokens": 80.0,
+                "prompt_tokens": 0.0,
+                "completion_tokens": 0.0,
+            },
+            {
+                "dataset_id": "provider_daily_activity",
+                "source_url": "https://openrouter.ai/xiaomi",
+                "source_run_id": "run-2",
+                "scraped_at": "2026-04-18T00:00:00Z",
+                "entity_id": "xiaomi",
+                "entity_name": "Xiaomi",
+                "usage_date": "2026-04-16",
+                "model_permaslug": "xiaomi/missing-model",
+                "total_tokens": 90.0,
+                "prompt_tokens": 0.0,
+                "completion_tokens": 0.0,
+            },
+            {
+                "dataset_id": "provider_daily_activity",
+                "source_url": "https://openrouter.ai/openai",
+                "source_run_id": "run-2",
+                "scraped_at": "2026-04-18T00:00:00Z",
+                "entity_id": "openai",
+                "entity_name": "OpenAI",
+                "usage_date": "2026-04-16",
+                "model_permaslug": "Others",
+                "total_tokens": 70.0,
+                "prompt_tokens": 0.0,
+                "completion_tokens": 0.0,
+            },
         ],
     )
     _write_dataset(
@@ -159,10 +237,12 @@ def _seed_research_inputs(base_dir: Path) -> None:
                 "scraped_at": "2026-04-15T12:00:00Z",
                 "snapshot_ts": "2026-04-15T12:00:00Z",
                 "model_id": "openai/gpt-4.1",
+                "canonical_slug": "openai/gpt-4.1",
                 "model_name": "OpenAI GPT-4.1",
                 "context_length": 131072,
                 "pricing_prompt": 0.001,
                 "pricing_completion": 0.002,
+                "provider_prefix": "openai",
             },
             {
                 "dataset_id": "raw_openrouter_models",
@@ -171,10 +251,54 @@ def _seed_research_inputs(base_dir: Path) -> None:
                 "scraped_at": "2026-04-17T12:00:00Z",
                 "snapshot_ts": "2026-04-17T12:00:00Z",
                 "model_id": "openai/gpt-4.1",
+                "canonical_slug": "openai/gpt-4.1",
                 "model_name": "OpenAI GPT-4.1",
                 "context_length": 262144,
                 "pricing_prompt": 0.010,
                 "pricing_completion": 0.020,
+                "provider_prefix": "openai",
+            },
+            {
+                "dataset_id": "raw_openrouter_models",
+                "source_url": "https://openrouter.ai/api/v1/models",
+                "source_run_id": "run-3",
+                "scraped_at": "2026-04-15T12:00:00Z",
+                "snapshot_ts": "2026-04-15T12:00:00Z",
+                "model_id": "openai/gpt-5.4",
+                "canonical_slug": "openai/gpt-5.4-20260305",
+                "model_name": "OpenAI GPT-5.4",
+                "context_length": 262144,
+                "pricing_prompt": 0.003,
+                "pricing_completion": 0.009,
+                "provider_prefix": "openai",
+            },
+            {
+                "dataset_id": "raw_openrouter_models",
+                "source_url": "https://openrouter.ai/api/v1/models",
+                "source_run_id": "run-3",
+                "scraped_at": "2026-04-15T12:00:00Z",
+                "snapshot_ts": "2026-04-15T12:00:00Z",
+                "model_id": "anthropic/claude-sonnet-4.6",
+                "canonical_slug": "anthropic/claude-4.6-sonnet-20260217",
+                "model_name": "Claude Sonnet 4.6",
+                "context_length": 200000,
+                "pricing_prompt": 0.004,
+                "pricing_completion": 0.008,
+                "provider_prefix": "anthropic",
+            },
+            {
+                "dataset_id": "raw_openrouter_models",
+                "source_url": "https://openrouter.ai/api/v1/models",
+                "source_run_id": "run-3",
+                "scraped_at": "2026-04-15T12:00:00Z",
+                "snapshot_ts": "2026-04-15T12:00:00Z",
+                "model_id": "qwen/qwen3.5-flash-02-23",
+                "canonical_slug": "qwen/qwen3.5-flash-20260224",
+                "model_name": "Qwen 3.5 Flash",
+                "context_length": 1000000,
+                "pricing_prompt": 0.000000065,
+                "pricing_completion": 0.00000026,
+                "provider_prefix": "qwen",
             },
         ],
     )
@@ -282,13 +406,165 @@ def test_build_daily_provider_economics_uses_latest_prior_snapshot_and_marks_mis
     mart = build_daily_provider_economics(base_dir=tmp_path, refresh=True)
 
     matched = mart[mart["model_permaslug"] == "openai/gpt-4.1"].iloc[0]
-    assert matched["pricing_snapshot_ts"] == "2026-04-15T12:00:00Z"
-    assert matched["pricing_join_status"] == "matched_exact_split"
-    assert matched["estimated_revenue"] == 0.14
+    assert matched["pricing_snapshot_ts"] == "2026-04-17T12:00:00Z"
+    assert matched["pricing_join_status"] == "matched_model_split_median"
+    assert matched["estimated_revenue"] == pytest.approx(0.77)
 
     missing = mart[mart["model_permaslug"] == "unknown/model"].iloc[0]
-    assert pd.isna(missing["estimated_revenue"])
-    assert missing["pricing_join_status"] == "missing_snapshot"
+    assert missing["pricing_join_status"] == "fallback_provider_median"
+    assert missing["estimated_revenue"] == pytest.approx(0.2191125)
+
+
+def test_build_daily_provider_economics_canonicalizes_model_ids(tmp_path: Path) -> None:
+    _seed_research_inputs(tmp_path)
+
+    mart = build_daily_provider_economics(base_dir=tmp_path, refresh=True)
+
+    openai_row = mart[mart["model_permaslug"] == "openai/gpt-5.4-20260305"].iloc[0]
+    assert openai_row["pricing_snapshot_ts"] == "2026-04-15T12:00:00Z"
+    assert openai_row["pricing_join_status"] == "matched_model_median"
+    assert openai_row["estimated_revenue"] == pytest.approx(0.6276)
+
+    anthropic_row = mart[mart["model_permaslug"] == "anthropic/claude-4.6-sonnet-20260217"].iloc[0]
+    assert anthropic_row["pricing_join_status"] == "matched_model_split_median"
+    assert anthropic_row["estimated_revenue"] == pytest.approx(0.56)
+
+    qwen_row = mart[mart["model_permaslug"] == "qwen/qwen3.5-flash-20260224"].iloc[0]
+    assert qwen_row["pricing_join_status"] == "matched_model_median"
+    assert qwen_row["estimated_revenue"] == pytest.approx(0.0000208455)
+
+
+def test_build_daily_provider_economics_uses_base_alias_before_canonical_slug_exists(tmp_path: Path) -> None:
+    _seed_research_inputs(tmp_path)
+
+    _write_dataset(
+        tmp_path,
+        "provider_daily_activity",
+        pd.concat(
+            [
+                pd.read_csv(_normalized_dir(tmp_path, "provider_daily_activity") / "provider_daily_activity.csv"),
+                pd.DataFrame(
+                    [
+                        {
+                            "dataset_id": "provider_daily_activity",
+                            "source_url": "https://openrouter.ai/moonshotai",
+                            "source_run_id": "run-2",
+                            "scraped_at": "2026-04-18T00:00:00Z",
+                            "entity_id": "moonshotai",
+                            "entity_name": "Moonshot AI",
+                            "usage_date": "2026-04-16",
+                            "model_permaslug": "moonshotai/kimi-k2.5-0127",
+                            "total_tokens": 1000.0,
+                            "prompt_tokens": 0.0,
+                            "completion_tokens": 0.0,
+                        }
+                    ]
+                ),
+            ],
+            ignore_index=True,
+        ).to_dict(orient="records"),
+    )
+    _write_dataset(
+        tmp_path,
+        "raw_openrouter_models",
+        pd.concat(
+            [
+                pd.read_csv(_normalized_dir(tmp_path, "raw_openrouter_models") / "raw_openrouter_models.csv"),
+                pd.DataFrame(
+                    [
+                        {
+                            "dataset_id": "raw_openrouter_models",
+                            "source_url": "https://openrouter.ai/api/v1/models",
+                            "source_run_id": "run-3",
+                            "scraped_at": "2026-04-15T12:00:00Z",
+                            "snapshot_ts": "2026-04-15T12:00:00Z",
+                            "model_id": "moonshotai/kimi-k2.5",
+                            "canonical_slug": pd.NA,
+                            "model_name": "Kimi K2.5",
+                            "context_length": 262144,
+                            "pricing_prompt": 0.0000006,
+                            "pricing_completion": 0.000003,
+                            "provider_prefix": "moonshotai",
+                        },
+                        {
+                            "dataset_id": "raw_openrouter_models",
+                            "source_url": "https://openrouter.ai/api/v1/models",
+                            "source_run_id": "run-3",
+                            "scraped_at": "2026-04-19T12:00:00Z",
+                            "snapshot_ts": "2026-04-19T12:00:00Z",
+                            "model_id": "moonshotai/kimi-k2.5",
+                            "canonical_slug": "moonshotai/kimi-k2.5-0127",
+                            "model_name": "Kimi K2.5",
+                            "context_length": 262144,
+                            "pricing_prompt": 0.0000006,
+                            "pricing_completion": 0.000003,
+                            "provider_prefix": "moonshotai",
+                        },
+                    ]
+                ),
+            ],
+            ignore_index=True,
+        ).to_dict(orient="records"),
+    )
+
+    mart = build_daily_provider_economics(base_dir=tmp_path, refresh=True)
+
+    kimi_row = mart[mart["model_permaslug"] == "moonshotai/kimi-k2.5-0127"].iloc[0]
+    assert kimi_row["pricing_snapshot_ts"] == "2026-04-19T12:00:00Z"
+    assert kimi_row["pricing_join_status"] == "matched_model_median"
+    assert kimi_row["estimated_revenue"] == pytest.approx(0.0006552)
+
+
+def test_provider_revenue_daily_defaults_to_dashboard_estimate_with_model_medians_and_fallbacks(tmp_path: Path) -> None:
+    _seed_research_inputs(tmp_path)
+
+    revenue = provider_revenue_daily(
+        ["openai", "anthropic", "qwen", "xiaomi"],
+        base_dir=tmp_path,
+        refresh=True,
+    )
+
+    split_match = revenue[revenue["model_permaslug"] == "openai/gpt-4.1"].iloc[0]
+    assert split_match["pricing_join_status"] == "matched_model_split_median"
+    assert split_match["estimated_revenue"] == pytest.approx(0.77)
+
+    blended_match = revenue[revenue["model_permaslug"] == "openai/gpt-5.4-20260305"].iloc[0]
+    assert blended_match["pricing_join_status"] == "matched_model_median"
+    assert blended_match["estimated_revenue"] == pytest.approx(0.6276)
+
+    provider_fallback = revenue[revenue["model_permaslug"] == "openai/new-unpriced-model"].iloc[0]
+    assert provider_fallback["pricing_join_status"] == "fallback_provider_median"
+    assert provider_fallback["estimated_revenue"] == pytest.approx(0.35058)
+
+    global_fallback = revenue[revenue["model_permaslug"] == "xiaomi/missing-model"].iloc[0]
+    assert global_fallback["pricing_join_status"] == "fallback_global_median"
+    assert global_fallback["estimated_revenue"] == pytest.approx(0.32535)
+
+    qwen_row = revenue[revenue["model_permaslug"] == "qwen/qwen3.5-flash-20260224"].iloc[0]
+    assert qwen_row["pricing_join_status"] == "matched_model_median"
+    assert qwen_row["estimated_revenue"] == pytest.approx(0.0000208455)
+
+    synthetic = revenue[revenue["model_permaslug"] == "Others"].iloc[0]
+    assert synthetic["pricing_join_status"] == "synthetic_unpriced"
+    assert pd.isna(synthetic["estimated_revenue"])
+
+
+def test_notebook_style_rollup_uses_dashboard_estimate_defaults(tmp_path: Path) -> None:
+    _seed_research_inputs(tmp_path)
+
+    revenue_daily = provider_revenue_daily(["xiaomi"], base_dir=tmp_path, refresh=True)
+    daily_rollup = (
+        revenue_daily.groupby(["usage_date", "provider_slug"], as_index=False)
+        .agg(
+            total_tokens=("total_tokens", "sum"),
+            estimated_revenue=("estimated_revenue", lambda s: s.sum(min_count=1)),
+        )
+        .sort_values(["usage_date", "provider_slug"])
+    )
+
+    xiaomi_row = daily_rollup.iloc[0]
+    assert xiaomi_row["provider_slug"] == "xiaomi"
+    assert xiaomi_row["estimated_revenue"] == pytest.approx(0.32535)
 
 
 def test_build_frontier_model_registry_preserves_unmatched_rows_and_flags_large_models(tmp_path: Path) -> None:
