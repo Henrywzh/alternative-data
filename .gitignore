@@ -86,3 +86,6 @@ data/normalized/semiconductor_memory/*
 
 # Secrets / API keys
 .config
+
+# Local raw provider-adoption artifact to keep untracked
+data/raw/provider_adoption/20260418T074352Z-928a3701/file_raykingecs-lab__proj_PulseGuard_src__constants__Theme_ts.json
