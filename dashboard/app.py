@@ -959,10 +959,56 @@ def _compute_revenue_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, 
                     modern_tok.pivot_table(index="usage_date_str2", columns="provider_label_tok", values="total_tokens", aggfunc="sum")
                     .fillna(0).sort_index()
                 )
-                pivot_tok_weekly_modern = (
-                    modern_tok.pivot_table(index="usage_week_tok", columns="provider_label_tok", values="total_tokens", aggfunc="sum")
-                    .fillna(0).sort_index()
+                # The first modern week starts mid-week (2026-01-16), so naive 7/3 scaling
+                # still understates the seam. We bridge the missing weekdays from the next
+                # observed week for each provider, then fall back to simple scaling elsewhere.
+                days_per_week_tok = (
+                    modern_tok.groupby(["usage_week_tok", "provider_label_tok"])["usage_date_str2"]
+                    .nunique()
+                    .rename("days_present")
                 )
+                pivot_tok_weekly_modern_raw = (
+                    modern_tok.pivot_table(index="usage_week_tok", columns="provider_label_tok", values="total_tokens", aggfunc="sum")
+                    .fillna(0)
+                )
+                if not pivot_tok_weekly_modern_raw.empty:
+                    first_week = pivot_tok_weekly_modern_raw.index.min()
+                    first_week_dt = pd.Timestamp(first_week)
+                    next_week = (first_week_dt + pd.Timedelta(days=7)).strftime("%Y-%m-%d")
+                    first_week_rows = modern_tok[modern_tok["usage_week_tok"] == first_week].copy()
+                    next_week_rows = modern_tok[modern_tok["usage_week_tok"] == next_week].copy()
+                    if not next_week_rows.empty:
+                        for prov in pivot_tok_weekly_modern_raw.columns:
+                            provider_first_rows = first_week_rows[first_week_rows["provider_label_tok"] == prov]
+                            if provider_first_rows.empty:
+                                continue
+                            observed_weekdays = set(provider_first_rows["usage_date_dt2"].dt.weekday.astype(int).tolist())
+                            if 0 < len(observed_weekdays) < 7:
+                                missing_weekdays = set(range(7)) - observed_weekdays
+                                provider_next_rows = next_week_rows[next_week_rows["provider_label_tok"] == prov]
+                                bridged_missing = provider_next_rows[
+                                    provider_next_rows["usage_date_dt2"].dt.weekday.isin(missing_weekdays)
+                                ]["total_tokens"].sum()
+                                if bridged_missing > 0:
+                                    observed_total = provider_first_rows["total_tokens"].sum()
+                                    pivot_tok_weekly_modern_raw.loc[first_week, prov] = observed_total + bridged_missing
+                for week in pivot_tok_weekly_modern_raw.index:
+                    for prov in pivot_tok_weekly_modern_raw.columns:
+                        try:
+                            num_days = days_per_week_tok.loc[(week, prov)]
+                            if 0 < num_days < 7:
+                                if week == first_week and pivot_tok_weekly_modern_raw.loc[week, prov] > 0:
+                                    provider_first_rows = modern_tok[
+                                        (modern_tok["usage_week_tok"] == week)
+                                        & (modern_tok["provider_label_tok"] == prov)
+                                    ]
+                                    observed_total = provider_first_rows["total_tokens"].sum()
+                                    if pivot_tok_weekly_modern_raw.loc[week, prov] > observed_total:
+                                        continue
+                                pivot_tok_weekly_modern_raw.loc[week, prov] *= (7 / num_days)
+                        except KeyError:
+                            continue
+                pivot_tok_weekly_modern = pivot_tok_weekly_modern_raw.sort_index()
                 pivot_tok_monthly_modern = (
                     modern_tok.pivot_table(index="usage_month_tok", columns="provider_label_tok", values="total_tokens", aggfunc="sum")
                     .fillna(0).sort_index()
@@ -1983,8 +2029,8 @@ def render_token_volume_chart(openrouter_views: dict[str, object]) -> None:
     st.markdown('<div class="section-title">Token Volume by Provider</div>', unsafe_allow_html=True)
     st.markdown(
         '<div class="section-subtitle">Token volume by provider across OpenRouter. '
-        'Legacy (pre-Jan 2026): rank-capped historical approximations from weekly top-model rankings. '
-        'Modern (2026+): exact daily logs for tracked priority providers only.</div>',
+        'Legacy (pre-Jan 2026): provider-level history from weekly Market Share rankings. '
+        'Modern (2026+): exact daily logs for tracked priority providers only, with a bridged seam estimate for the Jan 12, 2026 handoff week.</div>',
         unsafe_allow_html=True,
     )
 
