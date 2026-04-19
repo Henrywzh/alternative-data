@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 
 from openrouter_revenue import estimate_usage_revenue
+from supplement_pricing import supplement_pricing_df
 from .clean import clean_model_id, mean_of_available, percentile_rank, to_datetime
 from .joins import latest_huggingface_snapshot, latest_pricing_snapshot
 from .loaders import load_dataset
@@ -147,6 +148,7 @@ def compute_daily_provider_economics(
     activity["provider_name"] = activity["entity_name"].astype("string")
     activity["model_permaslug"] = clean_model_id(activity["model_permaslug"])
 
+    pricing = pd.concat([pricing, supplement_pricing_df()], ignore_index=True)
     estimated = estimate_usage_revenue(
         activity,
         pricing,

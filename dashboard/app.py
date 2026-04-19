@@ -1877,7 +1877,34 @@ def render_revenue_estimator(datasets: dict[str, DatasetLoadResult], openrouter_
         )
 
     with tab_week:
-        _render_rev_chart(pivot_weekly, "Usage Week (Starting)")
+        if pivot_weekly.empty:
+            st.info("No weekly data available.")
+        else:
+            today_month = datetime.now().strftime("%Y-%m")
+            display_index = [str(d) for d in pivot_weekly.index]
+            fig_week = make_stacked_area_chart(
+                pivot_weekly,
+                display_index,
+                MODEL_COLORS,
+                x_title="Usage Week (Starting)",
+                y_title="Revenue (USD)",
+                hover_prefix="$",
+            )
+            fig_week.add_vrect(
+                x0="2026-01-05", x1="2026-01-12",
+                fillcolor="#E5E7EB", opacity=0.5,
+                line_width=0,
+                annotation_text="Engine handover",
+                annotation_position="top left",
+                annotation_font_size=10,
+                annotation_font_color="#6B7280",
+            )
+            st.plotly_chart(fig_week, use_container_width=True, theme=None)
+            st.caption(
+                "⚠️ Shaded region (Jan 05–12): Legacy estimation ends Jan 05; modern per-model daily logs begin Jan 12. "
+                "The apparent step-down is a methodology seam, not a real revenue event — "
+                "legacy used provider-median pricing while modern uses exact per-model prices."
+            )
     with tab_month:
         _render_rev_chart(pivot_monthly, "Usage Month")
     with tab_day:
