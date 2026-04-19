@@ -20,6 +20,12 @@ def _to_datetime(series: pd.Series, *, utc: bool = False) -> pd.Series:
     return pd.to_datetime(series, errors="coerce", utc=utc)
 
 
+def _optional_series(frame: pd.DataFrame, column: str) -> pd.Series:
+    if column in frame.columns:
+        return frame[column]
+    return pd.Series(pd.NA, index=frame.index, dtype="string")
+
+
 @dataclass(frozen=True)
 class PriceContext:
     model_stats: pd.DataFrame
@@ -74,8 +80,8 @@ def build_price_context(pricing: pd.DataFrame) -> PriceContext:
 
     prepared = pricing.copy()
     prepared["model_id"] = _clean_model_id(prepared["model_id"])
-    prepared["canonical_slug"] = _clean_model_id(prepared.get("canonical_slug"))
-    prepared["provider_prefix"] = _clean_model_id(prepared.get("provider_prefix"))
+    prepared["canonical_slug"] = _clean_model_id(_optional_series(prepared, "canonical_slug"))
+    prepared["provider_prefix"] = _clean_model_id(_optional_series(prepared, "provider_prefix"))
     prepared["provider_prefix"] = prepared["provider_prefix"].fillna(
         prepared["canonical_slug"].map(derive_provider_prefix)
     ).fillna(prepared["model_id"].map(derive_provider_prefix))
