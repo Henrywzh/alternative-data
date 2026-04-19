@@ -592,19 +592,35 @@ def compute_openrouter_views(
 ) -> dict[str, object]:
     views: dict[str, object] = {}
 
-    for dataset_id in ["top_models", "categories_programming"]:
-        result = datasets.get(dataset_id)
-        if not result or result.frame.empty:
-            views[dataset_id] = {"weeks": [], "pivot_top": pd.DataFrame()}
-            continue
-        frame = result.frame.copy()
+    top_models_result = datasets.get("top_models")
+    if not top_models_result or top_models_result.frame.empty:
+        views["top_models"] = {"weeks": [], "pivot_total": pd.DataFrame()}
+    else:
+        frame = top_models_result.frame.copy()
+        frame["week_start_date"] = frame["week_start_date"].astype(str)
+        pivot_total = (
+            frame.groupby("week_start_date", as_index=True)["metric_value"]
+            .sum()
+            .to_frame(name="Total Tokens")
+            .sort_index()
+        )
+        views["top_models"] = {
+            "weeks": sorted(frame["week_start_date"].unique(), reverse=True),
+            "pivot_total": pivot_total,
+        }
+
+    programming_result = datasets.get("categories_programming")
+    if not programming_result or programming_result.frame.empty:
+        views["categories_programming"] = {"weeks": [], "pivot_top": pd.DataFrame()}
+    else:
+        frame = programming_result.frame.copy()
         frame["week_start_date"] = frame["week_start_date"].astype(str)
         pivot = (
             frame.pivot_table(index="week_start_date", columns="entity_id", values="metric_value", aggfunc="sum")
             .fillna(0)
             .sort_index()
         )
-        views[dataset_id] = {
+        views["categories_programming"] = {
             "weeks": sorted(frame["week_start_date"].unique(), reverse=True),
             "pivot_top": _top_n_with_others(pivot, top_n_count=15),
         }
@@ -1793,33 +1809,26 @@ def render_rankings_semantics_note(datasets: dict[str, DatasetLoadResult]) -> No
 
 
 def render_top_models_chart(datasets: dict[str, DatasetLoadResult], openrouter_views: dict[str, object]) -> None:
-    st.markdown('<div class="section-title">Top Models — Weekly Token Usage (Week Starting)</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">Total Weekly Tokens</div>', unsafe_allow_html=True)
     st.markdown(
-        f'<div class="section-subtitle">Completed weekly buckets aligned to week start dates from OpenRouter rankings.</div>',
+        f'<div class="section-subtitle">Completed weekly OpenRouter token-usage buckets aligned to week start dates.</div>',
         unsafe_allow_html=True,
     )
     result = datasets.get("top_models")
     if not result or not render_dataset_guard(result):
         return
-
-    tm = result.frame.copy()
-    tm["week_start_date"] = tm["week_start_date"].astype(str)
     st.markdown(
         f'<div class="status-caption">Latest completed model week: {result.latest_date or "n/a"} · Scraped: {format_scraped_at_display(result.latest_scraped_at)}</div>',
         unsafe_allow_html=True,
     )
-    
-    # --- Period Selector & Total ---
-    weeks = openrouter_views["top_models"]["weeks"]
-    sel_week = st.selectbox("Analyze week starting", options=weeks, index=0, key="tm_week_sel")
-    week_total = tm[tm["week_start_date"] == sel_week]["metric_value"].sum()
-    st.markdown(
-        kpi_card_html(f"Total Tokens ({sel_week})", format_metric(week_total),
-                      card_style="margin-bottom:1rem; max-width:300px", value_style="font-size:1.5rem"),
-        unsafe_allow_html=True,
-    )
 
-    fig = make_stacked_bar(openrouter_views["top_models"]["pivot_top"], MODEL_COLORS, y_title="Tokens")
+    fig = make_line_chart(
+        openrouter_views["top_models"]["pivot_total"],
+        [ACCENT],
+        y_title="Tokens",
+        x_title="Usage Week (Starting)",
+        hover_suffix="tokens",
+    )
     st.plotly_chart(fig, use_container_width=True, theme=None)
 
 
