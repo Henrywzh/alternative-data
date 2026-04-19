@@ -11,10 +11,12 @@ from dashboard.app import (
     build_domain_signature,
     build_manifest_signature,
     build_normalized_signature,
+    compute_openrouter_views,
     compute_semiconductor_views,
     compute_provider_adoption_views,
     format_scraped_at_display,
     grouped_revenue_token_pivots,
+    make_line_chart,
     make_stacked_area_chart,
     market_share_legend_rows,
     prepare_hf_models_table,
@@ -1513,6 +1515,117 @@ def test_make_stacked_area_chart_allows_metric_specific_hover_formatting() -> No
     assert "$%{y:,.2f}" in revenue_fig.data[0].hovertemplate
     assert "$" not in token_fig.data[0].hovertemplate
     assert "%{y:,.0f} tokens" in token_fig.data[0].hovertemplate
+
+
+def test_compute_openrouter_views_exposes_total_weekly_tokens_for_top_models() -> None:
+    top_models = pd.DataFrame(
+        [
+            {
+                **_base_row("top_models"),
+                "week_label": "2026-03-09",
+                "week_start_date": "2026-03-09",
+                "entity_id": "openai/gpt-4o-mini",
+                "entity_name": "openai/gpt-4o-mini",
+                "parent_entity_id": "openai",
+                "parent_entity_name": "openai",
+                "metric_name": "tokens",
+                "metric_unit": "tokens",
+                "metric_value": 100.0,
+                "rank": 1,
+            },
+            {
+                **_base_row("top_models"),
+                "week_label": "2026-03-09",
+                "week_start_date": "2026-03-09",
+                "entity_id": "anthropic/claude-sonnet",
+                "entity_name": "anthropic/claude-sonnet",
+                "parent_entity_id": "anthropic",
+                "parent_entity_name": "anthropic",
+                "metric_name": "tokens",
+                "metric_unit": "tokens",
+                "metric_value": 250.0,
+                "rank": 2,
+            },
+            {
+                **_base_row("top_models"),
+                "week_label": "2026-03-16",
+                "week_start_date": "2026-03-16",
+                "entity_id": "openai/gpt-4o-mini",
+                "entity_name": "openai/gpt-4o-mini",
+                "parent_entity_id": "openai",
+                "parent_entity_name": "openai",
+                "metric_name": "tokens",
+                "metric_unit": "tokens",
+                "metric_value": 300.0,
+                "rank": 1,
+            },
+        ],
+        columns=EXPECTED_COLUMNS,
+    )
+
+    empty_result = DatasetLoadResult(
+        dataset_id="empty",
+        label="Empty",
+        domain="rankings",
+        primary_date_column=None,
+        metric_column=None,
+        frame=pd.DataFrame(),
+        source_format=None,
+        source_path=None,
+        missing_columns=[],
+        duplicate_rows=0,
+        first_date=None,
+        latest_date=None,
+        latest_scraped_at=None,
+        row_count=0,
+    )
+
+    datasets = {
+        "top_models": DatasetLoadResult(
+            dataset_id="top_models",
+            label="Top Models",
+            domain="rankings",
+            primary_date_column="week_start_date",
+            metric_column="metric_value",
+            frame=top_models,
+            source_format="csv",
+            source_path=Path("data/normalized/openrouter/top_models.csv"),
+            missing_columns=[],
+            duplicate_rows=0,
+            first_date="2026-03-09",
+            latest_date="2026-03-16",
+            latest_scraped_at="2026-04-05T00:00:00Z",
+            row_count=len(top_models),
+        ),
+        "categories_programming": empty_result,
+        "market_share": empty_result,
+    }
+
+    views = compute_openrouter_views(datasets)
+    pivot_total = views["top_models"]["pivot_total"]
+
+    assert list(pivot_total.columns) == ["Total Tokens"]
+    assert list(pivot_total.index) == ["2026-03-09", "2026-03-16"]
+    assert pivot_total.loc["2026-03-09", "Total Tokens"] == 350.0
+    assert pivot_total.loc["2026-03-16", "Total Tokens"] == 300.0
+
+
+def test_make_line_chart_handles_single_total_series_for_top_models() -> None:
+    pivot = pd.DataFrame({"Total Tokens": [350.0, 300.0]}, index=["2026-03-09", "2026-03-16"])
+
+    fig = make_line_chart(
+        pivot,
+        ["#4285F4"],
+        y_title="Tokens",
+        x_title="Usage Week (Starting)",
+        hover_suffix="tokens",
+    )
+
+    assert len(fig.data) == 1
+    assert fig.data[0].name == "Total Tokens"
+    assert list(fig.data[0].x) == ["2026-03-09", "2026-03-16"]
+    assert list(fig.data[0].y) == [350.0, 300.0]
+    assert "%{y:,.0f} tokens" in fig.data[0].hovertemplate
 
 
 def test_grouped_revenue_token_pivots_share_aligned_display_provider_buckets() -> None:
