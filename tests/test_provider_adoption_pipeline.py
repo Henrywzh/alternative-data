@@ -8,6 +8,7 @@ from contextlib import redirect_stdout
 
 import pandas as pd
 import pytest
+import requests
 
 from provider_adoption_data.models import (
     GithubRepository,
@@ -276,6 +277,38 @@ class FakeHuggingFaceSource:
         return points
 
 
+class FakePypiResponse:
+    def __init__(
+        self,
+        *,
+        status_code: int,
+        text: str = "",
+        url: str = "https://pypistats.org/api/packages/openai/overall",
+        headers: dict[str, str] | None = None,
+    ) -> None:
+        self.status_code = status_code
+        self.text = text
+        self.url = url
+        self.headers = headers or {}
+
+    def raise_for_status(self) -> None:
+        if self.status_code >= 400:
+            raise requests.HTTPError(f"{self.status_code} error for {self.url}", response=self)
+
+
+class FakePypiSession:
+    def __init__(self, responses) -> None:
+        self.headers = {}
+        self._responses = list(responses)
+        self.requested_urls: list[str] = []
+
+    def get(self, url, timeout=30):
+        self.requested_urls.append(url)
+        if not self._responses:
+            raise AssertionError(f"Unexpected PyPI request: {url}")
+        return self._responses.pop(0)
+
+
 class FakeResponse:
     def __init__(self, payload: dict, url: str = "https://api.github.com/search/repositories") -> None:
         self._payload = payload
@@ -344,6 +377,59 @@ def test_pypi_source_extracts_with_and_without_mirrors() -> None:
     )
 
     assert [(point.with_mirrors, point.downloads) for point in points] == [(False, 123), (True, 456)]
+
+
+def test_pypi_source_retries_rate_limit_and_recovers() -> None:
+    session = FakePypiSession(
+        [
+            FakePypiResponse(status_code=429, headers={"Retry-After": "0"}),
+            FakePypiResponse(
+                status_code=200,
+                text=json.dumps(
+                    {
+                        "package": "openai",
+                        "type": "overall_downloads",
+                        "data": [{"category": "without_mirrors", "date": "2026-04-05", "downloads": 120}],
+                    }
+                ),
+            ),
+        ]
+    )
+    source = PypiStatsSource(session=session)
+
+    snapshots = source.fetch_snapshots(get_provider_registry(["openai"]))
+
+    assert len(snapshots) == 1
+    assert len(session.requested_urls) == 2
+    assert json.loads(snapshots[0].body)["package"] == "openai"
+
+
+def test_pypi_source_skips_package_after_repeated_rate_limits() -> None:
+    session = FakePypiSession(
+        [
+            FakePypiResponse(status_code=429, url="https://pypistats.org/api/packages/openai/overall", headers={"Retry-After": "0"}),
+            FakePypiResponse(status_code=429, url="https://pypistats.org/api/packages/openai/overall", headers={"Retry-After": "0"}),
+            FakePypiResponse(status_code=429, url="https://pypistats.org/api/packages/openai/overall", headers={"Retry-After": "0"}),
+            FakePypiResponse(
+                status_code=200,
+                url="https://pypistats.org/api/packages/anthropic/overall",
+                text=json.dumps(
+                    {
+                        "package": "anthropic",
+                        "type": "overall_downloads",
+                        "data": [{"category": "without_mirrors", "date": "2026-04-05", "downloads": 220}],
+                    }
+                ),
+            ),
+        ]
+    )
+    source = PypiStatsSource(session=session)
+
+    snapshots = source.fetch_snapshots(get_provider_registry(["openai", "anthropic"]))
+
+    assert len(snapshots) == 1
+    assert json.loads(snapshots[0].body)["package"] == "anthropic"
+    assert session.requested_urls.count("https://pypistats.org/api/packages/openai/overall") == 3
 
 
 def test_npm_source_extracts_scoped_package_downloads() -> None:
