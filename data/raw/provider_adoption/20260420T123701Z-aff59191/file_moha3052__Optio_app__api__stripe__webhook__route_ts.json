@@ -1,0 +1,1 @@
+{"path": "app/api/stripe/webhook/route.ts", "content": "aW1wb3J0IHsgTmV4dFJlcXVlc3QsIE5leHRSZXNwb25zZSB9IGZyb20gJ25l\neHQvc2VydmVyJwoKZXhwb3J0IGFzeW5jIGZ1bmN0aW9uIFBPU1QocmVxdWVz\ndDogTmV4dFJlcXVlc3QpIHsKICAvLyBUT0RPOiBJbXBsZW1lbnQgU3RyaXBl\nIHdlYmhvb2sgaGFuZGxlcgogIHJldHVybiBOZXh0UmVzcG9uc2UuanNvbih7\nIHJlY2VpdmVkOiB0cnVlIH0pCn0K\n", "encoding": "base64"}
