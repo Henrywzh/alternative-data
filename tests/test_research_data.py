@@ -8,6 +8,7 @@ import pandas as pd
 import pytest
 
 from dashboard import data as dashboard_data
+from openrouter_revenue import estimate_usage_revenue
 from research_data.api import monthly_model_releases, provider_revenue_daily
 from research_data.cli import main as research_cli_main
 from research_data.catalog import catalog
@@ -406,13 +407,13 @@ def test_build_daily_provider_economics_uses_latest_prior_snapshot_and_marks_mis
     mart = build_daily_provider_economics(base_dir=tmp_path, refresh=True)
 
     matched = mart[mart["model_permaslug"] == "openai/gpt-4.1"].iloc[0]
-    assert matched["pricing_snapshot_ts"] == "2026-04-17T12:00:00Z"
+    assert matched["pricing_snapshot_ts"] == "2026-04-15T12:00:00Z"
     assert matched["pricing_join_status"] == "matched_model_split_median"
-    assert matched["estimated_revenue"] == pytest.approx(0.77)
+    assert matched["estimated_revenue"] == pytest.approx(0.14)
 
     missing = mart[mart["model_permaslug"] == "unknown/model"].iloc[0]
     assert missing["pricing_join_status"] == "fallback_provider_median"
-    assert missing["estimated_revenue"] == pytest.approx(0.2191125)
+    assert missing["estimated_revenue"] == pytest.approx(0.104025)
 
 
 def test_build_daily_provider_economics_canonicalizes_model_ids(tmp_path: Path) -> None:
@@ -510,7 +511,7 @@ def test_build_daily_provider_economics_uses_base_alias_before_canonical_slug_ex
     mart = build_daily_provider_economics(base_dir=tmp_path, refresh=True)
 
     kimi_row = mart[mart["model_permaslug"] == "moonshotai/kimi-k2.5-0127"].iloc[0]
-    assert kimi_row["pricing_snapshot_ts"] == "2026-04-19T12:00:00Z"
+    assert kimi_row["pricing_snapshot_ts"] == "2026-04-15T12:00:00Z"
     assert kimi_row["pricing_join_status"] == "matched_model_median"
     assert kimi_row["estimated_revenue"] == pytest.approx(0.0006552)
 
@@ -526,7 +527,7 @@ def test_provider_revenue_daily_defaults_to_dashboard_estimate_with_model_median
 
     split_match = revenue[revenue["model_permaslug"] == "openai/gpt-4.1"].iloc[0]
     assert split_match["pricing_join_status"] == "matched_model_split_median"
-    assert split_match["estimated_revenue"] == pytest.approx(0.77)
+    assert split_match["estimated_revenue"] == pytest.approx(0.14)
 
     blended_match = revenue[revenue["model_permaslug"] == "openai/gpt-5.4-20260305"].iloc[0]
     assert blended_match["pricing_join_status"] == "matched_model_median"
@@ -534,11 +535,11 @@ def test_provider_revenue_daily_defaults_to_dashboard_estimate_with_model_median
 
     provider_fallback = revenue[revenue["model_permaslug"] == "openai/new-unpriced-model"].iloc[0]
     assert provider_fallback["pricing_join_status"] == "fallback_provider_median"
-    assert provider_fallback["estimated_revenue"] == pytest.approx(0.35058)
+    assert provider_fallback["estimated_revenue"] == pytest.approx(0.16644)
 
     global_fallback = revenue[revenue["model_permaslug"] == "xiaomi/missing-model"].iloc[0]
     assert global_fallback["pricing_join_status"] == "fallback_global_median"
-    assert global_fallback["estimated_revenue"] == pytest.approx(0.32535)
+    assert global_fallback["estimated_revenue"] == pytest.approx(0.187245)
 
     qwen_row = revenue[revenue["model_permaslug"] == "qwen/qwen3.5-flash-20260224"].iloc[0]
     assert qwen_row["pricing_join_status"] == "matched_model_median"
@@ -547,6 +548,53 @@ def test_provider_revenue_daily_defaults_to_dashboard_estimate_with_model_median
     synthetic = revenue[revenue["model_permaslug"] == "Others"].iloc[0]
     assert synthetic["pricing_join_status"] == "synthetic_unpriced"
     assert pd.isna(synthetic["estimated_revenue"])
+
+
+def test_estimate_usage_revenue_uses_asof_snapshot_for_historical_usage() -> None:
+    usage = pd.DataFrame(
+        [
+            {
+                "usage_date": "2026-04-16",
+                "provider_slug": "openai",
+                "model_permaslug": "openai/gpt-4.1",
+                "total_tokens": 100.0,
+                "prompt_tokens": 0.0,
+                "completion_tokens": 0.0,
+            }
+        ]
+    )
+    pricing = pd.DataFrame(
+        [
+            {
+                "snapshot_ts": "2026-04-15T12:00:00Z",
+                "model_id": "openai/gpt-4.1",
+                "canonical_slug": "openai/gpt-4.1",
+                "provider_prefix": "openai",
+                "pricing_prompt": 0.001,
+                "pricing_completion": 0.002,
+            },
+            {
+                "snapshot_ts": "2026-04-17T12:00:00Z",
+                "model_id": "openai/gpt-4.1",
+                "canonical_slug": "openai/gpt-4.1",
+                "provider_prefix": "openai",
+                "pricing_prompt": 0.010,
+                "pricing_completion": 0.020,
+            },
+        ]
+    )
+
+    estimated = estimate_usage_revenue(
+        usage,
+        pricing,
+        slug_strategy="canonical",
+        pricing_strategy="provider_fallback",
+    )
+
+    row = estimated.iloc[0]
+    assert pd.Timestamp(row["pricing_snapshot_ts"]) == pd.Timestamp("2026-04-15T12:00:00Z")
+    assert row["pricing_join_status"] == "matched_model_median"
+    assert row["estimated_revenue"] == pytest.approx(0.1023)
 
 
 def test_notebook_style_rollup_uses_dashboard_estimate_defaults(tmp_path: Path) -> None:
@@ -564,7 +612,7 @@ def test_notebook_style_rollup_uses_dashboard_estimate_defaults(tmp_path: Path) 
 
     xiaomi_row = daily_rollup.iloc[0]
     assert xiaomi_row["provider_slug"] == "xiaomi"
-    assert xiaomi_row["estimated_revenue"] == pytest.approx(0.32535)
+    assert xiaomi_row["estimated_revenue"] == pytest.approx(0.187245)
 
 
 def test_build_frontier_model_registry_preserves_unmatched_rows_and_flags_large_models(tmp_path: Path) -> None:

@@ -189,33 +189,17 @@ def resolve_model_key(value: object, alias_to_model_key: dict[str, str], slug_st
     return None
 
 
-def estimate_usage_revenue(
-    usage: pd.DataFrame,
-    pricing: pd.DataFrame,
+def _estimate_with_context(
+    estimated: pd.DataFrame,
+    context: PriceContext,
     *,
-    slug_strategy: str = "canonical",
-    pricing_strategy: str = "provider_fallback",
+    slug_strategy: str,
+    pricing_strategy: str,
 ) -> pd.DataFrame:
-    estimated = usage.copy()
     if estimated.empty:
         return estimated
 
-    estimated = estimated.drop(
-        columns=[
-            "matched_model_key",
-            "provider_prefix",
-            "pricing_snapshot_ts",
-            "pricing_prompt",
-            "pricing_completion",
-            "pricing_blended",
-        ],
-        errors="ignore",
-    )
-
-    context = build_price_context(pricing)
-    estimated["model_permaslug"] = _clean_model_id(estimated["model_permaslug"])
-    provider_series = estimated["provider_slug"] if "provider_slug" in estimated.columns else pd.Series(pd.NA, index=estimated.index)
-    estimated["provider_slug"] = _clean_model_id(provider_series).fillna(estimated["model_permaslug"].map(derive_provider_prefix))
+    estimated = estimated.copy()
     estimated["matched_model_key"] = estimated["model_permaslug"].map(
         lambda slug: resolve_model_key(slug, context.alias_to_model_key, slug_strategy=slug_strategy)
     )
@@ -282,3 +266,65 @@ def estimate_usage_revenue(
         raise ValueError("pricing_strategy must be 'provider_fallback' or 'observed_only'")
 
     return estimated
+
+
+def estimate_usage_revenue(
+    usage: pd.DataFrame,
+    pricing: pd.DataFrame,
+    *,
+    slug_strategy: str = "canonical",
+    pricing_strategy: str = "provider_fallback",
+) -> pd.DataFrame:
+    estimated = usage.copy()
+    if estimated.empty:
+        return estimated
+
+    estimated = estimated.drop(
+        columns=[
+            "matched_model_key",
+            "provider_prefix",
+            "pricing_snapshot_ts",
+            "pricing_prompt",
+            "pricing_completion",
+            "pricing_blended",
+        ],
+        errors="ignore",
+    )
+
+    estimated["model_permaslug"] = _clean_model_id(estimated["model_permaslug"])
+    provider_series = estimated["provider_slug"] if "provider_slug" in estimated.columns else pd.Series(pd.NA, index=estimated.index)
+    estimated["provider_slug"] = _clean_model_id(provider_series).fillna(estimated["model_permaslug"].map(derive_provider_prefix))
+    if "usage_date" not in estimated.columns or "snapshot_ts" not in pricing.columns:
+        context = build_price_context(pricing)
+        return _estimate_with_context(
+            estimated,
+            context,
+            slug_strategy=slug_strategy,
+            pricing_strategy=pricing_strategy,
+        )
+
+    usage_dates = pd.to_datetime(estimated["usage_date"], errors="coerce", utc=True).dt.normalize()
+    pricing_dates = pd.to_datetime(pricing["snapshot_ts"], errors="coerce", utc=True).dt.normalize()
+    pricing_with_dates = pricing.copy()
+    pricing_with_dates["_pricing_date"] = pricing_dates
+    estimated["_usage_date"] = usage_dates
+
+    resolved_frames: list[pd.DataFrame] = []
+    for usage_date, group in estimated.groupby("_usage_date", dropna=False, sort=False):
+        eligible_pricing = pricing_with_dates.iloc[0:0].copy()
+        if pd.notna(usage_date):
+            eligible_pricing = pricing_with_dates[pricing_with_dates["_pricing_date"] <= usage_date].drop(
+                columns="_pricing_date"
+            )
+        group = group.drop(columns="_usage_date")
+        context = build_price_context(eligible_pricing)
+        resolved_frames.append(
+            _estimate_with_context(
+                group,
+                context,
+                slug_strategy=slug_strategy,
+                pricing_strategy=pricing_strategy,
+            )
+        )
+
+    return pd.concat(resolved_frames, ignore_index=True) if resolved_frames else estimated.drop(columns="_usage_date")
