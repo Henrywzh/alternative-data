@@ -1,0 +1,1 @@
+{"target_date": "2026-04-20", "providers": ["openai", "anthropic", "google", "deepseek", "meta", "mistral", "qwen", "moonshot", "minimax", "zai"]}
