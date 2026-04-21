@@ -34,6 +34,7 @@ class DatasetRecord:
     snapshot_ts: str
 
     # OpenRouter fields
+    # NOTE: AWS Spot + Lambda Cloud fields were removed along with their source collectors.
     model_id: str | None = None
     canonical_slug: str | None = None
     model_name: str | None = None
@@ -44,19 +45,6 @@ class DatasetRecord:
     pricing_completion: float | None = None
     top_provider_id: str | None = None
     provider_prefix: str | None = None
-
-    # Lambda Cloud fields
-    instance_type_name: str | None = None
-    gpu_type: str | None = None
-    gpu_count: float | None = None
-    region: str | None = None
-
-    # AWS Spot fields (region shared with Lambda)
-    availability_zone: str | None = None
-    instance_type: str | None = None
-    product_description: str | None = None
-    spot_price: float | None = None
-    price_timestamp: str | None = None
 
     # Raw Payload (Optional if we want to follow the "minimal structured fields" rule)
     raw_json_preview: str | None = None

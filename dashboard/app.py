@@ -238,19 +238,15 @@ def format_scraped_at_display(value: str | None) -> str:
 def rankings_week_context(datasets: dict[str, DatasetLoadResult]) -> dict[str, str | bool | None]:
     top_models = datasets.get("top_models")
     market_share = datasets.get("market_share")
-    programming = datasets.get("categories_programming")
 
     model_week = top_models.latest_date if top_models else None
     market_share_week = market_share.latest_date if market_share else None
-    programming_week = programming.latest_date if programming else None
 
     return {
         "model_week": model_week,
         "market_share_week": market_share_week,
-        "programming_week": programming_week,
         "model_scraped_at": top_models.latest_scraped_at if top_models else None,
         "market_share_scraped_at": market_share.latest_scraped_at if market_share else None,
-        "programming_scraped_at": programming.latest_scraped_at if programming else None,
         "has_divergent_weeks": bool(model_week and market_share_week and model_week != market_share_week),
     }
 
@@ -610,22 +606,6 @@ def compute_openrouter_views(
         views["top_models"] = {
             "weeks": sorted(frame["week_start_date"].unique(), reverse=True),
             "pivot_total": pivot_total,
-        }
-
-    programming_result = datasets.get("categories_programming")
-    if not programming_result or programming_result.frame.empty:
-        views["categories_programming"] = {"weeks": [], "pivot_top": pd.DataFrame()}
-    else:
-        frame = programming_result.frame.copy()
-        frame["week_start_date"] = frame["week_start_date"].astype(str)
-        pivot = (
-            frame.pivot_table(index="week_start_date", columns="entity_id", values="metric_value", aggfunc="sum")
-            .fillna(0)
-            .sort_index()
-        )
-        views["categories_programming"] = {
-            "weeks": sorted(frame["week_start_date"].unique(), reverse=True),
-            "pivot_top": _top_n_with_others(pivot, top_n_count=15),
         }
 
     result = datasets.get("market_share")
@@ -1379,29 +1359,11 @@ def compute_semiconductor_views(datasets: dict[str, DatasetLoadResult]) -> dict[
 
 @st.cache_data(ttl=3600)
 def compute_compute_availability_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, object]:
+    # NOTE: Legacy function name. After removing AWS Spot + Lambda Cloud sources, this
+    # now only surfaces OpenRouter catalog growth + latest-snapshot views used by the
+    # Compute Evolution section on the OpenRouter tab.
     views: dict[str, object] = {}
 
-    # 1. AWS Spot Prices
-    spot_result = datasets.get("raw_aws_spot_price_history")
-    if spot_result and not spot_result.frame.empty:
-        df = spot_result.frame.copy()
-        df["price_timestamp"] = pd.to_datetime(df["price_timestamp"], errors="coerce")
-        df = df.sort_values("price_timestamp")
-        views["spot_df"] = df
-    else:
-        views["spot_df"] = pd.DataFrame()
-
-    # 2. Lambda Inventory
-    lambda_result = datasets.get("raw_lambda_instance_types")
-    if lambda_result and not lambda_result.frame.empty:
-        df = lambda_result.frame.copy()
-        df["snapshot_ts"] = pd.to_datetime(df["snapshot_ts"], errors="coerce")
-        latest_ts = df["snapshot_ts"].max()
-        views["lambda_latest"] = df[df["snapshot_ts"] == latest_ts].copy()
-    else:
-        views["lambda_latest"] = pd.DataFrame()
-
-    # 3. OpenRouter Models (Growth & Pricing)
     models_result = datasets.get("raw_openrouter_models")
     if models_result and not models_result.frame.empty:
         df = models_result.frame.copy()
@@ -1723,19 +1685,17 @@ def render_kpi_row(datasets: dict[str, DatasetLoadResult], openrouter_views: dic
 def render_rankings_semantics_note(datasets: dict[str, DatasetLoadResult]) -> None:
     context = rankings_week_context(datasets)
     model_week = context["model_week"] or "n/a"
-    programming_week = context["programming_week"] or model_week
     market_share_week = context["market_share_week"] or "n/a"
 
     st.markdown(
         f"""
         <div class="rankings-note">
           <strong>OpenRouter week semantics</strong><br>
-          Top Models and Programming are grouped by <strong>week starting</strong> dates.
+          Top Models are grouped by <strong>week starting</strong> dates.
           Market Share is grouped by <strong>week ending</strong> dates.
           These latest completed buckets can differ by up to 6 days on the same scrape.<br><br>
           <span style="color:{MUTED};">
             Latest completed model week: {model_week} ·
-            Latest completed programming week: {programming_week} ·
             Latest completed market-share week: {market_share_week}
           </span>
         </div>
@@ -2148,36 +2108,6 @@ def render_token_revenue_comparison(openrouter_views: dict[str, object]) -> None
             _comparison_table(rev_weekly, tok_weekly, "weekly")
         with tab_m:
             _comparison_table(rev_monthly, tok_monthly, "monthly")
-
-
-def render_programming_chart(datasets: dict[str, DatasetLoadResult], openrouter_views: dict[str, object]) -> None:
-    st.markdown('<div class="section-title">Programming — Weekly Token Usage (Week Starting)</div>', unsafe_allow_html=True)
-    st.markdown(
-        '<div class="section-subtitle">Coding-only weekly rankings from OpenRouter, aligned to week start dates.</div>',
-        unsafe_allow_html=True,
-    )
-    result = datasets.get("categories_programming")
-    if not result or not render_dataset_guard(result):
-        return
-
-    frame = result.frame.copy()
-    frame["week_start_date"] = frame["week_start_date"].astype(str)
-    st.markdown(
-        f'<div class="status-caption">Latest completed programming week: {result.latest_date or "n/a"} · Scraped: {format_scraped_at_display(result.latest_scraped_at)}</div>',
-        unsafe_allow_html=True,
-    )
-
-    weeks = openrouter_views["categories_programming"]["weeks"]
-    sel_week = st.selectbox("Analyze programming week starting", options=weeks, index=0, key="prog_week_sel")
-    week_total = frame[frame["week_start_date"] == sel_week]["metric_value"].sum()
-    st.markdown(
-        kpi_card_html(f"Programming Tokens ({sel_week})", format_metric(week_total),
-                      card_style="margin-bottom:1rem; max-width:300px", value_style="font-size:1.5rem"),
-        unsafe_allow_html=True,
-    )
-
-    fig = make_stacked_bar(openrouter_views["categories_programming"]["pivot_top"], MODEL_COLORS, y_title="Tokens")
-    st.plotly_chart(fig, use_container_width=True, theme=None)
 
 
 def render_apps_tables(datasets: dict[str, DatasetLoadResult]) -> None:
@@ -3010,96 +2940,16 @@ def render_checks(checks: list[CheckResult]) -> None:
             )
 
 
-def render_compute_availability_section(datasets: dict[str, DatasetLoadResult], compute_views: dict[str, object]) -> None:
-    spot_df = compute_views.get("spot_df", pd.DataFrame())
-    lambda_latest = compute_views.get("lambda_latest", pd.DataFrame())
+def render_compute_evolution_section(compute_views: dict[str, object]) -> None:
+    """Render the OpenRouter catalog-growth + context-vs-pricing pair inside the OpenRouter tab.
+
+    NOTE: Previously this was `render_compute_availability_section` with AWS Spot + Lambda
+    Cloud KPIs and panels. Those sources were removed; only the two OpenRouter catalog
+    charts survived and were moved out of the now-deleted HW & Compute tab.
+    """
     models_latest = compute_views.get("models_latest", pd.DataFrame())
     models_growth = compute_views.get("models_growth", pd.DataFrame())
 
-    st.markdown('<div class="section-title">Hardware & Compute Availability</div>', unsafe_allow_html=True)
-
-    # --- KPI Row ---
-    if not lambda_latest.empty and "instance_type_name" in lambda_latest.columns:
-        stock_val = lambda_latest["instance_type_name"].nunique()
-        stock_count = int(stock_val.max() if hasattr(stock_val, "max") else stock_val)
-    else:
-        stock_count = 0
-
-    if not spot_df.empty and "instance_type" in spot_df.columns and "spot_price" in spot_df.columns:
-        p5_data = spot_df[spot_df["instance_type"].str.contains("p5", na=False)]
-        avg_val = p5_data["spot_price"].mean()
-        avg_p5 = float(avg_val.max() if hasattr(avg_val, "max") else avg_val) if not p5_data.empty else 0
-    else:
-        avg_p5 = 0
-
-    if not models_latest.empty and "model_id" in models_latest.columns:
-        m_val = models_latest["model_id"].nunique()
-        model_count = int(m_val.max() if hasattr(m_val, "max") else m_val)
-    else:
-        model_count = 0
-
-    if not models_latest.empty and "pricing_prompt" in models_latest.columns:
-        p_col = models_latest["pricing_prompt"]
-        if isinstance(p_col, pd.DataFrame):
-            p_col = p_col.iloc[:, 0]
-        p_clean = pd.to_numeric(p_col, errors="coerce").dropna()
-        p_valid = p_clean[p_clean > 0]
-        p_avg = p_valid.mean()
-        avg_pricing = float(p_avg) * 1e6 if pd.notna(p_avg) else 0
-    else:
-        avg_pricing = 0
-
-    kpi_col1, kpi_col2, kpi_col3, kpi_col4 = st.columns(4)
-    with kpi_col1:
-        st.markdown(kpi_card_html("Lambda GPU Stock", str(stock_count), delta="instance types"), unsafe_allow_html=True)
-    with kpi_col2:
-        st.markdown(kpi_card_html("Avg P5 Spot Price", f"${avg_p5:.2f}", delta="per hour"), unsafe_allow_html=True)
-    with kpi_col3:
-        st.markdown(kpi_card_html("Direct Model Access", str(model_count), delta="OpenRouter catalog"), unsafe_allow_html=True)
-    with kpi_col4:
-        st.markdown(kpi_card_html("Avg Prompt Pricing", f"${avg_pricing:.2f}", delta="per 1M tokens"), unsafe_allow_html=True)
-
-    # --- Main Visuals ---
-    col_left, col_right = st.columns(2)
-
-    with col_left:
-        st.markdown('<div class="section-subtitle">AWS Spot Price History (H100/P5 Watchlist)</div>', unsafe_allow_html=True)
-        if not spot_df.empty:
-            fig_spot = go.Figure()
-            for instance in spot_df["instance_type"].unique():
-                inst_data = spot_df[spot_df["instance_type"] == instance]
-                for az in inst_data["availability_zone"].unique():
-                    az_data = inst_data[inst_data["availability_zone"] == az]
-                    fig_spot.add_trace(go.Scatter(
-                        x=az_data["price_timestamp"],
-                        y=az_data["spot_price"],
-                        name=f"{instance} ({az})",
-                        mode="lines",
-                        hovertemplate="<b>%{x}</b><br>$%{y:.2f}/hr<extra></extra>"
-                    ))
-            fig_spot.update_layout(
-                title="AWS Spot Price History ($/hr)",
-                template="plotly_white",
-                height=400,
-                margin=dict(l=0, r=0, t=40, b=10),
-                legend=dict(orientation="h", y=-0.2)
-            )
-            st.plotly_chart(fig_spot, use_container_width=True, theme=None)
-        else:
-            st.info("No AWS Spot pricing data available.")
-
-    with col_right:
-        st.markdown('<div class="section-subtitle">Lambda Cloud Availability Listing</div>', unsafe_allow_html=True)
-        if not lambda_latest.empty:
-            display_lambda = lambda_latest[[
-                "instance_type_name", "gpu_type", "gpu_count", "region"
-            ]].copy()
-            display_lambda.columns = ["Instance", "GPU Type", "Count", "Region"]
-            st.dataframe(display_lambda, use_container_width=True, hide_index=True)
-        else:
-            st.info("No Lambda Cloud inventory data available.")
-
-    # --- Bottom Row ---
     st.markdown('<div class="section-title">Compute Evolution</div>', unsafe_allow_html=True)
     row2_col1, row2_col2 = st.columns(2)
 
@@ -3226,8 +3076,8 @@ def main() -> None:
 
     render_header(freshness)
     
-    main_tabs = st.tabs(["OpenRouter Intelligence", "AI Frontier & HBM", "HW & Compute", "GitHub Trending", "Provider Adoption", "Semiconductor Analysis"])
-    
+    main_tabs = st.tabs(["OpenRouter Intelligence", "AI Frontier & HBM", "GitHub Trending", "Provider Adoption", "Semiconductor Analysis"])
+
     with main_tabs[0]:
         render_rankings_semantics_note(datasets)
         render_kpi_row(datasets, openrouter_views)
@@ -3237,22 +3087,19 @@ def main() -> None:
         render_revenue_estimator(datasets, openrouter_views)
         render_token_volume_chart(openrouter_views)
         render_token_revenue_comparison(openrouter_views)
-        render_programming_chart(datasets, openrouter_views)
+        render_compute_evolution_section(compute_views)
         render_apps_tables(datasets)
-    
+
     with main_tabs[1]:
         render_ai_frontier_section(datasets, benchmark_views)
 
     with main_tabs[2]:
-        render_compute_availability_section(datasets, compute_views)
-
-    with main_tabs[3]:
         render_github_trending_section(datasets, github_views)
 
-    with main_tabs[4]:
+    with main_tabs[3]:
         render_provider_adoption_section(datasets, provider_views)
-        
-    with main_tabs[5]:
+
+    with main_tabs[4]:
         render_semiconductor_section(datasets, semi_views)
         
     render_checks(checks)
