@@ -311,11 +311,12 @@ def estimate_usage_revenue(
 
     resolved_frames: list[pd.DataFrame] = []
     for usage_date, group in estimated.groupby("_usage_date", dropna=False, sort=False):
-        eligible_pricing = pricing_with_dates.iloc[0:0].copy()
         if pd.notna(usage_date):
             eligible_pricing = pricing_with_dates[pricing_with_dates["_pricing_date"] <= usage_date].drop(
                 columns="_pricing_date"
             )
+        else:
+            eligible_pricing = pricing_with_dates.drop(columns="_pricing_date")
         group = group.drop(columns="_usage_date")
         context = build_price_context(eligible_pricing)
         resolved_frames.append(
