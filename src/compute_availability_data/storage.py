@@ -10,10 +10,10 @@ import pandas as pd
 from compute_availability_data.models import DatasetRecord, Snapshot
 
 
+# NOTE: "compute_availability" is a legacy name. After removing AWS Spot + Lambda
+# Cloud sources, this module only handles the OpenRouter model catalog.
 NATURAL_KEYS: dict[str, list[str]] = {
     "raw_openrouter_models": ["model_id", "snapshot_ts"],
-    "raw_lambda_instance_types": ["instance_type_name", "region", "snapshot_ts"],
-    "raw_aws_spot_price_history": ["instance_type", "availability_zone", "product_description", "price_timestamp"],
 }
 
 DATASET_COLUMNS = [
@@ -32,15 +32,6 @@ DATASET_COLUMNS = [
     "pricing_completion",
     "top_provider_id",
     "provider_prefix",
-    "instance_type_name",
-    "gpu_type",
-    "gpu_count",
-    "region",
-    "availability_zone",
-    "instance_type",
-    "product_description",
-    "spot_price",
-    "price_timestamp",
 ]
 
 NUMERIC_COLUMNS = [
@@ -48,8 +39,6 @@ NUMERIC_COLUMNS = [
     "context_length",
     "pricing_prompt",
     "pricing_completion",
-    "gpu_count",
-    "spot_price",
 ]
 
 BOOL_COLUMNS = []
@@ -60,9 +49,15 @@ TEXT_COLUMNS = [
 
 SORT_KEYS: dict[str, list[str]] = {
     "raw_openrouter_models": ["snapshot_ts", "model_id"],
-    "raw_lambda_instance_types": ["snapshot_ts", "region", "instance_type_name"],
-    "raw_aws_spot_price_history": ["price_timestamp", "availability_zone", "instance_type"],
 }
+
+OPENROUTER_CHANGE_COLUMNS = [
+    "pricing_prompt",
+    "pricing_completion",
+    "canonical_slug",
+    "provider_prefix",
+    "context_length",
+]
 
 
 class StorageManager:
@@ -98,8 +93,14 @@ class StorageManager:
             return self.load_dataset(dataset_id)
 
         existing = self.load_dataset(dataset_id)
+        incoming = self._coerce_types(incoming)
+        existing = self._coerce_types(existing) if not existing.empty else existing
+        if dataset_id == "raw_openrouter_models":
+            incoming = self._filter_unchanged_openrouter_rows(existing, incoming)
+            if incoming.empty:
+                return existing.reset_index(drop=True)
+
         merged = pd.concat([existing, incoming], ignore_index=True) if not existing.empty else incoming.copy()
-        merged = self._coerce_types(merged)
         merged = merged.drop_duplicates(subset=NATURAL_KEYS[dataset_id], keep="last")
         merged = merged.sort_values(by=SORT_KEYS[dataset_id], na_position="last").reset_index(drop=True)
 
@@ -116,3 +117,39 @@ class StorageManager:
         for column in TEXT_COLUMNS:
             dataframe[column] = dataframe[column].astype("string")
         return dataframe
+
+    @staticmethod
+    def _filter_unchanged_openrouter_rows(existing: pd.DataFrame, incoming: pd.DataFrame) -> pd.DataFrame:
+        if incoming.empty:
+            return incoming
+        if existing.empty:
+            return incoming
+
+        latest_existing = (
+            existing.sort_values(["model_id", "snapshot_ts"], na_position="last")
+            .groupby("model_id", as_index=False)
+            .tail(1)
+            .set_index("model_id")
+        )
+
+        keep_indexes: list[int] = []
+        for index, row in incoming.iterrows():
+            model_id = row["model_id"]
+            if pd.isna(model_id) or model_id not in latest_existing.index:
+                keep_indexes.append(index)
+                continue
+
+            previous = latest_existing.loc[model_id]
+            changed = any(not StorageManager._values_equal(row[column], previous[column]) for column in OPENROUTER_CHANGE_COLUMNS)
+            if changed:
+                keep_indexes.append(index)
+
+        return incoming.loc[keep_indexes].reset_index(drop=True)
+
+    @staticmethod
+    def _values_equal(left: object, right: object) -> bool:
+        if pd.isna(left) and pd.isna(right):
+            return True
+        if pd.isna(left) or pd.isna(right):
+            return False
+        return left == right
