@@ -24,14 +24,6 @@ DATASET_REGISTRY: dict[str, dict[str, object]] = {
         "metric_column": "metric_value",
         "required_columns": ["week_start_date", "entity_id", "metric_value", "rank"],
     },
-    "categories_programming": {
-        "label": "Programming",
-        "domain": "rankings",
-        "natural_keys": ["week_start_date", "category_slug", "entity_id"],
-        "primary_date_column": "week_start_date",
-        "metric_column": "metric_value",
-        "required_columns": ["week_start_date", "category_slug", "entity_id", "metric_value", "rank"],
-    },
     "app_metadata_snapshots": {
         "label": "App Metadata",
         "domain": "apps",
@@ -176,6 +168,9 @@ DATASET_REGISTRY: dict[str, dict[str, object]] = {
         "metric_column": "gpqa",
         "required_columns": ["model_id", "name", "organization", "release_date", "gpqa", "swe_bench", "context_window"],
     },
+    # NOTE: "compute_availability" is a legacy domain name. After removing AWS Spot +
+    # Lambda Cloud, this domain holds only the OpenRouter model catalog. Kept for
+    # file-path stability (data/normalized/compute_availability/).
     "raw_openrouter_models": {
         "label": "OpenRouter Catalog",
         "domain": "compute_availability",
@@ -192,22 +187,6 @@ DATASET_REGISTRY: dict[str, dict[str, object]] = {
             "canonical_slug",
             "provider_prefix",
         ],
-    },
-    "raw_lambda_instance_types": {
-        "label": "Lambda GPU Stock",
-        "domain": "compute_availability",
-        "natural_keys": ["instance_type_name", "region", "snapshot_ts"],
-        "primary_date_column": "snapshot_ts",
-        "metric_column": "gpu_count",
-        "required_columns": ["instance_type_name", "region", "snapshot_ts", "gpu_type", "gpu_count"],
-    },
-    "raw_aws_spot_price_history": {
-        "label": "AWS Spot Pricing",
-        "domain": "compute_availability",
-        "natural_keys": ["instance_type", "availability_zone", "product_description", "price_timestamp"],
-        "primary_date_column": "price_timestamp",
-        "metric_column": "spot_price",
-        "required_columns": ["instance_type", "availability_zone", "region", "price_timestamp", "spot_price"],
     },
     "openrouter_model_activity": {
         "label": "Model Activity Splits",
@@ -231,7 +210,6 @@ DOMAIN_ORDER = {
     "rankings": [
         "top_models",
         "market_share",
-        "categories_programming",
         "openrouter_model_activity",
         "provider_daily_activity",
     ],
@@ -265,8 +243,6 @@ DOMAIN_ORDER = {
     ],
     "compute_availability": [
         "raw_openrouter_models",
-        "raw_lambda_instance_types",
-        "raw_aws_spot_price_history",
     ],
 }
 

@@ -11,7 +11,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--base-dir", default=".", help="Repository root for data writes")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    subparsers.add_parser("daily-update", help="Run all compute availability collectors (OpenRouter, Lambda, AWS)")
+    # NOTE: "compute availability" name is legacy; pipeline now only scrapes OpenRouter catalog.
+    subparsers.add_parser("daily-update", help="Scrape OpenRouter model catalog")
     return parser
 
 
