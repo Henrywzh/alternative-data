@@ -28,7 +28,8 @@ def run_checks(
 ) -> list[CheckResult]:
     checks: list[CheckResult] = []
     missing_files = []
-    for dataset_id in dataset_ids():
+    expected_dataset_ids = list(datasets) if datasets else dataset_ids()
+    for dataset_id in expected_dataset_ids:
         registry_entry = DATASET_REGISTRY.get(dataset_id, {})
         domain = registry_entry.get("domain", "rankings")
         source = dataset_source_for_domain(domain)

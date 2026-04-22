@@ -1368,15 +1368,52 @@ def compute_compute_availability_views(datasets: dict[str, DatasetLoadResult]) -
     if models_result and not models_result.frame.empty:
         df = models_result.frame.copy()
         df["snapshot_ts"] = pd.to_datetime(df["snapshot_ts"], errors="coerce")
-        latest_ts = df["snapshot_ts"].max()
-        views["models_latest"] = df[df["snapshot_ts"] == latest_ts].copy()
-        
-        # Historical growth
-        growth = df.groupby("snapshot_ts")["model_id"].nunique().reset_index().rename(columns={"model_id": "model_count"})
-        views["models_growth"] = growth
+        df = df.dropna(subset=["snapshot_ts", "model_id"]).sort_values(["snapshot_ts", "model_id"]).reset_index(drop=True)
+
+        if df.empty:
+            views["models_latest"] = pd.DataFrame()
+            views["models_growth"] = pd.DataFrame()
+            views["models_history_start"] = None
+            views["models_history_end"] = None
+            return views
+
+        snapshot_groups = list(df.groupby("snapshot_ts", sort=True))
+        max_snapshot_size = max(group["model_id"].nunique() for _, group in snapshot_groups)
+        full_snapshot_threshold = max_snapshot_size * 0.8
+
+        current_catalog: dict[str, pd.Series] = {}
+        growth_rows: list[dict[str, object]] = []
+
+        for snapshot_ts, group in snapshot_groups:
+            snapshot_rows = (
+                group.drop_duplicates(subset=["model_id"], keep="last")
+                .sort_values("model_id")
+                .reset_index(drop=True)
+            )
+
+            if snapshot_rows["model_id"].nunique() >= full_snapshot_threshold:
+                current_catalog = {
+                    str(row["model_id"]): row.copy()
+                    for _, row in snapshot_rows.iterrows()
+                }
+            else:
+                for _, row in snapshot_rows.iterrows():
+                    current_catalog[str(row["model_id"])] = row.copy()
+
+            growth_rows.append({"snapshot_ts": snapshot_ts, "model_count": len(current_catalog)})
+
+        latest_ts = snapshot_groups[-1][0]
+        latest_models = pd.DataFrame(current_catalog.values()).sort_values("model_id").reset_index(drop=True)
+
+        views["models_latest"] = latest_models
+        views["models_growth"] = pd.DataFrame(growth_rows)
+        views["models_history_start"] = snapshot_groups[0][0]
+        views["models_history_end"] = latest_ts
     else:
         views["models_latest"] = pd.DataFrame()
         views["models_growth"] = pd.DataFrame()
+        views["models_history_start"] = None
+        views["models_history_end"] = None
 
     return views
 
@@ -2949,6 +2986,8 @@ def render_compute_evolution_section(compute_views: dict[str, object]) -> None:
     """
     models_latest = compute_views.get("models_latest", pd.DataFrame())
     models_growth = compute_views.get("models_growth", pd.DataFrame())
+    models_history_start = compute_views.get("models_history_start")
+    models_history_end = compute_views.get("models_history_end")
 
     st.markdown('<div class="section-title">Compute Evolution</div>', unsafe_allow_html=True)
     row2_col1, row2_col2 = st.columns(2)
@@ -2970,6 +3009,12 @@ def render_compute_evolution_section(compute_views: dict[str, object]) -> None:
                 margin=dict(l=0, r=0, t=40, b=10)
             )
             st.plotly_chart(fig_growth, use_container_width=True, theme=None)
+            if models_history_start is not None and models_history_end is not None:
+                start_label = pd.Timestamp(models_history_start).strftime("%Y-%m-%d")
+                end_label = pd.Timestamp(models_history_end).strftime("%Y-%m-%d")
+                st.caption(
+                    f"History reflects the normalized OpenRouter catalog snapshots currently on disk ({start_label} to {end_label})."
+                )
 
     with row2_col2:
         st.markdown('<div class="section-subtitle">Context Window vs. Pricing Prompt</div>', unsafe_allow_html=True)

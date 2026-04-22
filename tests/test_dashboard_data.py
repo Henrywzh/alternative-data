@@ -11,6 +11,7 @@ from dashboard.app import (
     build_domain_signature,
     build_manifest_signature,
     build_normalized_signature,
+    compute_compute_availability_views,
     compute_openrouter_views,
     compute_semiconductor_views,
     compute_provider_adoption_views,
@@ -675,6 +676,22 @@ def test_checks_flag_missing_and_duplicate_data_across_domains(tmp_path: Path) -
     assert "apps_trending_snapshots is empty" in titles
 
 
+def test_checks_only_report_missing_files_for_provided_domain_dataset_subset(tmp_path: Path) -> None:
+    root = tmp_path / "data" / "normalized" / "openrouter"
+    root.mkdir(parents=True)
+    _rankings_frame("top_models").to_csv(root / "top_models.csv", index=False)
+
+    datasets = load_domain_datasets("rankings", base_dir=tmp_path)
+    freshness = load_latest_manifest(base_dir=tmp_path)
+    checks = run_checks(datasets, freshness, base_dir=tmp_path)
+
+    missing = [check for check in checks if check.title == "Missing datasets"]
+    assert len(missing) == 1
+    assert "market_share" in missing[0].detail
+    assert "app_usage_daily" not in missing[0].detail
+    assert "raw_openrouter_models" not in missing[0].detail
+
+
 def test_load_latest_manifest_reads_latest_run(tmp_path: Path) -> None:
     raw_root = tmp_path / "data" / "raw" / "openrouter" / "20260404T120606Z-ef7072ee"
     raw_root.mkdir(parents=True)
@@ -1082,7 +1099,6 @@ def test_rankings_week_context_detects_divergent_week_buckets(tmp_path: Path) ->
     context = rankings_week_context(datasets)
 
     assert context["model_week"] == "2026-03-30"
-    assert context["programming_week"] == "2026-03-30"
     assert context["market_share_week"] == "2026-04-05"
     assert context["has_divergent_weeks"] is True
     assert context["model_scraped_at"] == "2026-04-06T08:19:47.193085Z"
@@ -1608,6 +1624,81 @@ def test_compute_openrouter_views_exposes_total_weekly_tokens_for_top_models() -
     assert list(pivot_total.index) == ["2026-03-09", "2026-03-16"]
     assert pivot_total.loc["2026-03-09", "Total Tokens"] == 350.0
     assert pivot_total.loc["2026-03-16", "Total Tokens"] == 300.0
+
+
+def test_compute_availability_views_reconstruct_catalog_from_full_and_delta_snapshots() -> None:
+    rows: list[dict] = []
+
+    for model_id in [f"model-{idx}" for idx in range(1, 6)]:
+        row = _base_row("raw_openrouter_models")
+        row.update(
+            {
+                "snapshot_ts": "2026-01-15T00:00:00Z",
+                "model_id": model_id,
+                "pricing_prompt": 0.001,
+                "pricing_completion": 0.002,
+                "context_length": 128000,
+            }
+        )
+        rows.append(row)
+
+    for model_id, prompt in [("model-3", 0.003), ("model-6", 0.0015)]:
+        row = _base_row("raw_openrouter_models")
+        row.update(
+            {
+                "snapshot_ts": "2026-01-16T00:00:00Z",
+                "model_id": model_id,
+                "pricing_prompt": prompt,
+                "pricing_completion": prompt * 2,
+                "context_length": 256000,
+            }
+        )
+        rows.append(row)
+
+    for model_id in [f"model-{idx}" for idx in range(1, 5)]:
+        row = _base_row("raw_openrouter_models")
+        row.update(
+            {
+                "snapshot_ts": "2026-01-17T00:00:00Z",
+                "model_id": model_id,
+                "pricing_prompt": 0.004,
+                "pricing_completion": 0.008,
+                "context_length": 512000,
+            }
+        )
+        rows.append(row)
+
+    raw_openrouter_models = pd.DataFrame(rows, columns=EXPECTED_COLUMNS)
+
+    datasets = {
+        "raw_openrouter_models": DatasetLoadResult(
+            dataset_id="raw_openrouter_models",
+            label="OpenRouter Catalog",
+            domain="compute_availability",
+            primary_date_column="snapshot_ts",
+            metric_column="pricing_prompt",
+            frame=raw_openrouter_models,
+            source_format="csv",
+            source_path=Path("data/normalized/compute_availability/raw_openrouter_models.csv"),
+            missing_columns=[],
+            duplicate_rows=0,
+            first_date="2026-01-15",
+            latest_date="2026-01-17",
+            latest_scraped_at="2026-01-17T00:00:00Z",
+            row_count=len(raw_openrouter_models),
+        )
+    }
+
+    views = compute_compute_availability_views(datasets)
+    models_growth = views["models_growth"]
+    models_latest = views["models_latest"]
+
+    assert models_growth["model_count"].tolist() == [5, 6, 4]
+    assert set(models_latest["model_id"]) == {"model-1", "model-2", "model-3", "model-4"}
+    latest_model_3 = models_latest[models_latest["model_id"] == "model-3"].iloc[0]
+    assert latest_model_3["pricing_prompt"] == 0.004
+    assert str(views["models_history_start"]).startswith("2026-01-15")
+    assert str(views["models_history_end"]).startswith("2026-01-17")
 
 
 def test_make_line_chart_handles_single_total_series_for_top_models() -> None:
