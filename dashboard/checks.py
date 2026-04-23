@@ -8,6 +8,7 @@ from dashboard.data import (
     DatasetLoadResult,
     FreshnessInfo,
     dataset_ids,
+    domain_dataset_ids,
     dataset_source_for_domain,
     normalized_root,
 )
@@ -25,11 +26,12 @@ def run_checks(
     datasets: dict[str, DatasetLoadResult],
     freshness: FreshnessInfo,
     base_dir: Path | None = None,
+    expected_dataset_ids: list[str] | None = None,
 ) -> list[CheckResult]:
     checks: list[CheckResult] = []
     missing_files = []
-    expected_dataset_ids = list(datasets) if datasets else dataset_ids()
-    for dataset_id in expected_dataset_ids:
+    expected_ids = expected_dataset_ids if expected_dataset_ids is not None else (list(datasets) if datasets else dataset_ids())
+    for dataset_id in expected_ids:
         registry_entry = DATASET_REGISTRY.get(dataset_id, {})
         domain = registry_entry.get("domain", "rankings")
         source = dataset_source_for_domain(domain)

@@ -692,6 +692,18 @@ def test_checks_only_report_missing_files_for_provided_domain_dataset_subset(tmp
     assert "raw_openrouter_models" not in missing[0].detail
 
 
+def test_checks_only_report_missing_files_for_empty_provided_domain_dataset_subset(tmp_path: Path) -> None:
+    freshness = load_latest_manifest(base_dir=tmp_path)
+    checks = run_checks({}, freshness, base_dir=tmp_path, expected_dataset_ids=domain_dataset_ids("rankings"))
+
+    missing = [check for check in checks if check.title == "Missing datasets"]
+    assert len(missing) == 1
+    assert "top_models" in missing[0].detail
+    assert "market_share" in missing[0].detail
+    assert "app_usage_daily" not in missing[0].detail
+    assert "raw_openrouter_models" not in missing[0].detail
+
+
 def test_load_latest_manifest_reads_latest_run(tmp_path: Path) -> None:
     raw_root = tmp_path / "data" / "raw" / "openrouter" / "20260404T120606Z-ef7072ee"
     raw_root.mkdir(parents=True)
