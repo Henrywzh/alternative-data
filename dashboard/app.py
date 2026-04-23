@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 from pathlib import Path
 import sys
 import re
@@ -501,7 +502,13 @@ def load_domain_state_cached(
     _ = domain_signature
     datasets = load_domain_datasets(domain, base_dir=base_dir)
     freshness = load_latest_manifest(base_dir=base_dir, datasets=datasets)
-    checks = run_checks(datasets, freshness, base_dir=base_dir, expected_dataset_ids=domain_dataset_ids(domain))
+    # Streamlit Cloud can briefly serve mixed app/checker versions during deploys.
+    # Prefer the narrowed domain-aware API when present, but keep the app bootable
+    # if an older dashboard.checks module is still resident.
+    if "expected_dataset_ids" in inspect.signature(run_checks).parameters:
+        checks = run_checks(datasets, freshness, base_dir=base_dir, expected_dataset_ids=domain_dataset_ids(domain))
+    else:
+        checks = run_checks(datasets, freshness, base_dir=base_dir)
     return datasets, freshness, checks
 
 
