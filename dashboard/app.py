@@ -64,6 +64,7 @@ NPM_CATEGORY_LABELS = {
 }
 
 BIG_TECH_ORGS = ["openai", "google", "anthropic", "meta", "mistralai", "deepseek", "qwen", "moonshotai"]
+REVENUE_CACHE_VERSION = "2026-04-23-historical-revenue-fallback-v1"
 AI_DEMAND_PPI_COMPONENT_COLUMNS = {
     "PCU33443344": "ppi_component_pcu33443344_rebased",
     "PCU33423342": "ppi_component_pcu33423342_rebased",
@@ -595,7 +596,9 @@ def _fuzzy_normalize_model_id(model_id: str) -> str:
 @st.cache_data(ttl=3600)
 def compute_openrouter_views(
     datasets: dict[str, DatasetLoadResult],
+    revenue_cache_version: str = REVENUE_CACHE_VERSION,
 ) -> dict[str, object]:
+    _ = revenue_cache_version
     views: dict[str, object] = {}
 
     top_models_result = datasets.get("top_models")
@@ -3119,7 +3122,10 @@ def main() -> None:
     )
     checks = openrouter_checks + apps_checks + github_checks + provider_checks + semi_checks + benchmark_checks
 
-    openrouter_views = compute_openrouter_views({**openrouter_datasets, **apps_datasets, **compute_datasets})
+    openrouter_views = compute_openrouter_views(
+        {**openrouter_datasets, **apps_datasets, **compute_datasets},
+        revenue_cache_version=REVENUE_CACHE_VERSION,
+    )
     github_views = compute_github_views(github_datasets)
     provider_views = compute_provider_adoption_views(provider_datasets)
     semi_views = compute_semiconductor_views(semi_datasets)
