@@ -501,7 +501,7 @@ def load_domain_state_cached(
     _ = domain_signature
     datasets = load_domain_datasets(domain, base_dir=base_dir)
     freshness = load_latest_manifest(base_dir=base_dir, datasets=datasets)
-    checks = run_checks(datasets, freshness, base_dir=base_dir)
+    checks = run_checks(datasets, freshness, base_dir=base_dir, expected_dataset_ids=domain_dataset_ids(domain))
     return datasets, freshness, checks
 
 
