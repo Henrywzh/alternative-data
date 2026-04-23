@@ -308,6 +308,7 @@ def estimate_usage_revenue(
     pricing_with_dates = pricing.copy()
     pricing_with_dates["_pricing_date"] = pricing_dates
     estimated["_usage_date"] = usage_dates
+    earliest_pricing_date = pricing_with_dates["_pricing_date"].dropna().min()
 
     resolved_frames: list[pd.DataFrame] = []
     for usage_date, group in estimated.groupby("_usage_date", dropna=False, sort=False):
@@ -315,6 +316,10 @@ def estimate_usage_revenue(
             eligible_pricing = pricing_with_dates[pricing_with_dates["_pricing_date"] <= usage_date].drop(
                 columns="_pricing_date"
             )
+            if eligible_pricing.empty and pd.notna(earliest_pricing_date):
+                eligible_pricing = pricing_with_dates[
+                    pricing_with_dates["_pricing_date"] == earliest_pricing_date
+                ].drop(columns="_pricing_date")
         else:
             eligible_pricing = pricing_with_dates.drop(columns="_pricing_date")
         group = group.drop(columns="_usage_date")
