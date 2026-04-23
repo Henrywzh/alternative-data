@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 import pandas as pd
+import dashboard.app as dashboard_app
 
 from dashboard.app import (
     _compute_revenue_views,
@@ -17,6 +18,7 @@ from dashboard.app import (
     compute_provider_adoption_views,
     format_scraped_at_display,
     grouped_revenue_token_pivots,
+    load_domain_state_cached,
     make_line_chart,
     make_stacked_area_chart,
     market_share_legend_rows,
@@ -702,6 +704,29 @@ def test_checks_only_report_missing_files_for_empty_provided_domain_dataset_subs
     assert "market_share" in missing[0].detail
     assert "app_usage_daily" not in missing[0].detail
     assert "raw_openrouter_models" not in missing[0].detail
+
+
+def test_load_domain_state_cached_supports_legacy_run_checks_signature(tmp_path: Path, monkeypatch) -> None:
+    captured: dict[str, object] = {}
+
+    def legacy_run_checks(datasets, freshness, base_dir=None):
+        captured["datasets"] = datasets
+        captured["freshness"] = freshness
+        captured["base_dir"] = base_dir
+        return []
+
+    monkeypatch.setattr(dashboard_app, "run_checks", legacy_run_checks)
+
+    datasets, freshness, checks = load_domain_state_cached.__wrapped__(
+        tmp_path,
+        "rankings",
+        build_domain_signature(tmp_path, "rankings"),
+    )
+
+    assert checks == []
+    assert captured["datasets"] == datasets
+    assert captured["freshness"] == freshness
+    assert captured["base_dir"] == tmp_path
 
 
 def test_load_latest_manifest_reads_latest_run(tmp_path: Path) -> None:
