@@ -597,6 +597,53 @@ def test_estimate_usage_revenue_uses_asof_snapshot_for_historical_usage() -> Non
     assert row["estimated_revenue"] == pytest.approx(0.1023)
 
 
+def test_estimate_usage_revenue_falls_back_to_earliest_snapshot_before_pricing_history_starts() -> None:
+    usage = pd.DataFrame(
+        [
+            {
+                "usage_date": "2026-01-16",
+                "provider_slug": "openai",
+                "model_permaslug": "openai/gpt-4.1",
+                "total_tokens": 100.0,
+                "prompt_tokens": 0.0,
+                "completion_tokens": 0.0,
+            }
+        ]
+    )
+    pricing = pd.DataFrame(
+        [
+            {
+                "snapshot_ts": "2026-04-15T12:00:00Z",
+                "model_id": "openai/gpt-4.1",
+                "canonical_slug": "openai/gpt-4.1",
+                "provider_prefix": "openai",
+                "pricing_prompt": 0.001,
+                "pricing_completion": 0.002,
+            },
+            {
+                "snapshot_ts": "2026-04-17T12:00:00Z",
+                "model_id": "openai/gpt-4.1",
+                "canonical_slug": "openai/gpt-4.1",
+                "provider_prefix": "openai",
+                "pricing_prompt": 0.010,
+                "pricing_completion": 0.020,
+            },
+        ]
+    )
+
+    estimated = estimate_usage_revenue(
+        usage,
+        pricing,
+        slug_strategy="canonical",
+        pricing_strategy="provider_fallback",
+    )
+
+    row = estimated.iloc[0]
+    assert pd.Timestamp(row["pricing_snapshot_ts"]) == pd.Timestamp("2026-04-15T12:00:00Z")
+    assert row["pricing_join_status"] == "matched_model_median"
+    assert row["estimated_revenue"] == pytest.approx(0.1023)
+
+
 def test_estimate_usage_revenue_falls_back_to_full_pricing_when_usage_date_missing() -> None:
     usage = pd.DataFrame(
         [
