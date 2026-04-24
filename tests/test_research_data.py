@@ -796,10 +796,12 @@ def test_benchmark_refresh_workflow_rebuilds_frontier_registry() -> None:
     assert "workflow_dispatch:" in workflow
     assert "python -m llm_benchmark_data.cli --base-dir . update" in workflow
     assert "python -m research_data.cli --base-dir . build-mart frontier_model_registry --refresh" in workflow
-    assert "data/raw/llm_benchmarks" in workflow
     assert "data/normalized/llm_benchmarks" in workflow
     assert "data/normalized/marts/frontier_model_registry.csv" in workflow
     assert "data/normalized/marts/frontier_model_registry.parquet" in workflow
+    commit_section = workflow.split("git add \\", 1)[1].split("if git diff --staged --quiet; then", 1)[0]
+    assert "data/raw/llm_benchmarks" not in commit_section
+    assert "path: data/raw/llm_benchmarks/" in workflow
 
 
 def test_pyproject_exposes_llm_benchmark_cli_script() -> None:
