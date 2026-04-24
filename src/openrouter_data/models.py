@@ -43,6 +43,7 @@ class DatasetRecord:
     growth_percent: float | None = None
     prompt_tokens: float | None = None
     completion_tokens: float | None = None
+    reasoning_tokens: float | None = None
     request_count: int | None = None
 
     def to_dict(self) -> dict[str, Any]:

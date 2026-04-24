@@ -100,6 +100,7 @@ class PypiDownloadPoint:
     provider_display_name: str
     package_name: str
     package_type: str
+    package_category: str
     with_mirrors: bool
     download_date: str
     downloads: int

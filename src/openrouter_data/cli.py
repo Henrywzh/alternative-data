@@ -25,8 +25,16 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers.add_parser("apps-initial-backfill", help="Fetch current app detail and public apps snapshots")
     subparsers.add_parser("apps-daily-update", help="Fetch current app detail and public apps snapshots")
     
-    activity = subparsers.add_parser("activity-daily-update", help="Discover top models and fetch granular usage activity")
-    activity.add_argument("--limit", type=int, default=50, help="Number of models to discover and scrape")
+    activity = subparsers.add_parser(
+        "activity-daily-update",
+        help="Fetch model activity for the configured major-provider set",
+    )
+    activity.add_argument(
+        "--limit",
+        type=int,
+        default=0,
+        help="Optional maximum number of discovered models to scrape; 0 means no limit",
+    )
 
     subparsers.add_parser(
         "provider-activity-daily-update",

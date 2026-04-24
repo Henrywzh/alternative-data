@@ -11,6 +11,8 @@ Rankings datasets:
 - `top_models`: weekly model usage history
 - `market_share`: weekly token share by model author
 - `categories_programming`: weekly rankings/programming history
+- `openrouter_model_activity`: daily model-level activity with request counts and token splits (`prompt`, `completion`, optional `reasoning`)
+- `provider_daily_activity`: daily provider-page total-token history by model for the configured major OpenRouter providers
 
 Apps datasets:
 
@@ -28,6 +30,11 @@ Apps datasets:
 - `github_provider_signals_daily`: first-match provider signals by repo/day/type
 - `github_repo_rollup_daily`: repo-level provider rollups for manifest/import/env/model detections
 - `provider_momentum_daily`: daily blended GitHub + PyPI provider momentum metrics
+
+Framework adoption tracked inside `provider_adoption`:
+
+- npm: `@langchain/core`, `@langchain/langgraph`
+- PyPI: `langchain`, `langgraph`, `pydantic-ai`
 
 ## Project Layout
 
@@ -93,6 +100,12 @@ Run the apps daily update:
 openrouter-data --base-dir . apps-daily-update
 ```
 
+Run the OpenRouter model-activity update for the configured major-provider set:
+
+```bash
+openrouter-data --base-dir . activity-daily-update
+```
+
 Validate the live app extractor:
 
 ```bash
@@ -111,10 +124,22 @@ Run the provider-adoption PyPI update:
 provider-adoption-data --base-dir . pypi-daily-update
 ```
 
+Run the framework-adoption PyPI update only:
+
+```bash
+provider-adoption-data --base-dir . --date 2026-04-24 --providers langchain,pydantic_ai pypi-daily-update
+```
+
 Run the provider-adoption npm update:
 
 ```bash
 provider-adoption-data --base-dir . --date 2026-04-08 npm-daily-update
+```
+
+Run the framework-adoption npm update only:
+
+```bash
+provider-adoption-data --base-dir . --date 2026-04-24 --providers langchain npm-daily-update
 ```
 
 Run the provider-adoption GitHub update for a specific date:
@@ -184,5 +209,7 @@ render blueprint apply
 
 This repository is intended as a home for small, practical alternative data projects that can expand over time. The OpenRouter pipeline now supports both rankings and app sources with the same raw snapshot storage and normalized dataset workflow.
 The provider-adoption pipeline now defaults to tracking OpenAI, Anthropic, Google, DeepSeek, Meta, Mistral, Qwen, Moonshot, Minimax, and ZAI. PyPI and npm coverage remain selective, while Hugging Face coverage tracks all models under each configured organization.
+Framework ecosystems are also tracked inside the provider-adoption domain, with package-level daily raw series for LangChain and PydanticAI.
+The OpenRouter activity pipeline now prefers the latest local OpenRouter catalog to discover model activity pages for the configured major-provider set, and stores request counts plus prompt/completion token splits with optional reasoning-token capture when the source exposes it.
 The bounded backfill command does not fabricate historical Hugging Face rows; HF snapshots begin from the first real collection date onward.
 The research layer keeps scraping outputs as the source of truth and writes derived marts under `data/normalized/marts/` for fast, deterministic Jupyter analysis.
