@@ -45,6 +45,7 @@ Apps datasets:
 - `data/normalized/github_trending/`: analytics-ready Parquet outputs for trending repos
 - `.github/workflows/github-trending-daily.yml`: daily GitHub Actions job for trending repos
 - `.github/workflows/provider-adoption-daily.yml`: daily GitHub Actions job for provider adoption datasets
+- `.github/workflows/llm-benchmarks-weekly.yml`: weekly GitHub Actions job for ZeroEval benchmark snapshots and the frontier registry mart
 - `.github/workflows/provider-adoption-backfill.yml`: manual bounded backfill job for provider adoption datasets
 - `.github/workflows/repo-keepalive.yml`: scheduled keepalive commit to avoid GitHub disabling scheduled workflows after long inactivity
 
@@ -126,6 +127,12 @@ Run the provider-adoption Hugging Face update for a specific date:
 
 ```bash
 provider-adoption-data --base-dir . --date 2026-04-08 huggingface-daily-update
+```
+
+Run the ZeroEval benchmark update:
+
+```bash
+llm-benchmark-data --base-dir . update
 ```
 
 Show the source and mart catalog:
