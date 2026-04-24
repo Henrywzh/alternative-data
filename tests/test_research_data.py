@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import sys
 from pathlib import Path
+import tomllib
 
 import pandas as pd
 import pytest
@@ -739,7 +740,7 @@ def test_mart_builds_are_idempotent_and_write_csv_and_parquet(tmp_path: Path) ->
     first = build_weekly_openrouter_usage(base_dir=tmp_path, refresh=True)
     second = build_weekly_openrouter_usage(base_dir=tmp_path, refresh=False)
 
-    pd.testing.assert_frame_equal(first, second, check_dtype=False)
+    pd.testing.assert_frame_equal(first.fillna(value=float("nan")), second.fillna(value=float("nan")), check_dtype=False)
     csv_path, parquet_path = mart_paths("weekly_openrouter_usage", base_dir=tmp_path)
     assert csv_path.exists()
     assert parquet_path.exists()
@@ -764,3 +765,46 @@ def test_research_cli_accepts_base_dir_after_subcommand(tmp_path: Path, monkeypa
 
     captured = capsys.readouterr()
     assert "weekly_openrouter_usage:" in captured.out
+
+
+def test_frontier_notebook_surfaces_freshness_and_zeroeval_coverage_note() -> None:
+    notebook_path = Path(__file__).resolve().parents[1] / "notebooks" / "03_frontier_intelligence_dynamics.ipynb"
+    notebook = json.loads(notebook_path.read_text())
+
+    markdown_text = "\n".join(
+        "".join(cell.get("source", []))
+        for cell in notebook["cells"]
+        if cell.get("cell_type") == "markdown"
+    )
+    code_text = "\n".join(
+        "".join(cell.get("source", []))
+        for cell in notebook["cells"]
+        if cell.get("cell_type") == "code"
+    )
+
+    assert "ZeroEval" in markdown_text
+    assert "coverage is limited" in markdown_text
+    assert "scraped_at" in code_text
+    assert "release_date" in code_text
+
+
+def test_benchmark_refresh_workflow_rebuilds_frontier_registry() -> None:
+    workflow_path = Path(__file__).resolve().parents[1] / ".github" / "workflows" / "llm-benchmarks-weekly.yml"
+    workflow = workflow_path.read_text()
+
+    assert 'cron: "0 9 * * 1"' in workflow
+    assert "workflow_dispatch:" in workflow
+    assert "python -m llm_benchmark_data.cli --base-dir . update" in workflow
+    assert "python -m research_data.cli --base-dir . build-mart frontier_model_registry --refresh" in workflow
+    assert "data/raw/llm_benchmarks" in workflow
+    assert "data/normalized/llm_benchmarks" in workflow
+    assert "data/normalized/marts/frontier_model_registry.csv" in workflow
+    assert "data/normalized/marts/frontier_model_registry.parquet" in workflow
+
+
+def test_pyproject_exposes_llm_benchmark_cli_script() -> None:
+    pyproject_path = Path(__file__).resolve().parents[1] / "pyproject.toml"
+    pyproject = tomllib.loads(pyproject_path.read_text())
+
+    scripts = pyproject["project"]["scripts"]
+    assert scripts["llm-benchmark-data"] == "llm_benchmark_data.cli:main"
