@@ -6,6 +6,8 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
+import pandas as pd
+
 from openrouter_data.models import DatasetRecord, RunContext, Snapshot
 from openrouter_data.sources.apps import AppsSource
 from openrouter_data.sources.activity import ActivitySource
@@ -228,16 +230,57 @@ class ActivityPipeline(BasePipeline):
     def __init__(self, base_dir: Path) -> None:
         super().__init__(base_dir, ActivitySource())
 
-    def run_daily_update(self, limit: int = 200) -> PipelineResult:
-        """Discovery phase then execute common pipeline logic."""
-        # 1. Discover top N slugs
-        popular_slugs = self.source.fetch_popular_slugs(limit=limit)
-        
-        # 2. Fetch snapshots for those slugs
-        snapshots = self.source.fetch_snapshots(popular_slugs)
-        
-        # 3. Standard execution
+    def run_daily_update(self, limit: int = 0) -> PipelineResult:
+        """Discover model slugs for the configured major providers, then ingest activity."""
+        slugs = self._discover_catalog_slugs(limit=limit)
+        if not slugs:
+            slugs = self.source.fetch_popular_slugs(limit=limit or 200)
+
+        snapshots = self.source.fetch_snapshots(slugs)
         return self._execute(mode="activity-daily-update", snapshots=snapshots)
+
+    def _discover_catalog_slugs(self, limit: int = 0) -> list[str]:
+        catalog_path = self.base_dir / "data" / "normalized" / "compute_availability" / "raw_openrouter_models.csv"
+        if not catalog_path.exists():
+            return []
+
+        catalog = pd.read_csv(catalog_path)
+        if catalog.empty or "provider_prefix" not in catalog.columns:
+            return []
+
+        latest_snapshot = None
+        if "snapshot_ts" in catalog.columns and catalog["snapshot_ts"].notna().any():
+            latest_snapshot = catalog["snapshot_ts"].dropna().astype(str).max()
+            catalog = catalog[catalog["snapshot_ts"].astype(str) == latest_snapshot].copy()
+
+        allowed_prefixes = set(PROVIDER_SLUGS.keys())
+        catalog["provider_prefix"] = catalog["provider_prefix"].astype("string")
+        catalog = catalog[catalog["provider_prefix"].isin(allowed_prefixes)].copy()
+        if catalog.empty:
+            return []
+
+        slug_series = catalog.get("canonical_slug")
+        if slug_series is None or slug_series.isna().all():
+            slug_series = catalog.get("model_id")
+        else:
+            slug_series = slug_series.fillna(catalog.get("model_id"))
+        if slug_series is None:
+            return []
+
+        slugs: list[str] = []
+        seen: set[str] = set()
+        for slug in slug_series.astype("string").dropna().tolist():
+            slug_str = str(slug).strip()
+            if not slug_str or "/" not in slug_str or slug_str in seen:
+                continue
+            if slug_str.split("/")[0] not in allowed_prefixes:
+                continue
+            seen.add(slug_str)
+            slugs.append(slug_str)
+
+        if limit and limit > 0:
+            return slugs[:limit]
+        return slugs
 
     def _filter_for_mode(
         self,

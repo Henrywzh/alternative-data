@@ -9,6 +9,7 @@ import requests
 
 from openrouter_data.exceptions import ExtractionError
 from openrouter_data.models import DatasetRecord, RunContext, Snapshot
+from openrouter_data.sources.provider_activity import PROVIDER_SLUGS
 from openrouter_data.sources.base import SourceExtractor
 from openrouter_data.utils import iter_next_f_objects, walk_json
 
@@ -17,6 +18,7 @@ class ActivitySource(SourceExtractor):
     name = "openrouter_activity"
     BROWSE_URL = "https://openrouter.ai/rankings"
     MODEL_BASE_URL = "https://openrouter.ai"
+    ALLOWED_PROVIDER_PREFIXES = frozenset(PROVIDER_SLUGS.keys())
 
     def __init__(self, timeout: int = 30) -> None:
         self.timeout = timeout
@@ -66,7 +68,8 @@ class ActivitySource(SourceExtractor):
                 unique_slugs.append(s)
                 seen.add(s)
         
-        return unique_slugs[:limit]
+        filtered_slugs = [slug for slug in unique_slugs if slug.split("/")[0] in self.ALLOWED_PROVIDER_PREFIXES]
+        return filtered_slugs[:limit]
 
     def fetch_snapshots(self, slugs: list[str]) -> list[Snapshot]:
         """Fetch activity snapshots for the given slugs."""
@@ -117,6 +120,7 @@ class ActivitySource(SourceExtractor):
                 # expected fields: date, model, category, count, total_prompt_tokens, total_completion_tokens
                 usage_date = item.get("date")
                 category = item.get("category")
+                reasoning_tokens = self._extract_reasoning_tokens(item)
                 
                 records.append(
                     DatasetRecord(
@@ -130,9 +134,18 @@ class ActivitySource(SourceExtractor):
                         request_count=item.get("count"),
                         prompt_tokens=float(item.get("total_prompt_tokens", 0) or 0),
                         completion_tokens=float(item.get("total_completion_tokens", 0) or 0),
+                        reasoning_tokens=reasoning_tokens,
                         total_tokens=float(item.get("total_prompt_tokens", 0) or 0) + float(item.get("total_completion_tokens", 0) or 0),
                         rank=item.get("rank"),
                     )
                 )
 
         return {dataset_id: records}
+
+    @staticmethod
+    def _extract_reasoning_tokens(item: dict[str, Any]) -> float | None:
+        for key in ("total_reasoning_tokens", "reasoning_tokens", "native_reasoning_tokens"):
+            value = item.get(key)
+            if value is not None:
+                return float(value or 0)
+        return None

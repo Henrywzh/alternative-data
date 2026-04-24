@@ -156,6 +156,36 @@ PROVIDER_REGISTRY: tuple[ProviderConfig, ...] = (
         env_var_patterns=(),
         model_patterns=(),
     ),
+    ProviderConfig(
+        slug="langchain",
+        display_name="LangChain",
+        enabled=True,
+        pypi_packages=(
+            ProviderPackageConfig("langchain", "framework", "framework_core"),
+            ProviderPackageConfig("langgraph", "framework", "framework_graph"),
+        ),
+        npm_packages=(
+            ProviderPackageConfig("@langchain/core", "framework", "framework_core"),
+            ProviderPackageConfig("@langchain/langgraph", "framework", "framework_graph"),
+        ),
+        huggingface_orgs=(),
+        manifest_patterns=("langchain", "langgraph", "@langchain/core", "@langchain/langgraph"),
+        import_patterns=("from langchain", "import langchain", "from langgraph", "import langgraph"),
+        env_var_patterns=(),
+        model_patterns=(),
+    ),
+    ProviderConfig(
+        slug="pydantic_ai",
+        display_name="PydanticAI",
+        enabled=True,
+        pypi_packages=(ProviderPackageConfig("pydantic-ai", "framework", "framework_agent"),),
+        npm_packages=(),
+        huggingface_orgs=(),
+        manifest_patterns=("pydantic-ai",),
+        import_patterns=("from pydantic_ai", "import pydantic_ai"),
+        env_var_patterns=(),
+        model_patterns=(),
+    ),
 )
 
 
