@@ -87,8 +87,8 @@ class PypiStatsSource:
             )
             if provider is None:
                 continue
-            package_type = next(
-                package.package_type for package in provider.pypi_packages if package.package_name == package_name
+            package = next(
+                package for package in provider.pypi_packages if package.package_name == package_name
             )
             for row in payload.get("data", []):
                 category = str(row.get("category", "without_mirrors")).strip().lower()
@@ -97,7 +97,8 @@ class PypiStatsSource:
                         provider=provider.slug,
                         provider_display_name=provider.display_name,
                         package_name=package_name,
-                        package_type=package_type,
+                        package_type=package.package_type,
+                        package_category=package.package_category,
                         with_mirrors=category == "with_mirrors",
                         download_date=str(row.get("date")),
                         downloads=int(row.get("downloads") or 0),

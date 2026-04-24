@@ -61,10 +61,21 @@ DATASET_COLUMNS = [
     "growth_percent",
     "prompt_tokens",
     "completion_tokens",
+    "reasoning_tokens",
     "request_count",
 ]
 
-NUMERIC_COLUMNS = ["metric_value", "rank", "total_tokens", "tokens", "growth_percent", "prompt_tokens", "completion_tokens", "request_count"]
+NUMERIC_COLUMNS = [
+    "metric_value",
+    "rank",
+    "total_tokens",
+    "tokens",
+    "growth_percent",
+    "prompt_tokens",
+    "completion_tokens",
+    "reasoning_tokens",
+    "request_count",
+]
 BOOL_COLUMNS = ["group_by_origin", "is_private", "is_hidden"]
 TEXT_COLUMNS = [
     column

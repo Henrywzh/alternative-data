@@ -108,7 +108,7 @@ TEXT_COLUMNS = [
 ]
 
 SORT_KEYS: dict[str, list[str]] = {
-    "pypi_downloads_daily": ["download_date", "provider", "package_name", "with_mirrors"],
+    "pypi_downloads_daily": ["download_date", "provider", "package_category", "package_name", "with_mirrors"],
     "npm_downloads_daily": ["download_date", "provider", "package_category", "package_name"],
     "huggingface_models_daily": ["download_date", "provider", "author", "model_id"],
     "github_repo_candidates_daily": ["repo_created_date", "provider", "repo_full_name"],

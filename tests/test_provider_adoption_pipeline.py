@@ -55,14 +55,14 @@ class FakePypiSource:
 
     def extract(self, snapshots, providers):
         by_package = {
-            package.package_name: (provider.slug, provider.display_name, package.package_type)
+            package.package_name: (provider.slug, provider.display_name, package.package_type, package.package_category)
             for provider in providers
             for package in provider.pypi_packages
         }
         records = []
         for snapshot in snapshots:
             payload = json.loads(snapshot.body)
-            provider_slug, display_name, package_type = by_package[payload["package"]]
+            provider_slug, display_name, package_type, package_category = by_package[payload["package"]]
             for row in payload["data"]:
                 records.append(
                     PypiDownloadPoint(
@@ -70,6 +70,7 @@ class FakePypiSource:
                         provider_display_name=display_name,
                         package_name=payload["package"],
                         package_type=package_type,
+                        package_category=package_category,
                         with_mirrors=row["category"] == "with_mirrors",
                         download_date=row["date"],
                         downloads=row["downloads"],
@@ -377,6 +378,7 @@ def test_pypi_source_extracts_with_and_without_mirrors() -> None:
     )
 
     assert [(point.with_mirrors, point.downloads) for point in points] == [(False, 123), (True, 456)]
+    assert all(point.package_category == "core_sdk" for point in points)
 
 
 def test_pypi_source_retries_rate_limit_and_recovers() -> None:
@@ -534,6 +536,8 @@ def test_provider_registry_includes_hf_defaults() -> None:
         "moonshot",
         "minimax",
         "zai",
+        "langchain",
+        "pydantic_ai",
     ]
     assert {provider.slug: [(package.package_name, package.package_category) for package in provider.npm_packages] for provider in providers} == {
         "openai": [
@@ -559,7 +563,19 @@ def test_provider_registry_includes_hf_defaults() -> None:
         "moonshot": [],
         "minimax": [],
         "zai": [],
+        "langchain": [
+            ("@langchain/core", "framework_core"),
+            ("@langchain/langgraph", "framework_graph"),
+        ],
+        "pydantic_ai": [],
     }
+    assert {provider.slug: [(package.package_name, package.package_category) for package in provider.pypi_packages] for provider in providers}["langchain"] == [
+        ("langchain", "framework_core"),
+        ("langgraph", "framework_graph"),
+    ]
+    assert {provider.slug: [(package.package_name, package.package_category) for package in provider.pypi_packages] for provider in providers}["pydantic_ai"] == [
+        ("pydantic-ai", "framework_agent"),
+    ]
 
 
 def test_github_source_fetch_snapshots_handles_pagination_and_filters_archived() -> None:
@@ -761,6 +777,27 @@ def test_npm_start_date_aligns_to_existing_pypi_history(tmp_path: Path) -> None:
     start_date = pipeline._resolve_npm_start_date(date.fromisoformat("2026-04-05"), get_provider_registry(["openai", "anthropic"]))
 
     assert start_date.isoformat() == "2026-04-04"
+
+
+def test_framework_package_daily_updates_write_requested_langchain_and_pydantic_ai_series(tmp_path: Path) -> None:
+    pipeline = ProviderAdoptionPipeline(
+        tmp_path,
+        pypi_source=FakePypiSource(),
+        npm_source=FakeNpmSource(),
+    )
+
+    pipeline.run_pypi_daily_update(target_date="2026-04-05", provider_slugs=["langchain", "pydantic_ai"])
+    pipeline.run_npm_daily_update(target_date="2026-04-05", provider_slugs=["langchain"])
+
+    pypi = pd.read_csv(tmp_path / "data" / "normalized" / "provider_adoption" / "pypi_downloads_daily.csv")
+    npm = pd.read_csv(tmp_path / "data" / "normalized" / "provider_adoption" / "npm_downloads_daily.csv")
+
+    assert set(pypi["provider"].unique()) == {"langchain", "pydantic_ai"}
+    assert set(pypi["package_name"].unique()) == {"langchain", "langgraph", "pydantic-ai"}
+    assert set(pypi["package_category"].dropna().unique()) == {"framework_core", "framework_graph", "framework_agent"}
+    assert set(npm["provider"].unique()) == {"langchain"}
+    assert set(npm["package_name"].unique()) == {"@langchain/core", "@langchain/langgraph"}
+    assert set(npm["package_category"].dropna().unique()) == {"framework_core", "framework_graph"}
 
 
 def test_backfill_returns_all_raw_run_directories_and_preserves_last_raw_run_dir(tmp_path: Path) -> None:

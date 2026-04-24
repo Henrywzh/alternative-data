@@ -104,7 +104,7 @@ DATASET_REGISTRY: dict[str, dict[str, object]] = {
         "natural_keys": ["provider", "package_name", "with_mirrors", "download_date"],
         "primary_date_column": "download_date",
         "metric_column": "downloads",
-        "required_columns": ["provider", "package_name", "with_mirrors", "download_date", "downloads"],
+        "required_columns": ["provider", "package_name", "package_category", "with_mirrors", "download_date", "downloads"],
     },
     "npm_downloads_daily": {
         "label": "npm Downloads Daily",
@@ -409,6 +409,7 @@ BENCHMARK_COLUMNS = [
 ACTIVITY_COLUMNS = [
     "prompt_tokens",
     "completion_tokens",
+    "reasoning_tokens",
     "request_count",
 ]
 
@@ -471,6 +472,7 @@ NUMERIC_COLUMNS = [
     "growth_percent",
     "prompt_tokens",
     "completion_tokens",
+    "reasoning_tokens",
     "request_count",
     "stars_today",
     "total_stars",
