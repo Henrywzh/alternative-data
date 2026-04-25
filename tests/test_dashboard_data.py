@@ -160,6 +160,7 @@ def _artificial_analysis_models_frame() -> pd.DataFrame:
     return pd.DataFrame(
         [
             {
+                "dataset_id": "artificial_analysis_models_daily",
                 "as_of_date": "2026-04-25",
                 "model_id": "model-openai-a",
                 "model_slug": "openai-a",
@@ -180,6 +181,7 @@ def _artificial_analysis_models_frame() -> pd.DataFrame:
                 "scraped_at": "2026-04-25T00:00:00Z",
             },
             {
+                "dataset_id": "artificial_analysis_models_daily",
                 "as_of_date": "2026-04-25",
                 "model_id": "model-openai-b",
                 "model_slug": "openai-b",
@@ -200,6 +202,7 @@ def _artificial_analysis_models_frame() -> pd.DataFrame:
                 "scraped_at": "2026-04-25T00:00:00Z",
             },
             {
+                "dataset_id": "artificial_analysis_models_daily",
                 "as_of_date": "2026-04-25",
                 "model_id": "model-meta-open",
                 "model_slug": "meta-open",
@@ -227,6 +230,7 @@ def _artificial_analysis_capex_frame() -> pd.DataFrame:
     return pd.DataFrame(
         [
             {
+                "dataset_id": "artificial_analysis_capex_quarterly",
                 "quarter_id": "2024-q4",
                 "quarter_label": "Q4-2024",
                 "microsoft": 15.804,
@@ -235,12 +239,14 @@ def _artificial_analysis_capex_frame() -> pd.DataFrame:
                 "amazon": 26.052,
                 "oracle": 3.97,
                 "apple": 2.94,
+                "source_url": "https://artificialanalysis.ai/trends",
                 "page_url": "https://artificialanalysis.ai/trends",
                 "bundle_url": "https://artificialanalysis.ai/_next/static/chunks/app/(pages)/trends/page-demo.js",
                 "source_run_id": "run-aa",
                 "scraped_at": "2026-04-25T00:00:00Z",
             },
             {
+                "dataset_id": "artificial_analysis_capex_quarterly",
                 "quarter_id": "2025-q1",
                 "quarter_label": "Q1-2025",
                 "microsoft": 16.745,
@@ -249,6 +255,7 @@ def _artificial_analysis_capex_frame() -> pd.DataFrame:
                 "amazon": 24.255,
                 "oracle": 5.862,
                 "apple": 3.071,
+                "source_url": "https://artificialanalysis.ai/trends",
                 "page_url": "https://artificialanalysis.ai/trends",
                 "bundle_url": "https://artificialanalysis.ai/_next/static/chunks/app/(pages)/trends/page-demo.js",
                 "source_run_id": "run-aa",
@@ -1939,6 +1946,8 @@ def test_artificial_analysis_domain_loads_normalized_datasets(tmp_path: Path) ->
     assert datasets["artificial_analysis_models_daily"].row_count == 3
     assert datasets["artificial_analysis_capex_quarterly"].row_count == 2
     assert datasets["artificial_analysis_models_daily"].latest_date == "2026-04-25"
+    assert datasets["artificial_analysis_models_daily"].missing_columns == []
+    assert datasets["artificial_analysis_capex_quarterly"].missing_columns == []
 
 
 def test_compute_artificial_analysis_views_builds_priority_charts(tmp_path: Path) -> None:
