@@ -35,6 +35,7 @@ semiconductor-memory-data = "semiconductor_memory_data.cli:main"
 compute-availability-data = "compute_availability_data.cli:main"
 llm-benchmark-data = "llm_benchmark_data.cli:main"
 research-data = "research_data.cli:main"
+artificial-analysis-data = "artificial_analysis_data.cli:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
