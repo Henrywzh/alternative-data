@@ -13,6 +13,7 @@ from dashboard.app import (
     build_manifest_signature,
     build_normalized_signature,
     compute_compute_availability_views,
+    compute_artificial_analysis_views,
     compute_openrouter_views,
     compute_semiconductor_views,
     compute_provider_adoption_views,
@@ -153,6 +154,108 @@ def _write_dataset(base_dir: Path, dataset_id: str, frame: pd.DataFrame) -> None
     root = base_dir / "data" / "normalized" / dataset_source_for_domain(str(domain))
     root.mkdir(parents=True, exist_ok=True)
     frame.to_csv(root / f"{dataset_id}.csv", index=False)
+
+
+def _artificial_analysis_models_frame() -> pd.DataFrame:
+    return pd.DataFrame(
+        [
+            {
+                "as_of_date": "2026-04-25",
+                "model_id": "model-openai-a",
+                "model_slug": "openai-a",
+                "model_name": "OpenAI A",
+                "creator_id": "creator-openai",
+                "creator_name": "OpenAI",
+                "creator_slug": "openai",
+                "creator_country": "us",
+                "release_date": "2025-01-15",
+                "release_quarter": "Q1-2025",
+                "intelligence_index": 35.0,
+                "price_1m_blended_3_to_1": 3.0,
+                "median_output_tokens_per_second": 120.0,
+                "open_source_categorization": "Proprietary",
+                "is_open_weights": False,
+                "source_url": "fixture://aa",
+                "source_run_id": "run-aa",
+                "scraped_at": "2026-04-25T00:00:00Z",
+            },
+            {
+                "as_of_date": "2026-04-25",
+                "model_id": "model-openai-b",
+                "model_slug": "openai-b",
+                "model_name": "OpenAI B",
+                "creator_id": "creator-openai",
+                "creator_name": "OpenAI",
+                "creator_slug": "openai",
+                "creator_country": "us",
+                "release_date": "2025-03-15",
+                "release_quarter": "Q1-2025",
+                "intelligence_index": 41.0,
+                "price_1m_blended_3_to_1": 2.5,
+                "median_output_tokens_per_second": 140.0,
+                "open_source_categorization": "Proprietary",
+                "is_open_weights": False,
+                "source_url": "fixture://aa",
+                "source_run_id": "run-aa",
+                "scraped_at": "2026-04-25T00:00:00Z",
+            },
+            {
+                "as_of_date": "2026-04-25",
+                "model_id": "model-meta-open",
+                "model_slug": "meta-open",
+                "model_name": "Meta Open",
+                "creator_id": "creator-meta",
+                "creator_name": "Meta",
+                "creator_slug": "meta",
+                "creator_country": "us",
+                "release_date": "2025-02-20",
+                "release_quarter": "Q1-2025",
+                "intelligence_index": 33.0,
+                "price_1m_blended_3_to_1": 0.4,
+                "median_output_tokens_per_second": 180.0,
+                "open_source_categorization": "Open Weights (Permissive License)",
+                "is_open_weights": True,
+                "source_url": "fixture://aa",
+                "source_run_id": "run-aa",
+                "scraped_at": "2026-04-25T00:00:00Z",
+            },
+        ]
+    )
+
+
+def _artificial_analysis_capex_frame() -> pd.DataFrame:
+    return pd.DataFrame(
+        [
+            {
+                "quarter_id": "2024-q4",
+                "quarter_label": "Q4-2024",
+                "microsoft": 15.804,
+                "google": 14.276,
+                "meta": 14.425,
+                "amazon": 26.052,
+                "oracle": 3.97,
+                "apple": 2.94,
+                "page_url": "https://artificialanalysis.ai/trends",
+                "bundle_url": "https://artificialanalysis.ai/_next/static/chunks/app/(pages)/trends/page-demo.js",
+                "source_run_id": "run-aa",
+                "scraped_at": "2026-04-25T00:00:00Z",
+            },
+            {
+                "quarter_id": "2025-q1",
+                "quarter_label": "Q1-2025",
+                "microsoft": 16.745,
+                "google": 17.197,
+                "meta": 12.941,
+                "amazon": 24.255,
+                "oracle": 5.862,
+                "apple": 3.071,
+                "page_url": "https://artificialanalysis.ai/trends",
+                "bundle_url": "https://artificialanalysis.ai/_next/static/chunks/app/(pages)/trends/page-demo.js",
+                "source_run_id": "run-aa",
+                "scraped_at": "2026-04-25T00:00:00Z",
+            },
+        ]
+    )
 
 
 def _apps_usage_frame() -> pd.DataFrame:
@@ -1820,3 +1923,41 @@ def test_market_share_legend_rows_use_selected_week_tokens_not_cumulative() -> N
     assert rows["entity_id"].tolist() == ["qwen", "google"]
     assert rows["metric_value"].tolist() == [100.0, 50.0]
     assert rows["share_pct"].round(1).tolist() == [66.7, 33.3]
+
+
+def test_artificial_analysis_domain_loads_normalized_datasets(tmp_path: Path) -> None:
+    _write_dataset(tmp_path, "artificial_analysis_models_daily", _artificial_analysis_models_frame())
+    _write_dataset(tmp_path, "artificial_analysis_capex_quarterly", _artificial_analysis_capex_frame())
+
+    datasets = load_domain_datasets("artificial_analysis", base_dir=tmp_path)
+
+    assert set(datasets) == {
+        "artificial_analysis_models_daily",
+        "artificial_analysis_leading_models_by_lab_daily",
+        "artificial_analysis_capex_quarterly",
+    }
+    assert datasets["artificial_analysis_models_daily"].row_count == 3
+    assert datasets["artificial_analysis_capex_quarterly"].row_count == 2
+    assert datasets["artificial_analysis_models_daily"].latest_date == "2026-04-25"
+
+
+def test_compute_artificial_analysis_views_builds_priority_charts(tmp_path: Path) -> None:
+    _write_dataset(tmp_path, "artificial_analysis_models_daily", _artificial_analysis_models_frame())
+    _write_dataset(tmp_path, "artificial_analysis_capex_quarterly", _artificial_analysis_capex_frame())
+    datasets = load_domain_datasets("artificial_analysis", base_dir=tmp_path)
+
+    views = compute_artificial_analysis_views(datasets)
+
+    capex = views["capex_pivot"]
+    frontier = views["frontier_by_lab_pivot"]
+    price = views["price_models"]
+    country = views["frontier_by_country_pivot"]
+    openness = views["open_vs_proprietary_pivot"]
+
+    assert capex.index.tolist() == ["Q4-2024", "Q1-2025"]
+    assert "Microsoft" in capex.columns
+    assert frontier.loc[pd.Timestamp("2025-03-15"), "OpenAI"] == 41.0
+    assert price["price_1m_blended_3_to_1"].tolist() == [3.0, 0.4, 2.5]
+    assert country.loc[pd.Timestamp("2025-03-15"), "US"] == 41.0
+    assert openness.loc[pd.Timestamp("2025-03-15"), "Proprietary"] == 41.0
+    assert openness.loc[pd.Timestamp("2025-03-15"), "Open Weights"] == 33.0

@@ -214,6 +214,30 @@ DATASET_REGISTRY: dict[str, dict[str, object]] = {
         "metric_column": "total_tokens",
         "required_columns": ["usage_date", "model_permaslug", "total_tokens"],
     },
+    "artificial_analysis_models_daily": {
+        "label": "Artificial Analysis Models",
+        "domain": "artificial_analysis",
+        "natural_keys": ["as_of_date", "model_id"],
+        "primary_date_column": "as_of_date",
+        "metric_column": "intelligence_index",
+        "required_columns": ["as_of_date", "model_id", "model_name", "creator_name", "release_date", "intelligence_index"],
+    },
+    "artificial_analysis_leading_models_by_lab_daily": {
+        "label": "Artificial Analysis Leading Models",
+        "domain": "artificial_analysis",
+        "natural_keys": ["as_of_date", "creator_id"],
+        "primary_date_column": "as_of_date",
+        "metric_column": "intelligence_index",
+        "required_columns": ["as_of_date", "creator_name", "model_id", "model_name", "intelligence_index"],
+    },
+    "artificial_analysis_capex_quarterly": {
+        "label": "Artificial Analysis Capex",
+        "domain": "artificial_analysis",
+        "natural_keys": ["quarter_id"],
+        "primary_date_column": "quarter_id",
+        "metric_column": "microsoft",
+        "required_columns": ["quarter_id", "quarter_label", "microsoft", "google", "meta", "amazon", "oracle", "apple"],
+    },
 }
 
 DOMAIN_ORDER = {
@@ -254,6 +278,11 @@ DOMAIN_ORDER = {
     ],
     "compute_availability": [
         "raw_openrouter_models",
+    ],
+    "artificial_analysis": [
+        "artificial_analysis_models_daily",
+        "artificial_analysis_leading_models_by_lab_daily",
+        "artificial_analysis_capex_quarterly",
     ],
 }
 
@@ -439,10 +468,47 @@ COMPUTE_AVAILABILITY_COLUMNS = [
     "price_timestamp",
 ]
 
+ARTIFICIAL_ANALYSIS_COLUMNS = [
+    "as_of_date",
+    "model_slug",
+    "model_name",
+    "creator_id",
+    "creator_name",
+    "creator_slug",
+    "creator_country",
+    "release_quarter",
+    "intelligence_index",
+    "coding_index",
+    "math_index",
+    "scicode",
+    "price_1m_blended_3_to_1",
+    "price_1m_input_tokens",
+    "price_1m_output_tokens",
+    "median_output_tokens_per_second",
+    "median_time_to_first_token_seconds",
+    "context_window_tokens",
+    "total_parameters_billions",
+    "active_parameters_billions",
+    "training_tokens_trillions",
+    "open_source_categorization",
+    "license_name",
+    "is_open_weights",
+    "quarter_id",
+    "quarter_label",
+    "microsoft",
+    "google",
+    "meta",
+    "amazon",
+    "oracle",
+    "apple",
+    "page_url",
+    "bundle_url",
+]
+
 EXPECTED_COLUMNS = list(dict.fromkeys(
     CORE_COLUMNS + RANKINGS_COLUMNS + APPS_COLUMNS + GITHUB_COLUMNS +
     PROVIDER_ADOPTION_COLUMNS + SEMICONDUCTOR_COLUMNS + BENCHMARK_COLUMNS +
-    ACTIVITY_COLUMNS + COMPUTE_AVAILABILITY_COLUMNS
+    ACTIVITY_COLUMNS + COMPUTE_AVAILABILITY_COLUMNS + ARTIFICIAL_ANALYSIS_COLUMNS
 ))
 
 DATE_COLUMNS = [
@@ -463,6 +529,7 @@ DATE_COLUMNS = [
     "release_date",
     "price_timestamp",
     "snapshot_ts",
+    "as_of_date",
 ]
 NUMERIC_COLUMNS = [
     "metric_value",
@@ -513,6 +580,25 @@ NUMERIC_COLUMNS = [
     "spot_price",
     "instance_vcpus",
     "instance_memory_gib",
+    "intelligence_index",
+    "coding_index",
+    "math_index",
+    "scicode",
+    "price_1m_blended_3_to_1",
+    "price_1m_input_tokens",
+    "price_1m_output_tokens",
+    "median_output_tokens_per_second",
+    "median_time_to_first_token_seconds",
+    "context_window_tokens",
+    "total_parameters_billions",
+    "active_parameters_billions",
+    "training_tokens_trillions",
+    "microsoft",
+    "google",
+    "meta",
+    "amazon",
+    "oracle",
+    "apple",
 ]
 
 
@@ -575,6 +661,8 @@ def dataset_source_for_domain(domain: str) -> str:
         return "llm_benchmarks"
     if domain == "compute_availability":
         return "compute_availability"
+    if domain == "artificial_analysis":
+        return "artificial_analysis"
     return "openrouter"
 
 
@@ -593,6 +681,8 @@ def load_dataset(dataset_id: str, base_dir: Path | None = None) -> DatasetLoadRe
         source = "llm_benchmarks"
     elif domain == "compute_availability":
         source = "compute_availability"
+    elif domain == "artificial_analysis":
+        source = "artificial_analysis"
     base = normalized_root(base_dir, source=source)
     parquet_path = base / f"{dataset_id}.parquet"
     csv_path = base / f"{dataset_id}.csv"
