@@ -70,6 +70,16 @@ data/normalized/semiconductor_memory/*
 !data/raw/semiconductor_memory/images/**/*.JPG
 !data/raw/semiconductor_memory/images/**/*.jpg
 
+# artificial_analysis: commit normalized CSVs/parquet + raw run manifests only
+!data/normalized/artificial_analysis/
+data/normalized/artificial_analysis/*
+!data/normalized/artificial_analysis/*.csv
+!data/normalized/artificial_analysis/*.parquet
+!data/raw/artificial_analysis/
+data/raw/artificial_analysis/**
+!data/raw/artificial_analysis/**/
+!data/raw/artificial_analysis/**/manifest.json
+
 # Secrets and environment
 .env
 .env.*
