@@ -59,6 +59,7 @@ class ArtificialAnalysisModelPoint:
     source_url: str
     source_run_id: str
     scraped_at: str
+    dataset_id: str = "artificial_analysis_models_daily"
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -76,8 +77,10 @@ class LeadingModelByLabPoint:
     model_name: str
     release_date: str | None
     intelligence_index: float | None
+    source_url: str
     source_run_id: str
     scraped_at: str
+    dataset_id: str = "artificial_analysis_leading_models_by_lab_daily"
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -91,8 +94,10 @@ class ContextWindowQuarterPoint:
     context_window_median_open_source_total: float | None
     proprietary_model_count: int
     open_source_model_count: int
+    source_url: str
     source_run_id: str
     scraped_at: str
+    dataset_id: str = "artificial_analysis_context_window_quarter_daily"
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -108,10 +113,12 @@ class CapexQuarterPoint:
     amazon: float | None
     oracle: float | None
     apple: float | None
+    source_url: str
     page_url: str
     bundle_url: str
     source_run_id: str
     scraped_at: str
+    dataset_id: str = "artificial_analysis_capex_quarterly"
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)

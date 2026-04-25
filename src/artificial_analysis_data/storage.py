@@ -13,6 +13,7 @@ from artificial_analysis_data.models import Snapshot
 DATASET_SPECS: dict[str, dict[str, list[str]]] = {
     "artificial_analysis_models_daily": {
         "columns": [
+            "dataset_id",
             "as_of_date",
             "model_id",
             "model_slug",
@@ -66,6 +67,7 @@ DATASET_SPECS: dict[str, dict[str, list[str]]] = {
     },
     "artificial_analysis_leading_models_by_lab_daily": {
         "columns": [
+            "dataset_id",
             "as_of_date",
             "creator_id",
             "creator_name",
@@ -76,6 +78,7 @@ DATASET_SPECS: dict[str, dict[str, list[str]]] = {
             "model_name",
             "release_date",
             "intelligence_index",
+            "source_url",
             "source_run_id",
             "scraped_at",
         ],
@@ -86,12 +89,14 @@ DATASET_SPECS: dict[str, dict[str, list[str]]] = {
     },
     "artificial_analysis_context_window_quarter_daily": {
         "columns": [
+            "dataset_id",
             "as_of_date",
             "release_quarter",
             "context_window_median_proprietary",
             "context_window_median_open_source_total",
             "proprietary_model_count",
             "open_source_model_count",
+            "source_url",
             "source_run_id",
             "scraped_at",
         ],
@@ -107,6 +112,7 @@ DATASET_SPECS: dict[str, dict[str, list[str]]] = {
     },
     "artificial_analysis_capex_quarterly": {
         "columns": [
+            "dataset_id",
             "quarter_id",
             "quarter_label",
             "microsoft",
@@ -115,6 +121,7 @@ DATASET_SPECS: dict[str, dict[str, list[str]]] = {
             "amazon",
             "oracle",
             "apple",
+            "source_url",
             "page_url",
             "bundle_url",
             "source_run_id",

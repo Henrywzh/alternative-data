@@ -50,6 +50,7 @@ def test_api_source_extracts_models_from_fixture_payload() -> None:
 
     assert len(points) == 3
     first = points[0]
+    assert first.dataset_id == "artificial_analysis_models_daily"
     assert first.as_of_date == "2026-04-25"
     assert first.model_id == "model-openai-1"
     assert first.creator_slug == "openai"
@@ -143,7 +144,11 @@ def test_pipeline_derives_leading_models_and_context_window_quarters(tmp_path: P
         ("anthropic", "model-anthropic-1"),
         ("openai", "model-openai-1"),
     }
+    assert all(row.dataset_id == "artificial_analysis_leading_models_by_lab_daily" for row in leaders)
+    assert all(row.source_url == "fixture://api" for row in leaders)
     by_quarter = {row.release_quarter: row for row in quarters}
+    assert all(row.dataset_id == "artificial_analysis_context_window_quarter_daily" for row in quarters)
+    assert all(row.source_url == "fixture://api" for row in quarters)
     assert by_quarter["Q2-2025"].context_window_median_proprietary == 200000.0
     assert by_quarter["Q2-2025"].context_window_median_open_source_total == 131072.0
     assert by_quarter["Q2-2025"].proprietary_model_count == 1
@@ -173,6 +178,8 @@ def test_capex_source_extracts_quarters_from_bundle_fixture() -> None:
     )
 
     assert [point.quarter_id for point in points] == ["2025-q2", "2025-q1", "2024-q4"]
+    assert points[0].dataset_id == "artificial_analysis_capex_quarterly"
+    assert points[0].source_url == "https://artificialanalysis.ai/trends"
     assert points[0].microsoft == 17.079
     assert points[0].bundle_url.endswith("page-demo.js")
 

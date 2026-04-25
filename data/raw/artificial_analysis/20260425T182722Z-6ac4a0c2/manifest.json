@@ -1,0 +1,28 @@
+{
+  "run_id": "20260425T182722Z-6ac4a0c2",
+  "scraped_at": "2026-04-25T18:27:22.396851Z",
+  "as_of_date": "2026-04-25",
+  "source": "artificial_analysis",
+  "command": "daily-update",
+  "parser_version": "aa-v1",
+  "counts": {
+    "artificial_analysis_models_daily": 496,
+    "artificial_analysis_leading_models_by_lab_daily": 49,
+    "artificial_analysis_context_window_quarter_daily": 0,
+    "artificial_analysis_capex_quarterly": 67
+  },
+  "snapshots": [
+    {
+      "name": "llms_models",
+      "source_url": "https://artificialanalysis.ai/api/v2/data/llms/models"
+    },
+    {
+      "name": "trends_page",
+      "source_url": "https://artificialanalysis.ai/trends"
+    },
+    {
+      "name": "trends_bundle",
+      "source_url": "https://artificialanalysis.ai/_next/static/chunks/app/(pages)/trends/page-d440c6f3c0e5d6fa.js"
+    }
+  ]
+}

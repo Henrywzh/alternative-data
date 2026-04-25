@@ -51,6 +51,7 @@ class ArtificialAnalysisCapexSource:
                 amazon=_to_float(item.get("amazon")),
                 oracle=_to_float(item.get("oracle")),
                 apple=_to_float(item.get("apple")),
+                source_url=page_snapshot.source_url,
                 page_url=page_snapshot.source_url,
                 bundle_url=bundle_snapshot.source_url,
                 source_run_id=run_id,

@@ -186,6 +186,7 @@ class ArtificialAnalysisPipeline:
                 model_name=point.model_name,
                 release_date=point.release_date,
                 intelligence_index=point.intelligence_index,
+                source_url=point.source_url,
                 source_run_id=run_id,
                 scraped_at=scraped_at,
             )
@@ -218,6 +219,7 @@ class ArtificialAnalysisPipeline:
                     context_window_median_open_source_total=_median_or_none(quarter_values["open"]),
                     proprietary_model_count=len(quarter_values["proprietary"]),
                     open_source_model_count=len(quarter_values["open"]),
+                    source_url=points[0].source_url if points else "derived://artificial_analysis/context_window_quarter_daily",
                     source_run_id=run_id,
                     scraped_at=scraped_at,
                 )
