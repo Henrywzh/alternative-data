@@ -1300,6 +1300,144 @@ def compute_llm_benchmark_views(datasets: dict[str, DatasetLoadResult]) -> dict[
     return views
 
 
+def _quarter_sort_value(value: str) -> tuple[int, int]:
+    match = re.fullmatch(r"(\d{4})-q([1-4])", str(value).lower())
+    if not match:
+        return (9999, 9)
+    return (int(match.group(1)), int(match.group(2)))
+
+
+def _frontier_pivot(
+    frame: pd.DataFrame,
+    *,
+    group_column: str,
+    max_groups: int | None = None,
+) -> pd.DataFrame:
+    required = {"release_date", "intelligence_index", group_column}
+    if frame.empty or not required.issubset(frame.columns):
+        return pd.DataFrame()
+    work = frame.dropna(subset=["release_date", "intelligence_index", group_column]).copy()
+    if work.empty:
+        return pd.DataFrame()
+    work["release_date"] = pd.to_datetime(work["release_date"], errors="coerce")
+    work = work.dropna(subset=["release_date"])
+    if work.empty:
+        return pd.DataFrame()
+    if max_groups is not None:
+        top_groups = (
+            work.groupby(group_column)["intelligence_index"]
+            .max()
+            .sort_values(ascending=False)
+            .head(max_groups)
+            .index
+        )
+        work = work[work[group_column].isin(top_groups)]
+    pivot = (
+        work.pivot_table(index="release_date", columns=group_column, values="intelligence_index", aggfunc="max")
+        .sort_index()
+        .cummax()
+        .ffill()
+    )
+    return pivot
+
+
+@st.cache_data(ttl=3600)
+def compute_artificial_analysis_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, object]:
+    views: dict[str, object] = {}
+    models_result = datasets.get("artificial_analysis_models_daily")
+    capex_result = datasets.get("artificial_analysis_capex_quarterly")
+
+    models = models_result.frame.copy() if models_result and not models_result.frame.empty else pd.DataFrame()
+    capex = capex_result.frame.copy() if capex_result and not capex_result.frame.empty else pd.DataFrame()
+    if not models.empty and "as_of_date" in models.columns:
+        latest_as_of = models["as_of_date"].dropna().astype(str).max()
+        models_latest = models[models["as_of_date"].astype(str) == latest_as_of].copy()
+    else:
+        latest_as_of = None
+        models_latest = pd.DataFrame()
+
+    if not capex.empty:
+        capex = capex.sort_values("quarter_id", key=lambda series: series.map(_quarter_sort_value))
+        company_cols = ["microsoft", "google", "meta", "amazon", "oracle", "apple"]
+        capex_pivot = (
+            capex[["quarter_label", *company_cols]]
+            .set_index("quarter_label")
+            .rename(
+                columns={
+                    "microsoft": "Microsoft",
+                    "google": "Google",
+                    "meta": "Meta",
+                    "amazon": "Amazon",
+                    "oracle": "Oracle",
+                    "apple": "Apple",
+                }
+            )
+        )
+        latest_capex_total = float(capex_pivot.iloc[-1].sum()) if not capex_pivot.empty else np.nan
+    else:
+        capex_pivot = pd.DataFrame()
+        latest_capex_total = np.nan
+
+    frontier_by_lab = _frontier_pivot(models_latest, group_column="creator_name", max_groups=10)
+
+    price_models = pd.DataFrame()
+    if not models_latest.empty:
+        price_models = models_latest.dropna(subset=["release_date", "price_1m_blended_3_to_1", "intelligence_index"]).copy()
+        price_models["release_date"] = pd.to_datetime(price_models["release_date"], errors="coerce")
+        price_models = price_models.dropna(subset=["release_date"]).sort_values("release_date")
+        price_models = price_models[
+            [
+                "release_date",
+                "model_name",
+                "creator_name",
+                "intelligence_index",
+                "price_1m_blended_3_to_1",
+                "median_output_tokens_per_second",
+            ]
+        ]
+
+    country_models = models_latest.copy()
+    if not country_models.empty and "creator_country" in country_models.columns:
+        country_models["country_label"] = country_models["creator_country"].astype("string").str.upper()
+    else:
+        country_models["country_label"] = pd.Series(dtype="string")
+    frontier_by_country = _frontier_pivot(country_models, group_column="country_label", max_groups=12)
+
+    openness_models = models_latest.copy()
+    if not openness_models.empty:
+        openness_models["openness_label"] = openness_models.apply(_artificial_analysis_openness_label, axis=1)
+        openness_models = openness_models.dropna(subset=["openness_label"])
+    else:
+        openness_models["openness_label"] = pd.Series(dtype="string")
+    open_vs_proprietary = _frontier_pivot(openness_models, group_column="openness_label")
+
+    views["models_latest"] = models_latest
+    views["latest_as_of"] = latest_as_of
+    views["capex_pivot"] = capex_pivot
+    views["latest_capex_total"] = latest_capex_total
+    views["frontier_by_lab_pivot"] = frontier_by_lab
+    views["price_models"] = price_models
+    views["frontier_by_country_pivot"] = frontier_by_country
+    views["open_vs_proprietary_pivot"] = open_vs_proprietary
+    return views
+
+
+def _artificial_analysis_openness_label(row: pd.Series) -> str | None:
+    raw_bool = row.get("is_open_weights")
+    if isinstance(raw_bool, bool):
+        return "Open Weights" if raw_bool else "Proprietary"
+    if pd.notna(raw_bool):
+        lowered = str(raw_bool).strip().lower()
+        if lowered in {"true", "1", "yes"}:
+            return "Open Weights"
+        if lowered in {"false", "0", "no"}:
+            return "Proprietary"
+    category = row.get("open_source_categorization")
+    if pd.isna(category):
+        return None
+    return "Open Weights" if "open" in str(category).lower() else "Proprietary"
+
+
 @st.cache_data(ttl=3600)
 def compute_semiconductor_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, object]:
     views: dict[str, object] = {}
@@ -2810,6 +2948,145 @@ def render_semiconductor_section(datasets: dict[str, DatasetLoadResult], semi_vi
         )
 
 
+def render_artificial_analysis_section(datasets: dict[str, DatasetLoadResult], aa_views: dict[str, object]) -> None:
+    models_latest = aa_views.get("models_latest", pd.DataFrame())
+    capex_pivot = aa_views.get("capex_pivot", pd.DataFrame())
+    frontier_by_lab = aa_views.get("frontier_by_lab_pivot", pd.DataFrame())
+    price_models = aa_views.get("price_models", pd.DataFrame())
+    frontier_by_country = aa_views.get("frontier_by_country_pivot", pd.DataFrame())
+    open_vs_proprietary = aa_views.get("open_vs_proprietary_pivot", pd.DataFrame())
+
+    if models_latest.empty and capex_pivot.empty:
+        st.warning("No Artificial Analysis data available.")
+        return
+
+    st.markdown('<div class="section-title">Artificial Analysis Trends</div>', unsafe_allow_html=True)
+    latest_as_of = aa_views.get("latest_as_of") or "-"
+    peak_intelligence = models_latest["intelligence_index"].max() if not models_latest.empty else np.nan
+    median_price = price_models["price_1m_blended_3_to_1"].median() if not price_models.empty else np.nan
+    latest_capex_total = aa_views.get("latest_capex_total", np.nan)
+
+    st.markdown(
+        kpi_grid_html(
+            kpi_card_html("Snapshot Date", str(latest_as_of), delta=f"{len(models_latest)} models"),
+            kpi_card_html("Peak Intelligence", f"{peak_intelligence:.1f}" if pd.notna(peak_intelligence) else "-", delta="latest API snapshot"),
+            kpi_card_html("Median Blended Price", f"${median_price:.2f}" if pd.notna(median_price) else "-", delta="per 1M tokens"),
+            kpi_card_html("Latest Capex Quarter", f"${latest_capex_total:,.1f}B" if pd.notna(latest_capex_total) else "-", delta="tracked companies"),
+        ),
+        unsafe_allow_html=True,
+    )
+
+    capex_tab, frontier_tab, price_tab, country_tab, openness_tab = st.tabs(
+        ["Capex", "Frontier Intelligence", "Inference Price", "Country", "Open vs Proprietary"]
+    )
+
+    with capex_tab:
+        st.markdown('<div class="section-subtitle">Capital Expenditure by Major Tech Companies, Over Time</div>', unsafe_allow_html=True)
+        if capex_pivot.empty:
+            st.info("Capital expenditure data is not available yet.")
+        else:
+            st.plotly_chart(
+                make_stacked_bar(
+                    capex_pivot,
+                    ["#00A4EF", "#34A853", "#0089F4", "#FF9900", "#F80000", "#6B7280"],
+                    y_title="Capital Expenditure (USD billions)",
+                    height=430,
+                ),
+                use_container_width=True,
+                theme=None,
+            )
+
+    with frontier_tab:
+        st.markdown('<div class="section-subtitle">Frontier Language Model Intelligence, Over Time</div>', unsafe_allow_html=True)
+        if frontier_by_lab.empty:
+            st.info("Frontier intelligence data is not available yet.")
+        else:
+            st.plotly_chart(
+                make_line_chart(
+                    frontier_by_lab,
+                    MODEL_COLORS,
+                    y_title="Artificial Analysis Intelligence Index",
+                    x_title="Release Date",
+                    height=430,
+                ),
+                use_container_width=True,
+                theme=None,
+            )
+
+    with price_tab:
+        st.markdown('<div class="section-subtitle">Language Model Inference Price</div>', unsafe_allow_html=True)
+        if price_models.empty:
+            st.info("Inference price data is not available yet.")
+        else:
+            fig_price = go.Figure()
+            for i, (creator, creator_df) in enumerate(price_models.groupby("creator_name", dropna=True)):
+                fig_price.add_trace(
+                    go.Scatter(
+                        x=creator_df["release_date"],
+                        y=creator_df["price_1m_blended_3_to_1"],
+                        mode="markers",
+                        name=str(creator),
+                        marker=dict(
+                            size=np.clip(creator_df["intelligence_index"].fillna(5) * 0.45, 6, 20),
+                            color=MODEL_COLORS[i % len(MODEL_COLORS)],
+                            opacity=0.75,
+                            line=dict(width=1, color="white"),
+                        ),
+                        text=creator_df["model_name"],
+                        customdata=creator_df[["intelligence_index", "median_output_tokens_per_second"]],
+                        hovertemplate=(
+                            "<b>%{text}</b><br>%{x|%Y-%m-%d}<br>"
+                            "Blended price: $%{y:.3f} / 1M tokens<br>"
+                            "Intelligence: %{customdata[0]:.1f}<br>"
+                            "Output speed: %{customdata[1]:.1f} tok/s<extra></extra>"
+                        ),
+                    )
+                )
+            fig_price.update_layout(
+                template="plotly_white",
+                xaxis_title="Release Date",
+                yaxis_title="Blended Price ($ / 1M tokens)",
+                height=430,
+                margin=dict(l=0, r=0, t=20, b=80),
+                legend=dict(orientation="h", y=-0.22),
+            )
+            st.plotly_chart(fig_price, use_container_width=True, theme=None)
+
+    with country_tab:
+        st.markdown('<div class="section-subtitle">Frontier Language Model Intelligence By Country, Over Time</div>', unsafe_allow_html=True)
+        if frontier_by_country.empty:
+            st.info("The current Artificial Analysis API snapshot does not expose creator country fields.")
+        else:
+            st.plotly_chart(
+                make_line_chart(
+                    frontier_by_country,
+                    MODEL_COLORS,
+                    y_title="Artificial Analysis Intelligence Index",
+                    x_title="Release Date",
+                    height=430,
+                ),
+                use_container_width=True,
+                theme=None,
+            )
+
+    with openness_tab:
+        st.markdown('<div class="section-subtitle">Progress in Open Weights vs. Proprietary Intelligence</div>', unsafe_allow_html=True)
+        if open_vs_proprietary.empty:
+            st.info("The current Artificial Analysis API snapshot does not expose open-weight categorization fields.")
+        else:
+            st.plotly_chart(
+                make_line_chart(
+                    open_vs_proprietary,
+                    ["#071846", "#6467F4"],
+                    y_title="Artificial Analysis Intelligence Index",
+                    x_title="Release Date",
+                    height=430,
+                ),
+                use_container_width=True,
+                theme=None,
+            )
+
+
 def render_ai_frontier_section(datasets: dict[str, DatasetLoadResult], benchmark_views: dict[str, object]) -> None:
     models_df = benchmark_views.get("models_df", pd.DataFrame())
     sota_peaks = benchmark_views.get("sota_peaks", pd.DataFrame())
@@ -3092,6 +3369,9 @@ def main() -> None:
     compute_datasets, compute_freshness, compute_checks = load_domain_state_cached(
         BASE_DIR, "compute_availability", build_domain_signature(BASE_DIR, "compute_availability")
     )
+    aa_datasets, aa_freshness, aa_checks = load_domain_state_cached(
+        BASE_DIR, "artificial_analysis", build_domain_signature(BASE_DIR, "artificial_analysis")
+    )
 
     datasets = {
         **openrouter_datasets,
@@ -3101,10 +3381,12 @@ def main() -> None:
         **semi_datasets,
         **benchmark_datasets,
         **compute_datasets,
+        **aa_datasets,
     }
     _all_freshness = [
         openrouter_freshness, apps_freshness, github_freshness,
         provider_freshness, semi_freshness, benchmark_freshness, compute_freshness,
+        aa_freshness,
     ]
     freshness = FreshnessInfo(
         latest_scraped_at=max(
@@ -3120,7 +3402,7 @@ def main() -> None:
             (f.latest_manifest_scraped_at for f in _all_freshness if f.latest_manifest_scraped_at), default=None,
         ),
     )
-    checks = openrouter_checks + apps_checks + github_checks + provider_checks + semi_checks + benchmark_checks
+    checks = openrouter_checks + apps_checks + github_checks + provider_checks + semi_checks + benchmark_checks + aa_checks
 
     openrouter_views = compute_openrouter_views(
         {**openrouter_datasets, **apps_datasets, **compute_datasets},
@@ -3131,10 +3413,20 @@ def main() -> None:
     semi_views = compute_semiconductor_views(semi_datasets)
     benchmark_views = compute_llm_benchmark_views(benchmark_datasets)
     compute_views = compute_compute_availability_views(compute_datasets)
+    aa_views = compute_artificial_analysis_views(aa_datasets)
 
     render_header(freshness)
     
-    main_tabs = st.tabs(["OpenRouter Intelligence", "AI Frontier & HBM", "GitHub Trending", "Provider Adoption", "Semiconductor Analysis"])
+    main_tabs = st.tabs(
+        [
+            "OpenRouter Intelligence",
+            "Artificial Analysis",
+            "AI Frontier & HBM",
+            "GitHub Trending",
+            "Provider Adoption",
+            "Semiconductor Analysis",
+        ]
+    )
 
     with main_tabs[0]:
         render_rankings_semantics_note(datasets)
@@ -3149,15 +3441,18 @@ def main() -> None:
         render_apps_tables(datasets)
 
     with main_tabs[1]:
-        render_ai_frontier_section(datasets, benchmark_views)
+        render_artificial_analysis_section(datasets, aa_views)
 
     with main_tabs[2]:
-        render_github_trending_section(datasets, github_views)
+        render_ai_frontier_section(datasets, benchmark_views)
 
     with main_tabs[3]:
-        render_provider_adoption_section(datasets, provider_views)
+        render_github_trending_section(datasets, github_views)
 
     with main_tabs[4]:
+        render_provider_adoption_section(datasets, provider_views)
+
+    with main_tabs[5]:
         render_semiconductor_section(datasets, semi_views)
         
     render_checks(checks)
