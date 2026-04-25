@@ -4,6 +4,7 @@ Research repo for gathering and analyzing alternative data.
 
 The first implemented projects are Python ingestion pipelines for OpenRouter rankings, app intelligence data, and GitHub Trending repository stats.
 The repository now also includes a provider-adoption pipeline that tracks GitHub, PyPI, npm, and Hugging Face signals for major LLM providers.
+The repository also includes an Artificial Analysis pipeline that snapshots the official model API daily and refreshes the public capital-expenditure trend series.
 The repository also includes a notebook-friendly research layer that builds analysis-ready marts and starter notebooks on top of the tracked datasets.
 
 Rankings datasets:
@@ -30,6 +31,10 @@ Apps datasets:
 - `github_provider_signals_daily`: first-match provider signals by repo/day/type
 - `github_repo_rollup_daily`: repo-level provider rollups for manifest/import/env/model detections
 - `provider_momentum_daily`: daily blended GitHub + PyPI provider momentum metrics
+- `artificial_analysis_models_daily`: daily Artificial Analysis API model snapshots
+- `artificial_analysis_leading_models_by_lab_daily`: highest-intelligence model per lab per snapshot date
+- `artificial_analysis_context_window_quarter_daily`: release-quarter median context window by proprietary/open-source bucket
+- `artificial_analysis_capex_quarterly`: capital expenditure by quarter for major tech companies
 
 Framework adoption tracked inside `provider_adoption`:
 
@@ -40,18 +45,22 @@ Framework adoption tracked inside `provider_adoption`:
 
 - `src/openrouter_data/`: package, CLI, source extractors, storage, and pipeline logic
 - `src/provider_adoption_data/`: package, CLI, source extractors, storage, and pipeline logic for GitHub + PyPI + npm adoption signals
+- `src/artificial_analysis_data/`: package, CLI, API extractor, capex scraper, storage, and pipeline logic for Artificial Analysis data
 - `src/research_data/`: analysis-facing loaders, marts, notebook helpers, and research CLI
 - `tests/fixtures/`: committed parser fixtures
 - `data/raw/openrouter/`: timestamped raw snapshots and run manifests
 - `data/normalized/openrouter/`: analytics-ready CSV and Parquet outputs tracked in git
 - `data/raw/provider_adoption/`: timestamped raw GitHub/PyPI/npm API payloads and run manifests
 - `data/normalized/provider_adoption/`: analytics-ready CSV and Parquet outputs for provider adoption signals
+- `data/raw/artificial_analysis/`: timestamped raw Artificial Analysis API payloads, trends HTML, JS bundle snapshots, and run manifests
+- `data/normalized/artificial_analysis/`: analytics-ready CSV and Parquet outputs for Artificial Analysis datasets
 - `data/normalized/marts/`: persisted analysis-ready marts for notebook use
 - `notebooks/`: starter Jupyter notebooks for data cataloging and research workflows
 - `src/github_trending_data/`: package, CLI, scraper, storage, and pipeline for GitHub data
 - `data/normalized/github_trending/`: analytics-ready Parquet outputs for trending repos
 - `.github/workflows/github-trending-daily.yml`: daily GitHub Actions job for trending repos
 - `.github/workflows/provider-adoption-daily.yml`: daily GitHub Actions job for provider adoption datasets
+- `.github/workflows/artificial-analysis-daily.yml`: daily GitHub Actions job for Artificial Analysis API snapshots and capex refreshes
 - `.github/workflows/llm-benchmarks-weekly.yml`: weekly GitHub Actions job for ZeroEval benchmark snapshots and the frontier registry mart
 - `.github/workflows/provider-adoption-backfill.yml`: manual bounded backfill job for provider adoption datasets
 - `.github/workflows/repo-keepalive.yml`: scheduled keepalive commit to avoid GitHub disabling scheduled workflows after long inactivity
@@ -160,6 +169,24 @@ Run the ZeroEval benchmark update:
 llm-benchmark-data --base-dir . update
 ```
 
+Run the Artificial Analysis daily update:
+
+```bash
+artificial-analysis-data --base-dir . daily-update
+```
+
+Refresh only the Artificial Analysis capex history:
+
+```bash
+artificial-analysis-data --base-dir . capex-update
+```
+
+Validate Artificial Analysis API auth and capex parsing:
+
+```bash
+artificial-analysis-data --base-dir . validate
+```
+
 Show the source and mart catalog:
 
 ```bash
@@ -192,6 +219,8 @@ provider-adoption-data --base-dir . backfill --start-date 2026-04-01 --end-date 
 
 Set `HF_TOKEN` to reduce Hugging Face API rate limiting during model snapshot collection. The token is optional for public data but recommended in CI and long-running local syncs.
 
+Set `ARTIFICIAL_ANALYSIS_API_KEY` to enable the Artificial Analysis API collector. If the environment variable is unset, the pipeline falls back to the repository-root `.config` file. API-backed history starts on the first real collection date; the pipeline does not synthesize historical API snapshots.
+
 Run the internal QA dashboard locally:
 
 ```bash
@@ -212,4 +241,5 @@ The provider-adoption pipeline now defaults to tracking OpenAI, Anthropic, Googl
 Framework ecosystems are also tracked inside the provider-adoption domain, with package-level daily raw series for LangChain and PydanticAI.
 The OpenRouter activity pipeline now prefers the latest local OpenRouter catalog to discover model activity pages for the configured major-provider set, and stores request counts plus prompt/completion token splits with optional reasoning-token capture when the source exposes it.
 The bounded backfill command does not fabricate historical Hugging Face rows; HF snapshots begin from the first real collection date onward.
+The Artificial Analysis pipeline uses the official API for model data and only scrapes the public site for the capital expenditure series; any downstream use should preserve Artificial Analysis attribution and API terms.
 The research layer keeps scraping outputs as the source of truth and writes derived marts under `data/normalized/marts/` for fast, deterministic Jupyter analysis.
