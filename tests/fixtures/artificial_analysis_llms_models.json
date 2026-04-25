@@ -1,0 +1,103 @@
+{
+  "status": 200,
+  "data": [
+    {
+      "id": "model-openai-1",
+      "name": "OpenAI Frontier",
+      "slug": "openai-frontier",
+      "release_date": "2025-04-15",
+      "model_creator": {
+        "id": "creator-openai",
+        "name": "OpenAI",
+        "slug": "openai",
+        "country": "us"
+      },
+      "evaluations": {
+        "artificial_analysis_intelligence_index": 42.5,
+        "artificial_analysis_coding_index": 38.1,
+        "artificial_analysis_math_index": 50.2,
+        "gpqa": 0.7,
+        "scicode": 0.4
+      },
+      "pricing": {
+        "price_1m_blended_3_to_1": 3.0,
+        "price_1m_input_tokens": 2.0,
+        "price_1m_output_tokens": 5.0
+      },
+      "median_output_tokens_per_second": 120.5,
+      "median_time_to_first_token_seconds": 0.75,
+      "context_window_tokens": 200000,
+      "parameters_billions": 400.0,
+      "inference_parameters_active_billions": 40.0,
+      "training_information": {
+        "training_tokens_trillions": 15.5
+      },
+      "open_source_categorization": "Proprietary",
+      "license_name": "Commercial",
+      "is_open_weights": false
+    },
+    {
+      "id": "model-openai-2",
+      "name": "OpenAI Open",
+      "slug": "openai-open",
+      "release_date": "2025-05",
+      "model_creator": {
+        "id": "creator-openai",
+        "name": "OpenAI",
+        "slug": "openai",
+        "country": "us"
+      },
+      "evaluations": {
+        "artificial_analysis_intelligence_index": 35.0,
+        "artificial_analysis_coding_index": 30.5,
+        "artificial_analysis_math_index": 41.0,
+        "gpqa": 0.61
+      },
+      "median_output_tokens_per_second": 180.0,
+      "median_time_to_first_token_seconds": 0.41,
+      "context_window_tokens": 131072,
+      "parameters_billions": 70.0,
+      "training_information": {
+        "training_tokens_trillions": 5.0
+      },
+      "open_source_categorization": "Open Weights (Permissive License)",
+      "license_name": "Apache 2.0",
+      "is_open_weights": true
+    },
+    {
+      "id": "model-anthropic-1",
+      "name": "Anthropic Flagship",
+      "slug": "anthropic-flagship",
+      "release_date": "Apr 2024",
+      "model_creator": {
+        "id": "creator-anthropic",
+        "name": "Anthropic",
+        "slug": "anthropic",
+        "country": "us"
+      },
+      "evaluations": {
+        "artificial_analysis_intelligence_index": 39.1,
+        "artificial_analysis_coding_index": 34.8,
+        "artificial_analysis_math_index": 44.3,
+        "gpqa": 0.66,
+        "scicode": 0.32
+      },
+      "pricing": {
+        "price_1m_blended_3_to_1": 8.4,
+        "price_1m_input_tokens": 6.0,
+        "price_1m_output_tokens": 15.0
+      },
+      "median_output_tokens_per_second": 82.0,
+      "median_time_to_first_token_seconds": 1.15,
+      "context_window_tokens": 100000,
+      "parameters_billions": 220.0,
+      "inference_parameters_active_billions": 220.0,
+      "training_information": {
+        "training_tokens_trillions": 9.1
+      },
+      "open_source_categorization": "Proprietary",
+      "license_name": "Commercial",
+      "is_open_weights": false
+    }
+  ]
+}
