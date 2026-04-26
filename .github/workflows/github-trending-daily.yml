@@ -45,6 +45,7 @@ jobs:
           fi
 
           git commit -m "chore: update normalized GitHub Trending datasets"
+          git pull --rebase origin "${{ github.event.repository.default_branch }}"
           git push
 
       - name: Upload normalized datasets
