@@ -181,3 +181,71 @@ def test_activity_pipeline_discovers_major_provider_slugs_from_catalog(tmp_path:
     slugs = pipeline._discover_catalog_slugs()
 
     assert slugs == ["anthropic/claude-opus-4.7", "x-ai/grok-4-fast"]
+
+
+def test_activity_pipeline_unions_recent_partial_catalog_snapshots(tmp_path: Path) -> None:
+    catalog_dir = tmp_path / "data" / "normalized" / "compute_availability"
+    catalog_dir.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame(
+        [
+            {
+                "model_id": "moonshotai/kimi-k2.6",
+                "canonical_slug": "moonshotai/kimi-k2.6-20260420",
+                "provider_prefix": "moonshotai",
+                "snapshot_ts": "2026-04-24T00:00:00Z",
+            },
+            {
+                "model_id": "deepseek/deepseek-v4-pro",
+                "canonical_slug": "deepseek/deepseek-v4-pro-20260423",
+                "provider_prefix": "deepseek",
+                "snapshot_ts": "2026-04-24T00:00:00Z",
+            },
+            {
+                "model_id": "openai/gpt-5.5",
+                "canonical_slug": "openai/gpt-5.5-20260423",
+                "provider_prefix": "openai",
+                "snapshot_ts": "2026-04-25T00:00:00Z",
+            },
+        ]
+    ).to_csv(catalog_dir / "raw_openrouter_models.csv", index=False)
+
+    pipeline = ActivityPipeline(tmp_path)
+    slugs = pipeline._discover_catalog_slugs()
+
+    assert slugs == [
+        "moonshotai/kimi-k2.6-20260420",
+        "deepseek/deepseek-v4-pro-20260423",
+        "openai/gpt-5.5-20260423",
+    ]
+
+
+def test_activity_pipeline_prefers_live_catalog_and_keeps_recent_local_releases(tmp_path: Path) -> None:
+    catalog_dir = tmp_path / "data" / "normalized" / "compute_availability"
+    catalog_dir.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame(
+        [
+            {
+                "model_id": "moonshotai/kimi-k2.6",
+                "canonical_slug": "moonshotai/kimi-k2.6-20260420",
+                "provider_prefix": "moonshotai",
+                "snapshot_ts": "2026-04-24T00:00:00Z",
+            },
+            {
+                "model_id": "deepseek/deepseek-v4-flash",
+                "canonical_slug": "deepseek/deepseek-v4-flash-20260423",
+                "provider_prefix": "deepseek",
+                "snapshot_ts": "2026-04-24T00:00:00Z",
+            },
+        ]
+    ).to_csv(catalog_dir / "raw_openrouter_models.csv", index=False)
+
+    pipeline = ActivityPipeline(tmp_path)
+    pipeline.source.fetch_catalog_slugs = lambda limit=0: ["openai/gpt-5.5-20260423", "nvidia/not-allowed"]
+
+    slugs = pipeline._discover_activity_slugs()
+
+    assert slugs == [
+        "openai/gpt-5.5-20260423",
+        "moonshotai/kimi-k2.6-20260420",
+        "deepseek/deepseek-v4-flash-20260423",
+    ]

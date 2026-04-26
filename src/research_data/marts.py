@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from openrouter_revenue import estimate_usage_revenue
+from openrouter_revenue import CONSERVATIVE_ECONOMICS_COLUMNS, build_conservative_provider_economics
 from supplement_pricing import supplement_pricing_df
 from .clean import clean_model_id, mean_of_available, percentile_rank, to_datetime
 from .joins import latest_huggingface_snapshot, latest_pricing_snapshot
@@ -113,70 +113,17 @@ def compute_daily_provider_economics(
     base_dir: str | Path | None = None,
 ) -> pd.DataFrame:
     activity = load_dataset("provider_daily_activity", base_dir=base_dir)
+    model_activity = load_dataset("openrouter_model_activity", base_dir=base_dir)
     pricing = load_dataset("raw_openrouter_models", base_dir=base_dir)
     if activity.empty:
-        return pd.DataFrame(
-            columns=[
-                "usage_date",
-                "provider_slug",
-                "provider_name",
-                "model_permaslug",
-                "total_tokens",
-                "prompt_tokens",
-                "completion_tokens",
-                "estimated_revenue",
-                "pricing_snapshot_ts",
-                "pricing_prompt",
-                "pricing_completion",
-                "pricing_join_status",
-            ]
-        )
-
-    activity = activity[
-        [
-            "usage_date",
-            "entity_id",
-            "entity_name",
-            "model_permaslug",
-            "total_tokens",
-            "prompt_tokens",
-            "completion_tokens",
-        ]
-    ].copy()
-    activity["usage_date"] = pd.to_datetime(activity["usage_date"], errors="coerce").dt.strftime("%Y-%m-%d")
-    activity["provider_slug"] = activity["entity_id"].astype("string")
-    activity["provider_name"] = activity["entity_name"].astype("string")
-    activity["model_permaslug"] = clean_model_id(activity["model_permaslug"])
+        return pd.DataFrame(columns=CONSERVATIVE_ECONOMICS_COLUMNS)
 
     pricing = pd.concat([pricing, supplement_pricing_df()], ignore_index=True)
-    estimated = estimate_usage_revenue(
+    output = build_conservative_provider_economics(
         activity,
         pricing,
-        slug_strategy="canonical",
-        pricing_strategy="provider_fallback",
+        model_activity=model_activity,
     )
-    estimated = estimated.rename(columns={"pricing_context_length": "context_length"})
-
-    output = estimated[
-        [
-            "usage_date",
-            "provider_slug",
-            "provider_name",
-            "model_permaslug",
-            "total_tokens",
-            "prompt_tokens",
-            "completion_tokens",
-            "estimated_revenue",
-            "pricing_snapshot_ts",
-            "pricing_prompt",
-            "pricing_completion",
-            "pricing_join_status",
-        ]
-    ].copy()
-    output["pricing_snapshot_ts"] = pd.to_datetime(output["pricing_snapshot_ts"], errors="coerce", utc=True).dt.strftime(
-        "%Y-%m-%dT%H:%M:%SZ"
-    )
-    output = output.sort_values(["usage_date", "provider_slug", "model_permaslug"]).reset_index(drop=True)
     return output
 
 

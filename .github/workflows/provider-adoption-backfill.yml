@@ -74,6 +74,7 @@ jobs:
 
           git diff --cached --stat
           git commit -m "chore: backfill provider adoption datasets"
+          git pull --rebase origin "${{ github.event.repository.default_branch }}"
           git push
 
       - name: Stage raw snapshots artifact

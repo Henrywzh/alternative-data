@@ -46,6 +46,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/normalized/openrouter
           git commit -m "chore: update normalized OpenRouter datasets"
+          git pull --rebase origin "${{ github.event.repository.default_branch }}"
           git push
 
       - name: Upload raw snapshots

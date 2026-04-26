@@ -409,12 +409,14 @@ def test_build_daily_provider_economics_uses_latest_prior_snapshot_and_marks_mis
 
     matched = mart[mart["model_permaslug"] == "openai/gpt-4.1"].iloc[0]
     assert matched["pricing_snapshot_ts"] == "2026-04-15T12:00:00Z"
-    assert matched["pricing_join_status"] == "matched_model_split_median"
+    assert matched["pricing_join_status"] == "matched_asof"
+    assert matched["revenue_method"] == "exact_split_priced"
     assert matched["estimated_revenue"] == pytest.approx(0.14)
 
     missing = mart[mart["model_permaslug"] == "unknown/model"].iloc[0]
-    assert missing["pricing_join_status"] == "fallback_provider_median"
-    assert missing["estimated_revenue"] == pytest.approx(0.104025)
+    assert missing["pricing_join_status"] == "unresolved_missing_pricing"
+    assert missing["revenue_method"] == "unpriced"
+    assert pd.isna(missing["estimated_revenue"])
 
 
 def test_build_daily_provider_economics_canonicalizes_model_ids(tmp_path: Path) -> None:
@@ -424,16 +426,72 @@ def test_build_daily_provider_economics_canonicalizes_model_ids(tmp_path: Path) 
 
     openai_row = mart[mart["model_permaslug"] == "openai/gpt-5.4-20260305"].iloc[0]
     assert openai_row["pricing_snapshot_ts"] == "2026-04-15T12:00:00Z"
-    assert openai_row["pricing_join_status"] == "matched_model_median"
+    assert openai_row["pricing_join_status"] == "matched_asof"
+    assert openai_row["revenue_method"] == "model_blended_no_split"
     assert openai_row["estimated_revenue"] == pytest.approx(0.6276)
 
     anthropic_row = mart[mart["model_permaslug"] == "anthropic/claude-4.6-sonnet-20260217"].iloc[0]
-    assert anthropic_row["pricing_join_status"] == "matched_model_split_median"
+    assert anthropic_row["pricing_join_status"] == "matched_asof"
+    assert anthropic_row["revenue_method"] == "exact_split_priced"
     assert anthropic_row["estimated_revenue"] == pytest.approx(0.56)
 
     qwen_row = mart[mart["model_permaslug"] == "qwen/qwen3.5-flash-20260224"].iloc[0]
-    assert qwen_row["pricing_join_status"] == "matched_model_median"
+    assert qwen_row["pricing_join_status"] == "matched_asof"
+    assert qwen_row["revenue_method"] == "model_blended_no_split"
     assert qwen_row["estimated_revenue"] == pytest.approx(0.0000208455)
+
+
+def test_build_daily_provider_economics_infers_split_tokens_from_model_activity(tmp_path: Path) -> None:
+    _seed_research_inputs(tmp_path)
+    _write_dataset(
+        tmp_path,
+        "provider_daily_activity",
+        [
+            {
+                "dataset_id": "provider_daily_activity",
+                "source_url": "https://openrouter.ai/openai",
+                "source_run_id": "run-2",
+                "scraped_at": "2026-04-18T00:00:00Z",
+                "entity_id": "openai",
+                "entity_name": "OpenAI",
+                "usage_date": "2026-04-16",
+                "model_permaslug": "openai/gpt-4.1",
+                "total_tokens": 1000.0,
+                "prompt_tokens": 0.0,
+                "completion_tokens": 0.0,
+            }
+        ],
+    )
+    _write_dataset(
+        tmp_path,
+        "openrouter_model_activity",
+        [
+            {
+                "dataset_id": "openrouter_model_activity",
+                "source_url": "https://openrouter.ai/openai/gpt-4.1/activity",
+                "source_run_id": "run-4",
+                "scraped_at": "2026-04-18T00:00:00Z",
+                "usage_date": "2026-04-16",
+                "model_permaslug": "openai/gpt-4.1",
+                "category_slug": "programming",
+                "prompt_tokens": 800.0,
+                "completion_tokens": 200.0,
+                "reasoning_tokens": 50.0,
+                "total_tokens": 1000.0,
+                "request_count": 100,
+            }
+        ],
+    )
+
+    mart = build_daily_provider_economics(base_dir=tmp_path, refresh=True)
+
+    row = mart[mart["model_permaslug"] == "openai/gpt-4.1"].iloc[0]
+    assert row["revenue_method"] == "model_split_inferred"
+    assert row["split_source"] == "model_activity"
+    assert row["prompt_tokens"] == pytest.approx(800.0)
+    assert row["completion_tokens"] == pytest.approx(200.0)
+    assert row["reasoning_tokens"] == pytest.approx(50.0)
+    assert row["estimated_revenue"] == pytest.approx(1.2)
 
 
 def test_build_daily_provider_economics_uses_base_alias_before_canonical_slug_exists(tmp_path: Path) -> None:
@@ -513,11 +571,12 @@ def test_build_daily_provider_economics_uses_base_alias_before_canonical_slug_ex
 
     kimi_row = mart[mart["model_permaslug"] == "moonshotai/kimi-k2.5-0127"].iloc[0]
     assert kimi_row["pricing_snapshot_ts"] == "2026-04-15T12:00:00Z"
-    assert kimi_row["pricing_join_status"] == "matched_model_median"
+    assert kimi_row["pricing_join_status"] == "matched_asof"
+    assert kimi_row["revenue_method"] == "model_blended_no_split"
     assert kimi_row["estimated_revenue"] == pytest.approx(0.0006552)
 
 
-def test_provider_revenue_daily_defaults_to_dashboard_estimate_with_model_medians_and_fallbacks(tmp_path: Path) -> None:
+def test_provider_revenue_daily_defaults_to_conservative_observed_estimate(tmp_path: Path) -> None:
     _seed_research_inputs(tmp_path)
 
     revenue = provider_revenue_daily(
@@ -527,23 +586,28 @@ def test_provider_revenue_daily_defaults_to_dashboard_estimate_with_model_median
     )
 
     split_match = revenue[revenue["model_permaslug"] == "openai/gpt-4.1"].iloc[0]
-    assert split_match["pricing_join_status"] == "matched_model_split_median"
+    assert split_match["pricing_join_status"] == "matched_asof"
+    assert split_match["revenue_method"] == "exact_split_priced"
     assert split_match["estimated_revenue"] == pytest.approx(0.14)
 
     blended_match = revenue[revenue["model_permaslug"] == "openai/gpt-5.4-20260305"].iloc[0]
-    assert blended_match["pricing_join_status"] == "matched_model_median"
+    assert blended_match["pricing_join_status"] == "matched_asof"
+    assert blended_match["revenue_method"] == "model_blended_no_split"
     assert blended_match["estimated_revenue"] == pytest.approx(0.6276)
 
-    provider_fallback = revenue[revenue["model_permaslug"] == "openai/new-unpriced-model"].iloc[0]
-    assert provider_fallback["pricing_join_status"] == "fallback_provider_median"
-    assert provider_fallback["estimated_revenue"] == pytest.approx(0.16644)
+    unpriced_provider = revenue[revenue["model_permaslug"] == "openai/new-unpriced-model"].iloc[0]
+    assert unpriced_provider["pricing_join_status"] == "unresolved_missing_pricing"
+    assert unpriced_provider["revenue_method"] == "unpriced"
+    assert pd.isna(unpriced_provider["estimated_revenue"])
 
-    global_fallback = revenue[revenue["model_permaslug"] == "xiaomi/missing-model"].iloc[0]
-    assert global_fallback["pricing_join_status"] == "fallback_global_median"
-    assert global_fallback["estimated_revenue"] == pytest.approx(0.187245)
+    unpriced_global = revenue[revenue["model_permaslug"] == "xiaomi/missing-model"].iloc[0]
+    assert unpriced_global["pricing_join_status"] == "unresolved_missing_pricing"
+    assert unpriced_global["revenue_method"] == "unpriced"
+    assert pd.isna(unpriced_global["estimated_revenue"])
 
     qwen_row = revenue[revenue["model_permaslug"] == "qwen/qwen3.5-flash-20260224"].iloc[0]
-    assert qwen_row["pricing_join_status"] == "matched_model_median"
+    assert qwen_row["pricing_join_status"] == "matched_asof"
+    assert qwen_row["revenue_method"] == "model_blended_no_split"
     assert qwen_row["estimated_revenue"] == pytest.approx(0.0000208455)
 
     synthetic = revenue[revenue["model_permaslug"] == "Others"].iloc[0]
@@ -684,7 +748,7 @@ def test_estimate_usage_revenue_falls_back_to_full_pricing_when_usage_date_missi
     assert row["estimated_revenue"] == pytest.approx(0.1023)
 
 
-def test_notebook_style_rollup_uses_dashboard_estimate_defaults(tmp_path: Path) -> None:
+def test_notebook_style_rollup_preserves_unpriced_coverage_gaps(tmp_path: Path) -> None:
     _seed_research_inputs(tmp_path)
 
     revenue_daily = provider_revenue_daily(["xiaomi"], base_dir=tmp_path, refresh=True)
@@ -699,7 +763,7 @@ def test_notebook_style_rollup_uses_dashboard_estimate_defaults(tmp_path: Path) 
 
     xiaomi_row = daily_rollup.iloc[0]
     assert xiaomi_row["provider_slug"] == "xiaomi"
-    assert xiaomi_row["estimated_revenue"] == pytest.approx(0.187245)
+    assert pd.isna(xiaomi_row["estimated_revenue"])
 
 
 def test_build_frontier_model_registry_preserves_unmatched_rows_and_flags_large_models(tmp_path: Path) -> None:
