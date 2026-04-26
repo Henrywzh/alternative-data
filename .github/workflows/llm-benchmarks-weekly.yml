@@ -51,6 +51,7 @@ jobs:
 
           git diff --cached --stat
           git commit -m "chore: update llm benchmarks and frontier registry"
+          git pull --rebase origin "${{ github.event.repository.default_branch }}"
           git push
 
       - name: Upload raw benchmark snapshots

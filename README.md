@@ -15,6 +15,12 @@ Rankings datasets:
 - `openrouter_model_activity`: daily model-level activity with request counts and token splits (`prompt`, `completion`, optional `reasoning`)
 - `provider_daily_activity`: daily provider-page total-token history by model for the configured major OpenRouter providers
 
+OpenRouter economics methodology:
+
+- Token-volume charts use provider-level `market_share` for legacy weekly history and observed `provider_daily_activity` for modern daily history.
+- Revenue estimates are conservative by default: usage is joined to the latest prior OpenRouter pricing snapshot, provider/global price fallbacks are excluded, and unpriced rows remain visible as coverage gaps.
+- `daily_provider_economics` is the shared dashboard/notebook table for observed tokens, pricing matches, revenue method, and coverage flags.
+
 Apps datasets:
 
 - `app_metadata_snapshots`: daily metadata snapshots for monitored apps
@@ -239,7 +245,7 @@ render blueprint apply
 This repository is intended as a home for small, practical alternative data projects that can expand over time. The OpenRouter pipeline now supports both rankings and app sources with the same raw snapshot storage and normalized dataset workflow.
 The provider-adoption pipeline now defaults to tracking OpenAI, Anthropic, Google, DeepSeek, Meta, Mistral, Qwen, Moonshot, Minimax, and ZAI. PyPI and npm coverage remain selective, while Hugging Face coverage tracks all models under each configured organization.
 Framework ecosystems are also tracked inside the provider-adoption domain, with package-level daily raw series for LangChain and PydanticAI.
-The OpenRouter activity pipeline now prefers the latest local OpenRouter catalog to discover model activity pages for the configured major-provider set, and stores request counts plus prompt/completion token splits with optional reasoning-token capture when the source exposes it.
+The OpenRouter activity pipeline uses the live OpenRouter model catalog plus recent local catalog snapshots to discover model activity pages for the configured major-provider set, and stores request counts plus prompt/completion token splits with optional reasoning-token capture when the source exposes it.
 The bounded backfill command does not fabricate historical Hugging Face rows; HF snapshots begin from the first real collection date onward.
 The Artificial Analysis pipeline uses the official API for model data and only scrapes the public site for the capital expenditure series; any downstream use should preserve Artificial Analysis attribution and API terms.
 The research layer keeps scraping outputs as the source of truth and writes derived marts under `data/normalized/marts/` for fast, deterministic Jupyter analysis.

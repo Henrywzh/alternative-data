@@ -17,6 +17,7 @@ from openrouter_data.utils import iter_next_f_objects, walk_json
 class ActivitySource(SourceExtractor):
     name = "openrouter_activity"
     BROWSE_URL = "https://openrouter.ai/rankings"
+    MODELS_API_URL = "https://openrouter.ai/api/v1/models"
     MODEL_BASE_URL = "https://openrouter.ai"
     ALLOWED_PROVIDER_PREFIXES = frozenset(PROVIDER_SLUGS.keys())
 
@@ -70,6 +71,28 @@ class ActivitySource(SourceExtractor):
         
         filtered_slugs = [slug for slug in unique_slugs if slug.split("/")[0] in self.ALLOWED_PROVIDER_PREFIXES]
         return filtered_slugs[:limit]
+
+    def fetch_catalog_slugs(self, limit: int = 0) -> list[str]:
+        """Discover current model slugs from OpenRouter's public Models API."""
+        response = self.session.get(self.MODELS_API_URL, timeout=self.timeout)
+        response.raise_for_status()
+        payload = response.json()
+        models = payload.get("data", []) if isinstance(payload, dict) else []
+        slugs: list[str] = []
+        seen: set[str] = set()
+        for item in models:
+            if not isinstance(item, dict):
+                continue
+            slug = item.get("canonical_slug") or item.get("id")
+            if not isinstance(slug, str) or "/" not in slug:
+                continue
+            if slug.split("/")[0] not in self.ALLOWED_PROVIDER_PREFIXES or slug in seen:
+                continue
+            seen.add(slug)
+            slugs.append(slug)
+        if limit and limit > 0:
+            return slugs[:limit]
+        return slugs
 
     def fetch_snapshots(self, slugs: list[str]) -> list[Snapshot]:
         """Fetch activity snapshots for the given slugs."""

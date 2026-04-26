@@ -232,12 +232,35 @@ class ActivityPipeline(BasePipeline):
 
     def run_daily_update(self, limit: int = 0) -> PipelineResult:
         """Discover model slugs for the configured major providers, then ingest activity."""
-        slugs = self._discover_catalog_slugs(limit=limit)
+        slugs = self._discover_activity_slugs(limit=limit)
         if not slugs:
             slugs = self.source.fetch_popular_slugs(limit=limit or 200)
 
         snapshots = self.source.fetch_snapshots(slugs)
         return self._execute(mode="activity-daily-update", snapshots=snapshots)
+
+    def _discover_activity_slugs(self, limit: int = 0) -> list[str]:
+        slugs: list[str] = []
+        seen: set[str] = set()
+        allowed_prefixes = set(PROVIDER_SLUGS.keys())
+
+        def add_many(values: list[str]) -> None:
+            for value in values:
+                if "/" not in value or value.split("/")[0] not in allowed_prefixes:
+                    continue
+                if value not in seen:
+                    seen.add(value)
+                    slugs.append(value)
+
+        try:
+            add_many(self.source.fetch_catalog_slugs(limit=0))
+        except Exception as exc:
+            print(f"Warning: Failed to fetch live OpenRouter model catalog for activity discovery: {exc}")
+        add_many(self._discover_catalog_slugs(limit=0))
+
+        if limit and limit > 0:
+            return slugs[:limit]
+        return slugs
 
     def _discover_catalog_slugs(self, limit: int = 0) -> list[str]:
         catalog_path = self.base_dir / "data" / "normalized" / "compute_availability" / "raw_openrouter_models.csv"
@@ -248,10 +271,9 @@ class ActivityPipeline(BasePipeline):
         if catalog.empty or "provider_prefix" not in catalog.columns:
             return []
 
-        latest_snapshot = None
         if "snapshot_ts" in catalog.columns and catalog["snapshot_ts"].notna().any():
-            latest_snapshot = catalog["snapshot_ts"].dropna().astype(str).max()
-            catalog = catalog[catalog["snapshot_ts"].astype(str) == latest_snapshot].copy()
+            latest_snapshots = sorted(catalog["snapshot_ts"].dropna().astype(str).unique())[-14:]
+            catalog = catalog[catalog["snapshot_ts"].astype(str).isin(latest_snapshots)].copy()
 
         allowed_prefixes = set(PROVIDER_SLUGS.keys())
         catalog["provider_prefix"] = catalog["provider_prefix"].astype("string")
