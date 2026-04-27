@@ -3266,15 +3266,13 @@ def render_artificial_analysis_section(datasets: dict[str, DatasetLoadResult], a
                     go.Scatter(
                         x=pd.to_datetime(lag_plot["us_breakthrough_date"], errors="coerce"),
                         y=lag_plot["lag_months"],
-                        mode="lines+markers+text",
+                        mode="lines+markers",
                         line=dict(width=3, color="#DC2626", dash="solid"),
                         marker=dict(
                             size=10,
                             color=np.where(lag_plot["status"] == "caught_up", "#DC2626", "#9CA3AF"),
                             symbol=np.where(lag_plot["status"] == "caught_up", "circle", "x"),
                         ),
-                        text=lag_plot["status"].map({"caught_up": "Caught up", "not_yet_caught": "Open"}),
-                        textposition="top center",
                         customdata=lag_plot[["us_intelligence_index", "catchup_label", "status"]],
                         hovertemplate=(
                             "<b>US breakthrough %{x}</b><br>"
