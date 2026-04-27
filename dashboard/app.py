@@ -1447,6 +1447,51 @@ def _china_catchup_lag(frontier_by_country: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows, columns=columns)
 
 
+def _frontier_points_with_metadata(
+    frame: pd.DataFrame,
+    frontier_pivot: pd.DataFrame,
+    *,
+    group_column: str,
+) -> pd.DataFrame:
+    columns = ["release_date", "country_label", "intelligence_index", "model_name", "creator_name"]
+    required = {"release_date", "intelligence_index", group_column, "model_name", "creator_name"}
+    if frame.empty or frontier_pivot.empty or not required.issubset(frame.columns):
+        return pd.DataFrame(columns=columns)
+
+    source = frame.dropna(subset=["release_date", "intelligence_index", group_column]).copy()
+    source["release_date"] = pd.to_datetime(source["release_date"], errors="coerce")
+    source = source.dropna(subset=["release_date"])
+    if source.empty:
+        return pd.DataFrame(columns=columns)
+
+    rows: list[dict[str, object]] = []
+    for group_name in frontier_pivot.columns:
+        group_rows = source[source[group_column] == group_name].copy()
+        if group_rows.empty:
+            continue
+        group_rows = group_rows.sort_values(["release_date", "intelligence_index"], ascending=[True, False])
+        group_rows = group_rows.drop_duplicates(subset=["release_date"], keep="first")
+        for release_date, intelligence_index in frontier_pivot[group_name].dropna().items():
+            candidates = group_rows[
+                (group_rows["release_date"] <= release_date)
+                & (group_rows["intelligence_index"] == intelligence_index)
+            ].sort_values("release_date")
+            if candidates.empty:
+                continue
+            active = candidates.iloc[-1]
+            rows.append(
+                {
+                    "release_date": pd.Timestamp(release_date),
+                    "country_label": group_name,
+                    "intelligence_index": float(intelligence_index),
+                    "model_name": active.get("model_name"),
+                    "creator_name": active.get("creator_name"),
+                }
+            )
+
+    return pd.DataFrame(rows, columns=columns)
+
+
 @st.cache_data(ttl=3600)
 def compute_artificial_analysis_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, object]:
     views: dict[str, object] = {}
@@ -1509,6 +1554,11 @@ def compute_artificial_analysis_views(datasets: dict[str, DatasetLoadResult]) ->
     else:
         country_models["country_label"] = pd.Series(dtype="string")
     frontier_by_country = _frontier_pivot(country_models, group_column="country_label")
+    frontier_by_country_points = _frontier_points_with_metadata(
+        country_models,
+        frontier_by_country,
+        group_column="country_label",
+    )
     china_catchup_lag = _china_catchup_lag(frontier_by_country)
 
     openness_models = models_latest.copy()
@@ -1526,6 +1576,7 @@ def compute_artificial_analysis_views(datasets: dict[str, DatasetLoadResult]) ->
     views["frontier_by_lab_pivot"] = frontier_by_lab
     views["price_models"] = price_models
     views["frontier_by_country_pivot"] = frontier_by_country
+    views["frontier_by_country_points"] = frontier_by_country_points
     views["china_catchup_lag"] = china_catchup_lag
     views["open_vs_proprietary_pivot"] = open_vs_proprietary
     return views
@@ -3058,6 +3109,7 @@ def render_artificial_analysis_section(datasets: dict[str, DatasetLoadResult], a
     frontier_by_lab = aa_views.get("frontier_by_lab_pivot", pd.DataFrame())
     price_models = aa_views.get("price_models", pd.DataFrame())
     frontier_by_country = aa_views.get("frontier_by_country_pivot", pd.DataFrame())
+    frontier_by_country_points = aa_views.get("frontier_by_country_points", pd.DataFrame())
     china_catchup_lag = aa_views.get("china_catchup_lag", pd.DataFrame())
     open_vs_proprietary = aa_views.get("open_vs_proprietary_pivot", pd.DataFrame())
 
@@ -3162,30 +3214,67 @@ def render_artificial_analysis_section(datasets: dict[str, DatasetLoadResult], a
         if frontier_by_country.empty:
             st.info("No US or China provider-country matches are available in the current Artificial Analysis snapshot.")
         else:
-            st.plotly_chart(
-                make_line_chart(
-                    frontier_by_country,
-                    ["#2563EB", "#DC2626"],
-                    y_title="Artificial Analysis Intelligence Index",
-                    x_title="Release Date",
-                    height=430,
-                ),
-                width="stretch",
-                theme=None,
+            country_colors = {"United States": "#2563EB", "China": "#DC2626"}
+            fig_country = go.Figure()
+            for country in frontier_by_country.columns:
+                country_points = frontier_by_country_points[
+                    frontier_by_country_points["country_label"] == country
+                ].sort_values("release_date")
+                if country_points.empty:
+                    fig_country.add_trace(
+                        go.Scatter(
+                            x=frontier_by_country.index,
+                            y=frontier_by_country[country],
+                            mode="lines+markers",
+                            name=str(country),
+                            line=dict(width=3, color=country_colors.get(str(country), MODEL_COLORS[0])),
+                        )
+                    )
+                    continue
+                fig_country.add_trace(
+                    go.Scatter(
+                        x=country_points["release_date"],
+                        y=country_points["intelligence_index"],
+                        mode="lines+markers",
+                        name=str(country),
+                        line=dict(width=3, color=country_colors.get(str(country), MODEL_COLORS[0])),
+                        customdata=country_points[["model_name", "creator_name"]],
+                        hovertemplate=(
+                            "<b>%{customdata[0]}</b><br>"
+                            "%{customdata[1]} - %{fullData.name}<br>"
+                            "%{x|%Y-%m-%d}<br>"
+                            "Intelligence: %{y:.1f}<extra></extra>"
+                        ),
+                    )
+                )
+            fig_country.update_layout(
+                template="plotly_white",
+                xaxis_title="Release Date",
+                yaxis_title="Artificial Analysis Intelligence Index",
+                legend=dict(orientation="h", y=-0.2),
+                height=430,
+                margin=dict(l=0, r=0, t=40, b=80),
             )
+            st.plotly_chart(fig_country, width="stretch", theme=None)
             st.markdown('<div class="section-subtitle">China Catch-Up Lag to US Frontier Breakthroughs</div>', unsafe_allow_html=True)
             if china_catchup_lag.empty:
                 st.info("Catch-up lag requires both United States and China frontier series.")
             else:
                 lag_plot = china_catchup_lag.copy()
-                lag_plot["bar_color"] = np.where(lag_plot["status"] == "caught_up", "#DC2626", "#9CA3AF")
                 lag_plot["catchup_label"] = lag_plot["china_catchup_date"].fillna("Not yet caught")
                 fig_lag = go.Figure(
-                    go.Bar(
-                        x=lag_plot["us_breakthrough_date"],
+                    go.Scatter(
+                        x=pd.to_datetime(lag_plot["us_breakthrough_date"], errors="coerce"),
                         y=lag_plot["lag_months"],
-                        marker=dict(color=lag_plot["bar_color"], pattern=dict(shape=np.where(lag_plot["status"] == "caught_up", "", "/"))),
+                        mode="lines+markers+text",
+                        line=dict(width=3, color="#DC2626", dash="solid"),
+                        marker=dict(
+                            size=10,
+                            color=np.where(lag_plot["status"] == "caught_up", "#DC2626", "#9CA3AF"),
+                            symbol=np.where(lag_plot["status"] == "caught_up", "circle", "x"),
+                        ),
                         text=lag_plot["status"].map({"caught_up": "Caught up", "not_yet_caught": "Open"}),
+                        textposition="top center",
                         customdata=lag_plot[["us_intelligence_index", "catchup_label", "status"]],
                         hovertemplate=(
                             "<b>US breakthrough %{x}</b><br>"
