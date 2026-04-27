@@ -168,7 +168,7 @@ def _artificial_analysis_models_frame() -> pd.DataFrame:
                 "creator_id": "creator-openai",
                 "creator_name": "OpenAI",
                 "creator_slug": "openai",
-                "creator_country": "us",
+                "creator_country": None,
                 "release_date": "2025-01-15",
                 "release_quarter": "Q1-2025",
                 "intelligence_index": 35.0,
@@ -189,7 +189,7 @@ def _artificial_analysis_models_frame() -> pd.DataFrame:
                 "creator_id": "creator-openai",
                 "creator_name": "OpenAI",
                 "creator_slug": "openai",
-                "creator_country": "us",
+                "creator_country": None,
                 "release_date": "2025-03-15",
                 "release_quarter": "Q1-2025",
                 "intelligence_index": 41.0,
@@ -210,7 +210,7 @@ def _artificial_analysis_models_frame() -> pd.DataFrame:
                 "creator_id": "creator-meta",
                 "creator_name": "Meta",
                 "creator_slug": "meta",
-                "creator_country": "us",
+                "creator_country": None,
                 "release_date": "2025-02-20",
                 "release_quarter": "Q1-2025",
                 "intelligence_index": 33.0,
@@ -218,6 +218,48 @@ def _artificial_analysis_models_frame() -> pd.DataFrame:
                 "median_output_tokens_per_second": 180.0,
                 "open_source_categorization": "Open Weights (Permissive License)",
                 "is_open_weights": True,
+                "source_url": "fixture://aa",
+                "source_run_id": "run-aa",
+                "scraped_at": "2026-04-25T00:00:00Z",
+            },
+            {
+                "dataset_id": "artificial_analysis_models_daily",
+                "as_of_date": "2026-04-25",
+                "model_id": "model-deepseek",
+                "model_slug": "deepseek-frontier",
+                "model_name": "DeepSeek Frontier",
+                "creator_id": "creator-deepseek",
+                "creator_name": "DeepSeek",
+                "creator_slug": "deepseek",
+                "creator_country": None,
+                "release_date": "2025-04-10",
+                "release_quarter": "Q2-2025",
+                "intelligence_index": 39.0,
+                "price_1m_blended_3_to_1": 0.2,
+                "median_output_tokens_per_second": 150.0,
+                "open_source_categorization": "Open Weights (Permissive License)",
+                "is_open_weights": True,
+                "source_url": "fixture://aa",
+                "source_run_id": "run-aa",
+                "scraped_at": "2026-04-25T00:00:00Z",
+            },
+            {
+                "dataset_id": "artificial_analysis_models_daily",
+                "as_of_date": "2026-04-25",
+                "model_id": "model-alibaba",
+                "model_slug": "alibaba-frontier",
+                "model_name": "Alibaba Frontier",
+                "creator_id": "creator-alibaba",
+                "creator_name": "Alibaba",
+                "creator_slug": "alibaba",
+                "creator_country": "cn",
+                "release_date": "2025-05-01",
+                "release_quarter": "Q2-2025",
+                "intelligence_index": 37.0,
+                "price_1m_blended_3_to_1": None,
+                "median_output_tokens_per_second": 130.0,
+                "open_source_categorization": "Proprietary",
+                "is_open_weights": False,
                 "source_url": "fixture://aa",
                 "source_run_id": "run-aa",
                 "scraped_at": "2026-04-25T00:00:00Z",
@@ -2065,7 +2107,7 @@ def test_artificial_analysis_domain_loads_normalized_datasets(tmp_path: Path) ->
         "artificial_analysis_leading_models_by_lab_daily",
         "artificial_analysis_capex_quarterly",
     }
-    assert datasets["artificial_analysis_models_daily"].row_count == 3
+    assert datasets["artificial_analysis_models_daily"].row_count == 5
     assert datasets["artificial_analysis_capex_quarterly"].row_count == 2
     assert datasets["artificial_analysis_models_daily"].latest_date == "2026-04-25"
     assert datasets["artificial_analysis_models_daily"].missing_columns == []
@@ -2088,7 +2130,9 @@ def test_compute_artificial_analysis_views_builds_priority_charts(tmp_path: Path
     assert capex.index.tolist() == ["Q4-2024", "Q1-2025"]
     assert "Microsoft" in capex.columns
     assert frontier.loc[pd.Timestamp("2025-03-15"), "OpenAI"] == 41.0
-    assert price["price_1m_blended_3_to_1"].tolist() == [3.0, 0.4, 2.5]
-    assert country.loc[pd.Timestamp("2025-03-15"), "US"] == 41.0
+    assert price["price_1m_blended_3_to_1"].tolist() == [3.0, 0.4, 2.5, 0.2]
+    assert set(country.columns) == {"United States", "China"}
+    assert country.loc[pd.Timestamp("2025-03-15"), "United States"] == 41.0
+    assert country.loc[pd.Timestamp("2025-04-10"), "China"] == 39.0
     assert openness.loc[pd.Timestamp("2025-03-15"), "Proprietary"] == 41.0
     assert openness.loc[pd.Timestamp("2025-03-15"), "Open Weights"] == 33.0
