@@ -1426,7 +1426,8 @@ def test_legacy_token_volume_uses_market_share_for_providers_missing_from_top_mo
     assert token_weekly.loc["2026-01-05", "智谱AI (Z.ai)"] == 250.0
     assert token_monthly.loc["2026-01", "智谱AI (Z.ai)"] == 340.0
     assert "智谱AI (Z.ai)" in revenue_weekly.columns
-    assert "2026-01-05" not in revenue_weekly.index
+    assert "2026-01-05" in revenue_weekly.index
+    assert revenue_weekly.loc["2026-01-05", "智谱AI (Z.ai)"] > 0
     assert revenue_weekly.loc["2026-01-12", "智谱AI (Z.ai)"] > 0
 
 
@@ -1526,7 +1527,7 @@ def test_market_share_legacy_and_modern_provider_logs_stitch_into_one_provider_s
     assert token_weekly.loc["2026-01-12", "智谱AI (Z.ai)"] > 0
 
 
-def test_partial_handover_week_token_volume_stays_observed_and_flags_partial_period(tmp_path: Path) -> None:
+def test_partial_handover_week_token_volume_backfills_missing_weekdays_from_following_week(tmp_path: Path) -> None:
     top_models = pd.DataFrame(
         [
             {
@@ -1655,7 +1656,7 @@ def test_partial_handover_week_token_volume_stays_observed_and_flags_partial_per
     weekly_coverage = views["token_volume"]["weekly_coverage"]
 
     assert token_weekly.loc["2026-01-05", "智谱AI (Z.ai)"] == 250.0
-    assert token_weekly.loc["2026-01-12", "智谱AI (Z.ai)"] == 300.0
+    assert token_weekly.loc["2026-01-12", "智谱AI (Z.ai)"] == 840.0
     partial_week = weekly_coverage[weekly_coverage["usage_week"] == "2026-01-12"].iloc[0]
     assert partial_week["observed_days"] == 3
     assert partial_week["expected_days"] == 7
@@ -1839,8 +1840,59 @@ def test_compute_openrouter_views_prefers_market_share_for_platform_total_tokens
 
     views = compute_openrouter_views(datasets)
 
-    assert views["top_models"]["total_source"] == "market_share"
+    assert views["top_models"]["total_source"] == "hybrid"
     assert views["top_models"]["pivot_total"].loc["2026-03-09", "Total Tokens"] == 550.0
+
+
+def test_compute_openrouter_views_falls_back_to_top_models_when_market_share_undercounts() -> None:
+    top_models = pd.DataFrame(
+        [
+            {**_base_row("top_models"), "week_start_date": "2026-04-13", "entity_id": "openai/gpt-4o", "metric_value": 2000.0},
+            {**_base_row("top_models"), "week_start_date": "2026-04-13", "entity_id": "anthropic/claude-sonnet", "metric_value": 1000.0},
+        ],
+        columns=EXPECTED_COLUMNS,
+    )
+    market_share = pd.DataFrame(
+        [
+            {**_base_row("market_share"), "week_start_date": "2026-04-12", "entity_id": "openai", "metric_value": 900.0},
+            {**_base_row("market_share"), "week_start_date": "2026-04-12", "entity_id": "others", "metric_value": 100.0},
+        ],
+        columns=EXPECTED_COLUMNS,
+    )
+    result_kwargs = {
+        "domain": "rankings",
+        "primary_date_column": "week_start_date",
+        "metric_column": "metric_value",
+        "source_format": "csv",
+        "source_path": None,
+        "missing_columns": [],
+        "duplicate_rows": 0,
+        "first_date": "2026-04-12",
+        "latest_date": "2026-04-12",
+        "latest_scraped_at": "2026-04-20T00:00:00Z",
+    }
+    datasets = {
+        "top_models": DatasetLoadResult(
+            dataset_id="top_models",
+            label="Top Models",
+            frame=top_models,
+            row_count=len(top_models),
+            **result_kwargs,
+        ),
+        "market_share": DatasetLoadResult(
+            dataset_id="market_share",
+            label="Market Share",
+            frame=market_share,
+            row_count=len(market_share),
+            **result_kwargs,
+        ),
+    }
+
+    views = compute_openrouter_views(datasets)
+
+    assert views["top_models"]["total_source"] == "hybrid"
+    assert views["top_models"]["pivot_total"].loc["2026-04-13", "Total Tokens"] == 3000.0
+    assert views["top_models"]["source_by_week"]["2026-04-13"] == "top_models"
 
 
 def test_compute_availability_views_reconstruct_catalog_from_full_and_delta_snapshots() -> None:

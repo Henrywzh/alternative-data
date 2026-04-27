@@ -30,7 +30,9 @@ from dashboard.data import (
     load_latest_manifest,
 )
 from openrouter_revenue import (
+    build_price_context,
     build_conservative_provider_economics,
+    estimate_usage_revenue,
     summarize_economics_coverage,
 )
 from semiconductor_memory_data.sources.config import AI_DEMAND_PPI_WEIGHTS
@@ -605,24 +607,75 @@ def compute_openrouter_views(
 
     top_models_result = datasets.get("top_models")
     market_share_result = datasets.get("market_share")
-    total_source_result = market_share_result if market_share_result and not market_share_result.frame.empty else top_models_result
-    if not total_source_result or total_source_result.frame.empty:
+    if not top_models_result or top_models_result.frame.empty:
         views["top_models"] = {"weeks": [], "pivot_total": pd.DataFrame()}
     else:
-        frame = total_source_result.frame.copy()
-        frame["week_start_date"] = frame["week_start_date"].astype(str)
-        if total_source_result.dataset_id == "market_share":
-            frame["week_start_date"] = _align_rankings_week_to_monday(frame["week_start_date"])
-        pivot_total = (
-            frame.groupby("week_start_date", as_index=True)["metric_value"]
+        top_frame = top_models_result.frame.copy()
+        top_frame["week_start_date"] = top_frame["week_start_date"].astype(str)
+        top_totals = (
+            top_frame.groupby("week_start_date", as_index=True)["metric_value"]
             .sum()
-            .to_frame(name="Total Tokens")
+            .rename("top_models")
             .sort_index()
         )
+        merged_totals = top_totals.to_frame()
+        total_source = "top_models"
+        if market_share_result and not market_share_result.frame.empty:
+            market_frame = market_share_result.frame.copy()
+            market_frame["week_start_date"] = _align_rankings_week_to_monday(
+                market_frame["week_start_date"].astype(str)
+            )
+            market_totals = (
+                market_frame.groupby("week_start_date", as_index=True)["metric_value"]
+                .sum()
+                .rename("market_share")
+                .sort_index()
+            )
+            merged_totals = merged_totals.join(market_totals, how="outer")
+
+            def _select_total(row: pd.Series) -> float:
+                top_value = pd.to_numeric(pd.Series([row.get("top_models")]), errors="coerce").iloc[0]
+                share_value = pd.to_numeric(pd.Series([row.get("market_share")]), errors="coerce").iloc[0]
+                if pd.isna(share_value):
+                    return float(top_value) if pd.notna(top_value) else np.nan
+                if pd.isna(top_value):
+                    return float(share_value)
+                if share_value >= top_value * 0.80:
+                    return float(share_value)
+                return float(top_value)
+
+            def _select_source(row: pd.Series) -> str:
+                top_value = pd.to_numeric(pd.Series([row.get("top_models")]), errors="coerce").iloc[0]
+                share_value = pd.to_numeric(pd.Series([row.get("market_share")]), errors="coerce").iloc[0]
+                if pd.isna(share_value):
+                    return "top_models"
+                if pd.isna(top_value):
+                    return "market_share"
+                return "market_share" if share_value >= top_value * 0.80 else "top_models"
+
+            merged_totals["selected_source"] = merged_totals.apply(_select_source, axis=1)
+            merged_totals["Total Tokens"] = merged_totals.apply(_select_total, axis=1)
+            previous_total = np.nan
+            for index, row in merged_totals.sort_index().iterrows():
+                if row["selected_source"] == "market_share" and pd.isna(row.get("top_models")) and pd.notna(previous_total):
+                    share_value = pd.to_numeric(pd.Series([row.get("market_share")]), errors="coerce").iloc[0]
+                    if pd.notna(share_value) and share_value < previous_total * 0.80:
+                        merged_totals.at[index, "Total Tokens"] = np.nan
+                        merged_totals.at[index, "selected_source"] = "suppressed_incomplete_market_share"
+                        continue
+                if pd.notna(row.get("Total Tokens")):
+                    previous_total = float(row["Total Tokens"])
+            total_source = "hybrid"
+        else:
+            merged_totals["selected_source"] = "top_models"
+            merged_totals["Total Tokens"] = merged_totals["top_models"]
+
+        pivot_total = merged_totals[["Total Tokens"]].dropna().sort_index()
         views["top_models"] = {
-            "weeks": sorted(frame["week_start_date"].unique(), reverse=True),
+            "weeks": sorted(pivot_total.index.astype(str).tolist(), reverse=True),
             "pivot_total": pivot_total,
-            "total_source": total_source_result.dataset_id,
+            "total_source": total_source,
+            "source_by_week": merged_totals.get("selected_source", pd.Series(dtype="string")).to_dict(),
         }
 
     result = datasets.get("market_share")
@@ -671,6 +724,63 @@ def _period_coverage(frame: pd.DataFrame, period_column: str, date_column: str, 
     return coverage
 
 
+def _scale_partial_week_values(
+    modern_frame: pd.DataFrame,
+    pivot_raw: pd.DataFrame,
+    week_column: str,
+    provider_column: str,
+    value_column: str,
+    date_column: str,
+) -> pd.DataFrame:
+    if pivot_raw.empty:
+        return pivot_raw
+
+    pivot = pivot_raw.copy()
+    days_per_week = (
+        modern_frame.groupby([week_column, provider_column])[date_column]
+        .nunique()
+        .rename("days_present")
+    )
+    first_week = pivot.index.min()
+    first_week_dt = pd.Timestamp(first_week)
+    next_week = (first_week_dt + pd.Timedelta(days=7)).strftime("%Y-%m-%d")
+    first_week_rows = modern_frame[modern_frame[week_column] == first_week].copy()
+    next_week_rows = modern_frame[modern_frame[week_column] == next_week].copy()
+
+    if not next_week_rows.empty:
+        for provider in pivot.columns:
+            provider_first_rows = first_week_rows[first_week_rows[provider_column] == provider]
+            if provider_first_rows.empty:
+                continue
+            observed_weekdays = set(provider_first_rows[date_column].dt.weekday.astype(int).tolist())
+            if 0 < len(observed_weekdays) < 7:
+                missing_weekdays = set(range(7)) - observed_weekdays
+                provider_next_rows = next_week_rows[next_week_rows[provider_column] == provider]
+                bridged_missing = provider_next_rows[
+                    provider_next_rows[date_column].dt.weekday.isin(missing_weekdays)
+                ][value_column].sum()
+                if bridged_missing > 0:
+                    observed_total = provider_first_rows[value_column].sum()
+                    pivot.loc[first_week, provider] = observed_total + bridged_missing
+
+    for week in pivot.index:
+        for provider in pivot.columns:
+            try:
+                days_present = days_per_week.loc[(week, provider)]
+            except KeyError:
+                continue
+            if 0 < days_present < 7:
+                if week == first_week and pivot.loc[week, provider] > 0:
+                    provider_first_rows = modern_frame[
+                        (modern_frame[week_column] == week) & (modern_frame[provider_column] == provider)
+                    ]
+                    observed_total = provider_first_rows[value_column].sum()
+                    if pivot.loc[week, provider] > observed_total:
+                        continue
+                pivot.loc[week, provider] *= 7 / days_present
+    return pivot.sort_index()
+
+
 def _revenue_pivots_from_economics(economics: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     if economics.empty:
         return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
@@ -690,11 +800,12 @@ def _revenue_pivots_from_economics(economics: pd.DataFrame) -> tuple[pd.DataFram
 
 
 def _compute_revenue_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, object]:
-    """Accuracy-first provider tokens and revenue with explicit coverage metadata."""
+    """Dashboard-oriented provider tokens and revenue with legacy fallback stitching."""
     provider_res = datasets.get("provider_daily_activity")
     model_activity_res = datasets.get("openrouter_model_activity")
     market_share_res = datasets.get("market_share")
     pricing_res = datasets.get("raw_openrouter_models")
+    macro_res = datasets.get("top_models")
 
     provider_activity = provider_res.frame.copy() if provider_res and not provider_res.frame.empty else pd.DataFrame()
     model_activity = (
@@ -707,7 +818,9 @@ def _compute_revenue_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, 
         pricing,
         model_activity=model_activity,
     )
-    pivot_rev_daily, pivot_rev_weekly, pivot_rev_monthly = _revenue_pivots_from_economics(economics)
+    pivot_rev_daily = pd.DataFrame()
+    pivot_rev_weekly = pd.DataFrame()
+    pivot_rev_monthly = pd.DataFrame()
 
     pivot_tok_daily = pd.DataFrame()
     pivot_tok_weekly_modern = pd.DataFrame()
@@ -724,7 +837,15 @@ def _compute_revenue_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, 
         modern_tok["provider_label"] = modern_tok["entity_name"].fillna(modern_tok["entity_id"])
         modern_tok["total_tokens"] = pd.to_numeric(modern_tok["total_tokens"], errors="coerce")
         pivot_tok_daily = modern_tok.pivot_table(index="usage_date_str", columns="provider_label", values="total_tokens", aggfunc="sum").fillna(0).sort_index()
-        pivot_tok_weekly_modern = modern_tok.pivot_table(index="usage_week", columns="provider_label", values="total_tokens", aggfunc="sum").fillna(0).sort_index()
+        pivot_tok_weekly_modern_raw = modern_tok.pivot_table(index="usage_week", columns="provider_label", values="total_tokens", aggfunc="sum").fillna(0)
+        pivot_tok_weekly_modern = _scale_partial_week_values(
+            modern_tok,
+            pivot_tok_weekly_modern_raw,
+            "usage_week",
+            "provider_label",
+            "total_tokens",
+            "usage_date_dt",
+        )
         pivot_tok_monthly_modern = modern_tok.pivot_table(index="usage_month", columns="provider_label", values="total_tokens", aggfunc="sum").fillna(0).sort_index()
         weekly_coverage = _period_coverage(modern_tok, "usage_week", "usage_date_str", 7)
         monthly_expected = modern_tok.assign(
@@ -766,7 +887,178 @@ def _compute_revenue_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, 
     pivot_tok_monthly = pd.concat([tok_legacy_m, pivot_tok_monthly_modern]).fillna(0).sort_index()
     pivot_tok_monthly = pivot_tok_monthly.groupby(level=0).sum() if not pivot_tok_monthly.empty else pivot_tok_monthly
 
+    big_tech_display = [
+        "OpenAI", "Anthropic", "Google", "Meta (Llama)", "DeepSeek",
+        "Alibaba (Qwen)", "智谱AI (Z.ai)", "Moonshot AI", "xAI (Grok)",
+        "Mistral AI", "Microsoft",
+    ]
+    if not pivot_tok_weekly.empty:
+        for column in big_tech_display:
+            if column in pivot_tok_weekly.columns:
+                interpolated = pivot_tok_weekly[column].replace(0, float("nan")).interpolate(
+                    method="linear", limit=4, limit_area="inside"
+                )
+                pivot_tok_weekly[column] = interpolated.fillna(0)
+
+    modern_pivot_daily = pd.DataFrame()
+    modern_pivot_weekly = pd.DataFrame()
+    modern_pivot_monthly = pd.DataFrame()
+    if not provider_activity.empty:
+        modern_df = provider_activity.copy()
+        modern_with_price = estimate_usage_revenue(
+            modern_df,
+            pricing,
+            slug_strategy="canonical",
+            pricing_strategy="provider_fallback",
+        )
+        modern_with_price = modern_with_price[modern_with_price["estimated_revenue"].notna()].copy()
+        if not modern_with_price.empty:
+            modern_with_price["revenue_usd"] = pd.to_numeric(modern_with_price["estimated_revenue"], errors="coerce")
+            modern_with_price["usage_date_dt"] = pd.to_datetime(modern_with_price["usage_date"], errors="coerce")
+            modern_with_price = modern_with_price.dropna(subset=["usage_date_dt"])
+            modern_with_price = modern_with_price[modern_with_price["revenue_usd"] > 0].copy()
+            modern_with_price["usage_date_str"] = modern_with_price["usage_date_dt"].dt.strftime("%Y-%m-%d")
+            modern_with_price["usage_week"] = _week_start(modern_with_price["usage_date_dt"])
+            modern_with_price["usage_month"] = modern_with_price["usage_date_dt"].dt.strftime("%Y-%m")
+            modern_with_price["provider_label"] = modern_with_price["entity_name"].fillna(modern_with_price["provider_slug"])
+
+            modern_pivot_daily = (
+                modern_with_price.pivot_table(index="usage_date_str", columns="provider_label", values="revenue_usd", aggfunc="sum")
+                .fillna(0).sort_index()
+            )
+            modern_pivot_weekly_raw = (
+                modern_with_price.pivot_table(index="usage_week", columns="provider_label", values="revenue_usd", aggfunc="sum")
+                .fillna(0)
+            )
+            modern_pivot_weekly = _scale_partial_week_values(
+                modern_with_price,
+                modern_pivot_weekly_raw,
+                "usage_week",
+                "provider_label",
+                "revenue_usd",
+                "usage_date_dt",
+            )
+            modern_pivot_monthly = (
+                modern_with_price.pivot_table(index="usage_month", columns="provider_label", values="revenue_usd", aggfunc="sum")
+                .fillna(0).sort_index()
+            )
+            pivot_rev_daily = modern_pivot_daily
+
     coverage_summary = summarize_economics_coverage(economics)
+
+    if macro_res and not macro_res.frame.empty and market_share_res and not market_share_res.frame.empty:
+        macro_df = macro_res.frame.copy()
+        share_df = market_share_res.frame.copy()
+        macro_df["usage_week"] = _align_rankings_week_to_monday(macro_df["week_start_date"].astype(str))
+        share_df["usage_week"] = _align_rankings_week_to_monday(share_df["week_start_date"].astype(str))
+
+        macro_usage = macro_df.copy()
+        macro_usage["usage_date"] = macro_usage["usage_week"]
+        macro_usage["model_permaslug"] = macro_usage["entity_id"]
+        macro_usage["provider_slug"] = macro_usage["parent_entity_id"]
+        macro_usage["provider_name"] = macro_usage["parent_entity_name"].fillna(macro_usage["parent_entity_id"])
+        macro_usage["total_tokens"] = pd.to_numeric(macro_usage["metric_value"], errors="coerce")
+        macro_usage["prompt_tokens"] = 0.0
+        macro_usage["completion_tokens"] = 0.0
+        macro_usage["reasoning_tokens"] = np.nan
+
+        macro_priced = estimate_usage_revenue(
+            macro_usage[[
+                "usage_date", "provider_slug", "provider_name", "model_permaslug",
+                "total_tokens", "prompt_tokens", "completion_tokens", "reasoning_tokens",
+            ]],
+            pricing,
+            slug_strategy="canonical",
+            pricing_strategy="provider_fallback",
+        )
+        macro_priced = macro_priced[macro_priced["estimated_revenue"].notna()].copy()
+        macro_priced["revenue_usd"] = pd.to_numeric(macro_priced["estimated_revenue"], errors="coerce")
+        tier1_agg = (
+            macro_priced.groupby(["usage_date", "provider_slug"], as_index=False)
+            .agg(metric_value=("total_tokens", "sum"), revenue_usd=("revenue_usd", "sum"))
+            .rename(columns={"usage_date": "usage_week"})
+        )
+
+        price_context = build_price_context(pricing)
+        provider_benchmarks = {
+            provider: values.get("pricing_blended", np.nan)
+            for provider, values in price_context.provider_lookup.items()
+            if pd.notna(values.get("pricing_blended", np.nan))
+        }
+        global_avg_price = (
+            price_context.global_stats.get("pricing_blended", np.nan)
+            if price_context.global_stats is not None
+            else np.nan
+        )
+
+        share_dedup = share_df.drop_duplicates(subset=["usage_week", "entity_id"]).copy()
+        combined = share_dedup.merge(
+            tier1_agg,
+            left_on=["usage_week", "entity_id"],
+            right_on=["usage_week", "provider_slug"],
+            how="left",
+        ).fillna({"metric_value_y": 0.0, "revenue_usd": 0.0})
+
+        def _legacy_hybrid_revenue(row: pd.Series) -> float:
+            total_share_tokens = float(row.get("metric_value_x", 0.0))
+            tier1_tokens = float(row.get("metric_value_y", 0.0))
+            tier1_revenue = float(row.get("revenue_usd", 0.0))
+            delta_tokens = max(0.0, total_share_tokens - tier1_tokens)
+            provider_slug = str(row.get("entity_id", "")).lower()
+            provider_median = provider_benchmarks.get(provider_slug, global_avg_price)
+            if tier1_tokens > 0:
+                vwap = tier1_revenue / tier1_tokens if tier1_tokens else 0.0
+                delta_price = max(vwap, provider_median) if pd.notna(provider_median) else vwap
+            else:
+                delta_price = provider_median if pd.notna(provider_median) else 0.0
+            return tier1_revenue + (delta_tokens * delta_price)
+
+        combined["final_revenue"] = combined.apply(_legacy_hybrid_revenue, axis=1)
+        combined["provider_label"] = combined["entity_id"].apply(lambda value: _derive_provider_name(f"{value}/model", None))
+        combined["usage_date_dt"] = pd.to_datetime(combined["usage_week"], errors="coerce")
+        combined["usage_month"] = combined["usage_date_dt"].dt.strftime("%Y-%m")
+
+        pivot_rev_weekly_legacy = (
+            combined.pivot_table(index="usage_week", columns="provider_label", values="final_revenue", aggfunc="sum")
+            .fillna(0).sort_index()
+        )
+        pivot_rev_weekly_legacy = pivot_rev_weekly_legacy[pivot_rev_weekly_legacy.index <= "2026-01-05"]
+
+        pivot_rev_monthly_legacy = (
+            combined.pivot_table(index="usage_month", columns="provider_label", values="final_revenue", aggfunc="sum")
+            .fillna(0).sort_index()
+        )
+
+        pivot_rev_weekly = pd.concat([pivot_rev_weekly_legacy, modern_pivot_weekly]).fillna(0).sort_index()
+        pivot_rev_weekly = pivot_rev_weekly.groupby(level=0).sum()
+
+        if not modern_pivot_monthly.empty:
+            modern_months = set(modern_pivot_monthly.index)
+            legacy_only = pivot_rev_monthly_legacy[~pivot_rev_monthly_legacy.index.isin(modern_months)]
+            overlap_months = pivot_rev_monthly_legacy[pivot_rev_monthly_legacy.index.isin(modern_months)]
+            pivot_rev_monthly = pd.concat([
+                legacy_only,
+                overlap_months.add(modern_pivot_monthly, fill_value=0),
+                modern_pivot_monthly.loc[~modern_pivot_monthly.index.isin(overlap_months.index)],
+            ])
+            pivot_rev_monthly = pivot_rev_monthly.sort_index().groupby(level=0).sum()
+        else:
+            pivot_rev_monthly = pivot_rev_monthly_legacy
+
+        for column in big_tech_display:
+            if column in pivot_rev_weekly.columns:
+                interpolated = pivot_rev_weekly[column].replace(0, float("nan")).interpolate(
+                    method="linear", limit=4, limit_area="inside"
+                )
+                pivot_rev_weekly[column] = interpolated.fillna(0)
+            if column in pivot_rev_monthly.columns:
+                interpolated = pivot_rev_monthly[column].replace(0, float("nan")).interpolate(
+                    method="linear", limit=2, limit_area="inside"
+                )
+                pivot_rev_monthly[column] = interpolated.fillna(0)
+    else:
+        pivot_rev_daily, pivot_rev_weekly, pivot_rev_monthly = _revenue_pivots_from_economics(economics)
+
     return {
         "revenue_estimator": {
             "pivot_rev": pivot_rev_daily,
@@ -1593,20 +1885,26 @@ def render_rankings_semantics_note(datasets: dict[str, DatasetLoadResult]) -> No
 def render_top_models_chart(datasets: dict[str, DatasetLoadResult], openrouter_views: dict[str, object]) -> None:
     st.markdown('<div class="section-title">Total Weekly Tokens</div>', unsafe_allow_html=True)
     st.markdown(
-        f'<div class="section-subtitle">Completed weekly OpenRouter token-usage buckets. Uses Market Share provider totals when available, with Top Models as a fallback.</div>',
+        f'<div class="section-subtitle">Completed weekly OpenRouter token-usage buckets. Uses Market Share totals when they remain directionally complete, and falls back to Top Models when the Market Share feed undercounts recent weeks.</div>',
         unsafe_allow_html=True,
     )
-    total_source = openrouter_views.get("top_models", {}).get("total_source", "top_models")
-    result = datasets.get(total_source) or datasets.get("top_models")
+    top_view = openrouter_views.get("top_models", {})
+    total_source = top_view.get("total_source", "top_models")
+    pivot_total = top_view.get("pivot_total", pd.DataFrame())
+    latest_week = pivot_total.index.max() if not pivot_total.empty else "n/a"
+    latest_source = top_view.get("source_by_week", {}).get(latest_week, total_source)
+    result = datasets.get("market_share") if latest_source == "market_share" else datasets.get("top_models")
+    if latest_source == "hybrid":
+        result = datasets.get("top_models")
     if not result or not render_dataset_guard(result):
         return
     st.markdown(
-        f'<div class="status-caption">Total source: {total_source} · Latest completed week: {result.latest_date or "n/a"} · Scraped: {format_scraped_at_display(result.latest_scraped_at)}</div>',
+        f'<div class="status-caption">Total source: {total_source} · Latest plotted week: {latest_week} · Latest-week source: {latest_source} · Scraped: {format_scraped_at_display(result.latest_scraped_at)}</div>',
         unsafe_allow_html=True,
     )
 
     fig = make_line_chart(
-        openrouter_views["top_models"]["pivot_total"],
+        pivot_total,
         [ACCENT],
         y_title="Tokens",
         x_title="Usage Week (Starting)",
@@ -1679,7 +1977,7 @@ def render_revenue_estimator(datasets: dict[str, DatasetLoadResult], openrouter_
     total_revenue = rev_data.get("total_revenue", 0)
     coverage = rev_data.get("coverage", {})
 
-    st.markdown('<div class="section-title">Provider Revenue Estimator (Conservative)</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">Provider Revenue Estimator</div>', unsafe_allow_html=True)
     
     if pivot_rev.empty:
         st.info("No priced provider activity is available for conservative revenue estimation yet.")
@@ -1741,8 +2039,8 @@ def render_revenue_estimator(datasets: dict[str, DatasetLoadResult], openrouter_
             )
             st.plotly_chart(fig_week, use_container_width=True, theme=None)
             st.caption(
-                "Revenue is shown only where observed provider/model usage has a defensible as-of pricing match. "
-                "Unpriced models and periods before pricing history are omitted from revenue totals."
+                "Weekly revenue combines legacy Market Share plus Top Models fallback estimates before mid-January 2026, "
+                "then switches to observed provider activity with pricing fallbacks."
             )
     with tab_month:
         _render_rev_chart(pivot_monthly, "Usage Month")
@@ -1750,9 +2048,9 @@ def render_revenue_estimator(datasets: dict[str, DatasetLoadResult], openrouter_
         _render_rev_chart(pivot_daily, "Usage Date")
         
     st.caption(
-        "Methodology: conservative revenue uses observed provider/model token volume joined to the latest prior OpenRouter "
-        "model pricing snapshot. Prompt/completion splits are used when reported or inferred from model activity; otherwise "
-        "a documented blended token ratio is used. Provider/global price fallbacks and full-platform extrapolations are excluded."
+        "Methodology: dashboard revenue uses a hybrid estimate. Legacy weekly history starts from Market Share provider totals, "
+        "prices the ranked model subset, and tops up uncovered provider volume with provider/global blended pricing benchmarks. "
+        "Modern daily history uses observed provider/model activity with OpenRouter pricing plus provider/global fallbacks when exact as-of matches are unavailable."
     )
     st.markdown("---")
 
@@ -1850,7 +2148,7 @@ def render_token_volume_chart(openrouter_views: dict[str, object]) -> None:
     st.markdown(
         '<div class="section-subtitle">Token volume by provider across OpenRouter. '
         'Legacy (pre-Jan 2026): provider-level history from weekly Market Share rankings. '
-        'Modern (2026+): observed daily logs for tracked priority providers only. Partial weeks/months are not rescaled.</div>',
+        'Modern (2026+): observed daily logs for tracked priority providers, with the first partial modern week bridged from the following week for continuity.</div>',
         unsafe_allow_html=True,
     )
 
@@ -1889,7 +2187,7 @@ def render_token_volume_chart(openrouter_views: dict[str, object]) -> None:
             kpi_card_html("Total Tokens (Latest Week)", format_metric(latest_tok_total) if latest_tok_total else "—", delta=tok_delta_text, delta_class=tok_delta_cls),
             kpi_card_html("WoW Change", wow_str, delta="vs prior week"),
             kpi_card_html("Dominant Provider", dominant_provider or "—", delta="by token share this week"),
-            kpi_card_html("Data Coverage", coverage, delta="no hidden period scaling"),
+            kpi_card_html("Data Coverage", coverage, delta="legacy + smoothed modern seam"),
         ),
         unsafe_allow_html=True,
     )
