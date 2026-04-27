@@ -241,6 +241,20 @@ def format_scraped_at_display(value: str | None) -> str:
     return timestamp.strftime("%Y-%m-%d %H:%M UTC")
 
 
+def dataframe_for_display(frame: pd.DataFrame, missing_text: str = "") -> pd.DataFrame:
+    """Fill display placeholders only for text-like columns to preserve numeric Arrow types."""
+    display = frame.copy()
+    if display.empty:
+        return display
+    for column in display.columns:
+        series = display[column]
+        if pd.api.types.is_object_dtype(series) or pd.api.types.is_string_dtype(series):
+            display[column] = series.where(series.notna(), missing_text)
+        elif pd.api.types.is_datetime64_any_dtype(series):
+            display[column] = series.astype("string").where(series.notna(), missing_text)
+    return display
+
+
 def rankings_week_context(datasets: dict[str, DatasetLoadResult]) -> dict[str, str | bool | None]:
     top_models = datasets.get("top_models")
     market_share = datasets.get("market_share")
@@ -1961,7 +1975,7 @@ def render_top_models_chart(datasets: dict[str, DatasetLoadResult], openrouter_v
         x_title="Usage Week (Starting)",
         hover_suffix="tokens",
     )
-    st.plotly_chart(fig, use_container_width=True, theme=None)
+    st.plotly_chart(fig, width="stretch", theme=None)
 
 
 def render_market_share_section(datasets: dict[str, DatasetLoadResult], openrouter_views: dict[str, object]) -> None:
@@ -1996,7 +2010,7 @@ def render_market_share_section(datasets: dict[str, DatasetLoadResult], openrout
     with chart_col:
         fig = make_stacked_bar(openrouter_views["market_share"]["pivot_pct_top"], MODEL_COLORS, y_title="Share (%)", pct=True)
         fig.update_yaxes(range=[0, 100])
-        st.plotly_chart(fig, use_container_width=True, theme=None)
+        st.plotly_chart(fig, width="stretch", theme=None)
 
     with legend_col:
         ms_named = market_share_legend_rows(ms, sel_ms_wk, limit=8)
@@ -2071,7 +2085,7 @@ def render_revenue_estimator(datasets: dict[str, DatasetLoadResult], openrouter_
                 y_title="Revenue (USD)",
                 hover_prefix="$",
             ),
-            use_container_width=True, theme=None,
+            width="stretch", theme=None,
         )
 
     with tab_week:
@@ -2088,7 +2102,7 @@ def render_revenue_estimator(datasets: dict[str, DatasetLoadResult], openrouter_
                 y_title="Revenue (USD)",
                 hover_prefix="$",
             )
-            st.plotly_chart(fig_week, use_container_width=True, theme=None)
+            st.plotly_chart(fig_week, width="stretch", theme=None)
             st.caption(
                 "Weekly revenue combines legacy Market Share plus Top Models fallback estimates before mid-January 2026, "
                 "then switches to observed provider activity with pricing fallbacks."
@@ -2264,7 +2278,7 @@ def render_token_volume_chart(openrouter_views: dict[str, object]) -> None:
                 value_format=",.0f",
                 hover_suffix="tokens",
             ),
-            use_container_width=True, theme=None,
+            width="stretch", theme=None,
         )
 
     with tab_week:
@@ -2317,7 +2331,7 @@ def render_token_revenue_comparison(openrouter_views: dict[str, object]) -> None
             # Colour: values outside [0.001, 10] $/M tokens are suspicious
             st.dataframe(
                 display.style.background_gradient(axis=None, cmap="RdYlGn_r", vmin=0, vmax=5),
-                use_container_width=True,
+                width="stretch",
             )
             st.caption(
                 f"Values in **$/M tokens** (implied avg price). "
@@ -2359,7 +2373,7 @@ def render_apps_tables(datasets: dict[str, DatasetLoadResult]) -> None:
                 )
                 
             tbl["tokens"] = tbl["tokens"].map(format_metric)
-            st.dataframe(tbl.fillna(""), use_container_width=True, hide_index=True)
+            st.dataframe(dataframe_for_display(tbl, ""), width="stretch", hide_index=True)
 
     with tabs[1]:
         result = datasets.get("apps_trending_snapshots")
@@ -2373,7 +2387,7 @@ def render_apps_tables(datasets: dict[str, DatasetLoadResult]) -> None:
             tbl["growth_percent"] = tbl["growth_percent"].map(
                 lambda v: "-" if pd.isna(v) else f"{v:,.0f}%"
             )
-            st.dataframe(tbl.fillna(""), use_container_width=True, hide_index=True)
+            st.dataframe(dataframe_for_display(tbl, ""), width="stretch", hide_index=True)
 
     with tabs[2]:
         meta_result  = datasets.get("app_metadata_snapshots")
@@ -2385,8 +2399,11 @@ def render_apps_tables(datasets: dict[str, DatasetLoadResult]) -> None:
                 latest_meta = latest_meta[latest_meta["scrape_date"] == latest_date]
             st.caption(f"Metadata snapshot: {latest_date or 'n/a'}")
             st.dataframe(
-                latest_meta[["app_name", "app_id", "origin_url", "categories", "description"]].fillna(""),
-                use_container_width=True,
+                dataframe_for_display(
+                    latest_meta[["app_name", "app_id", "origin_url", "categories", "description"]],
+                    "",
+                ),
+                width="stretch",
                 hide_index=True,
             )
 
@@ -2412,7 +2429,7 @@ def render_apps_tables(datasets: dict[str, DatasetLoadResult]) -> None:
                 top_m = pivot_u.sum().nlargest(15).index.tolist()
                 pivot_u = pivot_u[top_m]
                 fig_u = make_stacked_bar(pivot_u, MODEL_COLORS, y_title="Tokens", height=300)
-                st.plotly_chart(fig_u, use_container_width=True, theme=None)
+                st.plotly_chart(fig_u, width="stretch", theme=None)
 
 
 def render_github_trending_section(datasets: dict[str, DatasetLoadResult], github_views: dict[str, dict[str, object]]) -> None:
@@ -2471,7 +2488,7 @@ def render_github_trending_section(datasets: dict[str, DatasetLoadResult], githu
                                 title=f"Star Growth - Top 5 {period_label} Repos",
                                 x_title="Scrape Date", y_title="Stars Gained",
                                 hover_suffix="stars gained", height=400),
-                use_container_width=True,
+                width="stretch",
             )
         else:
             st.info("Not enough historical data to show growth.")
@@ -2649,7 +2666,7 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
                     y_title=hf_metric_config["downloads_axis"],
                     hover_suffix=hf_metric_config["downloads_hover"],
                 ),
-                use_container_width=True, theme=None,
+                width="stretch", theme=None,
             )
             # Market share (stacked bar)
             value_column = hf_metric_config["value_column"]
@@ -2664,7 +2681,7 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
             st.plotly_chart(
                 make_stacked_bar(pivot_share * 100, MODEL_COLORS,
                                  title=hf_metric_config["share_title"], y_title="Share", pct=True, height=340),
-                use_container_width=True, theme=None,
+                width="stretch", theme=None,
             )
 
     with hf_models_tab:
@@ -2693,7 +2710,7 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
                 st.caption(
                     f"Showing top 20 models for {selected_hf_provider} by {hf_metric_config['models_caption_metric']}."
                 )
-                st.dataframe(table.fillna("-"), use_container_width=True, hide_index=True)
+                st.dataframe(dataframe_for_display(table, "-"), width="stretch", hide_index=True)
 
     with pypi_tab:
         # Downloads trend
@@ -2706,7 +2723,7 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
             make_line_chart(pivot_downloads, MODEL_COLORS,
                             title="PyPI Daily Download History (Without Mirrors)",
                             y_title="Downloads", hover_suffix="downloads"),
-            use_container_width=True, theme=None,
+            width="stretch", theme=None,
         )
         # Market share
         totals = pypi_grouped.groupby("download_date")["downloads"].sum().rename("total").reset_index()
@@ -2721,7 +2738,7 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
             make_stacked_bar(pivot_share * 100, MODEL_COLORS,
                              title="PyPI Daily Download Share (Without Mirrors)",
                              y_title="Share", pct=True, height=340),
-            use_container_width=True, theme=None,
+            width="stretch", theme=None,
         )
 
     with npm_tab:
@@ -2739,7 +2756,7 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
                 make_line_chart(pivot_downloads, MODEL_COLORS,
                                 title=f"{_npm_label} npm Daily Download History",
                                 y_title="Downloads", hover_suffix="downloads"),
-                use_container_width=True, theme=None,
+                width="stretch", theme=None,
             )
             # Market share
             totals = npm_grouped.groupby("download_date")["downloads"].sum().rename("total").reset_index()
@@ -2754,7 +2771,7 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
                 make_stacked_bar(pivot_share * 100, MODEL_COLORS,
                                  title=f"{_npm_label} npm Daily Download Share",
                                  y_title="Share", pct=True, height=340),
-                use_container_width=True, theme=None,
+                width="stretch", theme=None,
             )
 
     with github_tab:
@@ -2776,7 +2793,7 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
                     make_line_chart(pivot_candidates, MODEL_COLORS,
                                     title="GitHub Scanned New Repo Pool by Day",
                                     y_title="Repos", hover_suffix="repos", height=340),
-                    use_container_width=True, theme=None,
+                    width="stretch", theme=None,
                 )
 
             with col_right:
@@ -2794,7 +2811,7 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
                     make_line_chart(pivot_signals, MODEL_COLORS,
                                     title="GitHub Signal-Bearing Repos by Day",
                                     y_title="Repos", hover_suffix="repos", height=340),
-                    use_container_width=True, theme=None,
+                    width="stretch", theme=None,
                 )
 
     with summary_tab:
@@ -2870,7 +2887,7 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
 
         display_date = latest_github_date or latest_npm_date or latest_pypi_date
         st.caption(f"Latest provider snapshot: {display_date or 'n/a'}")
-        st.dataframe(summary.fillna("-"), use_container_width=True, hide_index=True)
+        st.dataframe(dataframe_for_display(summary, "-"), width="stretch", hide_index=True)
 
 
 def render_semiconductor_section(datasets: dict[str, DatasetLoadResult], semi_views: dict[str, object]) -> None:
@@ -2961,7 +2978,7 @@ def render_semiconductor_section(datasets: dict[str, DatasetLoadResult], semi_vi
     proxy_pivot = _plot_df[["month", "fred_ppi_value"]].set_index("month").rename(columns={"fred_ppi_value": "AI Demand PPI"})
     st.plotly_chart(
         make_line_chart(proxy_pivot, [ACCENT], title="AI Demand PPI Trend", y_title="Rebased Index", x_title="Month", height=350),
-        use_container_width=True,
+        width="stretch",
     )
 
     available_component_columns = [column for column in component_columns if column in _plot_df.columns]
@@ -2980,7 +2997,7 @@ def render_semiconductor_section(datasets: dict[str, DatasetLoadResult], semi_vi
                 x_title="Month",
                 height=380,
             ),
-            use_container_width=True,
+            width="stretch",
         )
 
 
@@ -3028,7 +3045,7 @@ def render_artificial_analysis_section(datasets: dict[str, DatasetLoadResult], a
                     y_title="Capital Expenditure (USD billions)",
                     height=430,
                 ),
-                use_container_width=True,
+                width="stretch",
                 theme=None,
             )
 
@@ -3045,7 +3062,7 @@ def render_artificial_analysis_section(datasets: dict[str, DatasetLoadResult], a
                     x_title="Release Date",
                     height=430,
                 ),
-                use_container_width=True,
+                width="stretch",
                 theme=None,
             )
 
@@ -3086,7 +3103,7 @@ def render_artificial_analysis_section(datasets: dict[str, DatasetLoadResult], a
                 margin=dict(l=0, r=0, t=20, b=80),
                 legend=dict(orientation="h", y=-0.22),
             )
-            st.plotly_chart(fig_price, use_container_width=True, theme=None)
+            st.plotly_chart(fig_price, width="stretch", theme=None)
 
     with country_tab:
         st.markdown('<div class="section-subtitle">Frontier Language Model Intelligence: US vs China</div>', unsafe_allow_html=True)
@@ -3101,7 +3118,7 @@ def render_artificial_analysis_section(datasets: dict[str, DatasetLoadResult], a
                     x_title="Release Date",
                     height=430,
                 ),
-                use_container_width=True,
+                width="stretch",
                 theme=None,
             )
 
@@ -3118,7 +3135,7 @@ def render_artificial_analysis_section(datasets: dict[str, DatasetLoadResult], a
                     x_title="Release Date",
                     height=430,
                 ),
-                use_container_width=True,
+                width="stretch",
                 theme=None,
             )
 
@@ -3211,7 +3228,7 @@ def render_ai_frontier_section(datasets: dict[str, DatasetLoadResult], benchmark
             margin=dict(l=0, r=0, t=40, b=40), 
             legend=dict(orientation="h", y=-0.2)
         )
-        st.plotly_chart(fig_sota, use_container_width=True, theme=None)
+        st.plotly_chart(fig_sota, width="stretch", theme=None)
 
     with c_col2:
         # Context Window Scaling
@@ -3250,7 +3267,7 @@ def render_ai_frontier_section(datasets: dict[str, DatasetLoadResult], benchmark
             margin=dict(l=0, r=0, t=40, b=40),
             yaxis=dict(type="log", title="Tokens (Log Scale)")
         )
-        st.plotly_chart(fig_ctx, use_container_width=True, theme=None)
+        st.plotly_chart(fig_ctx, width="stretch", theme=None)
 
     # --- Frontier Leaderboard ---
     st.markdown('<div class="section-title">Frontier Intelligence Leaderboard</div>', unsafe_allow_html=True)
@@ -3278,7 +3295,7 @@ def render_ai_frontier_section(datasets: dict[str, DatasetLoadResult], benchmark
                 "GPQA": "{:.2%}",
                 "SWE-bench": "{:.2%}"
             }).background_gradient(subset=["GPQA"], cmap="Blues"),
-            use_container_width=True,
+            width="stretch",
             hide_index=True
         )
 
@@ -3331,7 +3348,7 @@ def render_compute_evolution_section(compute_views: dict[str, object]) -> None:
                 height=350,
                 margin=dict(l=0, r=0, t=40, b=10)
             )
-            st.plotly_chart(fig_growth, use_container_width=True, theme=None)
+            st.plotly_chart(fig_growth, width="stretch", theme=None)
             if models_history_start is not None and models_history_end is not None:
                 start_label = pd.Timestamp(models_history_start).strftime("%Y-%m-%d")
                 end_label = pd.Timestamp(models_history_end).strftime("%Y-%m-%d")
@@ -3368,7 +3385,7 @@ def render_compute_evolution_section(compute_views: dict[str, object]) -> None:
                 yaxis_type="log",
                 margin=dict(l=0, r=0, t=40, b=10)
             )
-            st.plotly_chart(fig_scatter, use_container_width=True, theme=None)
+            st.plotly_chart(fig_scatter, width="stretch", theme=None)
 
 
 # ---------------------------------------------------------------------------
