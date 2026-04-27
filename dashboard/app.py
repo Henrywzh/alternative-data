@@ -1398,6 +1398,55 @@ def _artificial_analysis_country_label(row: pd.Series) -> str | None:
     return ARTIFICIAL_ANALYSIS_PROVIDER_COUNTRIES.get(str(raw_slug).strip().lower())
 
 
+def _china_catchup_lag(frontier_by_country: pd.DataFrame) -> pd.DataFrame:
+    columns = [
+        "us_breakthrough_date",
+        "us_intelligence_index",
+        "china_catchup_date",
+        "lag_months",
+        "status",
+    ]
+    if frontier_by_country.empty or not {"United States", "China"}.issubset(frontier_by_country.columns):
+        return pd.DataFrame(columns=columns)
+
+    work = frontier_by_country[["United States", "China"]].copy().sort_index()
+    work.index = pd.to_datetime(work.index, errors="coerce")
+    work = work[work.index.notna()]
+    if work.empty:
+        return pd.DataFrame(columns=columns)
+
+    latest_date = work.index.max()
+    previous_us_frontier = float("-inf")
+    rows: list[dict[str, object]] = []
+    for breakthrough_date, values in work.iterrows():
+        us_score = values.get("United States")
+        if pd.isna(us_score) or float(us_score) <= previous_us_frontier:
+            continue
+        previous_us_frontier = float(us_score)
+        future_china = work.loc[work.index > breakthrough_date]
+        caught = future_china[future_china["China"] >= previous_us_frontier]
+        if caught.empty:
+            catchup_date = pd.NaT
+            horizon_date = latest_date
+            status = "not_yet_caught"
+        else:
+            catchup_date = caught.index[0]
+            horizon_date = catchup_date
+            status = "caught_up"
+        lag_months = (horizon_date - breakthrough_date).days / 30.4375
+        rows.append(
+            {
+                "us_breakthrough_date": breakthrough_date.date().isoformat(),
+                "us_intelligence_index": previous_us_frontier,
+                "china_catchup_date": None if pd.isna(catchup_date) else catchup_date.date().isoformat(),
+                "lag_months": float(lag_months),
+                "status": status,
+            }
+        )
+
+    return pd.DataFrame(rows, columns=columns)
+
+
 @st.cache_data(ttl=3600)
 def compute_artificial_analysis_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, object]:
     views: dict[str, object] = {}
@@ -1460,6 +1509,7 @@ def compute_artificial_analysis_views(datasets: dict[str, DatasetLoadResult]) ->
     else:
         country_models["country_label"] = pd.Series(dtype="string")
     frontier_by_country = _frontier_pivot(country_models, group_column="country_label")
+    china_catchup_lag = _china_catchup_lag(frontier_by_country)
 
     openness_models = models_latest.copy()
     if not openness_models.empty:
@@ -1476,6 +1526,7 @@ def compute_artificial_analysis_views(datasets: dict[str, DatasetLoadResult]) ->
     views["frontier_by_lab_pivot"] = frontier_by_lab
     views["price_models"] = price_models
     views["frontier_by_country_pivot"] = frontier_by_country
+    views["china_catchup_lag"] = china_catchup_lag
     views["open_vs_proprietary_pivot"] = open_vs_proprietary
     return views
 
@@ -3007,6 +3058,7 @@ def render_artificial_analysis_section(datasets: dict[str, DatasetLoadResult], a
     frontier_by_lab = aa_views.get("frontier_by_lab_pivot", pd.DataFrame())
     price_models = aa_views.get("price_models", pd.DataFrame())
     frontier_by_country = aa_views.get("frontier_by_country_pivot", pd.DataFrame())
+    china_catchup_lag = aa_views.get("china_catchup_lag", pd.DataFrame())
     open_vs_proprietary = aa_views.get("open_vs_proprietary_pivot", pd.DataFrame())
 
     if models_latest.empty and capex_pivot.empty:
@@ -3121,6 +3173,38 @@ def render_artificial_analysis_section(datasets: dict[str, DatasetLoadResult], a
                 width="stretch",
                 theme=None,
             )
+            st.markdown('<div class="section-subtitle">China Catch-Up Lag to US Frontier Breakthroughs</div>', unsafe_allow_html=True)
+            if china_catchup_lag.empty:
+                st.info("Catch-up lag requires both United States and China frontier series.")
+            else:
+                lag_plot = china_catchup_lag.copy()
+                lag_plot["bar_color"] = np.where(lag_plot["status"] == "caught_up", "#DC2626", "#9CA3AF")
+                lag_plot["catchup_label"] = lag_plot["china_catchup_date"].fillna("Not yet caught")
+                fig_lag = go.Figure(
+                    go.Bar(
+                        x=lag_plot["us_breakthrough_date"],
+                        y=lag_plot["lag_months"],
+                        marker=dict(color=lag_plot["bar_color"], pattern=dict(shape=np.where(lag_plot["status"] == "caught_up", "", "/"))),
+                        text=lag_plot["status"].map({"caught_up": "Caught up", "not_yet_caught": "Open"}),
+                        customdata=lag_plot[["us_intelligence_index", "catchup_label", "status"]],
+                        hovertemplate=(
+                            "<b>US breakthrough %{x}</b><br>"
+                            "US intelligence: %{customdata[0]:.1f}<br>"
+                            "China catch-up: %{customdata[1]}<br>"
+                            "Lag: %{y:.1f} months<br>"
+                            "Status: %{customdata[2]}<extra></extra>"
+                        ),
+                    )
+                )
+                fig_lag.update_layout(
+                    template="plotly_white",
+                    xaxis_title="US Breakthrough Date",
+                    yaxis_title="Months Until China Catch-Up",
+                    height=320,
+                    margin=dict(l=0, r=0, t=20, b=80),
+                    showlegend=False,
+                )
+                st.plotly_chart(fig_lag, width="stretch", theme=None)
 
     with openness_tab:
         st.markdown('<div class="section-subtitle">Progress in Open Weights vs. Proprietary Intelligence</div>', unsafe_allow_html=True)

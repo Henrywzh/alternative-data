@@ -2125,6 +2125,7 @@ def test_compute_artificial_analysis_views_builds_priority_charts(tmp_path: Path
     frontier = views["frontier_by_lab_pivot"]
     price = views["price_models"]
     country = views["frontier_by_country_pivot"]
+    china_lag = views["china_catchup_lag"]
     openness = views["open_vs_proprietary_pivot"]
 
     assert capex.index.tolist() == ["Q4-2024", "Q1-2025"]
@@ -2134,5 +2135,10 @@ def test_compute_artificial_analysis_views_builds_priority_charts(tmp_path: Path
     assert set(country.columns) == {"United States", "China"}
     assert country.loc[pd.Timestamp("2025-03-15"), "United States"] == 41.0
     assert country.loc[pd.Timestamp("2025-04-10"), "China"] == 39.0
+    assert china_lag["status"].tolist() == ["caught_up", "not_yet_caught"]
+    assert china_lag["us_intelligence_index"].tolist() == [35.0, 41.0]
+    assert china_lag.loc[0, "china_catchup_date"] == "2025-04-10"
+    assert pd.isna(china_lag.loc[1, "china_catchup_date"])
+    assert china_lag["lag_months"].round(1).tolist() == [2.8, 1.5]
     assert openness.loc[pd.Timestamp("2025-03-15"), "Proprietary"] == 41.0
     assert openness.loc[pd.Timestamp("2025-03-15"), "Open Weights"] == 33.0
