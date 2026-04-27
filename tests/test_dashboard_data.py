@@ -2125,6 +2125,7 @@ def test_compute_artificial_analysis_views_builds_priority_charts(tmp_path: Path
     frontier = views["frontier_by_lab_pivot"]
     price = views["price_models"]
     country = views["frontier_by_country_pivot"]
+    country_points = views["frontier_by_country_points"]
     china_lag = views["china_catchup_lag"]
     openness = views["open_vs_proprietary_pivot"]
 
@@ -2135,6 +2136,18 @@ def test_compute_artificial_analysis_views_builds_priority_charts(tmp_path: Path
     assert set(country.columns) == {"United States", "China"}
     assert country.loc[pd.Timestamp("2025-03-15"), "United States"] == 41.0
     assert country.loc[pd.Timestamp("2025-04-10"), "China"] == 39.0
+    us_frontier = country_points[
+        (country_points["country_label"] == "United States")
+        & (country_points["release_date"] == pd.Timestamp("2025-03-15"))
+    ].iloc[0]
+    china_frontier = country_points[
+        (country_points["country_label"] == "China")
+        & (country_points["release_date"] == pd.Timestamp("2025-04-10"))
+    ].iloc[0]
+    assert us_frontier["model_name"] == "OpenAI B"
+    assert us_frontier["creator_name"] == "OpenAI"
+    assert china_frontier["model_name"] == "DeepSeek Frontier"
+    assert china_frontier["creator_name"] == "DeepSeek"
     assert china_lag["status"].tolist() == ["caught_up", "not_yet_caught"]
     assert china_lag["us_intelligence_index"].tolist() == [35.0, 41.0]
     assert china_lag.loc[0, "china_catchup_date"] == "2025-04-10"
