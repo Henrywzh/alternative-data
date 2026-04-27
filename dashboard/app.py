@@ -1334,6 +1334,56 @@ def _frontier_pivot(
     return pivot
 
 
+ARTIFICIAL_ANALYSIS_PROVIDER_COUNTRIES = {
+    "ai2": "United States",
+    "anthropic": "United States",
+    "arcee": "United States",
+    "aws": "United States",
+    "azure": "United States",
+    "databricks": "United States",
+    "google": "United States",
+    "ibm": "United States",
+    "liquidai": "United States",
+    "meta": "United States",
+    "nvidia": "United States",
+    "openai": "United States",
+    "perplexity": "United States",
+    "reka-ai": "United States",
+    "servicenow": "United States",
+    "snowflake": "United States",
+    "xai": "United States",
+    "alibaba": "China",
+    "baidu": "China",
+    "bytedance_seed": "China",
+    "china-mobile": "China",
+    "deepseek": "China",
+    "inclusionai": "China",
+    "kimi": "China",
+    "kwaikat": "China",
+    "longcat": "China",
+    "minimax": "China",
+    "nanbeige": "China",
+    "stepfun": "China",
+    "xiaomi": "China",
+    "zai": "China",
+}
+
+
+def _artificial_analysis_country_label(row: pd.Series) -> str | None:
+    raw_country = row.get("creator_country")
+    if pd.notna(raw_country):
+        normalized = str(raw_country).strip().lower()
+        if normalized in {"us", "usa", "united states", "united states of america"}:
+            return "United States"
+        if normalized in {"cn", "china", "prc", "people's republic of china"}:
+            return "China"
+
+    raw_slug = row.get("creator_slug")
+    if pd.isna(raw_slug):
+        return None
+    return ARTIFICIAL_ANALYSIS_PROVIDER_COUNTRIES.get(str(raw_slug).strip().lower())
+
+
 @st.cache_data(ttl=3600)
 def compute_artificial_analysis_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, object]:
     views: dict[str, object] = {}
@@ -1390,11 +1440,12 @@ def compute_artificial_analysis_views(datasets: dict[str, DatasetLoadResult]) ->
         ]
 
     country_models = models_latest.copy()
-    if not country_models.empty and "creator_country" in country_models.columns:
-        country_models["country_label"] = country_models["creator_country"].astype("string").str.upper()
+    if not country_models.empty:
+        country_models["country_label"] = country_models.apply(_artificial_analysis_country_label, axis=1)
+        country_models = country_models[country_models["country_label"].isin(["United States", "China"])]
     else:
         country_models["country_label"] = pd.Series(dtype="string")
-    frontier_by_country = _frontier_pivot(country_models, group_column="country_label", max_groups=12)
+    frontier_by_country = _frontier_pivot(country_models, group_column="country_label")
 
     openness_models = models_latest.copy()
     if not openness_models.empty:
@@ -3038,14 +3089,14 @@ def render_artificial_analysis_section(datasets: dict[str, DatasetLoadResult], a
             st.plotly_chart(fig_price, use_container_width=True, theme=None)
 
     with country_tab:
-        st.markdown('<div class="section-subtitle">Frontier Language Model Intelligence By Country, Over Time</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-subtitle">Frontier Language Model Intelligence: US vs China</div>', unsafe_allow_html=True)
         if frontier_by_country.empty:
-            st.info("The current Artificial Analysis API snapshot does not expose creator country fields.")
+            st.info("No US or China provider-country matches are available in the current Artificial Analysis snapshot.")
         else:
             st.plotly_chart(
                 make_line_chart(
                     frontier_by_country,
-                    MODEL_COLORS,
+                    ["#2563EB", "#DC2626"],
                     y_title="Artificial Analysis Intelligence Index",
                     x_title="Release Date",
                     height=430,
