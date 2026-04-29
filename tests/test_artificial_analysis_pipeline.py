@@ -184,6 +184,50 @@ def test_capex_source_extracts_quarters_from_bundle_fixture() -> None:
     assert points[0].bundle_url.endswith("page-demo.js")
 
 
+def test_capex_source_fetches_shared_capex_data_bundle_when_page_bundle_only_imports_provider() -> None:
+    page_html = (
+        '<html><script src="/_next/static/chunks/app/(pages)/trends/page-demo.js"></script>'
+        '<script>self.__next_f.push([1,"3b:I[70276,[\\"73848\\",'
+        '\\"static/chunks/73848-demo.js\\",\\"28155\\",'
+        '\\"static/chunks/app/(pages)/trends/page-demo.js\\"],'
+        '\\"CapexQuarterContextProvider\\"]"])</script></html>'
+    )
+    page_bundle = "70276:(e,t,l)=>{l.d(t,{CapexQuarterContextProvider:()=>u})}"
+    capex_bundle = (
+        '70276:(e,l,o)=>{o.r(l),o.d(l,{CapexQuarterContext:()=>s,'
+        'CapexQuarterContextProvider:()=>u});let n=[{id:"2025-q3",label:"Q3-2025",'
+        "microsoft:19.394,google:23.953,meta:18.829,amazon:34.228,oracle:8.502,apple:0}];"
+        "let s={}}"
+    )
+
+    class FakeResponse:
+        def __init__(self, text: str) -> None:
+            self.text = text
+
+        def raise_for_status(self) -> None:
+            return None
+
+    class FakeSession:
+        def get(self, url: str, timeout: int) -> FakeResponse:
+            if url == "https://artificialanalysis.ai/trends":
+                return FakeResponse(page_html)
+            if url.endswith("/_next/static/chunks/app/(pages)/trends/page-demo.js"):
+                return FakeResponse(page_bundle)
+            if url.endswith("/_next/static/chunks/73848-demo.js"):
+                return FakeResponse(capex_bundle)
+            raise AssertionError(f"Unexpected URL: {url}")
+
+    source = ArtificialAnalysisCapexSource(session=FakeSession())
+
+    snapshots = source.fetch_snapshots()
+    points = source.extract(snapshots, run_id="run-123", scraped_at="2026-04-25T10:00:00Z")
+
+    assert [snapshot.name for snapshot in snapshots] == ["trends_page", "trends_bundle", "capex_data_bundle"]
+    assert points[0].quarter_id == "2025-q3"
+    assert points[0].microsoft == 19.394
+    assert points[0].bundle_url.endswith("73848-demo.js")
+
+
 class FakeApiSource:
     def fetch_snapshot(self, api_key: str) -> Snapshot:
         assert api_key == "test-key"
