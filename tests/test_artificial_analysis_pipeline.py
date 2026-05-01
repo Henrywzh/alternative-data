@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import requests
 import sys
 from pathlib import Path
 
@@ -66,6 +67,49 @@ def test_api_source_extracts_models_from_fixture_payload() -> None:
     assert second.price_1m_blended_3_to_1 is None
     assert second.open_source_categorization == "Open Weights (Permissive License)"
     assert second.is_open_weights is True
+
+
+class FakeArtificialAnalysisApiResponse:
+    def __init__(self, *, status_code: int, text: str = "", headers: dict[str, str] | None = None) -> None:
+        self.status_code = status_code
+        self.text = text
+        self.headers = headers or {}
+
+    def raise_for_status(self) -> None:
+        if self.status_code >= 400:
+            raise requests.HTTPError(f"{self.status_code} error", response=self)
+
+
+class FakeArtificialAnalysisApiSession:
+    def __init__(self, responses: list[FakeArtificialAnalysisApiResponse]) -> None:
+        self._responses = list(responses)
+        self.request_count = 0
+
+    def get(self, url: str, headers: dict[str, str], timeout: int) -> FakeArtificialAnalysisApiResponse:
+        self.request_count += 1
+        assert headers["x-api-key"] == "test-key"
+        if not self._responses:
+            raise AssertionError(f"Unexpected Artificial Analysis request: {url}")
+        return self._responses.pop(0)
+
+
+def test_api_source_retries_rate_limit_and_recovers(monkeypatch: pytest.MonkeyPatch) -> None:
+    sleeps: list[float] = []
+    monkeypatch.setattr("artificial_analysis_data.sources.api.time.sleep", sleeps.append)
+    session = FakeArtificialAnalysisApiSession(
+        [
+            FakeArtificialAnalysisApiResponse(status_code=429, headers={"Retry-After": "0"}),
+            FakeArtificialAnalysisApiResponse(status_code=200, text=json.dumps(_load_api_payload())),
+        ]
+    )
+    source = ArtificialAnalysisApiSource(session=session)
+
+    snapshot = source.fetch_snapshot("test-key")
+
+    assert session.request_count == 2
+    assert sleeps == [0.0]
+    assert snapshot.name == "llms_models"
+    assert json.loads(snapshot.body)["data"][0]["id"] == "model-openai-1"
 
 
 def test_resolve_api_key_prefers_env_then_config(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
