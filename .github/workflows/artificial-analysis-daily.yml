@@ -29,12 +29,10 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e .[dev]
 
-      - name: Validate Artificial Analysis sources
-        run: |
-          python -m artificial_analysis_data.cli --base-dir . validate
-
       - name: Run Artificial Analysis daily update
         run: |
+          # daily-update fetches the API and capex sources once; running validate
+          # immediately before it doubles live API usage and can trigger 429s.
           python -m artificial_analysis_data.cli --base-dir . daily-update
 
       - name: Commit normalized datasets

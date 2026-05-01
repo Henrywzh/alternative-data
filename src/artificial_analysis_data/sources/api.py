@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import logging
+import time
 from typing import Any
 
 import requests
@@ -14,18 +16,45 @@ from artificial_analysis_data.models import (
 
 
 class ArtificialAnalysisApiSource:
+    MAX_RATE_LIMIT_RETRIES = 3
+    BASE_RETRY_DELAY_SECONDS = 30.0
+
     def __init__(self, session: requests.Session | None = None) -> None:
         self.session = session or requests.Session()
         self.source_url = "https://artificialanalysis.ai/api/v2/data/llms/models"
 
     def fetch_snapshot(self, api_key: str) -> Snapshot:
-        response = self.session.get(
-            self.source_url,
-            headers={"x-api-key": api_key},
-            timeout=30,
-        )
-        response.raise_for_status()
-        return Snapshot(name="llms_models", source_url=self.source_url, body=response.text)
+        max_attempts = self.MAX_RATE_LIMIT_RETRIES + 1
+        for attempt in range(1, max_attempts + 1):
+            response = self.session.get(
+                self.source_url,
+                headers={"x-api-key": api_key},
+                timeout=30,
+            )
+            if response.status_code == 429 and attempt < max_attempts:
+                delay_seconds = self._retry_delay_seconds(response, attempt)
+                logging.warning(
+                    "Artificial Analysis API rate limited; retrying in %.1fs (attempt %s/%s)",
+                    delay_seconds,
+                    attempt,
+                    max_attempts,
+                )
+                time.sleep(delay_seconds)
+                continue
+
+            response.raise_for_status()
+            return Snapshot(name="llms_models", source_url=self.source_url, body=response.text)
+
+        raise RuntimeError("Artificial Analysis API request exhausted retry attempts")
+
+    def _retry_delay_seconds(self, response: requests.Response, attempt: int) -> float:
+        retry_after = response.headers.get("Retry-After")
+        if retry_after is not None:
+            try:
+                return max(float(retry_after), 0.0)
+            except ValueError:
+                pass
+        return self.BASE_RETRY_DELAY_SECONDS * (2 ** (attempt - 1))
 
     def extract(
         self,
