@@ -69,7 +69,7 @@ def run_checks(
 
     if freshness.latest_scraped_at is None:
         checks.append(CheckResult("warning", "Freshness unavailable", "No dataset-level scraped timestamps found.", "global"))
-    if freshness.latest_manifest_path is None:
+    if expected_dataset_ids is None and freshness.latest_manifest_path is None:
         checks.append(CheckResult("warning", "Manifest unavailable", "No raw run manifest found across data/raw sources.", "global"))
 
     if not checks:

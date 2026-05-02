@@ -761,32 +761,34 @@ def load_domain_datasets(domain: str, base_dir: Path | None = None) -> dict[str,
 def load_latest_manifest(
     base_dir: Path | None = None,
     datasets: dict[str, DatasetLoadResult] | None = None,
+    scan_raw_manifests: bool = True,
 ) -> FreshnessInfo:
     latest_scraped_at: str | None = None
     latest_run_id: str | None = None
     manifest_path: Path | None = None
     manifest_scraped_at: str | None = None
 
-    # Find manifests across all sources (openrouter, github_trending, etc.)
-    raw_base = (base_dir or repo_root()) / "data" / "raw"
-    manifests = sorted(raw_base.glob("**/manifest.json"))
-    
-    if manifests:
-        # Sort manifests by their scraped_at if possible, otherwise use path sorting
-        # For now, we'll stick to path sorting which works if naming is consistent
-        manifest_path = manifests[-1]
-        try:
-            payload = json.loads(manifest_path.read_text(encoding="utf-8"))
-            latest_run_id = payload.get("run_id")
-            manifest_scraped_at = payload.get("scraped_at")
-        except (json.JSONDecodeError, IOError) as e:
-            # Handle corrupted manifests gracefully
-            manifest_path = None
-    else:
-        # Diagnostic: If no manifests found, check if the raw_root even has subdirectories
-        subdirs = list(raw_root(base_dir).iterdir()) if raw_root(base_dir).exists() else []
-        if subdirs:
-            print(f"Warning: Found {len(subdirs)} directories in raw root, but none contain manifest.json")
+    if scan_raw_manifests:
+        # Raw snapshots are stored as data/raw/<source>/<run_id>/manifest.json.
+        # Avoid a recursive scan through every captured raw payload on dashboard
+        # startup; Streamlit Cloud health checks are sensitive to that overhead.
+        raw_base = (base_dir or repo_root()) / "data" / "raw"
+        manifests = sorted(raw_base.glob("*/*/manifest.json"))
+
+        if manifests:
+            manifest_path = max(manifests, key=lambda p: p.stat().st_mtime_ns)
+            try:
+                payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+                latest_run_id = payload.get("run_id")
+                manifest_scraped_at = payload.get("scraped_at")
+            except (json.JSONDecodeError, IOError):
+                # Handle corrupted manifests gracefully.
+                manifest_path = None
+        else:
+            # Diagnostic: If no manifests found, check if the raw_root even has subdirectories.
+            subdirs = list(raw_root(base_dir).iterdir()) if raw_root(base_dir).exists() else []
+            if subdirs:
+                print(f"Warning: Found {len(subdirs)} directories in raw root, but none contain manifest.json")
 
     results = datasets if datasets is not None else load_all_datasets(base_dir=base_dir)
     scraped_values = [result.latest_scraped_at for result in results.values() if result.latest_scraped_at]

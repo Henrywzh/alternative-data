@@ -68,6 +68,22 @@ NPM_CATEGORY_LABELS = {
 }
 
 BIG_TECH_ORGS = ["openai", "google", "anthropic", "meta", "mistralai", "deepseek", "qwen", "moonshotai"]
+MAIN_SECTIONS = (
+    "OpenRouter Intelligence",
+    "Artificial Analysis",
+    "AI Frontier & HBM",
+    "GitHub Trending",
+    "Provider Adoption",
+    "Semiconductor Analysis",
+)
+SECTION_DOMAIN_MAP = {
+    "OpenRouter Intelligence": ("rankings", "apps", "compute_availability"),
+    "Artificial Analysis": ("artificial_analysis",),
+    "AI Frontier & HBM": ("ai_frontier",),
+    "GitHub Trending": ("github",),
+    "Provider Adoption": ("provider_adoption",),
+    "Semiconductor Analysis": ("semiconductor_memory",),
+}
 REVENUE_CACHE_VERSION = "2026-04-23-historical-revenue-fallback-v1"
 AI_DEMAND_PPI_COMPONENT_COLUMNS = {
     "PCU33443344": "ppi_component_pcu33443344_rebased",
@@ -188,7 +204,7 @@ def build_manifest_signature(base_dir: Path, domain: str) -> tuple[tuple[str, in
     if not raw_dir.exists():
         return tuple()
 
-    manifests = sorted(raw_dir.rglob("manifest.json"))
+    manifests = sorted(raw_dir.glob("*/manifest.json"))
     if not manifests:
         return tuple()
 
@@ -199,6 +215,18 @@ def build_manifest_signature(base_dir: Path, domain: str) -> tuple[tuple[str, in
 
 def build_domain_signature(base_dir: Path, domain: str) -> tuple[tuple[str, int, int], ...]:
     return build_normalized_signature(base_dir, domain) + build_manifest_signature(base_dir, domain)
+
+
+def section_domains(section: str) -> tuple[str, ...]:
+    return SECTION_DOMAIN_MAP[section]
+
+
+def select_main_section() -> str:
+    label = "Dashboard section"
+    if hasattr(st, "segmented_control"):
+        selected = st.segmented_control(label, MAIN_SECTIONS, default=MAIN_SECTIONS[0])
+        return str(selected or MAIN_SECTIONS[0])
+    return str(st.radio(label, MAIN_SECTIONS, horizontal=True))
 
 
 def render_dataset_guard(result: DatasetLoadResult, show_subheader: bool = False) -> bool:
@@ -520,7 +548,7 @@ def load_domain_state_cached(
 ) -> tuple[dict[str, DatasetLoadResult], FreshnessInfo, list[CheckResult]]:
     _ = domain_signature
     datasets = load_domain_datasets(domain, base_dir=base_dir)
-    freshness = load_latest_manifest(base_dir=base_dir, datasets=datasets)
+    freshness = load_latest_manifest(base_dir=base_dir, datasets=datasets, scan_raw_manifests=False)
     # Streamlit Cloud can briefly serve mixed app/checker versions during deploys.
     # Prefer the narrowed domain-aware API when present, but keep the app bootable
     # if an older dashboard.checks module is still resident.
@@ -3573,47 +3601,21 @@ def main() -> None:
     
     inject_css()
 
-    # 3. Load per-domain cached state
-    openrouter_datasets, openrouter_freshness, openrouter_checks = load_domain_state_cached(
-        BASE_DIR, "rankings", build_domain_signature(BASE_DIR, "rankings")
-    )
-    apps_datasets, apps_freshness, apps_checks = load_domain_state_cached(
-        BASE_DIR, "apps", build_domain_signature(BASE_DIR, "apps")
-    )
-    github_datasets, github_freshness, github_checks = load_domain_state_cached(
-        BASE_DIR, "github", build_domain_signature(BASE_DIR, "github")
-    )
-    provider_datasets, provider_freshness, provider_checks = load_domain_state_cached(
-        BASE_DIR, "provider_adoption", build_domain_signature(BASE_DIR, "provider_adoption")
-    )
-    semi_datasets, semi_freshness, semi_checks = load_domain_state_cached(
-        BASE_DIR, "semiconductor_memory", build_domain_signature(BASE_DIR, "semiconductor_memory")
-    )
-    benchmark_datasets, benchmark_freshness, benchmark_checks = load_domain_state_cached(
-        BASE_DIR, "ai_frontier", build_domain_signature(BASE_DIR, "ai_frontier")
-    )
-    compute_datasets, compute_freshness, compute_checks = load_domain_state_cached(
-        BASE_DIR, "compute_availability", build_domain_signature(BASE_DIR, "compute_availability")
-    )
-    aa_datasets, aa_freshness, aa_checks = load_domain_state_cached(
-        BASE_DIR, "artificial_analysis", build_domain_signature(BASE_DIR, "artificial_analysis")
-    )
-
-    datasets = {
-        **openrouter_datasets,
-        **apps_datasets,
-        **github_datasets,
-        **provider_datasets,
-        **semi_datasets,
-        **benchmark_datasets,
-        **compute_datasets,
-        **aa_datasets,
+    selected_section = select_main_section()
+    selected_domains = section_domains(selected_section)
+    domain_states = {
+        domain: load_domain_state_cached(BASE_DIR, domain, build_domain_signature(BASE_DIR, domain))
+        for domain in selected_domains
     }
-    _all_freshness = [
-        openrouter_freshness, apps_freshness, github_freshness,
-        provider_freshness, semi_freshness, benchmark_freshness, compute_freshness,
-        aa_freshness,
-    ]
+
+    datasets: dict[str, DatasetLoadResult] = {}
+    _all_freshness: list[FreshnessInfo] = []
+    checks: list[CheckResult] = []
+    for domain_datasets, domain_freshness, domain_checks in domain_states.values():
+        datasets.update(domain_datasets)
+        _all_freshness.append(domain_freshness)
+        checks.extend(domain_checks)
+
     freshness = FreshnessInfo(
         latest_scraped_at=max(
             (f.latest_scraped_at for f in _all_freshness if f.latest_scraped_at), default=None,
@@ -3628,33 +3630,20 @@ def main() -> None:
             (f.latest_manifest_scraped_at for f in _all_freshness if f.latest_manifest_scraped_at), default=None,
         ),
     )
-    checks = openrouter_checks + apps_checks + github_checks + provider_checks + semi_checks + benchmark_checks + aa_checks
-
-    openrouter_views = compute_openrouter_views(
-        {**openrouter_datasets, **apps_datasets, **compute_datasets},
-        revenue_cache_version=REVENUE_CACHE_VERSION,
-    )
-    github_views = compute_github_views(github_datasets)
-    provider_views = compute_provider_adoption_views(provider_datasets)
-    semi_views = compute_semiconductor_views(semi_datasets)
-    benchmark_views = compute_llm_benchmark_views(benchmark_datasets)
-    compute_views = compute_compute_availability_views(compute_datasets)
-    aa_views = compute_artificial_analysis_views(aa_datasets)
 
     render_header(freshness)
-    
-    main_tabs = st.tabs(
-        [
-            "OpenRouter Intelligence",
-            "Artificial Analysis",
-            "AI Frontier & HBM",
-            "GitHub Trending",
-            "Provider Adoption",
-            "Semiconductor Analysis",
-        ]
-    )
+    st.caption("Only the selected dashboard section is loaded, which keeps Streamlit Cloud restarts lighter and faster.")
 
-    with main_tabs[0]:
+    if selected_section == "OpenRouter Intelligence":
+        openrouter_views = compute_openrouter_views(
+            {
+                **domain_states["rankings"][0],
+                **domain_states["apps"][0],
+                **domain_states["compute_availability"][0],
+            },
+            revenue_cache_version=REVENUE_CACHE_VERSION,
+        )
+        compute_views = compute_compute_availability_views(domain_states["compute_availability"][0])
         render_rankings_semantics_note(datasets)
         render_kpi_row(datasets, openrouter_views)
         render_top_models_chart(datasets, openrouter_views)
@@ -3665,20 +3654,20 @@ def main() -> None:
         render_token_revenue_comparison(openrouter_views)
         render_compute_evolution_section(compute_views)
         render_apps_tables(datasets)
-
-    with main_tabs[1]:
+    elif selected_section == "Artificial Analysis":
+        aa_views = compute_artificial_analysis_views(domain_states["artificial_analysis"][0])
         render_artificial_analysis_section(datasets, aa_views)
-
-    with main_tabs[2]:
+    elif selected_section == "AI Frontier & HBM":
+        benchmark_views = compute_llm_benchmark_views(domain_states["ai_frontier"][0])
         render_ai_frontier_section(datasets, benchmark_views)
-
-    with main_tabs[3]:
+    elif selected_section == "GitHub Trending":
+        github_views = compute_github_views(domain_states["github"][0])
         render_github_trending_section(datasets, github_views)
-
-    with main_tabs[4]:
+    elif selected_section == "Provider Adoption":
+        provider_views = compute_provider_adoption_views(domain_states["provider_adoption"][0])
         render_provider_adoption_section(datasets, provider_views)
-
-    with main_tabs[5]:
+    elif selected_section == "Semiconductor Analysis":
+        semi_views = compute_semiconductor_views(domain_states["semiconductor_memory"][0])
         render_semiconductor_section(datasets, semi_views)
         
     render_checks(checks)
