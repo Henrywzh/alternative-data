@@ -8,7 +8,7 @@ import pandas as pd
 from openrouter_data.models import DatasetRecord, RunContext, Snapshot
 from openrouter_data.pipeline import ActivityPipeline
 from openrouter_data.sources.activity import ActivitySource
-from openrouter_data.sources.provider_activity import ProviderActivitySource
+from openrouter_data.sources.provider_activity import PROVIDER_SLUGS, ProviderActivitySource
 from openrouter_data.storage import StorageManager
 
 
@@ -151,6 +151,41 @@ def test_provider_activity_source_still_emits_total_tokens_only() -> None:
     assert record.request_count is None
 
 
+def test_provider_config_tracks_tencent() -> None:
+    assert PROVIDER_SLUGS["tencent"] == "Tencent"
+
+
+def test_provider_activity_source_emits_tencent_rows() -> None:
+    payload = [
+        "$",
+        "$L53",
+        None,
+        {
+            "data": [
+                {"x": "2026-05-01 00:00:00", "ys": {"tencent/hy3-preview:free": 123456}},
+                {"x": "2026-05-02 00:00:00", "ys": {"tencent/hy3-preview:free": 234567}},
+                {"x": "2026-05-03 00:00:00", "ys": {"tencent/hy3-preview:free": 345678}},
+                {"x": "2026-05-04 00:00:00", "ys": {"tencent/hy3-preview:free": 456789}},
+                {"x": "2026-05-05 00:00:00", "ys": {"tencent/hy3-preview:free": 567890}},
+            ],
+        },
+    ]
+    html = f"<html><body>{_make_next_f_script('44', payload)}</body></html>"
+    source = ProviderActivitySource()
+    context = RunContext(run_id="provider-activity-test", scraped_at=pd.Timestamp("2026-05-02T00:00:00Z").to_pydatetime())
+
+    extracted = source.extract(
+        [Snapshot(name="provider_tencent", source_url="fixture://tencent", body=html)],
+        context,
+    )
+
+    record = extracted["provider_daily_activity"][0]
+    assert record.entity_id == "tencent"
+    assert record.entity_name == "Tencent"
+    assert record.model_permaslug == "tencent/hy3-preview:free"
+    assert record.total_tokens == 123456.0
+
+
 def test_activity_pipeline_discovers_major_provider_slugs_from_catalog(tmp_path: Path) -> None:
     catalog_dir = tmp_path / "data" / "normalized" / "compute_availability"
     catalog_dir.mkdir(parents=True, exist_ok=True)
@@ -169,6 +204,12 @@ def test_activity_pipeline_discovers_major_provider_slugs_from_catalog(tmp_path:
                 "snapshot_ts": "2026-04-24T00:00:00Z",
             },
             {
+                "model_id": "tencent/hy3-preview:free",
+                "canonical_slug": "tencent/hy3-preview:free",
+                "provider_prefix": "tencent",
+                "snapshot_ts": "2026-04-24T00:00:00Z",
+            },
+            {
                 "model_id": "nvidia/llama-3.1-nemotron",
                 "canonical_slug": "nvidia/llama-3.1-nemotron",
                 "provider_prefix": "nvidia",
@@ -180,7 +221,7 @@ def test_activity_pipeline_discovers_major_provider_slugs_from_catalog(tmp_path:
     pipeline = ActivityPipeline(tmp_path)
     slugs = pipeline._discover_catalog_slugs()
 
-    assert slugs == ["anthropic/claude-opus-4.7", "x-ai/grok-4-fast"]
+    assert slugs == ["anthropic/claude-opus-4.7", "x-ai/grok-4-fast", "tencent/hy3-preview:free"]
 
 
 def test_activity_pipeline_unions_recent_partial_catalog_snapshots(tmp_path: Path) -> None:
@@ -240,12 +281,17 @@ def test_activity_pipeline_prefers_live_catalog_and_keeps_recent_local_releases(
     ).to_csv(catalog_dir / "raw_openrouter_models.csv", index=False)
 
     pipeline = ActivityPipeline(tmp_path)
-    pipeline.source.fetch_catalog_slugs = lambda limit=0: ["openai/gpt-5.5-20260423", "nvidia/not-allowed"]
+    pipeline.source.fetch_catalog_slugs = lambda limit=0: [
+        "openai/gpt-5.5-20260423",
+        "tencent/hy3-preview:free",
+        "nvidia/not-allowed",
+    ]
 
     slugs = pipeline._discover_activity_slugs()
 
     assert slugs == [
         "openai/gpt-5.5-20260423",
+        "tencent/hy3-preview:free",
         "moonshotai/kimi-k2.6-20260420",
         "deepseek/deepseek-v4-flash-20260423",
     ]
