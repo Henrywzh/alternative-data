@@ -33,6 +33,7 @@ PROVIDER_SLUGS: dict[str, str] = {
     "minimax": "MiniMax",
     "xiaomi": "Xiaomi",
     "tencent": "Tencent",
+    "stepfun": "StepFun",
 }
 
 PROVIDER_ACTIVITY_DATASET_ID = "provider_daily_activity"

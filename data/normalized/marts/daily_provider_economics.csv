@@ -1629,6 +1629,7 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-02-02,qwen,Alibaba (Qwen),qwen/qwen3-embedding-8b,2466318558.0,0.0,0.0,,0.0,2026-01-01T00:00:00Z,0.0,0.0,matched_asof,model_blended_no_split,True,False,none
 2026-02-02,qwen,Alibaba (Qwen),qwen/qwen3-vl-235b-a22b-instruct,1797776673.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-02,qwen,Alibaba (Qwen),qwen/qwen3-vl-30b-a3b-instruct,1008944168.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-02-02,stepfun,StepFun,stepfun/step-3.5-flash:free,5938638991.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-02-02,tencent,Tencent,tencent/hunyuan-a13b-instruct,3658604.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-02,x-ai,xAI (Grok),x-ai/grok-3,566042015.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-02,x-ai,xAI (Grok),x-ai/grok-3-mini,1343406749.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -1722,6 +1723,7 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-02-03,qwen,Alibaba (Qwen),qwen/qwen3-embedding-8b,2466569862.0,0.0,0.0,,0.0,2026-01-01T00:00:00Z,0.0,0.0,matched_asof,model_blended_no_split,True,False,none
 2026-02-03,qwen,Alibaba (Qwen),qwen/qwen3-next-80b-a3b-instruct-2509,3310865058.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-03,qwen,Alibaba (Qwen),qwen/qwen3-vl-235b-a22b-instruct,2729402149.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-02-03,stepfun,StepFun,stepfun/step-3.5-flash:free,6543631620.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-02-03,tencent,Tencent,tencent/hunyuan-a13b-instruct,5473658.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-03,x-ai,xAI (Grok),x-ai/grok-3,554198108.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-03,x-ai,xAI (Grok),x-ai/grok-3-mini,1487402385.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -1815,6 +1817,7 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-02-04,qwen,Alibaba (Qwen),qwen/qwen3-embedding-8b,2150474999.0,0.0,0.0,,0.0,2026-01-01T00:00:00Z,0.0,0.0,matched_asof,model_blended_no_split,True,False,none
 2026-02-04,qwen,Alibaba (Qwen),qwen/qwen3-next-80b-a3b-instruct-2509,1804745660.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-04,qwen,Alibaba (Qwen),qwen/qwen3-vl-235b-a22b-instruct,2455578253.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-02-04,stepfun,StepFun,stepfun/step-3.5-flash:free,7860341735.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-02-04,tencent,Tencent,tencent/hunyuan-a13b-instruct,2837134.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-04,x-ai,xAI (Grok),x-ai/grok-3,543242524.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-04,x-ai,xAI (Grok),x-ai/grok-3-mini,1450771495.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -1908,6 +1911,7 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-02-05,qwen,Alibaba (Qwen),qwen/qwen3-next-80b-a3b-instruct-2509,1962585366.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-05,qwen,Alibaba (Qwen),qwen/qwen3-vl-235b-a22b-instruct,2588345883.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-05,qwen,Alibaba (Qwen),qwen/qwen3-vl-30b-a3b-instruct,1317285840.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-02-05,stepfun,StepFun,stepfun/step-3.5-flash:free,10504638713.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-02-05,tencent,Tencent,tencent/hunyuan-a13b-instruct,463488.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-05,x-ai,xAI (Grok),x-ai/grok-3,531825700.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-05,x-ai,xAI (Grok),x-ai/grok-3-mini,1292665261.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -2001,6 +2005,7 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-02-06,qwen,Alibaba (Qwen),qwen/qwen3-embedding-8b,2195898881.0,0.0,0.0,,0.0,2026-01-01T00:00:00Z,0.0,0.0,matched_asof,model_blended_no_split,True,False,none
 2026-02-06,qwen,Alibaba (Qwen),qwen/qwen3-next-80b-a3b-instruct-2509,2011881881.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-06,qwen,Alibaba (Qwen),qwen/qwen3-vl-235b-a22b-instruct,1601209851.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-02-06,stepfun,StepFun,stepfun/step-3.5-flash:free,10912713684.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-02-06,tencent,Tencent,tencent/hunyuan-a13b-instruct,1021347.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-06,x-ai,xAI (Grok),x-ai/grok-3,528345602.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-06,x-ai,xAI (Grok),x-ai/grok-3-mini,1246243916.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -2094,6 +2099,7 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-02-07,qwen,Alibaba (Qwen),qwen/qwen3-embedding-8b,1333960154.0,0.0,0.0,,0.0,2026-01-01T00:00:00Z,0.0,0.0,matched_asof,model_blended_no_split,True,False,none
 2026-02-07,qwen,Alibaba (Qwen),qwen/qwen3-next-80b-a3b-instruct-2509,981342835.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-07,qwen,Alibaba (Qwen),qwen/qwen3-vl-30b-a3b-instruct,1416601740.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-02-07,stepfun,StepFun,stepfun/step-3.5-flash:free,10797367926.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-02-07,tencent,Tencent,tencent/hunyuan-a13b-instruct,284136.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-07,x-ai,xAI (Grok),x-ai/grok-3,484499296.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-07,x-ai,xAI (Grok),x-ai/grok-3-mini,1212387434.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -2187,6 +2193,7 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-02-08,qwen,Alibaba (Qwen),qwen/qwen3-embedding-8b,2184708288.0,0.0,0.0,,0.0,2026-01-01T00:00:00Z,0.0,0.0,matched_asof,model_blended_no_split,True,False,none
 2026-02-08,qwen,Alibaba (Qwen),qwen/qwen3-vl-235b-a22b-instruct,2687490848.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-08,qwen,Alibaba (Qwen),qwen/qwen3-vl-30b-a3b-instruct,1430093218.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-02-08,stepfun,StepFun,stepfun/step-3.5-flash:free,12853668555.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-02-08,tencent,Tencent,tencent/hunyuan-a13b-instruct,287017.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-08,x-ai,xAI (Grok),x-ai/grok-3,498911904.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-08,x-ai,xAI (Grok),x-ai/grok-3-mini,1251626174.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -2280,6 +2287,7 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-02-09,qwen,Alibaba (Qwen),qwen/qwen3-embedding-8b,3032032341.0,0.0,0.0,,0.0,2026-01-01T00:00:00Z,0.0,0.0,matched_asof,model_blended_no_split,True,False,none
 2026-02-09,qwen,Alibaba (Qwen),qwen/qwen3-vl-235b-a22b-instruct,3216695128.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-09,qwen,Alibaba (Qwen),qwen/qwen3-vl-30b-a3b-instruct,2158533898.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-02-09,stepfun,StepFun,stepfun/step-3.5-flash:free,25271969482.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-02-09,tencent,Tencent,tencent/hunyuan-a13b-instruct,290186.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-09,x-ai,xAI (Grok),x-ai/grok-3,503360827.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-09,x-ai,xAI (Grok),x-ai/grok-3-mini,1312467966.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -2372,6 +2380,7 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-02-10,qwen,Alibaba (Qwen),qwen/qwen3-next-80b-a3b-instruct-2509,1606851412.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-10,qwen,Alibaba (Qwen),qwen/qwen3-vl-235b-a22b-instruct,12840006804.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-10,qwen,Alibaba (Qwen),qwen/qwen3-vl-30b-a3b-instruct,1931639202.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-02-10,stepfun,StepFun,stepfun/step-3.5-flash:free,29140402654.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-02-10,tencent,Tencent,tencent/hunyuan-a13b-instruct,915114.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-10,x-ai,xAI (Grok),x-ai/grok-3,470039653.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-10,x-ai,xAI (Grok),x-ai/grok-3-mini,1463501722.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -2464,6 +2473,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-02-11,qwen,Alibaba (Qwen),qwen/qwen3-next-80b-a3b-instruct-2509,3200854645.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-11,qwen,Alibaba (Qwen),qwen/qwen3-vl-235b-a22b-instruct,2476464107.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-11,qwen,Alibaba (Qwen),qwen/qwen3-vl-30b-a3b-instruct,2584147030.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-02-11,stepfun,StepFun,stepfun/step-3.5-flash,175492030.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-02-11,stepfun,StepFun,stepfun/step-3.5-flash:free,34124473472.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-02-11,tencent,Tencent,tencent/hunyuan-a13b-instruct,804295.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-11,x-ai,xAI (Grok),x-ai/grok-3,510559770.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-11,x-ai,xAI (Grok),x-ai/grok-3-mini,1414607797.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -2557,6 +2568,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-02-12,qwen,Alibaba (Qwen),qwen/qwen3-embedding-8b,2527937458.0,0.0,0.0,,0.0,2026-01-01T00:00:00Z,0.0,0.0,matched_asof,model_blended_no_split,True,False,none
 2026-02-12,qwen,Alibaba (Qwen),qwen/qwen3-next-80b-a3b-instruct-2509,3660009047.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-12,qwen,Alibaba (Qwen),qwen/qwen3-vl-235b-a22b-instruct,4729331120.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-02-12,stepfun,StepFun,stepfun/step-3.5-flash,761131267.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-02-12,stepfun,StepFun,stepfun/step-3.5-flash:free,43717505699.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-02-12,tencent,Tencent,tencent/hunyuan-a13b-instruct,931255.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-12,x-ai,xAI (Grok),x-ai/grok-3,476767573.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-12,x-ai,xAI (Grok),x-ai/grok-3-mini,1620368001.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -2650,6 +2663,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-02-13,qwen,Alibaba (Qwen),qwen/qwen3-embedding-8b,2290772921.0,0.0,0.0,,0.0,2026-01-01T00:00:00Z,0.0,0.0,matched_asof,model_blended_no_split,True,False,none
 2026-02-13,qwen,Alibaba (Qwen),qwen/qwen3-next-80b-a3b-instruct-2509,1292447560.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-13,qwen,Alibaba (Qwen),qwen/qwen3-vl-235b-a22b-instruct,1596395158.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-02-13,stepfun,StepFun,stepfun/step-3.5-flash,376335551.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-02-13,stepfun,StepFun,stepfun/step-3.5-flash:free,44902871564.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-02-13,tencent,Tencent,tencent/hunyuan-a13b-instruct,566781.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-13,x-ai,xAI (Grok),x-ai/grok-3,515255218.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-13,x-ai,xAI (Grok),x-ai/grok-3-mini,1317192341.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -2743,6 +2758,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-02-14,qwen,Alibaba (Qwen),qwen/qwen3-embedding-8b,2830217389.0,0.0,0.0,,0.0,2026-01-01T00:00:00Z,0.0,0.0,matched_asof,model_blended_no_split,True,False,none
 2026-02-14,qwen,Alibaba (Qwen),qwen/qwen3-vl-235b-a22b-instruct,949109823.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-14,qwen,Alibaba (Qwen),qwen/qwen3-vl-8b-instruct,553244659.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-02-14,stepfun,StepFun,stepfun/step-3.5-flash,772107111.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-02-14,stepfun,StepFun,stepfun/step-3.5-flash:free,43752401214.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-02-14,tencent,Tencent,tencent/hunyuan-a13b-instruct,409309.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-14,x-ai,xAI (Grok),x-ai/grok-3,516601922.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-14,x-ai,xAI (Grok),x-ai/grok-3-mini,1160032761.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -2836,6 +2853,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-02-15,qwen,Alibaba (Qwen),qwen/qwen3-embedding-8b,4034393931.0,0.0,0.0,,0.0,2026-01-01T00:00:00Z,0.0,0.0,matched_asof,model_blended_no_split,True,False,none
 2026-02-15,qwen,Alibaba (Qwen),qwen/qwen3-next-80b-a3b-instruct-2509,933944102.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-15,qwen,Alibaba (Qwen),qwen/qwen3-vl-235b-a22b-instruct,1834561717.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-02-15,stepfun,StepFun,stepfun/step-3.5-flash,1835705291.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-02-15,stepfun,StepFun,stepfun/step-3.5-flash:free,43385111615.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-02-15,tencent,Tencent,tencent/hunyuan-a13b-instruct,433823.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-15,x-ai,xAI (Grok),x-ai/grok-3,557518387.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-15,x-ai,xAI (Grok),x-ai/grok-3-mini,1279933230.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -2929,6 +2948,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-02-16,qwen,Alibaba (Qwen),qwen/qwen3-embedding-8b,2072166121.0,0.0,0.0,,0.0,2026-01-01T00:00:00Z,0.0,0.0,matched_asof,model_blended_no_split,True,False,none
 2026-02-16,qwen,Alibaba (Qwen),qwen/qwen3-vl-235b-a22b-instruct,1149122728.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-16,qwen,Alibaba (Qwen),qwen/qwen3.5-397b-a17b-20260216,875443402.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-02-16,stepfun,StepFun,stepfun/step-3.5-flash,1867007765.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-02-16,stepfun,StepFun,stepfun/step-3.5-flash:free,49607065662.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-02-16,tencent,Tencent,tencent/hunyuan-a13b-instruct,520205.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-16,x-ai,xAI (Grok),x-ai/grok-3,560811305.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-16,x-ai,xAI (Grok),x-ai/grok-3-mini,1421632447.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -3022,6 +3043,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-02-17,qwen,Alibaba (Qwen),qwen/qwen3-vl-235b-a22b-instruct,1215058781.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-17,qwen,Alibaba (Qwen),qwen/qwen3.5-397b-a17b-20260216,3121522765.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-17,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,1469552915.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-02-17,stepfun,StepFun,stepfun/step-3.5-flash,1438957988.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-02-17,stepfun,StepFun,stepfun/step-3.5-flash:free,50091067225.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-02-17,tencent,Tencent,tencent/hunyuan-a13b-instruct,660883.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-17,x-ai,xAI (Grok),x-ai/grok-3,545763809.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-17,x-ai,xAI (Grok),x-ai/grok-3-mini,1630950376.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -3115,6 +3138,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-02-18,qwen,Alibaba (Qwen),qwen/qwen3-vl-235b-a22b-instruct,2991750939.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-18,qwen,Alibaba (Qwen),qwen/qwen3.5-397b-a17b-20260216,3611353103.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-18,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,1705400628.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-02-18,stepfun,StepFun,stepfun/step-3.5-flash,2134964052.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-02-18,stepfun,StepFun,stepfun/step-3.5-flash:free,53530437610.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-02-18,tencent,Tencent,tencent/hunyuan-a13b-instruct,573911.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-18,x-ai,xAI (Grok),x-ai/grok-3,484695458.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-18,x-ai,xAI (Grok),x-ai/grok-3-mini,1529894266.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -3208,6 +3233,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-02-19,qwen,Alibaba (Qwen),qwen/qwen3-embedding-8b,7590434821.0,0.0,0.0,,0.0,2026-01-01T00:00:00Z,0.0,0.0,matched_asof,model_blended_no_split,True,False,none
 2026-02-19,qwen,Alibaba (Qwen),qwen/qwen3-vl-235b-a22b-instruct,2958911856.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-19,qwen,Alibaba (Qwen),qwen/qwen3.5-397b-a17b-20260216,4780990250.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-02-19,stepfun,StepFun,stepfun/step-3.5-flash,1740286591.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-02-19,stepfun,StepFun,stepfun/step-3.5-flash:free,51008530856.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-02-19,tencent,Tencent,tencent/hunyuan-a13b-instruct,656910.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-19,x-ai,xAI (Grok),x-ai/grok-3,511488206.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-19,x-ai,xAI (Grok),x-ai/grok-3-mini,1019412065.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -3301,6 +3328,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-02-20,qwen,Alibaba (Qwen),qwen/qwen3-vl-235b-a22b-instruct,2419022872.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-20,qwen,Alibaba (Qwen),qwen/qwen3.5-397b-a17b-20260216,5607946971.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-20,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,1451605196.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-02-20,stepfun,StepFun,stepfun/step-3.5-flash,2832623936.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-02-20,stepfun,StepFun,stepfun/step-3.5-flash:free,56333878751.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-02-20,tencent,Tencent,tencent/hunyuan-a13b-instruct,729357.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-20,x-ai,xAI (Grok),x-ai/grok-3,561839058.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-20,x-ai,xAI (Grok),x-ai/grok-3-mini,1102133994.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -3394,6 +3423,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-02-21,qwen,Alibaba (Qwen),qwen/qwen3-vl-235b-a22b-instruct,1481934732.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-21,qwen,Alibaba (Qwen),qwen/qwen3.5-397b-a17b-20260216,2187302918.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-21,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,1358540433.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-02-21,stepfun,StepFun,stepfun/step-3.5-flash,1794986232.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-02-21,stepfun,StepFun,stepfun/step-3.5-flash:free,58820990964.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-02-21,tencent,Tencent,tencent/hunyuan-a13b-instruct,2132302.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-21,x-ai,xAI (Grok),x-ai/grok-3,498144484.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-21,x-ai,xAI (Grok),x-ai/grok-3-mini,896495028.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -3487,6 +3518,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-02-22,qwen,Alibaba (Qwen),qwen/qwen3-vl-235b-a22b-thinking,2436715769.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-22,qwen,Alibaba (Qwen),qwen/qwen3.5-397b-a17b-20260216,4369589539.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-22,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,1439831525.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-02-22,stepfun,StepFun,stepfun/step-3.5-flash,2361802567.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-02-22,stepfun,StepFun,stepfun/step-3.5-flash:free,60629366991.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-02-22,tencent,Tencent,tencent/hunyuan-a13b-instruct,295077.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-22,x-ai,xAI (Grok),x-ai/grok-3,502970359.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-22,x-ai,xAI (Grok),x-ai/grok-3-mini,884496807.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -3580,6 +3613,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-02-23,qwen,Alibaba (Qwen),qwen/qwen3-vl-235b-a22b-thinking,2103386035.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-23,qwen,Alibaba (Qwen),qwen/qwen3.5-397b-a17b-20260216,7222010899.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-23,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,1811986138.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-02-23,stepfun,StepFun,stepfun/step-3.5-flash,1649648807.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-02-23,stepfun,StepFun,stepfun/step-3.5-flash:free,63044253642.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-02-23,tencent,Tencent,tencent/hunyuan-a13b-instruct,1426064.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-23,x-ai,xAI (Grok),x-ai/grok-3,510724470.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-23,x-ai,xAI (Grok),x-ai/grok-3-mini,1012154366.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -3673,6 +3708,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-02-24,qwen,Alibaba (Qwen),qwen/qwen3-vl-235b-a22b-instruct,3592896492.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-24,qwen,Alibaba (Qwen),qwen/qwen3-vl-235b-a22b-thinking,2327291793.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-24,qwen,Alibaba (Qwen),qwen/qwen3.5-397b-a17b-20260216,4246733854.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-02-24,stepfun,StepFun,stepfun/step-3.5-flash,2581034620.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-02-24,stepfun,StepFun,stepfun/step-3.5-flash:free,62437799292.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-02-24,tencent,Tencent,tencent/hunyuan-a13b-instruct,1189280.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-24,x-ai,xAI (Grok),x-ai/grok-3,524536278.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-24,x-ai,xAI (Grok),x-ai/grok-3-mini,1415590896.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -3766,6 +3803,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-02-25,qwen,Alibaba (Qwen),qwen/qwen3-vl-235b-a22b-instruct,3846267275.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-25,qwen,Alibaba (Qwen),qwen/qwen3-vl-235b-a22b-thinking,3883672079.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-25,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,2391016296.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-02-25,stepfun,StepFun,stepfun/step-3.5-flash,1745479298.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-02-25,stepfun,StepFun,stepfun/step-3.5-flash:free,61167998623.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-02-25,tencent,Tencent,tencent/hunyuan-a13b-instruct,325868.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-25,x-ai,xAI (Grok),x-ai/grok-3,515589556.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-25,x-ai,xAI (Grok),x-ai/grok-3-mini,950767147.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -3859,6 +3898,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-02-26,qwen,Alibaba (Qwen),qwen/qwen3.5-397b-a17b-20260216,3291036613.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-26,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,3082460443.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-26,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,3502172635.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-02-26,stepfun,StepFun,stepfun/step-3.5-flash,1632483204.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-02-26,stepfun,StepFun,stepfun/step-3.5-flash:free,63895995683.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-02-26,tencent,Tencent,tencent/hunyuan-a13b-instruct,790165.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-26,x-ai,xAI (Grok),x-ai/grok-3,499487876.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-26,x-ai,xAI (Grok),x-ai/grok-3-mini,878267679.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -3952,6 +3993,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-02-27,qwen,Alibaba (Qwen),qwen/qwen3.5-397b-a17b-20260216,4059800872.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-27,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,3602597506.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-27,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,3982736355.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-02-27,stepfun,StepFun,stepfun/step-3.5-flash,1636562759.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-02-27,stepfun,StepFun,stepfun/step-3.5-flash:free,63796470458.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-02-27,tencent,Tencent,tencent/hunyuan-a13b-instruct,904924.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-27,x-ai,xAI (Grok),x-ai/grok-3,498001304.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-27,x-ai,xAI (Grok),x-ai/grok-3-mini,755751962.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -4045,6 +4088,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-02-28,qwen,Alibaba (Qwen),qwen/qwen3.5-397b-a17b-20260216,4678815332.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-28,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,3631380805.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-28,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,3843214365.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-02-28,stepfun,StepFun,stepfun/step-3.5-flash,1545589548.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-02-28,stepfun,StepFun,stepfun/step-3.5-flash:free,63948092796.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-02-28,tencent,Tencent,tencent/hunyuan-a13b-instruct,261024.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-28,x-ai,xAI (Grok),x-ai/grok-3,450459157.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-02-28,x-ai,xAI (Grok),x-ai/grok-3-mini,494920457.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -4138,6 +4183,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-03-01,qwen,Alibaba (Qwen),qwen/qwen3.5-397b-a17b-20260216,4323915367.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-01,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,3544937192.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-01,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,2783929999.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-01,stepfun,StepFun,stepfun/step-3.5-flash,1461193098.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-01,stepfun,StepFun,stepfun/step-3.5-flash:free,64372432024.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-03-01,tencent,Tencent,tencent/hunyuan-a13b-instruct,1486968.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-01,x-ai,xAI (Grok),x-ai/grok-3,472562863.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-01,x-ai,xAI (Grok),x-ai/grok-3-mini,575661657.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -4231,6 +4278,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-03-02,qwen,Alibaba (Qwen),qwen/qwen3.5-397b-a17b-20260216,5930630371.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-02,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,5030833399.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-02,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,5309667043.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-02,stepfun,StepFun,stepfun/step-3.5-flash,1552533065.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-02,stepfun,StepFun,stepfun/step-3.5-flash:free,68799136412.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-03-02,tencent,Tencent,tencent/hunyuan-a13b-instruct,1823050.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-02,x-ai,xAI (Grok),x-ai/grok-3,544017878.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-02,x-ai,xAI (Grok),x-ai/grok-3-mini,703688943.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -4324,6 +4373,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-03-03,qwen,Alibaba (Qwen),qwen/qwen3.5-397b-a17b-20260216,7470547237.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-03,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,6232139122.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-03,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,4969479198.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-03,stepfun,StepFun,stepfun/step-3.5-flash,2143515930.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-03,stepfun,StepFun,stepfun/step-3.5-flash:free,83232488883.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-03-03,tencent,Tencent,tencent/hunyuan-a13b-instruct,444821.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-03,x-ai,xAI (Grok),x-ai/grok-3,542052844.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-03,x-ai,xAI (Grok),x-ai/grok-3-mini,733233103.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -4417,6 +4468,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-03-04,qwen,Alibaba (Qwen),qwen/qwen3.5-397b-a17b-20260216,18032260194.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-04,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,7265839082.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-04,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,3980395049.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-04,stepfun,StepFun,stepfun/step-3.5-flash,2989049038.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-04,stepfun,StepFun,stepfun/step-3.5-flash:free,96841635991.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-03-04,tencent,Tencent,tencent/hunyuan-a13b-instruct,758078.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-04,x-ai,xAI (Grok),x-ai/grok-3,472009538.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-04,x-ai,xAI (Grok),x-ai/grok-3-mini,555777774.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -4510,6 +4563,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-03-05,qwen,Alibaba (Qwen),qwen/qwen3.5-397b-a17b-20260216,8178705466.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-05,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,15201448437.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-05,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,4194556227.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-05,stepfun,StepFun,stepfun/step-3.5-flash,2314832688.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-05,stepfun,StepFun,stepfun/step-3.5-flash:free,113295317299.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-03-05,tencent,Tencent,tencent/hunyuan-a13b-instruct,374204.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-05,x-ai,xAI (Grok),x-ai/grok-3,471133788.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-05,x-ai,xAI (Grok),x-ai/grok-3-mini,554768384.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -4603,6 +4658,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-03-06,qwen,Alibaba (Qwen),qwen/qwen3.5-35b-a3b-20260224,11901849230.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-06,qwen,Alibaba (Qwen),qwen/qwen3.5-397b-a17b-20260216,5300036894.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-06,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,5942420939.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-06,stepfun,StepFun,stepfun/step-3.5-flash,2546639433.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-06,stepfun,StepFun,stepfun/step-3.5-flash:free,121231479889.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-03-06,tencent,Tencent,tencent/hunyuan-a13b-instruct,696166.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-06,x-ai,xAI (Grok),x-ai/grok-3,470981265.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-06,x-ai,xAI (Grok),x-ai/grok-3-mini,488629969.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -4696,6 +4753,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-03-07,qwen,Alibaba (Qwen),qwen/qwen3.5-35b-a3b-20260224,9160684007.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-07,qwen,Alibaba (Qwen),qwen/qwen3.5-397b-a17b-20260216,5014390386.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-07,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,4280244782.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-07,stepfun,StepFun,stepfun/step-3.5-flash,2562622214.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-07,stepfun,StepFun,stepfun/step-3.5-flash:free,122482008227.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-03-07,tencent,Tencent,tencent/hunyuan-a13b-instruct,1094403.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-07,x-ai,xAI (Grok),x-ai/grok-3,468146492.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-07,x-ai,xAI (Grok),x-ai/grok-3-mini,479117396.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -4789,6 +4848,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-03-08,qwen,Alibaba (Qwen),qwen/qwen3.5-397b-a17b-20260216,7388987077.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-08,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,6836140099.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-08,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,4354542066.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-08,stepfun,StepFun,stepfun/step-3.5-flash,3421255227.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-08,stepfun,StepFun,stepfun/step-3.5-flash:free,142089821467.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-03-08,tencent,Tencent,tencent/hunyuan-a13b-instruct,85862588.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-08,x-ai,xAI (Grok),x-ai/grok-3,464307493.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-08,x-ai,xAI (Grok),x-ai/grok-3-mini,426350326.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -4882,6 +4943,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-03-09,qwen,Alibaba (Qwen),qwen/qwen3.5-397b-a17b-20260216,11190480062.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-09,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,5706089907.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-09,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,5759895749.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-09,stepfun,StepFun,stepfun/step-3.5-flash,2861170330.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-09,stepfun,StepFun,stepfun/step-3.5-flash:free,174055971595.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-03-09,tencent,Tencent,tencent/hunyuan-a13b-instruct,1159330.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-09,x-ai,xAI (Grok),x-ai/grok-3,466313670.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-09,x-ai,xAI (Grok),x-ai/grok-3-mini,526551574.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -4975,6 +5038,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-03-10,qwen,Alibaba (Qwen),qwen/qwen3.5-397b-a17b-20260216,11231398929.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-10,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,5896702050.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-10,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,6193066787.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-10,stepfun,StepFun,stepfun/step-3.5-flash,3107773926.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-10,stepfun,StepFun,stepfun/step-3.5-flash:free,195644400711.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-03-10,tencent,Tencent,tencent/hunyuan-a13b-instruct,375801.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-10,x-ai,xAI (Grok),x-ai/grok-3,510172215.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-10,x-ai,xAI (Grok),x-ai/grok-3-mini,916556577.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -5068,6 +5133,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-03-11,qwen,Alibaba (Qwen),qwen/qwen3.5-397b-a17b-20260216,10685102027.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-11,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,6433788240.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-11,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,5672898397.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-11,stepfun,StepFun,stepfun/step-3.5-flash,3485493302.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-11,stepfun,StepFun,stepfun/step-3.5-flash:free,199756705083.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-03-11,tencent,Tencent,tencent/hunyuan-a13b-instruct,647632.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-11,x-ai,xAI (Grok),x-ai/grok-3,509574896.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-11,x-ai,xAI (Grok),x-ai/grok-3-mini,551006620.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -5161,6 +5228,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-03-12,qwen,Alibaba (Qwen),qwen/qwen3.5-397b-a17b-20260216,10277198506.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-12,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,7712257600.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-12,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,6995320298.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-12,stepfun,StepFun,stepfun/step-3.5-flash,3483630454.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-12,stepfun,StepFun,stepfun/step-3.5-flash:free,203483545406.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-03-12,tencent,Tencent,tencent/hunyuan-a13b-instruct,917549.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-12,x-ai,xAI (Grok),x-ai/grok-3,485046156.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-12,x-ai,xAI (Grok),x-ai/grok-3-mini,612534524.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -5256,6 +5325,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-03-13,qwen,Alibaba (Qwen),qwen/qwen3.5-397b-a17b-20260216,6029670670.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-13,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,6202711466.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-13,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,5343084992.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-13,stepfun,StepFun,stepfun/step-3.5-flash,3161524790.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-13,stepfun,StepFun,stepfun/step-3.5-flash:free,193154464349.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-03-13,tencent,Tencent,tencent/hunyuan-a13b-instruct,1733196.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-13,x-ai,xAI (Grok),x-ai/grok-3,507920344.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-13,x-ai,xAI (Grok),x-ai/grok-3-mini,598695547.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -5351,6 +5422,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-03-14,qwen,Alibaba (Qwen),qwen/qwen3.5-397b-a17b-20260216,5066059570.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-14,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,5019026684.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-14,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,4704050717.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-14,stepfun,StepFun,stepfun/step-3.5-flash,3976889971.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-14,stepfun,StepFun,stepfun/step-3.5-flash:free,188227809935.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-03-14,tencent,Tencent,tencent/hunyuan-a13b-instruct,530252.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-14,x-ai,xAI (Grok),x-ai/grok-3,485066707.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-14,x-ai,xAI (Grok),x-ai/grok-3-mini,585288457.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -5447,6 +5520,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-03-15,qwen,Alibaba (Qwen),qwen/qwen3.5-397b-a17b-20260216,6253279663.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-15,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,4387126811.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-15,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,5631900043.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-15,stepfun,StepFun,stepfun/step-3.5-flash,14321351543.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-15,stepfun,StepFun,stepfun/step-3.5-flash:free,187340085818.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-03-15,tencent,Tencent,tencent/hunyuan-a13b-instruct,797269.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-15,x-ai,xAI (Grok),x-ai/grok-3,483463827.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-15,x-ai,xAI (Grok),x-ai/grok-3-mini,559651203.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -5543,6 +5618,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-03-16,qwen,Alibaba (Qwen),qwen/qwen3.5-397b-a17b-20260216,7291642041.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-16,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,5945807327.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-16,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,6226583711.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-16,stepfun,StepFun,stepfun/step-3.5-flash,8165959834.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-16,stepfun,StepFun,stepfun/step-3.5-flash:free,161953614249.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-03-16,tencent,Tencent,tencent/hunyuan-a13b-instruct,557026.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-16,x-ai,xAI (Grok),x-ai/grok-3,508389083.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-16,x-ai,xAI (Grok),x-ai/grok-3-mini,612990545.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -5639,6 +5716,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-03-17,qwen,Alibaba (Qwen),qwen/qwen3.5-9b-20260310,4026319023.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-17,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,6104221525.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-17,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,6452593829.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-17,stepfun,StepFun,stepfun/step-3.5-flash,6848543632.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-17,stepfun,StepFun,stepfun/step-3.5-flash:free,199475428706.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-03-17,tencent,Tencent,tencent/hunyuan-a13b-instruct,463958.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-17,x-ai,xAI (Grok),x-ai/grok-3,506914780.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-17,x-ai,xAI (Grok),x-ai/grok-3-mini,584353980.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -5736,6 +5815,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-03-18,qwen,Alibaba (Qwen),qwen/qwen3.5-9b-20260310,3583487996.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-18,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,9062298195.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-18,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,7013370807.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-18,stepfun,StepFun,stepfun/step-3.5-flash,5218545321.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-18,stepfun,StepFun,stepfun/step-3.5-flash:free,215522827685.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-03-18,tencent,Tencent,tencent/hunyuan-a13b-instruct,730900.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-18,x-ai,xAI (Grok),x-ai/grok-3,546822979.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-18,x-ai,xAI (Grok),x-ai/grok-3-mini,547856065.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -5833,6 +5914,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-03-19,qwen,Alibaba (Qwen),qwen/qwen3.5-397b-a17b-20260216,9061427649.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-19,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,9973936060.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-19,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,6853649069.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-19,stepfun,StepFun,stepfun/step-3.5-flash,5717652596.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-19,stepfun,StepFun,stepfun/step-3.5-flash:free,244797794909.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-03-19,tencent,Tencent,tencent/hunyuan-a13b-instruct,1350787.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-19,x-ai,xAI (Grok),x-ai/grok-3,548376129.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-19,x-ai,xAI (Grok),x-ai/grok-3-mini,615284213.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -5932,6 +6015,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-03-20,qwen,Alibaba (Qwen),qwen/qwen3.5-397b-a17b-20260216,6075663712.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-20,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,7838487626.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-20,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,6630348808.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-20,stepfun,StepFun,stepfun/step-3.5-flash,5085653273.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-20,stepfun,StepFun,stepfun/step-3.5-flash:free,239100466875.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-03-20,tencent,Tencent,tencent/hunyuan-a13b-instruct,1020000.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-20,x-ai,xAI (Grok),x-ai/grok-3,548528934.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-20,x-ai,xAI (Grok),x-ai/grok-3-mini,532503989.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -6031,6 +6116,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-03-21,qwen,Alibaba (Qwen),qwen/qwen3.5-9b-20260310,2295399485.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-21,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,8395373663.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-21,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,5036030427.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-21,stepfun,StepFun,stepfun/step-3.5-flash,5710413034.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-21,stepfun,StepFun,stepfun/step-3.5-flash:free,216841228593.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-03-21,tencent,Tencent,tencent/hunyuan-a13b-instruct,1303699.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-21,x-ai,xAI (Grok),x-ai/grok-3,425892246.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-21,x-ai,xAI (Grok),x-ai/grok-3-mini,442380663.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -6130,6 +6217,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-03-22,qwen,Alibaba (Qwen),qwen/qwen3.5-9b-20260310,2610934556.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-22,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,6821173670.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-22,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,5183353740.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-22,stepfun,StepFun,stepfun/step-3.5-flash,4481441076.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-22,stepfun,StepFun,stepfun/step-3.5-flash:free,204017268221.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-03-22,tencent,Tencent,tencent/hunyuan-a13b-instruct,698078.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-22,x-ai,xAI (Grok),x-ai/grok-3,475473607.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-22,x-ai,xAI (Grok),x-ai/grok-3-mini,598068815.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -6229,6 +6318,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-03-23,qwen,Alibaba (Qwen),qwen/qwen3.5-397b-a17b-20260216,9043471576.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-23,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,9138509491.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-23,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,5685038886.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-23,stepfun,StepFun,stepfun/step-3.5-flash,6582688479.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-23,stepfun,StepFun,stepfun/step-3.5-flash:free,216864363374.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-03-23,tencent,Tencent,tencent/hunyuan-a13b-instruct,614076.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-23,x-ai,xAI (Grok),x-ai/grok-3,503374002.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-23,x-ai,xAI (Grok),x-ai/grok-3-mini,669613025.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -6328,6 +6419,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-03-24,qwen,Alibaba (Qwen),qwen/qwen3.5-397b-a17b-20260216,7381737882.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-24,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,9477599021.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-24,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,6810982035.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-24,stepfun,StepFun,stepfun/step-3.5-flash,8421431736.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-24,stepfun,StepFun,stepfun/step-3.5-flash:free,228133073409.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-03-24,tencent,Tencent,tencent/hunyuan-a13b-instruct,623729.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-24,x-ai,xAI (Grok),x-ai/grok-3,535194122.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-24,x-ai,xAI (Grok),x-ai/grok-3-mini,621110289.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -6427,6 +6520,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-03-25,qwen,Alibaba (Qwen),qwen/qwen3.5-397b-a17b-20260216,8948166736.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-25,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,8530331249.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-25,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,5710076384.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-25,stepfun,StepFun,stepfun/step-3.5-flash,8724839835.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-25,stepfun,StepFun,stepfun/step-3.5-flash:free,224813624552.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-03-25,tencent,Tencent,tencent/hunyuan-a13b-instruct,851770.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-25,x-ai,xAI (Grok),x-ai/grok-3,522159760.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-25,x-ai,xAI (Grok),x-ai/grok-3-mini,769996426.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -6526,6 +6621,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-03-26,qwen,Alibaba (Qwen),qwen/qwen3.5-9b-20260310,7087676576.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-26,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,12132025330.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-26,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,5094235934.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-26,stepfun,StepFun,stepfun/step-3.5-flash,10546611018.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-26,stepfun,StepFun,stepfun/step-3.5-flash:free,195503975257.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-03-26,tencent,Tencent,tencent/hunyuan-a13b-instruct,1940941.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-26,x-ai,xAI (Grok),x-ai/grok-3,518600790.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-26,x-ai,xAI (Grok),x-ai/grok-3-mini,574730382.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -6625,6 +6722,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-03-27,qwen,Alibaba (Qwen),qwen/qwen3.5-9b-20260310,4394384665.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-27,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,18420339937.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-27,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,5657659204.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-27,stepfun,StepFun,stepfun/step-3.5-flash,8619612187.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-27,stepfun,StepFun,stepfun/step-3.5-flash:free,214336926072.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-03-27,tencent,Tencent,tencent/hunyuan-a13b-instruct,1940729.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-27,x-ai,xAI (Grok),x-ai/grok-3,497751101.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-27,x-ai,xAI (Grok),x-ai/grok-3-mini,614529386.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -6724,6 +6823,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-03-28,qwen,Alibaba (Qwen),qwen/qwen3.5-9b-20260310,5227567025.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-28,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,11306636664.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-28,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,3778593533.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-28,stepfun,StepFun,stepfun/step-3.5-flash,7130481860.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-28,stepfun,StepFun,stepfun/step-3.5-flash:free,208832350161.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-03-28,tencent,Tencent,tencent/hunyuan-a13b-instruct,7778628.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-28,x-ai,xAI (Grok),x-ai/grok-3,426268536.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-28,x-ai,xAI (Grok),x-ai/grok-3-mini,493213117.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -6823,6 +6924,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-03-29,qwen,Alibaba (Qwen),qwen/qwen3.5-9b-20260310,13087523437.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-29,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,9632303509.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-29,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,4877912792.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-29,stepfun,StepFun,stepfun/step-3.5-flash,8297091627.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-29,stepfun,StepFun,stepfun/step-3.5-flash:free,200887866471.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-03-29,tencent,Tencent,tencent/hunyuan-a13b-instruct,1309001.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-29,x-ai,xAI (Grok),x-ai/grok-3,447013529.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-29,x-ai,xAI (Grok),x-ai/grok-3-mini,597249202.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -6922,6 +7025,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-03-30,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,14174644327.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-30,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,9030645507.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-30,qwen,Alibaba (Qwen),qwen/qwen3.6-plus-preview:free,17668336478.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
+2026-03-30,stepfun,StepFun,stepfun/step-3.5-flash,8591707136.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-30,stepfun,StepFun,stepfun/step-3.5-flash:free,199808215182.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-03-30,tencent,Tencent,tencent/hunyuan-a13b-instruct,10899850.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-30,x-ai,xAI (Grok),x-ai/grok-3,546060903.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-30,x-ai,xAI (Grok),x-ai/grok-3-mini,621516902.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -7021,6 +7126,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-03-31,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,13699288310.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-31,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,8767298049.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-31,qwen,Alibaba (Qwen),qwen/qwen3.6-plus-preview:free,446139179301.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
+2026-03-31,stepfun,StepFun,stepfun/step-3.5-flash,8764197438.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-03-31,stepfun,StepFun,stepfun/step-3.5-flash:free,190721445073.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-03-31,tencent,Tencent,tencent/hunyuan-a13b-instruct,2929038.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-31,x-ai,xAI (Grok),x-ai/grok-3-mini,568601585.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-03-31,x-ai,xAI (Grok),x-ai/grok-4-07-09,1481987355.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -7121,6 +7228,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-04-01,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,19657828644.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-01,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,8747013491.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-01,qwen,Alibaba (Qwen),qwen/qwen3.6-plus-preview:free,635952327575.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
+2026-04-01,stepfun,StepFun,stepfun/step-3.5-flash,9019167464.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-04-01,stepfun,StepFun,stepfun/step-3.5-flash:free,183008102893.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-04-01,tencent,Tencent,tencent/hunyuan-a13b-instruct,1341191.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-01,x-ai,xAI (Grok),x-ai/grok-3,397881413.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-01,x-ai,xAI (Grok),x-ai/grok-3-mini,618663223.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -7220,6 +7329,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-04-02,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,8684465414.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-02,qwen,Alibaba (Qwen),qwen/qwen3.6-plus-04-02:free,174280430515.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-04-02,qwen,Alibaba (Qwen),qwen/qwen3.6-plus-preview:free,541265168205.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
+2026-04-02,stepfun,StepFun,stepfun/step-3.5-flash,8083359533.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-04-02,stepfun,StepFun,stepfun/step-3.5-flash:free,182056816249.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-04-02,tencent,Tencent,tencent/hunyuan-a13b-instruct,3137091.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-02,x-ai,xAI (Grok),x-ai/grok-3,393439718.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-02,x-ai,xAI (Grok),x-ai/grok-3-mini,540071480.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -7319,6 +7430,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-04-03,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,8088191237.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-03,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,5973646833.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-03,qwen,Alibaba (Qwen),qwen/qwen3.6-plus-04-02:free,1414068737321.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
+2026-04-03,stepfun,StepFun,stepfun/step-3.5-flash,8873866154.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-04-03,stepfun,StepFun,stepfun/step-3.5-flash:free,178079396396.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-04-03,tencent,Tencent,tencent/hunyuan-a13b-instruct,6418964.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-03,x-ai,xAI (Grok),x-ai/grok-3,370948958.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-03,x-ai,xAI (Grok),x-ai/grok-3-mini,515867755.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -7418,6 +7531,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-04-04,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,8492805733.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-04,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,4393175284.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-04,qwen,Alibaba (Qwen),qwen/qwen3.6-plus-04-02:free,1571944155326.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
+2026-04-04,stepfun,StepFun,stepfun/step-3.5-flash,7869497570.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-04-04,stepfun,StepFun,stepfun/step-3.5-flash:free,165923405193.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-04-04,tencent,Tencent,tencent/hunyuan-a13b-instruct,7230080.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-04,x-ai,xAI (Grok),x-ai/grok-3,318789520.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-04,x-ai,xAI (Grok),x-ai/grok-3-beta,2972.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -7518,6 +7633,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-04-05,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,8361514133.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-05,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,5092525286.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-05,qwen,Alibaba (Qwen),qwen/qwen3.6-plus-04-02:free,1442212089173.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
+2026-04-05,stepfun,StepFun,stepfun/step-3.5-flash,8684332683.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-04-05,stepfun,StepFun,stepfun/step-3.5-flash:free,157831307278.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-04-05,tencent,Tencent,tencent/hunyuan-a13b-instruct,15810700.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-05,x-ai,xAI (Grok),x-ai/grok-3,312316258.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-05,x-ai,xAI (Grok),x-ai/grok-3-mini,459086457.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -7617,6 +7734,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-04-06,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,13262805619.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-06,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,6485676886.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-06,qwen,Alibaba (Qwen),qwen/qwen3.6-plus-04-02:free,931557210587.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
+2026-04-06,stepfun,StepFun,stepfun/step-3.5-flash,8392031998.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-04-06,stepfun,StepFun,stepfun/step-3.5-flash:free,188301037927.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-04-06,tencent,Tencent,tencent/hunyuan-a13b-instruct,1997337.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-06,x-ai,xAI (Grok),x-ai/grok-3,359192067.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-06,x-ai,xAI (Grok),x-ai/grok-3-mini,498596417.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -7716,6 +7835,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-04-07,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,12226580002.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-07,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,8327393014.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-07,qwen,Alibaba (Qwen),qwen/qwen3.6-plus-04-02:free,732021103927.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
+2026-04-07,stepfun,StepFun,stepfun/step-3.5-flash,9739627467.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-04-07,stepfun,StepFun,stepfun/step-3.5-flash:free,199310055430.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-04-07,tencent,Tencent,tencent/hunyuan-a13b-instruct,573284.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-07,x-ai,xAI (Grok),x-ai/grok-3,385701470.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-07,x-ai,xAI (Grok),x-ai/grok-3-mini,568194172.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -7815,6 +7936,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-04-08,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,13161475934.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-08,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,7667569366.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-08,qwen,Alibaba (Qwen),qwen/qwen3.6-plus-04-02,29178635890.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-04-08,stepfun,StepFun,stepfun/step-3.5-flash,13564502140.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-04-08,stepfun,StepFun,stepfun/step-3.5-flash:free,120074619567.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-04-08,tencent,Tencent,tencent/hunyuan-a13b-instruct,3091178.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-08,x-ai,xAI (Grok),x-ai/grok-3,363656601.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-08,x-ai,xAI (Grok),x-ai/grok-3-mini,566388050.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -7914,6 +8037,8 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-04-09,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,13133917308.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-09,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,6496940588.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-09,qwen,Alibaba (Qwen),qwen/qwen3.6-plus-04-02,40458345398.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-04-09,stepfun,StepFun,stepfun/step-3.5-flash,16048438989.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-04-09,stepfun,StepFun,stepfun/step-3.5-flash:free,344485463.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-04-09,tencent,Tencent,tencent/hunyuan-a13b-instruct,860896.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-09,x-ai,xAI (Grok),x-ai/grok-3,498553275.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-09,x-ai,xAI (Grok),x-ai/grok-3-mini,530795270.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -8014,6 +8139,7 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-04-10,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,15084545311.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-10,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,6631160009.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-10,qwen,Alibaba (Qwen),qwen/qwen3.6-plus-04-02,42837210844.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-04-10,stepfun,StepFun,stepfun/step-3.5-flash,14692358970.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-10,tencent,Tencent,tencent/hunyuan-a13b-instruct,3077535.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-10,x-ai,xAI (Grok),x-ai/grok-3,1382080028.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-10,x-ai,xAI (Grok),x-ai/grok-3-mini,566239550.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -8113,6 +8239,7 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-04-11,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,11796210951.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-11,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,4541502290.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-11,qwen,Alibaba (Qwen),qwen/qwen3.6-plus-04-02,40335655426.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-04-11,stepfun,StepFun,stepfun/step-3.5-flash,13267147300.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-11,tencent,Tencent,tencent/hunyuan-a13b-instruct,993535.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-11,x-ai,xAI (Grok),x-ai/grok-3,357211028.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-11,x-ai,xAI (Grok),x-ai/grok-3-mini,450796703.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -8212,6 +8339,7 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-04-12,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,11755740207.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-12,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,4124858936.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-12,qwen,Alibaba (Qwen),qwen/qwen3.6-plus-04-02,37862509763.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-04-12,stepfun,StepFun,stepfun/step-3.5-flash,13790671123.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-12,tencent,Tencent,tencent/hunyuan-a13b-instruct,2663809.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-12,x-ai,xAI (Grok),x-ai/grok-3,368780195.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-12,x-ai,xAI (Grok),x-ai/grok-3-beta,27.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -8312,6 +8440,7 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-04-13,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,15333420459.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-13,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,5541806394.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-13,qwen,Alibaba (Qwen),qwen/qwen3.6-plus-04-02,41164843171.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-04-13,stepfun,StepFun,stepfun/step-3.5-flash,16943134269.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-13,tencent,Tencent,tencent/hunyuan-a13b-instruct,1308342.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-13,x-ai,xAI (Grok),x-ai/grok-3,416459861.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-13,x-ai,xAI (Grok),x-ai/grok-3-mini,574391219.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -8411,6 +8540,7 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-04-14,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,15288914294.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-14,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,5027335143.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-14,qwen,Alibaba (Qwen),qwen/qwen3.6-plus-04-02,41719099581.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
+2026-04-14,stepfun,StepFun,stepfun/step-3.5-flash,19960640599.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-14,tencent,Tencent,tencent/hunyuan-a13b-instruct,4553630.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-14,x-ai,xAI (Grok),x-ai/grok-3,390745609.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-14,x-ai,xAI (Grok),x-ai/grok-3-mini,516218309.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -8511,6 +8641,7 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-04-15,qwen,Alibaba (Qwen),qwen/qwen3.5-9b-20260310,9864048577.0,9011960883.854729,852087693.1452712,0.0,,,,,unresolved_missing_pricing,unpriced,False,True,model_activity
 2026-04-15,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,17278029441.0,14771894550.765945,2506134890.2340536,0.0,,,,,unresolved_missing_pricing,unpriced,False,True,model_activity
 2026-04-15,qwen,Alibaba (Qwen),qwen/qwen3.6-plus-04-02,45721173941.0,43264789828.66896,2456384112.331045,0.0,,,,,unresolved_missing_pricing,unpriced,False,True,model_activity
+2026-04-15,stepfun,StepFun,stepfun/step-3.5-flash,37714820121.0,36200248794.968185,1514571326.0318103,0.0,,,,,unresolved_missing_pricing,unpriced,False,True,model_activity
 2026-04-15,tencent,Tencent,tencent/hunyuan-a13b-instruct,1529526.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-15,x-ai,xAI (Grok),x-ai/grok-3,438721810.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
 2026-04-15,x-ai,xAI (Grok),x-ai/grok-3-mini,516131160.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
@@ -8613,6 +8744,7 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-04-16,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,16955245801.0,0.0,0.0,,1178.1352544824852,2026-04-15T22:53:52Z,6.5e-08,2.6e-07,matched_asof,model_blended_no_split,True,False,none
 2026-04-16,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,7945706544.0,0.0,0.0,,2303.4603271056,2026-04-15T22:53:52Z,2.6e-07,1.56e-06,matched_asof,model_blended_no_split,True,False,none
 2026-04-16,qwen,Alibaba (Qwen),qwen/qwen3.6-plus-04-02,42439844019.0,0.0,0.0,,15379.138476385124,2026-04-15T22:53:52Z,3.25e-07,1.95e-06,matched_asof,model_blended_no_split,True,False,none
+2026-04-16,stepfun,StepFun,stepfun/step-3.5-flash,52285527744.0,0.0,0.0,,5469.0662020224,2026-04-15T22:53:52Z,1e-07,3e-07,matched_asof,model_blended_no_split,True,False,none
 2026-04-16,tencent,Tencent,tencent/hunyuan-a13b-instruct,1823175.0,0.0,0.0,,0.27327570075,2026-04-15T22:53:52Z,1.4e-07,5.7e-07,matched_asof,model_blended_no_split,True,False,none
 2026-04-16,x-ai,xAI (Grok),x-ai/grok-3,382634446.0,0.0,0.0,,1253.510445096,2026-04-15T22:53:52Z,3e-06,1.5e-05,matched_asof,model_blended_no_split,True,False,none
 2026-04-16,x-ai,xAI (Grok),x-ai/grok-3-mini,542158184.0,0.0,0.0,,165.1413828464,2026-04-15T22:53:52Z,3e-07,5e-07,matched_asof,model_blended_no_split,True,False,none
@@ -8719,6 +8851,7 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-04-17,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,14414851588.0,0.0,0.0,,1001.61596259218,2026-04-15T22:53:52Z,6.5e-08,2.6e-07,matched_asof,model_blended_no_split,True,False,none
 2026-04-17,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,9385416563.0,0.0,0.0,,2720.8322616136998,2026-04-15T22:53:52Z,2.6e-07,1.56e-06,matched_asof,model_blended_no_split,True,False,none
 2026-04-17,qwen,Alibaba (Qwen),qwen/qwen3.6-plus-04-02,38818375611.0,0.0,0.0,,14066.808862036123,2026-04-15T22:53:52Z,3.25e-07,1.95e-06,matched_asof,model_blended_no_split,True,False,none
+2026-04-17,stepfun,StepFun,stepfun/step-3.5-flash,91446531158.0,0.0,0.0,,9565.3071591268,2026-04-15T22:53:52Z,1e-07,3e-07,matched_asof,model_blended_no_split,True,False,none
 2026-04-17,tencent,Tencent,tencent/hunyuan-a13b-instruct,884179.0,0.0,0.0,,0.13252959031,2026-04-15T22:53:52Z,1.4e-07,5.7e-07,matched_asof,model_blended_no_split,True,False,none
 2026-04-17,x-ai,xAI (Grok),x-ai/grok-3,346429415.0,0.0,0.0,,1134.90276354,2026-04-15T22:53:52Z,3e-06,1.5e-05,matched_asof,model_blended_no_split,True,False,none
 2026-04-17,x-ai,xAI (Grok),x-ai/grok-3-mini,512581870.0,0.0,0.0,,156.132437602,2026-04-15T22:53:52Z,3e-07,5e-07,matched_asof,model_blended_no_split,True,False,none
@@ -8820,6 +8953,7 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-04-18,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,13472527194.0,0.0,0.0,,936.13855207509,2026-04-15T22:53:52Z,6.5e-08,2.6e-07,matched_asof,model_blended_no_split,True,False,none
 2026-04-18,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,5643374204.0,0.0,0.0,,1636.0141817395997,2026-04-15T22:53:52Z,2.6e-07,1.56e-06,matched_asof,model_blended_no_split,True,False,none
 2026-04-18,qwen,Alibaba (Qwen),qwen/qwen3.6-plus-04-02,31242903897.0,0.0,0.0,,11321.647299675375,2026-04-15T22:53:52Z,3.25e-07,1.95e-06,matched_asof,model_blended_no_split,True,False,none
+2026-04-18,stepfun,StepFun,stepfun/step-3.5-flash,70126146146.0,0.0,0.0,,7335.1948868716,2026-04-15T22:53:52Z,1e-07,3e-07,matched_asof,model_blended_no_split,True,False,none
 2026-04-18,tencent,Tencent,tencent/hunyuan-a13b-instruct,979203.0,0.0,0.0,,0.14677273767000001,2026-04-15T22:53:52Z,1.4e-07,5.7e-07,matched_asof,model_blended_no_split,True,False,none
 2026-04-18,x-ai,xAI (Grok),x-ai/grok-3,238742444.0,0.0,0.0,,782.120246544,2026-04-15T22:53:52Z,3e-06,1.5e-05,matched_asof,model_blended_no_split,True,False,none
 2026-04-18,x-ai,xAI (Grok),x-ai/grok-3-mini,533889836.0,0.0,0.0,,162.6228440456,2026-04-15T22:53:52Z,3e-07,5e-07,matched_asof,model_blended_no_split,True,False,none
@@ -8921,6 +9055,7 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-04-19,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,13067654606.0,0.0,0.0,,908.00598029791,2026-04-15T22:53:52Z,6.5e-08,2.6e-07,matched_asof,model_blended_no_split,True,False,none
 2026-04-19,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,5146277302.0,0.0,0.0,,1491.9057898498,2026-04-15T22:53:52Z,2.6e-07,1.56e-06,matched_asof,model_blended_no_split,True,False,none
 2026-04-19,qwen,Alibaba (Qwen),qwen/qwen3.6-plus-04-02,32781027535.0,0.0,0.0,,11879.024852995624,2026-04-15T22:53:52Z,3.25e-07,1.95e-06,matched_asof,model_blended_no_split,True,False,none
+2026-04-19,stepfun,StepFun,stepfun/step-3.5-flash,75334874034.0,0.0,0.0,,7880.0278239563995,2026-04-15T22:53:52Z,1e-07,3e-07,matched_asof,model_blended_no_split,True,False,none
 2026-04-19,tencent,Tencent,tencent/hunyuan-a13b-instruct,5736896.0,0.0,0.0,,0.85990334144,2026-04-15T22:53:52Z,1.4e-07,5.7e-07,matched_asof,model_blended_no_split,True,False,none
 2026-04-19,x-ai,xAI (Grok),x-ai/grok-3,193678333.0,0.0,0.0,,634.490218908,2026-04-15T22:53:52Z,3e-06,1.5e-05,matched_asof,model_blended_no_split,True,False,none
 2026-04-19,x-ai,xAI (Grok),x-ai/grok-3-mini,499055820.0,0.0,0.0,,152.012402772,2026-04-15T22:53:52Z,3e-07,5e-07,matched_asof,model_blended_no_split,True,False,none
@@ -9026,6 +9161,7 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-04-20,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,15598069369.0,0.0,0.0,,1083.831850104965,2026-04-19T13:39:19Z,6.5e-08,2.6e-07,matched_asof,model_blended_no_split,True,False,none
 2026-04-20,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,5136124040.0,0.0,0.0,,1488.9623591959999,2026-04-19T13:39:19Z,2.6e-07,1.56e-06,matched_asof,model_blended_no_split,True,False,none
 2026-04-20,qwen,Alibaba (Qwen),qwen/qwen3.6-plus-04-02,42237185779.0,0.0,0.0,,15305.700196665124,2026-04-19T13:39:19Z,3.25e-07,1.95e-06,matched_asof,model_blended_no_split,True,False,none
+2026-04-20,stepfun,StepFun,stepfun/step-3.5-flash,82224259258.0,0.0,0.0,,8600.657518386799,2026-04-19T13:39:19Z,1e-07,3e-07,matched_asof,model_blended_no_split,True,False,none
 2026-04-20,tencent,Tencent,tencent/hunyuan-a13b-instruct,11966981.0,0.0,0.0,,1.79373078209,2026-04-19T13:39:19Z,1.4e-07,5.7e-07,matched_asof,model_blended_no_split,True,False,none
 2026-04-20,x-ai,xAI (Grok),x-ai/grok-3,286109773.0,0.0,0.0,,937.2956163480001,2026-04-19T13:39:19Z,3e-06,1.5e-05,matched_asof,model_blended_no_split,True,False,none
 2026-04-20,x-ai,xAI (Grok),x-ai/grok-3-mini,570997618.0,0.0,0.0,,173.9258744428,2026-04-19T13:39:19Z,3e-07,5e-07,matched_asof,model_blended_no_split,True,False,none
@@ -9130,6 +9266,7 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-04-21,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,18965089885.0,0.0,0.0,,1317.7892706592252,2026-04-20T09:19:37Z,6.5e-08,2.6e-07,matched_asof,model_blended_no_split,True,False,none
 2026-04-21,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,808779106.0,0.0,0.0,,234.46506282939998,2026-04-20T09:19:37Z,2.6e-07,1.56e-06,matched_asof,model_blended_no_split,True,False,none
 2026-04-21,qwen,Alibaba (Qwen),qwen/qwen3.6-plus-04-02,44732065609.0,0.0,0.0,,16209.782275061374,2026-04-20T09:19:37Z,3.25e-07,1.95e-06,matched_asof,model_blended_no_split,True,False,none
+2026-04-21,stepfun,StepFun,stepfun/step-3.5-flash,71836229855.0,0.0,0.0,,7514.069642833,2026-04-20T09:19:37Z,1e-07,3e-07,matched_asof,model_blended_no_split,True,False,none
 2026-04-21,tencent,Tencent,tencent/hunyuan-a13b-instruct,10049979.0,0.0,0.0,,1.50639135231,2026-04-20T09:19:37Z,1.4e-07,5.7e-07,matched_asof,model_blended_no_split,True,False,none
 2026-04-21,x-ai,xAI (Grok),x-ai/grok-3,467334669.0,0.0,0.0,,1530.988375644,2026-04-20T09:19:37Z,3e-06,1.5e-05,matched_asof,model_blended_no_split,True,False,none
 2026-04-21,x-ai,xAI (Grok),x-ai/grok-3-mini,601624242.0,0.0,0.0,,183.25474411320002,2026-04-20T09:19:37Z,3e-07,5e-07,matched_asof,model_blended_no_split,True,False,none
@@ -9235,6 +9372,7 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-04-22,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,20982645778.0,0.0,0.0,,1457.9791418843301,2026-04-21T09:03:17Z,6.5e-08,2.6e-07,matched_asof,model_blended_no_split,True,False,none
 2026-04-22,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,5630237086.0,0.0,0.0,,1632.2057312313998,2026-04-21T09:03:17Z,2.6e-07,1.56e-06,matched_asof,model_blended_no_split,True,False,none
 2026-04-22,qwen,Alibaba (Qwen),qwen/qwen3.6-plus-04-02,44517080522.0,0.0,0.0,,16131.877054159748,2026-04-21T09:03:17Z,3.25e-07,1.95e-06,matched_asof,model_blended_no_split,True,False,none
+2026-04-22,stepfun,StepFun,stepfun/step-3.5-flash,94660654036.0,0.0,0.0,,9901.5044121656,2026-04-21T09:03:17Z,1e-07,3e-07,matched_asof,model_blended_no_split,True,False,none
 2026-04-22,tencent,Tencent,tencent/hunyuan-a13b-instruct,2138700.0,0.0,0.0,,0.320569743,2026-04-21T09:03:17Z,1.4e-07,5.7e-07,matched_asof,model_blended_no_split,True,False,none
 2026-04-22,x-ai,xAI (Grok),x-ai/grok-3,504169795.0,0.0,0.0,,1651.66024842,2026-04-21T09:03:17Z,3e-06,1.5e-05,matched_asof,model_blended_no_split,True,False,none
 2026-04-22,x-ai,xAI (Grok),x-ai/grok-3-beta,17.0,0.0,0.0,,5.5692e-05,2026-04-21T09:03:17Z,3e-06,1.5e-05,matched_asof,model_blended_no_split,True,False,none
@@ -9341,6 +9479,7 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-04-23,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,16343710272.0,0.0,0.0,,1135.6427082499201,2026-04-21T09:03:17Z,6.5e-08,2.6e-07,matched_asof,model_blended_no_split,True,False,none
 2026-04-23,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,689500491.0,0.0,0.0,,199.88619234089998,2026-04-21T09:03:17Z,2.6e-07,1.56e-06,matched_asof,model_blended_no_split,True,False,none
 2026-04-23,qwen,Alibaba (Qwen),qwen/qwen3.6-plus-04-02,40265915141.0,0.0,0.0,,14591.360999219873,2026-04-21T09:03:17Z,3.25e-07,1.95e-06,matched_asof,model_blended_no_split,True,False,none
+2026-04-23,stepfun,StepFun,stepfun/step-3.5-flash,130871307613.0,0.0,0.0,,13689.1387763198,2026-04-21T09:03:17Z,1e-07,3e-07,matched_asof,model_blended_no_split,True,False,none
 2026-04-23,tencent,Tencent,tencent/hunyuan-a13b-instruct,8117631.0,0.0,0.0,,1.21675171059,2026-04-21T09:03:17Z,1.4e-07,5.7e-07,matched_asof,model_blended_no_split,True,False,none
 2026-04-23,tencent,Tencent,tencent/hy3-preview-20260421:free,58748144581.0,0.0,0.0,,0.0,,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-04-23,x-ai,xAI (Grok),x-ai/grok-3,511118834.0,0.0,0.0,,1674.425300184,2026-04-21T09:03:17Z,3e-06,1.5e-05,matched_asof,model_blended_no_split,True,False,none
@@ -9450,6 +9589,7 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-04-24,qwen,Alibaba (Qwen),qwen/qwen3.5-9b-20260310,9957937934.0,0.0,0.0,,1007.2454220240999,2026-04-21T09:03:17Z,1e-07,1.5e-07,matched_asof,model_blended_no_split,True,False,none
 2026-04-24,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,16384271215.0,0.0,0.0,,1138.461085374275,2026-04-21T09:03:17Z,6.5e-08,2.6e-07,matched_asof,model_blended_no_split,True,False,none
 2026-04-24,qwen,Alibaba (Qwen),qwen/qwen3.6-plus-04-02,43307273542.0,0.0,0.0,,15693.473249782248,2026-04-21T09:03:17Z,3.25e-07,1.95e-06,matched_asof,model_blended_no_split,True,False,none
+2026-04-24,stepfun,StepFun,stepfun/step-3.5-flash,108318757207.0,0.0,0.0,,11330.1420038522,2026-04-21T09:03:17Z,1e-07,3e-07,matched_asof,model_blended_no_split,True,False,none
 2026-04-24,tencent,Tencent,tencent/hunyuan-a13b-instruct,1020387.0,0.0,0.0,,0.15294580743,2026-04-21T09:03:17Z,1.4e-07,5.7e-07,matched_asof,model_blended_no_split,True,False,none
 2026-04-24,tencent,Tencent,tencent/hy3-preview-20260421:free,89046169897.0,0.0,0.0,,0.0,2026-04-23T09:04:01Z,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-04-24,x-ai,xAI (Grok),x-ai/grok-3,237250548.0,0.0,0.0,,777.232795248,2026-04-21T09:03:17Z,3e-06,1.5e-05,matched_asof,model_blended_no_split,True,False,none
@@ -9560,6 +9700,7 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-04-25,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,14536182147.0,0.0,0.0,,1010.0466164842951,2026-04-21T09:03:17Z,6.5e-08,2.6e-07,matched_asof,model_blended_no_split,True,False,none
 2026-04-25,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,3684917252.0,0.0,0.0,,1068.2575113547998,2026-04-21T09:03:17Z,2.6e-07,1.56e-06,matched_asof,model_blended_no_split,True,False,none
 2026-04-25,qwen,Alibaba (Qwen),qwen/qwen3.6-plus-04-02,31911819136.0,0.0,0.0,,11564.045459407998,2026-04-21T09:03:17Z,3.25e-07,1.95e-06,matched_asof,model_blended_no_split,True,False,none
+2026-04-25,stepfun,StepFun,stepfun/step-3.5-flash,109263766868.0,0.0,0.0,,11428.990014392799,2026-04-21T09:03:17Z,1e-07,3e-07,matched_asof,model_blended_no_split,True,False,none
 2026-04-25,tencent,Tencent,tencent/hunyuan-a13b-instruct,3509623.0,0.0,0.0,,0.52605739147,2026-04-21T09:03:17Z,1.4e-07,5.7e-07,matched_asof,model_blended_no_split,True,False,none
 2026-04-25,tencent,Tencent,tencent/hy3-preview-20260421:free,71819312699.0,0.0,0.0,,0.0,2026-04-23T09:04:01Z,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-04-25,x-ai,xAI (Grok),x-ai/grok-3,132554137.0,0.0,0.0,,434.24735281200003,2026-04-21T09:03:17Z,3e-06,1.5e-05,matched_asof,model_blended_no_split,True,False,none
@@ -9668,6 +9809,7 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-04-26,qwen,Alibaba (Qwen),qwen/qwen3.5-9b-20260310,2765907384.0,0.0,0.0,,279.7715318916,2026-04-21T09:03:17Z,1e-07,1.5e-07,matched_asof,model_blended_no_split,True,False,none
 2026-04-26,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,14087329562.0,0.0,0.0,,978.85809461557,2026-04-21T09:03:17Z,6.5e-08,2.6e-07,matched_asof,model_blended_no_split,True,False,none
 2026-04-26,qwen,Alibaba (Qwen),qwen/qwen3.6-plus-04-02,32097463262.0,0.0,0.0,,11631.318249567248,2026-04-21T09:03:17Z,3.25e-07,1.95e-06,matched_asof,model_blended_no_split,True,False,none
+2026-04-26,stepfun,StepFun,stepfun/step-3.5-flash,123627785967.0,0.0,0.0,,12931.4664121482,2026-04-21T09:03:17Z,1e-07,3e-07,matched_asof,model_blended_no_split,True,False,none
 2026-04-26,tencent,Tencent,tencent/hunyuan-a13b-instruct,9828245.0,0.0,0.0,,1.47315564305,2026-04-21T09:03:17Z,1.4e-07,5.7e-07,matched_asof,model_blended_no_split,True,False,none
 2026-04-26,tencent,Tencent,tencent/hy3-preview-20260421:free,118087932471.0,0.0,0.0,,0.0,2026-04-23T09:04:01Z,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-04-26,x-ai,xAI (Grok),x-ai/grok-3,158908291.0,0.0,0.0,,520.583561316,2026-04-21T09:03:17Z,3e-06,1.5e-05,matched_asof,model_blended_no_split,True,False,none
@@ -9777,6 +9919,7 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-04-27,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,13807308052.0,0.0,0.0,,959.4007999932201,2026-04-21T09:03:17Z,6.5e-08,2.6e-07,matched_asof,model_blended_no_split,True,False,none
 2026-04-27,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,4166912183.0,0.0,0.0,,1207.9878418516998,2026-04-21T09:03:17Z,2.6e-07,1.56e-06,matched_asof,model_blended_no_split,True,False,none
 2026-04-27,qwen,Alibaba (Qwen),qwen/qwen3.6-plus-04-02,32915058914.0,0.0,0.0,,11927.59447396075,2026-04-21T09:03:17Z,3.25e-07,1.95e-06,matched_asof,model_blended_no_split,True,False,none
+2026-04-27,stepfun,StepFun,stepfun/step-3.5-flash,123795813078.0,0.0,0.0,,12949.0420479588,2026-04-21T09:03:17Z,1e-07,3e-07,matched_asof,model_blended_no_split,True,False,none
 2026-04-27,tencent,Tencent,tencent/hunyuan-a13b-instruct,4597493.0,0.0,0.0,,0.68911822577,2026-04-21T09:03:17Z,1.4e-07,5.7e-07,matched_asof,model_blended_no_split,True,False,none
 2026-04-27,tencent,Tencent,tencent/hy3-preview-20260421:free,211332825737.0,0.0,0.0,,0.0,2026-04-23T09:04:01Z,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-04-27,x-ai,xAI (Grok),x-ai/grok-3,157878705.0,0.0,0.0,,517.21063758,2026-04-21T09:03:17Z,3e-06,1.5e-05,matched_asof,model_blended_no_split,True,False,none
@@ -9889,6 +10032,7 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-04-28,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,16197325577.0,0.0,0.0,,1125.471167717845,2026-04-21T09:03:17Z,6.5e-08,2.6e-07,matched_asof,model_blended_no_split,True,False,none
 2026-04-28,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,4110417220.0,0.0,0.0,,1191.6099520779999,2026-04-21T09:03:17Z,2.6e-07,1.56e-06,matched_asof,model_blended_no_split,True,False,none
 2026-04-28,qwen,Alibaba (Qwen),qwen/qwen3.6-plus-04-02,32954419599.0,0.0,0.0,,11941.857802187624,2026-04-21T09:03:17Z,3.25e-07,1.95e-06,matched_asof,model_blended_no_split,True,False,none
+2026-04-28,stepfun,StepFun,stepfun/step-3.5-flash,124727445015.0,0.0,0.0,,13046.490748569,2026-04-21T09:03:17Z,1e-07,3e-07,matched_asof,model_blended_no_split,True,False,none
 2026-04-28,tencent,Tencent,tencent/hunyuan-a13b-instruct,2637949.0,0.0,0.0,,0.39540217561,2026-04-21T09:03:17Z,1.4e-07,5.7e-07,matched_asof,model_blended_no_split,True,False,none
 2026-04-28,tencent,Tencent,tencent/hy3-preview-20260421:free,370600880264.0,0.0,0.0,,0.0,2026-04-23T09:04:01Z,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-04-28,x-ai,xAI (Grok),x-ai/grok-3,238131715.0,0.0,0.0,,780.1194983400001,2026-04-21T09:03:17Z,3e-06,1.5e-05,matched_asof,model_blended_no_split,True,False,none
@@ -9998,6 +10142,7 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-04-29,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,9985083335.0,0.0,0.0,,2894.6756588165,2026-04-21T09:03:17Z,2.6e-07,1.56e-06,matched_asof,model_blended_no_split,True,False,none
 2026-04-29,qwen,Alibaba (Qwen),qwen/qwen3.6-max-preview-20260420,819938089.0,0.0,0.0,,950.8002080043999,2026-04-28T09:35:05Z,1.04e-06,6.24e-06,matched_asof,model_blended_no_split,True,False,none
 2026-04-29,qwen,Alibaba (Qwen),qwen/qwen3.6-plus-04-02,32181017392.0,0.0,0.0,,11661.596177426,2026-04-21T09:03:17Z,3.25e-07,1.95e-06,matched_asof,model_blended_no_split,True,False,none
+2026-04-29,stepfun,StepFun,stepfun/step-3.5-flash,118453725303.0,0.0,0.0,,12390.259666693799,2026-04-21T09:03:17Z,1e-07,3e-07,matched_asof,model_blended_no_split,True,False,none
 2026-04-29,tencent,Tencent,tencent/hunyuan-a13b-instruct,2320448.0,0.0,0.0,,0.34781195072,2026-04-21T09:03:17Z,1.4e-07,5.7e-07,matched_asof,model_blended_no_split,True,False,none
 2026-04-29,tencent,Tencent,tencent/hy3-preview-20260421,10048.0,0.0,0.0,,0.0,2026-04-23T09:04:01Z,0.0,0.0,matched_asof,model_blended_no_split,True,False,none
 2026-04-29,tencent,Tencent,tencent/hy3-preview-20260421:free,464743570967.0,0.0,0.0,,0.0,2026-04-23T09:04:01Z,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
@@ -10108,6 +10253,7 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-04-30,qwen,Alibaba (Qwen),qwen/qwen3.5-plus-20260216,6697085379.0,0.0,0.0,,1941.4850513720999,2026-04-21T09:03:17Z,2.6e-07,1.56e-06,matched_asof,model_blended_no_split,True,False,none
 2026-04-30,qwen,Alibaba (Qwen),qwen/qwen3.6-max-preview-20260420,825552616.0,0.0,0.0,,957.3108135135999,2026-04-28T09:35:05Z,1.04e-06,6.24e-06,matched_asof,model_blended_no_split,True,False,none
 2026-04-30,qwen,Alibaba (Qwen),qwen/qwen3.6-plus-04-02,39686124333.0,0.0,0.0,,14381.259305170874,2026-04-21T09:03:17Z,3.25e-07,1.95e-06,matched_asof,model_blended_no_split,True,False,none
+2026-04-30,stepfun,StepFun,stepfun/step-3.5-flash,107507800803.0,0.0,0.0,,11245.3159639938,2026-04-21T09:03:17Z,1e-07,3e-07,matched_asof,model_blended_no_split,True,False,none
 2026-04-30,tencent,Tencent,tencent/hunyuan-a13b-instruct,3457500.0,0.0,0.0,,0.518244675,2026-04-21T09:03:17Z,1.4e-07,5.7e-07,matched_asof,model_blended_no_split,True,False,none
 2026-04-30,tencent,Tencent,tencent/hy3-preview-20260421:free,451216166442.0,0.0,0.0,,0.0,2026-04-23T09:04:01Z,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
 2026-04-30,x-ai,xAI (Grok),x-ai/grok-3,523854851.0,0.0,0.0,,1716.148491876,2026-04-21T09:03:17Z,3e-06,1.5e-05,matched_asof,model_blended_no_split,True,False,none
@@ -10217,6 +10363,7 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-05-01,qwen,Alibaba (Qwen),qwen/qwen3.5-9b-20260310,1362653545.0,0.0,0.0,,137.83240607674998,2026-04-21T09:03:17Z,1e-07,1.5e-07,matched_asof,model_blended_no_split,True,False,none
 2026-05-01,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,15692864338.0,0.0,0.0,,1090.41867852593,2026-04-21T09:03:17Z,6.5e-08,2.6e-07,matched_asof,model_blended_no_split,True,False,none
 2026-05-01,qwen,Alibaba (Qwen),qwen/qwen3.6-plus-04-02,28128068275.0,0.0,0.0,,10192.908741153124,2026-04-21T09:03:17Z,3.25e-07,1.95e-06,matched_asof,model_blended_no_split,True,False,none
+2026-05-01,stepfun,StepFun,stepfun/step-3.5-flash,101768052232.0,0.0,0.0,,10644.9382634672,2026-04-21T09:03:17Z,1e-07,3e-07,matched_asof,model_blended_no_split,True,False,none
 2026-05-01,tencent,Tencent,tencent/hunyuan-a13b-instruct,344521.0,0.0,0.0,,0.05164025269,2026-04-21T09:03:17Z,1.4e-07,5.7e-07,matched_asof,model_blended_no_split,True,False,none
 2026-05-01,tencent,Tencent,tencent/hy3-preview-20260421,35391.0,0.0,0.0,,0.0,2026-04-23T09:04:01Z,0.0,0.0,matched_asof,model_blended_no_split,True,False,none
 2026-05-01,tencent,Tencent,tencent/hy3-preview-20260421:free,464169204938.0,0.0,0.0,,0.0,2026-04-23T09:04:01Z,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
@@ -10243,110 +10390,111 @@ usage_date,provider_slug,provider_name,model_permaslug,total_tokens,prompt_token
 2026-05-01,z-ai,智谱AI (Z.ai),z-ai/glm-5-turbo-20260315,19792245641.0,0.0,0.0,,25025.315388480398,2026-04-21T09:03:17Z,1.2e-06,4e-06,matched_asof,model_blended_no_split,True,False,none
 2026-05-01,z-ai,智谱AI (Z.ai),z-ai/glm-5.1-20260406,44557624586.0,0.0,0.0,,49296.32796072109,2026-04-22T08:58:07Z,1.05e-06,3.5e-06,matched_asof,model_blended_no_split,True,False,none
 2026-05-01,z-ai,智谱AI (Z.ai),z-ai/glm-5v-turbo-20260401,4003887419.0,0.0,0.0,,5062.515252583599,2026-04-21T09:03:17Z,1.2e-06,4e-06,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,anthropic,Anthropic,anthropic/claude-3-5-haiku,583802353.0,0.0,0.0,,510.0097355808,2026-04-21T09:03:17Z,8e-07,4e-06,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,anthropic,Anthropic,anthropic/claude-3-7-sonnet-20250219,481060110.0,0.0,0.0,,1575.95292036,2026-04-21T09:03:17Z,3e-06,1.5e-05,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,anthropic,Anthropic,anthropic/claude-4-sonnet-20250522,2331880111.0,0.0,0.0,,7639.2392436360005,2026-04-21T09:03:17Z,3e-06,1.5e-05,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,anthropic,Anthropic,anthropic/claude-4.5-haiku-20251001,9148350910.0,0.0,0.0,,9989.99919372,2026-04-21T09:03:17Z,1e-06,5e-06,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,anthropic,Anthropic,anthropic/claude-4.5-opus-20251124,1737260380.0,0.0,0.0,,9485.4416748,2026-04-21T09:03:17Z,5e-06,2.5e-05,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,anthropic,Anthropic,anthropic/claude-4.5-sonnet-20250929,4340914634.0,0.0,0.0,,14220.836340984,2026-04-21T09:03:17Z,3e-06,1.5e-05,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,anthropic,Anthropic,anthropic/claude-4.6-opus-20260205,17943572800.0,0.0,0.0,,97971.907488,2026-04-21T09:03:17Z,5e-06,2.5e-05,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,anthropic,Anthropic,anthropic/claude-4.6-sonnet-20260217,46901835128.0,0.0,0.0,,153650.411879328,2026-04-21T09:03:17Z,3e-06,1.5e-05,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,anthropic,Anthropic,anthropic/claude-4.7-opus-20260416,32243240226.0,0.0,0.0,,176048.09163396,2026-04-21T09:03:17Z,5e-06,2.5e-05,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,deepseek,DeepSeek,deepseek/deepseek-chat-v3-0324,3243294686.0,0.0,0.0,,691.1785305334599,2026-04-21T09:03:17Z,2e-07,7.7e-07,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,deepseek,DeepSeek,deepseek/deepseek-chat-v3.1,2168064311.0,0.0,0.0,,355.1289341418,2026-04-21T09:03:17Z,1.5e-07,7.5e-07,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,deepseek,DeepSeek,deepseek/deepseek-r1,207237647.0,0.0,0.0,,111.48349220364999,2026-04-21T09:03:17Z,5e-07,2.15e-06,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,deepseek,DeepSeek,deepseek/deepseek-r1-0528,722825425.0,0.0,0.0,,388.84393737874996,2026-04-21T09:03:17Z,5e-07,2.15e-06,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,deepseek,DeepSeek,deepseek/deepseek-v3.1-terminus,1080359597.0,0.0,0.0,,241.28751239398002,2026-04-21T09:03:17Z,2.1e-07,7.9e-07,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,deepseek,DeepSeek,deepseek/deepseek-v3.2-20251201,43561409969.0,0.0,0.0,,11103.716278278162,2026-04-21T09:03:17Z,2.52e-07,3.78e-07,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,deepseek,DeepSeek,deepseek/deepseek-v3.2-exp,1074315141.0,0.0,0.0,,293.52438282402,2026-04-21T09:03:17Z,2.7e-07,4.1e-07,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,deepseek,DeepSeek,deepseek/deepseek-v4-flash-20260423,35476902918.0,0.0,0.0,,5081.002035915961,2026-04-24T09:12:10Z,1.4e-07,2.8e-07,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,deepseek,DeepSeek,deepseek/deepseek-v4-pro-20260423,25885910874.0,0.0,0.0,,11519.35976848437,2026-04-26T08:38:54Z,4.35e-07,8.7e-07,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,google,Google,google/gemini-2.0-flash-001,4800798312.0,0.0,0.0,,513.2053395528,2026-05-01T09:10:42Z,1e-07,4e-07,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,google,Google,google/gemini-2.5-flash,28642057451.0,0.0,0.0,,10041.905342320599,2026-04-21T09:03:17Z,3e-07,2.5e-06,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,google,Google,google/gemini-2.5-flash-lite,25923565368.0,0.0,0.0,,2771.2291378392,2026-04-21T09:03:17Z,1e-07,4e-07,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,google,Google,google/gemini-2.5-pro,3445173094.0,0.0,0.0,,4999.807452667501,2026-04-21T09:03:17Z,1.25e-06,1e-05,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,google,Google,google/gemini-3-flash-preview-20251217,42390848005.0,0.0,0.0,,23632.8977627875,2026-04-21T09:03:17Z,5e-07,3e-06,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,google,Google,google/gemini-3.1-flash-lite-preview-20260303,13641311581.0,0.0,0.0,,3802.51560320375,2026-04-21T09:03:17Z,2.5e-07,1.5e-06,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,google,Google,google/gemini-3.1-pro-preview-20260219,9355563772.0,0.0,0.0,,20862.90721156,2026-04-21T09:03:17Z,2e-06,1.2e-05,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,google,Google,google/gemma-4-26b-a4b-it-20260403,7890721318.0,0.0,0.0,,522.44465846478,2026-04-24T09:12:10Z,6e-08,3.3e-07,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,google,Google,google/gemma-4-31b-it-20260402,10237210025.0,0.0,0.0,,0.0,2026-04-21T09:03:17Z,0.0,0.0,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,meta-llama,Meta (Llama),meta-llama/llama-3-8b-instruct,19035074.0,0.0,0.0,,0.5754302870199999,2026-04-21T09:03:17Z,3e-08,4e-08,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,meta-llama,Meta (Llama),meta-llama/llama-3.1-70b-instruct,388037195.0,0.0,0.0,,155.214878,2026-04-21T09:03:17Z,4e-07,4e-07,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,meta-llama,Meta (Llama),meta-llama/llama-3.1-8b-instruct,1735996251.0,0.0,0.0,,35.917762433190006,2026-04-21T09:03:17Z,2e-08,5e-08,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,meta-llama,Meta (Llama),meta-llama/llama-3.2-3b-instruct,29560037.0,0.0,0.0,,0.0,2026-04-21T09:03:17Z,0.0,0.0,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,meta-llama,Meta (Llama),meta-llama/llama-3.3-70b-instruct,1540106400.0,0.0,0.0,,161.803578384,2026-04-22T08:58:07Z,1e-07,3.2e-07,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,meta-llama,Meta (Llama),meta-llama/llama-3.3-70b-instruct:free,41098750.0,0.0,0.0,,0.0,2026-04-21T09:03:17Z,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
-2026-05-02,meta-llama,Meta (Llama),meta-llama/llama-4-maverick-17b-128e-instruct,1406483136.0,0.0,0.0,,225.5295708576,2026-04-21T09:03:17Z,1.5e-07,6e-07,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,meta-llama,Meta (Llama),meta-llama/llama-4-scout-17b-16e-instruct,733465982.0,0.0,0.0,,62.38861642892001,2026-04-21T09:03:17Z,8e-08,3e-07,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,meta-llama,Meta (Llama),meta-llama/llama-guard-4-12b,71659169.0,0.0,0.0,,12.89865042,2026-04-21T09:03:17Z,1.8e-07,1.8e-07,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,microsoft,Microsoft,microsoft/phi-4,36387280.0,0.0,0.0,,2.4279412579999997,2026-04-21T09:03:17Z,6.5e-08,1.4e-07,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,microsoft,Microsoft,microsoft/wizardlm-2-8x22b,45889088.0,0.0,0.0,,28.45123456,2026-04-21T09:03:17Z,6.2e-07,6.2e-07,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,anthropic,Anthropic,anthropic/claude-3-5-haiku,683426099.0,0.0,0.0,,597.0410400864,2026-04-21T09:03:17Z,8e-07,4e-06,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,anthropic,Anthropic,anthropic/claude-3-7-sonnet-20250219,595306938.0,0.0,0.0,,1950.225528888,2026-04-21T09:03:17Z,3e-06,1.5e-05,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,anthropic,Anthropic,anthropic/claude-4-sonnet-20250522,2863661333.0,0.0,0.0,,9381.354526908,2026-04-21T09:03:17Z,3e-06,1.5e-05,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,anthropic,Anthropic,anthropic/claude-4.5-haiku-20251001,11486964016.0,0.0,0.0,,12543.764705471998,2026-04-21T09:03:17Z,1e-06,5e-06,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,anthropic,Anthropic,anthropic/claude-4.5-opus-20251124,2207867402.0,0.0,0.0,,12054.95601492,2026-04-21T09:03:17Z,5e-06,2.5e-05,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,anthropic,Anthropic,anthropic/claude-4.5-sonnet-20250929,5460646568.0,0.0,0.0,,17889.078156768,2026-04-21T09:03:17Z,3e-06,1.5e-05,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,anthropic,Anthropic,anthropic/claude-4.6-opus-20260205,22740358165.0,0.0,0.0,,124162.35558090001,2026-04-21T09:03:17Z,5e-06,2.5e-05,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,anthropic,Anthropic,anthropic/claude-4.6-sonnet-20260217,59635023740.0,0.0,0.0,,195364.33777224,2026-04-21T09:03:17Z,3e-06,1.5e-05,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,anthropic,Anthropic,anthropic/claude-4.7-opus-20260416,40188377118.0,0.0,0.0,,219428.53906428002,2026-04-21T09:03:17Z,5e-06,2.5e-05,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,deepseek,DeepSeek,deepseek/deepseek-chat-v3-0324,3712543294.0,0.0,0.0,,791.1801013843399,2026-04-21T09:03:17Z,2e-07,7.7e-07,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,deepseek,DeepSeek,deepseek/deepseek-chat-v3.1,2524224789.0,0.0,0.0,,413.46802043819997,2026-04-21T09:03:17Z,1.5e-07,7.5e-07,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,deepseek,DeepSeek,deepseek/deepseek-r1,236715067.0,0.0,0.0,,127.34087029265,2026-04-21T09:03:17Z,5e-07,2.15e-06,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,deepseek,DeepSeek,deepseek/deepseek-r1-0528,841644810.0,0.0,0.0,,452.7628255395,2026-04-21T09:03:17Z,5e-07,2.15e-06,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,deepseek,DeepSeek,deepseek/deepseek-v3.1-terminus,1261848622.0,0.0,0.0,,281.82127123748,2026-04-21T09:03:17Z,2.1e-07,7.9e-07,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,deepseek,DeepSeek,deepseek/deepseek-v3.2-20251201,50992853554.0,0.0,0.0,,12997.976385207492,2026-04-21T09:03:17Z,2.52e-07,3.78e-07,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,deepseek,DeepSeek,deepseek/deepseek-v3.2-exp,1242189285.0,0.0,0.0,,339.39095644770003,2026-04-21T09:03:17Z,2.7e-07,4.1e-07,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,deepseek,DeepSeek,deepseek/deepseek-v4-flash-20260423,42873385095.0,0.0,0.0,,6140.326213305901,2026-04-24T09:12:10Z,1.4e-07,2.8e-07,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,deepseek,DeepSeek,deepseek/deepseek-v4-pro-20260423,31090584302.0,0.0,0.0,,13835.465467311511,2026-04-26T08:38:54Z,4.35e-07,8.7e-07,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,google,Google,google/gemini-2.0-flash-001,6229828596.0,0.0,0.0,,665.9686769124,2026-05-01T09:10:42Z,1e-07,4e-07,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,google,Google,google/gemini-2.5-flash,35242005858.0,0.0,0.0,,12355.8472538148,2026-04-21T09:03:17Z,3e-07,2.5e-06,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,google,Google,google/gemini-2.5-flash-lite,32322407407.0,0.0,0.0,,3455.2653518083,2026-04-21T09:03:17Z,1e-07,4e-07,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,google,Google,google/gemini-2.5-pro,4241017940.0,0.0,0.0,,6154.7772854250015,2026-04-21T09:03:17Z,1.25e-06,1e-05,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,google,Google,google/gemini-3-flash-preview-20251217,51471531649.0,0.0,0.0,,28695.3788943175,2026-04-21T09:03:17Z,5e-07,3e-06,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,google,Google,google/gemini-3.1-flash-lite-preview-20260303,17820774269.0,0.0,0.0,,4967.54082748375,2026-04-21T09:03:17Z,2.5e-07,1.5e-06,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,google,Google,google/gemini-3.1-pro-preview-20260219,10917906097.0,0.0,0.0,,24346.930596309998,2026-04-21T09:03:17Z,2e-06,1.2e-05,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,google,Google,google/gemma-4-26b-a4b-it-20260403,9953362998.0,0.0,0.0,,659.0121640975799,2026-04-24T09:12:10Z,6e-08,3.3e-07,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,google,Google,google/gemma-4-31b-it-20260402,12125795832.0,0.0,0.0,,0.0,2026-04-21T09:03:17Z,0.0,0.0,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,meta-llama,Meta (Llama),meta-llama/llama-3-8b-instruct,24104035.0,0.0,0.0,,0.7286649780499999,2026-04-21T09:03:17Z,3e-08,4e-08,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,meta-llama,Meta (Llama),meta-llama/llama-3.1-70b-instruct,480077840.0,0.0,0.0,,192.031136,2026-04-21T09:03:17Z,4e-07,4e-07,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,meta-llama,Meta (Llama),meta-llama/llama-3.1-8b-instruct,2223649294.0,0.0,0.0,,46.00730389286,2026-04-21T09:03:17Z,2e-08,5e-08,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,meta-llama,Meta (Llama),meta-llama/llama-3.2-3b-instruct,37090322.0,0.0,0.0,,0.0,2026-04-21T09:03:17Z,0.0,0.0,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,meta-llama,Meta (Llama),meta-llama/llama-3.3-70b-instruct,1776353658.0,0.0,0.0,,186.62371530948,2026-04-22T08:58:07Z,1e-07,3.2e-07,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,meta-llama,Meta (Llama),meta-llama/llama-3.3-70b-instruct:free,41145260.0,0.0,0.0,,0.0,2026-04-21T09:03:17Z,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
+2026-05-02,meta-llama,Meta (Llama),meta-llama/llama-4-maverick-17b-128e-instruct,1636230199.0,0.0,0.0,,262.36951240965,2026-04-21T09:03:17Z,1.5e-07,6e-07,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,meta-llama,Meta (Llama),meta-llama/llama-4-scout-17b-16e-instruct,963142370.0,0.0,0.0,,81.92488999220001,2026-04-21T09:03:17Z,8e-08,3e-07,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,meta-llama,Meta (Llama),meta-llama/llama-guard-4-12b,87581296.0,0.0,0.0,,15.76463328,2026-04-21T09:03:17Z,1.8e-07,1.8e-07,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,microsoft,Microsoft,microsoft/phi-4,40228121.0,0.0,0.0,,2.684221373725,2026-04-21T09:03:17Z,6.5e-08,1.4e-07,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,microsoft,Microsoft,microsoft/wizardlm-2-8x22b,52595092.0,0.0,0.0,,32.60895704,2026-04-21T09:03:17Z,6.2e-07,6.2e-07,matched_asof,model_blended_no_split,True,False,none
 2026-05-02,minimax,MiniMax,minimax/hailuo-2.3-20260420,0.0,0.0,0.0,,,,,,unresolved_missing_pricing,unpriced,False,False,none
-2026-05-02,minimax,MiniMax,minimax/minimax-01,12399602.0,0.0,0.0,,2.7365921614,2026-04-21T09:03:17Z,2e-07,1.1e-06,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,minimax,MiniMax,minimax/minimax-m1,11483898.0,0.0,0.0,,5.0689925771999995,2026-04-21T09:03:17Z,4e-07,2.2e-06,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,minimax,MiniMax,minimax/minimax-m2,108808253.0,0.0,0.0,,29.610533930154997,2026-04-21T09:03:17Z,2.55e-07,1e-06,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,minimax,MiniMax,minimax/minimax-m2-her-20260123,23678730.0,0.0,0.0,,7.593768711,2026-04-21T09:03:17Z,3e-07,1.2e-06,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,minimax,MiniMax,minimax/minimax-m2.1,151417347.0,0.0,0.0,,46.209545957459994,2026-04-21T09:03:17Z,2.9e-07,9.5e-07,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,minimax,MiniMax,minimax/minimax-m2.5-20260211,8021209012.0,0.0,0.0,,1387.669159076,2026-04-24T09:12:10Z,1.5e-07,1.15e-06,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,minimax,MiniMax,minimax/minimax-m2.5-20260211:free,2446151109.0,0.0,0.0,,0.0,2026-04-24T09:12:10Z,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
-2026-05-02,minimax,MiniMax,minimax/minimax-m2.7-20260318,35675479525.0,0.0,0.0,,11441.1262836675,2026-04-21T09:03:17Z,3e-07,1.2e-06,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,mistralai,Mistral AI,mistralai/devstral-2512,228165682.0,0.0,0.0,,99.6627698976,2026-04-21T09:03:17Z,4e-07,2e-06,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,mistralai,Mistral AI,mistralai/devstral-small-2507,117488003.0,0.0,0.0,,12.2892451138,2026-04-21T09:03:17Z,1e-07,3e-07,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,minimax,MiniMax,minimax/minimax-01,15583751.0,0.0,0.0,,3.4393338457,2026-04-21T09:03:17Z,2e-07,1.1e-06,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,minimax,MiniMax,minimax/minimax-m1,13208836.0,0.0,0.0,,5.8303802103999995,2026-04-21T09:03:17Z,4e-07,2.2e-06,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,minimax,MiniMax,minimax/minimax-m2,131304630.0,0.0,0.0,,35.732585485049995,2026-04-21T09:03:17Z,2.55e-07,1e-06,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,minimax,MiniMax,minimax/minimax-m2-her-20260123,29375159.0,0.0,0.0,,9.420613491300001,2026-04-21T09:03:17Z,3e-07,1.2e-06,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,minimax,MiniMax,minimax/minimax-m2.1,187396682.0,0.0,0.0,,57.18971941276,2026-04-21T09:03:17Z,2.9e-07,9.5e-07,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,minimax,MiniMax,minimax/minimax-m2.5-20260211,10118949799.0,0.0,0.0,,1750.578315227,2026-04-24T09:12:10Z,1.5e-07,1.15e-06,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,minimax,MiniMax,minimax/minimax-m2.5-20260211:free,2959089988.0,0.0,0.0,,0.0,2026-04-24T09:12:10Z,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
+2026-05-02,minimax,MiniMax,minimax/minimax-m2.7-20260318,44651425742.0,0.0,0.0,,14319.7122354594,2026-04-21T09:03:17Z,3e-07,1.2e-06,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,mistralai,Mistral AI,mistralai/devstral-2512,241744194.0,0.0,0.0,,105.5938639392,2026-04-21T09:03:17Z,4e-07,2e-06,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,mistralai,Mistral AI,mistralai/devstral-small-2507,171479625.0,0.0,0.0,,17.936768775,2026-04-21T09:03:17Z,1e-07,3e-07,matched_asof,model_blended_no_split,True,False,none
 2026-05-02,mistralai,Mistral AI,mistralai/ministral-14b-2512,50432436.0,0.0,0.0,,10.086487199999999,2026-04-21T09:03:17Z,2e-07,2e-07,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,mistralai,Mistral AI,mistralai/ministral-3b-2512,200593576.0,0.0,0.0,,20.0593576,2026-04-21T09:03:17Z,1e-07,1e-07,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,mistralai,Mistral AI,mistralai/ministral-8b-2512,298091439.0,0.0,0.0,,44.71371585,2026-04-21T09:03:17Z,1.5e-07,1.5e-07,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,mistralai,Mistral AI,mistralai/mistral-large-2512,413503019.0,0.0,0.0,,216.26207893699996,2026-04-21T09:03:17Z,5e-07,1.5e-06,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,mistralai,Mistral AI,mistralai/mistral-nemo,6720676183.0,0.0,0.0,,135.95927918209003,2026-04-29T09:25:02Z,2e-08,3e-08,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,mistralai,Mistral AI,mistralai/mistral-small-24b-instruct-2501,235862341.0,0.0,0.0,,11.955862065289999,2026-04-21T09:03:17Z,5e-08,8e-08,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,mistralai,Mistral AI,mistralai/mistral-small-2603,343742876.0,0.0,0.0,,55.1191701666,2026-04-21T09:03:17Z,1.5e-07,6e-07,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,mistralai,Mistral AI,mistralai/mistral-small-3.2-24b-instruct-2506,1688926382.0,0.0,0.0,,131.52514199825,2026-04-21T09:03:17Z,7.5e-08,2e-07,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,moonshotai,Moonshot AI,moonshotai/kimi-k2,200040084.0,0.0,0.0,,87.37750869119999,2026-04-21T09:03:17Z,4e-07,2e-06,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,moonshotai,Moonshot AI,moonshotai/kimi-k2-0905,366493074.0,0.0,0.0,,160.0841747232,2026-04-21T09:03:17Z,4e-07,2e-06,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,moonshotai,Moonshot AI,moonshotai/kimi-k2-thinking-20251106,240351457.0,0.0,0.0,,154.7142328709,2026-04-21T09:03:17Z,6e-07,2.5e-06,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,moonshotai,Moonshot AI,moonshotai/kimi-k2.5-0127,14016561582.0,0.0,0.0,,6670.201325642161,2026-04-21T09:03:17Z,4.4e-07,2e-06,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,moonshotai,Moonshot AI,moonshotai/kimi-k2.6-20260420,69673682854.0,0.0,0.0,,55965.3857524755,2026-05-01T09:10:42Z,7.4e-07,3.49e-06,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,mistralai,Mistral AI,mistralai/ministral-3b-2512,251774400.0,0.0,0.0,,25.177439999999997,2026-04-21T09:03:17Z,1e-07,1e-07,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,mistralai,Mistral AI,mistralai/ministral-8b-2512,320330236.0,0.0,0.0,,48.049535399999996,2026-04-21T09:03:17Z,1.5e-07,1.5e-07,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,mistralai,Mistral AI,mistralai/mistral-large-2512,545106567.0,0.0,0.0,,285.09073454099996,2026-04-21T09:03:17Z,5e-07,1.5e-06,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,mistralai,Mistral AI,mistralai/mistral-nemo,8185081483.0,0.0,0.0,,165.58419840109002,2026-04-29T09:25:02Z,2e-08,3e-08,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,mistralai,Mistral AI,mistralai/mistral-small-24b-instruct-2501,287763234.0,0.0,0.0,,14.58671833146,2026-04-21T09:03:17Z,5e-08,8e-08,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,mistralai,Mistral AI,mistralai/mistral-small-2603,442394230.0,0.0,0.0,,70.9379147805,2026-04-21T09:03:17Z,1.5e-07,6e-07,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,mistralai,Mistral AI,mistralai/mistral-small-3.2-24b-instruct-2506,2001073498.0,0.0,0.0,,155.83359865675,2026-04-21T09:03:17Z,7.5e-08,2e-07,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,moonshotai,Moonshot AI,moonshotai/kimi-k2,256882657.0,0.0,0.0,,112.20634457759999,2026-04-21T09:03:17Z,4e-07,2e-06,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,moonshotai,Moonshot AI,moonshotai/kimi-k2-0905,551936429.0,0.0,0.0,,241.0858321872,2026-04-21T09:03:17Z,4e-07,2e-06,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,moonshotai,Moonshot AI,moonshotai/kimi-k2-thinking-20251106,356307245.0,0.0,0.0,,229.35497360649998,2026-04-21T09:03:17Z,6e-07,2.5e-06,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,moonshotai,Moonshot AI,moonshotai/kimi-k2.5-0127,17657015573.0,0.0,0.0,,8402.62057087924,2026-04-21T09:03:17Z,4.4e-07,2e-06,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,moonshotai,Moonshot AI,moonshotai/kimi-k2.6-20260420,91425292164.0,0.0,0.0,,73437.365930733,2026-05-01T09:10:42Z,7.4e-07,3.49e-06,matched_asof,model_blended_no_split,True,False,none
 2026-05-02,openai,OpenAI,openai/gpt-4.1-mini-2025-04-14,1725255237.0,0.0,0.0,,737.7191393411999,2026-04-21T09:03:17Z,4e-07,1.6e-06,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,openai,OpenAI,openai/gpt-4o-mini,9906163714.0,0.0,0.0,,1588.4533515399,2026-04-21T09:03:17Z,1.5e-07,6e-07,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,openai,OpenAI,openai/gpt-5.2-20251211,5253899507.0,0.0,0.0,,10674.61032334725,2026-04-21T09:03:17Z,1.75e-06,1.4e-05,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,openai,OpenAI,openai/gpt-5.4-20260305,12729352265.0,0.0,0.0,,35483.069438687504,2026-04-21T09:03:17Z,2.5e-06,1.5e-05,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,openai,OpenAI,openai/gpt-5.4-mini-20260317,4210949486.0,0.0,0.0,,3521.4065076675,2026-04-21T09:03:17Z,7.5e-07,4.5e-06,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,openai,OpenAI,openai/gpt-5.4-nano-20260317,13680513587.0,0.0,0.0,,3066.48712052605,2026-04-21T09:03:17Z,2e-07,1.25e-06,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,openai,OpenAI,openai/gpt-5.5-20260423,185958979643.0,0.0,0.0,,1036721.3115097252,2026-04-25T08:12:58Z,5e-06,3e-05,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,openai,OpenAI,openai/gpt-oss-120b,16754799003.0,0.0,0.0,,707.772974283729,2026-05-01T09:10:42Z,3.9e-08,1.8e-07,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,openai,OpenAI,openai/gpt-oss-120b:free,6463657235.0,0.0,0.0,,0.0,2026-04-21T09:03:17Z,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
-2026-05-02,openai,OpenAI,openai/text-embedding-3-small,4578342851.0,0.0,0.0,,89.46081930854001,2026-01-01T00:00:00Z,2e-08,0.0,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,qwen,Alibaba (Qwen),Others,11944836047.0,0.0,0.0,,,,,,synthetic_unpriced,unpriced,False,False,none
-2026-05-02,qwen,Alibaba (Qwen),qwen/qwen3-235b-a22b-07-25,8345855953.0,0.0,0.0,,598.122458583651,2026-04-21T09:03:17Z,7.1e-08,1e-07,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,qwen,Alibaba (Qwen),qwen/qwen3-coder-480b-a35b-07-25,1884109016.0,0.0,0.0,,482.97250516144004,2026-04-26T08:38:54Z,2.2e-07,1.8e-06,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,qwen,Alibaba (Qwen),qwen/qwen3-embedding-4b,948999088.0,0.0,0.0,,0.0,2026-01-01T00:00:00Z,0.0,0.0,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,qwen,Alibaba (Qwen),qwen/qwen3-embedding-8b,2824837442.0,0.0,0.0,,0.0,2026-01-01T00:00:00Z,0.0,0.0,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,qwen,Alibaba (Qwen),qwen/qwen3-vl-32b-instruct,6992120842.0,0.0,0.0,,777.3560267301921,2026-04-21T09:03:17Z,1.04e-07,4.16e-07,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,qwen,Alibaba (Qwen),qwen/qwen3.5-35b-a3b-20260224,2600894957.0,0.0,0.0,,490.69134482501244,2026-04-21T09:03:17Z,1.625e-07,1.3e-06,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,qwen,Alibaba (Qwen),qwen/qwen3.5-397b-a17b-20260216,8116913068.0,0.0,0.0,,3529.6396476198,2026-04-21T09:03:17Z,3.9e-07,2.34e-06,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,4858584568.0,0.0,0.0,,337.59874870748,2026-04-21T09:03:17Z,6.5e-08,2.6e-07,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,qwen,Alibaba (Qwen),qwen/qwen3.6-plus-04-02,11156621665.0,0.0,0.0,,4042.8807758543744,2026-04-21T09:03:17Z,3.25e-07,1.95e-06,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,tencent,Tencent,tencent/hunyuan-a13b-instruct,151708.0,0.0,0.0,,0.02273951212,2026-04-21T09:03:17Z,1.4e-07,5.7e-07,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,tencent,Tencent,tencent/hy3-preview-20260421:free,190592393587.0,0.0,0.0,,0.0,2026-04-23T09:04:01Z,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
-2026-05-02,x-ai,xAI (Grok),x-ai/grok-3,109985475.0,0.0,0.0,,360.3124161,2026-04-21T09:03:17Z,3e-06,1.5e-05,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,x-ai,xAI (Grok),x-ai/grok-3-mini,154357090.0,0.0,0.0,,47.017169614000004,2026-04-21T09:03:17Z,3e-07,5e-07,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,x-ai,xAI (Grok),x-ai/grok-4-07-09,199238025.0,0.0,0.0,,652.7037699,2026-04-21T09:03:17Z,3e-06,1.5e-05,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,x-ai,xAI (Grok),x-ai/grok-4-fast,4065614410.0,0.0,0.0,,841.1756214289999,2026-04-21T09:03:17Z,2e-07,5e-07,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,x-ai,xAI (Grok),x-ai/grok-4.1-fast,23595145194.0,0.0,0.0,,4881.8355406386,2026-04-21T09:03:17Z,2e-07,5e-07,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,x-ai,xAI (Grok),x-ai/grok-4.20-20260309,818124410.0,0.0,0.0,,1046.1765892875003,2026-05-01T09:10:42Z,1.25e-06,2.5e-06,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,x-ai,xAI (Grok),x-ai/grok-4.20-multi-agent-20260309,344138607.0,0.0,0.0,,719.9379658439999,2026-04-21T09:03:17Z,2e-06,6e-06,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,x-ai,xAI (Grok),x-ai/grok-4.3-20260430,1000110750.0,0.0,0.0,,1278.8916215625002,2026-05-01T09:10:42Z,1.25e-06,2.5e-06,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,x-ai,xAI (Grok),x-ai/grok-code-fast-1,162152722.0,0.0,0.0,,37.2789107878,2026-04-21T09:03:17Z,2e-07,1.5e-06,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,xiaomi,Xiaomi,xiaomi/mimo-v2-flash-20251210,3653978552.0,0.0,0.0,,345.66637101919997,2026-04-21T09:03:17Z,9e-08,2.9e-07,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,xiaomi,Xiaomi,xiaomi/mimo-v2-omni-20260318,605182745.0,0.0,0.0,,264.343823016,2026-04-21T09:03:17Z,4e-07,2e-06,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,xiaomi,Xiaomi,xiaomi/mimo-v2-pro-20260318,2397187478.0,0.0,0.0,,2507.4581019879997,2026-04-21T09:03:17Z,1e-06,3e-06,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,xiaomi,Xiaomi,xiaomi/mimo-v2.5-20260422,1992870451.0,0.0,0.0,,870.4858129968,2026-04-23T09:04:01Z,4e-07,2e-06,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,xiaomi,Xiaomi,xiaomi/mimo-v2.5-pro-20260422,4849563070.0,0.0,0.0,,5072.642971219999,2026-04-23T09:04:01Z,1e-06,3e-06,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,z-ai,智谱AI (Z.ai),z-ai/glm-4-32b-0414,240495523.0,0.0,0.0,,24.0495523,2026-04-21T09:03:17Z,1e-07,1e-07,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,z-ai,智谱AI (Z.ai),z-ai/glm-4.5-air,1380016767.0,0.0,0.0,,0.0,2026-04-21T09:03:17Z,0.0,0.0,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,z-ai,智谱AI (Z.ai),z-ai/glm-4.5-air:free,4977866668.0,0.0,0.0,,0.0,2026-04-21T09:03:17Z,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
-2026-05-02,z-ai,智谱AI (Z.ai),z-ai/glm-4.6,445122061.0,0.0,0.0,,139.6793027418,2026-04-21T09:03:17Z,3e-07,9e-07,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,z-ai,智谱AI (Z.ai),z-ai/glm-4.7-20251222,9929464306.0,0.0,0.0,,4083.79007977168,2026-04-21T09:03:17Z,3.8e-07,1.74e-06,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,z-ai,智谱AI (Z.ai),z-ai/glm-4.7-flash-20260119,1040010754.0,0.0,0.0,,70.53352933628,2026-04-21T09:03:17Z,6e-08,4e-07,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,z-ai,智谱AI (Z.ai),z-ai/glm-5-20260211,7954221827.0,0.0,0.0,,5043.2948071910805,2026-04-24T09:12:10Z,6e-07,2.08e-06,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,z-ai,智谱AI (Z.ai),z-ai/glm-5-turbo-20260315,8603869405.0,0.0,0.0,,10878.732475682,2026-04-21T09:03:17Z,1.2e-06,4e-06,matched_asof,model_blended_no_split,True,False,none
-2026-05-02,z-ai,智谱AI (Z.ai),z-ai/glm-5.1-20260406,17321242710.0,0.0,0.0,,19163.356872208496,2026-04-22T08:58:07Z,1.05e-06,3.5e-06,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,openai,OpenAI,openai/gpt-4o-mini,12140298654.0,0.0,0.0,,1946.6968891689,2026-04-21T09:03:17Z,1.5e-07,6e-07,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,openai,OpenAI,openai/gpt-5.2-20251211,5550308125.0,0.0,0.0,,11276.83853296875,2026-04-21T09:03:17Z,1.75e-06,1.4e-05,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,openai,OpenAI,openai/gpt-5.4-20260305,14896212954.0,0.0,0.0,,41523.193609275004,2026-04-21T09:03:17Z,2.5e-06,1.5e-05,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,openai,OpenAI,openai/gpt-5.4-mini-20260317,5015011400.0,0.0,0.0,,4193.80328325,2026-04-21T09:03:17Z,7.5e-07,4.5e-06,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,openai,OpenAI,openai/gpt-5.4-nano-20260317,16657758075.0,0.0,0.0,,3733.83647251125,2026-04-21T09:03:17Z,2e-07,1.25e-06,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,openai,OpenAI,openai/gpt-5.5-20260423,203192884808.0,0.0,0.0,,1132800.3328046002,2026-04-25T08:12:58Z,5e-06,3e-05,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,openai,OpenAI,openai/gpt-oss-120b,19673315607.0,0.0,0.0,,831.059871186501,2026-05-01T09:10:42Z,3.9e-08,1.8e-07,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,openai,OpenAI,openai/gpt-oss-120b:free,7833316106.0,0.0,0.0,,0.0,2026-04-21T09:03:17Z,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
+2026-05-02,openai,OpenAI,openai/text-embedding-3-small,6160594968.0,0.0,0.0,,120.37802567472,2026-01-01T00:00:00Z,2e-08,0.0,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,qwen,Alibaba (Qwen),Others,15616843050.0,0.0,0.0,,,,,,synthetic_unpriced,unpriced,False,False,none
+2026-05-02,qwen,Alibaba (Qwen),qwen/qwen3-235b-a22b-07-25,10084549036.0,0.0,0.0,,722.7293757630121,2026-04-21T09:03:17Z,7.1e-08,1e-07,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,qwen,Alibaba (Qwen),qwen/qwen3-coder-480b-a35b-07-25,2175837465.0,0.0,0.0,,557.7541757781,2026-04-26T08:38:54Z,2.2e-07,1.8e-06,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,qwen,Alibaba (Qwen),qwen/qwen3-embedding-4b,1123686813.0,0.0,0.0,,0.0,2026-01-01T00:00:00Z,0.0,0.0,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,qwen,Alibaba (Qwen),qwen/qwen3-embedding-8b,3643079049.0,0.0,0.0,,0.0,2026-01-01T00:00:00Z,0.0,0.0,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,qwen,Alibaba (Qwen),qwen/qwen3-vl-32b-instruct,7682418343.0,0.0,0.0,,854.100541701368,2026-04-21T09:03:17Z,1.04e-07,4.16e-07,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,qwen,Alibaba (Qwen),qwen/qwen3.5-35b-a3b-20260224,3291076198.0,0.0,0.0,,620.9026632051749,2026-04-21T09:03:17Z,1.625e-07,1.3e-06,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,qwen,Alibaba (Qwen),qwen/qwen3.5-397b-a17b-20260216,10290265182.0,0.0,0.0,,4474.7218143927,2026-04-21T09:03:17Z,3.9e-07,2.34e-06,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,qwen,Alibaba (Qwen),qwen/qwen3.5-flash-20260224,6001557009.0,0.0,0.0,,417.01818877036504,2026-04-21T09:03:17Z,6.5e-08,2.6e-07,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,qwen,Alibaba (Qwen),qwen/qwen3.6-plus-04-02,13457101471.0,0.0,0.0,,4876.517145553625,2026-04-21T09:03:17Z,3.25e-07,1.95e-06,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,stepfun,StepFun,stepfun/step-3.5-flash,35579845466.0,0.0,0.0,,3721.6518357436,2026-04-21T09:03:17Z,1e-07,3e-07,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,tencent,Tencent,tencent/hunyuan-a13b-instruct,326829.0,0.0,0.0,,0.04898839881,2026-04-21T09:03:17Z,1.4e-07,5.7e-07,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,tencent,Tencent,tencent/hy3-preview-20260421:free,243118319869.0,0.0,0.0,,0.0,2026-04-23T09:04:01Z,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
+2026-05-02,x-ai,xAI (Grok),x-ai/grok-3,126841094.0,0.0,0.0,,415.531423944,2026-04-21T09:03:17Z,3e-06,1.5e-05,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,x-ai,xAI (Grok),x-ai/grok-3-mini,183823034.0,0.0,0.0,,55.9924961564,2026-04-21T09:03:17Z,3e-07,5e-07,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,x-ai,xAI (Grok),x-ai/grok-4-07-09,217480925.0,0.0,0.0,,712.4675103,2026-04-21T09:03:17Z,3e-06,1.5e-05,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,x-ai,xAI (Grok),x-ai/grok-4-fast,4713552215.0,0.0,0.0,,975.2339532834999,2026-04-21T09:03:17Z,2e-07,5e-07,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,x-ai,xAI (Grok),x-ai/grok-4.1-fast,28619525025.0,0.0,0.0,,5921.379727672499,2026-04-21T09:03:17Z,2e-07,5e-07,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,x-ai,xAI (Grok),x-ai/grok-4.20-20260309,966346426.0,0.0,0.0,,1235.7154922475002,2026-05-01T09:10:42Z,1.25e-06,2.5e-06,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,x-ai,xAI (Grok),x-ai/grok-4.20-multi-agent-20260309,367081097.0,0.0,0.0,,767.9336549239998,2026-04-21T09:03:17Z,2e-06,6e-06,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,x-ai,xAI (Grok),x-ai/grok-4.3-20260430,1375499873.0,0.0,0.0,,1758.9204625987504,2026-05-01T09:10:42Z,1.25e-06,2.5e-06,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,x-ai,xAI (Grok),x-ai/grok-code-fast-1,252234962.0,0.0,0.0,,57.9888177638,2026-04-21T09:03:17Z,2e-07,1.5e-06,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,xiaomi,Xiaomi,xiaomi/mimo-v2-flash-20251210,4434875656.0,0.0,0.0,,419.53923705759996,2026-04-21T09:03:17Z,9e-08,2.9e-07,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,xiaomi,Xiaomi,xiaomi/mimo-v2-omni-20260318,681557155.0,0.0,0.0,,297.704165304,2026-04-21T09:03:17Z,4e-07,2e-06,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,xiaomi,Xiaomi,xiaomi/mimo-v2-pro-20260318,2745136458.0,0.0,0.0,,2871.4127350679996,2026-04-21T09:03:17Z,1e-06,3e-06,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,xiaomi,Xiaomi,xiaomi/mimo-v2.5-20260422,2458901899.0,0.0,0.0,,1074.0483494832,2026-04-23T09:04:01Z,4e-07,2e-06,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,xiaomi,Xiaomi,xiaomi/mimo-v2.5-pro-20260422,5635044226.0,0.0,0.0,,5894.256260395999,2026-04-23T09:04:01Z,1e-06,3e-06,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,z-ai,智谱AI (Z.ai),z-ai/glm-4-32b-0414,265086188.0,0.0,0.0,,26.508618799999997,2026-04-21T09:03:17Z,1e-07,1e-07,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,z-ai,智谱AI (Z.ai),z-ai/glm-4.5-air,1615435391.0,0.0,0.0,,0.0,2026-04-21T09:03:17Z,0.0,0.0,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,z-ai,智谱AI (Z.ai),z-ai/glm-4.5-air:free,5860819131.0,0.0,0.0,,0.0,2026-04-21T09:03:17Z,0.0,0.0,free_model_zero_revenue,free_model,True,False,none
+2026-05-02,z-ai,智谱AI (Z.ai),z-ai/glm-4.6,540550608.0,0.0,0.0,,169.6247807904,2026-04-21T09:03:17Z,3e-07,9e-07,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,z-ai,智谱AI (Z.ai),z-ai/glm-4.7-20251222,11198094157.0,0.0,0.0,,4605.55216489096,2026-04-21T09:03:17Z,3.8e-07,1.74e-06,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,z-ai,智谱AI (Z.ai),z-ai/glm-4.7-flash-20260119,1273721269.0,0.0,0.0,,86.38377646357999,2026-04-21T09:03:17Z,6e-08,4e-07,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,z-ai,智谱AI (Z.ai),z-ai/glm-5-20260211,9256811730.0,0.0,0.0,,5869.188909289201,2026-04-24T09:12:10Z,6e-07,2.08e-06,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,z-ai,智谱AI (Z.ai),z-ai/glm-5-turbo-20260315,10087015781.0,0.0,0.0,,12754.0227534964,2026-04-21T09:03:17Z,1.2e-06,4e-06,matched_asof,model_blended_no_split,True,False,none
+2026-05-02,z-ai,智谱AI (Z.ai),z-ai/glm-5.1-20260406,24287709415.0,0.0,0.0,,26870.707311285245,2026-04-22T08:58:07Z,1.05e-06,3.5e-06,matched_asof,model_blended_no_split,True,False,none

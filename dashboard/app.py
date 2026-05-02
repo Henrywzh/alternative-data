@@ -124,7 +124,6 @@ def format_metric(value: float, metric_unit: str | None = None) -> str:
 
 WEEKLY_MONTHLY_OTHER_PROVIDERS = {
     "Tngtech",
-    "StepFun",
     "Others",
     "OpenRouter",
     "Microsoft",
@@ -138,6 +137,47 @@ DAILY_OTHER_PROVIDERS = {
     "Meta (Llama)",
     "Mistral AI",
 }
+
+US_PROVIDER_ORDER = [
+    "OpenAI",
+    "Anthropic",
+    "Google",
+    "Meta (Llama)",
+    "xAI (Grok)",
+    "Microsoft",
+]
+CHINA_PROVIDER_ORDER = [
+    "DeepSeek",
+    "Alibaba (Qwen)",
+    "智谱AI (Z.ai)",
+    "Moonshot AI",
+    "MiniMax",
+    "Xiaomi",
+    "Tencent",
+    "StepFun",
+]
+
+
+def order_provider_columns(pivot_df: pd.DataFrame) -> pd.DataFrame:
+    """Apply dashboard-wide provider order for token/revenue displays."""
+    if pivot_df.empty:
+        return pivot_df.copy()
+
+    columns = list(pivot_df.columns)
+    ordered: list[object] = []
+
+    for provider in US_PROVIDER_ORDER + CHINA_PROVIDER_ORDER:
+        if provider in columns:
+            ordered.append(provider)
+
+    known = set(US_PROVIDER_ORDER + CHINA_PROVIDER_ORDER + ["Others"])
+    other_named = sorted((col for col in columns if col not in known), key=lambda value: str(value).casefold())
+    ordered.extend(other_named)
+
+    if "Others" in columns:
+        ordered.append("Others")
+
+    return pivot_df.loc[:, ordered]
 
 
 def regroup_provider_pivot_for_display(pivot_df: pd.DataFrame, granularity: str) -> pd.DataFrame:
@@ -155,12 +195,12 @@ def regroup_provider_pivot_for_display(pivot_df: pd.DataFrame, granularity: str)
     target_keys = {target.casefold() for target in targets}
     matched_cols = [col for col in pivot_df.columns if str(col).casefold() in target_keys]
     if not matched_cols:
-        return pivot_df.copy()
+        return order_provider_columns(pivot_df.copy())
 
     kept_cols = [col for col in pivot_df.columns if col not in matched_cols]
     regrouped = pivot_df[kept_cols].copy()
     regrouped["Others"] = pivot_df[matched_cols].sum(axis=1)
-    return regrouped
+    return order_provider_columns(regrouped)
 
 
 def grouped_revenue_token_pivots(
@@ -2449,7 +2489,7 @@ def render_token_revenue_comparison(openrouter_views: dict[str, object]) -> None
                 st.info(f"Not enough data for {period_label} comparison.")
                 return
             # Align columns and index
-            common_cols = sorted(set(rev_piv.columns) & set(tok_piv.columns))
+            common_cols = [col for col in rev_piv.columns if col in set(tok_piv.columns)]
             common_idx  = sorted(set(rev_piv.index)   & set(tok_piv.index))
             if not common_cols or not common_idx:
                 st.info("No overlapping providers/periods between revenue and token data.")
