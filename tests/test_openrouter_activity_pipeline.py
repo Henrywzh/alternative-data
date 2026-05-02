@@ -155,6 +155,10 @@ def test_provider_config_tracks_tencent() -> None:
     assert PROVIDER_SLUGS["tencent"] == "Tencent"
 
 
+def test_provider_config_tracks_stepfun() -> None:
+    assert PROVIDER_SLUGS["stepfun"] == "StepFun"
+
+
 def test_provider_activity_source_emits_tencent_rows() -> None:
     payload = [
         "$",
@@ -186,6 +190,37 @@ def test_provider_activity_source_emits_tencent_rows() -> None:
     assert record.total_tokens == 123456.0
 
 
+def test_provider_activity_source_emits_stepfun_rows() -> None:
+    payload = [
+        "$",
+        "$L53",
+        None,
+        {
+            "data": [
+                {"x": "2026-05-01 00:00:00", "ys": {"stepfun/step-3.5-flash": 123456}},
+                {"x": "2026-05-02 00:00:00", "ys": {"stepfun/step-3.5-flash": 234567}},
+                {"x": "2026-05-03 00:00:00", "ys": {"stepfun/step-3.5-flash": 345678}},
+                {"x": "2026-05-04 00:00:00", "ys": {"stepfun/step-3.5-flash": 456789}},
+                {"x": "2026-05-05 00:00:00", "ys": {"stepfun/step-3.5-flash": 567890}},
+            ],
+        },
+    ]
+    html = f"<html><body>{_make_next_f_script('44', payload)}</body></html>"
+    source = ProviderActivitySource()
+    context = RunContext(run_id="provider-activity-test", scraped_at=pd.Timestamp("2026-05-02T00:00:00Z").to_pydatetime())
+
+    extracted = source.extract(
+        [Snapshot(name="provider_stepfun", source_url="fixture://stepfun", body=html)],
+        context,
+    )
+
+    record = extracted["provider_daily_activity"][0]
+    assert record.entity_id == "stepfun"
+    assert record.entity_name == "StepFun"
+    assert record.model_permaslug == "stepfun/step-3.5-flash"
+    assert record.total_tokens == 123456.0
+
+
 def test_activity_pipeline_discovers_major_provider_slugs_from_catalog(tmp_path: Path) -> None:
     catalog_dir = tmp_path / "data" / "normalized" / "compute_availability"
     catalog_dir.mkdir(parents=True, exist_ok=True)
@@ -210,6 +245,12 @@ def test_activity_pipeline_discovers_major_provider_slugs_from_catalog(tmp_path:
                 "snapshot_ts": "2026-04-24T00:00:00Z",
             },
             {
+                "model_id": "stepfun/step-3.5-flash",
+                "canonical_slug": "stepfun/step-3.5-flash",
+                "provider_prefix": "stepfun",
+                "snapshot_ts": "2026-04-24T00:00:00Z",
+            },
+            {
                 "model_id": "nvidia/llama-3.1-nemotron",
                 "canonical_slug": "nvidia/llama-3.1-nemotron",
                 "provider_prefix": "nvidia",
@@ -221,7 +262,12 @@ def test_activity_pipeline_discovers_major_provider_slugs_from_catalog(tmp_path:
     pipeline = ActivityPipeline(tmp_path)
     slugs = pipeline._discover_catalog_slugs()
 
-    assert slugs == ["anthropic/claude-opus-4.7", "x-ai/grok-4-fast", "tencent/hy3-preview:free"]
+    assert slugs == [
+        "anthropic/claude-opus-4.7",
+        "x-ai/grok-4-fast",
+        "tencent/hy3-preview:free",
+        "stepfun/step-3.5-flash",
+    ]
 
 
 def test_activity_pipeline_unions_recent_partial_catalog_snapshots(tmp_path: Path) -> None:
