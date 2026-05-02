@@ -23,6 +23,7 @@ from dashboard.app import (
     make_line_chart,
     make_stacked_area_chart,
     market_share_legend_rows,
+    order_provider_columns,
     prepare_hf_models_table,
     resolve_hf_metric_config,
     section_domains,
@@ -1364,10 +1365,11 @@ def test_regroup_provider_pivot_for_display_weekly_monthly_merges_into_others() 
 
     regrouped = regroup_provider_pivot_for_display(pivot, "weekly")
 
-    assert list(regrouped.columns) == ["OpenAI", "Tencent", "Others"]
-    assert regrouped.loc["2026-01-05", "Others"] == 77.0
-    assert regrouped.loc["2026-01-12", "Others"] == 84.0
+    assert list(regrouped.columns) == ["OpenAI", "Tencent", "StepFun", "Others"]
+    assert regrouped.loc["2026-01-05", "Others"] == 70.0
+    assert regrouped.loc["2026-01-12", "Others"] == 76.0
     assert regrouped.loc["2026-01-05", "Tencent"] == 19.0
+    assert regrouped.loc["2026-01-05", "StepFun"] == 7.0
 
 
 def test_regroup_provider_pivot_for_display_daily_uses_daily_bucket_rules() -> None:
@@ -1404,6 +1406,37 @@ def test_regroup_provider_pivot_for_display_is_noop_when_no_targets_present() ->
     pd.testing.assert_frame_equal(regrouped, pivot)
 
 
+def test_order_provider_columns_groups_us_china_other_and_others_last() -> None:
+    pivot = pd.DataFrame(
+        {
+            "Mistral AI": [1.0],
+            "Tencent": [2.0],
+            "Others": [3.0],
+            "Anthropic": [4.0],
+            "StepFun": [5.0],
+            "OpenAI": [6.0],
+            "Arcee AI": [7.0],
+            "DeepSeek": [8.0],
+            "Google": [9.0],
+        },
+        index=["2026-05-01"],
+    )
+
+    ordered = order_provider_columns(pivot)
+
+    assert list(ordered.columns) == [
+        "OpenAI",
+        "Anthropic",
+        "Google",
+        "DeepSeek",
+        "Tencent",
+        "StepFun",
+        "Arcee AI",
+        "Mistral AI",
+        "Others",
+    ]
+
+
 def test_derive_provider_name_normalizes_meta_llama_slug() -> None:
     assert _derive_provider_name("meta-llama/model", None) == "Meta (Llama)"
 
@@ -1414,6 +1447,10 @@ def test_derive_provider_name_normalizes_tencent_slug() -> None:
 
 def test_derive_provider_name_normalizes_z_ai_slug() -> None:
     assert _derive_provider_name("z-ai/model", None) == "智谱AI (Z.ai)"
+
+
+def test_derive_provider_name_normalizes_stepfun_slug() -> None:
+    assert _derive_provider_name("stepfun/step-3.5-flash", None) == "StepFun"
 
 
 def test_tencent_surfaces_in_daily_token_and_revenue_views(tmp_path: Path) -> None:
@@ -1467,6 +1504,50 @@ def test_tencent_surfaces_in_daily_token_and_revenue_views(tmp_path: Path) -> No
     assert "Tencent" in revenue_daily.columns
     assert token_daily.loc["2026-05-01", "Tencent"] == 500.0
     assert revenue_daily.loc["2026-05-01", "Tencent"] == 0.1023
+
+
+def test_stepfun_surfaces_in_daily_token_and_revenue_views(tmp_path: Path) -> None:
+    provider_daily_activity = pd.DataFrame(
+        [
+            {
+                **_base_row("provider_daily_activity"),
+                "usage_date": "2026-05-01",
+                "entity_id": "stepfun",
+                "entity_name": "StepFun",
+                "category_slug": "stepfun",
+                "model_permaslug": "stepfun/step-3.5-flash",
+                "total_tokens": 100.0,
+            },
+        ],
+        columns=EXPECTED_COLUMNS,
+    )
+    raw_openrouter_models = pd.DataFrame(
+        [
+            {
+                **_base_row("raw_openrouter_models"),
+                "snapshot_ts": "2026-04-30T00:00:00Z",
+                "model_id": "stepfun/step-3.5-flash",
+                "canonical_slug": "stepfun/step-3.5-flash",
+                "provider_prefix": "stepfun",
+                "pricing_prompt": 0.001,
+                "pricing_completion": 0.002,
+            }
+        ],
+        columns=EXPECTED_COLUMNS,
+    )
+
+    _write_dataset(tmp_path, "provider_daily_activity", provider_daily_activity)
+    _write_dataset(tmp_path, "raw_openrouter_models", raw_openrouter_models)
+
+    datasets = load_all_datasets(base_dir=tmp_path)
+    views = _compute_revenue_views(datasets)
+    token_daily = regroup_provider_pivot_for_display(views["token_volume"]["pivot_daily"], "daily")
+    revenue_daily = regroup_provider_pivot_for_display(views["revenue_estimator"]["pivot_rev_daily"], "daily")
+
+    assert "StepFun" in token_daily.columns
+    assert "StepFun" in revenue_daily.columns
+    assert token_daily.loc["2026-05-01", "StepFun"] == 100.0
+    assert revenue_daily.loc["2026-05-01", "StepFun"] == 0.1023
 
 
 def test_legacy_token_volume_uses_market_share_for_providers_missing_from_top_models(tmp_path: Path) -> None:
@@ -2155,10 +2236,12 @@ def test_grouped_revenue_token_pivots_share_aligned_display_provider_buckets() -
 
     rev_grouped, tok_grouped = grouped_revenue_token_pivots(rev_data, tok_data, "weekly")
 
-    assert list(rev_grouped.columns) == ["OpenAI", "Others"]
-    assert list(tok_grouped.columns) == ["OpenAI", "Others"]
-    assert rev_grouped.loc["2026-01-05", "Others"] == 28.0
-    assert tok_grouped.loc["2026-01-05", "Others"] == 280.0
+    assert list(rev_grouped.columns) == ["OpenAI", "StepFun", "Others"]
+    assert list(tok_grouped.columns) == ["OpenAI", "StepFun", "Others"]
+    assert rev_grouped.loc["2026-01-05", "StepFun"] == 5.0
+    assert tok_grouped.loc["2026-01-05", "StepFun"] == 50.0
+    assert rev_grouped.loc["2026-01-05", "Others"] == 23.0
+    assert tok_grouped.loc["2026-01-05", "Others"] == 230.0
 
 
 def test_top_n_with_others_preserves_existing_others_bucket() -> None:
