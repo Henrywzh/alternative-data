@@ -556,6 +556,7 @@ OPENROUTER_PROVIDER_MAP = {
     "rekaai": "Reka AI",
     "xiaomi": "Xiaomi",
     "minimax": "MiniMax",
+    "tencent": "Tencent",
     "x-ai": "xAI (Grok)",
     "01-ai": "01.AI (Yi)",
     "upstage": "Upstage",
@@ -2217,7 +2218,8 @@ def render_revenue_estimator(datasets: dict[str, DatasetLoadResult], openrouter_
     st.caption(
         "Methodology: dashboard revenue uses a hybrid estimate. Legacy weekly history starts from Market Share provider totals, "
         "prices the ranked model subset, and tops up uncovered provider volume with provider/global blended pricing benchmarks. "
-        "Modern daily history uses observed provider/model activity with OpenRouter pricing plus provider/global fallbacks when exact as-of matches are unavailable."
+        "Modern daily history uses observed provider/model activity with OpenRouter pricing plus provider/global fallbacks when exact as-of matches are unavailable. "
+        "Models whose OpenRouter slug ends in :free are included in token volume and zero-rated for revenue."
     )
     st.markdown("---")
 

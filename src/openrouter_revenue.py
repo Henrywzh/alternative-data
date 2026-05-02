@@ -31,6 +31,11 @@ CONSERVATIVE_ECONOMICS_COLUMNS = [
 ]
 
 
+def is_free_model_slug(value: object) -> bool:
+    slug = clean_slug(value)
+    return bool(slug and slug.endswith(":free"))
+
+
 def _clean_model_id(series: pd.Series) -> pd.Series:
     return series.astype("string").str.strip()
 
@@ -249,9 +254,15 @@ def _estimate_with_context(
         ),
     )
     estimated.loc[estimated["pricing_join_status"] == "synthetic_unpriced", "estimated_revenue"] = np.nan
+    free_mask = estimated["model_permaslug"].map(is_free_model_slug)
+    estimated.loc[free_mask, "pricing_prompt"] = 0.0
+    estimated.loc[free_mask, "pricing_completion"] = 0.0
+    estimated.loc[free_mask, "pricing_blended"] = 0.0
+    estimated.loc[free_mask, "estimated_revenue"] = 0.0
+    estimated.loc[free_mask, "pricing_join_status"] = "free_model_zero_revenue"
 
     if pricing_strategy == "provider_fallback":
-        unresolved_mask = estimated["pricing_join_status"].eq("unresolved_missing_pricing")
+        unresolved_mask = estimated["pricing_join_status"].eq("unresolved_missing_pricing") & ~free_mask
         for index in estimated[unresolved_mask].index:
             provider = estimated.at[index, "provider_slug"]
             provider_stats = context.provider_lookup.get(str(provider)) if pd.notna(provider) else None
@@ -548,6 +559,7 @@ def build_conservative_provider_economics(
     )
     has_split = (priced["prompt_tokens"].fillna(0) + priced["completion_tokens"].fillna(0)) > 0
     blended = blended_unit_price_series(priced["pricing_prompt"], priced["pricing_completion"])
+    free_mask = priced["model_permaslug"].map(is_free_model_slug)
 
     priced["estimated_revenue"] = np.nan
     split_priced = has_pricing & has_split
@@ -569,6 +581,12 @@ def build_conservative_provider_economics(
     priced.loc[has_pricing & has_split & priced["split_source"].eq("model_activity"), "revenue_method"] = "model_split_inferred"
     priced.loc[blended_priced, "revenue_method"] = "model_blended_no_split"
     priced.loc[priced["model_permaslug"].eq("Others"), "revenue_method"] = "unpriced"
+    priced.loc[free_mask, "pricing_prompt"] = 0.0
+    priced.loc[free_mask, "pricing_completion"] = 0.0
+    priced.loc[free_mask, "estimated_revenue"] = 0.0
+    priced.loc[free_mask, "has_pricing"] = True
+    priced.loc[free_mask, "pricing_join_status"] = "free_model_zero_revenue"
+    priced.loc[free_mask, "revenue_method"] = "free_model"
 
     output = priced.copy()
     output["pricing_snapshot_ts"] = pd.to_datetime(output["pricing_snapshot_ts"], errors="coerce", utc=True).dt.strftime(
