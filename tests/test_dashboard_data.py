@@ -1378,6 +1378,59 @@ def test_derive_provider_name_normalizes_z_ai_slug() -> None:
     assert _derive_provider_name("z-ai/model", None) == "智谱AI (Z.ai)"
 
 
+def test_tencent_surfaces_in_daily_token_and_revenue_views(tmp_path: Path) -> None:
+    provider_daily_activity = pd.DataFrame(
+        [
+            {
+                **_base_row("provider_daily_activity"),
+                "usage_date": "2026-05-01",
+                "entity_id": "tencent",
+                "entity_name": "Tencent",
+                "category_slug": "tencent",
+                "model_permaslug": "tencent/hy3-preview-20260421:free",
+                "total_tokens": 400.0,
+            },
+            {
+                **_base_row("provider_daily_activity"),
+                "usage_date": "2026-05-01",
+                "entity_id": "tencent",
+                "entity_name": "Tencent",
+                "category_slug": "tencent",
+                "model_permaslug": "tencent/hunyuan-a13b-instruct",
+                "total_tokens": 100.0,
+            },
+        ],
+        columns=EXPECTED_COLUMNS,
+    )
+    raw_openrouter_models = pd.DataFrame(
+        [
+            {
+                **_base_row("raw_openrouter_models"),
+                "snapshot_ts": "2026-04-30T00:00:00Z",
+                "model_id": "tencent/hunyuan-a13b-instruct",
+                "canonical_slug": "tencent/hunyuan-a13b-instruct",
+                "provider_prefix": "tencent",
+                "pricing_prompt": 0.001,
+                "pricing_completion": 0.002,
+            }
+        ],
+        columns=EXPECTED_COLUMNS,
+    )
+
+    _write_dataset(tmp_path, "provider_daily_activity", provider_daily_activity)
+    _write_dataset(tmp_path, "raw_openrouter_models", raw_openrouter_models)
+
+    datasets = load_all_datasets(base_dir=tmp_path)
+    views = _compute_revenue_views(datasets)
+    token_daily = regroup_provider_pivot_for_display(views["token_volume"]["pivot_daily"], "daily")
+    revenue_daily = regroup_provider_pivot_for_display(views["revenue_estimator"]["pivot_rev_daily"], "daily")
+
+    assert "Tencent" in token_daily.columns
+    assert "Tencent" in revenue_daily.columns
+    assert token_daily.loc["2026-05-01", "Tencent"] == 500.0
+    assert revenue_daily.loc["2026-05-01", "Tencent"] == 0.1023
+
+
 def test_legacy_token_volume_uses_market_share_for_providers_missing_from_top_models(tmp_path: Path) -> None:
     top_models = pd.DataFrame(
         [
