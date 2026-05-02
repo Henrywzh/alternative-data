@@ -25,6 +25,7 @@ from dashboard.app import (
     market_share_legend_rows,
     prepare_hf_models_table,
     resolve_hf_metric_config,
+    section_domains,
     regroup_provider_pivot_for_display,
     _top_n_with_others,
     rankings_bucket_warning,
@@ -894,6 +895,43 @@ def test_load_latest_manifest_reads_latest_run(tmp_path: Path) -> None:
 
     assert freshness.latest_run_id == payload["run_id"]
     assert freshness.latest_manifest_scraped_at == payload["scraped_at"]
+
+
+def test_load_latest_manifest_can_skip_raw_manifest_scan_when_datasets_provided(tmp_path: Path) -> None:
+    raw_root = tmp_path / "data" / "raw" / "openrouter" / "20260404T120606Z-ef7072ee"
+    raw_root.mkdir(parents=True)
+    (raw_root / "manifest.json").write_text(
+        json.dumps({"run_id": "raw-run", "scraped_at": "2026-04-04T12:06:06Z"}),
+        encoding="utf-8",
+    )
+    result = DatasetLoadResult(
+        dataset_id="top_models",
+        label="Top Models",
+        domain="rankings",
+        primary_date_column="week_start_date",
+        metric_column="metric_value",
+        frame=pd.DataFrame(),
+        source_format="csv",
+        source_path=tmp_path / "data" / "normalized" / "openrouter" / "top_models.csv",
+        missing_columns=[],
+        duplicate_rows=0,
+        first_date="2026-04-01",
+        latest_date="2026-04-01",
+        latest_scraped_at="2026-04-05T00:00:00Z",
+        row_count=1,
+    )
+
+    freshness = load_latest_manifest(base_dir=tmp_path, datasets={"top_models": result}, scan_raw_manifests=False)
+
+    assert freshness.latest_scraped_at == "2026-04-05T00:00:00Z"
+    assert freshness.latest_run_id is None
+    assert freshness.latest_manifest_path is None
+
+
+def test_section_domains_loads_only_selected_dashboard_inputs() -> None:
+    assert section_domains("OpenRouter Intelligence") == ("rankings", "apps", "compute_availability")
+    assert section_domains("Provider Adoption") == ("provider_adoption",)
+    assert section_domains("Artificial Analysis") == ("artificial_analysis",)
 
 
 def test_load_all_datasets_supports_every_registered_dataset(tmp_path: Path) -> None:
