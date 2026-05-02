@@ -1319,15 +1319,17 @@ def test_regroup_provider_pivot_for_display_weekly_monthly_merges_into_others() 
             "Arcee AI": [13.0, 14.0],
             "Nousresearch": [15.0, 16.0],
             "NVIDIA": [17.0, 18.0],
+            "Tencent": [19.0, 20.0],
         },
         index=["2026-01-05", "2026-01-12"],
     )
 
     regrouped = regroup_provider_pivot_for_display(pivot, "weekly")
 
-    assert list(regrouped.columns) == ["OpenAI", "Others"]
+    assert list(regrouped.columns) == ["OpenAI", "Tencent", "Others"]
     assert regrouped.loc["2026-01-05", "Others"] == 77.0
     assert regrouped.loc["2026-01-12", "Others"] == 84.0
+    assert regrouped.loc["2026-01-05", "Tencent"] == 19.0
 
 
 def test_regroup_provider_pivot_for_display_daily_uses_daily_bucket_rules() -> None:
@@ -1338,14 +1340,16 @@ def test_regroup_provider_pivot_for_display_daily_uses_daily_bucket_rules() -> N
             "Meta (Llama)": [30.0],
             "Mistral AI": [40.0],
             "Google": [50.0],
+            "Tencent": [60.0],
         },
         index=["2026-04-05"],
     )
 
     regrouped = regroup_provider_pivot_for_display(pivot, "daily")
 
-    assert list(regrouped.columns) == ["OpenAI", "Google", "Others"]
+    assert list(regrouped.columns) == ["OpenAI", "Google", "Tencent", "Others"]
     assert regrouped.loc["2026-04-05", "Others"] == 90.0
+    assert regrouped.loc["2026-04-05", "Tencent"] == 60.0
 
 
 def test_regroup_provider_pivot_for_display_is_noop_when_no_targets_present() -> None:
@@ -1364,6 +1368,10 @@ def test_regroup_provider_pivot_for_display_is_noop_when_no_targets_present() ->
 
 def test_derive_provider_name_normalizes_meta_llama_slug() -> None:
     assert _derive_provider_name("meta-llama/model", None) == "Meta (Llama)"
+
+
+def test_derive_provider_name_normalizes_tencent_slug() -> None:
+    assert _derive_provider_name("tencent/hy3-preview:free", None) == "Tencent"
 
 
 def test_derive_provider_name_normalizes_z_ai_slug() -> None:

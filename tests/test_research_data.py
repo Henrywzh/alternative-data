@@ -9,7 +9,7 @@ import pandas as pd
 import pytest
 
 from dashboard import data as dashboard_data
-from openrouter_revenue import estimate_usage_revenue
+from openrouter_revenue import build_conservative_provider_economics, estimate_usage_revenue
 from research_data.api import monthly_model_releases, provider_revenue_daily
 from research_data.cli import main as research_cli_main
 from research_data.catalog import catalog
@@ -746,6 +746,84 @@ def test_estimate_usage_revenue_falls_back_to_full_pricing_when_usage_date_missi
     assert pd.Timestamp(row["pricing_snapshot_ts"]) == pd.Timestamp("2026-04-15T12:00:00Z")
     assert row["pricing_join_status"] == "fallback_provider_median"
     assert row["estimated_revenue"] == pytest.approx(0.1023)
+
+
+def test_estimate_usage_revenue_zero_rates_free_models_without_fallback_pricing() -> None:
+    usage = pd.DataFrame(
+        [
+            {
+                "usage_date": "2026-05-01",
+                "provider_slug": "tencent",
+                "model_permaslug": "tencent/hy3-preview:free",
+                "total_tokens": 10_000_000.0,
+                "prompt_tokens": 0.0,
+                "completion_tokens": 0.0,
+            }
+        ]
+    )
+    pricing = pd.DataFrame(
+        [
+            {
+                "snapshot_ts": "2026-04-30T00:00:00Z",
+                "model_id": "openai/gpt-4.1",
+                "canonical_slug": "openai/gpt-4.1",
+                "provider_prefix": "openai",
+                "pricing_prompt": 0.001,
+                "pricing_completion": 0.002,
+            }
+        ]
+    )
+
+    estimated = estimate_usage_revenue(
+        usage,
+        pricing,
+        slug_strategy="canonical",
+        pricing_strategy="provider_fallback",
+    )
+
+    row = estimated.iloc[0]
+    assert row["pricing_join_status"] == "free_model_zero_revenue"
+    assert row["estimated_revenue"] == 0.0
+    assert row["pricing_prompt"] == 0.0
+    assert row["pricing_completion"] == 0.0
+
+
+def test_conservative_economics_zero_rates_free_models_and_keeps_token_volume() -> None:
+    provider_activity = pd.DataFrame(
+        [
+            {
+                "usage_date": "2026-05-01",
+                "entity_id": "tencent",
+                "entity_name": "Tencent",
+                "model_permaslug": "tencent/hy3-preview:free",
+                "total_tokens": 10_000_000.0,
+                "prompt_tokens": 0.0,
+                "completion_tokens": 0.0,
+            }
+        ]
+    )
+    pricing = pd.DataFrame(
+        [
+            {
+                "snapshot_ts": "2026-04-30T00:00:00Z",
+                "model_id": "openai/gpt-4.1",
+                "canonical_slug": "openai/gpt-4.1",
+                "provider_prefix": "openai",
+                "pricing_prompt": 0.001,
+                "pricing_completion": 0.002,
+            }
+        ]
+    )
+
+    economics = build_conservative_provider_economics(provider_activity, pricing)
+
+    row = economics.iloc[0]
+    assert row["provider_slug"] == "tencent"
+    assert row["provider_name"] == "Tencent"
+    assert row["total_tokens"] == 10_000_000.0
+    assert row["pricing_join_status"] == "free_model_zero_revenue"
+    assert row["revenue_method"] == "free_model"
+    assert row["estimated_revenue"] == 0.0
 
 
 def test_notebook_style_rollup_preserves_unpriced_coverage_gaps(tmp_path: Path) -> None:
