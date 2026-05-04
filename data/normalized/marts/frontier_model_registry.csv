@@ -5,11 +5,11 @@ gemini-1.0-pro,Gemini 1.0 Pro,Google,2024-02-15,32760.0,0.279,,,,,False,,,False,
 claude-3-opus-20240229,Claude 3 Opus,Anthropic,2024-02-29,200000.0,0.504,,,,,False,,,True,0.36848719126352314
 claude-3-sonnet-20240229,Claude 3 Sonnet,Anthropic,2024-02-29,200000.0,0.404,,,,,False,,,True,0.3039332006531945
 claude-3-haiku-20240307,Claude 3 Haiku,Anthropic,2024-03-13,200000.0,0.333,,,,,False,,,True,0.2745904776484997
-gemini-1.5-flash-8b,Gemini 1.5 Flash 8B,Google,2024-03-15,1048576.0,0.384,,,,,False,,,True,0.5253368034292712
+gemini-1.5-flash-8b,Gemini 1.5 Flash 8B,Google,2024-03-15,1048576.0,0.384,,,,,False,,,True,0.5199020208205756
 grok-1.5,Grok-1.5,xAI,2024-03-28,,0.359,,,,,False,,,False,0.10328638497652583
 gpt-4-turbo-2024-04-09,GPT-4 Turbo,OpenAI,2024-04-09,128000.0,0.48,,,,,False,,,False,0.21482700551132883
 grok-1.5v,Grok-1.5V,xAI,2024-04-12,,,,,,,False,,,False,
-gemini-1.5-flash,Gemini 1.5 Flash,Google,2024-05-01,1048576.0,0.51,,,,,False,,,True,0.606322718922229
+gemini-1.5-flash,Gemini 1.5 Flash,Google,2024-05-01,1048576.0,0.51,,,,,False,,,True,0.6008879363135333
 gemini-1.5-pro,Gemini 1.5 Pro,Google,2024-05-01,2097152.0,0.591,,,,,False,,,True,0.6709915288834456
 deepseek-v2.5,DeepSeek-V2.5,DeepSeek,2024-05-08,8192.0,,0.168,,,,False,,,False,0.013953346360527601
 chatgpt-4o-latest,ChatGPT-4o Latest,OpenAI,2024-05-13,128000.0,0.84,,,,,False,,,False,0.4859537660747091
@@ -30,8 +30,8 @@ gpt-4o-2024-08-06,GPT-4o,OpenAI,2024-08-06,128000.0,0.701,0.332,,,,False,,,False
 grok-2,Grok-2,xAI,2024-08-13,128000.0,0.56,,,,,False,,,False,0.25708052663808945
 grok-2-mini,Grok-2 mini,xAI,2024-08-13,,0.51,,,,,False,,,False,0.2887323943661972
 hermes-3-70b,Hermes 3 70B,Nous Research,2024-08-15,,0.661,,,,,False,,,False,0.4225352112676056
-jamba-1.5-large,Jamba 1.5 Large,AI21 Labs,2024-08-22,256000.0,0.369,,,,,False,,,True,0.33585935905286796
-jamba-1.5-mini,Jamba 1.5 Mini,AI21 Labs,2024-08-22,256144.0,0.323,,,,,False,,,True,0.3259721371708512
+jamba-1.5-large,Jamba 1.5 Large,AI21 Labs,2024-08-22,256000.0,0.369,,,,,False,,,True,0.334500663400694
+jamba-1.5-mini,Jamba 1.5 Mini,AI21 Labs,2024-08-22,256144.0,0.323,,,,,False,,,True,0.3232547458665034
 phi-3.5-mini-instruct,Phi-3.5-mini-instruct,Microsoft,2024-08-23,128000.0,0.304,,,,,False,,,False,0.11975658297611758
 phi-3.5-moe-instruct,Phi-3.5-MoE-instruct,Microsoft,2024-08-23,,0.368,,,,,False,,,False,0.11267605633802817
 phi-3.5-vision-instruct,Phi-3.5-vision-instruct,Microsoft,2024-08-23,,,,,,,False,,,False,
@@ -55,11 +55,11 @@ ministral-8b-instruct-2410,Ministral 8B Instruct,Mistral AI,2024-10-16,128000.0,
 claude-3-5-haiku-20241022,Claude 3.5 Haiku,Anthropic,2024-10-22,200000.0,0.416,0.406,,,,False,,,True,0.24398768035668825
 claude-3-5-sonnet-20241022,Claude 3.5 Sonnet,Anthropic,2024-10-22,200000.0,0.672,0.49,,,,False,,,True,0.36505113976482245
 pixtral-large,Pixtral Large,Mistral AI,2024-11-18,128000.0,,,,,,False,,,False,0.19021739130434784
-nova-lite,Nova Lite,Amazon,2024-11-20,300000.0,0.42,,,,,False,,,True,0.4449313635435803
+nova-lite,Nova Lite,Amazon,2024-11-20,300000.0,0.42,,,,,False,,,True,0.44221397223923253
 nova-micro,Nova Micro,Amazon,2024-11-20,128000.0,0.4,,,,,False,,,False,0.16083639518269036
-nova-pro,Nova Pro,Amazon,2024-11-20,300000.0,0.469,,,,,False,,,True,0.4777952133088385
+nova-pro,Nova Pro,Amazon,2024-11-20,300000.0,0.469,,,,,False,,,True,0.4750778220044907
 qwq-32b-preview,QwQ-32B-Preview,Alibaba Cloud / Qwen Team,2024-11-28,32768.0,0.652,,,,,False,,,False,0.22497576035925698
-gemini-2.0-flash,Gemini 2.0 Flash,Google,2024-12-01,1048576.0,0.621,,,,,False,,,True,0.6485762400489896
+gemini-2.0-flash,Gemini 2.0 Flash,Google,2024-12-01,1048576.0,0.621,,,,,False,,,True,0.6431414574402939
 llama-3.3-70b-instruct,Llama 3.3 70B Instruct,Meta,2024-12-06,128000.0,0.505,,,,,False,,,False,0.23360634823433354
 phi-4,Phi 4,Microsoft,2024-12-12,16000.0,0.561,,,,,False,,,False,0.16975403143498674
 grok-2-image-1212,Grok-2 Image 1212,xAI,2024-12-12,,,,,,,False,,,False,
@@ -70,7 +70,7 @@ o1-2024-12-17,o1,OpenAI,2024-12-17,200000.0,0.78,0.41,,,,False,,,True,0.41126977
 o1-pro,o1-pro,OpenAI,2024-12-17,,0.79,,,,,False,,,False,0.6572769953051644
 qvq-72b-preview,QvQ-72B-Preview,Alibaba Cloud / Qwen Team,2024-12-25,,,,,,,False,,,False,
 deepseek-v3,DeepSeek-V3,DeepSeek,2024-12-25,131072.0,0.591,0.42,,,,False,,,True,0.2804371143541486
-qwen3-coder,Qwen3-Coder,Alibaba Cloud / Qwen Team,2025-01-01,256000.0,,,,,,False,,,True,0.5543478260869565
+qwen3-coder,Qwen3-Coder,Alibaba Cloud / Qwen Team,2025-01-01,,,,,,,False,,,False,
 deepseek-v3.1,DeepSeek-V3.1,DeepSeek,2025-01-10,163840.0,0.749,0.66,,,,False,,,True,0.45170668477018544
 deepseek-r1,DeepSeek-R1,DeepSeek,2025-01-20,131072.0,,,,,,False,,,True,0.34782608695652173
 deepseek-r1-distill-llama-70b,DeepSeek R1 Distill Llama 70B,DeepSeek,2025-01-20,128000.0,0.652,,,,,False,,,False,0.2969866299244744
@@ -90,7 +90,7 @@ o3-mini,o3-mini,OpenAI,2025-01-30,200000.0,0.772,0.493,,,,False,,,True,0.4290468
 qwen3-coder-480b-a35b-instruct,Qwen3-Coder 480B A35B Instruct,Alibaba Cloud / Qwen Team,2025-01-31,,,0.696,,,,False,,,False,0.47752808988764045
 phi-4-mini,Phi 4 Mini,Microsoft,2025-02-01,,0.252,,,,,False,,,False,0.03286384976525822
 phi-4-multimodal-instruct,Phi-4-multimodal-instruct,Microsoft,2025-02-01,128000.0,,,,,,False,,,False,0.19021739130434784
-gemini-2.0-flash-lite,Gemini 2.0 Flash-Lite,Google,2025-02-05,1048576.0,0.515,,,,,False,,,True,0.6098438456827924
+gemini-2.0-flash-lite,Gemini 2.0 Flash-Lite,Google,2025-02-05,1048576.0,0.515,,,,,False,,,True,0.6044090630740967
 grok-3,Grok-3,xAI,2025-02-17,128000.0,0.846,,,,,False,,,False,0.4965171463563993
 grok-3-mini,Grok-3 Mini,xAI,2025-02-17,128000.0,0.84,,,,,False,,,False,0.4859537660747091
 claude-3-7-sonnet-20250219,Claude 3.7 Sonnet,Anthropic,2025-02-24,200000.0,0.848,0.703,,,,False,,,True,0.5926012092202567
@@ -107,12 +107,12 @@ llama-3.1-nemotron-nano-8b-v1,Llama 3.1 Nemotron Nano 8B V1,NVIDIA,2025-03-18,,0
 llama-3.3-nemotron-super-49b-v1,Llama-3.3 Nemotron Super 49B v1,NVIDIA,2025-03-18,,0.6667,,,,,False,,,False,0.43661971830985913
 deepseek-v3-0324,DeepSeek-V3 0324,DeepSeek,2025-03-25,163840.0,0.684,,,,,False,,,True,0.43113390487854664
 qwen2.5-omni-7b,Qwen2.5-Omni-7B,Alibaba Cloud / Qwen Team,2025-03-27,,0.308,,,,,False,,,False,0.06103286384976526
-llama-4-maverick,Llama 4 Maverick,Meta,2025-04-05,1000000.0,0.698,,,,,False,,,True,0.6629796897325985
+llama-4-maverick,Llama 4 Maverick,Meta,2025-04-05,1000000.0,0.698,,,,,False,,,True,0.6589036027760767
 llama-4-scout,Llama 4 Scout,Meta,2025-04-05,10000000.0,0.572,,,,,False,,,True,0.6666666666666666
 llama-3.1-nemotron-ultra-253b-v1,Llama 3.1 Nemotron Ultra 253B v1,NVIDIA,2025-04-07,,0.7601,,,,,False,,,False,0.6197183098591549
-gpt-4.1-2025-04-14,GPT-4.1,OpenAI,2025-04-14,1047576.0,0.663,0.546,,,,False,,,True,0.5163515561151745
-gpt-4.1-mini-2025-04-14,GPT-4.1 mini,OpenAI,2025-04-14,1047576.0,0.65,0.236,,,,False,,,True,0.44172652754173636
-gpt-4.1-nano-2025-04-14,GPT-4.1 nano,OpenAI,2025-04-14,1047576.0,0.503,,,,,False,,,True,0.5767375995101041
+gpt-4.1-2025-04-14,GPT-4.1,OpenAI,2025-04-14,1047576.0,0.663,0.546,,,,False,,,True,0.5127283677093774
+gpt-4.1-mini-2025-04-14,GPT-4.1 mini,OpenAI,2025-04-14,1047576.0,0.65,0.236,,,,False,,,True,0.43810333913593924
+gpt-4.1-nano-2025-04-14,GPT-4.1 nano,OpenAI,2025-04-14,1047576.0,0.503,,,,,False,,,True,0.5713028169014085
 granite-3.3-8b-base,Granite 3.3 8B Base,IBM,2025-04-16,,,,,,,False,,,False,
 granite-3.3-8b-instruct,Granite 3.3 8B Instruct,IBM,2025-04-16,128000.0,,,,,,False,,,False,0.19021739130434784
 o3-2025-04-16,o3,OpenAI,2025-04-16,200000.0,0.833,0.691,,,,False,,,True,0.5560447920656436
@@ -124,8 +124,8 @@ phi-4-mini-reasoning,Phi 4 Mini Reasoning,Microsoft,2025-04-30,,0.52,,,,,False,,
 phi-4-reasoning,Phi 4 Reasoning,Microsoft,2025-04-30,,0.658,,,,,False,,,False,0.4154929577464789
 phi-4-reasoning-plus,Phi 4 Reasoning Plus,Microsoft,2025-04-30,,0.689,,,,,False,,,False,0.4671361502347418
 granite-4.0-tiny-preview,IBM Granite 4.0 Tiny Preview,IBM,2025-05-02,,,,,,,False,,,False,
-gemini-2.5-flash,Gemini 2.5 Flash,Google,2025-05-20,1048576.0,0.828,0.604,,,,False,,,True,0.6621409780945893
-gemini-2.5-pro,Gemini 2.5 Pro,Google,2025-05-20,1048576.0,0.83,0.632,,,,False,,,True,0.6738516918151148
+gemini-2.5-flash,Gemini 2.5 Flash,Google,2025-05-20,1048576.0,0.828,0.604,,,,False,,,True,0.6585177896887923
+gemini-2.5-pro,Gemini 2.5 Pro,Google,2025-05-20,1048576.0,0.83,0.632,,,,False,,,True,0.6702285034093176
 gemini-diffusion,Gemini Diffusion,Google,2025-05-20,,0.404,0.229,,,,False,,,False,0.08845017671572507
 gemma-3n-e2b-it-litert-preview,Gemma 3n E2B Instructed LiteRT (Preview),Google,2025-05-20,,0.248,,,,,False,,,False,0.025821596244131457
 gemma-3n-e4b-it-litert-preview,Gemma 3n E4B Instructed LiteRT Preview,Google,2025-05-20,,0.237,,,,,False,,,False,0.01643192488262911
@@ -133,13 +133,13 @@ medgemma-4b-it,MedGemma 4B IT,Google,2025-05-20,,,,,,,False,,,False,
 claude-opus-4-20250514,Claude Opus 4,Anthropic,2025-05-22,,0.796,0.725,,,,False,,,False,0.6142322097378277
 claude-sonnet-4-20250514,Claude Sonnet 4,Anthropic,2025-05-22,,0.754,0.727,,,,False,,,False,0.5916811731814106
 deepseek-r1-0528,DeepSeek-R1-0528,DeepSeek,2025-05-28,131072.0,0.81,0.446,,,,False,,,True,0.40155332472498784
-gemini-2.5-pro-preview-06-05,Gemini 2.5 Pro Preview 06-05,Google,2025-06-05,1048576.0,0.864,0.672,,,,False,,,True,0.7223122428868386
+gemini-2.5-pro-preview-06-05,Gemini 2.5 Pro Preview 06-05,Google,2025-06-05,1048576.0,0.864,0.672,,,,False,,,True,0.7186890544810414
 magistral-medium,Magistral Medium,Mistral AI,2025-06-10,,0.708,,,,,False,,,False,0.5070422535211268
 magistral-small-2506,Magistral Small 2506,Mistral AI,2025-06-10,,0.6818,,,,,False,,,False,0.45539906103286387
 o3-pro-2025-06-10,o3-pro,OpenAI,2025-06-10,200000.0,,,,,,False,,,True,0.46467391304347827
 minimax-m1-40k,MiniMax M1 40K,MiniMax,2025-06-16,,0.692,0.556,,,,False,,,False,0.3606847074959118
-minimax-m1-80k,MiniMax M1 80K,MiniMax,2025-06-16,1000000.0,0.7,0.56,,,,False,,,True,0.5312586723729447
-gemini-2.5-flash-lite,Gemini 2.5 Flash-Lite,Google,2025-06-17,1048576.0,0.646,0.316,,,,False,,,True,0.456588060087169
+minimax-m1-80k,MiniMax M1 80K,MiniMax,2025-06-16,1000000.0,0.7,0.56,,,,False,,,True,0.5285412810685969
+gemini-2.5-flash-lite,Gemini 2.5 Flash-Lite,Google,2025-06-17,1048576.0,0.646,0.316,,,,False,,,True,0.45296487168137195
 mistral-small-3.2-24b-instruct-2506,Mistral Small 3.2 24B Instruct,Mistral AI,2025-06-20,,0.4613,,,,,False,,,False,0.22065727699530516
 ernie-4.5,ERNIE 4.5,Baidu,2025-06-25,128000.0,0.74,,,,,False,,,False,0.3756251275770566
 gemma-3n-e2b,Gemma 3n E2B,Google,2025-06-26,,,,,,,False,,,False,
@@ -151,8 +151,8 @@ devstral-medium-2507,Devstral Medium,Mistral AI,2025-07-10,128000.0,,0.616,,,,Fa
 devstral-small-2507,Devstral Small 1.1,Mistral AI,2025-07-11,128000.0,,0.536,,,,False,,,False,0.1962322911577919
 kimi-k2-base,Kimi K2 Base,Moonshot AI,2025-07-11,,0.481,,,,,False,,,False,0.24413145539906103
 kimi-k2-instruct,Kimi K2 Instruct,Moonshot AI,2025-07-11,200000.0,0.751,,,,,False,,,True,0.5316327311696265
-qwen3-235b-a22b-instruct-2507,Qwen3-235B-A22B-Instruct-2507,Alibaba Cloud / Qwen Team,2025-07-22,262144.0,0.775,,,,,False,,,True,0.6507705654215146
-qwen3-235b-a22b-thinking-2507,Qwen3-235B-A22B-Thinking-2507,Alibaba Cloud / Qwen Team,2025-07-25,262144.0,0.811,,,,,False,,,True,0.6859818330271483
+qwen3-235b-a22b-instruct-2507,Qwen3-235B-A22B-Instruct-2507,Alibaba Cloud / Qwen Team,2025-07-22,262144.0,0.775,,,,,False,,,True,0.6480531741171668
+qwen3-235b-a22b-thinking-2507,Qwen3-235B-A22B-Thinking-2507,Alibaba Cloud / Qwen Team,2025-07-25,262144.0,0.811,,,,,False,,,True,0.6832644417228007
 glm-4.5,GLM-4.5,Zhipu AI,2025-07-28,,0.791,0.642,,,,False,,,False,0.5051432188637442
 glm-4.5-air,GLM-4.5-Air,Zhipu AI,2025-07-28,,0.75,0.576,,,,False,,,False,0.4294323996412934
 claude-opus-4-1-20250805,Claude Opus 4.1,Anthropic,2025-08-05,200000.0,0.809,0.745,,,,False,,,True,0.6182381770949205
@@ -162,59 +162,59 @@ gpt-oss-20b,GPT OSS 20B,OpenAI,2025-08-05,131072.0,0.715,,,,,False,,,True,0.4368
 gpt-oss-20b-high,GPT OSS 20B High,OpenAI,2025-08-05,,0.742,,,,,False,,,False,0.5704225352112676
 gpt-5-2025-08-07,GPT-5,OpenAI,2025-08-07,,0.857,0.749,,,,False,,,False,0.7806614970723216
 gpt-5-high-2025-08-07,GPT-5 High,OpenAI,2025-08-07,,0.873,,,,,False,,,False,0.8685446009389671
-gpt-5-medium-2025-08-07,GPT-5 Medium,OpenAI,2025-08-07,400000.0,0.881,,,,,False,,,True,0.8363888038375179
-gpt-5-mini-2025-08-07,GPT-5 mini,OpenAI,2025-08-07,400000.0,0.823,,,,,False,,,True,0.7495343437436212
+gpt-5-medium-2025-08-07,GPT-5 Medium,OpenAI,2025-08-07,400000.0,0.881,,,,,False,,,True,0.8336714125331701
+gpt-5-mini-2025-08-07,GPT-5 mini,OpenAI,2025-08-07,400000.0,0.823,,,,,False,,,True,0.7468169524392734
 gpt-5-nano-2025-08-07,GPT-5 nano,OpenAI,2025-08-07,,0.712,,,,,False,,,False,0.5164319248826291
 glm-4.5v,GLM-4.5V,Zhipu AI,2025-08-11,,,,,,,False,,,False,
 nvidia-nemotron-nano-9b-v2,Nemotron Nano 9B v2,NVIDIA,2025-08-18,,0.64,,,,,False,,,False,0.38028169014084506
 grok-4-fast,Grok 4 Fast,xAI,2025-08-28,2000000.0,0.857,,,,,False,,,True,0.9019060012247397
 grok-4-fast-non-reasoning,Grok-4 Fast Non-Reasoning,xAI,2025-08-28,2000000.0,,,,,,False,,,True,0.9728260869565217
 grok-4-fast-reasoning,Grok-4 Fast Reasoning,xAI,2025-08-28,2000000.0,,,,,,False,,,True,0.9728260869565217
-grok-code-fast-1,Grok Code Fast 1,xAI,2025-08-28,256000.0,,0.708,,,,False,,,True,0.5356008793356131
+grok-code-fast-1,Grok Code Fast 1,xAI,2025-08-28,256000.0,,0.708,,,,False,,,True,0.5342421836834392
 longcat-flash-chat,LongCat-Flash-Chat,Meituan,2025-08-29,128000.0,0.7323,0.604,,,,False,,,False,0.3479356981054759
 mistral-large-3-2509,Mistral Large 3,Mistral AI,2025-09-01,128000.0,,,,,,False,,,False,0.19021739130434784
-kimi-k2-0905,Kimi K2 0905,Moonshot AI,2025-09-05,262144.0,0.758,,,,,False,,,True,0.6390334762196366
+kimi-k2-0905,Kimi K2 0905,Moonshot AI,2025-09-05,262144.0,0.758,,,,,False,,,True,0.6363160849152889
 kimi-k2-instruct-0905,Kimi K2-Instruct-0905,Moonshot AI,2025-09-05,,0.751,0.658,,,,False,,,False,0.4790710555467637
 kimi-k2-thinking-0905,Kimi K2-Thinking-0905,Moonshot AI,2025-09-05,,0.845,0.713,,,,False,,,False,0.6631059766840744
 qwen3-next-80b-a3b-base,Qwen3-Next-80B-A3B-Base,Alibaba Cloud / Qwen Team,2025-09-10,,,,,,,False,,,False,
 qwen3-next-80b-a3b-instruct,Qwen3-Next-80B-A3B-Instruct,Alibaba Cloud / Qwen Team,2025-09-10,65536.0,0.729,,,,,False,,,False,0.2978669116146152
 qwen3-next-80b-a3b-thinking,Qwen3-Next-80B-A3B-Thinking,Alibaba Cloud / Qwen Team,2025-09-10,65536.0,0.772,,,,,False,,,False,0.34833639518269033
 gpt-5-codex-2025-09-15,GPT-5 Codex,OpenAI,2025-09-15,,,0.745,,,,False,,,False,0.702247191011236
-qwen3-vl-235b-a22b-instruct,Qwen3 VL 235B A22B Instruct,Alibaba Cloud / Qwen Team,2025-09-22,262144.0,,,,,,False,,,True,0.6630434782608695
-qwen3-vl-235b-a22b-thinking,Qwen3 VL 235B A22B Thinking,Alibaba Cloud / Qwen Team,2025-09-22,262144.0,,,,,,False,,,True,0.6630434782608695
-qwen3-vl-30b-a3b-instruct,Qwen3 VL 30B A3B Instruct,Alibaba Cloud / Qwen Team,2025-09-22,262144.0,0.704,,,,,False,,,True,0.5826954480506226
-qwen3-vl-30b-a3b-thinking,Qwen3 VL 30B A3B Thinking,Alibaba Cloud / Qwen Team,2025-09-22,262144.0,0.744,,,,,False,,,True,0.6202541334966319
+qwen3-vl-235b-a22b-instruct,Qwen3 VL 235B A22B Instruct,Alibaba Cloud / Qwen Team,2025-09-22,262144.0,,,,,,False,,,True,0.657608695652174
+qwen3-vl-235b-a22b-thinking,Qwen3 VL 235B A22B Thinking,Alibaba Cloud / Qwen Team,2025-09-22,262144.0,,,,,,False,,,True,0.657608695652174
+qwen3-vl-30b-a3b-instruct,Qwen3 VL 30B A3B Instruct,Alibaba Cloud / Qwen Team,2025-09-22,262144.0,0.704,,,,,False,,,True,0.5799780567462748
+qwen3-vl-30b-a3b-thinking,Qwen3 VL 30B A3B Thinking,Alibaba Cloud / Qwen Team,2025-09-22,262144.0,0.744,,,,,False,,,True,0.6175367421922842
 qwen3-vl-32b-instruct,Qwen3 VL 32B Instruct,Alibaba Cloud / Qwen Team,2025-09-22,,0.689,,,,,False,,,False,0.4671361502347418
 qwen3-vl-32b-thinking,Qwen3 VL 32B Thinking,Alibaba Cloud / Qwen Team,2025-09-22,,0.731,,,,,False,,,False,0.539906103286385
-qwen3-vl-4b-instruct,Qwen3 VL 4B Instruct,Alibaba Cloud / Qwen Team,2025-09-22,262144.0,,,,,,False,,,True,0.6630434782608695
-qwen3-vl-4b-thinking,Qwen3 VL 4B Thinking,Alibaba Cloud / Qwen Team,2025-09-22,262144.0,0.641,,,,,False,,,True,0.5240100020412328
-qwen3-vl-8b-instruct,Qwen3 VL 8B Instruct,Alibaba Cloud / Qwen Team,2025-09-22,262144.0,,,,,,False,,,True,0.6630434782608695
-qwen3-vl-8b-thinking,Qwen3 VL 8B Thinking,Alibaba Cloud / Qwen Team,2025-09-22,262144.0,0.699,,,,,False,,,True,0.5756531945294958
+qwen3-vl-4b-instruct,Qwen3 VL 4B Instruct,Alibaba Cloud / Qwen Team,2025-09-22,262144.0,,,,,,False,,,True,0.657608695652174
+qwen3-vl-4b-thinking,Qwen3 VL 4B Thinking,Alibaba Cloud / Qwen Team,2025-09-22,262144.0,0.641,,,,,False,,,True,0.5212926107368852
+qwen3-vl-8b-instruct,Qwen3 VL 8B Instruct,Alibaba Cloud / Qwen Team,2025-09-22,262144.0,,,,,,False,,,True,0.657608695652174
+qwen3-vl-8b-thinking,Qwen3 VL 8B Thinking,Alibaba Cloud / Qwen Team,2025-09-22,262144.0,0.699,,,,,False,,,True,0.572935803225148
 longcat-flash-thinking,LongCat-Flash-Thinking,Meituan,2025-09-22,,0.815,0.594,,,,False,,,False,0.5052223453078019
 claude-sonnet-4-5-20250929,Claude Sonnet 4.5,Anthropic,2025-09-29,200000.0,0.834,,,,,False,,,True,0.6173134823433354
 deepseek-v3.2-exp,DeepSeek-V3.2-Exp,DeepSeek,2025-09-29,,0.799,0.678,,,,False,,,False,0.5379279421849449
 glm-4.6,GLM-4.6,Zhipu AI,2025-09-30,131072.0,0.81,0.68,,,,False,,,True,0.4876956468223661
 claude-haiku-4-5-20251001,Claude Haiku 4.5,Anthropic,2025-10-15,200000.0,0.73,0.733,,,,False,,,True,0.5392875695796665
-minimax-m2,MiniMax M2,MiniMax,2025-10-27,1000000.0,0.78,0.694,,,,False,,,True,0.6495351225848278
-gpt-5.1-codex-high,GPT-5.1 Codex High,OpenAI,2025-11-12,400000.0,,,,,,False,,,True,0.7690217391304348
+minimax-m2,MiniMax M2,MiniMax,2025-10-27,1000000.0,0.78,0.694,,,,False,,,True,0.64681773128048
+gpt-5.1-codex-high,GPT-5.1 Codex High,OpenAI,2025-11-12,400000.0,,,,,,False,,,True,0.7635869565217391
 gpt-5.1-codex-mini,GPT-5.1 Codex Mini,OpenAI,2025-11-12,,,,,,,False,,,False,
 gpt-5.1-high-2025-11-12,GPT-5.1 High,OpenAI,2025-11-12,,0.881,,,,,False,,,True,0.903755868544601
-gpt-5.1-instant-2025-11-12,GPT-5.1 Instant,OpenAI,2025-11-12,400000.0,0.881,0.763,,,,False,,,True,0.8122741838317534
-gpt-5.1-medium-2025-11-12,GPT-5.1 Medium,OpenAI,2025-11-12,400000.0,,,,,,False,,,True,0.7690217391304348
-gpt-5.1-thinking-2025-11-12,GPT-5.1 Thinking,OpenAI,2025-11-12,400000.0,0.881,0.763,,,,False,,,True,0.8122741838317534
-gpt-5.1-2025-11-13,GPT-5.1,OpenAI,2025-11-13,400000.0,0.881,0.763,,,,False,,,True,0.8122741838317534
+gpt-5.1-instant-2025-11-12,GPT-5.1 Instant,OpenAI,2025-11-12,400000.0,0.881,0.763,,,,False,,,True,0.810462589628855
+gpt-5.1-medium-2025-11-12,GPT-5.1 Medium,OpenAI,2025-11-12,400000.0,,,,,,False,,,True,0.7635869565217391
+gpt-5.1-thinking-2025-11-12,GPT-5.1 Thinking,OpenAI,2025-11-12,400000.0,0.881,0.763,,,,False,,,True,0.810462589628855
+gpt-5.1-2025-11-13,GPT-5.1,OpenAI,2025-11-13,400000.0,0.881,0.763,,,,False,,,True,0.810462589628855
 grok-4-1-fast-non-reasoning,Grok-4.1 Fast Non-Reasoning,xAI,2025-11-17,2000000.0,,,,,,False,,,True,0.9728260869565217
 grok-4-1-fast-reasoning,Grok-4.1 Fast Reasoning,xAI,2025-11-17,2000000.0,,,,,,False,,,True,0.9728260869565217
-grok-4.1-2025-11-17,Grok-4.1,xAI,2025-11-17,256000.0,,,,,,False,,,True,0.5543478260869565
-grok-4.1-thinking-2025-11-17,Grok-4.1 Thinking,xAI,2025-11-17,256000.0,,,,,,False,,,True,0.5543478260869565
+grok-4.1-2025-11-17,Grok-4.1,xAI,2025-11-17,256000.0,,,,,,False,,,True,0.5516304347826086
+grok-4.1-thinking-2025-11-17,Grok-4.1 Thinking,xAI,2025-11-17,256000.0,,,,,,False,,,True,0.5516304347826086
 gemini-3-pro-preview,Gemini 3 Pro,Google,2025-11-18,,0.919,0.762,,,,False,,,True,0.8543545919713035
-gpt-5.1-codex,GPT-5.1 Codex,OpenAI,2025-11-19,400000.0,,0.737,,,,False,,,True,0.7159715437225207
+gpt-5.1-codex,GPT-5.1 Codex,OpenAI,2025-11-19,400000.0,,0.737,,,,False,,,True,0.7132541524181729
 claude-opus-4-5-20251101,Claude Opus 4.5,Anthropic,2025-11-24,200000.0,0.87,0.809,,,,False,,,True,0.7686839227297781
 deepseek-chat,DeepSeek-V3.2 (Non-thinking),DeepSeek,2025-12-01,131072.0,,,,,,False,,,True,0.34782608695652173
 deepseek-reasoner,DeepSeek-V3.2 (Thinking),DeepSeek,2025-12-01,,0.824,0.731,,,,False,,,False,0.667471118847919
 deepseek-v3.2,DeepSeek-V3.2,DeepSeek,2025-12-01,163840.0,0.824,0.731,,,,False,,,True,0.5790387169131054
 deepseek-v3.2-speciale,DeepSeek-V3.2-Speciale,DeepSeek,2025-12-01,,,0.731,,,,False,,,False,0.5955056179775281
-ministral-14b-latest,Ministral 3 (14B Reasoning 2512),Mistral AI,2025-12-04,262100.0,0.712,,,,,False,,,True,0.5571290059195755
+ministral-14b-latest,Ministral 3 (14B Reasoning 2512),Mistral AI,2025-12-04,262100.0,0.712,,,,,False,,,True,0.5544116146152276
 ministral-3-14b-base-2512,Ministral 3 (14B Base 2512),Mistral AI,2025-12-04,,,,,,,False,,,False,
 ministral-3-14b-instruct-2512,MiniStral 3 (14B Instruct 2512),Mistral AI,2025-12-04,,,,,,,False,,,False,
 ministral-3-3b-base-2512,Ministral 3 (3B Base 2512),Mistral AI,2025-12-04,,,,,,,False,,,False,
@@ -222,77 +222,77 @@ ministral-3-3b-instruct-2512,Ministral 3 (3B Instruct 2512),Mistral AI,2025-12-0
 ministral-3-8b-base-2512,Ministral 3 (8B Base 2512),Mistral AI,2025-12-04,,,,,,,False,,,False,
 ministral-3-8b-instruct-2512,Ministral 3 (8B Instruct 2512),Mistral AI,2025-12-04,,,,,,,False,,,False,
 ministral-3b-latest,Min  istral 3 (3B Reasoning 2512),Mistral AI,2025-12-04,131100.0,0.534,,,,,False,,,True,0.3505817513778322
-ministral-8b-latest,Ministral 3 (8B Reasoning 2512),Mistral AI,2025-12-04,262100.0,0.668,,,,,False,,,True,0.5219177383139416
+ministral-8b-latest,Ministral 3 (8B Reasoning 2512),Mistral AI,2025-12-04,262100.0,0.668,,,,,False,,,True,0.5192003470095938
 mistral-large-3-675B-instruct-2512-eagle,Mistral Large 3 (675B Instruct 2512 Eagle),Mistral AI,2025-12-04,,0.439,,,,,False,,,False,0.19014084507042253
 mistral-large-3-675b-base-2512,Mistral Large 3 (675B Base),Mistral AI,2025-12-04,,0.439,,,,,False,,,False,0.19014084507042253
 mistral-large-3-675b-instruct-2512-nvfp4,Mistral Large 3 (675B Instruct 2512 NVFP4),Mistral AI,2025-12-04,,0.439,,,,,False,,,False,0.19014084507042253
-mistral-large-latest,Mistral Large 3 (675B Instruct 2512),Mistral AI,2025-12-04,262100.0,0.439,,,,,False,,,True,0.3939834660134721
-gpt-5.2-2025-12-11,GPT-5.2,OpenAI,2025-12-11,400000.0,0.924,0.8,,,,False,,,True,0.8836550281988299
-gpt-5.2-pro-2025-12-11,GPT-5.2 Pro,OpenAI,2025-12-11,400000.0,0.932,,,,,False,,,True,0.875121198203715
-qwen3-max,Qwen3 Max,Alibaba Cloud / Qwen Team,2025-12-15,256000.0,0.62,0.696,,,,False,,,True,0.4660243663577295
-nemotron-3-nano-30b-a3b,Nemotron 3 Nano (30B A3B),NVIDIA,2025-12-15,262144.0,0.75,0.388,,,,False,,,True,0.45112298390025324
-mimo-v2-flash,MiMo-V2-Flash,Xiaomi,2025-12-16,256000.0,0.837,0.734,,,,False,,,True,0.6546090580283525
-gemini-3-flash-preview,Gemini 3 Flash,Google,2025-12-17,1000000.0,0.904,0.78,,,,False,,,True,0.8842153638325638
+mistral-large-latest,Mistral Large 3 (675B Instruct 2512),Mistral AI,2025-12-04,262100.0,0.439,,,,,False,,,True,0.3912660747091243
+gpt-5.2-2025-12-11,GPT-5.2,OpenAI,2025-12-11,400000.0,0.924,0.8,,,,False,,,True,0.8818434339959312
+gpt-5.2-pro-2025-12-11,GPT-5.2 Pro,OpenAI,2025-12-11,400000.0,0.932,,,,,False,,,True,0.8724038068993671
+qwen3-max,Qwen3 Max,Alibaba Cloud / Qwen Team,2025-12-15,256000.0,0.62,0.696,,,,False,,,True,0.46511856925628026
+nemotron-3-nano-30b-a3b,Nemotron 3 Nano (30B A3B),NVIDIA,2025-12-15,262144.0,0.75,0.388,,,,False,,,True,0.4493113896973548
+mimo-v2-flash,MiMo-V2-Flash,Xiaomi,2025-12-16,256000.0,0.837,0.734,,,,False,,,True,0.6537032609269032
+gemini-3-flash-preview,Gemini 3 Flash,Google,2025-12-17,1000000.0,0.904,0.78,,,,False,,,True,0.881497972528216
 glm-4.7,GLM-4.7,Zhipu AI,2025-12-22,204800.0,0.857,0.738,,,,False,,,True,0.676533246867625
-minimax-m2.1,MiniMax M2.1,MiniMax,2025-12-23,1000000.0,0.81,0.67,,,,False,,,True,0.6413147642299544
+minimax-m2.1,MiniMax M2.1,MiniMax,2025-12-23,1000000.0,0.81,0.67,,,,False,,,True,0.6385973729256066
 k-exaone-236b-a23b,K-EXAONE-236B-A23B,LG AI Research,2025-12-31,32768.0,,,,,,False,,,False,0.04619565217391304
 longcat-flash-thinking-2601,LongCat-Flash-Thinking-2601,Meituan,2026-01-14,128000.0,0.805,0.7,,,,False,,,False,0.45511686249505945
-gpt-5.2-codex,GPT-5.2 Codex,OpenAI,2026-01-14,400000.0,,,,,,False,,,True,0.7690217391304348
+gpt-5.2-codex,GPT-5.2 Codex,OpenAI,2026-01-14,400000.0,,,,,,False,,,True,0.7635869565217391
 step3-vl-10b,Step3-VL-10B,StepFun,2026-01-15,,,,,,,False,,,False,
 glm-4.7-flash,GLM-4.7-Flash,Zhipu AI,2026-01-19,128000.0,0.752,0.592,,,,False,,,False,0.35891669017524785
 ernie-5.0,ERNIE 5.0,Baidu,2026-01-22,,0.85,,,,,False,,,False,0.812206572769953
-kimi-k2.5,Kimi K2.5,Moonshot AI,2026-01-27,262144.0,0.876,0.768,,,,False,,,True,0.7833221715354276
+kimi-k2.5,Kimi K2.5,Moonshot AI,2026-01-27,262144.0,0.876,0.768,,,,False,,,True,0.7815105773325292
 grok-imagine-image-pro,Grok Imagine Image Pro,xAI,2026-02-01,131072.0,,,,,,False,,,True,0.34782608695652173
 step-3.5-flash,Step-3.5-Flash,StepFun,2026-02-02,65536.0,,0.744,,,,False,,,False,0.37530532486565704
-claude-opus-4-6,Claude Opus 4.6,Anthropic,2026-02-05,1000000.0,0.913,0.808,,,,False,,,True,0.9237082512444258
-longcat-flash-lite,LongCat-Flash-Lite,Meituan,2026-02-05,256000.0,0.6678,0.544,,,,False,,,True,0.40679382706705414
-gpt-5.3-codex,GPT-5.3 Codex,OpenAI,2026-02-05,400000.0,,,,,,False,,,True,0.7690217391304348
+claude-opus-4-6,Claude Opus 4.6,Anthropic,2026-02-05,1000000.0,0.913,0.808,,,,False,,,True,0.920990859940078
+longcat-flash-lite,LongCat-Flash-Lite,Meituan,2026-02-05,256000.0,0.6678,0.544,,,,False,,,True,0.40588802996560486
+gpt-5.3-codex,GPT-5.3 Codex,OpenAI,2026-02-05,400000.0,,,,,,False,,,True,0.7635869565217391
 minicpm-sala,MiniCPM-SALA,OpenBMB,2026-02-11,,,,,,,False,,,False,
 glm-5,GLM-5,Zhipu AI,2026-02-11,200000.0,,0.778,,,,False,,,True,0.6536852711284806
-minimax-m2.5,MiniMax M2.5,MiniMax,2026-02-12,1000000.0,,0.802,,,,False,,,True,0.8846787982413288
+minimax-m2.5,MiniMax M2.5,MiniMax,2026-02-12,1000000.0,,0.802,,,,False,,,True,0.880602711284807
 seed-2.0-lite,Seed 2.0 Lite,ByteDance,2026-02-14,,0.851,0.735,,,,False,,,False,0.7342934008545656
 seed-2.0-pro,Seed 2.0 Pro,ByteDance,2026-02-14,,0.889,0.765,,,,False,,,True,0.8636651368887482
-qwen3.5-397b-a17b,Qwen3.5-397B-A17B,Alibaba Cloud / Qwen Team,2026-02-16,262144.0,0.884,0.764,,,,False,,,True,0.7906985144870199
+qwen3.5-397b-a17b,Qwen3.5-397B-A17B,Alibaba Cloud / Qwen Team,2026-02-16,262144.0,0.884,0.764,,,,False,,,True,0.7888869202841212
 claude-sonnet-4-6,Claude Sonnet 4.6,Anthropic,2026-02-17,200000.0,0.899,0.796,,,,False,,,True,0.7675058178960317
-gemini-3.1-pro-preview,Gemini 3.1 Pro,Google,2026-02-19,1048576.0,0.943,0.806,,,,False,,,True,0.9562188033482335
-qwen3.5-122b-a10b,Qwen3.5-122B-A10B,Alibaba Cloud / Qwen Team,2026-02-24,262144.0,0.866,0.72,,,,False,,,True,0.6856098049514041
-qwen3.5-27b,Qwen3.5-27B,Alibaba Cloud / Qwen Team,2026-02-24,262144.0,0.855,0.724,,,,False,,,True,0.6784005067150446
-qwen3.5-35b-a3b,Qwen3.5-35B-A3B,Alibaba Cloud / Qwen Team,2026-02-24,262144.0,0.842,0.692,,,,False,,,True,0.633738024958086
+gemini-3.1-pro-preview,Gemini 3.1 Pro,Google,2026-02-19,1048576.0,0.943,0.806,,,,False,,,True,0.9525956149424365
+qwen3.5-122b-a10b,Qwen3.5-122B-A10B,Alibaba Cloud / Qwen Team,2026-02-24,262144.0,0.866,0.72,,,,False,,,True,0.6837982107485056
+qwen3.5-27b,Qwen3.5-27B,Alibaba Cloud / Qwen Team,2026-02-24,262144.0,0.855,0.724,,,,False,,,True,0.676588912512146
+qwen3.5-35b-a3b,Qwen3.5-35B-A3B,Alibaba Cloud / Qwen Team,2026-02-24,262144.0,0.842,0.692,,,,False,,,True,0.6319264307551874
 mercury-2,Mercury 2,Inception,2026-02-24,128000.0,0.74,,,,,False,,,False,0.3756251275770566
 qwen3.5-0.8b,Qwen3.5-0.8B,Alibaba Cloud / Qwen Team,2026-03-02,,0.119,,,,,False,,,False,0.004694835680751174
 qwen3.5-2b,Qwen3.5-2B,Alibaba Cloud / Qwen Team,2026-03-02,,0.516,,,,,False,,,False,0.3004694835680751
 qwen3.5-4b,Qwen3.5-4B,Alibaba Cloud / Qwen Team,2026-03-02,,0.762,,,,,False,,,False,0.6244131455399061
 qwen3.5-9b,Qwen3.5-9B,Alibaba Cloud / Qwen Team,2026-03-02,,0.817,,,,,False,,,False,0.7230046948356808
-gemini-3.1-flash-lite-preview,Gemini 3.1 Flash-Lite,Google,2026-03-03,1000000.0,0.869,,,,,False,,,True,0.8507731169626453
+gemini-3.1-flash-lite-preview,Gemini 3.1 Flash-Lite,Google,2026-03-03,1000000.0,0.869,,,,,False,,,True,0.8466970300061236
 gpt-5.3-chat-latest,GPT-5.3 Chat,OpenAI,2026-03-04,128000.0,,,,,,False,,,False,0.19021739130434784
-gpt-5.4,GPT-5.4,OpenAI,2026-03-05,1000000.0,0.928,,,,,False,,,True,0.9094585629720351
+gpt-5.4,GPT-5.4,OpenAI,2026-03-05,1000000.0,0.928,,,,,False,,,True,0.9053824760155134
 sarvam-105b,Sarvam-105B,Sarvam AI,2026-03-06,,0.787,0.45,,,,False,,,False,0.41056074273355486
 sarvam-30b,Sarvam-30B,Sarvam AI,2026-03-06,,0.665,0.34,,,,False,,,False,0.2552882840111832
 grok-4.20-beta-0309-non-reasoning,Grok-4.20 Beta Non-Reasoning,xAI,2026-03-09,2000000.0,,,,,,False,,,True,0.9728260869565217
 grok-4.20-beta-0309-reasoning,Grok-4.20 Beta Reasoning,xAI,2026-03-09,2000000.0,,,,,,False,,,True,0.9728260869565217
 grok-4.20-multi-agent-beta-0309,Grok-4.20 Multi-Agent Beta,xAI,2026-03-09,,,,,,,False,,,False,
 nemotron-3-super-120b-a12b,Nemotron 3 Super (120B A12B),NVIDIA,2026-03-11,,0.827,0.5373,,,,False,,,False,0.47998100965342616
-mistral-small-latest,Mistral Small 4,Mistral AI,2026-03-16,256000.0,0.712,,,,,False,,,True,0.5353898754847928
-gpt-5.4-mini,GPT-5.4 mini,OpenAI,2026-03-17,400000.0,0.88,,,,,False,,,True,0.8281728413962033
-gpt-5.4-nano,GPT-5.4 nano,OpenAI,2026-03-17,400000.0,0.828,,,,,False,,,True,0.761271432945499
+mistral-small-latest,Mistral Small 4,Mistral AI,2026-03-16,256000.0,0.712,,,,,False,,,True,0.5340311798326189
+gpt-5.4-mini,GPT-5.4 mini,OpenAI,2026-03-17,400000.0,0.88,,,,,False,,,True,0.8254554500918555
+gpt-5.4-nano,GPT-5.4 nano,OpenAI,2026-03-17,400000.0,0.828,,,,,False,,,True,0.7585540416411513
 minimax-m2.7,MiniMax M2.7,MiniMax,2026-03-18,204800.0,,,,,,False,,,True,0.5244565217391305
-mimo-v2-omni,MiMo-V2-Omni,Xiaomi,2026-03-18,262000.0,,0.748,,,,False,,,True,0.653028822667318
-mimo-v2-pro,MiMo-V2-Pro,Xiaomi,2026-03-18,1000000.0,,0.78,,,,False,,,True,0.8509709330727895
-qwen3.6-plus,Qwen3.6 Plus,Alibaba Cloud / Qwen Team,2026-03-31,,0.904,0.788,,,,False,,,True,0.9135543598670676
-gemma-4-26b-a4b-it,Gemma 4 26B-A4B,Google,2026-04-02,262144.0,0.823,,,,,False,,,True,0.6965452133088386
-gemma-4-31b-it,Gemma 4 31B,Google,2026-04-02,262144.0,0.843,,,,,False,,,True,0.7282353541539089
+mimo-v2-omni,MiMo-V2-Omni,Xiaomi,2026-03-18,262000.0,,0.748,,,,False,,,True,0.6503114313629702
+mimo-v2-pro,MiMo-V2-Pro,Xiaomi,2026-03-18,1000000.0,,0.78,,,,False,,,True,0.8468948461162678
+qwen3.6-plus,Qwen3.6 Plus,Alibaba Cloud / Qwen Team,2026-03-31,1000000.0,0.904,0.788,,,,False,,,True,0.8871159500563058
+gemma-4-26b-a4b-it,Gemma 4 26B-A4B,Google,2026-04-02,262144.0,0.823,,,,,False,,,True,0.6938278220044907
+gemma-4-31b-it,Gemma 4 31B,Google,2026-04-02,262144.0,0.843,,,,,False,,,True,0.7255179628495612
 gemma-4-e2b-it,Gemma 4 E2B,Google,2026-04-02,,0.434,,,,,False,,,False,0.1784037558685446
 gemma-4-e4b-it,Gemma 4 E4B,Google,2026-04-02,,0.586,,,,,False,,,False,0.3380281690140845
 glm-5v-turbo,GLM-5V-Turbo,Zhipu AI,2026-04-02,,,,,,,False,,,False,
 glm-5.1,GLM-5.1,Zhipu AI,2026-04-07,200000.0,0.862,,,,,False,,,True,0.6548721677893448
 muse-spark,Muse Spark,Meta,2026-04-08,,0.895,0.774,,,,False,,,True,0.8828664873133936
 qwen3.6-35b-a3b,Qwen3.6-35B-A3B,Alibaba Cloud / Qwen Team,2026-04-16,,0.86,0.734,,,,False,,,False,0.7376035237643087
-claude-opus-4-7,Claude Opus 4.7,Anthropic,2026-04-16,1000000.0,0.942,0.876,,,,False,,,True,0.940588559310048
-kimi-k2.6,Kimi K2.6,Moonshot AI,2026-04-20,262144.0,0.905,0.802,,,,False,,,True,0.8492520830896467
-qwen3.6-27b,Qwen3.6-27B,Alibaba Cloud / Qwen Team,2026-04-21,262144.0,0.878,0.772,,,,False,,,True,0.7886324351144046
-deepseek-v4-flash-max,DeepSeek-V4-Flash-Max,DeepSeek,2026-04-23,1048576.0,0.881,0.79,,,,False,,,True,0.9051031204870214
-deepseek-v4-pro-max,DeepSeek-V4-Pro-Max,DeepSeek,2026-04-23,1048576.0,0.901,0.806,,,,False,,,True,0.9390044058521458
-gpt-5.5,GPT-5.5,OpenAI,2026-04-23,1000000.0,0.936,,,,,False,,,True,0.9141533986527863
-gpt-5.5-pro,GPT-5.5 Pro,OpenAI,2026-04-23,1000000.0,,,,,,False,,,True,0.842391304347826
+claude-opus-4-7,Claude Opus 4.7,Anthropic,2026-04-16,1000000.0,0.942,0.876,,,,False,,,True,0.9378711680057003
+kimi-k2.6,Kimi K2.6,Moonshot AI,2026-04-20,262144.0,0.905,0.802,,,,False,,,True,0.8474404888867483
+qwen3.6-27b,Qwen3.6-27B,Alibaba Cloud / Qwen Team,2026-04-21,262144.0,0.878,0.772,,,,False,,,True,0.786820840911506
+deepseek-v4-flash-max,DeepSeek-V4-Flash-Max,DeepSeek,2026-04-23,1048576.0,0.881,0.79,,,,False,,,True,0.9014799320812242
+deepseek-v4-pro-max,DeepSeek-V4-Pro-Max,DeepSeek,2026-04-23,1048576.0,0.901,0.806,,,,False,,,True,0.9353812174463488
+gpt-5.5,GPT-5.5,OpenAI,2026-04-23,1050000.0,0.936,,,,,False,,,True,0.9671425290875689
+gpt-5.5-pro,GPT-5.5 Pro,OpenAI,2026-04-23,1050000.0,,,,,,False,,,True,0.9483695652173914
 claude-mythos-preview,Claude Mythos Preview,Anthropic,,,0.946,0.939,,,,False,,,True,1.0
 grok-4-heavy,Grok-4 Heavy,xAI,,,0.884,,,,,False,,,True,0.9225352112676056
