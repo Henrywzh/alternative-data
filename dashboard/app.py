@@ -705,15 +705,7 @@ def compute_openrouter_views(
         total_source = "top_models"
         if market_share_result and not market_share_result.frame.empty:
             market_frame = market_share_result.frame.copy()
-            market_frame["week_start_date"] = _align_rankings_week_to_monday(
-                market_frame["week_start_date"].astype(str)
-            )
-            market_totals = (
-                market_frame.groupby("week_start_date", as_index=True)["metric_value"]
-                .sum()
-                .rename("market_share")
-                .sort_index()
-            )
+            market_totals = _market_share_weekly_totals(market_frame)
             merged_totals = merged_totals.join(market_totals, how="outer")
 
             def _select_total(row: pd.Series) -> float:
@@ -790,6 +782,34 @@ def _align_rankings_week_to_monday(series: pd.Series) -> pd.Series:
     dates = pd.to_datetime(series, errors="coerce")
     dates = dates.apply(lambda value: value + pd.Timedelta(days=1) if pd.notna(value) and value.weekday() == 6 else value)
     return (dates - pd.to_timedelta(dates.dt.weekday, unit="D")).dt.normalize().dt.strftime("%Y-%m-%d")
+
+
+def _market_share_weekly_totals(frame: pd.DataFrame) -> pd.Series:
+    if frame.empty:
+        return pd.Series(dtype="float64", name="market_share")
+    market = frame.copy()
+    original_dates = pd.to_datetime(market["week_start_date"].astype(str), errors="coerce")
+    market["original_week_start_date"] = original_dates.dt.normalize()
+    market["week_start_date"] = _align_rankings_week_to_monday(market["week_start_date"].astype(str))
+    market["metric_value"] = pd.to_numeric(market["metric_value"], errors="coerce")
+    totals = (
+        market.dropna(subset=["original_week_start_date", "week_start_date"])
+        .groupby(["week_start_date", "original_week_start_date"], as_index=False)["metric_value"]
+        .sum()
+    )
+    if totals.empty:
+        return pd.Series(dtype="float64", name="market_share")
+    totals["is_aligned_monday"] = totals["original_week_start_date"].dt.strftime("%Y-%m-%d") == totals["week_start_date"]
+    totals = totals.sort_values(
+        ["week_start_date", "is_aligned_monday", "metric_value", "original_week_start_date"],
+        ascending=[True, False, False, False],
+    )
+    return (
+        totals.drop_duplicates(subset=["week_start_date"], keep="first")
+        .set_index("week_start_date")["metric_value"]
+        .rename("market_share")
+        .sort_index()
+    )
 
 
 def _period_coverage(frame: pd.DataFrame, period_column: str, date_column: str, expected_days: int) -> pd.DataFrame:
@@ -1300,12 +1320,17 @@ def compute_provider_adoption_views(datasets: dict[str, DatasetLoadResult]) -> d
     if not github_adoption.empty:
         candidates_daily = (
             github_adoption.groupby(["signal_date"], dropna=False)["github_new_repo_count"]
-            .sum()
+            .max()
             .reset_index(name="repo_candidates")
             .rename(columns={"signal_date": "repo_created_date"})
         )
     else:
         candidates_daily = pd.DataFrame(columns=["repo_created_date", "repo_candidates"])
+    latest_github_candidate_count = (
+        int(candidates_daily[candidates_daily["repo_created_date"] == latest_github_date]["repo_candidates"].max())
+        if latest_github_date and not candidates_daily.empty
+        else 0
+    )
 
     if not github_adoption.empty:
         rollup_daily = github_adoption[
@@ -1334,6 +1359,7 @@ def compute_provider_adoption_views(datasets: dict[str, DatasetLoadResult]) -> d
 
     views["candidates_daily"] = candidates_daily
     views["rollup_daily"] = rollup_daily
+    views["latest_github_candidate_count"] = latest_github_candidate_count
     return views
 
 
@@ -2732,11 +2758,7 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
 
     top_download_row = latest_pypi.sort_values("downloads", ascending=False).iloc[0] if not latest_pypi.empty else None
     total_latest_downloads = latest_pypi["downloads"].sum() if not latest_pypi.empty else 0
-    latest_candidate_count = (
-        int(github_adoption[github_adoption["signal_date"] == latest_github_date]["github_new_repo_count"].sum())
-        if latest_github_date and not github_adoption.empty
-        else 0
-    )
+    latest_candidate_count = provider_views["latest_github_candidate_count"]
     top_hf_row = latest_hf.sort_values("downloads_30d", ascending=False).iloc[0] if not latest_hf.empty else None
 
     col1, col2, col3, col4 = st.columns(4)
