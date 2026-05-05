@@ -674,9 +674,9 @@ def _provider_rollup_frame() -> pd.DataFrame:
 def _provider_github_adoption_frame() -> pd.DataFrame:
     rows = []
     for provider, display_name, candidates, signals, manifest, imports, env, models, count in [
-        ("openai", "OpenAI", 2, 1, 1, 1, 0, 1, 3),
-        ("anthropic", "Anthropic", 1, 1, 0, 0, 1, 0, 1),
-        ("google", "Google", 1, 1, 1, 0, 0, 0, 1),
+        ("openai", "OpenAI", 600, 1, 1, 1, 0, 1, 3),
+        ("anthropic", "Anthropic", 600, 1, 0, 0, 1, 0, 1),
+        ("google", "Google", 600, 1, 1, 0, 0, 0, 1),
     ]:
         row = _base_row("github_provider_adoption_daily")
         row.update(
@@ -1047,7 +1047,8 @@ def test_compute_provider_adoption_views_rollup_daily_counts_only_signal_bearing
     assert int(openai_rollup["model_repos"]) == 1
 
     assert list(candidates_daily.columns) == ["repo_created_date", "repo_candidates"]
-    assert int(candidates_daily.iloc[0]["repo_candidates"]) == 4
+    assert int(candidates_daily.iloc[0]["repo_candidates"]) == 600
+    assert int(views["latest_github_candidate_count"]) == 600
 
 
 def test_compute_semiconductor_views_exposes_proxy_and_component_columns() -> None:
@@ -2131,6 +2132,93 @@ def test_compute_openrouter_views_falls_back_to_top_models_when_market_share_und
     assert views["top_models"]["total_source"] == "hybrid"
     assert views["top_models"]["pivot_total"].loc["2026-04-13", "Total Tokens"] == 3000.0
     assert views["top_models"]["source_by_week"]["2026-04-13"] == "top_models"
+
+
+def test_compute_openrouter_views_deduplicates_sunday_and_monday_market_share_totals() -> None:
+    top_models = pd.DataFrame(
+        [
+            {
+                **_base_row("top_models"),
+                "week_start_date": "2026-03-30",
+                "entity_id": "openai/gpt-4o",
+                "metric_value": 25_000.0,
+            }
+        ],
+        columns=EXPECTED_COLUMNS,
+    )
+    market_share = pd.DataFrame(
+        [
+            {**_base_row("market_share"), "week_start_date": "2026-03-29", "entity_id": "openai", "metric_value": 20_000.0},
+            {**_base_row("market_share"), "week_start_date": "2026-03-29", "entity_id": "others", "metric_value": 4_400.0},
+            {**_base_row("market_share"), "week_start_date": "2026-03-30", "entity_id": "openai", "metric_value": 22_000.0},
+            {**_base_row("market_share"), "week_start_date": "2026-03-30", "entity_id": "others", "metric_value": 5_000.0},
+        ],
+        columns=EXPECTED_COLUMNS,
+    )
+    result_kwargs = {
+        "domain": "rankings",
+        "primary_date_column": "week_start_date",
+        "metric_column": "metric_value",
+        "source_format": "csv",
+        "source_path": None,
+        "missing_columns": [],
+        "duplicate_rows": 0,
+        "first_date": "2026-03-29",
+        "latest_date": "2026-03-30",
+        "latest_scraped_at": "2026-04-05T00:00:00Z",
+    }
+    datasets = {
+        "top_models": DatasetLoadResult(dataset_id="top_models", label="Top Models", frame=top_models, row_count=len(top_models), **result_kwargs),
+        "market_share": DatasetLoadResult(dataset_id="market_share", label="Market Share", frame=market_share, row_count=len(market_share), **result_kwargs),
+    }
+
+    views = compute_openrouter_views(datasets)
+
+    assert views["top_models"]["pivot_total"].loc["2026-03-30", "Total Tokens"] == 27_000.0
+    assert views["top_models"]["pivot_total"].loc["2026-03-30", "Total Tokens"] != 51_400.0
+    assert views["top_models"]["source_by_week"]["2026-03-30"] == "market_share"
+
+
+def test_compute_openrouter_views_keeps_sunday_market_share_when_no_monday_snapshot_exists() -> None:
+    top_models = pd.DataFrame(
+        [
+            {
+                **_base_row("top_models"),
+                "week_start_date": "2026-04-13",
+                "entity_id": "openai/gpt-4o",
+                "metric_value": 1_000.0,
+            }
+        ],
+        columns=EXPECTED_COLUMNS,
+    )
+    market_share = pd.DataFrame(
+        [
+            {**_base_row("market_share"), "week_start_date": "2026-04-12", "entity_id": "openai", "metric_value": 8_000.0},
+            {**_base_row("market_share"), "week_start_date": "2026-04-12", "entity_id": "others", "metric_value": 2_000.0},
+        ],
+        columns=EXPECTED_COLUMNS,
+    )
+    result_kwargs = {
+        "domain": "rankings",
+        "primary_date_column": "week_start_date",
+        "metric_column": "metric_value",
+        "source_format": "csv",
+        "source_path": None,
+        "missing_columns": [],
+        "duplicate_rows": 0,
+        "first_date": "2026-04-12",
+        "latest_date": "2026-04-12",
+        "latest_scraped_at": "2026-04-13T00:00:00Z",
+    }
+    datasets = {
+        "top_models": DatasetLoadResult(dataset_id="top_models", label="Top Models", frame=top_models, row_count=len(top_models), **result_kwargs),
+        "market_share": DatasetLoadResult(dataset_id="market_share", label="Market Share", frame=market_share, row_count=len(market_share), **result_kwargs),
+    }
+
+    views = compute_openrouter_views(datasets)
+
+    assert views["top_models"]["pivot_total"].loc["2026-04-13", "Total Tokens"] == 10_000.0
+    assert views["top_models"]["source_by_week"]["2026-04-13"] == "market_share"
 
 
 def test_compute_availability_views_reconstruct_catalog_from_full_and_delta_snapshots() -> None:
