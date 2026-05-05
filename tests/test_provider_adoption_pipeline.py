@@ -647,6 +647,7 @@ def test_provider_pipeline_repeated_runs_are_idempotent_and_write_manifest(tmp_p
     pypi = pd.read_csv(tmp_path / "data" / "normalized" / "provider_adoption" / "pypi_downloads_daily.csv")
     npm = pd.read_csv(tmp_path / "data" / "normalized" / "provider_adoption" / "npm_downloads_daily.csv")
     rollup = pd.read_csv(tmp_path / "data" / "normalized" / "provider_adoption" / "github_repo_rollup_daily.csv")
+    gold = pd.read_csv(tmp_path / "data" / "normalized" / "provider_adoption" / "github_provider_adoption_daily.csv")
     momentum_csv = pd.read_csv(tmp_path / "data" / "normalized" / "provider_adoption" / "provider_momentum_daily.csv")
     momentum_parquet = pd.read_parquet(tmp_path / "data" / "normalized" / "provider_adoption" / "provider_momentum_daily.parquet")
 
@@ -655,6 +656,7 @@ def test_provider_pipeline_repeated_runs_are_idempotent_and_write_manifest(tmp_p
     assert pypi[["provider", "package_name", "with_mirrors", "download_date"]].duplicated().sum() == 0
     assert npm[["provider", "package_name", "package_category", "download_date"]].duplicated().sum() == 0
     assert rollup[["provider", "repo_full_name", "signal_date"]].duplicated().sum() == 0
+    assert gold[["provider", "signal_date"]].duplicated().sum() == 0
     assert list(momentum_csv.columns) == list(momentum_parquet.columns)
     assert (Path(derived.raw_run_dir) / "manifest.json").exists()
 
@@ -669,12 +671,26 @@ def test_github_signal_records_include_provider_display_name(tmp_path: Path) -> 
 
     signals = pd.read_csv(tmp_path / "data" / "normalized" / "provider_adoption" / "github_provider_signals_daily.csv")
     rollup = pd.read_csv(tmp_path / "data" / "normalized" / "provider_adoption" / "github_repo_rollup_daily.csv")
+    gold = pd.read_csv(tmp_path / "data" / "normalized" / "provider_adoption" / "github_provider_adoption_daily.csv")
 
     assert set(signals["provider_display_name"].dropna().unique()) == {"OpenAI"}
     assert set(signals["signal_type"].unique()) == {"manifest_dependency", "code_import", "env_var", "model_name"}
     assert int(rollup.loc[rollup["provider"] == "openai", "matched_signal_count"].iloc[0]) == 4
     assert bool(rollup.loc[rollup["provider"] == "openai", "has_manifest_dependency"].iloc[0]) is True
     assert bool(rollup.loc[rollup["provider"] == "anthropic", "has_manifest_dependency"].iloc[0]) is False
+
+    openai = gold[gold["provider"] == "openai"].iloc[0]
+    anthropic = gold[gold["provider"] == "anthropic"].iloc[0]
+    assert int(openai["github_new_repo_count"]) == 1
+    assert int(openai["github_signal_repo_count"]) == 1
+    assert int(openai["github_manifest_repo_count"]) == 1
+    assert int(openai["github_import_repo_count"]) == 1
+    assert int(openai["github_env_repo_count"]) == 1
+    assert int(openai["github_model_repo_count"]) == 1
+    assert int(openai["matched_signal_count"]) == 4
+    assert int(anthropic["github_new_repo_count"]) == 1
+    assert int(anthropic["github_signal_repo_count"]) == 0
+    assert int(anthropic["matched_signal_count"]) == 0
 
 
 def test_huggingface_pipeline_first_snapshot_is_blank_and_same_day_rerun_is_idempotent(tmp_path: Path) -> None:
