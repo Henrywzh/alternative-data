@@ -1281,51 +1281,51 @@ def compute_provider_adoption_views(datasets: dict[str, DatasetLoadResult]) -> d
     views["latest_hf_models"] = latest_hf_models
     views["provider_order"] = provider_order
 
-    github_candidates_result = datasets.get("github_repo_candidates_daily")
-    github_rollup_result = datasets.get("github_repo_rollup_daily")
-    github_signals_result = datasets.get("github_provider_signals_daily")
-    github_candidates = github_candidates_result.frame.copy() if github_candidates_result and github_candidates_result.frame is not None else pd.DataFrame()
-    github_rollup = github_rollup_result.frame.copy() if github_rollup_result and github_rollup_result.frame is not None else pd.DataFrame()
-    github_signals = github_signals_result.frame.copy() if github_signals_result and github_signals_result.frame is not None else pd.DataFrame()
+    github_adoption_result = datasets.get("github_provider_adoption_daily")
+    github_adoption = (
+        github_adoption_result.frame.copy()
+        if github_adoption_result and github_adoption_result.frame is not None
+        else pd.DataFrame()
+    )
 
-    if not github_candidates.empty and provider_order:
-        github_candidates = github_candidates[github_candidates["provider_display_name"].isin(provider_order)].copy()
-        github_candidates["repo_created_date"] = github_candidates["repo_created_date"].astype(str)
-    if not github_rollup.empty and provider_order:
-        github_rollup = github_rollup[github_rollup["provider_display_name"].isin(provider_order)].copy()
-        github_rollup["signal_date"] = github_rollup["signal_date"].astype(str)
-    if not github_signals.empty and provider_order:
-        github_signals = github_signals[github_signals["provider_display_name"].isin(provider_order)].copy()
-        github_signals["signal_date"] = github_signals["signal_date"].astype(str)
+    if not github_adoption.empty and provider_order:
+        github_adoption = github_adoption[github_adoption["provider_display_name"].isin(provider_order)].copy()
+        github_adoption["signal_date"] = github_adoption["signal_date"].astype(str)
 
-    latest_github_date = github_candidates["repo_created_date"].max() if not github_candidates.empty else None
+    latest_github_date = github_adoption["signal_date"].max() if not github_adoption.empty else None
 
-    views["github_candidates"] = github_candidates
-    views["github_rollup"] = github_rollup
-    views["github_signals"] = github_signals
+    views["github_adoption"] = github_adoption
     views["latest_github_date"] = latest_github_date
 
-    if not github_candidates.empty:
+    if not github_adoption.empty:
         candidates_daily = (
-            github_candidates.groupby(["repo_created_date"], dropna=False)["repo_full_name"]
-            .nunique()
+            github_adoption.groupby(["signal_date"], dropna=False)["github_new_repo_count"]
+            .sum()
             .reset_index(name="repo_candidates")
+            .rename(columns={"signal_date": "repo_created_date"})
         )
     else:
         candidates_daily = pd.DataFrame(columns=["repo_created_date", "repo_candidates"])
 
-    if not github_rollup.empty:
-        signal_positive = github_rollup[github_rollup["matched_signal_count"].fillna(0) > 0].copy()
-        rollup_daily = (
-            signal_positive.groupby(["signal_date", "provider_display_name"], dropna=False)
-            .agg(
-                signal_repos=("repo_full_name", "nunique"),
-                manifest_repos=("has_manifest_dependency", "sum"),
-                import_repos=("has_code_import", "sum"),
-                env_repos=("has_env_var", "sum"),
-                model_repos=("has_model_name", "sum"),
-            )
-            .reset_index()
+    if not github_adoption.empty:
+        rollup_daily = github_adoption[
+            [
+                "signal_date",
+                "provider_display_name",
+                "github_signal_repo_count",
+                "github_manifest_repo_count",
+                "github_import_repo_count",
+                "github_env_repo_count",
+                "github_model_repo_count",
+            ]
+        ].rename(
+            columns={
+                "github_signal_repo_count": "signal_repos",
+                "github_manifest_repo_count": "manifest_repos",
+                "github_import_repo_count": "import_repos",
+                "github_env_repo_count": "env_repos",
+                "github_model_repo_count": "model_repos",
+            }
         )
     else:
         rollup_daily = pd.DataFrame(
@@ -2700,9 +2700,6 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
     pypi_result = datasets.get("pypi_downloads_daily")
     npm_result = datasets.get("npm_downloads_daily")
     hf_result = datasets.get("huggingface_models_daily")
-    github_candidates_result = datasets.get("github_repo_candidates_daily")
-    github_rollup_result = datasets.get("github_repo_rollup_daily")
-    github_signals_result = datasets.get("github_provider_signals_daily")
 
     if not pypi_result or not render_dataset_guard(pypi_result):
         st.info("Run the provider-adoption pipeline to populate GitHub, PyPI, npm, and Hugging Face scraped data.")
@@ -2726,9 +2723,7 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
         st.info("No provider rows available yet.")
         return
 
-    github_candidates = provider_views["github_candidates"]
-    github_rollup = provider_views["github_rollup"]
-    github_signals = provider_views["github_signals"]
+    github_adoption = provider_views["github_adoption"]
     latest_github_date = provider_views["latest_github_date"]
     latest_hf_date = provider_views["latest_hf_date"]
     latest_hf = provider_views["latest_hf"]
@@ -2738,8 +2733,8 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
     top_download_row = latest_pypi.sort_values("downloads", ascending=False).iloc[0] if not latest_pypi.empty else None
     total_latest_downloads = latest_pypi["downloads"].sum() if not latest_pypi.empty else 0
     latest_candidate_count = (
-        github_candidates[github_candidates["repo_created_date"] == latest_github_date]["repo_full_name"].nunique()
-        if latest_github_date and not github_candidates.empty
+        int(github_adoption[github_adoption["signal_date"] == latest_github_date]["github_new_repo_count"].sum())
+        if latest_github_date and not github_adoption.empty
         else 0
     )
     top_hf_row = latest_hf.sort_values("downloads_30d", ascending=False).iloc[0] if not latest_hf.empty else None
@@ -2947,7 +2942,7 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
             )
 
     with github_tab:
-        if github_candidates.empty or github_rollup.empty:
+        if github_adoption.empty:
             st.info("No GitHub provider signal data available yet.")
         else:
             candidates_daily = provider_views["candidates_daily"]
@@ -3038,19 +3033,16 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
             })[["Provider", "HF 30d Downloads", "HF All-Time Downloads", "HF Daily (Est)", "HF Likes"]]
             summary = summary.merge(hf_sum, on="Provider", how="left")
 
-        if latest_github_date and not github_rollup.empty:
-            latest_rollup = github_rollup[github_rollup["signal_date"] == latest_github_date].copy()
-            rollup_summary = (
-                latest_rollup.groupby("provider_display_name", dropna=False)
-                .agg(
-                    **{
-                        "GH Signals": ("repo_full_name", "nunique"),
-                        "Import Repos": ("has_code_import", "sum"),
-                    }
-                )
-                .reset_index()
-                .rename(columns={"provider_display_name": "Provider"})
-            )
+        if latest_github_date and not provider_views["rollup_daily"].empty:
+            latest_rollup = provider_views["rollup_daily"]
+            latest_rollup = latest_rollup[latest_rollup["signal_date"] == latest_github_date].copy()
+            rollup_summary = latest_rollup.rename(
+                columns={
+                    "provider_display_name": "Provider",
+                    "signal_repos": "GH Signals",
+                    "import_repos": "Import Repos",
+                }
+            )[["Provider", "GH Signals", "Import Repos"]]
             summary = summary.merge(rollup_summary, on="Provider", how="left")
 
         # Sort: priority to HF 30d, otherwise PyPI

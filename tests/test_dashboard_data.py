@@ -115,6 +115,8 @@ def _base_row(dataset_id: str) -> dict:
         "pypi_share_28d": None,
         "pypi_growth_28d": None,
         "github_new_repo_count": None,
+        "github_signal_repo_count": None,
+        "github_manifest_repo_count": None,
         "github_repo_share": None,
         "github_import_repo_count": None,
         "github_env_repo_count": None,
@@ -669,6 +671,32 @@ def _provider_rollup_frame() -> pd.DataFrame:
     return pd.DataFrame(rows, columns=EXPECTED_COLUMNS)
 
 
+def _provider_github_adoption_frame() -> pd.DataFrame:
+    rows = []
+    for provider, display_name, candidates, signals, manifest, imports, env, models, count in [
+        ("openai", "OpenAI", 2, 1, 1, 1, 0, 1, 3),
+        ("anthropic", "Anthropic", 1, 1, 0, 0, 1, 0, 1),
+        ("google", "Google", 1, 1, 1, 0, 0, 0, 1),
+    ]:
+        row = _base_row("github_provider_adoption_daily")
+        row.update(
+            {
+                "provider": provider,
+                "provider_display_name": display_name,
+                "signal_date": "2026-04-05",
+                "github_new_repo_count": candidates,
+                "github_signal_repo_count": signals,
+                "github_manifest_repo_count": manifest,
+                "github_import_repo_count": imports,
+                "github_env_repo_count": env,
+                "github_model_repo_count": models,
+                "matched_signal_count": count,
+            }
+        )
+        rows.append(row)
+    return pd.DataFrame(rows, columns=EXPECTED_COLUMNS)
+
+
 def _provider_momentum_frame() -> pd.DataFrame:
     rows = []
     for signal_date, provider, score in [
@@ -733,6 +761,7 @@ def _frame_for_dataset(dataset_id: str) -> pd.DataFrame:
         "github_repo_candidates_daily": _provider_candidates_frame,
         "github_provider_signals_daily": _provider_signals_frame,
         "github_repo_rollup_daily": _provider_rollup_frame,
+        "github_provider_adoption_daily": _provider_github_adoption_frame,
         "provider_momentum_daily": _provider_momentum_frame,
     }
     if dataset_id in mapping:
@@ -955,18 +984,37 @@ def test_load_all_datasets_supports_every_registered_dataset(tmp_path: Path) -> 
     assert datasets["provider_momentum_daily"].latest_date == "2026-04-05"
 
 
+def test_provider_adoption_domain_loads_gold_github_table_not_repo_detail(tmp_path: Path) -> None:
+    root = tmp_path / "data" / "normalized" / "provider_adoption"
+    root.mkdir(parents=True, exist_ok=True)
+    _provider_pypi_frame().to_csv(root / "pypi_downloads_daily.csv", index=False)
+    _provider_npm_frame().to_csv(root / "npm_downloads_daily.csv", index=False)
+    _provider_hf_frame().to_csv(root / "huggingface_models_daily.csv", index=False)
+    _provider_github_adoption_frame().to_csv(root / "github_provider_adoption_daily.csv", index=False)
+    _provider_momentum_frame().to_csv(root / "provider_momentum_daily.csv", index=False)
+    _provider_candidates_frame().to_csv(root / "github_repo_candidates_daily.csv", index=False)
+    _provider_signals_frame().to_csv(root / "github_provider_signals_daily.csv", index=False)
+    _provider_rollup_frame().to_csv(root / "github_repo_rollup_daily.csv", index=False)
+
+    datasets = load_domain_datasets("provider_adoption", base_dir=tmp_path)
+
+    assert "github_provider_adoption_daily" in datasets
+    assert "github_repo_candidates_daily" not in datasets
+    assert "github_repo_rollup_daily" not in datasets
+    assert "github_provider_signals_daily" not in datasets
+    assert sum(result.row_count for result in datasets.values()) < 100
+
+
 def test_compute_provider_adoption_views_includes_hf_aggregates_and_latest_models(tmp_path: Path) -> None:
     root = tmp_path / "data" / "normalized" / "provider_adoption"
     root.mkdir(parents=True, exist_ok=True)
     _provider_pypi_frame().to_csv(root / "pypi_downloads_daily.csv", index=False)
     _provider_npm_frame().to_csv(root / "npm_downloads_daily.csv", index=False)
     _provider_hf_frame().to_csv(root / "huggingface_models_daily.csv", index=False)
-    _provider_candidates_frame().to_csv(root / "github_repo_candidates_daily.csv", index=False)
-    _provider_signals_frame().to_csv(root / "github_provider_signals_daily.csv", index=False)
-    _provider_rollup_frame().to_csv(root / "github_repo_rollup_daily.csv", index=False)
+    _provider_github_adoption_frame().to_csv(root / "github_provider_adoption_daily.csv", index=False)
     _provider_momentum_frame().to_csv(root / "provider_momentum_daily.csv", index=False)
 
-    datasets = load_all_datasets(base_dir=tmp_path)
+    datasets = load_domain_datasets("provider_adoption", base_dir=tmp_path)
     views = compute_provider_adoption_views(datasets)
 
     assert views["latest_hf_date"] == "2026-04-06"
@@ -983,40 +1031,10 @@ def test_compute_provider_adoption_views_rollup_daily_counts_only_signal_bearing
     _provider_pypi_frame().to_csv(root / "pypi_downloads_daily.csv", index=False)
     _provider_npm_frame().to_csv(root / "npm_downloads_daily.csv", index=False)
     _provider_hf_frame().to_csv(root / "huggingface_models_daily.csv", index=False)
-    _provider_candidates_frame().to_csv(root / "github_repo_candidates_daily.csv", index=False)
-    _provider_signals_frame().to_csv(root / "github_provider_signals_daily.csv", index=False)
-
-    rollup = _provider_rollup_frame()
-    zero_row = _base_row("github_repo_rollup_daily")
-    zero_row.update(
-        {
-            "provider": "openai",
-            "provider_display_name": "OpenAI",
-            "repo_full_name": "openai/zero-signal-repo",
-            "repo_owner": "openai",
-            "repo_name": "zero-signal-repo",
-            "repo_html_url": "https://github.com/openai/zero-signal-repo",
-            "repo_created_date": "2026-04-05",
-            "repo_created_at": "2026-04-05T12:00:00Z",
-            "repo_pushed_at": "2026-04-05T12:30:00Z",
-            "repo_default_branch": "main",
-            "language_bucket": "python",
-            "signal_date": "2026-04-05",
-            "has_manifest_dependency": False,
-            "has_code_import": False,
-            "has_env_var": False,
-            "has_model_name": False,
-            "matched_signal_count": 0,
-            "stargazers_count": 1,
-            "is_fork": False,
-            "is_archived": False,
-        }
-    )
-    rollup = pd.concat([rollup, pd.DataFrame([zero_row], columns=EXPECTED_COLUMNS)], ignore_index=True)
-    rollup.to_csv(root / "github_repo_rollup_daily.csv", index=False)
+    _provider_github_adoption_frame().to_csv(root / "github_provider_adoption_daily.csv", index=False)
     _provider_momentum_frame().to_csv(root / "provider_momentum_daily.csv", index=False)
 
-    datasets = load_all_datasets(base_dir=tmp_path)
+    datasets = load_domain_datasets("provider_adoption", base_dir=tmp_path)
     views = compute_provider_adoption_views(datasets)
 
     rollup_daily = views["rollup_daily"].sort_values(["signal_date", "provider_display_name"]).reset_index(drop=True)
@@ -1029,7 +1047,7 @@ def test_compute_provider_adoption_views_rollup_daily_counts_only_signal_bearing
     assert int(openai_rollup["model_repos"]) == 1
 
     assert list(candidates_daily.columns) == ["repo_created_date", "repo_candidates"]
-    assert int(candidates_daily.iloc[0]["repo_candidates"]) == 3
+    assert int(candidates_daily.iloc[0]["repo_candidates"]) == 4
 
 
 def test_compute_semiconductor_views_exposes_proxy_and_component_columns() -> None:
@@ -1226,9 +1244,7 @@ def test_compute_provider_adoption_views_exposes_hf_daily_est_rollups(tmp_path: 
     _provider_pypi_frame().to_csv(root / "pypi_downloads_daily.csv", index=False)
     _provider_npm_frame().to_csv(root / "npm_downloads_daily.csv", index=False)
     _provider_hf_frame().to_csv(root / "huggingface_models_daily.csv", index=False)
-    _provider_candidates_frame().to_csv(root / "github_repo_candidates_daily.csv", index=False)
-    _provider_signals_frame().to_csv(root / "github_provider_signals_daily.csv", index=False)
-    _provider_rollup_frame().to_csv(root / "github_repo_rollup_daily.csv", index=False)
+    _provider_github_adoption_frame().to_csv(root / "github_provider_adoption_daily.csv", index=False)
     _provider_momentum_frame().to_csv(root / "provider_momentum_daily.csv", index=False)
 
     datasets = load_domain_datasets("provider_adoption", base_dir=tmp_path)

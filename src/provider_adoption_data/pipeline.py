@@ -30,6 +30,7 @@ DATASET_IDS = (
     "github_repo_candidates_daily",
     "github_provider_signals_daily",
     "github_repo_rollup_daily",
+    "github_provider_adoption_daily",
     "provider_momentum_daily",
     "huggingface_models_daily",
 )
@@ -182,22 +183,33 @@ class ProviderAdoptionPipeline:
         candidate_records = self._build_candidate_records(context, providers, repositories)
         signal_records = self._build_signal_records(context, matches)
         rollup_records = self._build_rollup_records(context, providers, repositories, matches, resolved_date.isoformat())
+        adoption_records = self._build_github_provider_adoption_records(
+            context,
+            providers,
+            candidate_records,
+            rollup_records,
+            resolved_date.isoformat(),
+        )
 
         existing_candidates = self.storage.load_dataset("github_repo_candidates_daily")
         existing_signals = self.storage.load_dataset("github_provider_signals_daily")
         existing_rollups = self.storage.load_dataset("github_repo_rollup_daily")
+        existing_adoption = self.storage.load_dataset("github_provider_adoption_daily")
         written_candidates = self.storage.upsert_dataset("github_repo_candidates_daily", candidate_records)
         written_signals = self.storage.upsert_dataset("github_provider_signals_daily", signal_records)
         written_rollups = self.storage.upsert_dataset("github_repo_rollup_daily", rollup_records)
+        written_adoption = self.storage.upsert_dataset("github_provider_adoption_daily", adoption_records)
         written = {
             "github_repo_candidates_daily": len(written_candidates),
             "github_provider_signals_daily": len(written_signals),
             "github_repo_rollup_daily": len(written_rollups),
+            "github_provider_adoption_daily": len(written_adoption),
         }
         deltas = {
             "github_repo_candidates_daily": max(len(written_candidates) - len(existing_candidates), 0),
             "github_provider_signals_daily": max(len(written_signals) - len(existing_signals), 0),
             "github_repo_rollup_daily": max(len(written_rollups) - len(existing_rollups), 0),
+            "github_provider_adoption_daily": max(len(written_adoption) - len(existing_adoption), 0),
         }
         return PipelineResult(context.run_id, written, str(raw_run_dir), deltas)
 
@@ -403,6 +415,68 @@ class ProviderAdoptionPipeline:
                         matched_signal_count=len(signal_types),
                     )
                 )
+        return records
+
+    def _build_github_provider_adoption_records(
+        self,
+        context: RunContext,
+        providers,
+        candidate_records: list[DatasetRecord],
+        rollup_records: list[DatasetRecord],
+        signal_date: str,
+    ) -> list[DatasetRecord]:
+        provider_display = {provider.slug: provider.display_name for provider in providers}
+        candidates_by_provider: dict[str, set[str]] = {provider.slug: set() for provider in providers}
+        for record in candidate_records:
+            if record.provider and record.repo_full_name and record.repo_created_date == signal_date:
+                candidates_by_provider.setdefault(record.provider, set()).add(record.repo_full_name)
+
+        rollups_by_provider: dict[str, list[DatasetRecord]] = {provider.slug: [] for provider in providers}
+        for record in rollup_records:
+            if record.provider and record.signal_date == signal_date:
+                rollups_by_provider.setdefault(record.provider, []).append(record)
+
+        records: list[DatasetRecord] = []
+        total_candidates = sum(len(repos) for repos in candidates_by_provider.values())
+        for provider in providers:
+            provider_rollups = rollups_by_provider.get(provider.slug, [])
+
+            def _repo_count(flag: str) -> float:
+                return float(
+                    len(
+                        {
+                            record.repo_full_name
+                            for record in provider_rollups
+                            if record.repo_full_name and getattr(record, flag) is True
+                        }
+                    )
+                )
+
+            signal_repos = {
+                record.repo_full_name
+                for record in provider_rollups
+                if record.repo_full_name and float(record.matched_signal_count or 0) > 0
+            }
+            github_new_repo_count = float(len(candidates_by_provider.get(provider.slug, set())))
+            records.append(
+                DatasetRecord(
+                    dataset_id="github_provider_adoption_daily",
+                    source_url="derived://github_provider_adoption_daily",
+                    source_run_id=context.run_id,
+                    scraped_at=context.scraped_at_iso,
+                    provider=provider.slug,
+                    provider_display_name=provider_display.get(provider.slug),
+                    signal_date=signal_date,
+                    github_new_repo_count=github_new_repo_count,
+                    github_signal_repo_count=float(len(signal_repos)),
+                    github_manifest_repo_count=_repo_count("has_manifest_dependency"),
+                    github_import_repo_count=_repo_count("has_code_import"),
+                    github_env_repo_count=_repo_count("has_env_var"),
+                    github_model_repo_count=_repo_count("has_model_name"),
+                    github_repo_share=github_new_repo_count / total_candidates if total_candidates else 0.0,
+                    matched_signal_count=float(sum(float(record.matched_signal_count or 0) for record in provider_rollups)),
+                )
+            )
         return records
 
     def _resolve_npm_start_date(self, target_date: date, providers) -> date:
