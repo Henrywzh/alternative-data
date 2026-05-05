@@ -17,6 +17,7 @@ NATURAL_KEYS: dict[str, list[str]] = {
     "github_repo_candidates_daily": ["provider", "repo_full_name", "repo_created_date"],
     "github_provider_signals_daily": ["provider", "repo_full_name", "signal_date", "signal_type"],
     "github_repo_rollup_daily": ["provider", "repo_full_name", "signal_date"],
+    "github_provider_adoption_daily": ["provider", "signal_date"],
     "provider_momentum_daily": ["provider", "signal_date"],
 }
 
@@ -66,6 +67,8 @@ DATASET_COLUMNS = [
     "pypi_share_28d",
     "pypi_growth_28d",
     "github_new_repo_count",
+    "github_signal_repo_count",
+    "github_manifest_repo_count",
     "github_repo_share",
     "github_import_repo_count",
     "github_env_repo_count",
@@ -86,6 +89,8 @@ NUMERIC_COLUMNS = [
     "pypi_share_28d",
     "pypi_growth_28d",
     "github_new_repo_count",
+    "github_signal_repo_count",
+    "github_manifest_repo_count",
     "github_repo_share",
     "github_import_repo_count",
     "github_env_repo_count",
@@ -114,6 +119,7 @@ SORT_KEYS: dict[str, list[str]] = {
     "github_repo_candidates_daily": ["repo_created_date", "provider", "repo_full_name"],
     "github_provider_signals_daily": ["signal_date", "provider", "repo_full_name", "signal_type"],
     "github_repo_rollup_daily": ["signal_date", "provider", "repo_full_name"],
+    "github_provider_adoption_daily": ["signal_date", "provider"],
     "provider_momentum_daily": ["signal_date", "provider"],
 }
 

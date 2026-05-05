@@ -172,6 +172,8 @@ class DatasetRecord:
     pypi_share_28d: float | None = None
     pypi_growth_28d: float | None = None
     github_new_repo_count: float | None = None
+    github_signal_repo_count: float | None = None
+    github_manifest_repo_count: float | None = None
     github_repo_share: float | None = None
     github_import_repo_count: float | None = None
     github_env_repo_count: float | None = None
