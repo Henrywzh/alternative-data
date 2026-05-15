@@ -1,0 +1,1 @@
+{"path": "src/app/api/auth/[...nextauth]/route.ts", "content": "ZXhwb3J0IGNvbnN0IHJ1bnRpbWUgPSAibm9kZWpzIjsKCmltcG9ydCBOZXh0\nQXV0aCBmcm9tICJuZXh0LWF1dGgiOwppbXBvcnQgeyBhdXRoT3B0aW9ucyB9\nIGZyb20gIkAvbGliL2F1dGgiOwoKY29uc3QgaGFuZGxlciA9IE5leHRBdXRo\nKGF1dGhPcHRpb25zKTsKCmV4cG9ydCB7IGhhbmRsZXIgYXMgR0VULCBoYW5k\nbGVyIGFzIFBPU1QgfTs=\n", "encoding": "base64"}
