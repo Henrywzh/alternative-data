@@ -100,6 +100,18 @@ def make_snapshots(html: str) -> list[Snapshot]:
     ]
 
 
+def _runtime_fallback_charts() -> dict[str, dict]:
+    payloads = _load_payloads()
+    return {
+        "top_models": {"data": payloads["top_models"], "forecast": "forecast-1w"},
+        "market_share": {"data": payloads["market_share"]},
+        "categories_programming": {
+            "data": payloads["categories_programming"],
+            "testId": "model-rankings-categories-chart",
+        },
+    }
+
+
 def test_parse_fixture_snapshots_for_all_three_datasets() -> None:
     html = build_fixture_html()
     source = RankingsSource()
@@ -119,9 +131,37 @@ def test_selector_drift_raises_clear_error() -> None:
     broken_html = build_fixture_html(categories_programming=[])
     source = RankingsSource()
     context = RunContext(run_id="broken", scraped_at=pd.Timestamp("2024-02-01", tz="UTC").to_pydatetime())
+    source._extract_chart_payloads_with_playwright = lambda: {}
 
     with pytest.raises(ExtractionError, match="categories_programming"):
         source.extract(make_snapshots(broken_html), context)
+
+
+def test_browser_fallback_is_used_when_static_chart_payloads_are_missing(monkeypatch: pytest.MonkeyPatch) -> None:
+    source = RankingsSource()
+    context = RunContext(run_id="fallback", scraped_at=pd.Timestamp("2024-02-01", tz="UTC").to_pydatetime())
+    called = {"value": False}
+
+    def fake_fallback() -> dict[str, dict]:
+        called["value"] = True
+        return _runtime_fallback_charts()
+
+    monkeypatch.setattr(source, "_extract_chart_payloads_with_playwright", fake_fallback)
+
+    extracted = source.extract(make_snapshots("<html><body>missing</body></html>"), context)
+
+    assert called["value"] is True
+    assert set(extracted) == {"top_models", "market_share", "categories_programming"}
+    assert len(extracted["top_models"]) == 9
+
+
+def test_browser_fallback_failure_raises_clear_missing_dataset_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    source = RankingsSource()
+    context = RunContext(run_id="fallback-broken", scraped_at=pd.Timestamp("2024-02-01", tz="UTC").to_pydatetime())
+    monkeypatch.setattr(source, "_extract_chart_payloads_with_playwright", lambda: {})
+
+    with pytest.raises(ExtractionError, match="top_models"):
+        source.extract(make_snapshots("<html><body>missing</body></html>"), context)
 
 
 def test_normalize_repeated_runs_are_idempotent(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -164,6 +204,24 @@ def test_weekly_update_adds_one_new_week(tmp_path: Path, monkeypatch: pytest.Mon
 
     market_share = pd.read_csv(tmp_path / "data" / "normalized" / "openrouter" / "market_share.csv")
     assert sorted(market_share["week_start_date"].unique().tolist()) == ["2024-01-07", "2024-01-14", "2024-01-21"]
+
+
+def test_validate_and_weekly_update_share_the_same_fallback_extraction_path(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    pipeline = RankingsPipeline(tmp_path)
+    broken_html = "<html><body>missing</body></html>"
+    monkeypatch.setattr(pipeline.source, "fetch_snapshots", lambda: make_snapshots(broken_html))
+    monkeypatch.setattr(pipeline.source, "_extract_chart_payloads_with_playwright", _runtime_fallback_charts)
+
+    counts = pipeline.validate()
+    weekly = pipeline.run_weekly_update()
+
+    assert counts["top_models"] == 9
+    assert weekly.datasets_written["top_models"] == 9
+    assert weekly.datasets_written["market_share"] == 9
+    assert weekly.datasets_written["categories_programming"] == 9
 
 
 def test_backfill_missing_fills_multiple_weeks(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

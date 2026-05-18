@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import json
+import logging
 import os
 import re
 from datetime import date
@@ -151,13 +152,53 @@ class GithubSource:
         if response.status_code >= 400:
             return None, None
         payload = response.json()
+        if not isinstance(payload, dict):
+            logging.warning(
+                "Skipping GitHub contents payload with unexpected shape repo=%s path=%s response_type=%s",
+                full_name,
+                path,
+                type(payload).__name__,
+            )
+            snapshot = Snapshot(
+                name=sanitize_filename(f"file_{full_name}_{path}"),
+                source_url=response.url,
+                body=json.dumps(
+                    {
+                        "path": path,
+                        "response_type": type(payload).__name__,
+                        "item_count": len(payload) if isinstance(payload, list) else None,
+                    }
+                ),
+            )
+            return snapshot, None
         snapshot = Snapshot(
             name=sanitize_filename(f"file_{full_name}_{path}"),
             source_url=response.url,
-            body=json.dumps({"path": path, "content": payload.get("content"), "encoding": payload.get("encoding")}),
+            body=json.dumps(
+                {
+                    "path": path,
+                    "type": payload.get("type"),
+                    "content": payload.get("content"),
+                    "encoding": payload.get("encoding"),
+                }
+            ),
         )
+        if payload.get("type") not in {None, "file"}:
+            logging.warning(
+                "Skipping non-file GitHub contents payload repo=%s path=%s type=%s",
+                full_name,
+                path,
+                payload.get("type"),
+            )
+            return snapshot, None
         encoded = payload.get("content")
         if not encoded or payload.get("encoding") != "base64":
+            logging.warning(
+                "Skipping undecodable GitHub contents payload repo=%s path=%s encoding=%s",
+                full_name,
+                path,
+                payload.get("encoding"),
+            )
             return snapshot, None
         try:
             content = base64.b64decode(encoded).decode("utf-8", errors="ignore")

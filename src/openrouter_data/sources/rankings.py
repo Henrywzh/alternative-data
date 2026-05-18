@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+import logging
 from dataclasses import dataclass
 from typing import Any
 
@@ -11,6 +13,7 @@ from openrouter_data.sources.base import SourceExtractor
 from openrouter_data.utils import (
     humanize_identifier,
     infer_completed_week_dates,
+    iter_next_f_decoded_strings,
     iter_next_f_objects,
     slug_author,
     walk_json,
@@ -81,38 +84,278 @@ class RankingsSource(SourceExtractor):
         rankings_html = snapshot_by_name["rankings"].body
         programming_html = snapshot_by_name["rankings_programming"].body
 
-        top_models_chart = self._find_chart(
-            rankings_html,
-            predicate=lambda chart: chart.get("forecast") == "forecast-1w",
-            label="top_models",
-        )
-        market_share_chart = self._find_chart(
-            rankings_html,
-            predicate=self._looks_like_market_share_chart,
-            label="market_share",
-        )
-        categories_programming_chart = self._find_chart(
-            programming_html,
-            predicate=lambda chart: chart.get("testId") == "model-rankings-categories-chart",
-            label="categories_programming",
-        )
+        charts = self._extract_chart_payloads(rankings_html, programming_html)
+        missing = self._missing_chart_labels(charts)
+        if missing:
+            logging.warning(
+                "Static OpenRouter rankings extraction missed %s; attempting Playwright fallback",
+                ", ".join(missing),
+            )
+            fallback_charts = self._extract_chart_payloads_with_playwright()
+            charts.update({label: chart for label, chart in fallback_charts.items() if chart is not None})
+            missing = self._missing_chart_labels(charts)
+        if missing:
+            raise ExtractionError(f"Could not find chart payloads for {', '.join(missing)}")
 
         return {
-            TOP_MODELS_SPEC.dataset_id: self._records_from_chart(top_models_chart, TOP_MODELS_SPEC, context),
-            MARKET_SHARE_SPEC.dataset_id: self._records_from_chart(market_share_chart, MARKET_SHARE_SPEC, context),
+            TOP_MODELS_SPEC.dataset_id: self._records_from_chart(charts[TOP_MODELS_SPEC.dataset_id], TOP_MODELS_SPEC, context),
+            MARKET_SHARE_SPEC.dataset_id: self._records_from_chart(charts[MARKET_SHARE_SPEC.dataset_id], MARKET_SHARE_SPEC, context),
             CATEGORIES_PROGRAMMING_SPEC.dataset_id: self._records_from_chart(
-                categories_programming_chart,
+                charts[CATEGORIES_PROGRAMMING_SPEC.dataset_id],
                 CATEGORIES_PROGRAMMING_SPEC,
                 context,
             ),
         }
+
+    def _extract_chart_payloads(self, rankings_html: str, programming_html: str) -> dict[str, dict[str, Any] | None]:
+        return {
+            TOP_MODELS_SPEC.dataset_id: self._find_chart(
+                rankings_html,
+                predicate=lambda chart: chart.get("forecast") == "forecast-1w",
+                label=TOP_MODELS_SPEC.dataset_id,
+            ),
+            MARKET_SHARE_SPEC.dataset_id: self._find_chart(
+                rankings_html,
+                predicate=self._looks_like_market_share_chart,
+                label=MARKET_SHARE_SPEC.dataset_id,
+            ),
+            CATEGORIES_PROGRAMMING_SPEC.dataset_id: self._find_chart(
+                programming_html,
+                predicate=lambda chart: chart.get("testId") == "model-rankings-categories-chart",
+                label=CATEGORIES_PROGRAMMING_SPEC.dataset_id,
+            ),
+        }
+
+    @staticmethod
+    def _missing_chart_labels(charts: dict[str, dict[str, Any] | None]) -> list[str]:
+        return [label for label, chart in charts.items() if chart is None]
 
     def _find_chart(self, html: str, *, predicate: Any, label: str) -> dict[str, Any]:
         for payload in iter_next_f_objects(html):
             for node in walk_json(payload):
                 if self._is_chart_candidate(node) and predicate(node):
                     return node
-        raise ExtractionError(f"Could not find chart payload for {label}")
+        chunks = self._parse_flight_chunks(html)
+        if chunks:
+            for payload in chunks.values():
+                materialized = self._materialize_flight_node(payload, chunks)
+                for node in walk_json(materialized):
+                    if self._is_chart_candidate(node) and predicate(node):
+                        return node
+        return None
+
+    def _parse_flight_chunks(self, html: str) -> dict[str, Any]:
+        chunks: dict[str, Any] = {}
+        for decoded in iter_next_f_decoded_strings(html):
+            if ":" not in decoded:
+                continue
+            label, payload = decoded.split(":", 1)
+            payload = payload.strip()
+            if not payload.startswith("[") and not payload.startswith("{"):
+                continue
+            try:
+                chunks[label] = json.loads(payload)
+            except json.JSONDecodeError:
+                continue
+        return chunks
+
+    def _materialize_flight_node(
+        self,
+        node: Any,
+        chunks: dict[str, Any],
+        seen: set[int] | None = None,
+    ) -> Any:
+        seen = seen or set()
+        node_id = id(node)
+        if node_id in seen:
+            return node
+
+        if isinstance(node, str):
+            return self._resolve_flight_reference(node, chunks, seen)
+        if isinstance(node, list):
+            seen.add(node_id)
+            return [self._materialize_flight_node(item, chunks, seen) for item in node]
+        if isinstance(node, dict):
+            seen.add(node_id)
+            return {key: self._materialize_flight_node(value, chunks, seen) for key, value in node.items()}
+        return node
+
+    def _resolve_flight_reference(self, value: str, chunks: dict[str, Any], seen: set[int]) -> Any:
+        if not value.startswith("$"):
+            return value
+        if value in {"$undefined", "$null", "$true", "$false"}:
+            return {
+                "$undefined": None,
+                "$null": None,
+                "$true": True,
+                "$false": False,
+            }[value]
+
+        ref = value[1:]
+        if ref.startswith("L"):
+            ref = ref[1:]
+        if not ref or ref not in chunks:
+            return value
+        return self._materialize_flight_node(chunks[ref], chunks, seen)
+
+    def _extract_chart_payloads_with_playwright(self) -> dict[str, dict[str, Any] | None]:
+        try:
+            from playwright.sync_api import sync_playwright
+        except ImportError:
+            logging.warning("Playwright is unavailable for OpenRouter rankings fallback")
+            return {}
+
+        try:
+            with sync_playwright() as playwright:
+                browser = playwright.chromium.launch(headless=True)
+                try:
+                    page = browser.new_page(viewport={"width": 1440, "height": 1800})
+                    try:
+                        page.goto(TOP_MODELS_SPEC.source_url, wait_until="networkidle", timeout=self.timeout * 1000)
+                        charts = {
+                            TOP_MODELS_SPEC.dataset_id: self._extract_runtime_chart_from_page(
+                                page,
+                                section_selector="#leaderboard",
+                                label=TOP_MODELS_SPEC.dataset_id,
+                            ),
+                            MARKET_SHARE_SPEC.dataset_id: self._extract_runtime_chart_from_page(
+                                page,
+                                section_selector="#market-share",
+                                label=MARKET_SHARE_SPEC.dataset_id,
+                            ),
+                        }
+                        page.goto(CATEGORIES_PROGRAMMING_SPEC.source_url, wait_until="networkidle", timeout=self.timeout * 1000)
+                        charts[CATEGORIES_PROGRAMMING_SPEC.dataset_id] = self._extract_runtime_chart_from_page(
+                            page,
+                            section_selector="#programming-languages",
+                            label=CATEGORIES_PROGRAMMING_SPEC.dataset_id,
+                        )
+                    finally:
+                        page.close()
+
+                    if not self._missing_chart_labels(charts):
+                        return charts
+
+                    rankings_html = self._capture_runtime_next_f_html(browser, TOP_MODELS_SPEC.source_url)
+                    programming_html = self._capture_runtime_next_f_html(browser, CATEGORIES_PROGRAMMING_SPEC.source_url)
+                    html_charts = self._extract_chart_payloads(rankings_html, programming_html)
+                    charts.update({label: chart for label, chart in html_charts.items() if chart is not None})
+                finally:
+                    browser.close()
+        except Exception as exc:  # pragma: no cover - exercised via mocked fallback path in tests
+            logging.warning("Playwright fallback failed for OpenRouter rankings: %s", exc)
+            return {}
+
+        return charts
+
+    def _extract_runtime_chart_from_page(self, page: Any, *, section_selector: str, label: str) -> dict[str, Any] | None:
+        section = page.locator(section_selector).first
+        if section.count() == 0:
+            logging.warning("Could not find OpenRouter section %s for %s", section_selector, label)
+            return None
+        section.scroll_into_view_if_needed()
+        return page.evaluate(
+            """
+            ({ sectionSelector, label }) => {
+              const section = document.querySelector(sectionSelector);
+              if (!section) return null;
+
+              const visited = new WeakSet();
+              const chartPredicate = (item) => {
+                if (!item || typeof item !== "object") return false;
+                if (!Array.isArray(item.data) || item.data.length === 0) return false;
+                const first = item.data[0];
+                if (!first || typeof first !== "object" || !("x" in first) || !("ys" in first)) return false;
+                if (label === "top_models") return item.forecast === "forecast-1w";
+                if (label === "market_share") return item.isPercentage === true || Object.keys(first.ys || {}).every((key) => !key.includes("/"));
+                return true;
+              };
+
+              const stack = [section];
+              while (stack.length) {
+                const current = stack.pop();
+                if (!current || typeof current !== "object") continue;
+
+                if (current instanceof Element) {
+                  for (const child of current.children) stack.push(child);
+                  for (const key of Object.keys(current)) {
+                    if (!key.startsWith("__reactProps$") && !key.startsWith("__reactFiber$")) continue;
+                    stack.push(current[key]);
+                  }
+                  continue;
+                }
+
+                if (visited.has(current)) continue;
+                visited.add(current);
+
+                if (chartPredicate(current)) {
+                  return {
+                    data: current.data,
+                    forecast: current.forecast ?? null,
+                    testId: current.testId ?? null,
+                    isPercentage: current.isPercentage ?? null,
+                  };
+                }
+
+                if (Array.isArray(current)) {
+                  for (const child of current) stack.push(child);
+                } else {
+                  for (const child of Object.values(current)) stack.push(child);
+                }
+              }
+              return null;
+            }
+            """,
+            {"sectionSelector": section_selector, "label": label},
+        )
+
+    def _capture_runtime_next_f_html(self, browser: Any, url: str) -> str:
+        page = browser.new_page(viewport={"width": 1440, "height": 1800})
+        page.add_init_script(
+            """
+            (() => {
+              const captured = [];
+              Object.defineProperty(window, "__capturedNextF", { value: captured, configurable: true });
+              const install = (arr) => {
+                const originalPush = arr.push.bind(arr);
+                arr.push = function (...args) {
+                  try { captured.push(...args); } catch (e) {}
+                  return originalPush(...args);
+                };
+                return arr;
+              };
+              let internal = install([]);
+              Object.defineProperty(window, "__next_f", {
+                get() { return internal; },
+                set(value) { internal = Array.isArray(value) ? install(value) : value; },
+                configurable: true,
+              });
+            })();
+            """
+        )
+        try:
+            page.goto(url, wait_until="networkidle", timeout=self.timeout * 1000)
+            html = page.content()
+            runtime_strings = page.evaluate(
+                """
+                () => (Array.isArray(window.__capturedNextF) ? window.__capturedNextF : [])
+                  .filter((entry) => Array.isArray(entry) && typeof entry[1] === "string")
+                  .map((entry) => entry[1])
+                """
+            )
+        finally:
+            page.close()
+        if not runtime_strings:
+            return html
+        return html + self._render_captured_next_f_html(runtime_strings)
+
+    @staticmethod
+    def _render_captured_next_f_html(runtime_strings: list[str]) -> str:
+        return "".join(
+            f"<script>self.__next_f.push([1,{json.dumps(decoded)}])</script>"
+            for decoded in runtime_strings
+        )
+
 
     @staticmethod
     def _is_chart_candidate(node: Any) -> bool:

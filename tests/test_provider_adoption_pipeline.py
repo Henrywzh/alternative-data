@@ -360,6 +360,29 @@ class FakeSession:
         return FakeResponse({"items": []})
 
 
+class FakeGithubApiResponse:
+    def __init__(self, payload, *, url: str, status_code: int = 200) -> None:
+        self._payload = payload
+        self.url = url
+        self.status_code = status_code
+
+    def json(self):
+        return self._payload
+
+
+class FakeGithubApiSession:
+    def __init__(self, responses) -> None:
+        self.headers = {}
+        self._responses = list(responses)
+        self.requested_urls: list[str] = []
+
+    def get(self, url, params=None, timeout=30):
+        self.requested_urls.append(url)
+        if not self._responses:
+            raise AssertionError(f"Unexpected GitHub contents request: {url}")
+        return self._responses.pop(0)
+
+
 def test_pypi_source_extracts_with_and_without_mirrors() -> None:
     source = PypiStatsSource()
     providers = get_provider_registry(["openai"])
@@ -618,6 +641,99 @@ def test_github_source_detects_signal_types_from_candidate_contents() -> None:
         "env_var",
         "model_name",
     }
+
+
+def test_github_source_fetch_file_skips_list_payloads_without_crashing() -> None:
+    session = FakeGithubApiSession(
+        [
+            FakeGithubApiResponse(
+                [{"name": "nested.txt"}],
+                url="https://api.github.com/repos/openai/demo/contents/package.json",
+            )
+        ]
+    )
+    source = GithubSource(session=session)
+
+    snapshot, content = source._fetch_file("openai/demo", "package.json")
+
+    assert content is None
+    assert snapshot is not None
+    body = json.loads(snapshot.body)
+    assert body["path"] == "package.json"
+    assert body["response_type"] == "list"
+    assert body["item_count"] == 1
+
+
+def test_github_source_fetch_file_skips_non_base64_payloads() -> None:
+    session = FakeGithubApiSession(
+        [
+            FakeGithubApiResponse(
+                {"type": "file", "encoding": "utf-8", "content": "plain-text"},
+                url="https://api.github.com/repos/openai/demo/contents/src/main.py",
+            )
+        ]
+    )
+    source = GithubSource(session=session)
+
+    snapshot, content = source._fetch_file("openai/demo", "src/main.py")
+
+    assert content is None
+    assert snapshot is not None
+    body = json.loads(snapshot.body)
+    assert body["type"] == "file"
+    assert body["encoding"] == "utf-8"
+
+
+def test_github_source_inspect_repositories_continues_after_unprocessable_path(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = GithubSource()
+    providers = get_provider_registry(["openai"])
+    repository = GithubRepository(
+        full_name="openai/demo",
+        owner="openai",
+        name="demo",
+        html_url="https://github.com/openai/demo",
+        created_at="2026-04-05T10:00:00Z",
+        created_date="2026-04-05",
+        pushed_at="2026-04-05T11:00:00Z",
+        default_branch="main",
+        language_bucket="python",
+        is_fork=False,
+        is_archived=False,
+        stargazers_count=10,
+    )
+
+    monkeypatch.setattr(
+        source,
+        "_fetch_tree",
+        lambda repo: (
+            Snapshot(
+                name="tree_openai_demo",
+                source_url="https://api.github.com/repos/openai/demo/git/trees/main",
+                body="{}",
+            ),
+            ["package.json", "src/main.py"],
+        ),
+    )
+
+    def fake_fetch_file(full_name: str, path: str) -> tuple[Snapshot, str | None]:
+        snapshot = Snapshot(
+            name=f"file_{path}",
+            source_url=f"https://api.github.com/repos/{full_name}/contents/{path}",
+            body=json.dumps({"path": path}),
+        )
+        if path == "package.json":
+            return snapshot, None
+        return snapshot, "from openai import OpenAI\n"
+
+    monkeypatch.setattr(source, "_fetch_file", fake_fetch_file)
+
+    snapshots, matches = source.inspect_repositories([repository], providers, date.fromisoformat("2026-04-05"))
+
+    assert len(snapshots) == 3
+    assert {match.signal_type for match in matches} == {"code_import"}
+    assert matches[0].matched_file_path == "src/main.py"
 
 
 def test_sanitize_filename_replaces_artifact_invalid_characters() -> None:
