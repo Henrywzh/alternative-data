@@ -1051,6 +1051,33 @@ def test_compute_provider_adoption_views_rollup_daily_counts_only_signal_bearing
     assert int(views["latest_github_candidate_count"]) == 600
 
 
+def test_provider_adoption_parquet_only_repo_detail_datasets_remain_dashboard_compatible(tmp_path: Path) -> None:
+    root = tmp_path / "data" / "normalized" / "provider_adoption"
+    root.mkdir(parents=True, exist_ok=True)
+    _provider_pypi_frame().to_csv(root / "pypi_downloads_daily.csv", index=False)
+    _provider_npm_frame().to_csv(root / "npm_downloads_daily.csv", index=False)
+    _provider_hf_frame().to_csv(root / "huggingface_models_daily.csv", index=False)
+    _provider_github_adoption_frame().to_csv(root / "github_provider_adoption_daily.csv", index=False)
+    _provider_momentum_frame().to_csv(root / "provider_momentum_daily.csv", index=False)
+    _provider_signals_frame().to_csv(root / "github_provider_signals_daily.csv", index=False)
+    _provider_candidates_frame().to_parquet(root / "github_repo_candidates_daily.parquet", index=False)
+    _provider_rollup_frame().to_parquet(root / "github_repo_rollup_daily.parquet", index=False)
+
+    candidates_result = load_dataset("github_repo_candidates_daily", base_dir=tmp_path)
+    rollup_result = load_dataset("github_repo_rollup_daily", base_dir=tmp_path)
+    datasets = load_domain_datasets("provider_adoption", base_dir=tmp_path)
+    views = compute_provider_adoption_views(datasets)
+
+    assert candidates_result.source_format == "parquet"
+    assert rollup_result.source_format == "parquet"
+    assert candidates_result.row_count == 3
+    assert rollup_result.row_count == 3
+    assert int(views["latest_github_candidate_count"]) == 600
+    openai_rollup = views["rollup_daily"][views["rollup_daily"]["provider_display_name"] == "OpenAI"].iloc[0]
+    assert int(openai_rollup["signal_repos"]) == 1
+    assert int(openai_rollup["manifest_repos"]) == 1
+
+
 def test_compute_semiconductor_views_exposes_proxy_and_component_columns() -> None:
     frame = pd.DataFrame(
         [
