@@ -1622,6 +1622,49 @@ def test_dashboard_modern_revenue_does_not_back_apply_future_xiaomi_pricing(tmp_
     assert pd.isna(xiaomi_row["estimated_revenue"])
 
 
+def test_dashboard_modern_revenue_keeps_non_xiaomi_fallback_before_pricing_history(tmp_path: Path) -> None:
+    provider_daily_activity = pd.DataFrame(
+        [
+            {
+                **_base_row("provider_daily_activity"),
+                "usage_date": "2026-03-30",
+                "entity_id": "openai",
+                "entity_name": "OpenAI",
+                "category_slug": "openai",
+                "model_permaslug": "openai/gpt-4o-mini",
+                "total_tokens": 1_000_000.0,
+                "prompt_tokens": 600_000.0,
+                "completion_tokens": 400_000.0,
+            },
+        ],
+        columns=EXPECTED_COLUMNS,
+    )
+    raw_openrouter_models = pd.DataFrame(
+        [
+            {
+                **_base_row("raw_openrouter_models"),
+                "snapshot_ts": "2026-04-15T00:00:00Z",
+                "model_id": "openai/gpt-4o-mini",
+                "canonical_slug": "openai/gpt-4o-mini",
+                "provider_prefix": "openai",
+                "pricing_prompt": 0.001,
+                "pricing_completion": 0.002,
+            }
+        ],
+        columns=EXPECTED_COLUMNS,
+    )
+
+    _write_dataset(tmp_path, "provider_daily_activity", provider_daily_activity)
+    _write_dataset(tmp_path, "raw_openrouter_models", raw_openrouter_models)
+
+    datasets = load_all_datasets(base_dir=tmp_path)
+    views = _compute_revenue_views(datasets)
+    revenue_daily = regroup_provider_pivot_for_display(views["revenue_estimator"]["pivot_rev_daily"], "daily")
+
+    assert "OpenAI" in revenue_daily.columns
+    assert revenue_daily.loc["2026-03-30", "OpenAI"] > 0
+
+
 def test_dashboard_monthly_revenue_excludes_post_legacy_market_share_topups(tmp_path: Path) -> None:
     top_models = pd.DataFrame(
         [
