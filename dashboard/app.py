@@ -902,6 +902,19 @@ def _revenue_pivots_from_economics(economics: pd.DataFrame) -> tuple[pd.DataFram
     return daily, weekly, monthly
 
 
+def _is_xiaomi_mimo_backpricing_hazard(frame: pd.DataFrame) -> pd.Series:
+    if frame.empty:
+        return pd.Series(dtype=bool, index=frame.index)
+    usage_date = pd.to_datetime(frame.get("usage_date"), errors="coerce").dt.strftime("%Y-%m-%d")
+    provider = frame.get("entity_id", frame.get("provider_slug", pd.Series("", index=frame.index))).astype("string").str.lower()
+    model = frame.get("model_permaslug", pd.Series("", index=frame.index)).astype("string").str.lower()
+    return (
+        provider.eq("xiaomi")
+        & usage_date.between("2026-03-19", "2026-04-05")
+        & model.str.startswith("xiaomi/mimo-v2-", na=False)
+    )
+
+
 def _compute_revenue_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, object]:
     """Dashboard-oriented provider tokens and revenue with legacy fallback stitching."""
     provider_res = datasets.get("provider_daily_activity")
@@ -1006,9 +1019,52 @@ def _compute_revenue_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, 
     modern_pivot_daily = pd.DataFrame()
     modern_pivot_weekly = pd.DataFrame()
     modern_pivot_monthly = pd.DataFrame()
-    if not economics.empty:
-        modern_pivot_daily, modern_pivot_weekly, modern_pivot_monthly = _revenue_pivots_from_economics(economics)
-        pivot_rev_daily = modern_pivot_daily
+    if not provider_activity.empty:
+        modern_df = provider_activity.copy()
+        modern_df = modern_df[~_is_xiaomi_mimo_backpricing_hazard(modern_df)].copy()
+        modern_with_price = (
+            estimate_usage_revenue(
+                modern_df,
+                pricing,
+                slug_strategy="canonical",
+                pricing_strategy="provider_fallback",
+            )
+            if not modern_df.empty
+            else pd.DataFrame()
+        )
+        if "estimated_revenue" in modern_with_price.columns:
+            modern_with_price = modern_with_price[modern_with_price["estimated_revenue"].notna()].copy()
+        if not modern_with_price.empty:
+            modern_with_price["revenue_usd"] = pd.to_numeric(modern_with_price["estimated_revenue"], errors="coerce")
+            modern_with_price["usage_date_dt"] = pd.to_datetime(modern_with_price["usage_date"], errors="coerce")
+            modern_with_price = modern_with_price.dropna(subset=["usage_date_dt"])
+            modern_with_price = modern_with_price[modern_with_price["revenue_usd"] > 0].copy()
+            modern_with_price["usage_date_str"] = modern_with_price["usage_date_dt"].dt.strftime("%Y-%m-%d")
+            modern_with_price["usage_week"] = _week_start(modern_with_price["usage_date_dt"])
+            modern_with_price["usage_month"] = modern_with_price["usage_date_dt"].dt.strftime("%Y-%m")
+            modern_with_price["provider_label"] = modern_with_price["entity_name"].fillna(modern_with_price["provider_slug"])
+
+            modern_pivot_daily = (
+                modern_with_price.pivot_table(index="usage_date_str", columns="provider_label", values="revenue_usd", aggfunc="sum")
+                .fillna(0).sort_index()
+            )
+            modern_pivot_weekly_raw = (
+                modern_with_price.pivot_table(index="usage_week", columns="provider_label", values="revenue_usd", aggfunc="sum")
+                .fillna(0)
+            )
+            modern_pivot_weekly = _scale_partial_week_values(
+                modern_with_price,
+                modern_pivot_weekly_raw,
+                "usage_week",
+                "provider_label",
+                "revenue_usd",
+                "usage_date_dt",
+            )
+            modern_pivot_monthly = (
+                modern_with_price.pivot_table(index="usage_month", columns="provider_label", values="revenue_usd", aggfunc="sum")
+                .fillna(0).sort_index()
+            )
+            pivot_rev_daily = modern_pivot_daily
 
     coverage_summary = summarize_economics_coverage(economics)
 
@@ -1124,7 +1180,8 @@ def _compute_revenue_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, 
                 )
                 pivot_rev_monthly[column] = interpolated.fillna(0)
     else:
-        pivot_rev_daily, pivot_rev_weekly, pivot_rev_monthly = _revenue_pivots_from_economics(economics)
+        if pivot_rev_daily.empty and pivot_rev_weekly.empty and pivot_rev_monthly.empty:
+            pivot_rev_daily, pivot_rev_weekly, pivot_rev_monthly = _revenue_pivots_from_economics(economics)
 
     return {
         "revenue_estimator": {
