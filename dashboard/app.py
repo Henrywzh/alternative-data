@@ -1006,46 +1006,9 @@ def _compute_revenue_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, 
     modern_pivot_daily = pd.DataFrame()
     modern_pivot_weekly = pd.DataFrame()
     modern_pivot_monthly = pd.DataFrame()
-    if not provider_activity.empty:
-        modern_df = provider_activity.copy()
-        modern_with_price = estimate_usage_revenue(
-            modern_df,
-            pricing,
-            slug_strategy="canonical",
-            pricing_strategy="provider_fallback",
-        )
-        modern_with_price = modern_with_price[modern_with_price["estimated_revenue"].notna()].copy()
-        if not modern_with_price.empty:
-            modern_with_price["revenue_usd"] = pd.to_numeric(modern_with_price["estimated_revenue"], errors="coerce")
-            modern_with_price["usage_date_dt"] = pd.to_datetime(modern_with_price["usage_date"], errors="coerce")
-            modern_with_price = modern_with_price.dropna(subset=["usage_date_dt"])
-            modern_with_price = modern_with_price[modern_with_price["revenue_usd"] > 0].copy()
-            modern_with_price["usage_date_str"] = modern_with_price["usage_date_dt"].dt.strftime("%Y-%m-%d")
-            modern_with_price["usage_week"] = _week_start(modern_with_price["usage_date_dt"])
-            modern_with_price["usage_month"] = modern_with_price["usage_date_dt"].dt.strftime("%Y-%m")
-            modern_with_price["provider_label"] = modern_with_price["entity_name"].fillna(modern_with_price["provider_slug"])
-
-            modern_pivot_daily = (
-                modern_with_price.pivot_table(index="usage_date_str", columns="provider_label", values="revenue_usd", aggfunc="sum")
-                .fillna(0).sort_index()
-            )
-            modern_pivot_weekly_raw = (
-                modern_with_price.pivot_table(index="usage_week", columns="provider_label", values="revenue_usd", aggfunc="sum")
-                .fillna(0)
-            )
-            modern_pivot_weekly = _scale_partial_week_values(
-                modern_with_price,
-                modern_pivot_weekly_raw,
-                "usage_week",
-                "provider_label",
-                "revenue_usd",
-                "usage_date_dt",
-            )
-            modern_pivot_monthly = (
-                modern_with_price.pivot_table(index="usage_month", columns="provider_label", values="revenue_usd", aggfunc="sum")
-                .fillna(0).sort_index()
-            )
-            pivot_rev_daily = modern_pivot_daily
+    if not economics.empty:
+        modern_pivot_daily, modern_pivot_weekly, modern_pivot_monthly = _revenue_pivots_from_economics(economics)
+        pivot_rev_daily = modern_pivot_daily
 
     coverage_summary = summarize_economics_coverage(economics)
 
@@ -1131,6 +1094,7 @@ def _compute_revenue_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, 
             combined.pivot_table(index="usage_month", columns="provider_label", values="final_revenue", aggfunc="sum")
             .fillna(0).sort_index()
         )
+        pivot_rev_monthly_legacy = pivot_rev_monthly_legacy[pivot_rev_monthly_legacy.index <= "2026-01"]
 
         pivot_rev_weekly = pd.concat([pivot_rev_weekly_legacy, modern_pivot_weekly]).fillna(0).sort_index()
         pivot_rev_weekly = pivot_rev_weekly.groupby(level=0).sum()
