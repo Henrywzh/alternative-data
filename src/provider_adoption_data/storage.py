@@ -123,6 +123,11 @@ SORT_KEYS: dict[str, list[str]] = {
     "provider_momentum_daily": ["signal_date", "provider"],
 }
 
+PARQUET_ONLY_DATASETS = {
+    "github_repo_candidates_daily",
+    "github_repo_rollup_daily",
+}
+
 
 class StorageManager:
     def __init__(self, base_dir: Path) -> None:
@@ -143,9 +148,13 @@ class StorageManager:
 
     def load_dataset(self, dataset_id: str) -> pd.DataFrame:
         csv_path = self.normalized_root / f"{dataset_id}.csv"
-        if not csv_path.exists():
+        parquet_path = self.normalized_root / f"{dataset_id}.parquet"
+        if parquet_path.exists():
+            dataframe = pd.read_parquet(parquet_path)
+        elif csv_path.exists():
+            dataframe = pd.read_csv(csv_path)
+        else:
             return pd.DataFrame(columns=DATASET_COLUMNS)
-        dataframe = pd.read_csv(csv_path)
         for column in DATASET_COLUMNS:
             if column not in dataframe.columns:
                 dataframe[column] = pd.NA
@@ -164,8 +173,11 @@ class StorageManager:
 
         csv_path = self.normalized_root / f"{dataset_id}.csv"
         parquet_path = self.normalized_root / f"{dataset_id}.parquet"
-        merged.to_csv(csv_path, index=False)
         merged.to_parquet(parquet_path, index=False)
+        if dataset_id in PARQUET_ONLY_DATASETS:
+            csv_path.unlink(missing_ok=True)
+        else:
+            merged.to_csv(csv_path, index=False)
         return merged
 
     @staticmethod
