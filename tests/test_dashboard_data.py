@@ -1567,6 +1567,118 @@ def test_stepfun_surfaces_in_daily_token_and_revenue_views(tmp_path: Path) -> No
     assert revenue_daily.loc["2026-05-01", "StepFun"] == 0.1023
 
 
+def test_dashboard_modern_revenue_does_not_back_apply_future_xiaomi_pricing(tmp_path: Path) -> None:
+    provider_daily_activity = pd.DataFrame(
+        [
+            {
+                **_base_row("provider_daily_activity"),
+                "usage_date": "2026-03-30",
+                "entity_id": "xiaomi",
+                "entity_name": "Xiaomi",
+                "category_slug": "xiaomi",
+                "model_permaslug": "xiaomi/mimo-v2-pro-20260318",
+                "total_tokens": 1_000_000.0,
+            },
+        ],
+        columns=EXPECTED_COLUMNS,
+    )
+    raw_openrouter_models = pd.DataFrame(
+        [
+            {
+                **_base_row("raw_openrouter_models"),
+                "snapshot_ts": "2026-04-15T00:00:00Z",
+                "model_id": "xiaomi/mimo-v2-pro",
+                "canonical_slug": "xiaomi/mimo-v2-pro-20260318",
+                "provider_prefix": "xiaomi",
+                "pricing_prompt": 0.001,
+                "pricing_completion": 0.003,
+            }
+        ],
+        columns=EXPECTED_COLUMNS,
+    )
+
+    _write_dataset(tmp_path, "provider_daily_activity", provider_daily_activity)
+    _write_dataset(tmp_path, "raw_openrouter_models", raw_openrouter_models)
+
+    datasets = load_all_datasets(base_dir=tmp_path)
+    views = _compute_revenue_views(datasets)
+    token_daily = regroup_provider_pivot_for_display(views["token_volume"]["pivot_daily"], "daily")
+    revenue_daily = regroup_provider_pivot_for_display(views["revenue_estimator"]["pivot_rev_daily"], "daily")
+    revenue_weekly = regroup_provider_pivot_for_display(views["revenue_estimator"]["pivot_rev_weekly"], "weekly")
+    revenue_monthly = regroup_provider_pivot_for_display(views["revenue_estimator"]["pivot_rev_monthly"], "monthly")
+    economics = views["revenue_estimator"]["economics"]
+    xiaomi_row = economics[economics["provider_slug"] == "xiaomi"].iloc[0]
+
+    assert token_daily.loc["2026-03-30", "Xiaomi"] == 1_000_000.0
+    assert "Xiaomi" not in revenue_daily.columns or revenue_daily.loc["2026-03-30", "Xiaomi"] == 0
+    assert "Xiaomi" not in revenue_weekly.columns or revenue_weekly.loc["2026-03-30", "Xiaomi"] == 0
+    assert (
+        "Xiaomi" not in revenue_monthly.columns
+        or "2026-03" not in revenue_monthly.index
+        or revenue_monthly.loc["2026-03", "Xiaomi"] == 0
+    )
+    assert xiaomi_row["pricing_join_status"] == "unresolved_missing_pricing"
+    assert xiaomi_row["revenue_method"] == "unpriced"
+    assert pd.isna(xiaomi_row["estimated_revenue"])
+
+
+def test_dashboard_monthly_revenue_excludes_post_legacy_market_share_topups(tmp_path: Path) -> None:
+    top_models = pd.DataFrame(
+        [
+            {
+                **_base_row("top_models"),
+                "week_start_date": "2026-03-30",
+                "entity_id": "xiaomi/mimo-v2-pro-20260318",
+                "entity_name": "xiaomi/mimo-v2-pro-20260318",
+                "parent_entity_id": "xiaomi",
+                "parent_entity_name": "Xiaomi",
+                "metric_value": 100.0,
+            }
+        ],
+        columns=EXPECTED_COLUMNS,
+    )
+    market_share = pd.DataFrame(
+        [
+            {
+                **_base_row("market_share"),
+                "week_start_date": "2026-03-30",
+                "entity_id": "xiaomi",
+                "entity_name": "xiaomi",
+                "metric_value": 1_000_000.0,
+            }
+        ],
+        columns=EXPECTED_COLUMNS,
+    )
+    raw_openrouter_models = pd.DataFrame(
+        [
+            {
+                **_base_row("raw_openrouter_models"),
+                "snapshot_ts": "2026-04-15T00:00:00Z",
+                "model_id": "xiaomi/mimo-v2-pro",
+                "canonical_slug": "xiaomi/mimo-v2-pro-20260318",
+                "provider_prefix": "xiaomi",
+                "pricing_prompt": 0.001,
+                "pricing_completion": 0.003,
+            }
+        ],
+        columns=EXPECTED_COLUMNS,
+    )
+
+    _write_dataset(tmp_path, "top_models", top_models)
+    _write_dataset(tmp_path, "market_share", market_share)
+    _write_dataset(tmp_path, "raw_openrouter_models", raw_openrouter_models)
+
+    datasets = load_all_datasets(base_dir=tmp_path)
+    views = _compute_revenue_views(datasets)
+    revenue_monthly = regroup_provider_pivot_for_display(views["revenue_estimator"]["pivot_rev_monthly"], "monthly")
+
+    assert (
+        "Xiaomi" not in revenue_monthly.columns
+        or "2026-03" not in revenue_monthly.index
+        or revenue_monthly.loc["2026-03", "Xiaomi"] == 0
+    )
+
+
 def test_legacy_token_volume_uses_market_share_for_providers_missing_from_top_models(tmp_path: Path) -> None:
     top_models = pd.DataFrame(
         [
