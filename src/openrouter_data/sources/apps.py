@@ -45,6 +45,7 @@ class AppsSource(SourceExtractor):
 
     def __init__(self, timeout: int = 30) -> None:
         self.timeout = timeout
+        self._directory_payload_cache: tuple[dict[str, list[dict[str, Any]]], list[dict[str, Any]]] | None = None
         self.session = requests.Session()
         self.session.headers.update(
             {
@@ -123,7 +124,9 @@ class AppsSource(SourceExtractor):
             for node in walk_json(payload):
                 if isinstance(node, dict) and "growthPercent" in node and "appAnalytics" in node:
                     return [item for item in walk_json(payload) if isinstance(item, dict) and "growthPercent" in item and "appAnalytics" in item]
-        raise ExtractionError("Could not find trending payload in /apps")
+        if "trendingApps" in html:
+            raise ExtractionError("Could not find trending payload in /apps")
+        return self._extract_directory_payload_with_playwright()[1]
 
     def _extract_ranking_map(self, html: str) -> dict[str, list[dict[str, Any]]]:
         chunks = self._parse_flight_chunks(html)
@@ -135,7 +138,9 @@ class AppsSource(SourceExtractor):
                         return ranking_map
                 if self._is_ranking_map(node):
                     return node
-        return self._extract_ranking_map_with_playwright()
+        if "rankingMap" in html:
+            raise ExtractionError("Could not find global ranking payload in /apps")
+        return self._extract_directory_payload_with_playwright()[0]
 
     @staticmethod
     def _is_ranking_map(node: Any) -> bool:
@@ -202,7 +207,10 @@ class AppsSource(SourceExtractor):
                 raise ExtractionError(f"Invalid flight reference segment {part} in {reference}")
         return node
 
-    def _extract_ranking_map_with_playwright(self) -> dict[str, list[dict[str, Any]]]:
+    def _extract_directory_payload_with_playwright(self) -> tuple[dict[str, list[dict[str, Any]]], list[dict[str, Any]]]:
+        if self._directory_payload_cache is not None:
+            return self._directory_payload_cache
+
         try:
             from playwright.sync_api import sync_playwright
         except ImportError as exc:
@@ -212,35 +220,125 @@ class AppsSource(SourceExtractor):
             browser = playwright.chromium.launch(headless=True)
             page = browser.new_page(viewport={"width": 1440, "height": 1800})
             try:
-                page.goto("https://openrouter.ai/apps", wait_until="domcontentloaded", timeout=self.timeout * 1000)
-                next_f_strings = page.evaluate(
+                page.goto("https://openrouter.ai/apps", wait_until="networkidle", timeout=self.timeout * 1000)
+                trending_cards = page.evaluate(
                     """
-                    () => (Array.isArray(self.__next_f) ? self.__next_f : [])
-                      .filter((entry) => Array.isArray(entry) && entry.length > 1 && typeof entry[1] === "string")
-                      .map((entry) => entry[1])
+                    () => {
+                      const section = [...document.querySelectorAll("section")].find(
+                        (node) => node.querySelector("h2")?.innerText.trim() === "Trending"
+                      );
+                      if (!section) return [];
+                      return [...section.querySelectorAll('a[href^="/apps/"]')]
+                        .map((anchor) => ({
+                          href: anchor.getAttribute("href"),
+                          text: anchor.innerText,
+                        }))
+                        .filter((item) => item.href && item.text);
+                    }
                     """
                 )
+
+                def read_global_rows() -> list[dict[str, str]]:
+                    return page.evaluate(
+                        """
+                        () => [...document.querySelectorAll('#global-ranking [data-slot="marketplace-app-row"]')]
+                          .map((anchor) => ({
+                            href: anchor.getAttribute("href"),
+                            text: anchor.innerText,
+                          }))
+                          .filter((item) => item.href && item.text)
+                        """
+                    )
+
+                ranking_map: dict[str, list[dict[str, Any]]] = {}
+                period_options = (
+                    ("Today", "day"),
+                    ("This Week", "week"),
+                    ("This Month", "month"),
+                )
+                for label, period in period_options:
+                    if period != "day":
+                        combobox = page.locator('#global-ranking button[role="combobox"]')
+                        combobox.click()
+                        option = page.locator('[role="option"]', has_text=label).last
+                        if option.count() == 0:
+                            continue
+                        option.click()
+                        page.wait_for_function(
+                            """([selector, value]) => {
+                                const input = document.querySelector(selector);
+                                return input && input.value === value;
+                            }""",
+                            arg=["#global-ranking input[aria-hidden='true']", period],
+                            timeout=self.timeout * 1000,
+                        )
+                        page.wait_for_timeout(250)
+                    ranking_map[period] = [
+                        self._parse_live_marketplace_row(item)
+                        for item in read_global_rows()
+                    ]
             finally:
                 browser.close()
 
-        chunks: dict[str, Any] = {}
-        for decoded in next_f_strings:
-            if '"rankingMap"' not in decoded or ":" not in decoded:
-                continue
-            label, payload = decoded.split(":", 1)
-            try:
-                chunks[label] = json.loads(payload)
-            except json.JSONDecodeError:
-                continue
-        for parsed in chunks.values():
-            for node in walk_json(parsed):
-                if isinstance(node, dict) and "rankingMap" in node:
-                    ranking_map = self._resolve_ranking_map(node["rankingMap"], chunks)
-                    if self._is_ranking_map(ranking_map):
-                        return ranking_map
-                if self._is_ranking_map(node):
-                    return node
-        raise ExtractionError("Could not find global ranking payload in /apps")
+        trending_payload = [self._parse_live_trending_card(item) for item in trending_cards]
+        if not self._is_ranking_map(ranking_map):
+            raise ExtractionError("Could not find global ranking payload in /apps")
+        if not trending_payload:
+            raise ExtractionError("Could not find trending payload in /apps")
+        self._directory_payload_cache = (ranking_map, trending_payload)
+        return self._directory_payload_cache
+
+    @staticmethod
+    def _parse_compact_metric(value: str) -> float:
+        normalized = value.strip().replace("tokens", "").replace("token", "").replace("%", "").replace("+", "").replace(">", "")
+        multiplier = 1.0
+        suffixes = {
+            "K": 1_000.0,
+            "M": 1_000_000.0,
+            "B": 1_000_000_000.0,
+            "T": 1_000_000_000_000.0,
+        }
+        if normalized and normalized[-1].upper() in suffixes:
+            multiplier = suffixes[normalized[-1].upper()]
+            normalized = normalized[:-1]
+        return float(normalized) * multiplier
+
+    def _parse_live_marketplace_row(self, item: dict[str, str]) -> dict[str, Any]:
+        lines = [line.strip() for line in item["text"].splitlines() if line.strip()]
+        if len(lines) < 3:
+            raise ExtractionError(f"Could not parse global ranking row: {item['text']}")
+
+        rank = int(lines[0].rstrip("."))
+        name = lines[1]
+        tokens = self._parse_compact_metric(lines[-1])
+        middle = lines[2:-1]
+        description = middle[0] if middle else None
+        categories = middle[1:] if len(middle) > 1 else []
+        return {
+            "app_id": item["href"],
+            "rank": rank,
+            "total_tokens": tokens,
+            "app": {
+                "title": name,
+                "description": description,
+                "categories": categories,
+            },
+        }
+
+    def _parse_live_trending_card(self, item: dict[str, str]) -> dict[str, Any]:
+        lines = [line.strip() for line in item["text"].splitlines() if line.strip()]
+        if len(lines) < 3:
+            raise ExtractionError(f"Could not parse trending card: {item['text']}")
+        return {
+            "growthPercent": self._parse_compact_metric(lines[-1]),
+            "appAnalytics": {
+                "app_id": item["href"],
+                "total_tokens": self._parse_compact_metric(lines[-2]),
+                "app": {
+                    "title": lines[0],
+                },
+            },
+        }
 
     def _extract_app_metadata(self, html: str, app: MonitoredApp) -> dict[str, Any]:
         best_match: dict[str, Any] | None = None
