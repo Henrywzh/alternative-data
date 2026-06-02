@@ -294,3 +294,52 @@ def test_multi_app_monitored_extraction_returns_openclaw_and_hermes() -> None:
     assert {"OpenClaw", "Hermes Agent"}.issubset(metadata_apps)
     assert {"OpenClaw", "Hermes Agent"}.issubset(usage_apps)
     assert {"OpenClaw", "Hermes Agent"}.issubset(top_model_apps)
+
+
+def test_live_card_text_parsers_handle_current_apps_page_format() -> None:
+    source = AppsSource()
+
+    ranking_row = source._parse_live_marketplace_row(
+        {
+            "href": "/apps/hermes-agent",
+            "text": (
+                "1.\nHermes Agent\n\n"
+                "Hermes Agent is an open-source, self-improving AI agent.\n\n"
+                "Personal Agents\nCLI Agents\n644Btokens"
+            ),
+        }
+    )
+    trending_row = source._parse_live_trending_card(
+        {
+            "href": "/apps/codex",
+            "text": "Codex\n54B\n+421%",
+        }
+    )
+
+    assert ranking_row["app_id"] == "/apps/hermes-agent"
+    assert ranking_row["rank"] == 1
+    assert ranking_row["app"]["title"] == "Hermes Agent"
+    assert ranking_row["app"]["description"] == "Hermes Agent is an open-source, self-improving AI agent."
+    assert ranking_row["app"]["categories"] == ["Personal Agents", "CLI Agents"]
+    assert ranking_row["total_tokens"] == 644_000_000_000.0
+
+    assert trending_row["growthPercent"] == 421.0
+    assert trending_row["appAnalytics"]["app_id"] == "/apps/codex"
+    assert trending_row["appAnalytics"]["app"]["title"] == "Codex"
+    assert trending_row["appAnalytics"]["total_tokens"] == 54_000_000_000.0
+
+
+def test_extract_uses_playwright_directory_fallback_when_html_payload_is_missing() -> None:
+    source = AppsSource()
+    context = RunContext(run_id="live-fallback", scraped_at=pd.Timestamp("2026-04-05T01:10:00Z").to_pydatetime())
+    payloads = _load_payloads()
+
+    source._extract_directory_payload_with_playwright = lambda: (payloads["ranking_map"], payloads["trending"])  # type: ignore[method-assign]
+
+    extracted = source.extract(
+        make_snapshots("<html><body><div>No ranking payload here</div></body></html>", build_app_detail_fixture_html()),
+        context,
+    )
+
+    assert len(extracted["apps_global_ranking_snapshots"]) == 6
+    assert len(extracted["apps_trending_snapshots"]) == 2
