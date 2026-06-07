@@ -38,7 +38,10 @@ class ArtificialAnalysisCapexSource:
         return snapshots
 
     def resolve_bundle_url(self, html: str) -> str:
-        match = re.search(r'(/_next/static/chunks/app/\(pages\)/trends/page-[^"]+\.js)', html)
+        match = re.search(
+            r'(/_next/static/chunks/app/(?:%5Blocale%5D|\(pages\))/trends/page-[^"]+\.js)',
+            html,
+        )
         if match is None:
             raise ValueError("Could not resolve trends page bundle URL")
         return urljoin(self.page_url, match.group(1))
