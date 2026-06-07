@@ -272,6 +272,15 @@ def test_capex_source_fetches_shared_capex_data_bundle_when_page_bundle_only_imp
     assert points[0].bundle_url.endswith("73848-demo.js")
 
 
+def test_capex_source_resolves_locale_scoped_trends_bundle_url() -> None:
+    source = ArtificialAnalysisCapexSource()
+    html = '<html><script src="/_next/static/chunks/app/%5Blocale%5D/trends/page-demo.js"></script></html>'
+
+    bundle_url = source.resolve_bundle_url(html)
+
+    assert bundle_url == "https://artificialanalysis.ai/_next/static/chunks/app/%5Blocale%5D/trends/page-demo.js"
+
+
 class FakeApiSource:
     def fetch_snapshot(self, api_key: str) -> Snapshot:
         assert api_key == "test-key"
