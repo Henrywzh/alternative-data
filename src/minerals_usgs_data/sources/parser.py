@@ -255,8 +255,14 @@ def _strip_section_heading(section_text: str) -> str:
     if not lines:
         return ""
     if len(lines) >= 2 and lines[1] == "Events, Trends, and Issues":
-        return "\n".join(lines[2:])
-    return "\n".join(lines[1:])
+        body_lines = lines[2:]
+    else:
+        body_lines = lines[1:]
+
+    while body_lines and _looks_like_heading_noise(body_lines[0]):
+        body_lines = body_lines[1:]
+
+    return "\n".join(body_lines)
 
 
 def _looks_like_mineral_name(line: str) -> bool:
@@ -275,3 +281,16 @@ def _split_sentences(text: str) -> list[str]:
     protected_text = normalized_text.replace("U.S.", "U<DOT>S<DOT>")
     sentences = re.split(r"(?<=[.?!])\s+", protected_text)
     return [sentence.replace("U<DOT>S<DOT>", "U.S.") for sentence in sentences]
+
+
+def _looks_like_heading_noise(line: str) -> bool:
+    if not line or APPLICATION_SENTENCE_RE.search(line):
+        return False
+    if any(punctuation in line for punctuation in ".!?"):
+        return False
+
+    words = line.split()
+    if not words or len(words) > 5:
+        return False
+
+    return bool(re.fullmatch(r"[A-Z][A-Za-z0-9 ,/&()\-—]*", line))

@@ -158,6 +158,30 @@ In the U.S., gallium was used in integrated circuits, optoelectronic components,
     ]
 
 
+def test_build_application_records_ignores_heading_noise_before_usage_sentence() -> None:
+    sections = {
+        "Gallium": """Gallium
+Uses
+Applications
+Gallium is used in integrated circuits, optoelectronic components, and photovoltaics.
+""",
+    }
+
+    records = build_application_records(sections, report_year=2026)
+
+    assert records == [
+        MineralApplicationRecord(
+            mineral_id="gallium",
+            application_text="Gallium is used in integrated circuits, optoelectronic components, and photovoltaics.",
+            source_year=2026,
+            source_type="usgs_mcs",
+            source_section_name="Gallium",
+            source_page_hint=None,
+            extraction_confidence="medium",
+        )
+    ]
+
+
 def test_build_metric_records_extracts_supported_numeric_metrics_only() -> None:
     records = build_metric_records(SAMPLE_SECTIONS, report_year=2026)
 
