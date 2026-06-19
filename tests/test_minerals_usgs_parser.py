@@ -50,6 +50,7 @@ def test_extract_contents_section_names_reads_minerals_only() -> None:
 def test_normalize_mineral_id_handles_multiword_titles() -> None:
     assert normalize_mineral_id("Rare Earths") == "rare_earths"
     assert normalize_mineral_id("Bauxite and Alumina") == "bauxite_and_alumina"
+    assert normalize_mineral_id("Diamond (Industrial)") == "diamond_industrial"
 
 
 def test_split_mineral_sections_maps_text_by_heading() -> None:
