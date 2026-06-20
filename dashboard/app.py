@@ -67,20 +67,19 @@ NPM_CATEGORY_LABELS = {
     "legacy_sdk": "Legacy SDK",
 }
 
-BIG_TECH_ORGS = ["openai", "google", "anthropic", "meta", "mistralai", "deepseek", "qwen", "moonshotai"]
 MAIN_SECTIONS = (
     "OpenRouter Intelligence",
     "Artificial Analysis",
-    "AI Frontier & HBM",
     "Provider Adoption",
     "Semiconductor Analysis",
+    "Google Trends Signal",
 )
 SECTION_DOMAIN_MAP = {
     "OpenRouter Intelligence": ("rankings", "apps", "compute_availability"),
     "Artificial Analysis": ("artificial_analysis",),
-    "AI Frontier & HBM": ("ai_frontier",),
     "Provider Adoption": ("provider_adoption",),
-    "Semiconductor Analysis": ("semiconductor_memory",),
+    "Semiconductor Analysis": ("semiconductor_memory", "semiconductor_proxies", "taiwan_semiconductor_revenue"),
+    "Google Trends Signal": (),
 }
 REVENUE_CACHE_VERSION = "2026-04-23-historical-revenue-fallback-v1"
 AI_DEMAND_PPI_COMPONENT_COLUMNS = {
@@ -118,6 +117,12 @@ def format_metric(value: float, metric_unit: str | None = None) -> str:
     if abs_v >= 1_000:
         return f"{value / 1_000:.1f}K"
     return f"{value:,.0f}"
+
+
+def _empty_dataset_frame(dataset_id: str) -> pd.DataFrame:
+    spec = DATASET_REGISTRY.get(dataset_id, {})
+    required_columns = list(spec.get("required_columns", []))
+    return pd.DataFrame(columns=required_columns)
 
 
 WEEKLY_MONTHLY_OTHER_PROVIDERS = {
@@ -487,6 +492,7 @@ def make_line_chart(
     x_title: str = "Date",
     hover_suffix: str = "",
     height: int = 360,
+    connect_gaps: bool = False,
 ) -> go.Figure:
     """Line chart factory — mirrors make_stacked_bar for time-series line charts."""
     fig = go.Figure()
@@ -498,6 +504,7 @@ def make_line_chart(
             name=col,
             mode="lines+markers",
             line=dict(width=3, color=colors[i % len(colors)]),
+            connectgaps=connect_gaps,
             hovertemplate=f"<b>{col}</b><br>%{{x}}<br>%{{y:,.0f}}{suffix}<extra></extra>",
         ))
     layout: dict = dict(
@@ -1341,45 +1348,6 @@ def compute_provider_adoption_views(datasets: dict[str, DatasetLoadResult]) -> d
     return views
 
 
-@st.cache_data(ttl=3600)
-def compute_llm_benchmark_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, object]:
-    views: dict[str, object] = {}
-    result = datasets.get("llm_benchmarks")
-    if not result or result.frame.empty:
-        return {"models_df": pd.DataFrame(), "sota_peaks": pd.DataFrame(), "innovation_velocity": 0, "frontier_avg": {}}
-
-    df = result.frame.copy()
-    df["release_date"] = pd.to_datetime(df["release_date"], errors="coerce")
-    df = df.dropna(subset=["release_date"]).sort_values("release_date")
-    
-    # 1. Compute Running Max SOTA for GPQA
-    df["gpqa_sota"] = df["gpqa"].cummax().fillna(0)
-    sota_peaks = df[df["gpqa"] >= df["gpqa_sota"]].copy()
-    
-    # 2. Innovation Velocity (Days between SOTA breaks)
-    sota_peaks["days_since_prev"] = sota_peaks["release_date"].diff().dt.days
-    velocity = sota_peaks["days_since_prev"].tail(5).mean() if len(sota_peaks) >= 2 else 0
-
-    # 3. Frontier Level (Top 5% metrics)
-    threshold = df["gpqa"].quantile(0.95) if not df.empty else 0
-    frontier_df = df[df["gpqa"] >= threshold].copy()
-    
-    frontier_avg = {
-        "context_window": frontier_df["context_window"].mean() if not frontier_df.empty else 0,
-        "gpqa": frontier_df["gpqa"].mean() if not frontier_df.empty else 0,
-        "swe_bench": frontier_df["swe_bench"].mean() if not frontier_df.empty else 0,
-        "max_gpqa": df["gpqa"].max(),
-        "max_swe": df["swe_bench"].max(),
-        "threshold": threshold,
-    }
-
-    views["models_df"] = df
-    views["sota_peaks"] = sota_peaks
-    views["innovation_velocity"] = velocity
-    views["frontier_avg"] = frontier_avg
-    return views
-
-
 def _quarter_sort_value(value: str) -> tuple[int, int]:
     match = re.fullmatch(r"(\d{4})-q([1-4])", str(value).lower())
     if not match:
@@ -1724,6 +1692,78 @@ def compute_semiconductor_views(datasets: dict[str, DatasetLoadResult]) -> dict[
                 latest_month_rows["series_name"].fillna(latest_month_rows["series_id"]).astype(str).unique().tolist()
             )
 
+    official_result = datasets.get("semiconductor_official_monthly")
+    backup_result = datasets.get("semiconductor_backup_check_monthly")
+    source_catalog_result = datasets.get("semiconductor_source_catalog")
+    taiwan_revenue_result = datasets.get("tw_monthly_revenue")
+
+    official_df = (
+        official_result.frame.copy()
+        if official_result and not official_result.frame.empty
+        else _empty_dataset_frame("semiconductor_official_monthly")
+    )
+    backup_df = (
+        backup_result.frame.copy()
+        if backup_result and not backup_result.frame.empty
+        else _empty_dataset_frame("semiconductor_backup_check_monthly")
+    )
+    source_catalog_df = (
+        source_catalog_result.frame.copy()
+        if source_catalog_result and not source_catalog_result.frame.empty
+        else _empty_dataset_frame("semiconductor_source_catalog")
+    )
+    taiwan_revenue_df = (
+        taiwan_revenue_result.frame.copy()
+        if taiwan_revenue_result and not taiwan_revenue_result.frame.empty
+        else pd.DataFrame()
+    )
+    trade_df = pd.DataFrame()
+    production_df = pd.DataFrame()
+    latest_official_period = None
+    latest_backup_period = None
+    if not official_df.empty:
+        official_df["period"] = official_df["period"].astype(str)
+        official_df = official_df.sort_values(["period", "source_region", "metric_type"]).reset_index(drop=True)
+        trade_df = official_df[official_df["metric_type"].isin(["exports", "imports", "trade_balance"])].copy()
+        production_df = official_df[official_df["metric_type"] == "production"].copy()
+        latest_official_period = official_df["period"].max()
+    if not backup_df.empty:
+        backup_df["period"] = backup_df["period"].astype(str)
+        backup_df = backup_df.sort_values(["period", "source_region", "metric_type"]).reset_index(drop=True)
+        latest_backup_period = backup_df["period"].max()
+
+    latest_taiwan_revenue_month = None
+    latest_taiwan_revenue = pd.DataFrame()
+    taiwan_revenue_pivot = pd.DataFrame()
+    taiwan_yoy_pivot = pd.DataFrame()
+    if not taiwan_revenue_df.empty:
+        taiwan_revenue_df["revenue_month"] = taiwan_revenue_df["revenue_month"].astype(str)
+        taiwan_revenue_df = taiwan_revenue_df.sort_values(["revenue_month", "company_code"]).reset_index(drop=True)
+        latest_taiwan_revenue_month = taiwan_revenue_df["revenue_month"].max()
+        latest_taiwan_revenue = (
+            taiwan_revenue_df[taiwan_revenue_df["revenue_month"] == latest_taiwan_revenue_month]
+            .sort_values("monthly_revenue_ntd", ascending=False)
+            .reset_index(drop=True)
+        )
+        taiwan_revenue_pivot = (
+            taiwan_revenue_df.pivot_table(
+                index="revenue_month",
+                columns="company_name",
+                values="monthly_revenue_ntd",
+                aggfunc="last",
+            )
+            .sort_index()
+        )
+        taiwan_yoy_pivot = (
+            taiwan_revenue_df.pivot_table(
+                index="revenue_month",
+                columns="company_name",
+                values="yoy_pct",
+                aggfunc="last",
+            )
+            .sort_index()
+        )
+
     views["regime_df"] = regime_df
     views["latest_month"] = latest_month
     views["latest_data"] = latest_data
@@ -1734,6 +1774,18 @@ def compute_semiconductor_views(datasets: dict[str, DatasetLoadResult]) -> dict[
     views["latest_proxy_data"] = latest_proxy_data
     views["latest_fred_month"] = latest_fred_month
     views["latest_fred_series_names"] = latest_fred_series_names
+    views["official_df"] = official_df
+    views["backup_df"] = backup_df
+    views["source_catalog_df"] = source_catalog_df
+    views["trade_df"] = trade_df
+    views["production_df"] = production_df
+    views["latest_official_period"] = latest_official_period
+    views["latest_backup_period"] = latest_backup_period
+    views["taiwan_revenue_df"] = taiwan_revenue_df
+    views["latest_taiwan_revenue_month"] = latest_taiwan_revenue_month
+    views["latest_taiwan_revenue"] = latest_taiwan_revenue
+    views["taiwan_revenue_pivot"] = taiwan_revenue_pivot
+    views["taiwan_yoy_pivot"] = taiwan_yoy_pivot
 
     return views
 
@@ -2751,73 +2803,6 @@ def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], pro
 
 
 def render_semiconductor_section(datasets: dict[str, DatasetLoadResult], semi_views: dict[str, object]) -> None:
-    regime_df = semi_views.get("regime_df", pd.DataFrame())
-    component_columns = semi_views.get("component_columns", [])
-    base_month = semi_views.get("base_month")
-    latest_proxy_month = semi_views.get("latest_proxy_month")
-    latest_proxy_data = semi_views.get("latest_proxy_data", pd.Series(dtype="object"))
-    latest_fred_month = semi_views.get("latest_fred_month")
-    latest_fred_series_names = semi_views.get("latest_fred_series_names", [])
-
-    if regime_df.empty:
-        st.warning("No semiconductor memory data available.")
-        return
-
-    st.markdown('<div class="section-title">Market Intelligence Hub</div>', unsafe_allow_html=True)
-
-    active_month = latest_proxy_month or semi_views.get("latest_month")
-    current_data = latest_proxy_data if not latest_proxy_data.empty else semi_views.get("latest_data", pd.Series(dtype="object"))
-
-    # --- PPI cards with lag handling ---
-    ppi_val = current_data.get("fred_ppi_value")
-    ppi_mom = current_data.get("fred_ppi_mom_pct")
-    ppi_trend = current_data.get("fred_ppi_3m_trend")
-
-    ppi_display_val = "—"
-    if pd.notna(ppi_val):
-        ppi_display_val = f"{ppi_val:.1f}"
-
-    if pd.notna(ppi_mom):
-        ppi_delta_cls = "up" if ppi_mom >= 0 else "down"
-        ppi_delta_text = f"{'↑' if ppi_mom >= 0 else '↓'} {abs(ppi_mom):.1f}% MoM"
-    else:
-        ppi_delta_cls, ppi_delta_text = "flat", "latest complete basket month"
-
-    trend_display_val = f"{ppi_trend:.1f}" if pd.notna(ppi_trend) else "—"
-    snapshot_delta = "latest complete basket month"
-    if latest_fred_month and active_month and latest_fred_month > active_month:
-        updated_count = len(latest_fred_series_names)
-        noun = "series" if updated_count != 1 else "series"
-        snapshot_delta = f"Using {active_month}; {latest_fred_month} has {updated_count} updated {noun}, but the basket is incomplete"
-
-    st.markdown(
-        kpi_grid_html(
-            kpi_card_html("Snapshot Month", active_month or "—", delta=snapshot_delta, delta_class="flat"),
-            kpi_card_html("AI Demand PPI", ppi_display_val, delta=ppi_delta_text, delta_class=ppi_delta_cls),
-            kpi_card_html("3M Trend", trend_display_val, delta="rebased index average", delta_class="flat"),
-            kpi_card_html("Proxy Base Month", base_month or "—", delta=f"{len(AI_DEMAND_PPI_WEIGHTS)} weighted PPIs", delta_class="flat"),
-        ),
-        unsafe_allow_html=True,
-    )
-
-    st.markdown(
-        "[ADATA Industrial Market Watch](https://industrial.adata.com/en/edm)",
-        unsafe_allow_html=False,
-    )
-    weight_note = ", ".join(
-        f"{AI_DEMAND_PPI_LABELS.get(series_id, series_id)}: {int(weight * 100)}%"
-        for series_id, weight in AI_DEMAND_PPI_WEIGHTS.items()
-    )
-    st.caption(
-        "AI Demand PPI is a weighted basket rebased to 100 at the first common month. "
-        f"Weights: {weight_note}"
-    )
-    if latest_fred_month and active_month and latest_fred_month > active_month:
-        st.info(
-            f"Latest raw PPI updates reach {latest_fred_month}, but the weighted AI Demand PPI remains on {active_month} "
-            "until all five component series have updated for the same month."
-        )
-
     _ppi_range = st.radio(
         "Time range",
         options=["YTD", "1yr", "2yr", "5yr", "All"],
@@ -2833,32 +2818,370 @@ def render_semiconductor_section(datasets: dict[str, DatasetLoadResult], semi_vi
         "5yr": (_now - pd.DateOffset(months=60)).strftime("%Y-%m"),
     }
     _cutoff = _cutoffs.get(_ppi_range)
-    _plot_df = regime_df[regime_df["month"] >= _cutoff].copy() if _cutoff else regime_df.copy()
 
-    proxy_pivot = _plot_df[["month", "fred_ppi_value"]].set_index("month").rename(columns={"fred_ppi_value": "AI Demand PPI"})
-    st.plotly_chart(
-        make_line_chart(proxy_pivot, [ACCENT], title="AI Demand PPI Trend", y_title="Rebased Index", x_title="Month", height=350),
-        width="stretch",
+    tab_taiwan, tab_ppi, tab_trade = st.tabs(
+        ["Taiwan Monthly Revenue", "AI Demand PPI (FRED)", "Tiered Trade & Production Tracker"]
     )
 
-    available_component_columns = [column for column in component_columns if column in _plot_df.columns]
-    if available_component_columns:
-        component_labels = {
-            AI_DEMAND_PPI_COMPONENT_COLUMNS[series_id]: AI_DEMAND_PPI_LABELS.get(series_id, series_id)
-            for series_id in AI_DEMAND_PPI_WEIGHTS
-        }
-        component_pivot = _plot_df[["month", *available_component_columns]].set_index("month").rename(columns=component_labels)
-        st.plotly_chart(
-            make_line_chart(
-                component_pivot,
-                MODEL_COLORS[:len(component_pivot.columns)],
-                title="Component PPIs (Rebased)",
-                y_title="Rebased Index",
-                x_title="Month",
-                height=380,
-            ),
-            width="stretch",
-        )
+    with tab_taiwan:
+        taiwan_revenue_df = semi_views.get("taiwan_revenue_df", pd.DataFrame())
+        latest_taiwan_revenue_month = semi_views.get("latest_taiwan_revenue_month")
+        latest_taiwan_revenue = semi_views.get("latest_taiwan_revenue", pd.DataFrame())
+        taiwan_revenue_pivot = semi_views.get("taiwan_revenue_pivot", pd.DataFrame())
+        taiwan_yoy_pivot = semi_views.get("taiwan_yoy_pivot", pd.DataFrame())
+
+        if not taiwan_revenue_df.empty:
+            min_date = _cutoff
+            if min_date:
+                taiwan_revenue_df = taiwan_revenue_df[taiwan_revenue_df["revenue_month"] >= min_date].copy()
+                taiwan_revenue_pivot = taiwan_revenue_pivot[taiwan_revenue_pivot.index >= min_date].copy()
+                taiwan_yoy_pivot = taiwan_yoy_pivot[taiwan_yoy_pivot.index >= min_date].copy()
+
+        if taiwan_revenue_df.empty:
+            st.warning("No Taiwan monthly revenue data available.")
+        else:
+            st.markdown('<div class="section-title">Taiwan Company Revenue Tracker</div>', unsafe_allow_html=True)
+            st.caption(
+                "Authoritative monthly operating revenue disclosures from MOPS for TSMC, UMC, and VIS. "
+                "Figures are reported in thousands of New Taiwan dollars."
+            )
+
+            latest_snapshot = latest_taiwan_revenue.copy()
+            if not latest_snapshot.empty:
+                latest_snapshot["monthly_revenue_ntd_b"] = latest_snapshot["monthly_revenue_ntd"] / 1e6
+                leader = latest_snapshot.iloc[0]
+                avg_yoy = latest_snapshot["yoy_pct"].mean()
+                avg_ytd = latest_snapshot["ytd_yoy_pct"].mean()
+                st.markdown(
+                    kpi_grid_html(
+                        kpi_card_html("Latest Month", latest_taiwan_revenue_month or "—", delta=f"{len(latest_snapshot)} companies", delta_class="flat"),
+                        kpi_card_html("Top Reporter", str(leader.get("company_name", "—")), delta=f"NT${leader.get('monthly_revenue_ntd_b', 0):,.1f}B", delta_class="flat"),
+                        kpi_card_html("Average YoY", f"{avg_yoy:.1f}%" if pd.notna(avg_yoy) else "—", delta="latest month", delta_class="up" if pd.notna(avg_yoy) and avg_yoy >= 0 else "down"),
+                        kpi_card_html("Average YTD YoY", f"{avg_ytd:.1f}%" if pd.notna(avg_ytd) else "—", delta="latest month", delta_class="up" if pd.notna(avg_ytd) and avg_ytd >= 0 else "down"),
+                    ),
+                    unsafe_allow_html=True,
+                )
+
+                latest_display = latest_snapshot[
+                    ["company_code", "company_name", "market", "revenue_month", "monthly_revenue_ntd", "yoy_pct", "ytd_revenue_ntd", "ytd_yoy_pct"]
+                ].copy()
+                latest_display["monthly_revenue_ntd"] = latest_display["monthly_revenue_ntd"] / 1e6
+                latest_display["ytd_revenue_ntd"] = latest_display["ytd_revenue_ntd"] / 1e6
+                latest_display = latest_display.rename(
+                    columns={
+                        "company_code": "Code",
+                        "company_name": "Company",
+                        "market": "Market",
+                        "revenue_month": "Month",
+                        "monthly_revenue_ntd": "Monthly Revenue (NT$ B)",
+                        "yoy_pct": "YoY %",
+                        "ytd_revenue_ntd": "YTD Revenue (NT$ B)",
+                        "ytd_yoy_pct": "YTD YoY %",
+                    }
+                )
+                st.dataframe(
+                    latest_display.style.format(
+                        {
+                            "Monthly Revenue (NT$ B)": "{:,.2f}",
+                            "YoY %": "{:,.2f}",
+                            "YTD Revenue (NT$ B)": "{:,.2f}",
+                            "YTD YoY %": "{:,.2f}",
+                        }
+                    ),
+                    width="stretch",
+                    hide_index=True,
+                )
+
+            if not taiwan_revenue_pivot.empty:
+                revenue_plot = (taiwan_revenue_pivot / 1e6).copy()
+                st.plotly_chart(
+                    make_line_chart(
+                        revenue_plot,
+                        MODEL_COLORS[:len(revenue_plot.columns)],
+                        title="Taiwan Monthly Revenue",
+                        y_title="NT$ Billion",
+                        x_title="Month",
+                        height=360,
+                        connect_gaps=True,
+                    ),
+                    width="stretch",
+                )
+
+            if not taiwan_yoy_pivot.empty:
+                st.plotly_chart(
+                    make_line_chart(
+                        taiwan_yoy_pivot,
+                        MODEL_COLORS[:len(taiwan_yoy_pivot.columns)],
+                        title="Taiwan Monthly Revenue YoY Growth",
+                        y_title="YoY %",
+                        x_title="Month",
+                        height=320,
+                        connect_gaps=True,
+                    ),
+                    width="stretch",
+                )
+
+    with tab_ppi:
+        regime_df = semi_views.get("regime_df", pd.DataFrame())
+        component_columns = semi_views.get("component_columns", [])
+        base_month = semi_views.get("base_month")
+        latest_proxy_month = semi_views.get("latest_proxy_month")
+        latest_proxy_data = semi_views.get("latest_proxy_data", pd.Series(dtype="object"))
+        latest_fred_month = semi_views.get("latest_fred_month")
+        latest_fred_series_names = semi_views.get("latest_fred_series_names", [])
+
+        if regime_df.empty:
+            st.warning("No semiconductor memory data available.")
+        else:
+            st.markdown('<div class="section-title">Market Intelligence Hub</div>', unsafe_allow_html=True)
+
+            active_month = latest_proxy_month or semi_views.get("latest_month")
+            current_data = latest_proxy_data if not latest_proxy_data.empty else semi_views.get("latest_data", pd.Series(dtype="object"))
+
+            # --- PPI cards with lag handling ---
+            ppi_val = current_data.get("fred_ppi_value")
+            ppi_mom = current_data.get("fred_ppi_mom_pct")
+            ppi_trend = current_data.get("fred_ppi_3m_trend")
+
+            ppi_display_val = "—"
+            if pd.notna(ppi_val):
+                ppi_display_val = f"{ppi_val:.1f}"
+
+            if pd.notna(ppi_mom):
+                ppi_delta_cls = "up" if ppi_mom >= 0 else "down"
+                ppi_delta_text = f"{'↑' if ppi_mom >= 0 else '↓'} {abs(ppi_mom):.1f}% MoM"
+            else:
+                ppi_delta_cls, ppi_delta_text = "flat", "latest complete basket month"
+
+            trend_display_val = f"{ppi_trend:.1f}" if pd.notna(ppi_trend) else "—"
+            snapshot_delta = "latest complete basket month"
+            if latest_fred_month and active_month and latest_fred_month > active_month:
+                updated_count = len(latest_fred_series_names)
+                noun = "series" if updated_count != 1 else "series"
+                snapshot_delta = f"Using {active_month}; {latest_fred_month} has {updated_count} updated {noun}, but the basket is incomplete"
+
+            st.markdown(
+                kpi_grid_html(
+                    kpi_card_html("Snapshot Month", active_month or "—", delta=snapshot_delta, delta_class="flat"),
+                    kpi_card_html("AI Demand PPI", ppi_display_val, delta=ppi_delta_text, delta_class=ppi_delta_cls),
+                    kpi_card_html("3M Trend", trend_display_val, delta="rebased index average", delta_class="flat"),
+                    kpi_card_html("Proxy Base Month", base_month or "—", delta=f"{len(AI_DEMAND_PPI_WEIGHTS)} weighted PPIs", delta_class="flat"),
+                ),
+                unsafe_allow_html=True,
+            )
+
+            st.markdown(
+                "[ADATA Industrial Market Watch](https://industrial.adata.com/en/edm)",
+                unsafe_allow_html=False,
+            )
+            weight_note = ", ".join(
+                f"{AI_DEMAND_PPI_LABELS.get(series_id, series_id)}: {int(weight * 100)}%"
+                for series_id, weight in AI_DEMAND_PPI_WEIGHTS.items()
+            )
+            st.caption(
+                "AI Demand PPI is a weighted basket rebased to 100 at the first common month. "
+                f"Weights: {weight_note}"
+            )
+            if latest_fred_month and active_month and latest_fred_month > active_month:
+                st.info(
+                    f"Latest raw PPI updates reach {latest_fred_month}, but the weighted AI Demand PPI remains on {active_month} "
+                    "until all five component series have updated for the same month."
+                )
+
+            _plot_df = regime_df[regime_df["month"] >= _cutoff].copy() if _cutoff else regime_df.copy()
+
+            proxy_pivot = _plot_df[["month", "fred_ppi_value"]].set_index("month").rename(columns={"fred_ppi_value": "AI Demand PPI"})
+            st.plotly_chart(
+                make_line_chart(proxy_pivot, [ACCENT], title="AI Demand PPI Trend", y_title="Rebased Index", x_title="Month", height=350),
+                width="stretch",
+            )
+
+            available_component_columns = [column for column in component_columns if column in _plot_df.columns]
+            if available_component_columns:
+                component_labels = {
+                    AI_DEMAND_PPI_COMPONENT_COLUMNS[series_id]: AI_DEMAND_PPI_LABELS.get(series_id, series_id)
+                    for series_id in AI_DEMAND_PPI_WEIGHTS
+                }
+                component_pivot = _plot_df[["month", *available_component_columns]].set_index("month").rename(columns=component_labels)
+                st.plotly_chart(
+                    make_line_chart(
+                        component_pivot,
+                        MODEL_COLORS[:len(component_pivot.columns)],
+                        title="Component PPIs (Rebased)",
+                        y_title="Rebased Index",
+                        x_title="Month",
+                        height=380,
+                    ),
+                    width="stretch",
+                )
+
+    with tab_trade:
+        official_df = semi_views.get("official_df", pd.DataFrame())
+        backup_df = semi_views.get("backup_df", pd.DataFrame())
+        production_df = semi_views.get("production_df", pd.DataFrame())
+        source_catalog_df = semi_views.get("source_catalog_df", pd.DataFrame())
+
+        min_date = _cutoff if _cutoff else "2025-01"
+        if min_date and min_date < "2025-01":
+            min_date = "2025-01"
+
+        if not official_df.empty:
+            official_df = official_df.sort_values("period")
+            official_df = official_df[official_df["period"] >= min_date].copy()
+        if not backup_df.empty:
+            backup_df = backup_df.sort_values("period")
+            backup_df = backup_df[backup_df["period"] >= min_date].copy()
+        if not production_df.empty:
+            production_df = production_df.sort_values("period")
+            production_df = production_df[production_df["period"] >= min_date].copy()
+
+        if official_df.empty and backup_df.empty and production_df.empty:
+            st.warning("No tiered semiconductor trade or production data available.")
+        else:
+            st.markdown('<div class="section-title">Tiered Semiconductor Tracker</div>', unsafe_allow_html=True)
+            source_tier = st.radio(
+                "Source tier",
+                options=["Official", "Backup Check", "Both"],
+                horizontal=True,
+                key="semi_source_tier",
+            )
+            category_choice = st.selectbox(
+                "Category",
+                options=["IC-only", "Broad Semiconductor", "Production", "Company Revenue"],
+                index=0,
+                key="semi_category_choice",
+            )
+
+            latest_official = semi_views.get("latest_official_period") or "—"
+            latest_backup = semi_views.get("latest_backup_period") or "—"
+            st.caption(
+                f"Official latest: {latest_official}. Backup latest: {latest_backup}. "
+                "Official/native series are the primary view; Comtrade is a cross-check."
+            )
+
+            selected_category_id = {
+                "IC-only": "ic_only",
+                "Broad Semiconductor": "broad_semiconductor",
+                "Production": "ic_only",
+            }.get(category_choice)
+
+            show_official = source_tier in {"Official", "Both"}
+            show_backup = source_tier in {"Backup Check", "Both"}
+
+            if not source_catalog_df.empty:
+                latest_catalog = source_catalog_df[
+                    ["source_region", "source_name", "source_tier", "metric_type", "category_label", "latest_period", "expected_release_window_days"]
+                ].copy()
+                latest_catalog = latest_catalog.rename(
+                    columns={
+                        "source_region": "Region",
+                        "source_name": "Source",
+                        "source_tier": "Tier",
+                        "metric_type": "Metric",
+                        "category_label": "Category",
+                        "latest_period": "Latest Period",
+                        "expected_release_window_days": "Expected Lag (Days)",
+                    }
+                )
+                st.dataframe(latest_catalog, width="stretch", hide_index=True)
+
+            if category_choice in {"IC-only", "Broad Semiconductor"}:
+                official_trade = official_df[
+                    (official_df["metric_type"] == "exports")
+                    & (official_df["partner_scope"] == "world")
+                    & (official_df["category_id"] == selected_category_id)
+                ].copy()
+                backup_trade = backup_df[
+                    (backup_df["metric_type"] == "exports")
+                    & (backup_df["partner_scope"] == "world")
+                    & (backup_df["category_id"] == selected_category_id)
+                ].copy()
+
+                if show_official and not official_trade.empty:
+                    official_trade["value_b"] = official_trade["value"] / 1e9
+                    official_pivot = official_trade.pivot_table(
+                        index="period",
+                        columns="country_name",
+                        values="value_b",
+                        aggfunc="last",
+                    ).sort_index()
+                    st.plotly_chart(
+                        make_line_chart(
+                            official_pivot,
+                            MODEL_COLORS[:len(official_pivot.columns)],
+                            title=f"Official {category_choice} Exports",
+                            y_title="USD Billion",
+                            x_title="Month",
+                            height=340,
+                            connect_gaps=True,
+                        ),
+                        width="stretch",
+                    )
+
+                if show_backup and not backup_trade.empty:
+                    backup_trade["value_b"] = backup_trade["value"] / 1e9
+                    backup_pivot = backup_trade.pivot_table(
+                        index="period",
+                        columns="country_name",
+                        values="value_b",
+                        aggfunc="last",
+                    ).sort_index()
+                    st.plotly_chart(
+                        make_line_chart(
+                            backup_pivot,
+                            MODEL_COLORS[:len(backup_pivot.columns)],
+                            title=f"Backup Check {category_choice} Exports",
+                            y_title="USD Billion",
+                            x_title="Month",
+                            height=340,
+                            connect_gaps=True,
+                        ),
+                        width="stretch",
+                    )
+
+                if show_official and show_backup and not official_trade.empty and not backup_trade.empty:
+                    gap_df = official_trade.merge(
+                        backup_trade[
+                            ["source_region", "period", "category_id", "value", "comparison_gap_pct"]
+                        ].rename(columns={"value": "backup_value"}),
+                        on=["source_region", "period", "category_id"],
+                        how="inner",
+                    )
+                    if not gap_df.empty:
+                        gap_display = gap_df[
+                            ["country_name", "period", "value", "backup_value", "comparison_gap_pct"]
+                        ].rename(
+                            columns={
+                                "country_name": "Country",
+                                "period": "Month",
+                                "value": "Official Value",
+                                "backup_value": "Backup Value",
+                                "comparison_gap_pct": "Gap %",
+                            }
+                        )
+                        st.dataframe(dataframe_for_display(gap_display, "-"), width="stretch", hide_index=True)
+
+            if category_choice == "Production" and not production_df.empty:
+                prod_pivot = production_df.pivot_table(
+                    index="period",
+                    columns="country_name",
+                    values="value",
+                    aggfunc="last",
+                ).sort_index()
+                st.plotly_chart(
+                    make_line_chart(
+                        prod_pivot,
+                        [MODEL_COLORS[4], MODEL_COLORS[1], MODEL_COLORS[2]][:len(prod_pivot.columns)],
+                        title="Official Semiconductor Production",
+                        y_title="Native Unit",
+                        x_title="Month",
+                        height=340,
+                    ),
+                    width="stretch",
+                )
+
+            if category_choice == "Company Revenue":
+                st.info("Use the Taiwan Monthly Revenue tab for company-level monthly revenue disclosures.")
 
 
 def render_artificial_analysis_section(datasets: dict[str, DatasetLoadResult], aa_views: dict[str, object]) -> None:
@@ -3069,166 +3392,6 @@ def render_artificial_analysis_section(datasets: dict[str, DatasetLoadResult], a
             )
 
 
-def render_ai_frontier_section(datasets: dict[str, DatasetLoadResult], benchmark_views: dict[str, object]) -> None:
-    models_df = benchmark_views.get("models_df", pd.DataFrame())
-    sota_peaks = benchmark_views.get("sota_peaks", pd.DataFrame())
-    frontier_avg = benchmark_views.get("frontier_avg", {})
-    velocity = benchmark_views.get("innovation_velocity", 0)
-
-    if models_df.empty:
-        st.warning("No LLM benchmark data available. Run 'cli update' for llm_benchmark_data.")
-        return
-
-    # --- Header & Filter ---
-    h_col1, h_col2 = st.columns([2, 1])
-    with h_col1:
-        st.markdown('<div class="section-title">AI Frontier & Intelligence Dynamics</div>', unsafe_allow_html=True)
-    with h_col2:
-        min_date = models_df["release_date"].min().date()
-        max_date = models_df["release_date"].max().date()
-        default_start = max_date - pd.Timedelta(days=365)
-        date_range = st.date_input(
-            "Analysis Period",
-            value=(max(min_date, default_start), max_date),
-            min_value=min_date,
-            max_value=max_date,
-        )
-
-    if len(date_range) == 2:
-        start_date, end_date = date_range
-        filtered_df = models_df[
-            (models_df["release_date"].dt.date >= start_date) & 
-            (models_df["release_date"].dt.date <= end_date)
-        ].copy()
-    else:
-        filtered_df = models_df.copy()
-
-    # Re-calculate KPIs for filtered range
-    range_max_gpqa = filtered_df["gpqa"].max()
-    range_max_swe = filtered_df["swe_bench"].max()
-    range_avg_context = filtered_df[filtered_df["gpqa"] >= filtered_df["gpqa"].quantile(0.95)]["context_window"].mean() if not filtered_df.empty else 0
-
-    # --- KPI Row ---
-    st.markdown(
-        kpi_grid_html(
-            kpi_card_html("Innovation Velocity", f"{velocity:.1f}d", delta="Avg SOTA cycle"),
-            kpi_card_html("Frontier Context Floor", format_metric(range_avg_context), delta="↑ High Demand", delta_class="up"),
-            kpi_card_html("Peak Intelligence (GPQA)", f"{range_max_gpqa:.1%}", delta="selected range"),
-            kpi_card_html("Peak Agents (SWE-bench)", f"{range_max_swe:.1%}", delta="verified coding"),
-        ),
-        unsafe_allow_html=True,
-    )
-
-    # --- Charts ---
-    c_col1, c_col2 = st.columns(2)
-
-    with c_col1:
-        # SOTA Progress Chart
-        st.markdown('<div class="section-subtitle" style="margin-top:1rem;">Intelligence SOTA Path (GPQA)</div>', unsafe_allow_html=True)
-        fig_sota = go.Figure()
-        
-        # All models (smaller)
-        fig_sota.add_trace(go.Scatter(
-            x=filtered_df["release_date"], y=filtered_df["gpqa"],
-            mode="markers", name="Other Models",
-            marker=dict(size=6, color=MUTED, opacity=0.3),
-            hovertemplate="<b>%{text}</b><br>%{x}<br>Score: %{y:.3f}<extra></extra>",
-            text=filtered_df["name"]
-        ))
-        
-        # SOTA line (Peaks)
-        range_sota = sota_peaks[
-            (sota_peaks["release_date"].dt.date >= start_date) & 
-            (sota_peaks["release_date"].dt.date <= end_date)
-        ]
-        fig_sota.add_trace(go.Scatter(
-            x=range_sota["release_date"], y=range_sota["gpqa"],
-            mode="lines+markers", name="SOTA Peaks",
-            line=dict(color=ACCENT, width=3, shape="hv"),
-            marker=dict(size=10, symbol="star", color=ACCENT),
-            hovertemplate="<b>SOTA: %{text}</b><br>%{x}<br>Score: %{y:.3f}<extra></extra>",
-            text=range_sota["name"]
-        ))
-        
-        fig_sota.update_layout(
-            title="Intelligence SOTA Path (GPQA)",
-            template="plotly_white", 
-            height=380, 
-            margin=dict(l=0, r=0, t=40, b=40), 
-            legend=dict(orientation="h", y=-0.2)
-        )
-        st.plotly_chart(fig_sota, width="stretch", theme=None)
-
-    with c_col2:
-        # Context Window Scaling
-        st.markdown('<div class="section-subtitle" style="margin-top:1rem;">Memory Demand: Context Window Scaling</div>', unsafe_allow_html=True)
-        
-        # Highlight Big Tech
-        def get_color(org):
-            org_lower = str(org).lower()
-            for tech in BIG_TECH_ORGS:
-                if tech in org_lower:
-                    return ACCENT
-            return MUTED
-
-        filtered_df["color"] = filtered_df["organization"].apply(get_color)
-        filtered_df["size"] = (filtered_df["gpqa"] * 15).fillna(5)
-        
-        fig_ctx = go.Figure()
-        fig_ctx.add_trace(go.Scatter(
-            x=filtered_df["release_date"], y=filtered_df["context_window"],
-            mode="markers",
-            marker=dict(
-                size=filtered_df["size"],
-                color=filtered_df["color"],
-                opacity=0.6,
-                line=dict(width=1, color="white")
-            ),
-            text=filtered_df["name"],
-            customdata=filtered_df["organization"],
-            hovertemplate="<b>%{text}</b> (%{customdata})<br>%{x}<br>Context: %{y:,.0f} tokens<extra></extra>"
-        ))
-        
-        fig_ctx.update_layout(
-            title="Context Window Scaling",
-            template="plotly_white", 
-            height=380, 
-            margin=dict(l=0, r=0, t=40, b=40),
-            yaxis=dict(type="log", title="Tokens (Log Scale)")
-        )
-        st.plotly_chart(fig_ctx, width="stretch", theme=None)
-
-    # --- Frontier Leaderboard ---
-    st.markdown('<div class="section-title">Frontier Intelligence Leaderboard</div>', unsafe_allow_html=True)
-    table_df = filtered_df.sort_values("gpqa", ascending=False).head(30)[
-        ["name", "organization", "release_date", "gpqa", "swe_bench", "context_window"]
-    ].copy()
-    
-    table_df = table_df.rename(columns={
-        "name": "Model",
-        "organization": "Organization",
-        "release_date": "Date",
-        "gpqa": "GPQA",
-        "swe_bench": "SWE-bench",
-        "context_window": "Context"
-    })
-    
-    table_df["Date"] = table_df["Date"].dt.date
-    table_df["Context"] = table_df["Context"].apply(lambda x: format_metric(x) if pd.notna(x) else "-")
-    
-    if table_df.empty:
-        st.info("No leaderboard entries for the selected range.")
-    else:
-        st.dataframe(
-            table_df.style.format({
-                "GPQA": "{:.2%}",
-                "SWE-bench": "{:.2%}"
-            }).background_gradient(subset=["GPQA"], cmap="Blues"),
-            width="stretch",
-            hide_index=True
-        )
-
-
 def render_checks(checks: list[CheckResult]) -> None:
     ok_count   = sum(1 for c in checks if c.status == "ok")
     warn_count = sum(1 for c in checks if c.status == "warning")
@@ -3318,6 +3481,453 @@ def render_compute_evolution_section(compute_views: dict[str, object]) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Google Trends Signal Section
+# ---------------------------------------------------------------------------
+
+SIGNAL_QUALITY_COLOR = {"High": GREEN, "Medium": YELLOW, "Low": RED}
+SIGNAL_QUALITY_EMOJI = {"High": "🟢", "Medium": "🟡", "Low": "🔴"}
+
+
+def _load_watchlist() -> list[dict]:
+    import json
+    wl_path = BASE_DIR / "src" / "google_trends_data" / "watchlist.json"
+    if not wl_path.exists():
+        return []
+    with open(wl_path) as f:
+        return json.load(f)
+
+
+def _load_combined(ticker: str, keyword: str, geo: str) -> pd.DataFrame:
+    slug_kw = keyword.lower().replace(" ", "_").replace(".", "_").replace("/", "_")
+    slug_tk = ticker.lower().replace(" ", "_").replace(".", "_").replace("/", "_")
+    geo_tag = geo if geo else "worldwide"
+    path = BASE_DIR / "data" / "processed" / "google_trends" / f"{slug_kw}_{geo_tag}_{slug_tk}_combined.parquet"
+    if path.exists():
+        df = pd.read_parquet(path)
+        df["week_start"] = pd.to_datetime(df["week_start"])
+        return df
+    return pd.DataFrame()
+
+
+def _correlation_table(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.dropna(subset=["trend_value", "stock_adj_close"]).copy()
+    df["ret_0w"] = df["stock_weekly_return"]
+    df["ret_+1w"] = df["ret_0w"].shift(-1)
+    df["ret_+2w"] = df["ret_0w"].shift(-2)
+    df["ret_-1w"] = df["ret_0w"].shift(1)
+    rows = []
+    for lag, col in [("Prior week", "ret_-1w"), ("Same week", "ret_0w"),
+                     ("Next week", "ret_+1w"), ("2w ahead", "ret_+2w")]:
+        sub = df[["trend_value", col]].dropna()
+        if len(sub) > 5:
+            r = sub["trend_value"].corr(sub[col])
+            rows.append({"Lag": lag, "Pearson r": round(r, 4), "N": len(sub)})
+    return pd.DataFrame(rows)
+
+
+def render_google_trends_section() -> None:
+    st.markdown("## 📈 Google Trends Signal")
+    st.caption(
+        "Weekly Google Search interest matched to stock weekly returns. "
+        "Data fetched via trendspyg (browser-based) and yfinance."
+    )
+
+    watchlist = _load_watchlist()
+    if not watchlist:
+        st.error("Watchlist not found at src/google_trends_data/watchlist.json")
+        return
+
+    tab_explorer, tab_watchlist, tab_leaderboard = st.tabs(["📊 Signal Explorer", "📋 Watchlist", "🏆 Signal Leaderboard"])
+
+    # ── Tab 1: Signal Explorer ────────────────────────────────────────────────
+    with tab_explorer:
+        # Sidebar-style controls in a horizontal row
+        ctrl_col1, ctrl_col2, ctrl_col3, ctrl_col4 = st.columns([2, 2, 1, 1])
+
+        enabled = [w for w in watchlist if w["enabled"]]
+        show_all = st.toggle("Show stocks without data", value=False)
+        pool = watchlist if show_all else (enabled if enabled else watchlist)
+
+        ticker_options = [
+            f"{SIGNAL_QUALITY_EMOJI.get(w['signal_quality'], '')} {w['ticker']} — {w['name']}"
+            + ("" if w["enabled"] else " ⏳")
+            for w in pool
+        ]
+        with ctrl_col1:
+            selected_label = st.selectbox("Stock", ticker_options, index=0)
+        selected_stock = pool[ticker_options.index(selected_label)]
+
+        kw_options = [
+            f"{k['term']} ({k['geo'] if k['geo'] else 'Worldwide'})"
+            for k in selected_stock["keywords"]
+        ]
+        with ctrl_col2:
+            selected_kw_label = st.selectbox("Keyword / Region", kw_options, index=0)
+        kw_idx = kw_options.index(selected_kw_label)
+        selected_kw = selected_stock["keywords"][kw_idx]
+
+        df = _load_combined(
+            ticker=selected_stock["ticker"],
+            keyword=selected_kw["term"],
+            geo=selected_kw["geo"],
+        )
+
+        if df.empty:
+            st.warning(
+                f"No data found for **{selected_kw['term']}** / **{selected_stock['ticker']}** "
+                f"(geo: {selected_kw['geo'] or 'Worldwide'}). "
+                "Run the pipeline first: `python -m google_trends_data.cli --keyword '...' --ticker '...'`"
+            )
+            return
+
+        df_valid = df.dropna(subset=["stock_close"])
+        with ctrl_col3:
+            st.metric("Weeks of data", len(df_valid))
+        with ctrl_col4:
+            latest = df_valid["week_start"].max()
+            st.metric("Latest week", pd.Timestamp(latest).strftime("%Y-%m-%d"))
+
+        st.divider()
+
+        # ── Trend vs Price chart ──────────────────────────────────────────────
+        st.markdown("### Trends vs Price")
+        fig = go.Figure()
+
+        # Google Trends (primary y)
+        fig.add_trace(go.Scatter(
+            x=df_valid["week_start"],
+            y=df_valid["trend_value"],
+            name=f"Google Trends: {selected_kw['term']}",
+            line=dict(color="#4285F4", width=2),
+            fill="tozeroy",
+            fillcolor="rgba(66,133,244,0.10)",
+            yaxis="y1",
+            hovertemplate="%{x|%Y-%m-%d}<br>Interest: %{y}<extra></extra>",
+        ))
+
+        # Stock price (secondary y)
+        fig.add_trace(go.Scatter(
+            x=df_valid["week_start"],
+            y=df_valid["stock_adj_close"],
+            name=f"{selected_stock['ticker']} Adj Close",
+            line=dict(color="#FF6B6B", width=2),
+            yaxis="y2",
+            hovertemplate="%{x|%Y-%m-%d}<br>Price: %{y:.2f}<extra></extra>",
+        ))
+
+        fig.update_layout(
+            template="plotly_white",
+            height=420,
+            margin=dict(l=0, r=0, t=40, b=10),
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+            yaxis=dict(
+                title=dict(text="Google Trends (0–100)", font=dict(color="#4285F4")),
+                tickfont=dict(color="#4285F4"),
+                range=[0, 105],
+                gridcolor=GRID,
+            ),
+            yaxis2=dict(
+                title=dict(text=f"{selected_stock['ticker']} Price", font=dict(color="#FF6B6B")),
+                tickfont=dict(color="#FF6B6B"),
+                overlaying="y",
+                side="right",
+                gridcolor="rgba(0,0,0,0)",
+            ),
+            xaxis=dict(gridcolor=GRID),
+            hovermode="x unified",
+        )
+        st.plotly_chart(fig, use_container_width=True, theme=None)
+
+        # ── Trend delta (momentum) chart ──────────────────────────────────────
+        st.markdown("### Trends Momentum (Week-over-Week Δ)")
+        df_valid = df_valid.copy()
+        df_valid["trend_delta"] = df_valid["trend_value"].diff()
+        df_valid["delta_color"] = df_valid["trend_delta"].apply(
+            lambda x: "rgba(22,163,74,0.7)" if (pd.notna(x) and x >= 0) else "rgba(220,38,38,0.7)"
+        )
+
+        fig_delta = go.Figure()
+        fig_delta.add_trace(go.Bar(
+            x=df_valid["week_start"],
+            y=df_valid["trend_delta"],
+            marker_color=df_valid["delta_color"],
+            name="Trend Δ",
+            hovertemplate="%{x|%Y-%m-%d}<br>Δ: %{y:+.0f}<extra></extra>",
+        ))
+
+        # Overlay stock weekly return on secondary axis
+        fig_delta.add_trace(go.Scatter(
+            x=df_valid["week_start"],
+            y=(df_valid["stock_weekly_return"] * 100),
+            name=f"{selected_stock['ticker']} Weekly Return %",
+            line=dict(color="#FF6B6B", width=1.5, dash="dot"),
+            yaxis="y2",
+            hovertemplate="%{x|%Y-%m-%d}<br>Ret: %{y:+.2f}%<extra></extra>",
+        ))
+
+        fig_delta.update_layout(
+            template="plotly_white",
+            height=300,
+            margin=dict(l=0, r=0, t=30, b=10),
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+            yaxis=dict(title="Trend WoW Δ", gridcolor=GRID),
+            yaxis2=dict(
+                title=dict(text="Stock Return %", font=dict(color="#FF6B6B")),
+                overlaying="y",
+                side="right",
+                tickformat="+.1f",
+                gridcolor="rgba(0,0,0,0)",
+                tickfont=dict(color="#FF6B6B"),
+            ),
+            xaxis=dict(gridcolor=GRID),
+            hovermode="x unified",
+            barmode="relative",
+        )
+        st.plotly_chart(fig_delta, use_container_width=True, theme=None)
+
+        # ── Trend YoY (Deseasonalized) chart ──────────────────────────────────
+        st.markdown("### Trends Seasonality (Year-over-Year 52-Week Δ)")
+        df_valid = df_valid.copy()
+        df_valid["trend_yoy"] = df_valid["trend_value"].diff(52)
+        df_valid["yoy_color"] = df_valid["trend_yoy"].apply(
+            lambda x: "rgba(22,163,74,0.7)" if (pd.notna(x) and x >= 0) else "rgba(220,38,38,0.7)"
+        )
+
+        fig_yoy = go.Figure()
+        fig_yoy.add_trace(go.Bar(
+            x=df_valid["week_start"],
+            y=df_valid["trend_yoy"],
+            marker_color=df_valid["yoy_color"],
+            name="Trend YoY Δ",
+            hovertemplate="%{x|%Y-%m-%d}<br>YoY Δ: %{y:+.0f}<extra></extra>",
+        ))
+
+        # Overlay stock weekly return on secondary axis
+        fig_yoy.add_trace(go.Scatter(
+            x=df_valid["week_start"],
+            y=(df_valid["stock_weekly_return"] * 100),
+            name=f"{selected_stock['ticker']} Weekly Return %",
+            line=dict(color="#FF6B6B", width=1.5, dash="dot"),
+            yaxis="y2",
+            hovertemplate="%{x|%Y-%m-%d}<br>Ret: %{y:+.2f}%<extra></extra>",
+        ))
+
+        fig_yoy.update_layout(
+            template="plotly_white",
+            height=300,
+            margin=dict(l=0, r=0, t=30, b=10),
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+            yaxis=dict(title="Trend YoY Δ (52w)", gridcolor=GRID),
+            yaxis2=dict(
+                title=dict(text="Stock Return %", font=dict(color="#FF6B6B")),
+                overlaying="y",
+                side="right",
+                tickformat="+.1f",
+                gridcolor="rgba(0,0,0,0)",
+                tickfont=dict(color="#FF6B6B"),
+            ),
+            xaxis=dict(gridcolor=GRID),
+            hovermode="x unified",
+            barmode="relative",
+        )
+        st.plotly_chart(fig_yoy, use_container_width=True, theme=None)
+
+        # ── Correlation panel ─────────────────────────────────────────────────
+        st.markdown("### Correlation Analysis")
+        corr_col1, corr_col2, corr_col3 = st.columns(3)
+
+        with corr_col1:
+            st.markdown("**Level: Trend value vs returns**")
+            corr_df = _correlation_table(df_valid)
+            if not corr_df.empty:
+                max_abs = corr_df["Pearson r"].abs().max()
+                styled = corr_df.style.background_gradient(
+                    subset=["Pearson r"], cmap="RdYlGn", vmin=-max_abs, vmax=max_abs
+                ).format({"Pearson r": "{:+.4f}"})
+                st.dataframe(styled, use_container_width=True, hide_index=True)
+
+        with corr_col2:
+            st.markdown("**Momentum: Trend WoW Δ vs returns**")
+            df_delta_corr = df_valid.dropna(subset=["trend_delta", "stock_adj_close"]).copy()
+            df_delta_corr["trend_value"] = df_delta_corr["trend_delta"]  # reuse helper
+            corr_delta_df = _correlation_table(df_delta_corr)
+            if not corr_delta_df.empty:
+                max_abs2 = corr_delta_df["Pearson r"].abs().max()
+                styled2 = corr_delta_df.style.background_gradient(
+                    subset=["Pearson r"], cmap="RdYlGn", vmin=-max_abs2, vmax=max_abs2
+                ).format({"Pearson r": "{:+.4f}"})
+                st.dataframe(styled2, use_container_width=True, hide_index=True)
+
+        with corr_col3:
+            st.markdown("**Seasonality: Trend YoY Δ (52w) vs returns**")
+            df_yoy_corr = df_valid.dropna(subset=["trend_yoy", "stock_adj_close"]).copy()
+            df_yoy_corr["trend_value"] = df_yoy_corr["trend_yoy"]  # reuse helper
+            corr_yoy_df = _correlation_table(df_yoy_corr)
+            if not corr_yoy_df.empty:
+                max_abs3 = corr_yoy_df["Pearson r"].abs().max()
+                styled3 = corr_yoy_df.style.background_gradient(
+                    subset=["Pearson r"], cmap="RdYlGn", vmin=-max_abs3, vmax=max_abs3
+                ).format({"Pearson r": "{:+.4f}"})
+                st.dataframe(styled3, use_container_width=True, hide_index=True)
+
+        st.caption(
+            f"Pearson r between Google Trends ('{selected_kw['term']}') and "
+            f"{selected_stock['ticker']} weekly returns at different lags. "
+            "Positive r = higher search interest associated with higher returns."
+        )
+
+    # ── Tab 2: Watchlist ──────────────────────────────────────────────────────
+    with tab_watchlist:
+        st.markdown("### 📋 Google Trends Signal Watchlist")
+        st.caption(
+            "Stocks where Google search interest has documented or hypothesised signal quality. "
+            "'Enabled' = data has been fetched and is available in the Signal Explorer."
+        )
+
+        # Build display dataframe
+        rows = []
+        for w in watchlist:
+            keywords_str = ", ".join(
+                f"{k['term']} ({k['geo'] if k['geo'] else 'WW'})" for k in w["keywords"]
+            )
+            rows.append({
+                "Signal": SIGNAL_QUALITY_EMOJI.get(w["signal_quality"], "⚪"),
+                "Ticker": w["ticker"],
+                "Company": w["name"],
+                "Sector": w["sector"],
+                "Subsector": w["subsector"],
+                "Quality": w["signal_quality"],
+                "Keywords": keywords_str,
+                "Notes": w["signal_notes"],
+                "Data Ready": "✅" if w["enabled"] else "⏳",
+            })
+
+        wl_df = pd.DataFrame(rows)
+
+        # Color Quality column
+        def color_quality(val: str) -> str:
+            c = SIGNAL_QUALITY_COLOR.get(val, MUTED)
+            return f"color: {c}; font-weight: 600"
+
+        styled_wl = wl_df.style.applymap(color_quality, subset=["Quality"])
+        st.dataframe(styled_wl, use_container_width=True, hide_index=True,
+                     column_config={
+                         "Notes": st.column_config.TextColumn(width="large"),
+                         "Keywords": st.column_config.TextColumn(width="medium"),
+                     })
+
+        st.divider()
+        st.markdown("#### ⚠️ Coverage Notes")
+        st.info(
+            "**Mainland China (CN):** Google Trends has no meaningful data — Google is blocked. "
+            "Recommend integrating **Baidu Index** (`index.baidu.com`) for A-share names (BYD, Moutai, Xiaomi). "
+            "This is a planned next step for this project."
+        )
+        st.info(
+            "**Chinese-language keywords:** For HK/TW-listed names with significant Chinese-speaking audiences, "
+            "the Chinese name (e.g. `泡泡玛特`) is tracked separately. Worldwide correlation is weaker (~0.03–0.07) "
+            "compared to English name in same geos (~0.10–0.18), confirming that international investors drive most of the signal."
+        )
+
+    # ── Tab 3: Leaderboard ────────────────────────────────────────────────────
+    with tab_leaderboard:
+        st.markdown("### 🏆 Google Trends Signal Leaderboard")
+        st.caption(
+            "Comparison of correlation strength across all enabled assets and keywords. "
+            "Seasonality-adjusted (YoY) correlation is included to filter out holiday and calendar spikes."
+        )
+
+        leaderboard_rows = []
+        for w in watchlist:
+            if not w["enabled"]:
+                continue
+            for k in w["keywords"]:
+                term = k["term"]
+                geo = k["geo"]
+                df = _load_combined(ticker=w["ticker"], keyword=term, geo=geo)
+                if df.empty:
+                    continue
+                
+                # Raw correlation
+                corr_df = _correlation_table(df)
+                if corr_df.empty:
+                    continue
+                
+                r_map = {}
+                for _, r_row in corr_df.iterrows():
+                    r_map[r_row["Lag"]] = r_row["Pearson r"]
+
+                # YoY correlation
+                df_yoy = df.copy()
+                df_yoy["trend_yoy"] = df_yoy["trend_value"].diff(52)
+                df_yoy_corr = df_yoy.dropna(subset=["trend_yoy", "stock_weekly_return"]).copy()
+                df_yoy_corr["trend_value"] = df_yoy_corr["trend_yoy"]
+                corr_yoy_df = _correlation_table(df_yoy_corr)
+                
+                r_yoy_map = {}
+                if not corr_yoy_df.empty:
+                    for _, r_yoy_row in corr_yoy_df.iterrows():
+                        r_yoy_map[r_yoy_row["Lag"]] = r_yoy_row["Pearson r"]
+                
+                # Determine max absolute r
+                all_rs = list(r_map.values()) + list(r_yoy_map.values())
+                max_abs_r = max([abs(val) for val in all_rs if pd.notna(val)], default=0.0)
+
+                leaderboard_rows.append({
+                    "Ticker": w["ticker"],
+                    "Company": w["name"],
+                    "Sector": w["sector"],
+                    "Keyword": term,
+                    "Region": geo if geo else "WW",
+                    "Same Week r": r_map.get("Same week", 0.0),
+                    "Next Week r": r_map.get("Next week", 0.0),
+                    "YoY Same Week r": r_yoy_map.get("Same week", 0.0),
+                    "YoY Next Week r": r_yoy_map.get("Next week", 0.0),
+                    "Max |r|": max_abs_r,
+                    "Quality": w["signal_quality"],
+                })
+
+        if not leaderboard_rows:
+            st.info("No data available yet. Please enable and fetch data for watchlist items.")
+        else:
+            lead_df = pd.DataFrame(leaderboard_rows)
+            lead_df = lead_df.sort_values(by="Max |r|", ascending=False).reset_index(drop=True)
+            
+            # Sector filter
+            sectors = ["All"] + sorted(list(lead_df["Sector"].unique()))
+            lead_col1, lead_col2 = st.columns([1, 3])
+            with lead_col1:
+                selected_sector = st.selectbox("Filter by Sector", sectors, index=0)
+            if selected_sector != "All":
+                lead_df = lead_df[lead_df["Sector"] == selected_sector]
+            
+            r_cols = ["Same Week r", "Next Week r", "YoY Same Week r", "YoY Next Week r"]
+            
+            def color_r(val):
+                if pd.isna(val):
+                    return ""
+                norm = max(-1.0, min(1.0, val / 0.25))
+                if norm >= 0:
+                    return f"background-color: rgba(22, 163, 74, {0.05 + 0.3*norm:.2f})"
+                else:
+                    norm = abs(norm)
+                    return f"background-color: rgba(220, 38, 38, {0.05 + 0.3*norm:.2f})"
+
+            styled_lead = lead_df.style.applymap(color_r, subset=r_cols).format({
+                "Same Week r": "{:+.4f}",
+                "Next Week r": "{:+.4f}",
+                "YoY Same Week r": "{:+.4f}",
+                "YoY Next Week r": "{:+.4f}",
+                "Max |r|": "{:.4f}",
+            })
+            
+            st.dataframe(styled_lead, use_container_width=True, hide_index=True,
+                         column_config={
+                             "Max |r|": st.column_config.NumberColumn(help="Strongest absolute correlation across raw and YoY metrics"),
+                         })
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -3382,16 +3992,20 @@ def main() -> None:
     elif selected_section == "Artificial Analysis":
         aa_views = compute_artificial_analysis_views(domain_states["artificial_analysis"][0])
         render_artificial_analysis_section(datasets, aa_views)
-    elif selected_section == "AI Frontier & HBM":
-        benchmark_views = compute_llm_benchmark_views(domain_states["ai_frontier"][0])
-        render_ai_frontier_section(datasets, benchmark_views)
     elif selected_section == "Provider Adoption":
         provider_views = compute_provider_adoption_views(domain_states["provider_adoption"][0])
         render_provider_adoption_section(datasets, provider_views)
     elif selected_section == "Semiconductor Analysis":
-        semi_views = compute_semiconductor_views(domain_states["semiconductor_memory"][0])
+        combined_datasets = {
+            **domain_states["semiconductor_memory"][0],
+            **domain_states["semiconductor_proxies"][0],
+            **domain_states["taiwan_semiconductor_revenue"][0],
+        }
+        semi_views = compute_semiconductor_views(combined_datasets)
         render_semiconductor_section(datasets, semi_views)
-        
+    elif selected_section == "Google Trends Signal":
+        render_google_trends_section()
+
     render_checks(checks)
 
 
