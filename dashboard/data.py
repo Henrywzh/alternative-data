@@ -74,30 +74,6 @@ DATASET_REGISTRY: dict[str, dict[str, object]] = {
         "metric_column": "tokens",
         "required_columns": ["app_id", "snapshot_date", "growth_percent", "tokens", "rank"],
     },
-    "github_trending_daily": {
-        "label": "GitHub Trending Daily",
-        "domain": "github",
-        "natural_keys": ["scrape_date", "author", "name"],
-        "primary_date_column": "scrape_date",
-        "metric_column": "stars_today",
-        "required_columns": ["scrape_date", "author", "name", "stars_today", "total_stars"],
-    },
-    "github_trending_weekly": {
-        "label": "GitHub Trending Weekly",
-        "domain": "github",
-        "natural_keys": ["scrape_date", "author", "name"],
-        "primary_date_column": "scrape_date",
-        "metric_column": "stars_today",
-        "required_columns": ["scrape_date", "author", "name", "stars_today", "total_stars"],
-    },
-    "github_trending_monthly": {
-        "label": "GitHub Trending Monthly",
-        "domain": "github",
-        "natural_keys": ["scrape_date", "author", "name"],
-        "primary_date_column": "scrape_date",
-        "metric_column": "stars_today",
-        "required_columns": ["scrape_date", "author", "name", "stars_today", "total_stars"],
-    },
     "pypi_downloads_daily": {
         "label": "PyPI Downloads Daily",
         "domain": "provider_adoption",
@@ -269,11 +245,6 @@ DOMAIN_ORDER = {
         "app_top_models_daily_snapshot",
         "apps_global_ranking_snapshots",
         "apps_trending_snapshots",
-    ],
-    "github": [
-        "github_trending_daily",
-        "github_trending_weekly",
-        "github_trending_monthly",
     ],
     "provider_adoption": [
         "pypi_downloads_daily",

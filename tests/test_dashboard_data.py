@@ -22,7 +22,6 @@ from dashboard.app import (
     load_domain_state_cached,
     make_line_chart,
     make_stacked_area_chart,
-    market_share_legend_rows,
     order_provider_columns,
     prepare_hf_models_table,
     resolve_hf_metric_config,
@@ -2546,22 +2545,6 @@ def test_top_n_with_others_preserves_existing_others_bucket() -> None:
     assert list(top.columns) == ["A", "B", "Others"]
     assert top.loc["w1", "Others"] == 150.0
     assert top.loc["w2", "Others"] == 15.0
-
-
-def test_market_share_legend_rows_use_selected_week_tokens_not_cumulative() -> None:
-    frame = pd.DataFrame(
-        {
-            "week_start_date": ["2026-04-05", "2026-04-05", "2026-04-12", "2026-04-12"],
-            "entity_id": ["qwen", "google", "qwen", "google"],
-            "metric_value": [100.0, 50.0, 1000.0, 200.0],
-        }
-    )
-
-    rows = market_share_legend_rows(frame, "2026-04-05", limit=8)
-
-    assert rows["entity_id"].tolist() == ["qwen", "google"]
-    assert rows["metric_value"].tolist() == [100.0, 50.0]
-    assert rows["share_pct"].round(1).tolist() == [66.7, 33.3]
 
 
 def test_artificial_analysis_domain_loads_normalized_datasets(tmp_path: Path) -> None:

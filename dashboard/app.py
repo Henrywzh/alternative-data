@@ -72,7 +72,6 @@ MAIN_SECTIONS = (
     "OpenRouter Intelligence",
     "Artificial Analysis",
     "AI Frontier & HBM",
-    "GitHub Trending",
     "Provider Adoption",
     "Semiconductor Analysis",
 )
@@ -80,7 +79,6 @@ SECTION_DOMAIN_MAP = {
     "OpenRouter Intelligence": ("rankings", "apps", "compute_availability"),
     "Artificial Analysis": ("artificial_analysis",),
     "AI Frontier & HBM": ("ai_frontier",),
-    "GitHub Trending": ("github",),
     "Provider Adoption": ("provider_adoption",),
     "Semiconductor Analysis": ("semiconductor_memory",),
 }
@@ -567,17 +565,6 @@ def _top_n_with_others(pivot_df: pd.DataFrame, *, top_n_count: int = 15, exclude
         existing_others = top["Others"].copy() if "Others" in top.columns else 0
         top["Others"] = existing_others + pivot_df[other_cols].sum(axis=1)
     return top
-
-
-def market_share_legend_rows(frame: pd.DataFrame, week_label: str, limit: int = 8) -> pd.DataFrame:
-    """Build selected-week market-share legend rows with same-window tokens and shares."""
-    week_rows = frame[frame["week_start_date"] == week_label].groupby("entity_id", as_index=False)["metric_value"].sum()
-    week_total = float(week_rows["metric_value"].sum())
-    named = week_rows[week_rows["entity_id"].str.lower() != "others"].sort_values("metric_value", ascending=False).head(limit).copy()
-    if named.empty:
-        return named.assign(share_pct=pd.Series(dtype=float))
-    named["share_pct"] = named["metric_value"] / week_total * 100 if week_total > 0 else 0.0
-    return named
 
 
 @st.cache_data(ttl=3600)
@@ -1203,36 +1190,6 @@ def _compute_revenue_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, 
             "monthly_coverage": monthly_coverage,
         },
     }
-
-
-@st.cache_data(ttl=3600)
-def compute_github_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, dict[str, object]]:
-    views: dict[str, dict[str, object]] = {}
-    for dataset_id in ["github_trending_daily", "github_trending_weekly", "github_trending_monthly"]:
-        result = datasets.get(dataset_id)
-        if not result or result.frame.empty:
-            views[dataset_id] = {"latest_date": None, "latest_df": pd.DataFrame(), "history_top5": pd.DataFrame()}
-            continue
-
-        df = result.frame.copy()
-        df["scrape_date"] = df["scrape_date"].astype(str)
-        latest_date = df["scrape_date"].max()
-        latest_df = df[df["scrape_date"] == latest_date].copy()
-        latest_df["stars_today"] = pd.to_numeric(latest_df["stars_today"], errors="coerce").fillna(0)
-        latest_df = latest_df.sort_values("stars_today", ascending=False)
-        top_5_names = latest_df.head(5)["name"].tolist()
-        hist_df = df[df["name"].isin(top_5_names)].copy()
-        history_top5 = (
-            hist_df.pivot_table(index="scrape_date", columns="name", values="stars_today", aggfunc="sum").fillna(0)
-            if not hist_df.empty
-            else pd.DataFrame()
-        )
-        views[dataset_id] = {
-            "latest_date": latest_date,
-            "latest_df": latest_df,
-            "history_top5": history_top5,
-        }
-    return views
 
 
 @st.cache_data(ttl=3600)
@@ -1913,16 +1870,6 @@ _DASHBOARD_CSS = f"""
             font-size: 0.88rem;
             margin: -0.25rem 0 0.9rem 0;
         }}
-        .rankings-note {{
-            background: rgba(37, 99, 235, 0.06);
-            border: 1px solid rgba(37, 99, 235, 0.14);
-            border-radius: 10px;
-            padding: 0.9rem 1rem;
-            margin: 0.35rem 0 1.15rem 0;
-            color: {TEXT};
-            font-size: 0.92rem;
-            line-height: 1.5;
-        }}
         .rankings-warning {{
             background: rgba(217, 119, 6, 0.08);
             border: 1px solid rgba(217, 119, 6, 0.16);
@@ -1932,44 +1879,6 @@ _DASHBOARD_CSS = f"""
             color: {TEXT};
             font-size: 0.9rem;
         }}
-
-        /* ---- Leaderboard Cards ---- */
-        .lb-card {{
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            background: {CARD};
-            border: 1px solid {BORDER};
-            border-radius: 10px;
-            padding: 0.8rem 1rem;
-            margin-bottom: 0.6rem;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
-            transition: transform 0.2s, box-shadow 0.2s;
-        }}
-        .lb-card:hover {{ transform: translateY(-1px); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.08); }}
-        .lb-rank {{
-            width: 28px;
-            height: 28px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: {SIDEBAR};
-            color: {MUTED};
-            border-radius: 50%;
-            font-size: 0.85rem;
-            font-weight: 800;
-        }}
-        .lb-rank-top {{ background: {ACCENT}; color: white; }}
-        .lb-model {{ flex: 1; }}
-        .lb-model-name {{ font-size: 0.92rem; font-weight: 700; color: {TEXT}; line-height: 1.2; }}
-        .lb-model-author {{ font-size: 0.72rem; color: {MUTED}; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }}
-        .lb-tokens {{ font-weight: 700; font-size: 0.95rem; color: {TEXT}; }}
-        
-        /* ---- Badges ---- */
-        .lb-badge-up   {{ font-size: 0.7rem; font-weight: 800; color: {GREEN}; background: rgba(22, 163, 74, 0.1); padding: 2px 6px; border-radius: 4px; min-width: 32px; text-align: center; }}
-        .lb-badge-down {{ font-size: 0.7rem; font-weight: 800; color: {RED};   background: rgba(220, 38, 38, 0.1); padding: 2px 6px; border-radius: 4px; min-width: 32px; text-align: center; }}
-        .lb-badge-flat {{ font-size: 0.7rem; font-weight: 800; color: {MUTED}; background: rgba(107, 114, 128, 0.1); padding: 2px 6px; border-radius: 4px; min-width: 32px; text-align: center; }}
-        .lb-badge-new  {{ font-size: 0.65rem; font-weight: 900; color: white;   background: {ACCENT}; padding: 2px 6px; border-radius: 4px; }}
 
         /* ---- Health Checks ---- */
         .chk-ok      {{ color: {GREEN}; font-weight: 700; font-size: 0.9rem; margin-top: 0.5rem; }}
@@ -2143,28 +2052,6 @@ def render_kpi_row(datasets: dict[str, DatasetLoadResult], openrouter_views: dic
         st.markdown(f'<div class="rankings-warning">{warning}</div>', unsafe_allow_html=True)
 
 
-def render_rankings_semantics_note(datasets: dict[str, DatasetLoadResult]) -> None:
-    context = rankings_week_context(datasets)
-    model_week = context["model_week"] or "n/a"
-    market_share_week = context["market_share_week"] or "n/a"
-
-    st.markdown(
-        f"""
-        <div class="rankings-note">
-          <strong>OpenRouter week semantics</strong><br>
-          Top Models are grouped by <strong>week starting</strong> dates.
-          Market Share is grouped by <strong>week ending</strong> dates.
-          These latest completed buckets can differ by up to 6 days on the same scrape.<br><br>
-          <span style="color:{MUTED};">
-            Latest completed model week: {model_week} ·
-            Latest completed market-share week: {market_share_week}
-          </span>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-
 def render_top_models_chart(datasets: dict[str, DatasetLoadResult], openrouter_views: dict[str, object]) -> None:
     st.markdown('<div class="section-title">Total Weekly Tokens</div>', unsafe_allow_html=True)
     st.markdown(
@@ -2194,64 +2081,6 @@ def render_top_models_chart(datasets: dict[str, DatasetLoadResult], openrouter_v
         hover_suffix="tokens",
     )
     st.plotly_chart(fig, width="stretch", theme=None)
-
-
-def render_market_share_section(datasets: dict[str, DatasetLoadResult], openrouter_views: dict[str, object]) -> None:
-    st.markdown('<div class="section-title">Market Share — Token Distribution by Author (Week Ending)</div>', unsafe_allow_html=True)
-    st.markdown(
-        f'<div class="section-subtitle">Completed weekly buckets aligned to week end dates from OpenRouter rankings.</div>',
-        unsafe_allow_html=True,
-    )
-    result = datasets.get("market_share")
-    if not result or not render_dataset_guard(result):
-        return
-
-    ms = result.frame.copy()
-    ms["week_start_date"] = ms["week_start_date"].astype(str)
-    st.markdown(
-        f'<div class="status-caption">Latest completed market-share week: {result.latest_date or "n/a"} · Scraped: {format_scraped_at_display(result.latest_scraped_at)}</div>',
-        unsafe_allow_html=True,
-    )
-
-    # --- Period Selector ---
-    ms_weeks = openrouter_views["market_share"]["weeks"]
-    sel_ms_wk = st.selectbox("Analyze week ending", options=ms_weeks, index=0, key="ms_week_sel")
-    ms_wk_total = ms[ms["week_start_date"] == sel_ms_wk]["metric_value"].sum()
-    st.markdown(
-        kpi_card_html(f"Total Tokens ({sel_ms_wk})", format_metric(ms_wk_total),
-                      card_style="margin-bottom:1rem; max-width:300px", value_style="font-size:1.5rem"),
-        unsafe_allow_html=True,
-    )
-
-    chart_col, legend_col = st.columns([2, 1], gap="large")
-
-    with chart_col:
-        fig = make_stacked_bar(openrouter_views["market_share"]["pivot_pct_top"], MODEL_COLORS, y_title="Share (%)", pct=True)
-        fig.update_yaxes(range=[0, 100])
-        st.plotly_chart(fig, width="stretch", theme=None)
-
-    with legend_col:
-        ms_named = market_share_legend_rows(ms, sel_ms_wk, limit=8)
-
-        st.markdown(f'<div style="font-weight:700;font-size:1rem;margin-bottom:0.8rem;">Week: {sel_ms_wk} Leaders</div>', unsafe_allow_html=True)
-        rows_html = '<div class="ms-legend">'
-        for rank_i, (_, row) in enumerate(ms_named.head(8).iterrows()):
-            color  = MODEL_COLORS[rank_i % len(MODEL_COLORS)]
-            author = row["entity_id"]
-            pct_v  = row["share_pct"]
-            week_v = format_metric(row["metric_value"])
-            rows_html += f"""
-            <div class="ms-row">
-              <span style="color:{MUTED};font-size:0.72rem;min-width:16px;">{rank_i+1}</span>
-              <span class="ms-dot" style="background:{color};"></span>
-              <span class="ms-name">{author}</span>
-              <span class="ms-tokens">{week_v}</span>
-              <span class="ms-pct">{pct_v:.1f}%</span>
-            </div>"""
-        rows_html += "</div>"
-        st.markdown(rows_html, unsafe_allow_html=True)
-
-    st.markdown("---")
 
 
 def render_revenue_estimator(datasets: dict[str, DatasetLoadResult], openrouter_views: dict[str, object]) -> None:
@@ -2337,93 +2166,6 @@ def render_revenue_estimator(datasets: dict[str, DatasetLoadResult], openrouter_
         "Models whose OpenRouter slug ends in :free are included in token volume and zero-rated for revenue."
     )
     st.markdown("---")
-
-
-def render_leaderboard(datasets: dict[str, DatasetLoadResult]) -> None:
-    st.markdown('<div class="section-title">Model Leaderboard — Weekly</div>', unsafe_allow_html=True)
-    result = datasets.get("top_models")
-    if not result or not render_dataset_guard(result):
-        return
-
-    tm = result.frame.copy()
-    tm["week_start_date"] = tm["week_start_date"].astype(str)
-    sorted_weeks = sorted(tm["week_start_date"].unique())
-    if len(sorted_weeks) < 1:
-        st.info("Not enough weekly data for leaderboard.")
-        return
-
-    latest_wk = sorted_weeks[-1]
-    prev_wk   = sorted_weeks[-2] if len(sorted_weeks) >= 2 else None
-    st.caption(f"Showing week starting {latest_wk} vs previous week")
-
-    def _agg_named(frame: pd.DataFrame) -> pd.DataFrame:
-        """Aggregate by entity_id, excluding catch-all 'Others' buckets."""
-        named = frame[
-            (frame["entity_id"].str.lower() != "others") &
-            (frame["entity_id"].str.contains("/", na=False))
-        ]
-        return (
-            named.groupby("entity_id", as_index=False)["metric_value"]
-            .sum()
-            .sort_values("metric_value", ascending=False)
-            .reset_index(drop=True)
-        )
-
-    latest_agg = _agg_named(tm[tm["week_start_date"] == latest_wk])
-    latest_agg["curr_rank"] = range(1, len(latest_agg) + 1)
-
-    if prev_wk:
-        prev_agg = _agg_named(tm[tm["week_start_date"] == prev_wk])
-        prev_agg["prev_rank"] = range(1, len(prev_agg) + 1)
-        rank_map = dict(zip(prev_agg["entity_id"], prev_agg["prev_rank"]))
-    else:
-        rank_map = {}
-
-    # extract author from entity_id (format: "author/model-name")
-    def split_entity(eid: str):
-        parts = eid.split("/", 1)
-        return (parts[0], parts[1]) if len(parts) == 2 else ("", eid)
-
-    top10 = latest_agg.head(10)
-    cards = []
-    for _, row in top10.iterrows():
-        eid    = row["entity_id"]
-        author, model_name = split_entity(eid)
-        tokens = format_metric(row["metric_value"])
-        rank   = row["curr_rank"]
-        prev_r = rank_map.get(eid)
-
-        if prev_r is None:
-            badge = '<span class="lb-badge-new">NEW</span>'
-        else:
-            delta = prev_r - rank  # positive → moved up
-            if delta > 0:
-                badge = f'<span class="lb-badge-up">↑{delta}</span>'
-            elif delta < 0:
-                badge = f'<span class="lb-badge-down">↓{abs(delta)}</span>'
-            else:
-                badge = '<span class="lb-badge-flat">—</span>'
-
-        rank_cls   = "lb-rank lb-rank-top" if rank <= 3 else "lb-rank"
-        model_disp = model_name[:32] + "…" if len(model_name) > 32 else model_name
-
-        cards.append(
-            f"""<div class="lb-card">
-              <div class="{rank_cls}">{rank}</div>
-              <div class="lb-model">
-                <div class="lb-model-name">{model_disp}</div>
-                <div class="lb-model-author">{author}</div>
-              </div>
-              <div class="lb-tokens">{tokens}</div>
-              {badge}
-            </div>"""
-        )
-
-    col_a, col_b = st.columns(2, gap="large")
-    with col_a:
-        st.markdown("".join(cards[:5]), unsafe_allow_html=True)
-    with col_b:
-        st.markdown("".join(cards[5:]), unsafe_allow_html=True)
 
 
 def render_token_volume_chart(openrouter_views: dict[str, object]) -> None:
@@ -2649,95 +2391,6 @@ def render_apps_tables(datasets: dict[str, DatasetLoadResult]) -> None:
                 pivot_u = pivot_u[top_m]
                 fig_u = make_stacked_bar(pivot_u, MODEL_COLORS, y_title="Tokens", height=300)
                 st.plotly_chart(fig_u, width="stretch", theme=None)
-
-
-def render_github_trending_section(datasets: dict[str, DatasetLoadResult], github_views: dict[str, dict[str, object]]) -> None:
-    st.markdown('<div class="section-title">GitHub Trending Repositories</div>', unsafe_allow_html=True)
-    
-    # 1. Period Selector
-    period_label = st.radio("Trending period", options=["Daily", "Weekly", "Monthly"], horizontal=True, label_visibility="collapsed")
-    dataset_id = f"github_trending_{period_label.lower()}"
-    
-    result = datasets.get(dataset_id)
-    if not result or not render_dataset_guard(result):
-        return
-
-    df = result.frame.copy()
-    if df.empty:
-        st.info(f"No data available for {period_label.lower()}.")
-        return
-
-    period_view = github_views[dataset_id]
-    latest_date = period_view["latest_date"]
-    latest_df = period_view["latest_df"]
-
-    # --- KPIs ---
-    top_repo = latest_df.iloc[0] if not latest_df.empty else None
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.markdown(
-            kpi_card_html(f"Top Gainer ({period_label})",
-                          top_repo["name"] if top_repo is not None else "—",
-                          delta=f"+{format_metric(top_repo['stars_today']) if top_repo is not None else '0'} stars",
-                          delta_class="up", value_style="font-size:1.3rem"),
-            unsafe_allow_html=True,
-        )
-    with col2:
-        total_gained = latest_df["stars_today"].sum()
-        st.markdown(
-            kpi_card_html("Total Stars Gained (Top 15)", format_metric(total_gained),
-                          delta="across trending list"),
-            unsafe_allow_html=True,
-        )
-    with col3:
-        unique_repos = df["name"].nunique()
-        st.markdown(
-            kpi_card_html("Unique Repos Tracked", str(unique_repos), delta="in history"),
-            unsafe_allow_html=True,
-        )
-
-    # --- Charts & Leaderboard ---
-    chart_tab, list_tab = st.tabs(["Historical Growth", "Latest Leaderboard"])
-
-    with chart_tab:
-        pivot_h = period_view["history_top5"]
-        if not pivot_h.empty:
-            st.plotly_chart(
-                make_line_chart(pivot_h, MODEL_COLORS,
-                                title=f"Star Growth - Top 5 {period_label} Repos",
-                                x_title="Scrape Date", y_title="Stars Gained",
-                                hover_suffix="stars gained", height=400),
-                width="stretch",
-            )
-        else:
-            st.info("Not enough historical data to show growth.")
-
-    with list_tab:
-        st.markdown(f'<div style="font-weight:700;font-size:1.1rem;margin-bottom:1rem;">Top Gaining Repositories ({latest_date})</div>', unsafe_allow_html=True)
-        
-        cols = st.columns(2)
-        for i, (_, row) in enumerate(latest_df.head(10).iterrows()):
-            col_idx = i % 2
-            with cols[col_idx]:
-                description = str(row.get('description', ''))
-                if description in ['nan', 'None', 'NULL']:
-                    description = ""
-                
-                desc_display = (description[:100] + '...') if len(description) > 100 else description
-                
-                st.markdown(
-                    f"""<div class="lb-card">
-                      <div class="lb-rank {'lb-rank-top' if i < 3 else ''}">{i+1}</div>
-                      <div class="lb-model">
-                        <div class="lb-model-name"><a href="{row['link']}" target="_blank">{row['name']}</a></div>
-                        <div class="lb-model-author">{row['author']}</div>
-                        <div style="font-size:0.75rem; color:{MUTED}; margin-top:2px;">{desc_display}</div>
-                      </div>
-                      <div class="lb-tokens" style="color:{GREEN};">+{format_metric(row['stars_today'])}</div>
-                      <div style="font-size:0.7rem; color:{MUTED}; min-width:50px; text-align:right;">Total: {format_metric(row['total_stars'])}</div>
-                    </div>""",
-                    unsafe_allow_html=True
-                )
 
 
 def render_provider_adoption_section(datasets: dict[str, DatasetLoadResult], provider_views: dict[str, object]) -> None:
@@ -3719,11 +3372,8 @@ def main() -> None:
             revenue_cache_version=REVENUE_CACHE_VERSION,
         )
         compute_views = compute_compute_availability_views(domain_states["compute_availability"][0])
-        render_rankings_semantics_note(datasets)
         render_kpi_row(datasets, openrouter_views)
         render_top_models_chart(datasets, openrouter_views)
-        render_market_share_section(datasets, openrouter_views)
-        render_leaderboard(datasets)
         render_revenue_estimator(datasets, openrouter_views)
         render_token_volume_chart(openrouter_views)
         render_token_revenue_comparison(openrouter_views)
@@ -3735,9 +3385,6 @@ def main() -> None:
     elif selected_section == "AI Frontier & HBM":
         benchmark_views = compute_llm_benchmark_views(domain_states["ai_frontier"][0])
         render_ai_frontier_section(datasets, benchmark_views)
-    elif selected_section == "GitHub Trending":
-        github_views = compute_github_views(domain_states["github"][0])
-        render_github_trending_section(datasets, github_views)
     elif selected_section == "Provider Adoption":
         provider_views = compute_provider_adoption_views(domain_states["provider_adoption"][0])
         render_provider_adoption_section(datasets, provider_views)
