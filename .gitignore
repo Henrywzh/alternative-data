@@ -48,6 +48,17 @@ data/normalized/semiconductor_memory/*
 !data/normalized/semiconductor_memory/*.csv
 !data/normalized/semiconductor_memory/*.parquet
 
+# semiconductor_proxies: commit normalized CSVs/parquet
+!data/normalized/semiconductor_proxies/
+data/normalized/semiconductor_proxies/*
+!data/normalized/semiconductor_proxies/*.csv
+!data/normalized/semiconductor_proxies/*.parquet
+
+# taiwan_semiconductor_revenue: commit normalized parquet
+!data/normalized/taiwan_semiconductor_revenue/
+data/normalized/taiwan_semiconductor_revenue/*
+!data/normalized/taiwan_semiconductor_revenue/*.parquet
+
 # artificial_analysis: commit normalized CSVs/parquet + raw run manifests only
 !data/normalized/artificial_analysis/
 data/normalized/artificial_analysis/*

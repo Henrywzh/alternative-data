@@ -1,0 +1,386 @@
+[
+  {
+    "ticker": "9992.HK",
+    "name": "Pop Mart",
+    "sector": "Consumer Discretionary",
+    "subsector": "Toys & Collectibles",
+    "keywords": [
+      {
+        "term": "Pop Mart",
+        "geo": ""
+      },
+      {
+        "term": "Pop Mart",
+        "geo": "HK"
+      },
+      {
+        "term": "Pop Mart",
+        "geo": "TW"
+      },
+      {
+        "term": "泡泡玛特",
+        "geo": ""
+      },
+      {
+        "term": "泡泡玛特",
+        "geo": "HK"
+      }
+    ],
+    "signal_quality": "Medium",
+    "signal_notes": "HK/TW search volume (~0.14-0.18 r) outperforms worldwide. Chinese name term pending evaluation. Best as coincident + mild 1-week lead signal.",
+    "enabled": true
+  },
+  {
+    "ticker": "BKNG",
+    "name": "Booking Holdings",
+    "sector": "Consumer Discretionary",
+    "subsector": "Online Travel",
+    "keywords": [
+      {
+        "term": "Booking.com",
+        "geo": ""
+      },
+      {
+        "term": "cheap flights",
+        "geo": "US"
+      },
+      {
+        "term": "hotel deals",
+        "geo": ""
+      }
+    ],
+    "signal_quality": "High",
+    "signal_notes": "Travel search is a textbook leading indicator of booking demand. Academically well-documented. Strongest 2-4 weeks before earnings.",
+    "enabled": true
+  },
+  {
+    "ticker": "ABNB",
+    "name": "Airbnb",
+    "sector": "Consumer Discretionary",
+    "subsector": "Online Travel",
+    "keywords": [
+      {
+        "term": "Airbnb",
+        "geo": ""
+      },
+      {
+        "term": "Airbnb rental",
+        "geo": "US"
+      }
+    ],
+    "signal_quality": "High",
+    "signal_notes": "Search volume closely tracks nights booked. Strong seasonal pattern. US geo has best signal.",
+    "enabled": true
+  },
+  {
+    "ticker": "TSLA",
+    "name": "Tesla",
+    "sector": "Consumer Discretionary",
+    "subsector": "Electric Vehicles",
+    "keywords": [
+      {
+        "term": "Tesla Model Y",
+        "geo": ""
+      },
+      {
+        "term": "Tesla Model 3",
+        "geo": "US"
+      },
+      {
+        "term": "buy Tesla",
+        "geo": "US"
+      }
+    ],
+    "signal_quality": "High",
+    "signal_notes": "Model-specific search volume is a strong proxy for order pipeline. Best during new model launch windows. Noise from Musk headlines can confound signal.",
+    "enabled": true
+  },
+  {
+    "ticker": "1211.HK",
+    "name": "BYD",
+    "sector": "Consumer Discretionary",
+    "subsector": "Electric Vehicles",
+    "keywords": [
+      {
+        "term": "BYD car",
+        "geo": ""
+      },
+      {
+        "term": "BYD EV",
+        "geo": ""
+      },
+      {
+        "term": "BYD",
+        "geo": "TW"
+      }
+    ],
+    "signal_quality": "Medium",
+    "signal_notes": "Google Trends only captures non-mainland markets (HK, TW, international). Baidu Index recommended as primary signal for CN market exposure.",
+    "enabled": true
+  },
+  {
+    "ticker": "9988.HK",
+    "name": "Alibaba",
+    "sector": "Communication Services",
+    "subsector": "E-Commerce",
+    "keywords": [
+      {
+        "term": "Alibaba",
+        "geo": ""
+      },
+      {
+        "term": "AliExpress",
+        "geo": ""
+      },
+      {
+        "term": "11.11 shopping",
+        "geo": ""
+      }
+    ],
+    "signal_quality": "Low",
+    "signal_notes": "Core business is mainland China where Google is blocked. AliExpress international search may provide weak signal for international segment only.",
+    "enabled": true
+  },
+  {
+    "ticker": "LULU",
+    "name": "Lululemon",
+    "sector": "Consumer Discretionary",
+    "subsector": "Apparel & Athletic",
+    "keywords": [
+      {
+        "term": "Lululemon",
+        "geo": "US"
+      },
+      {
+        "term": "Lululemon leggings",
+        "geo": "US"
+      }
+    ],
+    "signal_quality": "High",
+    "signal_notes": "Strong brand-search to revenue link. US geo dominant market. Searches correlate well with same-store sales. Best before Q4 holiday earnings.",
+    "enabled": true
+  },
+  {
+    "ticker": "NVO",
+    "name": "Novo Nordisk",
+    "sector": "Healthcare",
+    "subsector": "Pharmaceuticals",
+    "keywords": [
+      {
+        "term": "Ozempic",
+        "geo": "US"
+      },
+      {
+        "term": "Wegovy",
+        "geo": "US"
+      },
+      {
+        "term": "semaglutide",
+        "geo": ""
+      }
+    ],
+    "signal_quality": "High",
+    "signal_notes": "Drug-brand search is a direct proxy for patient demand and prescription intent. Ozempic search was a textbook leading indicator of NVO's 2022-23 revenue surge.",
+    "enabled": true
+  },
+  {
+    "ticker": "LLY",
+    "name": "Eli Lilly",
+    "sector": "Healthcare",
+    "subsector": "Pharmaceuticals",
+    "keywords": [
+      {
+        "term": "Mounjaro",
+        "geo": "US"
+      },
+      {
+        "term": "Zepbound",
+        "geo": "US"
+      },
+      {
+        "term": "tirzepatide",
+        "geo": ""
+      }
+    ],
+    "signal_quality": "High",
+    "signal_notes": "Same GLP-1 drug-brand playbook as NVO. Mounjaro/Zepbound search volume tracks script volumes. High confidence signal for a secular growth story.",
+    "enabled": true
+  },
+  {
+    "ticker": "NTDOY",
+    "name": "Nintendo",
+    "sector": "Communication Services",
+    "subsector": "Gaming",
+    "keywords": [
+      {
+        "term": "Nintendo Switch 2",
+        "geo": ""
+      },
+      {
+        "term": "Nintendo Switch",
+        "geo": "US"
+      }
+    ],
+    "signal_quality": "Medium",
+    "signal_notes": "Console hardware search spikes sharply on announcements and near launch. DAU/engagement signals harder to capture for Nintendo's closed ecosystem.",
+    "enabled": true
+  },
+  {
+    "ticker": "RBLX",
+    "name": "Roblox",
+    "sector": "Communication Services",
+    "subsector": "Gaming",
+    "keywords": [
+      {
+        "term": "Roblox",
+        "geo": "US"
+      },
+      {
+        "term": "Roblox codes",
+        "geo": "US"
+      }
+    ],
+    "signal_quality": "Medium",
+    "signal_notes": "Search volume tracks DAU closely. 'Roblox codes' is a high-intent search by active players. Seasonal pattern (school holidays) is very predictable.",
+    "enabled": true
+  },
+  {
+    "ticker": "AAPL",
+    "name": "Apple",
+    "sector": "Technology",
+    "subsector": "Consumer Electronics",
+    "keywords": [
+      {
+        "term": "iPhone 17",
+        "geo": ""
+      },
+      {
+        "term": "Apple Watch",
+        "geo": "US"
+      },
+      {
+        "term": "MacBook",
+        "geo": "US"
+      }
+    ],
+    "signal_quality": "Medium",
+    "signal_notes": "Product-specific search volume is useful near launch windows (Sep-Nov). Too diversified for a single keyword to represent the whole company. Best for launch-cycle event trading.",
+    "enabled": true
+  },
+  {
+    "ticker": "NKE",
+    "name": "Nike",
+    "sector": "Consumer Discretionary",
+    "subsector": "Apparel & Athletic",
+    "keywords": [
+      {
+        "term": "Nike",
+        "geo": ""
+      },
+      {
+        "term": "Nike",
+        "geo": "GB"
+      },
+      {
+        "term": "Nike",
+        "geo": "DE"
+      },
+      {
+        "term": "Nike",
+        "geo": "FR"
+      },
+      {
+        "term": "Nike",
+        "geo": "ES"
+      },
+      {
+        "term": "Nike",
+        "geo": "IT"
+      },
+      {
+        "term": "Nike",
+        "geo": "AT"
+      }
+    ],
+    "signal_quality": "High",
+    "signal_notes": "Global sportswear giant. D2C and e-commerce channel search interest tracks consumer demand closely.",
+    "enabled": true
+  },
+  {
+    "ticker": "ADS.DE",
+    "name": "Adidas",
+    "sector": "Consumer Discretionary",
+    "subsector": "Apparel & Athletic",
+    "keywords": [
+      {
+        "term": "Adidas",
+        "geo": ""
+      },
+      {
+        "term": "Adidas",
+        "geo": "GB"
+      },
+      {
+        "term": "Adidas",
+        "geo": "DE"
+      },
+      {
+        "term": "Adidas",
+        "geo": "FR"
+      },
+      {
+        "term": "Adidas",
+        "geo": "ES"
+      },
+      {
+        "term": "Adidas",
+        "geo": "IT"
+      },
+      {
+        "term": "Adidas",
+        "geo": "AT"
+      }
+    ],
+    "signal_quality": "High",
+    "signal_notes": "European sportswear giant. Brand search and sneaker cycles represent strong consumer demand signal.",
+    "enabled": true
+  },
+  {
+    "ticker": "JD.L",
+    "name": "JD Sports",
+    "sector": "Consumer Discretionary",
+    "subsector": "Apparel Retail",
+    "keywords": [
+      {
+        "term": "JD Sports",
+        "geo": ""
+      },
+      {
+        "term": "JD Sports",
+        "geo": "GB"
+      }
+    ],
+    "signal_quality": "High",
+    "signal_notes": "UK-based sports fashion retailer with strong e-commerce presence. Search interest tracks retail spending trends.",
+    "enabled": true
+  },
+  {
+    "ticker": "NXT.L",
+    "name": "Next",
+    "sector": "Consumer Discretionary",
+    "subsector": "Apparel Retail",
+    "keywords": [
+      {
+        "term": "Next",
+        "geo": ""
+      },
+      {
+        "term": "Next",
+        "geo": "GB"
+      }
+    ],
+    "signal_quality": "High",
+    "signal_notes": "UK retail staple with highly profitable online directory channel. Strong coincident indicator.",
+    "enabled": true
+  }
+]
