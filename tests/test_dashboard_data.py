@@ -2850,3 +2850,60 @@ def test_compute_artificial_analysis_views_builds_priority_charts(tmp_path: Path
     assert china_lag["lag_months"].round(1).tolist() == [2.8, 1.5]
     assert openness.loc[pd.Timestamp("2025-03-15"), "Proprietary"] == 41.0
     assert openness.loc[pd.Timestamp("2025-03-15"), "Open Weights"] == 33.0
+
+    capex_yoy = views["capex_yoy_growth"]
+    assert capex_yoy.empty
+
+
+def test_compute_artificial_analysis_views_calculates_yoy(tmp_path: Path) -> None:
+    # Create 5 quarters of capex data
+    quarters = ["2024-q1", "2024-q2", "2024-q3", "2024-q4", "2025-q1"]
+    quarter_labels = ["Q1-2024", "Q2-2024", "Q3-2024", "Q4-2024", "Q1-2025"]
+    rows = []
+    for q_id, q_label in zip(quarters, quarter_labels):
+        rows.append({
+            "dataset_id": "artificial_analysis_capex_quarterly",
+            "quarter_id": q_id,
+            "quarter_label": q_label,
+            "microsoft": 10.0,
+            "google": 10.0,
+            "meta": 10.0,
+            "amazon": 10.0,
+            "oracle": 10.0,
+            "apple": 10.0,
+            "source_url": "https://artificialanalysis.ai/trends",
+            "page_url": "https://artificialanalysis.ai/trends",
+            "bundle_url": "https://artificialanalysis.ai/_next/static/chunks/app/(pages)/trends/page-demo.js",
+            "source_run_id": "run-aa",
+            "scraped_at": "2026-04-25T00:00:00Z",
+        })
+    
+    # For the last quarter (Q1-2025), let's make microsoft have 15.0 (+50% YoY growth),
+    # Google have 5.0 (-50% YoY growth), and others stay 10.0.
+    rows[-1]["microsoft"] = 15.0
+    rows[-1]["google"] = 5.0
+    
+    _write_dataset(tmp_path, "artificial_analysis_models_daily", _artificial_analysis_models_frame())
+    _write_dataset(tmp_path, "artificial_analysis_capex_quarterly", pd.DataFrame(rows))
+    datasets = load_domain_datasets("artificial_analysis", base_dir=tmp_path)
+
+    views = compute_artificial_analysis_views(datasets)
+    capex_yoy = views["capex_yoy_growth"]
+    
+    # It should have exactly 1 row (since first 4 are dropped)
+    assert len(capex_yoy) == 1
+    assert capex_yoy.index.tolist() == ["Q1-2025"]
+    
+    # microsoft went from 10.0 to 15.0 (+50%)
+    assert capex_yoy.loc["Q1-2025", "Microsoft"] == 50.0
+    # google went from 10.0 to 5.0 (-50%)
+    assert capex_yoy.loc["Q1-2025", "Google"] == -50.0
+    # others stayed the same (0%)
+    assert capex_yoy.loc["Q1-2025", "Meta"] == 0.0
+    
+    # Aggregated:
+    # Q1-2024 sum: 10 + 10 + 10 + 10 + 10 + 10 = 60
+    # Q1-2025 sum: 15 + 5 + 10 + 10 + 10 + 10 = 60
+    # YoY growth of sum: 0%
+    assert capex_yoy.loc["Q1-2025", "Aggregated"] == 0.0
+

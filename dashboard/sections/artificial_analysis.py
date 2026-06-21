@@ -19,7 +19,7 @@ from dashboard.data import (DOMAIN_ORDER, DATASET_REGISTRY, DatasetLoadResult, F
 from openrouter_revenue import (build_price_context, build_conservative_provider_economics, estimate_usage_revenue, summarize_economics_coverage)
 from semiconductor_memory_data.sources.config import AI_DEMAND_PPI_WEIGHTS
 from dashboard.theme import (ACCENT, BG, SIDEBAR, CARD, BORDER, TEXT, MUTED, GREEN, RED, YELLOW, GRID, TICK, MODEL_COLORS)
-from dashboard.components import (format_metric, _empty_dataset_frame, _styler_applymap_compat, WEEKLY_MONTHLY_OTHER_PROVIDERS, DAILY_OTHER_PROVIDERS, US_PROVIDER_ORDER, CHINA_PROVIDER_ORDER, order_provider_columns, regroup_provider_pivot_for_display, render_dataset_guard, format_scraped_at_display, dataframe_for_display, make_stacked_bar, make_stacked_area_chart, make_line_chart, kpi_card_html, kpi_grid_html, _top_n_with_others)
+from dashboard.components import (format_metric, _empty_dataset_frame, _styler_applymap_compat, WEEKLY_MONTHLY_OTHER_PROVIDERS, DAILY_OTHER_PROVIDERS, US_PROVIDER_ORDER, CHINA_PROVIDER_ORDER, order_provider_columns, regroup_provider_pivot_for_display, render_dataset_guard, format_scraped_at_display, dataframe_for_display, make_stacked_bar, make_stacked_area_chart, make_line_chart, make_yoy_growth_chart, kpi_card_html, kpi_grid_html, _top_n_with_others)
 
 
 def _quarter_sort_value(value: str) -> tuple[int, int]:
@@ -240,8 +240,17 @@ def compute_artificial_analysis_views(datasets: dict[str, DatasetLoadResult]) ->
             )
         )
         latest_capex_total = float(capex_pivot.iloc[-1].sum()) if not capex_pivot.empty else np.nan
+        
+        # Calculate Year-over-Year (YoY) Growth
+        capex_yoy_growth = (capex_pivot / capex_pivot.shift(4) - 1) * 100
+        capex_yoy_growth = capex_yoy_growth.replace([np.inf, -np.inf], np.nan)
+        agg_capex = capex_pivot.sum(axis=1)
+        agg_yoy = (agg_capex / agg_capex.shift(4) - 1) * 100
+        capex_yoy_growth["Aggregated"] = agg_yoy
+        capex_yoy_growth = capex_yoy_growth.iloc[4:]
     else:
         capex_pivot = pd.DataFrame()
+        capex_yoy_growth = pd.DataFrame()
         latest_capex_total = np.nan
 
     frontier_by_lab = _frontier_pivot(models_latest, group_column="creator_name", max_groups=10)
@@ -287,6 +296,7 @@ def compute_artificial_analysis_views(datasets: dict[str, DatasetLoadResult]) ->
     views["models_latest"] = models_latest
     views["latest_as_of"] = latest_as_of
     views["capex_pivot"] = capex_pivot
+    views["capex_yoy_growth"] = capex_yoy_growth
     views["latest_capex_total"] = latest_capex_total
     views["frontier_by_lab_pivot"] = frontier_by_lab
     views["price_models"] = price_models
@@ -316,6 +326,7 @@ def _artificial_analysis_openness_label(row: pd.Series) -> str | None:
 def render_artificial_analysis_section(datasets: dict[str, DatasetLoadResult], aa_views: dict[str, object]) -> None:
     models_latest = aa_views.get("models_latest", pd.DataFrame())
     capex_pivot = aa_views.get("capex_pivot", pd.DataFrame())
+    capex_yoy_growth = aa_views.get("capex_yoy_growth", pd.DataFrame())
     frontier_by_lab = aa_views.get("frontier_by_lab_pivot", pd.DataFrame())
     price_models = aa_views.get("price_models", pd.DataFrame())
     frontier_by_country = aa_views.get("frontier_by_country_pivot", pd.DataFrame())
@@ -362,6 +373,20 @@ def render_artificial_analysis_section(datasets: dict[str, DatasetLoadResult], a
                 width="stretch",
                 theme=None,
             )
+
+            st.markdown('<div class="section-subtitle" style="margin-top: 2rem;">Year-over-Year (YoY) Capital Expenditure Growth Rate</div>', unsafe_allow_html=True)
+            if capex_yoy_growth.empty:
+                st.info("YoY growth data is not available.")
+            else:
+                st.plotly_chart(
+                    make_yoy_growth_chart(
+                        capex_yoy_growth,
+                        ["#00A4EF", "#34A853", "#0089F4", "#FF9900", "#F80000", "#6B7280"],
+                        height=430,
+                    ),
+                    width="stretch",
+                    theme=None,
+                )
 
     with frontier_tab:
         st.markdown('<div class="section-subtitle">Frontier Language Model Intelligence, Over Time</div>', unsafe_allow_html=True)
