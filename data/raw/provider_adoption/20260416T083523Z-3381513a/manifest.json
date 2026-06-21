@@ -1,0 +1,28 @@
+{
+  "run_id": "20260416T083523Z-3381513a",
+  "mode": "derived-daily-update",
+  "scraped_at": "2026-04-16T08:35:23.430396Z",
+  "target_date": "2026-04-15",
+  "providers": [
+    "openai",
+    "anthropic",
+    "google",
+    "deepseek",
+    "meta",
+    "mistral",
+    "qwen",
+    "moonshot",
+    "minimax",
+    "zai"
+  ],
+  "datasets": [
+    "pypi_downloads_daily",
+    "npm_downloads_daily",
+    "github_repo_candidates_daily",
+    "github_provider_signals_daily",
+    "github_repo_rollup_daily",
+    "provider_momentum_daily",
+    "huggingface_models_daily"
+  ],
+  "parser_version": "0.1.0"
+}
