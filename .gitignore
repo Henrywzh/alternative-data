@@ -31,6 +31,10 @@ data/normalized/provider_adoption/*
 !data/normalized/provider_adoption/*.parquet
 !data/raw/
 data/raw/*
+!data/raw/provider_adoption/
+data/raw/provider_adoption/**
+!data/raw/provider_adoption/**/
+!data/raw/provider_adoption/**/manifest.json
 
 # compute_availability: commit normalized files and raw run manifests
 !data/normalized/compute_availability/
@@ -47,6 +51,10 @@ data/raw/compute_availability/**
 data/normalized/semiconductor_memory/*
 !data/normalized/semiconductor_memory/*.csv
 !data/normalized/semiconductor_memory/*.parquet
+!data/raw/semiconductor_memory/
+data/raw/semiconductor_memory/**
+!data/raw/semiconductor_memory/**/
+!data/raw/semiconductor_memory/**/manifest.json
 
 # semiconductor_proxies: commit normalized CSVs/parquet
 !data/normalized/semiconductor_proxies/
