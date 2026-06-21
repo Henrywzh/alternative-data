@@ -115,8 +115,10 @@ img/
 
 # Local tool config — never push
 .claude/
+.playwright-mcp/
 .streamlit/*
 ! .streamlit/config.toml
+!.streamlit/secrets.toml.example
 
 # Secrets / API keys
 .config
