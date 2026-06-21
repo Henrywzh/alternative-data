@@ -1,9 +1,9 @@
 metric,value
 supported_minerals,21
 unsupported_minerals,0
-direct_signal_rows,2110
-proxy_signal_rows,1175
-tradeable_stock_signal_rows,7892
-us_stock_rows,76
+direct_signal_rows,2100
+proxy_signal_rows,2097
+tradeable_stock_signal_rows,9140
+us_stock_rows,74
 hk_stock_rows,23
 cn_a_stock_rows,62

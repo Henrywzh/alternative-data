@@ -9,14 +9,14 @@ nickel,Nickel,direct,yfinance_futures,NIY=F,USD,metric ton,1,True,
 palladium,Palladium,direct,yfinance_futures,PA=F,USD,oz,1,True,
 platinum,Platinum,direct,yfinance_futures,PL=F,USD,oz,1,True,
 silver,Silver,direct,yfinance_futures,SI=F,USD,oz,1,True,
-tantalum,Tantalum,direct,investing_html,https://au.investing.com/commodities/tantalum-99.95-min-united-states-futures-historical-data,USD,kg,3,True,
 tin,Tin,direct,fred_series,PTINUSDM,USD,metric ton,30,True,
-vanadium,Vanadium,direct,investing_html,https://www.investing.com/commodities/vanadium-pentoxide-98-min-europe-futures-historical-data,USD,kg,1,True,
 zinc,Zinc,direct,fred_series,PZINCUSDM,USD,metric ton,30,True,
 antimony,Antimony,proxy,yfinance_futures,HG=F,USD,lb,2,True,copper
 graphite,Graphite,proxy,yfinance_futures,LIT,USD,etf_share,2,True,lithium
 lithium,Lithium,proxy,yfinance_futures,LIT,USD,etf_share,1,True,
-manganese,Manganese,proxy,investing_html,https://www.investing.com/commodities/zce-silicomanganese-futures-historical-data,CNY,ton,1,True,silicomanganese_proxy
+manganese,Manganese,proxy,yfinance_futures,S32.AX,AUD,equity_proxy,1,True,south32_producer_equity
 neodymium,Neodymium,proxy,yfinance_futures,REMX,USD,etf_share,1,True,
-silicon,Silicon,proxy,investing_html,https://www.investing.com/commodities/zce-ferrosilicon-futures-historical-data,CNY,ton,1,True,ferrosilicon_proxy
+silicon,Silicon,proxy,yfinance_futures,GSM,USD,equity_proxy,1,True,ferroglobe_producer_equity
+tantalum,Tantalum,proxy,yfinance_futures,AMG.AS,EUR,equity_proxy,1,True,amg_producer_equity
 uranium,Uranium,proxy,yfinance_futures,URA,USD,etf_share,1,True,
+vanadium,Vanadium,proxy,yfinance_futures,LGO,USD,equity_proxy,1,True,largo_producer_equity
