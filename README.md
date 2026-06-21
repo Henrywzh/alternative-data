@@ -2,6 +2,8 @@
 
 Research repo for gathering and analyzing alternative data.
 
+Live dashboard: [alternative-data.streamlit.app](https://alternative-data.streamlit.app/)
+
 The first implemented projects are Python ingestion pipelines for OpenRouter rankings, app intelligence data, and GitHub Trending repository stats.
 The repository now also includes a provider-adoption pipeline that tracks GitHub, PyPI, npm, and Hugging Face signals for major LLM providers.
 The repository also includes an Artificial Analysis pipeline that snapshots the official model API daily and refreshes the public capital-expenditure trend series.
