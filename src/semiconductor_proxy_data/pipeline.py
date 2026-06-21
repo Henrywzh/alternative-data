@@ -16,6 +16,7 @@ from semiconductor_proxy_data.models import (
     SourceCatalogPoint,
 )
 from semiconductor_proxy_data.sources.comtrade import ComtradeSource
+from semiconductor_proxy_data.sources.hongkong_censtatd import HongKongCenstatdSource
 from semiconductor_proxy_data.sources.japan_customs import JapanCustomsSource
 from semiconductor_proxy_data.sources.korea_customs import KoreaCustomsSource
 from semiconductor_proxy_data.sources.nbs import NbsSource
@@ -23,7 +24,7 @@ from semiconductor_proxy_data.storage import StorageManager
 
 PARSER_VERSION = "semi-tiered-v2"
 DEFAULT_START_MONTH = "2024-01"
-DEFAULT_REGIONS = ["korea", "china", "hongkong", "japan"]
+DEFAULT_REGIONS = ["japan", "korea", "hongkong"]
 DEFAULT_CATEGORIES = ["ic_only", "broad_semiconductor"]
 
 
@@ -40,7 +41,7 @@ class SemiconductorProxyPipeline:
         self.official_sources = (
             official_sources
             if official_sources is not None
-            else [JapanCustomsSource(), KoreaCustomsSource(), NbsSource()]
+            else [JapanCustomsSource(), KoreaCustomsSource(), HongKongCenstatdSource(), NbsSource()]
         )
         self.backup_source = backup_source or ComtradeSource()
 
