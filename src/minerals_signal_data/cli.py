@@ -11,7 +11,12 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command", required=True)
     shared = argparse.ArgumentParser(add_help=False)
     shared.add_argument("--base-dir", default=".", help="Repository root for data writes")
-    shared.add_argument("--workbook", help="Path to the mineral stock mapping workbook")
+    shared.add_argument("--workbook", help="Path to the mineral workbook (.xlsx) or critical-minerals CSV")
+    shared.add_argument(
+        "--stock-mapping",
+        help="Path to the stock-mapping CSV (defaults to a sibling stock_mapping.csv for CSV workbooks; "
+        "ignored for .xlsx, which reads the mapping sheet)",
+    )
     shared.add_argument("--run-label", default="latest", help="Output partition label")
 
     subparsers.add_parser(
@@ -52,6 +57,13 @@ def build_parser() -> argparse.ArgumentParser:
     run_v2 = subparsers.add_parser("run-v2", parents=[shared], help="Run the broader V2 price-coverage pipeline")
     run_v2.add_argument("--start-date", default="2022-01-01", help="Backtest start date")
     run_v2.add_argument("--end-date", help="Optional backtest end date")
+    run_v2.add_argument(
+        "--min-mineral-coverage",
+        type=int,
+        default=0,
+        help="Fail (non-zero exit) if fewer than N minerals fetch price history; guards against "
+        "silent bot-blocked scrapes (0 disables the check)",
+    )
 
     subparsers.add_parser("validate", parents=[shared], help="Validate workbook coverage and mappings")
     return parser
@@ -63,7 +75,11 @@ def main() -> int:
     pipeline = MineralsSignalPipeline(Path(args.base_dir).resolve())
 
     if args.command in {"load-workbook", "build-price-universe"}:
-        outputs = pipeline.load_workbook(args.workbook, run_label=args.run_label)
+        outputs = pipeline.load_workbook(
+            args.workbook,
+            stock_mapping_path=args.stock_mapping,
+            run_label=args.run_label,
+        )
     elif args.command == "fetch-price-history":
         outputs = pipeline.fetch_price_history(
             args.workbook,
@@ -76,6 +92,7 @@ def main() -> int:
         outputs = pipeline.derive_signals(
             args.workbook,
             args.mineral_prices,
+            stock_mapping_path=args.stock_mapping,
             run_label=args.run_label,
         )
     elif args.command == "backtest":
@@ -83,6 +100,7 @@ def main() -> int:
     elif args.command == "run-v1":
         outputs = pipeline.run_v1(
             args.workbook,
+            stock_mapping_path=args.stock_mapping,
             start_date=args.start_date,
             end_date=args.end_date,
             run_label=args.run_label,
@@ -90,12 +108,14 @@ def main() -> int:
     elif args.command == "run-v2":
         outputs = pipeline.run_v2(
             args.workbook,
+            stock_mapping_path=args.stock_mapping,
             start_date=args.start_date,
             end_date=args.end_date,
             run_label=args.run_label,
+            min_mineral_coverage=args.min_mineral_coverage,
         )
     elif args.command == "validate":
-        counts = pipeline.validate(args.workbook)
+        counts = pipeline.validate(args.workbook, stock_mapping_path=args.stock_mapping)
         for key, value in counts.items():
             print(f"{key}={value}")
         return 0

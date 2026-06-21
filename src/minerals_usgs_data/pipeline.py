@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from minerals_usgs_data.models import MineralMasterRecord, MineralMetricRecord
@@ -17,9 +18,11 @@ from minerals_usgs_data.storage import MineralsStorage
 ALLOWED_METRIC_NAMES = frozenset(
     {
         "net_import_reliance",
-        "price_change_pct_2024_2025",
     }
 )
+# price_change metric names embed the comparison/report-year window, e.g.
+# "price_change_pct_2024_2025"; accept any such year-pair generated from report_year.
+PRICE_CHANGE_METRIC_RE = re.compile(r"^price_change_pct_\d{4}_\d{4}$")
 
 
 def validate_master_records(
@@ -45,7 +48,12 @@ def validate_master_records(
 
 def validate_metric_records(metric_records: list[MineralMetricRecord]) -> None:
     invalid_metric_names = sorted(
-        {record.metric_name for record in metric_records if record.metric_name not in ALLOWED_METRIC_NAMES}
+        {
+            record.metric_name
+            for record in metric_records
+            if record.metric_name not in ALLOWED_METRIC_NAMES
+            and not PRICE_CHANGE_METRIC_RE.match(record.metric_name)
+        }
     )
     if invalid_metric_names:
         invalid_names = ", ".join(invalid_metric_names)

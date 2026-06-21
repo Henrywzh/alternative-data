@@ -1,0 +1,454 @@
+mineral_name,normalized_mineral_id,ticker_raw,ticker_normalized,market,exposure_purity,mapping_note,is_primary_exposure,importance_rank,importance_tier
+Aluminum,aluminum,000807.SZ,000807.SZ,CN_A,Primary for smelters/alumina; downstream for rollers/fabricators,Separate bauxite/alumina/smelting from fabricated aluminum exposure.,False,31,Tier 3 - high
+Aluminum,aluminum,000933.SZ,000933.SZ,CN_A,Primary for smelters/alumina; downstream for rollers/fabricators,Separate bauxite/alumina/smelting from fabricated aluminum exposure.,False,31,Tier 3 - high
+Aluminum,aluminum,601600.SH,601600.SH,CN_A,Primary for smelters/alumina; downstream for rollers/fabricators,Separate bauxite/alumina/smelting from fabricated aluminum exposure.,False,31,Tier 3 - high
+Aluminum,aluminum,1378.HK,1378.HK,HK,Primary for smelters/alumina; downstream for rollers/fabricators,Separate bauxite/alumina/smelting from fabricated aluminum exposure.,False,31,Tier 3 - high
+Aluminum,aluminum,2600.HK,2600.HK,HK,Primary for smelters/alumina; downstream for rollers/fabricators,Separate bauxite/alumina/smelting from fabricated aluminum exposure.,False,31,Tier 3 - high
+Aluminum,aluminum,AA,AA,US,Primary for smelters/alumina; downstream for rollers/fabricators,Separate bauxite/alumina/smelting from fabricated aluminum exposure.,False,31,Tier 3 - high
+Aluminum,aluminum,CENX,CENX,US,Primary for smelters/alumina; downstream for rollers/fabricators,Separate bauxite/alumina/smelting from fabricated aluminum exposure.,False,31,Tier 3 - high
+Aluminum,aluminum,KALU,KALU,US,Primary for smelters/alumina; downstream for rollers/fabricators,Separate bauxite/alumina/smelting from fabricated aluminum exposure.,False,31,Tier 3 - high
+Antimony,antimony,002155.SZ,002155.SZ,CN_A,Primary for UAMY/Hunan Gold; byproduct for others,"China/HK exposure is stronger than US except UAMY, which is small-cap/high beta.",False,16,Tier 2 - very high
+Antimony,antimony,600497.SH,600497.SH,CN_A,Primary for UAMY/Hunan Gold; byproduct for others,"China/HK exposure is stronger than US except UAMY, which is small-cap/high beta.",False,16,Tier 2 - very high
+Antimony,antimony,601020.SH,601020.SH,CN_A,Primary for UAMY/Hunan Gold; byproduct for others,"China/HK exposure is stronger than US except UAMY, which is small-cap/high beta.",False,16,Tier 2 - very high
+Antimony,antimony,UAMY,UAMY,US,Primary for UAMY/Hunan Gold; byproduct for others,"China/HK exposure is stronger than US except UAMY, which is small-cap/high beta.",True,16,Tier 2 - very high
+Arsenic,arsenic,002428.SZ,002428.SZ,CN_A,Adjacent,Treat as semiconductor-material adjacency rather than a clean arsenic commodity equity.,False,7,Tier 1 - highest
+Arsenic,arsenic,AXT,AXT,US,Adjacent,Treat as semiconductor-material adjacency rather than a clean arsenic commodity equity.,False,7,Tier 1 - highest
+Arsenic,arsenic,AXTI,AXTI,US,Adjacent,Treat as semiconductor-material adjacency rather than a clean arsenic commodity equity.,False,7,Tier 1 - highest
+Arsenic,arsenic,COHR,COHR,US,Adjacent,Treat as semiconductor-material adjacency rather than a clean arsenic commodity equity.,False,7,Tier 1 - highest
+Barite,barite,600367.SH,600367.SH,CN_A,Weak/adjacent,Barite is mostly an oilfield drilling-fluid mineral; public equity supply exposure is limited.,False,36,Tier 3 - high
+Barite,barite,HAL,HAL,US,Weak/adjacent,Barite is mostly an oilfield drilling-fluid mineral; public equity supply exposure is limited.,False,36,Tier 3 - high
+Barite,barite,SLB,SLB,US,Weak/adjacent,Barite is mostly an oilfield drilling-fluid mineral; public equity supply exposure is limited.,False,36,Tier 3 - high
+Beryllium,beryllium,601168.SH,601168.SH,CN_A,Primary for MTRN; weak/adjacent in China,Materion is the cleanest US-listed beryllium/alloy/materials proxy.,False,60,Tier 5 - lower/unknown
+Beryllium,beryllium,MTRN,MTRN,US,Primary for MTRN; weak/adjacent in China,Materion is the cleanest US-listed beryllium/alloy/materials proxy.,True,60,Tier 5 - lower/unknown
+Bismuth,bismuth,002155.SZ,002155.SZ,CN_A,Byproduct exposure,Bismuth is usually byproduct of lead/zinc/copper/tin smelting.,False,19,Tier 2 - very high
+Bismuth,bismuth,600497.SH,600497.SH,CN_A,Byproduct exposure,Bismuth is usually byproduct of lead/zinc/copper/tin smelting.,False,19,Tier 2 - very high
+Bismuth,bismuth,600961.SH,600961.SH,CN_A,Byproduct exposure,Bismuth is usually byproduct of lead/zinc/copper/tin smelting.,False,19,Tier 2 - very high
+Bismuth,bismuth,TECK,TECK,US,Byproduct exposure,Bismuth is usually byproduct of lead/zinc/copper/tin smelting.,False,19,Tier 2 - very high
+Boron,boron,000762.SZ,000762.SZ,CN_A,Primary for Rio/FEAM; adjacent for Chinese brine/salt-lake names,Rio Tinto’s Boron operation is the key large listed global proxy.,False,59,Tier 5 - lower/unknown
+Boron,boron,000792.SZ,000792.SZ,CN_A,Primary for Rio/FEAM; adjacent for Chinese brine/salt-lake names,Rio Tinto’s Boron operation is the key large listed global proxy.,False,59,Tier 5 - lower/unknown
+Boron,boron,600338.SH,600338.SH,CN_A,Primary for Rio/FEAM; adjacent for Chinese brine/salt-lake names,Rio Tinto’s Boron operation is the key large listed global proxy.,False,59,Tier 5 - lower/unknown
+Boron,boron,FEAM,FEAM,US,Primary for Rio/FEAM; adjacent for Chinese brine/salt-lake names,Rio Tinto’s Boron operation is the key large listed global proxy.,True,59,Tier 5 - lower/unknown
+Boron,boron,RIO,RIO,US,Primary for Rio/FEAM; adjacent for Chinese brine/salt-lake names,Rio Tinto’s Boron operation is the key large listed global proxy.,True,59,Tier 5 - lower/unknown
+Cerium,cerium,000831.SZ,000831.SZ,CN_A,Light REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,40,Tier 3 - high
+Cerium,cerium,000970.SZ,000970.SZ,CN_A,Light REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,40,Tier 3 - high
+Cerium,cerium,300748.SZ,300748.SZ,CN_A,Light REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,40,Tier 3 - high
+Cerium,cerium,600111.SH,600111.SH,CN_A,Light REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,40,Tier 3 - high
+Cerium,cerium,600366.SH,600366.SH,CN_A,Light REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,40,Tier 3 - high
+Cerium,cerium,600392.SH,600392.SH,CN_A,Light REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,40,Tier 3 - high
+Cerium,cerium,6680.HK,6680.HK,HK,Light REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,40,Tier 3 - high
+Cerium,cerium,MP,MP,US,Light REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,40,Tier 3 - high
+Cerium,cerium,USA,USA,US,Light REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,40,Tier 3 - high
+Cerium,cerium,USAR,USAR,US,Light REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,40,Tier 3 - high
+Cerium,cerium,UUUU,UUUU,US,Light REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,40,Tier 3 - high
+Cesium,cesium,002738.SZ,002738.SZ,CN_A,Primary for Sinomine,Cesium is niche; listed equity exposure is scarce and concentrated.,False,9,Tier 1 - highest
+Chromium,chromium,000928.SZ,000928.SZ,CN_A,Weak/adjacent,Chromium exposure is poor in public equities; many operations are private or integrated in stainless chains.,False,27,Tier 3 - high
+Chromium,chromium,GLNCY,GLNCY,US,Weak/adjacent,Chromium exposure is poor in public equities; many operations are private or integrated in stainless chains.,False,27,Tier 3 - high
+Chromium,chromium,GSM,GSM,US,Weak/adjacent,Chromium exposure is poor in public equities; many operations are private or integrated in stainless chains.,False,27,Tier 3 - high
+Cobalt,cobalt,002340.SZ,002340.SZ,CN_A,Primary for CMOC/Huayou/Hanrui; diversified/byproduct for global names,CMOC is one of the cleanest listed cobalt mining exposures; battery-material processors add refining exposure.,False,21,Tier 2 - very high
+Cobalt,cobalt,300618.SZ,300618.SZ,CN_A,Primary for CMOC/Huayou/Hanrui; diversified/byproduct for global names,CMOC is one of the cleanest listed cobalt mining exposures; battery-material processors add refining exposure.,False,21,Tier 2 - very high
+Cobalt,cobalt,603799.SH,603799.SH,CN_A,Primary for CMOC/Huayou/Hanrui; diversified/byproduct for global names,CMOC is one of the cleanest listed cobalt mining exposures; battery-material processors add refining exposure.,False,21,Tier 2 - very high
+Cobalt,cobalt,603993.SH,603993.SH,CN_A,Primary for CMOC/Huayou/Hanrui; diversified/byproduct for global names,CMOC is one of the cleanest listed cobalt mining exposures; battery-material processors add refining exposure.,False,21,Tier 2 - very high
+Cobalt,cobalt,3993.HK,3993.HK,HK,Primary for CMOC/Huayou/Hanrui; diversified/byproduct for global names,CMOC is one of the cleanest listed cobalt mining exposures; battery-material processors add refining exposure.,False,21,Tier 2 - very high
+Cobalt,cobalt,ELBM,ELBM,US,Primary for CMOC/Huayou/Hanrui; diversified/byproduct for global names,CMOC is one of the cleanest listed cobalt mining exposures; battery-material processors add refining exposure.,False,21,Tier 2 - very high
+Cobalt,cobalt,GLNCY,GLNCY,US,Primary for CMOC/Huayou/Hanrui; diversified/byproduct for global names,CMOC is one of the cleanest listed cobalt mining exposures; battery-material processors add refining exposure.,False,21,Tier 2 - very high
+Cobalt,cobalt,JRVMF,JRVMF,US,Primary for CMOC/Huayou/Hanrui; diversified/byproduct for global names,CMOC is one of the cleanest listed cobalt mining exposures; battery-material processors add refining exposure.,False,21,Tier 2 - very high
+Cobalt,cobalt,VALE,VALE,US,Primary for CMOC/Huayou/Hanrui; diversified/byproduct for global names,CMOC is one of the cleanest listed cobalt mining exposures; battery-material processors add refining exposure.,False,21,Tier 2 - very high
+Copper,copper,000630.SZ,000630.SZ,CN_A,Primary copper exposure,Copper has broad liquid public-equity coverage in both China/HK and US.,False,46,Tier 4 - moderate
+Copper,copper,600362.SH,600362.SH,CN_A,Primary copper exposure,Copper has broad liquid public-equity coverage in both China/HK and US.,False,46,Tier 4 - moderate
+Copper,copper,601899.SH,601899.SH,CN_A,Primary copper exposure,Copper has broad liquid public-equity coverage in both China/HK and US.,False,46,Tier 4 - moderate
+Copper,copper,603993.SH,603993.SH,CN_A,Primary copper exposure,Copper has broad liquid public-equity coverage in both China/HK and US.,False,46,Tier 4 - moderate
+Copper,copper,0358.HK,0358.HK,HK,Primary copper exposure,Copper has broad liquid public-equity coverage in both China/HK and US.,False,46,Tier 4 - moderate
+Copper,copper,2899.HK,2899.HK,HK,Primary copper exposure,Copper has broad liquid public-equity coverage in both China/HK and US.,False,46,Tier 4 - moderate
+Copper,copper,3993.HK,3993.HK,HK,Primary copper exposure,Copper has broad liquid public-equity coverage in both China/HK and US.,False,46,Tier 4 - moderate
+Copper,copper,FCX,FCX,US,Primary copper exposure,Copper has broad liquid public-equity coverage in both China/HK and US.,False,46,Tier 4 - moderate
+Copper,copper,HBM,HBM,US,Primary copper exposure,Copper has broad liquid public-equity coverage in both China/HK and US.,False,46,Tier 4 - moderate
+Copper,copper,SCCO,SCCO,US,Primary copper exposure,Copper has broad liquid public-equity coverage in both China/HK and US.,False,46,Tier 4 - moderate
+Copper,copper,TECK,TECK,US,Primary copper exposure,Copper has broad liquid public-equity coverage in both China/HK and US.,False,46,Tier 4 - moderate
+Dysprosium,dysprosium,000831.SZ,000831.SZ,CN_A,Heavy REE / magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,23,Tier 2 - very high
+Dysprosium,dysprosium,000970.SZ,000970.SZ,CN_A,Heavy REE / magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,23,Tier 2 - very high
+Dysprosium,dysprosium,300748.SZ,300748.SZ,CN_A,Heavy REE / magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,23,Tier 2 - very high
+Dysprosium,dysprosium,600111.SH,600111.SH,CN_A,Heavy REE / magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,23,Tier 2 - very high
+Dysprosium,dysprosium,600366.SH,600366.SH,CN_A,Heavy REE / magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,23,Tier 2 - very high
+Dysprosium,dysprosium,600392.SH,600392.SH,CN_A,Heavy REE / magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,23,Tier 2 - very high
+Dysprosium,dysprosium,6680.HK,6680.HK,HK,Heavy REE / magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,23,Tier 2 - very high
+Dysprosium,dysprosium,MP,MP,US,Heavy REE / magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,23,Tier 2 - very high
+Dysprosium,dysprosium,USA,USA,US,Heavy REE / magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,23,Tier 2 - very high
+Dysprosium,dysprosium,USAR,USAR,US,Heavy REE / magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,23,Tier 2 - very high
+Dysprosium,dysprosium,UUUU,UUUU,US,Heavy REE / magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,23,Tier 2 - very high
+Erbium,erbium,000831.SZ,000831.SZ,CN_A,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,35,Tier 3 - high
+Erbium,erbium,000970.SZ,000970.SZ,CN_A,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,35,Tier 3 - high
+Erbium,erbium,300748.SZ,300748.SZ,CN_A,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,35,Tier 3 - high
+Erbium,erbium,600111.SH,600111.SH,CN_A,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,35,Tier 3 - high
+Erbium,erbium,600366.SH,600366.SH,CN_A,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,35,Tier 3 - high
+Erbium,erbium,600392.SH,600392.SH,CN_A,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,35,Tier 3 - high
+Erbium,erbium,6680.HK,6680.HK,HK,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,35,Tier 3 - high
+Erbium,erbium,MP,MP,US,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,35,Tier 3 - high
+Erbium,erbium,USA,USA,US,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,35,Tier 3 - high
+Erbium,erbium,USAR,USAR,US,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,35,Tier 3 - high
+Erbium,erbium,UUUU,UUUU,US,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,35,Tier 3 - high
+Europium,europium,000831.SZ,000831.SZ,CN_A,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,37,Tier 3 - high
+Europium,europium,000970.SZ,000970.SZ,CN_A,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,37,Tier 3 - high
+Europium,europium,300748.SZ,300748.SZ,CN_A,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,37,Tier 3 - high
+Europium,europium,600111.SH,600111.SH,CN_A,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,37,Tier 3 - high
+Europium,europium,600366.SH,600366.SH,CN_A,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,37,Tier 3 - high
+Europium,europium,600392.SH,600392.SH,CN_A,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,37,Tier 3 - high
+Europium,europium,6680.HK,6680.HK,HK,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,37,Tier 3 - high
+Europium,europium,MP,MP,US,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,37,Tier 3 - high
+Europium,europium,USA,USA,US,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,37,Tier 3 - high
+Europium,europium,USAR,USAR,US,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,37,Tier 3 - high
+Europium,europium,UUUU,UUUU,US,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,37,Tier 3 - high
+Fluorspar,fluorspar,002407.SZ,002407.SZ,CN_A,Primary for Chinese upstream/fluorochemicals; small-cap for ARSMF,"Fluorspar exposure is often through fluorochemicals, refrigerants, and battery-electrolyte chains.",False,13,Tier 1 - highest
+Fluorspar,fluorspar,603505.SH,603505.SH,CN_A,Primary for Chinese upstream/fluorochemicals; small-cap for ARSMF,"Fluorspar exposure is often through fluorochemicals, refrigerants, and battery-electrolyte chains.",False,13,Tier 1 - highest
+Fluorspar,fluorspar,605020.SH,605020.SH,CN_A,Primary for Chinese upstream/fluorochemicals; small-cap for ARSMF,"Fluorspar exposure is often through fluorochemicals, refrigerants, and battery-electrolyte chains.",False,13,Tier 1 - highest
+Fluorspar,fluorspar,ARSMF,ARSMF,US,Primary for Chinese upstream/fluorochemicals; small-cap for ARSMF,"Fluorspar exposure is often through fluorochemicals, refrigerants, and battery-electrolyte chains.",False,13,Tier 1 - highest
+Fluorspar,fluorspar,MX,MX,US,Primary for Chinese upstream/fluorochemicals; small-cap for ARSMF,"Fluorspar exposure is often through fluorochemicals, refrigerants, and battery-electrolyte chains.",False,13,Tier 1 - highest
+Fluorspar,fluorspar,ORBIA,ORBIA,US,Primary for Chinese upstream/fluorochemicals; small-cap for ARSMF,"Fluorspar exposure is often through fluorochemicals, refrigerants, and battery-electrolyte chains.",False,13,Tier 1 - highest
+Fluorspar,fluorspar,ORBJF,ORBJF,US,Primary for Chinese upstream/fluorochemicals; small-cap for ARSMF,"Fluorspar exposure is often through fluorochemicals, refrigerants, and battery-electrolyte chains.",False,13,Tier 1 - highest
+Gadolinium,gadolinium,000831.SZ,000831.SZ,CN_A,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,30,Tier 3 - high
+Gadolinium,gadolinium,000970.SZ,000970.SZ,CN_A,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,30,Tier 3 - high
+Gadolinium,gadolinium,300748.SZ,300748.SZ,CN_A,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,30,Tier 3 - high
+Gadolinium,gadolinium,600111.SH,600111.SH,CN_A,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,30,Tier 3 - high
+Gadolinium,gadolinium,600366.SH,600366.SH,CN_A,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,30,Tier 3 - high
+Gadolinium,gadolinium,600392.SH,600392.SH,CN_A,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,30,Tier 3 - high
+Gadolinium,gadolinium,6680.HK,6680.HK,HK,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,30,Tier 3 - high
+Gadolinium,gadolinium,MP,MP,US,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,30,Tier 3 - high
+Gadolinium,gadolinium,USA,USA,US,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,30,Tier 3 - high
+Gadolinium,gadolinium,USAR,USAR,US,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,30,Tier 3 - high
+Gadolinium,gadolinium,UUUU,UUUU,US,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,30,Tier 3 - high
+Gallium,gallium,000831.SZ,000831.SZ,CN_A,Primary/secondary in China; US mostly downstream compound-semiconductor exposure,Gallium is often recovered from bauxite/alumina and used in GaAs/GaN semis.,True,6,Tier 1 - highest
+Gallium,gallium,002428.SZ,002428.SZ,CN_A,Primary/secondary in China; US mostly downstream compound-semiconductor exposure,Gallium is often recovered from bauxite/alumina and used in GaAs/GaN semis.,True,6,Tier 1 - highest
+Gallium,gallium,601600.SH,601600.SH,CN_A,Primary/secondary in China; US mostly downstream compound-semiconductor exposure,Gallium is often recovered from bauxite/alumina and used in GaAs/GaN semis.,True,6,Tier 1 - highest
+Gallium,gallium,2600.HK,2600.HK,HK,Primary/secondary in China; US mostly downstream compound-semiconductor exposure,Gallium is often recovered from bauxite/alumina and used in GaAs/GaN semis.,True,6,Tier 1 - highest
+Gallium,gallium,AXT,AXT,US,Primary/secondary in China; US mostly downstream compound-semiconductor exposure,Gallium is often recovered from bauxite/alumina and used in GaAs/GaN semis.,True,6,Tier 1 - highest
+Gallium,gallium,AXTI,AXTI,US,Primary/secondary in China; US mostly downstream compound-semiconductor exposure,Gallium is often recovered from bauxite/alumina and used in GaAs/GaN semis.,True,6,Tier 1 - highest
+Gallium,gallium,COHR,COHR,US,Primary/secondary in China; US mostly downstream compound-semiconductor exposure,Gallium is often recovered from bauxite/alumina and used in GaAs/GaN semis.,True,6,Tier 1 - highest
+Germanium,germanium,002428.SZ,002428.SZ,CN_A,Primary for 002428; byproduct for zinc smelters,Yunnan Germanium is the cleanest listed China proxy.,True,45,Tier 4 - moderate
+Germanium,germanium,600497.SH,600497.SH,CN_A,Primary for 002428; byproduct for zinc smelters,Yunnan Germanium is the cleanest listed China proxy.,False,45,Tier 4 - moderate
+Germanium,germanium,600961.SH,600961.SH,CN_A,Primary for 002428; byproduct for zinc smelters,Yunnan Germanium is the cleanest listed China proxy.,False,45,Tier 4 - moderate
+Germanium,germanium,FPLSF,FPLSF,US,Primary for 002428; byproduct for zinc smelters,Yunnan Germanium is the cleanest listed China proxy.,False,45,Tier 4 - moderate
+Germanium,germanium,TECK,TECK,US,Primary for 002428; byproduct for zinc smelters,Yunnan Germanium is the cleanest listed China proxy.,False,45,Tier 4 - moderate
+Germanium,germanium,TO,TO,US,Primary for 002428; byproduct for zinc smelters,Yunnan Germanium is the cleanest listed China proxy.,False,45,Tier 4 - moderate
+Germanium,germanium,VNP,VNP,US,Primary for 002428; byproduct for zinc smelters,Yunnan Germanium is the cleanest listed China proxy.,False,45,Tier 4 - moderate
+Graphite,graphite,600516.SH,600516.SH,CN_A,Primary for 2237/NMG/WWR/GPHOF; battery-anode downstream for BTR/Putailai/Shanshan,Separate natural graphite mining from synthetic graphite/anode processing.,False,5,Tier 1 - highest
+Graphite,graphite,600884.SH,600884.SH,CN_A,Primary for 2237/NMG/WWR/GPHOF; battery-anode downstream for BTR/Putailai/Shanshan,Separate natural graphite mining from synthetic graphite/anode processing.,False,5,Tier 1 - highest
+Graphite,graphite,603659.SH,603659.SH,CN_A,Primary for 2237/NMG/WWR/GPHOF; battery-anode downstream for BTR/Putailai/Shanshan,Separate natural graphite mining from synthetic graphite/anode processing.,False,5,Tier 1 - highest
+Graphite,graphite,835185.BJ,835185.BJ,CN_A,Primary for 2237/NMG/WWR/GPHOF; battery-anode downstream for BTR/Putailai/Shanshan,Separate natural graphite mining from synthetic graphite/anode processing.,False,5,Tier 1 - highest
+Graphite,graphite,2237.HK,2237.HK,HK,Primary for 2237/NMG/WWR/GPHOF; battery-anode downstream for BTR/Putailai/Shanshan,Separate natural graphite mining from synthetic graphite/anode processing.,True,5,Tier 1 - highest
+Graphite,graphite,GPHOF,GPHOF,US,Primary for 2237/NMG/WWR/GPHOF; battery-anode downstream for BTR/Putailai/Shanshan,Separate natural graphite mining from synthetic graphite/anode processing.,True,5,Tier 1 - highest
+Graphite,graphite,NMG,NMG,US,Primary for 2237/NMG/WWR/GPHOF; battery-anode downstream for BTR/Putailai/Shanshan,Separate natural graphite mining from synthetic graphite/anode processing.,True,5,Tier 1 - highest
+Graphite,graphite,WWR,WWR,US,Primary for 2237/NMG/WWR/GPHOF; battery-anode downstream for BTR/Putailai/Shanshan,Separate natural graphite mining from synthetic graphite/anode processing.,True,5,Tier 1 - highest
+Hafnium,hafnium,002167.SZ,002167.SZ,CN_A,Byproduct/adjacent,Hafnium is tied to zirconium mineral separation; most listed exposure is indirect.,False,41,Tier 3 - high
+Hafnium,hafnium,002601.SZ,002601.SZ,CN_A,Byproduct/adjacent,Hafnium is tied to zirconium mineral separation; most listed exposure is indirect.,False,41,Tier 3 - high
+Hafnium,hafnium,603663.SH,603663.SH,CN_A,Byproduct/adjacent,Hafnium is tied to zirconium mineral separation; most listed exposure is indirect.,False,41,Tier 3 - high
+Hafnium,hafnium,ATI,ATI,US,Byproduct/adjacent,Hafnium is tied to zirconium mineral separation; most listed exposure is indirect.,False,41,Tier 3 - high
+Hafnium,hafnium,USA,USA,US,Byproduct/adjacent,Hafnium is tied to zirconium mineral separation; most listed exposure is indirect.,False,41,Tier 3 - high
+Hafnium,hafnium,USAR,USAR,US,Byproduct/adjacent,Hafnium is tied to zirconium mineral separation; most listed exposure is indirect.,False,41,Tier 3 - high
+Hafnium,hafnium,UUUU,UUUU,US,Byproduct/adjacent,Hafnium is tied to zirconium mineral separation; most listed exposure is indirect.,False,41,Tier 3 - high
+Holmium,holmium,000831.SZ,000831.SZ,CN_A,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,26,Tier 3 - high
+Holmium,holmium,000970.SZ,000970.SZ,CN_A,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,26,Tier 3 - high
+Holmium,holmium,300748.SZ,300748.SZ,CN_A,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,26,Tier 3 - high
+Holmium,holmium,600111.SH,600111.SH,CN_A,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,26,Tier 3 - high
+Holmium,holmium,600366.SH,600366.SH,CN_A,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,26,Tier 3 - high
+Holmium,holmium,600392.SH,600392.SH,CN_A,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,26,Tier 3 - high
+Holmium,holmium,6680.HK,6680.HK,HK,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,26,Tier 3 - high
+Holmium,holmium,MP,MP,US,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,26,Tier 3 - high
+Holmium,holmium,USA,USA,US,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,26,Tier 3 - high
+Holmium,holmium,USAR,USAR,US,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,26,Tier 3 - high
+Holmium,holmium,UUUU,UUUU,US,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,26,Tier 3 - high
+Indium,indium,000960.SZ,000960.SZ,CN_A,Byproduct exposure,Indium is mainly recovered as a zinc/tin smelting byproduct; watch disclosure quality.,False,4,Tier 1 - highest
+Indium,indium,600497.SH,600497.SH,CN_A,Byproduct exposure,Indium is mainly recovered as a zinc/tin smelting byproduct; watch disclosure quality.,False,4,Tier 1 - highest
+Indium,indium,600961.SH,600961.SH,CN_A,Byproduct exposure,Indium is mainly recovered as a zinc/tin smelting byproduct; watch disclosure quality.,False,4,Tier 1 - highest
+Indium,indium,TECK,TECK,US,Byproduct exposure,Indium is mainly recovered as a zinc/tin smelting byproduct; watch disclosure quality.,False,4,Tier 1 - highest
+Iridium,iridium,2362.HK,2362.HK,HK,PGM basket exposure,Iridium exposure is almost always through PGM basket producers.,False,57,Tier 5 - lower/unknown
+Iridium,iridium,ANGPY,ANGPY,US,PGM basket exposure,Iridium exposure is almost always through PGM basket producers.,False,57,Tier 5 - lower/unknown
+Iridium,iridium,IMPUY,IMPUY,US,PGM basket exposure,Iridium exposure is almost always through PGM basket producers.,False,57,Tier 5 - lower/unknown
+Iridium,iridium,NGLOY,NGLOY,US,PGM basket exposure,Iridium exposure is almost always through PGM basket producers.,False,57,Tier 5 - lower/unknown
+Iridium,iridium,SBSW,SBSW,US,PGM basket exposure,Iridium exposure is almost always through PGM basket producers.,False,57,Tier 5 - lower/unknown
+Lanthanum,lanthanum,000831.SZ,000831.SZ,CN_A,Light REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,29,Tier 3 - high
+Lanthanum,lanthanum,000970.SZ,000970.SZ,CN_A,Light REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,29,Tier 3 - high
+Lanthanum,lanthanum,300748.SZ,300748.SZ,CN_A,Light REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,29,Tier 3 - high
+Lanthanum,lanthanum,600111.SH,600111.SH,CN_A,Light REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,29,Tier 3 - high
+Lanthanum,lanthanum,600366.SH,600366.SH,CN_A,Light REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,29,Tier 3 - high
+Lanthanum,lanthanum,600392.SH,600392.SH,CN_A,Light REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,29,Tier 3 - high
+Lanthanum,lanthanum,6680.HK,6680.HK,HK,Light REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,29,Tier 3 - high
+Lanthanum,lanthanum,MP,MP,US,Light REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,29,Tier 3 - high
+Lanthanum,lanthanum,USA,USA,US,Light REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,29,Tier 3 - high
+Lanthanum,lanthanum,USAR,USAR,US,Light REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,29,Tier 3 - high
+Lanthanum,lanthanum,UUUU,UUUU,US,Light REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,29,Tier 3 - high
+Lead,lead,600497.SH,600497.SH,CN_A,Primary/secondary,Often co-mined with zinc/silver; check segment disclosure.,True,51,Tier 5 - lower/unknown
+Lead,lead,600531.SH,600531.SH,CN_A,Primary/secondary,Often co-mined with zinc/silver; check segment disclosure.,True,51,Tier 5 - lower/unknown
+Lead,lead,601168.SH,601168.SH,CN_A,Primary/secondary,Often co-mined with zinc/silver; check segment disclosure.,True,51,Tier 5 - lower/unknown
+Lead,lead,601899.SH,601899.SH,CN_A,Primary/secondary,Often co-mined with zinc/silver; check segment disclosure.,True,51,Tier 5 - lower/unknown
+Lead,lead,2899.HK,2899.HK,HK,Primary/secondary,Often co-mined with zinc/silver; check segment disclosure.,True,51,Tier 5 - lower/unknown
+Lead,lead,HL,HL,US,Primary/secondary,Often co-mined with zinc/silver; check segment disclosure.,True,51,Tier 5 - lower/unknown
+Lead,lead,NEXA,NEXA,US,Primary/secondary,Often co-mined with zinc/silver; check segment disclosure.,True,51,Tier 5 - lower/unknown
+Lead,lead,TECK,TECK,US,Primary/secondary,Often co-mined with zinc/silver; check segment disclosure.,True,51,Tier 5 - lower/unknown
+Lithium,lithium,000408.SZ,000408.SZ,CN_A,Primary lithium exposure,China names are very direct for lithium chemicals; US/ADR names add global project/resource exposure.,False,44,Tier 4 - moderate
+Lithium,lithium,000792.SZ,000792.SZ,CN_A,Primary lithium exposure,China names are very direct for lithium chemicals; US/ADR names add global project/resource exposure.,False,44,Tier 4 - moderate
+Lithium,lithium,002460.SZ,002460.SZ,CN_A,Primary lithium exposure,China names are very direct for lithium chemicals; US/ADR names add global project/resource exposure.,False,44,Tier 4 - moderate
+Lithium,lithium,002466.SZ,002466.SZ,CN_A,Primary lithium exposure,China names are very direct for lithium chemicals; US/ADR names add global project/resource exposure.,False,44,Tier 4 - moderate
+Lithium,lithium,1772.HK,1772.HK,HK,Primary lithium exposure,China names are very direct for lithium chemicals; US/ADR names add global project/resource exposure.,False,44,Tier 4 - moderate
+Lithium,lithium,9696.HK,9696.HK,HK,Primary lithium exposure,China names are very direct for lithium chemicals; US/ADR names add global project/resource exposure.,False,44,Tier 4 - moderate
+Lithium,lithium,ALB,ALB,US,Primary lithium exposure,China names are very direct for lithium chemicals; US/ADR names add global project/resource exposure.,False,44,Tier 4 - moderate
+Lithium,lithium,ALTM,ALTM,US,Primary lithium exposure,China names are very direct for lithium chemicals; US/ADR names add global project/resource exposure.,False,44,Tier 4 - moderate
+Lithium,lithium,LAC,LAC,US,Primary lithium exposure,China names are very direct for lithium chemicals; US/ADR names add global project/resource exposure.,False,44,Tier 4 - moderate
+Lithium,lithium,SGML,SGML,US,Primary lithium exposure,China names are very direct for lithium chemicals; US/ADR names add global project/resource exposure.,False,44,Tier 4 - moderate
+Lithium,lithium,SQM,SQM,US,Primary lithium exposure,China names are very direct for lithium chemicals; US/ADR names add global project/resource exposure.,False,44,Tier 4 - moderate
+Lutetium,lutetium,000831.SZ,000831.SZ,CN_A,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,34,Tier 3 - high
+Lutetium,lutetium,000970.SZ,000970.SZ,CN_A,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,34,Tier 3 - high
+Lutetium,lutetium,300748.SZ,300748.SZ,CN_A,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,34,Tier 3 - high
+Lutetium,lutetium,600111.SH,600111.SH,CN_A,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,34,Tier 3 - high
+Lutetium,lutetium,600366.SH,600366.SH,CN_A,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,34,Tier 3 - high
+Lutetium,lutetium,600392.SH,600392.SH,CN_A,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,34,Tier 3 - high
+Lutetium,lutetium,6680.HK,6680.HK,HK,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,34,Tier 3 - high
+Lutetium,lutetium,MP,MP,US,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,34,Tier 3 - high
+Lutetium,lutetium,USA,USA,US,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,34,Tier 3 - high
+Lutetium,lutetium,USAR,USAR,US,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,34,Tier 3 - high
+Lutetium,lutetium,UUUU,UUUU,US,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,34,Tier 3 - high
+Magnesium,magnesium,002182.SZ,002182.SZ,CN_A,Primary for 002182; adjacent for refractories,Listed US coverage is poor; China has better magnesium metal exposure.,True,17,Tier 2 - very high
+Magnesium,magnesium,002225.SZ,002225.SZ,CN_A,Primary for 002182; adjacent for refractories,Listed US coverage is poor; China has better magnesium metal exposure.,False,17,Tier 2 - very high
+Manganese,manganese,002125.SZ,002125.SZ,CN_A,Primary for 1091/002125; secondary for diversified miners,Use as battery/steel manganese screen; A-share/HK names are much purer than global diversified ADRs.,True,3,Tier 1 - highest
+Manganese,manganese,1091.HK,1091.HK,HK,Primary for 1091/002125; secondary for diversified miners,Use as battery/steel manganese screen; A-share/HK names are much purer than global diversified ADRs.,True,3,Tier 1 - highest
+Manganese,manganese,BHP,BHP,US,Primary for 1091/002125; secondary for diversified miners,Use as battery/steel manganese screen; A-share/HK names are much purer than global diversified ADRs.,False,3,Tier 1 - highest
+Manganese,manganese,ERMAF,ERMAF,US,Primary for 1091/002125; secondary for diversified miners,Use as battery/steel manganese screen; A-share/HK names are much purer than global diversified ADRs.,False,3,Tier 1 - highest
+Manganese,manganese,SHTLF,SHTLF,US,Primary for 1091/002125; secondary for diversified miners,Use as battery/steel manganese screen; A-share/HK names are much purer than global diversified ADRs.,False,3,Tier 1 - highest
+Manganese,manganese,SOUHY,SOUHY,US,Primary for 1091/002125; secondary for diversified miners,Use as battery/steel manganese screen; A-share/HK names are much purer than global diversified ADRs.,False,3,Tier 1 - highest
+Manganese,manganese,VALE,VALE,US,Primary for 1091/002125; secondary for diversified miners,Use as battery/steel manganese screen; A-share/HK names are much purer than global diversified ADRs.,False,3,Tier 1 - highest
+Metallurgical coal,metallurgical_coal,000983.SZ,000983.SZ,CN_A,Primary for coal producers,Focus on met coal mix rather than thermal coal dominance.,False,55,Tier 5 - lower/unknown
+Metallurgical coal,metallurgical_coal,600188.SH,600188.SH,CN_A,Primary for coal producers,Focus on met coal mix rather than thermal coal dominance.,False,55,Tier 5 - lower/unknown
+Metallurgical coal,metallurgical_coal,601088.SH,601088.SH,CN_A,Primary for coal producers,Focus on met coal mix rather than thermal coal dominance.,False,55,Tier 5 - lower/unknown
+Metallurgical coal,metallurgical_coal,601898.SH,601898.SH,CN_A,Primary for coal producers,Focus on met coal mix rather than thermal coal dominance.,False,55,Tier 5 - lower/unknown
+Metallurgical coal,metallurgical_coal,1088.HK,1088.HK,HK,Primary for coal producers,Focus on met coal mix rather than thermal coal dominance.,False,55,Tier 5 - lower/unknown
+Metallurgical coal,metallurgical_coal,1171.HK,1171.HK,HK,Primary for coal producers,Focus on met coal mix rather than thermal coal dominance.,False,55,Tier 5 - lower/unknown
+Metallurgical coal,metallurgical_coal,1898.HK,1898.HK,HK,Primary for coal producers,Focus on met coal mix rather than thermal coal dominance.,False,55,Tier 5 - lower/unknown
+Metallurgical coal,metallurgical_coal,ARCH,ARCH,US,Primary for coal producers,Focus on met coal mix rather than thermal coal dominance.,False,55,Tier 5 - lower/unknown
+Metallurgical coal,metallurgical_coal,BTU,BTU,US,Primary for coal producers,Focus on met coal mix rather than thermal coal dominance.,False,55,Tier 5 - lower/unknown
+Metallurgical coal,metallurgical_coal,HCC,HCC,US,Primary for coal producers,Focus on met coal mix rather than thermal coal dominance.,False,55,Tier 5 - lower/unknown
+Metallurgical coal,metallurgical_coal,METC,METC,US,Primary for coal producers,Focus on met coal mix rather than thermal coal dominance.,False,55,Tier 5 - lower/unknown
+Neodymium,neodymium,000831.SZ,000831.SZ,CN_A,REE/magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,33,Tier 3 - high
+Neodymium,neodymium,000970.SZ,000970.SZ,CN_A,REE/magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,33,Tier 3 - high
+Neodymium,neodymium,300748.SZ,300748.SZ,CN_A,REE/magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,33,Tier 3 - high
+Neodymium,neodymium,600111.SH,600111.SH,CN_A,REE/magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,33,Tier 3 - high
+Neodymium,neodymium,600366.SH,600366.SH,CN_A,REE/magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,33,Tier 3 - high
+Neodymium,neodymium,600392.SH,600392.SH,CN_A,REE/magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,33,Tier 3 - high
+Neodymium,neodymium,6680.HK,6680.HK,HK,REE/magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,33,Tier 3 - high
+Neodymium,neodymium,MP,MP,US,REE/magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,33,Tier 3 - high
+Neodymium,neodymium,USA,USA,US,REE/magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,33,Tier 3 - high
+Neodymium,neodymium,USAR,USAR,US,REE/magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,33,Tier 3 - high
+Neodymium,neodymium,UUUU,UUUU,US,REE/magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,33,Tier 3 - high
+Nickel,nickel,002340.SZ,002340.SZ,CN_A,Primary/secondary,China listed exposure often appears through battery-material processors rather than pure mines.,True,48,Tier 4 - moderate
+Nickel,nickel,300919.SZ,300919.SZ,CN_A,Primary/secondary,China listed exposure often appears through battery-material processors rather than pure mines.,True,48,Tier 4 - moderate
+Nickel,nickel,603799.SH,603799.SH,CN_A,Primary/secondary,China listed exposure often appears through battery-material processors rather than pure mines.,True,48,Tier 4 - moderate
+Nickel,nickel,2362.HK,2362.HK,HK,Primary/secondary,China listed exposure often appears through battery-material processors rather than pure mines.,True,48,Tier 4 - moderate
+Nickel,nickel,BHP,BHP,US,Primary/secondary,China listed exposure often appears through battery-material processors rather than pure mines.,True,48,Tier 4 - moderate
+Nickel,nickel,TECK,TECK,US,Primary/secondary,China listed exposure often appears through battery-material processors rather than pure mines.,True,48,Tier 4 - moderate
+Nickel,nickel,TLOFF,TLOFF,US,Primary/secondary,China listed exposure often appears through battery-material processors rather than pure mines.,True,48,Tier 4 - moderate
+Nickel,nickel,VALE,VALE,US,Primary/secondary,China listed exposure often appears through battery-material processors rather than pure mines.,True,48,Tier 4 - moderate
+Niobium,niobium,000657.SZ,000657.SZ,CN_A,Primary for CMOC/NB,CMOC has operating niobium; NB is a development project.,False,12,Tier 1 - highest
+Niobium,niobium,603993.SH,603993.SH,CN_A,Primary for CMOC/NB,CMOC has operating niobium; NB is a development project.,False,12,Tier 1 - highest
+Niobium,niobium,3993.HK,3993.HK,HK,Primary for CMOC/NB,CMOC has operating niobium; NB is a development project.,False,12,Tier 1 - highest
+Niobium,niobium,NB,NB,US,Primary for CMOC/NB,CMOC has operating niobium; NB is a development project.,True,12,Tier 1 - highest
+Palladium,palladium,601899.SH,601899.SH,CN_A,Primary for PGM miners,Treat with platinum/rhodium basket rather than single-metal purity.,False,42,Tier 3 - high
+Palladium,palladium,2362.HK,2362.HK,HK,Primary for PGM miners,Treat with platinum/rhodium basket rather than single-metal purity.,False,42,Tier 3 - high
+Palladium,palladium,2899.HK,2899.HK,HK,Primary for PGM miners,Treat with platinum/rhodium basket rather than single-metal purity.,False,42,Tier 3 - high
+Palladium,palladium,ANGPY,ANGPY,US,Primary for PGM miners,Treat with platinum/rhodium basket rather than single-metal purity.,False,42,Tier 3 - high
+Palladium,palladium,IMPUY,IMPUY,US,Primary for PGM miners,Treat with platinum/rhodium basket rather than single-metal purity.,False,42,Tier 3 - high
+Palladium,palladium,NGLOY,NGLOY,US,Primary for PGM miners,Treat with platinum/rhodium basket rather than single-metal purity.,False,42,Tier 3 - high
+Palladium,palladium,PLG,PLG,US,Primary for PGM miners,Treat with platinum/rhodium basket rather than single-metal purity.,False,42,Tier 3 - high
+Palladium,palladium,SBSW,SBSW,US,Primary for PGM miners,Treat with platinum/rhodium basket rather than single-metal purity.,False,42,Tier 3 - high
+Phosphate rock,phosphate_rock,000422.SZ,000422.SZ,CN_A,Primary for phosphate/fertilizer producers,CMOC has phosphate fertilizer in Brazil; pure phosphate names are fertilizer-driven.,False,58,Tier 5 - lower/unknown
+Phosphate rock,phosphate_rock,002895.SZ,002895.SZ,CN_A,Primary for phosphate/fertilizer producers,CMOC has phosphate fertilizer in Brazil; pure phosphate names are fertilizer-driven.,False,58,Tier 5 - lower/unknown
+Phosphate rock,phosphate_rock,600096.SH,600096.SH,CN_A,Primary for phosphate/fertilizer producers,CMOC has phosphate fertilizer in Brazil; pure phosphate names are fertilizer-driven.,False,58,Tier 5 - lower/unknown
+Phosphate rock,phosphate_rock,600141.SH,600141.SH,CN_A,Primary for phosphate/fertilizer producers,CMOC has phosphate fertilizer in Brazil; pure phosphate names are fertilizer-driven.,False,58,Tier 5 - lower/unknown
+Phosphate rock,phosphate_rock,603993.SH,603993.SH,CN_A,Primary for phosphate/fertilizer producers,CMOC has phosphate fertilizer in Brazil; pure phosphate names are fertilizer-driven.,False,58,Tier 5 - lower/unknown
+Phosphate rock,phosphate_rock,3993.HK,3993.HK,HK,Primary for phosphate/fertilizer producers,CMOC has phosphate fertilizer in Brazil; pure phosphate names are fertilizer-driven.,False,58,Tier 5 - lower/unknown
+Phosphate rock,phosphate_rock,CVR,CVR,US,Primary for phosphate/fertilizer producers,CMOC has phosphate fertilizer in Brazil; pure phosphate names are fertilizer-driven.,False,58,Tier 5 - lower/unknown
+Phosphate rock,phosphate_rock,ICL,ICL,US,Primary for phosphate/fertilizer producers,CMOC has phosphate fertilizer in Brazil; pure phosphate names are fertilizer-driven.,False,58,Tier 5 - lower/unknown
+Phosphate rock,phosphate_rock,MOS,MOS,US,Primary for phosphate/fertilizer producers,CMOC has phosphate fertilizer in Brazil; pure phosphate names are fertilizer-driven.,False,58,Tier 5 - lower/unknown
+Phosphate rock,phosphate_rock,NTR,NTR,US,Primary for phosphate/fertilizer producers,CMOC has phosphate fertilizer in Brazil; pure phosphate names are fertilizer-driven.,False,58,Tier 5 - lower/unknown
+Phosphate rock,phosphate_rock,UAN,UAN,US,Primary for phosphate/fertilizer producers,CMOC has phosphate fertilizer in Brazil; pure phosphate names are fertilizer-driven.,False,58,Tier 5 - lower/unknown
+Platinum,platinum,601899.SH,601899.SH,CN_A,Primary for PGM miners; secondary for diversified miners,US exposure mostly via South African PGM ADRs rather than US domestic production.,False,14,Tier 2 - very high
+Platinum,platinum,2362.HK,2362.HK,HK,Primary for PGM miners; secondary for diversified miners,US exposure mostly via South African PGM ADRs rather than US domestic production.,False,14,Tier 2 - very high
+Platinum,platinum,2899.HK,2899.HK,HK,Primary for PGM miners; secondary for diversified miners,US exposure mostly via South African PGM ADRs rather than US domestic production.,False,14,Tier 2 - very high
+Platinum,platinum,ANGPY,ANGPY,US,Primary for PGM miners; secondary for diversified miners,US exposure mostly via South African PGM ADRs rather than US domestic production.,False,14,Tier 2 - very high
+Platinum,platinum,IMPUY,IMPUY,US,Primary for PGM miners; secondary for diversified miners,US exposure mostly via South African PGM ADRs rather than US domestic production.,False,14,Tier 2 - very high
+Platinum,platinum,NGLOY,NGLOY,US,Primary for PGM miners; secondary for diversified miners,US exposure mostly via South African PGM ADRs rather than US domestic production.,False,14,Tier 2 - very high
+Platinum,platinum,PLG,PLG,US,Primary for PGM miners; secondary for diversified miners,US exposure mostly via South African PGM ADRs rather than US domestic production.,False,14,Tier 2 - very high
+Platinum,platinum,SBSW,SBSW,US,Primary for PGM miners; secondary for diversified miners,US exposure mostly via South African PGM ADRs rather than US domestic production.,False,14,Tier 2 - very high
+Potash,potash,000408.SZ,000408.SZ,CN_A,Primary for potash producers,Comparable across China and North America; watch brine vs hard-rock cost curves.,False,18,Tier 2 - very high
+Potash,potash,000792.SZ,000792.SZ,CN_A,Primary for potash producers,Comparable across China and North America; watch brine vs hard-rock cost curves.,False,18,Tier 2 - very high
+Potash,potash,000893.SZ,000893.SZ,CN_A,Primary for potash producers,Comparable across China and North America; watch brine vs hard-rock cost curves.,False,18,Tier 2 - very high
+Potash,potash,IPI,IPI,US,Primary for potash producers,Comparable across China and North America; watch brine vs hard-rock cost curves.,False,18,Tier 2 - very high
+Potash,potash,MOS,MOS,US,Primary for potash producers,Comparable across China and North America; watch brine vs hard-rock cost curves.,False,18,Tier 2 - very high
+Potash,potash,NTR,NTR,US,Primary for potash producers,Comparable across China and North America; watch brine vs hard-rock cost curves.,False,18,Tier 2 - very high
+Praseodymium,praseodymium,000831.SZ,000831.SZ,CN_A,REE/magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,15,Tier 2 - very high
+Praseodymium,praseodymium,000970.SZ,000970.SZ,CN_A,REE/magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,15,Tier 2 - very high
+Praseodymium,praseodymium,300748.SZ,300748.SZ,CN_A,REE/magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,15,Tier 2 - very high
+Praseodymium,praseodymium,600111.SH,600111.SH,CN_A,REE/magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,15,Tier 2 - very high
+Praseodymium,praseodymium,600366.SH,600366.SH,CN_A,REE/magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,15,Tier 2 - very high
+Praseodymium,praseodymium,600392.SH,600392.SH,CN_A,REE/magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,15,Tier 2 - very high
+Praseodymium,praseodymium,6680.HK,6680.HK,HK,REE/magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,15,Tier 2 - very high
+Praseodymium,praseodymium,MP,MP,US,REE/magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,15,Tier 2 - very high
+Praseodymium,praseodymium,USA,USA,US,REE/magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,15,Tier 2 - very high
+Praseodymium,praseodymium,USAR,USAR,US,REE/magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,15,Tier 2 - very high
+Praseodymium,praseodymium,UUUU,UUUU,US,REE/magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,15,Tier 2 - very high
+Rhenium,rhenium,000630.SZ,000630.SZ,CN_A,Byproduct exposure,Rhenium is recovered from molybdenite/copper-moly systems; equity exposure is indirect.,False,24,Tier 2 - very high
+Rhenium,rhenium,600362.SH,600362.SH,CN_A,Byproduct exposure,Rhenium is recovered from molybdenite/copper-moly systems; equity exposure is indirect.,False,24,Tier 2 - very high
+Rhenium,rhenium,603993.SH,603993.SH,CN_A,Byproduct exposure,Rhenium is recovered from molybdenite/copper-moly systems; equity exposure is indirect.,False,24,Tier 2 - very high
+Rhenium,rhenium,0358.HK,0358.HK,HK,Byproduct exposure,Rhenium is recovered from molybdenite/copper-moly systems; equity exposure is indirect.,False,24,Tier 2 - very high
+Rhenium,rhenium,3993.HK,3993.HK,HK,Byproduct exposure,Rhenium is recovered from molybdenite/copper-moly systems; equity exposure is indirect.,False,24,Tier 2 - very high
+Rhenium,rhenium,FCX,FCX,US,Byproduct exposure,Rhenium is recovered from molybdenite/copper-moly systems; equity exposure is indirect.,False,24,Tier 2 - very high
+Rhenium,rhenium,TECK,TECK,US,Byproduct exposure,Rhenium is recovered from molybdenite/copper-moly systems; equity exposure is indirect.,False,24,Tier 2 - very high
+Rhodium,rhodium,2362.HK,2362.HK,HK,PGM basket exposure,Rhodium is a PGM byproduct; very volatile and usually not disclosed as standalone equity exposure.,False,56,Tier 5 - lower/unknown
+Rhodium,rhodium,ANGPY,ANGPY,US,PGM basket exposure,Rhodium is a PGM byproduct; very volatile and usually not disclosed as standalone equity exposure.,False,56,Tier 5 - lower/unknown
+Rhodium,rhodium,IMPUY,IMPUY,US,PGM basket exposure,Rhodium is a PGM byproduct; very volatile and usually not disclosed as standalone equity exposure.,False,56,Tier 5 - lower/unknown
+Rhodium,rhodium,NGLOY,NGLOY,US,PGM basket exposure,Rhodium is a PGM byproduct; very volatile and usually not disclosed as standalone equity exposure.,False,56,Tier 5 - lower/unknown
+Rhodium,rhodium,PLG,PLG,US,PGM basket exposure,Rhodium is a PGM byproduct; very volatile and usually not disclosed as standalone equity exposure.,False,56,Tier 5 - lower/unknown
+Rhodium,rhodium,SBSW,SBSW,US,PGM basket exposure,Rhodium is a PGM byproduct; very volatile and usually not disclosed as standalone equity exposure.,False,56,Tier 5 - lower/unknown
+Rubidium,rubidium,002738.SZ,002738.SZ,CN_A,Primary for Sinomine,Sinomine is the main listed China proxy for cesium/rubidium specialty salts.,False,8,Tier 1 - highest
+Ruthenium,ruthenium,2362.HK,2362.HK,HK,PGM basket exposure,Usually bundled with PGM miners; individual ruthenium revenue is not separately clean.,False,50,Tier 4 - moderate
+Ruthenium,ruthenium,ANGPY,ANGPY,US,PGM basket exposure,Usually bundled with PGM miners; individual ruthenium revenue is not separately clean.,False,50,Tier 4 - moderate
+Ruthenium,ruthenium,IMPUY,IMPUY,US,PGM basket exposure,Usually bundled with PGM miners; individual ruthenium revenue is not separately clean.,False,50,Tier 4 - moderate
+Ruthenium,ruthenium,NGLOY,NGLOY,US,PGM basket exposure,Usually bundled with PGM miners; individual ruthenium revenue is not separately clean.,False,50,Tier 4 - moderate
+Ruthenium,ruthenium,SBSW,SBSW,US,PGM basket exposure,Usually bundled with PGM miners; individual ruthenium revenue is not separately clean.,False,50,Tier 4 - moderate
+Samarium,samarium,000831.SZ,000831.SZ,CN_A,REE/magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,25,Tier 3 - high
+Samarium,samarium,000970.SZ,000970.SZ,CN_A,REE/magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,25,Tier 3 - high
+Samarium,samarium,300748.SZ,300748.SZ,CN_A,REE/magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,25,Tier 3 - high
+Samarium,samarium,600111.SH,600111.SH,CN_A,REE/magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,25,Tier 3 - high
+Samarium,samarium,600366.SH,600366.SH,CN_A,REE/magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,25,Tier 3 - high
+Samarium,samarium,600392.SH,600392.SH,CN_A,REE/magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,25,Tier 3 - high
+Samarium,samarium,6680.HK,6680.HK,HK,REE/magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,25,Tier 3 - high
+Samarium,samarium,MP,MP,US,REE/magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,25,Tier 3 - high
+Samarium,samarium,USA,USA,US,REE/magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,25,Tier 3 - high
+Samarium,samarium,USAR,USAR,US,REE/magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,25,Tier 3 - high
+Samarium,samarium,UUUU,UUUU,US,REE/magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,25,Tier 3 - high
+Scandium,scandium,000831.SZ,000831.SZ,CN_A,Primary for NB project; secondary for REE processors,Scandium is usually project-level or byproduct exposure; NB is the cleanest US scandium development proxy.,False,2,Tier 1 - highest
+Scandium,scandium,600111.SH,600111.SH,CN_A,Primary for NB project; secondary for REE processors,Scandium is usually project-level or byproduct exposure; NB is the cleanest US scandium development proxy.,False,2,Tier 1 - highest
+Scandium,scandium,600392.SH,600392.SH,CN_A,Primary for NB project; secondary for REE processors,Scandium is usually project-level or byproduct exposure; NB is the cleanest US scandium development proxy.,False,2,Tier 1 - highest
+Scandium,scandium,NB,NB,US,Primary for NB project; secondary for REE processors,Scandium is usually project-level or byproduct exposure; NB is the cleanest US scandium development proxy.,True,2,Tier 1 - highest
+Scandium,scandium,USA,USA,US,Primary for NB project; secondary for REE processors,Scandium is usually project-level or byproduct exposure; NB is the cleanest US scandium development proxy.,False,2,Tier 1 - highest
+Scandium,scandium,USAR,USAR,US,Primary for NB project; secondary for REE processors,Scandium is usually project-level or byproduct exposure; NB is the cleanest US scandium development proxy.,False,2,Tier 1 - highest
+Scandium,scandium,UUUU,UUUU,US,Primary for NB project; secondary for REE processors,Scandium is usually project-level or byproduct exposure; NB is the cleanest US scandium development proxy.,False,2,Tier 1 - highest
+Silicon,silicon,600089.SH,600089.SH,CN_A,Primary for silicon metal/polysilicon producers,Split metallurgical silicon from polysilicon/solar supply chain.,False,43,Tier 3 - high
+Silicon,silicon,600438.SH,600438.SH,CN_A,Primary for silicon metal/polysilicon producers,Split metallurgical silicon from polysilicon/solar supply chain.,False,43,Tier 3 - high
+Silicon,silicon,603260.SH,603260.SH,CN_A,Primary for silicon metal/polysilicon producers,Split metallurgical silicon from polysilicon/solar supply chain.,False,43,Tier 3 - high
+Silicon,silicon,688303.SH,688303.SH,CN_A,Primary for silicon metal/polysilicon producers,Split metallurgical silicon from polysilicon/solar supply chain.,False,43,Tier 3 - high
+Silicon,silicon,3800.HK,3800.HK,HK,Primary for silicon metal/polysilicon producers,Split metallurgical silicon from polysilicon/solar supply chain.,False,43,Tier 3 - high
+Silicon,silicon,DQ,DQ,US,Primary for silicon metal/polysilicon producers,Split metallurgical silicon from polysilicon/solar supply chain.,False,43,Tier 3 - high
+Silicon,silicon,GSM,GSM,US,Primary for silicon metal/polysilicon producers,Split metallurgical silicon from polysilicon/solar supply chain.,False,43,Tier 3 - high
+Silicon,silicon,WKCMY,WKCMY,US,Primary for silicon metal/polysilicon producers,Split metallurgical silicon from polysilicon/solar supply chain.,False,43,Tier 3 - high
+Silver,silver,600531.SH,600531.SH,CN_A,Primary for silver miners/streamers; byproduct for base-metal smelters,SVM is US/Canada-listed but has China assets; good bridge name.,False,20,Tier 2 - very high
+Silver,silver,601899.SH,601899.SH,CN_A,Primary for silver miners/streamers; byproduct for base-metal smelters,SVM is US/Canada-listed but has China assets; good bridge name.,False,20,Tier 2 - very high
+Silver,silver,0815.HK,0815.HK,HK,Primary for silver miners/streamers; byproduct for base-metal smelters,SVM is US/Canada-listed but has China assets; good bridge name.,False,20,Tier 2 - very high
+Silver,silver,2899.HK,2899.HK,HK,Primary for silver miners/streamers; byproduct for base-metal smelters,SVM is US/Canada-listed but has China assets; good bridge name.,False,20,Tier 2 - very high
+Silver,silver,CDE,CDE,US,Primary for silver miners/streamers; byproduct for base-metal smelters,SVM is US/Canada-listed but has China assets; good bridge name.,False,20,Tier 2 - very high
+Silver,silver,HL,HL,US,Primary for silver miners/streamers; byproduct for base-metal smelters,SVM is US/Canada-listed but has China assets; good bridge name.,False,20,Tier 2 - very high
+Silver,silver,PAAS,PAAS,US,Primary for silver miners/streamers; byproduct for base-metal smelters,SVM is US/Canada-listed but has China assets; good bridge name.,False,20,Tier 2 - very high
+Silver,silver,SVM,SVM,US,Primary for silver miners/streamers; byproduct for base-metal smelters,SVM is US/Canada-listed but has China assets; good bridge name.,False,20,Tier 2 - very high
+Silver,silver,WPM,WPM,US,Primary for silver miners/streamers; byproduct for base-metal smelters,SVM is US/Canada-listed but has China assets; good bridge name.,False,20,Tier 2 - very high
+Tantalum,tantalum,000657.SZ,000657.SZ,CN_A,Primary for 000962; secondary/adjacent for 000657/NB,000962 is the closest China listed tantalum proxy; US listed pure-play coverage is weak.,False,1,Tier 1 - highest
+Tantalum,tantalum,000962.SZ,000962.SZ,CN_A,Primary for 000962; secondary/adjacent for 000657/NB,000962 is the closest China listed tantalum proxy; US listed pure-play coverage is weak.,True,1,Tier 1 - highest
+Tantalum,tantalum,NB,NB,US,Primary for 000962; secondary/adjacent for 000657/NB,000962 is the closest China listed tantalum proxy; US listed pure-play coverage is weak.,False,1,Tier 1 - highest
+Tellurium,tellurium,000630.SZ,000630.SZ,CN_A,Byproduct/downstream,"Tellurium is typically a copper refining byproduct; FSLR is demand-side CdTe solar, not a miner.",False,54,Tier 5 - lower/unknown
+Tellurium,tellurium,600362.SH,600362.SH,CN_A,Byproduct/downstream,"Tellurium is typically a copper refining byproduct; FSLR is demand-side CdTe solar, not a miner.",False,54,Tier 5 - lower/unknown
+Tellurium,tellurium,600961.SH,600961.SH,CN_A,Byproduct/downstream,"Tellurium is typically a copper refining byproduct; FSLR is demand-side CdTe solar, not a miner.",False,54,Tier 5 - lower/unknown
+Tellurium,tellurium,0358.HK,0358.HK,HK,Byproduct/downstream,"Tellurium is typically a copper refining byproduct; FSLR is demand-side CdTe solar, not a miner.",False,54,Tier 5 - lower/unknown
+Tellurium,tellurium,FPLSF,FPLSF,US,Byproduct/downstream,"Tellurium is typically a copper refining byproduct; FSLR is demand-side CdTe solar, not a miner.",False,54,Tier 5 - lower/unknown
+Tellurium,tellurium,FSLR,FSLR,US,Byproduct/downstream,"Tellurium is typically a copper refining byproduct; FSLR is demand-side CdTe solar, not a miner.",False,54,Tier 5 - lower/unknown
+Tellurium,tellurium,TO,TO,US,Byproduct/downstream,"Tellurium is typically a copper refining byproduct; FSLR is demand-side CdTe solar, not a miner.",False,54,Tier 5 - lower/unknown
+Tellurium,tellurium,VNP,VNP,US,Byproduct/downstream,"Tellurium is typically a copper refining byproduct; FSLR is demand-side CdTe solar, not a miner.",False,54,Tier 5 - lower/unknown
+Terbium,terbium,000831.SZ,000831.SZ,CN_A,Heavy REE / magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,22,Tier 2 - very high
+Terbium,terbium,000970.SZ,000970.SZ,CN_A,Heavy REE / magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,22,Tier 2 - very high
+Terbium,terbium,300748.SZ,300748.SZ,CN_A,Heavy REE / magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,22,Tier 2 - very high
+Terbium,terbium,600111.SH,600111.SH,CN_A,Heavy REE / magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,22,Tier 2 - very high
+Terbium,terbium,600366.SH,600366.SH,CN_A,Heavy REE / magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,22,Tier 2 - very high
+Terbium,terbium,600392.SH,600392.SH,CN_A,Heavy REE / magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,22,Tier 2 - very high
+Terbium,terbium,6680.HK,6680.HK,HK,Heavy REE / magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,22,Tier 2 - very high
+Terbium,terbium,MP,MP,US,Heavy REE / magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,22,Tier 2 - very high
+Terbium,terbium,USA,USA,US,Heavy REE / magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,22,Tier 2 - very high
+Terbium,terbium,USAR,USAR,US,Heavy REE / magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,22,Tier 2 - very high
+Terbium,terbium,UUUU,UUUU,US,Heavy REE / magnet exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,22,Tier 2 - very high
+Thulium,thulium,000831.SZ,000831.SZ,CN_A,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,39,Tier 3 - high
+Thulium,thulium,000970.SZ,000970.SZ,CN_A,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,39,Tier 3 - high
+Thulium,thulium,300748.SZ,300748.SZ,CN_A,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,39,Tier 3 - high
+Thulium,thulium,600111.SH,600111.SH,CN_A,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,39,Tier 3 - high
+Thulium,thulium,600366.SH,600366.SH,CN_A,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,39,Tier 3 - high
+Thulium,thulium,600392.SH,600392.SH,CN_A,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,39,Tier 3 - high
+Thulium,thulium,6680.HK,6680.HK,HK,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,39,Tier 3 - high
+Thulium,thulium,MP,MP,US,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,39,Tier 3 - high
+Thulium,thulium,USA,USA,US,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,39,Tier 3 - high
+Thulium,thulium,USAR,USAR,US,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,39,Tier 3 - high
+Thulium,thulium,UUUU,UUUU,US,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,39,Tier 3 - high
+Tin,tin,000426.SZ,000426.SZ,CN_A,Primary for 000960/AFMJF,Yunnan Tin is the cleanest China A-share tin proxy.,False,28,Tier 3 - high
+Tin,tin,000960.SZ,000960.SZ,CN_A,Primary for 000960/AFMJF,Yunnan Tin is the cleanest China A-share tin proxy.,True,28,Tier 3 - high
+Tin,tin,AFMJF,AFMJF,US,Primary for 000960/AFMJF,Yunnan Tin is the cleanest China A-share tin proxy.,True,28,Tier 3 - high
+Tin,tin,MLXEF,MLXEF,US,Primary for 000960/AFMJF,Yunnan Tin is the cleanest China A-share tin proxy.,False,28,Tier 3 - high
+Tin,tin,X,X,US,Primary for 000960/AFMJF,Yunnan Tin is the cleanest China A-share tin proxy.,False,28,Tier 3 - high
+Titanium,titanium,000629.SZ,000629.SZ,CN_A,Primary/secondary depending ore vs pigment vs alloy,Split titanium mineral sands/TiO2 pigment from titanium metal/alloy exposure.,True,11,Tier 1 - highest
+Titanium,titanium,002145.SZ,002145.SZ,CN_A,Primary/secondary depending ore vs pigment vs alloy,Split titanium mineral sands/TiO2 pigment from titanium metal/alloy exposure.,True,11,Tier 1 - highest
+Titanium,titanium,002601.SZ,002601.SZ,CN_A,Primary/secondary depending ore vs pigment vs alloy,Split titanium mineral sands/TiO2 pigment from titanium metal/alloy exposure.,True,11,Tier 1 - highest
+Titanium,titanium,002978.SZ,002978.SZ,CN_A,Primary/secondary depending ore vs pigment vs alloy,Split titanium mineral sands/TiO2 pigment from titanium metal/alloy exposure.,True,11,Tier 1 - highest
+Titanium,titanium,600456.SH,600456.SH,CN_A,Primary/secondary depending ore vs pigment vs alloy,Split titanium mineral sands/TiO2 pigment from titanium metal/alloy exposure.,True,11,Tier 1 - highest
+Titanium,titanium,ATI,ATI,US,Primary/secondary depending ore vs pigment vs alloy,Split titanium mineral sands/TiO2 pigment from titanium metal/alloy exposure.,True,11,Tier 1 - highest
+Titanium,titanium,CC,CC,US,Primary/secondary depending ore vs pigment vs alloy,Split titanium mineral sands/TiO2 pigment from titanium metal/alloy exposure.,True,11,Tier 1 - highest
+Titanium,titanium,TROX,TROX,US,Primary/secondary depending ore vs pigment vs alloy,Split titanium mineral sands/TiO2 pigment from titanium metal/alloy exposure.,True,11,Tier 1 - highest
+Titanium,titanium,UUUU,UUUU,US,Primary/secondary depending ore vs pigment vs alloy,Split titanium mineral sands/TiO2 pigment from titanium metal/alloy exposure.,True,11,Tier 1 - highest
+Tungsten,tungsten,000657.SZ,000657.SZ,CN_A,Primary for China tungsten names,China has far better listed tungsten depth than US markets.,False,49,Tier 4 - moderate
+Tungsten,tungsten,002378.SZ,002378.SZ,CN_A,Primary for China tungsten names,China has far better listed tungsten depth than US markets.,False,49,Tier 4 - moderate
+Tungsten,tungsten,600549.SH,600549.SH,CN_A,Primary for China tungsten names,China has far better listed tungsten depth than US markets.,False,49,Tier 4 - moderate
+Tungsten,tungsten,603993.SH,603993.SH,CN_A,Primary for China tungsten names,China has far better listed tungsten depth than US markets.,False,49,Tier 4 - moderate
+Tungsten,tungsten,3993.HK,3993.HK,HK,Primary for China tungsten names,China has far better listed tungsten depth than US markets.,False,49,Tier 4 - moderate
+Tungsten,tungsten,ALM,ALM,US,Primary for China tungsten names,China has far better listed tungsten depth than US markets.,False,49,Tier 4 - moderate
+Tungsten,tungsten,ALMTF,ALMTF,US,Primary for China tungsten names,China has far better listed tungsten depth than US markets.,False,49,Tier 4 - moderate
+Uranium,uranium,601985.SH,601985.SH,CN_A,Primary for uranium miners; utility exposure for 601985,US/Canada listed uranium universe is much deeper than China A/HK.,False,53,Tier 5 - lower/unknown
+Uranium,uranium,1164.HK,1164.HK,HK,Primary for uranium miners; utility exposure for 601985,US/Canada listed uranium universe is much deeper than China A/HK.,False,53,Tier 5 - lower/unknown
+Uranium,uranium,2302.HK,2302.HK,HK,Primary for uranium miners; utility exposure for 601985,US/Canada listed uranium universe is much deeper than China A/HK.,False,53,Tier 5 - lower/unknown
+Uranium,uranium,CCJ,CCJ,US,Primary for uranium miners; utility exposure for 601985,US/Canada listed uranium universe is much deeper than China A/HK.,False,53,Tier 5 - lower/unknown
+Uranium,uranium,DNN,DNN,US,Primary for uranium miners; utility exposure for 601985,US/Canada listed uranium universe is much deeper than China A/HK.,False,53,Tier 5 - lower/unknown
+Uranium,uranium,NXE,NXE,US,Primary for uranium miners; utility exposure for 601985,US/Canada listed uranium universe is much deeper than China A/HK.,False,53,Tier 5 - lower/unknown
+Uranium,uranium,UEC,UEC,US,Primary for uranium miners; utility exposure for 601985,US/Canada listed uranium universe is much deeper than China A/HK.,False,53,Tier 5 - lower/unknown
+Uranium,uranium,UUUU,UUUU,US,Primary for uranium miners; utility exposure for 601985,US/Canada listed uranium universe is much deeper than China A/HK.,False,53,Tier 5 - lower/unknown
+Vanadium,vanadium,000629.SZ,000629.SZ,CN_A,Primary/secondary,Vanadium exposure can be steel-alloy demand or vanadium-flow battery optionality.,True,47,Tier 4 - moderate
+Vanadium,vanadium,000709.SZ,000709.SZ,CN_A,Primary/secondary,Vanadium exposure can be steel-alloy demand or vanadium-flow battery optionality.,True,47,Tier 4 - moderate
+Vanadium,vanadium,002978.SZ,002978.SZ,CN_A,Primary/secondary,Vanadium exposure can be steel-alloy demand or vanadium-flow battery optionality.,True,47,Tier 4 - moderate
+Vanadium,vanadium,AMG,AMG,US,Primary/secondary,Vanadium exposure can be steel-alloy demand or vanadium-flow battery optionality.,True,47,Tier 4 - moderate
+Vanadium,vanadium,AMGNY,AMGNY,US,Primary/secondary,Vanadium exposure can be steel-alloy demand or vanadium-flow battery optionality.,True,47,Tier 4 - moderate
+Vanadium,vanadium,LGO,LGO,US,Primary/secondary,Vanadium exposure can be steel-alloy demand or vanadium-flow battery optionality.,True,47,Tier 4 - moderate
+Vanadium,vanadium,UUUU,UUUU,US,Primary/secondary,Vanadium exposure can be steel-alloy demand or vanadium-flow battery optionality.,True,47,Tier 4 - moderate
+Ytterbium,ytterbium,000831.SZ,000831.SZ,CN_A,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,38,Tier 3 - high
+Ytterbium,ytterbium,000970.SZ,000970.SZ,CN_A,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,38,Tier 3 - high
+Ytterbium,ytterbium,300748.SZ,300748.SZ,CN_A,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,38,Tier 3 - high
+Ytterbium,ytterbium,600111.SH,600111.SH,CN_A,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,38,Tier 3 - high
+Ytterbium,ytterbium,600366.SH,600366.SH,CN_A,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,38,Tier 3 - high
+Ytterbium,ytterbium,600392.SH,600392.SH,CN_A,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,38,Tier 3 - high
+Ytterbium,ytterbium,6680.HK,6680.HK,HK,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,38,Tier 3 - high
+Ytterbium,ytterbium,MP,MP,US,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,38,Tier 3 - high
+Ytterbium,ytterbium,USA,USA,US,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,38,Tier 3 - high
+Ytterbium,ytterbium,USAR,USAR,US,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,38,Tier 3 - high
+Ytterbium,ytterbium,UUUU,UUUU,US,Heavy REE exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,38,Tier 3 - high
+Yttrium,yttrium,000831.SZ,000831.SZ,CN_A,REE complex exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,10,Tier 1 - highest
+Yttrium,yttrium,000970.SZ,000970.SZ,CN_A,REE complex exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,10,Tier 1 - highest
+Yttrium,yttrium,300748.SZ,300748.SZ,CN_A,REE complex exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,10,Tier 1 - highest
+Yttrium,yttrium,600111.SH,600111.SH,CN_A,REE complex exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,10,Tier 1 - highest
+Yttrium,yttrium,600366.SH,600366.SH,CN_A,REE complex exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,10,Tier 1 - highest
+Yttrium,yttrium,600392.SH,600392.SH,CN_A,REE complex exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,10,Tier 1 - highest
+Yttrium,yttrium,6680.HK,6680.HK,HK,REE complex exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,10,Tier 1 - highest
+Yttrium,yttrium,MP,MP,US,REE complex exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,10,Tier 1 - highest
+Yttrium,yttrium,USA,USA,US,REE complex exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,10,Tier 1 - highest
+Yttrium,yttrium,USAR,USAR,US,REE complex exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,10,Tier 1 - highest
+Yttrium,yttrium,UUUU,UUUU,US,REE complex exposure,"REE complex exposure; individual element revenue disclosure is usually limited, especially for heavy REEs.",False,10,Tier 1 - highest
+Zinc,zinc,600497.SH,600497.SH,CN_A,Primary/secondary,"Zinc is often combined with lead, silver, germanium, indium byproducts.",True,32,Tier 3 - high
+Zinc,zinc,600961.SH,600961.SH,CN_A,Primary/secondary,"Zinc is often combined with lead, silver, germanium, indium byproducts.",True,32,Tier 3 - high
+Zinc,zinc,601168.SH,601168.SH,CN_A,Primary/secondary,"Zinc is often combined with lead, silver, germanium, indium byproducts.",True,32,Tier 3 - high
+Zinc,zinc,601899.SH,601899.SH,CN_A,Primary/secondary,"Zinc is often combined with lead, silver, germanium, indium byproducts.",True,32,Tier 3 - high
+Zinc,zinc,2899.HK,2899.HK,HK,Primary/secondary,"Zinc is often combined with lead, silver, germanium, indium byproducts.",True,32,Tier 3 - high
+Zinc,zinc,HBM,HBM,US,Primary/secondary,"Zinc is often combined with lead, silver, germanium, indium byproducts.",True,32,Tier 3 - high
+Zinc,zinc,HL,HL,US,Primary/secondary,"Zinc is often combined with lead, silver, germanium, indium byproducts.",True,32,Tier 3 - high
+Zinc,zinc,NEXA,NEXA,US,Primary/secondary,"Zinc is often combined with lead, silver, germanium, indium byproducts.",True,32,Tier 3 - high
+Zinc,zinc,TECK,TECK,US,Primary/secondary,"Zinc is often combined with lead, silver, germanium, indium byproducts.",True,32,Tier 3 - high
+Zirconium,zirconium,002167.SZ,002167.SZ,CN_A,Primary/secondary for zircon/mineral sands,Zirconium exposure often comes via mineral sands or zirconium chemicals.,True,52,Tier 5 - lower/unknown
+Zirconium,zirconium,002601.SZ,002601.SZ,CN_A,Primary/secondary for zircon/mineral sands,Zirconium exposure often comes via mineral sands or zirconium chemicals.,True,52,Tier 5 - lower/unknown
+Zirconium,zirconium,603663.SH,603663.SH,CN_A,Primary/secondary for zircon/mineral sands,Zirconium exposure often comes via mineral sands or zirconium chemicals.,True,52,Tier 5 - lower/unknown
+Zirconium,zirconium,ILKAF,ILKAF,US,Primary/secondary for zircon/mineral sands,Zirconium exposure often comes via mineral sands or zirconium chemicals.,True,52,Tier 5 - lower/unknown
+Zirconium,zirconium,TROX,TROX,US,Primary/secondary for zircon/mineral sands,Zirconium exposure often comes via mineral sands or zirconium chemicals.,True,52,Tier 5 - lower/unknown
+Zirconium,zirconium,UUUU,UUUU,US,Primary/secondary for zircon/mineral sands,Zirconium exposure often comes via mineral sands or zirconium chemicals.,True,52,Tier 5 - lower/unknown

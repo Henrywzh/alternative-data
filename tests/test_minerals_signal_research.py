@@ -6,6 +6,7 @@ from minerals_signal_data.backtest import run_weekly_long_only_backtest
 from minerals_signal_data.market_data import (
     _resolve_tradingeconomics_api_key,
     attach_fx_to_stock_prices,
+    fetch_fred_history,
     fetch_investing_history,
     fetch_tradingeconomics_history,
     to_yfinance_equity_symbol,
@@ -343,3 +344,59 @@ def test_build_tracking_split_marks_easy_proxy_and_impractical_buckets() -> None
     assert result["graphite"] == "easy_next"
     assert result["dysprosium"] == "proxy_index"
     assert result["hafnium"] == "paywalled_or_impractical"
+
+
+def test_fetch_fred_history_forward_fills_monthly_to_daily(monkeypatch) -> None:
+    class _FakeResponse:
+        def raise_for_status(self) -> None:
+            return None
+
+        def json(self) -> dict:
+            return {
+                "observations": [
+                    {"date": "2024-01-01", "value": "100"},
+                    {"date": "2024-02-01", "value": "."},  # missing value, skipped
+                    {"date": "2024-03-01", "value": "110"},
+                ]
+            }
+
+    monkeypatch.setattr(
+        "minerals_signal_data.market_data.requests.get",
+        lambda *args, **kwargs: _FakeResponse(),
+    )
+
+    frame = fetch_fred_history("PLEADUSDM", start_date="2024-01-01", end_date="2024-03-15", api_key="dummy")
+
+    assert list(frame.columns) == ["date", "price"]
+    # Monthly observations forward-filled onto business days (no >3-day gaps).
+    assert frame["date"].diff().dropna().dt.days.max() <= 3
+    assert frame["price"].iloc[0] == 100.0
+    assert frame["price"].iloc[-1] == 110.0
+
+
+def test_fetch_fred_history_without_key_returns_empty(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "minerals_signal_data.market_data._resolve_fred_api_key", lambda: None
+    )
+    frame = fetch_fred_history("PLEADUSDM", start_date="2024-01-01")
+    assert frame.empty
+    assert list(frame.columns) == ["date", "price"]
+
+
+def test_reference_price_universe_has_reliable_free_coverage() -> None:
+    from minerals_signal_data.workbook import build_price_universe, load_critical_minerals
+
+    universe = build_price_universe(
+        load_critical_minerals("data/reference/minerals_signal_data/critical_minerals.csv")
+    )
+    reliable = universe.loc[
+        universe["is_active_for_v1"]
+        & universe["price_source_type"].isin(["yfinance_futures", "fred_series"])
+    ]
+    # yfinance + FRED sources do not depend on bot-block-prone HTML scraping; this is
+    # the floor that must clear the weekly workflow's --min-mineral-coverage gate.
+    assert len(reliable) >= 14
+    # The previously-dead proxy minerals now carry a real instrument.
+    for mineral_id in ("antimony", "graphite", "lithium"):
+        row = universe.loc[universe["normalized_mineral_id"] == mineral_id].iloc[0]
+        assert row["price_source_type"] == "yfinance_futures"

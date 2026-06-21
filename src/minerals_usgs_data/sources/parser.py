@@ -202,11 +202,13 @@ def build_metric_records(sections: dict[str, str], report_year: int) -> list[Min
                 )
                 break
 
+        expected_comparison_year = report_year - 2
+        expected_metric_year = report_year - 1
         price_change_match = PRICE_CHANGE_RE.search(section_text)
         if price_change_match is not None:
             comparison_year = int(price_change_match.group(3))
             metric_year = int(price_change_match.group(4))
-            if comparison_year == 2024 and metric_year == 2025:
+            if comparison_year == expected_comparison_year and metric_year == expected_metric_year:
                 direction = price_change_match.group(1).lower()
                 metric_value = float(price_change_match.group(2))
                 if direction == "decreased":
@@ -214,7 +216,7 @@ def build_metric_records(sections: dict[str, str], report_year: int) -> list[Min
                 records.append(
                     MineralMetricRecord(
                         mineral_id=mineral_id,
-                        metric_name="price_change_pct_2024_2025",
+                        metric_name=f"price_change_pct_{comparison_year}_{metric_year}",
                         metric_value=metric_value,
                         metric_unit="pct",
                         metric_period="annual",
