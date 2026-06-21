@@ -152,7 +152,9 @@ def test_build_price_universe_marks_direct_proxy_and_unsupported_minerals(tmp_pa
 
     expected = {
         "tantalum": ("direct", "investing_html", True),
-        "graphite": ("proxy", "manual_proxy", True),
+        # graphite is a proxy mineral now pointed at a reliable free instrument
+        # (LIT, lithium ETF) instead of the dead manual_proxy placeholder.
+        "graphite": ("proxy", "yfinance_futures", True),
         "copper": ("direct", "yfinance_futures", True),
         "gallium": ("direct", "investing_html", True),
     }

@@ -68,6 +68,52 @@ def fetch_tradingeconomics_history(
     return frame
 
 
+def fetch_fred_history(
+    series_id: str,
+    *,
+    start_date: str | None = None,
+    end_date: str | None = None,
+    api_key: str | None = None,
+) -> pd.DataFrame:
+    """Fetch a FRED series (e.g. IMF global commodity prices) as a daily price frame.
+
+    FRED commodity series are monthly; we forward-fill onto business days so the
+    downstream weekly resample/signal windows behave like the daily sources.
+    """
+    fred_key = api_key or _resolve_fred_api_key()
+    if not fred_key:
+        return pd.DataFrame(columns=["date", "price"])
+
+    observation_start = start_date or "2018-01-01"
+    url = (
+        "https://api.stlouisfed.org/fred/series/observations"
+        f"?series_id={series_id}"
+        f"&api_key={fred_key}"
+        f"&file_type=json"
+        f"&observation_start={observation_start}"
+    )
+    response = requests.get(url, timeout=30, headers={"User-Agent": "Mozilla/5.0"})
+    response.raise_for_status()
+    observations = response.json().get("observations", [])
+    rows = [
+        {"date": obs["date"], "price": float(obs["value"])}
+        for obs in observations
+        if obs.get("value", ".") != "."
+    ]
+    if not rows:
+        return pd.DataFrame(columns=["date", "price"])
+
+    frame = pd.DataFrame(rows)
+    frame["date"] = pd.to_datetime(frame["date"])
+    series = frame.set_index("date").sort_index()["price"]
+    upper = pd.Timestamp(end_date) if end_date else pd.Timestamp.today().normalize()
+    daily = series.reindex(pd.date_range(series.index.min(), upper, freq="B")).ffill().dropna()
+    result = daily.rename("price").rename_axis("date").reset_index()
+    if start_date:
+        result = result.loc[result["date"] >= pd.Timestamp(start_date)].copy()
+    return result[["date", "price"]]
+
+
 def fetch_investing_history(url: str) -> pd.DataFrame:
     response = requests.get(
         url,
@@ -127,6 +173,12 @@ def fetch_public_mineral_prices(
                 start_date=start_date,
                 end_date=end_date,
             )
+        elif row.price_source_type == "fred_series" and row.price_symbol_or_series_id:
+            frame = fetch_fred_history(
+                row.price_symbol_or_series_id,
+                start_date=start_date,
+                end_date=end_date,
+            )
         elif row.price_source_type == "investing_html" and row.price_symbol_or_series_id:
             frame = fetch_investing_history(row.price_symbol_or_series_id)
             if start_date:
@@ -146,6 +198,20 @@ def fetch_public_mineral_prices(
         frames.append(frame)
 
     return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
+
+
+def _resolve_fred_api_key() -> str | None:
+    for env_name in ("FRED_API_KEY", "SEMICONDUCTOR_FRED_API_KEY", "MINERALS_FRED_API_KEY"):
+        value = os.getenv(env_name)
+        if value:
+            return value
+    config_path = Path(".config")
+    if not config_path.exists():
+        return None
+    for line in config_path.read_text(encoding="utf-8").splitlines():
+        if line.startswith("FRED_API_KEY="):
+            return line.split("=", 1)[1].strip()
+    return None
 
 
 def _resolve_tradingeconomics_api_key() -> str | None:

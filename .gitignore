@@ -84,6 +84,25 @@ data/raw/artificial_analysis/**
 !data/raw/artificial_analysis/**/
 !data/raw/artificial_analysis/**/manifest.json
 
+# minerals: curated reference inputs (CSV-ified workbook sheets)
+!data/reference/
+data/reference/*
+!data/reference/minerals_signal_data/
+!data/reference/minerals_signal_data/*.csv
+
+# minerals_usgs: commit processed CSVs/parquet (raw PDF/text excluded)
+!data/processed/minerals_usgs/
+data/processed/minerals_usgs/*
+!data/processed/minerals_usgs/**/
+!data/processed/minerals_usgs/**/*.csv
+!data/processed/minerals_usgs/**/*.parquet
+
+# minerals_signal_data: commit only the canonical `latest` run partition
+!data/processed/minerals_signal_data/
+data/processed/minerals_signal_data/*
+!data/processed/minerals_signal_data/**/
+!data/processed/minerals_signal_data/**/latest/**
+
 # Secrets and environment
 .env
 .env.*

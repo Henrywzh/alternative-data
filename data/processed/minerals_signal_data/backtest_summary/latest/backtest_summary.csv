@@ -1,0 +1,14 @@
+metric,value
+live_minerals,21.0
+live_stock_links,161.0
+fetched_mineral_price_rows,15904.0
+fetched_stock_price_rows,118385.0
+mineral_signal_rows,3285.0
+stock_signal_rows,21787.0
+holding_rows,6802.0
+weekly_rebalances,237.0
+cumulative_return,1.7582435181952936
+average_weekly_return,0.005233414641795215
+weekly_volatility,0.04340193411730226
+positive_week_ratio,0.4641350210970464
+average_active_names,30.29113924050633
