@@ -395,7 +395,7 @@ def test_reference_price_universe_has_reliable_free_coverage() -> None:
     ]
     # yfinance + FRED sources do not depend on bot-block-prone HTML scraping; this is
     # the floor that must clear the weekly workflow's --min-mineral-coverage gate.
-    assert len(reliable) >= 14
+    assert len(reliable) >= 18
     # The previously-dead proxy minerals now carry a real instrument.
     for mineral_id in ("antimony", "graphite", "lithium"):
         row = universe.loc[universe["normalized_mineral_id"] == mineral_id].iloc[0]
