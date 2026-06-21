@@ -222,7 +222,7 @@ def _fetch_monthly_fx_to_usd(start_period: str, end_period: str) -> pd.DataFrame
             close = frame["Close"].iloc[:, 0]
         else:
             close = frame["Close"]
-        month_end = close.resample("M").last().dropna()
+        month_end = close.resample("ME").last().dropna()
         if month_end.empty:
             continue
         fx_frame = pd.DataFrame({
