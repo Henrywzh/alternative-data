@@ -208,14 +208,17 @@ def main() -> None:
     inject_css()
 
     data_sha = remote.latest_data_sha() if remote.remote_enabled() else None
-    with st.sidebar:
+
+    selector_col, refresh_col = st.columns([5, 1], vertical_alignment="bottom")
+    with selector_col:
+        selected_section = select_main_section()
+    with refresh_col:
         if st.button("🔄 Refresh data", use_container_width=True):
             st.cache_data.clear()
             st.rerun()
         if data_sha:
-            st.caption(f"Data version: `{data_sha[:7]}`")
+            st.caption(f"Data `{data_sha[:7]}`")
 
-    selected_section = select_main_section()
     selected_domains = section_domains(selected_section)
     domain_states = {
         domain: load_domain_state_cached(
