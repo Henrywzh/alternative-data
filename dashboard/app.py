@@ -2150,6 +2150,8 @@ def _official_trade_unit_config(unit: str) -> tuple[float, str]:
         return 1e9, "USD Billion"
     if normalized == "jpy_thousand":
         return 1e6, "JPY Billion"
+    if normalized == "hkd_thousand":
+        return 1e6, "HKD Billion"
     return 1.0, normalized or "Native Unit"
 
 
@@ -2866,9 +2868,103 @@ def render_semiconductor_section(datasets: dict[str, DatasetLoadResult], semi_vi
     }
     _cutoff = _cutoffs.get(_ppi_range)
 
-    tab_taiwan, tab_ppi, tab_trade = st.tabs(
-        ["Taiwan Monthly Revenue", "AI Demand PPI (FRED)", "Tiered Trade & Production Tracker"]
+    tab_ppi, tab_taiwan, tab_trade = st.tabs(
+        ["AI Demand PPI (FRED)", "Taiwan Monthly Revenue", "Tiered Trade & Production Tracker"]
     )
+
+    with tab_ppi:
+        regime_df = semi_views.get("regime_df", pd.DataFrame())
+        component_columns = semi_views.get("component_columns", [])
+        base_month = semi_views.get("base_month")
+        latest_proxy_month = semi_views.get("latest_proxy_month")
+        latest_proxy_data = semi_views.get("latest_proxy_data", pd.Series(dtype="object"))
+        latest_fred_month = semi_views.get("latest_fred_month")
+        latest_fred_series_names = semi_views.get("latest_fred_series_names", [])
+
+        if regime_df.empty:
+            st.warning("No semiconductor memory data available.")
+        else:
+            st.markdown('<div class="section-title">Market Intelligence Hub</div>', unsafe_allow_html=True)
+
+            active_month = latest_proxy_month or semi_views.get("latest_month")
+            current_data = latest_proxy_data if not latest_proxy_data.empty else semi_views.get("latest_data", pd.Series(dtype="object"))
+
+            # --- PPI cards with lag handling ---
+            ppi_val = current_data.get("fred_ppi_value")
+            ppi_mom = current_data.get("fred_ppi_mom_pct")
+            ppi_trend = current_data.get("fred_ppi_3m_trend")
+
+            ppi_display_val = "—"
+            if pd.notna(ppi_val):
+                ppi_display_val = f"{ppi_val:.1f}"
+
+            if pd.notna(ppi_mom):
+                ppi_delta_cls = "up" if ppi_mom >= 0 else "down"
+                ppi_delta_text = f"{'↑' if ppi_mom >= 0 else '↓'} {abs(ppi_mom):.1f}% MoM"
+            else:
+                ppi_delta_cls, ppi_delta_text = "flat", "latest complete basket month"
+
+            trend_display_val = f"{ppi_trend:.1f}" if pd.notna(ppi_trend) else "—"
+            snapshot_delta = "latest complete basket month"
+            if latest_fred_month and active_month and latest_fred_month > active_month:
+                updated_count = len(latest_fred_series_names)
+                noun = "series" if updated_count != 1 else "series"
+                snapshot_delta = f"Using {active_month}; {latest_fred_month} has {updated_count} updated {noun}, but the basket is incomplete"
+
+            st.markdown(
+                kpi_grid_html(
+                    kpi_card_html("Snapshot Month", active_month or "—", delta=snapshot_delta, delta_class="flat"),
+                    kpi_card_html("AI Demand PPI", ppi_display_val, delta=ppi_delta_text, delta_class=ppi_delta_cls),
+                    kpi_card_html("3M Trend", trend_display_val, delta="rebased index average", delta_class="flat"),
+                    kpi_card_html("Proxy Base Month", base_month or "—", delta=f"{len(AI_DEMAND_PPI_WEIGHTS)} weighted PPIs", delta_class="flat"),
+                ),
+                unsafe_allow_html=True,
+            )
+
+            st.markdown(
+                "[ADATA Industrial Market Watch](https://industrial.adata.com/en/edm)",
+                unsafe_allow_html=False,
+            )
+            weight_note = ", ".join(
+                f"{AI_DEMAND_PPI_LABELS.get(series_id, series_id)}: {int(weight * 100)}%"
+                for series_id, weight in AI_DEMAND_PPI_WEIGHTS.items()
+            )
+            st.caption(
+                "AI Demand PPI is a weighted basket rebased to 100 at the first common month. "
+                f"Weights: {weight_note}"
+            )
+            if latest_fred_month and active_month and latest_fred_month > active_month:
+                st.info(
+                    f"Latest raw PPI updates reach {latest_fred_month}, but the weighted AI Demand PPI remains on {active_month} "
+                    "until all five component series have updated for the same month."
+                )
+
+            _plot_df = regime_df[regime_df["month"] >= _cutoff].copy() if _cutoff else regime_df.copy()
+
+            proxy_pivot = _plot_df[["month", "fred_ppi_value"]].set_index("month").rename(columns={"fred_ppi_value": "AI Demand PPI"})
+            st.plotly_chart(
+                make_line_chart(proxy_pivot, [ACCENT], title="AI Demand PPI Trend", y_title="Rebased Index", x_title="Month", height=350),
+                width="stretch",
+            )
+
+            available_component_columns = [column for column in component_columns if column in _plot_df.columns]
+            if available_component_columns:
+                component_labels = {
+                    AI_DEMAND_PPI_COMPONENT_COLUMNS[series_id]: AI_DEMAND_PPI_LABELS.get(series_id, series_id)
+                    for series_id in AI_DEMAND_PPI_WEIGHTS
+                }
+                component_pivot = _plot_df[["month", *available_component_columns]].set_index("month").rename(columns=component_labels)
+                st.plotly_chart(
+                    make_line_chart(
+                        component_pivot,
+                        MODEL_COLORS[:len(component_pivot.columns)],
+                        title="Component PPIs (Rebased)",
+                        y_title="Rebased Index",
+                        x_title="Month",
+                        height=380,
+                    ),
+                    width="stretch",
+                )
 
     with tab_taiwan:
         taiwan_revenue_df = semi_views.get("taiwan_revenue_df", pd.DataFrame())
@@ -2964,100 +3060,6 @@ def render_semiconductor_section(datasets: dict[str, DatasetLoadResult], semi_vi
                         x_title="Month",
                         height=320,
                         connect_gaps=True,
-                    ),
-                    width="stretch",
-                )
-
-    with tab_ppi:
-        regime_df = semi_views.get("regime_df", pd.DataFrame())
-        component_columns = semi_views.get("component_columns", [])
-        base_month = semi_views.get("base_month")
-        latest_proxy_month = semi_views.get("latest_proxy_month")
-        latest_proxy_data = semi_views.get("latest_proxy_data", pd.Series(dtype="object"))
-        latest_fred_month = semi_views.get("latest_fred_month")
-        latest_fred_series_names = semi_views.get("latest_fred_series_names", [])
-
-        if regime_df.empty:
-            st.warning("No semiconductor memory data available.")
-        else:
-            st.markdown('<div class="section-title">Market Intelligence Hub</div>', unsafe_allow_html=True)
-
-            active_month = latest_proxy_month or semi_views.get("latest_month")
-            current_data = latest_proxy_data if not latest_proxy_data.empty else semi_views.get("latest_data", pd.Series(dtype="object"))
-
-            # --- PPI cards with lag handling ---
-            ppi_val = current_data.get("fred_ppi_value")
-            ppi_mom = current_data.get("fred_ppi_mom_pct")
-            ppi_trend = current_data.get("fred_ppi_3m_trend")
-
-            ppi_display_val = "—"
-            if pd.notna(ppi_val):
-                ppi_display_val = f"{ppi_val:.1f}"
-
-            if pd.notna(ppi_mom):
-                ppi_delta_cls = "up" if ppi_mom >= 0 else "down"
-                ppi_delta_text = f"{'↑' if ppi_mom >= 0 else '↓'} {abs(ppi_mom):.1f}% MoM"
-            else:
-                ppi_delta_cls, ppi_delta_text = "flat", "latest complete basket month"
-
-            trend_display_val = f"{ppi_trend:.1f}" if pd.notna(ppi_trend) else "—"
-            snapshot_delta = "latest complete basket month"
-            if latest_fred_month and active_month and latest_fred_month > active_month:
-                updated_count = len(latest_fred_series_names)
-                noun = "series" if updated_count != 1 else "series"
-                snapshot_delta = f"Using {active_month}; {latest_fred_month} has {updated_count} updated {noun}, but the basket is incomplete"
-
-            st.markdown(
-                kpi_grid_html(
-                    kpi_card_html("Snapshot Month", active_month or "—", delta=snapshot_delta, delta_class="flat"),
-                    kpi_card_html("AI Demand PPI", ppi_display_val, delta=ppi_delta_text, delta_class=ppi_delta_cls),
-                    kpi_card_html("3M Trend", trend_display_val, delta="rebased index average", delta_class="flat"),
-                    kpi_card_html("Proxy Base Month", base_month or "—", delta=f"{len(AI_DEMAND_PPI_WEIGHTS)} weighted PPIs", delta_class="flat"),
-                ),
-                unsafe_allow_html=True,
-            )
-
-            st.markdown(
-                "[ADATA Industrial Market Watch](https://industrial.adata.com/en/edm)",
-                unsafe_allow_html=False,
-            )
-            weight_note = ", ".join(
-                f"{AI_DEMAND_PPI_LABELS.get(series_id, series_id)}: {int(weight * 100)}%"
-                for series_id, weight in AI_DEMAND_PPI_WEIGHTS.items()
-            )
-            st.caption(
-                "AI Demand PPI is a weighted basket rebased to 100 at the first common month. "
-                f"Weights: {weight_note}"
-            )
-            if latest_fred_month and active_month and latest_fred_month > active_month:
-                st.info(
-                    f"Latest raw PPI updates reach {latest_fred_month}, but the weighted AI Demand PPI remains on {active_month} "
-                    "until all five component series have updated for the same month."
-                )
-
-            _plot_df = regime_df[regime_df["month"] >= _cutoff].copy() if _cutoff else regime_df.copy()
-
-            proxy_pivot = _plot_df[["month", "fred_ppi_value"]].set_index("month").rename(columns={"fred_ppi_value": "AI Demand PPI"})
-            st.plotly_chart(
-                make_line_chart(proxy_pivot, [ACCENT], title="AI Demand PPI Trend", y_title="Rebased Index", x_title="Month", height=350),
-                width="stretch",
-            )
-
-            available_component_columns = [column for column in component_columns if column in _plot_df.columns]
-            if available_component_columns:
-                component_labels = {
-                    AI_DEMAND_PPI_COMPONENT_COLUMNS[series_id]: AI_DEMAND_PPI_LABELS.get(series_id, series_id)
-                    for series_id in AI_DEMAND_PPI_WEIGHTS
-                }
-                component_pivot = _plot_df[["month", *available_component_columns]].set_index("month").rename(columns=component_labels)
-                st.plotly_chart(
-                    make_line_chart(
-                        component_pivot,
-                        MODEL_COLORS[:len(component_pivot.columns)],
-                        title="Component PPIs (Rebased)",
-                        y_title="Rebased Index",
-                        x_title="Month",
-                        height=380,
                     ),
                     width="stretch",
                 )
