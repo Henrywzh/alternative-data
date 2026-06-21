@@ -275,16 +275,20 @@ def test_csv_exporter_waits_for_download_button_until_toolbar_renders(monkeypatc
 
 
 def test_csv_exporter_wait_for_download_button_times_out(monkeypatch: pytest.MonkeyPatch) -> None:
+    import google_trends_data.exporter as exporter_module
+
     exporter = GoogleTrendsCsvExporter(profile_dir=Path("/tmp/profile"), timeout_ms=2200)
     page = _FakePage()
+    ticks = iter([0.0, 0.5, 1.5, 2.5])
 
     monkeypatch.setattr(exporter, "_locate_download_button", lambda _page: (_ for _ in ()).throw(ValueError("missing")))
     monkeypatch.setattr(exporter, "_dismiss_common_dialogs", lambda _page: None)
+    monkeypatch.setattr(exporter_module, "monotonic", lambda: next(ticks))
 
     with pytest.raises(ValueError, match="missing"):
         exporter._wait_for_download_button(page)
 
-    assert page.wait_calls == [1000, 1000, 1000]
+    assert page.wait_calls == [1000, 1000]
 
 
 class _FakePage:

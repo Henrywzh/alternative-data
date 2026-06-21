@@ -70,8 +70,10 @@ def _correlation_table(df: pd.DataFrame) -> pd.DataFrame:
     df["ret_+2w"] = df["ret_0w"].shift(-2)
     df["ret_-1w"] = df["ret_0w"].shift(1)
     rows = []
-    for lag, col in [("Prior week", "ret_-1w"), ("Same week", "ret_0w"),
-                     ("Next week", "ret_+1w"), ("2w ahead", "ret_+2w")]:
+    for lag, col in [("Trend (t) vs Return (t-1)", "ret_-1w"),
+                     ("Trend (t) vs Return (t)", "ret_0w"),
+                     ("Trend (t) vs Return (t+1)", "ret_+1w"),
+                     ("Trend (t) vs Return (t+2)", "ret_+2w")]:
         sub = df[["trend_value", col]].dropna()
         if len(sub) > 5:
             r = sub["trend_value"].corr(sub[col])
@@ -326,10 +328,12 @@ def render_google_trends_section() -> None:
                 ).format({"Pearson r": "{:+.4f}"})
                 st.dataframe(styled3, use_container_width=True, hide_index=True)
 
-        st.caption(
-            f"Pearson r between Google Trends ('{selected_kw['term']}') and "
-            f"{selected_stock['ticker']} weekly returns at different lags. "
-            "Positive r = higher search interest associated with higher returns."
+        st.info(
+            "💡 **How to read these correlation tables:**\n\n"
+            "We pair weekly Google Trends search interest ($Trend_t$) with weekly stock returns ($Return_{t+lag}$):\n"
+            "* **`Trend (t) vs Return (t+1)` (Trend leads Return by 1w)**: Compares this week's search interest with *next week's* stock return. A positive number suggests search interest acts as a **leading indicator** of stock performance.\n"
+            "* **`Trend (t) vs Return (t-1)` (Return leads Trend by 1w)**: Compares this week's search interest with *last week's* stock return. A positive number indicates search interest acts as a **lagging indicator** (e.g., people search for the stock *after* it makes a big move).\n"
+            "* **`Trend (t) vs Return (t)` (Coincident)**: Compares search interest and stock return in the exact same week."
         )
 
     # ── Tab 2: Watchlist ──────────────────────────────────────────────────────
@@ -435,10 +439,10 @@ def render_google_trends_section() -> None:
                     "Sector": w["sector"],
                     "Keyword": term,
                     "Region": geo if geo else "WW",
-                    "Same Week r": r_map.get("Same week", 0.0),
-                    "Next Week r": r_map.get("Next week", 0.0),
-                    "YoY Same Week r": r_yoy_map.get("Same week", 0.0),
-                    "YoY Next Week r": r_yoy_map.get("Next week", 0.0),
+                    "Same Week r": r_map.get("Trend (t) vs Return (t)", 0.0),
+                    "Next Week r": r_map.get("Trend (t) vs Return (t+1)", 0.0),
+                    "YoY Same Week r": r_yoy_map.get("Trend (t) vs Return (t)", 0.0),
+                    "YoY Next Week r": r_yoy_map.get("Trend (t) vs Return (t+1)", 0.0),
                     "Max |r|": max_abs_r,
                     "Quality": w["signal_quality"],
                 })
@@ -479,7 +483,21 @@ def render_google_trends_section() -> None:
             
             st.dataframe(styled_lead, use_container_width=True, hide_index=True,
                          column_config={
-                             "Max |r|": st.column_config.NumberColumn(help="Strongest absolute correlation across raw and YoY metrics"),
+                             "Same Week r": st.column_config.NumberColumn(
+                                 help="Coincident correlation: same week Trend vs same week Stock Return"
+                             ),
+                             "Next Week r": st.column_config.NumberColumn(
+                                 help="Predictive correlation: this week's Trend vs next week's Stock Return (Trend leads Return)"
+                             ),
+                             "YoY Same Week r": st.column_config.NumberColumn(
+                                 help="Coincident correlation of Year-over-Year (52w) differences"
+                             ),
+                             "YoY Next Week r": st.column_config.NumberColumn(
+                                 help="Predictive correlation of Year-over-Year (52w) differences (Trend leads Return)"
+                             ),
+                             "Max |r|": st.column_config.NumberColumn(
+                                 help="Strongest absolute correlation across raw and YoY metrics"
+                             ),
                          })
 
 
