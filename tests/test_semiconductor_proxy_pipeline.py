@@ -9,6 +9,7 @@ import pytest
 from semiconductor_proxy_data.models import BackupCheckPoint, OfficialMonthlyPoint, Snapshot, SourceCatalogPoint
 from semiconductor_proxy_data.pipeline import SemiconductorProxyPipeline
 from semiconductor_proxy_data.sources.comtrade import ComtradeSource
+from semiconductor_proxy_data.sources.hongkong_censtatd import HongKongCenstatdSource
 from semiconductor_proxy_data.sources.japan_customs import JapanCustomsSource
 from semiconductor_proxy_data.sources.korea_customs import KoreaCustomsSource
 from semiconductor_proxy_data.sources.nbs import NbsSource
@@ -242,6 +243,136 @@ def test_korea_customs_source_extraction_and_broad_aggregation() -> None:
 
     balances = [point for point in points if point.metric_type == "trade_balance"]
     assert next(point for point in balances if point.period == "2026-05").value == 1950.0
+
+
+def test_hongkong_censtatd_source_extraction() -> None:
+    source = HongKongCenstatdSource()
+    snapshot = Snapshot(
+        name="official_hongkong_ic_only_2025-01_2025-02",
+        source_url="https://tradeidds.censtatd.gov.hk/api/get",
+        body=json.dumps(
+            {
+                "category_id": "ic_only",
+                "responses": [
+                    {
+                        "metric_type": "exports",
+                        "classification_code": "8542",
+                        "payload": {
+                            "dataSet": [
+                                {
+                                    "period": "202501",
+                                    "codeDescEN": "ELECTRONIC INTEGRATED CIRCUITS AND MICROASSEMBLIES",
+                                    "figure": "141590694",
+                                },
+                                {
+                                    "period": "202502",
+                                    "codeDescEN": "ELECTRONIC INTEGRATED CIRCUITS AND MICROASSEMBLIES",
+                                    "figure": "126037552",
+                                },
+                            ]
+                        },
+                    },
+                    {
+                        "metric_type": "imports",
+                        "classification_code": "8542",
+                        "payload": {
+                            "dataSet": [
+                                {
+                                    "period": "202501",
+                                    "codeDescEN": "ELECTRONIC INTEGRATED CIRCUITS AND MICROASSEMBLIES",
+                                    "figure": "136485489",
+                                },
+                                {
+                                    "period": "202502",
+                                    "codeDescEN": "ELECTRONIC INTEGRATED CIRCUITS AND MICROASSEMBLIES",
+                                    "figure": "121042000",
+                                },
+                            ]
+                        },
+                    },
+                ],
+            }
+        ),
+    )
+
+    points = source.extract([snapshot], run_id="test-run", scraped_at="2026-06-21T00:00:00Z")
+    assert len(points) == 6
+
+    export_point = next(point for point in points if point.metric_type == "exports" and point.period == "2025-01")
+    import_point = next(point for point in points if point.metric_type == "imports" and point.period == "2025-01")
+    balance_point = next(point for point in points if point.metric_type == "trade_balance" and point.period == "2025-01")
+
+    assert export_point.source_region == "hongkong"
+    assert export_point.country_name == "Hong Kong"
+    assert export_point.classification_system == "HKHS"
+    assert export_point.classification_code == "8542"
+    assert export_point.unit == "hkd_thousand"
+    assert export_point.currency == "HKD"
+    assert export_point.value == 141590694.0
+    assert import_point.value == 136485489.0
+    assert balance_point.value == 5105205.0
+
+
+def test_hongkong_censtatd_trims_undefined_latest_month() -> None:
+    class StubResponse:
+        def __init__(self, payload: dict[str, object]) -> None:
+            self._payload = payload
+
+        def raise_for_status(self) -> None:
+            return None
+
+        def json(self) -> dict[str, object]:
+            return self._payload
+
+    class StubSession:
+        def __init__(self) -> None:
+            self.headers = {}
+            self.periods: list[str] = []
+
+        def get(self, url: str, params: dict[str, str], timeout: int, verify: bool) -> StubResponse:
+            period = params["period"]
+            self.periods.append(period)
+            if period == "202601,202606":
+                return StubResponse(
+                    {
+                        "header": {
+                            "status": {
+                                "name": "Fail",
+                                "message": ["Period code (202606) is not defined"],
+                            }
+                        }
+                    }
+                )
+            if period == "202601,202605":
+                return StubResponse(
+                    {
+                        "header": {
+                            "status": {
+                                "name": "Fail",
+                                "message": ["Period code (202605) is not defined"],
+                            }
+                        }
+                    }
+                )
+            return StubResponse(
+                {
+                    "header": {"status": {"name": "Success"}},
+                    "dataSet": [{"period": "202604", "figure": "123"}],
+                }
+            )
+
+    session = StubSession()
+    source = HongKongCenstatdSource(session=session)
+
+    payload = source._fetch_series(
+        classification_code="8542",
+        trade_type="4",
+        start_month="2026-01",
+        end_month="2026-06",
+    )
+
+    assert session.periods == ["202601,202606", "202601,202605", "202601,202604"]
+    assert payload["dataSet"] == [{"period": "202604", "figure": "123"}]
 
 
 class FakeOfficialSource:
