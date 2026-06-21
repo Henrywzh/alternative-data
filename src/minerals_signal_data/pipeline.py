@@ -17,14 +17,39 @@ from minerals_signal_data.storage import MineralsSignalStorage
 from minerals_signal_data.workbook import build_price_universe, load_critical_minerals, load_expanded_stock_mapping
 
 
+def _resolve_stock_mapping_path(
+    workbook_path: str | Path, stock_mapping_path: str | Path | None
+) -> str | Path:
+    """Resolve the stock-mapping source.
+
+    For .xlsx inputs the mapping lives on a sheet of the same file, so the
+    workbook path is reused. For CSV inputs the mapping is a separate file;
+    if not given explicitly, default to a sibling ``stock_mapping.csv``.
+    """
+    if stock_mapping_path is not None:
+        return stock_mapping_path
+    path = Path(workbook_path)
+    if path.suffix.lower() == ".csv":
+        return path.with_name("stock_mapping.csv")
+    return workbook_path
+
+
 class MineralsSignalPipeline:
     def __init__(self, base_dir: Path) -> None:
         self.base_dir = Path(base_dir)
         self.storage = MineralsSignalStorage(self.base_dir)
 
-    def load_workbook(self, workbook_path: str | Path, *, run_label: str = "latest") -> dict[str, Path]:
+    def load_workbook(
+        self,
+        workbook_path: str | Path,
+        *,
+        stock_mapping_path: str | Path | None = None,
+        run_label: str = "latest",
+    ) -> dict[str, Path]:
         minerals = load_critical_minerals(workbook_path)
-        stock_mapping = load_expanded_stock_mapping(workbook_path)
+        stock_mapping = load_expanded_stock_mapping(
+            _resolve_stock_mapping_path(workbook_path, stock_mapping_path)
+        )
         price_universe = build_price_universe(minerals)
         tracking_split = build_tracking_split(price_universe)
         return {
@@ -68,11 +93,14 @@ class MineralsSignalPipeline:
         workbook_path: str | Path,
         mineral_prices_path: str | Path,
         *,
+        stock_mapping_path: str | Path | None = None,
         run_label: str = "latest",
     ) -> dict[str, Path]:
         minerals = load_critical_minerals(workbook_path)
         price_universe = build_price_universe(minerals)
-        stock_mapping = load_expanded_stock_mapping(workbook_path)
+        stock_mapping = load_expanded_stock_mapping(
+            _resolve_stock_mapping_path(workbook_path, stock_mapping_path)
+        )
         mineral_prices = pd.read_csv(mineral_prices_path)
         mineral_signals = build_weekly_mineral_signals(mineral_prices, price_universe)
         stock_signals = build_stock_weekly_signals(mineral_signals, stock_mapping)
@@ -109,10 +137,17 @@ class MineralsSignalPipeline:
             ),
         }
 
-    def validate(self, workbook_path: str | Path) -> dict[str, int]:
+    def validate(
+        self,
+        workbook_path: str | Path,
+        *,
+        stock_mapping_path: str | Path | None = None,
+    ) -> dict[str, int]:
         minerals = load_critical_minerals(workbook_path)
         price_universe = build_price_universe(minerals)
-        stock_mapping = load_expanded_stock_mapping(workbook_path)
+        stock_mapping = load_expanded_stock_mapping(
+            _resolve_stock_mapping_path(workbook_path, stock_mapping_path)
+        )
         return {
             "minerals": len(minerals),
             "supported_minerals": int(price_universe["is_active_for_v1"].sum()),
@@ -125,13 +160,16 @@ class MineralsSignalPipeline:
         self,
         workbook_path: str | Path,
         *,
+        stock_mapping_path: str | Path | None = None,
         start_date: str = "2022-01-01",
         end_date: str | None = None,
         run_label: str = "latest",
     ) -> dict[str, Path]:
         minerals = load_critical_minerals(workbook_path)
         price_universe = build_price_universe(minerals)
-        stock_mapping = load_expanded_stock_mapping(workbook_path)
+        stock_mapping = load_expanded_stock_mapping(
+            _resolve_stock_mapping_path(workbook_path, stock_mapping_path)
+        )
 
         live_price_universe = price_universe.loc[
             (price_universe["is_active_for_v1"]) & (price_universe["price_source_type"] == "yfinance_futures")
@@ -212,17 +250,23 @@ class MineralsSignalPipeline:
         self,
         workbook_path: str | Path,
         *,
+        stock_mapping_path: str | Path | None = None,
         start_date: str = "2022-01-01",
         end_date: str | None = None,
         run_label: str = "latest",
+        min_mineral_coverage: int = 0,
     ) -> dict[str, Path]:
         minerals = load_critical_minerals(workbook_path)
         price_universe = build_price_universe(minerals)
-        stock_mapping = load_expanded_stock_mapping(workbook_path)
+        stock_mapping = load_expanded_stock_mapping(
+            _resolve_stock_mapping_path(workbook_path, stock_mapping_path)
+        )
 
         live_price_universe = price_universe.loc[
             price_universe["is_active_for_v1"]
-            & price_universe["price_source_type"].isin(["yfinance_futures", "tradingeconomics_api", "investing_html"])
+            & price_universe["price_source_type"].isin(
+                ["yfinance_futures", "tradingeconomics_api", "investing_html", "fred_series"]
+            )
         ].copy()
         live_stock_mapping = stock_mapping.loc[
             stock_mapping["normalized_mineral_id"].isin(live_price_universe["normalized_mineral_id"])
@@ -234,6 +278,13 @@ class MineralsSignalPipeline:
             end_date=end_date,
         )
         fetched_mineral_ids = set(mineral_prices["normalized_mineral_id"].unique()) if not mineral_prices.empty else set()
+        if min_mineral_coverage > 0 and len(fetched_mineral_ids) < min_mineral_coverage:
+            raise RuntimeError(
+                "V2 mineral price coverage below threshold: fetched "
+                f"{len(fetched_mineral_ids)} mineral(s), require >= {min_mineral_coverage}. "
+                "Upstream price sources may be blocked or unavailable; refusing to write a "
+                "degraded run."
+            )
         fetched_price_universe = live_price_universe.loc[
             live_price_universe["normalized_mineral_id"].isin(fetched_mineral_ids)
         ].copy()

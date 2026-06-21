@@ -34,10 +34,10 @@ PRICE_SOURCE_DEFAULTS: dict[str, PriceSourceRecord] = {
         normalized_mineral_id="antimony",
         mineral_name="Antimony",
         trackability_grade="proxy",
-        price_source_type="manual_proxy",
-        price_symbol_or_series_id="antimony_proxy",
+        price_source_type="yfinance_futures",
+        price_symbol_or_series_id="HG=F",
         price_currency="USD",
-        price_unit="index",
+        price_unit="lb",
         publish_lag_assumption_days=2,
         is_active_for_v1=True,
         proxy_target="copper",
@@ -90,21 +90,21 @@ PRICE_SOURCE_DEFAULTS: dict[str, PriceSourceRecord] = {
         normalized_mineral_id="lead",
         mineral_name="Lead",
         trackability_grade="direct",
-        price_source_type="investing_html",
-        price_symbol_or_series_id="https://www.investing.com/commodities/lead-historical-data",
+        price_source_type="fred_series",
+        price_symbol_or_series_id="PLEADUSDM",
         price_currency="USD",
         price_unit="metric ton",
-        publish_lag_assumption_days=1,
+        publish_lag_assumption_days=30,
         is_active_for_v1=True,
     ),
     "graphite": PriceSourceRecord(
         normalized_mineral_id="graphite",
         mineral_name="Graphite",
         trackability_grade="proxy",
-        price_source_type="manual_proxy",
-        price_symbol_or_series_id="graphite_proxy",
+        price_source_type="yfinance_futures",
+        price_symbol_or_series_id="LIT",
         price_currency="USD",
-        price_unit="index",
+        price_unit="etf_share",
         publish_lag_assumption_days=2,
         is_active_for_v1=True,
         proxy_target="lithium",
@@ -123,12 +123,12 @@ PRICE_SOURCE_DEFAULTS: dict[str, PriceSourceRecord] = {
     "lithium": PriceSourceRecord(
         normalized_mineral_id="lithium",
         mineral_name="Lithium",
-        trackability_grade="direct",
-        price_source_type="investing_html",
-        price_symbol_or_series_id="https://www.investing.com/commodities/lithium-carbonate-99-min-china-futures-historical-data",
-        price_currency="CNY",
-        price_unit="ton",
-        publish_lag_assumption_days=2,
+        trackability_grade="proxy",
+        price_source_type="yfinance_futures",
+        price_symbol_or_series_id="LIT",
+        price_currency="USD",
+        price_unit="etf_share",
+        publish_lag_assumption_days=1,
         is_active_for_v1=True,
     ),
     "manganese": PriceSourceRecord(
@@ -158,11 +158,11 @@ PRICE_SOURCE_DEFAULTS: dict[str, PriceSourceRecord] = {
         normalized_mineral_id="neodymium",
         mineral_name="Neodymium",
         trackability_grade="proxy",
-        price_source_type="investing_html",
-        price_symbol_or_series_id="https://www.investing.com/indices/mvis-rare-earth-strategic-metals-historical-data",
+        price_source_type="yfinance_futures",
+        price_symbol_or_series_id="REMX",
         price_currency="USD",
-        price_unit="index",
-        publish_lag_assumption_days=3,
+        price_unit="etf_share",
+        publish_lag_assumption_days=1,
         is_active_for_v1=True,
     ),
     "nickel": PriceSourceRecord(
@@ -225,11 +225,11 @@ PRICE_SOURCE_DEFAULTS: dict[str, PriceSourceRecord] = {
         normalized_mineral_id="tin",
         mineral_name="Tin",
         trackability_grade="direct",
-        price_source_type="investing_html",
-        price_symbol_or_series_id="https://www.investing.com/commodities/tin-historical-data",
+        price_source_type="fred_series",
+        price_symbol_or_series_id="PTINUSDM",
         price_currency="USD",
         price_unit="metric ton",
-        publish_lag_assumption_days=1,
+        publish_lag_assumption_days=30,
         is_active_for_v1=True,
     ),
     "tantalum": PriceSourceRecord(
@@ -246,11 +246,11 @@ PRICE_SOURCE_DEFAULTS: dict[str, PriceSourceRecord] = {
     "uranium": PriceSourceRecord(
         normalized_mineral_id="uranium",
         mineral_name="Uranium",
-        trackability_grade="direct",
-        price_source_type="investing_html",
-        price_symbol_or_series_id="https://www.investing.com/commodities/uranium-futures-historical-data",
+        trackability_grade="proxy",
+        price_source_type="yfinance_futures",
+        price_symbol_or_series_id="URA",
         price_currency="USD",
-        price_unit="lb",
+        price_unit="etf_share",
         publish_lag_assumption_days=1,
         is_active_for_v1=True,
     ),
@@ -269,11 +269,11 @@ PRICE_SOURCE_DEFAULTS: dict[str, PriceSourceRecord] = {
         normalized_mineral_id="zinc",
         mineral_name="Zinc",
         trackability_grade="direct",
-        price_source_type="investing_html",
-        price_symbol_or_series_id="https://www.investing.com/commodities/zinc-futures-historical-data",
+        price_source_type="fred_series",
+        price_symbol_or_series_id="PZINCUSDM",
         price_currency="USD",
         price_unit="metric ton",
-        publish_lag_assumption_days=1,
+        publish_lag_assumption_days=30,
         is_active_for_v1=True,
     ),
 }
@@ -295,23 +295,34 @@ def normalize_ticker(value: str) -> tuple[str, str]:
     return token, "US"
 
 
+def _coerce_bool_series(series: pd.Series) -> pd.Series:
+    if series.dtype == bool:
+        return series
+    return series.map(lambda value: str(value).strip().lower() in {"true", "1", "yes"})
+
+
 def load_critical_minerals(workbook_path: str | Path) -> pd.DataFrame:
-    frame = pd.read_excel(workbook_path, sheet_name=CRITICAL_MINERALS_SHEET)
-    renamed = frame.rename(
-        columns={
-            "Importance rank (computed)": "importance_rank",
-            "Importance tier": "importance_tier",
-            "Mineral": "mineral_name",
-            "2025 U.S. net import reliance": "net_import_reliance_2025",
-            "NIR_numeric_for_sort": "net_import_reliance_numeric",
-            "Strategic application bucket": "strategic_application_bucket",
-            "Applications (USGS Table 6)": "applications",
-            "Source / note": "source_note",
-        }
-    ).copy()
-    renamed["normalized_mineral_id"] = renamed["mineral_name"].map(normalize_mineral_id)
-    renamed["importance_rank"] = renamed["importance_rank"].astype("Int64")
-    return renamed
+    path = Path(workbook_path)
+    if path.suffix.lower() == ".csv":
+        # Already-normalized reference CSV: columns match the post-rename schema.
+        frame = pd.read_csv(path).copy()
+    else:
+        frame = pd.read_excel(path, sheet_name=CRITICAL_MINERALS_SHEET).rename(
+            columns={
+                "Importance rank (computed)": "importance_rank",
+                "Importance tier": "importance_tier",
+                "Mineral": "mineral_name",
+                "2025 U.S. net import reliance": "net_import_reliance_2025",
+                "NIR_numeric_for_sort": "net_import_reliance_numeric",
+                "Strategic application bucket": "strategic_application_bucket",
+                "Applications (USGS Table 6)": "applications",
+                "Source / note": "source_note",
+            }
+        ).copy()
+    if "normalized_mineral_id" not in frame.columns:
+        frame["normalized_mineral_id"] = frame["mineral_name"].map(normalize_mineral_id)
+    frame["importance_rank"] = frame["importance_rank"].astype("Int64")
+    return frame
 
 
 def build_price_universe(minerals: pd.DataFrame) -> pd.DataFrame:
@@ -338,7 +349,18 @@ def build_price_universe(minerals: pd.DataFrame) -> pd.DataFrame:
 
 
 def load_expanded_stock_mapping(workbook_path: str | Path) -> pd.DataFrame:
-    frame = pd.read_excel(workbook_path, sheet_name=STOCK_MAPPING_SHEET)
+    path = Path(workbook_path)
+    if path.suffix.lower() == ".csv":
+        # Already-exploded reference CSV (one row per ticker); pass through.
+        frame = pd.read_csv(path).copy()
+        if "normalized_mineral_id" not in frame.columns:
+            frame["normalized_mineral_id"] = frame["mineral_name"].map(normalize_mineral_id)
+        frame["is_primary_exposure"] = _coerce_bool_series(frame["is_primary_exposure"])
+        return frame.sort_values(
+            ["normalized_mineral_id", "market", "ticker_normalized"]
+        ).reset_index(drop=True)
+
+    frame = pd.read_excel(path, sheet_name=STOCK_MAPPING_SHEET)
     frame = frame.rename(
         columns={
             "Importance rank": "importance_rank",

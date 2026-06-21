@@ -1,0 +1,94 @@
+name: Minerals USGS Yearly
+
+on:
+  schedule:
+    # USGS Mineral Commodity Summaries publishes in late January/early February.
+    # Check daily across an early-February window; the ingest is an idempotent
+    # overwrite of data/processed/minerals_usgs/<year>/.
+    - cron: "0 12 1-10 2 *"
+  workflow_dispatch:
+    inputs:
+      report_year:
+        description: "Report year (YYYY) — leave blank to use the current year"
+        required: false
+        default: ""
+      pdf_url:
+        description: "Override the MCS PDF URL (defaults to the USGS pubs pattern)"
+        required: false
+        default: ""
+
+concurrency:
+  group: minerals-usgs-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  ingest:
+    name: Ingest USGS MCS PDF
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install poppler (pdftotext)
+        run: sudo apt-get update && sudo apt-get install -y poppler-utils
+
+      - name: Install dependencies
+        run: python -m pip install -e .[dev]
+
+      - name: Resolve report year and PDF URL
+        id: resolve
+        run: |
+          REPORT_YEAR="${{ github.event.inputs.report_year }}"
+          if [ -z "$REPORT_YEAR" ]; then
+            REPORT_YEAR="$(date -u +%Y)"
+          fi
+          PDF_URL="${{ github.event.inputs.pdf_url }}"
+          if [ -z "$PDF_URL" ]; then
+            PDF_URL="https://pubs.usgs.gov/periodicals/mcs${REPORT_YEAR}/mcs${REPORT_YEAR}.pdf"
+          fi
+          echo "report_year=$REPORT_YEAR" >> "$GITHUB_OUTPUT"
+          echo "pdf_url=$PDF_URL" >> "$GITHUB_OUTPUT"
+          echo "Report year: $REPORT_YEAR"
+          echo "PDF URL: $PDF_URL"
+
+      - name: Download MCS PDF
+        run: |
+          curl -fSL --retry 3 --retry-delay 5 \
+            -o "/tmp/mcs${{ steps.resolve.outputs.report_year }}.pdf" \
+            "${{ steps.resolve.outputs.pdf_url }}"
+          test -s "/tmp/mcs${{ steps.resolve.outputs.report_year }}.pdf"
+
+      - name: Run USGS ingestion
+        run: |
+          minerals-usgs-data \
+            "/tmp/mcs${{ steps.resolve.outputs.report_year }}.pdf" \
+            --report-year "${{ steps.resolve.outputs.report_year }}" \
+            --base-dir .
+
+      - name: Commit results
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add 'data/processed/minerals_usgs/**'
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git diff --cached --stat
+          git commit -m "chore: update USGS minerals datasets (${{ steps.resolve.outputs.report_year }})"
+          git pull --rebase origin "${{ github.event.repository.default_branch }}"
+          git push
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: minerals-usgs-processed
+          path: data/processed/minerals_usgs/
+          if-no-files-found: warn
