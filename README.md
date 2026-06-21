@@ -327,11 +327,12 @@ python3 -m pip install -r requirements-dashboard.txt
 streamlit run dashboard/app.py
 ```
 
-Deploy the QA dashboard on Render:
+The dashboard is deployed on Streamlit Community Cloud (entry point `dashboard/app.py`). It reads the committed datasets directly from GitHub (`raw.githubusercontent.com`) at runtime, keyed by the latest `data/normalized` commit SHA, so data pushed by the scheduled workflows appears within a few minutes without rebooting the app. Use the "🔄 Refresh data" button next to the section selector to force an immediate refresh.
 
-```bash
-render blueprint apply
-```
+Optional configuration via Streamlit secrets / environment variables (see `.streamlit/secrets.toml.example`):
+
+- `DATA_SOURCE`: `remote` (default) fetches datasets from GitHub; `local` reads the on-disk checkout instead (offline/local dev).
+- `GITHUB_TOKEN`: optional. The repo is public, so no token is required; setting one only raises the GitHub API rate limit used for the commit-SHA check.
 
 ## Notes
 
