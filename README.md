@@ -5,6 +5,8 @@ Research repo for gathering and analyzing alternative data.
 The first implemented projects are Python ingestion pipelines for OpenRouter rankings, app intelligence data, and GitHub Trending repository stats.
 The repository now also includes a provider-adoption pipeline that tracks GitHub, PyPI, npm, and Hugging Face signals for major LLM providers.
 The repository also includes an Artificial Analysis pipeline that snapshots the official model API daily and refreshes the public capital-expenditure trend series.
+The repository also includes a Taiwan semiconductor revenue pipeline that backfills monthly MOPS operating-revenue disclosures for TSMC, UMC, and VIS.
+The repository also includes a tiered semiconductor tracker that separates official/native monthly signals from Comtrade backup checks and keeps category splits explicit.
 The repository also includes a notebook-friendly research layer that builds analysis-ready marts and starter notebooks on top of the tracked datasets.
 
 Rankings datasets:
@@ -41,6 +43,10 @@ Apps datasets:
 - `artificial_analysis_leading_models_by_lab_daily`: highest-intelligence model per lab per snapshot date
 - `artificial_analysis_context_window_quarter_daily`: release-quarter median context window by proprietary/open-source bucket
 - `artificial_analysis_capex_quarterly`: capital expenditure by quarter for major tech companies
+- `tw_monthly_revenue`: monthly Taiwan semiconductor operating revenue history from MOPS for TSMC, UMC, and VIS
+- `semiconductor_official_monthly`: official/native monthly semiconductor trade and production signals
+- `semiconductor_backup_check_monthly`: Comtrade-based backup/check monthly series for cross-validation
+- `semiconductor_source_catalog`: source metadata, cadence, and expected lag catalog for the semiconductor tracker
 
 Framework adoption tracked inside `provider_adoption`:
 
@@ -52,6 +58,8 @@ Framework adoption tracked inside `provider_adoption`:
 - `src/openrouter_data/`: package, CLI, source extractors, storage, and pipeline logic
 - `src/provider_adoption_data/`: package, CLI, source extractors, storage, and pipeline logic for GitHub + PyPI + npm adoption signals
 - `src/artificial_analysis_data/`: package, CLI, API extractor, capex scraper, storage, and pipeline logic for Artificial Analysis data
+- `src/taiwan_semiconductor_revenue_data/`: package, CLI, MOPS extractor, storage, and pipeline logic for Taiwan monthly semiconductor revenue
+- `src/semiconductor_proxy_data/`: package, CLI, tiered official/native plus backup semiconductor tracker logic
 - `src/research_data/`: analysis-facing loaders, marts, notebook helpers, and research CLI
 - `tests/fixtures/`: committed parser fixtures
 - `data/raw/openrouter/`: timestamped raw snapshots and run manifests
@@ -60,6 +68,10 @@ Framework adoption tracked inside `provider_adoption`:
 - `data/normalized/provider_adoption/`: analytics-ready CSV and Parquet outputs for provider adoption signals
 - `data/raw/artificial_analysis/`: timestamped raw Artificial Analysis API payloads, trends HTML, JS bundle snapshots, and run manifests
 - `data/normalized/artificial_analysis/`: analytics-ready CSV and Parquet outputs for Artificial Analysis datasets
+- `data/raw/taiwan_semiconductor_revenue/`: timestamped raw MOPS monthly revenue HTML snapshots and run manifests
+- `data/normalized/taiwan_semiconductor_revenue/`: analytics-ready parquet outputs for Taiwan semiconductor revenue
+- `data/raw/semiconductor_proxies/`: timestamped raw official/native and backup semiconductor tracker snapshots with manifests
+- `data/normalized/semiconductor_proxies/`: parquet-only normalized semiconductor tracker outputs
 - `data/normalized/marts/`: persisted analysis-ready marts for notebook use
 - `notebooks/`: starter Jupyter notebooks for data cataloging and research workflows
 - `src/github_trending_data/`: package, CLI, scraper, storage, and pipeline for GitHub data
@@ -187,6 +199,60 @@ Refresh only the Artificial Analysis capex history:
 artificial-analysis-data --base-dir . capex-update
 ```
 
+Backfill Taiwan semiconductor monthly revenue history:
+
+```bash
+taiwan-semiconductor-revenue-data --base-dir . backfill
+```
+
+Backfill a bounded Taiwan revenue window:
+
+```bash
+taiwan-semiconductor-revenue-data --base-dir . backfill --start-month 2025-01 --end-month 2025-06
+```
+
+Refresh the latest closed Taiwan revenue month:
+
+```bash
+taiwan-semiconductor-revenue-data --base-dir . update-latest
+```
+
+Validate the stored Taiwan revenue parquet:
+
+```bash
+taiwan-semiconductor-revenue-data --base-dir . validate
+```
+
+Backfill the tiered semiconductor tracker:
+
+```bash
+semiconductor-proxy-data --base-dir . backfill --start-month 2025-01 --end-month 2025-12
+```
+
+Refresh the latest closed month from the configured official + backup tiers:
+
+```bash
+semiconductor-proxy-data --base-dir . update-latest --sources all --regions korea,china,hongkong,japan --categories ic_only
+```
+
+Import an official native CSV snapshot into the official tier:
+
+```bash
+semiconductor-proxy-data --base-dir . import-csv --filepath ./korea_official.csv --region korea --category-id ic_only --metric-type exports --flow-code X --scale-thousand
+```
+
+Recompute official-vs-backup comparison gaps:
+
+```bash
+semiconductor-proxy-data --base-dir . compare-backup
+```
+
+Validate the stored tiered semiconductor tracker:
+
+```bash
+semiconductor-proxy-data --base-dir . validate
+```
+
 Validate Artificial Analysis API auth and capex parsing:
 
 ```bash
@@ -226,6 +292,8 @@ provider-adoption-data --base-dir . backfill --start-date 2026-04-01 --end-date 
 Set `HF_TOKEN` to reduce Hugging Face API rate limiting during model snapshot collection. The token is optional for public data but recommended in CI and long-running local syncs.
 
 Set `ARTIFICIAL_ANALYSIS_API_KEY` to enable the Artificial Analysis API collector. If the environment variable is unset, the pipeline falls back to the repository-root `.config` file. API-backed history starts on the first real collection date; the pipeline does not synthesize historical API snapshots.
+
+The tiered semiconductor tracker writes normalized outputs as parquet only by design; it does not emit CSV copies for these datasets.
 
 Run the internal QA dashboard locally:
 

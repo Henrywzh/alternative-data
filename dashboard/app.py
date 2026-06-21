@@ -2135,6 +2135,44 @@ def render_top_models_chart(datasets: dict[str, DatasetLoadResult], openrouter_v
     st.plotly_chart(fig, width="stretch", theme=None)
 
 
+def _official_trade_unit_config(unit: str) -> tuple[float, str]:
+    normalized = str(unit or "").strip().lower()
+    if normalized == "usd":
+        return 1e9, "USD Billion"
+    if normalized == "jpy_thousand":
+        return 1e6, "JPY Billion"
+    return 1.0, normalized or "Native Unit"
+
+
+def _render_official_trade_chart(official_trade: pd.DataFrame, category_choice: str) -> None:
+    if official_trade.empty:
+        return
+
+    for unit, unit_frame in official_trade.groupby("unit", dropna=False):
+        scale, y_title = _official_trade_unit_config(str(unit))
+        chart_frame = unit_frame.copy()
+        chart_frame["display_value"] = chart_frame["value"] / scale
+        official_pivot = chart_frame.pivot_table(
+            index="period",
+            columns="country_name",
+            values="display_value",
+            aggfunc="last",
+        ).sort_index()
+        unit_suffix = f" ({str(unit)})" if str(unit) else ""
+        st.plotly_chart(
+            make_line_chart(
+                official_pivot,
+                MODEL_COLORS[:len(official_pivot.columns)],
+                title=f"Official {category_choice} Exports{unit_suffix}",
+                y_title=y_title,
+                x_title="Month",
+                height=340,
+                connect_gaps=True,
+            ),
+            width="stretch",
+        )
+
+
 def render_revenue_estimator(datasets: dict[str, DatasetLoadResult], openrouter_views: dict[str, object]) -> None:
     rev_data = openrouter_views.get("revenue_estimator", {})
     pivot_rev = rev_data.get("pivot_rev", pd.DataFrame())
@@ -3021,19 +3059,20 @@ def render_semiconductor_section(datasets: dict[str, DatasetLoadResult], semi_vi
         production_df = semi_views.get("production_df", pd.DataFrame())
         source_catalog_df = semi_views.get("source_catalog_df", pd.DataFrame())
 
-        min_date = _cutoff if _cutoff else "2025-01"
-        if min_date and min_date < "2025-01":
-            min_date = "2025-01"
+        min_date = _cutoff
 
         if not official_df.empty:
             official_df = official_df.sort_values("period")
-            official_df = official_df[official_df["period"] >= min_date].copy()
+            if min_date:
+                official_df = official_df[official_df["period"] >= min_date].copy()
         if not backup_df.empty:
             backup_df = backup_df.sort_values("period")
-            backup_df = backup_df[backup_df["period"] >= min_date].copy()
+            if min_date:
+                backup_df = backup_df[backup_df["period"] >= min_date].copy()
         if not production_df.empty:
             production_df = production_df.sort_values("period")
-            production_df = production_df[production_df["period"] >= min_date].copy()
+            if min_date:
+                production_df = production_df[production_df["period"] >= min_date].copy()
 
         if official_df.empty and backup_df.empty and production_df.empty:
             st.warning("No tiered semiconductor trade or production data available.")
@@ -3098,25 +3137,7 @@ def render_semiconductor_section(datasets: dict[str, DatasetLoadResult], semi_vi
                 ].copy()
 
                 if show_official and not official_trade.empty:
-                    official_trade["value_b"] = official_trade["value"] / 1e9
-                    official_pivot = official_trade.pivot_table(
-                        index="period",
-                        columns="country_name",
-                        values="value_b",
-                        aggfunc="last",
-                    ).sort_index()
-                    st.plotly_chart(
-                        make_line_chart(
-                            official_pivot,
-                            MODEL_COLORS[:len(official_pivot.columns)],
-                            title=f"Official {category_choice} Exports",
-                            y_title="USD Billion",
-                            x_title="Month",
-                            height=340,
-                            connect_gaps=True,
-                        ),
-                        width="stretch",
-                    )
+                    _render_official_trade_chart(official_trade, category_choice)
 
                 if show_backup and not backup_trade.empty:
                     backup_trade["value_b"] = backup_trade["value"] / 1e9
