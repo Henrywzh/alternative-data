@@ -8,17 +8,17 @@ graphite,Graphite,proxy,yfinance_futures,LIT,USD,etf_share,2,True,lithium,True,1
 indium,Indium,direct,investing_html,https://www.investing.com/commodities/indium-99.99-min-united-states-futures-historical-data,USD,kg,3,True,,True,20,fetched
 lead,Lead,direct,fred_series,PLEADUSDM,USD,metric ton,30,True,,True,1144,fetched
 lithium,Lithium,proxy,yfinance_futures,LIT,USD,etf_share,1,True,,True,1119,fetched
-manganese,Manganese,proxy,investing_html,https://www.investing.com/commodities/zce-silicomanganese-futures-historical-data,CNY,ton,1,True,silicomanganese_proxy,True,21,fetched
+manganese,Manganese,proxy,yfinance_futures,S32.AX,AUD,equity_proxy,1,True,south32_producer_equity,True,1127,fetched
 neodymium,Neodymium,proxy,yfinance_futures,REMX,USD,etf_share,1,True,,True,1119,fetched
 nickel,Nickel,direct,yfinance_futures,NIY=F,USD,metric ton,1,True,,True,1122,fetched
 palladium,Palladium,direct,yfinance_futures,PA=F,USD,oz,1,True,,True,1121,fetched
 platinum,Platinum,direct,yfinance_futures,PL=F,USD,oz,1,True,,True,1122,fetched
-silicon,Silicon,proxy,investing_html,https://www.investing.com/commodities/zce-ferrosilicon-futures-historical-data,CNY,ton,1,True,ferrosilicon_proxy,True,21,fetched
+silicon,Silicon,proxy,yfinance_futures,GSM,USD,equity_proxy,1,True,ferroglobe_producer_equity,True,1119,fetched
 silver,Silver,direct,yfinance_futures,SI=F,USD,oz,1,True,,True,1122,fetched
-tantalum,Tantalum,direct,investing_html,https://au.investing.com/commodities/tantalum-99.95-min-united-states-futures-historical-data,USD,kg,3,True,,True,20,fetched
+tantalum,Tantalum,proxy,yfinance_futures,AMG.AS,EUR,equity_proxy,1,True,amg_producer_equity,True,1141,fetched
 tin,Tin,direct,fred_series,PTINUSDM,USD,metric ton,30,True,,True,1144,fetched
 uranium,Uranium,proxy,yfinance_futures,URA,USD,etf_share,1,True,,True,1119,fetched
-vanadium,Vanadium,direct,investing_html,https://www.investing.com/commodities/vanadium-pentoxide-98-min-europe-futures-historical-data,USD,kg,1,True,,True,20,fetched
+vanadium,Vanadium,proxy,yfinance_futures,LGO,USD,equity_proxy,1,True,largo_producer_equity,True,1119,fetched
 zinc,Zinc,direct,fred_series,PZINCUSDM,USD,metric ton,30,True,,True,1144,fetched
 arsenic,Arsenic,unsupported,manual_proxy,,,,5,False,,False,0,inactive
 barite,Barite,unsupported,manual_proxy,,,,5,False,,False,0,inactive

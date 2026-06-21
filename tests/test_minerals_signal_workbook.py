@@ -151,11 +151,13 @@ def test_build_price_universe_marks_direct_proxy_and_unsupported_minerals(tmp_pa
     frame = build_price_universe(minerals)
 
     expected = {
-        "tantalum": ("direct", "investing_html", True),
+        # tantalum has no free spot feed; tracked via a producer-equity proxy (AMG.AS).
+        "tantalum": ("proxy", "yfinance_futures", True),
         # graphite is a proxy mineral now pointed at a reliable free instrument
         # (LIT, lithium ETF) instead of the dead manual_proxy placeholder.
         "graphite": ("proxy", "yfinance_futures", True),
         "copper": ("direct", "yfinance_futures", True),
+        # gallium still has no free source — stays best-effort on investing.com.
         "gallium": ("direct", "investing_html", True),
     }
 
