@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import io
 import json
 from dataclasses import dataclass
 from pathlib import Path
 
 import pandas as pd
+
+from dashboard import remote
 
 
 DATASET_REGISTRY: dict[str, dict[str, object]] = {
@@ -817,18 +820,46 @@ def load_dataset(dataset_id: str, base_dir: Path | None = None) -> DatasetLoadRe
     source_format: str | None = None
     source_path: Path | None = None
 
-    try:
-        if parquet_path.exists():
-            frame = pd.read_parquet(parquet_path)
-            source_format = "parquet"
-            source_path = parquet_path
-        elif csv_path.exists():
-            frame = pd.read_csv(csv_path)
-            source_format = "csv"
-            source_path = csv_path
-    except Exception as e:
-        print(f"Warning: Failed to load dataset {dataset_id} from {parquet_path if parquet_path.exists() else csv_path}: {e}")
-        # frame remains an empty DataFrame initialized above
+    # Prefer fetching committed bytes from GitHub keyed by the latest data SHA, so
+    # the running Streamlit Cloud container reflects daily pushes without a reboot.
+    # Falls through to the local checkout on any failure (local dev / offline).
+    # Remote fetch only applies to the live deployed checkout. When a caller passes
+    # a custom base_dir (tests, ad-hoc tooling), read those local files directly so
+    # the data source stays predictable and isolated from the production repo.
+    root = base_dir if base_dir is not None else repo_root()
+    if remote.remote_enabled() and root == repo_root():
+        sha = remote.latest_data_sha()
+        if sha:
+            candidates = (
+                (parquet_path, "parquet", lambda b: pd.read_parquet(io.BytesIO(b))),
+                (csv_path, "csv", lambda b: pd.read_csv(io.BytesIO(b))),
+            )
+            for path_obj, fmt, reader in candidates:
+                rel = path_obj.relative_to(root).as_posix()
+                payload = remote.fetch_bytes(rel, sha)
+                if payload is None:
+                    continue
+                try:
+                    frame = reader(payload)
+                    source_format = fmt
+                    source_path = path_obj
+                    break
+                except Exception as e:
+                    print(f"Warning: remote read failed for {rel}: {e}")
+
+    if source_format is None:
+        try:
+            if parquet_path.exists():
+                frame = pd.read_parquet(parquet_path)
+                source_format = "parquet"
+                source_path = parquet_path
+            elif csv_path.exists():
+                frame = pd.read_csv(csv_path)
+                source_format = "csv"
+                source_path = csv_path
+        except Exception as e:
+            print(f"Warning: Failed to load dataset {dataset_id} from {parquet_path if parquet_path.exists() else csv_path}: {e}")
+            # frame remains an empty DataFrame initialized above
     
     # CRITICAL: Ensure no duplicate columns exist before padding/filtering
     frame = frame.loc[:, ~frame.columns.duplicated()].copy()
