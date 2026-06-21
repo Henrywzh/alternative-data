@@ -125,6 +125,12 @@ def _empty_dataset_frame(dataset_id: str) -> pd.DataFrame:
     return pd.DataFrame(columns=required_columns)
 
 
+def _styler_applymap_compat(styler, func, subset=None):
+    if hasattr(styler, "map"):
+        return styler.map(func, subset=subset)
+    return styler.applymap(func, subset=subset)
+
+
 WEEKLY_MONTHLY_OTHER_PROVIDERS = {
     "Tngtech",
     "Others",
@@ -3843,7 +3849,7 @@ def render_google_trends_section() -> None:
             c = SIGNAL_QUALITY_COLOR.get(val, MUTED)
             return f"color: {c}; font-weight: 600"
 
-        styled_wl = wl_df.style.applymap(color_quality, subset=["Quality"])
+        styled_wl = _styler_applymap_compat(wl_df.style, color_quality, subset=["Quality"])
         st.dataframe(styled_wl, use_container_width=True, hide_index=True,
                      column_config={
                          "Notes": st.column_config.TextColumn(width="large"),
@@ -3947,7 +3953,7 @@ def render_google_trends_section() -> None:
                     norm = abs(norm)
                     return f"background-color: rgba(220, 38, 38, {0.05 + 0.3*norm:.2f})"
 
-            styled_lead = lead_df.style.applymap(color_r, subset=r_cols).format({
+            styled_lead = _styler_applymap_compat(lead_df.style, color_r, subset=r_cols).format({
                 "Same Week r": "{:+.4f}",
                 "Next Week r": "{:+.4f}",
                 "YoY Same Week r": "{:+.4f}",
