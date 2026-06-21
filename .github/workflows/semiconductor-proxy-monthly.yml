@@ -1,0 +1,189 @@
+name: Semiconductor Proxy Monthly
+
+on:
+  schedule:
+    - cron: "0 10 12-16 * *"
+  workflow_dispatch:
+    inputs:
+      command:
+        description: "Command to run"
+        required: false
+        default: "update-latest"
+        type: choice
+        options:
+          - update-latest
+          - backfill
+          - compare-backup
+          - validate
+      period_month:
+        description: "Override month (YYYY-MM) for update-latest"
+        required: false
+        default: ""
+      start_month:
+        description: "Start month (YYYY-MM) for backfill"
+        required: false
+        default: ""
+      end_month:
+        description: "End month (YYYY-MM) for backfill"
+        required: false
+        default: ""
+      regions:
+        description: "Optional comma-separated region overrides"
+        required: false
+        default: "japan,korea,hongkong"
+      categories:
+        description: "Optional comma-separated category overrides"
+        required: false
+        default: "ic_only"
+      sources:
+        description: "Source tier to run"
+        required: false
+        default: "official"
+        type: choice
+        options:
+          - all
+          - official
+          - backup
+
+concurrency:
+  group: semiconductor-proxy-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  semiconductor-proxy:
+    runs-on: ubuntu-latest
+    env:
+      COMTRADE_API_KEY: ${{ secrets.SEMICONDUCTOR_COMTRADE_API_KEY }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .[dev]
+
+      - name: Require Comtrade API key for backup-enabled runs
+        if: github.event_name == 'workflow_dispatch' && (github.event.inputs.command == 'update-latest' || github.event.inputs.command == 'backfill' || github.event.inputs.command == 'compare-backup') && github.event.inputs.sources != 'official'
+        run: |
+          set -euo pipefail
+          if [ -z "${COMTRADE_API_KEY}" ]; then
+            echo "SEMICONDUCTOR_COMTRADE_API_KEY secret is required when running backup-enabled semiconductor proxy refreshes."
+            exit 1
+          fi
+
+      - name: Run scheduled latest update
+        if: github.event_name == 'schedule'
+        run: |
+          set -euo pipefail
+          semiconductor-proxy-data --base-dir . --sources official --regions japan,korea,hongkong update-latest
+
+      - name: Run manual latest update
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.command == 'update-latest'
+        run: |
+          set -euo pipefail
+          ARGS="--sources ${{ github.event.inputs.sources }}"
+          if [ -n "${{ github.event.inputs.regions }}" ]; then
+            ARGS="$ARGS --regions ${{ github.event.inputs.regions }}"
+          fi
+          if [ -n "${{ github.event.inputs.categories }}" ]; then
+            ARGS="$ARGS --categories ${{ github.event.inputs.categories }}"
+          fi
+          ARGS="$ARGS update-latest"
+          if [ -n "${{ github.event.inputs.period_month }}" ]; then
+            ARGS="$ARGS --period-month ${{ github.event.inputs.period_month }}"
+          fi
+          semiconductor-proxy-data --base-dir . $ARGS
+
+      - name: Run manual backfill
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.command == 'backfill'
+        run: |
+          set -euo pipefail
+          ARGS="--sources ${{ github.event.inputs.sources }}"
+          if [ -n "${{ github.event.inputs.regions }}" ]; then
+            ARGS="$ARGS --regions ${{ github.event.inputs.regions }}"
+          fi
+          if [ -n "${{ github.event.inputs.categories }}" ]; then
+            ARGS="$ARGS --categories ${{ github.event.inputs.categories }}"
+          fi
+          ARGS="$ARGS backfill"
+          if [ -n "${{ github.event.inputs.start_month }}" ]; then
+            ARGS="$ARGS --start-month ${{ github.event.inputs.start_month }}"
+          fi
+          if [ -n "${{ github.event.inputs.end_month }}" ]; then
+            ARGS="$ARGS --end-month ${{ github.event.inputs.end_month }}"
+          fi
+          semiconductor-proxy-data --base-dir . $ARGS
+
+      - name: Run manual compare-backup
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.command == 'compare-backup'
+        run: |
+          set -euo pipefail
+          ARGS="--sources ${{ github.event.inputs.sources }}"
+          if [ -n "${{ github.event.inputs.regions }}" ]; then
+            ARGS="$ARGS --regions ${{ github.event.inputs.regions }}"
+          fi
+          if [ -n "${{ github.event.inputs.categories }}" ]; then
+            ARGS="$ARGS --categories ${{ github.event.inputs.categories }}"
+          fi
+          semiconductor-proxy-data --base-dir . $ARGS compare-backup
+
+      - name: Validate datasets
+        if: github.event_name == 'schedule' || github.event.inputs.command == 'update-latest' || github.event.inputs.command == 'backfill' || github.event.inputs.command == 'compare-backup' || github.event.inputs.command == 'validate'
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            semiconductor-proxy-data --base-dir . --sources official --regions japan,korea,hongkong validate --fail-on-issues
+          else
+            ARGS="--sources ${{ github.event.inputs.sources }}"
+            if [ -n "${{ github.event.inputs.regions }}" ]; then
+              ARGS="$ARGS --regions ${{ github.event.inputs.regions }}"
+            fi
+            if [ -n "${{ github.event.inputs.categories }}" ]; then
+              ARGS="$ARGS --categories ${{ github.event.inputs.categories }}"
+            fi
+            semiconductor-proxy-data --base-dir . $ARGS validate --fail-on-issues
+          fi
+
+      - name: Commit dataset changes
+        if: github.event_name == 'schedule' || github.event.inputs.command == 'update-latest' || github.event.inputs.command == 'backfill' || github.event.inputs.command == 'compare-backup'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/raw/semiconductor_proxies data/normalized/semiconductor_proxies
+
+          if git diff --staged --quiet; then
+            echo "No semiconductor proxy dataset changes to commit"
+            exit 0
+          fi
+
+          git diff --cached --stat
+          git commit -m "chore: update semiconductor proxy datasets"
+          git pull --rebase origin "${{ github.event.repository.default_branch }}"
+          git push
+
+      - name: Upload raw snapshots
+        if: github.event_name == 'schedule' || github.event.inputs.command == 'update-latest' || github.event.inputs.command == 'backfill' || github.event.inputs.command == 'compare-backup'
+        uses: actions/upload-artifact@v4
+        with:
+          name: semiconductor-proxy-raw-snapshots
+          path: data/raw/semiconductor_proxies/
+          if-no-files-found: warn
+
+      - name: Upload normalized datasets
+        if: github.event_name == 'schedule' || github.event.inputs.command == 'update-latest' || github.event.inputs.command == 'backfill' || github.event.inputs.command == 'compare-backup'
+        uses: actions/upload-artifact@v4
+        with:
+          name: semiconductor-proxy-normalized-datasets
+          path: data/normalized/semiconductor_proxies/
+          if-no-files-found: warn
