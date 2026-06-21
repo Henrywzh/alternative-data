@@ -19,6 +19,7 @@ dependencies = [
   "plotly>=5.24",
   "matplotlib>=3.8",
   "yfinance>=0.2.54",
+  "trendspyg>=0.6.1",
 ]
 
 [tool.poetry]
@@ -40,6 +41,9 @@ research-data = "research_data.cli:main"
 artificial-analysis-data = "artificial_analysis_data.cli:main"
 minerals-usgs-data = "minerals_usgs_data.cli:main"
 minerals-signal-data = "minerals_signal_data.cli:main"
+taiwan-semiconductor-revenue-data = "taiwan_semiconductor_revenue_data.cli:main"
+semiconductor-proxy-data = "semiconductor_proxy_data.cli:main"
+google-trends-data = "google_trends_data.cli:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

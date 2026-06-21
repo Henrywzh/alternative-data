@@ -161,6 +161,79 @@ DATASET_REGISTRY: dict[str, dict[str, object]] = {
         "metric_column": None,
         "required_columns": ["month", "image_url", "local_path", "image_type"],
     },
+    "semiconductor_official_monthly": {
+        "label": "Semiconductor Official Monthly",
+        "domain": "semiconductor_proxies",
+        "natural_keys": ["source_region", "metric_type", "category_id", "flow_code", "period", "partner_scope"],
+        "primary_date_column": "period",
+        "metric_column": "value",
+        "required_columns": [
+            "source_region",
+            "country_name",
+            "metric_type",
+            "flow_code",
+            "partner_scope",
+            "period",
+            "category_id",
+            "classification_code",
+            "value",
+        ],
+    },
+    "semiconductor_backup_check_monthly": {
+        "label": "Semiconductor Backup Check Monthly",
+        "domain": "semiconductor_proxies",
+        "natural_keys": ["source_region", "metric_type", "category_id", "flow_code", "period", "partner_scope", "source_name"],
+        "primary_date_column": "period",
+        "metric_column": "value",
+        "required_columns": [
+            "source_region",
+            "country_name",
+            "metric_type",
+            "flow_code",
+            "partner_scope",
+            "period",
+            "category_id",
+            "classification_code",
+            "value",
+            "comparison_gap_pct",
+        ],
+    },
+    "semiconductor_source_catalog": {
+        "label": "Semiconductor Source Catalog",
+        "domain": "semiconductor_proxies",
+        "natural_keys": ["source_region", "source_name", "metric_type", "category_id", "source_tier"],
+        "primary_date_column": "latest_period",
+        "metric_column": None,
+        "required_columns": [
+            "source_region",
+            "country_name",
+            "source_name",
+            "source_tier",
+            "metric_type",
+            "category_id",
+            "latest_period",
+            "expected_release_window_days",
+        ],
+    },
+    "tw_monthly_revenue": {
+        "label": "Taiwan Monthly Revenue",
+        "domain": "taiwan_semiconductor_revenue",
+        "natural_keys": ["company_code", "revenue_month"],
+        "primary_date_column": "revenue_month",
+        "metric_column": "monthly_revenue_ntd",
+        "required_columns": [
+            "company_code",
+            "company_name",
+            "market",
+            "industry",
+            "filing_date",
+            "revenue_month",
+            "monthly_revenue_ntd",
+            "yoy_pct",
+            "ytd_revenue_ntd",
+            "ytd_yoy_pct",
+        ],
+    },
     "llm_benchmarks": {
         "label": "LLM Benchmarks",
         "domain": "ai_frontier",
@@ -256,6 +329,14 @@ DOMAIN_ORDER = {
     "semiconductor_memory": [
         "semiconductor_memory_regime_monthly",
         "adata_marketwatch_images",
+    ],
+    "semiconductor_proxies": [
+        "semiconductor_official_monthly",
+        "semiconductor_backup_check_monthly",
+        "semiconductor_source_catalog",
+    ],
+    "taiwan_semiconductor_revenue": [
+        "tw_monthly_revenue",
     ],
     "ai_frontier": [
         "llm_benchmarks",
@@ -411,6 +492,48 @@ SEMICONDUCTOR_COLUMNS = [
     "adata_freshness_days",
     "fred_release_lag_days",
     "data_completeness",
+    "source_region",
+    "country_name",
+    "metric_type",
+    "flow_code",
+    "partner_scope",
+    "period",
+    "release_date",
+    "expected_release_window_days",
+    "lag_days",
+    "category_id",
+    "category_label",
+    "classification_system",
+    "classification_code",
+    "unit",
+    "currency",
+    "comparison_gap_pct",
+    "source_name",
+    "source_tier",
+    "coverage_start",
+    "latest_period",
+    "cadence",
+    "default_unit",
+    "default_currency",
+    "notes",
+    "company_code",
+    "company_name",
+    "market",
+    "industry",
+    "filing_date",
+    "revenue_month",
+    "monthly_revenue_ntd",
+    "mom_pct",
+    "yoy_pct",
+    "ytd_revenue_ntd",
+    "ytd_yoy_pct",
+    "parser_version",
+    "raw_company_name_text",
+    "raw_monthly_revenue_text",
+    "raw_mom_pct_text",
+    "raw_yoy_pct_text",
+    "raw_ytd_revenue_text",
+    "raw_ytd_yoy_pct_text",
 ]
 
 BENCHMARK_COLUMNS = [
@@ -512,6 +635,8 @@ DATE_COLUMNS = [
     "signal_date",
     "month",
     "date",
+    "filing_date",
+    "revenue_month",
     "release_date",
     "price_timestamp",
     "snapshot_ts",
@@ -548,6 +673,11 @@ NUMERIC_COLUMNS = [
     "github_env_repo_count",
     "github_model_repo_count",
     "momentum_score",
+    "monthly_revenue_ntd",
+    "mom_pct",
+    "yoy_pct",
+    "ytd_revenue_ntd",
+    "ytd_yoy_pct",
     "fred_ppi_value",
     "fred_ppi_mom_pct",
     "fred_ppi_3m_trend",
@@ -645,6 +775,10 @@ def dataset_source_for_domain(domain: str) -> str:
         return "provider_adoption"
     if domain == "semiconductor_memory":
         return "semiconductor_memory"
+    if domain == "semiconductor_proxies":
+        return "semiconductor_proxies"
+    if domain == "taiwan_semiconductor_revenue":
+        return "taiwan_semiconductor_revenue"
     if domain == "ai_frontier":
         return "llm_benchmarks"
     if domain == "compute_availability":
@@ -665,6 +799,10 @@ def load_dataset(dataset_id: str, base_dir: Path | None = None) -> DatasetLoadRe
         source = "provider_adoption"
     elif domain == "semiconductor_memory":
         source = "semiconductor_memory"
+    elif domain == "semiconductor_proxies":
+        source = "semiconductor_proxies"
+    elif domain == "taiwan_semiconductor_revenue":
+        source = "taiwan_semiconductor_revenue"
     elif domain == "ai_frontier":
         source = "llm_benchmarks"
     elif domain == "compute_availability":

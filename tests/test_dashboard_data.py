@@ -961,6 +961,11 @@ def test_section_domains_loads_only_selected_dashboard_inputs() -> None:
     assert section_domains("OpenRouter Intelligence") == ("rankings", "apps", "compute_availability")
     assert section_domains("Provider Adoption") == ("provider_adoption",)
     assert section_domains("Artificial Analysis") == ("artificial_analysis",)
+    assert section_domains("Semiconductor Analysis") == (
+        "semiconductor_memory",
+        "semiconductor_proxies",
+        "taiwan_semiconductor_revenue",
+    )
 
 
 def test_load_all_datasets_supports_every_registered_dataset(tmp_path: Path) -> None:
@@ -1181,6 +1186,241 @@ def test_compute_semiconductor_views_exposes_proxy_and_component_columns() -> No
     assert result["latest_fred_month"] == "2026-04"
     assert len(result["component_columns"]) == 5
     assert list(result["proxy_df"]["month"]) == ["2026-02", "2026-03"]
+
+
+def test_compute_semiconductor_views_includes_tiered_official_backup_and_production_data() -> None:
+    official_frame = pd.DataFrame(
+        [
+            {
+                **_base_row("semiconductor_official_monthly"),
+                "source_region": "korea",
+                "country_name": "South Korea",
+                "metric_type": "exports",
+                "flow_code": "X",
+                "partner_scope": "world",
+                "period": "2026-03",
+                "release_date": "2026-04-15",
+                "expected_release_window_days": 21,
+                "lag_days": 15,
+                "category_id": "ic_only",
+                "category_label": "IC-only",
+                "classification_system": "HS",
+                "classification_code": "8542",
+                "unit": "usd",
+                "currency": "USD",
+                "value": 12500000000.0,
+                "comparison_gap_pct": 6.5,
+                "is_official_primary": True,
+                "source_name": "Korea Customs Service",
+                "parser_version": "test-v1",
+            },
+            {
+                **_base_row("semiconductor_official_monthly"),
+                "source_region": "china",
+                "country_name": "China",
+                "metric_type": "production",
+                "flow_code": "",
+                "partner_scope": "domestic",
+                "period": "2026-03",
+                "release_date": "2026-04-17",
+                "expected_release_window_days": 20,
+                "lag_days": 17,
+                "category_id": "ic_only",
+                "category_label": "IC-only",
+                "classification_system": "NBS",
+                "classification_code": "A02092C",
+                "unit": "100m_pieces",
+                "currency": "",
+                "value": 350.0,
+                "is_official_primary": True,
+                "source_name": "NBS",
+                "parser_version": "test-v1",
+            },
+        ],
+        columns=EXPECTED_COLUMNS,
+    )
+    backup_frame = pd.DataFrame(
+        [
+            {
+                **_base_row("semiconductor_backup_check_monthly"),
+                "source_region": "korea",
+                "country_name": "South Korea",
+                "metric_type": "exports",
+                "flow_code": "X",
+                "partner_scope": "world",
+                "period": "2026-03",
+                "release_date": "2026-04-30",
+                "expected_release_window_days": 45,
+                "lag_days": 30,
+                "category_id": "ic_only",
+                "category_label": "IC-only",
+                "classification_system": "HS",
+                "classification_code": "8542",
+                "unit": "usd",
+                "currency": "USD",
+                "value": 11700000000.0,
+                "comparison_gap_pct": 6.5,
+                "is_official_primary": False,
+                "source_name": "UN Comtrade",
+                "parser_version": "test-v1",
+            }
+        ],
+        columns=EXPECTED_COLUMNS,
+    )
+
+    result = compute_semiconductor_views(
+        {
+            "semiconductor_official_monthly": DatasetLoadResult(
+                dataset_id="semiconductor_official_monthly",
+                label="Semiconductor Official Monthly",
+                domain="semiconductor_proxies",
+                primary_date_column="period",
+                metric_column="value",
+                frame=official_frame,
+                source_format="parquet",
+                source_path=None,
+                missing_columns=[],
+                duplicate_rows=0,
+                first_date="2026-03",
+                row_count=len(official_frame),
+                latest_date="2026-03",
+                latest_scraped_at="2026-03-15T00:00:00Z",
+            ),
+            "semiconductor_backup_check_monthly": DatasetLoadResult(
+                dataset_id="semiconductor_backup_check_monthly",
+                label="Semiconductor Backup Check Monthly",
+                domain="semiconductor_proxies",
+                primary_date_column="period",
+                metric_column="value",
+                frame=backup_frame,
+                source_format="parquet",
+                source_path=None,
+                missing_columns=[],
+                duplicate_rows=0,
+                first_date="2026-03",
+                row_count=len(backup_frame),
+                latest_date="2026-03",
+                latest_scraped_at="2026-03-15T00:00:00Z",
+            ),
+            "semiconductor_source_catalog": DatasetLoadResult(
+                dataset_id="semiconductor_source_catalog",
+                label="Semiconductor Source Catalog",
+                domain="semiconductor_proxies",
+                primary_date_column="latest_period",
+                metric_column=None,
+                frame=pd.DataFrame(
+                    [
+                        {
+                            **_base_row("semiconductor_source_catalog"),
+                            "source_region": "korea",
+                            "country_name": "South Korea",
+                            "source_name": "Korea Customs Service",
+                            "source_tier": "official",
+                            "metric_type": "exports",
+                            "category_id": "ic_only",
+                            "category_label": "IC-only",
+                            "coverage_start": "2025-01",
+                            "latest_period": "2026-03",
+                            "cadence": "monthly",
+                            "expected_release_window_days": 21,
+                            "default_unit": "usd",
+                            "default_currency": "USD",
+                            "is_official_primary": True,
+                            "notes": "Fixture catalog row",
+                        }
+                    ],
+                    columns=EXPECTED_COLUMNS,
+                ),
+                source_format="parquet",
+                source_path=None,
+                missing_columns=[],
+                duplicate_rows=0,
+                first_date="2026-03",
+                row_count=1,
+                latest_date="2026-03",
+                latest_scraped_at="2026-03-15T00:00:00Z",
+            ),
+        }
+    )
+
+    assert not result["official_df"].empty
+    assert not result["backup_df"].empty
+    assert not result["production_df"].empty
+    korea_official = result["official_df"][result["official_df"]["source_region"] == "korea"].iloc[0]
+    assert korea_official["value"] == 12500000000.0
+    assert result["backup_df"].iloc[0]["comparison_gap_pct"] == 6.5
+    assert result["production_df"].iloc[0]["value"] == 350.0
+    assert result["latest_official_period"] == "2026-03"
+
+
+def test_compute_semiconductor_views_includes_taiwan_monthly_revenue() -> None:
+    taiwan_frame = pd.DataFrame(
+        [
+            {
+                **_base_row("tw_monthly_revenue"),
+                "company_code": "2330",
+                "company_name": "台積電",
+                "market": "TWSE",
+                "industry": "Foundry",
+                "filing_date": "2026-06-10",
+                "revenue_month": "2026-05",
+                "monthly_revenue_ntd": 416975163.0,
+                "yoy_pct": 30.09,
+                "ytd_revenue_ntd": 1961803721.0,
+                "ytd_yoy_pct": 29.98,
+            },
+            {
+                **_base_row("tw_monthly_revenue"),
+                "company_code": "2303",
+                "company_name": "聯電",
+                "market": "TWSE",
+                "industry": "Foundry",
+                "filing_date": "2026-06-10",
+                "revenue_month": "2026-05",
+                "monthly_revenue_ntd": 22943755.0,
+                "yoy_pct": 17.78,
+                "ytd_revenue_ntd": 106645602.0,
+                "ytd_yoy_pct": 9.05,
+            },
+        ],
+        columns=EXPECTED_COLUMNS,
+    )
+
+    result = compute_semiconductor_views(
+        {
+            "tw_monthly_revenue": DatasetLoadResult(
+                dataset_id="tw_monthly_revenue",
+                label="Taiwan Monthly Revenue",
+                domain="taiwan_semiconductor_revenue",
+                primary_date_column="revenue_month",
+                metric_column="monthly_revenue_ntd",
+                frame=taiwan_frame,
+                source_format="parquet",
+                source_path=None,
+                missing_columns=[],
+                duplicate_rows=0,
+                first_date="2026-05",
+                row_count=len(taiwan_frame),
+                latest_date="2026-05",
+                latest_scraped_at="2026-06-10T00:00:00Z",
+            )
+        }
+    )
+
+    assert result["latest_taiwan_revenue_month"] == "2026-05"
+    assert list(result["latest_taiwan_revenue"]["company_code"]) == ["2330", "2303"]
+    assert float(result["taiwan_revenue_pivot"].loc["2026-05", "台積電"]) == 416975163.0
+    assert float(result["taiwan_yoy_pivot"].loc["2026-05", "聯電"]) == 17.78
+
+
+def test_compute_semiconductor_views_preserves_empty_semiconductor_schema() -> None:
+    result = compute_semiconductor_views({})
+
+    assert "metric_type" in result["official_df"].columns
+    assert "partner_scope" in result["official_df"].columns
+    assert "category_id" in result["official_df"].columns
+    assert "metric_type" in result["backup_df"].columns
+    assert "source_tier" in result["source_catalog_df"].columns
 
 
 def test_prepare_hf_models_table_returns_empty_for_all_view() -> None:
