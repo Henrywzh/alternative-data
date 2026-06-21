@@ -1,0 +1,143 @@
+name: Taiwan Semiconductor Revenue Monthly
+
+on:
+  schedule:
+    - cron: "0 9 10-12 * *"
+  workflow_dispatch:
+    inputs:
+      command:
+        description: "Command to run"
+        required: false
+        default: "update-latest"
+        type: choice
+        options:
+          - update-latest
+          - backfill
+          - validate
+      revenue_month:
+        description: "Revenue month (YYYY-MM) for update-latest override"
+        required: false
+        default: ""
+      start_month:
+        description: "Start month (YYYY-MM) for backfill"
+        required: false
+        default: ""
+      end_month:
+        description: "End month (YYYY-MM) for backfill"
+        required: false
+        default: ""
+      companies:
+        description: "Optional comma-separated company overrides"
+        required: false
+        default: ""
+
+concurrency:
+  group: taiwan-semiconductor-revenue-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  taiwan-semiconductor-revenue:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .[dev]
+
+      - name: Run scheduled latest update
+        if: github.event_name == 'schedule'
+        run: |
+          set -euo pipefail
+          taiwan-semiconductor-revenue-data --base-dir . update-latest
+
+      - name: Run manual latest update
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.command == 'update-latest'
+        run: |
+          set -euo pipefail
+          ARGS=""
+          if [ -n "${{ github.event.inputs.companies }}" ]; then
+            ARGS="$ARGS --companies ${{ github.event.inputs.companies }}"
+          fi
+          if [ -n "${{ github.event.inputs.revenue_month }}" ]; then
+            ARGS="$ARGS update-latest --revenue-month ${{ github.event.inputs.revenue_month }}"
+          else
+            ARGS="$ARGS update-latest"
+          fi
+          taiwan-semiconductor-revenue-data --base-dir . $ARGS
+
+      - name: Run manual backfill
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.command == 'backfill'
+        run: |
+          set -euo pipefail
+          ARGS=""
+          if [ -n "${{ github.event.inputs.companies }}" ]; then
+            ARGS="$ARGS --companies ${{ github.event.inputs.companies }}"
+          fi
+          ARGS="$ARGS backfill"
+          if [ -n "${{ github.event.inputs.start_month }}" ]; then
+            ARGS="$ARGS --start-month ${{ github.event.inputs.start_month }}"
+          fi
+          if [ -n "${{ github.event.inputs.end_month }}" ]; then
+            ARGS="$ARGS --end-month ${{ github.event.inputs.end_month }}"
+          fi
+          taiwan-semiconductor-revenue-data --base-dir . $ARGS
+
+      - name: Validate datasets
+        if: github.event_name == 'schedule' || github.event.inputs.command == 'update-latest' || github.event.inputs.command == 'backfill' || github.event.inputs.command == 'validate'
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            taiwan-semiconductor-revenue-data --base-dir . validate --fail-on-issues
+          else
+            COMPANIES_ARG=""
+            if [ -n "${{ github.event.inputs.companies }}" ]; then
+              COMPANIES_ARG="--companies ${{ github.event.inputs.companies }}"
+            fi
+            taiwan-semiconductor-revenue-data --base-dir . $COMPANIES_ARG validate --fail-on-issues
+          fi
+
+      - name: Commit dataset changes
+        if: github.event_name == 'schedule' || github.event.inputs.command == 'update-latest' || github.event.inputs.command == 'backfill'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/raw/taiwan_semiconductor_revenue data/normalized/taiwan_semiconductor_revenue
+
+          if git diff --staged --quiet; then
+            echo "No Taiwan semiconductor revenue dataset changes to commit"
+            exit 0
+          fi
+
+          git diff --cached --stat
+          git commit -m "chore: update Taiwan semiconductor revenue datasets"
+          git pull --rebase origin "${{ github.event.repository.default_branch }}"
+          git push
+
+      - name: Upload raw snapshots
+        if: github.event_name == 'schedule' || github.event.inputs.command == 'update-latest' || github.event.inputs.command == 'backfill'
+        uses: actions/upload-artifact@v4
+        with:
+          name: taiwan-semiconductor-revenue-raw-snapshots
+          path: data/raw/taiwan_semiconductor_revenue/
+          if-no-files-found: warn
+
+      - name: Upload normalized datasets
+        if: github.event_name == 'schedule' || github.event.inputs.command == 'update-latest' || github.event.inputs.command == 'backfill'
+        uses: actions/upload-artifact@v4
+        with:
+          name: taiwan-semiconductor-revenue-normalized-datasets
+          path: data/normalized/taiwan_semiconductor_revenue/
+          if-no-files-found: warn

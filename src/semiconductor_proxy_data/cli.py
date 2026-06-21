@@ -43,7 +43,12 @@ def main() -> None:
         help="Override the latest closed month (useful for tests and manual reruns)",
     )
 
-    subparsers.add_parser("validate", help="Report stored dataset counts and duplicate checks")
+    validate = subparsers.add_parser("validate", help="Report stored dataset counts and duplicate checks")
+    validate.add_argument(
+        "--fail-on-issues",
+        action="store_true",
+        help="Exit non-zero when duplicates, stale rows, or empty official outputs are detected",
+    )
     subparsers.add_parser("compare-backup", help="Recompute official vs backup comparison gaps")
 
     import_csv = subparsers.add_parser("import-csv", help="Import a custom local CSV dataset (e.g. from KCS or KITA)")
@@ -81,6 +86,8 @@ def main() -> None:
         counts = pipeline.validate()
         for key, value in counts.items():
             print(f"  {key}: {value}")
+        if args.fail_on_issues:
+            _raise_on_validation_issues(counts)
     elif args.command == "compare-backup":
         result = pipeline.compare_backup()
         _print_result(result)
@@ -112,6 +119,29 @@ def _print_result(result: PipelineResult) -> None:
         suffix = f"  (+{new_rows} new)" if new_rows else ""
         print(f"  {dataset_id}: {total_rows} rows{suffix}")
     print(f"raw_run_dir={result.raw_run_dir}")
+
+
+def _raise_on_validation_issues(counts: dict[str, int | str | None]) -> None:
+    problems: list[str] = []
+    official_rows = int(counts.get("official_rows") or 0)
+    official_duplicates = int(counts.get("official_duplicates") or 0)
+    backup_duplicates = int(counts.get("backup_duplicates") or 0)
+    official_stale_rows = int(counts.get("official_stale_rows") or 0)
+    backup_stale_rows = int(counts.get("backup_stale_rows") or 0)
+
+    if official_rows == 0:
+        problems.append("official_rows=0")
+    if official_duplicates > 0:
+        problems.append(f"official_duplicates={official_duplicates}")
+    if backup_duplicates > 0:
+        problems.append(f"backup_duplicates={backup_duplicates}")
+    if official_stale_rows > 0:
+        problems.append(f"official_stale_rows={official_stale_rows}")
+    if backup_stale_rows > 0:
+        problems.append(f"backup_stale_rows={backup_stale_rows}")
+
+    if problems:
+        raise SystemExit(f"Semiconductor proxy validation failed: {', '.join(problems)}")
 
 
 if __name__ == "__main__":

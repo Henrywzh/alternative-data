@@ -32,7 +32,12 @@ def main() -> None:
         help="Override the latest closed month (useful for tests and manual reruns)",
     )
 
-    subparsers.add_parser("validate", help="Report stored dataset counts and missing-field checks")
+    validate = subparsers.add_parser("validate", help="Report stored dataset counts and missing-field checks")
+    validate.add_argument(
+        "--fail-on-issues",
+        action="store_true",
+        help="Exit non-zero when duplicates, empty outputs, or missing monthly revenue are detected",
+    )
 
     args = parser.parse_args()
     base_dir = Path(args.base_dir).resolve()
@@ -56,6 +61,8 @@ def main() -> None:
         counts = pipeline.validate()
         for key, value in counts.items():
             print(f"  {key}: {value}")
+        if args.fail_on_issues:
+            _raise_on_validation_issues(counts)
 
 
 def _parse_company_codes(value: str | None) -> list[str] | None:
@@ -71,6 +78,26 @@ def _print_result(result: PipelineResult) -> None:
         suffix = f"  (+{new_rows} new)" if new_rows else ""
         print(f"  {dataset_id}: {total_rows} rows{suffix}")
     print(f"raw_run_dir={result.raw_run_dir}")
+
+
+def _raise_on_validation_issues(counts: dict[str, int]) -> None:
+    problems: list[str] = []
+    rows = int(counts.get("rows") or 0)
+    companies = int(counts.get("companies") or 0)
+    duplicate_keys = int(counts.get("duplicate_keys") or 0)
+    missing_monthly_revenue = int(counts.get("missing_monthly_revenue") or 0)
+
+    if rows == 0:
+        problems.append("rows=0")
+    if companies == 0:
+        problems.append("companies=0")
+    if duplicate_keys > 0:
+        problems.append(f"duplicate_keys={duplicate_keys}")
+    if missing_monthly_revenue > 0:
+        problems.append(f"missing_monthly_revenue={missing_monthly_revenue}")
+
+    if problems:
+        raise SystemExit(f"Taiwan semiconductor revenue validation failed: {', '.join(problems)}")
 
 
 if __name__ == "__main__":

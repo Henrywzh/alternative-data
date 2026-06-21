@@ -7,6 +7,7 @@ The repository now also includes a provider-adoption pipeline that tracks GitHub
 The repository also includes an Artificial Analysis pipeline that snapshots the official model API daily and refreshes the public capital-expenditure trend series.
 The repository also includes a Taiwan semiconductor revenue pipeline that backfills monthly MOPS operating-revenue disclosures for TSMC, UMC, and VIS.
 The repository also includes a tiered semiconductor tracker that separates official/native monthly signals from Comtrade backup checks and keeps category splits explicit.
+The scheduled official semiconductor tracker currently targets Japan, South Korea, and Hong Kong; China remains excluded from the automated default path for now.
 The repository also includes a notebook-friendly research layer that builds analysis-ready marts and starter notebooks on top of the tracked datasets.
 
 Rankings datasets:
@@ -223,6 +224,12 @@ Validate the stored Taiwan revenue parquet:
 taiwan-semiconductor-revenue-data --base-dir . validate
 ```
 
+Fail validation when Taiwan outputs are obviously broken:
+
+```bash
+taiwan-semiconductor-revenue-data --base-dir . validate --fail-on-issues
+```
+
 Backfill the tiered semiconductor tracker:
 
 ```bash
@@ -232,7 +239,7 @@ semiconductor-proxy-data --base-dir . backfill --start-month 2025-01 --end-month
 Refresh the latest closed month from the configured official + backup tiers:
 
 ```bash
-semiconductor-proxy-data --base-dir . update-latest --sources all --regions korea,china,hongkong,japan --categories ic_only
+semiconductor-proxy-data --base-dir . update-latest --sources all --regions japan,korea,hongkong --categories ic_only
 ```
 
 Import an official native CSV snapshot into the official tier:
@@ -251,6 +258,12 @@ Validate the stored tiered semiconductor tracker:
 
 ```bash
 semiconductor-proxy-data --base-dir . validate
+```
+
+Fail validation when official outputs are empty or stale, or when duplicate keys are present:
+
+```bash
+semiconductor-proxy-data --base-dir . --sources official --regions japan,korea,hongkong validate --fail-on-issues
 ```
 
 Validate Artificial Analysis API auth and capex parsing:
@@ -294,6 +307,7 @@ Set `HF_TOKEN` to reduce Hugging Face API rate limiting during model snapshot co
 Set `ARTIFICIAL_ANALYSIS_API_KEY` to enable the Artificial Analysis API collector. If the environment variable is unset, the pipeline falls back to the repository-root `.config` file. API-backed history starts on the first real collection date; the pipeline does not synthesize historical API snapshots.
 
 The tiered semiconductor tracker writes normalized outputs as parquet only by design; it does not emit CSV copies for these datasets.
+For GitHub Actions backup/check runs, set the repository secret `SEMICONDUCTOR_COMTRADE_API_KEY` to your UN Comtrade subscription key; the workflow exposes it to the pipeline as `COMTRADE_API_KEY`.
 
 Run the internal QA dashboard locally:
 
