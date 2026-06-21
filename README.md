@@ -309,6 +309,17 @@ Set `ARTIFICIAL_ANALYSIS_API_KEY` to enable the Artificial Analysis API collecto
 The tiered semiconductor tracker writes normalized outputs as parquet only by design; it does not emit CSV copies for these datasets.
 For GitHub Actions backup/check runs, set the repository secret `SEMICONDUCTOR_COMTRADE_API_KEY` to your UN Comtrade subscription key; the workflow exposes it to the pipeline as `COMTRADE_API_KEY`.
 
+## Semiconductor Automation
+
+- `Taiwan Semiconductor Revenue Monthly` runs monthly on GitHub Actions and updates the Taiwan MOPS revenue parquet for the default company set.
+- `Semiconductor Proxy Monthly` also runs monthly on GitHub Actions and currently targets `japan,korea,hongkong` official sources by default.
+- The scheduled proxy workflow uses `sources=official`, so it fetches country-native official data first:
+  - Japan: Japan Customs
+  - Korea: Korea Customs Service
+  - Hong Kong: Hong Kong Census and Statistics Department
+- `Comtrade` is not the default scheduled source for the proxy workflow. It is kept as a `backup/check` layer and is only used when you manually run the workflow with `sources=all` or `sources=backup`.
+- China is intentionally excluded from the automated proxy default path for now.
+
 Run the internal QA dashboard locally:
 
 ```bash
