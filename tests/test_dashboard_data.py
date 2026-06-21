@@ -1438,6 +1438,10 @@ def test_prepare_hf_models_table_limits_to_top_20_for_selected_provider() -> Non
     assert table.iloc[-1]["Model"] == "Qwen/model-19"
 
 
+def test_domain_dataset_ids_returns_empty_for_unknown_domain() -> None:
+    assert domain_dataset_ids("does_not_exist") == []
+
+
 def test_prepare_hf_models_table_uses_all_time_as_tiebreaker() -> None:
     table = prepare_hf_models_table(_provider_hf_large_frame(), provider_display_name="OpenAI", limit=20)
 

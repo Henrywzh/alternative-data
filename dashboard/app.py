@@ -3511,11 +3511,23 @@ SIGNAL_QUALITY_EMOJI = {"High": "🟢", "Medium": "🟡", "Low": "🔴"}
 
 def _load_watchlist() -> list[dict]:
     import json
-    wl_path = BASE_DIR / "src" / "google_trends_data" / "watchlist.json"
-    if not wl_path.exists():
-        return []
-    with open(wl_path) as f:
-        return json.load(f)
+    candidate_paths = [
+        BASE_DIR / "src" / "google_trends_data" / "watchlist.json",
+        Path(__file__).resolve().parent.parent / "src" / "google_trends_data" / "watchlist.json",
+    ]
+
+    try:
+        import google_trends_data
+
+        candidate_paths.append(Path(google_trends_data.__file__).resolve().with_name("watchlist.json"))
+    except Exception:
+        pass
+
+    for wl_path in candidate_paths:
+        if wl_path.exists():
+            with open(wl_path, encoding="utf-8") as f:
+                return json.load(f)
+    return []
 
 
 def _load_combined(ticker: str, keyword: str, geo: str) -> pd.DataFrame:
@@ -3555,7 +3567,8 @@ def render_google_trends_section() -> None:
 
     watchlist = _load_watchlist()
     if not watchlist:
-        st.error("Watchlist not found at src/google_trends_data/watchlist.json")
+        st.warning("Google Trends watchlist is not available in this deployment.")
+        st.caption("Expected `src/google_trends_data/watchlist.json` or packaged `google_trends_data/watchlist.json`.")
         return
 
     tab_explorer, tab_watchlist, tab_leaderboard = st.tabs(["📊 Signal Explorer", "📋 Watchlist", "🏆 Signal Leaderboard"])

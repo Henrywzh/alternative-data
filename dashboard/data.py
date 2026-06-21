@@ -765,7 +765,7 @@ def dataset_ids() -> list[str]:
 
 
 def domain_dataset_ids(domain: str) -> list[str]:
-    return DOMAIN_ORDER[domain]
+    return list(DOMAIN_ORDER.get(domain, []))
 
 
 def dataset_source_for_domain(domain: str) -> str:
