@@ -59,6 +59,13 @@ data/normalized/semiconductor_proxies/*
 data/normalized/taiwan_semiconductor_revenue/*
 !data/normalized/taiwan_semiconductor_revenue/*.parquet
 
+# google_trends: commit processed combined parquet outputs used by the dashboard
+!data/processed/
+data/processed/*
+!data/processed/google_trends/
+data/processed/google_trends/*
+!data/processed/google_trends/*.parquet
+
 # artificial_analysis: commit normalized CSVs/parquet + raw run manifests only
 !data/normalized/artificial_analysis/
 data/normalized/artificial_analysis/*
