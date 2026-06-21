@@ -8,6 +8,7 @@ The repository also includes an Artificial Analysis pipeline that snapshots the 
 The repository also includes a Taiwan semiconductor revenue pipeline that backfills monthly MOPS operating-revenue disclosures for TSMC, UMC, and VIS.
 The repository also includes a tiered semiconductor tracker that separates official/native monthly signals from Comtrade backup checks and keeps category splits explicit.
 The scheduled official semiconductor tracker currently targets Japan, South Korea, and Hong Kong; China remains excluded from the automated default path for now.
+The repository also includes a Google Trends signal pipeline for keyword-level search-interest studies, with a self-hosted CSV export/import automation path for watchlist refreshes and a `trendspyg` local fallback for ad hoc single-keyword research.
 The repository also includes a notebook-friendly research layer that builds analysis-ready marts and starter notebooks on top of the tracked datasets.
 
 Rankings datasets:
@@ -62,6 +63,7 @@ Framework adoption tracked inside `provider_adoption`:
 - `src/taiwan_semiconductor_revenue_data/`: package, CLI, MOPS extractor, storage, and pipeline logic for Taiwan monthly semiconductor revenue
 - `src/semiconductor_proxy_data/`: package, CLI, tiered official/native plus backup semiconductor tracker logic
 - `src/research_data/`: analysis-facing loaders, marts, notebook helpers, and research CLI
+- `src/google_trends_data/`: package, single-keyword CLI, watchlist automation CLI, CSV importer/exporter, storage, and signal logic for Google Trends research
 - `tests/fixtures/`: committed parser fixtures
 - `data/raw/openrouter/`: timestamped raw snapshots and run manifests
 - `data/normalized/openrouter/`: analytics-ready CSV and Parquet outputs tracked in git
@@ -74,6 +76,8 @@ Framework adoption tracked inside `provider_adoption`:
 - `data/raw/semiconductor_proxies/`: timestamped raw official/native and backup semiconductor tracker snapshots with manifests
 - `data/normalized/semiconductor_proxies/`: parquet-only normalized semiconductor tracker outputs
 - `data/normalized/marts/`: persisted analysis-ready marts for notebook use
+- `data/raw/google_trends/`: parquet snapshots of imported Google Trends keyword histories plus yfinance stock history
+- `data/processed/google_trends/`: combined weekly Google Trends + stock signal outputs
 - `notebooks/`: starter Jupyter notebooks for data cataloging and research workflows
 - `src/github_trending_data/`: package, CLI, scraper, storage, and pipeline for GitHub data
 - `data/normalized/github_trending/`: analytics-ready Parquet outputs for trending repos
@@ -217,6 +221,26 @@ Refresh the latest closed Taiwan revenue month:
 ```bash
 taiwan-semiconductor-revenue-data --base-dir . update-latest
 ```
+
+Refresh the full enabled Google Trends watchlist via CSV export/import:
+
+```bash
+python -m google_trends_data.batch_cli refresh-enabled --base-dir .
+```
+
+Refresh a single Google Trends ticker in visible-browser mode:
+
+```bash
+python -m google_trends_data.batch_cli refresh-ticker --base-dir . --ticker TSLA --headful
+```
+
+Validate the first enabled Google Trends watchlist entry without writing datasets:
+
+```bash
+python -m google_trends_data.batch_cli validate --base-dir .
+```
+
+Operator notes for the self-hosted Google Trends workflow live in [docs/google-trends-self-hosted.md](/Users/henrywzh/Desktop/Quant/alternative-data/docs/google-trends-self-hosted.md).
 
 Validate the stored Taiwan revenue parquet:
 

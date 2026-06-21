@@ -261,6 +261,51 @@ def make_line_chart(
     return fig
 
 
+def make_yoy_growth_chart(
+    yoy_df: pd.DataFrame,
+    colors: list[str],
+    height: int = 400,
+) -> go.Figure:
+    fig = go.Figure()
+    
+    cols = [col for col in yoy_df.columns if col != "Aggregated"]
+    for i, col in enumerate(cols):
+        color = colors[i % len(colors)]
+        fig.add_trace(go.Scatter(
+            x=yoy_df.index,
+            y=yoy_df[col],
+            name=col,
+            mode="lines+markers",
+            line=dict(width=2, color=color),
+            marker=dict(size=5),
+            hovertemplate=f"<b>{col}</b><br>%{{x}}<br>%{{y:+.1f}}%<extra></extra>",
+        ))
+        
+    if "Aggregated" in yoy_df.columns:
+        fig.add_trace(go.Scatter(
+            x=yoy_df.index,
+            y=yoy_df["Aggregated"],
+            name="Aggregated (Total)",
+            mode="lines+markers",
+            line=dict(width=4, color=TEXT, dash="dash"),
+            marker=dict(size=7, symbol="diamond"),
+            hovertemplate=f"<b>Aggregated (Total)</b><br>%{{x}}<br>%{{y:+.1f}}%<extra></extra>",
+        ))
+        
+    fig.update_layout(
+        template="plotly_white",
+        plot_bgcolor="white",
+        paper_bgcolor="white",
+        font=dict(color=TEXT, size=12),
+        legend=dict(orientation="h", y=-0.18, font=dict(size=11)),
+        xaxis=dict(gridcolor=GRID, tickcolor=TICK, showgrid=False, tickfont=dict(size=11)),
+        yaxis=dict(gridcolor=GRID, tickcolor=TICK, title="YoY Growth (%)", tickfont=dict(size=11), ticksuffix="%"),
+        height=height,
+        margin=dict(l=0, r=0, t=20, b=80),
+    )
+    return fig
+
+
 def kpi_card_html(
     label: str,
     value: str,
