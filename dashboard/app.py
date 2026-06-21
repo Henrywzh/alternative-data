@@ -11,6 +11,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 import matplotlib
+import yfinance as yf
 
 if __package__ in {None, ""}:
     repo_root = Path(__file__).resolve().parent.parent
@@ -2155,6 +2156,70 @@ def _official_trade_unit_config(unit: str) -> tuple[float, str]:
     return 1.0, normalized or "Native Unit"
 
 
+@st.cache_data(ttl=86400, show_spinner=False)
+def _fetch_monthly_fx_to_usd(start_period: str, end_period: str) -> pd.DataFrame:
+    start_date = (pd.Period(start_period, freq="M") - 1).to_timestamp(how="end").strftime("%Y-%m-%d")
+    end_date = (pd.Period(end_period, freq="M") + 1).to_timestamp(how="end").strftime("%Y-%m-%d")
+    symbol_map = {
+        "JPY": ("USDJPY=X", lambda close: 1.0 / close),
+        "HKD": ("USDHKD=X", lambda close: 1.0 / close),
+    }
+    rows: list[pd.DataFrame] = []
+    for currency, (symbol, transform) in symbol_map.items():
+        try:
+            frame = yf.download(symbol, start=start_date, end=end_date, auto_adjust=False, progress=False)
+        except Exception:
+            continue
+        if frame.empty:
+            continue
+        if isinstance(frame.columns, pd.MultiIndex):
+            close = frame["Close"].iloc[:, 0]
+        else:
+            close = frame["Close"]
+        month_end = close.resample("M").last().dropna()
+        if month_end.empty:
+            continue
+        fx_frame = pd.DataFrame({
+            "period": month_end.index.to_period("M").strftime("%Y-%m"),
+            "currency": currency,
+            "fx_to_usd": month_end.map(transform).astype(float),
+        })
+        rows.append(fx_frame)
+    if not rows:
+        return pd.DataFrame(columns=["period", "currency", "fx_to_usd"])
+    return pd.concat(rows, ignore_index=True)
+
+
+def _prepare_official_trade_display(official_trade: pd.DataFrame, scale_mode: str) -> tuple[pd.DataFrame, str, bool]:
+    if official_trade.empty:
+        return pd.DataFrame(), "Native Unit", False
+
+    chart_frame = official_trade.copy()
+    if scale_mode == "USD Normalized (PT FX)":
+        start_period = str(chart_frame["period"].min())
+        end_period = str(chart_frame["period"].max())
+        fx_df = _fetch_monthly_fx_to_usd(start_period, end_period)
+        chart_frame["display_value"] = np.nan
+
+        usd_mask = chart_frame["currency"].astype(str).str.upper() == "USD"
+        chart_frame.loc[usd_mask, "display_value"] = chart_frame.loc[usd_mask, "value"] / 1e9
+
+        if not fx_df.empty:
+            merged = chart_frame.merge(fx_df, on=["period", "currency"], how="left")
+            local_mask = merged["currency"].astype(str).str.upper().isin(["JPY", "HKD"])
+            merged.loc[local_mask, "display_value"] = (
+                merged.loc[local_mask, "value"] * merged.loc[local_mask, "fx_to_usd"] / 1e6
+            )
+            chart_frame = merged
+
+        has_complete_fx = chart_frame["display_value"].notna().all()
+        chart_frame = chart_frame.dropna(subset=["display_value"]).copy()
+        return chart_frame, "USD Billion", has_complete_fx
+
+    chart_frame["display_value"] = chart_frame["value"]
+    return chart_frame, "Native Unit", True
+
+
 def _render_official_trade_chart(official_trade: pd.DataFrame, category_choice: str) -> None:
     if official_trade.empty:
         return
@@ -2182,6 +2247,33 @@ def _render_official_trade_chart(official_trade: pd.DataFrame, category_choice: 
             ),
             width="stretch",
         )
+
+
+def _render_trade_yoy_chart(chart_frame: pd.DataFrame, category_choice: str, title_prefix: str) -> None:
+    if chart_frame.empty:
+        return
+    yoy_pivot = chart_frame.pivot_table(
+        index="period",
+        columns="country_name",
+        values="display_value",
+        aggfunc="last",
+    ).sort_index()
+    yoy_pivot = yoy_pivot.pct_change(12) * 100.0
+    yoy_pivot = yoy_pivot.dropna(how="all")
+    if yoy_pivot.empty:
+        return
+    st.plotly_chart(
+        make_line_chart(
+            yoy_pivot,
+            MODEL_COLORS[:len(yoy_pivot.columns)],
+            title=f"{title_prefix} {category_choice} Exports YoY",
+            y_title="YoY %",
+            x_title="Month",
+            height=320,
+            connect_gaps=True,
+        ),
+        width="stretch",
+    )
 
 
 def render_revenue_estimator(datasets: dict[str, DatasetLoadResult], openrouter_views: dict[str, object]) -> None:
@@ -3104,8 +3196,14 @@ def render_semiconductor_section(datasets: dict[str, DatasetLoadResult], semi_vi
 
             latest_official = semi_views.get("latest_official_period") or "—"
             latest_backup = semi_views.get("latest_backup_period") or "—"
+            official_freshness = official_df[
+                (official_df["metric_type"] == "exports") & (official_df["partner_scope"] == "world")
+            ].groupby("country_name")["period"].max() if not official_df.empty else pd.Series(dtype="object")
+            freshness_bits = [f"{country}: {period}" for country, period in official_freshness.sort_index().items()]
+            freshness_text = " · ".join(freshness_bits) if freshness_bits else "No official country snapshots"
             st.caption(
                 f"Official latest: {latest_official}. Backup latest: {latest_backup}. "
+                f"Latest official by country: {freshness_text}. "
                 "Official/native series are the primary view; Comtrade is a cross-check."
             )
 
@@ -3118,23 +3216,6 @@ def render_semiconductor_section(datasets: dict[str, DatasetLoadResult], semi_vi
             show_official = source_tier in {"Official", "Both"}
             show_backup = source_tier in {"Backup Check", "Both"}
 
-            if not source_catalog_df.empty:
-                latest_catalog = source_catalog_df[
-                    ["source_region", "source_name", "source_tier", "metric_type", "category_label", "latest_period", "expected_release_window_days"]
-                ].copy()
-                latest_catalog = latest_catalog.rename(
-                    columns={
-                        "source_region": "Region",
-                        "source_name": "Source",
-                        "source_tier": "Tier",
-                        "metric_type": "Metric",
-                        "category_label": "Category",
-                        "latest_period": "Latest Period",
-                        "expected_release_window_days": "Expected Lag (Days)",
-                    }
-                )
-                st.dataframe(latest_catalog, width="stretch", hide_index=True)
-
             if category_choice in {"IC-only", "Broad Semiconductor"}:
                 official_trade = official_df[
                     (official_df["metric_type"] == "exports")
@@ -3146,9 +3227,46 @@ def render_semiconductor_section(datasets: dict[str, DatasetLoadResult], semi_vi
                     & (backup_df["partner_scope"] == "world")
                     & (backup_df["category_id"] == selected_category_id)
                 ].copy()
+                scale_mode = st.radio(
+                    "Scale",
+                    options=["Native", "USD Normalized (PT FX)"],
+                    horizontal=True,
+                    key="semi_trade_scale",
+                )
 
                 if show_official and not official_trade.empty:
-                    _render_official_trade_chart(official_trade, category_choice)
+                    official_chart_frame = pd.DataFrame()
+                    if scale_mode == "Native":
+                        _render_official_trade_chart(official_trade, category_choice)
+                        official_chart_frame = official_trade.copy()
+                        official_chart_frame["display_value"] = official_chart_frame["value"]
+                    else:
+                        official_chart_frame, y_title, has_complete_fx = _prepare_official_trade_display(official_trade, scale_mode)
+                        if official_chart_frame.empty:
+                            st.warning("USD-normalized comparison is unavailable because monthly FX rates could not be loaded.")
+                        else:
+                            if not has_complete_fx:
+                                st.info("Some monthly FX points were unavailable, so the USD-normalized chart may omit a few country-month observations.")
+                            official_pivot = official_chart_frame.pivot_table(
+                                index="period",
+                                columns="country_name",
+                                values="display_value",
+                                aggfunc="last",
+                            ).sort_index()
+                            st.plotly_chart(
+                                make_line_chart(
+                                    official_pivot,
+                                    MODEL_COLORS[:len(official_pivot.columns)],
+                                    title=f"Official {category_choice} Exports (USD Normalized)",
+                                    y_title=y_title,
+                                    x_title="Month",
+                                    height=340,
+                                    connect_gaps=True,
+                                ),
+                                width="stretch",
+                            )
+                    if not official_chart_frame.empty:
+                        _render_trade_yoy_chart(official_chart_frame, category_choice, "Official")
 
                 if show_backup and not backup_trade.empty:
                     backup_trade["value_b"] = backup_trade["value"] / 1e9
@@ -3170,6 +3288,8 @@ def render_semiconductor_section(datasets: dict[str, DatasetLoadResult], semi_vi
                         ),
                         width="stretch",
                     )
+                    backup_trade["display_value"] = backup_trade["value_b"]
+                    _render_trade_yoy_chart(backup_trade, category_choice, "Backup Check")
 
                 if show_official and show_backup and not official_trade.empty and not backup_trade.empty:
                     gap_df = official_trade.merge(
@@ -3192,6 +3312,23 @@ def render_semiconductor_section(datasets: dict[str, DatasetLoadResult], semi_vi
                             }
                         )
                         st.dataframe(dataframe_for_display(gap_display, "-"), width="stretch", hide_index=True)
+
+                if not source_catalog_df.empty:
+                    latest_catalog = source_catalog_df[
+                        ["source_region", "source_name", "source_tier", "metric_type", "category_label", "latest_period", "expected_release_window_days"]
+                    ].copy()
+                    latest_catalog = latest_catalog.rename(
+                        columns={
+                            "source_region": "Region",
+                            "source_name": "Source",
+                            "source_tier": "Tier",
+                            "metric_type": "Metric",
+                            "category_label": "Category",
+                            "latest_period": "Latest Period",
+                            "expected_release_window_days": "Expected Lag (Days)",
+                        }
+                    )
+                    st.dataframe(latest_catalog, width="stretch", hide_index=True)
 
             if category_choice == "Production" and not production_df.empty:
                 prod_pivot = production_df.pivot_table(
