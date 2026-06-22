@@ -100,6 +100,13 @@ def make_snapshots(html: str) -> list[Snapshot]:
     ]
 
 
+def make_split_snapshots(rankings_html: str, programming_html: str) -> list[Snapshot]:
+    return [
+        Snapshot(name="rankings", source_url="fixture://rankings", body=rankings_html),
+        Snapshot(name="rankings_programming", source_url="fixture://rankings/programming", body=programming_html),
+    ]
+
+
 def _runtime_fallback_charts() -> dict[str, dict]:
     payloads = _load_payloads()
     return {
@@ -135,6 +142,16 @@ def test_selector_drift_raises_clear_error() -> None:
 
     with pytest.raises(ExtractionError, match="categories_programming"):
         source.extract(make_snapshots(broken_html), context)
+
+
+def test_programming_chart_can_fall_back_to_main_rankings_html() -> None:
+    html = build_fixture_html()
+    source = RankingsSource()
+    context = RunContext(run_id="main-page-programming", scraped_at=pd.Timestamp("2024-02-01", tz="UTC").to_pydatetime())
+
+    extracted = source.extract(make_split_snapshots(html, "<html><body>missing</body></html>"), context)
+
+    assert len(extracted["categories_programming"]) == 9
 
 
 def test_browser_fallback_is_used_when_static_chart_payloads_are_missing(monkeypatch: pytest.MonkeyPatch) -> None:
