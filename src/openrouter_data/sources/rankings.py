@@ -119,8 +119,9 @@ class RankingsSource(SourceExtractor):
                 predicate=self._looks_like_market_share_chart,
                 label=MARKET_SHARE_SPEC.dataset_id,
             ),
-            CATEGORIES_PROGRAMMING_SPEC.dataset_id: self._find_chart(
+            CATEGORIES_PROGRAMMING_SPEC.dataset_id: self._find_first_chart(
                 programming_html,
+                rankings_html,
                 predicate=lambda chart: chart.get("testId") == "model-rankings-categories-chart",
                 label=CATEGORIES_PROGRAMMING_SPEC.dataset_id,
             ),
@@ -129,6 +130,15 @@ class RankingsSource(SourceExtractor):
     @staticmethod
     def _missing_chart_labels(charts: dict[str, dict[str, Any] | None]) -> list[str]:
         return [label for label, chart in charts.items() if chart is None]
+
+    def _find_first_chart(self, *html_bodies: str, predicate: Any, label: str) -> dict[str, Any] | None:
+        for html in html_bodies:
+            if not html:
+                continue
+            chart = self._find_chart(html, predicate=predicate, label=label)
+            if chart is not None:
+                return chart
+        return None
 
     def _find_chart(self, html: str, *, predicate: Any, label: str) -> dict[str, Any]:
         for payload in iter_next_f_objects(html):
@@ -223,13 +233,12 @@ class RankingsSource(SourceExtractor):
                                 section_selector="#market-share",
                                 label=MARKET_SHARE_SPEC.dataset_id,
                             ),
+                            CATEGORIES_PROGRAMMING_SPEC.dataset_id: self._extract_runtime_chart_from_page(
+                                page,
+                                section_selector="#programming-languages",
+                                label=CATEGORIES_PROGRAMMING_SPEC.dataset_id,
+                            ),
                         }
-                        page.goto(CATEGORIES_PROGRAMMING_SPEC.source_url, wait_until="networkidle", timeout=self.timeout * 1000)
-                        charts[CATEGORIES_PROGRAMMING_SPEC.dataset_id] = self._extract_runtime_chart_from_page(
-                            page,
-                            section_selector="#programming-languages",
-                            label=CATEGORIES_PROGRAMMING_SPEC.dataset_id,
-                        )
                     finally:
                         page.close()
 
