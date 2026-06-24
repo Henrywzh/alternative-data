@@ -29,6 +29,11 @@ def build_parser() -> argparse.ArgumentParser:
     shared.add_argument("--headful", action="store_true", help="Run Chromium with a visible window")
     subparsers = parser.add_subparsers(dest="command", required=True)
     subparsers.add_parser("refresh-enabled", parents=[shared], help="Refresh all enabled watchlist entries")
+    subparsers.add_parser(
+        "refresh-enabled-library",
+        parents=[shared],
+        help="Refresh all enabled watchlist entries using the Python Trends fetcher",
+    )
 
     refresh_ticker = subparsers.add_parser("refresh-ticker", parents=[shared], help="Refresh a single watchlist ticker")
     refresh_ticker.add_argument("--ticker", required=True, help="Ticker symbol to refresh")
@@ -57,6 +62,11 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "refresh-enabled":
         result = runner.refresh_enabled(stock_period=args.stock_period, **common)
+    elif args.command == "refresh-enabled-library":
+        result = runner.refresh_enabled_with_fetcher(
+            timeframe=args.timeframe,
+            stock_period=args.stock_period,
+        )
     elif args.command == "refresh-ticker":
         result = runner.refresh_ticker(args.ticker, stock_period=args.stock_period, **common)
     else:
