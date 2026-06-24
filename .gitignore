@@ -74,6 +74,11 @@ data/processed/*
 data/processed/google_trends/*
 !data/processed/google_trends/*.parquet
 
+# action_stores: commit the per-country store-count time series
+!data/processed/action_stores/
+data/processed/action_stores/*
+!data/processed/action_stores/*.parquet
+
 # artificial_analysis: commit normalized CSVs/parquet + raw run manifests only
 !data/normalized/artificial_analysis/
 data/normalized/artificial_analysis/*
