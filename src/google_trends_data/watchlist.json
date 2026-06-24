@@ -54,6 +54,57 @@
     "enabled": true
   },
   {
+    "ticker": "III.L",
+    "name": "Action",
+    "sector": "Consumer Discretionary",
+    "subsector": "Discount Retail",
+    "keywords": [
+      {
+        "term": "Action",
+        "geo": ""
+      },
+      {
+        "term": "Action",
+        "geo": "FR"
+      },
+      {
+        "term": "Action",
+        "geo": "DE"
+      },
+      {
+        "term": "Action",
+        "geo": "PL"
+      },
+      {
+        "term": "Action",
+        "geo": "NL"
+      },
+      {
+        "term": "Action",
+        "geo": "IT"
+      },
+      {
+        "term": "Action",
+        "geo": "AT"
+      },
+      {
+        "term": "Action",
+        "geo": "ES"
+      },
+      {
+        "term": "Action",
+        "geo": "BE"
+      },
+      {
+        "term": "Action",
+        "geo": "CZ"
+      }
+    ],
+    "signal_quality": "Medium",
+    "signal_notes": "Google Trends tracks Action brand demand; stock proxy is 3i Group (III.L), which owns Action privately.",
+    "enabled": true
+  },
+  {
     "ticker": "ABNB",
     "name": "Airbnb",
     "sector": "Consumer Discretionary",
@@ -70,7 +121,8 @@
     ],
     "signal_quality": "High",
     "signal_notes": "Search volume closely tracks nights booked. Strong seasonal pattern. US geo has best signal.",
-    "enabled": true
+    "enabled": false,
+    "tracking_comment": "Stock only in dashboard; Google Trends refresh paused."
   },
   {
     "ticker": "TSLA",
@@ -93,7 +145,8 @@
     ],
     "signal_quality": "High",
     "signal_notes": "Model-specific search volume is a strong proxy for order pipeline. Best during new model launch windows. Noise from Musk headlines can confound signal.",
-    "enabled": true
+    "enabled": false,
+    "tracking_comment": "Stock only in dashboard; Google Trends refresh paused."
   },
   {
     "ticker": "1211.HK",
@@ -116,7 +169,8 @@
     ],
     "signal_quality": "Medium",
     "signal_notes": "Google Trends only captures non-mainland markets (HK, TW, international). Baidu Index recommended as primary signal for CN market exposure.",
-    "enabled": true
+    "enabled": false,
+    "tracking_comment": "Stock only in dashboard; Google Trends refresh paused."
   },
   {
     "ticker": "9988.HK",
@@ -139,7 +193,8 @@
     ],
     "signal_quality": "Low",
     "signal_notes": "Core business is mainland China where Google is blocked. AliExpress international search may provide weak signal for international segment only.",
-    "enabled": true
+    "enabled": false,
+    "tracking_comment": "Stock only in dashboard; Google Trends refresh paused."
   },
   {
     "ticker": "LULU",
@@ -158,7 +213,8 @@
     ],
     "signal_quality": "High",
     "signal_notes": "Strong brand-search to revenue link. US geo dominant market. Searches correlate well with same-store sales. Best before Q4 holiday earnings.",
-    "enabled": true
+    "enabled": false,
+    "tracking_comment": "Stock only in dashboard; Google Trends refresh paused."
   },
   {
     "ticker": "NVO",
@@ -181,7 +237,8 @@
     ],
     "signal_quality": "High",
     "signal_notes": "Drug-brand search is a direct proxy for patient demand and prescription intent. Ozempic search was a textbook leading indicator of NVO's 2022-23 revenue surge.",
-    "enabled": true
+    "enabled": false,
+    "tracking_comment": "Stock only in dashboard; Google Trends refresh paused."
   },
   {
     "ticker": "LLY",
@@ -204,7 +261,8 @@
     ],
     "signal_quality": "High",
     "signal_notes": "Same GLP-1 drug-brand playbook as NVO. Mounjaro/Zepbound search volume tracks script volumes. High confidence signal for a secular growth story.",
-    "enabled": true
+    "enabled": false,
+    "tracking_comment": "Stock only in dashboard; Google Trends refresh paused."
   },
   {
     "ticker": "NTDOY",
@@ -223,7 +281,8 @@
     ],
     "signal_quality": "Medium",
     "signal_notes": "Console hardware search spikes sharply on announcements and near launch. DAU/engagement signals harder to capture for Nintendo's closed ecosystem.",
-    "enabled": true
+    "enabled": false,
+    "tracking_comment": "Stock only in dashboard; Google Trends refresh paused."
   },
   {
     "ticker": "RBLX",
@@ -242,7 +301,8 @@
     ],
     "signal_quality": "Medium",
     "signal_notes": "Search volume tracks DAU closely. 'Roblox codes' is a high-intent search by active players. Seasonal pattern (school holidays) is very predictable.",
-    "enabled": true
+    "enabled": false,
+    "tracking_comment": "Stock only in dashboard; Google Trends refresh paused."
   },
   {
     "ticker": "AAPL",
@@ -265,7 +325,8 @@
     ],
     "signal_quality": "Medium",
     "signal_notes": "Product-specific search volume is useful near launch windows (Sep-Nov). Too diversified for a single keyword to represent the whole company. Best for launch-cycle event trading.",
-    "enabled": true
+    "enabled": false,
+    "tracking_comment": "Stock only in dashboard; Google Trends refresh paused."
   },
   {
     "ticker": "NKE",
@@ -304,7 +365,8 @@
     ],
     "signal_quality": "High",
     "signal_notes": "Global sportswear giant. D2C and e-commerce channel search interest tracks consumer demand closely.",
-    "enabled": true
+    "enabled": false,
+    "tracking_comment": "Stock only in dashboard; Google Trends refresh paused."
   },
   {
     "ticker": "ADS.DE",
@@ -343,7 +405,8 @@
     ],
     "signal_quality": "High",
     "signal_notes": "European sportswear giant. Brand search and sneaker cycles represent strong consumer demand signal.",
-    "enabled": true
+    "enabled": false,
+    "tracking_comment": "Stock only in dashboard; Google Trends refresh paused."
   },
   {
     "ticker": "JD.L",
@@ -362,7 +425,8 @@
     ],
     "signal_quality": "High",
     "signal_notes": "UK-based sports fashion retailer with strong e-commerce presence. Search interest tracks retail spending trends.",
-    "enabled": true
+    "enabled": false,
+    "tracking_comment": "Stock only in dashboard; Google Trends refresh paused."
   },
   {
     "ticker": "NXT.L",
@@ -381,6 +445,7 @@
     ],
     "signal_quality": "High",
     "signal_notes": "UK retail staple with highly profitable online directory channel. Strong coincident indicator.",
-    "enabled": true
+    "enabled": false,
+    "tracking_comment": "Stock only in dashboard; Google Trends refresh paused."
   }
 ]

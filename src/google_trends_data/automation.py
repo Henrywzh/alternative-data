@@ -6,6 +6,7 @@ from typing import Any
 
 from .csv_importer import parse_interest_over_time_csv
 from .fetcher import StockFetcher
+from .fetcher import TrendsFetcher
 from .signal import combine
 from .storage import GoogleTrendsStorage
 
@@ -24,12 +25,14 @@ class GoogleTrendsWatchlistRunner:
         base_dir: str | Path,
         watchlist_path: str | Path,
         exporter: Any,
+        trends_fetcher: TrendsFetcher | Any | None = None,
         stock_fetcher: StockFetcher | Any | None = None,
         data_dir: str = "data",
     ) -> None:
         self.base_dir = Path(base_dir)
         self.watchlist_path = Path(watchlist_path)
         self.exporter = exporter
+        self.trends_fetcher = trends_fetcher or TrendsFetcher()
         self.stock_fetcher = stock_fetcher or StockFetcher()
         self.data_dir = data_dir
 
@@ -50,6 +53,19 @@ class GoogleTrendsWatchlistRunner:
             hl=hl,
             headless=headless,
             download_dir=download_dir,
+        )
+
+    def refresh_enabled_with_fetcher(
+        self,
+        *,
+        timeframe: str = "today 5-y",
+        stock_period: str = "5y",
+    ) -> dict[str, int]:
+        entries = load_watchlist(self.watchlist_path, enabled_only=True)
+        return self._refresh_entries_with_fetcher(
+            entries,
+            timeframe=timeframe,
+            stock_period=stock_period,
         )
 
     def refresh_ticker(
@@ -141,6 +157,47 @@ class GoogleTrendsWatchlistRunner:
                     csv_path,
                     keyword=keyword_spec["term"],
                     geo=keyword_spec.get("geo", ""),
+                )
+                staged_trends.append((entry, keyword_spec, records))
+
+            staged_stocks[ticker] = self.stock_fetcher.fetch(ticker=ticker, period=stock_period)
+
+        storage = GoogleTrendsStorage(self.base_dir / self.data_dir)
+        for ticker, stocks in staged_stocks.items():
+            storage.save_stock(ticker, stocks)
+
+        for entry, keyword_spec, trends in staged_trends:
+            ticker = entry["ticker"]
+            geo = keyword_spec.get("geo", "")
+            storage.save_trends(keyword=keyword_spec["term"], geo=geo, records=trends)
+            combined = combine(trends, staged_stocks[ticker])
+            storage.save_combined(keyword=keyword_spec["term"], geo=geo, ticker=ticker, df=combined)
+
+        return {
+            "tickers": len(entries),
+            "keyword_pairs": len(staged_trends),
+        }
+
+    def _refresh_entries_with_fetcher(
+        self,
+        entries: list[dict[str, Any]],
+        *,
+        timeframe: str,
+        stock_period: str,
+    ) -> dict[str, int]:
+        if not entries:
+            return {"tickers": 0, "keyword_pairs": 0}
+
+        staged_trends: list[tuple[dict[str, Any], dict[str, str], list[Any]]] = []
+        staged_stocks: dict[str, list[Any]] = {}
+
+        for entry in entries:
+            ticker = entry["ticker"]
+            for keyword_spec in entry["keywords"]:
+                records = self.trends_fetcher.fetch(
+                    keyword=keyword_spec["term"],
+                    geo=keyword_spec.get("geo", ""),
+                    timeframe=timeframe,
                 )
                 staged_trends.append((entry, keyword_spec, records))
 

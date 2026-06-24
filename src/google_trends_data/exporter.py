@@ -1,14 +1,17 @@
 from __future__ import annotations
 
+import csv
 from pathlib import Path
 from time import monotonic
+from time import sleep
 from urllib.parse import urlencode
 
 
 class GoogleTrendsCsvExporter:
-    def __init__(self, *, profile_dir: str | Path, timeout_ms: int = 30000) -> None:
+    def __init__(self, *, profile_dir: str | Path, timeout_ms: int = 30000, max_attempts: int = 5) -> None:
         self.profile_dir = Path(profile_dir).expanduser()
         self.timeout_ms = timeout_ms
+        self.max_attempts = max_attempts
 
     @staticmethod
     def build_explore_url(*, keyword: str, geo: str, timeframe: str, hl: str) -> str:
@@ -40,22 +43,37 @@ class GoogleTrendsCsvExporter:
 
         url = self.build_explore_url(keyword=keyword, geo=geo, timeframe=timeframe, hl=hl)
 
-        with sync_playwright() as playwright:
-            context = playwright.chromium.launch_persistent_context(
-                user_data_dir=str(self.profile_dir),
-                accept_downloads=True,
-                headless=headless,
+        for attempt in range(1, self.max_attempts + 1):
+            with sync_playwright() as playwright:
+                context = playwright.chromium.launch_persistent_context(
+                    user_data_dir=str(self.profile_dir),
+                    accept_downloads=True,
+                    headless=headless,
+                )
+                try:
+                    page = context.pages[0] if context.pages else context.new_page()
+                    page.goto(url, wait_until="domcontentloaded", timeout=self.timeout_ms)
+                    download_buttons = self._wait_for_download_buttons(page)
+                    for download_button in download_buttons:
+                        with page.expect_download(timeout=self.timeout_ms) as download_info:
+                            download_button.click()
+                        download = download_info.value
+                        download.save_as(str(target_path))
+                        if self._download_contains_timeseries_header(target_path):
+                            return target_path
+                finally:
+                    context.close()
+
+            if attempt < self.max_attempts:
+                sleep(min(attempt * 2, 10))
+                continue
+
+            preview = self._download_preview(target_path)
+            raise ValueError(
+                "Downloaded Google Trends CSV did not contain a Day/Week/Month header. "
+                f"Preview: {preview}. This usually means the automation clicked a non-timeseries export "
+                "or Google Trends served an incomplete/blocked page state."
             )
-            try:
-                page = context.pages[0] if context.pages else context.new_page()
-                page.goto(url, wait_until="domcontentloaded", timeout=self.timeout_ms)
-                download_button = self._wait_for_download_button(page)
-                with page.expect_download(timeout=self.timeout_ms) as download_info:
-                    download_button.click()
-                download = download_info.value
-                download.save_as(str(target_path))
-            finally:
-                context.close()
 
         return target_path
 
@@ -78,6 +96,24 @@ class GoogleTrendsCsvExporter:
                 except Exception:
                     continue
 
+    def _wait_for_download_buttons(self, page):
+        deadline = monotonic() + (self.timeout_ms / 1000)
+        last_error: ValueError | None = None
+        while monotonic() < deadline:
+            self._dismiss_common_dialogs(page)
+            try:
+                buttons = self._candidate_download_buttons(page)
+                if buttons:
+                    return buttons
+                raise ValueError("Could not locate Google Trends CSV download button")
+            except ValueError as exc:
+                last_error = exc
+                page.wait_for_timeout(1000)
+
+        if last_error is not None:
+            raise last_error
+        raise ValueError("Could not locate Google Trends CSV download button")
+
     def _wait_for_download_button(self, page):
         deadline = monotonic() + (self.timeout_ms / 1000)
         last_error: ValueError | None = None
@@ -94,14 +130,76 @@ class GoogleTrendsCsvExporter:
         raise ValueError("Could not locate Google Trends CSV download button")
 
     def _locate_download_button(self, page):
+        buttons = self._candidate_download_buttons(page)
+        if buttons:
+            return buttons[0]
+
+        raise ValueError("Could not locate Google Trends CSV download button")
+
+    def _candidate_download_buttons(self, page):
+        ordered_buttons = []
+        seen = set()
+
+        interest_over_time = page.locator("widget").filter(has_text="Interest over time").locator("button[title='CSV']")
+        if not interest_over_time.count():
+            return ordered_buttons
+
+        self._extend_unique_buttons(ordered_buttons, seen, interest_over_time)
+
         candidates = [
+            page.locator("button[title='CSV']"),
             page.get_by_role("button", name="CSV"),
             page.get_by_label("CSV"),
-            page.locator("button[title*='CSV']"),
             page.locator("button[aria-label*='CSV']"),
             page.locator("[data-tooltip*='CSV']"),
         ]
         for locator in candidates:
-            if locator.count():
-                return locator.first
-        raise ValueError("Could not locate Google Trends CSV download button")
+            self._extend_unique_buttons(ordered_buttons, seen, locator)
+        return ordered_buttons
+
+    @staticmethod
+    def _pick_topmost_button(locator):
+        best = None
+        best_key = None
+        for index in range(locator.count()):
+            candidate = locator.nth(index)
+            box = candidate.bounding_box()
+            if not box:
+                continue
+            key = (box.get("y", float("inf")), box.get("x", float("inf")))
+            if best is None or key < best_key:
+                best = candidate
+                best_key = key
+        return best or locator.first
+
+    def _extend_unique_buttons(self, ordered_buttons, seen, locator) -> None:
+        if not locator.count():
+            return
+        indexed = []
+        for index in range(locator.count()):
+            candidate = locator.nth(index)
+            box = candidate.bounding_box()
+            if not box:
+                continue
+            key = (box.get("y", float("inf")), box.get("x", float("inf")))
+            indexed.append((key, candidate))
+
+        for key, candidate in sorted(indexed):
+            if key in seen:
+                continue
+            seen.add(key)
+            ordered_buttons.append(candidate)
+
+    @staticmethod
+    def _download_contains_timeseries_header(csv_path: str | Path) -> bool:
+        path = Path(csv_path)
+        rows = csv.reader(path.open(encoding="utf-8"))
+        for row in rows:
+            if row and row[0].strip().lower() in {"day", "week", "month"}:
+                return True
+        return False
+
+    @staticmethod
+    def _download_preview(csv_path: str | Path, *, max_lines: int = 3) -> str:
+        path = Path(csv_path)
+        return " | ".join(path.read_text(encoding="utf-8").splitlines()[:max_lines])
