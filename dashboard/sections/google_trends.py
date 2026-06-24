@@ -30,6 +30,20 @@ SIGNAL_QUALITY_COLOR = {"High": GREEN, "Medium": YELLOW, "Low": RED}
 SIGNAL_QUALITY_EMOJI = {"High": "🟢", "Medium": "🟡", "Low": "🔴"}
 
 
+def _tracking_label(entry: dict) -> str:
+    return "Google Trends active" if entry.get("enabled") else "Stock only"
+
+
+def _tracking_badge(entry: dict) -> str:
+    return "✅ Active" if entry.get("enabled") else "🧊 Stock only"
+
+
+def _tracking_comment(entry: dict) -> str:
+    if entry.get("enabled"):
+        return entry.get("tracking_comment", "Included in the active Google Trends refresh program.")
+    return entry.get("tracking_comment", "Visible in the dashboard, but Google Trends refresh is paused.")
+
+
 def _load_watchlist() -> list[dict]:
     import json
     candidate_paths = [
@@ -86,7 +100,9 @@ def render_google_trends_section() -> None:
     st.caption(
         "Weekly Google Search interest matched to stock weekly returns. "
         "Automated watchlist refreshes use Google Trends CSV export/import on a self-hosted runner; "
-        "single-keyword local experiments can still use trendspyg plus yfinance."
+        "single-keyword local experiments can still use trendspyg plus yfinance. "
+        "Current active Google Trends program is intentionally narrowed to Pop Mart, Action, and Booking; "
+        "the rest remain visible here as stock-only names."
     )
 
     watchlist = _load_watchlist()
@@ -108,7 +124,7 @@ def render_google_trends_section() -> None:
 
         ticker_options = [
             f"{SIGNAL_QUALITY_EMOJI.get(w['signal_quality'], '')} {w['ticker']} — {w['name']}"
-            + ("" if w["enabled"] else " ⏳")
+            + ("" if w["enabled"] else " • stock-only")
             for w in pool
         ]
         with ctrl_col1:
@@ -136,6 +152,7 @@ def render_google_trends_section() -> None:
                 f"(geo: {selected_kw['geo'] or 'Worldwide'}). "
                 "Run the pipeline first: `python -m google_trends_data.cli --keyword '...' --ticker '...'`"
             )
+            st.caption(_tracking_comment(selected_stock))
             return
 
         df_valid = df.dropna(subset=["stock_close"])
@@ -341,7 +358,8 @@ def render_google_trends_section() -> None:
         st.markdown("### 📋 Google Trends Signal Watchlist")
         st.caption(
             "Stocks where Google search interest has documented or hypothesised signal quality. "
-            "'Enabled' = data has been fetched and is available in the Signal Explorer."
+            "'Google Trends active' = included in the current automated trends refresh program. "
+            "'Stock only' = still visible in the dashboard, but trends refresh is intentionally paused."
         )
 
         # Build display dataframe
@@ -359,7 +377,8 @@ def render_google_trends_section() -> None:
                 "Quality": w["signal_quality"],
                 "Keywords": keywords_str,
                 "Notes": w["signal_notes"],
-                "Data Ready": "✅" if w["enabled"] else "⏳",
+                "Tracking": _tracking_badge(w),
+                "Tracking Note": _tracking_comment(w),
             })
 
         wl_df = pd.DataFrame(rows)
@@ -374,6 +393,7 @@ def render_google_trends_section() -> None:
                      column_config={
                          "Notes": st.column_config.TextColumn(width="large"),
                          "Keywords": st.column_config.TextColumn(width="medium"),
+                         "Tracking Note": st.column_config.TextColumn(width="large"),
                      })
 
         st.divider()

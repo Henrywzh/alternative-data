@@ -17,6 +17,10 @@ class _FakeRunner:
         self.calls.append(("refresh-enabled", kwargs))
         return {"tickers": 1, "keyword_pairs": 2}
 
+    def refresh_enabled_with_fetcher(self, **kwargs):
+        self.calls.append(("refresh-enabled-library", kwargs))
+        return {"tickers": 1, "keyword_pairs": 2}
+
     def refresh_ticker(self, ticker: str, **kwargs):
         self.calls.append(("refresh-ticker", {"ticker": ticker, **kwargs}))
         return {"tickers": 1, "keyword_pairs": 1}
@@ -83,6 +87,34 @@ def test_batch_cli_refresh_ticker_dispatches_runner(monkeypatch, capsys) -> None
                 "hl": "en-US",
                 "headless": False,
                 "download_dir": None,
+            },
+        )
+    ]
+
+
+def test_batch_cli_refresh_enabled_library_dispatches_runner(monkeypatch, capsys) -> None:
+    monkeypatch.setattr(batch_cli, "GoogleTrendsWatchlistRunner", _FakeRunner)
+
+    exit_code = batch_cli.main(
+        [
+            "refresh-enabled-library",
+            "--base-dir",
+            "/tmp/repo",
+            "--watchlist",
+            "/tmp/repo/watchlist.json",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert "keyword_pairs=2" in captured.out
+    assert _FakeRunner.last_instance is not None
+    assert _FakeRunner.last_instance.calls == [
+        (
+            "refresh-enabled-library",
+            {
+                "timeframe": "today 5-y",
+                "stock_period": "5y",
             },
         )
     ]

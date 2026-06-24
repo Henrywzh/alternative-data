@@ -2,6 +2,8 @@
 
 This repo’s automated Google Trends refresh now uses Google Trends CSV export/import on a `self-hosted` GitHub Actions runner. The older `trendspyg` flow remains available for ad hoc local single-keyword work, but scheduled watchlist refreshes should use the self-hosted workflow.
 
+Current active Google Trends program is intentionally narrowed to `Pop Mart` (`9992.HK`), `Action` (tracked with `III.L` as the stock proxy), and `Booking Holdings` (`BKNG`). Other names remain visible in the dashboard as stock-only / trends-paused entries.
+
 ## Runner Setup
 
 1. Register your Mac as a self-hosted runner for this repo.
