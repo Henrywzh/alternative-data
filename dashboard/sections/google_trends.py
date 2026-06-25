@@ -211,7 +211,7 @@ def render_google_trends_section() -> None:
             xaxis=dict(gridcolor=GRID),
             hovermode="x unified",
         )
-        st.plotly_chart(fig, use_container_width=True, theme=None)
+        st.plotly_chart(fig, width="stretch", theme=None)
 
         # ── Trend delta (momentum) chart ──────────────────────────────────────
         st.markdown("### Trends Momentum (Week-over-Week Δ)")
@@ -258,7 +258,7 @@ def render_google_trends_section() -> None:
             hovermode="x unified",
             barmode="relative",
         )
-        st.plotly_chart(fig_delta, use_container_width=True, theme=None)
+        st.plotly_chart(fig_delta, width="stretch", theme=None)
 
         # ── Trend YoY (Deseasonalized) chart ──────────────────────────────────
         st.markdown("### Trends Seasonality (Year-over-Year 52-Week Δ)")
@@ -305,7 +305,7 @@ def render_google_trends_section() -> None:
             hovermode="x unified",
             barmode="relative",
         )
-        st.plotly_chart(fig_yoy, use_container_width=True, theme=None)
+        st.plotly_chart(fig_yoy, width="stretch", theme=None)
 
         # ── Correlation panel ─────────────────────────────────────────────────
         st.markdown("### Correlation Analysis")
@@ -319,7 +319,7 @@ def render_google_trends_section() -> None:
                 styled = corr_df.style.background_gradient(
                     subset=["Pearson r"], cmap="RdYlGn", vmin=-max_abs, vmax=max_abs
                 ).format({"Pearson r": "{:+.4f}"})
-                st.dataframe(styled, use_container_width=True, hide_index=True)
+                st.dataframe(styled, width="stretch", hide_index=True)
 
         with corr_col2:
             st.markdown("**Momentum: Trend WoW Δ vs returns**")
@@ -331,7 +331,7 @@ def render_google_trends_section() -> None:
                 styled2 = corr_delta_df.style.background_gradient(
                     subset=["Pearson r"], cmap="RdYlGn", vmin=-max_abs2, vmax=max_abs2
                 ).format({"Pearson r": "{:+.4f}"})
-                st.dataframe(styled2, use_container_width=True, hide_index=True)
+                st.dataframe(styled2, width="stretch", hide_index=True)
 
         with corr_col3:
             st.markdown("**Seasonality: Trend YoY Δ (52w) vs returns**")
@@ -343,7 +343,7 @@ def render_google_trends_section() -> None:
                 styled3 = corr_yoy_df.style.background_gradient(
                     subset=["Pearson r"], cmap="RdYlGn", vmin=-max_abs3, vmax=max_abs3
                 ).format({"Pearson r": "{:+.4f}"})
-                st.dataframe(styled3, use_container_width=True, hide_index=True)
+                st.dataframe(styled3, width="stretch", hide_index=True)
 
         st.info(
             "💡 **How to read these correlation tables:**\n\n"
@@ -389,7 +389,7 @@ def render_google_trends_section() -> None:
             return f"color: {c}; font-weight: 600"
 
         styled_wl = _styler_applymap_compat(wl_df.style, color_quality, subset=["Quality"])
-        st.dataframe(styled_wl, use_container_width=True, hide_index=True,
+        st.dataframe(styled_wl, width="stretch", hide_index=True,
                      column_config={
                          "Notes": st.column_config.TextColumn(width="large"),
                          "Keywords": st.column_config.TextColumn(width="medium"),
@@ -501,7 +501,7 @@ def render_google_trends_section() -> None:
                 "Max |r|": "{:.4f}",
             })
             
-            st.dataframe(styled_lead, use_container_width=True, hide_index=True,
+            st.dataframe(styled_lead, width="stretch", hide_index=True,
                          column_config={
                              "Same Week r": st.column_config.NumberColumn(
                                  help="Coincident correlation: same week Trend vs same week Stock Return"

@@ -142,7 +142,7 @@ def render_minerals_section() -> None:
         xaxis=dict(gridcolor=GRID),
         hovermode="x unified",
     )
-    st.plotly_chart(fig, use_container_width=True, theme=None)
+    st.plotly_chart(fig, width="stretch", theme=None)
 
     # ── Related stocks (rebased to 100) ───────────────────────────────────────
     st.markdown("### Related stocks")
@@ -201,7 +201,7 @@ def render_minerals_section() -> None:
         hovermode="x unified",
     )
     st.caption("Each line is rebased to 100 at the start of its available history for comparability.")
-    st.plotly_chart(fig2, use_container_width=True, theme=None)
+    st.plotly_chart(fig2, width="stretch", theme=None)
 
 
 def render(domain_states, datasets) -> None:
