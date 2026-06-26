@@ -107,6 +107,17 @@ data/processed/minerals_usgs/*
 data/processed/minerals_signal_data/*
 !data/processed/minerals_signal_data/**/
 !data/processed/minerals_signal_data/**/latest/**
+# minerals raw: commit the tungsten scrape CSV/parquet, never the downloaded images
+!data/raw/minerals_signal_data/
+data/raw/minerals_signal_data/*
+!data/raw/minerals_signal_data/*.csv
+!data/raw/minerals_signal_data/*.parquet
+data/raw/minerals_signal_data/images/
+
+# Repo-size control: never commit normalized CSVs — the dashboard loader reads the
+# parquet twin first (dashboard/data.py load_dataset), so committing the CSV too just
+# bloats git history (these are regenerated daily). Keep parquet only.
+data/normalized/**/*.csv
 
 # Secrets and environment
 .env
@@ -127,6 +138,3 @@ img/
 
 # Secrets / API keys
 .config
-
-# Repo-size control: never commit normalized CSVs (dashboard reads parquet twin)
-data/normalized/**/*.csv

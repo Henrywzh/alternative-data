@@ -66,6 +66,15 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     subparsers.add_parser("validate", parents=[shared], help="Validate workbook coverage and mappings")
+
+    tungsten = subparsers.add_parser("scrape-tungsten", help="Scrape daily tungsten prices from Chinatungsten")
+    tungsten.add_argument("--base-dir", default=".", help="Repository root for data writes")
+    tungsten.add_argument("--max-pages", type=int, default=3, help="Max category pages to scrape")
+    tungsten.add_argument(
+        "--with-images",
+        action="store_true",
+        help="Also download price-table/trend images (local only; not committed)",
+    )
     return parser
 
 
@@ -114,6 +123,11 @@ def main() -> int:
             run_label=args.run_label,
             min_mineral_coverage=args.min_mineral_coverage,
         )
+    elif args.command == "scrape-tungsten":
+        from minerals_signal_data.chinatungsten_scraper import scrape_range
+
+        scrape_range(args.base_dir, max_pages=args.max_pages, with_images=args.with_images)
+        return 0
     elif args.command == "validate":
         counts = pipeline.validate(args.workbook, stock_mapping_path=args.stock_mapping)
         for key, value in counts.items():
