@@ -114,6 +114,11 @@ data/raw/minerals_signal_data/*
 !data/raw/minerals_signal_data/*.parquet
 data/raw/minerals_signal_data/images/
 
+# Repo-size control: never commit normalized CSVs — the dashboard loader reads the
+# parquet twin first (dashboard/data.py load_dataset), so committing the CSV too just
+# bloats git history (these are regenerated daily). Keep parquet only.
+data/normalized/**/*.csv
+
 # Secrets and environment
 .env
 .env.*
