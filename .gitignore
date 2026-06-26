@@ -127,3 +127,6 @@ img/
 
 # Secrets / API keys
 .config
+
+# Repo-size control: never commit normalized CSVs (dashboard reads parquet twin)
+data/normalized/**/*.csv
