@@ -6,6 +6,8 @@ from minerals_signal_data.chinatungsten_scraper import (
     clean_value,
     extract_prices_from_body,
     parse_date_from_article,
+    extract_molybdenum_prices_from_body,
+    _parse_ocr_text,
 )
 
 
@@ -55,3 +57,37 @@ def test_parse_date_falls_back_to_title() -> None:
 def test_parse_date_returns_empty_when_unresolvable() -> None:
     soup = BeautifulSoup("<div>no date anywhere</div>", "html.parser")
     assert parse_date_from_article(soup, "Generic tungsten market commentary") == ""
+
+
+def test_extract_molybdenum_prices_from_body() -> None:
+    # A typical molybdenum price announcement sentence with 'respectively'
+    body = (
+        "China molybdenum prices were mixed on June 25, 2026, when molybdenum concentrate, "
+        "ferromolybdenum and ammonium heptamolybdate prices were RMB 4,710/ton-degree, "
+        "RMB 315,000/ton and RMB 305,000/ton, respectively."
+    )
+    prices = extract_molybdenum_prices_from_body(body)
+    assert prices["molybdenum_concentrate"] == 4710.0
+    assert prices["ferromolybdenum"] == 315000.0
+    assert prices["ammonium_heptamolybdate"] == 305000.0
+    assert prices["ammonium_tetramolybdate"] == ""
+
+
+def test_parse_ocr_text_extracts_and_corrects() -> None:
+    # Real-world OCR text containing typical errors and units
+    ocr_text = (
+        "Ferro Molybdenum 60% 4794.12 USD/MT\n"
+        "Molybdenum Concentrate | 40-45% 761.76 USDIMTU\n"
+        "Ammonium Heptamotvbdate | Grade 1 4705882 USD/MT\n"
+    )
+    prices = _parse_ocr_text(ocr_text)
+    
+    # Expected calculations (raw_val * 6.80, with correction multiplier/divisor and rounding):
+    # - Molybdenum concentrate: 761.76 * 6.8 = 5179.968 => 5180.0
+    # - Ferromolybdenum: 4794.12 * 10 (since < 10000) = 47941.2 * 6.8 = 325999.96 => 326000.0
+    # - Ammonium heptamolybdate: 4705882 / 100 = 47058.82 * 6.8 = 319999.976 => 320000.0
+    
+    assert prices["molybdenum_concentrate"] == 5180.0
+    assert prices["ferromolybdenum"] == 326000.0
+    assert prices["ammonium_heptamolybdate"] == 320000.0
+    assert prices["ammonium_tetramolybdate"] is None

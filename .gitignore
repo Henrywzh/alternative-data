@@ -128,6 +128,7 @@ data/normalized/**/*.csv
 .vscode/
 .idea/
 img/
+scratch/
 
 # Local tool config — never push
 .claude/
