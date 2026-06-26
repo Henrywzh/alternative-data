@@ -142,7 +142,7 @@ def render_minerals_section() -> None:
         xaxis=dict(gridcolor=GRID),
         hovermode="x unified",
     )
-    st.plotly_chart(fig, use_container_width=True, theme=None)
+    st.plotly_chart(fig, width="stretch", theme=None)
 
     # ── Related stocks (rebased to 100) ───────────────────────────────────────
     st.markdown("### Related stocks")
@@ -201,8 +201,76 @@ def render_minerals_section() -> None:
         hovermode="x unified",
     )
     st.caption("Each line is rebased to 100 at the start of its available history for comparability.")
-    st.plotly_chart(fig2, use_container_width=True, theme=None)
+    st.plotly_chart(fig2, width="stretch", theme=None)
+
+
+_TUNGSTEN_SERIES = [
+    "apt",
+    "european_apt",
+    "wolframite_concentrate",
+    "scheelite_concentrate",
+    "ferrotungsten",
+    "tungsten_powder",
+    "tungsten_carbide_powder",
+    "cobalt_powder",
+    "scrap_carbide_rod",
+]
+
+
+def _render_tungsten_panel() -> None:
+    st.markdown("### Tungsten prices (Chinatungsten daily)")
+    frame = _load_minerals_csv("tungsten_price_daily")
+    if frame.empty:
+        st.info(
+            "No tungsten price data yet. Run "
+            "`minerals-signal-data scrape-tungsten --base-dir .` to populate it."
+        )
+        return
+
+    series_cols = [c for c in _TUNGSTEN_SERIES if c in frame.columns]
+    labels = {col: col.replace("_", " ").title() for col in series_cols}
+    st.caption(
+        "Daily Chinatungsten product prices. Series use different units "
+        "(RMB/tonne, USD/mtu, RMB/kg), so each line is rebased to 100 at its first "
+        "available value for comparability."
+    )
+    default = [c for c in ("apt", "wolframite_concentrate", "ferrotungsten") if c in series_cols]
+    chosen = st.multiselect(
+        "Tungsten series",
+        series_cols,
+        default=default or series_cols[:3],
+        format_func=lambda c: labels[c],
+    )
+    if not chosen:
+        st.caption("Select one or more series to compare.")
+        return
+
+    fig = go.Figure()
+    for index, col in enumerate(chosen):
+        series = frame[["date", col]].dropna()
+        series = series[series[col] > 0].sort_values("date")
+        if series.empty:
+            continue
+        base = series[col].iloc[0]
+        fig.add_trace(go.Scatter(
+            x=series["date"],
+            y=series[col] / base * 100.0,
+            name=labels[col],
+            line=dict(color=MODEL_COLORS[index % len(MODEL_COLORS)], width=1.8),
+            hovertemplate="%{x|%Y-%m-%d}<br>" + labels[col] + ": %{y:.1f}<extra></extra>",
+        ))
+    fig.update_layout(
+        template="plotly_white",
+        height=420,
+        margin=dict(l=0, r=0, t=30, b=10),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        yaxis=dict(title=dict(text="Rebased price (=100 at first value)"), gridcolor=GRID),
+        xaxis=dict(gridcolor=GRID),
+        hovermode="x unified",
+    )
+    st.plotly_chart(fig, width="stretch", theme=None)
 
 
 def render(domain_states, datasets) -> None:
     render_minerals_section()
+    _render_tungsten_panel()

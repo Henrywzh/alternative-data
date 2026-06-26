@@ -213,7 +213,7 @@ def main() -> None:
     with selector_col:
         selected_section = select_main_section()
     with refresh_col:
-        if st.button("🔄 Refresh data", use_container_width=True):
+        if st.button("🔄 Refresh data", width="stretch"):
             st.cache_data.clear()
             st.rerun()
         if data_sha:
