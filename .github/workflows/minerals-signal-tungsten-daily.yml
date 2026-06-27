@@ -1,4 +1,4 @@
-name: Minerals Signal Tungsten Daily
+name: Minerals Signal Tungsten and Molybdenum Daily
 
 on:
   schedule:
@@ -14,8 +14,8 @@ permissions:
   contents: write
 
 jobs:
-  scrape-tungsten:
-    name: Scrape Daily Tungsten Price
+  scrape-tungsten-molybdenum:
+    name: Scrape Daily Tungsten and Molybdenum Prices
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -36,9 +36,43 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e .[dev]
 
+      - name: Run scraper tests
+        run: |
+          pytest tests/test_minerals_tungsten_scraper.py -q
+
       - name: Run Chinatungsten daily scraper
         run: |
-          minerals-signal-data scrape-tungsten --base-dir .
+          minerals-signal-data scrape-tungsten --base-dir . --max-pages 6 --since-days 31
+
+      - name: Validate recent molybdenum coverage
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          import pandas as pd
+
+          path = Path("data/raw/minerals_signal_data/molybdenum_chinatungsten.csv")
+          if not path.exists():
+              raise SystemExit("Missing molybdenum raw CSV after scrape")
+
+          fields = [
+              "molybdenum_concentrate",
+              "ferromolybdenum",
+              "ammonium_heptamolybdate",
+              "ammonium_tetramolybdate",
+          ]
+          frame = pd.read_csv(path)
+          frame["date"] = pd.to_datetime(frame["date"], errors="coerce")
+          cutoff = pd.Timestamp.now(tz="UTC").tz_convert(None).normalize() - pd.Timedelta(days=45)
+          recent = frame[frame["date"] >= cutoff].copy()
+          if recent.empty:
+              raise SystemExit("No recent molybdenum rows found in the last 45 days")
+
+          counts = recent[fields].replace("", pd.NA).notna().sum()
+          print(counts.to_string())
+          if int(counts.sum()) == 0:
+              raise SystemExit("Recent molybdenum rows exist, but all tracked price fields are empty")
+          PY
 
       - name: Commit and push updates
         run: |

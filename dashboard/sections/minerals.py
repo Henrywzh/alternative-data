@@ -25,6 +25,64 @@ BASE_DIR = repo_root()
 
 
 _MINERALS_SIGNAL_ROOT = BASE_DIR / "data" / "processed" / "minerals_signal_data"
+_MINERALS_REFERENCE_ROOT = BASE_DIR / "data" / "reference" / "minerals_signal_data"
+
+
+_CHINATUNGSTEN_MINERAL_IDS = {"tungsten", "molybdenum"}
+
+
+_TUNGSTEN_SERIES = [
+    "apt",
+    "european_apt",
+    "wolframite_concentrate",
+    "scheelite_concentrate",
+    "ferrotungsten",
+    "tungsten_powder",
+    "tungsten_carbide_powder",
+    "cobalt_powder",
+    "scrap_carbide_rod",
+]
+
+
+_MOLYBDENUM_SERIES = [
+    "molybdenum_concentrate",
+    "ferromolybdenum",
+    "ammonium_heptamolybdate",
+    "ammonium_tetramolybdate",
+]
+
+
+_CHINATUNGSTEN_SERIES = {
+    "tungsten": {
+        "dataset": "tungsten_price_daily",
+        "mineral_name": "Tungsten",
+        "series": _TUNGSTEN_SERIES,
+        "default": ["apt", "wolframite_concentrate", "ferrotungsten"],
+    },
+    "molybdenum": {
+        "dataset": "molybdenum_price_daily",
+        "mineral_name": "Molybdenum",
+        "series": _MOLYBDENUM_SERIES,
+        "default": ["molybdenum_concentrate", "ferromolybdenum", "ammonium_heptamolybdate"],
+    },
+}
+
+
+_PRODUCT_LABELS = {
+    "apt": "APT",
+    "european_apt": "European APT",
+    "wolframite_concentrate": "Wolframite Concentrate",
+    "scheelite_concentrate": "Scheelite Concentrate",
+    "ferrotungsten": "Ferrotungsten",
+    "tungsten_powder": "Tungsten Powder",
+    "tungsten_carbide_powder": "Tungsten Carbide Powder",
+    "cobalt_powder": "Cobalt Powder",
+    "scrap_carbide_rod": "Scrap Carbide Rod",
+    "molybdenum_concentrate": "Molybdenum Concentrate",
+    "ferromolybdenum": "Ferromolybdenum",
+    "ammonium_heptamolybdate": "Ammonium Heptamolybdate",
+    "ammonium_tetramolybdate": "Ammonium Tetramolybdate",
+}
 
 
 def _minerals_partition_dir(dataset: str) -> Path | None:
@@ -54,6 +112,125 @@ def _load_minerals_csv(dataset: str) -> pd.DataFrame:
     return frame
 
 
+def _product_label(series_id: str) -> str:
+    return _PRODUCT_LABELS.get(series_id, series_id.replace("_", " ").title())
+
+
+def _series_to_long(frame: pd.DataFrame, *, mineral_id: str, mineral_name: str, series_cols: list[str]) -> pd.DataFrame:
+    if frame.empty or "date" not in frame.columns:
+        return pd.DataFrame()
+    rows: list[pd.DataFrame] = []
+    for series_id in series_cols:
+        if series_id not in frame.columns:
+            continue
+        series = frame[["date", series_id]].copy()
+        series["date"] = pd.to_datetime(series["date"], errors="coerce")
+        series["price"] = pd.to_numeric(series[series_id], errors="coerce")
+        series = series.dropna(subset=["date", "price"])
+        series = series.loc[series["price"] > 0, ["date", "price"]]
+        if series.empty:
+            continue
+        series["normalized_mineral_id"] = mineral_id
+        series["mineral_name"] = mineral_name
+        series["source_type"] = "chinatungsten_daily"
+        series["product_series"] = series_id
+        series["product_label"] = _product_label(series_id)
+        rows.append(series)
+    if not rows:
+        return pd.DataFrame()
+    return pd.concat(rows, ignore_index=True)
+
+
+def _build_chinatungsten_long_prices(tungsten: pd.DataFrame, molybdenum: pd.DataFrame) -> pd.DataFrame:
+    frames = [
+        _series_to_long(
+            tungsten,
+            mineral_id="tungsten",
+            mineral_name="Tungsten",
+            series_cols=_TUNGSTEN_SERIES,
+        ),
+        _series_to_long(
+            molybdenum,
+            mineral_id="molybdenum",
+            mineral_name="Molybdenum",
+            series_cols=_MOLYBDENUM_SERIES,
+        ),
+    ]
+    frames = [frame for frame in frames if not frame.empty]
+    return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
+
+
+def _merge_mineral_selector_prices(base_prices: pd.DataFrame, chinatungsten_prices: pd.DataFrame) -> pd.DataFrame:
+    if chinatungsten_prices.empty:
+        return base_prices
+    if base_prices.empty:
+        return chinatungsten_prices
+    filtered = base_prices.loc[
+        ~base_prices["normalized_mineral_id"].isin(_CHINATUNGSTEN_MINERAL_IDS)
+    ].copy()
+    return pd.concat([filtered, chinatungsten_prices], ignore_index=True, sort=False)
+
+
+def _merge_mineral_selector_universe(universe: pd.DataFrame, chinatungsten_prices: pd.DataFrame) -> pd.DataFrame:
+    if chinatungsten_prices.empty:
+        return universe
+    base = universe.copy()
+    if base.empty:
+        base = pd.DataFrame(
+            columns=[
+                "normalized_mineral_id",
+                "mineral_name",
+                "trackability_grade",
+                "price_source_type",
+                "price_symbol_or_series_id",
+                "price_currency",
+                "price_unit",
+                "publish_lag_assumption_days",
+                "is_active_for_v1",
+                "proxy_target",
+            ]
+        )
+    existing_ids = set(base.get("normalized_mineral_id", pd.Series(dtype=str)).dropna())
+    additions = []
+    for mineral_id, config in _CHINATUNGSTEN_SERIES.items():
+        if mineral_id in existing_ids or mineral_id not in set(chinatungsten_prices["normalized_mineral_id"]):
+            continue
+        additions.append(
+            {
+                "normalized_mineral_id": mineral_id,
+                "mineral_name": config["mineral_name"],
+                "trackability_grade": "direct",
+                "price_source_type": "chinatungsten_daily",
+                "price_symbol_or_series_id": config["dataset"],
+                "price_currency": "mixed",
+                "price_unit": "mixed product units",
+                "publish_lag_assumption_days": 1,
+                "is_active_for_v1": True,
+                "proxy_target": "",
+            }
+        )
+    if additions:
+        base = pd.concat([base, pd.DataFrame(additions)], ignore_index=True, sort=False)
+    return base
+
+
+def _load_reference_stock_mapping(base_dir: Path) -> pd.DataFrame:
+    path = base_dir / "data" / "reference" / "minerals_signal_data" / "stock_mapping.csv"
+    if not path.exists():
+        return pd.DataFrame()
+    return pd.read_csv(path)
+
+
+def _load_related_stock_links(mapping: pd.DataFrame, selected_id: str, base_dir: Path = BASE_DIR) -> pd.DataFrame:
+    links = mapping.loc[mapping["normalized_mineral_id"] == selected_id] if not mapping.empty else pd.DataFrame()
+    if not links.empty or selected_id != "tungsten":
+        return links
+    reference_mapping = _load_reference_stock_mapping(base_dir)
+    if reference_mapping.empty:
+        return pd.DataFrame()
+    return reference_mapping.loc[reference_mapping["normalized_mineral_id"] == selected_id].copy()
+
+
 def render_minerals_section() -> None:
     st.markdown("## ⛏️ Critical Minerals")
     st.caption(
@@ -63,7 +240,12 @@ def render_minerals_section() -> None:
     )
 
     universe = _load_minerals_csv("mineral_price_universe_live")
-    prices = _load_minerals_csv("mineral_price_series_daily")
+    base_prices = _load_minerals_csv("mineral_price_series_daily")
+    tungsten_prices = _load_minerals_csv("tungsten_price_daily")
+    molybdenum_prices = _load_minerals_csv("molybdenum_price_daily")
+    chinatungsten_prices = _build_chinatungsten_long_prices(tungsten_prices, molybdenum_prices)
+    prices = _merge_mineral_selector_prices(base_prices, chinatungsten_prices)
+    universe = _merge_mineral_selector_universe(universe, chinatungsten_prices)
     signals = _load_minerals_csv("mineral_signal_weekly")
     mapping = _load_minerals_csv("stock_mapping_expanded_live")
     stock_prices = _load_minerals_csv("stock_price_series_daily")
@@ -97,6 +279,7 @@ def render_minerals_section() -> None:
         if not signals.empty
         else pd.DataFrame()
     )
+    is_chinatungsten = selected_id in _CHINATUNGSTEN_MINERAL_IDS and "product_series" in m_prices.columns
 
     # ── Header metrics ────────────────────────────────────────────────────────
     col1, col2, col3, col4 = st.columns(4)
@@ -104,25 +287,68 @@ def render_minerals_section() -> None:
         col1.metric("Trackability", str(meta.get("trackability_grade", "—")))
         col2.metric("Price source", str(meta.get("price_source_type", "—")))
         col3.metric("Currency", str(meta.get("price_currency", "—")) or "—")
-    latest_price = float(m_prices["price"].iloc[-1])
     latest_date = m_prices["date"].iloc[-1]
-    col4.metric(
-        "Latest price",
-        f"{latest_price:,.2f}",
-        help=f"As of {pd.Timestamp(latest_date).date()}",
-    )
+    if is_chinatungsten:
+        col4.metric("Latest date", str(pd.Timestamp(latest_date).date()))
+    else:
+        latest_price = float(m_prices["price"].iloc[-1])
+        col4.metric(
+            "Latest price",
+            f"{latest_price:,.2f}",
+            help=f"As of {pd.Timestamp(latest_date).date()}",
+        )
 
     # ── Price trend with weekly signal overlay ────────────────────────────────
     st.markdown("### Price trend")
     fig = go.Figure()
-    fig.add_trace(go.Scatter(
-        x=m_prices["date"],
-        y=m_prices["price"],
-        name=str(selected_name),
-        line=dict(color=ACCENT, width=2),
-        hovertemplate="%{x|%Y-%m-%d}<br>Price: %{y:.2f}<extra></extra>",
-    ))
-    if not m_signals.empty and "signal_state" in m_signals.columns:
+    if is_chinatungsten:
+        product_rows = m_prices.dropna(subset=["product_series"]).copy()
+        product_options = [
+            series_id
+            for series_id in _CHINATUNGSTEN_SERIES[selected_id]["series"]
+            if series_id in set(product_rows["product_series"])
+        ]
+        default_products = [
+            series_id for series_id in _CHINATUNGSTEN_SERIES[selected_id]["default"] if series_id in product_options
+        ]
+        chosen_products = st.multiselect(
+            "Product series",
+            product_options,
+            default=default_products or product_options[:3],
+            format_func=_product_label,
+        )
+        st.caption(
+            "Chinatungsten product prices use different units, so selected product lines are rebased to "
+            "100 at their first available value."
+        )
+        for index, series_id in enumerate(chosen_products):
+            series = product_rows.loc[product_rows["product_series"] == series_id].sort_values("date")
+            if series.empty:
+                continue
+            base = series["price"].iloc[0]
+            if not base or pd.isna(base):
+                continue
+            fig.add_trace(go.Scatter(
+                x=series["date"],
+                y=series["price"] / base * 100.0,
+                customdata=series["price"],
+                name=_product_label(series_id),
+                line=dict(color=MODEL_COLORS[index % len(MODEL_COLORS)], width=1.8),
+                hovertemplate=(
+                    "%{x|%Y-%m-%d}<br>"
+                    + _product_label(series_id)
+                    + " index: %{y:.1f}<br>Raw: %{customdata:,.2f}<extra></extra>"
+                ),
+            ))
+    else:
+        fig.add_trace(go.Scatter(
+            x=m_prices["date"],
+            y=m_prices["price"],
+            name=str(selected_name),
+            line=dict(color=ACCENT, width=2),
+            hovertemplate="%{x|%Y-%m-%d}<br>Price: %{y:.2f}<extra></extra>",
+        ))
+    if not is_chinatungsten and not m_signals.empty and "signal_state" in m_signals.columns:
         bullish = m_signals.loc[m_signals["signal_state"] == "bullish"]
         if not bullish.empty:
             fig.add_trace(go.Scatter(
@@ -138,7 +364,16 @@ def render_minerals_section() -> None:
         height=420,
         margin=dict(l=0, r=0, t=30, b=10),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-        yaxis=dict(title=dict(text=f"Price ({meta.get('price_currency', '') if meta is not None else ''})"), gridcolor=GRID),
+        yaxis=dict(
+            title=dict(
+                text=(
+                    "Rebased price (=100 at first value)"
+                    if is_chinatungsten
+                    else f"Price ({meta.get('price_currency', '') if meta is not None else ''})"
+                )
+            ),
+            gridcolor=GRID,
+        ),
         xaxis=dict(gridcolor=GRID),
         hovermode="x unified",
     )
@@ -146,7 +381,7 @@ def render_minerals_section() -> None:
 
     # ── Related stocks (rebased to 100) ───────────────────────────────────────
     st.markdown("### Related stocks")
-    links = mapping.loc[mapping["normalized_mineral_id"] == selected_id] if not mapping.empty else pd.DataFrame()
+    links = _load_related_stock_links(mapping, selected_id, BASE_DIR)
     if links.empty:
         st.info(f"No related stocks are mapped for {selected_name}.")
         return
@@ -204,73 +439,5 @@ def render_minerals_section() -> None:
     st.plotly_chart(fig2, width="stretch", theme=None)
 
 
-_TUNGSTEN_SERIES = [
-    "apt",
-    "european_apt",
-    "wolframite_concentrate",
-    "scheelite_concentrate",
-    "ferrotungsten",
-    "tungsten_powder",
-    "tungsten_carbide_powder",
-    "cobalt_powder",
-    "scrap_carbide_rod",
-]
-
-
-def _render_tungsten_panel() -> None:
-    st.markdown("### Tungsten prices (Chinatungsten daily)")
-    frame = _load_minerals_csv("tungsten_price_daily")
-    if frame.empty:
-        st.info(
-            "No tungsten price data yet. Run "
-            "`minerals-signal-data scrape-tungsten --base-dir .` to populate it."
-        )
-        return
-
-    series_cols = [c for c in _TUNGSTEN_SERIES if c in frame.columns]
-    labels = {col: col.replace("_", " ").title() for col in series_cols}
-    st.caption(
-        "Daily Chinatungsten product prices. Series use different units "
-        "(RMB/tonne, USD/mtu, RMB/kg), so each line is rebased to 100 at its first "
-        "available value for comparability."
-    )
-    default = [c for c in ("apt", "wolframite_concentrate", "ferrotungsten") if c in series_cols]
-    chosen = st.multiselect(
-        "Tungsten series",
-        series_cols,
-        default=default or series_cols[:3],
-        format_func=lambda c: labels[c],
-    )
-    if not chosen:
-        st.caption("Select one or more series to compare.")
-        return
-
-    fig = go.Figure()
-    for index, col in enumerate(chosen):
-        series = frame[["date", col]].dropna()
-        series = series[series[col] > 0].sort_values("date")
-        if series.empty:
-            continue
-        base = series[col].iloc[0]
-        fig.add_trace(go.Scatter(
-            x=series["date"],
-            y=series[col] / base * 100.0,
-            name=labels[col],
-            line=dict(color=MODEL_COLORS[index % len(MODEL_COLORS)], width=1.8),
-            hovertemplate="%{x|%Y-%m-%d}<br>" + labels[col] + ": %{y:.1f}<extra></extra>",
-        ))
-    fig.update_layout(
-        template="plotly_white",
-        height=420,
-        margin=dict(l=0, r=0, t=30, b=10),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-        yaxis=dict(title=dict(text="Rebased price (=100 at first value)"), gridcolor=GRID),
-        xaxis=dict(gridcolor=GRID),
-        hovermode="x unified",
-    )
-    st.plotly_chart(fig, width="stretch", theme=None)
-
-
 def render(domain_states, datasets) -> None:
     render_minerals_section()
-    _render_tungsten_panel()
