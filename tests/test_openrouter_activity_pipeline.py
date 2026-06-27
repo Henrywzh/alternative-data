@@ -118,6 +118,37 @@ def test_openrouter_model_activity_storage_roundtrips_reasoning_tokens(tmp_path:
     assert float(loaded.loc[0, "reasoning_tokens"]) == 75.0
 
 
+def test_provider_daily_activity_storage_is_parquet_only(tmp_path: Path) -> None:
+    storage = StorageManager(tmp_path)
+
+    records = [
+        DatasetRecord(
+            dataset_id="provider_daily_activity",
+            source_url="fixture://provider/openai",
+            source_run_id="run-1",
+            scraped_at="2026-04-24T00:00:00Z",
+            entity_id="openai",
+            entity_name="OpenAI",
+            usage_date="2026-04-24",
+            model_permaslug="openai/gpt-4.1",
+            prompt_tokens=0.0,
+            completion_tokens=0.0,
+            total_tokens=1250.0,
+        )
+    ]
+
+    storage.upsert_dataset("provider_daily_activity", records)
+
+    root = tmp_path / "data" / "normalized" / "openrouter"
+    assert not (root / "provider_daily_activity.csv").exists()
+    assert (root / "provider_daily_activity.parquet").exists()
+
+    loaded = storage.load_dataset("provider_daily_activity")
+    assert len(loaded) == 1
+    assert loaded.loc[0, "model_permaslug"] == "openai/gpt-4.1"
+    assert float(loaded.loc[0, "total_tokens"]) == 1250.0
+
+
 def test_provider_activity_source_still_emits_total_tokens_only() -> None:
     payload = [
         "$",
