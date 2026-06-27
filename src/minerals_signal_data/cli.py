@@ -70,6 +70,8 @@ def build_parser() -> argparse.ArgumentParser:
     tungsten = subparsers.add_parser("scrape-tungsten", help="Scrape daily tungsten prices from Chinatungsten")
     tungsten.add_argument("--base-dir", default=".", help="Repository root for data writes")
     tungsten.add_argument("--max-pages", type=int, default=3, help="Max category pages to scrape")
+    tungsten.add_argument("--since-date", help="Only write articles on/after this YYYY-MM-DD date")
+    tungsten.add_argument("--since-days", type=int, help="Only write articles from the last N days")
     tungsten.add_argument(
         "--with-images",
         action="store_true",
@@ -126,7 +128,13 @@ def main() -> int:
     elif args.command == "scrape-tungsten":
         from minerals_signal_data.chinatungsten_scraper import scrape_range
 
-        scrape_range(args.base_dir, max_pages=args.max_pages, with_images=args.with_images)
+        scrape_range(
+            args.base_dir,
+            max_pages=args.max_pages,
+            with_images=args.with_images,
+            since_date=args.since_date,
+            since_days=args.since_days,
+        )
         return 0
     elif args.command == "validate":
         counts = pipeline.validate(args.workbook, stock_mapping_path=args.stock_mapping)
