@@ -14,7 +14,7 @@ import sys
 import time
 import urllib.parse
 import subprocess
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import pandas as pd
@@ -157,55 +157,134 @@ def extract_prices_from_body(html_text):
     return extracted
 
 
-def extract_molybdenum_prices_from_body(html_text: str) -> dict:
-    sentences = re.split(r"[\.\n]", html_text)
-    target_sentence = None
-    for s in sentences:
-        if "molybdenum concentrate" in s.lower() and "respectively" in s.lower():
-            target_sentence = s
-            break
-    if not target_sentence:
-        for s in sentences:
-            if "rmb" in s.lower() and ("ton-degree" in s.lower() or "per ton" in s.lower()):
-                target_sentence = s
+MOLY_PRODUCT_ALIASES = {
+    "molybdenum_concentrate": [r"molybdenum\s+concentrate"],
+    "ferromolybdenum": [r"ferro\s*-?\s*molybdenum", r"ferromolybdenum"],
+    "ammonium_heptamolybdate": [
+        r"ammonium\s+hepta\s*-?\s*molybdate",
+        r"ammonium\s+heptamolybdate",
+    ],
+    "ammonium_tetramolybdate": [
+        r"ammonium\s+tetra\s*-?\s*molybdate",
+        r"ammonium\s+tetramolybdate",
+    ],
+}
+
+MOLY_RMB_PRICE_RE = re.compile(
+    r"rmb\s*([\d,\.]+)\s*(?:/|per)\s*(ton-degree|ton)\b",
+    re.IGNORECASE,
+)
+
+MOLY_CHANGE_CONTEXT_RE = re.compile(
+    r"\b(?:rose|risen|rise|increased?|decreased?|declined?|fell|fallen|dropped|reduced)\s+by\b",
+    re.IGNORECASE,
+)
+
+
+def _normalize_moly_text(text: str) -> str:
+    text = BeautifulSoup(text, "html.parser").get_text(" ") if "<" in text and ">" in text else str(text)
+    text = text.replace("\xa0", " ")
+    text = re.sub(r"[\u2010-\u2015]", "-", text)
+    text = re.sub(r"\s+", " ", text)
+    return text.strip()
+
+
+def _valid_moly_value(field: str, value: float | str) -> bool:
+    if value == "":
+        return False
+    low, high = MOLY_PRICE_BOUNDS[field]
+    return low <= float(value) <= high
+
+
+def _moly_product_mentions(text: str) -> list[tuple[int, str]]:
+    mentions: list[tuple[int, str]] = []
+    for field, aliases in MOLY_PRODUCT_ALIASES.items():
+        for alias in aliases:
+            match = re.search(alias, text, re.IGNORECASE)
+            if match:
+                mentions.append((match.start(), field))
                 break
+    return sorted(mentions)
 
+
+def _nearby_text_has_change_context(text: str, start: int, end: int) -> bool:
+    window = text[max(0, start - 80) : min(len(text), end + 80)]
+    return bool(MOLY_CHANGE_CONTEXT_RE.search(window))
+
+
+def _assign_moly_value(extracted: dict, field: str, val_str: str) -> None:
+    value = clean_value(val_str)
+    if value != "" and _valid_moly_value(field, value):
+        extracted[field] = value
+
+
+def _extract_moly_direct_pairs(text: str) -> dict:
     extracted = {k: "" for k in MOLY_PRICE_FIELDS}
-    if not target_sentence:
+    for field, aliases in MOLY_PRODUCT_ALIASES.items():
+        for alias in aliases:
+            pattern = re.compile(
+                rf"{alias}.{{0,120}}?"
+                r"rmb\s*([\d,\.]+)\s*(?:/|per)\s*(ton-degree|ton)\b",
+                re.IGNORECASE,
+            )
+            match = pattern.search(text)
+            if not match:
+                continue
+            if _nearby_text_has_change_context(text, match.start(), match.end()):
+                continue
+            _assign_moly_value(extracted, field, match.group(1))
+            if extracted[field] != "":
+                break
+    return extracted
+
+
+def _extract_moly_respectively(text: str) -> dict:
+    extracted = {k: "" for k in MOLY_PRICE_FIELDS}
+    clauses = re.split(r"(?<=[\.;])\s+", text)
+    for clause in clauses:
+        if "respectively" not in clause.lower() or "rmb" not in clause.lower():
+            continue
+        product_mentions = _moly_product_mentions(clause)
+        price_matches = list(MOLY_RMB_PRICE_RE.finditer(clause))
+        if len(product_mentions) != len(price_matches):
+            continue
+        for (_, field), price_match in zip(product_mentions, price_matches):
+            if _nearby_text_has_change_context(clause, price_match.start(), price_match.end()):
+                continue
+            _assign_moly_value(extracted, field, price_match.group(1))
+    return extracted
+
+
+def _extract_moly_concentrate_fallback(text: str) -> dict:
+    extracted = {k: "" for k in MOLY_PRICE_FIELDS}
+    if "molybdenum concentrate" not in text.lower():
         return extracted
+    for match in MOLY_RMB_PRICE_RE.finditer(text):
+        if match.group(2).lower() != "ton-degree":
+            continue
+        if _nearby_text_has_change_context(text, match.start(), match.end()):
+            continue
+        _assign_moly_value(extracted, "molybdenum_concentrate", match.group(1))
+        break
+    return extracted
 
-    s_lower = target_sentence.lower()
-    found_products = []
-    pos_moly_conc = s_lower.find("molybdenum concentrate")
-    pos_ferro = s_lower.find("ferromolybdenum")
-    pos_ammo_hep = s_lower.find("ammonium heptamolybdate")
-    pos_ammo_tet = s_lower.find("ammonium tetramolybdate")
 
-    if pos_moly_conc != -1: found_products.append((pos_moly_conc, "molybdenum_concentrate"))
-    if pos_ferro != -1: found_products.append((pos_ferro, "ferromolybdenum"))
-    if pos_ammo_hep != -1: found_products.append((pos_ammo_hep, "ammonium_heptamolybdate"))
-    if pos_ammo_tet != -1: found_products.append((pos_ammo_tet, "ammonium_tetramolybdate"))
+def _merge_moly_prices(base: dict, update: dict) -> dict:
+    for field in MOLY_PRICE_FIELDS:
+        if base.get(field) in ("", None) and update.get(field) not in ("", None):
+            base[field] = update[field]
+    return base
 
-    found_products.sort()
 
-    price_matches = list(re.finditer(r"rmb\s*([\d,\.]+)\s*(?:\/|per)\s*(?:ton\-degree|ton)", target_sentence, re.IGNORECASE))
-
-    if len(found_products) == len(price_matches):
-        for prod_info, price_match in zip(found_products, price_matches):
-            prod_name = prod_info[1]
-            val = clean_value(price_match.group(1))
-            if val != "":
-                low, high = MOLY_PRICE_BOUNDS[prod_name]
-                if low <= val <= high:
-                    extracted[prod_name] = val
-    else:
-        for m in price_matches:
-            val = clean_value(m.group(1))
-            if val != "":
-                if "ton-degree" in m.group(0).lower():
-                    low, high = MOLY_PRICE_BOUNDS["molybdenum_concentrate"]
-                    if low <= val <= high:
-                        extracted["molybdenum_concentrate"] = val
+def extract_molybdenum_prices_from_body(html_text: str) -> dict:
+    text = _normalize_moly_text(html_text)
+    extracted = {k: "" for k in MOLY_PRICE_FIELDS}
+    for strategy in (
+        _extract_moly_respectively,
+        _extract_moly_direct_pairs,
+        _extract_moly_concentrate_fallback,
+    ):
+        _merge_moly_prices(extracted, strategy(text))
     return extracted
 
 
@@ -285,15 +364,39 @@ def _run_tesseract_ocr(image_path: Path) -> dict:
             ["tesseract", str(image_path), str(txt_base), "--psm", "3"],
             capture_output=True,
             text=True,
+            errors="replace",
             check=False
         )
         if result.returncode == 0 and txt_file.exists():
-            ocr_text = txt_file.read_text(encoding="utf-8")
+            ocr_text = txt_file.read_text(encoding="utf-8", errors="replace")
             txt_file.unlink()
             return _parse_ocr_text(ocr_text)
     except Exception as exc:
         _log(f"  Tesseract OCR execution failed: {exc}")
     return {}
+
+
+def _find_molybdenum_price_image_url(body: BeautifulSoup) -> str | None:
+    """Prefer daily price-table images and avoid trend/average charts."""
+    best: tuple[int, str] | None = None
+    for img in body.find_all("img"):
+        src = img.get("src", "")
+        alt = img.get("alt", "")
+        img_title = img.get("title", "")
+        haystack = " ".join([src, alt, img_title]).lower()
+        if "molybdenum" not in haystack or "price" not in haystack:
+            continue
+        if any(blocked in haystack for blocked in ("trend", "chart", "average", "wechat")):
+            continue
+        score = 1
+        if "price-picture" in haystack or "price picture" in haystack:
+            score += 4
+        if "picture" in haystack:
+            score += 1
+        full_url = urllib.parse.urljoin(BASE_URL, src)
+        if best is None or score > best[0]:
+            best = (score, full_url)
+    return best[1] if best else None
 
 
 def _flag_suspicious_moly_prices(prices: dict, *, context: str) -> None:
@@ -394,16 +497,7 @@ def parse_article_page(
         if is_moly:
             prices = extract_molybdenum_prices_from_body(body.get_text())
             moly_missing = any(prices.get(f) in ("", None) for f in MOLY_PRICE_FIELDS)
-            
-            image_url = None
-            for img in body.find_all("img"):
-                src = img.get("src", "")
-                alt = img.get("alt", "")
-                img_title = img.get("title", "")
-                filename = src.split("/")[-1]
-                if "price" in filename or "price" in alt.lower() or "price" in img_title.lower():
-                    image_url = urllib.parse.urljoin(BASE_URL, src)
-                    break
+            image_url = _find_molybdenum_price_image_url(body)
                     
             if moly_missing and image_url and image_dir is not None:
                 temp_img_name = f"temp_moly_ocr_{date_str}.jpg"
@@ -481,12 +575,44 @@ def write_processed_snapshot(base_dir: Path, csv_path: Path, dataset_name: str, 
     return storage.write_dataset(dataset_name, frame, run_label="latest")
 
 
+def _resolve_since_date(since_date: str | None = None, since_days: int | None = None) -> datetime | None:
+    if since_date and since_days is not None:
+        raise ValueError("Use either since_date or since_days, not both")
+    if since_date:
+        return datetime.strptime(since_date, "%Y-%m-%d")
+    if since_days is not None:
+        if since_days < 0:
+            raise ValueError("since_days must be non-negative")
+        return datetime.utcnow() - timedelta(days=since_days)
+    return None
+
+
+def _is_older_than_cutoff(date_str: str, cutoff: datetime | None) -> bool:
+    if cutoff is None or not date_str:
+        return False
+    try:
+        return datetime.strptime(date_str, "%Y-%m-%d").date() < cutoff.date()
+    except ValueError:
+        return False
+
+
+def _is_daily_price_article_title(title: str, mineral_type: str) -> bool:
+    title = title.lower()
+    if "news" in title or "video" in title:
+        return False
+    if mineral_type == "molybdenum" and any(blocked in title for blocked in ("price trend", "trends", "average")):
+        return False
+    return True
+
+
 def scrape_range(
     base_dir: str | Path = ".",
     *,
     max_pages: int = 3,
     with_images: bool = False,
     session: requests.Session | None = None,
+    since_date: str | None = None,
+    since_days: int | None = None,
 ) -> int:
     """Scrape category pages, append new dated rows, and refresh the processed snapshots."""
     base_dir = Path(base_dir)
@@ -497,8 +623,10 @@ def scrape_range(
     moly_csv_path = data_dir / "molybdenum_chinatungsten.csv"
     image_dir = data_dir / "images"
     session = session or build_session()
+    cutoff = _resolve_since_date(since_date=since_date, since_days=since_days)
 
-    _log(f"Scraping up to {max_pages} category pages (images={'on' if with_images else 'off'})...")
+    cutoff_msg = f", since={cutoff.date()}" if cutoff is not None else ""
+    _log(f"Scraping up to {max_pages} category pages (images={'on' if with_images else 'off'}{cutoff_msg})...")
     existing_tungsten_dates, existing_tungsten_urls = _load_existing(tungsten_csv_path)
     existing_moly_dates, existing_moly_urls = _load_existing(moly_csv_path)
 
@@ -535,8 +663,10 @@ def scrape_range(
                 title = a_tag.text.strip().lower()
                 href = a_tag.get("href", "")
                 
-                is_tungsten = ("tungsten" in title or "apt" in title) and "news" not in title and "video" not in title
-                is_moly = "molybdenum" in title and "news" not in title and "video" not in title
+                is_tungsten = ("tungsten" in title or "apt" in title) and _is_daily_price_article_title(
+                    title, "tungsten"
+                )
+                is_moly = "molybdenum" in title and _is_daily_price_article_title(title, "molybdenum")
                 
                 full_url = urllib.parse.urljoin(BASE_URL, href)
                 if is_tungsten:
@@ -560,6 +690,9 @@ def scrape_range(
                     if not data:
                         continue
                     date_str = data["date"]
+                    if _is_older_than_cutoff(date_str, cutoff):
+                        _log(f"Skipping {date_str}: older than cutoff")
+                        continue
                     if date_str in existing_tungsten_dates:
                         continue
                     _log(f"Scraped {date_str}: APT={data['apt']}")
@@ -573,6 +706,9 @@ def scrape_range(
                     if not data:
                         continue
                     date_str = data["date"]
+                    if _is_older_than_cutoff(date_str, cutoff):
+                        _log(f"Skipping Moly {date_str}: older than cutoff")
+                        continue
                     if date_str in existing_moly_dates:
                         continue
                     _log(f"Scraped Moly {date_str}: Conc={data['molybdenum_concentrate']}")
@@ -618,13 +754,21 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Scrape Chinatungsten daily tungsten/molybdenum prices.")
     parser.add_argument("--base-dir", default=".", help="Repository root for data writes")
     parser.add_argument("--max-pages", type=int, default=3, help="Max category pages to scrape")
+    parser.add_argument("--since-date", help="Only write articles on/after this YYYY-MM-DD date")
+    parser.add_argument("--since-days", type=int, help="Only write articles from the last N days")
     parser.add_argument(
         "--with-images",
         action="store_true",
         help="Also download price-table/trend images (local only; not committed)",
     )
     args = parser.parse_args()
-    scrape_range(args.base_dir, max_pages=args.max_pages, with_images=args.with_images)
+    scrape_range(
+        args.base_dir,
+        max_pages=args.max_pages,
+        with_images=args.with_images,
+        since_date=args.since_date,
+        since_days=args.since_days,
+    )
     return 0
 
 
