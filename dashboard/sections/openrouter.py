@@ -374,6 +374,48 @@ def _revenue_pivots_from_economics(economics: pd.DataFrame) -> tuple[pd.DataFram
     return daily, weekly, monthly
 
 
+def _pivot_to_share_percent(pivot_df: pd.DataFrame) -> pd.DataFrame:
+    if pivot_df.empty:
+        return pivot_df.copy()
+    denominator = pivot_df.sum(axis=1).replace(0, np.nan)
+    return pivot_df.div(denominator, axis=0).fillna(0.0) * 100
+
+
+def _estimator_coverage_summary(estimated: pd.DataFrame) -> dict[str, float | int | dict[str, int]]:
+    if estimated.empty or "total_tokens" not in estimated.columns:
+        return {
+            "total_tokens": 0.0,
+            "model_priced_tokens": 0.0,
+            "fallback_priced_tokens": 0.0,
+            "unpriced_tokens": 0.0,
+            "model_priced_token_coverage": 0.0,
+            "fallback_priced_token_coverage": 0.0,
+            "unpriced_token_share": 0.0,
+            "pricing_status_mix": {},
+        }
+
+    frame = estimated.copy()
+    total_tokens = pd.to_numeric(frame["total_tokens"], errors="coerce").fillna(0.0)
+    status = frame.get("pricing_join_status", pd.Series(pd.NA, index=frame.index)).astype("string")
+    model_mask = status.isin(["matched_model_median", "matched_model_split_median", "free_model_zero_revenue"])
+    fallback_mask = status.isin(["fallback_provider_median", "fallback_global_median"])
+    unpriced_mask = status.isin(["unresolved_missing_pricing", "synthetic_unpriced"]) | status.isna()
+    total = float(total_tokens.sum())
+    model_tokens = float(total_tokens[model_mask].sum())
+    fallback_tokens = float(total_tokens[fallback_mask].sum())
+    unpriced_tokens = float(total_tokens[unpriced_mask].sum())
+    return {
+        "total_tokens": total,
+        "model_priced_tokens": model_tokens,
+        "fallback_priced_tokens": fallback_tokens,
+        "unpriced_tokens": unpriced_tokens,
+        "model_priced_token_coverage": model_tokens / total if total else 0.0,
+        "fallback_priced_token_coverage": fallback_tokens / total if total else 0.0,
+        "unpriced_token_share": unpriced_tokens / total if total else 0.0,
+        "pricing_status_mix": status.value_counts(dropna=False).to_dict(),
+    }
+
+
 def _is_xiaomi_mimo_backpricing_hazard(frame: pd.DataFrame) -> pd.Series:
     if frame.empty:
         return pd.Series(dtype=bool, index=frame.index)
@@ -491,6 +533,7 @@ def _compute_revenue_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, 
     modern_pivot_daily = pd.DataFrame()
     modern_pivot_weekly = pd.DataFrame()
     modern_pivot_monthly = pd.DataFrame()
+    estimator_coverage = _estimator_coverage_summary(pd.DataFrame())
     if not provider_activity.empty:
         modern_df = provider_activity.copy()
         modern_df = modern_df[~_is_xiaomi_mimo_backpricing_hazard(modern_df)].copy()
@@ -504,6 +547,7 @@ def _compute_revenue_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, 
             if not modern_df.empty
             else pd.DataFrame()
         )
+        estimator_coverage = _estimator_coverage_summary(modern_with_price)
         if "estimated_revenue" in modern_with_price.columns:
             modern_with_price = modern_with_price[modern_with_price["estimated_revenue"].notna()].copy()
         if not modern_with_price.empty:
@@ -538,7 +582,8 @@ def _compute_revenue_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, 
             )
             pivot_rev_daily = modern_pivot_daily
 
-    coverage_summary = summarize_economics_coverage(economics)
+    strict_coverage_summary = summarize_economics_coverage(economics)
+    coverage_summary = estimator_coverage if not provider_activity.empty else strict_coverage_summary
 
     if macro_res and not macro_res.frame.empty and market_share_res and not market_share_res.frame.empty:
         macro_df = macro_res.frame.copy()
@@ -666,6 +711,7 @@ def _compute_revenue_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, 
             "merged_count": len(economics),
             "economics": economics,
             "coverage": coverage_summary,
+            "strict_coverage": strict_coverage_summary,
         },
         "token_volume": {
             "pivot_daily": pivot_tok_daily,
@@ -863,19 +909,25 @@ def render_revenue_estimator(datasets: dict[str, DatasetLoadResult], openrouter_
 
     st.markdown(
         kpi_grid_html(
-            kpi_card_html("Observed Priced Revenue", f"${total_revenue:,.0f}", delta="matched model pricing only"),
+            kpi_card_html("Estimated Revenue", f"${total_revenue:,.0f}", delta="modeled from OpenRouter pricing"),
             kpi_card_html("Provider Coverage", str(len(pivot_rev.columns)), delta="active priced providers"),
-            kpi_card_html("Priced Token Coverage", f"{coverage.get('priced_token_coverage', 0):.1%}", delta="of observed provider tokens"),
-            kpi_card_html("Split Token Coverage", f"{coverage.get('split_token_coverage', 0):.1%}", delta="prompt/completion known or inferred"),
+            kpi_card_html("Model-Priced Tokens", f"{coverage.get('model_priced_token_coverage', 0):.1%}", delta="matched or free model pricing"),
+            kpi_card_html("Fallback-Priced Tokens", f"{coverage.get('fallback_priced_token_coverage', 0):.1%}", delta=f"{coverage.get('unpriced_token_share', 0):.1%} unpriced/synthetic"),
         ),
         unsafe_allow_html=True,
     )
 
-    st.markdown('<div class="section-subtitle">Estimated Revenue by Provider (USD)</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-subtitle">Estimated Revenue by Provider</div>', unsafe_allow_html=True)
 
     pivot_monthly = regroup_provider_pivot_for_display(rev_data.get("pivot_rev_monthly", pd.DataFrame()), "monthly")
     pivot_weekly  = regroup_provider_pivot_for_display(rev_data.get("pivot_rev_weekly", pd.DataFrame()), "weekly")
     pivot_daily   = regroup_provider_pivot_for_display(rev_data.get("pivot_rev_daily", pd.DataFrame()), "daily")
+    chart_mode_options = ["USD", "Share (%)"]
+    if hasattr(st, "segmented_control"):
+        chart_mode = st.segmented_control("Revenue chart mode", chart_mode_options, default="USD")
+    else:
+        chart_mode = st.radio("Revenue chart mode", chart_mode_options, horizontal=True)
+    chart_mode = str(chart_mode or "USD")
 
     tab_week, tab_month, tab_day = st.tabs(["Weekly", "Monthly", "Daily"])
     
@@ -889,14 +941,17 @@ def render_revenue_estimator(datasets: dict[str, DatasetLoadResult], openrouter_
             f"{d} (MTD)" if date_title == "Usage Month" and str(d) == today_month else d
             for d in pivot_df.index
         ]
+        plot_df = _pivot_to_share_percent(pivot_df) if chart_mode == "Share (%)" else pivot_df
         st.plotly_chart(
             make_stacked_area_chart(
-                pivot_df,
+                plot_df,
                 display_index,
                 MODEL_COLORS,
                 x_title=date_title,
-                y_title="Revenue (USD)",
-                hover_prefix="$",
+                y_title="Revenue Share (%)" if chart_mode == "Share (%)" else "Revenue (USD)",
+                value_format=".1f" if chart_mode == "Share (%)" else ",.2f",
+                hover_prefix="" if chart_mode == "Share (%)" else "$",
+                hover_suffix="%" if chart_mode == "Share (%)" else "",
             ),
             width="stretch", theme=None,
         )
@@ -907,13 +962,16 @@ def render_revenue_estimator(datasets: dict[str, DatasetLoadResult], openrouter_
         else:
             today_month = datetime.now().strftime("%Y-%m")
             display_index = [str(d) for d in pivot_weekly.index]
+            plot_weekly = _pivot_to_share_percent(pivot_weekly) if chart_mode == "Share (%)" else pivot_weekly
             fig_week = make_stacked_area_chart(
-                pivot_weekly,
+                plot_weekly,
                 display_index,
                 MODEL_COLORS,
                 x_title="Usage Week (Starting)",
-                y_title="Revenue (USD)",
-                hover_prefix="$",
+                y_title="Revenue Share (%)" if chart_mode == "Share (%)" else "Revenue (USD)",
+                value_format=".1f" if chart_mode == "Share (%)" else ",.2f",
+                hover_prefix="" if chart_mode == "Share (%)" else "$",
+                hover_suffix="%" if chart_mode == "Share (%)" else "",
             )
             st.plotly_chart(fig_week, width="stretch", theme=None)
             st.caption(

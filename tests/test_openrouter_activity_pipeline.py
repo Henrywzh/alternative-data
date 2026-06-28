@@ -301,6 +301,32 @@ def test_activity_pipeline_discovers_major_provider_slugs_from_catalog(tmp_path:
     ]
 
 
+def test_activity_pipeline_discovers_major_provider_slugs_from_parquet_catalog(tmp_path: Path) -> None:
+    catalog_dir = tmp_path / "data" / "normalized" / "compute_availability"
+    catalog_dir.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame(
+        [
+            {
+                "model_id": "anthropic/claude-opus-4.7",
+                "canonical_slug": "anthropic/claude-opus-4.7",
+                "provider_prefix": "anthropic",
+                "snapshot_ts": "2026-04-24T00:00:00Z",
+            },
+            {
+                "model_id": "nvidia/llama-3.1-nemotron",
+                "canonical_slug": "nvidia/llama-3.1-nemotron",
+                "provider_prefix": "nvidia",
+                "snapshot_ts": "2026-04-24T00:00:00Z",
+            },
+        ]
+    ).to_parquet(catalog_dir / "raw_openrouter_models.parquet", index=False)
+
+    pipeline = ActivityPipeline(tmp_path)
+    slugs = pipeline._discover_catalog_slugs()
+
+    assert slugs == ["anthropic/claude-opus-4.7"]
+
+
 def test_activity_pipeline_unions_recent_partial_catalog_snapshots(tmp_path: Path) -> None:
     catalog_dir = tmp_path / "data" / "normalized" / "compute_availability"
     catalog_dir.mkdir(parents=True, exist_ok=True)

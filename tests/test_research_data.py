@@ -10,6 +10,7 @@ import pytest
 
 from dashboard import data as dashboard_data
 from openrouter_revenue import build_conservative_provider_economics, estimate_usage_revenue
+from pricing_model_aliases import generate_candidate_aliases
 from research_data.api import monthly_model_releases, provider_revenue_daily
 from research_data.cli import main as research_cli_main
 from research_data.catalog import catalog
@@ -660,6 +661,62 @@ def test_estimate_usage_revenue_uses_asof_snapshot_for_historical_usage() -> Non
     assert pd.Timestamp(row["pricing_snapshot_ts"]) == pd.Timestamp("2026-04-15T12:00:00Z")
     assert row["pricing_join_status"] == "matched_model_median"
     assert row["estimated_revenue"] == pytest.approx(0.1023)
+
+
+def test_anthropic_fast_aliases_do_not_collapse_into_plain_opus() -> None:
+    assert generate_candidate_aliases("anthropic/claude-4.7-opus-20260416")[-1] == "anthropic/claude-opus-4.7"
+    assert generate_candidate_aliases("anthropic/claude-4.7-opus-fast-20260512")[-1] == "anthropic/claude-opus-4.7-fast"
+    assert "anthropic/claude-opus-4.7" not in generate_candidate_aliases(
+        "anthropic/claude-4.7-opus-fast-20260512"
+    )
+
+
+def test_estimate_usage_revenue_keeps_anthropic_opus_fast_pricing_separate() -> None:
+    usage = pd.DataFrame(
+        [
+            {
+                "usage_date": "2026-06-24",
+                "provider_slug": "anthropic",
+                "model_permaslug": "anthropic/claude-4.7-opus-20260416",
+                "total_tokens": 1_000_000.0,
+                "prompt_tokens": 0.0,
+                "completion_tokens": 0.0,
+            }
+        ]
+    )
+    pricing = pd.DataFrame(
+        [
+            {
+                "snapshot_ts": "2026-06-27T09:35:09Z",
+                "model_id": "anthropic/claude-opus-4.7",
+                "canonical_slug": "anthropic/claude-4.7-opus-20260416",
+                "provider_prefix": "anthropic",
+                "pricing_prompt": 0.000005,
+                "pricing_completion": 0.000025,
+            },
+            {
+                "snapshot_ts": "2026-06-27T09:35:09Z",
+                "model_id": "anthropic/claude-opus-4.7-fast",
+                "canonical_slug": "anthropic/claude-4.7-opus-fast-20260512",
+                "provider_prefix": "anthropic",
+                "pricing_prompt": 0.000030,
+                "pricing_completion": 0.000150,
+            },
+        ]
+    )
+
+    estimated = estimate_usage_revenue(
+        usage,
+        pricing,
+        slug_strategy="canonical",
+        pricing_strategy="provider_fallback",
+    )
+
+    row = estimated.iloc[0]
+    assert row["matched_model_key"] == "anthropic/claude-opus-4.7"
+    assert row["pricing_prompt"] == pytest.approx(0.000005)
+    assert row["pricing_completion"] == pytest.approx(0.000025)
+    assert row["estimated_revenue"] == pytest.approx(5.46)
 
 
 def test_estimate_usage_revenue_falls_back_to_earliest_snapshot_before_pricing_history_starts() -> None:

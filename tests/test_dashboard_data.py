@@ -43,6 +43,7 @@ from dashboard.data import (
     load_domain_datasets,
     load_latest_manifest,
 )
+from dashboard.sections.openrouter import _estimator_coverage_summary, _pivot_to_share_percent
 
 
 def _base_row(dataset_id: str) -> dict:
@@ -2351,6 +2352,40 @@ def test_make_stacked_area_chart_allows_metric_specific_hover_formatting() -> No
     assert "%{y:,.0f} tokens" in token_fig.data[0].hovertemplate
 
 
+def test_revenue_share_pivot_normalizes_each_period_to_100_percent() -> None:
+    pivot = pd.DataFrame(
+        {
+            "OpenAI": [25.0, 0.0],
+            "Anthropic": [75.0, 0.0],
+        },
+        index=["2026-06-24", "2026-06-25"],
+    )
+
+    share = _pivot_to_share_percent(pivot)
+
+    assert share.loc["2026-06-24", "OpenAI"] == 25.0
+    assert share.loc["2026-06-24", "Anthropic"] == 75.0
+    assert share.loc["2026-06-24"].sum() == 100.0
+    assert share.loc["2026-06-25"].sum() == 0.0
+
+
+def test_estimator_coverage_summary_separates_model_fallback_and_unpriced_tokens() -> None:
+    estimated = pd.DataFrame(
+        [
+            {"total_tokens": 90.0, "pricing_join_status": "matched_model_median"},
+            {"total_tokens": 5.0, "pricing_join_status": "fallback_provider_median"},
+            {"total_tokens": 3.0, "pricing_join_status": "free_model_zero_revenue"},
+            {"total_tokens": 2.0, "pricing_join_status": "synthetic_unpriced"},
+        ]
+    )
+
+    coverage = _estimator_coverage_summary(estimated)
+
+    assert coverage["model_priced_token_coverage"] == 0.93
+    assert coverage["fallback_priced_token_coverage"] == 0.05
+    assert coverage["unpriced_token_share"] == 0.02
+
+
 def test_compute_openrouter_views_exposes_total_weekly_tokens_for_top_models() -> None:
     top_models = pd.DataFrame(
         [
@@ -2906,4 +2941,3 @@ def test_compute_artificial_analysis_views_calculates_yoy(tmp_path: Path) -> Non
     # Q1-2025 sum: 15 + 5 + 10 + 10 + 10 + 10 = 60
     # YoY growth of sum: 0%
     assert capex_yoy.loc["Q1-2025", "Aggregated"] == 0.0
-

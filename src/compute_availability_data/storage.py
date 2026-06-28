@@ -79,9 +79,13 @@ class StorageManager:
 
     def load_dataset(self, dataset_id: str) -> pd.DataFrame:
         csv_path = self.normalized_root / f"{dataset_id}.csv"
-        if not csv_path.exists():
+        parquet_path = self.normalized_root / f"{dataset_id}.parquet"
+        if parquet_path.exists():
+            dataframe = pd.read_parquet(parquet_path)
+        elif csv_path.exists():
+            dataframe = pd.read_csv(csv_path)
+        else:
             return pd.DataFrame(columns=DATASET_COLUMNS)
-        dataframe = pd.read_csv(csv_path)
         for column in DATASET_COLUMNS:
             if column not in dataframe.columns:
                 dataframe[column] = pd.NA

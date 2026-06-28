@@ -263,11 +263,16 @@ class ActivityPipeline(BasePipeline):
         return slugs
 
     def _discover_catalog_slugs(self, limit: int = 0) -> list[str]:
-        catalog_path = self.base_dir / "data" / "normalized" / "compute_availability" / "raw_openrouter_models.csv"
-        if not catalog_path.exists():
+        catalog_root = self.base_dir / "data" / "normalized" / "compute_availability"
+        parquet_path = catalog_root / "raw_openrouter_models.parquet"
+        csv_path = catalog_root / "raw_openrouter_models.csv"
+        if parquet_path.exists():
+            catalog = pd.read_parquet(parquet_path)
+        elif csv_path.exists():
+            catalog = pd.read_csv(csv_path)
+        else:
             return []
 
-        catalog = pd.read_csv(catalog_path)
         if catalog.empty or "provider_prefix" not in catalog.columns:
             return []
 
