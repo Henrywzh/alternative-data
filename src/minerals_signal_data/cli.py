@@ -65,6 +65,10 @@ def build_parser() -> argparse.ArgumentParser:
         "silent bot-blocked scrapes (0 disables the check)",
     )
 
+    run_live = subparsers.add_parser("run-live", parents=[shared], help="Run the live dashboard price-refresh pipeline")
+    run_live.add_argument("--start-date", default="2022-01-01", help="Price history start date")
+    run_live.add_argument("--end-date", help="Optional price history end date")
+
     subparsers.add_parser("validate", parents=[shared], help="Validate workbook coverage and mappings")
 
     tungsten = subparsers.add_parser("scrape-tungsten", help="Scrape daily tungsten prices from Chinatungsten")
@@ -124,6 +128,14 @@ def main() -> int:
             end_date=args.end_date,
             run_label=args.run_label,
             min_mineral_coverage=args.min_mineral_coverage,
+        )
+    elif args.command == "run-live":
+        outputs = pipeline.run_live(
+            args.workbook,
+            stock_mapping_path=args.stock_mapping,
+            start_date=args.start_date,
+            end_date=args.end_date,
+            run_label=args.run_label,
         )
     elif args.command == "scrape-tungsten":
         from minerals_signal_data.chinatungsten_scraper import scrape_range

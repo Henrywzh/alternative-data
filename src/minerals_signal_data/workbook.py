@@ -41,6 +41,9 @@ PRICE_SOURCE_DEFAULTS: dict[str, PriceSourceRecord] = {
         publish_lag_assumption_days=2,
         is_active_for_v1=True,
         proxy_target="copper",
+        proxy_type="commodity_cross_proxy",
+        proxy_instrument="HG=F",
+        proxy_display_name="COMEX Copper Futures",
     ),
     "cobalt": PriceSourceRecord(
         normalized_mineral_id="cobalt",
@@ -108,6 +111,9 @@ PRICE_SOURCE_DEFAULTS: dict[str, PriceSourceRecord] = {
         publish_lag_assumption_days=2,
         is_active_for_v1=True,
         proxy_target="lithium",
+        proxy_type="etf",
+        proxy_instrument="LIT",
+        proxy_display_name="Global X Lithium & Battery Tech ETF",
     ),
     "indium": PriceSourceRecord(
         normalized_mineral_id="indium",
@@ -130,6 +136,9 @@ PRICE_SOURCE_DEFAULTS: dict[str, PriceSourceRecord] = {
         price_unit="etf_share",
         publish_lag_assumption_days=1,
         is_active_for_v1=True,
+        proxy_type="etf",
+        proxy_instrument="LIT",
+        proxy_display_name="Global X Lithium & Battery Tech ETF",
     ),
     "manganese": PriceSourceRecord(
         normalized_mineral_id="manganese",
@@ -142,6 +151,9 @@ PRICE_SOURCE_DEFAULTS: dict[str, PriceSourceRecord] = {
         publish_lag_assumption_days=1,
         is_active_for_v1=True,
         proxy_target="south32_producer_equity",
+        proxy_type="producer_equity",
+        proxy_instrument="S32.AX",
+        proxy_display_name="South32 Ltd",
     ),
     "molybdenum": PriceSourceRecord(
         normalized_mineral_id="molybdenum",
@@ -164,6 +176,9 @@ PRICE_SOURCE_DEFAULTS: dict[str, PriceSourceRecord] = {
         price_unit="etf_share",
         publish_lag_assumption_days=1,
         is_active_for_v1=True,
+        proxy_type="etf",
+        proxy_instrument="REMX",
+        proxy_display_name="VanEck Rare Earth/Strategic Metals ETF",
     ),
     "nickel": PriceSourceRecord(
         normalized_mineral_id="nickel",
@@ -220,6 +235,9 @@ PRICE_SOURCE_DEFAULTS: dict[str, PriceSourceRecord] = {
         publish_lag_assumption_days=1,
         is_active_for_v1=True,
         proxy_target="ferroglobe_producer_equity",
+        proxy_type="producer_equity",
+        proxy_instrument="GSM",
+        proxy_display_name="Ferroglobe PLC",
     ),
     "tin": PriceSourceRecord(
         normalized_mineral_id="tin",
@@ -243,6 +261,9 @@ PRICE_SOURCE_DEFAULTS: dict[str, PriceSourceRecord] = {
         publish_lag_assumption_days=1,
         is_active_for_v1=True,
         proxy_target="amg_producer_equity",
+        proxy_type="producer_equity",
+        proxy_instrument="AMG.AS",
+        proxy_display_name="AMG Critical Materials N.V.",
     ),
     "uranium": PriceSourceRecord(
         normalized_mineral_id="uranium",
@@ -254,6 +275,9 @@ PRICE_SOURCE_DEFAULTS: dict[str, PriceSourceRecord] = {
         price_unit="etf_share",
         publish_lag_assumption_days=1,
         is_active_for_v1=True,
+        proxy_type="etf",
+        proxy_instrument="URA",
+        proxy_display_name="Global X Uranium ETF",
     ),
     "vanadium": PriceSourceRecord(
         normalized_mineral_id="vanadium",
@@ -266,6 +290,9 @@ PRICE_SOURCE_DEFAULTS: dict[str, PriceSourceRecord] = {
         publish_lag_assumption_days=1,
         is_active_for_v1=True,
         proxy_target="largo_producer_equity",
+        proxy_type="producer_equity",
+        proxy_instrument="LGO",
+        proxy_display_name="Largo Inc.",
     ),
     "zinc": PriceSourceRecord(
         normalized_mineral_id="zinc",

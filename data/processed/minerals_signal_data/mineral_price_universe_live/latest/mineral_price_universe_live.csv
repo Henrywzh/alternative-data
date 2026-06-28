@@ -1,22 +1,19 @@
-normalized_mineral_id,mineral_name,trackability_grade,price_source_type,price_symbol_or_series_id,price_currency,price_unit,publish_lag_assumption_days,is_active_for_v1,proxy_target
-aluminum,Aluminum,direct,yfinance_futures,ALI=F,USD,metric ton,1,True,
-cobalt,Cobalt,direct,investing_html,https://www.investing.com/commodities/cobalt-historical-data,USD,metric ton,1,True,
-copper,Copper,direct,yfinance_futures,HG=F,USD,lb,1,True,
-germanium,Germanium,direct,investing_html,https://www.investing.com/commodities/germanium-99.99-min-china-futures-historical-data,CNY,kg,3,True,
-indium,Indium,direct,investing_html,https://www.investing.com/commodities/indium-99.99-min-united-states-futures-historical-data,USD,kg,3,True,
-lead,Lead,direct,fred_series,PLEADUSDM,USD,metric ton,30,True,
-nickel,Nickel,direct,yfinance_futures,NIY=F,USD,metric ton,1,True,
-palladium,Palladium,direct,yfinance_futures,PA=F,USD,oz,1,True,
-platinum,Platinum,direct,yfinance_futures,PL=F,USD,oz,1,True,
-silver,Silver,direct,yfinance_futures,SI=F,USD,oz,1,True,
-tin,Tin,direct,fred_series,PTINUSDM,USD,metric ton,30,True,
-zinc,Zinc,direct,fred_series,PZINCUSDM,USD,metric ton,30,True,
-antimony,Antimony,proxy,yfinance_futures,HG=F,USD,lb,2,True,copper
-graphite,Graphite,proxy,yfinance_futures,LIT,USD,etf_share,2,True,lithium
-lithium,Lithium,proxy,yfinance_futures,LIT,USD,etf_share,1,True,
-manganese,Manganese,proxy,yfinance_futures,S32.AX,AUD,equity_proxy,1,True,south32_producer_equity
-neodymium,Neodymium,proxy,yfinance_futures,REMX,USD,etf_share,1,True,
-silicon,Silicon,proxy,yfinance_futures,GSM,USD,equity_proxy,1,True,ferroglobe_producer_equity
-tantalum,Tantalum,proxy,yfinance_futures,AMG.AS,EUR,equity_proxy,1,True,amg_producer_equity
-uranium,Uranium,proxy,yfinance_futures,URA,USD,etf_share,1,True,
-vanadium,Vanadium,proxy,yfinance_futures,LGO,USD,equity_proxy,1,True,largo_producer_equity
+normalized_mineral_id,mineral_name,trackability_grade,price_source_type,price_symbol_or_series_id,price_currency,price_unit,publish_lag_assumption_days,is_active_for_v1,proxy_target,proxy_type,proxy_instrument,proxy_display_name
+aluminum,Aluminum,direct,yfinance_futures,ALI=F,USD,metric ton,1,True,,,,
+copper,Copper,direct,yfinance_futures,HG=F,USD,lb,1,True,,,,
+lead,Lead,direct,fred_series,PLEADUSDM,USD,metric ton,30,True,,,,
+nickel,Nickel,direct,yfinance_futures,NIY=F,USD,metric ton,1,True,,,,
+palladium,Palladium,direct,yfinance_futures,PA=F,USD,oz,1,True,,,,
+platinum,Platinum,direct,yfinance_futures,PL=F,USD,oz,1,True,,,,
+silver,Silver,direct,yfinance_futures,SI=F,USD,oz,1,True,,,,
+tin,Tin,direct,fred_series,PTINUSDM,USD,metric ton,30,True,,,,
+zinc,Zinc,direct,fred_series,PZINCUSDM,USD,metric ton,30,True,,,,
+antimony,Antimony,proxy,yfinance_futures,HG=F,USD,lb,2,True,copper,commodity_cross_proxy,HG=F,COMEX Copper Futures
+graphite,Graphite,proxy,yfinance_futures,LIT,USD,etf_share,2,True,lithium,etf,LIT,Global X Lithium & Battery Tech ETF
+lithium,Lithium,proxy,yfinance_futures,LIT,USD,etf_share,1,True,,etf,LIT,Global X Lithium & Battery Tech ETF
+manganese,Manganese,proxy,yfinance_futures,S32.AX,AUD,equity_proxy,1,True,south32_producer_equity,producer_equity,S32.AX,South32 Ltd
+neodymium,Neodymium,proxy,yfinance_futures,REMX,USD,etf_share,1,True,,etf,REMX,VanEck Rare Earth/Strategic Metals ETF
+silicon,Silicon,proxy,yfinance_futures,GSM,USD,equity_proxy,1,True,ferroglobe_producer_equity,producer_equity,GSM,Ferroglobe PLC
+tantalum,Tantalum,proxy,yfinance_futures,AMG.AS,EUR,equity_proxy,1,True,amg_producer_equity,producer_equity,AMG.AS,AMG Critical Materials N.V.
+uranium,Uranium,proxy,yfinance_futures,URA,USD,etf_share,1,True,,etf,URA,Global X Uranium ETF
+vanadium,Vanadium,proxy,yfinance_futures,LGO,USD,equity_proxy,1,True,largo_producer_equity,producer_equity,LGO,Largo Inc.

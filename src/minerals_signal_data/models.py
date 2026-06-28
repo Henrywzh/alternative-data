@@ -16,6 +16,9 @@ class PriceSourceRecord:
     publish_lag_assumption_days: int
     is_active_for_v1: bool
     proxy_target: str | None = None
+    proxy_type: str | None = None
+    proxy_instrument: str | None = None
+    proxy_display_name: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)

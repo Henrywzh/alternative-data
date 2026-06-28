@@ -167,6 +167,15 @@ def test_build_price_universe_marks_direct_proxy_and_unsupported_minerals(tmp_pa
         assert row["price_source_type"] == source_type
         assert bool(row["is_active_for_v1"]) is active
 
+    graphite = frame.loc[frame["normalized_mineral_id"] == "graphite"].iloc[0]
+    assert graphite["proxy_type"] == "etf"
+    assert graphite["proxy_instrument"] == "LIT"
+    assert graphite["proxy_display_name"] == "Global X Lithium & Battery Tech ETF"
+
+    tantalum = frame.loc[frame["normalized_mineral_id"] == "tantalum"].iloc[0]
+    assert tantalum["proxy_type"] == "producer_equity"
+    assert tantalum["proxy_instrument"] == "AMG.AS"
+
 
 def test_load_critical_minerals_preserves_workbook_rank_columns(tmp_path: Path) -> None:
     workbook_path = tmp_path / "critical_minerals.xlsx"

@@ -365,6 +365,71 @@ class MineralsSignalPipeline:
         outputs.update(self._write_backtest_charts(returns=returns, holdings=holdings, run_label=run_label))
         return outputs
 
+    def run_live(
+        self,
+        workbook_path: str | Path,
+        *,
+        stock_mapping_path: str | Path | None = None,
+        start_date: str = "2022-01-01",
+        end_date: str | None = None,
+        run_label: str = "latest",
+    ) -> dict[str, Path]:
+        minerals = load_critical_minerals(workbook_path)
+        price_universe = build_price_universe(minerals)
+        stock_mapping = load_expanded_stock_mapping(
+            _resolve_stock_mapping_path(workbook_path, stock_mapping_path)
+        )
+
+        live_price_universe = price_universe.loc[
+            price_universe["is_active_for_v1"]
+            & price_universe["price_source_type"].isin(["yfinance_futures", "fred_series"])
+        ].copy()
+        live_stock_mapping = stock_mapping.loc[
+            stock_mapping["normalized_mineral_id"].isin(live_price_universe["normalized_mineral_id"])
+        ].copy()
+
+        mineral_prices = fetch_public_mineral_prices(
+            live_price_universe,
+            start_date=start_date,
+            end_date=end_date,
+        )
+        fetched_mineral_ids = set(mineral_prices["normalized_mineral_id"].unique()) if not mineral_prices.empty else set()
+        fetched_price_universe = live_price_universe.loc[
+            live_price_universe["normalized_mineral_id"].isin(fetched_mineral_ids)
+        ].copy()
+        fetched_stock_mapping = live_stock_mapping.loc[
+            live_stock_mapping["normalized_mineral_id"].isin(fetched_mineral_ids)
+        ].copy()
+
+        stock_prices = fetch_public_stock_prices(
+            fetched_stock_mapping,
+            start_date=start_date,
+            end_date=end_date,
+        )
+        fx_history = fetch_fx_to_usd_history(start_date=start_date, end_date=end_date)
+        stock_prices = attach_fx_to_stock_prices(stock_prices, fx_history)
+        coverage = build_v2_source_coverage(price_universe, mineral_prices)
+        tracking_split = build_tracking_split(price_universe)
+
+        return {
+            "v2_source_coverage": self.storage.write_dataset("v2_source_coverage", coverage, run_label=run_label),
+            "mineral_tracking_split": self.storage.write_dataset(
+                "mineral_tracking_split", tracking_split, run_label=run_label
+            ),
+            "mineral_price_universe_live": self.storage.write_dataset(
+                "mineral_price_universe_live", fetched_price_universe, run_label=run_label
+            ),
+            "stock_mapping_expanded_live": self.storage.write_dataset(
+                "stock_mapping_expanded_live", fetched_stock_mapping, run_label=run_label
+            ),
+            "mineral_price_series_daily": self.storage.write_dataset(
+                "mineral_price_series_daily", mineral_prices, run_label=run_label
+            ),
+            "stock_price_series_daily": self.storage.write_dataset(
+                "stock_price_series_daily", stock_prices, run_label=run_label
+            ),
+        }
+
     def _write_backtest_charts(self, *, returns: pd.DataFrame, holdings: pd.DataFrame, run_label: str) -> dict[str, Path]:
         outputs: dict[str, Path] = {}
         if returns.empty:
@@ -468,6 +533,11 @@ def build_tracking_split(price_universe: pd.DataFrame) -> pd.DataFrame:
                 "normalized_mineral_id": row.normalized_mineral_id,
                 "mineral_name": row.mineral_name,
                 "tracking_split": split,
+                "live_dashboard_status": (
+                    "shown_live"
+                    if bool(row.is_active_for_v1) and row.price_source_type in {"yfinance_futures", "fred_series"}
+                    else ("research_only" if bool(row.is_active_for_v1) else "unsupported")
+                ),
                 "trackability_grade": row.trackability_grade,
                 "price_source_type": row.price_source_type,
                 "price_symbol_or_series_id": row.price_symbol_or_series_id,

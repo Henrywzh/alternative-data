@@ -11,15 +11,6 @@ Antimony,antimony,002155.SZ,002155.SZ,CN_A,Primary for UAMY/Hunan Gold; byproduc
 Antimony,antimony,600497.SH,600497.SH,CN_A,Primary for UAMY/Hunan Gold; byproduct for others,"China/HK exposure is stronger than US except UAMY, which is small-cap/high beta.",False,16,Tier 2 - very high
 Antimony,antimony,601020.SH,601020.SH,CN_A,Primary for UAMY/Hunan Gold; byproduct for others,"China/HK exposure is stronger than US except UAMY, which is small-cap/high beta.",False,16,Tier 2 - very high
 Antimony,antimony,UAMY,UAMY,US,Primary for UAMY/Hunan Gold; byproduct for others,"China/HK exposure is stronger than US except UAMY, which is small-cap/high beta.",True,16,Tier 2 - very high
-Cobalt,cobalt,002340.SZ,002340.SZ,CN_A,Primary for CMOC/Huayou/Hanrui; diversified/byproduct for global names,CMOC is one of the cleanest listed cobalt mining exposures; battery-material processors add refining exposure.,False,21,Tier 2 - very high
-Cobalt,cobalt,300618.SZ,300618.SZ,CN_A,Primary for CMOC/Huayou/Hanrui; diversified/byproduct for global names,CMOC is one of the cleanest listed cobalt mining exposures; battery-material processors add refining exposure.,False,21,Tier 2 - very high
-Cobalt,cobalt,603799.SH,603799.SH,CN_A,Primary for CMOC/Huayou/Hanrui; diversified/byproduct for global names,CMOC is one of the cleanest listed cobalt mining exposures; battery-material processors add refining exposure.,False,21,Tier 2 - very high
-Cobalt,cobalt,603993.SH,603993.SH,CN_A,Primary for CMOC/Huayou/Hanrui; diversified/byproduct for global names,CMOC is one of the cleanest listed cobalt mining exposures; battery-material processors add refining exposure.,False,21,Tier 2 - very high
-Cobalt,cobalt,3993.HK,3993.HK,HK,Primary for CMOC/Huayou/Hanrui; diversified/byproduct for global names,CMOC is one of the cleanest listed cobalt mining exposures; battery-material processors add refining exposure.,False,21,Tier 2 - very high
-Cobalt,cobalt,ELBM,ELBM,US,Primary for CMOC/Huayou/Hanrui; diversified/byproduct for global names,CMOC is one of the cleanest listed cobalt mining exposures; battery-material processors add refining exposure.,False,21,Tier 2 - very high
-Cobalt,cobalt,GLNCY,GLNCY,US,Primary for CMOC/Huayou/Hanrui; diversified/byproduct for global names,CMOC is one of the cleanest listed cobalt mining exposures; battery-material processors add refining exposure.,False,21,Tier 2 - very high
-Cobalt,cobalt,JRVMF,JRVMF,US,Primary for CMOC/Huayou/Hanrui; diversified/byproduct for global names,CMOC is one of the cleanest listed cobalt mining exposures; battery-material processors add refining exposure.,False,21,Tier 2 - very high
-Cobalt,cobalt,VALE,VALE,US,Primary for CMOC/Huayou/Hanrui; diversified/byproduct for global names,CMOC is one of the cleanest listed cobalt mining exposures; battery-material processors add refining exposure.,False,21,Tier 2 - very high
 Copper,copper,000630.SZ,000630.SZ,CN_A,Primary copper exposure,Copper has broad liquid public-equity coverage in both China/HK and US.,False,46,Tier 4 - moderate
 Copper,copper,600362.SH,600362.SH,CN_A,Primary copper exposure,Copper has broad liquid public-equity coverage in both China/HK and US.,False,46,Tier 4 - moderate
 Copper,copper,601899.SH,601899.SH,CN_A,Primary copper exposure,Copper has broad liquid public-equity coverage in both China/HK and US.,False,46,Tier 4 - moderate
@@ -31,13 +22,6 @@ Copper,copper,FCX,FCX,US,Primary copper exposure,Copper has broad liquid public-
 Copper,copper,HBM,HBM,US,Primary copper exposure,Copper has broad liquid public-equity coverage in both China/HK and US.,False,46,Tier 4 - moderate
 Copper,copper,SCCO,SCCO,US,Primary copper exposure,Copper has broad liquid public-equity coverage in both China/HK and US.,False,46,Tier 4 - moderate
 Copper,copper,TECK,TECK,US,Primary copper exposure,Copper has broad liquid public-equity coverage in both China/HK and US.,False,46,Tier 4 - moderate
-Germanium,germanium,002428.SZ,002428.SZ,CN_A,Primary for 002428; byproduct for zinc smelters,Yunnan Germanium is the cleanest listed China proxy.,True,45,Tier 4 - moderate
-Germanium,germanium,600497.SH,600497.SH,CN_A,Primary for 002428; byproduct for zinc smelters,Yunnan Germanium is the cleanest listed China proxy.,False,45,Tier 4 - moderate
-Germanium,germanium,600961.SH,600961.SH,CN_A,Primary for 002428; byproduct for zinc smelters,Yunnan Germanium is the cleanest listed China proxy.,False,45,Tier 4 - moderate
-Germanium,germanium,FPLSF,FPLSF,US,Primary for 002428; byproduct for zinc smelters,Yunnan Germanium is the cleanest listed China proxy.,False,45,Tier 4 - moderate
-Germanium,germanium,TECK,TECK,US,Primary for 002428; byproduct for zinc smelters,Yunnan Germanium is the cleanest listed China proxy.,False,45,Tier 4 - moderate
-Germanium,germanium,TO,TO,US,Primary for 002428; byproduct for zinc smelters,Yunnan Germanium is the cleanest listed China proxy.,False,45,Tier 4 - moderate
-Germanium,germanium,VNP,VNP,US,Primary for 002428; byproduct for zinc smelters,Yunnan Germanium is the cleanest listed China proxy.,False,45,Tier 4 - moderate
 Graphite,graphite,600516.SH,600516.SH,CN_A,Primary for 2237/NMG/WWR/GPHOF; battery-anode downstream for BTR/Putailai/Shanshan,Separate natural graphite mining from synthetic graphite/anode processing.,False,5,Tier 1 - highest
 Graphite,graphite,600884.SH,600884.SH,CN_A,Primary for 2237/NMG/WWR/GPHOF; battery-anode downstream for BTR/Putailai/Shanshan,Separate natural graphite mining from synthetic graphite/anode processing.,False,5,Tier 1 - highest
 Graphite,graphite,603659.SH,603659.SH,CN_A,Primary for 2237/NMG/WWR/GPHOF; battery-anode downstream for BTR/Putailai/Shanshan,Separate natural graphite mining from synthetic graphite/anode processing.,False,5,Tier 1 - highest
@@ -46,10 +30,6 @@ Graphite,graphite,2237.HK,2237.HK,HK,Primary for 2237/NMG/WWR/GPHOF; battery-ano
 Graphite,graphite,GPHOF,GPHOF,US,Primary for 2237/NMG/WWR/GPHOF; battery-anode downstream for BTR/Putailai/Shanshan,Separate natural graphite mining from synthetic graphite/anode processing.,True,5,Tier 1 - highest
 Graphite,graphite,NMG,NMG,US,Primary for 2237/NMG/WWR/GPHOF; battery-anode downstream for BTR/Putailai/Shanshan,Separate natural graphite mining from synthetic graphite/anode processing.,True,5,Tier 1 - highest
 Graphite,graphite,WWR,WWR,US,Primary for 2237/NMG/WWR/GPHOF; battery-anode downstream for BTR/Putailai/Shanshan,Separate natural graphite mining from synthetic graphite/anode processing.,True,5,Tier 1 - highest
-Indium,indium,000960.SZ,000960.SZ,CN_A,Byproduct exposure,Indium is mainly recovered as a zinc/tin smelting byproduct; watch disclosure quality.,False,4,Tier 1 - highest
-Indium,indium,600497.SH,600497.SH,CN_A,Byproduct exposure,Indium is mainly recovered as a zinc/tin smelting byproduct; watch disclosure quality.,False,4,Tier 1 - highest
-Indium,indium,600961.SH,600961.SH,CN_A,Byproduct exposure,Indium is mainly recovered as a zinc/tin smelting byproduct; watch disclosure quality.,False,4,Tier 1 - highest
-Indium,indium,TECK,TECK,US,Byproduct exposure,Indium is mainly recovered as a zinc/tin smelting byproduct; watch disclosure quality.,False,4,Tier 1 - highest
 Lead,lead,600497.SH,600497.SH,CN_A,Primary/secondary,Often co-mined with zinc/silver; check segment disclosure.,True,51,Tier 5 - lower/unknown
 Lead,lead,600531.SH,600531.SH,CN_A,Primary/secondary,Often co-mined with zinc/silver; check segment disclosure.,True,51,Tier 5 - lower/unknown
 Lead,lead,601168.SH,601168.SH,CN_A,Primary/secondary,Often co-mined with zinc/silver; check segment disclosure.,True,51,Tier 5 - lower/unknown

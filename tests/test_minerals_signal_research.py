@@ -11,7 +11,7 @@ from minerals_signal_data.market_data import (
     fetch_tradingeconomics_history,
     to_yfinance_equity_symbol,
 )
-from minerals_signal_data.pipeline import build_signal_diagnostics, build_tracking_split, build_v2_source_coverage
+from minerals_signal_data.pipeline import MineralsSignalPipeline, build_signal_diagnostics, build_tracking_split, build_v2_source_coverage
 from minerals_signal_data.signals import build_stock_weekly_signals, build_weekly_mineral_signals
 
 
@@ -339,11 +339,65 @@ def test_build_tracking_split_marks_easy_proxy_and_impractical_buckets() -> None
     )
     split = build_tracking_split(price_universe)
     result = dict(zip(split["normalized_mineral_id"], split["tracking_split"]))
+    live_status = dict(zip(split["normalized_mineral_id"], split["live_dashboard_status"]))
 
     assert result["copper"] == "already_tracked"
     assert result["graphite"] == "easy_next"
     assert result["dysprosium"] == "proxy_index"
     assert result["hafnium"] == "paywalled_or_impractical"
+    assert live_status["copper"] == "shown_live"
+    assert live_status["graphite"] == "unsupported"
+
+
+def test_run_live_excludes_investing_sources_and_backtest_outputs(tmp_path, monkeypatch) -> None:
+    captured: dict[str, object] = {}
+
+    def fake_fetch_public_mineral_prices(price_universe: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        captured["source_types"] = set(price_universe["price_source_type"])
+        captured["mineral_ids"] = set(price_universe["normalized_mineral_id"])
+        return pd.DataFrame(
+            [
+                {"date": "2025-01-03", "normalized_mineral_id": "copper", "mineral_name": "Copper", "price": 4.1},
+                {"date": "2025-01-03", "normalized_mineral_id": "graphite", "mineral_name": "Graphite", "price": 52.0},
+            ]
+        )
+
+    def fake_fetch_public_stock_prices(stock_mapping: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        return pd.DataFrame(
+            [
+                {"ticker_normalized": row.ticker_normalized, "market": row.market, "date": "2025-01-03", "adj_close": 10.0}
+                for row in stock_mapping.drop_duplicates(["ticker_normalized", "market"]).itertuples(index=False)
+            ]
+        )
+
+    monkeypatch.setattr("minerals_signal_data.pipeline.fetch_public_mineral_prices", fake_fetch_public_mineral_prices)
+    monkeypatch.setattr("minerals_signal_data.pipeline.fetch_public_stock_prices", fake_fetch_public_stock_prices)
+    monkeypatch.setattr(
+        "minerals_signal_data.pipeline.fetch_fx_to_usd_history",
+        lambda **kwargs: pd.DataFrame(
+            [
+                {"date": "2025-01-03", "market": "HK", "fx_to_usd": 1.0 / 7.8},
+                {"date": "2025-01-03", "market": "CN_A", "fx_to_usd": 1.0 / 7.3},
+            ]
+        ),
+    )
+
+    pipeline = MineralsSignalPipeline(tmp_path)
+    outputs = pipeline.run_live(
+        "data/reference/minerals_signal_data/critical_minerals.csv",
+        stock_mapping_path="data/reference/minerals_signal_data/stock_mapping.csv",
+        start_date="2025-01-01",
+        run_label="test",
+    )
+
+    assert captured["source_types"] == {"yfinance_futures", "fred_series"}
+    assert "cobalt" not in captured["mineral_ids"]
+    assert "stock_signal_weekly" not in outputs
+    assert "portfolio_returns_weekly" not in outputs
+
+    universe = pd.read_csv(outputs["mineral_price_universe_live"])
+    assert set(universe["normalized_mineral_id"]) == {"copper", "graphite"}
+    assert "investing_html" not in set(universe["price_source_type"])
 
 
 def test_fetch_fred_history_forward_fills_monthly_to_daily(monkeypatch) -> None:
