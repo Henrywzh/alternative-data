@@ -8,7 +8,7 @@ DATE_SUFFIX_RE = re.compile(
     r"-(\d{8}|\d{4}-\d{2}-\d{2}|\d{2}-\d{2}|(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])|\d{2}(?:0[1-9]|1[0-2]))$"
 )
 ANTHROPIC_VERSION_RE = re.compile(r"(anthropic/claude-)(\d)-(\d)(?=[-/]|$)")
-ANTHROPIC_ORDER_RE = re.compile(r"anthropic/claude-([\d.]+)-(opus|sonnet|haiku)(?=$|[-/])")
+ANTHROPIC_ORDER_RE = re.compile(r"anthropic/claude-([\d.]+)-(opus|sonnet|haiku)(-[a-z0-9-]+)?$")
 
 
 def clean_slug(value: object) -> str | None:
@@ -55,7 +55,8 @@ def reorder_anthropic_variant(value: object) -> str | None:
     match = ANTHROPIC_ORDER_RE.match(slug)
     if not match:
         return None
-    return f"anthropic/claude-{match.group(2)}-{match.group(1)}"
+    suffix = match.group(3) or ""
+    return f"anthropic/claude-{match.group(2)}-{match.group(1)}{suffix}"
 
 
 def generate_candidate_aliases(value: object) -> list[str]:

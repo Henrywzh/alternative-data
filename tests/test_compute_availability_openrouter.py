@@ -113,6 +113,45 @@ def test_storage_skips_unchanged_openrouter_model_snapshots(tmp_path: Path) -> N
     assert second.iloc[0]["snapshot_ts"] == "2026-04-20T00:00:00Z"
 
 
+def test_storage_loads_existing_openrouter_catalog_from_parquet_when_csv_absent(tmp_path: Path) -> None:
+    source = OpenRouterSource()
+    storage = StorageManager(tmp_path)
+    body = json.dumps(
+        {
+            "data": [
+                {
+                    "id": "anthropic/claude-opus-4.7",
+                    "canonical_slug": "anthropic/claude-4.7-opus-20260416",
+                    "name": "Claude Opus 4.7",
+                    "created": 1710000000,
+                    "context_length": 1_000_000,
+                    "architecture": {"modality": "text"},
+                    "pricing": {"prompt": "0.000005", "completion": "0.000025"},
+                    "top_provider": {"id": "anthropic"},
+                }
+            ]
+        }
+    )
+    first_records = source.extract(
+        Snapshot(name="openrouter_models", source_url=source.URL, body=body),
+        run_id="run-1",
+        scraped_at="2026-04-20T00:00:00Z",
+    )
+    second_records = source.extract(
+        Snapshot(name="openrouter_models", source_url=source.URL, body=body),
+        run_id="run-2",
+        scraped_at="2026-04-21T00:00:00Z",
+    )
+
+    storage.upsert_dataset("raw_openrouter_models", first_records)
+    csv_path = tmp_path / "data" / "normalized" / "compute_availability" / "raw_openrouter_models.csv"
+    csv_path.unlink()
+    second = storage.upsert_dataset("raw_openrouter_models", second_records)
+
+    assert len(second) == 1
+    assert second.iloc[0]["snapshot_ts"] == "2026-04-20T00:00:00Z"
+
+
 def test_storage_appends_openrouter_model_when_tracked_fields_change(tmp_path: Path) -> None:
     source = OpenRouterSource()
     storage = StorageManager(tmp_path)
