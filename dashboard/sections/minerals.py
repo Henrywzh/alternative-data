@@ -116,6 +116,22 @@ def _product_label(series_id: str) -> str:
     return _PRODUCT_LABELS.get(series_id, series_id.replace("_", " ").title())
 
 
+def _format_source_label(source_type: str | object) -> str:
+    labels = {
+        "yfinance_futures": "Yahoo Finance",
+        "fred_series": "FRED",
+        "chinatungsten_daily": "Chinatungsten",
+        "investing_html": "Investing.com",
+    }
+    source = str(source_type or "")
+    return labels.get(source, source.replace("_", " ").title() if source else "—")
+
+
+def _format_proxy_type(proxy_type: str | object) -> str:
+    proxy = str(proxy_type or "")
+    return proxy.replace("_", " ").title() if proxy else "—"
+
+
 def _series_to_long(frame: pd.DataFrame, *, mineral_id: str, mineral_name: str, series_cols: list[str]) -> pd.DataFrame:
     if frame.empty or "date" not in frame.columns:
         return pd.DataFrame()
@@ -188,6 +204,9 @@ def _merge_mineral_selector_universe(universe: pd.DataFrame, chinatungsten_price
                 "publish_lag_assumption_days",
                 "is_active_for_v1",
                 "proxy_target",
+                "proxy_type",
+                "proxy_instrument",
+                "proxy_display_name",
             ]
         )
     existing_ids = set(base.get("normalized_mineral_id", pd.Series(dtype=str)).dropna())
@@ -207,6 +226,9 @@ def _merge_mineral_selector_universe(universe: pd.DataFrame, chinatungsten_price
                 "publish_lag_assumption_days": 1,
                 "is_active_for_v1": True,
                 "proxy_target": "",
+                "proxy_type": "",
+                "proxy_instrument": "",
+                "proxy_display_name": "",
             }
         )
     if additions:
@@ -235,8 +257,8 @@ def render_minerals_section() -> None:
     st.markdown("## ⛏️ Critical Minerals")
     st.caption(
         "Price trends for USGS critical minerals and their related listed stocks. "
-        "Mineral prices come from public commodity feeds (yfinance futures/ETFs, FRED, Investing.com); "
-        "weekly bullish markers flag weeks where both the 4-week and 12-week returns are positive."
+        "The live dashboard uses stable public sources from Yahoo Finance, FRED, and Chinatungsten, "
+        "with proxy minerals labeled by the actual tracked instrument."
     )
 
     universe = _load_minerals_csv("mineral_price_universe_live")
@@ -246,7 +268,6 @@ def render_minerals_section() -> None:
     chinatungsten_prices = _build_chinatungsten_long_prices(tungsten_prices, molybdenum_prices)
     prices = _merge_mineral_selector_prices(base_prices, chinatungsten_prices)
     universe = _merge_mineral_selector_universe(universe, chinatungsten_prices)
-    signals = _load_minerals_csv("mineral_signal_weekly")
     mapping = _load_minerals_csv("stock_mapping_expanded_live")
     stock_prices = _load_minerals_csv("stock_price_series_daily")
 
@@ -274,29 +295,36 @@ def render_minerals_section() -> None:
     meta = meta_rows.iloc[0] if not meta_rows.empty else None
 
     m_prices = prices.loc[prices["normalized_mineral_id"] == selected_id].sort_values("date")
-    m_signals = (
-        signals.loc[signals["normalized_mineral_id"] == selected_id].sort_values("signal_date")
-        if not signals.empty
-        else pd.DataFrame()
-    )
     is_chinatungsten = selected_id in _CHINATUNGSTEN_MINERAL_IDS and "product_series" in m_prices.columns
 
     # ── Header metrics ────────────────────────────────────────────────────────
     col1, col2, col3, col4 = st.columns(4)
     if meta is not None:
         col1.metric("Trackability", str(meta.get("trackability_grade", "—")))
-        col2.metric("Price source", str(meta.get("price_source_type", "—")))
-        col3.metric("Currency", str(meta.get("price_currency", "—")) or "—")
+        col2.metric("Price source", _format_source_label(meta.get("price_source_type", "—")))
+        if str(meta.get("trackability_grade", "")) == "proxy":
+            col3.metric("Proxy type", _format_proxy_type(meta.get("proxy_type", "")))
+            instrument = str(meta.get("proxy_instrument", "") or meta.get("price_symbol_or_series_id", "") or "—")
+            col4.metric("Tracked instrument", instrument)
+            proxy_name = str(meta.get("proxy_display_name", "") or "").strip()
+            if proxy_name:
+                st.caption(f"Proxy instrument: {proxy_name}")
+        else:
+            col3.metric("Currency", str(meta.get("price_currency", "—")) or "—")
     latest_date = m_prices["date"].iloc[-1]
     if is_chinatungsten:
-        col4.metric("Latest date", str(pd.Timestamp(latest_date).date()))
+        if meta is None or str(meta.get("trackability_grade", "")) != "proxy":
+            col4.metric("Latest date", str(pd.Timestamp(latest_date).date()))
     else:
         latest_price = float(m_prices["price"].iloc[-1])
-        col4.metric(
-            "Latest price",
-            f"{latest_price:,.2f}",
-            help=f"As of {pd.Timestamp(latest_date).date()}",
-        )
+        if meta is None or str(meta.get("trackability_grade", "")) != "proxy":
+            col4.metric(
+                "Latest price",
+                f"{latest_price:,.2f}",
+                help=f"As of {pd.Timestamp(latest_date).date()}",
+            )
+        else:
+            st.caption(f"Latest price: {latest_price:,.2f} as of {pd.Timestamp(latest_date).date()}")
 
     # ── Price trend with weekly signal overlay ────────────────────────────────
     st.markdown("### Price trend")
@@ -348,17 +376,6 @@ def render_minerals_section() -> None:
             line=dict(color=ACCENT, width=2),
             hovertemplate="%{x|%Y-%m-%d}<br>Price: %{y:.2f}<extra></extra>",
         ))
-    if not is_chinatungsten and not m_signals.empty and "signal_state" in m_signals.columns:
-        bullish = m_signals.loc[m_signals["signal_state"] == "bullish"]
-        if not bullish.empty:
-            fig.add_trace(go.Scatter(
-                x=bullish["signal_date"],
-                y=bullish["price"],
-                name="Bullish week",
-                mode="markers",
-                marker=dict(color=GREEN, size=8, symbol="triangle-up"),
-                hovertemplate="%{x|%Y-%m-%d}<br>Bullish<br>Price: %{y:.2f}<extra></extra>",
-            ))
     fig.update_layout(
         template="plotly_white",
         height=420,
