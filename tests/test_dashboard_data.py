@@ -829,6 +829,41 @@ def test_load_dataset_prefers_parquet(tmp_path: Path) -> None:
     assert float(result.frame.iloc[0]["metric_value"]) == 999.0
 
 
+def test_provider_adoption_loader_prunes_unneeded_parquet_columns(tmp_path: Path) -> None:
+    root = tmp_path / "data" / "normalized" / "provider_adoption"
+    root.mkdir(parents=True)
+    pd.DataFrame(
+        [
+            {
+                "dataset_id": "huggingface_models_daily",
+                "source_url": "fixture://hf",
+                "source_run_id": "run-hf",
+                "scraped_at": "2026-06-30T00:00:00Z",
+                "provider": "openai",
+                "provider_display_name": "OpenAI",
+                "author": "openai",
+                "model_id": "openai/gpt-test",
+                "download_date": "2026-06-30",
+                "hf_downloads_30d": 100,
+                "hf_downloads_all_time": 1000,
+                "hf_downloads_daily_est": 10,
+                "hf_likes": 5,
+                "hf_last_modified": "2026-06-29T00:00:00Z",
+                "repo_full_name": "heavy/detail-column",
+                "pricing_prompt": 0.123,
+            }
+        ]
+    ).to_parquet(root / "huggingface_models_daily.parquet", index=False)
+
+    result = load_dataset("huggingface_models_daily", base_dir=tmp_path)
+
+    assert result.row_count == 1
+    assert "hf_downloads_30d" in result.frame.columns
+    assert "provider_display_name" in result.frame.columns
+    assert "repo_full_name" not in result.frame.columns
+    assert "pricing_prompt" not in result.frame.columns
+
+
 def test_load_dataset_falls_back_to_csv_for_app_dataset(tmp_path: Path) -> None:
     root = tmp_path / "data" / "normalized" / "openrouter"
     root.mkdir(parents=True)
