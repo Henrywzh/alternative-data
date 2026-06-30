@@ -571,6 +571,11 @@ ACTIVITY_COLUMNS = [
     "completion_tokens",
     "reasoning_tokens",
     "request_count",
+    "window_days",
+    "macro_category",
+    "task_share_of_total",
+    "model_share",
+    "delta_pp",
 ]
 
 COMPUTE_AVAILABILITY_COLUMNS = [

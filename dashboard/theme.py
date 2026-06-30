@@ -104,6 +104,29 @@ _DASHBOARD_CSS = f"""
         .ms-tokens {{ font-size: 0.78rem; color: {MUTED}; min-width: 50px; text-align: right; }}
         .ms-pct {{ font-size: 0.82rem; font-weight: 700; color: {TEXT}; min-width: 45px; text-align: right; }}
 
+        /* ---- Macro Category Legend (task treemap) ---- */
+        .macro-legend-row {{ display: flex; gap: 1.5rem; flex-wrap: wrap; margin: 0.75rem 0 1.25rem 0; }}
+        .macro-legend-item {{ display: flex; align-items: center; gap: 0.45rem; font-size: 0.85rem; font-weight: 600; color: {TEXT}; }}
+        .macro-legend-dot {{ width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }}
+        .macro-legend-pct {{ color: {MUTED}; font-weight: 500; }}
+
+        /* ---- Task Leaderboard ---- */
+        .task-lb-list {{ display: flex; flex-direction: column; gap: 0.1rem; }}
+        .task-lb-row {{
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.55rem 0.6rem;
+            border-radius: 8px;
+            transition: background 0.15s;
+        }}
+        .task-lb-row:hover {{ background: rgba(128, 128, 128, 0.06); }}
+        .task-lb-rank {{ width: 1.6rem; flex-shrink: 0; font-weight: 700; color: {MUTED}; font-size: 0.9rem; text-align: right; }}
+        .task-lb-info {{ flex: 1; min-width: 0; }}
+        .task-lb-name {{ font-weight: 700; font-size: 0.92rem; color: {TEXT}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }}
+        .task-lb-provider {{ font-size: 0.78rem; color: {MUTED}; }}
+        .task-lb-share {{ text-align: right; font-weight: 700; font-size: 0.92rem; color: {TEXT}; flex-shrink: 0; min-width: 56px; }}
+
         .section-subtitle {{
             color: {MUTED};
             font-size: 0.9rem;

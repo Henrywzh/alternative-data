@@ -22,7 +22,7 @@ from dashboard.theme import (ACCENT, BG, SIDEBAR, CARD, BORDER, TEXT, MUTED, GRE
 from dashboard.components import (format_metric, _empty_dataset_frame, _styler_applymap_compat, WEEKLY_MONTHLY_OTHER_PROVIDERS, DAILY_OTHER_PROVIDERS, US_PROVIDER_ORDER, CHINA_PROVIDER_ORDER, order_provider_columns, regroup_provider_pivot_for_display, render_dataset_guard, format_scraped_at_display, dataframe_for_display, make_stacked_bar, make_stacked_area_chart, make_line_chart, kpi_card_html, kpi_grid_html, _top_n_with_others)
 
 
-REVENUE_CACHE_VERSION = "2026-04-23-historical-revenue-fallback-v1"
+REVENUE_CACHE_VERSION = "2026-07-01-pricing-perf-v1"
 
 
 def grouped_revenue_token_pivots(
@@ -70,6 +70,170 @@ def rankings_bucket_warning(context: dict[str, str | bool | None]) -> str | None
         "Model rankings use week starting dates, while market share uses week ending dates. "
         "The latest completed buckets can differ by up to 6 days on the same scrape."
     )
+
+
+def _pretty_task_label(task_slug: str) -> str:
+    text = str(task_slug or "").replace(":", " · ").replace("_", " ").replace("-", " ")
+    return " ".join(part.capitalize() for part in text.split()) or "Unknown"
+
+
+MACRO_CATEGORY_COLORS = {
+    "general": "#F97316",
+    "agent": "#7C3AED",
+    "code": "#16A34A",
+    "data": "#2563EB",
+}
+DEFAULT_MACRO_COLOR = "#9CA3AF"
+
+
+def _macro_color(macro_category: str) -> str:
+    return MACRO_CATEGORY_COLORS.get(str(macro_category).lower(), DEFAULT_MACRO_COLOR)
+
+
+_MODEL_DATE_SUFFIX_RE = re.compile(r"-(202[0-9]{5}|\d{4}-\d{2}-\d{2}|\d{2}-\d{2})(?=:|$)")
+
+
+def _short_model_name(model_slug: str) -> str:
+    """Provider-stripped, date-suffix-stripped display name (case preserved)."""
+    text = str(model_slug)
+    name = text.split("/", 1)[-1] if "/" in text else text
+    return _MODEL_DATE_SUFFIX_RE.sub("", name)
+
+
+def _task_top_models(model_rows: pd.DataFrame) -> pd.DataFrame:
+    """Rank-1 (or highest-share) model per task category_slug, indexed by category_slug."""
+    if model_rows.empty:
+        return model_rows
+    return (
+        model_rows.sort_values(["category_slug", "rank", "model_share_pct"], ascending=[True, True, False])
+        .drop_duplicates(subset=["category_slug"], keep="first")
+        .set_index("category_slug")
+    )
+
+
+def _macro_top_models(model_rows: pd.DataFrame, task_summary: pd.DataFrame) -> pd.DataFrame:
+    """Model with the highest share-of-total-spend contribution per macro category, indexed by macro_category."""
+    if model_rows.empty or task_summary.empty:
+        return pd.DataFrame()
+    task_share_lookup = task_summary.set_index("category_slug")["task_share_pct"]
+    contrib = model_rows.copy()
+    contrib["task_share_pct"] = contrib["category_slug"].map(task_share_lookup)
+    contrib["contribution_pct"] = contrib["model_share_pct"] / 100.0 * contrib["task_share_pct"]
+    contrib = contrib.dropna(subset=["contribution_pct"])
+    if contrib.empty:
+        return pd.DataFrame()
+    return (
+        contrib.groupby(["macro_category", "model_permaslug"], as_index=False)["contribution_pct"]
+        .sum()
+        .sort_values(["macro_category", "contribution_pct"], ascending=[True, False])
+        .drop_duplicates(subset=["macro_category"], keep="first")
+        .set_index("macro_category")
+    )
+
+
+def _compute_task_spend_views(frame: pd.DataFrame) -> dict[str, object]:
+    if frame.empty:
+        return {
+            "latest_snapshot_date": None,
+            "windows": [],
+            "periods": [],
+            "by_selection": {},
+        }
+
+    required = {"snapshot_date", "period", "window_days", "category_slug", "model_permaslug", "task_share_of_total", "model_share"}
+    if not required.issubset(frame.columns):
+        return {
+            "latest_snapshot_date": None,
+            "windows": [],
+            "periods": [],
+            "by_selection": {},
+        }
+
+    prepared = frame.copy()
+    prepared["snapshot_date_dt"] = pd.to_datetime(prepared["snapshot_date"], errors="coerce")
+    prepared["period"] = prepared["period"].astype("string")
+    prepared["window_days"] = pd.to_numeric(prepared["window_days"], errors="coerce").astype("Int64")
+    prepared["task_share_of_total"] = pd.to_numeric(prepared["task_share_of_total"], errors="coerce")
+    prepared["model_share"] = pd.to_numeric(prepared["model_share"], errors="coerce")
+    prepared["rank"] = pd.to_numeric(prepared.get("rank", pd.Series(pd.NA, index=prepared.index)), errors="coerce")
+    prepared = prepared.dropna(subset=["snapshot_date_dt", "period", "window_days", "category_slug", "model_permaslug"])
+    if prepared.empty:
+        return {
+            "latest_snapshot_date": None,
+            "windows": [],
+            "periods": [],
+            "by_selection": {},
+        }
+
+    prepared["macro_category"] = prepared.get("macro_category", pd.Series(pd.NA, index=prepared.index)).fillna("unknown")
+    prepared["task_share_pct"] = prepared["task_share_of_total"] * 100
+    prepared["model_share_pct"] = prepared["model_share"] * 100
+    prepared["window_days_int"] = prepared["window_days"].astype(int)
+    prepared["snapshot_date_str"] = prepared["snapshot_date_dt"].dt.strftime("%Y-%m-%d")
+
+    history_source = prepared.drop_duplicates(subset=["snapshot_date_str", "period", "window_days_int", "category_slug"])
+    history_by_selection: dict[tuple[str, int], pd.DataFrame] = {}
+    for (period, window_days), selection in history_source.groupby(["period", "window_days_int"], sort=True):
+        pivot = (
+            selection.groupby(["snapshot_date_str", "macro_category"], as_index=False)["task_share_pct"]
+            .sum()
+            .pivot(index="snapshot_date_str", columns="macro_category", values="task_share_pct")
+            .sort_index()
+        )
+        history_by_selection[(str(period), int(window_days))] = pivot
+
+    latest_date = prepared["snapshot_date_dt"].max()
+    latest = prepared[prepared["snapshot_date_dt"] == latest_date].copy()
+    latest["task_label"] = latest["category_slug"].map(_pretty_task_label)
+
+    periods = [value for value in ("spend", "tokens") if value in set(latest["period"].dropna().astype(str))]
+    periods.extend(sorted(set(latest["period"].dropna().astype(str)) - set(periods)))
+    windows = sorted(latest["window_days_int"].dropna().unique().tolist())
+    by_selection: dict[tuple[str, int], dict[str, object]] = {}
+
+    for (period, window_days), selection in latest.groupby(["period", "window_days_int"], sort=True):
+        selection = selection.copy()
+        task_summary = (
+            selection.drop_duplicates(subset=["category_slug"])
+            [["category_slug", "task_label", "macro_category", "task_share_pct"]]
+            .sort_values("task_share_pct", ascending=False)
+            .reset_index(drop=True)
+        )
+        model_rows = (
+            selection[["category_slug", "task_label", "macro_category", "model_permaslug", "model_share_pct", "rank"]]
+            .sort_values(["category_slug", "rank", "model_share_pct"], ascending=[True, True, False])
+            .reset_index(drop=True)
+        )
+        top_task = str(task_summary.iloc[0]["category_slug"]) if not task_summary.empty else None
+        top_model = None
+        if top_task:
+            task_models = model_rows[model_rows["category_slug"] == top_task].sort_values(
+                ["rank", "model_share_pct"],
+                ascending=[True, False],
+            )
+            if not task_models.empty:
+                top_model = str(task_models.iloc[0]["model_permaslug"])
+        macro_summary = (
+            task_summary.groupby("macro_category", as_index=False)["task_share_pct"]
+            .sum()
+            .sort_values("task_share_pct", ascending=False)
+            .reset_index(drop=True)
+        )
+        by_selection[(str(period), int(window_days))] = {
+            "task_summary": task_summary,
+            "model_rows": model_rows,
+            "macro_summary": macro_summary,
+            "top_task": top_task,
+            "top_model": top_model,
+        }
+
+    return {
+        "latest_snapshot_date": latest_date.strftime("%Y-%m-%d"),
+        "windows": windows,
+        "periods": periods,
+        "by_selection": by_selection,
+        "history_by_selection": history_by_selection,
+    }
 
 
 # --- OpenRouter Provider Mapping ---
@@ -240,6 +404,10 @@ def compute_openrouter_views(
         }
     else:
         views["market_share"] = {"weeks": [], "pivot_pct_top": pd.DataFrame()}
+
+    task_spend_result = datasets.get("openrouter_task_spend")
+    task_spend_frame = task_spend_result.frame.copy() if task_spend_result and not task_spend_result.frame.empty else pd.DataFrame()
+    views["task_spend"] = _compute_task_spend_views(task_spend_frame)
 
     views.update(_compute_revenue_views(datasets))
     return views
@@ -895,189 +1063,388 @@ def render_top_models_chart(datasets: dict[str, DatasetLoadResult], openrouter_v
     st.plotly_chart(fig, width="stretch", theme=None)
 
 
-def render_revenue_estimator(datasets: dict[str, DatasetLoadResult], openrouter_views: dict[str, object]) -> None:
+def render_revenue_token_section(datasets: dict[str, DatasetLoadResult], openrouter_views: dict[str, object]) -> None:
+    """Unified provider revenue + token volume section with Metric/View toggles over shared Weekly/Monthly/Daily tabs."""
     rev_data = openrouter_views.get("revenue_estimator", {})
+    tok_data = openrouter_views.get("token_volume", {})
+
     pivot_rev = rev_data.get("pivot_rev", pd.DataFrame())
-    total_revenue = rev_data.get("total_revenue", 0)
-    coverage = rev_data.get("coverage", {})
+    pivot_rev_monthly = regroup_provider_pivot_for_display(rev_data.get("pivot_rev_monthly", pd.DataFrame()), "monthly")
+    pivot_rev_weekly  = regroup_provider_pivot_for_display(rev_data.get("pivot_rev_weekly", pd.DataFrame()), "weekly")
+    pivot_rev_daily   = regroup_provider_pivot_for_display(rev_data.get("pivot_rev_daily", pd.DataFrame()), "daily")
 
-    st.markdown('<div class="section-title">Provider Revenue Estimator</div>', unsafe_allow_html=True)
-    
-    if pivot_rev.empty:
-        st.info("No priced provider activity is available for conservative revenue estimation yet.")
-        return
+    pivot_tok_daily   = regroup_provider_pivot_for_display(tok_data.get("pivot_daily", pd.DataFrame()), "daily")
+    pivot_tok_weekly  = regroup_provider_pivot_for_display(tok_data.get("pivot_weekly", pd.DataFrame()), "weekly")
+    pivot_tok_monthly = regroup_provider_pivot_for_display(tok_data.get("pivot_monthly", pd.DataFrame()), "monthly")
 
+    st.markdown('<div class="section-title">Provider Revenue &amp; Token Volume</div>', unsafe_allow_html=True)
     st.markdown(
-        kpi_grid_html(
-            kpi_card_html("Estimated Revenue", f"${total_revenue:,.0f}", delta="modeled from OpenRouter pricing"),
-            kpi_card_html("Provider Coverage", str(len(pivot_rev.columns)), delta="active priced providers"),
-            kpi_card_html("Model-Priced Tokens", f"{coverage.get('model_priced_token_coverage', 0):.1%}", delta="matched or free model pricing"),
-            kpi_card_html("Fallback-Priced Tokens", f"{coverage.get('fallback_priced_token_coverage', 0):.1%}", delta=f"{coverage.get('unpriced_token_share', 0):.1%} unpriced/synthetic"),
-        ),
+        '<div class="section-subtitle">Provider-level revenue and token consumption across OpenRouter, '
+        'switchable between absolute values and normalized share of total.</div>',
         unsafe_allow_html=True,
     )
 
-    st.markdown('<div class="section-subtitle">Estimated Revenue by Provider</div>', unsafe_allow_html=True)
+    if (
+        pivot_rev_daily.empty and pivot_rev_weekly.empty and pivot_rev_monthly.empty
+        and pivot_tok_daily.empty and pivot_tok_weekly.empty and pivot_tok_monthly.empty
+    ):
+        st.info("No provider revenue or token volume data is available yet.")
+        return
 
-    pivot_monthly = regroup_provider_pivot_for_display(rev_data.get("pivot_rev_monthly", pd.DataFrame()), "monthly")
-    pivot_weekly  = regroup_provider_pivot_for_display(rev_data.get("pivot_rev_weekly", pd.DataFrame()), "weekly")
-    pivot_daily   = regroup_provider_pivot_for_display(rev_data.get("pivot_rev_daily", pd.DataFrame()), "daily")
-    chart_mode_options = ["USD", "Share (%)"]
-    if hasattr(st, "segmented_control"):
-        chart_mode = st.segmented_control("Revenue chart mode", chart_mode_options, default="USD")
+    control_col1, control_col2 = st.columns([1, 1])
+    with control_col1:
+        metric_options = ["Revenue", "Tokens"]
+        if hasattr(st, "segmented_control"):
+            metric = st.segmented_control("Metric", metric_options, default="Revenue")
+        else:
+            metric = st.radio("Metric", metric_options, horizontal=True)
+    with control_col2:
+        view_options = ["Absolute", "Share (%)"]
+        if hasattr(st, "segmented_control"):
+            view_mode = st.segmented_control("View", view_options, default="Absolute")
+        else:
+            view_mode = st.radio("View", view_options, horizontal=True)
+    metric = str(metric or "Revenue")
+    view_mode = str(view_mode or "Absolute")
+    is_share = view_mode == "Share (%)"
+    is_revenue = metric == "Revenue"
+
+    if is_revenue:
+        total_revenue = rev_data.get("total_revenue", 0)
+        coverage = rev_data.get("coverage", {})
+        st.markdown(
+            kpi_grid_html(
+                kpi_card_html("Estimated Revenue", f"${total_revenue:,.0f}", delta="modeled from OpenRouter pricing"),
+                kpi_card_html("Provider Coverage", str(len(pivot_rev.columns)), delta="active priced providers"),
+                kpi_card_html("Model-Priced Tokens", f"{coverage.get('model_priced_token_coverage', 0):.1%}", delta="matched or free model pricing"),
+                kpi_card_html("Fallback-Priced Tokens", f"{coverage.get('fallback_priced_token_coverage', 0):.1%}", delta=f"{coverage.get('unpriced_token_share', 0):.1%} unpriced/synthetic"),
+            ),
+            unsafe_allow_html=True,
+        )
     else:
-        chart_mode = st.radio("Revenue chart mode", chart_mode_options, horizontal=True)
-    chart_mode = str(chart_mode or "USD")
+        latest_tok_total, tok_wow_pct, dominant_provider = None, None, None
+        if not pivot_tok_weekly.empty:
+            latest_row = pivot_tok_weekly.iloc[-1]
+            latest_tok_total = float(latest_row.sum())
+            if len(pivot_tok_weekly) >= 2:
+                prev_total = float(pivot_tok_weekly.iloc[-2].sum())
+                if prev_total > 0:
+                    tok_wow_pct = (latest_tok_total - prev_total) / prev_total * 100
+            if latest_tok_total > 0:
+                dominant_provider = latest_row.idxmax()
 
-    tab_week, tab_month, tab_day = st.tabs(["Weekly", "Monthly", "Daily"])
-    
-    def _render_rev_chart(pivot_df, date_title):
+        if tok_wow_pct is not None:
+            tok_delta_cls  = "up" if tok_wow_pct >= 0 else "down"
+            tok_delta_text = f"{'↑' if tok_wow_pct >= 0 else '↓'} {abs(tok_wow_pct):.1f}% WoW"
+        else:
+            tok_delta_cls, tok_delta_text = "flat", "—"
+
+        tok_coverage_label = "Legacy + observed modern" if not pivot_tok_weekly.empty and pivot_tok_weekly.index[0] < "2026" else "Observed modern"
+        wow_str = f"{'+'  if tok_wow_pct and tok_wow_pct >= 0 else ''}{f'{tok_wow_pct:.1f}%' if tok_wow_pct is not None else '—'}"
+
+        st.markdown(
+            kpi_grid_html(
+                kpi_card_html("Total Tokens (Latest Week)", format_metric(latest_tok_total) if latest_tok_total else "—", delta=tok_delta_text, delta_class=tok_delta_cls),
+                kpi_card_html("WoW Change", wow_str, delta="vs prior week"),
+                kpi_card_html("Dominant Provider", dominant_provider or "—", delta="by token share this week"),
+                kpi_card_html("Data Coverage", tok_coverage_label, delta="legacy + smoothed modern seam"),
+            ),
+            unsafe_allow_html=True,
+        )
+
+    pivot_active_daily   = pivot_rev_daily if is_revenue else pivot_tok_daily
+    pivot_active_weekly  = pivot_rev_weekly if is_revenue else pivot_tok_weekly
+    pivot_active_monthly = pivot_rev_monthly if is_revenue else pivot_tok_monthly
+
+    def _render_chart(pivot_df: pd.DataFrame, date_title: str, extra_caption: str | None = None) -> None:
         if pivot_df.empty:
             st.info(f"No {date_title.lower()} data available.")
             return
-        # Label the current month as MTD in the X-axis for clarity
         today_month = datetime.now().strftime("%Y-%m")
         display_index = [
             f"{d} (MTD)" if date_title == "Usage Month" and str(d) == today_month else d
             for d in pivot_df.index
         ]
-        plot_df = _pivot_to_share_percent(pivot_df) if chart_mode == "Share (%)" else pivot_df
+        plot_df = _pivot_to_share_percent(pivot_df) if is_share else pivot_df
+        if is_revenue:
+            y_title = "Revenue Share (%)" if is_share else "Revenue (USD)"
+            value_format = ".1f" if is_share else ",.2f"
+            hover_prefix = "" if is_share else "$"
+            hover_suffix = "%" if is_share else ""
+        else:
+            y_title = "Token Share (%)" if is_share else "Tokens"
+            value_format = ".1f" if is_share else ",.0f"
+            hover_prefix = ""
+            hover_suffix = "%" if is_share else "tokens"
         st.plotly_chart(
             make_stacked_area_chart(
                 plot_df,
                 display_index,
                 MODEL_COLORS,
                 x_title=date_title,
-                y_title="Revenue Share (%)" if chart_mode == "Share (%)" else "Revenue (USD)",
-                value_format=".1f" if chart_mode == "Share (%)" else ",.2f",
-                hover_prefix="" if chart_mode == "Share (%)" else "$",
-                hover_suffix="%" if chart_mode == "Share (%)" else "",
+                y_title=y_title,
+                value_format=value_format,
+                hover_prefix=hover_prefix,
+                hover_suffix=hover_suffix,
             ),
             width="stretch", theme=None,
         )
+        if extra_caption:
+            st.caption(extra_caption)
 
+    tab_week, tab_month, tab_day = st.tabs(["Weekly", "Monthly", "Daily"])
     with tab_week:
-        if pivot_weekly.empty:
-            st.info("No weekly data available.")
-        else:
-            today_month = datetime.now().strftime("%Y-%m")
-            display_index = [str(d) for d in pivot_weekly.index]
-            plot_weekly = _pivot_to_share_percent(pivot_weekly) if chart_mode == "Share (%)" else pivot_weekly
-            fig_week = make_stacked_area_chart(
-                plot_weekly,
-                display_index,
-                MODEL_COLORS,
-                x_title="Usage Week (Starting)",
-                y_title="Revenue Share (%)" if chart_mode == "Share (%)" else "Revenue (USD)",
-                value_format=".1f" if chart_mode == "Share (%)" else ",.2f",
-                hover_prefix="" if chart_mode == "Share (%)" else "$",
-                hover_suffix="%" if chart_mode == "Share (%)" else "",
-            )
-            st.plotly_chart(fig_week, width="stretch", theme=None)
-            st.caption(
-                "Weekly revenue combines legacy Market Share plus Top Models fallback estimates before mid-January 2026, "
-                "then switches to observed provider activity with pricing fallbacks."
-            )
+        week_caption = (
+            "Weekly revenue combines legacy Market Share plus Top Models fallback estimates before mid-January 2026, "
+            "then switches to observed provider activity with pricing fallbacks."
+            if is_revenue else None
+        )
+        _render_chart(pivot_active_weekly, "Usage Week (Starting)", extra_caption=week_caption)
     with tab_month:
-        _render_rev_chart(pivot_monthly, "Usage Month")
+        _render_chart(pivot_active_monthly, "Usage Month")
     with tab_day:
-        _render_rev_chart(pivot_daily, "Usage Date")
-        
-    st.caption(
-        "Methodology: dashboard revenue uses a hybrid estimate. Legacy weekly history starts from Market Share provider totals, "
-        "prices the ranked model subset, and tops up uncovered provider volume with provider/global blended pricing benchmarks. "
-        "Modern daily history uses observed provider/model activity with OpenRouter pricing plus provider/global fallbacks when exact as-of matches are unavailable. "
-        "Models whose OpenRouter slug ends in :free are included in token volume and zero-rated for revenue."
-    )
+        _render_chart(pivot_active_daily, "Usage Date")
+
+    if is_revenue:
+        st.caption(
+            "Methodology: dashboard revenue uses a hybrid estimate. Legacy weekly history starts from Market Share provider totals, "
+            "prices the ranked model subset, and tops up uncovered provider volume with provider/global blended pricing benchmarks. "
+            "Modern daily history uses observed provider/model activity with OpenRouter pricing plus provider/global fallbacks when exact as-of matches are unavailable. "
+            "Models whose OpenRouter slug ends in :free are included in token volume and zero-rated for revenue."
+        )
+    else:
+        st.caption(
+            "Legacy (pre-Jan 2026): weekly/monthly token views come from provider-level Market Share history, "
+            "so they reflect providers visible in OpenRouter's author-share chart rather than only the surviving top-model cutoff. "
+            "Modern (post-Jan 2026): daily token views come from exact per-provider logs, but only for the configured priority providers, "
+            "not the full OpenRouter provider universe, so some providers may still be missing from the chart. Partial periods are observed totals."
+        )
     st.markdown("---")
 
 
-def render_token_volume_chart(openrouter_views: dict[str, object]) -> None:
-    """Stacked area chart: raw token consumption by provider over time (daily/weekly/monthly)."""
-    st.markdown('<div class="section-title">Token Volume by Provider</div>', unsafe_allow_html=True)
+def render_task_spend_section(openrouter_views: dict[str, object]) -> None:
+    task_view = openrouter_views.get("task_spend", {})
+    by_selection = task_view.get("by_selection", {})
+
+    st.markdown('<div class="section-title">Task-Level Model Leaders</div>', unsafe_allow_html=True)
     st.markdown(
-        '<div class="section-subtitle">Token volume by provider across OpenRouter. '
-        'Legacy (pre-Jan 2026): provider-level history from weekly Market Share rankings. '
-        'Modern (2026+): observed daily logs for tracked priority providers, with the first partial modern week bridged from the following week for continuity.</div>',
+        '<div class="section-subtitle">OpenRouter task rankings from the new spend/token views. '
+        'Rows are rolling-window shares, not absolute dollars or token counts.</div>',
         unsafe_allow_html=True,
     )
 
-    tok_data = openrouter_views.get("token_volume", {})
-    pivot_daily = regroup_provider_pivot_for_display(tok_data.get("pivot_daily", pd.DataFrame()), "daily")
-    pivot_weekly = regroup_provider_pivot_for_display(tok_data.get("pivot_weekly", pd.DataFrame()), "weekly")
-    pivot_monthly = regroup_provider_pivot_for_display(tok_data.get("pivot_monthly", pd.DataFrame()), "monthly")
-
-    if pivot_weekly.empty and pivot_daily.empty:
-        st.info("No token volume data available.")
+    if not by_selection:
+        st.info("No task-level OpenRouter spend/token rankings are available yet.")
         return
 
-    # --- KPI Row ---
-    latest_tok_total, tok_wow_pct, dominant_provider = None, None, None
-    if not pivot_weekly.empty:
-        latest_row = pivot_weekly.iloc[-1]
-        latest_tok_total = float(latest_row.sum())
-        if len(pivot_weekly) >= 2:
-            prev_total = float(pivot_weekly.iloc[-2].sum())
-            if prev_total > 0:
-                tok_wow_pct = (latest_tok_total - prev_total) / prev_total * 100
-        if latest_tok_total > 0:
-            dominant_provider = latest_row.idxmax()
+    periods = task_view.get("periods", []) or ["spend"]
+    windows = task_view.get("windows", []) or [30]
+    default_period = "spend" if "spend" in periods else periods[0]
+    default_window = 30 if 30 in windows else windows[0]
 
-    if tok_wow_pct is not None:
-        tok_delta_cls  = "up" if tok_wow_pct >= 0 else "down"
-        tok_delta_text = f"{'↑' if tok_wow_pct >= 0 else '↓'} {abs(tok_wow_pct):.1f}% WoW"
-    else:
-        tok_delta_cls, tok_delta_text = "flat", "—"
+    control_col1, control_col2 = st.columns([1, 1])
+    with control_col1:
+        period = st.selectbox(
+            "Task ranking view",
+            options=periods,
+            index=periods.index(default_period),
+            format_func=lambda value: "Spend share" if value == "spend" else "Token share",
+            key="openrouter_task_spend_period",
+        )
+    with control_col2:
+        window_days = st.selectbox(
+            "Rolling window",
+            options=windows,
+            index=windows.index(default_window),
+            format_func=lambda value: f"{int(value)} days",
+            key="openrouter_task_spend_window",
+        )
 
-    coverage = "Legacy + observed modern" if not pivot_weekly.empty and pivot_weekly.index[0] < "2026" else "Observed modern"
-    wow_str = f"{'+'  if tok_wow_pct and tok_wow_pct >= 0 else ''}{f'{tok_wow_pct:.1f}%' if tok_wow_pct is not None else '—'}"
+    selected = by_selection.get((str(period), int(window_days)))
+    if not selected:
+        st.info("No task ranking rows are available for that view/window selection.")
+        return
+
+    task_summary = selected.get("task_summary", pd.DataFrame()).copy()
+    model_rows = selected.get("model_rows", pd.DataFrame()).copy()
+    macro_summary = selected.get("macro_summary", pd.DataFrame()).copy()
+    snapshot_label = task_view.get("latest_snapshot_date") or "n/a"
+    top_task = selected.get("top_task") or "—"
+    top_task_label = _pretty_task_label(str(top_task)) if top_task != "—" else "—"
+    top_model = selected.get("top_model") or "—"
+
+    top_task_share = 0.0
+    if not task_summary.empty:
+        top_task_share = float(task_summary.iloc[0]["task_share_pct"])
 
     st.markdown(
         kpi_grid_html(
-            kpi_card_html("Total Tokens (Latest Week)", format_metric(latest_tok_total) if latest_tok_total else "—", delta=tok_delta_text, delta_class=tok_delta_cls),
-            kpi_card_html("WoW Change", wow_str, delta="vs prior week"),
-            kpi_card_html("Dominant Provider", dominant_provider or "—", delta="by token share this week"),
-            kpi_card_html("Data Coverage", coverage, delta="legacy + smoothed modern seam"),
+            kpi_card_html("Snapshot", str(snapshot_label), delta=f"rolling {int(window_days)}d"),
+            kpi_card_html("Tasks", f"{len(task_summary):,.0f}", delta=f"{str(period).title()} view"),
+            kpi_card_html("Top Task", top_task_label, delta=f"{top_task_share:.1f}% of total {period}"),
+            kpi_card_html("Top Model In Task", str(top_model), delta="ranked within top task", value_style="font-size:1.0rem;"),
         ),
         unsafe_allow_html=True,
     )
 
-    tab_week, tab_month, tab_day = st.tabs(["Weekly", "Monthly", "Daily"])
+    st.markdown('<div class="section-subtitle">Top Tasks</div>', unsafe_allow_html=True)
+    if task_summary.empty:
+        st.info("No task rows available.")
+    else:
+        treemap = task_summary.copy()
+        treemap["macro_category"] = treemap["macro_category"].fillna("unknown").astype(str)
+        macro_totals = treemap.groupby("macro_category")["task_share_pct"].sum()
+        task_top_models = _task_top_models(model_rows)
+        macro_top_models = _macro_top_models(model_rows, task_summary)
 
-    def _render_tok_chart(pivot_df: pd.DataFrame, date_title: str) -> None:
-        if pivot_df.empty:
-            st.info(f"No {date_title.lower()} token data available.")
-            return
-        today_month = datetime.now().strftime("%Y-%m")
-        display_index = [
-            f"{d} (MTD)" if date_title == "Usage Month" and str(d) == today_month else d
-            for d in pivot_df.index
-        ]
-        st.plotly_chart(
-            make_stacked_area_chart(
-                pivot_df,
-                display_index,
-                MODEL_COLORS,
-                x_title=date_title,
-                y_title="Tokens",
-                value_format=",.0f",
-                hover_suffix="tokens",
-            ),
-            width="stretch", theme=None,
+        ids: list[str] = []
+        labels: list[str] = []
+        parents: list[str] = []
+        values: list[float] = []
+        colors: list[str] = []
+        customdata: list[str] = []
+        for macro_category in sorted(macro_totals.index):
+            ids.append(macro_category)
+            labels.append(macro_category.capitalize())
+            parents.append("")
+            values.append(float(macro_totals[macro_category]))
+            colors.append(_macro_color(macro_category))
+            if macro_category in macro_top_models.index:
+                top_row = macro_top_models.loc[macro_category]
+                customdata.append(
+                    f"#1 model: {_short_model_name(top_row['model_permaslug'])} "
+                    f"({top_row['contribution_pct']:.1f}% of total {period})"
+                )
+            else:
+                customdata.append("#1 model: —")
+        for _, row in treemap.iterrows():
+            ids.append(f"{row['macro_category']}::{row['category_slug']}")
+            labels.append(row["task_label"])
+            parents.append(row["macro_category"])
+            values.append(float(row["task_share_pct"]))
+            colors.append(_macro_color(row["macro_category"]))
+            category_slug = row["category_slug"]
+            if category_slug in task_top_models.index:
+                top_row = task_top_models.loc[category_slug]
+                customdata.append(
+                    f"#1 model: {_short_model_name(top_row['model_permaslug'])} "
+                    f"({top_row['model_share_pct']:.1f}% within task)"
+                )
+            else:
+                customdata.append("#1 model: —")
+
+        fig_tasks = go.Figure(
+            go.Treemap(
+                ids=ids,
+                labels=labels,
+                parents=parents,
+                values=values,
+                branchvalues="total",
+                marker=dict(colors=colors, line=dict(width=1, color=BG)),
+                textfont=dict(size=13, color="white"),
+                customdata=customdata,
+                hovertemplate=(
+                    f"<b>%{{label}}</b><br>{str(period).title()} share: %{{value:.1f}}%<br>%{{customdata}}<extra></extra>"
+                ),
+            )
+        )
+        fig_tasks.update_layout(margin=dict(l=0, r=0, t=10, b=10), height=380)
+        st.plotly_chart(fig_tasks, width="stretch", theme=None)
+
+        if not macro_summary.empty:
+            legend_items = "".join(
+                f'<div class="macro-legend-item">'
+                f'<span class="macro-legend-dot" style="background:{_macro_color(row["macro_category"])}"></span>'
+                f'{str(row["macro_category"]).capitalize()} '
+                f'<span class="macro-legend-pct">{row["task_share_pct"]:.1f}%</span>'
+                f'</div>'
+                for _, row in macro_summary.iterrows()
+            )
+            st.markdown(f'<div class="macro-legend-row">{legend_items}</div>', unsafe_allow_html=True)
+
+    st.markdown('<div class="section-subtitle">Macro Category Share Over Time</div>', unsafe_allow_html=True)
+    history_pivot = task_view.get("history_by_selection", {}).get((str(period), int(window_days)), pd.DataFrame())
+    if history_pivot.empty or len(history_pivot.index) < 2:
+        snapshots_captured = len(history_pivot.index) if not history_pivot.empty else 0
+        st.info(
+            f"Only {snapshots_captured} daily snapshot(s) captured so far for this view. "
+            "The OpenRouter task-spend scrape runs once a day, so this trend line fills in over the coming days/weeks."
+        )
+    else:
+        fig_history = go.Figure()
+        for macro_category in history_pivot.columns:
+            fig_history.add_trace(
+                go.Scatter(
+                    x=history_pivot.index,
+                    y=history_pivot[macro_category],
+                    mode="lines+markers",
+                    name=str(macro_category).capitalize(),
+                    line=dict(color=_macro_color(macro_category), width=2),
+                    hovertemplate="<b>%{fullData.name}</b><br>%{x}: %{y:.1f}%<extra></extra>",
+                )
+            )
+        fig_history.update_layout(
+            template="plotly_white",
+            height=320,
+            margin=dict(l=0, r=0, t=10, b=10),
+            xaxis_title="Snapshot Date",
+            yaxis_title=f"{str(period).title()} Share (%)",
+            legend=dict(orientation="h", y=-0.2),
+        )
+        st.plotly_chart(fig_history, width="stretch", theme=None)
+        st.caption(
+            f"Rolling {int(window_days)}-day {period} share per macro category, one point per daily snapshot. "
+            "Compare the 7d/30d/90d windows like fast/medium/slow moving averages to read trend speed."
         )
 
-    with tab_week:
-        _render_tok_chart(pivot_weekly, "Usage Week (Starting)")
-    with tab_month:
-        _render_tok_chart(pivot_monthly, "Usage Month")
-    with tab_day:
-        _render_tok_chart(pivot_daily, "Usage Date")
+    if task_summary.empty or model_rows.empty:
+        return
+
+    task_options = task_summary["category_slug"].astype(str).tolist()
+    default_task_index = task_options.index(top_task) if top_task in task_options else 0
+    selected_task = st.selectbox(
+        "Inspect task leaders",
+        options=task_options,
+        index=default_task_index,
+        format_func=_pretty_task_label,
+        key="openrouter_task_spend_task",
+    )
+    task_models = model_rows[model_rows["category_slug"].astype(str) == str(selected_task)].copy()
+    if task_models.empty:
+        st.info("No model rows are available for that task.")
+        return
+
+    task_models = task_models.sort_values(["rank", "model_share_pct"], ascending=[True, False]).head(10).reset_index(drop=True)
+
+    def _leaderboard_row(rank: int, model_slug: str, share_pct: float) -> str:
+        provider = _derive_provider_name(str(model_slug), None)
+        model_name = _short_model_name(model_slug)
+        return (
+            '<div class="task-lb-row">'
+            f'<div class="task-lb-rank">{rank}.</div>'
+            f'<div class="task-lb-info"><div class="task-lb-name">{model_name}</div>'
+            f'<div class="task-lb-provider">by {provider}</div></div>'
+            f'<div class="task-lb-share">{share_pct:.1f}%</div>'
+            '</div>'
+        )
+
+    rows_html = [
+        _leaderboard_row(
+            int(row["rank"]) if pd.notna(row["rank"]) else idx + 1,
+            row["model_permaslug"],
+            float(row["model_share_pct"]),
+        )
+        for idx, row in task_models.iterrows()
+    ]
+    half = (len(rows_html) + 1) // 2
+    lb_col1, lb_col2 = st.columns(2)
+    with lb_col1:
+        st.markdown(f'<div class="task-lb-list">{"".join(rows_html[:half])}</div>', unsafe_allow_html=True)
+    with lb_col2:
+        st.markdown(f'<div class="task-lb-list">{"".join(rows_html[half:])}</div>', unsafe_allow_html=True)
 
     st.caption(
-        "Legacy (pre-Jan 2026): weekly/monthly token views come from provider-level Market Share history, "
-        "so they reflect providers visible in OpenRouter's author-share chart rather than only the surviving top-model cutoff. "
-        "Modern (post-Jan 2026): daily token views come from exact per-provider logs, but only for the configured priority providers, "
-        "not the full OpenRouter provider universe, so some providers may still be missing from the chart. Partial periods are observed totals."
+        "Source: OpenRouter frontend task rankings endpoint. Spend/token shares are normalized shares from rolling-window task classifications."
     )
 
 
@@ -1300,8 +1667,8 @@ def render(domain_states, datasets) -> None:
     compute_views = compute_compute_availability_views(domain_states["compute_availability"][0])
     render_kpi_row(datasets, openrouter_views)
     render_top_models_chart(datasets, openrouter_views)
-    render_revenue_estimator(datasets, openrouter_views)
-    render_token_volume_chart(openrouter_views)
+    render_revenue_token_section(datasets, openrouter_views)
+    render_task_spend_section(openrouter_views)
     render_token_revenue_comparison(openrouter_views)
     render_compute_evolution_section(compute_views)
     render_apps_tables(datasets)
