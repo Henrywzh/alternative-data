@@ -113,17 +113,14 @@ def build_price_context(pricing: pd.DataFrame) -> PriceContext:
     prepared["pricing_prompt"] = pd.to_numeric(prepared["pricing_prompt"], errors="coerce")
     prepared["pricing_completion"] = pd.to_numeric(prepared["pricing_completion"], errors="coerce")
     prepared = prepared.dropna(subset=["model_id", "snapshot_ts"]).copy()
-    prepared["canonical_model_key"] = prepared.apply(
-        lambda row: canonical_model_key(
-            row["canonical_slug"] if pd.notna(row.get("canonical_slug")) else row["model_id"],
-            preserve_free=str(row["model_id"]).endswith(":free"),
-        ),
-        axis=1,
-    )
-    prepared["pricing_blended"] = prepared.apply(
-        lambda row: blended_unit_price(row["pricing_prompt"], row["pricing_completion"]),
-        axis=1,
-    )
+    key_source = prepared["canonical_slug"].where(prepared["canonical_slug"].notna(), prepared["model_id"])
+    preserve_free = prepared["model_id"].astype(str).str.endswith(":free")
+    key_pairs = list(zip(key_source, preserve_free))
+    resolved_keys = {
+        pair: canonical_model_key(pair[0], preserve_free=pair[1]) for pair in set(key_pairs)
+    }
+    prepared["canonical_model_key"] = [resolved_keys[pair] for pair in key_pairs]
+    prepared["pricing_blended"] = blended_unit_price_series(prepared["pricing_prompt"], prepared["pricing_completion"])
     prepared = prepared.dropna(subset=["canonical_model_key"]).copy()
 
     model_stats = (
@@ -224,9 +221,12 @@ def _estimate_with_context(
         return estimated
 
     estimated = estimated.copy()
-    estimated["matched_model_key"] = estimated["model_permaslug"].map(
-        lambda slug: resolve_model_key(slug, context.alias_to_model_key, slug_strategy=slug_strategy)
-    )
+    unique_slugs = estimated["model_permaslug"].dropna().unique()
+    resolved_lookup = {
+        slug: resolve_model_key(slug, context.alias_to_model_key, slug_strategy=slug_strategy)
+        for slug in unique_slugs
+    }
+    estimated["matched_model_key"] = estimated["model_permaslug"].map(resolved_lookup)
 
     model_stats = context.model_stats.rename(columns={"canonical_model_key": "matched_model_key"})
     estimated = estimated.merge(model_stats, on="matched_model_key", how="left")
@@ -466,10 +466,15 @@ def _attach_latest_prior_pricing(usage: pd.DataFrame, pricing: pd.DataFrame) -> 
         return usage.drop(columns=["_usage_row_id", "_usage_date"])
 
     pricing_keys = set(aliases["pricing_lookup_key"].dropna().astype(str))
+    unique_usage_slugs = usage["model_permaslug"].dropna().unique()
+    candidates_lookup = {
+        slug: [alias for alias in generate_candidate_aliases(slug) if alias in pricing_keys]
+        for slug in unique_usage_slugs
+    }
     expanded_rows: list[dict[str, object]] = []
     for row in usage.to_dict(orient="records"):
         slug = row.get("model_permaslug")
-        candidates = [alias for alias in generate_candidate_aliases(slug) if alias in pricing_keys]
+        candidates = candidates_lookup.get(slug) or []
         if not candidates:
             candidates = [str(slug)] if pd.notna(slug) else []
         for priority, candidate in enumerate(candidates):

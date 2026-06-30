@@ -43,7 +43,7 @@ from dashboard.data import (
     load_domain_datasets,
     load_latest_manifest,
 )
-from dashboard.sections.openrouter import _estimator_coverage_summary, _pivot_to_share_percent
+from dashboard.sections.openrouter import _compute_task_spend_views, _estimator_coverage_summary, _pivot_to_share_percent
 
 
 def _base_row(dataset_id: str) -> dict:
@@ -82,6 +82,11 @@ def _base_row(dataset_id: str) -> dict:
         "period": None,
         "tokens": None,
         "growth_percent": None,
+        "window_days": None,
+        "macro_category": None,
+        "task_share_of_total": None,
+        "model_share": None,
+        "delta_pp": None,
         "provider": None,
         "provider_display_name": None,
         "package_name": None,
@@ -2419,6 +2424,85 @@ def test_estimator_coverage_summary_separates_model_fallback_and_unpriced_tokens
     assert coverage["model_priced_token_coverage"] == 0.93
     assert coverage["fallback_priced_token_coverage"] == 0.05
     assert coverage["unpriced_token_share"] == 0.02
+
+
+def test_compute_task_spend_views_prepares_latest_task_and_model_rankings() -> None:
+    frame = pd.DataFrame(
+        [
+            {
+                **_base_row("openrouter_task_spend"),
+                "snapshot_date": "2026-06-29",
+                "period": "spend",
+                "window_days": 30,
+                "category_slug": "agent:workflow_execution",
+                "macro_category": "agent",
+                "task_share_of_total": 0.10,
+                "model_permaslug": "openai/gpt-5.5",
+                "model_share": 0.60,
+                "rank": 1,
+            },
+            {
+                **_base_row("openrouter_task_spend"),
+                "snapshot_date": "2026-06-30",
+                "period": "spend",
+                "window_days": 30,
+                "category_slug": "agent:workflow_execution",
+                "macro_category": "agent",
+                "task_share_of_total": 0.30,
+                "model_permaslug": "anthropic/claude-opus-4.7",
+                "model_share": 0.70,
+                "rank": 1,
+            },
+            {
+                **_base_row("openrouter_task_spend"),
+                "snapshot_date": "2026-06-30",
+                "period": "spend",
+                "window_days": 30,
+                "category_slug": "agent:workflow_execution",
+                "macro_category": "agent",
+                "task_share_of_total": 0.30,
+                "model_permaslug": "openai/gpt-5.5",
+                "model_share": 0.20,
+                "rank": 2,
+            },
+            {
+                **_base_row("openrouter_task_spend"),
+                "snapshot_date": "2026-06-30",
+                "period": "spend",
+                "window_days": 30,
+                "category_slug": "code:general_impl",
+                "macro_category": "code",
+                "task_share_of_total": 0.20,
+                "model_permaslug": "anthropic/claude-sonnet-4.6",
+                "model_share": 0.50,
+                "rank": 1,
+            },
+            {
+                **_base_row("openrouter_task_spend"),
+                "snapshot_date": "2026-06-30",
+                "period": "tokens",
+                "window_days": 7,
+                "category_slug": "classification_tagging",
+                "macro_category": "general",
+                "task_share_of_total": 0.40,
+                "model_permaslug": "google/gemini-2.5-flash",
+                "model_share": 0.55,
+                "rank": 1,
+            },
+        ],
+        columns=EXPECTED_COLUMNS,
+    )
+
+    views = _compute_task_spend_views(frame)
+
+    assert views["latest_snapshot_date"] == "2026-06-30"
+    assert views["windows"] == [7, 30]
+    assert views["periods"] == ["spend", "tokens"]
+    spend_30 = views["by_selection"][("spend", 30)]
+    assert spend_30["top_task"] == "agent:workflow_execution"
+    assert spend_30["top_model"] == "anthropic/claude-opus-4.7"
+    assert spend_30["task_summary"]["task_share_pct"].tolist() == [30.0, 20.0]
+    assert spend_30["model_rows"].iloc[0]["model_share_pct"] == 70.0
 
 
 def test_compute_openrouter_views_exposes_total_weekly_tokens_for_top_models() -> None:
