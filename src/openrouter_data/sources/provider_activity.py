@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import Any
 
+import pandas as pd
 import requests
 
 from openrouter_data.exceptions import ExtractionError
@@ -37,6 +38,7 @@ PROVIDER_SLUGS: dict[str, str] = {
 }
 
 PROVIDER_ACTIVITY_DATASET_ID = "provider_daily_activity"
+SYNTHETIC_MODEL_BUCKETS = {"Others"}
 
 
 class ProviderActivitySource(SourceExtractor):
@@ -130,6 +132,84 @@ class ProviderActivitySource(SourceExtractor):
                     )
 
         return {PROVIDER_ACTIVITY_DATASET_ID: records}
+
+    @staticmethod
+    def validate_records(
+        records: list[DatasetRecord],
+        *,
+        expected_providers: dict[str, str],
+        scraped_at: datetime,
+        min_days: int = 60,
+        max_lag_days: int = 2,
+        min_total_tokens: float = 1.0,
+    ) -> dict[str, dict[str, Any]]:
+        """Fail loudly when provider-page HTML/RSC changes produce bad extracts."""
+        errors: list[str] = []
+        if not records:
+            raise ExtractionError("Provider activity extraction failed health checks: no records extracted")
+
+        frame = pd.DataFrame([record.to_dict() for record in records])
+        required_columns = {"entity_id", "usage_date", "model_permaslug", "total_tokens"}
+        missing_columns = sorted(required_columns - set(frame.columns))
+        if missing_columns:
+            raise ExtractionError(
+                "Provider activity extraction failed health checks: "
+                f"missing columns {', '.join(missing_columns)}"
+            )
+
+        frame["entity_id"] = frame["entity_id"].astype("string")
+        frame["model_permaslug"] = frame["model_permaslug"].astype("string")
+        frame["usage_date_dt"] = pd.to_datetime(frame["usage_date"], errors="coerce").dt.date
+        frame["total_tokens_numeric"] = pd.to_numeric(frame["total_tokens"], errors="coerce").fillna(0.0)
+
+        present_providers = set(frame["entity_id"].dropna().astype(str).unique().tolist())
+        missing_providers = sorted(set(expected_providers) - present_providers)
+        if missing_providers:
+            errors.append(f"missing providers: {', '.join(missing_providers)}")
+
+        malformed_keys = frame["model_permaslug"].dropna().astype(str).map(
+            lambda value: value not in SYNTHETIC_MODEL_BUCKETS and ("/" not in value or value.startswith("/"))
+        )
+        if bool(malformed_keys.any()):
+            examples = frame.loc[malformed_keys[malformed_keys].index, "model_permaslug"].dropna().astype(str).head(5).tolist()
+            errors.append(f"malformed model keys: {', '.join(examples)}")
+
+        latest_allowed = scraped_at.date() - timedelta(days=max_lag_days)
+        summary: dict[str, dict[str, Any]] = {}
+        for provider_slug in sorted(present_providers & set(expected_providers)):
+            provider_frame = frame[frame["entity_id"] == provider_slug].copy()
+            dates = sorted(provider_frame["usage_date_dt"].dropna().unique().tolist())
+            latest_date = dates[-1] if dates else None
+            total_tokens = float(provider_frame["total_tokens_numeric"].sum())
+            model_count = int(provider_frame["model_permaslug"].dropna().nunique())
+
+            summary[provider_slug] = {
+                "date_count": len(dates),
+                "first_date": dates[0].isoformat() if dates else None,
+                "latest_date": latest_date.isoformat() if latest_date else None,
+                "model_count": model_count,
+                "total_tokens": total_tokens,
+            }
+
+            if len(dates) < min_days:
+                errors.append(f"{provider_slug}: only {len(dates)} dates extracted; expected at least {min_days}")
+            if latest_date is None or latest_date < latest_allowed:
+                latest_label = latest_date.isoformat() if latest_date else "none"
+                errors.append(
+                    f"{provider_slug}: latest date {latest_label} is older than allowed {latest_allowed.isoformat()}"
+                )
+            if total_tokens <= min_total_tokens:
+                errors.append(f"{provider_slug}: total tokens {total_tokens:.0f} is not positive")
+            if model_count < 1:
+                errors.append(f"{provider_slug}: no model keys extracted")
+
+        if errors:
+            detail = "; ".join(errors[:12])
+            if len(errors) > 12:
+                detail += f"; ... {len(errors) - 12} more"
+            raise ExtractionError(f"Provider activity extraction failed health checks: {detail}")
+
+        return summary
 
     # ------------------------------------------------------------------
     # Internal helpers

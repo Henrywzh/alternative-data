@@ -281,6 +281,24 @@ DATASET_REGISTRY: dict[str, dict[str, object]] = {
         "metric_column": "total_tokens",
         "required_columns": ["usage_date", "model_permaslug", "total_tokens"],
     },
+    "openrouter_task_spend": {
+        "label": "Task Spend Rankings",
+        "domain": "rankings",
+        "natural_keys": ["snapshot_date", "period", "window_days", "category_slug", "model_permaslug"],
+        "primary_date_column": "snapshot_date",
+        "metric_column": "model_share",
+        "required_columns": [
+            "snapshot_date",
+            "period",
+            "window_days",
+            "category_slug",
+            "macro_category",
+            "task_share_of_total",
+            "model_permaslug",
+            "model_share",
+            "rank",
+        ],
+    },
     "artificial_analysis_models_daily": {
         "label": "Artificial Analysis Models",
         "domain": "artificial_analysis",
@@ -314,6 +332,7 @@ DOMAIN_ORDER = {
         "categories_programming",
         "openrouter_model_activity",
         "provider_daily_activity",
+        "openrouter_task_spend",
     ],
     "apps": [
         "app_metadata_snapshots",
