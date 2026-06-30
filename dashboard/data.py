@@ -642,6 +642,62 @@ EXPECTED_COLUMNS = list(dict.fromkeys(
     ACTIVITY_COLUMNS + COMPUTE_AVAILABILITY_COLUMNS + ARTIFICIAL_ANALYSIS_COLUMNS
 ))
 
+PROVIDER_ADOPTION_LOAD_COLUMNS: dict[str, list[str]] = {
+    "pypi_downloads_daily": [
+        *CORE_COLUMNS,
+        "provider",
+        "provider_display_name",
+        "package_name",
+        "package_category",
+        "with_mirrors",
+        "download_date",
+        "downloads",
+    ],
+    "npm_downloads_daily": [
+        *CORE_COLUMNS,
+        "provider",
+        "provider_display_name",
+        "package_name",
+        "package_category",
+        "download_date",
+        "downloads",
+    ],
+    "provider_momentum_daily": [
+        *CORE_COLUMNS,
+        "provider",
+        "provider_display_name",
+        "signal_date",
+        "momentum_score",
+        "pypi_share_28d",
+        "github_repo_share",
+    ],
+    "huggingface_models_daily": [
+        *CORE_COLUMNS,
+        "provider",
+        "provider_display_name",
+        "author",
+        "model_id",
+        "download_date",
+        "hf_downloads_30d",
+        "hf_downloads_all_time",
+        "hf_downloads_daily_est",
+        "hf_likes",
+        "hf_last_modified",
+    ],
+    "github_provider_adoption_daily": [
+        *CORE_COLUMNS,
+        "provider",
+        "provider_display_name",
+        "signal_date",
+        "github_new_repo_count",
+        "github_signal_repo_count",
+        "github_manifest_repo_count",
+        "github_import_repo_count",
+        "github_env_repo_count",
+        "github_model_repo_count",
+    ],
+}
+
 DATE_COLUMNS = [
     "week_start_date",
     "scrape_date",
@@ -813,6 +869,7 @@ def dataset_source_for_domain(domain: str) -> str:
 def load_dataset(dataset_id: str, base_dir: Path | None = None) -> DatasetLoadResult:
     registry_entry = DATASET_REGISTRY.get(dataset_id, {})
     domain = registry_entry.get("domain", "rankings")
+    load_columns = PROVIDER_ADOPTION_LOAD_COLUMNS.get(dataset_id)
 
     source = "openrouter"
     if domain == "github":
@@ -850,7 +907,7 @@ def load_dataset(dataset_id: str, base_dir: Path | None = None) -> DatasetLoadRe
         sha = remote.latest_data_sha()
         if sha:
             candidates = (
-                (parquet_path, "parquet", lambda b: pd.read_parquet(io.BytesIO(b))),
+                (parquet_path, "parquet", lambda b: pd.read_parquet(io.BytesIO(b), columns=load_columns)),
                 (csv_path, "csv", lambda b: pd.read_csv(io.BytesIO(b))),
             )
             for path_obj, fmt, reader in candidates:
@@ -869,7 +926,7 @@ def load_dataset(dataset_id: str, base_dir: Path | None = None) -> DatasetLoadRe
     if source_format is None:
         try:
             if parquet_path.exists():
-                frame = pd.read_parquet(parquet_path)
+                frame = pd.read_parquet(parquet_path, columns=load_columns)
                 source_format = "parquet"
                 source_path = parquet_path
             elif csv_path.exists():
@@ -886,8 +943,8 @@ def load_dataset(dataset_id: str, base_dir: Path | None = None) -> DatasetLoadRe
     required_columns = list(CORE_COLUMNS) + list(registry_entry.get("required_columns", []))
     missing_columns = [column for column in required_columns if column not in frame.columns]
     
-    # Padding using the full global set via reindex() to prevent Fragmentation Warnings
-    frame = frame.reindex(columns=EXPECTED_COLUMNS)
+    target_columns = load_columns or EXPECTED_COLUMNS
+    frame = frame.reindex(columns=target_columns)
     for column in DATE_COLUMNS:
         if column in frame.columns:
             frame[column] = frame[column].astype("string")
