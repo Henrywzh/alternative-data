@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from openrouter_data.pipeline import ActivityPipeline, AppsPipeline, ProviderActivityPipeline, RankingsPipeline
+from openrouter_data.pipeline import ActivityPipeline, AppsPipeline, ProviderActivityPipeline, RankingsPipeline, TaskSpendPipeline
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -24,6 +24,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     subparsers.add_parser("apps-initial-backfill", help="Fetch current app detail and public apps snapshots")
     subparsers.add_parser("apps-daily-update", help="Fetch current app detail and public apps snapshots")
+    subparsers.add_parser("task-spend-daily-update", help="Fetch task-level spend and token ranking snapshots")
+    subparsers.add_parser("task-spend-validate", help="Validate live task-level spend and token ranking extraction")
     
     activity = subparsers.add_parser(
         "activity-daily-update",
@@ -39,6 +41,10 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers.add_parser(
         "provider-activity-daily-update",
         help="Fetch daily token usage from each priority provider page (self-healing 91-day window)",
+    )
+    subparsers.add_parser(
+        "provider-activity-validate",
+        help="Validate live provider activity extraction and fail on likely OpenRouter HTML drift",
     )
 
     apps_validate = subparsers.add_parser("apps-validate", help="Validate live app extraction or parse fixture HTML")
@@ -103,6 +109,18 @@ def main() -> None:
             print(f"{dataset_id}: {count} records")
         return
 
+    if args.command in {"task-spend-daily-update", "task-spend-validate"}:
+        pipeline = TaskSpendPipeline(base_dir)
+
+        if args.command == "task-spend-daily-update":
+            _print_result(pipeline.run_daily_update())
+            return
+
+        counts = pipeline.validate()
+        for dataset_id, count in counts.items():
+            print(f"{dataset_id}: {count} records")
+        return
+
     if args.command == "activity-daily-update":
         pipeline = ActivityPipeline(base_dir)
         _print_result(pipeline.run_daily_update(limit=args.limit))
@@ -111,6 +129,18 @@ def main() -> None:
     if args.command == "provider-activity-daily-update":
         pipeline = ProviderActivityPipeline(base_dir)
         _print_result(pipeline.run_daily_update())
+        return
+
+    if args.command == "provider-activity-validate":
+        pipeline = ProviderActivityPipeline(base_dir)
+        summary = pipeline.validate()
+        for provider_slug, stats in summary.items():
+            print(
+                f"{provider_slug}: {stats['date_count']} dates, "
+                f"{stats['model_count']} models, "
+                f"{stats['first_date']}..{stats['latest_date']}, "
+                f"{stats['total_tokens']:.0f} tokens"
+            )
         return
 
     parser.error(f"Unknown command: {args.command}")

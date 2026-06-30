@@ -14,6 +14,7 @@ from openrouter_data.sources.activity import ActivitySource
 from openrouter_data.sources.base import SourceExtractor
 from openrouter_data.sources.provider_activity import ProviderActivitySource, PROVIDER_SLUGS, PROVIDER_ACTIVITY_DATASET_ID
 from openrouter_data.sources.rankings import RankingsSource
+from openrouter_data.sources.task_spend import TASK_SPEND_DATASET_ID, TaskSpendSource
 from openrouter_data.storage import StorageManager
 
 
@@ -26,6 +27,7 @@ APPS_DATASET_IDS = (
     "apps_trending_snapshots",
 )
 ACTIVITY_DATASET_IDS = ("openrouter_model_activity",)
+TASK_SPEND_DATASET_IDS = (TASK_SPEND_DATASET_ID,)
 
 
 @dataclass
@@ -224,6 +226,31 @@ class AppsPipeline(BasePipeline):
         return filtered
 
 
+class TaskSpendPipeline(BasePipeline):
+    dataset_ids = TASK_SPEND_DATASET_IDS
+
+    def __init__(self, base_dir: Path) -> None:
+        super().__init__(base_dir, TaskSpendSource())
+
+    def run_daily_update(self) -> PipelineResult:
+        return self._execute(mode="task-spend-daily-update")
+
+    def validate(self) -> dict[str, int]:
+        context = self._create_context(run_id="validate-task-spend")
+        snapshots = self.source.fetch_snapshots()
+        extracted = self.source.extract(snapshots, context)
+        return {dataset_id: len(records) for dataset_id, records in extracted.items()}
+
+    def _filter_for_mode(
+        self,
+        mode: str,
+        extracted: dict[str, list[DatasetRecord]],
+    ) -> dict[str, list[DatasetRecord]]:
+        if mode != "task-spend-daily-update":
+            raise ValueError(f"Unsupported mode: {mode}")
+        return extracted
+
+
 class ActivityPipeline(BasePipeline):
     dataset_ids = ACTIVITY_DATASET_IDS
 
@@ -340,6 +367,16 @@ class ProviderActivityPipeline(BasePipeline):
         snapshots = self.source.fetch_snapshots(self._provider_slugs)
         return self._execute(mode="provider-activity-daily-update", snapshots=snapshots)
 
+    def validate(self) -> dict[str, dict[str, Any]]:
+        context = self._create_context(run_id="validate-provider-activity")
+        snapshots = self.source.fetch_snapshots(self._provider_slugs)
+        extracted = self.source.extract(snapshots, context)
+        return ProviderActivitySource.validate_records(
+            extracted.get(PROVIDER_ACTIVITY_DATASET_ID, []),
+            expected_providers=self._provider_slugs,
+            scraped_at=context.scraped_at,
+        )
+
     def _filter_for_mode(
         self,
         mode: str,
@@ -348,4 +385,18 @@ class ProviderActivityPipeline(BasePipeline):
         """Upsert semantics: keep all rows; StorageManager deduplicates on natural key."""
         if mode != "provider-activity-daily-update":
             raise ValueError(f"Unsupported mode: {mode}")
+        records = extracted.get(PROVIDER_ACTIVITY_DATASET_ID, [])
+        scraped_at = datetime.now(timezone.utc)
+        for record in records:
+            if record.scraped_at:
+                try:
+                    scraped_at = datetime.fromisoformat(record.scraped_at.replace("Z", "+00:00"))
+                except ValueError:
+                    pass
+                break
+        ProviderActivitySource.validate_records(
+            records,
+            expected_providers=self._provider_slugs,
+            scraped_at=scraped_at,
+        )
         return extracted

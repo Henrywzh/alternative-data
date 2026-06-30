@@ -45,6 +45,11 @@ class DatasetRecord:
     completion_tokens: float | None = None
     reasoning_tokens: float | None = None
     request_count: int | None = None
+    window_days: int | None = None
+    macro_category: str | None = None
+    task_share_of_total: float | None = None
+    model_share: float | None = None
+    delta_pp: float | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)

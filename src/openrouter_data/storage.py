@@ -22,6 +22,7 @@ NATURAL_KEYS: dict[str, list[str]] = {
     "apps_trending_snapshots": ["snapshot_date", "rank"],
     "openrouter_model_activity": ["usage_date", "model_permaslug", "category_slug"],
     "provider_daily_activity": ["usage_date", "model_permaslug"],
+    "openrouter_task_spend": ["snapshot_date", "period", "window_days", "category_slug", "model_permaslug"],
 }
 
 DATASET_COLUMNS = [
@@ -63,6 +64,11 @@ DATASET_COLUMNS = [
     "completion_tokens",
     "reasoning_tokens",
     "request_count",
+    "window_days",
+    "macro_category",
+    "task_share_of_total",
+    "model_share",
+    "delta_pp",
 ]
 
 NUMERIC_COLUMNS = [
@@ -75,6 +81,10 @@ NUMERIC_COLUMNS = [
     "completion_tokens",
     "reasoning_tokens",
     "request_count",
+    "window_days",
+    "task_share_of_total",
+    "model_share",
+    "delta_pp",
 ]
 BOOL_COLUMNS = ["group_by_origin", "is_private", "is_hidden"]
 TEXT_COLUMNS = [
@@ -93,6 +103,7 @@ SORT_KEYS: dict[str, list[str]] = {
     "apps_trending_snapshots": ["snapshot_date", "rank", "origin_url"],
     "openrouter_model_activity": ["usage_date", "model_permaslug", "category_slug"],
     "provider_daily_activity": ["usage_date", "model_permaslug"],
+    "openrouter_task_spend": ["snapshot_date", "period", "category_slug", "rank", "model_permaslug"],
 }
 PARQUET_ONLY_DATASETS = {"provider_daily_activity"}
 

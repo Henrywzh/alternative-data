@@ -4,9 +4,11 @@ import json
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 from openrouter_data.models import DatasetRecord, RunContext, Snapshot
-from openrouter_data.pipeline import ActivityPipeline
+from openrouter_data.exceptions import ExtractionError
+from openrouter_data.pipeline import ActivityPipeline, ProviderActivityPipeline
 from openrouter_data.sources.activity import ActivitySource
 from openrouter_data.sources.provider_activity import PROVIDER_SLUGS, ProviderActivitySource
 from openrouter_data.storage import StorageManager
@@ -180,6 +182,107 @@ def test_provider_activity_source_still_emits_total_tokens_only() -> None:
     assert record.prompt_tokens == 0.0
     assert record.completion_tokens == 0.0
     assert record.request_count is None
+
+
+def test_provider_activity_validation_accepts_healthy_provider_rows() -> None:
+    records = [
+        DatasetRecord(
+            dataset_id="provider_daily_activity",
+            source_url="fixture://provider/openai",
+            source_run_id="run-1",
+            scraped_at="2026-06-30T00:00:00Z",
+            entity_id="openai",
+            entity_name="OpenAI",
+            usage_date=f"2026-06-{day:02d}",
+            model_permaslug="openai/gpt-5.5",
+            total_tokens=1_000_000.0,
+        )
+        for day in range(25, 31)
+    ]
+
+    summary = ProviderActivitySource.validate_records(
+        records,
+        expected_providers={"openai": "OpenAI"},
+        scraped_at=pd.Timestamp("2026-06-30T00:00:00Z").to_pydatetime(),
+        min_days=5,
+        max_lag_days=1,
+    )
+
+    assert summary["openai"]["date_count"] == 6
+    assert summary["openai"]["latest_date"] == "2026-06-30"
+
+
+def test_provider_activity_validation_rejects_html_drift_partial_rows() -> None:
+    records = [
+        DatasetRecord(
+            dataset_id="provider_daily_activity",
+            source_url="fixture://provider/openai",
+            source_run_id="run-1",
+            scraped_at="2026-06-30T00:00:00Z",
+            entity_id="openai",
+            entity_name="OpenAI",
+            usage_date="2026-06-01",
+            model_permaslug="malformed-model-key",
+            total_tokens=0.0,
+        )
+    ]
+
+    with pytest.raises(ExtractionError, match="Provider activity extraction failed health checks"):
+        ProviderActivitySource.validate_records(
+            records,
+            expected_providers={"openai": "OpenAI", "anthropic": "Anthropic"},
+            scraped_at=pd.Timestamp("2026-06-30T00:00:00Z").to_pydatetime(),
+            min_days=5,
+            max_lag_days=1,
+        )
+
+
+def test_provider_activity_validation_allows_others_synthetic_bucket() -> None:
+    records = []
+    for day in range(25, 31):
+        records.append(
+            DatasetRecord(
+                dataset_id="provider_daily_activity",
+                source_url="fixture://provider/openai",
+                source_run_id="run-1",
+                scraped_at="2026-06-30T00:00:00Z",
+                entity_id="openai",
+                entity_name="OpenAI",
+                usage_date=f"2026-06-{day:02d}",
+                model_permaslug="Others",
+                total_tokens=100_000.0,
+            )
+        )
+
+    summary = ProviderActivitySource.validate_records(
+        records,
+        expected_providers={"openai": "OpenAI"},
+        scraped_at=pd.Timestamp("2026-06-30T00:00:00Z").to_pydatetime(),
+        min_days=5,
+        max_lag_days=1,
+    )
+
+    assert summary["openai"]["model_count"] == 1
+
+
+def test_provider_activity_pipeline_blocks_bad_extraction_before_storage(tmp_path: Path) -> None:
+    pipeline = ProviderActivityPipeline(tmp_path, provider_slugs={"openai": "OpenAI"})
+    bad_record = DatasetRecord(
+        dataset_id="provider_daily_activity",
+        source_url="fixture://provider/openai",
+        source_run_id="run-1",
+        scraped_at="2026-06-30T00:00:00Z",
+        entity_id="openai",
+        entity_name="OpenAI",
+        usage_date="2026-06-01",
+        model_permaslug="openai/gpt-5.5",
+        total_tokens=1.0,
+    )
+
+    with pytest.raises(ExtractionError):
+        pipeline._filter_for_mode("provider-activity-daily-update", {"provider_daily_activity": [bad_record]})
+
+    assert not (tmp_path / "data" / "normalized" / "openrouter" / "provider_daily_activity.parquet").exists()
 
 
 def test_provider_config_tracks_tencent() -> None:
