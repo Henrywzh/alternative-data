@@ -4,10 +4,12 @@ from bs4 import BeautifulSoup
 
 from minerals_signal_data.chinatungsten_scraper import (
     MOLY_PRICE_FIELDS,
+    REE_PRICE_FIELDS,
     clean_value,
     extract_prices_from_body,
     parse_date_from_article,
     extract_molybdenum_prices_from_body,
+    extract_rare_earth_prices_from_body,
     _parse_ocr_text,
     _find_molybdenum_price_image_url,
     _run_tesseract_ocr,
@@ -99,6 +101,64 @@ def test_extract_molybdenum_prices_ignores_monthly_change_amounts() -> None:
     )
     prices = extract_molybdenum_prices_from_body(body)
     assert prices == {field: "" for field in MOLY_PRICE_FIELDS}
+
+
+def test_extract_rare_earth_prices_respectively_pattern() -> None:
+    # Real observed article text (Rare Earth Market - June 24, 2026): the prose only
+    # names a rotating subset of the 12 tracked oxides per day.
+    body = (
+        "Today, the prices of praseodymium oxide, gadolinium oxide, and erbium oxide "
+        "are approximately RMB 820,000/ton, RMB 230,000/ton, and RMB 475,000/ton, "
+        "respectively."
+    )
+    prices = extract_rare_earth_prices_from_body(body)
+    assert prices["praseodymium_oxide"] == 820000.0
+    assert prices["gadolinium_oxide"] == 230000.0
+    assert prices["erbium_oxide"] == 475000.0
+    # Unmentioned oxides stay empty rather than guessed - this is the expected sparse
+    # coverage for the thin (text-only, no OCR) version.
+    unmentioned = set(REE_PRICE_FIELDS) - {"praseodymium_oxide", "gadolinium_oxide", "erbium_oxide"}
+    for field in unmentioned:
+        assert prices[field] == ""
+
+
+def test_extract_rare_earth_prices_different_oxide_subset_next_day() -> None:
+    # Real observed article text (Rare Earth Market - June 25, 2026): a different
+    # rotating subset than the June 24 article above.
+    body = (
+        "the prices of praseodymium oxide, gadolinium oxide, and holmium oxide are "
+        "approximately RMB 820,000/ton, RMB 230,000/ton, and RMB 567,000/ton, "
+        "respectively."
+    )
+    prices = extract_rare_earth_prices_from_body(body)
+    assert prices["praseodymium_oxide"] == 820000.0
+    assert prices["gadolinium_oxide"] == 230000.0
+    assert prices["holmium_oxide"] == 567000.0
+    assert prices["erbium_oxide"] == ""
+
+
+def test_extract_rare_earth_prices_direct_pair_fallback() -> None:
+    body = "Market update. Neodymium oxide price is RMB 450,000/ton today, holding steady."
+    prices = extract_rare_earth_prices_from_body(body)
+    assert prices["neodymium_oxide"] == 450000.0
+
+
+def test_extract_rare_earth_prices_ignores_change_amounts() -> None:
+    body = "In the first half of June, the price of terbium oxide rose by approximately RMB 50,000 per ton."
+    prices = extract_rare_earth_prices_from_body(body)
+    assert prices == {field: "" for field in REE_PRICE_FIELDS}
+
+
+def test_extract_rare_earth_prices_rejects_out_of_bound_values() -> None:
+    # A mis-parsed value (e.g. picking up a policy figure) outside the shared
+    # plausibility band should be dropped, not recorded as a price.
+    body = (
+        "the prices of lanthanum oxide, cerium oxide are approximately RMB 10, "
+        "RMB 6,000,000, respectively."
+    )
+    prices = extract_rare_earth_prices_from_body(body)
+    assert prices["lanthanum_oxide"] == ""
+    assert prices["cerium_oxide"] == ""
 
 
 def test_find_molybdenum_price_image_prefers_price_picture_over_trend_chart() -> None:
@@ -219,3 +279,38 @@ def test_scrape_range_since_date_skips_older_articles(tmp_path) -> None:
     rows = moly_csv.read_text(encoding="utf-8")
     assert "2026-06-25" in rows
     assert "2026-05-01" not in rows
+
+
+def test_scrape_range_writes_rare_earth_records_to_their_own_csv(tmp_path) -> None:
+    category_html = """
+    <div class="contentpaneopen">
+      <h2 class="contentheading">
+        <a href="/en/rare-earth-news/175164-tpn-3228.html">Rare Earth Market - June 24, 2026</a>
+      </h2>
+    </div>
+    """
+    ree_article = """
+    <h2 class="contentheading">Rare Earth Market - June 24, 2026</h2>
+    <dd class="published"><span>Wednesday, 24 June 2026 15:23</span></dd>
+    <div class="item-page">
+      Today, the prices of praseodymium oxide, gadolinium oxide, and erbium oxide are
+      approximately RMB 820,000/ton, RMB 230,000/ton, and RMB 475,000/ton, respectively.
+    </div>
+    """
+    session = _FakeSession(
+        {
+            "http://news.chinatungsten.com/en/tungsten-product-news.html": category_html,
+            "http://news.chinatungsten.com/en/rare-earth-news/175164-tpn-3228.html": ree_article,
+        }
+    )
+
+    scrape_range(tmp_path, max_pages=1, session=session)
+
+    ree_csv = tmp_path / "data/raw/minerals_signal_data/rare_earth_chinatungsten.csv"
+    assert ree_csv.exists()
+    rows = ree_csv.read_text(encoding="utf-8")
+    assert "2026-06-24" in rows
+    assert "820000.0" in rows
+    # Should not have leaked into the tungsten CSV.
+    tungsten_csv = tmp_path / "data/raw/minerals_signal_data/tungsten_chinatungsten.csv"
+    assert "2026-06-24" not in tungsten_csv.read_text(encoding="utf-8")

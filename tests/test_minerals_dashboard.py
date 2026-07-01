@@ -39,6 +39,29 @@ def test_build_chinatungsten_long_prices_adds_tungsten_and_molybdenum_series() -
     assert prices.loc[prices["product_series"] == "apt", "product_label"].iloc[0] == "APT"
 
 
+def test_build_chinatungsten_long_prices_adds_rare_earth_series() -> None:
+    rare_earth = pd.DataFrame(
+        {
+            "date": ["2026-06-24", "2026-06-25"],
+            "praseodymium_oxide": [820000.0, 820000.0],
+            "gadolinium_oxide": [230000.0, 230000.0],
+        }
+    )
+
+    prices = _build_chinatungsten_long_prices(pd.DataFrame(), pd.DataFrame(), rare_earth)
+
+    assert set(prices["normalized_mineral_id"]) == {"rare_earth"}
+    assert set(prices["product_series"]) == {"praseodymium_oxide", "gadolinium_oxide"}
+    assert prices.loc[prices["product_series"] == "praseodymium_oxide", "product_label"].iloc[0] == "Praseodymium Oxide"
+
+
+def test_build_chinatungsten_long_prices_defaults_rare_earth_to_empty() -> None:
+    # Backward-compatible call without the rare_earth arg should not raise.
+    tungsten = pd.DataFrame({"date": ["2026-06-25"], "apt": [750000.0]})
+    prices = _build_chinatungsten_long_prices(tungsten, pd.DataFrame())
+    assert set(prices["normalized_mineral_id"]) == {"tungsten"}
+
+
 def test_merge_mineral_selector_prices_prefers_chinatungsten_for_special_minerals() -> None:
     base_prices = pd.DataFrame(
         {

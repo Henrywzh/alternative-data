@@ -28,7 +28,7 @@ _MINERALS_SIGNAL_ROOT = BASE_DIR / "data" / "processed" / "minerals_signal_data"
 _MINERALS_REFERENCE_ROOT = BASE_DIR / "data" / "reference" / "minerals_signal_data"
 
 
-_CHINATUNGSTEN_MINERAL_IDS = {"tungsten", "molybdenum"}
+_CHINATUNGSTEN_MINERAL_IDS = {"tungsten", "molybdenum", "rare_earth"}
 
 
 _TUNGSTEN_SERIES = [
@@ -52,6 +52,22 @@ _MOLYBDENUM_SERIES = [
 ]
 
 
+_RARE_EARTH_SERIES = [
+    "lanthanum_oxide",
+    "cerium_oxide",
+    "praseodymium_oxide",
+    "neodymium_oxide",
+    "samarium_oxide",
+    "europium_oxide",
+    "gadolinium_oxide",
+    "terbium_oxide",
+    "dysprosium_oxide",
+    "holmium_oxide",
+    "erbium_oxide",
+    "yttrium_oxide",
+]
+
+
 _CHINATUNGSTEN_SERIES = {
     "tungsten": {
         "dataset": "tungsten_price_daily",
@@ -64,6 +80,12 @@ _CHINATUNGSTEN_SERIES = {
         "mineral_name": "Molybdenum",
         "series": _MOLYBDENUM_SERIES,
         "default": ["molybdenum_concentrate", "ferromolybdenum", "ammonium_heptamolybdate"],
+    },
+    "rare_earth": {
+        "dataset": "rare_earth_price_daily",
+        "mineral_name": "Rare Earth",
+        "series": _RARE_EARTH_SERIES,
+        "default": ["praseodymium_oxide", "neodymium_oxide", "dysprosium_oxide"],
     },
 }
 
@@ -82,6 +104,18 @@ _PRODUCT_LABELS = {
     "ferromolybdenum": "Ferromolybdenum",
     "ammonium_heptamolybdate": "Ammonium Heptamolybdate",
     "ammonium_tetramolybdate": "Ammonium Tetramolybdate",
+    "lanthanum_oxide": "Lanthanum Oxide",
+    "cerium_oxide": "Cerium Oxide",
+    "praseodymium_oxide": "Praseodymium Oxide",
+    "neodymium_oxide": "Neodymium Oxide",
+    "samarium_oxide": "Samarium Oxide",
+    "europium_oxide": "Europium Oxide",
+    "gadolinium_oxide": "Gadolinium Oxide",
+    "terbium_oxide": "Terbium Oxide",
+    "dysprosium_oxide": "Dysprosium Oxide",
+    "holmium_oxide": "Holmium Oxide",
+    "erbium_oxide": "Erbium Oxide",
+    "yttrium_oxide": "Yttrium Oxide",
 }
 
 
@@ -157,7 +191,10 @@ def _series_to_long(frame: pd.DataFrame, *, mineral_id: str, mineral_name: str, 
     return pd.concat(rows, ignore_index=True)
 
 
-def _build_chinatungsten_long_prices(tungsten: pd.DataFrame, molybdenum: pd.DataFrame) -> pd.DataFrame:
+def _build_chinatungsten_long_prices(
+    tungsten: pd.DataFrame, molybdenum: pd.DataFrame, rare_earth: pd.DataFrame | None = None
+) -> pd.DataFrame:
+    rare_earth = rare_earth if rare_earth is not None else pd.DataFrame()
     frames = [
         _series_to_long(
             tungsten,
@@ -170,6 +207,12 @@ def _build_chinatungsten_long_prices(tungsten: pd.DataFrame, molybdenum: pd.Data
             mineral_id="molybdenum",
             mineral_name="Molybdenum",
             series_cols=_MOLYBDENUM_SERIES,
+        ),
+        _series_to_long(
+            rare_earth,
+            mineral_id="rare_earth",
+            mineral_name="Rare Earth",
+            series_cols=_RARE_EARTH_SERIES,
         ),
     ]
     frames = [frame for frame in frames if not frame.empty]
@@ -265,7 +308,8 @@ def render_minerals_section() -> None:
     base_prices = _load_minerals_csv("mineral_price_series_daily")
     tungsten_prices = _load_minerals_csv("tungsten_price_daily")
     molybdenum_prices = _load_minerals_csv("molybdenum_price_daily")
-    chinatungsten_prices = _build_chinatungsten_long_prices(tungsten_prices, molybdenum_prices)
+    rare_earth_prices = _load_minerals_csv("rare_earth_price_daily")
+    chinatungsten_prices = _build_chinatungsten_long_prices(tungsten_prices, molybdenum_prices, rare_earth_prices)
     prices = _merge_mineral_selector_prices(base_prices, chinatungsten_prices)
     universe = _merge_mineral_selector_universe(universe, chinatungsten_prices)
     mapping = _load_minerals_csv("stock_mapping_expanded_live")
