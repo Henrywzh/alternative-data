@@ -90,9 +90,19 @@ def test_pipeline_build_writes_run_specific_outputs_and_updates_latest(
 
 def test_pipeline_builds_use_distinct_run_ids_and_latest_tracks_newest(
     tmp_path: Path,
+    monkeypatch,
 ) -> None:
     _write_reference_registries(tmp_path)
     pipeline = SignalLayerPipeline(tmp_path)
+
+    run_ids = iter(
+        [
+            "20260701T201042000000Z-firstaaa",
+            "20260701T201042000000Z-firstaaa",
+            "20260701T201042000001Z-secondbb",
+        ]
+    )
+    monkeypatch.setattr("signal_layer.pipeline._run_id", lambda: next(run_ids))
 
     first = pipeline.build(sources=["provider_adoption"])
     second = pipeline.build(sources=["provider_adoption", "apps"])
@@ -183,7 +193,7 @@ def _cli_env() -> dict[str, str]:
     env = dict(os.environ)
     src_path = str(Path(__file__).resolve().parents[1] / "src")
     existing = env.get("PYTHONPATH")
-    env["PYTHONPATH"] = src_path if not existing else f"{src_path}:{existing}"
+    env["PYTHONPATH"] = src_path if not existing else f"{src_path}{os.pathsep}{existing}"
     return env
 
 
