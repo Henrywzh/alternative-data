@@ -197,6 +197,32 @@ def test_pipeline_build_provider_adoption_signals_handles_null_entity_values_in_
     assert "duplicate_count=1" in metric_signals.loc[0, "quality_issues"]
 
 
+def test_pipeline_build_semiconductor_signals(tmp_path: Path) -> None:
+    _write_semiconductor_fixture(tmp_path)
+
+    result = SignalLayerPipeline(tmp_path).build(sources=["semiconductor"])
+    metric_signals = _read_metric_signals(tmp_path, result)
+
+    assert sorted(metric_signals["metric_id"].tolist()) == [
+        "fred_memory_ppi_yoy",
+        "tw_tsmc_revenue_yoy",
+    ]
+
+    tsmc_signal = metric_signals.loc[metric_signals["metric_id"] == "tw_tsmc_revenue_yoy"].iloc[0]
+    assert tsmc_signal["as_of_date"] == "2026-03-01"
+    assert tsmc_signal["entity_key"] == "2330"
+    assert tsmc_signal["entity_name"] == "TSMC"
+    assert tsmc_signal["yoy_change"] == 200.0
+    assert tsmc_signal["quality_state"] == "valid"
+
+    memory_signal = metric_signals.loc[metric_signals["metric_id"] == "fred_memory_ppi_yoy"].iloc[0]
+    assert memory_signal["as_of_date"] == "2026-03-01"
+    assert memory_signal["entity_key"] == "WPU117909"
+    assert memory_signal["entity_name"] == "Memory chip PPI"
+    assert memory_signal["yoy_change"] == 50.0
+    assert memory_signal["quality_state"] == "valid"
+
+
 def test_pipeline_build_defaults_to_implemented_registry_sources(tmp_path: Path) -> None:
     _write_provider_adoption_fixture(tmp_path)
 
@@ -381,6 +407,255 @@ def _null_package_rows(index: int, day: str) -> list[dict[str, object]]:
         "source_run_id": "run-001",
     }
     return [row, row.copy()] if index == 10 else [row]
+
+
+def _write_semiconductor_fixture(base_dir: Path) -> None:
+    reference_dir = base_dir / "data" / "reference" / "signal_layer"
+    reference_dir.mkdir(parents=True)
+    pd.DataFrame(
+        [
+            {
+                "metric_id": "tw_tsmc_revenue_yoy",
+                "source": "semiconductor",
+                "dataset_id": "tw_monthly_revenue",
+                "date_column": "revenue_month",
+                "value_column": "monthly_revenue_ntd",
+                "entity_columns": "company_code",
+                "cadence": "monthly",
+                "transform": "yoy_growth",
+                "baseline_method": "robust_z",
+                "baseline_window": "36M",
+                "seasonality_mode": "yoy",
+                "higher_is_better": True,
+                "default_metric_direction": "positive",
+                "min_baseline_observations": 1,
+                "max_freshness_lag_days": 365,
+                "min_coverage_ratio": "",
+                "description": "TSMC monthly revenue YoY.",
+                "caveats": "Monthly revenue can be revised and should be interpreted with release lag.",
+            },
+            {
+                "metric_id": "fred_memory_ppi_yoy",
+                "source": "semiconductor",
+                "dataset_id": "fred_semiconductor_ppi",
+                "date_column": "date",
+                "value_column": "value",
+                "entity_columns": "series_id",
+                "cadence": "monthly",
+                "transform": "yoy_growth",
+                "baseline_method": "robust_z",
+                "baseline_window": "36M",
+                "seasonality_mode": "yoy",
+                "higher_is_better": True,
+                "default_metric_direction": "positive",
+                "min_baseline_observations": 1,
+                "max_freshness_lag_days": 365,
+                "min_coverage_ratio": "",
+                "description": "Memory chip producer price index YoY.",
+                "caveats": "FRED PPI is a pricing proxy and not a direct revenue metric.",
+            },
+        ]
+    ).to_csv(reference_dir / "signal_metric_registry.csv", index=False)
+    pd.DataFrame(
+        [
+            {
+                "metric_id": "tw_tsmc_revenue_yoy",
+                "ticker": "TSM",
+                "company_name": "Taiwan Semiconductor Manufacturing Company",
+                "asset_type": "equity",
+                "theme": "semiconductor_supply_chain",
+                "exposure_type": "direct",
+                "expected_direction": "positive",
+                "exposure_weight": 1.0,
+                "lag_days": 0,
+                "confidence": "high",
+                "notes": "TSMC direct exposure.",
+            },
+            {
+                "metric_id": "fred_memory_ppi_yoy",
+                "ticker": "MU",
+                "company_name": "Micron Technology",
+                "asset_type": "equity",
+                "theme": "semiconductor_memory",
+                "exposure_type": "pricing_proxy",
+                "expected_direction": "positive",
+                "exposure_weight": 1.0,
+                "lag_days": 0,
+                "confidence": "medium",
+                "notes": "Memory pricing proxy.",
+            },
+        ]
+    ).to_csv(reference_dir / "signal_asset_mapping.csv", index=False)
+
+    taiwan_dir = base_dir / "data" / "normalized" / "taiwan_semiconductor_revenue"
+    taiwan_dir.mkdir(parents=True)
+    pd.DataFrame(
+        [
+            {
+                "dataset_id": "tw_monthly_revenue",
+                "company_code": "2330",
+                "company_name": "TSMC",
+                "market": "TWSE",
+                "industry": "Semiconductor",
+                "filing_date": "2025-01-10",
+                "revenue_month": "2025-01",
+                "monthly_revenue_ntd": 100.0,
+                "mom_pct": 0.0,
+                "yoy_pct": 0.0,
+                "ytd_revenue_ntd": 100.0,
+                "ytd_yoy_pct": 0.0,
+                "source_url": "https://mops.twse.com.tw",
+                "source_run_id": "run-001",
+                "scraped_at": "2026-03-31T00:00:00Z",
+            },
+            {
+                "dataset_id": "tw_monthly_revenue",
+                "company_code": "2330",
+                "company_name": "TSMC",
+                "market": "TWSE",
+                "industry": "Semiconductor",
+                "filing_date": "2025-02-10",
+                "revenue_month": "2025-02",
+                "monthly_revenue_ntd": 100.0,
+                "mom_pct": 0.0,
+                "yoy_pct": 0.0,
+                "ytd_revenue_ntd": 200.0,
+                "ytd_yoy_pct": 0.0,
+                "source_url": "https://mops.twse.com.tw",
+                "source_run_id": "run-001",
+                "scraped_at": "2026-03-31T00:00:00Z",
+            },
+            {
+                "dataset_id": "tw_monthly_revenue",
+                "company_code": "2330",
+                "company_name": "TSMC",
+                "market": "TWSE",
+                "industry": "Semiconductor",
+                "filing_date": "2025-03-10",
+                "revenue_month": "2025-03",
+                "monthly_revenue_ntd": 100.0,
+                "mom_pct": 0.0,
+                "yoy_pct": 0.0,
+                "ytd_revenue_ntd": 300.0,
+                "ytd_yoy_pct": 0.0,
+                "source_url": "https://mops.twse.com.tw",
+                "source_run_id": "run-001",
+                "scraped_at": "2026-03-31T00:00:00Z",
+            },
+            {
+                "dataset_id": "tw_monthly_revenue",
+                "company_code": "2330",
+                "company_name": "TSMC",
+                "market": "TWSE",
+                "industry": "Semiconductor",
+                "filing_date": "2026-01-10",
+                "revenue_month": "2026-01",
+                "monthly_revenue_ntd": 200.0,
+                "mom_pct": 0.0,
+                "yoy_pct": 100.0,
+                "ytd_revenue_ntd": 200.0,
+                "ytd_yoy_pct": 100.0,
+                "source_url": "https://mops.twse.com.tw",
+                "source_run_id": "run-002",
+                "scraped_at": "2026-03-31T00:00:00Z",
+            },
+            {
+                "dataset_id": "tw_monthly_revenue",
+                "company_code": "2330",
+                "company_name": "TSMC",
+                "market": "TWSE",
+                "industry": "Semiconductor",
+                "filing_date": "2026-02-10",
+                "revenue_month": "2026-02",
+                "monthly_revenue_ntd": 250.0,
+                "mom_pct": 25.0,
+                "yoy_pct": 150.0,
+                "ytd_revenue_ntd": 450.0,
+                "ytd_yoy_pct": 125.0,
+                "source_url": "https://mops.twse.com.tw",
+                "source_run_id": "run-002",
+                "scraped_at": "2026-03-31T00:00:00Z",
+            },
+            {
+                "dataset_id": "tw_monthly_revenue",
+                "company_code": "2330",
+                "company_name": "TSMC",
+                "market": "TWSE",
+                "industry": "Semiconductor",
+                "filing_date": "2026-03-10",
+                "revenue_month": "2026-03",
+                "monthly_revenue_ntd": 300.0,
+                "mom_pct": 20.0,
+                "yoy_pct": 200.0,
+                "ytd_revenue_ntd": 750.0,
+                "ytd_yoy_pct": 150.0,
+                "source_url": "https://mops.twse.com.tw",
+                "source_run_id": "run-002",
+                "scraped_at": "2026-03-31T00:00:00Z",
+            },
+        ]
+    ).to_parquet(taiwan_dir / "tw_monthly_revenue.parquet", index=False)
+
+    memory_dir = base_dir / "data" / "normalized" / "semiconductor_memory"
+    memory_dir.mkdir(parents=True)
+    pd.DataFrame(
+        [
+            {
+                "date": "2025-01-01",
+                "series_id": "WPU117909",
+                "series_name": "Memory chip PPI",
+                "value": 100.0,
+                "source_url": "https://fred.stlouisfed.org/series/WPU117909",
+                "source_run_id": "run-101",
+                "scraped_at": "2026-03-31T00:00:00Z",
+            },
+            {
+                "date": "2025-02-01",
+                "series_id": "WPU117909",
+                "series_name": "Memory chip PPI",
+                "value": 100.0,
+                "source_url": "https://fred.stlouisfed.org/series/WPU117909",
+                "source_run_id": "run-101",
+                "scraped_at": "2026-03-31T00:00:00Z",
+            },
+            {
+                "date": "2025-03-01",
+                "series_id": "WPU117909",
+                "series_name": "Memory chip PPI",
+                "value": 100.0,
+                "source_url": "https://fred.stlouisfed.org/series/WPU117909",
+                "source_run_id": "run-101",
+                "scraped_at": "2026-03-31T00:00:00Z",
+            },
+            {
+                "date": "2026-01-01",
+                "series_id": "WPU117909",
+                "series_name": "Memory chip PPI",
+                "value": 120.0,
+                "source_url": "https://fred.stlouisfed.org/series/WPU117909",
+                "source_run_id": "run-102",
+                "scraped_at": "2026-03-31T00:00:00Z",
+            },
+            {
+                "date": "2026-02-01",
+                "series_id": "WPU117909",
+                "series_name": "Memory chip PPI",
+                "value": 130.0,
+                "source_url": "https://fred.stlouisfed.org/series/WPU117909",
+                "source_run_id": "run-102",
+                "scraped_at": "2026-03-31T00:00:00Z",
+            },
+            {
+                "date": "2026-03-01",
+                "series_id": "WPU117909",
+                "series_name": "Memory chip PPI",
+                "value": 150.0,
+                "source_url": "https://fred.stlouisfed.org/series/WPU117909",
+                "source_run_id": "run-102",
+                "scraped_at": "2026-03-31T00:00:00Z",
+            },
+        ]
+    ).to_parquet(memory_dir / "fred_semiconductor_ppi.parquet", index=False)
 
 
 def _write_reference_registries(base_dir: Path) -> None:

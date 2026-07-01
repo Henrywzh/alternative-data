@@ -8,6 +8,7 @@ import pandas as pd
 
 from signal_layer.aggregation import build_asset_signals, build_theme_signals
 from signal_layer.builders.provider_adoption import build_provider_adoption_signals
+from signal_layer.builders.semiconductor import build_semiconductor_signals
 from signal_layer.models import (
     ASSET_SIGNAL_COLUMNS,
     METRIC_SIGNAL_COLUMNS,
@@ -34,6 +35,8 @@ class SignalLayerPipeline:
         metric_frames: list[pd.DataFrame] = []
         if "provider_adoption" in selected_sources:
             metric_frames.append(build_provider_adoption_signals(self.base_dir, metric_registry))
+        if "semiconductor" in selected_sources:
+            metric_frames.append(build_semiconductor_signals(self.base_dir, metric_registry))
         metric_signals = (
             pd.concat(metric_frames, ignore_index=True)
             if metric_frames
@@ -90,6 +93,6 @@ def _run_id() -> str:
 
 
 def _implemented_sources(metric_registry: pd.DataFrame) -> list[str]:
-    implemented = {"provider_adoption"}
+    implemented = {"provider_adoption", "semiconductor"}
     available = metric_registry["source"].dropna().astype(str)
     return [source for source in available.unique().tolist() if source in implemented]
