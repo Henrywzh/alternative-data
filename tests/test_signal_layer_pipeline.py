@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -57,6 +58,35 @@ def test_storage_writes_csv_and_parquet(tmp_path: Path) -> None:
     assert output.with_suffix(".parquet").exists()
 
 
+def test_pipeline_build_writes_run_specific_outputs_and_updates_latest(
+    tmp_path: Path,
+) -> None:
+    _write_reference_registries(tmp_path)
+
+    result = SignalLayerPipeline(tmp_path).build(sources=["provider_adoption"])
+
+    run_dir = tmp_path / "data" / "processed" / "signals" / result.run_id
+    latest_dir = tmp_path / "data" / "processed" / "signals" / "latest"
+
+    assert Path(result.output_dir) == run_dir
+    assert run_dir.is_dir()
+    assert latest_dir.is_dir()
+
+    manifest = json.loads((run_dir / "latest_signal_run.json").read_text(encoding="utf-8"))
+    assert manifest["run_id"] == result.run_id
+    assert manifest["sources"] == ["provider_adoption"]
+    assert manifest["datasets_written"] == result.datasets_written
+
+    for directory in (run_dir, latest_dir):
+        assert (directory / "metric_signals.csv").exists()
+        assert (directory / "metric_signals.parquet").exists()
+        assert (directory / "asset_signals.csv").exists()
+        assert (directory / "asset_signals.parquet").exists()
+        assert (directory / "theme_signals.csv").exists()
+        assert (directory / "theme_signals.parquet").exists()
+        assert (directory / "latest_signal_run.json").exists()
+
+
 def test_pipeline_validate_registry_returns_counts(tmp_path: Path) -> None:
     _write_reference_registries(tmp_path)
 
@@ -84,6 +114,37 @@ def test_cli_validate_registry(tmp_path: Path) -> None:
 
     assert "metrics: 1" in result.stdout
     assert "asset_mappings: 1" in result.stdout
+
+
+def test_cli_build_accepts_natural_subcommand_argument_order(tmp_path: Path) -> None:
+    _write_reference_registries(tmp_path)
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "signal_layer.cli",
+            "build",
+            "--base-dir",
+            str(tmp_path),
+            "--sources",
+            "provider_adoption",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    assert "run_id=" in result.stdout
+    run_id = next(
+        line.removeprefix("run_id=")
+        for line in result.stdout.splitlines()
+        if line.startswith("run_id=")
+    )
+    assert f"output_dir={tmp_path / 'data' / 'processed' / 'signals' / run_id}" in result.stdout
+    assert (
+        tmp_path / "data" / "processed" / "signals" / "latest" / "latest_signal_run.json"
+    ).exists()
 
 
 def _write_reference_registries(base_dir: Path) -> None:

@@ -8,11 +8,26 @@ from signal_layer.pipeline import SignalLayerPipeline
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Alternative-data signal layer pipeline")
-    parser.add_argument("--base-dir", default=".", help="Repository root")
-    parser.add_argument("--sources", help="Comma-separated sources to build")
+    parser.add_argument("--base-dir", default=argparse.SUPPRESS, help="Repository root")
     subparsers = parser.add_subparsers(dest="command", required=True)
-    subparsers.add_parser("validate-registry", help="Validate signal registry files")
-    subparsers.add_parser("build", help="Build metric, asset, and theme signals")
+    shared_parser = argparse.ArgumentParser(add_help=False)
+    shared_parser.add_argument(
+        "--base-dir",
+        default=argparse.SUPPRESS,
+        help="Repository root",
+    )
+
+    subparsers.add_parser(
+        "validate-registry",
+        parents=[shared_parser],
+        help="Validate signal registry files",
+    )
+    build_parser = subparsers.add_parser(
+        "build",
+        parents=[shared_parser],
+        help="Build metric, asset, and theme signals",
+    )
+    build_parser.add_argument("--sources", help="Comma-separated sources to build")
     return parser
 
 
@@ -24,7 +39,7 @@ def _source_list(value: str | None) -> list[str] | None:
 
 def main() -> None:
     args = build_parser().parse_args()
-    pipeline = SignalLayerPipeline(Path(args.base_dir).resolve())
+    pipeline = SignalLayerPipeline(Path(getattr(args, "base_dir", ".") or ".").resolve())
 
     if args.command == "validate-registry":
         counts = pipeline.validate_registry()

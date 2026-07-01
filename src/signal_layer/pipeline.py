@@ -26,6 +26,8 @@ class SignalLayerPipeline:
 
     def build(self, *, sources: list[str] | None = None) -> PipelineResult:
         load_registries(self.base_dir)
+        run_id = _run_id()
+        run_dir = self.storage.run_dir(run_id)
         selected_sources = sources or []
         datasets_written = {
             "metric_signals": 0,
@@ -33,24 +35,31 @@ class SignalLayerPipeline:
             "theme_signals": 0,
         }
         self.storage.write_dataset(
-            "metric_signals", pd.DataFrame(columns=METRIC_SIGNAL_COLUMNS)
+            "metric_signals",
+            pd.DataFrame(columns=METRIC_SIGNAL_COLUMNS),
+            target_dir=run_dir,
         )
         self.storage.write_dataset(
-            "asset_signals", pd.DataFrame(columns=ASSET_SIGNAL_COLUMNS)
+            "asset_signals",
+            pd.DataFrame(columns=ASSET_SIGNAL_COLUMNS),
+            target_dir=run_dir,
         )
         self.storage.write_dataset(
-            "theme_signals", pd.DataFrame(columns=THEME_SIGNAL_COLUMNS)
+            "theme_signals",
+            pd.DataFrame(columns=THEME_SIGNAL_COLUMNS),
+            target_dir=run_dir,
         )
         manifest = {
-            "run_id": _run_id(),
+            "run_id": run_id,
             "sources": selected_sources,
             "datasets_written": datasets_written,
         }
-        self.storage.write_run_manifest(manifest)
+        self.storage.write_run_manifest(manifest, target_dir=run_dir)
+        self.storage.update_latest(run_dir)
         return PipelineResult(
-            run_id=manifest["run_id"],
+            run_id=run_id,
             datasets_written=datasets_written,
-            output_dir=str(self.storage.processed_root),
+            output_dir=str(run_dir),
         )
 
 
