@@ -103,7 +103,8 @@ def test_build_asset_signals_combines_only_valid_rows_and_carries_quality_issues
     assert row["top_metric_description"] == "Positive demand metric"
     assert "metric_invalid" in row["quality_issues"]
     assert "freshness_lag_days=12 above max_freshness_lag_days=7" in row["quality_issues"]
-    assert row["signal_state"] == "watch"
+    assert row["combined_tail_probability"] > 0.10
+    assert row["signal_state"] == "neutral"
 
 
 def test_build_theme_signals_rolls_up_assets_and_identifies_top_ticker() -> None:
@@ -174,3 +175,79 @@ def test_build_theme_signals_rolls_up_assets_and_identifies_top_ticker() -> None
     assert row["positive_evidence_count"] == 3
     assert row["negative_evidence_count"] == 0
     assert row["signal_state"] == "bullish"
+
+
+def test_build_asset_signals_tolerates_empty_bare_metric_registry() -> None:
+    metric_signals = pd.DataFrame(
+        [
+            {
+                "metric_id": "metric_positive",
+                "as_of_date": "2026-06-30",
+                "signed_stat": 2.0,
+                "signal_state": "bullish",
+                "quality_state": "valid",
+                "quality_issues": "",
+                "confidence": "high",
+            }
+        ]
+    )
+    asset_mapping = pd.DataFrame(
+        [
+            {
+                "metric_id": "metric_positive",
+                "ticker": "MSFT",
+                "company_name": "Microsoft",
+                "asset_type": "equity",
+                "theme": "ai_platforms",
+                "expected_direction": "positive",
+                "exposure_weight": 1.0,
+                "confidence": "high",
+            }
+        ]
+    )
+
+    result = build_asset_signals(metric_signals, asset_mapping, pd.DataFrame())
+
+    assert result.columns.tolist() == ASSET_SIGNAL_COLUMNS
+    assert len(result) == 1
+    assert result.loc[0, "top_metric_id"] == "metric_positive"
+    assert pd.isna(result.loc[0, "top_metric_description"])
+
+
+def test_build_asset_signals_uses_tail_thresholds_for_neutral_state() -> None:
+    metric_signals = pd.DataFrame(
+        [
+            {
+                "metric_id": "metric_moderate",
+                "as_of_date": "2026-06-30",
+                "signed_stat": 1.2,
+                "signal_state": "watch",
+                "quality_state": "valid",
+                "quality_issues": "",
+                "confidence": "medium",
+            }
+        ]
+    )
+    asset_mapping = pd.DataFrame(
+        [
+            {
+                "metric_id": "metric_moderate",
+                "ticker": "MSFT",
+                "company_name": "Microsoft",
+                "asset_type": "equity",
+                "theme": "ai_platforms",
+                "expected_direction": "positive",
+                "exposure_weight": 1.0,
+                "confidence": "medium",
+            }
+        ]
+    )
+    metric_registry = pd.DataFrame(
+        [{"metric_id": "metric_moderate", "description": "Moderate metric"}]
+    )
+
+    result = build_asset_signals(metric_signals, asset_mapping, metric_registry)
+
+    assert len(result) == 1
+    assert result.loc[0, "combined_tail_probability"] > 0.10
+    assert result.loc[0, "signal_state"] == "neutral"

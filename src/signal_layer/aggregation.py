@@ -15,11 +15,14 @@ def build_asset_signals(
     if metric_signals.empty or asset_mapping.empty:
         return pd.DataFrame(columns=ASSET_SIGNAL_COLUMNS)
 
-    descriptions = (
-        metric_registry.loc[:, ["metric_id", "description"]]
-        .drop_duplicates(subset=["metric_id"])
-        .rename(columns={"description": "metric_description"})
-    )
+    if {"metric_id", "description"}.issubset(metric_registry.columns):
+        descriptions = (
+            metric_registry.loc[:, ["metric_id", "description"]]
+            .drop_duplicates(subset=["metric_id"])
+            .rename(columns={"description": "metric_description"})
+        )
+    else:
+        descriptions = pd.DataFrame(columns=["metric_id", "metric_description"])
     mapping_columns = asset_mapping.rename(columns={"confidence": "mapping_confidence"})
     mapped = metric_signals.merge(mapping_columns, on="metric_id", how="inner")
     if mapped.empty:
@@ -182,7 +185,7 @@ def _state_from_stat(stat: float, tail_probability: float) -> str:
         return "bullish"
     if tail_probability <= 0.05 and stat < 0:
         return "bearish"
-    if tail_probability <= 0.10 or abs(float(stat)) >= 1.0:
+    if tail_probability <= 0.10:
         return "watch"
     return "neutral"
 
