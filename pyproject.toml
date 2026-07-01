@@ -45,6 +45,7 @@ taiwan-semiconductor-revenue-data = "taiwan_semiconductor_revenue_data.cli:main"
 semiconductor-proxy-data = "semiconductor_proxy_data.cli:main"
 google-trends-data = "google_trends_data.cli:main"
 google-trends-watchlist = "google_trends_data.batch_cli:main"
+signal-layer = "signal_layer.cli:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
