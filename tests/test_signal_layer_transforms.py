@@ -64,3 +64,18 @@ def test_summarize_latest_signal_returns_watch_for_invalid_quality() -> None:
     assert result["signal_state"] == "watch"
     assert result["signed_stat"] > 0
     assert result["baseline_observation_count"] == 3
+
+
+def test_summarize_latest_signal_never_directional_for_ambiguous_metric() -> None:
+    result = summarize_latest_signal(
+        latest_value=150.0,
+        transformed_value=50.0,
+        baseline_values=pd.Series([1.0, 2.0, 3.0]),
+        baseline_method="robust_z",
+        baseline_window="90D",
+        metric_direction="ambiguous",
+        quality_state="valid",
+    )
+
+    assert pd.isna(result["signed_stat"])
+    assert result["signal_state"] == "watch"

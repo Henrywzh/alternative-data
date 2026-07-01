@@ -70,11 +70,18 @@ def summarize_latest_signal(
     robust = robust_z_score(transformed_value, clean)
     standard = standard_z_score(transformed_value, clean)
     stat = robust if baseline_method == "robust_z" else standard
-    signed_stat = -stat if metric_direction == "negative" else stat
+    if metric_direction == "negative":
+        signed_stat = -stat
+    elif metric_direction == "positive":
+        signed_stat = stat
+    else:
+        signed_stat = float("nan")
     tail = empirical_tail_probability(transformed_value, clean)
     percentile = empirical_percentile(transformed_value, clean)
 
-    if quality_state != "valid":
+    if metric_direction == "ambiguous":
+        signal_state = "watch" if not pd.isna(tail) and tail <= 0.10 else "neutral"
+    elif quality_state != "valid":
         signal_state = "watch" if not pd.isna(signed_stat) and abs(float(signed_stat)) >= 1.0 else "neutral"
     elif not pd.isna(tail) and tail <= 0.05 and signed_stat > 0:
         signal_state = "bullish"
