@@ -30,6 +30,13 @@ def build_asset_signals(
     mapped = mapped.merge(descriptions, on="metric_id", how="left")
 
     mapped["as_of_date"] = pd.to_datetime(mapped["as_of_date"], errors="coerce")
+    lag_days = (
+        pd.to_numeric(mapped["lag_days"], errors="coerce")
+        if "lag_days" in mapped.columns
+        else pd.Series(0, index=mapped.index, dtype="float64")
+    )
+    mapped["lag_days"] = lag_days.fillna(0)
+    mapped["as_of_date"] = mapped["as_of_date"] + pd.to_timedelta(mapped["lag_days"], unit="D")
     mapped["signed_stat"] = pd.to_numeric(mapped["signed_stat"], errors="coerce")
     mapped["exposure_weight"] = (
         pd.to_numeric(mapped["exposure_weight"], errors="coerce").fillna(0.0).clip(lower=0.0)
@@ -122,7 +129,9 @@ def _asset_row(group: pd.DataFrame) -> dict[str, object]:
 
 
 def _theme_row(group: pd.DataFrame) -> dict[str, object]:
-    top_asset = _top_asset(group)
+    evidence = group.loc[pd.to_numeric(group["valid_driver_count"], errors="coerce").fillna(0).gt(0)].copy()
+    active_group = evidence if not evidence.empty else group.iloc[0:0]
+    top_asset = _top_asset(active_group)
     combined_stat = _combine_asset_stats(group)
     combined_tail = _tail_probability_from_stat(combined_stat)
     median_signed_stat = _safe_median(group["combined_signed_stat"])
@@ -136,13 +145,15 @@ def _theme_row(group: pd.DataFrame) -> dict[str, object]:
         "median_signed_stat": median_signed_stat,
         "positive_evidence_count": int(group["positive_evidence_count"].sum()),
         "negative_evidence_count": int(group["negative_evidence_count"].sum()),
-        "active_metric_count": int(group["top_metric_id"].dropna().astype("string").nunique()),
-        "active_asset_count": int(group["ticker"].dropna().astype("string").nunique()),
+        "active_metric_count": int(active_group["top_metric_id"].dropna().astype("string").nunique()),
+        "active_asset_count": int(active_group["ticker"].dropna().astype("string").nunique()),
         "top_metric_id": top_asset.get("top_metric_id"),
         "top_ticker": top_asset.get("ticker"),
         "signal_state": _state_from_stat(combined_stat, combined_tail),
         "confidence": confidence,
-        "summary": _theme_summary(group["theme"].iloc[0], combined_stat, int(group["ticker"].nunique())),
+        "summary": _theme_summary(
+            group["theme"].iloc[0], combined_stat, int(active_group["ticker"].dropna().astype("string").nunique())
+        ),
     }
 
 

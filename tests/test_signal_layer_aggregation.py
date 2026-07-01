@@ -251,3 +251,160 @@ def test_build_asset_signals_uses_tail_thresholds_for_neutral_state() -> None:
     assert len(result) == 1
     assert result.loc[0, "combined_tail_probability"] > 0.10
     assert result.loc[0, "signal_state"] == "neutral"
+
+
+def test_build_asset_signals_applies_mapping_lag_days_before_grouping() -> None:
+    metric_signals = pd.DataFrame(
+        [
+            {
+                "metric_id": "metric_lagged",
+                "as_of_date": "2026-06-30",
+                "signed_stat": 1.5,
+                "signal_state": "bullish",
+                "quality_state": "valid",
+                "quality_issues": "",
+                "confidence": "high",
+            },
+            {
+                "metric_id": "metric_unlagged",
+                "as_of_date": "2026-06-30",
+                "signed_stat": 0.5,
+                "signal_state": "watch",
+                "quality_state": "valid",
+                "quality_issues": "",
+                "confidence": "medium",
+            },
+            {
+                "metric_id": "metric_invalid_lag",
+                "as_of_date": "2026-06-30",
+                "signed_stat": 0.2,
+                "signal_state": "watch",
+                "quality_state": "valid",
+                "quality_issues": "",
+                "confidence": "low",
+            },
+        ]
+    )
+    asset_mapping = pd.DataFrame(
+        [
+            {
+                "metric_id": "metric_lagged",
+                "ticker": "MSFT",
+                "company_name": "Microsoft",
+                "asset_type": "equity",
+                "theme": "ai_platforms",
+                "expected_direction": "positive",
+                "exposure_weight": 1.0,
+                "lag_days": 2,
+                "confidence": "high",
+            },
+            {
+                "metric_id": "metric_unlagged",
+                "ticker": "MSFT",
+                "company_name": "Microsoft",
+                "asset_type": "equity",
+                "theme": "ai_platforms",
+                "expected_direction": "positive",
+                "exposure_weight": 1.0,
+                "lag_days": None,
+                "confidence": "high",
+            },
+            {
+                "metric_id": "metric_invalid_lag",
+                "ticker": "MSFT",
+                "company_name": "Microsoft",
+                "asset_type": "equity",
+                "theme": "ai_platforms",
+                "expected_direction": "positive",
+                "exposure_weight": 1.0,
+                "lag_days": "bad-input",
+                "confidence": "medium",
+            },
+        ]
+    )
+    metric_registry = pd.DataFrame(
+        [
+            {"metric_id": "metric_lagged", "description": "Lagged metric"},
+            {"metric_id": "metric_unlagged", "description": "Unlagged metric"},
+            {"metric_id": "metric_invalid_lag", "description": "Invalid lag metric"},
+        ]
+    )
+
+    result = build_asset_signals(metric_signals, asset_mapping, metric_registry)
+
+    assert len(result) == 2
+    assert set(result["as_of_date"]) == {"2026-06-30", "2026-07-02"}
+
+    unlagged_row = result.loc[result["as_of_date"] == "2026-06-30"].iloc[0]
+    lagged_row = result.loc[result["as_of_date"] == "2026-07-02"].iloc[0]
+
+    assert unlagged_row["driver_count"] == 2
+    assert unlagged_row["top_metric_id"] == "metric_unlagged"
+    assert lagged_row["driver_count"] == 1
+    assert lagged_row["top_metric_id"] == "metric_lagged"
+
+
+def test_build_theme_signals_excludes_invalid_only_assets_from_active_evidence() -> None:
+    asset_signals = pd.DataFrame(
+        [
+            {
+                "ticker": "MSFT",
+                "company_name": "Microsoft",
+                "asset_type": "equity",
+                "as_of_date": "2026-06-30",
+                "theme": "ai_platforms",
+                "combined_signed_stat": 2.4,
+                "combined_tail_probability": 0.016,
+                "median_signed_stat": 2.2,
+                "positive_evidence_count": 2,
+                "negative_evidence_count": 0,
+                "bullish_metric_count": 1,
+                "bearish_metric_count": 0,
+                "neutral_metric_count": 1,
+                "top_metric_id": "metric_positive",
+                "top_metric_description": "Positive demand metric",
+                "driver_count": 2,
+                "valid_driver_count": 2,
+                "non_valid_driver_count": 0,
+                "quality_issues": "",
+                "signal_state": "bullish",
+                "confidence": "high",
+                "summary": "",
+            },
+            {
+                "ticker": "XYZ",
+                "company_name": "Invalid Corp",
+                "asset_type": "equity",
+                "as_of_date": "2026-06-30",
+                "theme": "ai_platforms",
+                "combined_signed_stat": float("nan"),
+                "combined_tail_probability": float("nan"),
+                "median_signed_stat": float("nan"),
+                "positive_evidence_count": 0,
+                "negative_evidence_count": 0,
+                "bullish_metric_count": 0,
+                "bearish_metric_count": 0,
+                "neutral_metric_count": 1,
+                "top_metric_id": "metric_invalid",
+                "top_metric_description": "Stale survey metric",
+                "driver_count": 1,
+                "valid_driver_count": 0,
+                "non_valid_driver_count": 1,
+                "quality_issues": "metric_invalid: quality_state=stale",
+                "signal_state": "watch",
+                "confidence": "low",
+                "summary": "",
+            },
+        ]
+    )
+
+    result = build_theme_signals(asset_signals)
+
+    assert len(result) == 1
+    row = result.loc[0]
+
+    assert row["active_asset_count"] == 1
+    assert row["active_metric_count"] == 1
+    assert row["top_ticker"] == "MSFT"
+    assert row["top_metric_id"] == "metric_positive"
+    assert row["summary"] == "ai_platforms evidence summary: combined_stat=2.40, active_assets=1."
