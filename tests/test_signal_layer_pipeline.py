@@ -127,6 +127,86 @@ def test_pipeline_builds_use_distinct_run_ids_and_latest_tracks_newest(
     assert latest_manifest["datasets_written"] == second.datasets_written
 
 
+def test_pipeline_build_provider_adoption_signals(tmp_path: Path) -> None:
+    reference_dir = tmp_path / "data" / "reference" / "signal_layer"
+    reference_dir.mkdir(parents=True)
+    pd.DataFrame(
+        [
+            {
+                "metric_id": "pypi_openai_downloads_28d_growth",
+                "source": "provider_adoption",
+                "dataset_id": "pypi_downloads_daily",
+                "date_column": "download_date",
+                "value_column": "downloads",
+                "entity_columns": "provider|package_name",
+                "cadence": "daily",
+                "transform": "rolling_growth",
+                "baseline_method": "robust_z",
+                "baseline_window": "90D",
+                "seasonality_mode": "none",
+                "higher_is_better": True,
+                "default_metric_direction": "positive",
+                "min_baseline_observations": 1,
+                "max_freshness_lag_days": 365,
+                "min_coverage_ratio": "",
+                "description": "OpenAI PyPI downloads 28-day growth.",
+                "caveats": "",
+            }
+        ]
+    ).to_csv(reference_dir / "signal_metric_registry.csv", index=False)
+    pd.DataFrame(
+        [
+            {
+                "metric_id": "pypi_openai_downloads_28d_growth",
+                "ticker": "MSFT",
+                "company_name": "Microsoft",
+                "asset_type": "equity",
+                "theme": "developer_ecosystem",
+                "exposure_type": "ecosystem_adoption",
+                "expected_direction": "positive",
+                "exposure_weight": 1.0,
+                "lag_days": 0,
+                "confidence": "medium",
+                "notes": "OpenAI ecosystem proxy.",
+            }
+        ]
+    ).to_csv(reference_dir / "signal_asset_mapping.csv", index=False)
+
+    normalized_dir = tmp_path / "data" / "normalized" / "provider_adoption"
+    normalized_dir.mkdir(parents=True)
+    pd.DataFrame(
+        [
+            {
+                "provider": "openai",
+                "provider_display_name": "OpenAI",
+                "package_name": "openai",
+                "package_type": "sdk",
+                "package_category": "core_sdk",
+                "with_mirrors": False,
+                "download_date": (pd.Timestamp("2026-03-01") + pd.Timedelta(days=index)).date().isoformat(),
+                "downloads": 1000 + index * 10,
+                "source_url": "https://pypistats.org/packages/openai",
+                "scraped_at": "2026-04-29T00:00:00Z",
+                "source_run_id": "run-001",
+            }
+            for index in range(60)
+        ]
+    ).to_parquet(normalized_dir / "pypi_downloads_daily.parquet", index=False)
+
+    result = SignalLayerPipeline(tmp_path).build(sources=["provider_adoption"])
+
+    metric_signals_path = Path(result.output_dir) / "metric_signals.parquet"
+    if not metric_signals_path.exists():
+        metric_signals_path = (
+            tmp_path / "data" / "processed" / "signals" / "latest" / "metric_signals.parquet"
+        )
+    metric_signals = pd.read_parquet(metric_signals_path)
+
+    assert len(metric_signals) == 1
+    assert metric_signals.loc[0, "metric_id"] == "pypi_openai_downloads_28d_growth"
+    assert metric_signals.loc[0, "quality_state"] == "valid"
+
+
 def test_pipeline_validate_registry_returns_counts(tmp_path: Path) -> None:
     _write_reference_registries(tmp_path)
 

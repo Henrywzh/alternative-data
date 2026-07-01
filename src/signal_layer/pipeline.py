@@ -6,6 +6,8 @@ from uuid import uuid4
 
 import pandas as pd
 
+from signal_layer.aggregation import build_asset_signals, build_theme_signals
+from signal_layer.builders.provider_adoption import build_provider_adoption_signals
 from signal_layer.models import (
     ASSET_SIGNAL_COLUMNS,
     METRIC_SIGNAL_COLUMNS,
@@ -26,27 +28,37 @@ class SignalLayerPipeline:
         return {"metrics": int(len(metrics)), "asset_mappings": int(len(mappings))}
 
     def build(self, *, sources: list[str] | None = None) -> PipelineResult:
-        load_registries(self.base_dir)
+        metric_registry, asset_mapping = load_registries(self.base_dir)
         run_id, run_dir = self._create_run()
         selected_sources = sources or []
+        metric_frames: list[pd.DataFrame] = []
+        if "provider_adoption" in selected_sources:
+            metric_frames.append(build_provider_adoption_signals(self.base_dir, metric_registry))
+        metric_signals = (
+            pd.concat(metric_frames, ignore_index=True)
+            if metric_frames
+            else pd.DataFrame(columns=METRIC_SIGNAL_COLUMNS)
+        )
+        asset_signals = build_asset_signals(metric_signals, asset_mapping, metric_registry)
+        theme_signals = build_theme_signals(asset_signals)
         datasets_written = {
-            "metric_signals": 0,
-            "asset_signals": 0,
-            "theme_signals": 0,
+            "metric_signals": int(len(metric_signals)),
+            "asset_signals": int(len(asset_signals)),
+            "theme_signals": int(len(theme_signals)),
         }
         self.storage.write_dataset(
             "metric_signals",
-            pd.DataFrame(columns=METRIC_SIGNAL_COLUMNS),
+            metric_signals,
             target_dir=run_dir,
         )
         self.storage.write_dataset(
             "asset_signals",
-            pd.DataFrame(columns=ASSET_SIGNAL_COLUMNS),
+            asset_signals if not asset_signals.empty else pd.DataFrame(columns=ASSET_SIGNAL_COLUMNS),
             target_dir=run_dir,
         )
         self.storage.write_dataset(
             "theme_signals",
-            pd.DataFrame(columns=THEME_SIGNAL_COLUMNS),
+            theme_signals if not theme_signals.empty else pd.DataFrame(columns=THEME_SIGNAL_COLUMNS),
             target_dir=run_dir,
         )
         manifest = {
