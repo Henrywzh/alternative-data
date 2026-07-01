@@ -30,7 +30,7 @@ class SignalLayerPipeline:
     def build(self, *, sources: list[str] | None = None) -> PipelineResult:
         metric_registry, asset_mapping = load_registries(self.base_dir)
         run_id, run_dir = self._create_run()
-        selected_sources = sources or []
+        selected_sources = sources or _implemented_sources(metric_registry)
         metric_frames: list[pd.DataFrame] = []
         if "provider_adoption" in selected_sources:
             metric_frames.append(build_provider_adoption_signals(self.base_dir, metric_registry))
@@ -87,3 +87,9 @@ class SignalLayerPipeline:
 def _run_id() -> str:
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
     return f"{timestamp}-{uuid4().hex[:8]}"
+
+
+def _implemented_sources(metric_registry: pd.DataFrame) -> list[str]:
+    implemented = {"provider_adoption"}
+    available = metric_registry["source"].dropna().astype(str)
+    return [source for source in available.unique().tolist() if source in implemented]

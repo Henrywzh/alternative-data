@@ -46,8 +46,9 @@ def _build_metric_records(source: pd.DataFrame, metric: pd.Series) -> list[dict[
     date_column = str(metric["date_column"])
     value_column = str(metric["value_column"])
     grain = [*entity_columns, date_column]
+    working_source = _filter_metric_source(source)
     canonical = canonicalize_latest(
-        source,
+        working_source,
         grain=grain,
         prefer_non_null=["package_category"],
         run_id_column="source_run_id",
@@ -60,7 +61,7 @@ def _build_metric_records(source: pd.DataFrame, metric: pd.Series) -> list[dict[
     canonical[value_column] = pd.to_numeric(canonical[value_column], errors="coerce")
     canonical = canonical.sort_values(entity_columns + [date_column])
 
-    raw = source.copy()
+    raw = working_source.copy()
     raw[date_column] = pd.to_datetime(raw[date_column], errors="coerce")
     raw[value_column] = pd.to_numeric(raw[value_column], errors="coerce")
 
@@ -72,7 +73,10 @@ def _build_metric_records(source: pd.DataFrame, metric: pd.Series) -> list[dict[
         entity_filters = dict(zip(entity_columns, entity_key_parts))
         raw_entity = raw.copy()
         for column, value in entity_filters.items():
-            raw_entity = raw_entity.loc[raw_entity[column] == value]
+            if pd.isna(value):
+                raw_entity = raw_entity.loc[raw_entity[column].isna()]
+            else:
+                raw_entity = raw_entity.loc[raw_entity[column] == value]
 
         series = entity_frame.set_index(date_column)[value_column].sort_index()
         transformed = calculate_rolling_growth(series, window=28).dropna()
@@ -153,3 +157,12 @@ def _build_metric_records(source: pd.DataFrame, metric: pd.Series) -> list[dict[
         )
 
     return metric_records
+
+
+def _filter_metric_source(source: pd.DataFrame) -> pd.DataFrame:
+    if "with_mirrors" not in source.columns:
+        return source
+
+    # PyPI feeds can contain mirrored and non-mirrored variants for the same package/date.
+    # The current metric contract uses the non-mirrored slice to keep the time series unique.
+    return source.loc[source["with_mirrors"] == False].copy()  # noqa: E712
