@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -87,6 +88,35 @@ def test_pipeline_build_writes_run_specific_outputs_and_updates_latest(
         assert (directory / "latest_signal_run.json").exists()
 
 
+def test_pipeline_builds_use_distinct_run_ids_and_latest_tracks_newest(
+    tmp_path: Path,
+) -> None:
+    _write_reference_registries(tmp_path)
+    pipeline = SignalLayerPipeline(tmp_path)
+
+    first = pipeline.build(sources=["provider_adoption"])
+    second = pipeline.build(sources=["provider_adoption", "apps"])
+
+    assert first.run_id != second.run_id
+    assert first.output_dir != second.output_dir
+    assert Path(first.output_dir).is_dir()
+    assert Path(second.output_dir).is_dir()
+
+    latest_manifest = json.loads(
+        (
+            tmp_path
+            / "data"
+            / "processed"
+            / "signals"
+            / "latest"
+            / "latest_signal_run.json"
+        ).read_text(encoding="utf-8")
+    )
+    assert latest_manifest["run_id"] == second.run_id
+    assert latest_manifest["sources"] == ["provider_adoption", "apps"]
+    assert latest_manifest["datasets_written"] == second.datasets_written
+
+
 def test_pipeline_validate_registry_returns_counts(tmp_path: Path) -> None:
     _write_reference_registries(tmp_path)
 
@@ -109,6 +139,7 @@ def test_cli_validate_registry(tmp_path: Path) -> None:
         ],
         check=True,
         capture_output=True,
+        env=_cli_env(),
         text=True,
     )
 
@@ -132,6 +163,7 @@ def test_cli_build_accepts_natural_subcommand_argument_order(tmp_path: Path) -> 
         ],
         check=True,
         capture_output=True,
+        env=_cli_env(),
         text=True,
     )
 
@@ -145,6 +177,14 @@ def test_cli_build_accepts_natural_subcommand_argument_order(tmp_path: Path) -> 
     assert (
         tmp_path / "data" / "processed" / "signals" / "latest" / "latest_signal_run.json"
     ).exists()
+
+
+def _cli_env() -> dict[str, str]:
+    env = dict(os.environ)
+    src_path = str(Path(__file__).resolve().parents[1] / "src")
+    existing = env.get("PYTHONPATH")
+    env["PYTHONPATH"] = src_path if not existing else f"{src_path}:{existing}"
+    return env
 
 
 def _write_reference_registries(base_dir: Path) -> None:

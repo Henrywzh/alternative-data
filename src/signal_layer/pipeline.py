@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from pathlib import Path
+from uuid import uuid4
 
 import pandas as pd
 
@@ -26,8 +27,7 @@ class SignalLayerPipeline:
 
     def build(self, *, sources: list[str] | None = None) -> PipelineResult:
         load_registries(self.base_dir)
-        run_id = _run_id()
-        run_dir = self.storage.run_dir(run_id)
+        run_id, run_dir = self._create_run()
         selected_sources = sources or []
         datasets_written = {
             "metric_signals": 0,
@@ -62,6 +62,16 @@ class SignalLayerPipeline:
             output_dir=str(run_dir),
         )
 
+    def _create_run(self) -> tuple[str, Path]:
+        for _ in range(10):
+            run_id = _run_id()
+            try:
+                return run_id, self.storage.create_run_dir(run_id)
+            except FileExistsError:
+                continue
+        raise RuntimeError("Unable to allocate a unique signal pipeline run directory")
+
 
 def _run_id() -> str:
-    return datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
+    return f"{timestamp}-{uuid4().hex[:8]}"
