@@ -6,6 +6,9 @@ from typing import Iterable
 import pandas as pd
 
 
+_HELPER_PREFIX = "__signal_layer_quality__"
+
+
 @dataclass(frozen=True)
 class QualityResult:
     quality_state: str
@@ -22,19 +25,28 @@ def canonicalize_latest(
     if frame.empty:
         return frame.copy()
 
-    working = frame.copy()
-    working["_row_order"] = range(len(working))
-    for column in prefer_non_null:
-        working[f"_has_{column}"] = working[column].notna().astype(int) if column in working.columns else 0
-    if run_id_column in working.columns:
-        working["_run_order"] = working[run_id_column].astype("string").fillna("")
-    else:
-        working["_run_order"] = ""
+    non_null_columns = list(prefer_non_null)
+    row_order_column = f"{_HELPER_PREFIX}row_order"
+    run_order_column = f"{_HELPER_PREFIX}run_order"
+    has_columns = {column: f"{_HELPER_PREFIX}has_{column}" for column in non_null_columns}
+    helper_columns = [row_order_column, run_order_column, *has_columns.values()]
+    colliding_columns = sorted(set(helper_columns).intersection(frame.columns))
+    if colliding_columns:
+        joined_columns = ", ".join(colliding_columns)
+        raise ValueError(f"canonicalize_latest helper column collision: {joined_columns}")
 
-    sort_columns = [f"_has_{column}" for column in prefer_non_null] + ["_run_order", "_row_order"]
+    working = frame.copy()
+    working[row_order_column] = range(len(working))
+    for column, has_column in has_columns.items():
+        working[has_column] = working[column].notna().astype(int) if column in working.columns else 0
+    if run_id_column in working.columns:
+        working[run_order_column] = working[run_id_column].astype("string").fillna("")
+    else:
+        working[run_order_column] = ""
+
+    sort_columns = [run_order_column, *has_columns.values(), row_order_column]
     working = working.sort_values(sort_columns)
     result = working.drop_duplicates(subset=grain, keep="last")
-    helper_columns = [column for column in result.columns if column.startswith("_has_")] + ["_run_order", "_row_order"]
     return result.drop(columns=helper_columns).reset_index(drop=True)
 
 
