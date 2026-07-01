@@ -1,4 +1,4 @@
-name: Minerals Signal Tungsten and Molybdenum Daily
+name: Minerals Signal Tungsten, Molybdenum, and Rare Earth Daily
 
 on:
   schedule:
@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   scrape-tungsten-molybdenum:
-    name: Scrape Daily Tungsten and Molybdenum Prices
+    name: Scrape Daily Tungsten, Molybdenum, and Rare Earth Prices
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -74,18 +74,47 @@ jobs:
               raise SystemExit("Recent molybdenum rows exist, but all tracked price fields are empty")
           PY
 
+      - name: Report rare earth coverage (informational only)
+        run: |
+          python - <<'PY'
+          # Thin/unproven category: log coverage but never fail the job on it.
+          # See chinatungsten_scraper.py module docstring for context.
+          from pathlib import Path
+
+          import pandas as pd
+
+          path = Path("data/raw/minerals_signal_data/rare_earth_chinatungsten.csv")
+          if not path.exists():
+              print("No rare earth raw CSV yet.")
+              raise SystemExit(0)
+
+          fields = [
+              "lanthanum_oxide", "cerium_oxide", "praseodymium_oxide", "neodymium_oxide",
+              "samarium_oxide", "europium_oxide", "gadolinium_oxide", "terbium_oxide",
+              "dysprosium_oxide", "holmium_oxide", "erbium_oxide", "yttrium_oxide",
+          ]
+          frame = pd.read_csv(path)
+          frame["date"] = pd.to_datetime(frame["date"], errors="coerce")
+          cutoff = pd.Timestamp.now(tz="UTC").tz_convert(None).normalize() - pd.Timedelta(days=45)
+          recent = frame[frame["date"] >= cutoff].copy()
+          print(f"Rare earth rows in last 45 days: {len(recent)}")
+          if not recent.empty:
+              print(recent[fields].replace("", pd.NA).notna().sum().to_string())
+          PY
+
       - name: Commit and push updates
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add 'data/raw/minerals_signal_data/*.csv' \
                   'data/processed/minerals_signal_data/tungsten_price_daily/latest/**' \
-                  'data/processed/minerals_signal_data/molybdenum_price_daily/latest/**'
+                  'data/processed/minerals_signal_data/molybdenum_price_daily/latest/**' \
+                  'data/processed/minerals_signal_data/rare_earth_price_daily/latest/**'
           if git diff --staged --quiet; then
             echo "No changes in daily mineral prices to commit"
             exit 0
           fi
           git diff --cached --stat
-          git commit -m "chore: update daily tungsten and molybdenum price data"
+          git commit -m "chore: update daily tungsten, molybdenum, and rare earth price data"
           git pull --rebase origin "${{ github.event.repository.default_branch }}"
           git push

@@ -1,8 +1,13 @@
-"""Scrape daily tungsten and molybdenum product prices from news.chinatungsten.com.
+"""Scrape daily tungsten, molybdenum, and rare-earth product prices from news.chinatungsten.com.
 
 Parses tungsten and molybdenum sub-series out of the English article prose,
 falling back to local Tesseract OCR on table images when text updates are incomplete,
 dedupes by date/URL into incremental raw CSVs, and emits normalized snapshots.
+
+Rare-earth coverage is a thin, text-only extractor (no OCR yet): the "Rare Earth
+News" category is new on the site (first observed articles: June 2026) and each
+article's prose only names 2-3 of ~12 tracked oxides per day (the rest live in a
+price-table image), so per-day coverage is intentionally sparse.
 """
 
 from __future__ import annotations
@@ -27,6 +32,10 @@ from minerals_signal_data.storage import MineralsSignalStorage
 
 BASE_URL = "http://news.chinatungsten.com"
 CATEGORY_URL = f"{BASE_URL}/en/tungsten-product-news.html"
+# Rare-earth articles only appear in the general tungsten-product-news listing
+# briefly (they scroll off within a day or two); the dedicated category page is
+# the reliable source and has ~daily history going back several weeks.
+REE_CATEGORY_URL = f"{BASE_URL}/en/tungsten-news/rare-earth-news.html"
 USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
     "(KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
@@ -87,6 +96,41 @@ MOLY_PRICE_BOUNDS = {
     "ferromolybdenum": (200000.0, 450000.0),
     "ammonium_heptamolybdate": (200000.0, 450000.0),
     "ammonium_tetramolybdate": (200000.0, 450000.0),
+}
+
+REE_PROCESSED_DATASET = "rare_earth_price_daily"
+
+REE_PRICE_FIELDS = [
+    "lanthanum_oxide",
+    "cerium_oxide",
+    "praseodymium_oxide",
+    "neodymium_oxide",
+    "samarium_oxide",
+    "europium_oxide",
+    "gadolinium_oxide",
+    "terbium_oxide",
+    "dysprosium_oxide",
+    "holmium_oxide",
+    "erbium_oxide",
+    "yttrium_oxide",
+]
+REE_CSV_HEADERS = [
+    "date",
+    *REE_PRICE_FIELDS,
+    "title",
+    "url",
+    "table_image_local",
+    "trend_image_local",
+]
+
+# Light rare earths (lanthanum, cerium) trade roughly two orders of magnitude
+# cheaper than the mid/heavy oxides in the Chinese domestic market; a single shared
+# band would let a light-REE-sized mis-parse (e.g. a light-oxide figure or unrelated
+# number) slip through as a bogus price for a heavy oxide field, or vice versa.
+_REE_LIGHT_FIELDS = {"lanthanum_oxide", "cerium_oxide"}
+REE_PRICE_BOUNDS = {
+    field: (1_000.0, 100_000.0) if field in _REE_LIGHT_FIELDS else (100_000.0, 5_000_000.0)
+    for field in REE_PRICE_FIELDS
 }
 
 
@@ -288,6 +332,103 @@ def extract_molybdenum_prices_from_body(html_text: str) -> dict:
     return extracted
 
 
+REE_PRODUCT_ALIASES = {
+    "lanthanum_oxide": [r"lanthanum\s+oxide"],
+    "cerium_oxide": [r"cerium\s+oxide"],
+    "praseodymium_oxide": [r"praseodymium\s+oxide"],
+    "neodymium_oxide": [r"neodymium\s+oxide"],
+    "samarium_oxide": [r"samarium\s+oxide"],
+    "europium_oxide": [r"europium\s+oxide"],
+    "gadolinium_oxide": [r"gadolinium\s+oxide"],
+    "terbium_oxide": [r"terbium\s+oxide"],
+    "dysprosium_oxide": [r"dysprosium\s+oxide"],
+    "holmium_oxide": [r"holmium\s+oxide"],
+    "erbium_oxide": [r"erbium\s+oxide"],
+    "yttrium_oxide": [r"yttrium\s+oxide"],
+}
+
+REE_RMB_PRICE_RE = re.compile(r"rmb\s*([\d,\.]+)\s*(?:/|per)\s*ton\b", re.IGNORECASE)
+
+
+def _valid_ree_value(field: str, value: float | str) -> bool:
+    if value == "":
+        return False
+    low, high = REE_PRICE_BOUNDS[field]
+    return low <= float(value) <= high
+
+
+def _assign_ree_value(extracted: dict, field: str, val_str: str) -> None:
+    value = clean_value(val_str)
+    if value != "" and _valid_ree_value(field, value):
+        extracted[field] = value
+
+
+def _ree_product_mentions(text: str) -> list[tuple[int, str]]:
+    mentions: list[tuple[int, str]] = []
+    for field, aliases in REE_PRODUCT_ALIASES.items():
+        for alias in aliases:
+            match = re.search(alias, text, re.IGNORECASE)
+            if match:
+                mentions.append((match.start(), field))
+                break
+    return sorted(mentions)
+
+
+def _extract_ree_respectively(text: str) -> dict:
+    """Parse the common 'the prices of X oxide, Y oxide, ... are approximately
+    RMB A, RMB B, ..., respectively' sentence. Only 2-3 of the 12 tracked oxides
+    are typically named per article, so most fields stay unset most days."""
+    extracted = {k: "" for k in REE_PRICE_FIELDS}
+    clauses = re.split(r"(?<=[\.;])\s+", text)
+    for clause in clauses:
+        if "respectively" not in clause.lower() or "rmb" not in clause.lower():
+            continue
+        product_mentions = _ree_product_mentions(clause)
+        price_matches = list(REE_RMB_PRICE_RE.finditer(clause))
+        if not product_mentions or len(product_mentions) != len(price_matches):
+            continue
+        for (_, field), price_match in zip(product_mentions, price_matches):
+            if _nearby_text_has_change_context(clause, price_match.start(), price_match.end()):
+                continue
+            _assign_ree_value(extracted, field, price_match.group(1))
+    return extracted
+
+
+def _extract_ree_direct_pairs(text: str) -> dict:
+    """Fallback for a single oxide mentioned outside a 'respectively' list,
+    e.g. 'Neodymium oxide price is RMB 450,000/ton today.'"""
+    extracted = {k: "" for k in REE_PRICE_FIELDS}
+    for field, aliases in REE_PRODUCT_ALIASES.items():
+        for alias in aliases:
+            pattern = re.compile(rf"{alias}.{{0,120}}?rmb\s*([\d,\.]+)\s*(?:/|per)\s*ton\b", re.IGNORECASE)
+            match = pattern.search(text)
+            if not match:
+                continue
+            if _nearby_text_has_change_context(text, match.start(), match.end()):
+                continue
+            _assign_ree_value(extracted, field, match.group(1))
+            if extracted[field] != "":
+                break
+    return extracted
+
+
+def _merge_ree_prices(base: dict, update: dict) -> dict:
+    for field in REE_PRICE_FIELDS:
+        if base.get(field) in ("", None) and update.get(field) not in ("", None):
+            base[field] = update[field]
+    return base
+
+
+def extract_rare_earth_prices_from_body(html_text: str) -> dict:
+    # _normalize_moly_text is a generic HTML/whitespace normalizer despite its name;
+    # shared across the tungsten/moly/REE extractors.
+    text = _normalize_moly_text(html_text)
+    extracted = {k: "" for k in REE_PRICE_FIELDS}
+    for strategy in (_extract_ree_respectively, _extract_ree_direct_pairs):
+        _merge_ree_prices(extracted, strategy(text))
+    return extracted
+
+
 def _clean_ocr_number(val_str: str) -> float | None:
     val_str = re.sub(r"[^\d\.]", "", val_str)
     if not val_str:
@@ -419,6 +560,17 @@ def _flag_suspicious_prices(prices: dict, *, context: str) -> None:
             _log(f"  [{context}] suspicious {field}={value} (outside {low}-{high})")
 
 
+def _flag_suspicious_ree_prices(prices: dict, *, context: str) -> None:
+    # Sparse coverage is expected for REE (2-3 of 12 oxides/day, text-only), so this
+    # logs a summary rather than warning on every missing field like tungsten/moly.
+    populated = [field for field in REE_PRICE_FIELDS if prices.get(field) not in ("", None)]
+    _log(f"  [{context}] rare earth: {len(populated)}/{len(REE_PRICE_FIELDS)} oxides parsed ({', '.join(populated) or 'none'})")
+    for field, (low, high) in REE_PRICE_BOUNDS.items():
+        value = prices.get(field)
+        if isinstance(value, (int, float)) and value != "" and not (low <= value <= high):
+            _log(f"  [{context}] suspicious rare earth {field}={value} (outside {low}-{high})")
+
+
 def parse_date_from_article(soup, title: str) -> str:
     pub_tag = soup.find("dd", class_="published")
     if pub_tag:
@@ -492,7 +644,9 @@ def parse_article_page(
             _log(f"No article body found for {url}; skipping")
             return None
 
-        is_moly = "molybdenum" in title.lower()
+        title_lower = title.lower()
+        is_moly = "molybdenum" in title_lower
+        is_ree = "rare earth" in title_lower
 
         if is_moly:
             prices = extract_molybdenum_prices_from_body(body.get_text())
@@ -513,6 +667,10 @@ def parse_article_page(
                     except Exception:
                         pass
             _flag_suspicious_moly_prices(prices, context=date_str)
+        elif is_ree:
+            # Thin version: text-only, no OCR fallback yet (see module docstring).
+            prices = extract_rare_earth_prices_from_body(body.get_text())
+            _flag_suspicious_ree_prices(prices, context=date_str)
         else:
             prices = extract_prices_from_body(body.get_text())
             _flag_suspicious_prices(prices, context=date_str)
@@ -526,7 +684,7 @@ def parse_article_page(
                 img_title = img.get("title", "")
                 full_src_url = urllib.parse.urljoin(BASE_URL, src)
                 filename = src.split("/")[-1]
-                prefix = "molybdenum" if is_moly else "tungsten"
+                prefix = "molybdenum" if is_moly else ("rare_earth" if is_ree else "tungsten")
                 if "trend" in filename or "trend" in alt.lower() or "trend" in img_title.lower():
                     trend_img_local = download_image(
                         session, full_src_url, image_dir, f"{prefix}_trend_{date_str}.jpg"
@@ -600,9 +758,65 @@ def _is_daily_price_article_title(title: str, mineral_type: str) -> bool:
     title = title.lower()
     if "news" in title or "video" in title:
         return False
-    if mineral_type == "molybdenum" and any(blocked in title for blocked in ("price trend", "trends", "average")):
+    if mineral_type in ("molybdenum", "rare_earth") and any(
+        blocked in title for blocked in ("price trend", "trends", "average")
+    ):
         return False
     return True
+
+
+def _classify_article_link(a_tag) -> tuple[str, str] | None:
+    """Classify a listing <a> tag as (full_url, mineral_type), or None if not a
+    daily price article we track."""
+    title = a_tag.text.strip().lower()
+    href = a_tag.get("href", "")
+
+    is_ree = "rare earth" in title and _is_daily_price_article_title(title, "rare_earth")
+    is_tungsten = (
+        not is_ree
+        and ("tungsten" in title or "apt" in title)
+        and _is_daily_price_article_title(title, "tungsten")
+    )
+    is_moly = not is_ree and "molybdenum" in title and _is_daily_price_article_title(title, "molybdenum")
+
+    full_url = urllib.parse.urljoin(BASE_URL, href)
+    if is_ree:
+        return (full_url, "rare_earth")
+    if is_tungsten:
+        return (full_url, "tungsten")
+    if is_moly:
+        return (full_url, "molybdenum")
+    return None
+
+
+def _fetch_category_article_links(
+    session: requests.Session, category_url: str, page: int
+) -> list[tuple[str, str]] | None:
+    """Fetch one listing page and return classified (url, mineral_type) links.
+
+    Returns None (rather than []) on an HTTP failure, so callers can distinguish
+    "stop paginating" from "this page had no matching articles"."""
+    start = page * 10
+    url = f"{category_url}?start={start}" if start > 0 else category_url
+    _log(f"Fetching category page {page + 1}: {url}")
+    response = session.get(url, timeout=REQUEST_TIMEOUT)
+    if response.status_code != 200:
+        _log(f"Failed to fetch {url}, status {response.status_code}")
+        return None
+    soup = BeautifulSoup(response.text, "html.parser")
+    articles = soup.find_all("div", class_="contentpaneopen") or soup.find_all("h2", class_="contentheading")
+    links: list[tuple[str, str]] = []
+    for art in articles:
+        heading = art.find("h2", class_="contentheading") if art.name != "h2" else art
+        if not heading:
+            continue
+        a_tag = heading.find("a")
+        if not a_tag:
+            continue
+        classified = _classify_article_link(a_tag)
+        if classified is not None:
+            links.append(classified)
+    return links
 
 
 def scrape_range(
@@ -621,6 +835,7 @@ def scrape_range(
     
     tungsten_csv_path = data_dir / "tungsten_chinatungsten.csv"
     moly_csv_path = data_dir / "molybdenum_chinatungsten.csv"
+    ree_csv_path = data_dir / "rare_earth_chinatungsten.csv"
     image_dir = data_dir / "images"
     session = session or build_session()
     cutoff = _resolve_since_date(since_date=since_date, since_days=since_days)
@@ -629,6 +844,7 @@ def scrape_range(
     _log(f"Scraping up to {max_pages} category pages (images={'on' if with_images else 'off'}{cutoff_msg})...")
     existing_tungsten_dates, existing_tungsten_urls = _load_existing(tungsten_csv_path)
     existing_moly_dates, existing_moly_urls = _load_existing(moly_csv_path)
+    existing_ree_dates, existing_ree_urls = _load_existing(ree_csv_path)
 
     if not tungsten_csv_path.exists():
         with tungsten_csv_path.open("w", newline="", encoding="utf-8") as handle:
@@ -636,122 +852,129 @@ def scrape_range(
     if not moly_csv_path.exists():
         with moly_csv_path.open("w", newline="", encoding="utf-8") as handle:
             csv.DictWriter(handle, fieldnames=MOLY_CSV_HEADERS).writeheader()
+    if not ree_csv_path.exists():
+        with ree_csv_path.open("w", newline="", encoding="utf-8") as handle:
+            csv.DictWriter(handle, fieldnames=REE_CSV_HEADERS).writeheader()
 
     new_count = 0
-    for page in range(max_pages):
-        start = page * 10
-        url = f"{CATEGORY_URL}?start={start}" if start > 0 else CATEGORY_URL
-        _log(f"Fetching category page {page + 1}: {url}")
-        try:
-            response = session.get(url, timeout=REQUEST_TIMEOUT)
-            if response.status_code != 200:
-                _log(f"Failed to fetch {url}, status {response.status_code}")
+    # Two independent listings: the general product-news page (tungsten + molybdenum,
+    # and occasionally rare-earth for a day or two) and the dedicated rare-earth-news
+    # category (the reliable source for REE history/backfill).
+    for category_url in (CATEGORY_URL, REE_CATEGORY_URL):
+        for page in range(max_pages):
+            try:
+                article_links = _fetch_category_article_links(session, category_url, page)
+                if article_links is None:
+                    break
+
+                if not article_links:
+                    _log("No matching articles found on this page.")
+                    continue
+
+                page_new_tungsten: list[dict] = []
+                page_new_moly: list[dict] = []
+                page_new_ree: list[dict] = []
+
+                for link, mineral_type in article_links:
+                    if mineral_type == "tungsten":
+                        if link in existing_tungsten_urls:
+                            continue
+                        data = parse_article_page(session, link, image_dir=image_dir, with_images=with_images)
+                        existing_tungsten_urls.add(link)
+                        if not data:
+                            continue
+                        date_str = data["date"]
+                        if _is_older_than_cutoff(date_str, cutoff):
+                            _log(f"Skipping {date_str}: older than cutoff")
+                            continue
+                        if date_str in existing_tungsten_dates:
+                            continue
+                        _log(f"Scraped {date_str}: APT={data['apt']}")
+                        page_new_tungsten.append(data)
+                        existing_tungsten_dates.add(date_str)
+                    elif mineral_type == "molybdenum":
+                        if link in existing_moly_urls:
+                            continue
+                        data = parse_article_page(session, link, image_dir=image_dir, with_images=with_images)
+                        existing_moly_urls.add(link)
+                        if not data:
+                            continue
+                        date_str = data["date"]
+                        if _is_older_than_cutoff(date_str, cutoff):
+                            _log(f"Skipping Moly {date_str}: older than cutoff")
+                            continue
+                        if date_str in existing_moly_dates:
+                            continue
+                        _log(f"Scraped Moly {date_str}: Conc={data['molybdenum_concentrate']}")
+                        page_new_moly.append(data)
+                        existing_moly_dates.add(date_str)
+                    elif mineral_type == "rare_earth":
+                        if link in existing_ree_urls:
+                            continue
+                        data = parse_article_page(session, link, image_dir=image_dir, with_images=with_images)
+                        existing_ree_urls.add(link)
+                        if not data:
+                            continue
+                        date_str = data["date"]
+                        if _is_older_than_cutoff(date_str, cutoff):
+                            _log(f"Skipping Rare Earth {date_str}: older than cutoff")
+                            continue
+                        if date_str in existing_ree_dates:
+                            continue
+                        populated = [f for f in REE_PRICE_FIELDS if data.get(f) not in ("", None)]
+                        _log(f"Scraped Rare Earth {date_str}: {len(populated)} oxide(s)")
+                        page_new_ree.append(data)
+                        existing_ree_dates.add(date_str)
+
+                    time.sleep(0.2)
+
+                if page_new_tungsten:
+                    page_new_tungsten.sort(key=lambda row: row["date"])
+                    with tungsten_csv_path.open("a", newline="", encoding="utf-8") as handle:
+                        writer = csv.DictWriter(handle, fieldnames=CSV_HEADERS)
+                        for row in page_new_tungsten:
+                            writer.writerow({k: row.get(k, "") for k in CSV_HEADERS})
+                    new_count += len(page_new_tungsten)
+                    _log(f"Wrote {len(page_new_tungsten)} new tungsten records from page {page + 1}.")
+
+                if page_new_moly:
+                    page_new_moly.sort(key=lambda row: row["date"])
+                    with moly_csv_path.open("a", newline="", encoding="utf-8") as handle:
+                        writer = csv.DictWriter(handle, fieldnames=MOLY_CSV_HEADERS)
+                        for row in page_new_moly:
+                            writer.writerow({k: row.get(k, "") for k in MOLY_CSV_HEADERS})
+                    new_count += len(page_new_moly)
+                    _log(f"Wrote {len(page_new_moly)} new molybdenum records from page {page + 1}.")
+
+                if page_new_ree:
+                    page_new_ree.sort(key=lambda row: row["date"])
+                    with ree_csv_path.open("a", newline="", encoding="utf-8") as handle:
+                        writer = csv.DictWriter(handle, fieldnames=REE_CSV_HEADERS)
+                        for row in page_new_ree:
+                            writer.writerow({k: row.get(k, "") for k in REE_CSV_HEADERS})
+                    new_count += len(page_new_ree)
+                    _log(f"Wrote {len(page_new_ree)} new rare earth records from page {page + 1}.")
+
+            except Exception as exc:  # noqa: BLE001
+                _log(f"Error scraping category page: {exc}")
                 break
-            soup = BeautifulSoup(response.text, "html.parser")
-
-            articles = soup.find_all("div", class_="contentpaneopen") or soup.find_all(
-                "h2", class_="contentheading"
-            )
-            article_links: list[tuple[str, str]] = []
-            for art in articles:
-                heading = art.find("h2", class_="contentheading") if art.name != "h2" else art
-                if not heading:
-                    continue
-                a_tag = heading.find("a")
-                if not a_tag:
-                    continue
-                title = a_tag.text.strip().lower()
-                href = a_tag.get("href", "")
-                
-                is_tungsten = ("tungsten" in title or "apt" in title) and _is_daily_price_article_title(
-                    title, "tungsten"
-                )
-                is_moly = "molybdenum" in title and _is_daily_price_article_title(title, "molybdenum")
-                
-                full_url = urllib.parse.urljoin(BASE_URL, href)
-                if is_tungsten:
-                    article_links.append((full_url, "tungsten"))
-                elif is_moly:
-                    article_links.append((full_url, "molybdenum"))
-
-            if not article_links:
-                _log("No matching articles found on this page.")
-                continue
-
-            page_new_tungsten: list[dict] = []
-            page_new_moly: list[dict] = []
-
-            for link, mineral_type in article_links:
-                if mineral_type == "tungsten":
-                    if link in existing_tungsten_urls:
-                        continue
-                    data = parse_article_page(session, link, image_dir=image_dir, with_images=with_images)
-                    existing_tungsten_urls.add(link)
-                    if not data:
-                        continue
-                    date_str = data["date"]
-                    if _is_older_than_cutoff(date_str, cutoff):
-                        _log(f"Skipping {date_str}: older than cutoff")
-                        continue
-                    if date_str in existing_tungsten_dates:
-                        continue
-                    _log(f"Scraped {date_str}: APT={data['apt']}")
-                    page_new_tungsten.append(data)
-                    existing_tungsten_dates.add(date_str)
-                elif mineral_type == "molybdenum":
-                    if link in existing_moly_urls:
-                        continue
-                    data = parse_article_page(session, link, image_dir=image_dir, with_images=with_images)
-                    existing_moly_urls.add(link)
-                    if not data:
-                        continue
-                    date_str = data["date"]
-                    if _is_older_than_cutoff(date_str, cutoff):
-                        _log(f"Skipping Moly {date_str}: older than cutoff")
-                        continue
-                    if date_str in existing_moly_dates:
-                        continue
-                    _log(f"Scraped Moly {date_str}: Conc={data['molybdenum_concentrate']}")
-                    page_new_moly.append(data)
-                    existing_moly_dates.add(date_str)
-                
-                time.sleep(0.2)
-
-            if page_new_tungsten:
-                page_new_tungsten.sort(key=lambda row: row["date"])
-                with tungsten_csv_path.open("a", newline="", encoding="utf-8") as handle:
-                    writer = csv.DictWriter(handle, fieldnames=CSV_HEADERS)
-                    for row in page_new_tungsten:
-                        writer.writerow({k: row.get(k, "") for k in CSV_HEADERS})
-                new_count += len(page_new_tungsten)
-                _log(f"Wrote {len(page_new_tungsten)} new tungsten records from page {page + 1}.")
-
-            if page_new_moly:
-                page_new_moly.sort(key=lambda row: row["date"])
-                with moly_csv_path.open("a", newline="", encoding="utf-8") as handle:
-                    writer = csv.DictWriter(handle, fieldnames=MOLY_CSV_HEADERS)
-                    for row in page_new_moly:
-                        writer.writerow({k: row.get(k, "") for k in MOLY_CSV_HEADERS})
-                new_count += len(page_new_moly)
-                _log(f"Wrote {len(page_new_moly)} new molybdenum records from page {page + 1}.")
-
-        except Exception as exc:  # noqa: BLE001
-            _log(f"Error scraping category page: {exc}")
-            break
 
     t_snapshot = write_processed_snapshot(base_dir, tungsten_csv_path, PROCESSED_DATASET, PRICE_FIELDS)
     m_snapshot = write_processed_snapshot(base_dir, moly_csv_path, MOLY_PROCESSED_DATASET, MOLY_PRICE_FIELDS)
+    r_snapshot = write_processed_snapshot(base_dir, ree_csv_path, REE_PROCESSED_DATASET, REE_PRICE_FIELDS)
     if t_snapshot is not None:
         _log(f"Processed Tungsten snapshot: {t_snapshot}")
     if m_snapshot is not None:
         _log(f"Processed Molybdenum snapshot: {m_snapshot}")
+    if r_snapshot is not None:
+        _log(f"Processed Rare Earth snapshot: {r_snapshot}")
 
     _log(f"Done. {new_count} new record(s).")
     return new_count
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Scrape Chinatungsten daily tungsten/molybdenum prices.")
+    parser = argparse.ArgumentParser(description="Scrape Chinatungsten daily tungsten/molybdenum/rare-earth prices.")
     parser.add_argument("--base-dir", default=".", help="Repository root for data writes")
     parser.add_argument("--max-pages", type=int, default=3, help="Max category pages to scrape")
     parser.add_argument("--since-date", help="Only write articles on/after this YYYY-MM-DD date")
