@@ -248,6 +248,21 @@ def test_pipeline_build_semiconductor_signals(tmp_path: Path) -> None:
     assert metric_signals.loc[0, "yoy_change"] > 0
 
 
+def test_pipeline_build_openrouter_signals(tmp_path: Path) -> None:
+    _write_openrouter_fixture(tmp_path)
+
+    result = SignalLayerPipeline(tmp_path).build(sources=["openrouter"])
+    metric_signals = _read_metric_signals(tmp_path, result)
+
+    assert result.datasets_written["metric_signals"] == 1
+    assert len(metric_signals) == 1
+    assert metric_signals.loc[0, "metric_id"] == "openrouter_anthropic_tokens_28d_growth"
+    assert metric_signals.loc[0, "entity_key"] == "anthropic"
+    assert metric_signals.loc[0, "entity_name"] == "Anthropic"
+    assert metric_signals.loc[0, "quality_state"] == "valid"
+    assert metric_signals.loc[0, "rolling_change"] > 0
+
+
 def test_pipeline_validate_registry_returns_counts(tmp_path: Path) -> None:
     _write_reference_registries(tmp_path)
 
@@ -792,3 +807,73 @@ def _write_semiconductor_fixture(base_dir: Path) -> None:
             }
         )
     pd.DataFrame(rows).to_parquet(normalized_dir / "tw_monthly_revenue.parquet", index=False)
+
+
+def _write_openrouter_fixture(base_dir: Path) -> None:
+    reference_dir = base_dir / "data" / "reference" / "signal_layer"
+    reference_dir.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame(
+        [
+            {
+                "metric_id": "openrouter_anthropic_tokens_28d_growth",
+                "source": "openrouter",
+                "dataset_id": "daily_provider_economics",
+                "date_column": "usage_date",
+                "value_column": "total_tokens",
+                "entity_columns": "provider_slug",
+                "cadence": "daily",
+                "transform": "rolling_growth",
+                "baseline_method": "robust_z",
+                "baseline_window": "90D",
+                "seasonality_mode": "none",
+                "higher_is_better": True,
+                "default_metric_direction": "positive",
+                "min_baseline_observations": 30,
+                "max_freshness_lag_days": 120,
+                "min_coverage_ratio": "",
+                "description": "Anthropic OpenRouter total-token 28-day growth.",
+                "caveats": "Provider-level token metric avoids task-spend snapshots.",
+            }
+        ]
+    ).to_csv(reference_dir / "signal_metric_registry.csv", index=False)
+    pd.DataFrame(
+        [
+            {
+                "metric_id": "openrouter_anthropic_tokens_28d_growth",
+                "ticker": "AMZN",
+                "company_name": "Amazon",
+                "asset_type": "equity",
+                "theme": "ai_model_adoption",
+                "exposure_type": "ecosystem_adoption",
+                "expected_direction": "positive",
+                "exposure_weight": 0.7,
+                "lag_days": 0,
+                "confidence": "low",
+                "notes": "Anthropic usage can be an indirect AI demand read-through.",
+            }
+        ]
+    ).to_csv(reference_dir / "signal_asset_mapping.csv", index=False)
+
+    normalized_dir = base_dir / "data" / "normalized" / "marts"
+    normalized_dir.mkdir(parents=True, exist_ok=True)
+    rows = []
+    for index, day in enumerate(pd.date_range("2026-03-01", periods=140, freq="D")):
+        rows.append(
+            {
+                "usage_date": day.strftime("%Y-%m-%d"),
+                "provider_slug": "anthropic",
+                "provider_name": "Anthropic",
+                "model_permaslug": "anthropic/claude-all",
+                "total_tokens": float(1_000_000 + index * 20_000),
+            }
+        )
+        rows.append(
+            {
+                "usage_date": day.strftime("%Y-%m-%d"),
+                "provider_slug": "anthropic",
+                "provider_name": "Anthropic",
+                "model_permaslug": "anthropic/claude-secondary",
+                "total_tokens": float(500_000 + index * 10_000),
+            }
+        )
+    pd.DataFrame(rows).to_parquet(normalized_dir / "daily_provider_economics.parquet", index=False)
