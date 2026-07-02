@@ -233,6 +233,21 @@ def test_pipeline_build_defaults_to_implemented_registry_sources(tmp_path: Path)
     assert metric_signals.loc[0, "metric_id"] == "pypi_openai_downloads_28d_growth"
 
 
+def test_pipeline_build_semiconductor_signals(tmp_path: Path) -> None:
+    _write_semiconductor_fixture(tmp_path)
+
+    result = SignalLayerPipeline(tmp_path).build(sources=["semiconductor"])
+    metric_signals = _read_metric_signals(tmp_path, result)
+
+    assert result.datasets_written["metric_signals"] == 1
+    assert len(metric_signals) == 1
+    assert metric_signals.loc[0, "metric_id"] == "tw_tsmc_revenue_yoy"
+    assert metric_signals.loc[0, "entity_key"] == "2330"
+    assert metric_signals.loc[0, "entity_name"] == "TSMC"
+    assert metric_signals.loc[0, "quality_state"] == "valid"
+    assert metric_signals.loc[0, "yoy_change"] > 0
+
+
 def test_pipeline_validate_registry_returns_counts(tmp_path: Path) -> None:
     _write_reference_registries(tmp_path)
 
@@ -702,3 +717,78 @@ def _write_reference_registries(base_dir: Path) -> None:
             }
         ]
     ).to_csv(reference_dir / "signal_asset_mapping.csv", index=False)
+
+
+def _write_semiconductor_fixture(base_dir: Path) -> None:
+    reference_dir = base_dir / "data" / "reference" / "signal_layer"
+    reference_dir.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame(
+        [
+            {
+                "metric_id": "tw_tsmc_revenue_yoy",
+                "source": "semiconductor",
+                "dataset_id": "tw_monthly_revenue",
+                "date_column": "revenue_month",
+                "value_column": "monthly_revenue_ntd",
+                "entity_columns": "company_code",
+                "cadence": "monthly",
+                "transform": "yoy_growth",
+                "baseline_method": "robust_z",
+                "baseline_window": "36M",
+                "seasonality_mode": "same_month",
+                "higher_is_better": True,
+                "default_metric_direction": "positive",
+                "min_baseline_observations": 24,
+                "max_freshness_lag_days": 120,
+                "min_coverage_ratio": "",
+                "description": "TSMC monthly revenue YoY growth.",
+                "caveats": "Monthly revenue can be revised.",
+            }
+        ]
+    ).to_csv(reference_dir / "signal_metric_registry.csv", index=False)
+    pd.DataFrame(
+        [
+            {
+                "metric_id": "tw_tsmc_revenue_yoy",
+                "ticker": "TSM",
+                "company_name": "Taiwan Semiconductor Manufacturing",
+                "asset_type": "equity",
+                "theme": "foundry_cycle",
+                "exposure_type": "direct_revenue_proxy",
+                "expected_direction": "positive",
+                "exposure_weight": 1.0,
+                "lag_days": 0,
+                "confidence": "high",
+                "notes": "Monthly revenue is a direct company operating proxy.",
+            }
+        ]
+    ).to_csv(reference_dir / "signal_asset_mapping.csv", index=False)
+
+    normalized_dir = base_dir / "data" / "normalized" / "taiwan_semiconductor_revenue"
+    normalized_dir.mkdir(parents=True, exist_ok=True)
+    rows = []
+    for month in pd.date_range("2023-01-01", periods=40, freq="MS"):
+        month_number = month.month
+        base_value = 100_000_000 + month_number * 1_000_000
+        if month.year == 2024:
+            value = base_value * 1.08
+        elif month.year == 2025:
+            value = base_value * 1.18
+        elif month.year == 2026:
+            value = base_value * 1.35
+        else:
+            value = base_value
+        rows.append(
+            {
+                "dataset_id": "tw_monthly_revenue",
+                "company_code": "2330",
+                "company_name": "TSMC",
+                "filing_date": "2026-05-10",
+                "revenue_month": month.strftime("%Y-%m"),
+                "monthly_revenue_ntd": float(value),
+                "source_url": "https://mops.twse.com.tw/mops/api/t05st10_ifrs",
+                "source_run_id": "run-001",
+                "scraped_at": "2026-05-10T00:00:00Z",
+            }
+        )
+    pd.DataFrame(rows).to_parquet(normalized_dir / "tw_monthly_revenue.parquet", index=False)
