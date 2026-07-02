@@ -263,6 +263,21 @@ def test_pipeline_build_openrouter_signals(tmp_path: Path) -> None:
     assert metric_signals.loc[0, "rolling_change"] > 0
 
 
+def test_pipeline_build_minerals_signals(tmp_path: Path) -> None:
+    _write_minerals_fixture(tmp_path)
+
+    result = SignalLayerPipeline(tmp_path).build(sources=["minerals"])
+    metric_signals = _read_metric_signals(tmp_path, result)
+
+    assert result.datasets_written["metric_signals"] == 1
+    assert len(metric_signals) == 1
+    assert metric_signals.loc[0, "metric_id"] == "tungsten_apt_13w_momentum"
+    assert metric_signals.loc[0, "entity_key"] == "apt"
+    assert metric_signals.loc[0, "entity_name"] == "apt"
+    assert metric_signals.loc[0, "quality_state"] == "valid"
+    assert metric_signals.loc[0, "rolling_change"] > 0
+
+
 def test_pipeline_validate_registry_returns_counts(tmp_path: Path) -> None:
     _write_reference_registries(tmp_path)
 
@@ -877,3 +892,70 @@ def _write_openrouter_fixture(base_dir: Path) -> None:
             }
         )
     pd.DataFrame(rows).to_parquet(normalized_dir / "daily_provider_economics.parquet", index=False)
+
+
+def _write_minerals_fixture(base_dir: Path) -> None:
+    reference_dir = base_dir / "data" / "reference" / "signal_layer"
+    reference_dir.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame(
+        [
+            {
+                "metric_id": "tungsten_apt_13w_momentum",
+                "source": "minerals",
+                "dataset_id": "tungsten_price_daily",
+                "date_column": "date",
+                "value_column": "apt",
+                "entity_columns": "commodity",
+                "cadence": "daily",
+                "transform": "rolling_growth",
+                "baseline_method": "robust_z",
+                "baseline_window": "52W",
+                "seasonality_mode": "none",
+                "higher_is_better": True,
+                "default_metric_direction": "positive",
+                "min_baseline_observations": 60,
+                "max_freshness_lag_days": 120,
+                "min_coverage_ratio": "",
+                "description": "China tungsten APT 13-week momentum.",
+                "caveats": "Producer-positive signal.",
+            }
+        ]
+    ).to_csv(reference_dir / "signal_metric_registry.csv", index=False)
+    pd.DataFrame(
+        [
+            {
+                "metric_id": "tungsten_apt_13w_momentum",
+                "ticker": "600549.SH",
+                "company_name": "Xiamen Tungsten",
+                "asset_type": "equity",
+                "theme": "critical_minerals",
+                "exposure_type": "direct_revenue_proxy",
+                "expected_direction": "positive",
+                "exposure_weight": 1.0,
+                "lag_days": 0,
+                "confidence": "medium",
+                "notes": "Tungsten price momentum can be positive for tungsten producers.",
+            }
+        ]
+    ).to_csv(reference_dir / "signal_asset_mapping.csv", index=False)
+
+    processed_dir = (
+        base_dir
+        / "data"
+        / "processed"
+        / "minerals_signal_data"
+        / "tungsten_price_daily"
+        / "latest"
+    )
+    processed_dir.mkdir(parents=True, exist_ok=True)
+    rows = []
+    for index, day in enumerate(pd.date_range("2026-01-01", periods=260, freq="D")):
+        rows.append(
+            {
+                "date": day.strftime("%Y-%m-%d"),
+                "apt": float(200_000 + index * 800),
+                "title": "fixture",
+                "url": f"fixture://apt/{index}",
+            }
+        )
+    pd.DataFrame(rows).to_parquet(processed_dir / "tungsten_price_daily.parquet", index=False)
