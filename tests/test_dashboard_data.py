@@ -1229,6 +1229,88 @@ def test_compute_semiconductor_views_exposes_proxy_and_component_columns() -> No
     assert list(result["proxy_df"]["month"]) == ["2026-02", "2026-03"]
 
 
+def test_compute_semiconductor_views_ppi_survives_collapsed_regime_table() -> None:
+    # Regime table collapsed to a single ADATA-only row with a null PPI (the exact
+    # failure mode that blanked the panel). The dedicated FRED-only PPI table must
+    # keep the panel populated.
+    regime_frame = pd.DataFrame(
+        [
+            {
+                **_base_row("semiconductor_memory_regime_monthly"),
+                "month": "2026-06",
+                "nand_regime_label": "stable",
+                "dram_regime_label": "stable",
+                "fred_ppi_value": None,
+            }
+        ],
+        columns=EXPECTED_COLUMNS,
+    )
+    ppi_frame = pd.DataFrame(
+        [
+            {
+                **_base_row("fred_semiconductor_ppi_monthly"),
+                "month": "2026-04",
+                "fred_ppi_value": 100.0,
+                "fred_ppi_mom_pct": 1.0,
+                "fred_ppi_3m_trend": 99.0,
+                "ppi_component_pcu33443344_rebased": 100.0,
+                "ppi_component_pcu33423342_rebased": 100.0,
+                "ppi_component_pcu335313335313_rebased": 100.0,
+                "ppi_component_pcu334111334111_rebased": 100.0,
+                "ppi_component_pcu3341123341121_rebased": 100.0,
+            },
+            {
+                **_base_row("fred_semiconductor_ppi_monthly"),
+                "month": "2026-05",
+                "fred_ppi_value": 103.0,
+                "fred_ppi_mom_pct": 3.0,
+                "fred_ppi_3m_trend": 101.5,
+                "ppi_component_pcu33443344_rebased": 104.0,
+                "ppi_component_pcu33423342_rebased": 102.0,
+                "ppi_component_pcu335313335313_rebased": 101.0,
+                "ppi_component_pcu334111334111_rebased": 99.0,
+                "ppi_component_pcu3341123341121_rebased": 98.0,
+            },
+        ],
+        columns=EXPECTED_COLUMNS,
+    )
+
+    def _result(dataset_id: str, frame: pd.DataFrame, latest: str) -> DatasetLoadResult:
+        return DatasetLoadResult(
+            dataset_id=dataset_id,
+            label=dataset_id,
+            domain="semiconductor_memory",
+            primary_date_column="month",
+            metric_column="fred_ppi_value",
+            frame=frame,
+            source_format="csv",
+            source_path=None,
+            missing_columns=[],
+            duplicate_rows=0,
+            first_date=str(frame["month"].min()),
+            row_count=len(frame),
+            latest_date=latest,
+            latest_scraped_at="2026-06-05T00:00:00Z",
+        )
+
+    result = compute_semiconductor_views(
+        {
+            "semiconductor_memory_regime_monthly": _result(
+                "semiconductor_memory_regime_monthly", regime_frame, "2026-06"
+            ),
+            "fred_semiconductor_ppi_monthly": _result(
+                "fred_semiconductor_ppi_monthly", ppi_frame, "2026-05"
+            ),
+        }
+    )
+
+    assert list(result["proxy_df"]["month"]) == ["2026-04", "2026-05"]
+    assert result["base_month"] == "2026-04"
+    assert result["latest_proxy_month"] == "2026-05"
+    assert result["latest_proxy_data"]["fred_ppi_value"] == 103.0
+    assert len(result["component_columns"]) == 5
+
+
 def test_compute_semiconductor_views_includes_tiered_official_backup_and_production_data() -> None:
     official_frame = pd.DataFrame(
         [

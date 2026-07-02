@@ -156,6 +156,14 @@ DATASET_REGISTRY: dict[str, dict[str, object]] = {
         "metric_column": "fred_ppi_value",
         "required_columns": ["month", "nand_regime_label", "dram_regime_label", "fred_ppi_value"],
     },
+    "fred_semiconductor_ppi_monthly": {
+        "label": "AI Demand PPI (FRED)",
+        "domain": "semiconductor_memory",
+        "natural_keys": ["month"],
+        "primary_date_column": "month",
+        "metric_column": "fred_ppi_value",
+        "required_columns": ["month", "fred_ppi_value"],
+    },
     "adata_marketwatch_images": {
         "label": "Memory Market Images",
         "domain": "semiconductor_memory",
@@ -349,6 +357,7 @@ DOMAIN_ORDER = {
         "github_provider_adoption_daily",
     ],
     "semiconductor_memory": [
+        "fred_semiconductor_ppi_monthly",
         "semiconductor_memory_regime_monthly",
         "adata_marketwatch_images",
     ],

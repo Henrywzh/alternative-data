@@ -231,53 +231,24 @@ class SemiconductorMemoryPipeline:
         )
 
     def run_derive(self) -> PipelineResult:
-        """Join adata_marketwatch_monthly + fred_semiconductor_ppi → regime_monthly."""
+        """Build fred_semiconductor_ppi_monthly and regime_monthly from the sources."""
         context = self._create_context()
         adata = self.storage.load_dataset("adata_marketwatch_monthly")
         fred = self.storage.load_dataset("fred_semiconductor_ppi")
 
         now = datetime.now(timezone.utc)
 
-        # Build a monthly weighted AI-demand proxy and rebased component series.
-        fred_monthly: pd.DataFrame = pd.DataFrame()
-        if not fred.empty:
-            fred = fred.copy()
-            fred["month"] = fred["date"].astype(str).str[:7]
-            fred["value"] = pd.to_numeric(fred["value"], errors="coerce")
-            fred_latest = (
-                fred.sort_values(["series_id", "date"])
-                .drop_duplicates(subset=["series_id", "month"], keep="last")
-            )
-            required_series = list(AI_DEMAND_PPI_WEIGHTS)
-            fred_wide = (
-                fred_latest
-                .pivot(index="month", columns="series_id", values="value")
-                .sort_index()
-            )
-            fred_wide = fred_wide.reindex(columns=required_series)
-            complete_months = fred_wide.dropna(subset=required_series, how="any")
-
-            if not complete_months.empty:
-                weighted_raw = sum(
-                    complete_months[series_id] * weight
-                    for series_id, weight in AI_DEMAND_PPI_WEIGHTS.items()
-                )
-                base_month = complete_months.index[0]
-                base_weighted_value = float(weighted_raw.loc[base_month])
-
-                fred_monthly = pd.DataFrame({
-                    "month": complete_months.index,
-                    "date": [f"{month}-01" for month in complete_months.index],
-                    "fred_ppi_value": (weighted_raw / base_weighted_value) * 100.0,
-                }).reset_index(drop=True)
-                fred_monthly["fred_ppi_mom_pct"] = fred_monthly["fred_ppi_value"].pct_change() * 100
-                fred_monthly["fred_ppi_3m_trend"] = fred_monthly["fred_ppi_value"].rolling(3, min_periods=1).mean()
-
-                for series_id, column_name in PPI_COMPONENT_COLUMN_MAP.items():
-                    base_component_value = float(complete_months.loc[base_month, series_id])
-                    fred_monthly[column_name] = (
-                        (complete_months[series_id] / base_component_value) * 100.0
-                    ).to_numpy()
+        # Build a monthly weighted AI-demand proxy and rebased component series
+        # purely from FRED, and persist it as its own dataset. The dashboard's PPI
+        # panel reads this table, so a failure of the ADATA scraper (which shares
+        # the regime table below) can no longer blank out the PPI signal.
+        fred_monthly = self._build_fred_ppi_monthly(fred)
+        ppi_written = 0
+        if not fred_monthly.empty:
+            ppi_written = len(self.storage.upsert_dataset(
+                "fred_semiconductor_ppi_monthly",
+                self._fred_ppi_monthly_records(context, fred_monthly),
+            ))
 
         # All months from ADATA
         adata_months: pd.DataFrame = pd.DataFrame()
@@ -305,7 +276,10 @@ class SemiconductorMemoryPipeline:
         if merged.empty:
             return PipelineResult(
                 run_id=context.run_id,
-                datasets_written={"semiconductor_memory_regime_monthly": 0},
+                datasets_written={
+                    "fred_semiconductor_ppi_monthly": ppi_written,
+                    "semiconductor_memory_regime_monthly": 0,
+                },
                 raw_run_dir=str(self.storage.raw_root / context.run_id),
             )
 
@@ -382,7 +356,10 @@ class SemiconductorMemoryPipeline:
 
         return PipelineResult(
             run_id=context.run_id,
-            datasets_written={"semiconductor_memory_regime_monthly": len(written)},
+            datasets_written={
+                "fred_semiconductor_ppi_monthly": ppi_written,
+                "semiconductor_memory_regime_monthly": len(written),
+            },
             raw_run_dir=str(self.storage.raw_root / context.run_id),
             dataset_row_deltas={"semiconductor_memory_regime_monthly": max(len(written) - len(existing), 0)},
         )
@@ -417,6 +394,82 @@ class SemiconductorMemoryPipeline:
     # ------------------------------------------------------------------
     # Private helpers
     # ------------------------------------------------------------------
+
+    def _build_fred_ppi_monthly(self, fred: pd.DataFrame) -> pd.DataFrame:
+        """Weighted AI-demand PPI basket + rebased components, derived only from FRED.
+
+        Returns columns month, date, fred_ppi_value, fred_ppi_mom_pct,
+        fred_ppi_3m_trend and the five rebased component columns. Returns an empty
+        frame when no month carries the full required-series basket.
+        """
+        if fred.empty:
+            return pd.DataFrame()
+
+        fred = fred.copy()
+        fred["month"] = fred["date"].astype(str).str[:7]
+        fred["value"] = pd.to_numeric(fred["value"], errors="coerce")
+        fred_latest = (
+            fred.sort_values(["series_id", "date"])
+            .drop_duplicates(subset=["series_id", "month"], keep="last")
+        )
+        required_series = list(AI_DEMAND_PPI_WEIGHTS)
+        fred_wide = (
+            fred_latest
+            .pivot(index="month", columns="series_id", values="value")
+            .sort_index()
+            .reindex(columns=required_series)
+        )
+        complete_months = fred_wide.dropna(subset=required_series, how="any")
+        if complete_months.empty:
+            return pd.DataFrame()
+
+        weighted_raw = sum(
+            complete_months[series_id] * weight
+            for series_id, weight in AI_DEMAND_PPI_WEIGHTS.items()
+        )
+        base_month = complete_months.index[0]
+        base_weighted_value = float(weighted_raw.loc[base_month])
+
+        fred_monthly = pd.DataFrame({
+            "month": complete_months.index,
+            "date": [f"{month}-01" for month in complete_months.index],
+            "fred_ppi_value": (weighted_raw / base_weighted_value) * 100.0,
+        }).reset_index(drop=True)
+        fred_monthly["fred_ppi_mom_pct"] = fred_monthly["fred_ppi_value"].pct_change() * 100
+        fred_monthly["fred_ppi_3m_trend"] = fred_monthly["fred_ppi_value"].rolling(3, min_periods=1).mean()
+
+        for series_id, column_name in PPI_COMPONENT_COLUMN_MAP.items():
+            base_component_value = float(complete_months.loc[base_month, series_id])
+            fred_monthly[column_name] = (
+                (complete_months[series_id] / base_component_value) * 100.0
+            ).to_numpy()
+
+        return fred_monthly
+
+    def _fred_ppi_monthly_records(
+        self, context: Any, fred_monthly: pd.DataFrame
+    ) -> list[DatasetRecord]:
+        records: list[DatasetRecord] = []
+        for _, row in fred_monthly.iterrows():
+            records.append(
+                DatasetRecord(
+                    dataset_id="fred_semiconductor_ppi_monthly",
+                    source_url="https://api.stlouisfed.org/fred (weighted AI-demand PPI basket)",
+                    source_run_id=context.run_id,
+                    scraped_at=context.scraped_at_iso,
+                    month=str(row["month"]),
+                    date=_str_or_none(row.get("date")),
+                    fred_ppi_value=_float_or_none(row.get("fred_ppi_value")),
+                    fred_ppi_mom_pct=_float_or_none(row.get("fred_ppi_mom_pct")),
+                    fred_ppi_3m_trend=_float_or_none(row.get("fred_ppi_3m_trend")),
+                    ppi_component_pcu33443344_rebased=_float_or_none(row.get("ppi_component_pcu33443344_rebased")),
+                    ppi_component_pcu33423342_rebased=_float_or_none(row.get("ppi_component_pcu33423342_rebased")),
+                    ppi_component_pcu335313335313_rebased=_float_or_none(row.get("ppi_component_pcu335313335313_rebased")),
+                    ppi_component_pcu334111334111_rebased=_float_or_none(row.get("ppi_component_pcu334111334111_rebased")),
+                    ppi_component_pcu3341123341121_rebased=_float_or_none(row.get("ppi_component_pcu3341123341121_rebased")),
+                )
+            )
+        return records
 
     def _download_images(self, image_points: list[AdataImagePoint]) -> list[AdataImagePoint]:
         """Download images to local storage; skip if already present. Returns updated points."""

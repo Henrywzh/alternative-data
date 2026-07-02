@@ -80,6 +80,52 @@ def test_run_derive_builds_weighted_ai_ppi_and_rebased_components(tmp_path: Path
     assert round(feb["fred_ppi_mom_pct"], 6) == round((((102.5 / 95.0) * 100.0) / 100.0 - 1.0) * 100.0, 6)
 
 
+def _full_fred_month(month: str, base: float) -> list[DatasetRecord]:
+    return [
+        _fred_record("PCU33443344", f"{month}-01", base),
+        _fred_record("PCU33423342", f"{month}-01", base * 2),
+        _fred_record("PCU335313335313", f"{month}-01", base * 4),
+        _fred_record("PCU334111334111", f"{month}-01", base * 1.6),
+        _fred_record("PCU3341123341121", f"{month}-01", base * 0.8),
+    ]
+
+
+def test_run_derive_persists_standalone_fred_ppi_monthly_table(tmp_path: Path) -> None:
+    storage = StorageManager(tmp_path)
+    storage.upsert_dataset(
+        "fred_semiconductor_ppi",
+        _full_fred_month("2026-01", 50.0) + _full_fred_month("2026-02", 55.0),
+    )
+    # ADATA covers only one month, mimicking a stale/collapsed scraper.
+    storage.upsert_dataset("adata_marketwatch_monthly", [_adata_record("2026-02")])
+
+    SemiconductorMemoryPipeline(tmp_path).run_derive()
+
+    ppi = storage.load_dataset("fred_semiconductor_ppi_monthly")
+    # PPI table carries the full FRED history regardless of ADATA coverage.
+    assert sorted(ppi["month"].tolist()) == ["2026-01", "2026-02"]
+    jan = ppi.loc[ppi["month"] == "2026-01"].iloc[0]
+    feb = ppi.loc[ppi["month"] == "2026-02"].iloc[0]
+    assert jan["fred_ppi_value"] == 100.0
+    assert round(feb["fred_ppi_value"], 6) == round((55.0 / 50.0) * 100.0, 6)
+    assert round(feb["ppi_component_pcu33443344_rebased"], 6) == 110.0
+
+
+def test_run_derive_ppi_monthly_unaffected_by_collapsed_adata(tmp_path: Path) -> None:
+    storage = StorageManager(tmp_path)
+    storage.upsert_dataset(
+        "fred_semiconductor_ppi",
+        _full_fred_month("2026-01", 50.0) + _full_fred_month("2026-02", 55.0),
+    )
+    # No ADATA at all: the shared regime table would go blank, but the dedicated
+    # PPI table must still hold the full FRED-derived series.
+    SemiconductorMemoryPipeline(tmp_path).run_derive()
+
+    ppi = storage.load_dataset("fred_semiconductor_ppi_monthly")
+    assert len(ppi) == 2
+    assert ppi["fred_ppi_value"].notna().all()
+
+
 def test_run_derive_uses_fred_only_when_adata_is_missing(tmp_path: Path) -> None:
     storage = StorageManager(tmp_path)
     storage.upsert_dataset(

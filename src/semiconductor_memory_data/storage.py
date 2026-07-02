@@ -15,6 +15,7 @@ NATURAL_KEYS: dict[str, list[str]] = {
     "adata_marketwatch_images":            ["month", "image_url"],
     "adata_marketwatch_monthly":           ["month"],
     "fred_semiconductor_ppi":              ["date", "series_id"],
+    "fred_semiconductor_ppi_monthly":      ["month"],
     "semiconductor_memory_regime_monthly": ["month"],
 }
 
@@ -23,6 +24,7 @@ SORT_KEYS: dict[str, list[str]] = {
     "adata_marketwatch_images":            ["month", "image_url"],
     "adata_marketwatch_monthly":           ["month"],
     "fred_semiconductor_ppi":             ["series_id", "date"],
+    "fred_semiconductor_ppi_monthly":      ["month"],
     "semiconductor_memory_regime_monthly": ["month"],
 }
 

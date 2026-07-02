@@ -46,22 +46,37 @@ def compute_semiconductor_views(datasets: dict[str, DatasetLoadResult]) -> dict[
 
     regime_result = datasets.get("semiconductor_memory_regime_monthly")
     fred_result = datasets.get("fred_semiconductor_ppi")
+    ppi_result = datasets.get("fred_semiconductor_ppi_monthly")
     regime_df = regime_result.frame.copy() if regime_result and not regime_result.frame.empty else pd.DataFrame()
     fred_df = fred_result.frame.copy() if fred_result and not fred_result.frame.empty else pd.DataFrame()
+
+    # The PPI panel reads a dedicated FRED-only table so a failure of the ADATA
+    # scraper (which shares the regime table) can no longer blank out the PPI
+    # signal. Fall back to the regime table's PPI columns during the transition,
+    # before the new table has been backfilled.
+    ppi_df = ppi_result.frame.copy() if ppi_result and not ppi_result.frame.empty else pd.DataFrame()
+    if ppi_df.empty and not regime_df.empty:
+        ppi_df = regime_df.dropna(subset=["fred_ppi_value"]).copy()
 
     if not regime_df.empty:
         regime_df["month"] = regime_df["month"].astype(str)
         regime_df = regime_df.sort_values("month")
-
         latest_month = regime_df["month"].max()
         latest_data = regime_df[regime_df["month"] == latest_month].iloc[0]
-        proxy_df = regime_df.dropna(subset=["fred_ppi_value"]).copy()
+    else:
+        latest_month = None
+        latest_data = pd.Series(dtype="object")
+
+    if not ppi_df.empty:
+        ppi_df["month"] = ppi_df["month"].astype(str)
+        ppi_df = ppi_df.sort_values("month")
+        proxy_df = ppi_df.dropna(subset=["fred_ppi_value"]).copy()
         component_columns = [
             column for column in AI_DEMAND_PPI_COMPONENT_COLUMNS.values()
-            if column in regime_df.columns
+            if column in ppi_df.columns
         ]
         if component_columns:
-            base_candidates = regime_df.dropna(subset=["fred_ppi_value", *component_columns]).copy()
+            base_candidates = ppi_df.dropna(subset=["fred_ppi_value", *component_columns]).copy()
         else:
             base_candidates = proxy_df
         base_month = base_candidates["month"].iloc[0] if not base_candidates.empty else None
@@ -72,8 +87,6 @@ def compute_semiconductor_views(datasets: dict[str, DatasetLoadResult]) -> dict[
             else pd.Series(dtype="object")
         )
     else:
-        latest_month = None
-        latest_data = pd.Series(dtype="object")
         proxy_df = pd.DataFrame()
         component_columns = []
         base_month = None
@@ -166,6 +179,7 @@ def compute_semiconductor_views(datasets: dict[str, DatasetLoadResult]) -> dict[
         )
 
     views["regime_df"] = regime_df
+    views["ppi_df"] = ppi_df
     views["latest_month"] = latest_month
     views["latest_data"] = latest_data
     views["proxy_df"] = proxy_df
@@ -344,7 +358,7 @@ def render_semiconductor_section(datasets: dict[str, DatasetLoadResult], semi_vi
     )
 
     with tab_ppi:
-        regime_df = semi_views.get("regime_df", pd.DataFrame())
+        ppi_df = semi_views.get("ppi_df", pd.DataFrame())
         component_columns = semi_views.get("component_columns", [])
         base_month = semi_views.get("base_month")
         latest_proxy_month = semi_views.get("latest_proxy_month")
@@ -352,8 +366,8 @@ def render_semiconductor_section(datasets: dict[str, DatasetLoadResult], semi_vi
         latest_fred_month = semi_views.get("latest_fred_month")
         latest_fred_series_names = semi_views.get("latest_fred_series_names", [])
 
-        if regime_df.empty:
-            st.warning("No semiconductor memory data available.")
+        if ppi_df.empty:
+            st.warning("No AI Demand PPI data available.")
         else:
             st.markdown('<div class="section-title">Market Intelligence Hub</div>', unsafe_allow_html=True)
 
@@ -410,7 +424,7 @@ def render_semiconductor_section(datasets: dict[str, DatasetLoadResult], semi_vi
                     "until all five component series have updated for the same month."
                 )
 
-            _plot_df = regime_df[regime_df["month"] >= _cutoff].copy() if _cutoff else regime_df.copy()
+            _plot_df = ppi_df[ppi_df["month"] >= _cutoff].copy() if _cutoff else ppi_df.copy()
 
             proxy_pivot = _plot_df[["month", "fred_ppi_value"]].set_index("month").rename(columns={"fred_ppi_value": "AI Demand PPI"})
             st.plotly_chart(
