@@ -44,8 +44,10 @@ from dashboard.data import (
     load_latest_manifest,
 )
 from dashboard.sections.openrouter import (
+    _cap_change_percent_for_display,
     _compute_task_spend_views,
     _estimator_coverage_summary,
+    _pivot_to_change_percent,
     _pivot_to_share_percent,
     _weekly_usage_section_state,
 )
@@ -3155,6 +3157,57 @@ def test_grouped_revenue_token_pivots_share_aligned_display_provider_buckets() -
     assert tok_grouped.loc["2026-01-05", "StepFun"] == 50.0
     assert rev_grouped.loc["2026-01-05", "Others"] == 23.0
     assert tok_grouped.loc["2026-01-05", "Others"] == 230.0
+
+
+def test_pivot_to_change_percent_computes_provider_week_over_week() -> None:
+    pivot = pd.DataFrame(
+        {
+            "OpenAI": [100.0, 125.0, 100.0],
+            "Google": [50.0, 50.0, 75.0],
+        },
+        index=["2026-01-05", "2026-01-12", "2026-01-19"],
+    )
+
+    changed = _pivot_to_change_percent(pivot, "weekly")
+
+    assert pd.isna(changed.loc["2026-01-05", "OpenAI"])
+    assert changed.loc["2026-01-12", "OpenAI"] == 25.0
+    assert changed.loc["2026-01-19", "OpenAI"] == -20.0
+    assert changed.loc["2026-01-19", "Google"] == 50.0
+
+
+def test_pivot_to_change_percent_daily_uses_trailing_seven_day_average_change() -> None:
+    pivot = pd.DataFrame(
+        {
+            "OpenAI": [100.0] * 7 + [110.0] * 7,
+            "Google": [50.0] * 7 + [25.0] * 7,
+        },
+        index=pd.date_range("2026-01-01", periods=14, freq="D").strftime("%Y-%m-%d"),
+    )
+
+    changed = _pivot_to_change_percent(pivot, "daily")
+
+    assert changed.iloc[6].isna().all()
+    assert changed.iloc[13]["OpenAI"] == 10.0
+    assert changed.iloc[13]["Google"] == -50.0
+
+
+def test_cap_change_percent_for_display_preserves_readable_momentum_range() -> None:
+    pivot = pd.DataFrame(
+        {
+            "OpenAI": [25.0, 500.0],
+            "Google": [-25.0, -150.0],
+            "Anthropic": [pd.NA, 75.0],
+        },
+        index=["2026-01-05", "2026-01-12"],
+    )
+
+    capped = _cap_change_percent_for_display(pivot)
+
+    assert capped.loc["2026-01-12", "OpenAI"] == 300.0
+    assert capped.loc["2026-01-12", "Google"] == -100.0
+    assert pd.isna(capped.loc["2026-01-05", "Anthropic"])
+    assert capped.loc["2026-01-12", "Anthropic"] == 75.0
 
 
 def test_top_n_with_others_preserves_existing_others_bucket() -> None:
