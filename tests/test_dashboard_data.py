@@ -43,7 +43,12 @@ from dashboard.data import (
     load_domain_datasets,
     load_latest_manifest,
 )
-from dashboard.sections.openrouter import _compute_task_spend_views, _estimator_coverage_summary, _pivot_to_share_percent
+from dashboard.sections.openrouter import (
+    _compute_task_spend_views,
+    _estimator_coverage_summary,
+    _pivot_to_share_percent,
+    _weekly_usage_section_state,
+)
 
 
 def _base_row(dataset_id: str) -> dict:
@@ -151,6 +156,33 @@ def _rankings_frame(dataset_id: str) -> pd.DataFrame:
                 "rank": rank,
                 "category_slug": "programming" if dataset_id == "categories_programming" else None,
                 "source_run_id": f"run-{week}",
+                "scraped_at": f"{week}T00:00:00Z",
+            }
+        )
+        rows.append(row)
+    return pd.DataFrame(rows, columns=EXPECTED_COLUMNS)
+
+
+def _provider_weekly_requests_frame() -> pd.DataFrame:
+    rows = []
+    for week, provider, requests, rank in [
+        ("2026-03-30", "openai", 1_200_000.0, 1),
+        ("2026-03-30", "anthropic", 800_000.0, 2),
+        ("2026-04-06", "openai", 1_500_000.0, 1),
+        ("2026-04-06", "anthropic", 700_000.0, 2),
+    ]:
+        row = _base_row("provider_weekly_requests")
+        row.update(
+            {
+                "week_label": week,
+                "week_start_date": week,
+                "entity_id": provider,
+                "entity_name": provider.title(),
+                "metric_name": "requests",
+                "metric_unit": "requests",
+                "metric_value": requests,
+                "rank": rank,
+                "source_run_id": f"requests-{week}",
                 "scraped_at": f"{week}T00:00:00Z",
             }
         )
@@ -2742,6 +2774,122 @@ def test_compute_openrouter_views_prefers_market_share_for_platform_total_tokens
 
     assert views["top_models"]["total_source"] == "hybrid"
     assert views["top_models"]["pivot_total"].loc["2026-03-09", "Total Tokens"] == 550.0
+
+
+def test_compute_openrouter_views_exposes_provider_weekly_request_volume() -> None:
+    provider_requests = _provider_weekly_requests_frame()
+    result_kwargs = {
+        "domain": "rankings",
+        "primary_date_column": "week_start_date",
+        "metric_column": "metric_value",
+        "source_format": "csv",
+        "source_path": None,
+        "missing_columns": [],
+        "duplicate_rows": 0,
+        "first_date": "2026-03-30",
+        "latest_date": "2026-04-06",
+        "latest_scraped_at": "2026-04-06T00:00:00Z",
+    }
+
+    views = compute_openrouter_views(
+        {
+            "provider_weekly_requests": DatasetLoadResult(
+                dataset_id="provider_weekly_requests",
+                label="Provider Weekly Requests",
+                frame=provider_requests,
+                row_count=len(provider_requests),
+                **result_kwargs,
+            )
+        }
+    )
+
+    request_view = views["provider_weekly_requests"]
+    pivot = request_view["pivot_weekly"]
+
+    assert request_view["weeks"] == ["2026-04-06", "2026-03-30"]
+    assert pivot.loc["2026-04-06", "OpenAI"] == 1_500_000.0
+    assert pivot.loc["2026-04-06", "Anthropic"] == 700_000.0
+
+
+def test_weekly_usage_section_state_switches_between_tokens_and_requests() -> None:
+    token_pivot = pd.DataFrame({"Total Tokens": [100.0, 150.0]}, index=["2026-03-30", "2026-04-06"])
+    request_pivot = pd.DataFrame({"OpenAI": [1_200.0, 1_500.0], "Anthropic": [800.0, 700.0]}, index=["2026-03-30", "2026-04-06"])
+    top_models = pd.DataFrame(
+        [
+            {**_base_row("top_models"), "week_start_date": "2026-04-06", "entity_id": "openai/gpt-4o", "metric_value": 500.0, "rank": 1},
+            {**_base_row("top_models"), "week_start_date": "2026-04-06", "entity_id": "anthropic/claude", "metric_value": 300.0, "rank": 2},
+        ],
+        columns=EXPECTED_COLUMNS,
+    )
+    market_share = pd.DataFrame(
+        [
+            {**_base_row("market_share"), "week_start_date": "2026-04-06", "entity_id": "google", "metric_value": 900.0, "rank": 1},
+            {**_base_row("market_share"), "week_start_date": "2026-04-06", "entity_id": "openai", "metric_value": 600.0, "rank": 2},
+        ],
+        columns=EXPECTED_COLUMNS,
+    )
+    openrouter_views = {
+        "top_models": {
+            "pivot_total": token_pivot,
+            "total_source": "hybrid",
+            "source_by_week": {"2026-04-06": "top_models"},
+        },
+        "provider_weekly_requests": {
+            "pivot_weekly": request_pivot,
+            "weeks": ["2026-04-06", "2026-03-30"],
+        },
+    }
+    result_kwargs = {
+        "domain": "rankings",
+        "primary_date_column": "week_start_date",
+        "metric_column": "metric_value",
+        "source_format": "csv",
+        "source_path": None,
+        "missing_columns": [],
+        "duplicate_rows": 0,
+        "first_date": "2026-03-30",
+        "latest_date": "2026-04-06",
+        "latest_scraped_at": "2026-04-06T00:00:00Z",
+    }
+    datasets = {
+        "top_models": DatasetLoadResult(
+            dataset_id="top_models",
+            label="Top Models",
+            frame=top_models,
+            row_count=2,
+            **result_kwargs,
+        ),
+        "market_share": DatasetLoadResult(
+            dataset_id="market_share",
+            label="Market Share",
+            frame=market_share,
+            row_count=2,
+            **result_kwargs,
+        ),
+        "provider_weekly_requests": DatasetLoadResult(
+            dataset_id="provider_weekly_requests",
+            label="Provider Weekly Requests",
+            frame=_provider_weekly_requests_frame(),
+            row_count=4,
+            **result_kwargs,
+        ),
+    }
+
+    token_state = _weekly_usage_section_state(datasets, openrouter_views, "Tokens")
+    request_state = _weekly_usage_section_state(datasets, openrouter_views, "Requests")
+
+    assert token_state["metric"] == "Tokens"
+    assert token_state["pivot"].equals(token_pivot)
+    assert token_state["y_title"] == "Tokens"
+    assert token_state["latest_total"] == 150.0
+    assert token_state["top_model"] == "openai/gpt-4o"
+    assert token_state["market_leader"] == "google"
+    assert token_state["market_leader_pct"] == 60.0
+    assert request_state["metric"] == "Requests"
+    assert request_state["pivot"].equals(request_pivot)
+    assert request_state["y_title"] == "Requests"
+    assert request_state["latest_total"] == 2200.0
+    assert request_state["dominant_label"] == "OpenAI"
 
 
 def test_compute_openrouter_views_falls_back_to_top_models_when_market_share_undercounts() -> None:

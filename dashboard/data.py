@@ -27,6 +27,14 @@ DATASET_REGISTRY: dict[str, dict[str, object]] = {
         "metric_column": "metric_value",
         "required_columns": ["week_start_date", "entity_id", "metric_value", "rank"],
     },
+    "provider_weekly_requests": {
+        "label": "Provider Weekly Requests",
+        "domain": "rankings",
+        "natural_keys": ["week_start_date", "entity_id"],
+        "primary_date_column": "week_start_date",
+        "metric_column": "metric_value",
+        "required_columns": ["week_start_date", "entity_id", "metric_value", "rank"],
+    },
     # NOTE: This dataset is no longer rendered in the dashboard, but it is still
     # produced by the rankings pipeline and consumed by research marts/tests.
     "categories_programming": {
@@ -337,6 +345,7 @@ DOMAIN_ORDER = {
     "rankings": [
         "top_models",
         "market_share",
+        "provider_weekly_requests",
         "categories_programming",
         "openrouter_model_activity",
         "provider_daily_activity",
