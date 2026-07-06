@@ -23,6 +23,8 @@ from dashboard.components import (format_metric, _empty_dataset_frame, _styler_a
 
 
 REVENUE_CACHE_VERSION = "2026-07-01-pricing-perf-v1"
+CHANGE_DISPLAY_MIN_PCT = -100.0
+CHANGE_DISPLAY_MAX_PCT = 300.0
 
 
 def grouped_revenue_token_pivots(
@@ -570,6 +572,59 @@ def _pivot_to_share_percent(pivot_df: pd.DataFrame) -> pd.DataFrame:
         return pivot_df.copy()
     denominator = pivot_df.sum(axis=1).replace(0, np.nan)
     return pivot_df.div(denominator, axis=0).fillna(0.0) * 100
+
+
+def _pivot_to_change_percent(pivot_df: pd.DataFrame, granularity: str) -> pd.DataFrame:
+    if pivot_df.empty:
+        return pivot_df.copy()
+    numeric = pivot_df.apply(pd.to_numeric, errors="coerce").sort_index()
+    if granularity == "daily":
+        baseline = numeric.rolling(window=7, min_periods=7).mean()
+        prior = baseline.shift(7)
+    elif granularity in {"weekly", "monthly"}:
+        baseline = numeric
+        prior = baseline.shift(1)
+    else:
+        raise ValueError(f"Unsupported granularity: {granularity}")
+    changed = baseline.sub(prior).div(prior.replace(0, np.nan)) * 100
+    return changed.replace([np.inf, -np.inf], np.nan)
+
+
+def _cap_change_percent_for_display(pivot_df: pd.DataFrame) -> pd.DataFrame:
+    if pivot_df.empty:
+        return pivot_df.copy()
+    return pivot_df.clip(lower=CHANGE_DISPLAY_MIN_PCT, upper=CHANGE_DISPLAY_MAX_PCT)
+
+
+def _make_change_line_chart(
+    pivot_df: pd.DataFrame,
+    colors: list[str],
+    x_title: str,
+    y_title: str,
+) -> go.Figure:
+    fig = go.Figure()
+    for i, col in enumerate(pivot_df.columns):
+        fig.add_trace(
+            go.Scatter(
+                x=pivot_df.index,
+                y=pivot_df[col],
+                name=str(col),
+                mode="lines+markers",
+                line=dict(width=2.5, color=colors[i % len(colors)]),
+                connectgaps=False,
+                hovertemplate=f"<b>{col}</b><br>%{{x}}<br>%{{y:+.1f}}%<extra></extra>",
+            )
+        )
+    fig.update_layout(
+        template="plotly_white",
+        xaxis_title=x_title,
+        yaxis_title=y_title,
+        legend=dict(orientation="h", y=-0.2),
+        height=400,
+        margin=dict(l=0, r=0, t=20, b=80),
+    )
+    fig.update_yaxes(ticksuffix="%", zeroline=True, zerolinecolor=GRID)
+    return fig
 
 
 def _estimator_coverage_summary(estimated: pd.DataFrame) -> dict[str, float | int | dict[str, int]]:
@@ -1278,7 +1333,7 @@ def render_revenue_token_section(datasets: dict[str, DatasetLoadResult], openrou
     st.markdown('<div class="section-title">Provider Revenue &amp; Token Volume</div>', unsafe_allow_html=True)
     st.markdown(
         '<div class="section-subtitle">Provider-level revenue and token consumption across OpenRouter, '
-        'switchable between absolute values and normalized share of total.</div>',
+        'switchable between absolute values, normalized share of total, and provider-level change over time.</div>',
         unsafe_allow_html=True,
     )
 
@@ -1297,7 +1352,7 @@ def render_revenue_token_section(datasets: dict[str, DatasetLoadResult], openrou
         else:
             metric = st.radio("Metric", metric_options, horizontal=True)
     with control_col2:
-        view_options = ["Absolute", "Share (%)"]
+        view_options = ["Absolute", "Share (%)", "WoW (%)"]
         if hasattr(st, "segmented_control"):
             view_mode = st.segmented_control("View", view_options, default="Absolute")
         else:
@@ -1305,6 +1360,7 @@ def render_revenue_token_section(datasets: dict[str, DatasetLoadResult], openrou
     metric = str(metric or "Revenue")
     view_mode = str(view_mode or "Absolute")
     is_share = view_mode == "Share (%)"
+    is_change = view_mode == "WoW (%)"
     is_revenue = metric == "Revenue"
 
     if is_revenue:
@@ -1354,7 +1410,12 @@ def render_revenue_token_section(datasets: dict[str, DatasetLoadResult], openrou
     pivot_active_weekly  = pivot_rev_weekly if is_revenue else pivot_tok_weekly
     pivot_active_monthly = pivot_rev_monthly if is_revenue else pivot_tok_monthly
 
-    def _render_chart(pivot_df: pd.DataFrame, date_title: str, extra_caption: str | None = None) -> None:
+    def _render_chart(
+        pivot_df: pd.DataFrame,
+        date_title: str,
+        granularity: str,
+        extra_caption: str | None = None,
+    ) -> None:
         if pivot_df.empty:
             st.info(f"No {date_title.lower()} data available.")
             return
@@ -1363,30 +1424,63 @@ def render_revenue_token_section(datasets: dict[str, DatasetLoadResult], openrou
             f"{d} (MTD)" if date_title == "Usage Month" and str(d) == today_month else d
             for d in pivot_df.index
         ]
-        plot_df = _pivot_to_share_percent(pivot_df) if is_share else pivot_df
-        if is_revenue:
-            y_title = "Revenue Share (%)" if is_share else "Revenue (USD)"
-            value_format = ".1f" if is_share else ",.2f"
-            hover_prefix = "" if is_share else "$"
-            hover_suffix = "%" if is_share else ""
+        if is_change:
+            plot_df = _pivot_to_change_percent(pivot_df, granularity)
+            plot_df = _cap_change_percent_for_display(plot_df)
+        elif is_share:
+            plot_df = _pivot_to_share_percent(pivot_df)
         else:
-            y_title = "Token Share (%)" if is_share else "Tokens"
-            value_format = ".1f" if is_share else ",.0f"
-            hover_prefix = ""
-            hover_suffix = "%" if is_share else "tokens"
-        st.plotly_chart(
-            make_stacked_area_chart(
-                plot_df,
-                display_index,
-                MODEL_COLORS,
-                x_title=date_title,
-                y_title=y_title,
-                value_format=value_format,
-                hover_prefix=hover_prefix,
-                hover_suffix=hover_suffix,
-            ),
-            width="stretch", theme=None,
-        )
+            plot_df = pivot_df
+        if is_change and not plot_df.empty:
+            plot_df = plot_df.copy()
+            plot_df.index = display_index
+        if is_revenue:
+            if is_change:
+                y_title = "Revenue Change (%)"
+            else:
+                y_title = "Revenue Share (%)" if is_share else "Revenue (USD)"
+                value_format = ".1f" if is_share else ",.2f"
+                hover_prefix = "" if is_share else "$"
+                hover_suffix = "%" if is_share else ""
+        else:
+            if is_change:
+                y_title = "Token Volume Change (%)"
+            else:
+                y_title = "Token Share (%)" if is_share else "Tokens"
+                value_format = ".1f" if is_share else ",.0f"
+                hover_prefix = ""
+                hover_suffix = "%" if is_share else "tokens"
+        if is_change:
+            st.plotly_chart(
+                _make_change_line_chart(
+                    plot_df,
+                    MODEL_COLORS,
+                    x_title=date_title,
+                    y_title=y_title,
+                ),
+                width="stretch",
+                theme=None,
+            )
+        else:
+            st.plotly_chart(
+                make_stacked_area_chart(
+                    plot_df,
+                    display_index,
+                    MODEL_COLORS,
+                    x_title=date_title,
+                    y_title=y_title,
+                    value_format=value_format,
+                    hover_prefix=hover_prefix,
+                    hover_suffix=hover_suffix,
+                ),
+                width="stretch", theme=None,
+            )
+        if is_change and granularity == "daily":
+            st.caption("Daily change uses each provider's trailing 7-day average versus its prior trailing 7-day average. Display is capped at -100% to +300% to keep tiny-base spikes readable.")
+        elif is_change and granularity == "weekly":
+            st.caption("Weekly change compares each provider with its previous weekly total. Display is capped at -100% to +300% to keep tiny-base spikes readable.")
+        elif is_change and granularity == "monthly":
+            st.caption("Monthly change compares each provider with its previous monthly total. Display is capped at -100% to +300% to keep tiny-base spikes readable.")
         if extra_caption:
             st.caption(extra_caption)
 
@@ -1397,11 +1491,11 @@ def render_revenue_token_section(datasets: dict[str, DatasetLoadResult], openrou
             "then switches to observed provider activity with pricing fallbacks."
             if is_revenue else None
         )
-        _render_chart(pivot_active_weekly, "Usage Week (Starting)", extra_caption=week_caption)
+        _render_chart(pivot_active_weekly, "Usage Week (Starting)", "weekly", extra_caption=week_caption)
     with tab_month:
-        _render_chart(pivot_active_monthly, "Usage Month")
+        _render_chart(pivot_active_monthly, "Usage Month", "monthly")
     with tab_day:
-        _render_chart(pivot_active_daily, "Usage Date")
+        _render_chart(pivot_active_daily, "Usage Date", "daily")
 
     if is_revenue:
         st.caption(
