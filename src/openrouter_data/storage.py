@@ -14,6 +14,7 @@ from openrouter_data.models import DatasetRecord, Snapshot
 NATURAL_KEYS: dict[str, list[str]] = {
     "top_models": ["week_start_date", "entity_id"],
     "market_share": ["week_start_date", "entity_id"],
+    "provider_weekly_requests": ["week_start_date", "entity_id"],
     "categories_programming": ["week_start_date", "category_slug", "entity_id"],
     "app_metadata_snapshots": ["app_id", "scrape_date"],
     "app_usage_daily": ["app_id", "usage_date", "model_permaslug"],
@@ -95,6 +96,7 @@ TEXT_COLUMNS = [
 SORT_KEYS: dict[str, list[str]] = {
     "top_models": ["week_start_date", "rank", "entity_id"],
     "market_share": ["week_start_date", "rank", "entity_id"],
+    "provider_weekly_requests": ["week_start_date", "rank", "entity_id"],
     "categories_programming": ["week_start_date", "rank", "entity_id"],
     "app_metadata_snapshots": ["scrape_date", "app_id"],
     "app_usage_daily": ["usage_date", "app_id", "rank", "model_permaslug"],

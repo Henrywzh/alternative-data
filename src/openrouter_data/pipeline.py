@@ -18,7 +18,7 @@ from openrouter_data.sources.task_spend import TASK_SPEND_DATASET_ID, TaskSpendS
 from openrouter_data.storage import StorageManager
 
 
-RANKINGS_DATASET_IDS = ("top_models", "market_share", "categories_programming")
+RANKINGS_DATASET_IDS = ("top_models", "market_share", "provider_weekly_requests", "categories_programming")
 APPS_DATASET_IDS = (
     "app_metadata_snapshots",
     "app_usage_daily",

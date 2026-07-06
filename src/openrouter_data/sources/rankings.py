@@ -46,6 +46,14 @@ MARKET_SHARE_SPEC = DatasetSpec(
     week_anchor="end",
 )
 
+PROVIDER_WEEKLY_REQUESTS_SPEC = DatasetSpec(
+    dataset_id="provider_weekly_requests",
+    source_url="https://openrouter.ai/rankings",
+    metric_name="requests",
+    metric_unit="requests",
+    week_anchor="end",
+)
+
 CATEGORIES_PROGRAMMING_SPEC = DatasetSpec(
     dataset_id="categories_programming",
     source_url="https://openrouter.ai/rankings/programming",
@@ -100,6 +108,11 @@ class RankingsSource(SourceExtractor):
         return {
             TOP_MODELS_SPEC.dataset_id: self._records_from_chart(charts[TOP_MODELS_SPEC.dataset_id], TOP_MODELS_SPEC, context),
             MARKET_SHARE_SPEC.dataset_id: self._records_from_chart(charts[MARKET_SHARE_SPEC.dataset_id], MARKET_SHARE_SPEC, context),
+            PROVIDER_WEEKLY_REQUESTS_SPEC.dataset_id: self._records_from_chart(
+                charts[PROVIDER_WEEKLY_REQUESTS_SPEC.dataset_id],
+                PROVIDER_WEEKLY_REQUESTS_SPEC,
+                context,
+            ),
             CATEGORIES_PROGRAMMING_SPEC.dataset_id: self._records_from_chart(
                 charts[CATEGORIES_PROGRAMMING_SPEC.dataset_id],
                 CATEGORIES_PROGRAMMING_SPEC,
@@ -118,6 +131,11 @@ class RankingsSource(SourceExtractor):
                 rankings_html,
                 predicate=self._looks_like_market_share_chart,
                 label=MARKET_SHARE_SPEC.dataset_id,
+            ),
+            PROVIDER_WEEKLY_REQUESTS_SPEC.dataset_id: self._find_chart(
+                rankings_html,
+                predicate=self._looks_like_market_share_chart,
+                label=PROVIDER_WEEKLY_REQUESTS_SPEC.dataset_id,
             ),
             CATEGORIES_PROGRAMMING_SPEC.dataset_id: self._find_first_chart(
                 programming_html,
@@ -233,6 +251,11 @@ class RankingsSource(SourceExtractor):
                                 section_selector="#market-share",
                                 label=MARKET_SHARE_SPEC.dataset_id,
                             ),
+                            PROVIDER_WEEKLY_REQUESTS_SPEC.dataset_id: self._extract_runtime_chart_from_page(
+                                page,
+                                section_selector="#market-share",
+                                label=PROVIDER_WEEKLY_REQUESTS_SPEC.dataset_id,
+                            ),
                             CATEGORIES_PROGRAMMING_SPEC.dataset_id: self._extract_runtime_chart_from_page(
                                 page,
                                 section_selector="#programming-languages",
@@ -276,7 +299,7 @@ class RankingsSource(SourceExtractor):
                 const first = item.data[0];
                 if (!first || typeof first !== "object" || !("x" in first) || !("ys" in first)) return false;
                 if (label === "top_models") return item.forecast === "forecast-1w";
-                if (label === "market_share") return item.isPercentage === true || Object.keys(first.ys || {}).every((key) => !key.includes("/"));
+                if (label === "market_share" || label === "provider_weekly_requests") return item.isPercentage === true || Object.keys(first.ys || {}).every((key) => !key.includes("/"));
                 return true;
               };
 
