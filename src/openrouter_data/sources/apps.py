@@ -260,10 +260,7 @@ class AppsSource(SourceExtractor):
                     if period != "day":
                         combobox = page.locator('#global-ranking button[role="combobox"]')
                         combobox.click()
-                        option = page.locator('[role="option"]', has_text=label).last
-                        if option.count() == 0:
-                            continue
-                        option.click()
+                        self._click_visible_option(page, label, timeout_ms=self.timeout * 1000)
                         page.wait_for_function(
                             """([selector, value]) => {
                                 const input = document.querySelector(selector);
@@ -287,6 +284,18 @@ class AppsSource(SourceExtractor):
             raise ExtractionError("Could not find trending payload in /apps")
         self._directory_payload_cache = (ranking_map, trending_payload)
         return self._directory_payload_cache
+
+    @staticmethod
+    def _click_visible_option(page: Any, label: str, *, timeout_ms: int = 30_000) -> None:
+        options = page.locator('[role="option"]', has_text=label)
+        for _ in range(12):
+            for index in range(options.count()):
+                option = options.nth(index)
+                if option.is_visible():
+                    option.click(timeout=timeout_ms)
+                    return
+            page.wait_for_timeout(250)
+        raise ExtractionError(f"Could not find visible option {label!r} in /apps ranking dropdown")
 
     @staticmethod
     def _parse_compact_metric(value: str) -> float:
