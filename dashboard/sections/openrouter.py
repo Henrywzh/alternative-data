@@ -405,6 +405,29 @@ def compute_openrouter_views(
     else:
         views["market_share"] = {"weeks": [], "pivot_pct_top": pd.DataFrame()}
 
+    requests_result = datasets.get("provider_weekly_requests")
+    if requests_result and not requests_result.frame.empty:
+        request_frame = requests_result.frame.copy()
+        request_frame["usage_week"] = _align_rankings_week_to_monday(request_frame["week_start_date"].astype(str))
+        request_frame["metric_value"] = pd.to_numeric(request_frame["metric_value"], errors="coerce")
+        request_frame["provider_label"] = request_frame["entity_id"].astype("string").str.lower().map(OPENROUTER_PROVIDER_MAP)
+        fallback_label = request_frame.get("entity_name", request_frame["entity_id"]).astype("string")
+        request_frame["provider_label"] = request_frame["provider_label"].fillna(fallback_label)
+        request_frame["provider_label"] = request_frame["provider_label"].replace({"others": "Others"})
+        pivot_requests = (
+            request_frame.dropna(subset=["usage_week", "provider_label"])
+            .pivot_table(index="usage_week", columns="provider_label", values="metric_value", aggfunc="sum")
+            .fillna(0)
+            .sort_index()
+        )
+        pivot_requests = regroup_provider_pivot_for_display(pivot_requests, "weekly")
+        views["provider_weekly_requests"] = {
+            "weeks": sorted(pivot_requests.index.astype(str).tolist(), reverse=True),
+            "pivot_weekly": pivot_requests,
+        }
+    else:
+        views["provider_weekly_requests"] = {"weeks": [], "pivot_weekly": pd.DataFrame()}
+
     task_spend_result = datasets.get("openrouter_task_spend")
     task_spend_frame = task_spend_result.frame.copy() if task_spend_result and not task_spend_result.frame.empty else pd.DataFrame()
     views["task_spend"] = _compute_task_spend_views(task_spend_frame)
@@ -1032,12 +1055,45 @@ def render_kpi_row(datasets: dict[str, DatasetLoadResult], openrouter_views: dic
         st.markdown(f'<div class="rankings-warning">{warning}</div>', unsafe_allow_html=True)
 
 
-def render_top_models_chart(datasets: dict[str, DatasetLoadResult], openrouter_views: dict[str, object]) -> None:
-    st.markdown('<div class="section-title">Total Weekly Tokens</div>', unsafe_allow_html=True)
-    st.markdown(
-        f'<div class="section-subtitle">Completed weekly OpenRouter token-usage buckets. Uses Market Share totals when they remain directionally complete, and falls back to Top Models when the Market Share feed undercounts recent weeks.</div>',
-        unsafe_allow_html=True,
-    )
+def _weekly_usage_section_state(
+    datasets: dict[str, DatasetLoadResult],
+    openrouter_views: dict[str, object],
+    metric: str,
+) -> dict[str, object]:
+    if metric == "Requests":
+        request_view = openrouter_views.get("provider_weekly_requests", {})
+        pivot_requests = request_view.get("pivot_weekly", pd.DataFrame())
+        latest_total = None
+        wow_pct = None
+        dominant_provider = None
+        provider_count = 0
+        latest_week = pivot_requests.index[-1] if not pivot_requests.empty else "n/a"
+        if not pivot_requests.empty:
+            latest_row = pivot_requests.iloc[-1]
+            latest_total = float(latest_row.sum())
+            provider_count = int((latest_row > 0).sum())
+            if latest_total > 0:
+                dominant_provider = latest_row.idxmax()
+            if len(pivot_requests) >= 2:
+                previous_total = float(pivot_requests.iloc[-2].sum())
+                if previous_total > 0:
+                    wow_pct = (latest_total - previous_total) / previous_total * 100
+        return {
+            "metric": "Requests",
+            "pivot": pivot_requests,
+            "latest_total": latest_total,
+            "wow_pct": wow_pct,
+            "dominant_label": dominant_provider,
+            "provider_count": provider_count,
+            "latest_week": str(latest_week),
+            "y_title": "Requests",
+            "hover_suffix": "requests",
+            "empty_message": "No provider weekly request data is available yet.",
+            "caption": "This request-volume signal is separate from token-volume charts and should not be mixed with token usage.",
+            "source_status": "Raw weekly requests from Rankings Market Share",
+            "scraped_at": datasets.get("provider_weekly_requests").latest_scraped_at if datasets.get("provider_weekly_requests") else None,
+        }
+
     top_view = openrouter_views.get("top_models", {})
     total_source = top_view.get("total_source", "top_models")
     pivot_total = top_view.get("pivot_total", pd.DataFrame())
@@ -1046,21 +1102,163 @@ def render_top_models_chart(datasets: dict[str, DatasetLoadResult], openrouter_v
     result = datasets.get("market_share") if latest_source == "market_share" else datasets.get("top_models")
     if latest_source == "hybrid":
         result = datasets.get("top_models")
-    if not result or not render_dataset_guard(result):
-        return
+    latest_total = None
+    wow_pct = None
+    top_model = None
+    market_leader = None
+    market_leader_pct = None
+    if not pivot_total.empty:
+        latest_total = float(pivot_total.iloc[-1].sum())
+        if len(pivot_total) >= 2:
+            previous_total = float(pivot_total.iloc[-2].sum())
+            if previous_total > 0:
+                wow_pct = (latest_total - previous_total) / previous_total * 100
+    top_models_result = datasets.get("top_models")
+    if top_models_result and not top_models_result.frame.empty:
+        top_models = top_models_result.frame.copy()
+        top_models["week_start_date"] = top_models["week_start_date"].astype(str)
+        latest_top_week = top_models["week_start_date"].max()
+        top_latest = (
+            top_models[
+                (top_models["week_start_date"] == latest_top_week)
+                & (top_models["entity_id"].astype("string").str.lower() != "others")
+                & (top_models["entity_id"].astype("string").str.contains("/", na=False))
+            ]
+            .groupby("entity_id", as_index=False)["metric_value"]
+            .sum()
+            .sort_values("metric_value", ascending=False)
+        )
+        if not top_latest.empty:
+            top_model = str(top_latest.iloc[0]["entity_id"])
+    market_share_result = datasets.get("market_share")
+    if market_share_result and not market_share_result.frame.empty:
+        market_share = market_share_result.frame.copy()
+        market_share["week_start_date"] = market_share["week_start_date"].astype(str)
+        latest_market_week = market_share["week_start_date"].max()
+        market_latest = market_share[market_share["week_start_date"] == latest_market_week].copy()
+        market_latest["metric_value"] = pd.to_numeric(market_latest["metric_value"], errors="coerce")
+        market_totals = market_latest.groupby("entity_id", as_index=False)["metric_value"].sum()
+        market_named = market_totals[market_totals["entity_id"].astype("string").str.lower() != "others"].copy()
+        if not market_named.empty:
+            market_named = market_named.sort_values("metric_value", ascending=False)
+            market_leader = str(market_named.iloc[0]["entity_id"])
+            total_market = float(market_totals["metric_value"].sum())
+            if total_market > 0:
+                market_leader_pct = float(market_named.iloc[0]["metric_value"]) / total_market * 100
+    return {
+        "metric": "Tokens",
+        "pivot": pivot_total,
+        "latest_total": latest_total,
+        "wow_pct": wow_pct,
+        "dominant_label": None,
+        "provider_count": None,
+        "top_model": top_model,
+        "market_leader": market_leader,
+        "market_leader_pct": market_leader_pct,
+        "latest_week": str(latest_week),
+        "latest_source": latest_source,
+        "total_source": total_source,
+        "y_title": "Tokens",
+        "hover_suffix": "tokens",
+        "empty_message": "No weekly token data is available yet.",
+        "caption": "Completed weekly OpenRouter token-usage buckets. Uses Market Share totals when they remain directionally complete, and falls back to Top Models when the Market Share feed undercounts recent weeks.",
+        "source_status": f"Total source: {total_source} · Latest plotted week: {latest_week} · Latest-week source: {latest_source}",
+        "scraped_at": result.latest_scraped_at if result else None,
+    }
+
+
+def render_weekly_usage_section(datasets: dict[str, DatasetLoadResult], openrouter_views: dict[str, object]) -> None:
+    st.markdown('<div class="section-title">Weekly OpenRouter Usage</div>', unsafe_allow_html=True)
     st.markdown(
-        f'<div class="status-caption">Total source: {total_source} · Latest plotted week: {latest_week} · Latest-week source: {latest_source} · Scraped: {format_scraped_at_display(result.latest_scraped_at)}</div>',
+        '<div class="section-subtitle">Switch between weekly token volume and raw weekly request volume from OpenRouter Rankings.</div>',
         unsafe_allow_html=True,
     )
 
-    fig = make_line_chart(
-        pivot_total,
-        [ACCENT],
-        y_title="Tokens",
-        x_title="Usage Week (Starting)",
-        hover_suffix="tokens",
+    metric_options = ["Tokens", "Requests"]
+    if hasattr(st, "segmented_control"):
+        metric = st.segmented_control("Metric", metric_options, default="Tokens", key="openrouter_weekly_usage_metric")
+    else:
+        metric = st.radio("Metric", metric_options, horizontal=True, key="openrouter_weekly_usage_metric")
+    metric = str(metric or "Tokens")
+
+    state = _weekly_usage_section_state(datasets, openrouter_views, metric)
+    pivot = state["pivot"]
+
+    if state.get("scraped_at"):
+        st.markdown(
+            f'<div class="status-caption">{state["source_status"]} · Scraped: {format_scraped_at_display(state.get("scraped_at"))}</div>',
+            unsafe_allow_html=True,
+        )
+    else:
+        st.markdown(f'<div class="status-caption">{state["source_status"]}</div>', unsafe_allow_html=True)
+
+    if pivot.empty:
+        st.info(str(state["empty_message"]))
+        return
+
+    latest_total = state.get("latest_total")
+    wow_pct = state.get("wow_pct")
+    if wow_pct is not None:
+        delta_cls = "up" if float(wow_pct) >= 0 else "down"
+        delta_text = f"{'↑' if float(wow_pct) >= 0 else '↓'} {abs(float(wow_pct)):.1f}% WoW"
+        wow_str = f"{'+' if float(wow_pct) >= 0 else ''}{float(wow_pct):.1f}%"
+    else:
+        delta_cls, delta_text, wow_str = "flat", "—", "—"
+
+    if metric == "Requests":
+        st.markdown(
+            kpi_grid_html(
+                kpi_card_html("Total Requests (Latest Week)", format_metric(latest_total) if latest_total else "—", delta=delta_text, delta_class=delta_cls),
+                kpi_card_html("WoW Change", wow_str, delta="vs prior week"),
+                kpi_card_html("Dominant Provider", str(state.get("dominant_label") or "—"), delta="by request share this week"),
+                kpi_card_html("Providers Tracked", f"{state.get('provider_count') or 0}", delta=f"latest week {state.get('latest_week')}"),
+            ),
+            unsafe_allow_html=True,
+        )
+    else:
+        top_model = str(state.get("top_model") or "—")
+        if len(top_model) > 28:
+            top_model = top_model[:26] + "…"
+        market_leader = state.get("market_leader")
+        market_leader_pct = state.get("market_leader_pct")
+        if market_leader and market_leader_pct is not None:
+            market_leader_label = f"{market_leader} ({float(market_leader_pct):.1f}%)"
+        else:
+            market_leader_label = str(market_leader or "—")
+        st.markdown(
+            kpi_grid_html(
+                kpi_card_html("Total Tokens (Latest Week)", format_metric(latest_total) if latest_total else "—", delta=delta_text, delta_class=delta_cls),
+                kpi_card_html("WoW Change", wow_str, delta="vs prior week"),
+                kpi_card_html("Top Model", top_model, delta="by tokens this week", value_style="font-size:1.1rem;"),
+                kpi_card_html("Market Leader", market_leader_label, delta="latest market-share week", value_style="font-size:1.1rem;"),
+            ),
+            unsafe_allow_html=True,
+        )
+
+    st.plotly_chart(
+        make_line_chart(
+            pivot,
+            MODEL_COLORS,
+            y_title=str(state["y_title"]),
+            x_title="Usage Week (Starting)",
+            hover_suffix=str(state["hover_suffix"]),
+        ) if metric == "Tokens" else make_stacked_area_chart(
+            pivot,
+            list(pivot.index.astype(str)),
+            MODEL_COLORS,
+            x_title="Usage Week (Starting)",
+            y_title=str(state["y_title"]),
+            value_format=",.0f",
+            hover_suffix=str(state["hover_suffix"]),
+        ),
+        width="stretch",
+        theme=None,
     )
-    st.plotly_chart(fig, width="stretch", theme=None)
+    st.caption(str(state["caption"]))
+
+
+def render_top_models_chart(datasets: dict[str, DatasetLoadResult], openrouter_views: dict[str, object]) -> None:
+    render_weekly_usage_section(datasets, openrouter_views)
 
 
 def render_revenue_token_section(datasets: dict[str, DatasetLoadResult], openrouter_views: dict[str, object]) -> None:
@@ -1665,7 +1863,6 @@ def render(domain_states, datasets) -> None:
         revenue_cache_version=REVENUE_CACHE_VERSION,
     )
     compute_views = compute_compute_availability_views(domain_states["compute_availability"][0])
-    render_kpi_row(datasets, openrouter_views)
     render_top_models_chart(datasets, openrouter_views)
     render_revenue_token_section(datasets, openrouter_views)
     render_task_spend_section(openrouter_views)

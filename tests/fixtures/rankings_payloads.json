@@ -29,25 +29,25 @@
     {
       "x": "2024-01-07",
       "ys": {
-        "author-a": 55.0,
-        "author-b": 30.0,
-        "others": 15.0
+        "author-a": 5500.0,
+        "author-b": 3000.0,
+        "others": 1500.0
       }
     },
     {
       "x": "2024-01-14",
       "ys": {
-        "author-a": 45.0,
-        "author-c": 35.0,
-        "others": 20.0
+        "author-a": 4500.0,
+        "author-c": 3500.0,
+        "others": 2000.0
       }
     },
     {
       "x": "2024-01-21",
       "ys": {
-        "author-c": 40.0,
-        "author-a": 38.0,
-        "others": 22.0
+        "author-c": 4000.0,
+        "author-a": 3800.0,
+        "others": 2200.0
       }
     }
   ],

@@ -17,6 +17,7 @@ Rankings datasets:
 
 - `top_models`: weekly model usage history
 - `market_share`: weekly token share by model author
+- `provider_weekly_requests`: weekly text request counts by model author from the OpenRouter Rankings Market Share raw-values view
 - `categories_programming`: weekly rankings/programming history
 - `openrouter_model_activity`: daily model-level activity with request counts and token splits (`prompt`, `completion`, optional `reasoning`)
 - `provider_daily_activity`: daily provider-page total-token history by model for the configured major OpenRouter providers
@@ -24,6 +25,7 @@ Rankings datasets:
 OpenRouter economics methodology:
 
 - Token-volume charts use provider-level `market_share` for legacy weekly history and observed `provider_daily_activity` for modern daily history.
+- Request-volume charts use observed `provider_weekly_requests` from the Rankings Market Share raw-values view.
 - Revenue estimates are conservative by default: usage is joined to the latest prior OpenRouter pricing snapshot, provider/global price fallbacks are excluded, and unpriced rows remain visible as coverage gaps.
 - `daily_provider_economics` is the shared dashboard/notebook table for observed tokens, pricing matches, revenue method, and coverage flags.
 
