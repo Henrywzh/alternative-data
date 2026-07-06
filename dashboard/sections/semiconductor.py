@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import hmac
 import inspect
+import os
 import re
 import sys
 from datetime import datetime
@@ -38,6 +40,43 @@ AI_DEMAND_PPI_LABELS = {
     "PCU3341123341121": "Storage Devices",
     "PCU335313335313": "Switchgear and Power Distribution Equipment",
 }
+
+
+PRIVATE_PANEL_ACCESS_KEY = "PRIVATE_PANEL_ACCESS_CODE"
+
+
+def _private_panel_expected_code(secrets: object, environ: dict[str, str]) -> str:
+    try:
+        secret_value = secrets.get(PRIVATE_PANEL_ACCESS_KEY, "") if secrets is not None else ""
+    except Exception:
+        secret_value = ""
+    return str(secret_value or environ.get(PRIVATE_PANEL_ACCESS_KEY, "") or "")
+
+
+def _private_panel_code_matches(submitted_code: str, expected_code: str) -> bool:
+    submitted = str(submitted_code or "")
+    expected = str(expected_code or "")
+    return bool(submitted and expected and hmac.compare_digest(submitted, expected))
+
+
+def _render_private_panel_gate() -> bool:
+    if st.session_state.get("private_panel_unlocked"):
+        return True
+
+    expected_code = _private_panel_expected_code(st.secrets, os.environ)
+    st.markdown('<div class="section-title">TODO</div>', unsafe_allow_html=True)
+    if not expected_code:
+        st.info("Private view is not configured for this environment.")
+        return False
+
+    submitted_code = st.text_input("Access code", type="password", key="private_panel_access_code")
+    unlock_clicked = st.button("Unlock", key="private_panel_unlock")
+    if unlock_clicked and _private_panel_code_matches(submitted_code, expected_code):
+        st.session_state["private_panel_unlocked"] = True
+        st.rerun()
+    elif unlock_clicked:
+        st.error("Access denied.")
+    return False
 
 
 @st.cache_data(ttl=3600)
@@ -336,6 +375,106 @@ def _render_trade_yoy_chart(chart_frame: pd.DataFrame, category_choice: str, tit
     )
 
 
+def _render_private_company_revenue(semi_views: dict[str, object], cutoff_month: str | None) -> None:
+    taiwan_revenue_df = semi_views.get("taiwan_revenue_df", pd.DataFrame())
+    latest_taiwan_revenue_month = semi_views.get("latest_taiwan_revenue_month")
+    latest_taiwan_revenue = semi_views.get("latest_taiwan_revenue", pd.DataFrame())
+    taiwan_revenue_pivot = semi_views.get("taiwan_revenue_pivot", pd.DataFrame())
+    taiwan_yoy_pivot = semi_views.get("taiwan_yoy_pivot", pd.DataFrame())
+
+    if not taiwan_revenue_df.empty:
+        min_date = cutoff_month
+        if min_date:
+            taiwan_revenue_df = taiwan_revenue_df[taiwan_revenue_df["revenue_month"] >= min_date].copy()
+            taiwan_revenue_pivot = taiwan_revenue_pivot[taiwan_revenue_pivot.index >= min_date].copy()
+            taiwan_yoy_pivot = taiwan_yoy_pivot[taiwan_yoy_pivot.index >= min_date].copy()
+
+    if taiwan_revenue_df.empty:
+        st.warning("No private company revenue data available.")
+        return
+
+    st.markdown('<div class="section-title">Company Revenue Tracker</div>', unsafe_allow_html=True)
+    st.caption(
+        "Authoritative monthly operating revenue disclosures for selected semiconductor companies. "
+        "Figures are reported in thousands of New Taiwan dollars."
+    )
+
+    latest_snapshot = latest_taiwan_revenue.copy()
+    if not latest_snapshot.empty:
+        latest_snapshot["monthly_revenue_ntd_b"] = latest_snapshot["monthly_revenue_ntd"] / 1e6
+        leader = latest_snapshot.iloc[0]
+        avg_yoy = latest_snapshot["yoy_pct"].mean()
+        avg_ytd = latest_snapshot["ytd_yoy_pct"].mean()
+        st.markdown(
+            kpi_grid_html(
+                kpi_card_html("Latest Month", latest_taiwan_revenue_month or "—", delta=f"{len(latest_snapshot)} companies", delta_class="flat"),
+                kpi_card_html("Top Reporter", str(leader.get("company_name", "—")), delta=f"NT${leader.get('monthly_revenue_ntd_b', 0):,.1f}B", delta_class="flat"),
+                kpi_card_html("Average YoY", f"{avg_yoy:.1f}%" if pd.notna(avg_yoy) else "—", delta="latest month", delta_class="up" if pd.notna(avg_yoy) and avg_yoy >= 0 else "down"),
+                kpi_card_html("Average YTD YoY", f"{avg_ytd:.1f}%" if pd.notna(avg_ytd) else "—", delta="latest month", delta_class="up" if pd.notna(avg_ytd) and avg_ytd >= 0 else "down"),
+            ),
+            unsafe_allow_html=True,
+        )
+
+        latest_display = latest_snapshot[
+            ["company_code", "company_name", "market", "revenue_month", "monthly_revenue_ntd", "yoy_pct", "ytd_revenue_ntd", "ytd_yoy_pct"]
+        ].copy()
+        latest_display["monthly_revenue_ntd"] = latest_display["monthly_revenue_ntd"] / 1e6
+        latest_display["ytd_revenue_ntd"] = latest_display["ytd_revenue_ntd"] / 1e6
+        latest_display = latest_display.rename(
+            columns={
+                "company_code": "Code",
+                "company_name": "Company",
+                "market": "Market",
+                "revenue_month": "Month",
+                "monthly_revenue_ntd": "Monthly Revenue (NT$ B)",
+                "yoy_pct": "YoY %",
+                "ytd_revenue_ntd": "YTD Revenue (NT$ B)",
+                "ytd_yoy_pct": "YTD YoY %",
+            }
+        )
+        st.dataframe(
+            latest_display.style.format(
+                {
+                    "Monthly Revenue (NT$ B)": "{:,.2f}",
+                    "YoY %": "{:,.2f}",
+                    "YTD Revenue (NT$ B)": "{:,.2f}",
+                    "YTD YoY %": "{:,.2f}",
+                }
+            ),
+            width="stretch",
+            hide_index=True,
+        )
+
+    if not taiwan_revenue_pivot.empty:
+        revenue_plot = (taiwan_revenue_pivot / 1e6).copy()
+        st.plotly_chart(
+            make_line_chart(
+                revenue_plot,
+                MODEL_COLORS[:len(revenue_plot.columns)],
+                title="Monthly Revenue",
+                y_title="NT$ Billion",
+                x_title="Month",
+                height=360,
+                connect_gaps=True,
+            ),
+            width="stretch",
+        )
+
+    if not taiwan_yoy_pivot.empty:
+        st.plotly_chart(
+            make_line_chart(
+                taiwan_yoy_pivot,
+                MODEL_COLORS[:len(taiwan_yoy_pivot.columns)],
+                title="Monthly Revenue YoY Growth",
+                y_title="YoY %",
+                x_title="Month",
+                height=320,
+                connect_gaps=True,
+            ),
+            width="stretch",
+        )
+
+
 def render_semiconductor_section(datasets: dict[str, DatasetLoadResult], semi_views: dict[str, object]) -> None:
     _ppi_range = st.radio(
         "Time range",
@@ -353,8 +492,8 @@ def render_semiconductor_section(datasets: dict[str, DatasetLoadResult], semi_vi
     }
     _cutoff = _cutoffs.get(_ppi_range)
 
-    tab_ppi, tab_taiwan, tab_trade = st.tabs(
-        ["AI Demand PPI (FRED)", "Taiwan Monthly Revenue", "Tiered Trade & Production Tracker"]
+    tab_ppi, tab_private, tab_trade = st.tabs(
+        ["AI Demand PPI (FRED)", "TODO", "Tiered Trade & Production Tracker"]
     )
 
     with tab_ppi:
@@ -451,103 +590,9 @@ def render_semiconductor_section(datasets: dict[str, DatasetLoadResult], semi_vi
                     width="stretch",
                 )
 
-    with tab_taiwan:
-        taiwan_revenue_df = semi_views.get("taiwan_revenue_df", pd.DataFrame())
-        latest_taiwan_revenue_month = semi_views.get("latest_taiwan_revenue_month")
-        latest_taiwan_revenue = semi_views.get("latest_taiwan_revenue", pd.DataFrame())
-        taiwan_revenue_pivot = semi_views.get("taiwan_revenue_pivot", pd.DataFrame())
-        taiwan_yoy_pivot = semi_views.get("taiwan_yoy_pivot", pd.DataFrame())
-
-        if not taiwan_revenue_df.empty:
-            min_date = _cutoff
-            if min_date:
-                taiwan_revenue_df = taiwan_revenue_df[taiwan_revenue_df["revenue_month"] >= min_date].copy()
-                taiwan_revenue_pivot = taiwan_revenue_pivot[taiwan_revenue_pivot.index >= min_date].copy()
-                taiwan_yoy_pivot = taiwan_yoy_pivot[taiwan_yoy_pivot.index >= min_date].copy()
-
-        if taiwan_revenue_df.empty:
-            st.warning("No Taiwan monthly revenue data available.")
-        else:
-            st.markdown('<div class="section-title">Taiwan Company Revenue Tracker</div>', unsafe_allow_html=True)
-            st.caption(
-                "Authoritative monthly operating revenue disclosures from MOPS for TSMC, UMC, and VIS. "
-                "Figures are reported in thousands of New Taiwan dollars."
-            )
-
-            latest_snapshot = latest_taiwan_revenue.copy()
-            if not latest_snapshot.empty:
-                latest_snapshot["monthly_revenue_ntd_b"] = latest_snapshot["monthly_revenue_ntd"] / 1e6
-                leader = latest_snapshot.iloc[0]
-                avg_yoy = latest_snapshot["yoy_pct"].mean()
-                avg_ytd = latest_snapshot["ytd_yoy_pct"].mean()
-                st.markdown(
-                    kpi_grid_html(
-                        kpi_card_html("Latest Month", latest_taiwan_revenue_month or "—", delta=f"{len(latest_snapshot)} companies", delta_class="flat"),
-                        kpi_card_html("Top Reporter", str(leader.get("company_name", "—")), delta=f"NT${leader.get('monthly_revenue_ntd_b', 0):,.1f}B", delta_class="flat"),
-                        kpi_card_html("Average YoY", f"{avg_yoy:.1f}%" if pd.notna(avg_yoy) else "—", delta="latest month", delta_class="up" if pd.notna(avg_yoy) and avg_yoy >= 0 else "down"),
-                        kpi_card_html("Average YTD YoY", f"{avg_ytd:.1f}%" if pd.notna(avg_ytd) else "—", delta="latest month", delta_class="up" if pd.notna(avg_ytd) and avg_ytd >= 0 else "down"),
-                    ),
-                    unsafe_allow_html=True,
-                )
-
-                latest_display = latest_snapshot[
-                    ["company_code", "company_name", "market", "revenue_month", "monthly_revenue_ntd", "yoy_pct", "ytd_revenue_ntd", "ytd_yoy_pct"]
-                ].copy()
-                latest_display["monthly_revenue_ntd"] = latest_display["monthly_revenue_ntd"] / 1e6
-                latest_display["ytd_revenue_ntd"] = latest_display["ytd_revenue_ntd"] / 1e6
-                latest_display = latest_display.rename(
-                    columns={
-                        "company_code": "Code",
-                        "company_name": "Company",
-                        "market": "Market",
-                        "revenue_month": "Month",
-                        "monthly_revenue_ntd": "Monthly Revenue (NT$ B)",
-                        "yoy_pct": "YoY %",
-                        "ytd_revenue_ntd": "YTD Revenue (NT$ B)",
-                        "ytd_yoy_pct": "YTD YoY %",
-                    }
-                )
-                st.dataframe(
-                    latest_display.style.format(
-                        {
-                            "Monthly Revenue (NT$ B)": "{:,.2f}",
-                            "YoY %": "{:,.2f}",
-                            "YTD Revenue (NT$ B)": "{:,.2f}",
-                            "YTD YoY %": "{:,.2f}",
-                        }
-                    ),
-                    width="stretch",
-                    hide_index=True,
-                )
-
-            if not taiwan_revenue_pivot.empty:
-                revenue_plot = (taiwan_revenue_pivot / 1e6).copy()
-                st.plotly_chart(
-                    make_line_chart(
-                        revenue_plot,
-                        MODEL_COLORS[:len(revenue_plot.columns)],
-                        title="Taiwan Monthly Revenue",
-                        y_title="NT$ Billion",
-                        x_title="Month",
-                        height=360,
-                        connect_gaps=True,
-                    ),
-                    width="stretch",
-                )
-
-            if not taiwan_yoy_pivot.empty:
-                st.plotly_chart(
-                    make_line_chart(
-                        taiwan_yoy_pivot,
-                        MODEL_COLORS[:len(taiwan_yoy_pivot.columns)],
-                        title="Taiwan Monthly Revenue YoY Growth",
-                        y_title="YoY %",
-                        x_title="Month",
-                        height=320,
-                        connect_gaps=True,
-                    ),
-                    width="stretch",
-                )
+    with tab_private:
+        if _render_private_panel_gate():
+            _render_private_company_revenue(semi_views, _cutoff)
 
     with tab_trade:
         official_df = semi_views.get("official_df", pd.DataFrame())
@@ -743,7 +788,7 @@ def render_semiconductor_section(datasets: dict[str, DatasetLoadResult], semi_vi
                 )
 
             if category_choice == "Company Revenue":
-                st.info("Use the Taiwan Monthly Revenue tab for company-level monthly revenue disclosures.")
+                st.info("Use the TODO tab for company-level monthly revenue disclosures.")
 
 
 def render(domain_states, datasets) -> None:
