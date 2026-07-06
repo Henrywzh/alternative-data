@@ -1,17 +1,18 @@
 # alternative-data
 
-Research repo for gathering and analyzing alternative data.
+Research repo for collecting practical alternative datasets, normalizing them into
+versioned Parquet tables, and publishing a lightweight Streamlit dashboard.
 
 Live dashboard: [alternative-data.streamlit.app](https://alternative-data.streamlit.app/)
 
-The first implemented projects are Python ingestion pipelines for OpenRouter rankings, app intelligence data, and GitHub Trending repository stats.
-The repository now also includes a provider-adoption pipeline that tracks GitHub, PyPI, npm, and Hugging Face signals for major LLM providers.
-The repository also includes an Artificial Analysis pipeline that snapshots the official model API daily and refreshes the public capital-expenditure trend series.
-The repository also includes a Taiwan semiconductor revenue pipeline that backfills monthly MOPS operating-revenue disclosures for TSMC, UMC, and VIS.
-The repository also includes a tiered semiconductor tracker that separates official/native monthly signals from Comtrade backup checks and keeps category splits explicit.
-The scheduled official semiconductor tracker currently targets Japan, South Korea, and Hong Kong; China remains excluded from the automated default path for now.
-The repository also includes a Google Trends signal pipeline for keyword-level search-interest studies, with a self-hosted CSV export/import automation path for watchlist refreshes and a `trendspyg` local fallback for ad hoc single-keyword research.
-The repository also includes a notebook-friendly research layer that builds analysis-ready marts and starter notebooks on top of the tracked datasets.
+Main coverage areas:
+
+- OpenRouter rankings, request volume, app intelligence, model activity, and provider economics.
+- Provider-adoption signals across GitHub, PyPI, npm, and Hugging Face.
+- Artificial Analysis model snapshots, frontier-model registry features, and public capex trends.
+- Semiconductor market signals from FRED, official/native trade data, production series, and backup checks.
+- Google Trends keyword studies with CSV import/export automation and local fallback tooling.
+- Notebook-friendly marts and starter notebooks for reproducible research.
 
 Rankings datasets:
 
@@ -361,6 +362,7 @@ Optional configuration via Streamlit secrets / environment variables (see `.stre
 
 - `DATA_SOURCE`: `remote` (default) fetches datasets from GitHub; `local` reads the on-disk checkout instead (offline/local dev).
 - `GITHUB_TOKEN`: optional. The repo is public, so no token is required; setting one only raises the GitHub API rate limit used for the commit-SHA check.
+- `PRIVATE_PANEL_ACCESS_CODE`: optional access code for the Semiconductor Analysis `TODO` tab. Set it in Streamlit Cloud secrets for deployment, or in local `.streamlit/secrets.toml` for development.
 
 ## Notes
 

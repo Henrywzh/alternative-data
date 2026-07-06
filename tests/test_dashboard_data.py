@@ -56,6 +56,10 @@ from dashboard.sections.openrouter import (
     _pivot_to_share_percent,
     _weekly_usage_section_state,
 )
+from dashboard.sections.semiconductor import (
+    _private_panel_code_matches,
+    _private_panel_expected_code,
+)
 
 
 def _base_row(dataset_id: str) -> dict:
@@ -1573,6 +1577,19 @@ def test_compute_semiconductor_views_includes_taiwan_monthly_revenue() -> None:
     assert list(result["latest_taiwan_revenue"]["company_code"]) == ["2330", "2303"]
     assert float(result["taiwan_revenue_pivot"].loc["2026-05", "台積電"]) == 416975163.0
     assert float(result["taiwan_yoy_pivot"].loc["2026-05", "聯電"]) == 17.78
+
+
+def test_private_panel_expected_code_uses_neutral_secret_or_env_name() -> None:
+    assert _private_panel_expected_code({"PRIVATE_PANEL_ACCESS_CODE": "secret"}, {}) == "secret"
+    assert _private_panel_expected_code({}, {"PRIVATE_PANEL_ACCESS_CODE": "local"}) == "local"
+    assert _private_panel_expected_code({}, {}) == ""
+
+
+def test_private_panel_code_matches_requires_configured_exact_match() -> None:
+    assert _private_panel_code_matches("secret", "secret") is True
+    assert _private_panel_code_matches("secret", "other") is False
+    assert _private_panel_code_matches("secret", "") is False
+    assert _private_panel_code_matches("", "secret") is False
 
 
 def test_compute_semiconductor_views_preserves_empty_semiconductor_schema() -> None:
