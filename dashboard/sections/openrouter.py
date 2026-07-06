@@ -590,6 +590,73 @@ def _pivot_to_change_percent(pivot_df: pd.DataFrame, granularity: str) -> pd.Dat
     return changed.replace([np.inf, -np.inf], np.nan)
 
 
+def _pivot_to_aggregate_change_percent(pivot_df: pd.DataFrame, granularity: str, series_name: str) -> pd.DataFrame:
+    if pivot_df.empty:
+        return pd.DataFrame(columns=[series_name])
+    numeric = pivot_df.apply(pd.to_numeric, errors="coerce").sort_index()
+    total = numeric.sum(axis=1).to_frame(name=series_name)
+    return _pivot_to_change_percent(total, granularity)
+
+
+def _drop_first_valid_change_point(pivot_df: pd.DataFrame) -> pd.DataFrame:
+    if pivot_df.empty:
+        return pivot_df.copy()
+    cleaned = pivot_df.copy()
+    valid_rows = cleaned.notna().any(axis=1)
+    if valid_rows.any():
+        first_valid = valid_rows[valid_rows].index[0]
+        cleaned.loc[first_valid] = np.nan
+    return cleaned
+
+
+def _nowcast_latest_partial_period(
+    period_pivot: pd.DataFrame,
+    daily_pivot: pd.DataFrame,
+    granularity: str,
+) -> tuple[pd.DataFrame, set[str]]:
+    adjusted = period_pivot.copy()
+    if adjusted.empty or daily_pivot.empty or granularity not in {"weekly", "monthly"}:
+        return adjusted, set()
+
+    daily = daily_pivot.apply(pd.to_numeric, errors="coerce").copy()
+    daily_dates = pd.to_datetime(daily.index, errors="coerce")
+    valid_mask = pd.Series(daily_dates.notna(), index=daily.index)
+    if not valid_mask.any():
+        return adjusted, set()
+
+    daily = daily.loc[valid_mask].copy()
+    daily_dates = pd.Series(daily_dates[valid_mask], index=daily.index)
+    latest_date = daily_dates.max()
+    if pd.isna(latest_date):
+        return adjusted, set()
+
+    if granularity == "weekly":
+        period_start = latest_date - pd.Timedelta(days=int(latest_date.weekday()))
+        period_label = period_start.strftime("%Y-%m-%d")
+        period_mask = (daily_dates >= period_start) & (daily_dates < period_start + pd.Timedelta(days=7))
+        expected_days = 7
+    else:
+        period_label = latest_date.strftime("%Y-%m")
+        period_mask = daily_dates.dt.strftime("%Y-%m") == period_label
+        expected_days = int(latest_date.days_in_month)
+
+    if period_label not in adjusted.index:
+        return adjusted, set()
+
+    observed_days = int(daily_dates[period_mask].dt.strftime("%Y-%m-%d").nunique())
+    if observed_days <= 0 or observed_days >= expected_days:
+        return adjusted, set()
+
+    observed_total = float(daily.loc[period_mask].sum().sum())
+    existing_total = float(pd.to_numeric(adjusted.loc[period_label], errors="coerce").fillna(0).sum())
+    if observed_total <= 0 or existing_total <= 0:
+        return adjusted, set()
+
+    nowcast_total = observed_total * expected_days / observed_days
+    adjusted.loc[period_label] = adjusted.loc[period_label] * (nowcast_total / existing_total)
+    return adjusted, {period_label}
+
+
 def _cap_change_percent_for_display(pivot_df: pd.DataFrame) -> pd.DataFrame:
     if pivot_df.empty:
         return pivot_df.copy()
@@ -969,6 +1036,12 @@ def _compute_revenue_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, 
     }
 
 
+def _default_task_spend_window(windows: list[int]) -> int:
+    if not windows:
+        return 7
+    return 7 if 7 in windows else windows[0]
+
+
 @st.cache_data(ttl=3600)
 def compute_compute_availability_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, object]:
     # NOTE: Legacy function name. After removing AWS Spot + Lambda Cloud sources, this
@@ -1333,7 +1406,7 @@ def render_revenue_token_section(datasets: dict[str, DatasetLoadResult], openrou
     st.markdown('<div class="section-title">Provider Revenue &amp; Token Volume</div>', unsafe_allow_html=True)
     st.markdown(
         '<div class="section-subtitle">Provider-level revenue and token consumption across OpenRouter, '
-        'switchable between absolute values, normalized share of total, and provider-level change over time.</div>',
+        'switchable between absolute values, normalized share of total, and aggregate change over time.</div>',
         unsafe_allow_html=True,
     )
 
@@ -1424,8 +1497,19 @@ def render_revenue_token_section(datasets: dict[str, DatasetLoadResult], openrou
             f"{d} (MTD)" if date_title == "Usage Month" and str(d) == today_month else d
             for d in pivot_df.index
         ]
+        estimate_periods: set[str] = set()
         if is_change:
-            plot_df = _pivot_to_change_percent(pivot_df, granularity)
+            aggregate_label = "Total Revenue" if is_revenue else "Total Tokens"
+            change_source = pivot_df
+            if granularity in {"weekly", "monthly"}:
+                change_source, estimate_periods = _nowcast_latest_partial_period(
+                    pivot_df,
+                    pivot_active_daily,
+                    granularity,
+                )
+            plot_df = _pivot_to_aggregate_change_percent(change_source, granularity, aggregate_label)
+            if granularity in {"weekly", "monthly"}:
+                plot_df = _drop_first_valid_change_point(plot_df)
             plot_df = _cap_change_percent_for_display(plot_df)
         elif is_share:
             plot_df = _pivot_to_share_percent(pivot_df)
@@ -1433,7 +1517,10 @@ def render_revenue_token_section(datasets: dict[str, DatasetLoadResult], openrou
             plot_df = pivot_df
         if is_change and not plot_df.empty:
             plot_df = plot_df.copy()
-            plot_df.index = display_index
+            plot_df.index = [
+                f"{label} (est.)" if str(original) in estimate_periods else label
+                for original, label in zip(pivot_df.index, display_index, strict=False)
+            ]
         if is_revenue:
             if is_change:
                 y_title = "Revenue Change (%)"
@@ -1476,11 +1563,11 @@ def render_revenue_token_section(datasets: dict[str, DatasetLoadResult], openrou
                 width="stretch", theme=None,
             )
         if is_change and granularity == "daily":
-            st.caption("Daily change uses each provider's trailing 7-day average versus its prior trailing 7-day average. Display is capped at -100% to +300% to keep tiny-base spikes readable.")
+            st.caption("Daily change uses total trailing 7-day average versus the prior total trailing 7-day average. Display is capped at -100% to +300% to keep tiny-base spikes readable.")
         elif is_change and granularity == "weekly":
-            st.caption("Weekly change compares each provider with its previous weekly total. Display is capped at -100% to +300% to keep tiny-base spikes readable.")
+            st.caption("Weekly change compares total volume with the previous weekly total. The first comparable point is hidden to avoid startup-base spikes; the latest incomplete week is nowcast from observed daily volume and marked (est.). Display is capped at -100% to +300%.")
         elif is_change and granularity == "monthly":
-            st.caption("Monthly change compares each provider with its previous monthly total. Display is capped at -100% to +300% to keep tiny-base spikes readable.")
+            st.caption("Monthly change compares total volume with the previous monthly total. The first comparable point is hidden to avoid startup-base spikes; the latest incomplete month is nowcast from observed daily volume and marked (est.). Display is capped at -100% to +300%.")
         if extra_caption:
             st.caption(extra_caption)
 
@@ -1532,7 +1619,7 @@ def render_task_spend_section(openrouter_views: dict[str, object]) -> None:
     periods = task_view.get("periods", []) or ["spend"]
     windows = task_view.get("windows", []) or [30]
     default_period = "spend" if "spend" in periods else periods[0]
-    default_window = 30 if 30 in windows else windows[0]
+    default_window = _default_task_spend_window(windows)
 
     control_col1, control_col2 = st.columns([1, 1])
     with control_col1:
