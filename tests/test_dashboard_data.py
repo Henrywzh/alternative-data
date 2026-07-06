@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 import pandas as pd
+import pytest
 import dashboard.app as dashboard_app
 
 from dashboard.app import (
@@ -46,7 +47,11 @@ from dashboard.data import (
 from dashboard.sections.openrouter import (
     _cap_change_percent_for_display,
     _compute_task_spend_views,
+    _default_task_spend_window,
     _estimator_coverage_summary,
+    _drop_first_valid_change_point,
+    _nowcast_latest_partial_period,
+    _pivot_to_aggregate_change_percent,
     _pivot_to_change_percent,
     _pivot_to_share_percent,
     _weekly_usage_section_state,
@@ -2621,6 +2626,11 @@ def test_compute_task_spend_views_prepares_latest_task_and_model_rankings() -> N
     assert spend_30["model_rows"].iloc[0]["model_share_pct"] == 70.0
 
 
+def test_default_task_spend_window_prefers_seven_days() -> None:
+    assert _default_task_spend_window([7, 30, 90]) == 7
+    assert _default_task_spend_window([30, 90]) == 30
+
+
 def test_compute_openrouter_views_exposes_total_weekly_tokens_for_top_models() -> None:
     top_models = pd.DataFrame(
         [
@@ -3190,6 +3200,84 @@ def test_pivot_to_change_percent_daily_uses_trailing_seven_day_average_change() 
     assert changed.iloc[6].isna().all()
     assert changed.iloc[13]["OpenAI"] == 10.0
     assert changed.iloc[13]["Google"] == -50.0
+
+
+def test_pivot_to_aggregate_change_percent_uses_total_period_values() -> None:
+    pivot = pd.DataFrame(
+        {
+            "OpenAI": [100.0, 125.0, 100.0],
+            "Google": [50.0, 75.0, 100.0],
+        },
+        index=["2026-01-05", "2026-01-12", "2026-01-19"],
+    )
+
+    changed = _pivot_to_aggregate_change_percent(pivot, "weekly", "Total Tokens")
+
+    assert list(changed.columns) == ["Total Tokens"]
+    assert pd.isna(changed.loc["2026-01-05", "Total Tokens"])
+    assert changed.loc["2026-01-12", "Total Tokens"] == pytest.approx(33.3333333333)
+    assert changed.loc["2026-01-19", "Total Tokens"] == 0.0
+
+
+def test_pivot_to_aggregate_change_percent_daily_uses_total_trailing_average() -> None:
+    pivot = pd.DataFrame(
+        {
+            "OpenAI": [100.0] * 7 + [110.0] * 7,
+            "Google": [50.0] * 7 + [40.0] * 7,
+        },
+        index=pd.date_range("2026-01-01", periods=14, freq="D").strftime("%Y-%m-%d"),
+    )
+
+    changed = _pivot_to_aggregate_change_percent(pivot, "daily", "Total Revenue")
+
+    assert list(changed.columns) == ["Total Revenue"]
+    assert changed.iloc[6]["Total Revenue"] is pd.NA or pd.isna(changed.iloc[6]["Total Revenue"])
+    assert changed.iloc[13]["Total Revenue"] == 0.0
+
+
+def test_drop_first_valid_change_point_removes_initial_weekly_spike() -> None:
+    changed = pd.DataFrame(
+        {"Total Revenue": [pd.NA, 300.0, 20.0]},
+        index=["2026-01-05", "2026-01-12", "2026-01-19"],
+    )
+
+    cleaned = _drop_first_valid_change_point(changed)
+
+    assert pd.isna(cleaned.loc["2026-01-05", "Total Revenue"])
+    assert pd.isna(cleaned.loc["2026-01-12", "Total Revenue"])
+    assert cleaned.loc["2026-01-19", "Total Revenue"] == 20.0
+
+
+def test_nowcast_latest_partial_week_scales_from_daily_observations() -> None:
+    weekly = pd.DataFrame(
+        {"OpenAI": [700.0, 200.0]},
+        index=["2026-06-22", "2026-06-29"],
+    )
+    daily = pd.DataFrame(
+        {"OpenAI": [100.0, 100.0]},
+        index=["2026-06-29", "2026-06-30"],
+    )
+
+    nowcast, estimates = _nowcast_latest_partial_period(weekly, daily, "weekly")
+
+    assert estimates == {"2026-06-29"}
+    assert nowcast.loc["2026-06-29", "OpenAI"] == 700.0
+
+
+def test_nowcast_latest_partial_month_scales_from_daily_observations() -> None:
+    monthly = pd.DataFrame(
+        {"OpenAI": [3000.0, 200.0]},
+        index=["2026-06", "2026-07"],
+    )
+    daily = pd.DataFrame(
+        {"OpenAI": [100.0, 100.0]},
+        index=["2026-07-01", "2026-07-02"],
+    )
+
+    nowcast, estimates = _nowcast_latest_partial_period(monthly, daily, "monthly")
+
+    assert estimates == {"2026-07"}
+    assert nowcast.loc["2026-07", "OpenAI"] == 3100.0
 
 
 def test_cap_change_percent_for_display_preserves_readable_momentum_range() -> None:
