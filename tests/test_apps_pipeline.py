@@ -329,6 +329,46 @@ def test_live_card_text_parsers_handle_current_apps_page_format() -> None:
     assert trending_row["appAnalytics"]["total_tokens"] == 54_000_000_000.0
 
 
+def test_click_visible_option_ignores_hidden_duplicate_options() -> None:
+    class FakeOption:
+        def __init__(self, *, visible: bool) -> None:
+            self.visible = visible
+            self.clicked = False
+
+        def is_visible(self) -> bool:
+            return self.visible
+
+        def click(self, timeout: int) -> None:
+            self.clicked = True
+
+    class FakeOptions:
+        def __init__(self, options: list[FakeOption]) -> None:
+            self.options = options
+
+        def count(self) -> int:
+            return len(self.options)
+
+        def nth(self, index: int) -> FakeOption:
+            return self.options[index]
+
+    class FakePage:
+        def __init__(self, options: list[FakeOption]) -> None:
+            self.options = FakeOptions(options)
+            self.locator_calls: list[tuple[str, str | None]] = []
+
+        def locator(self, selector: str, *, has_text: str | None = None) -> FakeOptions:
+            self.locator_calls.append((selector, has_text))
+            return self.options
+
+    hidden = FakeOption(visible=False)
+    visible = FakeOption(visible=True)
+
+    AppsSource._click_visible_option(FakePage([hidden, visible]), "This Month")
+
+    assert not hidden.clicked
+    assert visible.clicked
+
+
 def test_extract_uses_playwright_directory_fallback_when_html_payload_is_missing() -> None:
     source = AppsSource()
     context = RunContext(run_id="live-fallback", scraped_at=pd.Timestamp("2026-04-05T01:10:00Z").to_pydatetime())
