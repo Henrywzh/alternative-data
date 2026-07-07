@@ -45,6 +45,30 @@ DATASET_REGISTRY: dict[str, dict[str, object]] = {
         "metric_column": "metric_value",
         "required_columns": ["week_start_date", "category_slug", "entity_id", "metric_value", "rank"],
     },
+    "vercel_model_leaderboard": {
+        "label": "Vercel Model Leaderboard",
+        "domain": "vercel_ai",
+        "natural_keys": ["date", "name", "metric", "modality"],
+        "primary_date_column": "date",
+        "metric_column": "share_percent",
+        "required_columns": ["date", "name", "metric", "modality", "share_percent"],
+    },
+    "vercel_lab_leaderboard": {
+        "label": "Vercel Lab Leaderboard",
+        "domain": "vercel_ai",
+        "natural_keys": ["date", "name", "metric", "modality"],
+        "primary_date_column": "date",
+        "metric_column": "share_percent",
+        "required_columns": ["date", "name", "metric", "modality", "share_percent"],
+    },
+    "vercel_models": {
+        "label": "Vercel Models Catalog",
+        "domain": "vercel_ai",
+        "natural_keys": ["model_id"],
+        "primary_date_column": "scraped_at",
+        "metric_column": None,
+        "required_columns": ["model_id", "name", "owned_by", "type"],
+    },
     "app_metadata_snapshots": {
         "label": "App Metadata",
         "domain": "apps",
@@ -384,6 +408,11 @@ DOMAIN_ORDER = {
     "compute_availability": [
         "raw_openrouter_models",
     ],
+    "vercel_ai": [
+        "vercel_model_leaderboard",
+        "vercel_lab_leaderboard",
+        "vercel_models",
+    ],
     "artificial_analysis": [
         "artificial_analysis_models_daily",
         "artificial_analysis_leading_models_by_lab_daily",
@@ -721,6 +750,46 @@ PROVIDER_ADOPTION_LOAD_COLUMNS: dict[str, list[str]] = {
     ],
 }
 
+# Vercel datasets carry columns that are not in EXPECTED_COLUMNS, so — like
+# provider_adoption — they need an explicit load_columns override or the generic
+# reindex(columns=EXPECTED_COLUMNS) in load_dataset would drop them.
+VERCEL_AI_LOAD_COLUMNS: dict[str, list[str]] = {
+    "vercel_model_leaderboard": [
+        *CORE_COLUMNS,
+        "date",
+        "group",
+        "name",
+        "metric",
+        "modality",
+        "share_percent",
+    ],
+    "vercel_lab_leaderboard": [
+        *CORE_COLUMNS,
+        "date",
+        "group",
+        "name",
+        "metric",
+        "modality",
+        "share_percent",
+    ],
+    "vercel_models": [
+        *CORE_COLUMNS,
+        "model_id",
+        "name",
+        "owned_by",
+        "description",
+        "context_window",
+        "max_tokens",
+        "type",
+        "pricing_input",
+        "pricing_output",
+        "pricing_cache_read",
+        "pricing_cache_write",
+        "tags",
+        "raw_pricing_json",
+    ],
+}
+
 DATE_COLUMNS = [
     "week_start_date",
     "scrape_date",
@@ -818,6 +887,12 @@ NUMERIC_COLUMNS = [
     "amazon",
     "oracle",
     "apple",
+    "share_percent",
+    "max_tokens",
+    "pricing_input",
+    "pricing_output",
+    "pricing_cache_read",
+    "pricing_cache_write",
 ]
 
 
@@ -886,13 +961,15 @@ def dataset_source_for_domain(domain: str) -> str:
         return "compute_availability"
     if domain == "artificial_analysis":
         return "artificial_analysis"
+    if domain == "vercel_ai":
+        return "vercel_ai"
     return "openrouter"
 
 
 def load_dataset(dataset_id: str, base_dir: Path | None = None) -> DatasetLoadResult:
     registry_entry = DATASET_REGISTRY.get(dataset_id, {})
     domain = registry_entry.get("domain", "rankings")
-    load_columns = PROVIDER_ADOPTION_LOAD_COLUMNS.get(dataset_id)
+    load_columns = PROVIDER_ADOPTION_LOAD_COLUMNS.get(dataset_id) or VERCEL_AI_LOAD_COLUMNS.get(dataset_id)
 
     source = "openrouter"
     if domain == "github":
@@ -911,6 +988,8 @@ def load_dataset(dataset_id: str, base_dir: Path | None = None) -> DatasetLoadRe
         source = "compute_availability"
     elif domain == "artificial_analysis":
         source = "artificial_analysis"
+    elif domain == "vercel_ai":
+        source = "vercel_ai"
     base = normalized_root(base_dir, source=source)
     parquet_path = base / f"{dataset_id}.parquet"
     csv_path = base / f"{dataset_id}.csv"
