@@ -1,0 +1,19 @@
+{
+  "dataset": "labs",
+  "modality": "all",
+  "license": "CC-BY-4.0",
+  "rows": [
+    {"date": "2026-05-08", "group": "lab", "name": "Google", "metric": "tokens", "modality": "all", "share_percent": 34.2},
+    {"date": "2026-05-08", "group": "lab", "name": "Anthropic", "metric": "tokens", "modality": "all", "share_percent": 28.6},
+    {"date": "2026-05-08", "group": "lab", "name": "OpenAI", "metric": "tokens", "modality": "all", "share_percent": 21.1},
+    {"date": "2026-05-08", "group": "lab", "name": "Google", "metric": "requests", "modality": "all", "share_percent": 30.0},
+    {"date": "2026-05-08", "group": "lab", "name": "Anthropic", "metric": "requests", "modality": "all", "share_percent": 27.5},
+    {"date": "2026-05-08", "group": "lab", "name": "OpenAI", "metric": "requests", "modality": "all", "share_percent": 22.9},
+    {"date": "2026-05-09", "group": "lab", "name": "Google", "metric": "tokens", "modality": "all", "share_percent": 35.0},
+    {"date": "2026-05-09", "group": "lab", "name": "Anthropic", "metric": "tokens", "modality": "all", "share_percent": 27.9},
+    {"date": "2026-05-09", "group": "lab", "name": "OpenAI", "metric": "tokens", "modality": "all", "share_percent": 20.4},
+    {"date": "2026-05-09", "group": "lab", "name": "Google", "metric": "requests", "modality": "all", "share_percent": 31.2},
+    {"date": "2026-05-09", "group": "lab", "name": "Anthropic", "metric": "requests", "modality": "all", "share_percent": 26.8},
+    {"date": "2026-05-09", "group": "lab", "name": "OpenAI", "metric": "requests", "modality": "all", "share_percent": 22.0}
+  ]
+}

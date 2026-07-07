@@ -43,6 +43,7 @@ from dashboard.theme import (ACCENT, BG, SIDEBAR, CARD, BORDER, TEXT, MUTED, GRE
 from dashboard.components import (format_metric, _empty_dataset_frame, _styler_applymap_compat, WEEKLY_MONTHLY_OTHER_PROVIDERS, DAILY_OTHER_PROVIDERS, US_PROVIDER_ORDER, CHINA_PROVIDER_ORDER, order_provider_columns, regroup_provider_pivot_for_display, render_dataset_guard, format_scraped_at_display, dataframe_for_display, make_stacked_bar, make_stacked_area_chart, make_line_chart, kpi_card_html, kpi_grid_html, _top_n_with_others)
 from dashboard.sections import (
     openrouter,
+    vercel_ai,
     provider_adoption,
     artificial_analysis,
     semiconductor,
@@ -74,6 +75,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 MAIN_SECTIONS = (
     "OpenRouter Intelligence",
+    "Vercel AI",
     "Artificial Analysis",
     "Provider Adoption",
     "Semiconductor Analysis",
@@ -84,6 +86,7 @@ MAIN_SECTIONS = (
 
 SECTION_DOMAIN_MAP = {
     "OpenRouter Intelligence": ("rankings", "apps", "compute_availability"),
+    "Vercel AI": ("vercel_ai",),
     "Artificial Analysis": ("artificial_analysis",),
     "Provider Adoption": ("provider_adoption",),
     "Semiconductor Analysis": ("semiconductor_memory", "semiconductor_proxies", "taiwan_semiconductor_revenue"),
@@ -195,6 +198,7 @@ def render_checks(checks: list[CheckResult]) -> None:
 
 SECTION_RENDERERS = {
     "OpenRouter Intelligence": openrouter.render,
+    "Vercel AI": vercel_ai.render,
     "Artificial Analysis": artificial_analysis.render,
     "Provider Adoption": provider_adoption.render,
     "Semiconductor Analysis": semiconductor.render,

@@ -1,0 +1,10 @@
+{
+  "object": "list",
+  "data": [
+    {"id": "alibaba/qwen-3-14b", "object": "model", "owned_by": "alibaba", "name": "Qwen3-14B", "description": "Qwen3 dense model.", "context_window": 40960, "max_tokens": 16384, "type": "language", "tags": ["reasoning", "tool-use"], "pricing": {"input": "0.00000012", "output": "0.00000024"}},
+    {"id": "anthropic/claude-sonnet-4.6", "object": "model", "owned_by": "anthropic", "name": "Claude Sonnet 4.6", "description": "", "context_window": 200000, "max_tokens": 64000, "type": "language", "tags": ["reasoning"], "pricing": {"input": "0.000003", "output": "0.000015", "input_cache_read": "0.0000003", "input_cache_write": "0.00000375"}},
+    {"id": "google/gemini-3-flash", "object": "model", "owned_by": "google", "name": "Gemini 3 Flash", "description": "Fast multimodal model.", "context_window": 1000000, "max_tokens": 65000, "type": "language", "tags": ["multimodal"], "pricing": {"input": "0.0000003", "output": "0.0000025"}},
+    {"id": "openai/gpt-4o-mini", "object": "model", "owned_by": "openai", "name": "GPT-4o mini", "description": "", "context_window": 128000, "max_tokens": 16384, "type": "language", "tags": [], "pricing": {"input": "0.00000015", "output": "0.0000006"}},
+    {"id": "openai/text-embedding-3-small", "object": "model", "owned_by": "openai", "name": "text-embedding-3-small", "description": "Embedding model.", "context_window": 8192, "max_tokens": null, "type": "embedding", "tags": [], "pricing": {"input": "0.00000002"}}
+  ]
+}
