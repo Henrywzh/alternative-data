@@ -89,6 +89,17 @@ data/raw/artificial_analysis/**
 !data/raw/artificial_analysis/**/
 !data/raw/artificial_analysis/**/manifest.json
 
+# vercel_ai: commit normalized parquet files only (CSVs are ignored by the repo-size rule)
+# plus the per-run manifest.json for a CI audit trail (raw JSON bodies stay local)
+!data/normalized/vercel_ai/
+data/normalized/vercel_ai/*
+!data/normalized/vercel_ai/*.parquet
+!data/raw/vercel_ai/
+data/raw/vercel_ai/**
+!data/raw/vercel_ai/**/
+!data/raw/vercel_ai/**/manifest.json
+
+
 # minerals: curated reference inputs (CSV-ified workbook sheets)
 !data/reference/
 data/reference/*

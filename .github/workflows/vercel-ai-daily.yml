@@ -1,0 +1,71 @@
+name: Vercel AI Gateway Daily Update
+
+on:
+  schedule:
+    - cron: "30 3 * * *"        # 03:30 UTC daily — offset from OpenRouter jobs to avoid push conflicts
+  workflow_dispatch:           # allow manual trigger for backfill
+
+permissions:
+  contents: write
+
+jobs:
+  scrape-vercel-ai:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .[dev]
+
+      - name: Validate extraction
+        run: |
+          python -m vercel_ai_data.cli --base-dir . validate
+
+      - name: Run daily update
+        run: |
+          python -m vercel_ai_data.cli --base-dir . daily-update
+
+      - name: Commit normalized datasets
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add data/normalized/vercel_ai/*.parquet
+          git add data/raw/vercel_ai/*/manifest.json 2>/dev/null || true
+
+          if git diff --cached --quiet; then
+            echo "No Vercel AI data changes to commit"
+            exit 0
+          fi
+
+          git commit -m "chore: update vercel ai gateway telemetry data [$(date -u +%Y-%m-%d)]"
+
+          # This job is the sole writer of these paths, so a diverged default
+          # branch rebases cleanly; retry to absorb a push race with other jobs.
+          for attempt in 1 2 3; do
+            if git pull --rebase origin "${{ github.event.repository.default_branch }}" && git push; then
+              echo "Pushed on attempt ${attempt}"
+              exit 0
+            fi
+            echo "Push attempt ${attempt} failed; retrying..."
+            sleep 5
+          done
+          echo "Failed to push after 3 attempts"
+          exit 1
+
+      - name: Upload normalized datasets
+        uses: actions/upload-artifact@v4
+        with:
+          name: vercel-ai-gateway-data
+          path: data/normalized/vercel_ai/
+          if-no-files-found: warn
