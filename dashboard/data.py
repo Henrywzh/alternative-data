@@ -363,6 +363,94 @@ DATASET_REGISTRY: dict[str, dict[str, object]] = {
         "metric_column": "microsoft",
         "required_columns": ["quarter_id", "quarter_label", "microsoft", "google", "meta", "amazon", "oracle", "apple"],
     },
+    "ramp_vendor_adoption_monthly": {
+        "label": "Ramp Vendor Adoption",
+        "domain": "ramp",
+        "natural_keys": ["vendor_slug", "spend_month"],
+        "primary_date_column": "spend_month",
+        "metric_column": "adoption_rate",
+        "required_columns": ["vendor_slug", "spend_month", "adoption_rate", "adoption_rank"],
+    },
+    "ramp_category_vendors": {
+        "label": "Ramp Category Vendors",
+        "domain": "ramp",
+        "natural_keys": ["category_slug", "vendor_slug"],
+        "primary_date_column": "scraped_at",
+        "metric_column": "adoption_rate",
+        "required_columns": ["category_slug", "vendor_slug", "adoption_rate"],
+    },
+    "ramp_ai_adoption_overall": {
+        "label": "Ramp AI Adoption (Overall)",
+        "domain": "ramp",
+        "natural_keys": ["date_month"],
+        "primary_date_column": "date_month",
+        "metric_column": "adoption_rate_pct",
+        "required_columns": ["date_month", "adoption_rate_pct"],
+    },
+    "ramp_ai_adoption_by_size": {
+        "label": "Ramp AI Adoption by Business Size",
+        "domain": "ramp",
+        "natural_keys": ["date_month", "business_size"],
+        "primary_date_column": "date_month",
+        "metric_column": "adoption_rate_pct",
+        "required_columns": ["date_month", "business_size", "adoption_rate_pct"],
+    },
+    "ramp_ai_adoption_by_sector": {
+        "label": "Ramp AI Adoption by Sector",
+        "domain": "ramp",
+        "natural_keys": ["date_month", "naics_sector"],
+        "primary_date_column": "date_month",
+        "metric_column": "adoption_rate_pct",
+        "required_columns": ["date_month", "naics_sector", "adoption_rate_pct"],
+    },
+    "ramp_ai_adoption_by_state": {
+        "label": "Ramp AI Adoption by State",
+        "domain": "ramp",
+        "natural_keys": ["date_month", "state_code"],
+        "primary_date_column": "date_month",
+        "metric_column": "adoption_rate_pct",
+        "required_columns": ["date_month", "state_code", "adoption_rate_pct"],
+    },
+    "ramp_ai_adoption_by_vendor": {
+        "label": "Ramp AI Adoption by Vendor",
+        "domain": "ramp",
+        "natural_keys": ["date_month", "vendor"],
+        "primary_date_column": "date_month",
+        "metric_column": "adoption_rate_pct",
+        "required_columns": ["date_month", "vendor", "adoption_rate_pct"],
+    },
+    "ramp_ai_pepm_spend": {
+        "label": "Ramp AI Spend per Employee",
+        "domain": "ramp",
+        "natural_keys": ["date_month"],
+        "primary_date_column": "date_month",
+        "metric_column": "median_pepm",
+        "required_columns": ["date_month", "median_pepm"],
+    },
+    "ramp_ai_spend_share_by_category": {
+        "label": "Ramp AI Spend Share by Category",
+        "domain": "ramp",
+        "natural_keys": ["date_month", "dimension_type", "dimension_value", "spend_category_key"],
+        "primary_date_column": "date_month",
+        "metric_column": "spend_share",
+        "required_columns": ["date_month", "spend_category_key", "spend_share"],
+    },
+    "ramp_ai_provider_model_share": {
+        "label": "Ramp AI Provider Model Share",
+        "domain": "ramp",
+        "natural_keys": ["date_month", "dimension_type", "dimension_value", "ai_provider", "model_bucket_key"],
+        "primary_date_column": "date_month",
+        "metric_column": "model_share",
+        "required_columns": ["date_month", "ai_provider", "model_share"],
+    },
+    "ramp_ai_jobs_impact": {
+        "label": "Ramp AI Jobs Impact",
+        "domain": "ramp",
+        "natural_keys": ["figure", "month_relative_to_adoption"],
+        "primary_date_column": "scraped_at",
+        "metric_column": "high_intensity_effect",
+        "required_columns": ["figure", "month_relative_to_adoption", "high_intensity_effect"],
+    },
 }
 
 DOMAIN_ORDER = {
@@ -417,6 +505,19 @@ DOMAIN_ORDER = {
         "artificial_analysis_models_daily",
         "artificial_analysis_leading_models_by_lab_daily",
         "artificial_analysis_capex_quarterly",
+    ],
+    "ramp": [
+        "ramp_vendor_adoption_monthly",
+        "ramp_category_vendors",
+        "ramp_ai_adoption_overall",
+        "ramp_ai_adoption_by_size",
+        "ramp_ai_adoption_by_sector",
+        "ramp_ai_adoption_by_state",
+        "ramp_ai_adoption_by_vendor",
+        "ramp_ai_pepm_spend",
+        "ramp_ai_spend_share_by_category",
+        "ramp_ai_provider_model_share",
+        "ramp_ai_jobs_impact",
     ],
 }
 
@@ -790,6 +891,66 @@ VERCEL_AI_LOAD_COLUMNS: dict[str, list[str]] = {
     ],
 }
 
+# Ramp datasets carry columns not in EXPECTED_COLUMNS, so — like vercel_ai and
+# provider_adoption — they need an explicit load_columns override, else the
+# generic reindex(columns=EXPECTED_COLUMNS) in load_dataset would drop them.
+RAMP_LOAD_COLUMNS: dict[str, list[str]] = {
+    "ramp_vendor_adoption_monthly": [
+        *CORE_COLUMNS,
+        "vendor_slug",
+        "vendor_name",
+        "vendor_domain",
+        "spend_month",
+        "adoption_rate",
+        "adoption_rate_yoy",
+        "adoption_rank",
+        "adoption_rank_mom",
+        "adoption_rate_ent",
+        "adoption_rate_mm",
+        "adoption_rate_smb",
+        "adoption_rate_growth_delta_mom",
+        "adoption_rate_growth_rank_mom",
+        "competitor_switch_rate",
+        "new_adopter_share",
+        "dominant_fte_segment",
+        "dominant_fte_segment_pct",
+    ],
+    "ramp_category_vendors": [
+        *CORE_COLUMNS,
+        "category_slug",
+        "category_name",
+        "vendor_slug",
+        "vendor_name",
+        "vendor_domain",
+        "adoption_rate",
+        "adoption_rate_yoy",
+    ],
+    "ramp_ai_adoption_overall": [*CORE_COLUMNS, "date_month", "adoption_rate_pct", "mom_change_pp", "yoy_change_pp"],
+    "ramp_ai_adoption_by_size": [*CORE_COLUMNS, "date_month", "business_size", "adoption_rate_pct", "mom_change_pp"],
+    "ramp_ai_adoption_by_sector": [*CORE_COLUMNS, "date_month", "naics_sector", "adoption_rate_pct", "mom_change_pp"],
+    "ramp_ai_adoption_by_state": [*CORE_COLUMNS, "date_month", "state_code", "adoption_rate_pct", "n_firms", "ai_firms"],
+    "ramp_ai_adoption_by_vendor": [*CORE_COLUMNS, "date_month", "vendor", "adoption_rate_pct", "mom_change_pp"],
+    "ramp_ai_pepm_spend": [
+        *CORE_COLUMNS, "date_month", "median_pepm", "p90_pepm", "p99_pepm",
+        "p99_winsorized_weighted_pepm", "raw_weighted_pepm", "top_10_percent_median_pepm",
+        "top_1_percent_median_pepm", "business_count", "spend_usd", "total_fte_denominator", "is_publishable",
+    ],
+    "ramp_ai_spend_share_by_category": [
+        *CORE_COLUMNS, "date_month", "dimension_type", "dimension_value", "dimension_label",
+        "display_order", "spend_category_key", "spend_category", "spend_category_display_order", "spend_share",
+    ],
+    "ramp_ai_provider_model_share": [
+        *CORE_COLUMNS, "date_month", "dimension_type", "dimension_value", "dimension_label",
+        "display_order", "ai_provider", "provider_display_order", "model_bucket_key",
+        "model_label", "model_display_order", "model_spend_type", "model_share",
+    ],
+    "ramp_ai_jobs_impact": [
+        *CORE_COLUMNS, "figure", "month_relative_to_adoption",
+        "high_intensity_effect", "high_intensity_ci_low", "high_intensity_ci_high",
+        "low_intensity_effect", "low_intensity_ci_low", "low_intensity_ci_high", "units",
+    ],
+}
+
 DATE_COLUMNS = [
     "week_start_date",
     "scrape_date",
@@ -811,8 +972,50 @@ DATE_COLUMNS = [
     "price_timestamp",
     "snapshot_ts",
     "as_of_date",
+    "spend_month",
 ]
 NUMERIC_COLUMNS = [
+    "adoption_rate",
+    "adoption_rate_yoy",
+    "adoption_rank",
+    "adoption_rank_mom",
+    "adoption_rate_ent",
+    "adoption_rate_mm",
+    "adoption_rate_smb",
+    "adoption_rate_growth_delta_mom",
+    "adoption_rate_growth_rank_mom",
+    "competitor_switch_rate",
+    "new_adopter_share",
+    "dominant_fte_segment_pct",
+    # ramp AI Index + jobs impact
+    "adoption_rate_pct",
+    "mom_change_pp",
+    "yoy_change_pp",
+    "n_firms",
+    "ai_firms",
+    "median_pepm",
+    "p90_pepm",
+    "p99_pepm",
+    "p99_winsorized_weighted_pepm",
+    "raw_weighted_pepm",
+    "top_10_percent_median_pepm",
+    "top_1_percent_median_pepm",
+    "business_count",
+    "spend_usd",
+    "total_fte_denominator",
+    "display_order",
+    "spend_category_display_order",
+    "spend_share",
+    "provider_display_order",
+    "model_display_order",
+    "model_share",
+    "month_relative_to_adoption",
+    "high_intensity_effect",
+    "high_intensity_ci_low",
+    "high_intensity_ci_high",
+    "low_intensity_effect",
+    "low_intensity_ci_low",
+    "low_intensity_ci_high",
     "metric_value",
     "rank",
     "total_tokens",
@@ -963,13 +1166,19 @@ def dataset_source_for_domain(domain: str) -> str:
         return "artificial_analysis"
     if domain == "vercel_ai":
         return "vercel_ai"
+    if domain == "ramp":
+        return "ramp"
     return "openrouter"
 
 
 def load_dataset(dataset_id: str, base_dir: Path | None = None) -> DatasetLoadResult:
     registry_entry = DATASET_REGISTRY.get(dataset_id, {})
     domain = registry_entry.get("domain", "rankings")
-    load_columns = PROVIDER_ADOPTION_LOAD_COLUMNS.get(dataset_id) or VERCEL_AI_LOAD_COLUMNS.get(dataset_id)
+    load_columns = (
+        PROVIDER_ADOPTION_LOAD_COLUMNS.get(dataset_id)
+        or VERCEL_AI_LOAD_COLUMNS.get(dataset_id)
+        or RAMP_LOAD_COLUMNS.get(dataset_id)
+    )
 
     source = "openrouter"
     if domain == "github":
@@ -990,6 +1199,8 @@ def load_dataset(dataset_id: str, base_dir: Path | None = None) -> DatasetLoadRe
         source = "artificial_analysis"
     elif domain == "vercel_ai":
         source = "vercel_ai"
+    elif domain == "ramp":
+        source = "ramp"
     base = normalized_root(base_dir, source=source)
     parquet_path = base / f"{dataset_id}.parquet"
     csv_path = base / f"{dataset_id}.csv"

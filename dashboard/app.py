@@ -44,6 +44,7 @@ from dashboard.components import (format_metric, _empty_dataset_frame, _styler_a
 from dashboard.sections import (
     openrouter,
     vercel_ai,
+    ramp,
     provider_adoption,
     artificial_analysis,
     semiconductor,
@@ -76,6 +77,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 MAIN_SECTIONS = (
     "OpenRouter Intelligence",
     "Vercel AI",
+    "Ramp",
     "Artificial Analysis",
     "Provider Adoption",
     "Semiconductor Analysis",
@@ -87,6 +89,7 @@ MAIN_SECTIONS = (
 SECTION_DOMAIN_MAP = {
     "OpenRouter Intelligence": ("rankings", "apps", "compute_availability"),
     "Vercel AI": ("vercel_ai",),
+    "Ramp": ("ramp",),
     "Artificial Analysis": ("artificial_analysis",),
     "Provider Adoption": ("provider_adoption",),
     "Semiconductor Analysis": ("semiconductor_memory", "semiconductor_proxies", "taiwan_semiconductor_revenue"),
@@ -199,6 +202,7 @@ def render_checks(checks: list[CheckResult]) -> None:
 SECTION_RENDERERS = {
     "OpenRouter Intelligence": openrouter.render,
     "Vercel AI": vercel_ai.render,
+    "Ramp": ramp.render,
     "Artificial Analysis": artificial_analysis.render,
     "Provider Adoption": provider_adoption.render,
     "Semiconductor Analysis": semiconductor.render,
