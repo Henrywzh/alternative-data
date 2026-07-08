@@ -100,6 +100,17 @@ data/raw/vercel_ai/**
 !data/raw/vercel_ai/**/manifest.json
 
 
+# ramp: commit normalized parquet files only (CSVs ignored by the repo-size rule)
+# plus the per-run manifest.json for a CI audit trail (raw payloads stay local)
+!data/normalized/ramp/
+data/normalized/ramp/*
+!data/normalized/ramp/*.parquet
+!data/raw/ramp/
+data/raw/ramp/**
+!data/raw/ramp/**/
+!data/raw/ramp/**/manifest.json
+
+
 # minerals: curated reference inputs (CSV-ified workbook sheets)
 !data/reference/
 data/reference/*
