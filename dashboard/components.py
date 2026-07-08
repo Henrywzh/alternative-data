@@ -123,7 +123,10 @@ def regroup_provider_pivot_for_display(pivot_df: pd.DataFrame, granularity: str)
     return order_provider_columns(regrouped)
 
 
-def render_dataset_guard(result: DatasetLoadResult, show_subheader: bool = False) -> bool:
+def render_dataset_guard(result: DatasetLoadResult | None, show_subheader: bool = False) -> bool:
+    if result is None:
+        st.error("No dataset available.")
+        return False
     if show_subheader:
         st.subheader(result.label)
     if result.source_path is None:
