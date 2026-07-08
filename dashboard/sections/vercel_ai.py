@@ -262,7 +262,8 @@ def _render_modality_tab(frame: pd.DataFrame, entity_label: str, modality: str) 
 def render(domain_states, datasets) -> None:
     st.markdown('<div class="section-title">Vercel AI Gateway Leaderboard</div>', unsafe_allow_html=True)
 
-    if not render_dataset_guard(datasets.get("vercel_model_leaderboard")):
+    model_leaderboard = datasets.get("vercel_model_leaderboard")
+    if not model_leaderboard or not render_dataset_guard(model_leaderboard):
         return
 
     views = compute_vercel_ai_views(datasets)
