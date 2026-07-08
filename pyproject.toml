@@ -46,6 +46,7 @@ semiconductor-proxy-data = "semiconductor_proxy_data.cli:main"
 google-trends-data = "google_trends_data.cli:main"
 google-trends-watchlist = "google_trends_data.batch_cli:main"
 vercel-ai-data = "vercel_ai_data.cli:main"
+ramp-data = "ramp_data.cli:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

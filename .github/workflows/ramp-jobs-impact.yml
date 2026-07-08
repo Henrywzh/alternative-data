@@ -1,0 +1,69 @@
+name: Ramp AI Jobs Impact (on-demand)
+
+# The AI jobs-impact table is a static research artifact (Ramp x Revelio paper),
+# client-rendered and refreshed roughly annually — so this runs on manual dispatch
+# only, not on a schedule.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  scrape-jobs-impact:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .[dev]
+          python -m playwright install --with-deps chromium
+
+      - name: Run jobs-impact extraction
+        # Gate (inside `jobs-impact`) fails loudly if the data table can't be found,
+        # so a Ramp redesign aborts instead of writing garbage over the committed data.
+        run: |
+          python -m ramp_data.cli --base-dir . jobs-impact
+
+      - name: Commit normalized dataset
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add data/normalized/ramp/ramp_ai_jobs_impact.parquet
+          git add data/raw/ramp/*/manifest.json 2>/dev/null || true
+
+          if git diff --cached --quiet; then
+            echo "No Ramp jobs-impact changes to commit"
+            exit 0
+          fi
+
+          git commit -m "chore: update ramp ai jobs-impact data [$(date -u +%Y-%m-%d)]"
+
+          for attempt in 1 2 3; do
+            if git pull --rebase origin "${{ github.event.repository.default_branch }}" && git push; then
+              echo "Pushed on attempt ${attempt}"
+              exit 0
+            fi
+            echo "Push attempt ${attempt} failed; retrying..."
+            sleep 5
+          done
+          echo "Failed to push after 3 attempts"
+          exit 1
+
+      - name: Upload dataset
+        uses: actions/upload-artifact@v4
+        with:
+          name: ramp-ai-jobs-impact
+          path: data/normalized/ramp/ramp_ai_jobs_impact.parquet
+          if-no-files-found: warn
