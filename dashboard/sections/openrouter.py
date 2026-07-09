@@ -1183,11 +1183,130 @@ def render_kpi_row(datasets: dict[str, DatasetLoadResult], openrouter_views: dic
         st.markdown(f'<div class="rankings-warning">{warning}</div>', unsafe_allow_html=True)
 
 
+def _compute_daily_average_price_pivots() -> pd.DataFrame:
+    """Calculate daily smoothed averages for all five price index metrics."""
+    try:
+        root = repo_root()
+        parquet_path = root / "data" / "normalized" / "marts" / "daily_provider_economics.parquet"
+        if not parquet_path.exists():
+            return pd.DataFrame()
+        df = pd.read_parquet(parquet_path)
+    except Exception:
+        return pd.DataFrame()
+
+    df["usage_date"] = pd.to_datetime(df["usage_date"], errors="coerce")
+    df = df.dropna(subset=["usage_date"])
+    df = df.sort_values(["model_permaslug", "usage_date"]).reset_index(drop=True)
+
+    # Drop ending partial day if present
+    df = df[df["usage_date"] < "2026-06-26"].copy()
+
+    # Backward fill pricing per model
+    df["filled_prompt"] = df.groupby("model_permaslug")["pricing_prompt"].bfill()
+    df["filled_completion"] = df.groupby("model_permaslug")["pricing_completion"].bfill()
+    df["filled_blended"] = (df["filled_prompt"] * 0.977) + (df["filled_completion"] * 0.023)
+    df["filled_blended"] = df["filled_blended"].fillna(df["filled_prompt"]).fillna(df["filled_completion"])
+
+    # Calculate revenue row-by-row safely
+    df["filled_revenue"] = df.apply(
+        lambda row: (row["prompt_tokens"] or 0) * (row["filled_prompt"] or 0) + (row["completion_tokens"] or 0) * (row["filled_completion"] or 0)
+        if ((row["prompt_tokens"] or 0) > 0 or (row["completion_tokens"] or 0) > 0)
+        else row["total_tokens"] * row["filled_blended"],
+        axis=1
+    )
+
+    # Filter out free models and Others
+    is_free = df["model_permaslug"].astype(str).str.endswith(":free")
+    df.loc[is_free, "filled_revenue"] = 0.0
+    df_priced = df[(df["model_permaslug"] != "Others") & (~is_free)].copy()
+
+    # 1. Spend-weighted terms
+    df_priced["price_sq_tokens"] = df_priced["filled_blended"] * df_priced["filled_revenue"]
+
+    daily_data = df_priced.groupby("usage_date").agg(
+        total_tokens=("total_tokens", "sum"),
+        total_revenue=("filled_revenue", "sum"),
+        total_price_sq_tokens=("price_sq_tokens", "sum")
+    ).reset_index()
+
+    daily_data["Original Volume-Weighted TEI"] = (daily_data["total_revenue"] / daily_data["total_tokens"]) * 1_000_000
+    daily_data["Spend-Weighted TEI"] = (daily_data["total_price_sq_tokens"] / daily_data["total_revenue"]) * 1_000_000
+
+    # 2. Segmented indices
+    df_priced["tier"] = "Mid-Tier"
+    df_priced.loc[df_priced["filled_blended"] >= 2.0e-6, "tier"] = "Frontier"
+    df_priced.loc[df_priced["filled_blended"] < 0.5e-6, "tier"] = "Value"
+
+    daily_segmented = df_priced.groupby(["usage_date", "tier"]).agg(
+        total_tokens=("total_tokens", "sum"),
+        total_revenue=("filled_revenue", "sum")
+    ).reset_index()
+    daily_segmented["tei"] = (daily_segmented["total_revenue"] / daily_segmented["total_tokens"]) * 1_000_000
+
+    pivot_segmented = daily_segmented.pivot(index="usage_date", columns="tier", values="tei").reset_index()
+    pivot_segmented = pivot_segmented.ffill().bfill()
+
+    pivot_segmented["CPI Workload Basket Index (50/40/10)"] = (
+        0.5 * pivot_segmented["Frontier"] +
+        0.4 * pivot_segmented["Mid-Tier"] +
+        0.1 * pivot_segmented["Value"]
+    )
+
+    # Merge
+    chart_df = daily_data.merge(
+        pivot_segmented[["usage_date", "Frontier", "Value", "CPI Workload Basket Index (50/40/10)"]],
+        on="usage_date"
+    )
+
+    chart_df = chart_df.sort_values("usage_date").reset_index(drop=True)
+
+    # Apply 7-day rolling average to all indices
+    index_cols = [
+        "Original Volume-Weighted TEI", 
+        "Spend-Weighted TEI", 
+        "CPI Workload Basket Index (50/40/10)", 
+        "Frontier", 
+        "Value"
+    ]
+    for col in index_cols:
+        chart_df[col] = chart_df[col].rolling(window=7, min_periods=1).mean()
+
+    # Reformat pivot columns for Plotly
+    pivot_df = chart_df.set_index("usage_date")[[
+        "Spend-Weighted TEI",
+        "CPI Workload Basket Index (50/40/10)",
+        "Original Volume-Weighted TEI",
+        "Frontier",
+        "Value"
+    ]]
+    pivot_df.index = pivot_df.index.strftime("%Y-%m-%d")
+    return pivot_df.sort_index()
+
+
 def _weekly_usage_section_state(
     datasets: dict[str, DatasetLoadResult],
     openrouter_views: dict[str, object],
     metric: str,
 ) -> dict[str, object]:
+    if metric == "Average Price":
+        pivot_price = _compute_daily_average_price_pivots()
+        latest_vals = {}
+        if not pivot_price.empty:
+            latest_row = pivot_price.iloc[-1]
+            for col in pivot_price.columns:
+                latest_vals[col] = float(latest_row[col])
+        return {
+            "metric": "Average Price",
+            "pivot": pivot_price,
+            "latest_values": latest_vals,
+            "y_title": "Price per Million Tokens ($)",
+            "hover_suffix": "/M tokens",
+            "empty_message": "No daily provider pricing economics data is available.",
+            "caption": "Shows daily 7-day rolling moving averages for all 5 pricing index metrics computed from OpenRouter provider economics data.",
+            "source_status": "Calculated daily indices (7-day rolling average)",
+            "scraped_at": datasets.get("market_share").latest_scraped_at if datasets.get("market_share") else None,
+        }
+
     if metric == "Requests":
         request_view = openrouter_views.get("provider_weekly_requests", {})
         pivot_requests = request_view.get("pivot_weekly", pd.DataFrame())
@@ -1295,6 +1414,15 @@ def _weekly_usage_section_state(
     }
 
 
+PRICE_INDEX_COLORS = [
+    "#4f46e5",  # Indigo (Spend-Weighted TEI)
+    "#0d9488",  # Teal (CPI Workload Basket Index)
+    "#2563eb",  # Blue (Original Volume-Weighted TEI)
+    "#ea580c",  # Orange (Frontier)
+    "#16a34a",  # Green (Value)
+]
+
+
 def render_weekly_usage_section(datasets: dict[str, DatasetLoadResult], openrouter_views: dict[str, object]) -> None:
     st.markdown('<div class="section-title">Weekly OpenRouter Usage</div>', unsafe_allow_html=True)
     st.markdown(
@@ -1302,7 +1430,7 @@ def render_weekly_usage_section(datasets: dict[str, DatasetLoadResult], openrout
         unsafe_allow_html=True,
     )
 
-    metric_options = ["Tokens", "Requests"]
+    metric_options = ["Tokens", "Requests", "Average Price"]
     if hasattr(st, "segmented_control"):
         metric = st.segmented_control("Metric", metric_options, default="Tokens", key="openrouter_weekly_usage_metric")
     else:
@@ -1324,16 +1452,15 @@ def render_weekly_usage_section(datasets: dict[str, DatasetLoadResult], openrout
         st.info(str(state["empty_message"]))
         return
 
-    latest_total = state.get("latest_total")
-    wow_pct = state.get("wow_pct")
-    if wow_pct is not None:
-        delta_cls = "up" if float(wow_pct) >= 0 else "down"
-        delta_text = f"{'↑' if float(wow_pct) >= 0 else '↓'} {abs(float(wow_pct)):.1f}% WoW"
-        wow_str = f"{'+' if float(wow_pct) >= 0 else ''}{float(wow_pct):.1f}%"
-    else:
-        delta_cls, delta_text, wow_str = "flat", "—", "—"
-
     if metric == "Requests":
+        latest_total = state.get("latest_total")
+        wow_pct = state.get("wow_pct")
+        if wow_pct is not None:
+            delta_cls = "up" if float(wow_pct) >= 0 else "down"
+            delta_text = f"{'↑' if float(wow_pct) >= 0 else '↓'} {abs(float(wow_pct)):.1f}% WoW"
+            wow_str = f"{'+' if float(wow_pct) >= 0 else ''}{float(wow_pct):.1f}%"
+        else:
+            delta_cls, delta_text, wow_str = "flat", "—", "—"
         st.markdown(
             kpi_grid_html(
                 kpi_card_html("Total Requests (Latest Week)", format_metric(latest_total) if latest_total else "—", delta=delta_text, delta_class=delta_cls),
@@ -1343,7 +1470,26 @@ def render_weekly_usage_section(datasets: dict[str, DatasetLoadResult], openrout
             ),
             unsafe_allow_html=True,
         )
+    elif metric == "Average Price":
+        vals = state.get("latest_values", {})
+        st.markdown(
+            kpi_grid_html(
+                kpi_card_html("Spend-Weighted TEI", f"${vals.get('Spend-Weighted TEI', 0.0):.3f}", delta="per Million tokens"),
+                kpi_card_html("CPI Workload Basket", f"${vals.get('CPI Workload Basket Index (50/40/10)', 0.0):.3f}", delta="standardized mix"),
+                kpi_card_html("Frontier Tier Price", f"${vals.get('Frontier', 0.0):.3f}", delta=">= $2.00/M models"),
+                kpi_card_html("Value Tier Price", f"${vals.get('Value', 0.0):.3f}", delta="< $0.50/M models"),
+            ),
+            unsafe_allow_html=True,
+        )
     else:
+        latest_total = state.get("latest_total")
+        wow_pct = state.get("wow_pct")
+        if wow_pct is not None:
+            delta_cls = "up" if float(wow_pct) >= 0 else "down"
+            delta_text = f"{'↑' if float(wow_pct) >= 0 else '↓'} {abs(float(wow_pct)):.1f}% WoW"
+            wow_str = f"{'+' if float(wow_pct) >= 0 else ''}{float(wow_pct):.1f}%"
+        else:
+            delta_cls, delta_text, wow_str = "flat", "—", "—"
         top_model = str(state.get("top_model") or "—")
         if len(top_model) > 28:
             top_model = top_model[:26] + "…"
@@ -1363,26 +1509,51 @@ def render_weekly_usage_section(datasets: dict[str, DatasetLoadResult], openrout
             unsafe_allow_html=True,
         )
 
-    st.plotly_chart(
-        make_line_chart(
-            pivot,
-            MODEL_COLORS,
-            y_title=str(state["y_title"]),
-            x_title="Usage Week (Starting)",
-            hover_suffix=str(state["hover_suffix"]),
-        ) if metric == "Tokens" else make_stacked_area_chart(
-            pivot,
-            list(pivot.index.astype(str)),
-            MODEL_COLORS,
-            x_title="Usage Week (Starting)",
-            y_title=str(state["y_title"]),
-            value_format=",.0f",
-            hover_suffix=str(state["hover_suffix"]),
-        ),
-        width="stretch",
-        theme=None,
-    )
+    if metric == "Average Price":
+        st.plotly_chart(
+            make_line_chart(
+                pivot,
+                PRICE_INDEX_COLORS,
+                y_title=str(state["y_title"]),
+                x_title="Usage Date (Daily)",
+                hover_suffix=str(state["hover_suffix"]),
+                value_format=",.4f",
+                mode="lines",
+            ),
+            width="stretch",
+            theme=None,
+        )
+    else:
+        st.plotly_chart(
+            make_line_chart(
+                pivot,
+                MODEL_COLORS,
+                y_title=str(state["y_title"]),
+                x_title="Usage Week (Starting)",
+                hover_suffix=str(state["hover_suffix"]),
+            ) if metric == "Tokens" else make_stacked_area_chart(
+                pivot,
+                list(pivot.index.astype(str)),
+                MODEL_COLORS,
+                x_title="Usage Week (Starting)",
+                y_title=str(state["y_title"]),
+                value_format=",.0f",
+                hover_suffix=str(state["hover_suffix"]),
+            ),
+            width="stretch",
+            theme=None,
+        )
     st.caption(str(state["caption"]))
+
+    if metric == "Average Price":
+        st.caption(
+            "Methodology: all indices are calculated daily and smoothed using a 7-day rolling moving average to isolate trends from daily volatility. "
+            "1. Spend-Weighted TEI weights each model's price by its daily share of USD spend: Sum(Price * Spend) / Sum(Spend) = Sum(Price^2 * Tokens) / Sum(Price * Tokens). "
+            "2. CPI Workload Basket Index is a fixed portfolio representing a standard enterprise mix: 50% Frontier + 40% Mid-Tier + 10% Value-Tier. "
+            "3. Original Volume-Weighted TEI is the simple average price of all priced models: Sum(Price * Tokens) / Sum(Tokens). "
+            "4. Segmented Tiers calculate the volume-weighted average price restricted to that cohort: Sum(Price_i * Tokens_i) / Sum(Tokens_i) for all models (i) in the segment. "
+            "Tiers are classified by blended price per million tokens: Frontier is >= $2.00/M tokens (e.g., Claude Opus, GPT-4o); Value is < $0.50/M tokens (e.g., DeepSeek Flash, Gemini Flash); Mid-Tier is $0.50 to $2.00/M tokens."
+        )
 
 
 def render_top_models_chart(datasets: dict[str, DatasetLoadResult], openrouter_views: dict[str, object]) -> None:
