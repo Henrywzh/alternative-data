@@ -25,6 +25,7 @@ from dashboard.components import (
     kpi_grid_html,
     make_line_chart,
     make_stacked_area_chart,
+    make_stacked_bar,
     render_dataset_guard,
 )
 from dashboard.data import DatasetLoadResult
@@ -39,6 +40,16 @@ AI_ADOPTION_VIEWS = {
     "By state": ("ramp_ai_adoption_by_state", "state_code"),
 }
 JOBS_ID = "ramp_ai_jobs_impact"
+
+# The spend/model sub-tabs share one set of filter dimensions (label -> dimension_type).
+# "Overall" is the un-filtered aggregate.
+SPEND_DIMENSIONS = {
+    "Overall": None,
+    "By state": "business_office_state",
+    "By sector": "naics_sector",
+    "By financing": "company_financing_status",
+    "By company size": "fte_segment",
+}
 
 MONTHLY_ID = "ramp_vendor_adoption_monthly"
 CATEGORY_ID = "ramp_category_vendors"
@@ -275,53 +286,117 @@ def _render_ai_index(datasets) -> None:
         st.caption(f"Share of businesses on Ramp adopting AI, {dim_label.lower()} (monthly).")
 
     elif view == "Spend per employee":
-        result = datasets.get("ramp_ai_pepm_spend")
-        if not result or result.frame.empty:
-            st.info("No spend-per-employee data.")
-            return
-        frame = result.frame.copy()
-        frame["date_month"] = frame["date_month"].astype(str)
-        cols = {"median_pepm": "Median", "p90_pepm": "90th pct", "p99_pepm": "99th pct"}
-        pivot = frame.set_index("date_month")[list(cols)].rename(columns=cols).sort_index()
+        dim_label = st.selectbox("Breakdown", list(SPEND_DIMENSIONS.keys()), key="ramp_pepm_dim")
+        dim_type = SPEND_DIMENSIONS[dim_label]
+        if dim_type is None:
+            result = datasets.get("ramp_ai_pepm_spend")
+            if not result or result.frame.empty:
+                st.info("No spend-per-employee data.")
+                return
+            frame = result.frame.copy()
+            frame["date_month"] = frame["date_month"].astype(str)
+            cols = {"median_pepm": "Median", "p90_pepm": "90th pct", "p99_pepm": "99th pct"}
+            pivot = frame.set_index("date_month")[list(cols)].rename(columns=cols).sort_index()
+            caption = "Monthly AI spend per employee (PEPM) across businesses on Ramp."
+        else:
+            # PEPM is a level, so by-dimension IS a genuine monthly time series.
+            result = datasets.get("ramp_ai_pepm_spend_by_dimension")
+            if not result or result.frame.empty:
+                st.info("No by-dimension PEPM data.")
+                return
+            frame = result.frame[result.frame["dimension_type"] == dim_type].copy()
+            frame["date_month"] = frame["date_month"].astype(str)
+            frame["median_pepm"] = pd.to_numeric(frame["median_pepm"], errors="coerce")
+            pivot = frame.pivot_table(index="date_month", columns="dimension_label",
+                                      values="median_pepm", aggfunc="mean").sort_index()
+            caption = f"Monthly median AI spend per employee (PEPM) {dim_label.lower()}."
         fig = make_line_chart(pivot, colors=PALETTE, y_title="AI spend per employee ($/mo)",
                               x_title="Month", hover_suffix="", connect_gaps=True)
         st.plotly_chart(fig, width="stretch", theme=None)
-        st.caption("Monthly AI spend per employee (PEPM) across businesses on Ramp.")
+        st.caption(caption)
 
     elif view == "Spend share":
-        result = datasets.get("ramp_ai_spend_breakdown")
-        if not result or result.frame.empty:
-            st.info("No spend-breakdown data.")
-            return
-        frame = result.frame.copy()
-        frame["date_month"] = frame["date_month"].astype(str)
-        frame["spend_usd"] = pd.to_numeric(frame["spend_usd"], errors="coerce")
-        dollars = frame.pivot_table(index="date_month", columns="spend_category",
-                                    values="spend_usd", aggfunc="sum").sort_index()
-        # Normalize each month to a 100% share of AI spend by type.
-        share = dollars.div(dollars.sum(axis=1).replace(0, pd.NA), axis=0) * 100.0
-        fig = make_stacked_area_chart(share, display_index=list(share.index), colors=PALETTE,
-                                      x_title="Month", y_title="Share of AI spend (%)",
-                                      value_format=".1f", hover_suffix="%")
-        st.plotly_chart(fig, width="stretch", theme=None)
-        st.caption("Share of AI spend by spend type over time (API usage, chat/coding subscriptions, other AI).")
+        dim_label = st.selectbox("Breakdown", list(SPEND_DIMENSIONS.keys()), key="ramp_spendshare_dim")
+        dim_type = SPEND_DIMENSIONS[dim_label]
+        if dim_type is None:
+            result = datasets.get("ramp_ai_spend_breakdown")
+            if not result or result.frame.empty:
+                st.info("No spend-breakdown data.")
+                return
+            frame = result.frame.copy()
+            frame["date_month"] = frame["date_month"].astype(str)
+            frame["spend_usd"] = pd.to_numeric(frame["spend_usd"], errors="coerce")
+            dollars = frame.pivot_table(index="date_month", columns="spend_category",
+                                        values="spend_usd", aggfunc="sum").sort_index()
+            # Normalize each month to a 100% share of AI spend by type.
+            share = dollars.div(dollars.sum(axis=1).replace(0, pd.NA), axis=0) * 100.0
+            fig = make_stacked_area_chart(share, display_index=list(share.index), colors=PALETTE,
+                                          x_title="Month", y_title="Share of AI spend (%)",
+                                          value_format=".1f", hover_suffix="%")
+            st.plotly_chart(fig, width="stretch", theme=None)
+            st.caption("Share of AI spend by spend type over time (API usage, chat/coding subscriptions, other AI).")
+        else:
+            # Ramp only publishes the by-dimension spend split for the latest month,
+            # so this is a composition (each bar sums to 100%), not a time series.
+            _render_dimension_composition(
+                datasets.get("ramp_ai_spend_share_by_category"), dim_type, dim_label,
+                category_col="spend_category", value_col="spend_share",
+                y_title="Share of AI spend (%)", noun="AI spend",
+            )
 
     else:  # Model share
-        result = datasets.get("ramp_ai_model_breakdown")
-        if not result or result.frame.empty:
-            st.info("No model-breakdown data.")
-            return
-        frame = result.frame.copy()
-        frame["date_month"] = frame["date_month"].astype(str)
-        frame["model_share"] = pd.to_numeric(frame["model_share"], errors="coerce")
-        frame["label"] = frame["ai_provider"].astype(str) + " · " + frame["model_label"].astype(str)
-        pivot = frame.pivot_table(index="date_month", columns="label",
-                                  values="model_share", aggfunc="sum").sort_index() * 100.0
-        leaders = pivot.iloc[-1].sort_values(ascending=False).head(12).index.tolist()
-        fig = make_line_chart(pivot[leaders], colors=PALETTE, y_title="Share of AI model spend (%)",
-                              x_title="Month", hover_suffix="%", connect_gaps=True)
-        st.plotly_chart(fig, width="stretch", theme=None)
-        st.caption("Share of AI model spend by provider/model over time (top 12 by latest month).")
+        dim_label = st.selectbox("Breakdown", list(SPEND_DIMENSIONS.keys()), key="ramp_modelshare_dim")
+        dim_type = SPEND_DIMENSIONS[dim_label]
+        if dim_type is None:
+            result = datasets.get("ramp_ai_model_breakdown")
+            if not result or result.frame.empty:
+                st.info("No model-breakdown data.")
+                return
+            frame = result.frame.copy()
+            frame["date_month"] = frame["date_month"].astype(str)
+            frame["model_share"] = pd.to_numeric(frame["model_share"], errors="coerce")
+            frame["label"] = frame["ai_provider"].astype(str) + " · " + frame["model_label"].astype(str)
+            pivot = frame.pivot_table(index="date_month", columns="label",
+                                      values="model_share", aggfunc="sum").sort_index() * 100.0
+            leaders = pivot.iloc[-1].sort_values(ascending=False).head(12).index.tolist()
+            fig = make_line_chart(pivot[leaders], colors=PALETTE, y_title="Share of AI model spend (%)",
+                                  x_title="Month", hover_suffix="%", connect_gaps=True)
+            st.plotly_chart(fig, width="stretch", theme=None)
+            st.caption("Share of AI model spend by provider/model over time (top 12 by latest month).")
+        else:
+            # By-dimension model share is a latest-month composition (bars sum to 100%),
+            # aggregated to provider level for legibility.
+            _render_dimension_composition(
+                datasets.get("ramp_ai_provider_model_share"), dim_type, dim_label,
+                category_col="ai_provider", value_col="model_share",
+                y_title="Share of AI model spend (%)", noun="AI model spend",
+            )
+
+
+def _render_dimension_composition(result, dim_type, dim_label, *, category_col, value_col, y_title, noun) -> None:
+    """Latest-month stacked bars (each summing to ~100%): one bar per dimension value,
+    segmented by ``category_col``. Used for the share breakdowns Ramp only publishes
+    for the current month."""
+    if not result or result.frame.empty:
+        st.info(f"No {noun.lower()} breakdown data.")
+        return
+    frame = result.frame[result.frame["dimension_type"] == dim_type].copy()
+    if frame.empty:
+        st.info(f"No data for {dim_label.lower()}.")
+        return
+    latest = frame["date_month"].max()
+    frame = frame[frame["date_month"] == latest]
+    frame[value_col] = pd.to_numeric(frame[value_col], errors="coerce")
+    pivot = frame.pivot_table(index="dimension_label", columns=category_col,
+                              values=value_col, aggfunc="sum") * 100.0
+    # Order bars by the dimension's natural display order where available.
+    if "display_order" in frame.columns:
+        order = (frame.groupby("dimension_label")["display_order"].min()
+                 .sort_values().index.tolist())
+        pivot = pivot.reindex([o for o in order if o in pivot.index])
+    fig = make_stacked_bar(pivot, colors=PALETTE, y_title=y_title, pct=True)
+    st.plotly_chart(fig, width="stretch", theme=None)
+    st.caption(f"Share of {noun} {dim_label.lower()}, latest month ({latest}). Each bar sums to 100%.")
 
 
 # --------------------------------------------------------------- Jobs Impact
