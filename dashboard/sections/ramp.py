@@ -51,6 +51,24 @@ SPEND_DIMENSIONS = {
     "By company size": "fte_segment",
 }
 
+# "Filter mode" combines all four dimensions at once against the cohort timeseries
+# endpoints (ramp_ai_filter_*), which — unlike the single-month by-dimension views
+# above — carry the full monthly history for every filter combination.
+FILTER_MODE_LABEL = "Filter mode (combine filters)"
+FILTER_DIM_ORDER = ["business_office_state", "fte_segment", "naics_sector", "company_financing_status"]
+FILTER_DIM_LABELS = {
+    "business_office_state": "State",
+    "fte_segment": "Company size",
+    "naics_sector": "Sector",
+    "company_financing_status": "Financing",
+}
+SPEND_TYPE_LABELS = {
+    "api": "API usage",
+    "chat_subscription": "Chat subscription",
+    "coding_agent": "Coding agent",
+    "other_ai": "Other AI",
+}
+
 MONTHLY_ID = "ramp_vendor_adoption_monthly"
 CATEGORY_ID = "ramp_category_vendors"
 
@@ -286,7 +304,10 @@ def _render_ai_index(datasets) -> None:
         st.caption(f"Share of businesses on Ramp adopting AI, {dim_label.lower()} (monthly).")
 
     elif view == "Spend per employee":
-        dim_label = st.selectbox("Breakdown", list(SPEND_DIMENSIONS.keys()), key="ramp_pepm_dim")
+        dim_label = st.selectbox("Breakdown", [*SPEND_DIMENSIONS, FILTER_MODE_LABEL], key="ramp_pepm_dim")
+        if dim_label == FILTER_MODE_LABEL:
+            _render_filter_mode(datasets, kind="pepm")
+            return
         dim_type = SPEND_DIMENSIONS[dim_label]
         if dim_type is None:
             result = datasets.get("ramp_ai_pepm_spend")
@@ -316,7 +337,10 @@ def _render_ai_index(datasets) -> None:
         st.caption(caption)
 
     elif view == "Spend share":
-        dim_label = st.selectbox("Breakdown", list(SPEND_DIMENSIONS.keys()), key="ramp_spendshare_dim")
+        dim_label = st.selectbox("Breakdown", [*SPEND_DIMENSIONS, FILTER_MODE_LABEL], key="ramp_spendshare_dim")
+        if dim_label == FILTER_MODE_LABEL:
+            _render_filter_mode(datasets, kind="spend")
+            return
         dim_type = SPEND_DIMENSIONS[dim_label]
         if dim_type is None:
             result = datasets.get("ramp_ai_spend_breakdown")
@@ -345,7 +369,10 @@ def _render_ai_index(datasets) -> None:
             )
 
     else:  # Model share
-        dim_label = st.selectbox("Breakdown", list(SPEND_DIMENSIONS.keys()), key="ramp_modelshare_dim")
+        dim_label = st.selectbox("Breakdown", [*SPEND_DIMENSIONS, FILTER_MODE_LABEL], key="ramp_modelshare_dim")
+        if dim_label == FILTER_MODE_LABEL:
+            _render_filter_mode(datasets, kind="model")
+            return
         dim_type = SPEND_DIMENSIONS[dim_label]
         if dim_type is None:
             result = datasets.get("ramp_ai_model_breakdown")
@@ -371,6 +398,78 @@ def _render_ai_index(datasets) -> None:
                 category_col="ai_provider", value_col="model_share",
                 y_title="Share of AI model spend (%)", noun="AI model spend",
             )
+
+
+_FILTER_MODE_DATASETS = {
+    "spend": "ramp_ai_filter_spend_share",
+    "model": "ramp_ai_filter_model_share",
+    "pepm": "ramp_ai_filter_pepm",
+}
+
+
+def _render_filter_mode(datasets, *, kind: str) -> None:
+    """Cohort filter mode: four combinable dimension dropdowns over the full monthly
+    timeseries (ramp_ai_filter_* endpoints). "All" on a dimension means unfiltered."""
+    result = datasets.get(_FILTER_MODE_DATASETS[kind])
+    if not result or result.frame.empty:
+        st.info("No filter-mode data available. Run `ramp-data filter-mode` to populate it.")
+        return
+    frame = result.frame.copy()
+
+    # One selectbox per dimension; "ALL" (shown as "All") keeps the cohort open.
+    cols = st.columns(len(FILTER_DIM_ORDER))
+    selected: dict[str, str] = {}
+    for col, dim in zip(cols, FILTER_DIM_ORDER):
+        values = [v for v in frame[dim].dropna().unique() if v != "ALL"]
+        options = ["ALL", *sorted(values)]
+        with col:
+            selected[dim] = st.selectbox(
+                FILTER_DIM_LABELS[dim], options,
+                format_func=lambda v: "All" if v == "ALL" else v,
+                key=f"ramp_fm_{kind}_{dim}",
+            )
+
+    cohort = frame
+    for dim, value in selected.items():
+        cohort = cohort[cohort[dim] == value]
+    if cohort.empty:
+        st.info("No data for this filter combination — try widening a filter.")
+        return
+    cohort = cohort.copy()
+    cohort["date_month"] = cohort["date_month"].astype(str)
+
+    active = [f"{FILTER_DIM_LABELS[d]}: {v}" for d, v in selected.items() if v != "ALL"]
+    cohort_label = ", ".join(active) if active else "all businesses"
+
+    if kind == "spend":
+        cohort["spend_share"] = pd.to_numeric(cohort["spend_share"], errors="coerce") * 100.0
+        pivot = cohort.pivot_table(index="date_month", columns="pepm_spend_type",
+                                   values="spend_share", aggfunc="sum").sort_index()
+        pivot = pivot.rename(columns=SPEND_TYPE_LABELS)
+        fig = make_stacked_area_chart(pivot, display_index=list(pivot.index), colors=PALETTE,
+                                      x_title="Month", y_title="Share of AI spend (%)",
+                                      value_format=".1f", hover_suffix="%")
+        st.plotly_chart(fig, width="stretch", theme=None)
+        st.caption(f"Monthly AI spend share by type for **{cohort_label}**.")
+    elif kind == "model":
+        cohort["model_share"] = pd.to_numeric(cohort["model_share"], errors="coerce") * 100.0
+        cohort["label"] = cohort["ai_provider"].astype(str) + " · " + cohort["model_label"].astype(str)
+        pivot = cohort.pivot_table(index="date_month", columns="label",
+                                   values="model_share", aggfunc="sum").sort_index()
+        leaders = pivot.iloc[-1].sort_values(ascending=False).head(12).index.tolist()
+        fig = make_line_chart(pivot[leaders], colors=PALETTE, y_title="Share of AI model spend (%)",
+                              x_title="Month", hover_suffix="%", connect_gaps=True)
+        st.plotly_chart(fig, width="stretch", theme=None)
+        st.caption(f"Monthly AI model spend share (top 12) for **{cohort_label}**.")
+    else:  # pepm
+        labels = {"median_pepm": "Median", "p90_pepm": "90th pct", "p99_pepm": "99th pct"}
+        for col_name in labels:
+            cohort[col_name] = pd.to_numeric(cohort[col_name], errors="coerce")
+        pivot = cohort.set_index("date_month")[list(labels)].rename(columns=labels).sort_index()
+        fig = make_line_chart(pivot, colors=PALETTE, y_title="AI spend per employee ($/mo)",
+                              x_title="Month", hover_suffix="", connect_gaps=True)
+        st.plotly_chart(fig, width="stretch", theme=None)
+        st.caption(f"Monthly AI spend per employee (PEPM) for **{cohort_label}**.")
 
 
 def _render_dimension_composition(result, dim_type, dim_label, *, category_col, value_col, y_title, noun) -> None:

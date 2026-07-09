@@ -137,6 +137,66 @@ AI_INDEX_DATASETS: dict[str, dict] = {
 }
 
 
+# --------------------------------------------------------------- Filter mode
+#
+# The AI Index "Filter mode" (a dropdown option under each breakdown chart) loads
+# the full monthly timeseries for every cohort from dedicated JSON endpoints —
+# NOT the page's hydration payload. Each row is one month for one combination of
+# the four filter dimensions (each either a specific value or "ALL").
+#
+# The endpoints require a version token found in the page payload as
+# ``filterModeBundleVersion``, so the source scrapes the page first to resolve it.
+FILTER_MODE_ENDPOINT_BASE = "https://ramp.com/data/ai-index/filter-mode"
+FILTER_MODE_VERSION_KEY = "filterModeBundleVersion"
+
+# The four cohort dimensions, shared across all filter-mode datasets.
+FILTER_DIMS = [
+    "business_office_state",
+    "fte_segment",
+    "naics_sector",
+    "company_financing_status",
+]
+
+# The API returns the month under ``my_date``; the source renames it to
+# ``date_month`` for consistency with the rest of the ramp datasets.
+FILTER_MODE_DATASETS: dict[str, dict] = {
+    "ramp_ai_filter_spend_share": {
+        "endpoint": "spendShare",
+        "fields": [*FILTER_DIMS, "date_month", "is_latest_complete_month", "pepm_spend_type", "spend_share"],
+        "natural_keys": ["date_month", *FILTER_DIMS, "pepm_spend_type"],
+        "sort_keys": ["date_month", *FILTER_DIMS, "pepm_spend_type"],
+        "numeric": ["spend_share"],
+        "min_rows": 5000,
+    },
+    "ramp_ai_filter_model_share": {
+        "endpoint": "modelShare",
+        "fields": [
+            *FILTER_DIMS, "date_month", "is_latest_complete_month", "ai_provider",
+            "provider_display_order", "model_bucket_key", "model_label",
+            "model_display_order", "model_spend_type", "model_share",
+        ],
+        "natural_keys": ["date_month", *FILTER_DIMS, "ai_provider", "model_bucket_key"],
+        "sort_keys": ["date_month", *FILTER_DIMS, "provider_display_order", "model_display_order"],
+        "numeric": ["provider_display_order", "model_display_order", "model_share"],
+        "min_rows": 5000,
+    },
+    "ramp_ai_filter_pepm": {
+        "endpoint": "spendPerEmployee",
+        "fields": [
+            *FILTER_DIMS, "date_month", "is_latest_complete_month", "median_pepm",
+            "p90_pepm", "p99_pepm", "top_10_percent_median_pepm", "top_1_percent_median_pepm",
+        ],
+        "natural_keys": ["date_month", *FILTER_DIMS],
+        "sort_keys": ["date_month", *FILTER_DIMS],
+        "numeric": [
+            "median_pepm", "p90_pepm", "p99_pepm",
+            "top_10_percent_median_pepm", "top_1_percent_median_pepm",
+        ],
+        "min_rows": 2000,
+    },
+}
+
+
 # AI Jobs Impact — client-rendered event study (Playwright). Static annual paper.
 JOBS_IMPACT_DATASET = "ramp_ai_jobs_impact"
 JOBS_IMPACT = {
