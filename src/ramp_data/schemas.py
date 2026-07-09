@@ -98,6 +98,29 @@ AI_INDEX_DATASETS: dict[str, dict] = {
         "numeric": ["display_order", "provider_display_order", "model_display_order", "model_share"],
         "min_rows": 100,
     },
+    # Historical (overall) time series. The *Curated datasets above are single-month
+    # cross-sections by dimension; these *Breakdown arrays carry the full monthly
+    # history the AI Index charts plot over time.
+    "ramp_ai_spend_breakdown": {
+        "payload_key": "spendBreakdown",
+        "fields": ["date_month", "spend_category", "spend_usd", "business_count"],
+        "natural_keys": ["date_month", "spend_category"],
+        "sort_keys": ["date_month", "spend_category"],
+        "numeric": ["spend_usd", "business_count"],
+        "min_rows": 60,
+    },
+    "ramp_ai_model_breakdown": {
+        "payload_key": "modelBreakdown",
+        "fields": [
+            "date_month", "ai_provider", "provider_display_order",
+            "model_bucket_key", "model_label", "model_display_order",
+            "model_spend_type", "model_share",
+        ],
+        "natural_keys": ["date_month", "ai_provider", "model_bucket_key"],
+        "sort_keys": ["date_month", "provider_display_order", "model_display_order"],
+        "numeric": ["provider_display_order", "model_display_order", "model_share"],
+        "min_rows": 60,
+    },
 }
 
 

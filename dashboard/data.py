@@ -443,6 +443,22 @@ DATASET_REGISTRY: dict[str, dict[str, object]] = {
         "metric_column": "model_share",
         "required_columns": ["date_month", "ai_provider", "model_share"],
     },
+    "ramp_ai_spend_breakdown": {
+        "label": "Ramp AI Spend Breakdown (history)",
+        "domain": "ramp",
+        "natural_keys": ["date_month", "spend_category"],
+        "primary_date_column": "date_month",
+        "metric_column": "spend_usd",
+        "required_columns": ["date_month", "spend_category", "spend_usd"],
+    },
+    "ramp_ai_model_breakdown": {
+        "label": "Ramp AI Model Breakdown (history)",
+        "domain": "ramp",
+        "natural_keys": ["date_month", "ai_provider", "model_bucket_key"],
+        "primary_date_column": "date_month",
+        "metric_column": "model_share",
+        "required_columns": ["date_month", "ai_provider", "model_share"],
+    },
     "ramp_ai_jobs_impact": {
         "label": "Ramp AI Jobs Impact",
         "domain": "ramp",
@@ -517,6 +533,8 @@ DOMAIN_ORDER = {
         "ramp_ai_pepm_spend",
         "ramp_ai_spend_share_by_category",
         "ramp_ai_provider_model_share",
+        "ramp_ai_spend_breakdown",
+        "ramp_ai_model_breakdown",
         "ramp_ai_jobs_impact",
     ],
 }
@@ -943,6 +961,11 @@ RAMP_LOAD_COLUMNS: dict[str, list[str]] = {
         *CORE_COLUMNS, "date_month", "dimension_type", "dimension_value", "dimension_label",
         "display_order", "ai_provider", "provider_display_order", "model_bucket_key",
         "model_label", "model_display_order", "model_spend_type", "model_share",
+    ],
+    "ramp_ai_spend_breakdown": [*CORE_COLUMNS, "date_month", "spend_category", "spend_usd", "business_count"],
+    "ramp_ai_model_breakdown": [
+        *CORE_COLUMNS, "date_month", "ai_provider", "provider_display_order",
+        "model_bucket_key", "model_label", "model_display_order", "model_spend_type", "model_share",
     ],
     "ramp_ai_jobs_impact": [
         *CORE_COLUMNS, "figure", "month_relative_to_adoption",

@@ -24,6 +24,7 @@ from dashboard.components import (
     kpi_card_html,
     kpi_grid_html,
     make_line_chart,
+    make_stacked_area_chart,
     render_dataset_guard,
 )
 from dashboard.data import DatasetLoadResult
@@ -234,10 +235,6 @@ def _render_vendors(datasets) -> None:
 
 # ------------------------------------------------------------------ AI Index
 
-def _latest(frame: pd.DataFrame) -> pd.DataFrame:
-    return frame[frame["date_month"] == frame["date_month"].max()]
-
-
 def _render_ai_index(datasets) -> None:
     overall = datasets.get("ramp_ai_adoption_overall")
     if not overall or overall.frame.empty:
@@ -292,37 +289,39 @@ def _render_ai_index(datasets) -> None:
         st.caption("Monthly AI spend per employee (PEPM) across businesses on Ramp.")
 
     elif view == "Spend share":
-        result = datasets.get("ramp_ai_spend_share_by_category")
+        result = datasets.get("ramp_ai_spend_breakdown")
         if not result or result.frame.empty:
-            st.info("No spend-share data.")
+            st.info("No spend-breakdown data.")
             return
-        frame = _latest(result.frame.copy())
-        frame = frame[frame["dimension_value"] == frame["dimension_value"].iloc[0]]
-        table = (
-            frame[["spend_category", "spend_share"]]
-            .assign(spend_share=lambda d: pd.to_numeric(d["spend_share"], errors="coerce") * 100.0)
-            .sort_values("spend_share", ascending=False)
-            .set_index("spend_category")
-        )
-        st.bar_chart(table["spend_share"])
-        st.caption(f"AI spend share by category, latest month ({result.frame['date_month'].max()}).")
+        frame = result.frame.copy()
+        frame["date_month"] = frame["date_month"].astype(str)
+        frame["spend_usd"] = pd.to_numeric(frame["spend_usd"], errors="coerce")
+        dollars = frame.pivot_table(index="date_month", columns="spend_category",
+                                    values="spend_usd", aggfunc="sum").sort_index()
+        # Normalize each month to a 100% share of AI spend by type.
+        share = dollars.div(dollars.sum(axis=1).replace(0, pd.NA), axis=0) * 100.0
+        fig = make_stacked_area_chart(share, display_index=list(share.index), colors=PALETTE,
+                                      x_title="Month", y_title="Share of AI spend (%)",
+                                      value_format=".1f", hover_suffix="%")
+        st.plotly_chart(fig, width="stretch", theme=None)
+        st.caption("Share of AI spend by spend type over time (API usage, chat/coding subscriptions, other AI).")
 
     else:  # Model share
-        result = datasets.get("ramp_ai_provider_model_share")
+        result = datasets.get("ramp_ai_model_breakdown")
         if not result or result.frame.empty:
-            st.info("No model-share data.")
+            st.info("No model-breakdown data.")
             return
-        frame = _latest(result.frame.copy())
-        frame = frame[frame["dimension_value"] == frame["dimension_value"].iloc[0]]
+        frame = result.frame.copy()
+        frame["date_month"] = frame["date_month"].astype(str)
+        frame["model_share"] = pd.to_numeric(frame["model_share"], errors="coerce")
         frame["label"] = frame["ai_provider"].astype(str) + " · " + frame["model_label"].astype(str)
-        table = (
-            frame.assign(model_share=lambda d: pd.to_numeric(d["model_share"], errors="coerce") * 100.0)
-            .sort_values("model_share", ascending=False)
-            .head(15)
-            .set_index("label")
-        )
-        st.bar_chart(table["model_share"])
-        st.caption(f"AI provider/model spend share, latest month ({result.frame['date_month'].max()}).")
+        pivot = frame.pivot_table(index="date_month", columns="label",
+                                  values="model_share", aggfunc="sum").sort_index() * 100.0
+        leaders = pivot.iloc[-1].sort_values(ascending=False).head(12).index.tolist()
+        fig = make_line_chart(pivot[leaders], colors=PALETTE, y_title="Share of AI model spend (%)",
+                              x_title="Month", hover_suffix="%", connect_gaps=True)
+        st.plotly_chart(fig, width="stretch", theme=None)
+        st.caption("Share of AI model spend by provider/model over time (top 12 by latest month).")
 
 
 # --------------------------------------------------------------- Jobs Impact
