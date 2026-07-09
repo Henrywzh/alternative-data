@@ -8,7 +8,13 @@ from typing import Any
 import pandas as pd
 
 from ramp_data.models import DatasetRecord, GenericRecord, Snapshot
-from ramp_data.schemas import AI_INDEX_DATASETS, CORE_COLUMNS, JOBS_IMPACT, JOBS_IMPACT_DATASET
+from ramp_data.schemas import (
+    AI_INDEX_DATASETS,
+    CORE_COLUMNS,
+    FILTER_MODE_DATASETS,
+    JOBS_IMPACT,
+    JOBS_IMPACT_DATASET,
+)
 
 NATURAL_KEYS: dict[str, list[str]] = {
     "ramp_vendor_adoption_monthly": ["vendor_slug", "spend_month"],
@@ -63,7 +69,7 @@ REPLACE_DATASETS = {"ramp_category_vendors"}
 # Register the config-driven datasets (AI Index + Jobs Impact) from schemas.py so
 # there is a single source of truth for their columns/keys. AI Index datasets are
 # history/append (keyed on date_month); Jobs Impact is a static REPLACE snapshot.
-for _dsid, _cfg in AI_INDEX_DATASETS.items():
+for _dsid, _cfg in {**AI_INDEX_DATASETS, **FILTER_MODE_DATASETS}.items():
     DATASET_COLUMNS[_dsid] = [*CORE_COLUMNS, *_cfg["fields"]]
     NATURAL_KEYS[_dsid] = _cfg["natural_keys"]
     SORT_KEYS[_dsid] = _cfg["sort_keys"]

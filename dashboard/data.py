@@ -467,6 +467,30 @@ DATASET_REGISTRY: dict[str, dict[str, object]] = {
         "metric_column": "model_share",
         "required_columns": ["date_month", "ai_provider", "model_share"],
     },
+    "ramp_ai_filter_spend_share": {
+        "label": "Ramp AI Filter-mode Spend Share",
+        "domain": "ramp",
+        "natural_keys": ["date_month", "business_office_state", "fte_segment", "naics_sector", "company_financing_status", "pepm_spend_type"],
+        "primary_date_column": "date_month",
+        "metric_column": "spend_share",
+        "required_columns": ["date_month", "pepm_spend_type", "spend_share"],
+    },
+    "ramp_ai_filter_model_share": {
+        "label": "Ramp AI Filter-mode Model Share",
+        "domain": "ramp",
+        "natural_keys": ["date_month", "business_office_state", "fte_segment", "naics_sector", "company_financing_status", "ai_provider", "model_bucket_key"],
+        "primary_date_column": "date_month",
+        "metric_column": "model_share",
+        "required_columns": ["date_month", "ai_provider", "model_share"],
+    },
+    "ramp_ai_filter_pepm": {
+        "label": "Ramp AI Filter-mode Spend per Employee",
+        "domain": "ramp",
+        "natural_keys": ["date_month", "business_office_state", "fte_segment", "naics_sector", "company_financing_status"],
+        "primary_date_column": "date_month",
+        "metric_column": "median_pepm",
+        "required_columns": ["date_month", "median_pepm"],
+    },
     "ramp_ai_jobs_impact": {
         "label": "Ramp AI Jobs Impact",
         "domain": "ramp",
@@ -544,6 +568,9 @@ DOMAIN_ORDER = {
         "ramp_ai_provider_model_share",
         "ramp_ai_spend_breakdown",
         "ramp_ai_model_breakdown",
+        "ramp_ai_filter_spend_share",
+        "ramp_ai_filter_model_share",
+        "ramp_ai_filter_pepm",
         "ramp_ai_jobs_impact",
     ],
 }
@@ -979,6 +1006,22 @@ RAMP_LOAD_COLUMNS: dict[str, list[str]] = {
     "ramp_ai_model_breakdown": [
         *CORE_COLUMNS, "date_month", "ai_provider", "provider_display_order",
         "model_bucket_key", "model_label", "model_display_order", "model_spend_type", "model_share",
+    ],
+    "ramp_ai_filter_spend_share": [
+        *CORE_COLUMNS, "business_office_state", "fte_segment", "naics_sector",
+        "company_financing_status", "date_month", "is_latest_complete_month",
+        "pepm_spend_type", "spend_share",
+    ],
+    "ramp_ai_filter_model_share": [
+        *CORE_COLUMNS, "business_office_state", "fte_segment", "naics_sector",
+        "company_financing_status", "date_month", "is_latest_complete_month", "ai_provider",
+        "provider_display_order", "model_bucket_key", "model_label", "model_display_order",
+        "model_spend_type", "model_share",
+    ],
+    "ramp_ai_filter_pepm": [
+        *CORE_COLUMNS, "business_office_state", "fte_segment", "naics_sector",
+        "company_financing_status", "date_month", "is_latest_complete_month", "median_pepm",
+        "p90_pepm", "p99_pepm", "top_10_percent_median_pepm", "top_1_percent_median_pepm",
     ],
     "ramp_ai_jobs_impact": [
         *CORE_COLUMNS, "figure", "month_relative_to_adoption",
