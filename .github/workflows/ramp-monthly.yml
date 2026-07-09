@@ -39,6 +39,12 @@ jobs:
         run: |
           python -m ramp_data.cli --base-dir . ai-index
 
+      - name: Run Filter-mode update
+        # AI Index "Filter mode" cohort timeseries (spend/model/pepm by every filter
+        # combination), fetched from the versioned filter-mode API endpoints.
+        run: |
+          python -m ramp_data.cli --base-dir . filter-mode
+
       - name: Commit normalized datasets
         run: |
           git config user.name "github-actions[bot]"
