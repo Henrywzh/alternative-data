@@ -1185,102 +1185,106 @@ def render_kpi_row(datasets: dict[str, DatasetLoadResult], openrouter_views: dic
 
 def _compute_daily_average_price_pivots() -> pd.DataFrame:
     """Calculate daily smoothed averages for all five price index metrics."""
+    import logging
+    logger = logging.getLogger(__name__)
     try:
         root = repo_root()
         parquet_path = root / "data" / "normalized" / "marts" / "daily_provider_economics.parquet"
         if not parquet_path.exists():
+            logger.warning("daily_provider_economics.parquet not found at %s", parquet_path)
             return pd.DataFrame()
         df = pd.read_parquet(parquet_path)
+
+        df["usage_date"] = pd.to_datetime(df["usage_date"], errors="coerce")
+        df = df.dropna(subset=["usage_date"])
+        df = df.sort_values(["model_permaslug", "usage_date"]).reset_index(drop=True)
+
+        # Drop ending partial day if present
+        df = df[df["usage_date"] < "2026-06-26"].copy()
+
+        # Backward fill pricing per model
+        df["filled_prompt"] = df.groupby("model_permaslug")["pricing_prompt"].bfill()
+        df["filled_completion"] = df.groupby("model_permaslug")["pricing_completion"].bfill()
+        df["filled_blended"] = (df["filled_prompt"] * 0.977) + (df["filled_completion"] * 0.023)
+        df["filled_blended"] = df["filled_blended"].fillna(df["filled_prompt"]).fillna(df["filled_completion"])
+
+        # Calculate revenue row-by-row safely
+        df["filled_revenue"] = df.apply(
+            lambda row: (row["prompt_tokens"] or 0) * (row["filled_prompt"] or 0) + (row["completion_tokens"] or 0) * (row["filled_completion"] or 0)
+            if ((row["prompt_tokens"] or 0) > 0 or (row["completion_tokens"] or 0) > 0)
+            else row["total_tokens"] * row["filled_blended"],
+            axis=1
+        )
+
+        # Filter out free models and Others
+        is_free = df["model_permaslug"].astype(str).str.endswith(":free")
+        df.loc[is_free, "filled_revenue"] = 0.0
+        df_priced = df[(df["model_permaslug"] != "Others") & (~is_free)].copy()
+
+        # 1. Spend-weighted terms
+        df_priced["price_sq_tokens"] = df_priced["filled_blended"] * df_priced["filled_revenue"]
+
+        daily_data = df_priced.groupby("usage_date").agg(
+            total_tokens=("total_tokens", "sum"),
+            total_revenue=("filled_revenue", "sum"),
+            total_price_sq_tokens=("price_sq_tokens", "sum")
+        ).reset_index()
+
+        daily_data["Original Volume-Weighted TEI"] = (daily_data["total_revenue"] / daily_data["total_tokens"]) * 1_000_000
+        daily_data["Spend-Weighted TEI"] = (daily_data["total_price_sq_tokens"] / daily_data["total_revenue"]) * 1_000_000
+
+        # 2. Segmented indices
+        df_priced["tier"] = "Mid-Tier"
+        df_priced.loc[df_priced["filled_blended"] >= 2.0e-6, "tier"] = "Frontier"
+        df_priced.loc[df_priced["filled_blended"] < 0.5e-6, "tier"] = "Value"
+
+        daily_segmented = df_priced.groupby(["usage_date", "tier"]).agg(
+            total_tokens=("total_tokens", "sum"),
+            total_revenue=("filled_revenue", "sum")
+        ).reset_index()
+        daily_segmented["tei"] = (daily_segmented["total_revenue"] / daily_segmented["total_tokens"]) * 1_000_000
+
+        pivot_segmented = daily_segmented.pivot(index="usage_date", columns="tier", values="tei").reset_index()
+        pivot_segmented = pivot_segmented.ffill().bfill()
+
+        pivot_segmented["CPI Workload Basket Index (50/40/10)"] = (
+            0.5 * pivot_segmented["Frontier"] +
+            0.4 * pivot_segmented["Mid-Tier"] +
+            0.1 * pivot_segmented["Value"]
+        )
+
+        # Merge
+        chart_df = daily_data.merge(
+            pivot_segmented[["usage_date", "Frontier", "Value", "CPI Workload Basket Index (50/40/10)"]],
+            on="usage_date"
+        )
+
+        chart_df = chart_df.sort_values("usage_date").reset_index(drop=True)
+
+        # Apply 7-day rolling average to all indices
+        index_cols = [
+            "Original Volume-Weighted TEI",
+            "Spend-Weighted TEI",
+            "CPI Workload Basket Index (50/40/10)",
+            "Frontier",
+            "Value"
+        ]
+        for col in index_cols:
+            chart_df[col] = chart_df[col].rolling(window=7, min_periods=1).mean()
+
+        # Reformat pivot columns for Plotly
+        pivot_df = chart_df.set_index("usage_date")[[
+            "Spend-Weighted TEI",
+            "CPI Workload Basket Index (50/40/10)",
+            "Original Volume-Weighted TEI",
+            "Frontier",
+            "Value"
+        ]]
+        pivot_df.index = pivot_df.index.strftime("%Y-%m-%d")
+        return pivot_df.sort_index()
     except Exception:
+        logger.exception("Failed to compute daily average price pivots")
         return pd.DataFrame()
-
-    df["usage_date"] = pd.to_datetime(df["usage_date"], errors="coerce")
-    df = df.dropna(subset=["usage_date"])
-    df = df.sort_values(["model_permaslug", "usage_date"]).reset_index(drop=True)
-
-    # Drop ending partial day if present
-    df = df[df["usage_date"] < "2026-06-26"].copy()
-
-    # Backward fill pricing per model
-    df["filled_prompt"] = df.groupby("model_permaslug")["pricing_prompt"].bfill()
-    df["filled_completion"] = df.groupby("model_permaslug")["pricing_completion"].bfill()
-    df["filled_blended"] = (df["filled_prompt"] * 0.977) + (df["filled_completion"] * 0.023)
-    df["filled_blended"] = df["filled_blended"].fillna(df["filled_prompt"]).fillna(df["filled_completion"])
-
-    # Calculate revenue row-by-row safely
-    df["filled_revenue"] = df.apply(
-        lambda row: (row["prompt_tokens"] or 0) * (row["filled_prompt"] or 0) + (row["completion_tokens"] or 0) * (row["filled_completion"] or 0)
-        if ((row["prompt_tokens"] or 0) > 0 or (row["completion_tokens"] or 0) > 0)
-        else row["total_tokens"] * row["filled_blended"],
-        axis=1
-    )
-
-    # Filter out free models and Others
-    is_free = df["model_permaslug"].astype(str).str.endswith(":free")
-    df.loc[is_free, "filled_revenue"] = 0.0
-    df_priced = df[(df["model_permaslug"] != "Others") & (~is_free)].copy()
-
-    # 1. Spend-weighted terms
-    df_priced["price_sq_tokens"] = df_priced["filled_blended"] * df_priced["filled_revenue"]
-
-    daily_data = df_priced.groupby("usage_date").agg(
-        total_tokens=("total_tokens", "sum"),
-        total_revenue=("filled_revenue", "sum"),
-        total_price_sq_tokens=("price_sq_tokens", "sum")
-    ).reset_index()
-
-    daily_data["Original Volume-Weighted TEI"] = (daily_data["total_revenue"] / daily_data["total_tokens"]) * 1_000_000
-    daily_data["Spend-Weighted TEI"] = (daily_data["total_price_sq_tokens"] / daily_data["total_revenue"]) * 1_000_000
-
-    # 2. Segmented indices
-    df_priced["tier"] = "Mid-Tier"
-    df_priced.loc[df_priced["filled_blended"] >= 2.0e-6, "tier"] = "Frontier"
-    df_priced.loc[df_priced["filled_blended"] < 0.5e-6, "tier"] = "Value"
-
-    daily_segmented = df_priced.groupby(["usage_date", "tier"]).agg(
-        total_tokens=("total_tokens", "sum"),
-        total_revenue=("filled_revenue", "sum")
-    ).reset_index()
-    daily_segmented["tei"] = (daily_segmented["total_revenue"] / daily_segmented["total_tokens"]) * 1_000_000
-
-    pivot_segmented = daily_segmented.pivot(index="usage_date", columns="tier", values="tei").reset_index()
-    pivot_segmented = pivot_segmented.ffill().bfill()
-
-    pivot_segmented["CPI Workload Basket Index (50/40/10)"] = (
-        0.5 * pivot_segmented["Frontier"] +
-        0.4 * pivot_segmented["Mid-Tier"] +
-        0.1 * pivot_segmented["Value"]
-    )
-
-    # Merge
-    chart_df = daily_data.merge(
-        pivot_segmented[["usage_date", "Frontier", "Value", "CPI Workload Basket Index (50/40/10)"]],
-        on="usage_date"
-    )
-
-    chart_df = chart_df.sort_values("usage_date").reset_index(drop=True)
-
-    # Apply 7-day rolling average to all indices
-    index_cols = [
-        "Original Volume-Weighted TEI", 
-        "Spend-Weighted TEI", 
-        "CPI Workload Basket Index (50/40/10)", 
-        "Frontier", 
-        "Value"
-    ]
-    for col in index_cols:
-        chart_df[col] = chart_df[col].rolling(window=7, min_periods=1).mean()
-
-    # Reformat pivot columns for Plotly
-    pivot_df = chart_df.set_index("usage_date")[[
-        "Spend-Weighted TEI",
-        "CPI Workload Basket Index (50/40/10)",
-        "Original Volume-Weighted TEI",
-        "Frontier",
-        "Value"
-    ]]
-    pivot_df.index = pivot_df.index.strftime("%Y-%m-%d")
-    return pivot_df.sort_index()
 
 
 def _weekly_usage_section_state(

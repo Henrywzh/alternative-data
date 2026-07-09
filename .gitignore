@@ -110,6 +110,10 @@ data/raw/ramp/**
 !data/raw/ramp/**/
 !data/raw/ramp/**/manifest.json
 
+# marts: derived analytics parquet files (e.g. daily_provider_economics)
+!data/normalized/marts/
+data/normalized/marts/*
+!data/normalized/marts/*.parquet
 
 # minerals: curated reference inputs (CSV-ified workbook sheets)
 !data/reference/
