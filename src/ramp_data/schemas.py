@@ -121,6 +121,19 @@ AI_INDEX_DATASETS: dict[str, dict] = {
         "numeric": ["provider_display_order", "model_display_order", "model_share"],
         "min_rows": 60,
     },
+    # PEPM (a level, not a share) IS published monthly by dimension, so this
+    # powers a true monthly time series under the spend-per-employee filter.
+    "ramp_ai_pepm_spend_by_dimension": {
+        "payload_key": "spendPerEmployeeCurated",
+        "fields": [
+            "date_month", "dimension_type", "dimension_value", "dimension_label",
+            "display_order", "median_pepm", "p99_winsorized_weighted_pepm",
+        ],
+        "natural_keys": ["date_month", "dimension_type", "dimension_value"],
+        "sort_keys": ["date_month", "dimension_type", "display_order"],
+        "numeric": ["display_order", "median_pepm", "p99_winsorized_weighted_pepm"],
+        "min_rows": 200,
+    },
 }
 
 

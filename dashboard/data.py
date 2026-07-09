@@ -427,6 +427,14 @@ DATASET_REGISTRY: dict[str, dict[str, object]] = {
         "metric_column": "median_pepm",
         "required_columns": ["date_month", "median_pepm"],
     },
+    "ramp_ai_pepm_spend_by_dimension": {
+        "label": "Ramp AI Spend per Employee by Dimension",
+        "domain": "ramp",
+        "natural_keys": ["date_month", "dimension_type", "dimension_value"],
+        "primary_date_column": "date_month",
+        "metric_column": "median_pepm",
+        "required_columns": ["date_month", "dimension_type", "dimension_value", "median_pepm"],
+    },
     "ramp_ai_spend_share_by_category": {
         "label": "Ramp AI Spend Share by Category",
         "domain": "ramp",
@@ -531,6 +539,7 @@ DOMAIN_ORDER = {
         "ramp_ai_adoption_by_state",
         "ramp_ai_adoption_by_vendor",
         "ramp_ai_pepm_spend",
+        "ramp_ai_pepm_spend_by_dimension",
         "ramp_ai_spend_share_by_category",
         "ramp_ai_provider_model_share",
         "ramp_ai_spend_breakdown",
@@ -961,6 +970,10 @@ RAMP_LOAD_COLUMNS: dict[str, list[str]] = {
         *CORE_COLUMNS, "date_month", "dimension_type", "dimension_value", "dimension_label",
         "display_order", "ai_provider", "provider_display_order", "model_bucket_key",
         "model_label", "model_display_order", "model_spend_type", "model_share",
+    ],
+    "ramp_ai_pepm_spend_by_dimension": [
+        *CORE_COLUMNS, "date_month", "dimension_type", "dimension_value", "dimension_label",
+        "display_order", "median_pepm", "p99_winsorized_weighted_pepm",
     ],
     "ramp_ai_spend_breakdown": [*CORE_COLUMNS, "date_month", "spend_category", "spend_usd", "business_count"],
     "ramp_ai_model_breakdown": [
