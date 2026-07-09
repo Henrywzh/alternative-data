@@ -2921,6 +2921,34 @@ def test_weekly_usage_section_state_switches_between_tokens_and_requests() -> No
     assert request_state["dominant_label"] == "OpenAI"
 
 
+def test_weekly_usage_section_state_average_price() -> None:
+    # Safe check verifying layout parsing handles Average Price state properly without blowing up
+    datasets = {
+        "market_share": DatasetLoadResult(
+            dataset_id="market_share",
+            label="Market Share",
+            frame=pd.DataFrame([{"week_start_date": "2026-04-12", "entity_id": "openai", "metric_value": 100}]),
+            row_count=1,
+            domain="rankings",
+            primary_date_column="week_start_date",
+            metric_column="metric_value",
+            source_format="parquet",
+            source_path=None,
+            missing_columns=[],
+            duplicate_rows=0,
+            first_date="2026-04-12",
+            latest_date="2026-04-12",
+            latest_scraped_at=pd.Timestamp("2026-04-12 12:00:00"),
+        )
+    }
+    openrouter_views = {}
+    from dashboard.sections.openrouter import _weekly_usage_section_state
+    state = _weekly_usage_section_state(datasets, openrouter_views, "Average Price")
+    assert state["metric"] == "Average Price"
+    assert state["y_title"] == "Price per Million Tokens ($)"
+    assert state["hover_suffix"] == "/M tokens"
+
+
 def test_compute_openrouter_views_falls_back_to_top_models_when_market_share_undercounts() -> None:
     top_models = pd.DataFrame(
         [

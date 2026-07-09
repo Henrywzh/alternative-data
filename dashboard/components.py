@@ -236,6 +236,8 @@ def make_line_chart(
     hover_suffix: str = "",
     height: int = 360,
     connect_gaps: bool = False,
+    value_format: str = ",.0f",
+    mode: str = "lines+markers",
 ) -> go.Figure:
     """Line chart factory — mirrors make_stacked_bar for time-series line charts."""
     fig = go.Figure()
@@ -245,10 +247,10 @@ def make_line_chart(
             x=pivot_df.index,
             y=pivot_df[col],
             name=col,
-            mode="lines+markers",
+            mode=mode,
             line=dict(width=3, color=colors[i % len(colors)]),
             connectgaps=connect_gaps,
-            hovertemplate=f"<b>{col}</b><br>%{{x}}<br>%{{y:,.0f}}{suffix}<extra></extra>",
+            hovertemplate=f"<b>{col}</b><br>%{{x}}<br>%{{y:{value_format}}}{suffix}<extra></extra>",
         ))
     layout: dict = dict(
         template="plotly_white",
