@@ -25,7 +25,6 @@ from dashboard.components import (
     kpi_grid_html,
     make_line_chart,
     make_stacked_area_chart,
-    make_stacked_bar,
     render_dataset_guard,
 )
 from dashboard.data import DatasetLoadResult
@@ -360,13 +359,7 @@ def _render_ai_index(datasets) -> None:
             st.plotly_chart(fig, width="stretch", theme=None)
             st.caption("Share of AI spend by spend type over time (API usage, chat/coding subscriptions, other AI).")
         else:
-            # Ramp only publishes the by-dimension spend split for the latest month,
-            # so this is a composition (each bar sums to 100%), not a time series.
-            _render_dimension_composition(
-                datasets.get("ramp_ai_spend_share_by_category"), dim_type, dim_label,
-                category_col="spend_category", value_col="spend_share",
-                y_title="Share of AI spend (%)", noun="AI spend",
-            )
+            _render_dimension_history(datasets, kind="spend", dim_type=dim_type, dim_label=dim_label)
 
     else:  # Model share
         dim_label = st.selectbox("Breakdown", [*SPEND_DIMENSIONS, FILTER_MODE_LABEL], key="ramp_modelshare_dim")
@@ -391,13 +384,7 @@ def _render_ai_index(datasets) -> None:
             st.plotly_chart(fig, width="stretch", theme=None)
             st.caption("Share of AI model spend by provider/model over time (top 12 by latest month).")
         else:
-            # By-dimension model share is a latest-month composition (bars sum to 100%),
-            # aggregated to provider level for legibility.
-            _render_dimension_composition(
-                datasets.get("ramp_ai_provider_model_share"), dim_type, dim_label,
-                category_col="ai_provider", value_col="model_share",
-                y_title="Share of AI model spend (%)", noun="AI model spend",
-            )
+            _render_dimension_history(datasets, kind="model", dim_type=dim_type, dim_label=dim_label)
 
 
 _FILTER_MODE_DATASETS = {
@@ -472,30 +459,48 @@ def _render_filter_mode(datasets, *, kind: str) -> None:
         st.caption(f"Monthly AI spend per employee (PEPM) for **{cohort_label}**.")
 
 
-def _render_dimension_composition(result, dim_type, dim_label, *, category_col, value_col, y_title, noun) -> None:
-    """Latest-month stacked bars (each summing to ~100%): one bar per dimension value,
-    segmented by ``category_col``. Used for the share breakdowns Ramp only publishes
-    for the current month."""
+def _render_dimension_history(datasets, *, kind: str, dim_type: str, dim_label: str) -> None:
+    """Historical trend comparing the values of one dimension over time, using the
+    filter-mode cohort timeseries (single-dimension cohorts: the chosen dimension
+    varies, the other three are "ALL"). A share needs a fixed slice to compare
+    values on one axis, so spend adds a spend-type radio and model a provider radio."""
+    result = datasets.get(_FILTER_MODE_DATASETS[kind])
     if not result or result.frame.empty:
-        st.info(f"No {noun.lower()} breakdown data.")
+        st.info("No filter-mode data available. Run `ramp-data filter-mode` to populate it.")
         return
-    frame = result.frame[result.frame["dimension_type"] == dim_type].copy()
-    if frame.empty:
+    frame = result.frame
+    others = [d for d in FILTER_DIM_ORDER if d != dim_type]
+    cohort = frame[(frame[dim_type] != "ALL") & (frame[others].eq("ALL").all(axis=1))].copy()
+    if cohort.empty:
         st.info(f"No data for {dim_label.lower()}.")
         return
-    latest = frame["date_month"].max()
-    frame = frame[frame["date_month"] == latest]
-    frame[value_col] = pd.to_numeric(frame[value_col], errors="coerce")
-    pivot = frame.pivot_table(index="dimension_label", columns=category_col,
-                              values=value_col, aggfunc="sum") * 100.0
-    # Order bars by the dimension's natural display order where available.
-    if "display_order" in frame.columns:
-        order = (frame.groupby("dimension_label")["display_order"].min()
-                 .sort_values().index.tolist())
-        pivot = pivot.reindex([o for o in order if o in pivot.index])
-    fig = make_stacked_bar(pivot, colors=PALETTE, y_title=y_title, pct=True)
+    cohort["date_month"] = cohort["date_month"].astype(str)
+
+    if kind == "spend":
+        spend_type = st.radio("Spend type", list(SPEND_TYPE_LABELS), horizontal=True,
+                              format_func=lambda t: SPEND_TYPE_LABELS[t], key="ramp_spendhist_type")
+        sub = cohort[cohort["pepm_spend_type"] == spend_type].copy()
+        sub["spend_share"] = pd.to_numeric(sub["spend_share"], errors="coerce") * 100.0
+        pivot = sub.pivot_table(index="date_month", columns=dim_type, values="spend_share", aggfunc="sum").sort_index()
+        y_title = f"{SPEND_TYPE_LABELS[spend_type]} share of AI spend (%)"
+        caption = f"Monthly **{SPEND_TYPE_LABELS[spend_type]}** share of AI spend {dim_label.lower()}."
+    else:  # model — compare one provider's total share across dimension values
+        cohort["model_share"] = pd.to_numeric(cohort["model_share"], errors="coerce")
+        providers = (cohort.groupby("ai_provider")["provider_display_order"].min()
+                     .sort_values().index.tolist())
+        provider = st.selectbox("Provider", providers, key="ramp_modelhist_provider")
+        sub = cohort[cohort["ai_provider"] == provider]
+        pivot = (sub.groupby(["date_month", dim_type])["model_share"].sum().unstack() * 100.0).sort_index()
+        y_title = f"{provider} share of AI model spend (%)"
+        caption = f"Monthly **{provider}** share of AI model spend {dim_label.lower()}."
+
+    # Cap to the top 12 values by latest month so many-valued dimensions (states) stay legible.
+    if pivot.shape[1] > 12:
+        pivot = pivot[pivot.iloc[-1].sort_values(ascending=False).head(12).index]
+    fig = make_line_chart(pivot, colors=PALETTE, y_title=y_title, x_title="Month",
+                          hover_suffix="%", connect_gaps=True)
     st.plotly_chart(fig, width="stretch", theme=None)
-    st.caption(f"Share of {noun} {dim_label.lower()}, latest month ({latest}). Each bar sums to 100%.")
+    st.caption(caption)
 
 
 # --------------------------------------------------------------- Jobs Impact
