@@ -67,6 +67,14 @@ SPEND_TYPE_LABELS = {
     "coding_agent": "Coding agent",
     "other_ai": "Other AI",
 }
+# Fixed stacking order so a spend type keeps the same colour across every panel.
+SPEND_TYPE_ORDER = ["api", "chat_subscription", "coding_agent", "other_ai"]
+
+# Natural (non-alphabetical) ordering for the small categorical dimensions.
+DIM_VALUE_ORDER = {
+    "fte_segment": ["Small", "Medium", "Large"],
+    "company_financing_status": ["VC-backed", "PE-backed", "Other"],
+}
 
 MONTHLY_ID = "ramp_vendor_adoption_monthly"
 CATEGORY_ID = "ramp_category_vendors"
@@ -459,11 +467,19 @@ def _render_filter_mode(datasets, *, kind: str) -> None:
         st.caption(f"Monthly AI spend per employee (PEPM) for **{cohort_label}**.")
 
 
+def _ordered_dim_values(cohort: pd.DataFrame, dim_type: str) -> list[str]:
+    values = [v for v in cohort[dim_type].dropna().unique() if v != "ALL"]
+    order = DIM_VALUE_ORDER.get(dim_type)
+    if order:
+        return [v for v in order if v in values] + [v for v in values if v not in order]
+    return sorted(values)
+
+
 def _render_dimension_history(datasets, *, kind: str, dim_type: str, dim_label: str) -> None:
-    """Historical trend comparing the values of one dimension over time, using the
-    filter-mode cohort timeseries (single-dimension cohorts: the chosen dimension
-    varies, the other three are "ALL"). A share needs a fixed slice to compare
-    values on one axis, so spend adds a spend-type radio and model a provider radio."""
+    """Small multiples: one 100%-stacked-area composition per dimension value, so the
+    spend/model *mix* is preserved (unlike a single-series line) and cohorts can be
+    compared side by side. Uses the single-dimension filter cohorts (chosen dim
+    varies, the other three are "ALL")."""
     result = datasets.get(_FILTER_MODE_DATASETS[kind])
     if not result or result.frame.empty:
         st.info("No filter-mode data available. Run `ramp-data filter-mode` to populate it.")
@@ -477,30 +493,51 @@ def _render_dimension_history(datasets, *, kind: str, dim_type: str, dim_label: 
     cohort["date_month"] = cohort["date_month"].astype(str)
 
     if kind == "spend":
-        spend_type = st.radio("Spend type", list(SPEND_TYPE_LABELS), horizontal=True,
-                              format_func=lambda t: SPEND_TYPE_LABELS[t], key="ramp_spendhist_type")
-        sub = cohort[cohort["pepm_spend_type"] == spend_type].copy()
-        sub["spend_share"] = pd.to_numeric(sub["spend_share"], errors="coerce") * 100.0
-        pivot = sub.pivot_table(index="date_month", columns=dim_type, values="spend_share", aggfunc="sum").sort_index()
-        y_title = f"{SPEND_TYPE_LABELS[spend_type]} share of AI spend (%)"
-        caption = f"Monthly **{SPEND_TYPE_LABELS[spend_type]}** share of AI spend {dim_label.lower()}."
-    else:  # model — compare one provider's total share across dimension values
-        cohort["model_share"] = pd.to_numeric(cohort["model_share"], errors="coerce")
-        providers = (cohort.groupby("ai_provider")["provider_display_order"].min()
-                     .sort_values().index.tolist())
-        provider = st.selectbox("Provider", providers, key="ramp_modelhist_provider")
-        sub = cohort[cohort["ai_provider"] == provider]
-        pivot = (sub.groupby(["date_month", dim_type])["model_share"].sum().unstack() * 100.0).sort_index()
-        y_title = f"{provider} share of AI model spend (%)"
-        caption = f"Monthly **{provider}** share of AI model spend {dim_label.lower()}."
+        cohort["value"] = pd.to_numeric(cohort["spend_share"], errors="coerce")
+        cat_col = "pepm_spend_type"
+        cat_order = SPEND_TYPE_ORDER
+        cat_labels = SPEND_TYPE_LABELS
+        noun, comp = "AI spend", "spend type"
+    else:
+        cohort["value"] = pd.to_numeric(cohort["model_share"], errors="coerce")
+        # Collapse the long tail of providers into "Other" so each panel stays readable.
+        totals = cohort.groupby("ai_provider")["value"].sum().sort_values(ascending=False)
+        top = totals.head(6).index.tolist()
+        cohort["provider_grp"] = cohort["ai_provider"].where(cohort["ai_provider"].isin(top), "Other")
+        cat_col = "provider_grp"
+        cat_order = [*top, "Other"]
+        cat_labels = {c: c for c in cat_order}
+        noun, comp = "AI model spend", "provider"
 
-    # Cap to the top 12 values by latest month so many-valued dimensions (states) stay legible.
-    if pivot.shape[1] > 12:
-        pivot = pivot[pivot.iloc[-1].sort_values(ascending=False).head(12).index]
-    fig = make_line_chart(pivot, colors=PALETTE, y_title=y_title, x_title="Month",
-                          hover_suffix="%", connect_gaps=True)
-    st.plotly_chart(fig, width="stretch", theme=None)
-    st.caption(caption)
+    color_map = {cat: PALETTE[i % len(PALETTE)] for i, cat in enumerate(cat_order)}
+    values = _ordered_dim_values(cohort, dim_type)
+    capped = len(values) > 12
+    values = values[:12]
+    seg = dim_label.replace("By ", "").lower()
+
+    st.caption(
+        f"Monthly {noun} composition by {comp} — one panel per {seg}, each stacked to 100%."
+        + (f" Top 12 {seg} values shown." if capped else "")
+    )
+
+    def _panel(val: str):
+        sub = cohort[cohort[dim_type] == val]
+        pivot = sub.pivot_table(index="date_month", columns=cat_col, values="value", aggfunc="sum").sort_index()
+        pivot = pivot.reindex(columns=[c for c in cat_order if c in pivot.columns])
+        pivot = pivot.div(pivot.sum(axis=1).replace(0, pd.NA), axis=0) * 100.0
+        colors = [color_map[c] for c in pivot.columns]
+        pivot = pivot.rename(columns=cat_labels)
+        return make_stacked_area_chart(
+            pivot, display_index=list(pivot.index), colors=colors,
+            x_title="", y_title="Share (%)", height=260, value_format=".0f", hover_suffix="%",
+        )
+
+    for row_start in range(0, len(values), 2):
+        grid = st.columns(2)
+        for col, val in zip(grid, values[row_start:row_start + 2]):
+            with col:
+                st.markdown(f"**{val}**")
+                st.plotly_chart(_panel(val), width="stretch", theme=None)
 
 
 # --------------------------------------------------------------- Jobs Impact
