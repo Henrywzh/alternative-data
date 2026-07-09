@@ -269,3 +269,37 @@ def test_jobs_impact_skips_unrelated_table():
     snap = [Snapshot("jobs_impact_tables", "https://ramp.com/data/ai-jobs-impact", json.dumps(tables))]
     records = RampJobsImpactSource().extract(snap, _context())[JOBS_IMPACT_DATASET]
     assert records == []
+
+
+# ------------------------------------------------------------------ Filter mode
+
+
+def test_filter_mode_version_regex():
+    from ramp_data.sources.filter_mode import _VERSION_RE
+    payload = '...,"spend_share":0.6}],"filterModeBundleVersion":"uRvGDPGrpkEmLur3bXIMka","sanity":{...'
+    assert _VERSION_RE.search(payload).group(1) == "uRvGDPGrpkEmLur3bXIMka"
+
+
+def test_filter_mode_extract_aliases_date_and_upserts(tmp_path: Path):
+    from ramp_data.sources.filter_mode import RampFilterModeSource
+    # The endpoint keys the month as ``my_date``; extract must alias it to date_month.
+    rows = [
+        {"my_date": "2024-01-01", "business_office_state": "ALL", "fte_segment": "ALL",
+         "naics_sector": "ALL", "company_financing_status": "VC-backed",
+         "is_latest_complete_month": False, "pepm_spend_type": "api", "spend_share": 0.42},
+        {"my_date": "2024-01-01", "business_office_state": "ALL", "fte_segment": "ALL",
+         "naics_sector": "ALL", "company_financing_status": "VC-backed",
+         "is_latest_complete_month": False, "pepm_spend_type": "other_ai", "spend_share": 0.58},
+    ]
+    snap = [Snapshot("ramp_ai_filter_spend_share",
+                     "https://ramp.com/data/ai-index/filter-mode/spendShare?version=x",
+                     json.dumps(rows))]
+    records = RampFilterModeSource().extract(snap, _context())["ramp_ai_filter_spend_share"]
+    assert len(records) == 2
+    assert records[0].payload["date_month"] == "2024-01-01"
+    assert "my_date" not in records[0].payload
+    assert records[0].payload["company_financing_status"] == "VC-backed"
+
+    merged = StorageManager(tmp_path).upsert_dataset("ramp_ai_filter_spend_share", records)
+    assert set(merged["pepm_spend_type"]) == {"api", "other_ai"}
+    assert "date_month" in merged.columns

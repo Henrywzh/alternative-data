@@ -7,8 +7,9 @@ from typing import Any
 from uuid import uuid4
 
 from ramp_data.models import DatasetRecord, GenericRecord, RunContext, Snapshot
-from ramp_data.schemas import AI_INDEX_DATASETS, JOBS_IMPACT, JOBS_IMPACT_DATASET
+from ramp_data.schemas import AI_INDEX_DATASETS, FILTER_MODE_DATASETS, JOBS_IMPACT, JOBS_IMPACT_DATASET
 from ramp_data.sources.ai_index import RampAiIndexSource
+from ramp_data.sources.filter_mode import RampFilterModeSource
 from ramp_data.sources.jobs_impact import RampJobsImpactSource
 from ramp_data.sources.vendors import RampVendorsSource
 from ramp_data.storage import StorageManager
@@ -44,6 +45,7 @@ class RampPipeline:
         self.storage = StorageManager(base_dir)
         self.source = RampVendorsSource()
         self.ai_index_source = RampAiIndexSource()
+        self.filter_mode_source = RampFilterModeSource()
         self.jobs_impact_source = RampJobsImpactSource()
 
     def _create_context(self, *, run_id: str | None = None) -> RunContext:
@@ -168,6 +170,14 @@ class RampPipeline:
             mode="ai-index",
         )
 
+    def run_filter_mode(self) -> PipelineResult:
+        return self._execute(
+            self.filter_mode_source,
+            tuple(FILTER_MODE_DATASETS.keys()),
+            self._assert_filter_mode_quality,
+            mode="filter-mode",
+        )
+
     def run_jobs_impact(self) -> PipelineResult:
         return self._execute(
             self.jobs_impact_source,
@@ -175,6 +185,30 @@ class RampPipeline:
             self._assert_jobs_impact_quality,
             mode="jobs-impact",
         )
+
+    @staticmethod
+    def _assert_filter_mode_quality(
+        snapshots: list[Snapshot],
+        extracted: dict[str, list[GenericRecord]],
+    ) -> dict[str, dict[str, Any]]:
+        report: dict[str, dict[str, Any]] = {}
+        failures: list[str] = []
+        for dataset_id, cfg in FILTER_MODE_DATASETS.items():
+            records = extracted.get(dataset_id, [])
+            rows = len(records)
+            report[dataset_id] = {"rows": rows}
+            if rows < cfg["min_rows"]:
+                failures.append(
+                    f"{dataset_id}: only {rows} rows (expected >= {cfg['min_rows']}) "
+                    f"— filter-mode endpoint empty or version token stale"
+                )
+                continue
+            missing_month = sum(1 for r in records if not r.payload.get("date_month"))
+            if missing_month:
+                failures.append(f"{dataset_id}: {missing_month} rows missing date_month")
+        if failures:
+            raise ValidationError("; ".join(failures))
+        return report
 
     @staticmethod
     def _assert_ai_index_quality(
