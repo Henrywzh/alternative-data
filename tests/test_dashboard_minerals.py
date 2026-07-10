@@ -141,3 +141,15 @@ def test_render_minerals_section_uses_live_selector_and_proxy_labels(monkeypatch
 def test_format_stock_label_uses_chinese_names_for_mapped_china_tungsten_stocks() -> None:
     assert minerals._format_stock_label("002842.SZ", "CN_A") == "翔鹭钨业（002842.SZ）"
     assert minerals._format_stock_label("600397.SH", "CN_A") == "江钨装备（600397.SH）"
+
+
+def test_default_stock_tickers_use_curated_tungsten_and_molybdenum_baskets() -> None:
+    tungsten = ["000657.SZ", "002378.SZ", "002842.SZ", "600397.SH", "600549.SH", "603993.SH"]
+    assert minerals._default_stock_tickers("tungsten", tungsten, set(tungsten), []) == [
+        "002842.SZ", "000657.SZ", "002378.SZ", "600397.SH", "600549.SH"
+    ]
+
+    molybdenum = ["601958.SH", "603993.SH", "3993.HK"]
+    assert minerals._default_stock_tickers("molybdenum", molybdenum, set(molybdenum), []) == [
+        "601958.SH", "603993.SH"
+    ]
