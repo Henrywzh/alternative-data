@@ -136,3 +136,8 @@ def test_render_minerals_section_uses_live_selector_and_proxy_labels(monkeypatch
     assert fake_st.figures
     assert all(trace.name != "Bullish week" for trace in fake_st.figures[0].data)
     assert fake_st.figures[0].layout.xaxis.range == fake_st.figures[1].layout.xaxis.range
+
+
+def test_format_stock_label_uses_chinese_names_for_mapped_china_tungsten_stocks() -> None:
+    assert minerals._format_stock_label("002842.SZ", "CN_A") == "翔鹭钨业（002842.SZ）"
+    assert minerals._format_stock_label("600397.SH", "CN_A") == "江钨装备（600397.SH）"

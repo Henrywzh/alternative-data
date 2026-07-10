@@ -399,6 +399,9 @@ def test_run_live_excludes_investing_sources_and_backtest_outputs(tmp_path, monk
     assert set(universe["normalized_mineral_id"]) == {"copper", "graphite"}
     assert "investing_html" not in set(universe["price_source_type"])
 
+    mapping = pd.read_csv(outputs["stock_mapping_expanded_live"])
+    assert "tungsten" in set(mapping["normalized_mineral_id"])
+
 
 def test_fetch_fred_history_forward_fills_monthly_to_daily(monkeypatch) -> None:
     class _FakeResponse:
