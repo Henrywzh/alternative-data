@@ -125,8 +125,15 @@ _CHINESE_STOCK_NAMES = {
     "002842.SZ": "翔鹭钨业",
     "600397.SH": "江钨装备",
     "600549.SH": "厦门钨业",
+    "601958.SH": "金钼股份",
     "603993.SH": "洛阳钼业",
     "3993.HK": "洛阳钼业",
+}
+
+
+_DEFAULT_STOCK_TICKERS_BY_MINERAL = {
+    "tungsten": ["002842.SZ", "000657.SZ", "002378.SZ", "600397.SH", "600549.SH"],
+    "molybdenum": ["601958.SH", "603993.SH"],
 }
 
 
@@ -182,6 +189,24 @@ def _format_stock_label(ticker: str, market: str) -> str:
     if chinese_name:
         return f"{chinese_name}（{ticker}）"
     return f"{ticker} ({market})"
+
+
+def _default_stock_tickers(
+    mineral_id: str,
+    all_tickers: list[str],
+    priced_tickers: set[str],
+    primary_tickers: list[str],
+) -> list[str]:
+    configured = _DEFAULT_STOCK_TICKERS_BY_MINERAL.get(mineral_id, [])
+    default_tickers = [
+        ticker for ticker in configured if ticker in all_tickers and ticker in priced_tickers
+    ]
+    if default_tickers:
+        return default_tickers
+
+    preferred_tickers = primary_tickers or all_tickers
+    default_tickers = [ticker for ticker in preferred_tickers if ticker in priced_tickers][:5]
+    return default_tickers or preferred_tickers[:5]
 
 
 def _series_to_long(frame: pd.DataFrame, *, mineral_id: str, mineral_name: str, series_cols: list[str]) -> pd.DataFrame:
@@ -491,10 +516,9 @@ def render_minerals_section() -> None:
     primary_tickers = ticker_rows.loc[is_primary, "ticker_normalized"].tolist()
     all_tickers = ticker_rows["ticker_normalized"].tolist()
     priced_tickers = set(stock_prices.get("ticker_normalized", pd.Series(dtype=str)).dropna())
-    preferred_tickers = primary_tickers or all_tickers
-    default_tickers = [ticker for ticker in preferred_tickers if ticker in priced_tickers][:5]
-    if not default_tickers:
-        default_tickers = preferred_tickers[:5]
+    default_tickers = _default_stock_tickers(
+        selected_id, all_tickers, priced_tickers, primary_tickers
+    )
 
     chosen = st.multiselect(
         "Tickers",
@@ -529,9 +553,13 @@ def render_minerals_section() -> None:
         fig2.add_trace(go.Scatter(
             x=group["date"],
             y=rebased,
-            name=f"{ticker} ({market_by_ticker.get(ticker, '?')})",
+            name=_format_stock_label(ticker, market_by_ticker.get(ticker, "?")),
             line=dict(color=MODEL_COLORS[index % len(MODEL_COLORS)], width=1.8),
-            hovertemplate="%{x|%Y-%m-%d}<br>" + str(ticker) + ": %{y:.1f}<extra></extra>",
+            hovertemplate=(
+                "%{x|%Y-%m-%d}<br>"
+                + _format_stock_label(ticker, market_by_ticker.get(ticker, "?"))
+                + ": %{y:.1f}<extra></extra>"
+            ),
         ))
     fig2.update_layout(
         template="plotly_white",
