@@ -1199,8 +1199,8 @@ def _compute_daily_average_price_pivots() -> pd.DataFrame:
         df = df.dropna(subset=["usage_date"])
         df = df.sort_values(["model_permaslug", "usage_date"]).reset_index(drop=True)
 
-        # Drop ending partial day if present
-        df = df[df["usage_date"] < "2026-06-26"].copy()
+        # Drop today's potentially incomplete day
+        df = df[df["usage_date"] < pd.Timestamp.now().normalize()].copy()
 
         # Backward fill pricing per model
         df["filled_prompt"] = df.groupby("model_permaslug")["pricing_prompt"].bfill()
