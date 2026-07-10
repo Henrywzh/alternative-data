@@ -296,6 +296,20 @@ def _load_related_stock_links(mapping: pd.DataFrame, selected_id: str, base_dir:
     return reference_mapping.loc[reference_mapping["normalized_mineral_id"] == selected_id].copy()
 
 
+def _shared_price_axis_range(mineral_prices: pd.DataFrame, stock_prices: pd.DataFrame) -> list[str] | None:
+    """Return one calendar window for both charts, keeping source gaps visible."""
+    dates: list[pd.Timestamp] = []
+    for frame in (mineral_prices, stock_prices):
+        if frame.empty or "date" not in frame.columns:
+            continue
+        parsed = pd.to_datetime(frame["date"], errors="coerce").dropna()
+        if not parsed.empty:
+            dates.extend([parsed.min(), parsed.max()])
+    if len(dates) < 2:
+        return None
+    return [pd.Timestamp(min(dates)).strftime("%Y-%m-%d"), pd.Timestamp(max(dates)).strftime("%Y-%m-%d")]
+
+
 def render_minerals_section() -> None:
     st.markdown("## ⛏️ Critical Minerals")
     st.caption(
@@ -319,7 +333,7 @@ def render_minerals_section() -> None:
         st.warning("No minerals price data is available in this deployment.")
         st.caption(
             "Expected the `latest` partition under `data/processed/minerals_signal_data/`. "
-            "Run the weekly pipeline: `minerals-signal-data run-v2 --run-label latest "
+            "Run the live pipeline: `minerals-signal-data run-live --run-label latest "
             "--workbook data/reference/minerals_signal_data/critical_minerals.csv "
             "--stock-mapping data/reference/minerals_signal_data/stock_mapping.csv`."
         )
@@ -370,9 +384,15 @@ def render_minerals_section() -> None:
         else:
             st.caption(f"Latest price: {latest_price:,.2f} as of {pd.Timestamp(latest_date).date()}")
 
-    # ── Price trend with weekly signal overlay ────────────────────────────────
+    # ── Price trend ───────────────────────────────────────────────────────────
     st.markdown("### Price trend")
     fig = go.Figure()
+    selected_links = _load_related_stock_links(mapping, selected_id, BASE_DIR)
+    linked_tickers = selected_links.get("ticker_normalized", pd.Series(dtype=str)).dropna().unique().tolist()
+    linked_stock_prices = stock_prices.loc[
+        stock_prices["ticker_normalized"].isin(linked_tickers)
+    ] if not stock_prices.empty and linked_tickers else pd.DataFrame()
+    shared_xrange = _shared_price_axis_range(m_prices, linked_stock_prices)
     if is_chinatungsten:
         product_rows = m_prices.dropna(subset=["product_series"]).copy()
         product_options = [
@@ -435,14 +455,14 @@ def render_minerals_section() -> None:
             ),
             gridcolor=GRID,
         ),
-        xaxis=dict(gridcolor=GRID),
+        xaxis=dict(gridcolor=GRID, range=shared_xrange),
         hovermode="x unified",
     )
     st.plotly_chart(fig, width="stretch", theme=None)
 
     # ── Related stocks (rebased to 100) ───────────────────────────────────────
     st.markdown("### Related stocks")
-    links = _load_related_stock_links(mapping, selected_id, BASE_DIR)
+    links = selected_links
     if links.empty:
         st.info(f"No related stocks are mapped for {selected_name}.")
         return
@@ -473,6 +493,10 @@ def render_minerals_section() -> None:
         st.info("No price history is available for the selected tickers.")
         return
 
+    latest_stock_date = pd.to_datetime(sp["date"], errors="coerce").max()
+    if pd.notna(latest_stock_date):
+        st.caption(f"Stock prices shown through {latest_stock_date.date()}.")
+
     fig2 = go.Figure()
     for index, (ticker, group) in enumerate(sp.groupby("ticker_normalized")):
         group = group.sort_values("date")
@@ -493,7 +517,7 @@ def render_minerals_section() -> None:
         margin=dict(l=0, r=0, t=30, b=10),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
         yaxis=dict(title=dict(text="Rebased price (=100 at start)"), gridcolor=GRID),
-        xaxis=dict(gridcolor=GRID),
+        xaxis=dict(gridcolor=GRID, range=shared_xrange),
         hovermode="x unified",
     )
     st.caption("Each line is rebased to 100 at the start of its available history for comparability.")
