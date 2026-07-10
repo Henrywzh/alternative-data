@@ -35,17 +35,24 @@ jobs:
         run: |
           python -m openrouter_data.cli --base-dir . provider-activity-daily-update
 
+      - name: Rebuild daily provider economics
+        run: |
+          python -m research_data.cli --base-dir . build-mart daily_provider_economics --refresh
+
       - name: Commit normalized datasets
         run: |
-          if git diff --quiet -- data/normalized/openrouter/provider_daily_activity.parquet; then
-            echo "No provider activity changes to commit"
+          if git diff --quiet -- \
+            data/normalized/openrouter/provider_daily_activity.parquet \
+            data/normalized/marts/daily_provider_economics.parquet; then
+            echo "No provider activity or economics changes to commit"
             exit 0
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/normalized/openrouter/provider_daily_activity.parquet
-          git commit -m "chore: update provider daily activity data [$(date -u +%Y-%m-%d)]"
+          git add data/normalized/marts/daily_provider_economics.parquet
+          git commit -m "chore: update provider activity and economics data [$(date -u +%Y-%m-%d)]"
           git pull --rebase origin "${{ github.event.repository.default_branch }}"
           git push
 
@@ -53,5 +60,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: provider-daily-activity
-          path: data/normalized/openrouter/provider_daily_activity.parquet
+          path: |
+            data/normalized/openrouter/provider_daily_activity.parquet
+            data/normalized/marts/daily_provider_economics.parquet
           if-no-files-found: warn
