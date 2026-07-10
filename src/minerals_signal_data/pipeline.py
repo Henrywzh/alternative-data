@@ -17,6 +17,9 @@ from minerals_signal_data.storage import MineralsSignalStorage
 from minerals_signal_data.workbook import build_price_universe, load_critical_minerals, load_expanded_stock_mapping
 
 
+_DASHBOARD_PRICE_MINERAL_IDS = {"tungsten", "molybdenum", "rare_earth"}
+
+
 def _resolve_stock_mapping_path(
     workbook_path: str | Path, stock_mapping_path: str | Path | None
 ) -> str | Path:
@@ -387,6 +390,15 @@ class MineralsSignalPipeline:
         live_stock_mapping = stock_mapping.loc[
             stock_mapping["normalized_mineral_id"].isin(live_price_universe["normalized_mineral_id"])
         ].copy()
+        # Chinatungsten supplies the price series for these minerals outside the
+        # yfinance/FRED price universe, but their linked equities still belong
+        # in the live dashboard refresh.
+        dashboard_price_mapping = stock_mapping.loc[
+            stock_mapping["normalized_mineral_id"].isin(_DASHBOARD_PRICE_MINERAL_IDS)
+        ]
+        live_stock_mapping = pd.concat(
+            [live_stock_mapping, dashboard_price_mapping], ignore_index=True
+        ).drop_duplicates(["normalized_mineral_id", "ticker_normalized", "market"])
 
         mineral_prices = fetch_public_mineral_prices(
             live_price_universe,
@@ -397,8 +409,9 @@ class MineralsSignalPipeline:
         fetched_price_universe = live_price_universe.loc[
             live_price_universe["normalized_mineral_id"].isin(fetched_mineral_ids)
         ].copy()
+        stock_mapping_mineral_ids = fetched_mineral_ids | _DASHBOARD_PRICE_MINERAL_IDS
         fetched_stock_mapping = live_stock_mapping.loc[
-            live_stock_mapping["normalized_mineral_id"].isin(fetched_mineral_ids)
+            live_stock_mapping["normalized_mineral_id"].isin(stock_mapping_mineral_ids)
         ].copy()
 
         stock_prices = fetch_public_stock_prices(

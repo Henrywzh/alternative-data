@@ -119,6 +119,17 @@ _PRODUCT_LABELS = {
 }
 
 
+_CHINESE_STOCK_NAMES = {
+    "000657.SZ": "中钨高新",
+    "002378.SZ": "章源钨业",
+    "002842.SZ": "翔鹭钨业",
+    "600397.SH": "江钨装备",
+    "600549.SH": "厦门钨业",
+    "603993.SH": "洛阳钼业",
+    "3993.HK": "洛阳钼业",
+}
+
+
 def _minerals_partition_dir(dataset: str) -> Path | None:
     """Resolve a minerals dataset partition: prefer `latest`, else the newest dated run."""
     root = _MINERALS_SIGNAL_ROOT / dataset
@@ -164,6 +175,13 @@ def _format_source_label(source_type: str | object) -> str:
 def _format_proxy_type(proxy_type: str | object) -> str:
     proxy = str(proxy_type or "")
     return proxy.replace("_", " ").title() if proxy else "—"
+
+
+def _format_stock_label(ticker: str, market: str) -> str:
+    chinese_name = _CHINESE_STOCK_NAMES.get(ticker)
+    if chinese_name:
+        return f"{chinese_name}（{ticker}）"
+    return f"{ticker} ({market})"
 
 
 def _series_to_long(frame: pd.DataFrame, *, mineral_id: str, mineral_name: str, series_cols: list[str]) -> pd.DataFrame:
@@ -472,13 +490,17 @@ def render_minerals_section() -> None:
     is_primary = ticker_rows["is_primary_exposure"].astype(str).str.lower().isin(["true", "1"])
     primary_tickers = ticker_rows.loc[is_primary, "ticker_normalized"].tolist()
     all_tickers = ticker_rows["ticker_normalized"].tolist()
-    default_tickers = (primary_tickers or all_tickers)[:5]
+    priced_tickers = set(stock_prices.get("ticker_normalized", pd.Series(dtype=str)).dropna())
+    preferred_tickers = primary_tickers or all_tickers
+    default_tickers = [ticker for ticker in preferred_tickers if ticker in priced_tickers][:5]
+    if not default_tickers:
+        default_tickers = preferred_tickers[:5]
 
     chosen = st.multiselect(
         "Tickers",
         all_tickers,
         default=default_tickers,
-        format_func=lambda t: f"{t} ({market_by_ticker.get(t, '?')})",
+        format_func=lambda t: _format_stock_label(t, market_by_ticker.get(t, "?")),
     )
     if not chosen:
         st.caption("Select one or more tickers to compare price trends.")
