@@ -135,3 +135,4 @@ def test_render_minerals_section_uses_live_selector_and_proxy_labels(monkeypatch
     assert not any("bullish" in caption.lower() for caption in fake_st.captions)
     assert fake_st.figures
     assert all(trace.name != "Bullish week" for trace in fake_st.figures[0].data)
+    assert fake_st.figures[0].layout.xaxis.range == fake_st.figures[1].layout.xaxis.range
