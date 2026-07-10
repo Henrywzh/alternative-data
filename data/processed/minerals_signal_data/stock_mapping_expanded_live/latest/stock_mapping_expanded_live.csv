@@ -138,6 +138,9 @@ Zinc,zinc,HBM,HBM,US,Primary/secondary,"Zinc is often combined with lead, silver
 Zinc,zinc,HL,HL,US,Primary/secondary,"Zinc is often combined with lead, silver, germanium, indium byproducts.",True,32,Tier 3 - high
 Zinc,zinc,NEXA,NEXA,US,Primary/secondary,"Zinc is often combined with lead, silver, germanium, indium byproducts.",True,32,Tier 3 - high
 Zinc,zinc,TECK,TECK,US,Primary/secondary,"Zinc is often combined with lead, silver, germanium, indium byproducts.",True,32,Tier 3 - high
+Molybdenum,molybdenum,601958.SH,601958.SH,CN_A,Primary molybdenum producer,Jinduicheng Molybdenum is a China-listed molybdenum-focused producer.,True,49,Tier 4 - moderate
+Molybdenum,molybdenum,603993.SH,603993.SH,CN_A,Diversified molybdenum and tungsten producer,CMOC has integrated China molybdenum and tungsten mining and processing operations.,False,49,Tier 4 - moderate
+Molybdenum,molybdenum,3993.HK,3993.HK,HK,Diversified molybdenum and tungsten producer,HK listing of CMOC; same operating exposure as 603993.SH.,False,49,Tier 4 - moderate
 Tungsten,tungsten,000657.SZ,000657.SZ,CN_A,Primary for China tungsten names,China has far better listed tungsten depth than US markets.,False,49,Tier 4 - moderate
 Tungsten,tungsten,002378.SZ,002378.SZ,CN_A,Primary for China tungsten names,China has far better listed tungsten depth than US markets.,False,49,Tier 4 - moderate
 Tungsten,tungsten,002842.SZ,002842.SZ,CN_A,Primary China tungsten producer,Integrated tungsten products producer from concentrate through deep processing.,True,49,Tier 4 - moderate
