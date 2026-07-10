@@ -1,9 +1,9 @@
-name: Minerals Dashboard Weekly
+name: Minerals Dashboard Daily
 
 on:
   schedule:
-    # Saturday 08:00 UTC — after the Friday (W-FRI) weekly close the signals resample on.
-    - cron: "0 8 * * 6"
+    # 23:00 UTC on weekdays, after the US market close and after Chinatungsten's daily scrape.
+    - cron: "0 23 * * 1-5"
   workflow_dispatch:
     inputs:
       start_date:
@@ -16,7 +16,7 @@ on:
         default: ""
 
 concurrency:
-  group: minerals-signal-${{ github.ref }}
+  group: minerals-dashboard-${{ github.ref }}
   cancel-in-progress: false
 
 permissions:
