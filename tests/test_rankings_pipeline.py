@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
+import requests
 
 from openrouter_data.exceptions import ExtractionError
 from openrouter_data.models import RunContext, Snapshot
@@ -139,6 +140,63 @@ def test_parse_fixture_snapshots_for_all_three_datasets() -> None:
     assert extracted["provider_weekly_requests"][0].metric_value == 5500.0
     assert extracted["provider_weekly_requests"][1].rank == 2
     assert extracted["categories_programming"][0].category_slug == "programming"
+
+
+def test_extract_prefers_rankings_api_payloads_for_top_models_and_market_share(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    payloads = _load_payloads()
+    html = build_fixture_html(top_models=[], market_share=[])
+    snapshots = [
+        *make_snapshots(html),
+        Snapshot(
+            name="model_rankings_chart",
+            source_url="fixture://rankings/model-rankings-chart",
+            body=json.dumps({"data": {"data": payloads["top_models"]}}),
+        ),
+        Snapshot(
+            name="text_modality_chart",
+            source_url="fixture://rankings/modality-chart",
+            body=json.dumps({"data": {"marketShareData": payloads["market_share"]}}),
+        ),
+    ]
+    source = RankingsSource()
+    context = RunContext(run_id="api", scraped_at=pd.Timestamp("2024-02-01", tz="UTC").to_pydatetime())
+    monkeypatch.setattr(
+        source,
+        "_extract_chart_payloads_with_playwright",
+        lambda: pytest.fail("Playwright fallback should not be needed when rankings APIs respond"),
+    )
+
+    extracted = source.extract(snapshots, context)
+
+    assert len(extracted["top_models"]) == 9
+    assert len(extracted["market_share"]) == 9
+    assert len(extracted["provider_weekly_requests"]) == 9
+    assert extracted["market_share"][0].entity_id == "author-a"
+
+
+def test_fetch_snapshots_keeps_html_fallback_available_when_rankings_api_fails(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = RankingsSource()
+
+    def fake_fetch(name: str, url: str) -> Snapshot:
+        if name == "model_rankings_chart":
+            raise requests.RequestException("temporary API outage")
+        return Snapshot(name=name, source_url=url, body="<html></html>")
+
+    monkeypatch.setattr(source, "_fetch", fake_fetch)
+
+    snapshots = source.fetch_snapshots()
+
+    assert {snapshot.name for snapshot in snapshots} == {
+        "rankings",
+        "rankings_programming",
+        "model_rankings_chart",
+        "text_modality_chart",
+    }
+    assert next(snapshot for snapshot in snapshots if snapshot.name == "model_rankings_chart").body == ""
 
 
 def test_selector_drift_raises_clear_error() -> None:
