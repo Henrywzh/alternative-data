@@ -63,6 +63,9 @@ CATEGORIES_PROGRAMMING_SPEC = DatasetSpec(
     category_slug="programming",
 )
 
+MODEL_RANKINGS_CHART_URL = "https://openrouter.ai/api/frontend/v1/rankings/model-rankings-chart"
+TEXT_MODALITY_CHART_URL = "https://openrouter.ai/api/frontend/v1/rankings/modality-chart?routeSegment=text"
+
 
 class RankingsSource(SourceExtractor):
     name = "openrouter_rankings"
@@ -80,6 +83,8 @@ class RankingsSource(SourceExtractor):
         return [
             self._fetch("rankings", TOP_MODELS_SPEC.source_url),
             self._fetch("rankings_programming", CATEGORIES_PROGRAMMING_SPEC.source_url),
+            self._fetch_optional("model_rankings_chart", MODEL_RANKINGS_CHART_URL),
+            self._fetch_optional("text_modality_chart", TEXT_MODALITY_CHART_URL),
         ]
 
     def _fetch(self, name: str, url: str) -> Snapshot:
@@ -87,12 +92,22 @@ class RankingsSource(SourceExtractor):
         response.raise_for_status()
         return Snapshot(name=name, source_url=url, body=response.text)
 
+    def _fetch_optional(self, name: str, url: str) -> Snapshot:
+        try:
+            return self._fetch(name, url)
+        except requests.RequestException as exc:
+            logging.warning("OpenRouter rankings API %s is unavailable: %s", name, exc)
+            return Snapshot(name=name, source_url=url, body="")
+
     def extract(self, snapshots: list[Snapshot], context: RunContext) -> dict[str, list[DatasetRecord]]:
         snapshot_by_name = {snapshot.name: snapshot for snapshot in snapshots}
         rankings_html = snapshot_by_name["rankings"].body
         programming_html = snapshot_by_name["rankings_programming"].body
 
-        charts = self._extract_chart_payloads(rankings_html, programming_html)
+        charts = self._extract_chart_payloads_from_api(snapshot_by_name)
+        static_charts = self._extract_chart_payloads(rankings_html, programming_html)
+        for label, chart in static_charts.items():
+            charts.setdefault(label, chart)
         missing = self._missing_chart_labels(charts)
         if missing:
             logging.warning(
@@ -119,6 +134,35 @@ class RankingsSource(SourceExtractor):
                 context,
             ),
         }
+
+    @staticmethod
+    def _extract_chart_payloads_from_api(snapshot_by_name: dict[str, Snapshot]) -> dict[str, dict[str, Any]]:
+        """Use OpenRouter's ranking APIs before falling back to page internals."""
+        charts: dict[str, dict[str, Any]] = {}
+
+        model_snapshot = snapshot_by_name.get("model_rankings_chart")
+        if model_snapshot is not None:
+            try:
+                model_payload = json.loads(model_snapshot.body)
+                model_data = model_payload.get("data", {}).get("data")
+                if RankingsSource._is_chart_data(model_data):
+                    charts[TOP_MODELS_SPEC.dataset_id] = {"data": model_data}
+            except (AttributeError, json.JSONDecodeError):
+                pass
+
+        modality_snapshot = snapshot_by_name.get("text_modality_chart")
+        if modality_snapshot is not None:
+            try:
+                modality_payload = json.loads(modality_snapshot.body)
+                market_share_data = modality_payload.get("data", {}).get("marketShareData")
+                if RankingsSource._is_chart_data(market_share_data):
+                    chart = {"data": market_share_data}
+                    charts[MARKET_SHARE_SPEC.dataset_id] = chart
+                    charts[PROVIDER_WEEKLY_REQUESTS_SPEC.dataset_id] = chart
+            except (AttributeError, json.JSONDecodeError):
+                pass
+
+        return charts
 
     def _extract_chart_payloads(self, rankings_html: str, programming_html: str) -> dict[str, dict[str, Any] | None]:
         return {
@@ -393,7 +437,10 @@ class RankingsSource(SourceExtractor):
     def _is_chart_candidate(node: Any) -> bool:
         if not isinstance(node, dict):
             return False
-        data = node.get("data")
+        return RankingsSource._is_chart_data(node.get("data"))
+
+    @staticmethod
+    def _is_chart_data(data: Any) -> bool:
         if not isinstance(data, list) or not data:
             return False
         first = data[0]
