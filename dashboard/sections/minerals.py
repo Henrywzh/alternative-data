@@ -173,6 +173,8 @@ def _format_source_label(source_type: str | object) -> str:
         "yfinance_futures": "Yahoo Finance",
         "fred_series": "FRED",
         "chinatungsten_daily": "Chinatungsten",
+        "ctia": "China Tungsten Industry Association",
+        "chinatungsten": "Chinatungsten",
         "investing_html": "Investing.com",
     }
     source = str(source_type or "")
@@ -225,7 +227,9 @@ def _series_to_long(frame: pd.DataFrame, *, mineral_id: str, mineral_name: str, 
             continue
         series["normalized_mineral_id"] = mineral_id
         series["mineral_name"] = mineral_name
-        series["source_type"] = "chinatungsten_daily"
+        series["source_type"] = frame.get(
+            "source", pd.Series("chinatungsten", index=frame.index)
+        )
         series["product_series"] = series_id
         series["product_label"] = _product_label(series_id)
         rows.append(series)

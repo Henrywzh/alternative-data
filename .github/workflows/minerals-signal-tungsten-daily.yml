@@ -38,11 +38,13 @@ jobs:
 
       - name: Run scraper tests
         run: |
-          pytest tests/test_minerals_tungsten_scraper.py -q
+          pytest tests/test_minerals_tungsten_scraper.py tests/test_ctia_scraper.py -q
 
-      - name: Run Chinatungsten daily scraper
+      - name: Run bounded CTIA daily scraper
         run: |
-          minerals-signal-data scrape-tungsten --base-dir . --max-pages 6 --since-days 31
+          # One API page per category; the scraper waits 15 seconds between
+          # requests and fails immediately on a CTIA refusal.
+          minerals-signal-data scrape-tungsten --base-dir . --source ctia --max-pages 1 --since-days 31
 
       - name: Validate recent molybdenum coverage
         run: |
