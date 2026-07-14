@@ -71,11 +71,17 @@ def build_parser() -> argparse.ArgumentParser:
 
     subparsers.add_parser("validate", parents=[shared], help="Validate workbook coverage and mappings")
 
-    tungsten = subparsers.add_parser("scrape-tungsten", help="Scrape daily tungsten prices from Chinatungsten")
+    tungsten = subparsers.add_parser("scrape-tungsten", help="Scrape daily tungsten prices from Chinatungsten/CTIA")
     tungsten.add_argument("--base-dir", default=".", help="Repository root for data writes")
     tungsten.add_argument("--max-pages", type=int, default=3, help="Max category pages to scrape")
     tungsten.add_argument("--since-date", help="Only write articles on/after this YYYY-MM-DD date")
     tungsten.add_argument("--since-days", type=int, help="Only write articles from the last N days")
+    tungsten.add_argument(
+        "--source",
+        choices=["ctia", "chinatungsten"],
+        default="chinatungsten",
+        help="Data source to scrape (defaults to chinatungsten; CTIA is explicit)",
+    )
     tungsten.add_argument(
         "--with-images",
         action="store_true",
@@ -146,6 +152,7 @@ def main() -> int:
             with_images=args.with_images,
             since_date=args.since_date,
             since_days=args.since_days,
+            source=args.source,
         )
         return 0
     elif args.command == "validate":
