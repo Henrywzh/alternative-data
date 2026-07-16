@@ -20,12 +20,13 @@ from semiconductor_proxy_data.sources.hongkong_censtatd import HongKongCenstatdS
 from semiconductor_proxy_data.sources.japan_customs import JapanCustomsSource
 from semiconductor_proxy_data.sources.korea_customs import KoreaCustomsSource
 from semiconductor_proxy_data.sources.nbs import NbsSource
+from semiconductor_proxy_data.sources.eurostat import EurostatSource
 from semiconductor_proxy_data.storage import StorageManager
 
 PARSER_VERSION = "semi-tiered-v2"
 DEFAULT_START_MONTH = "2024-01"
-DEFAULT_REGIONS = ["japan", "korea", "hongkong"]
-DEFAULT_CATEGORIES = ["ic_only", "broad_semiconductor"]
+DEFAULT_REGIONS = ["japan", "korea", "hongkong", "netherlands"]
+DEFAULT_CATEGORIES = ["ic_only", "broad_semiconductor", "lithography"]
 
 
 class SemiconductorProxyPipeline:
@@ -41,7 +42,7 @@ class SemiconductorProxyPipeline:
         self.official_sources = (
             official_sources
             if official_sources is not None
-            else [JapanCustomsSource(), KoreaCustomsSource(), HongKongCenstatdSource(), NbsSource()]
+            else [JapanCustomsSource(), KoreaCustomsSource(), HongKongCenstatdSource(), NbsSource(), EurostatSource()]
         )
         self.backup_source = backup_source or ComtradeSource()
 
@@ -251,9 +252,10 @@ class SemiconductorProxyPipeline:
 
         if sources in {"backup", "all"}:
             backup_categories = [category for category in categories if category == "ic_only"]
-            if backup_categories:
+            backup_regions = [r for r in regions if r.lower() in ["korea", "china", "hongkong", "japan"]]
+            if backup_categories and backup_regions:
                 try:
-                    backup_snapshots = self.backup_source.fetch_snapshots(months, regions, cmd_codes=["8542"])
+                    backup_snapshots = self.backup_source.fetch_snapshots(months, backup_regions, cmd_codes=["8542"])
                     snapshots.extend(backup_snapshots)
                     backup_points.extend(
                         self.backup_source.extract(
@@ -525,6 +527,7 @@ def _region_country_name(region: str) -> str:
         "china": "China",
         "hongkong": "Hong Kong",
         "japan": "Japan",
+        "netherlands": "Netherlands",
     }
     return mapping.get(region.lower(), region)
 
