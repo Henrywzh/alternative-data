@@ -252,6 +252,8 @@ def _official_trade_unit_config(unit: str) -> tuple[float, str]:
         return 1e6, "JPY Billion"
     if normalized == "hkd_thousand":
         return 1e6, "HKD Billion"
+    if normalized == "eur":
+        return 1e9, "EUR Billion"
     return 1.0, normalized or "Native Unit"
 
 
@@ -262,6 +264,7 @@ def _fetch_monthly_fx_to_usd(start_period: str, end_period: str) -> pd.DataFrame
     symbol_map = {
         "JPY": ("USDJPY=X", lambda close: 1.0 / close),
         "HKD": ("USDHKD=X", lambda close: 1.0 / close),
+        "EUR": ("EURUSD=X", lambda close: close),
     }
     rows: list[pd.DataFrame] = []
     for currency, (symbol, transform) in symbol_map.items():
@@ -305,9 +308,13 @@ def _prepare_official_trade_display(official_trade: pd.DataFrame, scale_mode: st
 
         if not fx_df.empty:
             merged = chart_frame.merge(fx_df, on=["period", "currency"], how="left")
-            local_mask = merged["currency"].astype(str).str.upper().isin(["JPY", "HKD"])
-            merged.loc[local_mask, "display_value"] = (
-                merged.loc[local_mask, "value"] * merged.loc[local_mask, "fx_to_usd"] / 1e6
+            local_mask_thousand = merged["currency"].astype(str).str.upper().isin(["JPY", "HKD"])
+            merged.loc[local_mask_thousand, "display_value"] = (
+                merged.loc[local_mask_thousand, "value"] * merged.loc[local_mask_thousand, "fx_to_usd"] / 1e6
+            )
+            local_mask_eur = merged["currency"].astype(str).str.upper() == "EUR"
+            merged.loc[local_mask_eur, "display_value"] = (
+                merged.loc[local_mask_eur, "value"] * merged.loc[local_mask_eur, "fx_to_usd"] / 1e9
             )
             chart_frame = merged
 
@@ -627,7 +634,7 @@ def render_semiconductor_section(datasets: dict[str, DatasetLoadResult], semi_vi
             )
             category_choice = st.selectbox(
                 "Category",
-                options=["IC-only", "Broad Semiconductor", "Production", "Company Revenue"],
+                options=["IC-only", "Broad Semiconductor", "Lithography Equipment", "Production", "Company Revenue"],
                 index=0,
                 key="semi_category_choice",
             )
@@ -648,13 +655,14 @@ def render_semiconductor_section(datasets: dict[str, DatasetLoadResult], semi_vi
             selected_category_id = {
                 "IC-only": "ic_only",
                 "Broad Semiconductor": "broad_semiconductor",
+                "Lithography Equipment": "lithography",
                 "Production": "ic_only",
             }.get(category_choice)
 
             show_official = source_tier in {"Official", "Both"}
             show_backup = source_tier in {"Backup Check", "Both"}
 
-            if category_choice in {"IC-only", "Broad Semiconductor"}:
+            if category_choice in {"IC-only", "Broad Semiconductor", "Lithography Equipment"}:
                 official_trade = official_df[
                     (official_df["metric_type"] == "exports")
                     & (official_df["partner_scope"] == "world")
