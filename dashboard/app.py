@@ -203,7 +203,9 @@ def render_checks(checks: list[CheckResult]) -> None:
 
 SECTION_RENDERERS = {
     "OpenRouter Intelligence": openrouter.render,
-    "OpenRouter Models": openrouter.render_models,
+    # Keep startup compatible with a Streamlit process that has briefly
+    # retained the pre-explorer module during a rolling redeploy.
+    "OpenRouter Models": getattr(openrouter, "render_models", openrouter.render),
     "Vercel AI": vercel_ai.render,
     "Ramp": ramp.render,
     "Artificial Analysis": artificial_analysis.render,
