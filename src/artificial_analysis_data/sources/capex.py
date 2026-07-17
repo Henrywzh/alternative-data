@@ -94,15 +94,11 @@ class ArtificialAnalysisCapexSource:
         ]
 
     def _extract_capex_payload(self, bundle_text: str) -> list[dict]:
-        match = re.search(r'(\[\{id:"20\d{2}-q[1-4]".*?\}\])(?=;)', bundle_text, re.DOTALL)
-        if match is None:
-            match = re.search(r"CapexQuarterContext.*?let r=(\[\{.*?\}\]);var", bundle_text, re.DOTALL)
-        if match is None:
-            match = re.search(r"let r=(\[\{.*?\}\]);var", bundle_text, re.DOTALL)
+        match = re.search(r'\[\{id:"20\d{2}-q[1-4]"', bundle_text)
         if match is None:
             raise ValueError("Could not locate capex array in trends bundle")
 
-        object_literal = match.group(1)
+        object_literal = self._extract_balanced_array(bundle_text, match.start())
         normalized = re.sub(r'([{,])([A-Za-z_][A-Za-z0-9_]*)\s*:', r'\1"\2":', object_literal)
         normalized = re.sub(r'([:\[,])\.(\d)', r"\g<1>0.\2", normalized)
         normalized = re.sub(r"\btrue\b", "True", normalized)
@@ -110,6 +106,35 @@ class ArtificialAnalysisCapexSource:
         normalized = re.sub(r"\bnull\b", "None", normalized)
         parsed = ast.literal_eval(normalized)
         return parsed
+
+    @staticmethod
+    def _extract_balanced_array(text: str, start: int) -> str:
+        """Return one JavaScript array literal without relying on minified variable names."""
+        depth = 0
+        quote: str | None = None
+        escaped = False
+
+        for index in range(start, len(text)):
+            char = text[index]
+            if quote is not None:
+                if escaped:
+                    escaped = False
+                elif char == "\\":
+                    escaped = True
+                elif char == quote:
+                    quote = None
+                continue
+
+            if char in {"'", '"', "`"}:
+                quote = char
+            elif char == "[":
+                depth += 1
+            elif char == "]":
+                depth -= 1
+                if depth == 0:
+                    return text[start : index + 1]
+
+        raise ValueError("Could not read complete capex array from trends bundle")
 
     def _contains_capex_payload(self, bundle_text: str) -> bool:
         try:

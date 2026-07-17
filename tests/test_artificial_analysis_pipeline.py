@@ -228,6 +228,21 @@ def test_capex_source_extracts_quarters_from_bundle_fixture() -> None:
     assert points[0].bundle_url.endswith("page-demo.js")
 
 
+def test_capex_source_extracts_quarters_when_bundle_uses_a_renamed_variable() -> None:
+    source = ArtificialAnalysisCapexSource()
+    bundle = (
+        'let i=[{id:"2026-q1",label:"Q1-2026",microsoft:30.876,google:35.674,'
+        'meta:18.997,amazon:43.234,oracle:18.635},'
+        '{id:"2025-q4",label:"Q4-2025",microsoft:29.876,google:27.851,'
+        'meta:21.383,amazon:38.469,oracle:12.033}],function d(){return i}'
+    )
+
+    payload = source._extract_capex_payload(bundle)
+
+    assert [row["id"] for row in payload] == ["2026-q1", "2025-q4"]
+    assert payload[0]["microsoft"] == 30.876
+
+
 def test_capex_source_fetches_shared_capex_data_bundle_when_page_bundle_only_imports_provider() -> None:
     page_html = (
         '<html><script src="/_next/static/chunks/app/(pages)/trends/page-demo.js"></script>'
