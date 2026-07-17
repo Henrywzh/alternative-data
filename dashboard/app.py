@@ -76,6 +76,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 MAIN_SECTIONS = (
     "OpenRouter Intelligence",
+    "OpenRouter Models",
     "Vercel AI",
     "Ramp",
     "Artificial Analysis",
@@ -88,6 +89,7 @@ MAIN_SECTIONS = (
 
 SECTION_DOMAIN_MAP = {
     "OpenRouter Intelligence": ("rankings", "apps", "compute_availability"),
+    "OpenRouter Models": ("rankings", "apps", "compute_availability"),
     "Vercel AI": ("vercel_ai",),
     "Ramp": ("ramp",),
     "Artificial Analysis": ("artificial_analysis",),
@@ -201,6 +203,7 @@ def render_checks(checks: list[CheckResult]) -> None:
 
 SECTION_RENDERERS = {
     "OpenRouter Intelligence": openrouter.render,
+    "OpenRouter Models": openrouter.render_models,
     "Vercel AI": vercel_ai.render,
     "Ramp": ramp.render,
     "Artificial Analysis": artificial_analysis.render,

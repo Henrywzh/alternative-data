@@ -98,6 +98,12 @@ class StorageManager:
 
         existing = self.load_dataset(dataset_id)
         incoming = self._coerce_types(incoming)
+        if dataset_id == "raw_openrouter_models":
+            # Keep a tiny authoritative current catalog alongside the compact
+            # change history. The historical table intentionally drops
+            # unchanged rows, so it cannot represent model removals by itself.
+            current = incoming.drop_duplicates(subset=["model_id"], keep="last").sort_values("model_id")
+            current.to_parquet(self.normalized_root / "raw_openrouter_models_current.parquet", index=False)
         existing = self._coerce_types(existing) if not existing.empty else existing
         if dataset_id == "raw_openrouter_models":
             incoming = self._filter_unchanged_openrouter_rows(existing, incoming)

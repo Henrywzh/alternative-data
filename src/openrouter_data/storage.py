@@ -107,7 +107,12 @@ SORT_KEYS: dict[str, list[str]] = {
     "provider_daily_activity": ["usage_date", "model_permaslug"],
     "openrouter_task_spend": ["snapshot_date", "period", "category_slug", "rank", "model_permaslug"],
 }
-PARQUET_ONLY_DATASETS = {"provider_daily_activity"}
+PARQUET_ONLY_DATASETS = {"provider_daily_activity", "openrouter_model_activity"}
+RETENTION_DAYS = {
+    # Daily model detail can add thousands of category rows per run. A rolling
+    # six-month window keeps the Streamlit load useful without unbounded growth.
+    "openrouter_model_activity": 180,
+}
 
 
 class StorageManager:
@@ -157,6 +162,13 @@ class StorageManager:
         merged = self._coerce_types(merged)
         keys = NATURAL_KEYS[dataset_id]
         merged = merged.drop_duplicates(subset=keys, keep="last")
+        retention_days = RETENTION_DAYS.get(dataset_id)
+        if retention_days and merged["usage_date"].notna().any():
+            usage_dates = pd.to_datetime(merged["usage_date"], errors="coerce")
+            latest_usage_date = usage_dates.max()
+            if pd.notna(latest_usage_date):
+                cutoff = latest_usage_date - pd.Timedelta(days=retention_days - 1)
+                merged = merged[usage_dates >= cutoff].copy()
         merged = merged.sort_values(by=SORT_KEYS[dataset_id], na_position="last").reset_index(drop=True)
 
         csv_path = self.normalized_root / f"{dataset_id}.csv"
