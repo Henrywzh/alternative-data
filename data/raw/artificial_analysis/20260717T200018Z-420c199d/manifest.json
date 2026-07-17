@@ -1,0 +1,21 @@
+{
+  "run_id": "20260717T200018Z-420c199d",
+  "scraped_at": "2026-07-17T20:00:18.653876Z",
+  "as_of_date": "2026-07-17",
+  "source": "artificial_analysis",
+  "command": "capex-update",
+  "parser_version": "aa-v1",
+  "counts": {
+    "artificial_analysis_capex_quarterly": 69
+  },
+  "snapshots": [
+    {
+      "name": "trends_page",
+      "source_url": "https://artificialanalysis.ai/trends"
+    },
+    {
+      "name": "trends_bundle",
+      "source_url": "https://artificialanalysis.ai/_next/static/chunks/app/%5Blocale%5D/trends/page-b42f12e76b53ba1f.js"
+    }
+  ]
+}
