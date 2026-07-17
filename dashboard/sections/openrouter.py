@@ -1176,7 +1176,35 @@ def _normalize_explorer_activity(frame: pd.DataFrame, aliases: dict[str, str]) -
     for column in keep_columns:
         if column not in activity.columns:
             activity[column] = pd.NA
-    return activity.dropna(subset=["usage_date_dt", "model_permaslug"])[keep_columns]
+    activity = activity.dropna(subset=["usage_date_dt", "model_permaslug"])[keep_columns]
+    activity["entity_id"] = activity["entity_id"].fillna(
+        activity["model_id"].astype("string").str.split("/", n=1).str[0]
+    )
+    return activity
+
+
+def _combine_explorer_activity(provider_activity: pd.DataFrame, model_activity: pd.DataFrame) -> pd.DataFrame:
+    """Prefer model-level rows and use provider rows only for missing model-days."""
+    detail = model_activity.copy()
+    fallback = provider_activity.copy()
+    if detail.empty:
+        if fallback.empty:
+            return pd.DataFrame()
+        fallback["activity_source"] = "Provider fallback"
+        return fallback
+    detail["activity_source"] = "Model activity"
+    if fallback.empty:
+        return detail
+
+    detail_keys = detail[["usage_date_dt", "model_id"]].drop_duplicates()
+    fallback = fallback.merge(
+        detail_keys.assign(_has_model_activity=True),
+        on=["usage_date_dt", "model_id"],
+        how="left",
+    )
+    fallback = fallback[fallback["_has_model_activity"].isna()].drop(columns="_has_model_activity")
+    fallback["activity_source"] = "Provider fallback"
+    return pd.concat([detail, fallback], ignore_index=True, sort=False)
 
 
 def build_openrouter_explorer_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, object]:
@@ -1191,29 +1219,35 @@ def build_openrouter_explorer_views(datasets: dict[str, DatasetLoadResult]) -> d
 
     provider_activity = _normalize_explorer_activity(dataset_frame("provider_daily_activity"), aliases)
     model_activity = _normalize_explorer_activity(dataset_frame("openrouter_model_activity"), aliases)
+    combined_activity = _combine_explorer_activity(provider_activity, model_activity)
     app_usage = _normalize_explorer_activity(dataset_frame("app_usage_daily"), aliases)
     app_metadata = dataset_frame("app_metadata_snapshots")
     metadata_columns = ["app_id", "scrape_date", "origin_url", "categories"]
     if not app_metadata.empty:
         app_metadata = app_metadata[[column for column in metadata_columns if column in app_metadata.columns]].copy()
 
-    usage_30d = pd.DataFrame(columns=["model_id", "tokens_30d"])
-    if not provider_activity.empty:
-        latest_date = provider_activity["usage_date_dt"].max()
-        recent = provider_activity[provider_activity["usage_date_dt"] >= latest_date - pd.Timedelta(days=29)]
+    usage_30d = pd.DataFrame(columns=["model_id", "tokens_30d", "observed_days", "activity_source"])
+    if not combined_activity.empty:
+        latest_date = combined_activity["usage_date_dt"].max()
+        recent = combined_activity[combined_activity["usage_date_dt"] >= latest_date - pd.Timedelta(days=29)]
         usage_30d = (
-            recent.groupby("model_id", as_index=False)["total_tokens"]
-            .sum()
-            .rename(columns={"total_tokens": "tokens_30d"})
+            recent.groupby("model_id", as_index=False)
+            .agg(
+                tokens_30d=("total_tokens", "sum"),
+                observed_days=("usage_date_dt", "nunique"),
+                activity_source=("activity_source", lambda values: " + ".join(sorted(set(values)))),
+            )
         )
     catalog_with_usage = catalog.merge(usage_30d, on="model_id", how="left") if not catalog.empty else catalog
     if not catalog_with_usage.empty:
-        catalog_with_usage["tokens_30d"] = catalog_with_usage["tokens_30d"].fillna(0)
+        catalog_with_usage["activity_source"] = catalog_with_usage["activity_source"].fillna("Not observed")
+        catalog_with_usage["observed_days"] = catalog_with_usage["observed_days"].fillna(0).astype(int)
 
     return {
         "catalog": catalog_with_usage,
         "provider_activity": provider_activity,
         "model_activity": model_activity,
+        "combined_activity": combined_activity,
         "app_usage": app_usage,
         "app_metadata": app_metadata,
         "aliases": aliases,
@@ -1224,14 +1258,16 @@ def build_openrouter_explorer_views(datasets: dict[str, DatasetLoadResult]) -> d
 
 def company_explorer_state(views: dict[str, object], provider_slug: str) -> dict[str, object]:
     catalog = views.get("catalog", pd.DataFrame())
-    activity = views.get("provider_activity", pd.DataFrame())
-    detail_activity = views.get("model_activity", pd.DataFrame())
+    activity = views.get("combined_activity", pd.DataFrame())
+    if activity is None or activity.empty:
+        activity = _combine_explorer_activity(
+            views.get("provider_activity", pd.DataFrame()),
+            views.get("model_activity", pd.DataFrame()),
+        )
     company_models = catalog[catalog["provider_slug"] == provider_slug].copy() if not catalog.empty else pd.DataFrame()
     company_activity = activity[activity["entity_id"].astype("string") == provider_slug].copy() if not activity.empty else pd.DataFrame()
-    if company_activity.empty and not detail_activity.empty and not company_models.empty:
-        company_activity = detail_activity[detail_activity["model_id"].isin(company_models["model_id"])].copy()
-        if not company_activity.empty:
-            company_activity["entity_id"] = provider_slug
+    if not company_activity.empty and not company_models.empty:
+        company_activity = company_activity[company_activity["model_id"].isin(company_models["model_id"])].copy()
 
     daily_total = pd.DataFrame()
     model_pivot = pd.DataFrame()
@@ -1257,21 +1293,22 @@ def company_explorer_state(views: dict[str, object], provider_slug: str) -> dict
 
 def model_explorer_state(views: dict[str, object], model_id: str) -> dict[str, object]:
     catalog = views.get("catalog", pd.DataFrame())
-    provider_activity = views.get("provider_activity", pd.DataFrame())
+    combined_activity = views.get("combined_activity", pd.DataFrame())
     model_activity = views.get("model_activity", pd.DataFrame())
+    if combined_activity is None or combined_activity.empty:
+        combined_activity = _combine_explorer_activity(
+            views.get("provider_activity", pd.DataFrame()), model_activity,
+        )
     app_usage = views.get("app_usage", pd.DataFrame())
     app_metadata = views.get("app_metadata", pd.DataFrame())
 
     info = catalog[catalog["model_id"] == model_id].head(1) if not catalog.empty else pd.DataFrame()
-    token_rows = provider_activity[provider_activity["model_id"] == model_id].copy() if not provider_activity.empty else pd.DataFrame()
+    token_rows = combined_activity[combined_activity["model_id"] == model_id].copy() if not combined_activity.empty else pd.DataFrame()
     detail_rows = model_activity[model_activity["model_id"] == model_id].copy() if not model_activity.empty else pd.DataFrame()
 
     activity = pd.DataFrame()
     if not token_rows.empty or not detail_rows.empty:
         tokens = token_rows.groupby("usage_date_dt")["total_tokens"].sum().rename("Tokens") if not token_rows.empty else pd.Series(dtype="float64")
-        if not detail_rows.empty:
-            detail_tokens = detail_rows.groupby("usage_date_dt")["total_tokens"].sum()
-            tokens = tokens.combine_first(detail_tokens).rename("Tokens")
         requests = detail_rows.groupby("usage_date_dt")["request_count"].sum().rename("Requests") if not detail_rows.empty else pd.Series(dtype="float64")
         activity = pd.concat([tokens, requests], axis=1).sort_index()
 
@@ -2382,7 +2419,7 @@ def _render_company_explorer(views: dict[str, object]) -> None:
     million_context = f"{int((models['context_length'] >= 1_000_000).sum()):,}" if not models.empty else "0"
     st.markdown(
         kpi_grid_html(
-            kpi_card_html("Tokens in stored window", format_metric(state["total_tokens"]), delta="provider activity"),
+            kpi_card_html("Tokens in stored window", format_metric(state["total_tokens"]), delta="observed activity"),
             kpi_card_html("Tracked models", f"{len(models):,}", delta="current catalog"),
             kpi_card_html("Latest activity", latest_activity, delta="daily coverage"),
             kpi_card_html("Models with 1M+ context", million_context, delta="current catalog"),
@@ -2390,7 +2427,7 @@ def _render_company_explorer(views: dict[str, object]) -> None:
         unsafe_allow_html=True,
     )
 
-    st.caption("Token volume by model over the rolling provider-page history.")
+    st.caption("Token volume by model, preferring model-level activity and filling gaps from provider pages.")
     if model_pivot.empty:
         st.info("No daily activity is stored for this company yet.")
     else:
@@ -2422,20 +2459,21 @@ def _render_company_explorer(views: dict[str, object]) -> None:
             return
     table = models[[
         "model_name", "model_id", "release_date", "context_length",
-        "input_price_per_m", "output_price_per_m", "tokens_30d", "openrouter_url",
+        "input_price_per_m", "output_price_per_m", "tokens_30d", "observed_days", "activity_source", "openrouter_url",
     ]].copy()
     table["release_date"] = table["release_date"].dt.date
     table = table.rename(columns={
         "model_name": "Model", "model_id": "Model ID", "release_date": "Released",
         "context_length": "Context", "input_price_per_m": "Input $/1M",
         "output_price_per_m": "Output $/1M", "tokens_30d": "Tokens (30d)",
-        "openrouter_url": "OpenRouter",
+        "observed_days": "Observed days", "activity_source": "Activity source", "openrouter_url": "OpenRouter",
     })
     st.dataframe(table, hide_index=True, width="stretch", column_config={
         "Context": st.column_config.NumberColumn(format="compact"),
         "Input $/1M": st.column_config.NumberColumn(format="$%.4g"),
         "Output $/1M": st.column_config.NumberColumn(format="$%.4g"),
         "Tokens (30d)": st.column_config.NumberColumn(format="compact"),
+        "Observed days": st.column_config.NumberColumn(format="%d/30"),
         "OpenRouter": st.column_config.LinkColumn(display_text="Open model ↗"),
     })
 
@@ -2474,9 +2512,13 @@ def _render_model_explorer(views: dict[str, object]) -> None:
             kpi_card_html("Input", _format_price_per_m(info["input_price_per_m"]), delta="per 1M tokens"),
             kpi_card_html("Output", _format_price_per_m(info["output_price_per_m"]), delta="per 1M tokens"),
             kpi_card_html("Released", released, delta="OpenRouter catalog"),
-            kpi_card_html("30d tokens", format_metric(info["tokens_30d"]), delta="provider activity"),
+            kpi_card_html("30d tokens", format_metric(info["tokens_30d"]), delta="observed activity"),
         ),
         unsafe_allow_html=True,
+    )
+    st.caption(
+        f"Activity coverage: {int(info['observed_days'])}/30 days · {info['activity_source']}. "
+        "A dash means no activity was observed, not confirmed zero traffic."
     )
 
     st.markdown("#### Activity")
@@ -2571,19 +2613,21 @@ def _render_models_catalog(views: dict[str, object]) -> None:
     st.caption(f"{len(filtered):,} of {len(catalog):,} current models")
     table = filtered[[
         "model_name", "company", "model_id", "release_date", "architecture", "context_length",
-        "input_price_per_m", "output_price_per_m", "tokens_30d", "openrouter_url",
+        "input_price_per_m", "output_price_per_m", "tokens_30d", "observed_days", "activity_source", "openrouter_url",
     ]].copy()
     table["release_date"] = table["release_date"].dt.date
     table = table.rename(columns={
         "model_name": "Model", "company": "Company", "model_id": "Model ID", "release_date": "Released",
         "architecture": "Modality", "context_length": "Context", "input_price_per_m": "Input $/1M",
-        "output_price_per_m": "Output $/1M", "tokens_30d": "Tokens (30d)", "openrouter_url": "Details",
+        "output_price_per_m": "Output $/1M", "tokens_30d": "Tokens (30d)", "observed_days": "Observed days",
+        "activity_source": "Activity source", "openrouter_url": "Details",
     })
     st.dataframe(table, hide_index=True, width="stretch", height=640, column_config={
         "Context": st.column_config.NumberColumn(format="compact"),
         "Input $/1M": st.column_config.NumberColumn(format="$%.4g"),
         "Output $/1M": st.column_config.NumberColumn(format="$%.4g"),
         "Tokens (30d)": st.column_config.NumberColumn(format="compact"),
+        "Observed days": st.column_config.NumberColumn(format="%d/30"),
         "Details": st.column_config.LinkColumn(display_text="Open ↗"),
     })
 
