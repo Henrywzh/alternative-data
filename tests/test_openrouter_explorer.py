@@ -6,6 +6,7 @@ import pandas as pd
 
 from dashboard.sections.openrouter import (
     _catalog_alias_map,
+    _combine_explorer_activity,
     _normalize_explorer_activity,
     _prepare_explorer_catalog,
     company_explorer_state,
@@ -87,6 +88,29 @@ def test_company_and_model_explorer_states_join_catalog_activity_and_apps() -> N
     assert model["activity"].loc[pd.Timestamp("2026-07-16"), "Requests"] == 20
     assert set(model["categories"]["category_slug"]) == {"programming", "roleplay"}
     assert model["apps"].iloc[0]["App"] == "Example App"
+
+
+def test_model_activity_precedes_provider_fallback_for_same_model_day() -> None:
+    aliases = {"openai/gpt-test": "openai/gpt-test"}
+    provider = _normalize_explorer_activity(pd.DataFrame([
+        {"usage_date": "2026-07-15", "model_permaslug": "openai/gpt-test", "total_tokens": 100},
+        {"usage_date": "2026-07-16", "model_permaslug": "openai/gpt-test", "total_tokens": 200},
+    ]), aliases)
+    detail = _normalize_explorer_activity(pd.DataFrame([
+        {
+            "usage_date": "2026-07-16", "model_permaslug": "openai/gpt-test",
+            "total_tokens": 150, "request_count": 10,
+        },
+    ]), aliases)
+
+    combined = _combine_explorer_activity(provider, detail)
+    by_date = combined.groupby("usage_date_dt").agg(
+        tokens=("total_tokens", "sum"), source=("activity_source", "first"),
+    )
+    assert by_date.loc[pd.Timestamp("2026-07-15"), "tokens"] == 100
+    assert by_date.loc[pd.Timestamp("2026-07-15"), "source"] == "Provider fallback"
+    assert by_date.loc[pd.Timestamp("2026-07-16"), "tokens"] == 150
+    assert by_date.loc[pd.Timestamp("2026-07-16"), "source"] == "Model activity"
 
 
 def test_model_activity_storage_is_parquet_only_and_retains_180_days(tmp_path: Path) -> None:
