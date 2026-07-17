@@ -243,7 +243,7 @@ OPENROUTER_PROVIDER_MAP = {
     "openai": "OpenAI",
     "anthropic": "Anthropic",
     "google": "Google",
-    "meta": "Meta (Llama)",
+    "meta": "Meta",
     "meta-llama": "Meta (Llama)",
     "mistralai": "Mistral AI",
     "cohere": "Cohere",
@@ -1089,6 +1089,18 @@ def compute_compute_availability_views(datasets: dict[str, DatasetLoadResult]) -
 
         latest_ts = snapshot_groups[-1][0]
         latest_models = pd.DataFrame(current_catalog.values()).sort_values("model_id").reset_index(drop=True)
+        # Prefer the authoritative current catalog emitted by the daily source.
+        # The historical table is change-only and therefore cannot remove a
+        # model that disappeared from the upstream API.
+        source_path = models_result.source_path
+        current_path = (
+            source_path.parent / "raw_openrouter_models_current.parquet"
+            if source_path is not None and source_path.is_absolute() else None
+        )
+        if current_path and current_path.exists():
+            current_frame = pd.read_parquet(current_path)
+            if not current_frame.empty and "model_id" in current_frame.columns:
+                latest_models = current_frame.drop_duplicates("model_id", keep="last").sort_values("model_id").reset_index(drop=True)
 
         views["models_latest"] = latest_models
         views["models_growth"] = pd.DataFrame(growth_rows)
@@ -1101,6 +1113,197 @@ def compute_compute_availability_views(datasets: dict[str, DatasetLoadResult]) -
         views["models_history_end"] = None
 
     return views
+
+
+def _prepare_explorer_catalog(frame: pd.DataFrame) -> pd.DataFrame:
+    """Normalize the reconstructed OpenRouter catalog for explorer use."""
+    if frame.empty:
+        return pd.DataFrame()
+
+    catalog = frame.copy()
+    for column in ("context_length", "pricing_prompt", "pricing_completion", "created_at"):
+        catalog[column] = pd.to_numeric(catalog.get(column), errors="coerce")
+    catalog["provider_slug"] = catalog.get("provider_prefix", pd.Series(pd.NA, index=catalog.index)).astype("string")
+    inferred_provider = catalog["model_id"].astype("string").str.split("/", n=1).str[0]
+    catalog["provider_slug"] = catalog["provider_slug"].fillna(inferred_provider)
+    catalog["company"] = [
+        _derive_provider_name(str(model_id), None)
+        for model_id in catalog["model_id"].astype("string")
+    ]
+    catalog["model_name"] = catalog.get("model_name", catalog["model_id"]).fillna(catalog["model_id"])
+    catalog["release_date"] = pd.to_datetime(catalog["created_at"], unit="s", errors="coerce", utc=True)
+    catalog["input_price_per_m"] = catalog["pricing_prompt"] * 1_000_000
+    catalog["output_price_per_m"] = catalog["pricing_completion"] * 1_000_000
+    catalog["openrouter_url"] = "https://openrouter.ai/" + catalog["model_id"].astype(str)
+    explorer_columns = [
+        "model_id", "canonical_slug", "model_name", "provider_slug", "company",
+        "release_date", "context_length", "architecture", "pricing_prompt",
+        "pricing_completion", "input_price_per_m", "output_price_per_m", "openrouter_url",
+    ]
+    return catalog[explorer_columns].sort_values(["company", "model_name", "model_id"]).reset_index(drop=True)
+
+
+def _catalog_alias_map(catalog: pd.DataFrame) -> dict[str, str]:
+    aliases: dict[str, str] = {}
+    if catalog.empty:
+        return aliases
+    for _, row in catalog.iterrows():
+        raw_model_id = row.get("model_id")
+        raw_canonical_slug = row.get("canonical_slug")
+        model_id = "" if pd.isna(raw_model_id) else str(raw_model_id)
+        canonical_slug = "" if pd.isna(raw_canonical_slug) else str(raw_canonical_slug)
+        if model_id:
+            aliases[model_id] = model_id
+        if canonical_slug:
+            aliases[canonical_slug] = model_id
+    return aliases
+
+
+def _normalize_explorer_activity(frame: pd.DataFrame, aliases: dict[str, str]) -> pd.DataFrame:
+    if frame.empty:
+        return pd.DataFrame()
+    activity = frame.copy()
+    activity["usage_date_dt"] = pd.to_datetime(activity.get("usage_date"), errors="coerce")
+    activity["model_permaslug"] = activity.get("model_permaslug", pd.Series(pd.NA, index=activity.index)).astype("string")
+    activity["model_id"] = activity["model_permaslug"].map(aliases).fillna(activity["model_permaslug"])
+    for column in ("total_tokens", "request_count", "prompt_tokens", "completion_tokens"):
+        activity[column] = pd.to_numeric(activity.get(column, pd.Series(0, index=activity.index)), errors="coerce").fillna(0)
+    keep_columns = [
+        "usage_date_dt", "model_permaslug", "model_id", "entity_id", "entity_name",
+        "category_slug", "total_tokens", "request_count", "prompt_tokens", "completion_tokens",
+        "app_id", "app_name",
+    ]
+    for column in keep_columns:
+        if column not in activity.columns:
+            activity[column] = pd.NA
+    return activity.dropna(subset=["usage_date_dt", "model_permaslug"])[keep_columns]
+
+
+def build_openrouter_explorer_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, object]:
+    """Build compact, reusable frames for company, model, and catalog exploration."""
+    catalog_views = compute_compute_availability_views(datasets)
+    catalog = _prepare_explorer_catalog(catalog_views.get("models_latest", pd.DataFrame()))
+    aliases = _catalog_alias_map(catalog)
+
+    def dataset_frame(dataset_id: str) -> pd.DataFrame:
+        result = datasets.get(dataset_id)
+        return result.frame.copy() if result and not result.frame.empty else pd.DataFrame()
+
+    provider_activity = _normalize_explorer_activity(dataset_frame("provider_daily_activity"), aliases)
+    model_activity = _normalize_explorer_activity(dataset_frame("openrouter_model_activity"), aliases)
+    app_usage = _normalize_explorer_activity(dataset_frame("app_usage_daily"), aliases)
+    app_metadata = dataset_frame("app_metadata_snapshots")
+    metadata_columns = ["app_id", "scrape_date", "origin_url", "categories"]
+    if not app_metadata.empty:
+        app_metadata = app_metadata[[column for column in metadata_columns if column in app_metadata.columns]].copy()
+
+    usage_30d = pd.DataFrame(columns=["model_id", "tokens_30d"])
+    if not provider_activity.empty:
+        latest_date = provider_activity["usage_date_dt"].max()
+        recent = provider_activity[provider_activity["usage_date_dt"] >= latest_date - pd.Timedelta(days=29)]
+        usage_30d = (
+            recent.groupby("model_id", as_index=False)["total_tokens"]
+            .sum()
+            .rename(columns={"total_tokens": "tokens_30d"})
+        )
+    catalog_with_usage = catalog.merge(usage_30d, on="model_id", how="left") if not catalog.empty else catalog
+    if not catalog_with_usage.empty:
+        catalog_with_usage["tokens_30d"] = catalog_with_usage["tokens_30d"].fillna(0)
+
+    return {
+        "catalog": catalog_with_usage,
+        "provider_activity": provider_activity,
+        "model_activity": model_activity,
+        "app_usage": app_usage,
+        "app_metadata": app_metadata,
+        "aliases": aliases,
+        "catalog_history_start": catalog_views.get("models_history_start"),
+        "catalog_history_end": catalog_views.get("models_history_end"),
+    }
+
+
+def company_explorer_state(views: dict[str, object], provider_slug: str) -> dict[str, object]:
+    catalog = views.get("catalog", pd.DataFrame())
+    activity = views.get("provider_activity", pd.DataFrame())
+    detail_activity = views.get("model_activity", pd.DataFrame())
+    company_models = catalog[catalog["provider_slug"] == provider_slug].copy() if not catalog.empty else pd.DataFrame()
+    company_activity = activity[activity["entity_id"].astype("string") == provider_slug].copy() if not activity.empty else pd.DataFrame()
+    if company_activity.empty and not detail_activity.empty and not company_models.empty:
+        company_activity = detail_activity[detail_activity["model_id"].isin(company_models["model_id"])].copy()
+        if not company_activity.empty:
+            company_activity["entity_id"] = provider_slug
+
+    daily_total = pd.DataFrame()
+    model_pivot = pd.DataFrame()
+    if not company_activity.empty:
+        daily_total = company_activity.groupby("usage_date_dt")["total_tokens"].sum().to_frame("Tokens").sort_index()
+        leaders = company_activity.groupby("model_id")["total_tokens"].sum().nlargest(8).index
+        chart_rows = company_activity.copy()
+        chart_rows["display_model"] = chart_rows["model_id"].where(chart_rows["model_id"].isin(leaders), "Other models")
+        model_pivot = (
+            chart_rows.pivot_table(index="usage_date_dt", columns="display_model", values="total_tokens", aggfunc="sum")
+            .fillna(0)
+            .sort_index()
+        )
+    company_models = company_models.sort_values(["tokens_30d", "model_name"], ascending=[False, True]) if not company_models.empty else company_models
+    return {
+        "catalog": company_models,
+        "daily_total": daily_total,
+        "model_pivot": model_pivot,
+        "total_tokens": float(company_activity["total_tokens"].sum()) if not company_activity.empty else 0.0,
+        "latest_date": company_activity["usage_date_dt"].max() if not company_activity.empty else None,
+    }
+
+
+def model_explorer_state(views: dict[str, object], model_id: str) -> dict[str, object]:
+    catalog = views.get("catalog", pd.DataFrame())
+    provider_activity = views.get("provider_activity", pd.DataFrame())
+    model_activity = views.get("model_activity", pd.DataFrame())
+    app_usage = views.get("app_usage", pd.DataFrame())
+    app_metadata = views.get("app_metadata", pd.DataFrame())
+
+    info = catalog[catalog["model_id"] == model_id].head(1) if not catalog.empty else pd.DataFrame()
+    token_rows = provider_activity[provider_activity["model_id"] == model_id].copy() if not provider_activity.empty else pd.DataFrame()
+    detail_rows = model_activity[model_activity["model_id"] == model_id].copy() if not model_activity.empty else pd.DataFrame()
+
+    activity = pd.DataFrame()
+    if not token_rows.empty or not detail_rows.empty:
+        tokens = token_rows.groupby("usage_date_dt")["total_tokens"].sum().rename("Tokens") if not token_rows.empty else pd.Series(dtype="float64")
+        if not detail_rows.empty:
+            detail_tokens = detail_rows.groupby("usage_date_dt")["total_tokens"].sum()
+            tokens = tokens.combine_first(detail_tokens).rename("Tokens")
+        requests = detail_rows.groupby("usage_date_dt")["request_count"].sum().rename("Requests") if not detail_rows.empty else pd.Series(dtype="float64")
+        activity = pd.concat([tokens, requests], axis=1).sort_index()
+
+    categories = pd.DataFrame()
+    if not detail_rows.empty:
+        categories = (
+            detail_rows.groupby("category_slug", as_index=False)
+            .agg(Tokens=("total_tokens", "sum"), Requests=("request_count", "sum"))
+            .sort_values("Tokens", ascending=False)
+        )
+
+    apps = pd.DataFrame()
+    if not app_usage.empty:
+        apps = (
+            app_usage[app_usage["model_id"] == model_id]
+            .groupby(["app_id", "app_name"], dropna=False, as_index=False)["total_tokens"]
+            .sum()
+            .rename(columns={"app_name": "App", "total_tokens": "Tokens"})
+            .sort_values("Tokens", ascending=False)
+        )
+        if not apps.empty and not app_metadata.empty:
+            latest_metadata = app_metadata.sort_values("scrape_date").drop_duplicates("app_id", keep="last")
+            apps = apps.merge(latest_metadata[["app_id", "origin_url", "categories"]], on="app_id", how="left")
+
+    return {
+        "info": info,
+        "activity": activity,
+        "categories": categories,
+        "apps": apps,
+        "total_tokens": float(token_rows["total_tokens"].sum()) if not token_rows.empty else 0.0,
+        "total_requests": float(detail_rows["request_count"].sum()) if not detail_rows.empty else 0.0,
+    }
 
 
 def render_kpi_row(datasets: dict[str, DatasetLoadResult], openrouter_views: dict[str, object]) -> None:
@@ -2138,6 +2341,278 @@ def render_apps_tables(datasets: dict[str, DatasetLoadResult]) -> None:
                 st.plotly_chart(fig_u, width="stretch", theme=None)
 
 
+def _format_context_window(value: object) -> str:
+    number = pd.to_numeric(pd.Series([value]), errors="coerce").iloc[0]
+    if pd.isna(number):
+        return "n/a"
+    if number >= 1_000_000:
+        return f"{number / 1_000_000:.2g}M tokens"
+    if number >= 1_000:
+        return f"{number / 1_000:.0f}K tokens"
+    return f"{number:,.0f} tokens"
+
+
+def _format_price_per_m(value: object) -> str:
+    number = pd.to_numeric(pd.Series([value]), errors="coerce").iloc[0]
+    return "n/a" if pd.isna(number) else f"${number:,.4g} / 1M"
+
+
+def _render_company_explorer(views: dict[str, object]) -> None:
+    catalog = views.get("catalog", pd.DataFrame())
+    if catalog.empty:
+        st.warning("The OpenRouter catalog is unavailable, so company exploration cannot be shown.")
+        return
+
+    options = catalog[["provider_slug", "company"]].dropna().drop_duplicates().sort_values("company")
+    labels = dict(zip(options["provider_slug"], options["company"]))
+    slugs = options["provider_slug"].tolist()
+    preferred = "openai" if "openai" in labels else slugs[0]
+    provider_slug = st.selectbox(
+        "Company", slugs, index=slugs.index(preferred),
+        format_func=lambda value: labels.get(value, value), key="openrouter_explorer_company",
+    )
+    state = company_explorer_state(views, str(provider_slug))
+    models = state["catalog"]
+    model_pivot = state["model_pivot"]
+
+    latest_activity = (
+        pd.Timestamp(state["latest_date"]).strftime("%b %d, %Y")
+        if state["latest_date"] is not None else "n/a"
+    )
+    million_context = f"{int((models['context_length'] >= 1_000_000).sum()):,}" if not models.empty else "0"
+    st.markdown(
+        kpi_grid_html(
+            kpi_card_html("Tokens in stored window", format_metric(state["total_tokens"]), delta="provider activity"),
+            kpi_card_html("Tracked models", f"{len(models):,}", delta="current catalog"),
+            kpi_card_html("Latest activity", latest_activity, delta="daily coverage"),
+            kpi_card_html("Models with 1M+ context", million_context, delta="current catalog"),
+        ),
+        unsafe_allow_html=True,
+    )
+
+    st.caption("Token volume by model over the rolling provider-page history.")
+    if model_pivot.empty:
+        st.info("No daily activity is stored for this company yet.")
+    else:
+        chart = make_stacked_area_chart(
+            model_pivot, list(model_pivot.index), MODEL_COLORS,
+            x_title="Date", y_title="Tokens", height=430, value_format=",.0f", hover_suffix="tokens",
+        )
+        chart.update_layout(hovermode="x unified")
+        st.plotly_chart(chart, width="stretch", theme=None)
+
+    st.markdown("#### Models by trailing 30-day token volume")
+    if models.empty:
+        st.info("No current catalog models are available for this company.")
+        return
+    company_search = st.text_input(
+        "Filter company models",
+        placeholder="Search name or model ID, e.g. gpt-5.6",
+        key=f"openrouter_company_model_search_{provider_slug}",
+    )
+    if company_search.strip():
+        needle = company_search.strip().casefold()
+        models = models[
+            models["model_name"].astype(str).str.casefold().str.contains(needle, regex=False)
+            | models["model_id"].astype(str).str.casefold().str.contains(needle, regex=False)
+        ]
+        st.caption(f"{len(models):,} matching models")
+        if models.empty:
+            st.info("No models match this filter.")
+            return
+    table = models[[
+        "model_name", "model_id", "release_date", "context_length",
+        "input_price_per_m", "output_price_per_m", "tokens_30d", "openrouter_url",
+    ]].copy()
+    table["release_date"] = table["release_date"].dt.date
+    table = table.rename(columns={
+        "model_name": "Model", "model_id": "Model ID", "release_date": "Released",
+        "context_length": "Context", "input_price_per_m": "Input $/1M",
+        "output_price_per_m": "Output $/1M", "tokens_30d": "Tokens (30d)",
+        "openrouter_url": "OpenRouter",
+    })
+    st.dataframe(table, hide_index=True, width="stretch", column_config={
+        "Context": st.column_config.NumberColumn(format="compact"),
+        "Input $/1M": st.column_config.NumberColumn(format="$%.4g"),
+        "Output $/1M": st.column_config.NumberColumn(format="$%.4g"),
+        "Tokens (30d)": st.column_config.NumberColumn(format="compact"),
+        "OpenRouter": st.column_config.LinkColumn(display_text="Open model ↗"),
+    })
+
+
+def _render_model_explorer(views: dict[str, object]) -> None:
+    catalog = views.get("catalog", pd.DataFrame())
+    if catalog.empty:
+        st.warning("The OpenRouter catalog is unavailable, so model exploration cannot be shown.")
+        return
+
+    catalog = catalog.sort_values(["tokens_30d", "model_name"], ascending=[False, True]).reset_index(drop=True)
+    label_map = {row["model_id"]: f"{row['model_name']} · {row['company']}" for _, row in catalog.iterrows()}
+    model_ids = catalog["model_id"].tolist()
+    requested_model = st.query_params.get("model") if hasattr(st, "query_params") else None
+    default_index = model_ids.index(requested_model) if requested_model in model_ids else 0
+    model_id = st.selectbox(
+        "Model", model_ids, index=default_index,
+        format_func=lambda value: label_map.get(value, value), key="openrouter_explorer_model",
+    )
+    if hasattr(st, "query_params"):
+        st.query_params["model"] = model_id
+
+    state = model_explorer_state(views, str(model_id))
+    info = state["info"]
+    if info.empty:
+        st.info("No catalog metadata is available for this model.")
+        return
+    info = info.iloc[0]
+    released = info["release_date"].strftime("%b %d, %Y") if pd.notna(info["release_date"]) else "n/a"
+
+    st.markdown(f"### {info['model_name']}")
+    st.caption(f"{info['company']} · `{info['model_id']}` · [View on OpenRouter ↗]({info['openrouter_url']})")
+    st.markdown(
+        kpi_grid_html(
+            kpi_card_html("Context", _format_context_window(info["context_length"]), delta="model metadata"),
+            kpi_card_html("Input", _format_price_per_m(info["input_price_per_m"]), delta="per 1M tokens"),
+            kpi_card_html("Output", _format_price_per_m(info["output_price_per_m"]), delta="per 1M tokens"),
+            kpi_card_html("Released", released, delta="OpenRouter catalog"),
+            kpi_card_html("30d tokens", format_metric(info["tokens_30d"]), delta="provider activity"),
+        ),
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("#### Activity")
+    st.caption("Token volume and, where the model-detail scraper has coverage, request traffic over time.")
+    activity = state["activity"]
+    if activity.empty:
+        st.info("No activity history is stored for this model yet.")
+    else:
+        fig = go.Figure()
+        if "Tokens" in activity and activity["Tokens"].notna().any():
+            fig.add_trace(go.Scatter(
+                x=activity.index, y=activity["Tokens"], name="Tokens", mode="lines",
+                line=dict(color=ACCENT, width=3), fill="tozeroy",
+                hovertemplate="%{x|%Y-%m-%d}<br>%{y:,.0f} tokens<extra></extra>",
+            ))
+        if "Requests" in activity and activity["Requests"].notna().any():
+            fig.add_trace(go.Scatter(
+                x=activity.index, y=activity["Requests"], name="Requests", mode="lines",
+                line=dict(color="#F97316", width=2), yaxis="y2",
+                hovertemplate="%{x|%Y-%m-%d}<br>%{y:,.0f} requests<extra></extra>",
+            ))
+        fig.update_layout(
+            template="plotly_white", height=420, hovermode="x unified", margin=dict(l=0, r=0, t=15, b=30),
+            xaxis=dict(title="Date", showgrid=False), yaxis=dict(title="Tokens", gridcolor=GRID),
+            yaxis2=dict(title="Requests", overlaying="y", side="right", showgrid=False),
+            legend=dict(orientation="h", y=1.12),
+        )
+        st.plotly_chart(fig, width="stretch", theme=None)
+
+    detail_left, detail_right = st.columns([1, 1])
+    with detail_left:
+        st.markdown("#### Workload mix")
+        categories = state["categories"]
+        if categories.empty:
+            st.caption("Category-level request data is not available for this model yet.")
+        else:
+            display_categories = categories.head(12).rename(columns={"category_slug": "Category"})
+            st.dataframe(display_categories, hide_index=True, width="stretch", column_config={
+                "Tokens": st.column_config.NumberColumn(format="compact"),
+                "Requests": st.column_config.NumberColumn(format="compact"),
+            })
+    with detail_right:
+        st.markdown("#### Public apps")
+        apps = state["apps"]
+        if apps.empty:
+            st.caption("No traffic from the currently monitored public apps is stored for this model.")
+        else:
+            app_table = apps[["App", "Tokens", "categories", "origin_url"]].rename(columns={
+                "categories": "Use cases", "origin_url": "App URL",
+            })
+            st.dataframe(app_table, hide_index=True, width="stretch", column_config={
+                "Tokens": st.column_config.NumberColumn(format="compact"),
+                "App URL": st.column_config.LinkColumn(display_text="Visit ↗"),
+            })
+            st.caption("Coverage reflects the public apps monitored by the daily apps pipeline, not every OpenRouter app.")
+
+
+def _render_models_catalog(views: dict[str, object]) -> None:
+    catalog = views.get("catalog", pd.DataFrame())
+    if catalog.empty:
+        st.warning("The OpenRouter model catalog is unavailable.")
+        return
+
+    st.caption("Current OpenRouter catalog reconstructed from compact change-only snapshots. Click any header to sort.")
+    filter_cols = st.columns([2.2, 1.4, 1.2, 1.2])
+    search = filter_cols[0].text_input("Search models", placeholder="Name or model ID", key="openrouter_catalog_search")
+    companies = filter_cols[1].multiselect(
+        "Companies", sorted(catalog["company"].dropna().unique().tolist()), key="openrouter_catalog_companies",
+    )
+    min_context = filter_cols[2].selectbox(
+        "Minimum context", [0, 32_000, 128_000, 1_000_000],
+        format_func=lambda value: "Any" if value == 0 else _format_context_window(value),
+        key="openrouter_catalog_context",
+    )
+    priced_only = filter_cols[3].toggle("Priced models only", value=False, key="openrouter_catalog_priced")
+
+    filtered = catalog.copy()
+    if search.strip():
+        needle = search.strip().casefold()
+        filtered = filtered[
+            filtered["model_name"].astype(str).str.casefold().str.contains(needle, regex=False)
+            | filtered["model_id"].astype(str).str.casefold().str.contains(needle, regex=False)
+        ]
+    if companies:
+        filtered = filtered[filtered["company"].isin(companies)]
+    if min_context:
+        filtered = filtered[filtered["context_length"] >= min_context]
+    if priced_only:
+        filtered = filtered[(filtered["pricing_prompt"] > 0) | (filtered["pricing_completion"] > 0)]
+    filtered = filtered.sort_values(["tokens_30d", "model_name"], ascending=[False, True])
+
+    st.caption(f"{len(filtered):,} of {len(catalog):,} current models")
+    table = filtered[[
+        "model_name", "company", "model_id", "release_date", "architecture", "context_length",
+        "input_price_per_m", "output_price_per_m", "tokens_30d", "openrouter_url",
+    ]].copy()
+    table["release_date"] = table["release_date"].dt.date
+    table = table.rename(columns={
+        "model_name": "Model", "company": "Company", "model_id": "Model ID", "release_date": "Released",
+        "architecture": "Modality", "context_length": "Context", "input_price_per_m": "Input $/1M",
+        "output_price_per_m": "Output $/1M", "tokens_30d": "Tokens (30d)", "openrouter_url": "Details",
+    })
+    st.dataframe(table, hide_index=True, width="stretch", height=640, column_config={
+        "Context": st.column_config.NumberColumn(format="compact"),
+        "Input $/1M": st.column_config.NumberColumn(format="$%.4g"),
+        "Output $/1M": st.column_config.NumberColumn(format="$%.4g"),
+        "Tokens (30d)": st.column_config.NumberColumn(format="compact"),
+        "Details": st.column_config.LinkColumn(display_text="Open ↗"),
+    })
+
+
+def render_data_explorer(datasets: dict[str, DatasetLoadResult]) -> None:
+    st.markdown('<div class="section-title">OpenRouter Data Explorer</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-subtitle">Inspect company traffic, model activity and pricing, or search the full current catalog.</div>',
+        unsafe_allow_html=True,
+    )
+    views = build_openrouter_explorer_views(datasets)
+    explorer_tab, catalog_tab = st.tabs(["Company & model", "All models"])
+    with explorer_tab:
+        mode = st.segmented_control(
+            "Explore by", ["Company", "Model"], default="Company", key="openrouter_explorer_mode",
+        ) if hasattr(st, "segmented_control") else st.radio(
+            "Explore by", ["Company", "Model"], horizontal=True, key="openrouter_explorer_mode",
+        )
+        _render_model_explorer(views) if mode == "Model" else _render_company_explorer(views)
+    with catalog_tab:
+        _render_models_catalog(views)
+
+
+def render_models(domain_states, datasets) -> None:
+    """Dedicated top-level tab for the OpenRouter catalog and explorer."""
+    _ = domain_states
+    render_data_explorer(datasets)
+
+
 def render_compute_evolution_section(compute_views: dict[str, object]) -> None:
     """Render the OpenRouter catalog-growth + context-vs-pricing pair inside the OpenRouter tab.
 
@@ -2176,6 +2651,13 @@ def render_compute_evolution_section(compute_views: dict[str, object]) -> None:
                 st.caption(
                     f"History reflects the normalized OpenRouter catalog snapshots currently on disk ({start_label} to {end_label})."
                 )
+            if len(models_growth) > 1:
+                drops = models_growth[models_growth["model_count"].diff() < 0]
+                if not drops.empty:
+                    st.caption(
+                        "Catalog history is change-only between full snapshots. A downward step indicates a full upstream "
+                        "catalog refresh removed stale carry-forward models; it should not be read as a precise daily deletion count."
+                    )
 
     with row2_col2:
         st.markdown('<div class="section-subtitle">Context Window vs. Pricing Prompt</div>', unsafe_allow_html=True)

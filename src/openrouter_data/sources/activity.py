@@ -14,12 +14,16 @@ from openrouter_data.sources.base import SourceExtractor
 from openrouter_data.utils import iter_next_f_objects, walk_json
 
 
+ACTIVITY_PROVIDER_SLUGS = {**PROVIDER_SLUGS, "meta": "Meta"}
+
+
 class ActivitySource(SourceExtractor):
     name = "openrouter_activity"
     BROWSE_URL = "https://openrouter.ai/rankings"
     MODELS_API_URL = "https://openrouter.ai/api/v1/models"
+    MODEL_ACTIVITY_API_URL = "https://openrouter.ai/api/frontend/v1/stats/model-activity"
     MODEL_BASE_URL = "https://openrouter.ai"
-    ALLOWED_PROVIDER_PREFIXES = frozenset(PROVIDER_SLUGS.keys())
+    ALLOWED_PROVIDER_PREFIXES = frozenset(ACTIVITY_PROVIDER_SLUGS.keys())
 
     def __init__(self, timeout: int = 30) -> None:
         self.timeout = timeout
@@ -95,17 +99,20 @@ class ActivitySource(SourceExtractor):
         return slugs
 
     def fetch_snapshots(self, slugs: list[str]) -> list[Snapshot]:
-        """Fetch activity snapshots for the given slugs."""
+        """Fetch compact JSON activity snapshots from OpenRouter's stats API."""
         snapshots = []
         for slug in slugs:
-            url = f"{self.MODEL_BASE_URL}/{slug}/activity"
             try:
-                response = self.session.get(url, timeout=self.timeout)
+                response = self.session.get(
+                    self.MODEL_ACTIVITY_API_URL,
+                    params={"permaslug": slug, "variant": "standard"},
+                    timeout=self.timeout,
+                )
                 response.raise_for_status()
                 snapshots.append(
                     Snapshot(
                         name=f"activity_{slug.replace('/', '_')}",
-                        source_url=url,
+                        source_url=response.url,
                         body=response.text,
                     )
                 )
@@ -122,6 +129,41 @@ class ActivitySource(SourceExtractor):
         for snapshot in snapshots:
             # Reconstruct slug from name if needed, or better, look into body
             html = snapshot.body
+
+            # Current OpenRouter frontend payload:
+            # {"data": {"analytics": [{date, count, token totals, ...}]}}.
+            if html.lstrip().startswith("{"):
+                try:
+                    payload = json.loads(html)
+                except json.JSONDecodeError:
+                    payload = {}
+                analytics = payload.get("data", {}).get("analytics", []) if isinstance(payload, dict) else []
+                for item in analytics:
+                    if not isinstance(item, dict):
+                        continue
+                    usage_date = str(item.get("date", "")).split(" ")[0] or None
+                    model_slug = item.get("model_permaslug") or item.get("variant_permaslug")
+                    if not usage_date or not model_slug:
+                        continue
+                    prompt_tokens = float(item.get("total_prompt_tokens", 0) or 0)
+                    completion_tokens = float(item.get("total_completion_tokens", 0) or 0)
+                    records.append(
+                        DatasetRecord(
+                            dataset_id=dataset_id,
+                            source_url=snapshot.source_url,
+                            source_run_id=context.run_id,
+                            scraped_at=scraped_at,
+                            usage_date=usage_date,
+                            model_permaslug=model_slug,
+                            category_slug="all",
+                            request_count=item.get("count"),
+                            prompt_tokens=prompt_tokens,
+                            completion_tokens=completion_tokens,
+                            reasoning_tokens=float(item.get("total_native_tokens_reasoning", 0) or 0),
+                            total_tokens=prompt_tokens + completion_tokens,
+                        )
+                    )
+                continue
             
             # Find the activity data in Next.js payload
             activity_data = []

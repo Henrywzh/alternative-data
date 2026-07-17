@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
+import re
 from typing import Any
 from uuid import uuid4
 
@@ -10,7 +11,7 @@ import pandas as pd
 
 from openrouter_data.models import DatasetRecord, RunContext, Snapshot
 from openrouter_data.sources.apps import AppsSource
-from openrouter_data.sources.activity import ActivitySource
+from openrouter_data.sources.activity import ACTIVITY_PROVIDER_SLUGS, ActivitySource
 from openrouter_data.sources.base import SourceExtractor
 from openrouter_data.sources.provider_activity import ProviderActivitySource, PROVIDER_SLUGS, PROVIDER_ACTIVITY_DATASET_ID
 from openrouter_data.sources.rankings import RankingsSource
@@ -269,7 +270,7 @@ class ActivityPipeline(BasePipeline):
     def _discover_activity_slugs(self, limit: int = 0) -> list[str]:
         slugs: list[str] = []
         seen: set[str] = set()
-        allowed_prefixes = set(PROVIDER_SLUGS.keys())
+        allowed_prefixes = set(ACTIVITY_PROVIDER_SLUGS.keys())
 
         def add_many(values: list[str]) -> None:
             for value in values:
@@ -279,15 +280,45 @@ class ActivityPipeline(BasePipeline):
                     seen.add(value)
                     slugs.append(value)
 
+        live_catalog_slugs: list[str] = []
         try:
-            add_many(self.source.fetch_catalog_slugs(limit=0))
+            live_catalog_slugs = self.source.fetch_catalog_slugs(limit=0)
         except Exception as exc:
             print(f"Warning: Failed to fetch live OpenRouter model catalog for activity discovery: {exc}")
+        # Keep newly released models in the capped scrape even before they
+        # appear in provider activity history.
+        if limit and limit > 0:
+            recent_catalog_slugs = [slug for slug in live_catalog_slugs if re.search(r"-(20\d{6})$", slug)]
+            add_many(recent_catalog_slugs)
+        # Spend remaining requests on models with the most recent traffic.
+        add_many(self._discover_active_provider_slugs(limit=0))
+        add_many(live_catalog_slugs)
         add_many(self._discover_catalog_slugs(limit=0))
 
         if limit and limit > 0:
             return slugs[:limit]
         return slugs
+
+    def _discover_active_provider_slugs(self, limit: int = 0) -> list[str]:
+        path = self.base_dir / "data" / "normalized" / "openrouter" / "provider_daily_activity.parquet"
+        if not path.exists():
+            return []
+        activity = pd.read_parquet(path, columns=["usage_date", "model_permaslug", "total_tokens"])
+        if activity.empty:
+            return []
+        activity["usage_date_dt"] = pd.to_datetime(activity["usage_date"], errors="coerce")
+        activity["total_tokens"] = pd.to_numeric(activity["total_tokens"], errors="coerce").fillna(0)
+        latest_date = activity["usage_date_dt"].max()
+        if pd.isna(latest_date):
+            return []
+        recent = activity[activity["usage_date_dt"] >= latest_date - pd.Timedelta(days=29)].copy()
+        ranked = recent.groupby("model_permaslug")["total_tokens"].sum().sort_values(ascending=False)
+        allowed_prefixes = set(ACTIVITY_PROVIDER_SLUGS.keys())
+        slugs = [
+            str(slug) for slug in ranked.index
+            if isinstance(slug, str) and "/" in slug and slug.split("/", 1)[0] in allowed_prefixes
+        ]
+        return slugs[:limit] if limit and limit > 0 else slugs
 
     def _discover_catalog_slugs(self, limit: int = 0) -> list[str]:
         catalog_root = self.base_dir / "data" / "normalized" / "compute_availability"
@@ -307,7 +338,7 @@ class ActivityPipeline(BasePipeline):
             latest_snapshots = sorted(catalog["snapshot_ts"].dropna().astype(str).unique())[-14:]
             catalog = catalog[catalog["snapshot_ts"].astype(str).isin(latest_snapshots)].copy()
 
-        allowed_prefixes = set(PROVIDER_SLUGS.keys())
+        allowed_prefixes = set(ACTIVITY_PROVIDER_SLUGS.keys())
         catalog["provider_prefix"] = catalog["provider_prefix"].astype("string")
         catalog = catalog[catalog["provider_prefix"].isin(allowed_prefixes)].copy()
         if catalog.empty:
