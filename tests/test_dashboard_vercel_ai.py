@@ -78,6 +78,9 @@ def test_stacked_display_sums_to_100() -> None:
     assert ((row_totals - 100.0).abs() < 1e-6).all()
     # Residual is real (Vercel truncates), so it should carry meaningful weight.
     assert display[others].mean() > 0
+    # Match Vercel's public layout: nine named models plus the residual band.
+    assert TOP_N_BY_ENTITY["Top Models"] == 9
+    assert display.shape[1] == 10
 
 
 def test_labs_show_up_to_top_20() -> None:

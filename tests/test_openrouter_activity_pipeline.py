@@ -64,6 +64,33 @@ def test_activity_source_extracts_requests_prompt_completion_and_reasoning_token
     assert record.total_tokens == 1250.0
 
 
+def test_activity_source_extracts_current_stats_api_payload() -> None:
+    payload = {
+        "data": {
+            "analytics": [{
+                "date": "2026-07-17 00:00:00",
+                "model_permaslug": "meta/muse-spark-1.1-20260709",
+                "total_prompt_tokens": 1000,
+                "total_completion_tokens": 250,
+                "total_native_tokens_reasoning": 75,
+                "count": 123,
+            }]
+        }
+    }
+    source = ActivitySource()
+    context = RunContext(run_id="activity-api-test", scraped_at=pd.Timestamp("2026-07-17T00:00:00Z").to_pydatetime())
+    records = source.extract(
+        [Snapshot(name="activity_meta_muse_spark", source_url="https://openrouter.ai/api/frontend/v1/stats/model-activity", body=json.dumps(payload))],
+        context,
+    )["openrouter_model_activity"]
+
+    assert len(records) == 1
+    assert records[0].model_permaslug == "meta/muse-spark-1.1-20260709"
+    assert records[0].category_slug == "all"
+    assert records[0].request_count == 123
+    assert records[0].total_tokens == 1250.0
+
+
 def test_activity_source_leaves_reasoning_tokens_null_when_missing() -> None:
     html = _build_activity_html(
         [
@@ -500,4 +527,33 @@ def test_activity_pipeline_prefers_live_catalog_and_keeps_recent_local_releases(
         "tencent/hy3-preview:free",
         "moonshotai/kimi-k2.6-20260420",
         "deepseek/deepseek-v4-flash-20260423",
+    ]
+
+
+def test_activity_pipeline_prioritizes_recent_high_traffic_models_when_limited(tmp_path: Path) -> None:
+    activity_dir = tmp_path / "data" / "normalized" / "openrouter"
+    activity_dir.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame([
+        {"usage_date": "2026-07-15", "model_permaslug": "openai/quiet", "total_tokens": 10},
+        {"usage_date": "2026-07-15", "model_permaslug": "deepseek/busy", "total_tokens": 1_000},
+        {"usage_date": "2026-07-15", "model_permaslug": "nvidia/not-tracked", "total_tokens": 9_000},
+    ]).to_parquet(activity_dir / "provider_daily_activity.parquet", index=False)
+
+    pipeline = ActivityPipeline(tmp_path)
+    pipeline.source.fetch_catalog_slugs = lambda limit=0: ["anthropic/new-model"]
+
+    assert pipeline._discover_activity_slugs(limit=2) == ["deepseek/busy", "openai/quiet"]
+
+
+def test_activity_pipeline_keeps_newly_released_catalog_models_in_capped_scrape(tmp_path: Path) -> None:
+    pipeline = ActivityPipeline(tmp_path)
+    pipeline.source.fetch_catalog_slugs = lambda limit=0: [
+        "meta/muse-spark-1.1-20260709",
+        "openai/gpt-5.6-luna-20260709",
+        "anthropic/older-model",
+    ]
+
+    assert pipeline._discover_activity_slugs(limit=2) == [
+        "meta/muse-spark-1.1-20260709",
+        "openai/gpt-5.6-luna-20260709",
     ]

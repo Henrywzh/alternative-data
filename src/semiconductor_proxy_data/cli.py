@@ -16,12 +16,12 @@ def main() -> None:
     parser.add_argument(
         "--regions",
         default=None,
-        help="Optional comma-separated region override (e.g. korea,china,hongkong,japan)",
+        help="Optional comma-separated region override (e.g. korea,china,hongkong,japan,netherlands)",
     )
     parser.add_argument(
         "--categories",
         default=None,
-        help="Optional comma-separated category override (e.g. ic_only,broad_semiconductor)",
+        help="Optional comma-separated category override (e.g. ic_only,broad_semiconductor,lithography)",
     )
     parser.add_argument(
         "--sources",

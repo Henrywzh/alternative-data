@@ -39,10 +39,11 @@ MODALITY_LABELS = {"all": "All", "text": "Text", "image": "Image", "video": "Vid
 METRIC_ORDER = ["tokens", "requests", "spend"]
 METRIC_LABELS = {"tokens": "Tokens", "requests": "Requests", "spend": "Spend"}
 
-# How many named series to show per entity, capped by what Vercel actually
-# publishes: models are hard-limited to the daily top 10 (export never lists
-# more), labs are a complete set of ~31 so we show the leading 20.
-TOP_N_BY_ENTITY = {"Top Models": 10, "Top Labs": 20}
+# How many named series to show per entity. Vercel's public model leaderboard
+# displays nine named models plus an "Other" residual as rank 10, while the
+# export contains the underlying top-ten cohort. Labs are a complete set of
+# ~31, so we show the leading 20.
+TOP_N_BY_ENTITY = {"Top Models": 9, "Top Labs": 20}
 DEFAULT_TOP_N = 10
 
 # Residual band label differs by entity: model shares don't sum to 100% (Vercel
@@ -239,7 +240,7 @@ def _render_modality_tab(frame: pd.DataFrame, entity_label: str, modality: str) 
             hover_suffix="%",
         )
         if entity_label == "Top Models":
-            residual = f" *{others_label}* is everything Vercel didn't rank that day (their export lists only the daily top {top_n})."
+            residual = f" *{others_label}* is everything outside the displayed top {top_n}; Vercel presents this residual as rank {top_n + 1}."
         else:
             residual = f" *{others_label}* groups every provider outside the top {top_n}."
     else:
