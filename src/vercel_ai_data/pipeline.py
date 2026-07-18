@@ -78,6 +78,20 @@ class VercelPipeline:
             catalog_extracted = self.catalog_source.extract(snapshots, context)
             extracted.update(catalog_extracted)
 
+            # Record first-seen leaderboard entities in the run manifest. The
+            # history tables are cumulative, so this is both an audit trail for
+            # daily automation and a guard against silently ignoring newcomers.
+            new_entities: dict[str, list[str]] = {}
+            for dataset_id in LEADERBOARD_DATASETS:
+                existing = self.storage.load_dataset(dataset_id)
+                known = set(existing["name"].dropna().astype(str)) if not existing.empty else set()
+                incoming_names = {
+                    str(record.name)
+                    for record in extracted.get(dataset_id, [])
+                    if record.name is not None
+                }
+                new_entities[dataset_id] = sorted(incoming_names - known)
+
             # 3. Upsert to storage
             datasets_written = {}
             for dataset_id in self.dataset_ids:
@@ -95,6 +109,11 @@ class VercelPipeline:
                     "status": "ok" if extracted.get(dataset_id) else "no_new_rows",
                     "rows": len(extracted.get(dataset_id, [])),
                     "source_urls": sorted({record.source_url for record in extracted.get(dataset_id, [])}),
+                    **(
+                        {"new_entities": new_entities[dataset_id]}
+                        if dataset_id in LEADERBOARD_DATASETS
+                        else {}
+                    ),
                 }
                 for dataset_id in self.dataset_ids
             ]

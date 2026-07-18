@@ -16,19 +16,19 @@ NATURAL_KEYS: dict[str, list[str]] = {
 }
 
 SORT_KEYS: dict[str, list[str]] = {
-    "vercel_model_leaderboard": ["date", "metric", "share_percent", "name"],
-    "vercel_lab_leaderboard": ["date", "metric", "share_percent", "name"],
+    "vercel_model_leaderboard": ["date", "metric", "modality", "rank", "name"],
+    "vercel_lab_leaderboard": ["date", "metric", "modality", "rank", "name"],
     "vercel_models": ["owned_by", "model_id"],
 }
 
 DATASET_COLUMNS: dict[str, list[str]] = {
     "vercel_model_leaderboard": [
         "dataset_id", "source_url", "source_run_id", "scraped_at",
-        "date", "group", "name", "metric", "modality", "share_percent"
+        "date", "group", "name", "metric", "modality", "share_percent", "rank"
     ],
     "vercel_lab_leaderboard": [
         "dataset_id", "source_url", "source_run_id", "scraped_at",
-        "date", "group", "name", "metric", "modality", "share_percent"
+        "date", "group", "name", "metric", "modality", "share_percent", "rank"
     ],
     "vercel_models": [
         "dataset_id", "source_url", "source_run_id", "scraped_at",
@@ -39,7 +39,7 @@ DATASET_COLUMNS: dict[str, list[str]] = {
 }
 
 NUMERIC_COLUMNS = [
-    "share_percent", "context_window", "max_tokens",
+    "share_percent", "rank", "context_window", "max_tokens",
     "pricing_input", "pricing_output", "pricing_cache_read", "pricing_cache_write"
 ]
 
@@ -103,14 +103,9 @@ class StorageManager:
 
         merged = self._merge_preserving_meta(dataset_id, existing, incoming)
 
-        ascending_spec = [True] * len(SORT_KEYS[dataset_id])
-        if "share_percent" in SORT_KEYS[dataset_id]:
-            idx = SORT_KEYS[dataset_id].index("share_percent")
-            ascending_spec[idx] = False
-
         merged = merged.sort_values(
             by=SORT_KEYS[dataset_id],
-            ascending=ascending_spec,
+            ascending=True,
             na_position="last",
         ).reset_index(drop=True)
 

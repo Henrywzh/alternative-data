@@ -47,6 +47,7 @@ def test_leaderboard_extract_maps_all_fields() -> None:
     assert first.name == "Gemini 3 Flash"
     assert first.metric == "tokens"
     assert first.share_percent == 16.4065
+    assert first.rank == 1
     assert len(extracted["vercel_lab_leaderboard"]) == 12
 
 
@@ -109,6 +110,29 @@ def test_validate_fails_on_empty_fetch(tmp_path: Path) -> None:
         )
 
 
+def test_daily_update_persists_ranks_and_audits_new_entities(tmp_path: Path, monkeypatch) -> None:
+    from vercel_ai_data.models import Snapshot
+
+    pipeline = VercelPipeline(tmp_path)
+    leaderboard_snapshots = [
+        Snapshot("vercel_model_leaderboard", "fixture://models", _fixture("vercel_model_leaderboard.json")),
+        Snapshot("vercel_lab_leaderboard", "fixture://labs", _fixture("vercel_lab_leaderboard.json")),
+    ]
+    catalog_snapshots = [
+        Snapshot("vercel_models", "fixture://catalog", _fixture("vercel_models.json")),
+    ]
+    monkeypatch.setattr(pipeline.leaderboard_source, "fetch_snapshots", lambda: leaderboard_snapshots)
+    monkeypatch.setattr(pipeline.catalog_source, "fetch_snapshots", lambda: catalog_snapshots)
+
+    result = pipeline.run_daily_update()
+
+    stored = pipeline.storage.load_dataset("vercel_model_leaderboard")
+    assert stored["rank"].notna().all()
+    manifest = json.loads((result.raw_run_dir / "manifest.json").read_text(encoding="utf-8"))
+    model_entry = next(row for row in manifest["datasets"] if row["dataset_id"] == "vercel_model_leaderboard")
+    assert "Gemini 3 Flash" in model_entry["new_entities"]
+
+
 # --------------------------------------------------------------------------- #
 # Storage merge semantics
 # --------------------------------------------------------------------------- #
@@ -138,6 +162,19 @@ def test_history_is_preserved_across_upserts(tmp_path: Path) -> None:
     ])
     dates = set(merged["date"])
     assert dates == {"2026-05-08", "2026-05-09"}
+
+
+def test_new_ranked_models_are_added_without_losing_prior_models(tmp_path: Path) -> None:
+    storage = StorageManager(tmp_path)
+    storage.upsert_dataset("vercel_model_leaderboard", [
+        _leaderboard_record("2026-05-08", "Established", "tokens", 20.0),
+    ])
+    merged = storage.upsert_dataset("vercel_model_leaderboard", [
+        _leaderboard_record("2026-05-09", "New entrant", "tokens", 25.0),
+    ])
+
+    assert set(merged["name"]) == {"Established", "New entrant"}
+    assert set(merged["date"]) == {"2026-05-08", "2026-05-09"}
 
 
 def test_unchanged_rows_do_not_churn_provenance(tmp_path: Path) -> None:
