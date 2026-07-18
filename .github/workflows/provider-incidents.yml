@@ -1,0 +1,77 @@
+name: Provider Incident Tracker
+
+on:
+  schedule:
+    - cron: "23 */2 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: provider-incidents-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .[dev]
+
+      - name: Collect official provider status feeds
+        run: python -m provider_incident_data.cli --base-dir . update
+
+      - name: Run incident-source quality tests
+        run: python -m pytest -q tests/test_provider_incident_data.py
+
+      - name: Commit compact normalized datasets
+        run: |
+          if [ -z "$(git status --porcelain -- data/normalized/provider_incidents)" ]; then
+            echo "No provider incident changes to commit"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/normalized/provider_incidents
+          git commit -m "chore: update provider incidents [$(date -u +%Y-%m-%dT%H:%MZ)]"
+
+          for attempt in 1 2 3; do
+            if git pull --rebase origin "${{ github.event.repository.default_branch }}" && git push; then
+              exit 0
+            fi
+            sleep $((attempt * 5))
+          done
+          exit 1
+
+      - name: Package raw feeds for short-lived debugging
+        if: always()
+        run: |
+          if [ -d data/raw/provider_incidents ]; then
+            tar -czf "$RUNNER_TEMP/provider-incidents-raw.tar.gz" -C data/raw/provider_incidents .
+          fi
+
+      - name: Upload raw feeds
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: provider-incidents-raw
+          path: ${{ runner.temp }}/provider-incidents-raw.tar.gz
+          if-no-files-found: warn
+          retention-days: 3

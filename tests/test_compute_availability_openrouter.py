@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from compute_availability_data.models import Snapshot
+from compute_availability_data.models import DatasetRecord, Snapshot
 from compute_availability_data.sources.openrouter import OpenRouterSource
 from compute_availability_data.storage import StorageManager
 
@@ -38,6 +38,94 @@ def test_openrouter_extract_persists_canonical_slug_and_provider_prefix() -> Non
     assert record.model_id == "qwen/qwen3.5-flash-02-23"
     assert record.canonical_slug == "qwen/qwen3.5-flash-20260224"
     assert record.provider_prefix == "qwen"
+
+
+def test_openrouter_extract_preserves_rich_official_catalog_fields() -> None:
+    source = OpenRouterSource()
+    snapshot = Snapshot(
+        name="openrouter_models",
+        source_url=source.URL,
+        body=json.dumps(
+            {
+                "data": [
+                    {
+                        "id": "example/multimodal-model",
+                        "canonical_slug": "example/multimodal-model-20260718",
+                        "name": "Multimodal Model",
+                        "description": "A rich model record.",
+                        "hugging_face_id": "example/model",
+                        "created": 1710000000,
+                        "context_length": 1_000_000,
+                        "architecture": {
+                            "modality": "text+image->text",
+                            "input_modalities": ["text", "image"],
+                            "output_modalities": ["text"],
+                            "tokenizer": "Example",
+                            "instruct_type": "chatml",
+                        },
+                        "supported_parameters": ["temperature", "tools"],
+                        "default_parameters": {"temperature": 0.2},
+                        "per_request_limits": {"prompt_tokens": "1000000"},
+                        "pricing": {
+                            "prompt": "0.000001",
+                            "completion": "0.000004",
+                            "input_cache_read": "0.0000001",
+                            "request": "0",
+                        },
+                        "top_provider": {
+                            "context_length": 1_000_000,
+                            "max_completion_tokens": 65_536,
+                            "is_moderated": False,
+                        },
+                        "expiration_date": "2027-01-01",
+                        "knowledge_cutoff": "2026-06",
+                        "benchmarks": {"quality": 0.9},
+                        "links": {"documentation": "https://example.com"},
+                        "reasoning": {"supported": True},
+                        "supported_voices": ["alloy"],
+                    }
+                ]
+            }
+        ),
+    )
+
+    record = source.extract(snapshot, run_id="run-1", scraped_at="2026-07-18T00:00:00Z")[0]
+
+    assert record.description == "A rich model record."
+    assert record.architecture_modality == "text+image->text"
+    assert json.loads(record.input_modalities_json or "[]") == ["text", "image"]
+    assert json.loads(record.supported_parameters_json or "[]") == ["temperature", "tools"]
+    assert record.pricing_request == 0.0
+    assert record.pricing_input_cache_read == 0.0000001
+    assert record.top_provider_context_length == 1_000_000
+    assert record.top_provider_is_moderated is False
+    assert record.knowledge_cutoff == "2026-06"
+    assert json.loads(record.benchmarks_json or "{}") == {"quality": 0.9}
+
+
+def test_openrouter_fetch_requests_all_output_modalities(monkeypatch) -> None:
+    captured: dict[str, object] = {}
+
+    class FakeResponse:
+        text = '{"data": []}'
+
+        @staticmethod
+        def raise_for_status() -> None:
+            return None
+
+    def fake_get(url, **kwargs):
+        captured["url"] = url
+        captured.update(kwargs)
+        return FakeResponse()
+
+    monkeypatch.setenv("OPENROUTER_API_KEY", "test-key")
+    monkeypatch.setattr("compute_availability_data.sources.openrouter.requests.get", fake_get)
+
+    snapshot = OpenRouterSource().fetch_snapshot()
+
+    assert snapshot.body == '{"data": []}'
+    assert captured["params"] == {"output_modalities": "all"}
+    assert captured["headers"]["Authorization"] == "Bearer test-key"
 
 
 def test_storage_round_trips_openrouter_identity_columns(tmp_path: Path) -> None:
@@ -209,3 +297,46 @@ def test_storage_appends_openrouter_model_when_tracked_fields_change(tmp_path: P
     assert latest["snapshot_ts"] == "2026-04-21T00:00:00Z"
     assert latest["pricing_prompt"] == 0.00000007
     assert latest["pricing_completion"] == 0.00000040
+
+
+def test_current_catalog_rejects_partial_response_and_preserves_previous_file(tmp_path: Path) -> None:
+    storage = StorageManager(tmp_path)
+    previous = [
+        DatasetRecord(
+            dataset_id="raw_openrouter_models",
+            source_url="fixture://models",
+            source_run_id="run-1",
+            scraped_at="2026-07-17T00:00:00Z",
+            snapshot_ts="2026-07-17T00:00:00Z",
+            model_id=f"provider-{index % 20}/model-{index}",
+            canonical_slug=f"provider-{index % 20}/model-{index}",
+            provider_prefix=f"provider-{index % 20}",
+        )
+        for index in range(400)
+    ]
+    storage.upsert_dataset("raw_openrouter_models", previous)
+    before = storage.load_current_catalog()
+
+    partial = [
+        DatasetRecord(
+            dataset_id="raw_openrouter_models",
+            source_url="fixture://models",
+            source_run_id="run-2",
+            scraped_at="2026-07-18T00:00:00Z",
+            snapshot_ts="2026-07-18T00:00:00Z",
+            model_id="provider-0/model-0",
+            canonical_slug="provider-0/model-0",
+            provider_prefix="provider-0",
+        )
+    ]
+
+    try:
+        storage.upsert_dataset("raw_openrouter_models", partial)
+    except ValueError as exc:
+        assert "collapsed" in str(exc)
+    else:
+        raise AssertionError("partial catalog response must be rejected")
+
+    after = storage.load_current_catalog()
+    assert len(after) == len(before) == 400
+    assert set(after["model_id"]) == set(before["model_id"])

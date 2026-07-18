@@ -366,6 +366,36 @@ def estimate_usage_revenue(
     return pd.concat(resolved_frames, ignore_index=True) if resolved_frames else estimated.drop(columns="_usage_date")
 
 
+def xiaomi_mimo_backpricing_hazard(frame: pd.DataFrame) -> pd.Series:
+    """Flag Xiaomi rows whose later model identity must not be priced backward."""
+    if frame.empty:
+        return pd.Series(dtype=bool, index=frame.index)
+    usage_date = pd.to_datetime(frame.get("usage_date"), errors="coerce").dt.strftime("%Y-%m-%d")
+    provider = frame.get(
+        "entity_id",
+        frame.get("provider_slug", pd.Series("", index=frame.index)),
+    ).astype("string").str.lower()
+    model = frame.get("model_permaslug", pd.Series("", index=frame.index)).astype("string").str.lower()
+    return (
+        provider.eq("xiaomi")
+        & usage_date.between("2026-03-19", "2026-04-05")
+        & model.str.startswith("xiaomi/mimo-v2-", na=False)
+    )
+
+
+def build_provider_revenue_estimates(provider_activity: pd.DataFrame, pricing: pd.DataFrame) -> pd.DataFrame:
+    """Build the dashboard estimate, including documented historical price backcasts."""
+    if provider_activity.empty:
+        return provider_activity.copy()
+    activity = provider_activity[~xiaomi_mimo_backpricing_hazard(provider_activity)].copy()
+    return estimate_usage_revenue(
+        activity,
+        pricing,
+        slug_strategy="canonical",
+        pricing_strategy="provider_fallback",
+    )
+
+
 def _empty_conservative_economics() -> pd.DataFrame:
     return pd.DataFrame(columns=CONSERVATIVE_ECONOMICS_COLUMNS)
 

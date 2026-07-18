@@ -32,6 +32,7 @@ dev = [
 
 [project.scripts]
 openrouter-data = "openrouter_data.cli:main"
+openrouter-official-data = "openrouter_official_data.cli:main"
 github-trending-data = "github_trending_data.cli:main"
 provider-adoption-data = "provider_adoption_data.cli:main"
 semiconductor-memory-data = "semiconductor_memory_data.cli:main"
@@ -47,6 +48,12 @@ google-trends-data = "google_trends_data.cli:main"
 google-trends-watchlist = "google_trends_data.batch_cli:main"
 vercel-ai-data = "vercel_ai_data.cli:main"
 ramp-data = "ramp_data.cli:main"
+ofr-macro-data = "ofr_macro_data.cli:main"
+global-news-data = "global_news_data.cli:main"
+provider-incident-data = "provider_incident_data.cli:main"
+ai-hiring-data = "ai_hiring_data.cli:main"
+fred-macro-data = "fred_macro_data.cli:main"
+sec-edgar-data = "sec_edgar_data.cli:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

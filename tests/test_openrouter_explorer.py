@@ -222,3 +222,36 @@ def test_model_activity_storage_is_parquet_only_and_retains_180_days(tmp_path: P
     root = tmp_path / "data" / "normalized" / "openrouter"
     assert (root / "openrouter_model_activity.parquet").exists()
     assert not (root / "openrouter_model_activity.csv").exists()
+    archive_path = tmp_path / "data" / "normalized" / "openrouter_archive" / "openrouter_model_activity_2025.parquet"
+    assert archive_path.exists()
+    archived = pd.read_parquet(archive_path)
+    assert archived["usage_date"].tolist() == ["2025-12-01"]
+
+
+def test_model_activity_archive_upserts_without_duplicates(tmp_path: Path) -> None:
+    storage = StorageManager(tmp_path)
+    common = {
+        "dataset_id": "openrouter_model_activity",
+        "source_url": "fixture://activity",
+        "scraped_at": "2026-07-16T00:00:00Z",
+        "model_permaslug": "openai/gpt-test",
+        "category_slug": "all",
+        "request_count": 10,
+    }
+    first = [
+        DatasetRecord(**common, source_run_id="run-1", usage_date="2025-12-01", total_tokens=100),
+        DatasetRecord(**common, source_run_id="run-1", usage_date="2026-07-16", total_tokens=200),
+    ]
+    second = [
+        DatasetRecord(**common, source_run_id="run-2", usage_date="2025-12-01", total_tokens=150),
+        DatasetRecord(**common, source_run_id="run-2", usage_date="2026-07-17", total_tokens=250),
+    ]
+
+    storage.upsert_dataset("openrouter_model_activity", first)
+    storage.upsert_dataset("openrouter_model_activity", second)
+
+    archive_path = tmp_path / "data" / "normalized" / "openrouter_archive" / "openrouter_model_activity_2025.parquet"
+    archived = pd.read_parquet(archive_path)
+    assert len(archived) == 1
+    assert float(archived.iloc[0]["total_tokens"]) == 150.0
+    assert archived.iloc[0]["source_run_id"] == "run-2"

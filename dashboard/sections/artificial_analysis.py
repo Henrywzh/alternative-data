@@ -17,6 +17,7 @@ from dashboard import remote
 from dashboard.checks import CheckResult, run_checks
 from dashboard.data import (DOMAIN_ORDER, DATASET_REGISTRY, DatasetLoadResult, FreshnessInfo, dataset_source_for_domain, domain_dataset_ids, load_domain_datasets, load_latest_manifest, repo_root)
 from openrouter_revenue import (build_price_context, build_conservative_provider_economics, estimate_usage_revenue, summarize_economics_coverage)
+from artificial_analysis_data.countries import artificial_analysis_country_label
 from semiconductor_memory_data.sources.config import AI_DEMAND_PPI_WEIGHTS
 from dashboard.theme import (ACCENT, BG, SIDEBAR, CARD, BORDER, TEXT, MUTED, GREEN, RED, YELLOW, GRID, TICK, MODEL_COLORS)
 from dashboard.components import (format_metric, _empty_dataset_frame, _styler_applymap_compat, WEEKLY_MONTHLY_OTHER_PROVIDERS, DAILY_OTHER_PROVIDERS, US_PROVIDER_ORDER, CHINA_PROVIDER_ORDER, order_provider_columns, regroup_provider_pivot_for_display, render_dataset_guard, format_scraped_at_display, dataframe_for_display, make_stacked_bar, make_stacked_area_chart, make_line_chart, make_yoy_growth_chart, kpi_card_html, kpi_grid_html, _top_n_with_others)
@@ -63,54 +64,11 @@ def _frontier_pivot(
     return pivot
 
 
-ARTIFICIAL_ANALYSIS_PROVIDER_COUNTRIES = {
-    "ai2": "United States",
-    "anthropic": "United States",
-    "arcee": "United States",
-    "aws": "United States",
-    "azure": "United States",
-    "databricks": "United States",
-    "google": "United States",
-    "ibm": "United States",
-    "liquidai": "United States",
-    "meta": "United States",
-    "nvidia": "United States",
-    "openai": "United States",
-    "perplexity": "United States",
-    "reka-ai": "United States",
-    "servicenow": "United States",
-    "snowflake": "United States",
-    "xai": "United States",
-    "alibaba": "China",
-    "baidu": "China",
-    "bytedance_seed": "China",
-    "china-mobile": "China",
-    "deepseek": "China",
-    "inclusionai": "China",
-    "kimi": "China",
-    "kwaikat": "China",
-    "longcat": "China",
-    "minimax": "China",
-    "nanbeige": "China",
-    "stepfun": "China",
-    "xiaomi": "China",
-    "zai": "China",
-}
-
-
 def _artificial_analysis_country_label(row: pd.Series) -> str | None:
-    raw_country = row.get("creator_country")
-    if pd.notna(raw_country):
-        normalized = str(raw_country).strip().lower()
-        if normalized in {"us", "usa", "united states", "united states of america"}:
-            return "United States"
-        if normalized in {"cn", "china", "prc", "people's republic of china"}:
-            return "China"
-
-    raw_slug = row.get("creator_slug")
-    if pd.isna(raw_slug):
-        return None
-    return ARTIFICIAL_ANALYSIS_PROVIDER_COUNTRIES.get(str(raw_slug).strip().lower())
+    return artificial_analysis_country_label(
+        creator_country=row.get("creator_country"),
+        creator_slug=row.get("creator_slug"),
+    )
 
 
 def _china_catchup_lag(frontier_by_country: pd.DataFrame) -> pd.DataFrame:
@@ -207,7 +165,7 @@ def _frontier_points_with_metadata(
     return pd.DataFrame(rows, columns=columns)
 
 
-@st.cache_data(ttl=3600)
+@st.cache_data(ttl=3600, max_entries=8)
 def compute_artificial_analysis_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, object]:
     views: dict[str, object] = {}
     models_result = datasets.get("artificial_analysis_models_daily")

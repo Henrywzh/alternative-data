@@ -6,8 +6,30 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import pandas as pd
+import pyarrow.parquet as pq
+from pyarrow.lib import ArrowInvalid
 
 from dashboard import remote
+
+
+def _read_parquet_projected(source, columns: list[str] | None) -> pd.DataFrame:
+    """Read projected Parquet columns with a schema-transition fallback."""
+    try:
+        return pd.read_parquet(source, columns=columns)
+    except (ArrowInvalid, KeyError, ValueError):
+        if columns is None:
+            raise
+        if hasattr(source, "seek"):
+            source.seek(0)
+        available = set(pq.ParquetFile(source).schema_arrow.names)
+        projected = [column for column in columns if column in available]
+        if len(projected) == len(columns):
+            raise
+        if hasattr(source, "seek"):
+            source.seek(0)
+        # Retry only the available projection. Missing transition columns are
+        # supplied later by reindexing without ever loading the full table.
+        return pd.read_parquet(source, columns=projected)
 
 
 DATASET_REGISTRY: dict[str, dict[str, object]] = {
@@ -551,10 +573,196 @@ DATASET_REGISTRY: dict[str, dict[str, object]] = {
         "metric_column": "adoption_rate",
         "required_columns": ["category_slug", "vendor_name", "date_month", "adoption_rate"],
     },
+    "official_model_rankings_daily": {
+        "label": "Official OpenRouter Model Rankings (daily)",
+        "domain": "openrouter_official",
+        "natural_keys": ["usage_date", "model_permaslug", "period", "modality", "context_bucket", "category", "language_type"],
+        "primary_date_column": "usage_date",
+        "metric_column": "total_tokens",
+        "required_columns": ["usage_date", "model_permaslug", "total_tokens", "period", "is_other"],
+    },
+    "official_app_rankings": {
+        "label": "Official OpenRouter App Rankings",
+        "domain": "openrouter_official",
+        "natural_keys": ["snapshot_date", "ranking_type", "app_id"],
+        "primary_date_column": "snapshot_date",
+        "metric_column": "total_tokens",
+        "required_columns": ["snapshot_date", "ranking_type", "app_id", "rank", "total_tokens", "total_requests"],
+    },
+    "official_task_classifications": {
+        "label": "Official OpenRouter Task Classifications",
+        "domain": "openrouter_official",
+        "natural_keys": ["snapshot_date", "window_days", "tag"],
+        "primary_date_column": "snapshot_date",
+        "metric_column": "usage_share",
+        "required_columns": ["snapshot_date", "window_days", "tag", "usage_share", "token_share"],
+    },
+    "official_task_models": {
+        "label": "Official OpenRouter Task Models",
+        "domain": "openrouter_official",
+        "natural_keys": ["snapshot_date", "window_days", "tag", "model_permaslug"],
+        "primary_date_column": "snapshot_date",
+        "metric_column": "tag_usage_share",
+        "required_columns": ["snapshot_date", "window_days", "tag", "model_permaslug", "rank", "tag_usage_share"],
+    },
+    "official_task_macro_categories": {
+        "label": "Official OpenRouter Task Macro Categories",
+        "domain": "openrouter_official",
+        "natural_keys": ["snapshot_date", "window_days", "macro_category"],
+        "primary_date_column": "snapshot_date",
+        "metric_column": "usage_share",
+        "required_columns": ["snapshot_date", "window_days", "macro_category", "usage_share", "token_share"],
+    },
+    "official_providers": {
+        "label": "Official OpenRouter Providers",
+        "domain": "openrouter_official",
+        "natural_keys": ["snapshot_date", "provider_slug"],
+        "primary_date_column": "snapshot_date",
+        "metric_column": None,
+        "required_columns": ["snapshot_date", "provider_slug", "provider_name"],
+    },
+    "official_benchmarks": {
+        "label": "Official OpenRouter Benchmarks",
+        "domain": "openrouter_official",
+        "natural_keys": ["snapshot_date", "benchmark_source", "model_permaslug", "display_name", "arena", "category", "variant_index"],
+        "primary_date_column": "snapshot_date",
+        "metric_column": "intelligence_index",
+        "required_columns": ["snapshot_date", "benchmark_source", "model_permaslug", "display_name", "variant_index"],
+    },
+    "official_legacy_reconciliation": {
+        "label": "OpenRouter Official / Legacy Reconciliation",
+        "domain": "openrouter_official",
+        "natural_keys": ["usage_date"],
+        "primary_date_column": "usage_date",
+        "metric_column": "official_total_tokens",
+        "required_columns": ["usage_date", "official_total_tokens", "official_named_tokens", "official_other_tokens"],
+    },
+    "official_source_health": {
+        "label": "OpenRouter Official Source Health",
+        "domain": "openrouter_official",
+        "natural_keys": ["source_run_id", "dataset_id"],
+        "primary_date_column": "scraped_at",
+        "metric_column": "row_count",
+        "required_columns": ["dataset_id", "source_run_id", "scraped_at", "row_count", "status"],
+    },
+    "market_pulse_daily": {
+        "label": "Market Pulse (daily)",
+        "domain": "overview",
+        "natural_keys": ["pulse_date"],
+        "primary_date_column": "pulse_date",
+        "metric_column": "openrouter_total_tokens",
+        "required_columns": ["pulse_date", "openrouter_total_tokens", "openrouter_top_model"],
+    },
+    "overview_signal_series": {
+        "label": "Overview Signal Series",
+        "domain": "overview",
+        "natural_keys": ["signal_id", "signal_date"],
+        "primary_date_column": "signal_date",
+        "metric_column": "value",
+        "required_columns": ["signal_id", "signal_date", "value", "unit", "source_dataset"],
+    },
+    "provider_incidents": {
+        "label": "Provider-reported Incidents",
+        "domain": "provider_incidents",
+        "natural_keys": ["provider_id", "source_incident_id"],
+        "primary_date_column": "published_at",
+        "metric_column": "duration_minutes",
+        "required_columns": ["provider_id", "source_incident_id", "title", "normalized_status", "started_at"],
+    },
+    "provider_incident_updates": {
+        "label": "Provider Incident Updates",
+        "domain": "provider_incidents",
+        "natural_keys": ["provider_id", "source_incident_id", "source_update_id"],
+        "primary_date_column": "update_at",
+        "metric_column": None,
+        "required_columns": ["provider_id", "source_incident_id", "source_update_id", "update_at"],
+    },
+    "provider_incident_components": {
+        "label": "Provider Incident Components",
+        "domain": "provider_incidents",
+        "natural_keys": ["provider_id", "source_incident_id", "component_id"],
+        "primary_date_column": "scraped_at",
+        "metric_column": None,
+        "required_columns": ["provider_id", "source_incident_id", "component_id", "component_name"],
+    },
+    "provider_incident_source_health": {
+        "label": "Provider Incident Source Health",
+        "domain": "provider_incidents",
+        "natural_keys": ["provider_id"],
+        "primary_date_column": "scraped_at",
+        "metric_column": "incident_rows",
+        "required_columns": ["provider_id", "source_url", "status", "scraped_at"],
+    },
+    "indeed_ai_posting_share_daily": {
+        "label": "Indeed AI Posting Share",
+        "domain": "ai_hiring",
+        "natural_keys": ["date", "jobcountry"],
+        "primary_date_column": "date",
+        "metric_column": "ai_share_pct",
+        "required_columns": ["date", "jobcountry", "ai_share_pct", "license"],
+    },
+    "hiring_companies": {
+        "label": "AI Hiring Company Registry",
+        "domain": "ai_hiring",
+        "natural_keys": ["company_id"],
+        "primary_date_column": "coverage_start_date",
+        "metric_column": None,
+        "required_columns": ["company_id", "company_name", "source_id", "coverage_start_date"],
+    },
+    "hiring_jobs": {
+        "label": "AI Company Job Lifecycle",
+        "domain": "ai_hiring",
+        "natural_keys": ["company_id", "source_job_id"],
+        "primary_date_column": "first_seen_at",
+        "metric_column": None,
+        "required_columns": ["company_id", "source_job_id", "title", "job_url", "status", "role_family"],
+    },
+    "hiring_job_events": {
+        "label": "AI Hiring Job Events",
+        "domain": "ai_hiring",
+        "natural_keys": ["company_id", "source_job_id", "event_at", "event_type"],
+        "primary_date_column": "event_at",
+        "metric_column": None,
+        "required_columns": ["company_id", "source_job_id", "event_at", "event_type"],
+    },
+    "hiring_demand_daily": {
+        "label": "AI Hiring Demand Daily",
+        "domain": "ai_hiring",
+        "natural_keys": ["snapshot_date", "company_id", "role_family"],
+        "primary_date_column": "snapshot_date",
+        "metric_column": "active_requisitions",
+        "required_columns": ["snapshot_date", "company_id", "role_family", "active_postings", "active_requisitions"],
+    },
+    "hiring_source_health": {
+        "label": "AI Hiring Source Health",
+        "domain": "ai_hiring",
+        "natural_keys": ["source_id"],
+        "primary_date_column": "scraped_at",
+        "metric_column": "row_count",
+        "required_columns": ["source_id", "source_kind", "status", "row_count"],
+    },
 }
 
 
 DOMAIN_ORDER = {
+    "overview": [
+        "market_pulse_daily",
+        "overview_signal_series",
+    ],
+    "provider_incidents": [
+        "provider_incidents",
+        "provider_incident_updates",
+        "provider_incident_components",
+        "provider_incident_source_health",
+    ],
+    "ai_hiring": [
+        "indeed_ai_posting_share_daily",
+        "hiring_companies",
+        "hiring_jobs",
+        "hiring_job_events",
+        "hiring_demand_daily",
+        "hiring_source_health",
+    ],
     "rankings": [
         "top_models",
         "market_share",
@@ -566,12 +774,39 @@ DOMAIN_ORDER = {
         "provider_daily_activity",
         "openrouter_task_spend",
     ],
+    # Focused OpenRouter page domains keep the large Intelligence surface and
+    # workload composition views from loading one another's datasets.
+    "openrouter_intelligence": [
+        "top_models",
+        "market_share",
+        "provider_weekly_requests",
+        "categories_programming",
+        "openrouter_model_activity",
+        "provider_daily_activity",
+        "openrouter_task_spend",
+    ],
+    "openrouter_workloads": [
+        "context_length_requests",
+        "modality_rankings",
+    ],
     "apps": [
         "app_metadata_snapshots",
         "app_usage_daily",
         "app_top_models_daily_snapshot",
         "apps_global_ranking_snapshots",
         "apps_trending_snapshots",
+    ],
+    # The dedicated Models tab needs only catalog, activity, and app-usage
+    # detail. Keeping these focused domains separate avoids loading every
+    # rankings and Apps panel merely to render the explorer.
+    "openrouter_model_explorer": [
+        "openrouter_model_activity",
+        "provider_daily_activity",
+        "app_metadata_snapshots",
+        "app_usage_daily",
+    ],
+    "openrouter_catalog": [
+        "raw_openrouter_models",
     ],
     "provider_adoption": [
         "pypi_downloads_daily",
@@ -598,6 +833,24 @@ DOMAIN_ORDER = {
     ],
     "compute_availability": [
         "raw_openrouter_models",
+    ],
+    "openrouter_official": [
+        "official_model_rankings_daily",
+        "official_app_rankings",
+        "official_task_classifications",
+        "official_task_models",
+        "official_task_macro_categories",
+        "official_providers",
+        "official_benchmarks",
+        "official_legacy_reconciliation",
+        "official_source_health",
+    ],
+    # Only this compact subset is loaded by OpenRouter Intelligence. The larger
+    # benchmarks/tasks/apps history remains queryable without inflating the tab.
+    "openrouter_official_market": [
+        "official_model_rankings_daily",
+        "official_legacy_reconciliation",
+        "official_source_health",
     ],
     "vercel_ai": [
         "vercel_model_leaderboard",
@@ -840,7 +1093,7 @@ ACTIVITY_COLUMNS = [
     "delta_pp",
 ]
 
-COMPUTE_AVAILABILITY_COLUMNS = [
+OPENROUTER_MODEL_COLUMNS = [
     "snapshot_ts",
     "model_id",
     "canonical_slug",
@@ -848,10 +1101,38 @@ COMPUTE_AVAILABILITY_COLUMNS = [
     "created_at",
     "context_length",
     "architecture",
+    "description",
+    "hugging_face_id",
+    "architecture_modality",
+    "input_modalities_json",
+    "output_modalities_json",
+    "tokenizer",
+    "instruct_type",
+    "supported_parameters_json",
+    "default_parameters_json",
+    "per_request_limits_json",
     "pricing_prompt",
     "pricing_completion",
+    "pricing_request",
+    "pricing_image",
+    "pricing_web_search",
+    "pricing_internal_reasoning",
+    "pricing_input_cache_read",
+    "pricing_input_cache_write",
     "top_provider_id",
+    "top_provider_context_length",
+    "top_provider_max_completion_tokens",
+    "top_provider_is_moderated",
     "provider_prefix",
+    "expiration_date",
+    "knowledge_cutoff",
+    "benchmarks_json",
+    "links_json",
+    "reasoning_json",
+    "supported_voices_json",
+]
+
+LEGACY_COMPUTE_AVAILABILITY_COLUMNS = [
     "instance_type_name",
     "gpu_type",
     "gpu_count",
@@ -864,6 +1145,11 @@ COMPUTE_AVAILABILITY_COLUMNS = [
     "product_description",
     "spot_price",
     "price_timestamp",
+]
+
+COMPUTE_AVAILABILITY_COLUMNS = [
+    *OPENROUTER_MODEL_COLUMNS,
+    *LEGACY_COMPUTE_AVAILABILITY_COLUMNS,
 ]
 
 ARTIFICIAL_ANALYSIS_COLUMNS = [
@@ -908,6 +1194,111 @@ EXPECTED_COLUMNS = list(dict.fromkeys(
     PROVIDER_ADOPTION_COLUMNS + SEMICONDUCTOR_COLUMNS + BENCHMARK_COLUMNS +
     ACTIVITY_COLUMNS + COMPUTE_AVAILABILITY_COLUMNS + ARTIFICIAL_ANALYSIS_COLUMNS
 ))
+
+# The OpenRouter storage layer intentionally keeps a stable, unioned schema so
+# old and new snapshots remain append-compatible. The dashboard should not
+# carry that storage schema (or the still larger EXPECTED_COLUMNS union) into
+# memory. These projections are the per-dataset analytical contracts consumed
+# by the current Streamlit views.
+OPENROUTER_LOAD_COLUMNS: dict[str, list[str]] = {
+    "top_models": [*CORE_COLUMNS, *RANKINGS_COLUMNS],
+    "market_share": [*CORE_COLUMNS, *RANKINGS_COLUMNS],
+    "provider_weekly_requests": [*CORE_COLUMNS, *RANKINGS_COLUMNS],
+    "context_length_requests": [*CORE_COLUMNS, *RANKINGS_COLUMNS],
+    "modality_rankings": [*CORE_COLUMNS, *RANKINGS_COLUMNS],
+    "categories_programming": [*CORE_COLUMNS, *RANKINGS_COLUMNS],
+    "openrouter_model_activity": [
+        *CORE_COLUMNS,
+        "usage_date",
+        "model_permaslug",
+        "entity_id",
+        "entity_name",
+        "category_slug",
+        "total_tokens",
+        "prompt_tokens",
+        "completion_tokens",
+        "reasoning_tokens",
+        "request_count",
+    ],
+    "provider_daily_activity": [
+        *CORE_COLUMNS,
+        "usage_date",
+        "model_permaslug",
+        "entity_id",
+        "entity_name",
+        "category_slug",
+        "total_tokens",
+        "prompt_tokens",
+        "completion_tokens",
+        "reasoning_tokens",
+        "request_count",
+    ],
+    "openrouter_task_spend": [
+        *CORE_COLUMNS,
+        "snapshot_date",
+        "period",
+        "window_days",
+        "category_slug",
+        "macro_category",
+        "task_share_of_total",
+        "model_permaslug",
+        "model_share",
+        "rank",
+    ],
+    "app_metadata_snapshots": [
+        *CORE_COLUMNS,
+        "app_id",
+        "app_name",
+        "origin_url",
+        "main_url",
+        "description",
+        "categories",
+        "group_by_origin",
+        "is_private",
+        "is_hidden",
+        "created_at",
+        "scrape_date",
+    ],
+    "app_usage_daily": [
+        *CORE_COLUMNS,
+        "app_id",
+        "app_name",
+        "usage_date",
+        "model_permaslug",
+        "total_tokens",
+    ],
+    "app_top_models_daily_snapshot": [
+        *CORE_COLUMNS,
+        "app_id",
+        "app_name",
+        "snapshot_date",
+        "model_permaslug",
+        "total_tokens",
+        "rank",
+        "observed_at",
+    ],
+    "apps_global_ranking_snapshots": [
+        *CORE_COLUMNS,
+        "snapshot_date",
+        "period",
+        "rank",
+        "app_id",
+        "app_name",
+        "categories",
+        "tokens",
+    ],
+    "apps_trending_snapshots": [
+        *CORE_COLUMNS,
+        "snapshot_date",
+        "rank",
+        "app_id",
+        "app_name",
+        "categories",
+        "tokens",
+        "growth_percent",
+    ],
+    "raw_openrouter_models": [*CORE_COLUMNS, *OPENROUTER_MODEL_COLUMNS],
+}
 
 PROVIDER_ADOPTION_LOAD_COLUMNS: dict[str, list[str]] = {
     "pypi_downloads_daily": [
@@ -1099,7 +1490,176 @@ RAMP_LOAD_COLUMNS: dict[str, list[str]] = {
     ],
 }
 
+OPENROUTER_OFFICIAL_LOAD_COLUMNS: dict[str, list[str]] = {
+    "official_model_rankings_daily": [
+        *CORE_COLUMNS, "usage_date", "model_permaslug", "total_tokens", "rank", "is_other",
+        "period", "modality", "context_bucket", "category", "language_type", "is_sampled",
+        "as_of", "window_start_date", "window_end_date", "api_version",
+    ],
+    "official_app_rankings": [
+        *CORE_COLUMNS, "snapshot_date", "ranking_type", "app_id", "app_name", "rank",
+        "total_tokens", "total_requests", "window_start_date", "window_end_date", "as_of", "api_version",
+    ],
+    "official_task_classifications": [
+        *CORE_COLUMNS, "snapshot_date", "window_days", "as_of", "is_sampled", "tag",
+        "display_name", "macro_category", "usage_share", "token_share",
+        "category_usage_share", "category_token_share",
+    ],
+    "official_task_models": [
+        *CORE_COLUMNS, "snapshot_date", "window_days", "as_of", "is_sampled", "tag",
+        "model_permaslug", "rank", "tag_usage_share", "tag_token_share",
+    ],
+    "official_task_macro_categories": [
+        *CORE_COLUMNS, "snapshot_date", "window_days", "as_of", "is_sampled",
+        "macro_category", "display_name", "usage_share", "token_share",
+    ],
+    "official_providers": [
+        *CORE_COLUMNS, "snapshot_date", "provider_slug", "provider_name", "headquarters",
+        "datacenters_json", "status_page_url", "privacy_policy_url", "terms_of_service_url",
+    ],
+    "official_benchmarks": [
+        *CORE_COLUMNS, "snapshot_date", "benchmark_source", "model_permaslug", "display_name",
+        "variant_index", "arena", "category", "intelligence_index", "coding_index", "agentic_index",
+        "elo", "win_rate", "avg_generation_time_ms", "first_place", "second_place", "third_place",
+        "fourth_place", "tournament_total", "pricing_prompt", "pricing_completion", "as_of",
+        "api_version", "citation",
+    ],
+    "official_legacy_reconciliation": [
+        *CORE_COLUMNS, "usage_date", "official_total_tokens", "official_named_tokens",
+        "official_other_tokens", "official_models", "matched_activity_models",
+        "official_tokens_with_activity_match", "legacy_activity_tokens_on_official_models",
+        "matched_provider_models", "official_tokens_with_provider_match",
+        "legacy_provider_tokens_on_official_models", "activity_official_token_coverage",
+        "provider_official_token_coverage",
+    ],
+    "official_source_health": [
+        *CORE_COLUMNS, "row_count", "first_date", "latest_date", "duplicate_rows", "status", "detail",
+    ],
+}
+
+OVERVIEW_LOAD_COLUMNS: dict[str, list[str]] = {
+    "market_pulse_daily": [
+        *CORE_COLUMNS,
+        "pulse_date",
+        "openrouter_total_tokens",
+        "openrouter_named_tokens",
+        "openrouter_other_tokens",
+        "openrouter_other_share_pct",
+        "openrouter_top_model",
+        "openrouter_top_model_tokens",
+        "openrouter_top_model_share_pct",
+        "openrouter_source_url",
+        "openrouter_as_of",
+        "catalog_model_count",
+        "catalog_models_added_30d",
+        "catalog_as_of",
+        "catalog_source_url",
+        "official_provider_count",
+        "official_provider_as_of",
+        "top_app",
+        "top_app_tokens",
+        "top_app_requests",
+        "top_app_as_of",
+        "top_app_source_url",
+        "top_task",
+        "top_task_share_pct",
+        "top_task_window_days",
+        "top_task_as_of",
+        "top_task_source_url",
+        "ramp_as_of",
+        "ramp_ai_adoption_pct",
+        "ramp_ai_adoption_mom_pp",
+        "ramp_ai_adoption_yoy_pp",
+        "ramp_source_url",
+        "semiconductor_as_of",
+        "ai_demand_ppi",
+        "ai_demand_ppi_mom_pct",
+        "ai_demand_ppi_3m_trend",
+        "semiconductor_source_url",
+        "momentum_provider",
+        "momentum_score",
+        "momentum_as_of",
+        "momentum_source_url",
+        "frontier_model",
+        "frontier_creator",
+        "frontier_intelligence_index",
+        "frontier_price_1m",
+        "frontier_as_of",
+        "frontier_source_url",
+    ],
+    "overview_signal_series": [
+        *CORE_COLUMNS,
+        "signal_id",
+        "signal_label",
+        "signal_date",
+        "time_grain",
+        "value",
+        "unit",
+        "detail_label",
+        "source_dataset",
+        "is_complete",
+    ],
+}
+
+PROVIDER_INCIDENT_LOAD_COLUMNS: dict[str, list[str]] = {
+    "provider_incidents": [
+        *CORE_COLUMNS, "provider_id", "provider_name", "source_system", "source_incident_id",
+        "incident_url", "title", "incident_type", "raw_status", "normalized_status", "raw_severity",
+        "severity_level", "started_at", "published_at", "resolved_at", "duration_minutes", "is_active",
+        "affected_components_json", "affected_regions_json", "latest_message", "source_confidence", "rule_version",
+    ],
+    "provider_incident_updates": [
+        *CORE_COLUMNS, "provider_id", "provider_name", "source_system", "source_incident_id",
+        "source_update_id", "update_at", "raw_status", "message",
+    ],
+    "provider_incident_components": [
+        *CORE_COLUMNS, "provider_id", "provider_name", "source_system", "source_incident_id",
+        "component_id", "component_name",
+    ],
+    "provider_incident_source_health": [
+        *CORE_COLUMNS, "provider_id", "provider_name", "source_system", "status", "status_code",
+        "response_ms", "content_bytes", "content_hash", "etag", "last_modified", "incident_rows",
+        "last_good_incident_rows", "detail",
+    ],
+}
+
+AI_HIRING_LOAD_COLUMNS: dict[str, list[str]] = {
+    "indeed_ai_posting_share_daily": [
+        *CORE_COLUMNS, "date", "jobcountry", "ai_share_pct", "source_frequency",
+        "source_refresh_cadence", "license",
+    ],
+    "hiring_companies": [
+        *CORE_COLUMNS, "company_id", "company_name", "company_segment", "source_id",
+        "source_platform", "board_token", "careers_url", "coverage_start_date", "cohort_version", "is_active",
+        "continuous_coverage_start_date",
+    ],
+    "hiring_jobs": [
+        *CORE_COLUMNS, "source_id", "company_id", "company_name", "company_segment", "source_platform",
+        "board_token", "source_job_id", "source_requisition_id", "title", "department", "team",
+        "location_raw", "country_code", "workplace_type", "employment_type", "published_at",
+        "source_updated_at", "job_url", "apply_url", "role_family", "seniority", "is_ai_role",
+        "ai_role_confidence", "classifier_version", "content_hash", "first_seen_at", "last_changed_at",
+        "missing_since_at", "closed_at", "status", "consecutive_missing_runs",
+    ],
+    "hiring_job_events": [
+        *CORE_COLUMNS, "company_id", "company_name", "source_job_id", "event_at", "event_date",
+        "event_type", "previous_status", "new_status", "changed_fields_json", "title", "role_family",
+    ],
+    "hiring_demand_daily": [
+        *CORE_COLUMNS, "snapshot_date", "company_id", "company_name", "company_segment", "cohort_version",
+        "role_family", "active_postings", "active_requisitions", "ai_role_postings", "new_postings_28d",
+        "closed_postings_28d", "net_posting_flow_28d", "source_status", "coverage_start_date", "same_store_28d",
+        "continuous_coverage_start_date",
+    ],
+    "hiring_source_health": [
+        *CORE_COLUMNS, "source_id", "source_kind", "company_id", "company_name", "status", "status_code",
+        "response_ms", "content_bytes", "content_hash", "etag", "last_modified", "row_count",
+        "last_good_row_count", "detail",
+    ],
+}
+
 DATE_COLUMNS = [
+    "pulse_date",
     "week_start_date",
     "scrape_date",
     "usage_date",
@@ -1123,8 +1683,60 @@ DATE_COLUMNS = [
     "spend_month",
     "date_month",
     "quarter",
+    "started_at",
+    "published_at",
+    "resolved_at",
+    "update_at",
+    "coverage_start_date",
+    "continuous_coverage_start_date",
+    "first_seen_at",
+    "last_changed_at",
+    "missing_since_at",
+    "closed_at",
+    "event_at",
+    "event_date",
+    "source_updated_at",
 ]
 NUMERIC_COLUMNS = [
+    "openrouter_total_tokens",
+    "openrouter_named_tokens",
+    "openrouter_other_tokens",
+    "openrouter_other_share_pct",
+    "openrouter_top_model_tokens",
+    "openrouter_top_model_share_pct",
+    "catalog_model_count",
+    "catalog_models_added_30d",
+    "official_provider_count",
+    "top_app_tokens",
+    "top_app_requests",
+    "top_task_share_pct",
+    "top_task_window_days",
+    "ramp_ai_adoption_pct",
+    "ramp_ai_adoption_mom_pp",
+    "ramp_ai_adoption_yoy_pp",
+    "ai_demand_ppi",
+    "ai_demand_ppi_mom_pct",
+    "ai_demand_ppi_3m_trend",
+    "frontier_intelligence_index",
+    "frontier_price_1m",
+    "total_requests",
+    "usage_share",
+    "token_share",
+    "category_usage_share",
+    "category_token_share",
+    "tag_usage_share",
+    "tag_token_share",
+    "variant_index",
+    "elo",
+    "win_rate",
+    "avg_generation_time_ms",
+    "tournament_total",
+    "official_total_tokens",
+    "official_named_tokens",
+    "official_other_tokens",
+    "activity_official_token_coverage",
+    "provider_official_token_coverage",
+    "row_count",
     "adoption_rate",
     "adoption_rate_yoy",
     "adoption_rank",
@@ -1246,6 +1858,21 @@ NUMERIC_COLUMNS = [
     "pricing_output",
     "pricing_cache_read",
     "pricing_cache_write",
+    "severity_level",
+    "duration_minutes",
+    "status_code",
+    "response_ms",
+    "content_bytes",
+    "incident_rows",
+    "ai_share_pct",
+    "consecutive_missing_runs",
+    "active_postings",
+    "active_requisitions",
+    "ai_role_postings",
+    "new_postings_28d",
+    "closed_postings_28d",
+    "net_posting_flow_28d",
+    "last_good_row_count",
 ]
 
 
@@ -1298,6 +1925,8 @@ def domain_dataset_ids(domain: str) -> list[str]:
 
 
 def dataset_source_for_domain(domain: str) -> str:
+    if domain == "overview":
+        return "overview"
     if domain == "github":
         return "github_trending"
     if domain == "provider_adoption":
@@ -1312,50 +1941,50 @@ def dataset_source_for_domain(domain: str) -> str:
         return "llm_benchmarks"
     if domain == "compute_availability":
         return "compute_availability"
+    if domain == "openrouter_catalog":
+        return "compute_availability"
+    if domain in {"openrouter_official", "openrouter_official_market"}:
+        return "openrouter_official"
     if domain == "artificial_analysis":
         return "artificial_analysis"
     if domain == "vercel_ai":
         return "vercel_ai"
     if domain == "ramp":
         return "ramp"
+    if domain == "provider_incidents":
+        return "provider_incidents"
+    if domain == "ai_hiring":
+        return "ai_hiring"
     return "openrouter"
 
 
-def load_dataset(dataset_id: str, base_dir: Path | None = None) -> DatasetLoadResult:
+def load_dataset(
+    dataset_id: str,
+    base_dir: Path | None = None,
+    data_sha: str | None = None,
+) -> DatasetLoadResult:
     registry_entry = DATASET_REGISTRY.get(dataset_id, {})
     domain = registry_entry.get("domain", "rankings")
     load_columns = (
-        PROVIDER_ADOPTION_LOAD_COLUMNS.get(dataset_id)
+        OPENROUTER_LOAD_COLUMNS.get(dataset_id)
+        or PROVIDER_ADOPTION_LOAD_COLUMNS.get(dataset_id)
         or VERCEL_AI_LOAD_COLUMNS.get(dataset_id)
         or RAMP_LOAD_COLUMNS.get(dataset_id)
+        or OPENROUTER_OFFICIAL_LOAD_COLUMNS.get(dataset_id)
+        or OVERVIEW_LOAD_COLUMNS.get(dataset_id)
+        or PROVIDER_INCIDENT_LOAD_COLUMNS.get(dataset_id)
+        or AI_HIRING_LOAD_COLUMNS.get(dataset_id)
     )
 
-    source = "openrouter"
-    if domain == "github":
-        source = "github_trending"
-    elif domain == "provider_adoption":
-        source = "provider_adoption"
-    elif domain == "semiconductor_memory":
-        source = "semiconductor_memory"
-    elif domain == "semiconductor_proxies":
-        source = "semiconductor_proxies"
-    elif domain == "taiwan_semiconductor_revenue":
-        source = "taiwan_semiconductor_revenue"
-    elif domain == "ai_frontier":
-        source = "llm_benchmarks"
-    elif domain == "compute_availability":
-        source = "compute_availability"
-    elif domain == "artificial_analysis":
-        source = "artificial_analysis"
-    elif domain == "vercel_ai":
-        source = "vercel_ai"
-    elif domain == "ramp":
-        source = "ramp"
+    source = dataset_source_for_domain(str(domain))
     base = normalized_root(base_dir, source=source)
     parquet_path = base / f"{dataset_id}.parquet"
     csv_path = base / f"{dataset_id}.csv"
 
-    frame = pd.DataFrame(columns=EXPECTED_COLUMNS)
+    required_columns = list(dict.fromkeys(
+        list(CORE_COLUMNS) + list(registry_entry.get("required_columns", []))
+    ))
+    frame = pd.DataFrame(columns=load_columns or required_columns)
     source_format: str | None = None
     source_path: Path | None = None
 
@@ -1367,10 +1996,10 @@ def load_dataset(dataset_id: str, base_dir: Path | None = None) -> DatasetLoadRe
     # the data source stays predictable and isolated from the production repo.
     root = base_dir if base_dir is not None else repo_root()
     if remote.remote_enabled() and root == repo_root():
-        sha = remote.latest_data_sha()
+        sha = data_sha or remote.latest_data_sha(f"{remote.DATA_PATH_PREFIX}/{source}")
         if sha:
             candidates = (
-                (parquet_path, "parquet", lambda b: pd.read_parquet(io.BytesIO(b), columns=load_columns)),
+                (parquet_path, "parquet", lambda b: _read_parquet_projected(io.BytesIO(b), load_columns)),
                 (csv_path, "csv", lambda b: pd.read_csv(io.BytesIO(b))),
             )
             for path_obj, fmt, reader in candidates:
@@ -1389,7 +2018,7 @@ def load_dataset(dataset_id: str, base_dir: Path | None = None) -> DatasetLoadRe
     if source_format is None:
         try:
             if parquet_path.exists():
-                frame = pd.read_parquet(parquet_path, columns=load_columns)
+                frame = _read_parquet_projected(parquet_path, load_columns)
                 source_format = "parquet"
                 source_path = parquet_path
             elif csv_path.exists():
@@ -1403,10 +2032,13 @@ def load_dataset(dataset_id: str, base_dir: Path | None = None) -> DatasetLoadRe
     # CRITICAL: Ensure no duplicate columns exist before padding/filtering
     frame = frame.loc[:, ~frame.columns.duplicated()].copy()
 
-    required_columns = list(CORE_COLUMNS) + list(registry_entry.get("required_columns", []))
     missing_columns = [column for column in required_columns if column not in frame.columns]
     
-    target_columns = load_columns or EXPECTED_COLUMNS
+    # Explicitly projected datasets use their analytical schema. Any legacy
+    # dataset without a projection keeps only the columns it actually stored;
+    # never pad a frame to the cross-domain EXPECTED_COLUMNS compatibility
+    # union, which used to create hundreds of all-null columns in memory.
+    target_columns = load_columns or list(frame.columns)
     frame = frame.reindex(columns=target_columns)
     for column in DATE_COLUMNS:
         if column in frame.columns:
@@ -1414,6 +2046,15 @@ def load_dataset(dataset_id: str, base_dir: Path | None = None) -> DatasetLoadRe
     for column in NUMERIC_COLUMNS:
         if column in frame.columns:
             frame[column] = pd.to_numeric(frame[column], errors="coerce")
+    # Python object strings dominate Pandas memory for repeated model/provider
+    # labels. Arrow-backed strings preserve nulls and string semantics while
+    # storing the values compactly. Keep a compatibility fallback for older
+    # local environments even though pyarrow is already a project dependency.
+    for column in frame.select_dtypes(include=["object", "string"]).columns:
+        try:
+            frame[column] = frame[column].astype("string[pyarrow]")
+        except (ImportError, TypeError, ValueError):
+            frame[column] = frame[column].astype("string")
 
     keys = registry_entry["natural_keys"]
     duplicate_rows = 0
@@ -1450,8 +2091,15 @@ def load_all_datasets(base_dir: Path | None = None) -> dict[str, DatasetLoadResu
     return {dataset_id: load_dataset(dataset_id, base_dir=base_dir) for dataset_id in dataset_ids()}
 
 
-def load_domain_datasets(domain: str, base_dir: Path | None = None) -> dict[str, DatasetLoadResult]:
-    return {dataset_id: load_dataset(dataset_id, base_dir=base_dir) for dataset_id in domain_dataset_ids(domain)}
+def load_domain_datasets(
+    domain: str,
+    base_dir: Path | None = None,
+    data_sha: str | None = None,
+) -> dict[str, DatasetLoadResult]:
+    return {
+        dataset_id: load_dataset(dataset_id, base_dir=base_dir, data_sha=data_sha)
+        for dataset_id in domain_dataset_ids(domain)
+    }
 
 
 def load_latest_manifest(

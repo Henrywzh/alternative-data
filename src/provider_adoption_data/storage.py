@@ -166,7 +166,20 @@ class StorageManager:
             return self.load_dataset(dataset_id)
 
         existing = self.load_dataset(dataset_id)
-        merged = pd.concat([existing, incoming], ignore_index=True) if not existing.empty else incoming.copy()
+        if not existing.empty:
+            # Avoid pandas' changing dtype inference for schema-padding columns
+            # that are entirely null in one side of the upsert. Restore the
+            # canonical schema immediately after concatenating real columns.
+            merged = pd.concat(
+                [existing.dropna(axis=1, how="all"), incoming.dropna(axis=1, how="all")],
+                ignore_index=True,
+            )
+            for column in DATASET_COLUMNS:
+                if column not in merged.columns:
+                    merged[column] = pd.NA
+            merged = merged[DATASET_COLUMNS]
+        else:
+            merged = incoming.copy()
         merged = self._coerce_types(merged)
         merged = merged.drop_duplicates(subset=NATURAL_KEYS[dataset_id], keep="last")
         merged = merged.sort_values(by=SORT_KEYS[dataset_id], na_position="last").reset_index(drop=True)

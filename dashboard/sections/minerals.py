@@ -149,7 +149,7 @@ def _minerals_partition_dir(dataset: str) -> Path | None:
     return candidates[-1] if candidates else None
 
 
-@st.cache_data(ttl=3600)
+@st.cache_data(ttl=3600, max_entries=8)
 def _load_minerals_csv(dataset: str) -> pd.DataFrame:
     part = _minerals_partition_dir(dataset)
     if part is None:

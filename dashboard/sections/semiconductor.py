@@ -79,7 +79,7 @@ def _render_private_panel_gate() -> bool:
     return False
 
 
-@st.cache_data(ttl=3600)
+@st.cache_data(ttl=3600, max_entries=8)
 def compute_semiconductor_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, object]:
     views: dict[str, object] = {}
 
@@ -257,7 +257,7 @@ def _official_trade_unit_config(unit: str) -> tuple[float, str]:
     return 1.0, normalized or "Native Unit"
 
 
-@st.cache_data(ttl=86400, show_spinner=False)
+@st.cache_data(ttl=86400, show_spinner=False, max_entries=8)
 def _fetch_monthly_fx_to_usd(start_period: str, end_period: str) -> pd.DataFrame:
     start_date = (pd.Period(start_period, freq="M") - 1).to_timestamp(how="end").strftime("%Y-%m-%d")
     end_date = (pd.Period(end_period, freq="M") + 1).to_timestamp(how="end").strftime("%Y-%m-%d")

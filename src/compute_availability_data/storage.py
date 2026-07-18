@@ -28,10 +28,35 @@ DATASET_COLUMNS = [
     "created_at",
     "context_length",
     "architecture",
+    "description",
+    "hugging_face_id",
+    "architecture_modality",
+    "input_modalities_json",
+    "output_modalities_json",
+    "tokenizer",
+    "instruct_type",
+    "supported_parameters_json",
+    "default_parameters_json",
+    "per_request_limits_json",
     "pricing_prompt",
     "pricing_completion",
+    "pricing_request",
+    "pricing_image",
+    "pricing_web_search",
+    "pricing_internal_reasoning",
+    "pricing_input_cache_read",
+    "pricing_input_cache_write",
     "top_provider_id",
+    "top_provider_context_length",
+    "top_provider_max_completion_tokens",
+    "top_provider_is_moderated",
     "provider_prefix",
+    "expiration_date",
+    "knowledge_cutoff",
+    "benchmarks_json",
+    "links_json",
+    "reasoning_json",
+    "supported_voices_json",
 ]
 
 NUMERIC_COLUMNS = [
@@ -39,9 +64,17 @@ NUMERIC_COLUMNS = [
     "context_length",
     "pricing_prompt",
     "pricing_completion",
+    "pricing_request",
+    "pricing_image",
+    "pricing_web_search",
+    "pricing_internal_reasoning",
+    "pricing_input_cache_read",
+    "pricing_input_cache_write",
+    "top_provider_context_length",
+    "top_provider_max_completion_tokens",
 ]
 
-BOOL_COLUMNS = []
+BOOL_COLUMNS = ["top_provider_is_moderated"]
 
 TEXT_COLUMNS = [
     column for column in DATASET_COLUMNS if column not in NUMERIC_COLUMNS and column not in BOOL_COLUMNS
@@ -52,12 +85,22 @@ SORT_KEYS: dict[str, list[str]] = {
 }
 
 OPENROUTER_CHANGE_COLUMNS = [
-    "pricing_prompt",
-    "pricing_completion",
-    "canonical_slug",
-    "provider_prefix",
-    "context_length",
+    column
+    for column in DATASET_COLUMNS
+    if column
+    not in {
+        "dataset_id",
+        "source_url",
+        "source_run_id",
+        "scraped_at",
+        "snapshot_ts",
+        "model_id",
+    }
 ]
+
+MINIMUM_PRODUCTION_CATALOG_MODELS = 100
+MINIMUM_PRODUCTION_PROVIDER_PREFIXES = 10
+MINIMUM_PRIOR_CATALOG_RATIO = 0.60
 
 
 class StorageManager:
@@ -91,6 +134,62 @@ class StorageManager:
                 dataframe[column] = pd.NA
         return dataframe[DATASET_COLUMNS]
 
+    def load_current_catalog(self) -> pd.DataFrame:
+        path = self.normalized_root / "raw_openrouter_models_current.parquet"
+        if not path.exists():
+            return pd.DataFrame(columns=DATASET_COLUMNS)
+        dataframe = pd.read_parquet(path)
+        for column in DATASET_COLUMNS:
+            if column not in dataframe.columns:
+                dataframe[column] = pd.NA
+        return self._coerce_types(dataframe[DATASET_COLUMNS])
+
+    @staticmethod
+    def validate_current_catalog(
+        incoming: pd.DataFrame,
+        previous: pd.DataFrame,
+        *,
+        minimum_models: int = 1,
+        minimum_provider_prefixes: int = 1,
+    ) -> None:
+        if incoming.empty:
+            raise ValueError("OpenRouter Models API returned an empty catalog")
+        if "model_id" not in incoming.columns or incoming["model_id"].isna().any():
+            raise ValueError("OpenRouter Models API returned rows without model IDs")
+        if incoming["model_id"].astype(str).duplicated().any():
+            raise ValueError("OpenRouter Models API returned duplicate model IDs")
+
+        incoming_count = int(incoming["model_id"].nunique())
+        if incoming_count < minimum_models:
+            raise ValueError(
+                f"OpenRouter Models API returned only {incoming_count} models; expected at least {minimum_models}"
+            )
+        incoming_providers = int(incoming["provider_prefix"].dropna().astype(str).nunique())
+        if incoming_providers < minimum_provider_prefixes:
+            raise ValueError(
+                "OpenRouter Models API provider coverage collapsed: "
+                f"{incoming_providers} prefixes; expected at least {minimum_provider_prefixes}"
+            )
+
+        if previous.empty:
+            return
+        previous_count = int(previous["model_id"].dropna().astype(str).nunique())
+        if previous_count >= MINIMUM_PRODUCTION_CATALOG_MODELS:
+            minimum_from_history = int(previous_count * MINIMUM_PRIOR_CATALOG_RATIO)
+            if incoming_count < minimum_from_history:
+                raise ValueError(
+                    "OpenRouter Models API catalog collapsed from "
+                    f"{previous_count} to {incoming_count} models; current catalog was preserved"
+                )
+        previous_providers = int(previous["provider_prefix"].dropna().astype(str).nunique())
+        if previous_providers >= MINIMUM_PRODUCTION_PROVIDER_PREFIXES:
+            minimum_providers = max(1, int(previous_providers * MINIMUM_PRIOR_CATALOG_RATIO))
+            if incoming_providers < minimum_providers:
+                raise ValueError(
+                    "OpenRouter Models API provider coverage collapsed from "
+                    f"{previous_providers} to {incoming_providers}; current catalog was preserved"
+                )
+
     def upsert_dataset(self, dataset_id: str, records: Iterable[DatasetRecord]) -> pd.DataFrame:
         incoming = pd.DataFrame([record.to_dict() for record in records], columns=DATASET_COLUMNS)
         if incoming.empty:
@@ -102,8 +201,13 @@ class StorageManager:
             # Keep a tiny authoritative current catalog alongside the compact
             # change history. The historical table intentionally drops
             # unchanged rows, so it cannot represent model removals by itself.
-            current = incoming.drop_duplicates(subset=["model_id"], keep="last").sort_values("model_id")
-            current.to_parquet(self.normalized_root / "raw_openrouter_models_current.parquet", index=False)
+            previous_current = self.load_current_catalog()
+            self.validate_current_catalog(incoming, previous_current)
+            current = incoming.sort_values("model_id").reset_index(drop=True)
+            current_path = self.normalized_root / "raw_openrouter_models_current.parquet"
+            temp_path = current_path.with_suffix(".tmp")
+            current.to_parquet(temp_path, index=False)
+            temp_path.replace(current_path)
         existing = self._coerce_types(existing) if not existing.empty else existing
         if dataset_id == "raw_openrouter_models":
             incoming = self._filter_unchanged_openrouter_rows(existing, incoming)
@@ -124,6 +228,8 @@ class StorageManager:
     def _coerce_types(dataframe: pd.DataFrame) -> pd.DataFrame:
         for column in NUMERIC_COLUMNS:
             dataframe[column] = pd.to_numeric(dataframe[column], errors="coerce")
+        for column in BOOL_COLUMNS:
+            dataframe[column] = dataframe[column].astype("boolean")
         for column in TEXT_COLUMNS:
             dataframe[column] = dataframe[column].astype("string")
         return dataframe

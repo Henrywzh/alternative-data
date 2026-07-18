@@ -97,7 +97,7 @@ def resolve_hf_metric_config(metric_label: str) -> dict[str, str]:
     }
 
 
-@st.cache_data(ttl=3600)
+@st.cache_data(ttl=3600, max_entries=8)
 def compute_provider_adoption_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, object]:
     views: dict[str, object] = {}
     # Mistral and Qwen don't publish meaningful PyPI/npm packages; exclude from those charts.

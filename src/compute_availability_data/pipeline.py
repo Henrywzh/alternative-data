@@ -4,9 +4,16 @@ from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
 
+import pandas as pd
+
 from compute_availability_data.models import PipelineResult, RunContext
 from compute_availability_data.sources.openrouter import OpenRouterSource
-from compute_availability_data.storage import StorageManager
+from compute_availability_data.storage import (
+    DATASET_COLUMNS,
+    MINIMUM_PRODUCTION_CATALOG_MODELS,
+    MINIMUM_PRODUCTION_PROVIDER_PREFIXES,
+    StorageManager,
+)
 
 
 class ComputeAvailabilityPipeline:
@@ -34,6 +41,14 @@ class ComputeAvailabilityPipeline:
 
         # 3. Extract & Normalize
         or_records = self.openrouter_source.extract(or_snapshot, context.run_id, scraped_at)
+
+        incoming = pd.DataFrame([record.to_dict() for record in or_records], columns=DATASET_COLUMNS)
+        self.storage.validate_current_catalog(
+            incoming,
+            self.storage.load_current_catalog(),
+            minimum_models=MINIMUM_PRODUCTION_CATALOG_MODELS,
+            minimum_provider_prefixes=MINIMUM_PRODUCTION_PROVIDER_PREFIXES,
+        )
 
         # 4. Upsert
         or_df = self.storage.upsert_dataset("raw_openrouter_models", or_records)
