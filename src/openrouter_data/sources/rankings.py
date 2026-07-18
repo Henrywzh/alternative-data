@@ -29,6 +29,7 @@ class DatasetSpec:
     week_anchor: str
     category_slug: str | None = None
     context_length_bucket: str | None = None
+    modality: str | None = None
 
 
 TOP_MODELS_SPEC = DatasetSpec(
@@ -74,8 +75,20 @@ CONTEXT_LENGTH_LABELS = {
 }
 CONTEXT_LENGTH_DATASET_ID = "context_length_requests"
 
+MODALITIES = ("image", "embeddings", "rerank", "video", "speech", "transcription")
+MODALITY_METRIC_UNITS = {
+    "image": "tokens",
+    "embeddings": "tokens",
+    "rerank": "requests",
+    "video": "seconds",
+    "speech": "seconds",
+    "transcription": "seconds",
+}
+MODALITY_RANKINGS_DATASET_ID = "modality_rankings"
+
 MODEL_RANKINGS_CHART_URL = "https://openrouter.ai/api/frontend/v1/rankings/model-rankings-chart"
 TEXT_MODALITY_CHART_URL = "https://openrouter.ai/api/frontend/v1/rankings/modality-chart?routeSegment=text"
+MODALITY_CHART_URL = "https://openrouter.ai/api/frontend/v1/rankings/modality-chart"
 CONTEXT_LENGTH_CHART_URL = "https://openrouter.ai/api/frontend/v1/rankings/context-length"
 
 
@@ -103,6 +116,13 @@ class RankingsSource(SourceExtractor):
                 self._fetch_optional(
                     f"context_length_{bucket}",
                     f"{CONTEXT_LENGTH_CHART_URL}?bucket={bucket}",
+                )
+            )
+        for modality in MODALITIES:
+            snapshots.append(
+                self._fetch_optional(
+                    f"modality_chart_{modality}",
+                    f"{MODALITY_CHART_URL}?routeSegment={modality}",
                 )
             )
         return snapshots
@@ -154,6 +174,7 @@ class RankingsSource(SourceExtractor):
                 context,
             ),
             **self._extract_context_length_records(charts, context),
+            **self._extract_modality_records(charts, context),
         }
 
     def _extract_context_length_records(
@@ -182,6 +203,33 @@ class RankingsSource(SourceExtractor):
             )
             records.extend(self._records_from_chart(chart, spec, context))
         return {CONTEXT_LENGTH_DATASET_ID: records} if records else {}
+
+    def _extract_modality_records(
+        self,
+        charts: dict[str, dict[str, Any] | None],
+        context: RunContext,
+    ) -> dict[str, list[DatasetRecord]]:
+        """Normalize the per-modality ranking endpoints (image, embeddings, rerank, video, speech, transcription).
+
+        Each modality is fetched independently and is not a hard pipeline dependency:
+        if OpenRouter retires or breaks one modality route, that modality is skipped
+        for this run and the rest of the rankings pipeline still succeeds.
+        """
+        records: list[DatasetRecord] = []
+        for modality in MODALITIES:
+            chart = charts.get(self._modality_chart_key(modality))
+            if not chart:
+                continue
+            spec = DatasetSpec(
+                dataset_id=MODALITY_RANKINGS_DATASET_ID,
+                source_url=f"{MODALITY_CHART_URL}?routeSegment={modality}",
+                metric_name="volume",
+                metric_unit=MODALITY_METRIC_UNITS[modality],
+                week_anchor="start",
+                modality=modality,
+            )
+            records.extend(self._records_from_chart(chart, spec, context))
+        return {MODALITY_RANKINGS_DATASET_ID: records} if records else {}
 
     @staticmethod
     def _extract_chart_payloads_from_api(snapshot_by_name: dict[str, Snapshot]) -> dict[str, dict[str, Any]]:
@@ -223,11 +271,27 @@ class RankingsSource(SourceExtractor):
             except (AttributeError, json.JSONDecodeError):
                 continue
 
+        for modality in MODALITIES:
+            snapshot = snapshot_by_name.get(f"modality_chart_{modality}")
+            if snapshot is None or not snapshot.body:
+                continue
+            try:
+                payload = json.loads(snapshot.body)
+                data = payload.get("data", {}).get("data")
+                if RankingsSource._is_chart_data(data):
+                    charts[RankingsSource._modality_chart_key(modality)] = {"data": data}
+            except (AttributeError, json.JSONDecodeError):
+                continue
+
         return charts
 
     @staticmethod
     def _context_chart_key(bucket: str) -> str:
         return f"{CONTEXT_LENGTH_DATASET_ID}:{bucket}"
+
+    @staticmethod
+    def _modality_chart_key(modality: str) -> str:
+        return f"{MODALITY_RANKINGS_DATASET_ID}:{modality}"
 
     def _extract_chart_payloads(self, rankings_html: str, programming_html: str) -> dict[str, dict[str, Any] | None]:
         return {
@@ -571,6 +635,7 @@ class RankingsSource(SourceExtractor):
                         scraped_at=context.scraped_at_iso,
                         category_slug=spec.category_slug,
                         context_length_bucket=spec.context_length_bucket,
+                        modality=spec.modality,
                     )
                 )
 

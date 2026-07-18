@@ -49,6 +49,20 @@ DATASET_REGISTRY: dict[str, dict[str, object]] = {
             "rank",
         ],
     },
+    "modality_rankings": {
+        "label": "Modality Rankings",
+        "domain": "rankings",
+        "natural_keys": ["week_start_date", "modality", "entity_id"],
+        "primary_date_column": "week_start_date",
+        "metric_column": "metric_value",
+        "required_columns": [
+            "week_start_date",
+            "modality",
+            "entity_id",
+            "metric_value",
+            "rank",
+        ],
+    },
     # NOTE: This dataset is no longer rendered in the dashboard, but it is still
     # produced by the rankings pipeline and consumed by research marts/tests.
     "categories_programming": {
@@ -513,7 +527,32 @@ DATASET_REGISTRY: dict[str, dict[str, object]] = {
         "metric_column": "high_intensity_effect",
         "required_columns": ["figure", "month_relative_to_adoption", "high_intensity_effect"],
     },
+    "ramp_category_adoption_monthly": {
+        "label": "Ramp Category Adoption (monthly)",
+        "domain": "ramp",
+        "natural_keys": ["category_slug", "spend_month", "vendor_name"],
+        "primary_date_column": "spend_month",
+        "metric_column": "adoption_rate",
+        "required_columns": ["category_slug", "spend_month", "vendor_name", "adoption_rate"],
+    },
+    "ramp_category_spend_share_quarterly": {
+        "label": "Ramp Category Spend Share (quarterly)",
+        "domain": "ramp",
+        "natural_keys": ["category_slug", "quarter", "vendor_name"],
+        "primary_date_column": "quarter",
+        "metric_column": "spend_share",
+        "required_columns": ["category_slug", "quarter", "vendor_name", "spend_share"],
+    },
+    "ramp_category_adoption_yoy_comparison": {
+        "label": "Ramp Category Adoption YoY Comparison",
+        "domain": "ramp",
+        "natural_keys": ["category_slug", "vendor_name", "date_month"],
+        "primary_date_column": "date_month",
+        "metric_column": "adoption_rate",
+        "required_columns": ["category_slug", "vendor_name", "date_month", "adoption_rate"],
+    },
 }
+
 
 DOMAIN_ORDER = {
     "rankings": [
@@ -521,6 +560,7 @@ DOMAIN_ORDER = {
         "market_share",
         "provider_weekly_requests",
         "context_length_requests",
+        "modality_rankings",
         "categories_programming",
         "openrouter_model_activity",
         "provider_daily_activity",
@@ -587,6 +627,9 @@ DOMAIN_ORDER = {
         "ramp_ai_filter_model_share",
         "ramp_ai_filter_pepm",
         "ramp_ai_jobs_impact",
+        "ramp_category_adoption_monthly",
+        "ramp_category_spend_share_quarterly",
+        "ramp_category_adoption_yoy_comparison",
     ],
 }
 
@@ -610,6 +653,7 @@ RANKINGS_COLUMNS = [
     "rank",
     "category_slug",
     "context_length_bucket",
+    "modality",
 ]
 
 APPS_COLUMNS = [
@@ -1044,6 +1088,15 @@ RAMP_LOAD_COLUMNS: dict[str, list[str]] = {
         "high_intensity_effect", "high_intensity_ci_low", "high_intensity_ci_high",
         "low_intensity_effect", "low_intensity_ci_low", "low_intensity_ci_high", "units",
     ],
+    "ramp_category_adoption_monthly": [
+        *CORE_COLUMNS, "category_slug", "spend_month", "vendor_name", "adoption_rate",
+    ],
+    "ramp_category_spend_share_quarterly": [
+        *CORE_COLUMNS, "category_slug", "quarter", "vendor_name", "spend_share",
+    ],
+    "ramp_category_adoption_yoy_comparison": [
+        *CORE_COLUMNS, "category_slug", "vendor_name", "date_month", "adoption_rate",
+    ],
 }
 
 DATE_COLUMNS = [
@@ -1068,6 +1121,8 @@ DATE_COLUMNS = [
     "snapshot_ts",
     "as_of_date",
     "spend_month",
+    "date_month",
+    "quarter",
 ]
 NUMERIC_COLUMNS = [
     "adoption_rate",

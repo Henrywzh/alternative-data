@@ -202,6 +202,33 @@ def test_extracts_context_length_request_buckets_from_official_api() -> None:
     assert max(row.metric_value for row in rows) == 90.0
 
 
+def test_extracts_modality_rankings_from_official_api() -> None:
+    html = build_fixture_html()
+    modality_points = [
+        {"x": "2024-01-01", "ys": {"google/gemini-2.5-flash-image": 80, "openai/gpt-image-2": 20, "Others": 5}},
+        {"x": "2024-01-08", "ys": {"google/gemini-2.5-flash-image": 90, "openai/gpt-image-2": 30, "Others": 10}},
+    ]
+    snapshots = [
+        *make_snapshots(html),
+        Snapshot(
+            name="modality_chart_image",
+            source_url="fixture://rankings/modality-chart?routeSegment=image",
+            body=json.dumps({"data": {"data": modality_points}}),
+        ),
+    ]
+    source = RankingsSource()
+    context = RunContext(run_id="modality", scraped_at=pd.Timestamp("2024-01-20", tz="UTC").to_pydatetime())
+
+    extracted = source.extract(snapshots, context)
+
+    rows = extracted["modality_rankings"]
+    assert len(rows) == 6
+    assert {row.modality for row in rows} == {"image"}
+    assert rows[0].metric_name == "volume"
+    assert rows[0].metric_unit == "tokens"
+    assert max(row.metric_value for row in rows) == 90.0
+
+
 def test_fetch_snapshots_keeps_html_fallback_available_when_rankings_api_fails(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -226,6 +253,12 @@ def test_fetch_snapshots_keeps_html_fallback_available_when_rankings_api_fails(
         "context_length_100K",
         "context_length_1M",
         "context_length_10M",
+        "modality_chart_image",
+        "modality_chart_embeddings",
+        "modality_chart_rerank",
+        "modality_chart_video",
+        "modality_chart_speech",
+        "modality_chart_transcription",
     }
     assert next(snapshot for snapshot in snapshots if snapshot.name == "model_rankings_chart").body == ""
 

@@ -136,7 +136,6 @@ AI_INDEX_DATASETS: dict[str, dict] = {
     },
 }
 
-
 # --------------------------------------------------------------- Filter mode
 #
 # The AI Index "Filter mode" (a dropdown option under each breakdown chart) loads
@@ -214,4 +213,34 @@ JOBS_IMPACT = {
         "low_intensity_effect", "low_intensity_ci_low", "low_intensity_ci_high",
     ],
     "min_rows": 30,
+}
+
+
+# ------------------------------------------------------------- Category Charts
+#
+# Scraped from the Datawrapper chart widgets embedded inside each category page
+# at ramp.com/vendors/categories/<slug>. Contains category-level adoption trends,
+# quarterly share of category spend, and annual YoY comparison snapshots.
+CATEGORY_CHARTS_DATASETS: dict[str, dict] = {
+    "ramp_category_adoption_monthly": {
+        "fields": ["category_slug", "spend_month", "vendor_name", "adoption_rate"],
+        "natural_keys": ["category_slug", "spend_month", "vendor_name"],
+        "sort_keys": ["category_slug", "spend_month", "vendor_name"],
+        "numeric": ["adoption_rate"],
+        "min_rows": 100,
+    },
+    "ramp_category_spend_share_quarterly": {
+        "fields": ["category_slug", "quarter", "vendor_name", "spend_share"],
+        "natural_keys": ["category_slug", "quarter", "vendor_name"],
+        "sort_keys": ["category_slug", "quarter", "vendor_name"],
+        "numeric": ["spend_share"],
+        "min_rows": 100,
+    },
+    "ramp_category_adoption_yoy_comparison": {
+        "fields": ["category_slug", "vendor_name", "date_month", "adoption_rate"],
+        "natural_keys": ["category_slug", "vendor_name", "date_month"],
+        "sort_keys": ["category_slug", "vendor_name", "date_month"],
+        "numeric": ["adoption_rate"],
+        "min_rows": 50,
+    },
 }

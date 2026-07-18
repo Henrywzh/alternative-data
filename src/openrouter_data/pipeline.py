@@ -14,7 +14,7 @@ from openrouter_data.sources.apps import AppsSource
 from openrouter_data.sources.activity import ACTIVITY_PROVIDER_SLUGS, ActivitySource
 from openrouter_data.sources.base import SourceExtractor
 from openrouter_data.sources.provider_activity import ProviderActivitySource, PROVIDER_SLUGS, PROVIDER_ACTIVITY_DATASET_ID
-from openrouter_data.sources.rankings import CONTEXT_LENGTH_DATASET_ID, RankingsSource
+from openrouter_data.sources.rankings import CONTEXT_LENGTH_DATASET_ID, MODALITY_RANKINGS_DATASET_ID, RankingsSource
 from openrouter_data.sources.task_spend import TASK_SPEND_DATASET_ID, TaskSpendSource
 from openrouter_data.storage import StorageManager
 
@@ -25,6 +25,7 @@ RANKINGS_DATASET_IDS = (
     "provider_weekly_requests",
     "categories_programming",
     "context_length_requests",
+    "modality_rankings",
 )
 APPS_DATASET_IDS = (
     "app_metadata_snapshots",
@@ -131,7 +132,7 @@ class BasePipeline:
 
 class RankingsPipeline(BasePipeline):
     dataset_ids = RANKINGS_DATASET_IDS
-    optional_dataset_ids = {"context_length_requests"}
+    optional_dataset_ids = {"context_length_requests", "modality_rankings"}
 
     def __init__(self, base_dir: Path) -> None:
         super().__init__(base_dir, RankingsSource())
@@ -181,6 +182,18 @@ class RankingsPipeline(BasePipeline):
                     record
                     for record in records
                     if (str(record.week_start_date), str(record.context_length_bucket), str(record.entity_id))
+                    not in existing_keys
+                ]
+                continue
+            if dataset_id == MODALITY_RANKINGS_DATASET_ID:
+                existing_keys = {
+                    (str(row.week_start_date), str(row.modality), str(row.entity_id))
+                    for row in existing[["week_start_date", "modality", "entity_id"]].itertuples(index=False)
+                } if not existing.empty else set()
+                filtered[dataset_id] = [
+                    record
+                    for record in records
+                    if (str(record.week_start_date), str(record.modality), str(record.entity_id))
                     not in existing_keys
                 ]
                 continue
@@ -250,7 +263,7 @@ class AppsPipeline(BasePipeline):
             record
             for record in extracted.get("app_usage_daily", [])
             if (record.app_id, record.usage_date, record.model_permaslug) not in seen_keys
-        ] or extracted.get("app_usage_daily", [])
+        ]
         return filtered
 
 

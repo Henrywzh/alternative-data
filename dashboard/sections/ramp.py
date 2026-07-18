@@ -228,45 +228,127 @@ def _render_vendors(datasets) -> None:
     controls = st.columns([2, 2])
     with controls[0]:
         selected_category = st.selectbox("Category", options, index=min(1, len(options) - 1), key="ramp_category")
-    with controls[1]:
-        metric = st.radio(
-            "Metric",
-            list(METRIC_LABELS.keys()),
+
+    if selected_category != ALL_VENDORS:
+        view_mode = st.radio(
+            "View by",
+            ["Adoption Over Time", "Share of Spend", "Adoption YoY"],
             horizontal=True,
-            format_func=lambda m: METRIC_LABELS[m],
-            key="ramp_metric",
+            key="ramp_category_view_mode",
+        )
+    else:
+        view_mode = "Adoption Over Time"
+
+    category_slug = None
+    if selected_category != ALL_VENDORS and not category.empty:
+        cat_row = category[category["category_name"] == selected_category]
+        if not cat_row.empty:
+            category_slug = cat_row.iloc[0]["category_slug"]
+
+    if view_mode == "Adoption Over Time":
+        with controls[1]:
+            metric = st.radio(
+                "Metric",
+                list(METRIC_LABELS.keys()),
+                horizontal=True,
+                format_func=lambda m: METRIC_LABELS[m],
+                key="ramp_metric",
+            )
+
+        slugs = _scope_slugs(category, selected_category)
+        scoped = monthly if slugs is None else monthly[monthly["vendor_slug"].isin(slugs)]
+        if scoped.empty:
+            st.info(f"No vendor data for {selected_category}.")
+            return
+
+        _render_kpi_row(_kpis(monthly, scoped, len(_category_options(category))))
+
+        leaders = _latest_leaders(scoped, metric, TOP_N)
+        pivot = _pivot(scoped, metric, leaders)
+        if pivot.empty:
+            st.info(f"No {METRIC_LABELS[metric].lower()} data for {selected_category}.")
+            return
+
+        fig = make_line_chart(
+            pivot,
+            colors=PALETTE,
+            y_title=f"{METRIC_LABELS[metric]} (%)",
+            x_title="Month",
+            hover_suffix="%",
+            connect_gaps=True,
+        )
+        st.plotly_chart(fig, width="stretch", theme=None)
+        scope_label = "all tracked vendors" if slugs is None else f"the {selected_category} category"
+        st.caption(
+            f"Monthly **{METRIC_LABELS[metric].lower()}** for the top {len(leaders)} vendors in {scope_label}, "
+            f"as a share of businesses transacting on Ramp."
         )
 
-    slugs = _scope_slugs(category, selected_category)
-    scoped = monthly if slugs is None else monthly[monthly["vendor_slug"].isin(slugs)]
-    if scoped.empty:
-        st.info(f"No vendor data for {selected_category}.")
-        return
+        _render_leaderboard(scoped)
 
-    _render_kpi_row(_kpis(monthly, scoped, len(_category_options(category))))
+    elif view_mode == "Share of Spend":
+        result = datasets.get("ramp_category_spend_share_quarterly")
+        if not result or result.frame.empty:
+            st.info("No Share of Spend data available. Run the category-charts scraping pipeline first.")
+            return
+        frame = result.frame
+        filtered = frame[frame["category_slug"] == category_slug].copy()
+        if filtered.empty:
+            st.info(f"No Share of Spend data for {selected_category}.")
+            return
 
-    leaders = _latest_leaders(scoped, metric, TOP_N)
-    pivot = _pivot(scoped, metric, leaders)
-    if pivot.empty:
-        st.info(f"No {METRIC_LABELS[metric].lower()} data for {selected_category}.")
-        return
+        import plotly.express as px
+        filtered["spend_share_pct"] = pd.to_numeric(filtered["spend_share"], errors="coerce") * 100.0
+        filtered = filtered.sort_values(by=["quarter", "spend_share_pct"], ascending=[True, False])
 
-    fig = make_line_chart(
-        pivot,
-        colors=PALETTE,
-        y_title=f"{METRIC_LABELS[metric]} (%)",
-        x_title="Month",
-        hover_suffix="%",
-        connect_gaps=True,
-    )
-    st.plotly_chart(fig, width="stretch", theme=None)
-    scope_label = "all tracked vendors" if slugs is None else f"the {selected_category} category"
-    st.caption(
-        f"Monthly **{METRIC_LABELS[metric].lower()}** for the top {len(leaders)} vendors in {scope_label}, "
-        f"as a share of businesses transacting on Ramp."
-    )
+        fig = px.bar(
+            filtered,
+            x="quarter",
+            y="spend_share_pct",
+            color="vendor_name",
+            title=f"Quarterly Share of Spend in {selected_category}",
+            labels={"quarter": "Quarter", "spend_share_pct": "Share of Spend (%)", "vendor_name": "Vendor"},
+            color_discrete_sequence=PALETTE,
+        )
+        fig.update_layout(
+            margin=dict(l=40, r=40, t=40, b=40),
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+            xaxis=dict(type='category')
+        )
+        st.plotly_chart(fig, use_container_width=True)
+        st.caption(f"Quarterly share of total category spend captured by each vendor in the {selected_category} category.")
 
-    _render_leaderboard(scoped)
+    elif view_mode == "Adoption YoY":
+        result = datasets.get("ramp_category_adoption_yoy_comparison")
+        if not result or result.frame.empty:
+            st.info("No YoY comparison data available. Run the category-charts scraping pipeline first.")
+            return
+        frame = result.frame
+        filtered = frame[frame["category_slug"] == category_slug].copy()
+        if filtered.empty:
+            st.info(f"No YoY comparison data for {selected_category}.")
+            return
+
+        import plotly.express as px
+        filtered["adoption_rate_pct"] = pd.to_numeric(filtered["adoption_rate"], errors="coerce") * 100.0
+        filtered["period"] = pd.to_datetime(filtered["date_month"]).dt.strftime("%b %Y")
+
+        fig = px.bar(
+            filtered,
+            x="vendor_name",
+            y="adoption_rate_pct",
+            color="period",
+            barmode="group",
+            title=f"Year-over-Year Adoption Rate Comparison in {selected_category}",
+            labels={"vendor_name": "Vendor", "adoption_rate_pct": "Adoption Rate (%)", "period": "Period"},
+            color_discrete_sequence=PALETTE,
+        )
+        fig.update_layout(
+            margin=dict(l=40, r=40, t=40, b=40),
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        )
+        st.plotly_chart(fig, use_container_width=True)
+        st.caption(f"Year-over-year comparative adoption rate snapshot for vendors in the {selected_category} category.")
 
 
 # ------------------------------------------------------------------ AI Index

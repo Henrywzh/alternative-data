@@ -23,6 +23,7 @@ class DatasetRecord:
     rank: int | None = None
     category_slug: str | None = None
     context_length_bucket: str | None = None
+    modality: str | None = None
     app_id: str | None = None
     app_name: str | None = None
     origin_url: str | None = None
