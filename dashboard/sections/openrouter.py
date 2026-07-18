@@ -2644,6 +2644,16 @@ def render_apps_tables(datasets: dict[str, DatasetLoadResult]) -> None:
 
         if usage_result and render_dataset_guard(usage_result, show_subheader=False):
             usage = usage_result.frame.copy()
+            usage["usage_date"] = pd.to_datetime(usage["usage_date"], errors="coerce")
+            scrape_dates = pd.to_datetime(usage.get("scraped_at"), errors="coerce", utc=True)
+            latest_scrape_date = scrape_dates.max()
+            if pd.notna(latest_scrape_date):
+                partial_date = latest_scrape_date.tz_convert(None).normalize()
+                usage = usage[usage["usage_date"] < partial_date].copy()
+                st.caption(
+                    f"Finalized daily usage only. The partial UTC day "
+                    f"{partial_date.strftime('%Y-%m-%d')} is omitted and will be finalized by the next scrape."
+                )
             app_names = sorted(usage["app_name"].dropna().astype(str).unique().tolist())
             selected  = st.multiselect("Apps", options=app_names, default=app_names[:3], key="mon_apps")
             if selected:

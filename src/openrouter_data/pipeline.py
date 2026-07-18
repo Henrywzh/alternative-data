@@ -75,7 +75,7 @@ class BasePipeline:
             for dataset_id in self.dataset_ids:
                 records = filtered.get(dataset_id, [])
                 if records:
-                    datasets_written[dataset_id] = len(self.storage.upsert_dataset(dataset_id, records))
+                    datasets_written[dataset_id] = len(self._upsert_dataset(dataset_id, records))
                 else:
                     datasets_written[dataset_id] = len(self.storage.load_dataset(dataset_id))
             
@@ -90,6 +90,9 @@ class BasePipeline:
             manifest["error"] = str(exc)
             self.storage.write_raw_run(context.run_id, snapshots, manifest)
             raise
+
+    def _upsert_dataset(self, dataset_id: str, records: list[DatasetRecord]) -> pd.DataFrame:
+        return self.storage.upsert_dataset(dataset_id, records)
 
     def _build_manifest(
         self,
@@ -239,6 +242,18 @@ class AppsPipeline(BasePipeline):
         extracted = self.source.extract(snapshots, context)
         return {dataset_id: len(records) for dataset_id, records in extracted.items()}
 
+    def _upsert_dataset(self, dataset_id: str, records: list[DatasetRecord]) -> pd.DataFrame:
+        if dataset_id == "app_usage_daily":
+            # The app chart includes the current, still-changing UTC day and a rolling
+            # history. Replace complete app/date partitions so the next run finalizes
+            # earlier partial observations and removes models that left the chart.
+            return self.storage.upsert_dataset(
+                dataset_id,
+                records,
+                replace_partitions=["app_id", "usage_date"],
+            )
+        return super()._upsert_dataset(dataset_id, records)
+
     def _filter_for_mode(
         self,
         mode: str,
@@ -251,18 +266,32 @@ class AppsPipeline(BasePipeline):
         if mode == "apps-initial-backfill":
             return filtered
 
+        usage_records = list(extracted.get("app_usage_daily", []))
         existing_usage = self.storage.load_dataset("app_usage_daily")
         if existing_usage.empty:
+            filtered["app_usage_daily"] = usage_records
             return filtered
 
-        seen_keys = {
-            (row.app_id, row.usage_date, row.model_permaslug)
-            for row in existing_usage[["app_id", "usage_date", "model_permaslug"]].itertuples(index=False)
+        existing_partitions = {
+            (str(row.app_id), str(row.usage_date))
+            for row in existing_usage[["app_id", "usage_date"]].drop_duplicates().itertuples(index=False)
         }
+        dates_by_app: dict[str, set[str]] = {}
+        for record in usage_records:
+            dates_by_app.setdefault(str(record.app_id), set()).add(str(record.usage_date))
+        refresh_partitions = {
+            (app_id, usage_date)
+            for app_id, dates in dates_by_app.items()
+            for usage_date in sorted(dates)[-3:]
+        }
+        incoming_partitions = {
+            (str(record.app_id), str(record.usage_date)) for record in usage_records
+        }
+        refresh_partitions.update(incoming_partitions - existing_partitions)
         filtered["app_usage_daily"] = [
             record
-            for record in extracted.get("app_usage_daily", [])
-            if (record.app_id, record.usage_date, record.model_permaslug) not in seen_keys
+            for record in usage_records
+            if (str(record.app_id), str(record.usage_date)) in refresh_partitions
         ]
         return filtered
 
