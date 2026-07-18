@@ -1126,10 +1126,19 @@ def _prepare_explorer_catalog(frame: pd.DataFrame) -> pd.DataFrame:
     catalog["provider_slug"] = catalog.get("provider_prefix", pd.Series(pd.NA, index=catalog.index)).astype("string")
     inferred_provider = catalog["model_id"].astype("string").str.split("/", n=1).str[0]
     catalog["provider_slug"] = catalog["provider_slug"].fillna(inferred_provider)
+    catalog["is_openrouter_alias"] = (
+        catalog["model_id"].astype("string").str.startswith("~", na=False)
+        | catalog["provider_slug"].str.startswith("~", na=False)
+    )
+    # OpenRouter's ~...-latest entries are routing aliases, not separate companies.
+    catalog["provider_slug"] = catalog["provider_slug"].str.lstrip("~")
     catalog["company"] = [
-        _derive_provider_name(str(model_id), None)
-        for model_id in catalog["model_id"].astype("string")
+        _derive_provider_name(f"{provider}/{str(model_id).split('/', 1)[-1]}", None)
+        for model_id, provider in zip(catalog["model_id"].astype("string"), catalog["provider_slug"])
     ]
+    catalog["model_type"] = catalog["is_openrouter_alias"].map(
+        {True: "OpenRouter latest alias", False: "Direct catalog model"}
+    )
     catalog["model_name"] = catalog.get("model_name", catalog["model_id"]).fillna(catalog["model_id"])
     catalog["release_date"] = pd.to_datetime(catalog["created_at"], unit="s", errors="coerce", utc=True)
     catalog["input_price_per_m"] = catalog["pricing_prompt"] * 1_000_000
@@ -1137,6 +1146,7 @@ def _prepare_explorer_catalog(frame: pd.DataFrame) -> pd.DataFrame:
     catalog["openrouter_url"] = "https://openrouter.ai/" + catalog["model_id"].astype(str)
     explorer_columns = [
         "model_id", "canonical_slug", "model_name", "provider_slug", "company",
+        "is_openrouter_alias", "model_type",
         "release_date", "context_length", "architecture", "pricing_prompt",
         "pricing_completion", "input_price_per_m", "output_price_per_m", "openrouter_url",
     ]
@@ -1180,12 +1190,20 @@ def _normalize_explorer_activity(frame: pd.DataFrame, aliases: dict[str, str]) -
     activity["entity_id"] = activity["entity_id"].fillna(
         activity["model_id"].astype("string").str.split("/", n=1).str[0]
     )
+    activity["entity_id"] = activity["entity_id"].astype("string").str.lstrip("~")
     return activity
 
 
 def _combine_explorer_activity(provider_activity: pd.DataFrame, model_activity: pd.DataFrame) -> pd.DataFrame:
-    """Prefer model-level rows and use provider rows only for missing model-days."""
-    detail = model_activity.copy()
+    """Prefer complete model totals and use provider rows for missing model-days.
+
+    Older model-activity snapshots contain category-level rows, which are useful
+    for workload detail but are not complete daily model totals. They must not
+    suppress the fuller provider-page total for the same model/day.
+    """
+    detail = model_activity[
+        model_activity["category_slug"].astype("string").str.casefold().eq("all")
+    ].copy() if not model_activity.empty else pd.DataFrame()
     fallback = provider_activity.copy()
     if detail.empty:
         if fallback.empty:
@@ -2420,14 +2438,13 @@ def _render_company_explorer(views: dict[str, object]) -> None:
     st.markdown(
         kpi_grid_html(
             kpi_card_html("Tokens in stored window", format_metric(state["total_tokens"]), delta="observed activity"),
-            kpi_card_html("Tracked models", f"{len(models):,}", delta="current catalog"),
+            kpi_card_html("Catalog entries", f"{len(models):,}", delta="aliases included"),
             kpi_card_html("Latest activity", latest_activity, delta="daily coverage"),
             kpi_card_html("Models with 1M+ context", million_context, delta="current catalog"),
         ),
         unsafe_allow_html=True,
     )
 
-    st.caption("Token volume by model, preferring model-level activity and filling gaps from provider pages.")
     if model_pivot.empty:
         st.info("No daily activity is stored for this company yet.")
     else:
@@ -2458,12 +2475,12 @@ def _render_company_explorer(views: dict[str, object]) -> None:
             st.info("No models match this filter.")
             return
     table = models[[
-        "model_name", "model_id", "release_date", "context_length",
+        "model_name", "model_type", "model_id", "release_date", "context_length",
         "input_price_per_m", "output_price_per_m", "tokens_30d", "observed_days", "activity_source", "openrouter_url",
     ]].copy()
     table["release_date"] = table["release_date"].dt.date
     table = table.rename(columns={
-        "model_name": "Model", "model_id": "Model ID", "release_date": "Released",
+        "model_name": "Model", "model_type": "Type", "model_id": "Model ID", "release_date": "Released",
         "context_length": "Context", "input_price_per_m": "Input $/1M",
         "output_price_per_m": "Output $/1M", "tokens_30d": "Tokens (30d)",
         "observed_days": "Observed days", "activity_source": "Activity source", "openrouter_url": "OpenRouter",
@@ -2612,12 +2629,12 @@ def _render_models_catalog(views: dict[str, object]) -> None:
 
     st.caption(f"{len(filtered):,} of {len(catalog):,} current models")
     table = filtered[[
-        "model_name", "company", "model_id", "release_date", "architecture", "context_length",
+        "model_name", "model_type", "company", "model_id", "release_date", "architecture", "context_length",
         "input_price_per_m", "output_price_per_m", "tokens_30d", "observed_days", "activity_source", "openrouter_url",
     ]].copy()
     table["release_date"] = table["release_date"].dt.date
     table = table.rename(columns={
-        "model_name": "Model", "company": "Company", "model_id": "Model ID", "release_date": "Released",
+        "model_name": "Model", "model_type": "Type", "company": "Company", "model_id": "Model ID", "release_date": "Released",
         "architecture": "Modality", "context_length": "Context", "input_price_per_m": "Input $/1M",
         "output_price_per_m": "Output $/1M", "tokens_30d": "Tokens (30d)", "observed_days": "Observed days",
         "activity_source": "Activity source", "openrouter_url": "Details",
@@ -2637,6 +2654,12 @@ def render_data_explorer(datasets: dict[str, DatasetLoadResult]) -> None:
     st.markdown(
         '<div class="section-subtitle">Inspect company traffic, model activity and pricing, or search the full current catalog.</div>',
         unsafe_allow_html=True,
+    )
+    st.info(
+        "Data source: complete model-activity totals are preferred; provider daily totals fill gaps. "
+        "Older category-only activity rows are used for workload detail but never replace provider totals. "
+        "Entries beginning with `~` are OpenRouter latest-routing aliases grouped under the underlying company.",
+        icon="ℹ️",
     )
     views = build_openrouter_explorer_views(datasets)
     explorer_tab, catalog_tab = st.tabs(["Company & model", "All models"])
