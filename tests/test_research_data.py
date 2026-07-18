@@ -966,7 +966,7 @@ def test_research_cli_accepts_base_dir_after_subcommand(tmp_path: Path, monkeypa
     assert "weekly_openrouter_usage:" in captured.out
 
 
-def test_frontier_notebook_surfaces_freshness_and_zeroeval_coverage_note() -> None:
+def test_frontier_notebook_surfaces_current_source_freshness_and_coverage_note() -> None:
     notebook_path = Path(__file__).resolve().parents[1] / "notebooks" / "03_frontier_intelligence_dynamics.ipynb"
     notebook = json.loads(notebook_path.read_text())
 
@@ -981,8 +981,9 @@ def test_frontier_notebook_surfaces_freshness_and_zeroeval_coverage_note() -> No
         if cell.get("cell_type") == "code"
     )
 
-    assert "ZeroEval" in markdown_text
-    assert "coverage is limited" in markdown_text
+    assert "Artificial Analysis" in markdown_text
+    assert "Model coverage reflects" in markdown_text
+    assert "as_of_date" in code_text
     assert "scraped_at" in code_text
     assert "release_date" in code_text
 

@@ -37,6 +37,7 @@ from dashboard.data import (
     EXPECTED_COLUMNS,
     DATASET_REGISTRY,
     DatasetLoadResult,
+    OPENROUTER_LOAD_COLUMNS,
     dataset_source_for_domain,
     domain_dataset_ids,
     load_all_datasets,
@@ -49,6 +50,7 @@ from dashboard.sections.openrouter import (
     _compute_task_spend_views,
     _default_task_spend_window,
     _estimator_coverage_summary,
+    _latest_provider_market_coverage,
     _drop_first_valid_change_point,
     _nowcast_latest_partial_period,
     _pivot_to_aggregate_change_percent,
@@ -861,6 +863,19 @@ def test_expected_columns_are_unique() -> None:
     assert len(EXPECTED_COLUMNS) == len(set(EXPECTED_COLUMNS))
 
 
+def test_openrouter_analytical_schemas_cover_registry_contracts() -> None:
+    for dataset_id, columns in OPENROUTER_LOAD_COLUMNS.items():
+        assert len(columns) == len(set(columns)), dataset_id
+        required = {
+            "dataset_id",
+            "source_url",
+            "source_run_id",
+            "scraped_at",
+            *DATASET_REGISTRY[dataset_id]["required_columns"],
+        }
+        assert required.issubset(columns), dataset_id
+
+
 def test_load_dataset_prefers_parquet(tmp_path: Path) -> None:
     root = tmp_path / "data" / "normalized" / "openrouter"
     root.mkdir(parents=True)
@@ -910,6 +925,97 @@ def test_provider_adoption_loader_prunes_unneeded_parquet_columns(tmp_path: Path
     assert "provider_display_name" in result.frame.columns
     assert "repo_full_name" not in result.frame.columns
     assert "pricing_prompt" not in result.frame.columns
+
+
+def test_openrouter_loader_uses_compact_dataset_schema_and_arrow_strings(tmp_path: Path) -> None:
+    root = tmp_path / "data" / "normalized" / "openrouter"
+    root.mkdir(parents=True)
+    pd.DataFrame(
+        [
+            {
+                "dataset_id": "provider_daily_activity",
+                "source_url": "fixture://provider-activity",
+                "source_run_id": "run-provider",
+                "scraped_at": "2026-07-18T00:00:00Z",
+                "usage_date": "2026-07-17",
+                "model_permaslug": "openai/gpt-test",
+                "entity_id": "openai",
+                "entity_name": "OpenAI",
+                "category_slug": "all",
+                "total_tokens": 1234,
+                "prompt_tokens": 800,
+                "completion_tokens": 434,
+                "reasoning_tokens": 0,
+                "request_count": 12,
+                # Deliberately present in the storage union but not consumed by
+                # the provider-activity analytical contract.
+                "description": "unused wide storage column",
+            }
+        ]
+    ).to_parquet(root / "provider_daily_activity.parquet", index=False)
+
+    result = load_dataset("provider_daily_activity", base_dir=tmp_path)
+
+    assert result.row_count == 1
+    assert list(result.frame.columns) == OPENROUTER_LOAD_COLUMNS["provider_daily_activity"]
+    assert "description" not in result.frame.columns
+    assert result.frame.iloc[0]["total_tokens"] == 1234
+    assert isinstance(result.frame["model_permaslug"].dtype, pd.StringDtype)
+    assert result.frame["model_permaslug"].dtype.storage == "pyarrow"
+
+
+def test_unprojected_legacy_dataset_keeps_stored_schema_without_global_padding(tmp_path: Path) -> None:
+    root = tmp_path / "data" / "normalized" / "llm_benchmarks"
+    root.mkdir(parents=True)
+    stored = pd.DataFrame(
+        [
+            {
+                "dataset_id": "llm_benchmarks",
+                "source_url": "fixture://benchmarks",
+                "source_run_id": "run-benchmarks",
+                "scraped_at": "2026-07-18T00:00:00Z",
+                "model_id": "model-a",
+                "name": "Model A",
+                "organization": "Lab A",
+                "release_date": "2026-07-01",
+                "gpqa": 0.8,
+                "swe_bench": 0.7,
+                "context_window": 128000,
+            }
+        ]
+    )
+    stored.to_parquet(root / "llm_benchmarks.parquet", index=False)
+
+    result = load_dataset("llm_benchmarks", base_dir=tmp_path)
+
+    assert list(result.frame.columns) == list(stored.columns)
+    assert "tokens" not in result.frame.columns
+    assert len(result.frame.columns) < len(EXPECTED_COLUMNS)
+
+
+def test_projected_loader_survives_new_column_before_dataset_migration(tmp_path: Path) -> None:
+    root = tmp_path / "data" / "normalized" / "openrouter_official"
+    root.mkdir(parents=True)
+    pd.DataFrame(
+        [
+            {
+                "dataset_id": "official_legacy_reconciliation",
+                "usage_date": "2026-07-17",
+                "official_total_tokens": 1000,
+                "official_named_tokens": 800,
+                "official_other_tokens": 200,
+                "source_run_id": "run-1",
+                "scraped_at": "2026-07-18T00:00:00Z",
+                # source_url intentionally represents the previous schema.
+            }
+        ]
+    ).to_parquet(root / "official_legacy_reconciliation.parquet", index=False)
+
+    result = load_dataset("official_legacy_reconciliation", base_dir=tmp_path)
+
+    assert result.row_count == 1
+    assert result.frame.iloc[0]["official_total_tokens"] == 1000
+    assert "source_url" in result.missing_columns
 
 
 def test_load_dataset_falls_back_to_csv_for_app_dataset(tmp_path: Path) -> None:
@@ -1042,7 +1148,14 @@ def test_load_latest_manifest_can_skip_raw_manifest_scan_when_datasets_provided(
 
 
 def test_section_domains_loads_only_selected_dashboard_inputs() -> None:
-    assert section_domains("OpenRouter Intelligence") == ("rankings", "apps", "compute_availability")
+    assert section_domains("Overview") == ("overview",)
+    assert section_domains("OpenRouter Intelligence") == (
+        "openrouter_intelligence", "compute_availability", "openrouter_official_market",
+    )
+    assert section_domains("OpenRouter Models") == (
+        "openrouter_model_explorer", "openrouter_catalog",
+    )
+    assert section_domains("OpenRouter Workloads") == ("openrouter_workloads", "apps")
     assert section_domains("Provider Adoption") == ("provider_adoption",)
     assert section_domains("Artificial Analysis") == ("artificial_analysis",)
     assert section_domains("Semiconductor Analysis") == (
@@ -1055,11 +1168,7 @@ def test_section_domains_loads_only_selected_dashboard_inputs() -> None:
 def test_load_all_datasets_supports_every_registered_dataset(tmp_path: Path) -> None:
     for dataset_id in DATASET_REGISTRY:
         domain = DATASET_REGISTRY[dataset_id]["domain"]
-        source = "openrouter"
-        if domain == "github":
-            source = "github_trending"
-        elif domain == "provider_adoption":
-            source = "provider_adoption"
+        source = dataset_source_for_domain(str(domain))
         root = tmp_path / "data" / "normalized" / source
         root.mkdir(parents=True, exist_ok=True)
         _frame_for_dataset(dataset_id).to_csv(root / f"{dataset_id}.csv", index=False)
@@ -1715,6 +1824,8 @@ def test_compute_provider_adoption_views_exposes_hf_daily_est_rollups(tmp_path: 
 def test_dataset_source_for_domain_maps_expected_roots() -> None:
     assert dataset_source_for_domain("rankings") == "openrouter"
     assert dataset_source_for_domain("apps") == "openrouter"
+    assert dataset_source_for_domain("openrouter_model_explorer") == "openrouter"
+    assert dataset_source_for_domain("openrouter_catalog") == "compute_availability"
     assert dataset_source_for_domain("github") == "github_trending"
     assert dataset_source_for_domain("provider_adoption") == "provider_adoption"
 
@@ -3476,3 +3587,52 @@ def test_compute_artificial_analysis_views_calculates_yoy(tmp_path: Path) -> Non
     # Q1-2025 sum: 15 + 5 + 10 + 10 + 10 + 10 = 60
     # YoY growth of sum: 0%
     assert capex_yoy.loc["Q1-2025", "Aggregated"] == 0.0
+
+
+def test_latest_provider_market_coverage_reconciles_to_official_total() -> None:
+    def result(dataset_id: str, frame: pd.DataFrame) -> DatasetLoadResult:
+        return DatasetLoadResult(
+            dataset_id=dataset_id,
+            label=dataset_id,
+            domain="rankings",
+            primary_date_column="usage_date",
+            metric_column="total_tokens",
+            frame=frame,
+            source_format="parquet",
+            source_path=None,
+            missing_columns=[],
+            duplicate_rows=0,
+            first_date="2026-07-16",
+            latest_date="2026-07-17",
+            latest_scraped_at="2026-07-18T00:00:00Z",
+            row_count=len(frame),
+        )
+
+    official = pd.DataFrame(
+        {
+            "usage_date": ["2026-07-16", "2026-07-17", "2026-07-17"],
+            "total_tokens": [80.0, 60.0, 40.0],
+        }
+    )
+    providers = pd.DataFrame(
+        {
+            "usage_date": ["2026-07-17", "2026-07-17"],
+            "entity_id": ["openai", "anthropic"],
+        }
+    )
+    plotted = pd.DataFrame(
+        {"OpenAI": [55.0], "Anthropic": [35.0]},
+        index=["2026-07-17"],
+    )
+
+    coverage, coverage_date, provider_count = _latest_provider_market_coverage(
+        {
+            "official_model_rankings_daily": result("official_model_rankings_daily", official),
+            "provider_daily_activity": result("provider_daily_activity", providers),
+        },
+        plotted,
+    )
+
+    assert coverage == pytest.approx(0.9)
+    assert coverage_date == "2026-07-17"
+    assert provider_count == 2

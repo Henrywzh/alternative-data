@@ -19,12 +19,26 @@ outputs/
 *.feather
 *.sqlite
 *.db
+!tests/fixtures/*.csv
 !data/normalized/
 data/normalized/*
 !data/normalized/openrouter/
 data/normalized/openrouter/*
 !data/normalized/openrouter/*.csv
 !data/normalized/openrouter/*.parquet
+
+# documented OpenRouter API datasets + compact landing-page mart
+!data/normalized/openrouter_official/
+data/normalized/openrouter_official/*
+!data/normalized/openrouter_official/*.parquet
+!data/normalized/overview/
+data/normalized/overview/*
+!data/normalized/overview/*.parquet
+
+# research archive is preserved outside Streamlit-loaded domains
+!data/normalized/openrouter_archive/
+data/normalized/openrouter_archive/*
+!data/normalized/openrouter_archive/*.parquet
 !data/normalized/provider_adoption/
 data/normalized/provider_adoption/*
 !data/normalized/provider_adoption/*.csv
@@ -109,6 +123,36 @@ data/normalized/ramp/*
 data/raw/ramp/**
 !data/raw/ramp/**/
 !data/raw/ramp/**/manifest.json
+
+# ofr_macro: commit normalized parquet files only (CSVs ignored by the repo-size rule)
+!data/normalized/ofr_macro/
+data/normalized/ofr_macro/*
+!data/normalized/ofr_macro/*.parquet
+
+# global_news: commit normalized parquet files only (CSVs ignored by the repo-size rule)
+!data/normalized/global_news/
+data/normalized/global_news/*
+!data/normalized/global_news/*.parquet
+
+# provider_incidents: compact normalized tables only; raw feeds remain artifacts
+!data/normalized/provider_incidents/
+data/normalized/provider_incidents/*
+!data/normalized/provider_incidents/*.parquet
+
+# ai_hiring: compact normalized lifecycle/aggregate tables only
+!data/normalized/ai_hiring/
+data/normalized/ai_hiring/*
+!data/normalized/ai_hiring/*.parquet
+
+# fred_macro: commit normalized parquet files only (CSVs ignored by the repo-size rule)
+!data/normalized/fred_macro/
+data/normalized/fred_macro/*
+!data/normalized/fred_macro/*.parquet
+
+# sec_edgar: commit normalized parquet files only (CSVs ignored by the repo-size rule)
+!data/normalized/sec_edgar/
+data/normalized/sec_edgar/*
+!data/normalized/sec_edgar/*.parquet
 
 # marts: derived analytics parquet files (e.g. daily_provider_economics)
 !data/normalized/marts/

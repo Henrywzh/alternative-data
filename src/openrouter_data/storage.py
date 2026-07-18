@@ -126,6 +126,7 @@ class StorageManager:
         self.base_dir = base_dir
         self.raw_root = base_dir / "data" / "raw" / "openrouter"
         self.normalized_root = base_dir / "data" / "normalized" / "openrouter"
+        self.archive_root = base_dir / "data" / "normalized" / "openrouter_archive"
         self.raw_root.mkdir(parents=True, exist_ok=True)
         self.normalized_root.mkdir(parents=True, exist_ok=True)
 
@@ -191,6 +192,9 @@ class StorageManager:
             latest_usage_date = usage_dates.max()
             if pd.notna(latest_usage_date):
                 cutoff = latest_usage_date - pd.Timedelta(days=retention_days - 1)
+                archive_rows = merged[usage_dates < cutoff].copy()
+                if not archive_rows.empty:
+                    self._archive_rows(dataset_id, archive_rows)
                 merged = merged[usage_dates >= cutoff].copy()
         merged = merged.sort_values(by=SORT_KEYS[dataset_id], na_position="last").reset_index(drop=True)
 
@@ -202,6 +206,32 @@ class StorageManager:
         else:
             merged.to_csv(csv_path, index=False)
         return merged
+
+    def _archive_rows(self, dataset_id: str, rows: pd.DataFrame) -> None:
+        """Persist rows before rolling-window eviction.
+
+        Archive files are deliberately outside dashboard registry domains, so
+        they preserve research-grade detail without being loaded by Streamlit.
+        """
+
+        dated = rows.copy()
+        years = pd.to_datetime(dated["usage_date"], errors="coerce").dt.year
+        dated = dated[years.notna()].copy()
+        if dated.empty:
+            return
+        dated["_archive_year"] = years[years.notna()].astype(int).to_numpy()
+        self.archive_root.mkdir(parents=True, exist_ok=True)
+        for year, group in dated.groupby("_archive_year"):
+            path = self.archive_root / f"{dataset_id}_{int(year)}.parquet"
+            archived = pd.read_parquet(path) if path.exists() else pd.DataFrame(columns=DATASET_COLUMNS)
+            incoming = group.drop(columns="_archive_year").reindex(columns=DATASET_COLUMNS)
+            combined = pd.concat([archived, incoming], ignore_index=True) if not archived.empty else incoming.copy()
+            combined = self._coerce_types(combined)
+            combined = combined.drop_duplicates(subset=NATURAL_KEYS[dataset_id], keep="last")
+            combined = combined.sort_values(SORT_KEYS[dataset_id], na_position="last").reset_index(drop=True)
+            temp_path = path.with_suffix(".tmp")
+            combined.to_parquet(temp_path, index=False)
+            temp_path.replace(path)
 
     @staticmethod
     def _coerce_types(dataframe: pd.DataFrame) -> pd.DataFrame:

@@ -54,6 +54,37 @@ _DASHBOARD_CSS = f"""
 .stApp {{ background: transparent; }}
 .block-container {{ padding-top: 1.5rem; padding-bottom: 3rem; max-width: 1360px; }}
 
+        /* ---- page orientation ---- */
+        .page-heading {{ margin: 0.2rem 0 1.6rem 0; max-width: 980px; }}
+        .page-eyebrow {{
+            color: {ACCENT} !important;
+            font-size: 0.72rem;
+            font-weight: 750;
+            letter-spacing: 0.11em;
+            text-transform: uppercase;
+            margin-bottom: 0.35rem;
+        }}
+        .page-heading h1 {{
+            color: {TEXT};
+            font-size: 2rem;
+            line-height: 1.15;
+            font-weight: 800;
+            letter-spacing: -0.025em;
+            margin: 0;
+        }}
+        .page-description {{
+            color: {MUTED} !important;
+            font-size: 0.95rem;
+            line-height: 1.55;
+            max-width: 900px;
+            margin-top: 0.45rem;
+        }}
+        .page-freshness {{
+            color: {TICK} !important;
+            font-size: 0.78rem;
+            margin-top: 0.35rem;
+        }}
+
         /* ---- KPI cards ---- */
         .kpi-grid {{ display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }}
         .kpi-card {{
@@ -152,8 +183,20 @@ _DASHBOARD_CSS = f"""
         .chk-warning {{ color: {YELLOW}; font-weight: 700; font-size: 0.9rem; margin-top: 0.5rem; }}
         .chk-error   {{ color: {RED}; font-weight: 700; font-size: 0.9rem; margin-top: 0.5rem; }}
 
-        /* ---- Hide Streamlit elements to lock theme ---- */
-        [data-testid="stToolbar"], #MainMenu, footer, header {{ visibility: hidden; display: none !important; }}
+        /* ---- Hide Streamlit chrome without removing sidebar controls ---- */
+        #MainMenu, footer {{ visibility: hidden; display: none !important; }}
+        [data-testid="stHeader"] {{
+            visibility: visible !important;
+            display: block !important;
+            background: transparent !important;
+            background-color: transparent !important;
+            box-shadow: none !important;
+        }}
+        [data-testid="stToolbar"] {{
+            visibility: visible !important;
+            display: flex !important;
+            background: transparent !important;
+        }}
         .stDeployButton {{ display: none; }}
         
         /* Force Light Mode variables and color-scheme across ALL components */
@@ -166,7 +209,7 @@ _DASHBOARD_CSS = f"""
         }}
 
         /* Global overrides */
-        body, .stApp, .stMain, [data-testid="stHeader"], [data-testid="stAppViewContainer"], [data-testid="stHorizontalBlock"] {{
+        body, .stApp, .stMain, [data-testid="stAppViewContainer"], [data-testid="stHorizontalBlock"] {{
             background-color: {BG} !important;
             color: {TEXT} !important;
         }}
@@ -175,6 +218,53 @@ _DASHBOARD_CSS = f"""
         [data-testid="stSidebar"], [data-testid="stSidebarContent"], [data-testid="stSidebarUserContent"], [data-testid="stSidebarNavLink"] {{
             background-color: {SIDEBAR} !important;
             color: {TEXT} !important;
+        }}
+        [data-testid="stSidebar"] {{ border-right: 1px solid {BORDER}; }}
+        [data-testid="stSidebar"] .sidebar-brand {{
+            color: {TEXT} !important;
+            font-size: 1.05rem;
+            font-weight: 800;
+            letter-spacing: -0.015em;
+            margin-top: 0.25rem;
+        }}
+        [data-testid="stSidebar"] .sidebar-brand-subtitle {{
+            color: {MUTED} !important;
+            font-size: 0.78rem;
+            margin: 0.05rem 0 1.15rem 0;
+        }}
+        [data-testid="stSidebar"] .sidebar-group-label {{
+            color: {MUTED} !important;
+            font-size: 0.68rem;
+            font-weight: 750;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin: 1rem 0 0.3rem 0.65rem;
+        }}
+        [data-testid="stSidebar"] .stButton {{ margin-bottom: 0.12rem; }}
+        [data-testid="stSidebar"] .stButton > button {{
+            justify-content: flex-start;
+            min-height: 2.25rem;
+            padding: 0.4rem 0.65rem;
+            border: 0 !important;
+            border-radius: 7px;
+            background: transparent !important;
+            box-shadow: none !important;
+            font-size: 0.86rem;
+            font-weight: 520;
+        }}
+        [data-testid="stSidebar"] .stButton > button p {{
+            width: 100%;
+            text-align: left;
+        }}
+        [data-testid="stSidebar"] .stButton > button:hover {{
+            background: rgba(37, 99, 235, 0.06) !important;
+            color: {ACCENT} !important;
+            transform: none;
+        }}
+        [data-testid="stSidebar"] .stButton > button[kind="primary"] {{
+            background: rgba(37, 99, 235, 0.10) !important;
+            color: {ACCENT} !important;
+            font-weight: 700;
         }}
 
         /* Ensure all text labels and elements use the fixed text color */

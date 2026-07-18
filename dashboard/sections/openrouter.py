@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+import json
 import re
 import sys
 from datetime import datetime
@@ -16,7 +17,7 @@ import yfinance as yf
 from dashboard import remote
 from dashboard.checks import CheckResult, run_checks
 from dashboard.data import (DOMAIN_ORDER, DATASET_REGISTRY, DatasetLoadResult, FreshnessInfo, dataset_source_for_domain, domain_dataset_ids, load_domain_datasets, load_latest_manifest, repo_root)
-from openrouter_revenue import (build_price_context, build_conservative_provider_economics, estimate_usage_revenue, summarize_economics_coverage)
+from openrouter_revenue import (build_price_context, build_conservative_provider_economics, build_provider_revenue_estimates, estimate_usage_revenue, summarize_economics_coverage)
 from semiconductor_memory_data.sources.config import AI_DEMAND_PPI_WEIGHTS
 from dashboard.theme import (ACCENT, BG, SIDEBAR, CARD, BORDER, TEXT, MUTED, GREEN, RED, YELLOW, GRID, TICK, MODEL_COLORS)
 from dashboard.components import (format_metric, _empty_dataset_frame, _styler_applymap_compat, WEEKLY_MONTHLY_OTHER_PROVIDERS, DAILY_OTHER_PROVIDERS, US_PROVIDER_ORDER, CHINA_PROVIDER_ORDER, order_provider_columns, regroup_provider_pivot_for_display, render_dataset_guard, format_scraped_at_display, dataframe_for_display, make_stacked_bar, make_stacked_area_chart, make_line_chart, kpi_card_html, kpi_grid_html, _top_n_with_others)
@@ -318,7 +319,7 @@ def _fuzzy_normalize_model_id(model_id: str) -> str:
     return f"{provider}/{normalized_model}"
 
 
-@st.cache_data(ttl=3600)
+@st.cache_data(ttl=3600, max_entries=12)
 def compute_openrouter_views(
     datasets: dict[str, DatasetLoadResult],
     revenue_cache_version: str = REVENUE_CACHE_VERSION,
@@ -729,19 +730,6 @@ def _estimator_coverage_summary(estimated: pd.DataFrame) -> dict[str, float | in
     }
 
 
-def _is_xiaomi_mimo_backpricing_hazard(frame: pd.DataFrame) -> pd.Series:
-    if frame.empty:
-        return pd.Series(dtype=bool, index=frame.index)
-    usage_date = pd.to_datetime(frame.get("usage_date"), errors="coerce").dt.strftime("%Y-%m-%d")
-    provider = frame.get("entity_id", frame.get("provider_slug", pd.Series("", index=frame.index))).astype("string").str.lower()
-    model = frame.get("model_permaslug", pd.Series("", index=frame.index)).astype("string").str.lower()
-    return (
-        provider.eq("xiaomi")
-        & usage_date.between("2026-03-19", "2026-04-05")
-        & model.str.startswith("xiaomi/mimo-v2-", na=False)
-    )
-
-
 def _compute_revenue_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, object]:
     """Dashboard-oriented provider tokens and revenue with legacy fallback stitching."""
     provider_res = datasets.get("provider_daily_activity")
@@ -848,18 +836,7 @@ def _compute_revenue_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, 
     modern_pivot_monthly = pd.DataFrame()
     estimator_coverage = _estimator_coverage_summary(pd.DataFrame())
     if not provider_activity.empty:
-        modern_df = provider_activity.copy()
-        modern_df = modern_df[~_is_xiaomi_mimo_backpricing_hazard(modern_df)].copy()
-        modern_with_price = (
-            estimate_usage_revenue(
-                modern_df,
-                pricing,
-                slug_strategy="canonical",
-                pricing_strategy="provider_fallback",
-            )
-            if not modern_df.empty
-            else pd.DataFrame()
-        )
+        modern_with_price = build_provider_revenue_estimates(provider_activity, pricing)
         estimator_coverage = _estimator_coverage_summary(modern_with_price)
         if "estimated_revenue" in modern_with_price.columns:
             modern_with_price = modern_with_price[modern_with_price["estimated_revenue"].notna()].copy()
@@ -1042,7 +1019,7 @@ def _default_task_spend_window(windows: list[int]) -> int:
     return 7 if 7 in windows else windows[0]
 
 
-@st.cache_data(ttl=3600)
+@st.cache_data(ttl=3600, max_entries=12)
 def compute_compute_availability_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, object]:
     # NOTE: Legacy function name. After removing AWS Spot + Lambda Cloud sources, this
     # now only surfaces OpenRouter catalog growth + latest-snapshot views used by the
@@ -1121,7 +1098,22 @@ def _prepare_explorer_catalog(frame: pd.DataFrame) -> pd.DataFrame:
         return pd.DataFrame()
 
     catalog = frame.copy()
-    for column in ("context_length", "pricing_prompt", "pricing_completion", "created_at"):
+    optional_columns = (
+        "description", "hugging_face_id", "architecture_modality", "input_modalities_json",
+        "output_modalities_json", "tokenizer", "instruct_type", "supported_parameters_json",
+        "default_parameters_json", "per_request_limits_json", "pricing_input_cache_read",
+        "pricing_input_cache_write", "top_provider_context_length",
+        "top_provider_max_completion_tokens", "top_provider_is_moderated", "expiration_date",
+        "knowledge_cutoff", "benchmarks_json", "links_json", "reasoning_json", "supported_voices_json",
+    )
+    for column in optional_columns:
+        if column not in catalog.columns:
+            catalog[column] = pd.NA
+    for column in (
+        "context_length", "pricing_prompt", "pricing_completion", "created_at",
+        "pricing_input_cache_read", "pricing_input_cache_write", "top_provider_context_length",
+        "top_provider_max_completion_tokens",
+    ):
         catalog[column] = pd.to_numeric(catalog.get(column), errors="coerce")
     catalog["provider_slug"] = catalog.get("provider_prefix", pd.Series(pd.NA, index=catalog.index)).astype("string")
     inferred_provider = catalog["model_id"].astype("string").str.split("/", n=1).str[0]
@@ -1143,12 +1135,15 @@ def _prepare_explorer_catalog(frame: pd.DataFrame) -> pd.DataFrame:
     catalog["release_date"] = pd.to_datetime(catalog["created_at"], unit="s", errors="coerce", utc=True)
     catalog["input_price_per_m"] = catalog["pricing_prompt"] * 1_000_000
     catalog["output_price_per_m"] = catalog["pricing_completion"] * 1_000_000
+    catalog["cache_read_price_per_m"] = catalog["pricing_input_cache_read"] * 1_000_000
+    catalog["cache_write_price_per_m"] = catalog["pricing_input_cache_write"] * 1_000_000
     catalog["openrouter_url"] = "https://openrouter.ai/" + catalog["model_id"].astype(str)
     explorer_columns = [
         "model_id", "canonical_slug", "model_name", "provider_slug", "company",
         "is_openrouter_alias", "model_type",
         "release_date", "context_length", "architecture", "pricing_prompt",
-        "pricing_completion", "input_price_per_m", "output_price_per_m", "openrouter_url",
+        "pricing_completion", "input_price_per_m", "output_price_per_m",
+        "cache_read_price_per_m", "cache_write_price_per_m", *optional_columns, "openrouter_url",
     ]
     return catalog[explorer_columns].sort_values(["company", "model_name", "model_id"]).reset_index(drop=True)
 
@@ -2093,6 +2088,43 @@ def render_modality_rankings_section(datasets: dict[str, DatasetLoadResult]) -> 
     )
 
 
+def _latest_provider_market_coverage(
+    datasets: dict[str, DatasetLoadResult],
+    provider_daily_pivot: pd.DataFrame,
+) -> tuple[float | None, str | None, int | None]:
+    """Reconcile the plotted priority-provider total with the official full-market total."""
+    official_result = datasets.get("official_model_rankings_daily")
+    if official_result is None or official_result.frame.empty or provider_daily_pivot.empty:
+        return None, None, None
+
+    official = official_result.frame.copy()
+    if not {"usage_date", "total_tokens"}.issubset(official.columns):
+        return None, None, None
+    official["usage_date"] = official["usage_date"].astype(str)
+    official["total_tokens"] = pd.to_numeric(official["total_tokens"], errors="coerce").fillna(0.0)
+    official_totals = official.groupby("usage_date")["total_tokens"].sum()
+
+    provider_totals = provider_daily_pivot.sum(axis=1)
+    provider_totals.index = provider_totals.index.astype(str)
+    common_dates = sorted(set(official_totals.index) & set(provider_totals.index))
+    if not common_dates:
+        return None, None, None
+    latest_date = common_dates[-1]
+    official_total = float(official_totals.loc[latest_date])
+    if official_total <= 0:
+        return None, latest_date, None
+
+    provider_count = None
+    provider_result = datasets.get("provider_daily_activity")
+    if provider_result is not None and not provider_result.frame.empty:
+        provider_rows = provider_result.frame
+        if {"usage_date", "entity_id"}.issubset(provider_rows.columns):
+            on_date = provider_rows[provider_rows["usage_date"].astype(str).eq(latest_date)]
+            provider_count = int(on_date["entity_id"].nunique())
+
+    return float(provider_totals.loc[latest_date]) / official_total, latest_date, provider_count
+
+
 def render_revenue_token_section(datasets: dict[str, DatasetLoadResult], openrouter_views: dict[str, object]) -> None:
     """Unified provider revenue + token volume section with Metric/View toggles over shared Weekly/Monthly/Daily tabs."""
     rev_data = openrouter_views.get("revenue_estimator", {})
@@ -2109,9 +2141,13 @@ def render_revenue_token_section(datasets: dict[str, DatasetLoadResult], openrou
 
     st.markdown('<div class="section-title">Provider Revenue &amp; Token Volume</div>', unsafe_allow_html=True)
     st.markdown(
-        '<div class="section-subtitle">Provider-level revenue and token consumption across OpenRouter, '
-        'switchable between absolute values, normalized share of total, and aggregate change over time.</div>',
+        '<div class="section-subtitle">Estimated revenue and observed token consumption for configured priority providers, '
+        'switchable between absolute values, normalized share, and aggregate change. This is not full-market OpenRouter volume.</div>',
         unsafe_allow_html=True,
+    )
+    st.caption(
+        "Coverage note: OpenRouter’s official ‘Other’ bucket contains models below the daily top 50 across all providers. "
+        "This priority-provider series already captures some of those long-tail models, so ‘Other’ is not the missing-provider gap."
     )
 
     if (
@@ -2154,6 +2190,7 @@ def render_revenue_token_section(datasets: dict[str, DatasetLoadResult], openrou
         )
     else:
         latest_tok_total, tok_wow_pct, dominant_provider = None, None, None
+        market_coverage, coverage_date, provider_count = _latest_provider_market_coverage(datasets, pivot_tok_daily)
         if not pivot_tok_weekly.empty:
             latest_row = pivot_tok_weekly.iloc[-1]
             latest_tok_total = float(latest_row.sum())
@@ -2170,15 +2207,21 @@ def render_revenue_token_section(datasets: dict[str, DatasetLoadResult], openrou
         else:
             tok_delta_cls, tok_delta_text = "flat", "—"
 
-        tok_coverage_label = "Legacy + observed modern" if not pivot_tok_weekly.empty and pivot_tok_weekly.index[0] < "2026" else "Observed modern"
         wow_str = f"{'+'  if tok_wow_pct and tok_wow_pct >= 0 else ''}{f'{tok_wow_pct:.1f}%' if tok_wow_pct is not None else '—'}"
+        coverage_detail = "priority providers vs official total"
+        if coverage_date:
+            coverage_detail = f"{provider_count or 'priority'} providers · {pd.to_datetime(coverage_date).strftime('%b %d')}"
 
         st.markdown(
             kpi_grid_html(
                 kpi_card_html("Total Tokens (Latest Week)", format_metric(latest_tok_total) if latest_tok_total else "—", delta=tok_delta_text, delta_class=tok_delta_cls),
                 kpi_card_html("WoW Change", wow_str, delta="vs prior week"),
                 kpi_card_html("Dominant Provider", dominant_provider or "—", delta="by token share this week"),
-                kpi_card_html("Data Coverage", tok_coverage_label, delta="legacy + smoothed modern seam"),
+                kpi_card_html(
+                    "Tracked-Provider Share",
+                    f"{market_coverage:.1%}" if market_coverage is not None else "—",
+                    delta=f"of official full market · {coverage_detail}",
+                ),
             ),
             unsafe_allow_html=True,
         )
@@ -2693,6 +2736,27 @@ def _format_price_per_m(value: object) -> str:
     return "n/a" if pd.isna(number) else f"${number:,.4g} / 1M"
 
 
+def _json_list(value: object) -> list[str]:
+    if value is None:
+        return []
+    if isinstance(value, list):
+        return [str(item) for item in value]
+    if pd.isna(value):
+        return []
+    try:
+        parsed = json.loads(str(value))
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return []
+    return [str(item) for item in parsed] if isinstance(parsed, list) else []
+
+
+def _safe_catalog_text(value: object) -> str | None:
+    if value is None or pd.isna(value):
+        return None
+    text = str(value).strip()
+    return text or None
+
+
 def _render_company_explorer(views: dict[str, object]) -> None:
     catalog = views.get("catalog", pd.DataFrame())
     if catalog.empty:
@@ -2819,6 +2883,39 @@ def _render_model_explorer(views: dict[str, object]) -> None:
         "A dash means no activity was observed, not confirmed zero traffic."
     )
 
+    description = _safe_catalog_text(info.get("description"))
+    input_modalities = _json_list(info.get("input_modalities_json"))
+    output_modalities = _json_list(info.get("output_modalities_json"))
+    supported_parameters = _json_list(info.get("supported_parameters_json"))
+    if description:
+        st.write(description)
+    with st.expander("Capabilities and official Models API metadata"):
+        meta_left, meta_right = st.columns(2)
+        with meta_left:
+            st.markdown("**Architecture**")
+            st.write(_safe_catalog_text(info.get("architecture_modality")) or _safe_catalog_text(info.get("architecture")) or "n/a")
+            st.markdown("**Input → output modalities**")
+            st.write(f"{', '.join(input_modalities) or 'n/a'} → {', '.join(output_modalities) or 'n/a'}")
+            st.markdown("**Tokenizer / instruction format**")
+            tokenizer = _safe_catalog_text(info.get("tokenizer")) or "n/a"
+            instruct = _safe_catalog_text(info.get("instruct_type"))
+            st.write(f"{tokenizer}{f' · {instruct}' if instruct else ''}")
+        with meta_right:
+            st.markdown("**Cache pricing**")
+            cache_read = _format_price_per_m(info.get("cache_read_price_per_m"))
+            cache_write = _format_price_per_m(info.get("cache_write_price_per_m"))
+            st.write(f"Read {cache_read} · Write {cache_write}")
+            st.markdown("**Top-provider limits**")
+            provider_context = _format_context_window(info.get("top_provider_context_length"))
+            max_completion = _format_context_window(info.get("top_provider_max_completion_tokens"))
+            st.write(f"Context {provider_context} · Max completion {max_completion}")
+            st.markdown("**Moderation / knowledge cutoff**")
+            moderated = info.get("top_provider_is_moderated")
+            moderation_text = "n/a" if pd.isna(moderated) else "Yes" if bool(moderated) else "No"
+            st.write(f"Moderated: {moderation_text} · Cutoff: {_safe_catalog_text(info.get('knowledge_cutoff')) or 'n/a'}")
+        st.markdown("**Supported request parameters**")
+        st.write(", ".join(supported_parameters) if supported_parameters else "Not published")
+
     st.markdown("#### Activity")
     st.caption("Token volume and, where the model-detail scraper has coverage, request traffic over time.")
     activity = state["activity"]
@@ -2881,7 +2978,8 @@ def _render_models_catalog(views: dict[str, object]) -> None:
         return
 
     st.caption("Current OpenRouter catalog reconstructed from compact change-only snapshots. Click any header to sort.")
-    filter_cols = st.columns([2.2, 1.4, 1.2, 1.2])
+    modality_options = sorted({item for value in catalog["input_modalities_json"] for item in _json_list(value)})
+    filter_cols = st.columns([2.0, 1.25, 1.05, 1.05, 1.0])
     search = filter_cols[0].text_input("Search models", placeholder="Name or model ID", key="openrouter_catalog_search")
     companies = filter_cols[1].multiselect(
         "Companies", sorted(catalog["company"].dropna().unique().tolist()), key="openrouter_catalog_companies",
@@ -2892,6 +2990,9 @@ def _render_models_catalog(views: dict[str, object]) -> None:
         key="openrouter_catalog_context",
     )
     priced_only = filter_cols[3].toggle("Priced models only", value=False, key="openrouter_catalog_priced")
+    input_modality = filter_cols[4].selectbox(
+        "Input modality", ["Any", *modality_options], key="openrouter_catalog_input_modality",
+    )
 
     filtered = catalog.copy()
     if search.strip():
@@ -2906,24 +3007,27 @@ def _render_models_catalog(views: dict[str, object]) -> None:
         filtered = filtered[filtered["context_length"] >= min_context]
     if priced_only:
         filtered = filtered[(filtered["pricing_prompt"] > 0) | (filtered["pricing_completion"] > 0)]
+    if input_modality != "Any":
+        filtered = filtered[filtered["input_modalities_json"].map(lambda value: input_modality in _json_list(value))]
     filtered = filtered.sort_values(["tokens_30d", "model_name"], ascending=[False, True])
 
     st.caption(f"{len(filtered):,} of {len(catalog):,} current models")
     table = filtered[[
         "model_name", "model_type", "company", "model_id", "release_date", "architecture", "context_length",
-        "input_price_per_m", "output_price_per_m", "tokens_30d", "observed_days", "activity_source", "openrouter_url",
+        "input_price_per_m", "output_price_per_m", "cache_read_price_per_m", "tokens_30d", "observed_days", "activity_source", "openrouter_url",
     ]].copy()
     table["release_date"] = table["release_date"].dt.date
     table = table.rename(columns={
         "model_name": "Model", "model_type": "Type", "company": "Company", "model_id": "Model ID", "release_date": "Released",
         "architecture": "Modality", "context_length": "Context", "input_price_per_m": "Input $/1M",
         "output_price_per_m": "Output $/1M", "tokens_30d": "Tokens (30d)", "observed_days": "Observed days",
-        "activity_source": "Activity source", "openrouter_url": "Details",
+        "cache_read_price_per_m": "Cache read $/1M", "activity_source": "Activity source", "openrouter_url": "Details",
     })
     st.dataframe(table, hide_index=True, width="stretch", height=640, column_config={
         "Context": st.column_config.NumberColumn(format="compact"),
         "Input $/1M": st.column_config.NumberColumn(format="$%.4g"),
         "Output $/1M": st.column_config.NumberColumn(format="$%.4g"),
+        "Cache read $/1M": st.column_config.NumberColumn(format="$%.4g"),
         "Tokens (30d)": st.column_config.NumberColumn(format="compact"),
         "Observed days": st.column_config.NumberColumn(format="%d/30"),
         "Details": st.column_config.LinkColumn(display_text="Open ↗"),
@@ -2943,15 +3047,32 @@ def render_data_explorer(datasets: dict[str, DatasetLoadResult]) -> None:
         icon="ℹ️",
     )
     views = build_openrouter_explorer_views(datasets)
-    explorer_tab, catalog_tab = st.tabs(["Company & model", "All models"])
-    with explorer_tab:
+    page_view = st.segmented_control(
+        "View",
+        ["Company & model", "All models"],
+        default="Company & model",
+        key="openrouter_models_page_view",
+    ) if hasattr(st, "segmented_control") else st.radio(
+        "View",
+        ["Company & model", "All models"],
+        horizontal=True,
+        key="openrouter_models_page_view",
+    )
+    if page_view == "Company & model":
         mode = st.segmented_control(
             "Explore by", ["Company", "Model"], default="Company", key="openrouter_explorer_mode",
         ) if hasattr(st, "segmented_control") else st.radio(
             "Explore by", ["Company", "Model"], horizontal=True, key="openrouter_explorer_mode",
         )
-        _render_model_explorer(views) if mode == "Model" else _render_company_explorer(views)
-    with catalog_tab:
+        if mode == "Model":
+            _render_model_explorer(views)
+        else:
+            if hasattr(st, "query_params") and st.query_params.get("model") is not None:
+                del st.query_params["model"]
+            _render_company_explorer(views)
+    else:
+        if hasattr(st, "query_params") and st.query_params.get("model") is not None:
+            del st.query_params["model"]
         _render_models_catalog(views)
 
 
@@ -2959,6 +3080,14 @@ def render_models(domain_states, datasets) -> None:
     """Dedicated top-level tab for the OpenRouter catalog and explorer."""
     _ = domain_states
     render_data_explorer(datasets)
+
+
+def render_workloads(domain_states, datasets) -> None:
+    """Render OpenRouter workload composition without loading market economics."""
+    _ = domain_states
+    render_context_length_section(datasets)
+    render_modality_rankings_section(datasets)
+    render_apps_tables(datasets)
 
 
 def render_compute_evolution_section(compute_views: dict[str, object]) -> None:
@@ -3039,11 +3168,87 @@ def render_compute_evolution_section(compute_views: dict[str, object]) -> None:
             st.plotly_chart(fig_scatter, width="stretch", theme=None)
 
 
+def render_official_market_section(datasets: dict[str, DatasetLoadResult]) -> None:
+    result = datasets.get("official_model_rankings_daily")
+    if result is None or result.frame.empty:
+        return
+    frame = result.frame.copy()
+    frame["usage_date"] = pd.to_datetime(frame["usage_date"], errors="coerce")
+    frame["total_tokens"] = pd.to_numeric(frame["total_tokens"], errors="coerce").fillna(0.0)
+    frame["is_other"] = frame["is_other"].fillna(False).astype(bool)
+    frame = frame.dropna(subset=["usage_date"])
+    if frame.empty:
+        return
+
+    daily = frame.groupby("usage_date", as_index=False).agg(total_tokens=("total_tokens", "sum")).sort_values("usage_date")
+    named = (
+        frame[~frame["is_other"]]
+        .groupby("usage_date", as_index=False)["total_tokens"]
+        .sum()
+        .rename(columns={"total_tokens": "named_tokens"})
+    )
+    daily = daily.merge(named, on="usage_date", how="left").fillna({"named_tokens": 0.0})
+    latest_date = daily.iloc[-1]["usage_date"]
+    latest_total = float(daily.iloc[-1]["total_tokens"])
+    latest_named = float(daily.iloc[-1]["named_tokens"])
+    dod = None
+    if len(daily) > 1 and float(daily.iloc[-2]["total_tokens"]) > 0:
+        dod = (latest_total / float(daily.iloc[-2]["total_tokens"]) - 1.0) * 100.0
+    latest_models = frame[(frame["usage_date"] == latest_date) & (~frame["is_other"])].sort_values(
+        "total_tokens", ascending=False
+    )
+    top_model = str(latest_models.iloc[0]["model_permaslug"]) if not latest_models.empty else "—"
+    other_share = (latest_total - latest_named) / latest_total * 100.0 if latest_total else 0.0
+
+    st.markdown('<div class="section-title">Official Daily Market Volume</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="rankings-warning"><b>Two complementary sources:</b> this panel uses the documented OpenRouter API '
+        '(daily top 50 + Other) for broad market totals. The detailed provider/model pages below retain request, prompt, '
+        'completion, category, and revenue granularity that the official aggregate API does not expose.</div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        kpi_grid_html(
+            kpi_card_html("Latest Daily Tokens", format_metric(latest_total), delta=latest_date.strftime("%b %d, %Y")),
+            kpi_card_html(
+                "Day-over-Day", f"{dod:+.1f}%" if dod is not None else "—", delta="official daily total",
+                delta_class="up" if dod is not None and dod >= 0 else "down" if dod is not None else "flat",
+            ),
+            kpi_card_html(
+                "Top Named Model", top_model[:28] + ("…" if len(top_model) > 28 else ""),
+                delta="latest day", value_style="font-size:1.05rem;",
+            ),
+            kpi_card_html("Other Share", f"{other_share:.1f}%", delta="outside named top 50"),
+        ),
+        unsafe_allow_html=True,
+    )
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=daily["usage_date"], y=daily["total_tokens"], name="All tokens", mode="lines",
+        line=dict(color=ACCENT, width=2.5), fill="tozeroy", fillcolor="rgba(37,99,235,0.10)",
+        hovertemplate="%{x|%Y-%m-%d}<br>%{y:,.0f} tokens<extra></extra>",
+    ))
+    fig.add_trace(go.Scatter(
+        x=daily["usage_date"], y=daily["named_tokens"], name="Named top models", mode="lines",
+        line=dict(color=MODEL_COLORS[2], width=1.5, dash="dot"),
+        hovertemplate="%{x|%Y-%m-%d}<br>%{y:,.0f} tokens<extra></extra>",
+    ))
+    fig.update_layout(
+        template="plotly_white", height=350, hovermode="x unified", margin=dict(l=0, r=0, t=10, b=55),
+        xaxis=dict(showgrid=False), yaxis=dict(title="Tokens", tickformat="~s", gridcolor=GRID),
+        legend=dict(orientation="h", y=-0.18),
+    )
+    st.plotly_chart(fig, width="stretch", theme=None)
+    st.caption(
+        f"Source: OpenRouter documented rankings-daily API · Scraped {format_scraped_at_display(result.latest_scraped_at)} · "
+        "Official totals are additive and do not overwrite the detailed tracker."
+    )
+
+
 def render(domain_states, datasets) -> None:
     openrouter_views = compute_openrouter_views(
         {
-            **domain_states["rankings"][0],
-            **domain_states["apps"][0],
+            **domain_states["openrouter_intelligence"][0],
             **domain_states["compute_availability"][0],
         },
         revenue_cache_version=REVENUE_CACHE_VERSION,
@@ -3052,8 +3257,5 @@ def render(domain_states, datasets) -> None:
     render_top_models_chart(datasets, openrouter_views)
     render_revenue_token_section(datasets, openrouter_views)
     render_task_spend_section(openrouter_views)
-    render_context_length_section(datasets)
-    render_modality_rankings_section(datasets)
     render_token_revenue_comparison(openrouter_views)
     render_compute_evolution_section(compute_views)
-    render_apps_tables(datasets)

@@ -5,17 +5,23 @@ on:
     - cron: "30 1 * * *"   # 01:30 UTC — after rankings weekly runs
   workflow_dispatch:        # allow manual trigger for backfill
 
+concurrency:
+  group: openrouter-provider-activity-${{ github.ref }}
+  cancel-in-progress: false
+
 permissions:
   contents: write
 
 jobs:
   scrape-provider-activity:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -53,10 +59,18 @@ jobs:
           git add data/normalized/openrouter/provider_daily_activity.parquet
           git add data/normalized/marts/daily_provider_economics.parquet
           git commit -m "chore: update provider activity and economics data [$(date -u +%Y-%m-%d)]"
-          git pull --rebase origin "${{ github.event.repository.default_branch }}"
-          git push
+
+          for attempt in 1 2 3; do
+            if git pull --rebase origin "${{ github.event.repository.default_branch }}" && git push; then
+              exit 0
+            fi
+            echo "Push failed on attempt ${attempt}; retrying after a fresh rebase"
+            sleep $((attempt * 5))
+          done
+          exit 1
 
       - name: Upload normalized datasets
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: provider-daily-activity

@@ -64,16 +64,16 @@ def _auth_headers() -> dict[str, str]:
     return headers
 
 
-@st.cache_data(ttl=300, show_spinner=False)
-def latest_data_sha() -> str | None:
-    """Latest commit SHA touching the data dir, or None if it can't be fetched.
+@st.cache_data(ttl=300, show_spinner=False, max_entries=24)
+def latest_data_sha(path_prefix: str = DATA_PATH_PREFIX) -> str | None:
+    """Latest commit SHA touching one data domain, or None on failure.
 
-    Filtering by ``path`` means unrelated code commits don't bump the SHA, so the
-    dataset cache only invalidates when data actually changes. Returns None on any
-    error, which makes callers fall back to the local checkout.
+    A domain-specific path prevents an unrelated workflow push from duplicating
+    heavy cached DataFrames. Returns None on any error, which makes callers fall
+    back to the local checkout.
     """
     url = f"{_API_BASE}/repos/{repo_slug()}/commits"
-    params = {"sha": data_branch(), "path": DATA_PATH_PREFIX, "per_page": 1}
+    params = {"sha": data_branch(), "path": path_prefix, "per_page": 1}
     try:
         resp = _SESSION.get(url, params=params, headers=_auth_headers(), timeout=_TIMEOUT)
         resp.raise_for_status()
@@ -85,7 +85,7 @@ def latest_data_sha() -> str | None:
     return None
 
 
-@st.cache_data(ttl=86400, show_spinner=False)
+@st.cache_data(ttl=1800, show_spinner=False, max_entries=24)
 def fetch_bytes(rel_path: str, sha: str) -> bytes | None:
     """Fetch a repo file at a pinned commit SHA, or None if not found/unreachable.
 

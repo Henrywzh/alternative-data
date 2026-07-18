@@ -42,6 +42,7 @@ from semiconductor_memory_data.sources.config import AI_DEMAND_PPI_WEIGHTS
 from dashboard.theme import (ACCENT, BG, SIDEBAR, CARD, BORDER, TEXT, MUTED, GREEN, RED, YELLOW, GRID, TICK, MODEL_COLORS, inject_css)
 from dashboard.components import (format_metric, _empty_dataset_frame, _styler_applymap_compat, WEEKLY_MONTHLY_OTHER_PROVIDERS, DAILY_OTHER_PROVIDERS, US_PROVIDER_ORDER, CHINA_PROVIDER_ORDER, order_provider_columns, regroup_provider_pivot_for_display, render_dataset_guard, format_scraped_at_display, dataframe_for_display, make_stacked_bar, make_stacked_area_chart, make_line_chart, kpi_card_html, kpi_grid_html, _top_n_with_others)
 from dashboard.sections import (
+    overview,
     openrouter,
     vercel_ai,
     ramp,
@@ -50,6 +51,8 @@ from dashboard.sections import (
     semiconductor,
     minerals,
     google_trends,
+    provider_incidents,
+    ai_hiring,
 )
 
 # Backward-compatible re-exports for tests/scratch that import from dashboard.app.
@@ -75,21 +78,44 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 MAIN_SECTIONS = (
+    "Overview",
     "OpenRouter Intelligence",
     "OpenRouter Models",
+    "OpenRouter Workloads",
     "Vercel AI",
     "Ramp",
     "Artificial Analysis",
     "Provider Adoption",
+    "AI Hiring Demand",
     "Semiconductor Analysis",
     "Google Trends Signal",
     "Minerals",
+    "Provider Incidents",
 )
 
 
+SECTION_DESCRIPTIONS = {
+    "Overview": "Cross-market pulse across AI usage, enterprise adoption, developer activity, model quality, and infrastructure.",
+    "OpenRouter Intelligence": "Tracks model and provider usage, estimated revenue, task leaders, market coverage, and catalog economics.",
+    "OpenRouter Models": "Explore OpenRouter companies and models by activity, pricing, context window, release date, capabilities, and public-app usage.",
+    "OpenRouter Workloads": "Tracks request context lengths, modality mix, and the public apps generating OpenRouter traffic.",
+    "Vercel AI": "Tracks model and lab usage share across Vercel AI Gateway, with modality and metric-level rankings.",
+    "Ramp": "Tracks business AI adoption, spend intensity, vendor mix, model mix, company segments, and employment signals.",
+    "Artificial Analysis": "Compares frontier-model intelligence, coding and math quality, speed, pricing, context, and lab-level progress.",
+    "Provider Adoption": "Tracks package downloads, GitHub implementation signals, Hugging Face activity, and provider momentum.",
+    "AI Hiring Demand": "Tracks AI job-posting share, company hiring pipelines, role mix, openings, closures, and source coverage.",
+    "Semiconductor Analysis": "Tracks AI-infrastructure demand through memory pricing, production, trade, revenue, and release-lag indicators.",
+    "Google Trends Signal": "Tracks search-interest changes for AI products and providers across time and geography.",
+    "Minerals": "Tracks strategic mineral prices, supply signals, and market conditions relevant to compute infrastructure.",
+    "Provider Incidents": "Tracks provider-reported outages, affected components, duration, status updates, and source coverage.",
+}
+
+
 SECTION_DOMAIN_MAP = {
-    "OpenRouter Intelligence": ("rankings", "apps", "compute_availability"),
-    "OpenRouter Models": ("rankings", "apps", "compute_availability"),
+    "Overview": ("overview",),
+    "OpenRouter Intelligence": ("openrouter_intelligence", "compute_availability", "openrouter_official_market"),
+    "OpenRouter Models": ("openrouter_model_explorer", "openrouter_catalog"),
+    "OpenRouter Workloads": ("openrouter_workloads", "apps"),
     "Vercel AI": ("vercel_ai",),
     "Ramp": ("ramp",),
     "Artificial Analysis": ("artificial_analysis",),
@@ -98,6 +124,8 @@ SECTION_DOMAIN_MAP = {
     "Google Trends Signal": (),
     # Self-contained, like Google Trends — loads its own data, no registry domain.
     "Minerals": (),
+    "Provider Incidents": ("provider_incidents",),
+    "AI Hiring Demand": ("ai_hiring",),
 }
 
 
@@ -137,15 +165,59 @@ def section_domains(section: str) -> tuple[str, ...]:
     return SECTION_DOMAIN_MAP[section]
 
 
+def _clear_model_query_param() -> None:
+    if hasattr(st, "query_params") and st.query_params.get("model") is not None:
+        del st.query_params["model"]
+
+
+def _set_main_section(section: str) -> None:
+    st.session_state["main_section"] = section
+    if section != "OpenRouter Models":
+        _clear_model_query_param()
+
+
 def select_main_section() -> str:
-    label = "Dashboard section"
-    if hasattr(st, "segmented_control"):
-        selected = st.segmented_control(label, MAIN_SECTIONS, default=MAIN_SECTIONS[0])
-        return str(selected or MAIN_SECTIONS[0])
-    return str(st.radio(label, MAIN_SECTIONS, horizontal=True))
+    current = str(st.session_state.get("main_section", MAIN_SECTIONS[0]))
+    if current not in MAIN_SECTIONS:
+        current = MAIN_SECTIONS[0]
+        st.session_state["main_section"] = current
+
+    def nav_button(label: str) -> None:
+        st.button(
+            label,
+            key=f"sidebar_nav_{label}",
+            type="primary" if current == label else "secondary",
+            width="stretch",
+            on_click=_set_main_section,
+            args=(label,),
+        )
+
+    with st.sidebar:
+        st.markdown(
+            '<div class="sidebar-brand">Alternative Data</div>'
+            '<div class="sidebar-brand-subtitle">Research dashboard</div>',
+            unsafe_allow_html=True,
+        )
+        nav_button("Overview")
+        st.markdown('<div class="sidebar-group-label">AI Usage</div>', unsafe_allow_html=True)
+        for label in ("OpenRouter Intelligence", "OpenRouter Models", "OpenRouter Workloads", "Vercel AI"):
+            nav_button(label)
+        st.markdown('<div class="sidebar-group-label">Adoption</div>', unsafe_allow_html=True)
+        for label in ("Ramp", "Provider Adoption", "AI Hiring Demand"):
+            nav_button(label)
+        st.markdown('<div class="sidebar-group-label">Analysis</div>', unsafe_allow_html=True)
+        nav_button("Artificial Analysis")
+        st.markdown('<div class="sidebar-group-label">Infrastructure</div>', unsafe_allow_html=True)
+        for label in ("Semiconductor Analysis", "Minerals"):
+            nav_button(label)
+        st.markdown('<div class="sidebar-group-label">Signals</div>', unsafe_allow_html=True)
+        for label in ("Google Trends Signal", "Provider Incidents"):
+            nav_button(label)
+
+    return current
 
 
-@st.cache_data(ttl=3600)
+@st.cache_data(ttl=3600, max_entries=8)
 def load_domain_state_cached(
     base_dir: Path,
     domain: str,
@@ -155,7 +227,7 @@ def load_domain_state_cached(
     # Both are cache keys only: domain_signature catches local edits (mtimes
     # change), data_sha catches remote pushes on Streamlit Cloud (mtimes don't).
     _ = (domain_signature, data_sha)
-    datasets = load_domain_datasets(domain, base_dir=base_dir)
+    datasets = load_domain_datasets(domain, base_dir=base_dir, data_sha=data_sha)
     freshness = load_latest_manifest(base_dir=base_dir, datasets=datasets, scan_raw_manifests=False)
     # Streamlit Cloud can briefly serve mixed app/checker versions during deploys.
     # Prefer the narrowed domain-aware API when present, but keep the app bootable
@@ -167,17 +239,19 @@ def load_domain_state_cached(
     return datasets, freshness, checks
 
 
-def render_header(freshness: FreshnessInfo) -> None:
+def render_header(freshness: FreshnessInfo, section: str) -> None:
     updated = freshness.latest_scraped_at or "Unknown"
+    updated_display = format_scraped_at_display(updated) if updated != "Unknown" else updated
+    description = SECTION_DESCRIPTIONS.get(section, "Alternative datasets for monitoring AI markets and infrastructure.")
     st.markdown(
         f"""
-        <div style="margin-bottom:1.2rem;">
-          <h1 style="font-size:1.9rem;font-weight:800;color:{TEXT};margin:0 0 0.2rem 0;">
-            Alternative Data Dashboard
+        <div class="page-heading">
+          <div class="page-eyebrow">Alternative Data Dashboard</div>
+          <h1>
+            {section}
           </h1>
-          <span style="color:{MUTED};font-size:0.88rem;">
-            Last updated: {updated}
-          </span>
+          <div class="page-description">{description}</div>
+          <div class="page-freshness">Latest available update: {updated_display}</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -202,10 +276,12 @@ def render_checks(checks: list[CheckResult]) -> None:
 
 
 SECTION_RENDERERS = {
+    "Overview": overview.render,
     "OpenRouter Intelligence": openrouter.render,
     # Keep startup compatible with a Streamlit process that has briefly
     # retained the pre-explorer module during a rolling redeploy.
     "OpenRouter Models": getattr(openrouter, "render_models", openrouter.render),
+    "OpenRouter Workloads": getattr(openrouter, "render_workloads", openrouter.render),
     "Vercel AI": vercel_ai.render,
     "Ramp": ramp.render,
     "Artificial Analysis": artificial_analysis.render,
@@ -213,29 +289,45 @@ SECTION_RENDERERS = {
     "Semiconductor Analysis": semiconductor.render,
     "Google Trends Signal": google_trends.render,
     "Minerals": minerals.render,
+    "Provider Incidents": provider_incidents.render,
+    "AI Hiring Demand": ai_hiring.render,
 }
 
 
 def main() -> None:
-    st.set_page_config(page_title="Alternative Data Dashboard", layout="wide", page_icon="📊")
+    st.set_page_config(
+        page_title="Alternative Data Dashboard",
+        layout="wide",
+        page_icon="📊",
+        initial_sidebar_state="expanded",
+    )
     inject_css()
 
-    data_sha = remote.latest_data_sha() if remote.remote_enabled() else None
-
-    selector_col, refresh_col = st.columns([5, 1], vertical_alignment="bottom")
-    with selector_col:
-        selected_section = select_main_section()
-    with refresh_col:
+    selected_section = select_main_section()
+    if selected_section != "OpenRouter Models":
+        _clear_model_query_param()
+    selected_domains = section_domains(selected_section)
+    domain_shas = {
+        domain: remote.latest_data_sha(
+            f"{remote.DATA_PATH_PREFIX}/{dataset_source_for_domain(domain)}"
+        )
+        for domain in selected_domains
+    } if remote.remote_enabled() else {domain: None for domain in selected_domains}
+    with st.sidebar:
+        st.divider()
         if st.button("🔄 Refresh data", width="stretch"):
             st.cache_data.clear()
             st.rerun()
-        if data_sha:
-            st.caption(f"Data `{data_sha[:7]}`")
+        visible_shas = sorted({sha[:7] for sha in domain_shas.values() if sha})
+        if visible_shas:
+            st.caption(f"Data {' · '.join(f'`{sha}`' for sha in visible_shas)}")
 
-    selected_domains = section_domains(selected_section)
     domain_states = {
         domain: load_domain_state_cached(
-            BASE_DIR, domain, build_domain_signature(BASE_DIR, domain), data_sha=data_sha
+            BASE_DIR,
+            domain,
+            build_domain_signature(BASE_DIR, domain),
+            data_sha=domain_shas[domain],
         )
         for domain in selected_domains
     }
@@ -263,8 +355,7 @@ def main() -> None:
         ),
     )
 
-    render_header(freshness)
-    st.caption("Only the selected dashboard section is loaded, which keeps Streamlit Cloud restarts lighter and faster.")
+    render_header(freshness, selected_section)
 
     renderer = SECTION_RENDERERS.get(selected_section)
     if renderer is not None:

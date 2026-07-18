@@ -41,10 +41,35 @@ class DatasetRecord:
     created_at: float | None = None
     context_length: float | None = None
     architecture: str | None = None
+    description: str | None = None
+    hugging_face_id: str | None = None
+    architecture_modality: str | None = None
+    input_modalities_json: str | None = None
+    output_modalities_json: str | None = None
+    tokenizer: str | None = None
+    instruct_type: str | None = None
+    supported_parameters_json: str | None = None
+    default_parameters_json: str | None = None
+    per_request_limits_json: str | None = None
     pricing_prompt: float | None = None
     pricing_completion: float | None = None
+    pricing_request: float | None = None
+    pricing_image: float | None = None
+    pricing_web_search: float | None = None
+    pricing_internal_reasoning: float | None = None
+    pricing_input_cache_read: float | None = None
+    pricing_input_cache_write: float | None = None
     top_provider_id: str | None = None
+    top_provider_context_length: float | None = None
+    top_provider_max_completion_tokens: float | None = None
+    top_provider_is_moderated: bool | None = None
     provider_prefix: str | None = None
+    expiration_date: str | None = None
+    knowledge_cutoff: str | None = None
+    benchmarks_json: str | None = None
+    links_json: str | None = None
+    reasoning_json: str | None = None
+    supported_voices_json: str | None = None
 
     # Raw Payload (Optional if we want to follow the "minimal structured fields" rule)
     raw_json_preview: str | None = None
