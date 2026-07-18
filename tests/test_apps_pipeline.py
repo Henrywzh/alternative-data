@@ -197,26 +197,49 @@ def test_daily_update_appends_new_usage_day_and_preserves_older_rows(tmp_path: P
     assert sorted(usage["usage_date"].unique().tolist()) == ["2026-03-06", "2026-03-07", "2026-03-08"]
 
 
-def test_daily_update_with_no_new_usage_reports_no_new_rows_and_skips_rewrite(
+def test_daily_update_replaces_mutable_app_date_partition_and_removes_stale_models(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    payloads = _load_payloads()
+    updated_usage = dict(payloads["openclaw_usage"])
+    updated_usage["data"] = [dict(point) for point in payloads["openclaw_usage"]["data"]]
+    updated_usage["data"][0] = {
+        "x": "2026-03-06 00:00:00",
+        "ys": {
+            "stepfun/step-3.5-flash": 164_423_763_540,
+            "Others": 92_090_175_269,
+        },
+    }
+
     pipeline = AppsPipeline(tmp_path)
     directory_html = build_apps_directory_fixture_html()
     app_html = build_app_detail_fixture_html()
     monkeypatch.setattr(pipeline.source, "fetch_snapshots", lambda: make_snapshots(directory_html, app_html))
 
     pipeline.run_initial_backfill()
-    usage_path = tmp_path / "data" / "normalized" / "openrouter" / "app_usage_daily.csv"
-    rows_after_backfill = len(pd.read_csv(usage_path))
+    monkeypatch.setattr(
+        pipeline.source,
+        "fetch_snapshots",
+        lambda: make_snapshots(
+            directory_html,
+            build_app_detail_fixture_html(usage=updated_usage),
+        ),
+    )
 
     result = pipeline.run_daily_update()
 
+    usage_path = tmp_path / "data" / "normalized" / "openrouter" / "app_usage_daily.csv"
+    usage = pd.read_csv(usage_path)
+    repaired = usage[
+        (usage["app_name"] == "OpenClaw") & (usage["usage_date"] == "2026-03-06")
+    ]
+    assert set(repaired["model_permaslug"]) == {"stepfun/step-3.5-flash", "Others"}
+    assert repaired["total_tokens"].sum() == 256_513_938_809
+
     manifest = json.loads((result.raw_run_dir / "manifest.json").read_text(encoding="utf-8"))
     usage_entry = next(item for item in manifest["datasets"] if item["dataset_id"] == "app_usage_daily")
-    assert usage_entry["status"] == "no_new_rows"
-    assert usage_entry["rows"] == 0
-    assert result.datasets_written["app_usage_daily"] == rows_after_backfill
-    assert len(pd.read_csv(usage_path)) == rows_after_backfill
+    assert usage_entry["status"] == "ok"
+    assert usage_entry["rows"] == 11
 
 
 def test_top_models_snapshots_append_across_multiple_scrape_dates(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

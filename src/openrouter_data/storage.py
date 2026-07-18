@@ -156,11 +156,28 @@ class StorageManager:
                 dataframe[column] = pd.NA
         return dataframe[DATASET_COLUMNS]
 
-    def upsert_dataset(self, dataset_id: str, records: Iterable[DatasetRecord]) -> pd.DataFrame:
+    def upsert_dataset(
+        self,
+        dataset_id: str,
+        records: Iterable[DatasetRecord],
+        *,
+        replace_partitions: list[str] | None = None,
+    ) -> pd.DataFrame:
         incoming = pd.DataFrame([record.to_dict() for record in records], columns=DATASET_COLUMNS)
         if incoming.empty:
             raise ValidationError(f"Dataset {dataset_id} has no incoming records")
         existing = self.load_dataset(dataset_id)
+        if not existing.empty and replace_partitions:
+            missing = [column for column in replace_partitions if column not in incoming.columns]
+            if missing:
+                raise ValidationError(
+                    f"Dataset {dataset_id} cannot replace partitions; missing columns: {missing}"
+                )
+            incoming_partitions = pd.MultiIndex.from_frame(
+                incoming[replace_partitions].astype("string").drop_duplicates()
+            )
+            existing_partitions = pd.MultiIndex.from_frame(existing[replace_partitions].astype("string"))
+            existing = existing[~existing_partitions.isin(incoming_partitions)].copy()
         if existing.empty:
             merged = incoming.copy()
         else:
