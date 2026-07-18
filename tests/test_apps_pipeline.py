@@ -197,6 +197,28 @@ def test_daily_update_appends_new_usage_day_and_preserves_older_rows(tmp_path: P
     assert sorted(usage["usage_date"].unique().tolist()) == ["2026-03-06", "2026-03-07", "2026-03-08"]
 
 
+def test_daily_update_with_no_new_usage_reports_no_new_rows_and_skips_rewrite(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    pipeline = AppsPipeline(tmp_path)
+    directory_html = build_apps_directory_fixture_html()
+    app_html = build_app_detail_fixture_html()
+    monkeypatch.setattr(pipeline.source, "fetch_snapshots", lambda: make_snapshots(directory_html, app_html))
+
+    pipeline.run_initial_backfill()
+    usage_path = tmp_path / "data" / "normalized" / "openrouter" / "app_usage_daily.csv"
+    rows_after_backfill = len(pd.read_csv(usage_path))
+
+    result = pipeline.run_daily_update()
+
+    manifest = json.loads((result.raw_run_dir / "manifest.json").read_text(encoding="utf-8"))
+    usage_entry = next(item for item in manifest["datasets"] if item["dataset_id"] == "app_usage_daily")
+    assert usage_entry["status"] == "no_new_rows"
+    assert usage_entry["rows"] == 0
+    assert result.datasets_written["app_usage_daily"] == rows_after_backfill
+    assert len(pd.read_csv(usage_path)) == rows_after_backfill
+
+
 def test_top_models_snapshots_append_across_multiple_scrape_dates(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     pipeline = AppsPipeline(tmp_path)
     first_top_models = {

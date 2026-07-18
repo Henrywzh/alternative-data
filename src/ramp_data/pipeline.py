@@ -7,12 +7,20 @@ from typing import Any
 from uuid import uuid4
 
 from ramp_data.models import DatasetRecord, GenericRecord, RunContext, Snapshot
-from ramp_data.schemas import AI_INDEX_DATASETS, FILTER_MODE_DATASETS, JOBS_IMPACT, JOBS_IMPACT_DATASET
+from ramp_data.schemas import (
+    AI_INDEX_DATASETS,
+    FILTER_MODE_DATASETS,
+    JOBS_IMPACT,
+    JOBS_IMPACT_DATASET,
+    CATEGORY_CHARTS_DATASETS,
+)
 from ramp_data.sources.ai_index import RampAiIndexSource
 from ramp_data.sources.filter_mode import RampFilterModeSource
 from ramp_data.sources.jobs_impact import RampJobsImpactSource
 from ramp_data.sources.vendors import RampVendorsSource
+from ramp_data.sources.category_charts import RampCategoryChartsSource
 from ramp_data.storage import StorageManager
+
 
 # Data-quality gates. These guard against a silent upstream layout change (a
 # renamed RSC key, a Cloudflare interstitial) nulling the payload and then
@@ -47,6 +55,8 @@ class RampPipeline:
         self.ai_index_source = RampAiIndexSource()
         self.filter_mode_source = RampFilterModeSource()
         self.jobs_impact_source = RampJobsImpactSource()
+        self.category_charts_source = RampCategoryChartsSource()
+
 
     def _create_context(self, *, run_id: str | None = None) -> RunContext:
         return RunContext(
@@ -185,6 +195,35 @@ class RampPipeline:
             self._assert_jobs_impact_quality,
             mode="jobs-impact",
         )
+
+    def run_category_charts(self) -> PipelineResult:
+        return self._execute(
+            self.category_charts_source,
+            tuple(CATEGORY_CHARTS_DATASETS.keys()),
+            self._assert_category_charts_quality,
+            mode="category-charts",
+        )
+
+
+    @staticmethod
+    def _assert_category_charts_quality(
+        snapshots: list[Snapshot],
+        extracted: dict[str, list[GenericRecord]],
+    ) -> dict[str, dict[str, Any]]:
+        report: dict[str, dict[str, Any]] = {}
+        failures: list[str] = []
+        for dataset_id, cfg in CATEGORY_CHARTS_DATASETS.items():
+            records = extracted.get(dataset_id, [])
+            rows = len(records)
+            report[dataset_id] = {"rows": rows}
+            if rows < cfg["min_rows"]:
+                failures.append(
+                    f"{dataset_id}: only {rows} rows (expected >= {cfg['min_rows']}) "
+                    f"— Datawrapper download empty or malformed"
+                )
+        if failures:
+            raise ValidationError("; ".join(failures))
+        return report
 
     @staticmethod
     def _assert_filter_mode_quality(

@@ -45,6 +45,13 @@ jobs:
         run: |
           python -m ramp_data.cli --base-dir . filter-mode
 
+      - name: Run Category-charts update
+        # Category-level adoption, spend share, and YoY comparison charts,
+        # dynamically scraped from Datawrapper widgets.
+        run: |
+          python -m ramp_data.cli --base-dir . category-charts
+
+
       - name: Commit normalized datasets
         run: |
           git config user.name "github-actions[bot]"

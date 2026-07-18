@@ -14,6 +14,7 @@ from ramp_data.schemas import (
     FILTER_MODE_DATASETS,
     JOBS_IMPACT,
     JOBS_IMPACT_DATASET,
+    CATEGORY_CHARTS_DATASETS,
 )
 
 NATURAL_KEYS: dict[str, list[str]] = {
@@ -54,6 +55,7 @@ NUMERIC_COLUMNS = [
     "adoption_rate_ent", "adoption_rate_mm", "adoption_rate_smb",
     "adoption_rate_growth_delta_mom", "adoption_rate_growth_rank_mom",
     "competitor_switch_rate", "new_adopter_share", "dominant_fte_segment_pct",
+    "spend_share",
 ]
 
 # Provenance columns that change every run; excluded from change detection so an
@@ -69,7 +71,7 @@ REPLACE_DATASETS = {"ramp_category_vendors"}
 # Register the config-driven datasets (AI Index + Jobs Impact) from schemas.py so
 # there is a single source of truth for their columns/keys. AI Index datasets are
 # history/append (keyed on date_month); Jobs Impact is a static REPLACE snapshot.
-for _dsid, _cfg in {**AI_INDEX_DATASETS, **FILTER_MODE_DATASETS}.items():
+for _dsid, _cfg in {**AI_INDEX_DATASETS, **FILTER_MODE_DATASETS, **CATEGORY_CHARTS_DATASETS}.items():
     DATASET_COLUMNS[_dsid] = [*CORE_COLUMNS, *_cfg["fields"]]
     NATURAL_KEYS[_dsid] = _cfg["natural_keys"]
     SORT_KEYS[_dsid] = _cfg["sort_keys"]
@@ -80,6 +82,8 @@ NATURAL_KEYS[JOBS_IMPACT_DATASET] = JOBS_IMPACT["natural_keys"]
 SORT_KEYS[JOBS_IMPACT_DATASET] = JOBS_IMPACT["sort_keys"]
 NUMERIC_COLUMNS.extend(c for c in JOBS_IMPACT["numeric"] if c not in NUMERIC_COLUMNS)
 REPLACE_DATASETS.add(JOBS_IMPACT_DATASET)
+REPLACE_DATASETS.add("ramp_category_adoption_yoy_comparison")
+
 
 
 class StorageManager:

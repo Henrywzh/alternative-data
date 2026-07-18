@@ -1,0 +1,23 @@
+{
+  "run_id": "20260718T143828Z-e807bf72",
+  "mode": "category-charts",
+  "scraped_at": "2026-07-18T14:38:28.005204Z",
+  "status": "success",
+  "datasets": [
+    {
+      "dataset_id": "ramp_category_adoption_monthly",
+      "status": "ok",
+      "rows": 5409
+    },
+    {
+      "dataset_id": "ramp_category_spend_share_quarterly",
+      "status": "ok",
+      "rows": 1709
+    },
+    {
+      "dataset_id": "ramp_category_adoption_yoy_comparison",
+      "status": "ok",
+      "rows": 471
+    }
+  ]
+}

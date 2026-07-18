@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import time
-from typing import Any
+
 import requests
 
 from semiconductor_proxy_data.models import OfficialMonthlyPoint, Snapshot, SourceCatalogPoint
@@ -29,6 +29,11 @@ class EurostatSource:
         self.session.headers.setdefault("User-Agent", USER_AGENT)
         self.timeout = timeout
 
+    # Eurostat has no documented hard cap on the number of `time` filters per
+    # request, but chunking keeps individual requests small and matches the
+    # defensive pattern used by the other regional sources in this package.
+    MAX_MONTHS_PER_REQUEST = 60
+
     def fetch_snapshots(
         self,
         months: list[str],
@@ -44,6 +49,20 @@ class EurostatSource:
         if not months:
             return []
 
+        snapshots: list[Snapshot] = []
+        for chunk in _chunk_months(months, max_months=self.MAX_MONTHS_PER_REQUEST):
+            response = self._fetch_with_retry(chunk)
+            period_str = chunk[0] if len(chunk) == 1 else f"{chunk[0]}_to_{chunk[-1]}"
+            snapshots.append(
+                Snapshot(
+                    name=f"official_netherlands_lithography_{period_str}",
+                    source_url=response.url,
+                    body=response.text,
+                )
+            )
+        return snapshots
+
+    def _fetch_with_retry(self, months: list[str]) -> requests.Response:
         params: list[tuple[str, str]] = [
             ("format", "JSON"),
             ("lang", "EN"),
@@ -52,52 +71,41 @@ class EurostatSource:
             ("reporter", "NL"),
             ("product", "84862000"),
         ]
-        # Append all partners
         for partner in sorted(self.PARTNERS):
             params.append(("partner", partner))
-
-        # Append all time periods
         # Eurostat expects periods in YYYY-MM format
         for month in sorted(months):
             params.append(("time", month))
 
         retries = 3
         backoff = 2.0
-        response = None
         for attempt in range(retries):
+            is_last_attempt = attempt == retries - 1
             try:
                 response = self.session.get(
                     self.BASE_URL,
                     params=params,
                     timeout=self.timeout,
                 )
-                if response.status_code == 429 or response.status_code >= 500:
-                    raise requests.HTTPError(f"Status code {response.status_code}")
-                response.raise_for_status()
-                break
-            except Exception as exc:
-                if attempt == retries - 1:
+            except requests.RequestException:
+                if is_last_attempt:
                     raise
                 time.sleep(backoff)
                 backoff *= 2
+                continue
 
-        if response is None:
-            return []
+            retryable = response.status_code == 429 or response.status_code >= 500
+            if retryable and not is_last_attempt:
+                time.sleep(backoff)
+                backoff *= 2
+                continue
 
-        sorted_months = sorted(months)
-        if len(sorted_months) > 1:
-            period_str = f"{sorted_months[0]}_to_{sorted_months[-1]}"
-        else:
-            period_str = sorted_months[0]
-        snapshot_name = f"official_netherlands_lithography_{period_str}"
+            # Non-retryable errors (e.g. 400 Bad Request) raise immediately
+            # instead of burning through the retry budget.
+            response.raise_for_status()
+            return response
 
-        return [
-            Snapshot(
-                name=snapshot_name,
-                source_url=response.url,
-                body=response.text,
-            )
-        ]
+        raise RuntimeError("unreachable: retry loop must return or raise")
 
     def extract(
         self,
@@ -135,6 +143,23 @@ class EurostatSource:
             if not time_index or not indicator_index or not partner_index:
                 continue
 
+            # The flat-index formula below assumes every dimension other than
+            # partner/indicators/time (freq, reporter, product, flow) has
+            # exactly one category, since the query always fixes a single
+            # reporter/product/flow. If Eurostat ever returns more than one
+            # category for those dims, the formula would silently misattribute
+            # values, so verify the assumption from the response's own `size`
+            # list rather than trust it blindly.
+            dim_ids = data.get("id", [])
+            dim_sizes = data.get("size", [])
+            fixed_dims_are_singular = all(
+                size == 1
+                for dim_id, size in zip(dim_ids, dim_sizes)
+                if dim_id not in {"partner", "indicators", "time"}
+            )
+            if not dim_ids or not dim_sizes or not fixed_dims_are_singular:
+                continue
+
             n_time = len(time_index)
             values = data.get("value", {})
 
@@ -144,13 +169,13 @@ class EurostatSource:
             indicator_list = sorted(indicator_index.keys(), key=lambda k: indicator_index[k])
 
             # Dimensions structure order is: freq, reporter, partner, product, flow, indicators, time
-            # Since size of freq=1, reporter=1, product=1, flow=1, offsets simplifies to:
+            # Since size of freq=1, reporter=1, product=1, flow=1 (verified above),
+            # offsets simplify to:
             # flat_idx = partner_idx * len(indicators) * len(time) + indicator_idx * len(time) + time_idx
             n_ind = len(indicator_list)
 
             for p_code in partner_list:
                 p_idx = partner_index[p_code]
-                p_name = self.PARTNERS.get(p_code, p_code)
                 partner_scope = "world" if p_code == "WORLD" else p_code.lower()
 
                 for t_idx, period in enumerate(time_list):
@@ -224,3 +249,8 @@ class EurostatSource:
                 scraped_at=scraped_at,
             )
         ]
+
+
+def _chunk_months(months: list[str], *, max_months: int) -> list[list[str]]:
+    ordered = sorted(set(months))
+    return [ordered[i : i + max_months] for i in range(0, len(ordered), max_months)]

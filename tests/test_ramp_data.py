@@ -303,3 +303,77 @@ def test_filter_mode_extract_aliases_date_and_upserts(tmp_path: Path):
     merged = StorageManager(tmp_path).upsert_dataset("ramp_ai_filter_spend_share", records)
     assert set(merged["pepm_spend_type"]) == {"api", "other_ai"}
     assert "date_month" in merged.columns
+
+
+# ------------------------------------------------------------- Category Charts
+
+
+def test_category_charts_parse_month_year():
+    from ramp_data.sources.category_charts import _parse_month_year
+    assert _parse_month_year("Jun 2025") == "2025-06-01"
+    assert _parse_month_year("June 2026") == "2026-06-01"
+    assert _parse_month_year("2024-07-01") == "2024-07-01"
+    assert _parse_month_year("Invalid") is None
+
+
+def test_category_charts_extract_and_upsert(tmp_path: Path):
+    from ramp_data.sources.category_charts import RampCategoryChartsSource
+
+    # 1. Category list
+    cat_list = json.dumps({"code-ai": "Code AI"})
+
+    # 2. Monthly adoption CSV
+    adoption_csv = (
+        "SPEND_MONTH,Cursor,Copilot\n"
+        "2026-05-01,45.2,54.8\n"
+        "2026-06-01,48.5,51.5\n"
+    )
+
+    # 3. Spend share CSV
+    spend_csv = (
+        "QUARTER,Cursor,Copilot\n"
+        "2026Q1,12.3,87.7\n"
+        "2026Q2,15.6,84.4\n"
+    )
+
+    # 4. YoY CSV
+    yoy_csv = (
+        "DISPLAY_NAME,Jun 2025,Jun 2026\n"
+        "Cursor,10.0,48.5\n"
+        "Copilot,80.0,51.5\n"
+    )
+
+    snapshots = [
+        Snapshot("category_list", "https://ramp.com/vendors", cat_list),
+        Snapshot("csv__code-ai__adoption_monthly", "https://datawrapper.dwcdn.net/a/1/dataset.csv", adoption_csv),
+        Snapshot("csv__code-ai__spend_share_quarterly", "https://datawrapper.dwcdn.net/b/1/dataset.csv", spend_csv),
+        Snapshot("csv__code-ai__adoption_yoy_comparison", "https://datawrapper.dwcdn.net/c/1/dataset.csv", yoy_csv),
+    ]
+
+    extracted = RampCategoryChartsSource().extract(snapshots, _context())
+
+    # Check monthly adoption
+    monthly = extracted["ramp_category_adoption_monthly"]
+    assert len(monthly) == 4
+    # Cursor 2026-05-01: 45.2% -> 0.452
+    row0 = next(r for r in monthly if r.payload["vendor_name"] == "Cursor" and r.payload["spend_month"] == "2026-05-01")
+    assert row0.payload["category_slug"] == "code-ai"
+    assert row0.payload["adoption_rate"] == pytest.approx(0.452)
+
+    # Check spend share
+    spend = extracted["ramp_category_spend_share_quarterly"]
+    assert len(spend) == 4
+    row_spend = next(r for r in spend if r.payload["vendor_name"] == "Cursor" and r.payload["quarter"] == "2026Q1")
+    assert row_spend.payload["spend_share"] == pytest.approx(0.123)
+
+    # Check YoY comparison
+    yoy = extracted["ramp_category_adoption_yoy_comparison"]
+    assert len(yoy) == 4
+    row_yoy = next(r for r in yoy if r.payload["vendor_name"] == "Cursor" and r.payload["date_month"] == "2025-06-01")
+    assert row_yoy.payload["adoption_rate"] == pytest.approx(0.1)
+
+    # Test StorageManager integration
+    storage = StorageManager(tmp_path)
+    merged_m = storage.upsert_dataset("ramp_category_adoption_monthly", monthly)
+    assert len(merged_m) == 4
+    assert set(merged_m.columns) >= {"category_slug", "spend_month", "vendor_name", "adoption_rate"}

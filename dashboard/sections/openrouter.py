@@ -1975,6 +1975,124 @@ def render_context_length_section(datasets: dict[str, DatasetLoadResult]) -> Non
     )
 
 
+MODALITY_RANKING_LABELS = {
+    "image": "Image",
+    "embeddings": "Embeddings",
+    "rerank": "Rerank",
+    "video": "Video",
+    "speech": "Speech",
+    "transcription": "Transcription",
+}
+
+
+def _modality_rankings_frame(datasets: dict[str, DatasetLoadResult]) -> pd.DataFrame:
+    result = datasets.get("modality_rankings")
+    if result is None or result.frame.empty:
+        return pd.DataFrame()
+    frame = result.frame.copy()
+    frame["week_start_date"] = frame["week_start_date"].astype(str)
+    frame["modality"] = frame["modality"].astype(str)
+    frame["entity_id"] = frame["entity_id"].astype(str)
+    frame["metric_value"] = pd.to_numeric(frame["metric_value"], errors="coerce").fillna(0.0)
+    return frame[frame["modality"].isin(MODALITY_RANKING_LABELS)].copy()
+
+
+def render_modality_rankings_section(datasets: dict[str, DatasetLoadResult]) -> None:
+    """Render weekly OpenRouter rankings for non-text modalities.
+
+    Covers image, embeddings, rerank, video, speech, and transcription models from
+    the same modality-chart endpoint that powers the text top-models section.
+    """
+    st.markdown('<div class="section-title">Modality Rankings</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-subtitle">Weekly model rankings on OpenRouter Rankings for image, embeddings, rerank, video, speech, and transcription models.</div>',
+        unsafe_allow_html=True,
+    )
+    frame = _modality_rankings_frame(datasets)
+    if frame.empty:
+        st.info("No modality ranking data is available yet. The weekly rankings scrape will populate it.")
+        return
+
+    available_modalities = [modality for modality in MODALITY_RANKING_LABELS if modality in frame["modality"].unique()]
+    modality = st.selectbox(
+        "Modality",
+        available_modalities,
+        format_func=lambda value: MODALITY_RANKING_LABELS.get(value, value),
+        key="openrouter_modality_rankings_modality",
+    )
+
+    selected = frame[frame["modality"] == modality].copy()
+    pivot = selected.pivot_table(
+        index="week_start_date",
+        columns="entity_id",
+        values="metric_value",
+        aggfunc="sum",
+        fill_value=0.0,
+    ).sort_index()
+    if pivot.empty:
+        st.info(f"No ranking observations are available for {MODALITY_RANKING_LABELS.get(modality, modality)}.")
+        return
+    pivot = pivot.loc[:, pivot.sum(axis=0).sort_values(ascending=False).index]
+
+    latest_week = str(pivot.index.max())
+    latest = pivot.loc[latest_week].sort_values(ascending=False).rename("volume").reset_index()
+    latest.columns = ["model", "volume"]
+    volume_total = float(latest["volume"].sum())
+    latest["share_pct"] = latest["volume"] / volume_total * 100.0 if volume_total else 0.0
+    latest["provider"] = latest["model"].map(lambda value: str(value).split("/", 1)[0] if "/" in str(value) else "Other")
+    latest["model"] = latest["model"].map(lambda value: "Other models" if str(value).lower() == "others" else value)
+
+    named = latest[latest["model"] != "Other models"]
+    top_model = str(named.iloc[0]["model"]) if not named.empty else "—"
+    top_share = float(named.iloc[0]["share_pct"]) if not named.empty else 0.0
+    st.markdown(
+        kpi_grid_html(
+            kpi_card_html("Volume (Latest Week)", format_metric(volume_total), delta=MODALITY_RANKING_LABELS.get(modality, modality)),
+            kpi_card_html("Top Model", top_model[:28] + ("…" if len(top_model) > 28 else ""), delta=f"{top_share:.1f}% share"),
+            kpi_card_html("Models Shown", f"{len(latest)}", delta="includes Other models"),
+            kpi_card_html("Latest Week", latest_week, delta="week starting"),
+        ),
+        unsafe_allow_html=True,
+    )
+    source_result = datasets.get("modality_rankings")
+    scraped_at = source_result.latest_scraped_at if source_result else None
+    source_caption = "OpenRouter Rankings modality endpoint · weekly volume by model"
+    if scraped_at:
+        source_caption += f" · Scraped: {format_scraped_at_display(scraped_at)}"
+    st.markdown(f'<div class="status-caption">{source_caption}</div>', unsafe_allow_html=True)
+
+    st.plotly_chart(
+        make_stacked_area_chart(
+            pivot,
+            list(pivot.index.astype(str)),
+            MODEL_COLORS,
+            x_title="Usage Week (Starting)",
+            y_title="Volume",
+            value_format=",.0f",
+            hover_suffix="volume",
+        ),
+        width="stretch",
+        theme=None,
+    )
+
+    table = latest[["model", "provider", "volume", "share_pct"]].copy()
+    table.insert(0, "rank", range(1, len(table) + 1))
+    table = table.rename(columns={"share_pct": "share (%)"})
+    st.dataframe(
+        table,
+        hide_index=True,
+        width="stretch",
+        column_config={
+            "volume": st.column_config.NumberColumn("Volume", format="%d"),
+            "share (%)": st.column_config.NumberColumn("Share", format="%.2f%%"),
+        },
+    )
+    st.caption(
+        "Volume units vary by modality: tokens for image and embeddings, requests for rerank, "
+        "seconds for video, speech, and transcription."
+    )
+
+
 def render_revenue_token_section(datasets: dict[str, DatasetLoadResult], openrouter_views: dict[str, object]) -> None:
     """Unified provider revenue + token volume section with Metric/View toggles over shared Weekly/Monthly/Daily tabs."""
     rev_data = openrouter_views.get("revenue_estimator", {})
@@ -2922,9 +3040,10 @@ def render(domain_states, datasets) -> None:
     )
     compute_views = compute_compute_availability_views(domain_states["compute_availability"][0])
     render_top_models_chart(datasets, openrouter_views)
-    render_context_length_section(datasets)
     render_revenue_token_section(datasets, openrouter_views)
     render_task_spend_section(openrouter_views)
+    render_context_length_section(datasets)
+    render_modality_rankings_section(datasets)
     render_token_revenue_comparison(openrouter_views)
     render_compute_evolution_section(compute_views)
     render_apps_tables(datasets)
