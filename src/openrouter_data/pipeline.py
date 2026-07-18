@@ -14,12 +14,18 @@ from openrouter_data.sources.apps import AppsSource
 from openrouter_data.sources.activity import ACTIVITY_PROVIDER_SLUGS, ActivitySource
 from openrouter_data.sources.base import SourceExtractor
 from openrouter_data.sources.provider_activity import ProviderActivitySource, PROVIDER_SLUGS, PROVIDER_ACTIVITY_DATASET_ID
-from openrouter_data.sources.rankings import RankingsSource
+from openrouter_data.sources.rankings import CONTEXT_LENGTH_DATASET_ID, RankingsSource
 from openrouter_data.sources.task_spend import TASK_SPEND_DATASET_ID, TaskSpendSource
 from openrouter_data.storage import StorageManager
 
 
-RANKINGS_DATASET_IDS = ("top_models", "market_share", "provider_weekly_requests", "categories_programming")
+RANKINGS_DATASET_IDS = (
+    "top_models",
+    "market_share",
+    "provider_weekly_requests",
+    "categories_programming",
+    "context_length_requests",
+)
 APPS_DATASET_IDS = (
     "app_metadata_snapshots",
     "app_usage_daily",
@@ -40,6 +46,7 @@ class PipelineResult:
 
 class BasePipeline:
     dataset_ids: tuple[str, ...]
+    optional_dataset_ids: set[str] = set()
 
     def __init__(self, base_dir: Path, source: SourceExtractor) -> None:
         self.base_dir = base_dir
@@ -90,6 +97,13 @@ class BasePipeline:
         context: RunContext,
         extracted: dict[str, list[DatasetRecord]],
     ) -> dict[str, Any]:
+        manifest_dataset_ids = [
+            dataset_id
+            for dataset_id in self.dataset_ids
+            if dataset_id not in self.optional_dataset_ids
+            or extracted.get(dataset_id)
+            or not self.storage.load_dataset(dataset_id).empty
+        ]
         return {
             "run_id": context.run_id,
             "mode": mode,
@@ -103,7 +117,7 @@ class BasePipeline:
                     "rows": len(extracted.get(dataset_id, [])),
                     "source_urls": sorted({record.source_url for record in extracted.get(dataset_id, [])}),
                 }
-                for dataset_id in self.dataset_ids
+                for dataset_id in manifest_dataset_ids
             ],
         }
 
@@ -117,6 +131,7 @@ class BasePipeline:
 
 class RankingsPipeline(BasePipeline):
     dataset_ids = RANKINGS_DATASET_IDS
+    optional_dataset_ids = {"context_length_requests"}
 
     def __init__(self, base_dir: Path) -> None:
         super().__init__(base_dir, RankingsSource())
@@ -157,6 +172,18 @@ class RankingsPipeline(BasePipeline):
         filtered: dict[str, list[DatasetRecord]] = {}
         for dataset_id, records in extracted.items():
             existing = self.storage.load_dataset(dataset_id)
+            if dataset_id == CONTEXT_LENGTH_DATASET_ID:
+                existing_keys = {
+                    (str(row.week_start_date), str(row.context_length_bucket), str(row.entity_id))
+                    for row in existing[["week_start_date", "context_length_bucket", "entity_id"]].itertuples(index=False)
+                } if not existing.empty else set()
+                filtered[dataset_id] = [
+                    record
+                    for record in records
+                    if (str(record.week_start_date), str(record.context_length_bucket), str(record.entity_id))
+                    not in existing_keys
+                ]
+                continue
             existing_weeks = set(existing["week_start_date"].dropna().tolist()) if not existing.empty else set()
             if mode in {"backfill-missing", "weekly-update"}:
                 filtered[dataset_id] = [record for record in records if record.week_start_date not in existing_weeks]

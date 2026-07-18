@@ -35,6 +35,20 @@ DATASET_REGISTRY: dict[str, dict[str, object]] = {
         "metric_column": "metric_value",
         "required_columns": ["week_start_date", "entity_id", "metric_value", "rank"],
     },
+    "context_length_requests": {
+        "label": "Context Length Requests",
+        "domain": "rankings",
+        "natural_keys": ["week_start_date", "context_length_bucket", "entity_id"],
+        "primary_date_column": "week_start_date",
+        "metric_column": "metric_value",
+        "required_columns": [
+            "week_start_date",
+            "context_length_bucket",
+            "entity_id",
+            "metric_value",
+            "rank",
+        ],
+    },
     # NOTE: This dataset is no longer rendered in the dashboard, but it is still
     # produced by the rankings pipeline and consumed by research marts/tests.
     "categories_programming": {
@@ -506,6 +520,7 @@ DOMAIN_ORDER = {
         "top_models",
         "market_share",
         "provider_weekly_requests",
+        "context_length_requests",
         "categories_programming",
         "openrouter_model_activity",
         "provider_daily_activity",
@@ -594,6 +609,7 @@ RANKINGS_COLUMNS = [
     "metric_value",
     "rank",
     "category_slug",
+    "context_length_bucket",
 ]
 
 APPS_COLUMNS = [

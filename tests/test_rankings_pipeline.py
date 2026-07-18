@@ -176,6 +176,32 @@ def test_extract_prefers_rankings_api_payloads_for_top_models_and_market_share(
     assert extracted["market_share"][0].entity_id == "author-a"
 
 
+def test_extracts_context_length_request_buckets_from_official_api() -> None:
+    html = build_fixture_html()
+    context_points = [
+        {"x": "2024-01-01", "ys": {"openai/gpt-4o": 80, "anthropic/claude-3": 20, "Others": 5}},
+        {"x": "2024-01-08", "ys": {"openai/gpt-4o": 90, "anthropic/claude-3": 30, "Others": 10}},
+    ]
+    snapshots = [
+        *make_snapshots(html),
+        Snapshot(
+            name="context_length_10K",
+            source_url="fixture://rankings/context-length?bucket=10K",
+            body=json.dumps({"data": context_points}),
+        ),
+    ]
+    source = RankingsSource()
+    context = RunContext(run_id="context", scraped_at=pd.Timestamp("2024-01-20", tz="UTC").to_pydatetime())
+
+    extracted = source.extract(snapshots, context)
+
+    rows = extracted["context_length_requests"]
+    assert len(rows) == 6
+    assert {row.context_length_bucket for row in rows} == {"1K-10K"}
+    assert rows[0].metric_name == "requests"
+    assert max(row.metric_value for row in rows) == 90.0
+
+
 def test_fetch_snapshots_keeps_html_fallback_available_when_rankings_api_fails(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -195,6 +221,11 @@ def test_fetch_snapshots_keeps_html_fallback_available_when_rankings_api_fails(
         "rankings_programming",
         "model_rankings_chart",
         "text_modality_chart",
+        "context_length_1K",
+        "context_length_10K",
+        "context_length_100K",
+        "context_length_1M",
+        "context_length_10M",
     }
     assert next(snapshot for snapshot in snapshots if snapshot.name == "model_rankings_chart").body == ""
 

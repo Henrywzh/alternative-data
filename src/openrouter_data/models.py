@@ -22,6 +22,7 @@ class DatasetRecord:
     metric_value: float | None = None
     rank: int | None = None
     category_slug: str | None = None
+    context_length_bucket: str | None = None
     app_id: str | None = None
     app_name: str | None = None
     origin_url: str | None = None

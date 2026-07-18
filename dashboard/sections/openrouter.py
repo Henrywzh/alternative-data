@@ -1157,6 +1157,7 @@ def _catalog_alias_map(catalog: pd.DataFrame) -> dict[str, str]:
     aliases: dict[str, str] = {}
     if catalog.empty:
         return aliases
+    canonical_targets: dict[str, set[str]] = {}
     for _, row in catalog.iterrows():
         raw_model_id = row.get("model_id")
         raw_canonical_slug = row.get("canonical_slug")
@@ -1165,7 +1166,22 @@ def _catalog_alias_map(catalog: pd.DataFrame) -> dict[str, str]:
         if model_id:
             aliases[model_id] = model_id
         if canonical_slug:
-            aliases[canonical_slug] = model_id
+            canonical_targets.setdefault(canonical_slug, set()).add(model_id)
+
+    # A paid model and its :free variant can share the same canonical slug.
+    # Resolve the bare slug to the paid/direct catalog model, while preserving
+    # an explicit :free suffix for the free catalog entry.
+    for canonical_slug, model_ids in canonical_targets.items():
+        model_ids = {model_id for model_id in model_ids if model_id}
+        if not model_ids:
+            continue
+        direct_ids = sorted(model_id for model_id in model_ids if not model_id.endswith(":free"))
+        free_ids = sorted(model_id for model_id in model_ids if model_id.endswith(":free"))
+        aliases[canonical_slug] = direct_ids[0] if direct_ids else free_ids[0]
+        if not canonical_slug.endswith(":free"):
+            # Provider activity may expose a dated free slug even when the
+            # catalog only publishes the paid/direct preview model.
+            aliases[f"{canonical_slug}:free"] = free_ids[0] if free_ids else aliases[canonical_slug]
     return aliases
 
 
@@ -1214,10 +1230,13 @@ def _combine_explorer_activity(provider_activity: pd.DataFrame, model_activity: 
     if fallback.empty:
         return detail
 
-    detail_keys = detail[["usage_date_dt", "model_id"]].drop_duplicates()
+    # Compare the raw activity slug, not only the catalog-normalized model ID.
+    # Paid and :free variants can intentionally share a catalog canonical slug;
+    # each must be retained when the provider feed reports both variants.
+    detail_keys = detail[["usage_date_dt", "model_permaslug"]].drop_duplicates()
     fallback = fallback.merge(
         detail_keys.assign(_has_model_activity=True),
-        on=["usage_date_dt", "model_id"],
+        on=["usage_date_dt", "model_permaslug"],
         how="left",
     )
     fallback = fallback[fallback["_has_model_activity"].isna()].drop(columns="_has_model_activity")
@@ -1820,6 +1839,140 @@ def render_weekly_usage_section(datasets: dict[str, DatasetLoadResult], openrout
 
 def render_top_models_chart(datasets: dict[str, DatasetLoadResult], openrouter_views: dict[str, object]) -> None:
     render_weekly_usage_section(datasets, openrouter_views)
+
+
+CONTEXT_LENGTH_BUCKET_LABELS = ["<1K", "1K-10K", "10K-100K", "100K-1M", "1M-10M"]
+
+
+def _context_length_frame(datasets: dict[str, DatasetLoadResult]) -> pd.DataFrame:
+    result = datasets.get("context_length_requests")
+    if result is None or result.frame.empty:
+        return pd.DataFrame()
+    frame = result.frame.copy()
+    frame["week_start_date"] = frame["week_start_date"].astype(str)
+    frame["context_length_bucket"] = frame["context_length_bucket"].astype(str)
+    frame["entity_id"] = frame["entity_id"].astype(str)
+    frame["metric_value"] = pd.to_numeric(frame["metric_value"], errors="coerce").fillna(0.0)
+    return frame[frame["context_length_bucket"].isin(CONTEXT_LENGTH_BUCKET_LABELS)].copy()
+
+
+def render_context_length_section(datasets: dict[str, DatasetLoadResult]) -> None:
+    """Render the OpenRouter Rankings context-length request tracker.
+
+    The upstream endpoint reports weekly request counts by model and prompt plus
+    completion-length bucket. The percentage view is calculated per bucket/week
+    from those raw counts, matching the website's chart toggle.
+    """
+    st.markdown('<div class="section-title">Context Length Usage</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-subtitle">Requests by prompt &amp; completion length on OpenRouter Rankings, with raw volume and share views.</div>',
+        unsafe_allow_html=True,
+    )
+    frame = _context_length_frame(datasets)
+    if frame.empty:
+        st.info("No context-length request data is available yet. The weekly rankings scrape will populate it.")
+        return
+
+    controls = st.columns([1, 1])
+    with controls[0]:
+        bucket = st.selectbox(
+            "Prompt + completion length",
+            CONTEXT_LENGTH_BUCKET_LABELS,
+            index=1 if "1K-10K" in frame["context_length_bucket"].unique() else 0,
+            key="openrouter_context_length_bucket",
+        )
+    with controls[1]:
+        view_options = ["Raw requests", "Share (%)"]
+        if hasattr(st, "segmented_control"):
+            view_mode = st.segmented_control(
+                "View",
+                view_options,
+                default="Raw requests",
+                key="openrouter_context_length_view",
+            )
+        else:
+            view_mode = st.radio(
+                "View",
+                view_options,
+                horizontal=True,
+                key="openrouter_context_length_view",
+            )
+    view_mode = str(view_mode or "Raw requests")
+
+    selected = frame[frame["context_length_bucket"] == bucket].copy()
+    pivot = selected.pivot_table(
+        index="week_start_date",
+        columns="entity_id",
+        values="metric_value",
+        aggfunc="sum",
+        fill_value=0.0,
+    ).sort_index()
+    if pivot.empty:
+        st.info(f"No request observations are available for the {bucket} bucket.")
+        return
+    pivot = pivot.loc[:, pivot.sum(axis=0).sort_values(ascending=False).index]
+    chart_pivot = pivot.copy()
+    if view_mode == "Share (%)":
+        totals = chart_pivot.sum(axis=1).replace(0, np.nan)
+        chart_pivot = chart_pivot.div(totals, axis=0).fillna(0.0) * 100.0
+
+    latest_week = str(pivot.index.max())
+    latest = pivot.loc[latest_week].sort_values(ascending=False).rename("requests").reset_index()
+    latest.columns = ["model", "requests"]
+    latest["share_pct"] = latest["requests"] / latest["requests"].sum() * 100.0
+    latest["provider"] = latest["model"].map(lambda value: str(value).split("/", 1)[0] if "/" in str(value) else "Other")
+    latest["model"] = latest["model"].map(lambda value: "Other models" if str(value).lower() == "others" else value)
+
+    total_requests = float(latest["requests"].sum())
+    named = latest[latest["model"] != "Other models"]
+    top_model = str(named.iloc[0]["model"]) if not named.empty else "—"
+    top_share = float(named.iloc[0]["share_pct"]) if not named.empty else 0.0
+    st.markdown(
+        kpi_grid_html(
+            kpi_card_html("Requests (Latest Week)", format_metric(total_requests), delta=bucket),
+            kpi_card_html("Top Model", top_model[:28] + ("…" if len(top_model) > 28 else ""), delta=f"{top_share:.1f}% share"),
+            kpi_card_html("Models Shown", f"{len(latest)}", delta="includes Other models"),
+            kpi_card_html("Latest Week", latest_week, delta="week starting"),
+        ),
+        unsafe_allow_html=True,
+    )
+    source_result = datasets.get("context_length_requests")
+    scraped_at = source_result.latest_scraped_at if source_result else None
+    source_caption = "OpenRouter Rankings context-length endpoint · weekly request counts"
+    if scraped_at:
+        source_caption += f" · Scraped: {format_scraped_at_display(scraped_at)}"
+    st.markdown(f'<div class="status-caption">{source_caption}</div>', unsafe_allow_html=True)
+
+    st.plotly_chart(
+        make_stacked_area_chart(
+            chart_pivot,
+            list(chart_pivot.index.astype(str)),
+            MODEL_COLORS,
+            x_title="Usage Week (Starting)",
+            y_title="Request Share (%)" if view_mode == "Share (%)" else "Requests",
+            value_format=",.1f" if view_mode == "Share (%)" else ",.0f",
+            hover_suffix="%" if view_mode == "Share (%)" else "requests",
+        ),
+        width="stretch",
+        theme=None,
+    )
+
+    table = latest[["model", "provider", "requests", "share_pct"]].copy()
+    table.insert(0, "rank", range(1, len(table) + 1))
+    table = table.rename(columns={"share_pct": "share (%)"})
+    st.dataframe(
+        table,
+        hide_index=True,
+        width="stretch",
+        column_config={
+            "requests": st.column_config.NumberColumn("Requests", format="%d"),
+            "share (%)": st.column_config.NumberColumn("Share", format="%.2f%%"),
+        },
+    )
+    st.caption(
+        "The buckets describe the combined prompt and completion length of requests, not a model's maximum context window. "
+        "Raw values are requests; percentage values are each model's share of the selected bucket for that week."
+    )
 
 
 def render_revenue_token_section(datasets: dict[str, DatasetLoadResult], openrouter_views: dict[str, object]) -> None:
@@ -2769,6 +2922,7 @@ def render(domain_states, datasets) -> None:
     )
     compute_views = compute_compute_availability_views(domain_states["compute_availability"][0])
     render_top_models_chart(datasets, openrouter_views)
+    render_context_length_section(datasets)
     render_revenue_token_section(datasets, openrouter_views)
     render_task_spend_section(openrouter_views)
     render_token_revenue_comparison(openrouter_views)

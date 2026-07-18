@@ -28,6 +28,7 @@ class DatasetSpec:
     metric_unit: str
     week_anchor: str
     category_slug: str | None = None
+    context_length_bucket: str | None = None
 
 
 TOP_MODELS_SPEC = DatasetSpec(
@@ -63,8 +64,19 @@ CATEGORIES_PROGRAMMING_SPEC = DatasetSpec(
     category_slug="programming",
 )
 
+CONTEXT_LENGTH_BUCKETS = ("1K", "10K", "100K", "1M", "10M")
+CONTEXT_LENGTH_LABELS = {
+    "1K": "<1K",
+    "10K": "1K-10K",
+    "100K": "10K-100K",
+    "1M": "100K-1M",
+    "10M": "1M-10M",
+}
+CONTEXT_LENGTH_DATASET_ID = "context_length_requests"
+
 MODEL_RANKINGS_CHART_URL = "https://openrouter.ai/api/frontend/v1/rankings/model-rankings-chart"
 TEXT_MODALITY_CHART_URL = "https://openrouter.ai/api/frontend/v1/rankings/modality-chart?routeSegment=text"
+CONTEXT_LENGTH_CHART_URL = "https://openrouter.ai/api/frontend/v1/rankings/context-length"
 
 
 class RankingsSource(SourceExtractor):
@@ -80,12 +92,20 @@ class RankingsSource(SourceExtractor):
         )
 
     def fetch_snapshots(self) -> list[Snapshot]:
-        return [
+        snapshots = [
             self._fetch("rankings", TOP_MODELS_SPEC.source_url),
             self._fetch("rankings_programming", CATEGORIES_PROGRAMMING_SPEC.source_url),
             self._fetch_optional("model_rankings_chart", MODEL_RANKINGS_CHART_URL),
             self._fetch_optional("text_modality_chart", TEXT_MODALITY_CHART_URL),
         ]
+        for bucket in CONTEXT_LENGTH_BUCKETS:
+            snapshots.append(
+                self._fetch_optional(
+                    f"context_length_{bucket}",
+                    f"{CONTEXT_LENGTH_CHART_URL}?bucket={bucket}",
+                )
+            )
+        return snapshots
 
     def _fetch(self, name: str, url: str) -> Snapshot:
         response = self.session.get(url, timeout=self.timeout)
@@ -133,7 +153,35 @@ class RankingsSource(SourceExtractor):
                 CATEGORIES_PROGRAMMING_SPEC,
                 context,
             ),
+            **self._extract_context_length_records(charts, context),
         }
+
+    def _extract_context_length_records(
+        self,
+        charts: dict[str, dict[str, Any] | None],
+        context: RunContext,
+    ) -> dict[str, list[DatasetRecord]]:
+        """Normalize the official context-length endpoint without making it a hard dependency.
+
+        The rankings page can still render its core sections if this newer endpoint
+        is temporarily unavailable. Missing buckets are therefore skipped and will
+        be filled by the next scheduled scrape.
+        """
+        records: list[DatasetRecord] = []
+        for bucket in CONTEXT_LENGTH_BUCKETS:
+            chart = charts.get(self._context_chart_key(bucket))
+            if not chart:
+                continue
+            spec = DatasetSpec(
+                dataset_id=CONTEXT_LENGTH_DATASET_ID,
+                source_url=f"{CONTEXT_LENGTH_CHART_URL}?bucket={bucket}",
+                metric_name="requests",
+                metric_unit="requests",
+                week_anchor="start",
+                context_length_bucket=CONTEXT_LENGTH_LABELS[bucket],
+            )
+            records.extend(self._records_from_chart(chart, spec, context))
+        return {CONTEXT_LENGTH_DATASET_ID: records} if records else {}
 
     @staticmethod
     def _extract_chart_payloads_from_api(snapshot_by_name: dict[str, Snapshot]) -> dict[str, dict[str, Any]]:
@@ -162,7 +210,24 @@ class RankingsSource(SourceExtractor):
             except (AttributeError, json.JSONDecodeError):
                 pass
 
+        for bucket in CONTEXT_LENGTH_BUCKETS:
+            snapshot = snapshot_by_name.get(f"context_length_{bucket}")
+            if snapshot is None or not snapshot.body:
+                continue
+            try:
+                payload = json.loads(snapshot.body)
+                data = payload.get("data")
+                # This endpoint returns {"data": [{"x": ..., "ys": ...}]}.
+                if RankingsSource._is_chart_data(data):
+                    charts[RankingsSource._context_chart_key(bucket)] = {"data": data}
+            except (AttributeError, json.JSONDecodeError):
+                continue
+
         return charts
+
+    @staticmethod
+    def _context_chart_key(bucket: str) -> str:
+        return f"{CONTEXT_LENGTH_DATASET_ID}:{bucket}"
 
     def _extract_chart_payloads(self, rankings_html: str, programming_html: str) -> dict[str, dict[str, Any] | None]:
         return {
@@ -505,6 +570,7 @@ class RankingsSource(SourceExtractor):
                         source_run_id=context.run_id,
                         scraped_at=context.scraped_at_iso,
                         category_slug=spec.category_slug,
+                        context_length_bucket=spec.context_length_bucket,
                     )
                 )
 
