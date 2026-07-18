@@ -39,10 +39,9 @@ MODALITY_LABELS = {"all": "All", "text": "Text", "image": "Image", "video": "Vid
 METRIC_ORDER = ["tokens", "requests", "spend"]
 METRIC_LABELS = {"tokens": "Tokens", "requests": "Requests", "spend": "Spend"}
 
-# How many named series to show per entity. Vercel's public model leaderboard
-# displays nine named models plus an "Other" residual as rank 10, while the
-# export contains the underlying top-ten cohort. Labs are a complete set of
-# ~31, so we show the leading 20.
+# How many named entities may contribute on each date. The chart retains the
+# cumulative union of entities that have entered these daily ranks, while only
+# the daily top-N have non-zero named share on any individual date.
 TOP_N_BY_ENTITY = {"Top Models": 9, "Top Labs": 20}
 DEFAULT_TOP_N = 10
 
@@ -116,9 +115,27 @@ def _pivot(frame: pd.DataFrame, modality: str, metric: str) -> pd.DataFrame:
     return pivot.sort_index()
 
 
-def _top_n_columns(pivot: pd.DataFrame, n: int) -> list[str]:
-    """Leading columns by mean reported share (NaN treated as absent → 0)."""
-    return pivot.fillna(0).mean().sort_values(ascending=False).head(n).index.tolist()
+def _daily_ranked(pivot: pd.DataFrame, n: int) -> pd.DataFrame:
+    """Union of entities that reached the daily top-N, masked to ranked days.
+
+    Columns are ordered by first top-N appearance and rank on that date. This
+    makes the series universe cumulative: a newly ranked entity is added at
+    once, while an entity outside the published ranking contributes no named
+    share until it re-enters.
+    """
+    if pivot.empty:
+        return pivot.copy()
+    ranks = pivot.rank(axis=1, method="first", ascending=False, na_option="bottom")
+    ranked = pivot.where(pivot.notna() & ranks.le(n))
+    entrants = [column for column in ranked.columns if ranked[column].notna().any()]
+    entrants.sort(
+        key=lambda column: (
+            ranked[column].first_valid_index(),
+            float(ranks.loc[ranked[column].first_valid_index(), column]),
+            str(column),
+        )
+    )
+    return ranked[entrants]
 
 
 def _stacked_display(pivot: pd.DataFrame, top_n: int, others_label: str) -> pd.DataFrame:
@@ -128,8 +145,7 @@ def _stacked_display(pivot: pd.DataFrame, top_n: int, others_label: str) -> pd.D
     into the residual. The residual also absorbs Vercel's unreported long tail,
     so the chart is honest about coverage instead of renormalising the leaders.
     """
-    cols = _top_n_columns(pivot, top_n)
-    shown = pivot[cols].fillna(0.0)
+    shown = _daily_ranked(pivot, top_n).fillna(0.0)
     residual = (100.0 - shown.sum(axis=1)).clip(lower=0.0)
     shown = shown.copy()
     shown[others_label] = residual
@@ -137,9 +153,14 @@ def _stacked_display(pivot: pd.DataFrame, top_n: int, others_label: str) -> pd.D
 
 
 def _line_display(pivot: pd.DataFrame, top_n: int) -> pd.DataFrame:
-    """Top-N leaders keeping NaN gaps so a drop-out is visibly a gap, not zero."""
-    cols = _top_n_columns(pivot, top_n)
-    return pivot[cols]
+    """Cumulative daily top-N entrants with unranked post-debut days at zero."""
+    ranked = _daily_ranked(pivot, top_n)
+    display = ranked.copy()
+    for column in display.columns:
+        first = display[column].first_valid_index()
+        if first is not None:
+            display.loc[first:, column] = display.loc[first:, column].fillna(0.0)
+    return display
 
 
 def _entity_kpis(frame: pd.DataFrame) -> dict[str, object]:
@@ -252,11 +273,17 @@ def _render_modality_tab(frame: pd.DataFrame, entity_label: str, modality: str) 
             x_title="Date",
             hover_suffix="%",
         )
-        residual = " A gap means the entity dropped out of Vercel's ranked set that day."
+        residual = (
+            " Before a model's first ranked appearance its line is absent; after debut, zero means it was "
+            "not in Vercel's published ranking and its unreported share is included in Others—not necessarily zero usage."
+        )
     st.plotly_chart(fig, width="stretch", theme=None)
     st.caption(
         f"Daily **{METRIC_LABELS.get(metric, metric).lower()}** share of Vercel AI Gateway "
-        f"{MODALITY_LABELS[modality]} {noun} (top {top_n}).{residual}"
+        f"{MODALITY_LABELS[modality]} {noun} (daily top {top_n}, cumulative entrants).{residual} "
+        f"**Tracking note:** after first entry, an entity remains in the cumulative series set; "
+        f"an unranked day is filled as 0 and assigned to {others_label}, and a later re-entry "
+        "continues the same series. This 0 means *not separately reported*, not confirmed zero usage."
     )
 
 

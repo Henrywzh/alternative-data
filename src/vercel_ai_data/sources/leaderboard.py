@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 import requests
 
 from vercel_ai_data.models import DatasetRecord, RunContext, Snapshot
@@ -103,5 +104,25 @@ class VercelLeaderboardSource(SourceExtractor):
                     share_percent=row.get("share_percent"),
                 )
                 extracted[dataset_id].append(record)
+
+        # The export does not include an explicit rank. Persist a deterministic
+        # daily rank so new entrants are incorporated immediately and a model or
+        # lab that later re-enters resumes under the same natural-key identity.
+        for dataset_id, records in extracted.items():
+            grouped: dict[tuple[str | None, str | None, str | None], list[DatasetRecord]] = {}
+            for record in records:
+                grouped.setdefault((record.date, record.metric, record.modality), []).append(record)
+
+            ranked: list[DatasetRecord] = []
+            for group_records in grouped.values():
+                ordered = sorted(
+                    group_records,
+                    key=lambda record: (
+                        -(record.share_percent if record.share_percent is not None else -1.0),
+                        record.name or "",
+                    ),
+                )
+                ranked.extend(replace(record, rank=rank) for rank, record in enumerate(ordered, start=1))
+            extracted[dataset_id] = ranked
 
         return extracted

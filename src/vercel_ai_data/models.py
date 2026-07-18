@@ -19,6 +19,7 @@ class DatasetRecord:
     metric: str | None = None         # "tokens", "requests", "spend", "imageCount", "videoCount"
     modality: str | None = None       # "all", "text", "image", "video"
     share_percent: float | None = None
+    rank: int | None = None           # Rank within date / metric / modality
 
     # Catalog fields
     model_id: str | None = None

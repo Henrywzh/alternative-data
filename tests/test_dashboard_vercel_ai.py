@@ -9,9 +9,12 @@ from dashboard.data import (
 )
 from dashboard.sections.vercel_ai import (
     _available_metrics,
+    _line_display,
     _pivot,
+    _stacked_display,
     compute_vercel_ai_views,
 )
+import pandas as pd
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
@@ -78,9 +81,33 @@ def test_stacked_display_sums_to_100() -> None:
     assert ((row_totals - 100.0).abs() < 1e-6).all()
     # Residual is real (Vercel truncates), so it should carry meaningful weight.
     assert display[others].mean() > 0
-    # Match Vercel's public layout: nine named models plus the residual band.
+    # Each date has at most nine non-zero named models plus the residual band;
+    # the cumulative column union may be wider as new models enter over time.
     assert TOP_N_BY_ENTITY["Top Models"] == 9
-    assert display.shape[1] == 10
+    assert display.shape[1] >= 10
+    assert (display.drop(columns=[others]).ne(0).sum(axis=1) <= 9).all()
+
+
+def test_daily_ranked_display_adds_newcomers_and_refills_dropouts() -> None:
+    pivot = pd.DataFrame(
+        {
+            "Alpha": [30.0, 30.0, 30.0],
+            "Beta": [20.0, 10.0, 35.0],
+            "Newcomer": [float("nan"), 40.0, 10.0],
+        },
+        index=["2026-07-01", "2026-07-02", "2026-07-03"],
+    )
+
+    stacked = _stacked_display(pivot, 2, "Others")
+    lines = _line_display(pivot, 2)
+
+    assert list(stacked.columns) == ["Alpha", "Beta", "Newcomer", "Others"]
+    assert stacked.loc["2026-07-02", "Beta"] == 0.0
+    assert lines.loc["2026-07-02", "Beta"] == 0.0
+    assert pd.isna(lines.loc["2026-07-01", "Newcomer"])
+    assert lines.loc["2026-07-02", "Newcomer"] == 40.0
+    assert lines.loc["2026-07-03", "Newcomer"] == 0.0
+    assert ((stacked.sum(axis=1) - 100.0).abs() < 1e-6).all()
 
 
 def test_labs_show_up_to_top_20() -> None:
@@ -95,10 +122,12 @@ def test_labs_show_up_to_top_20() -> None:
     others = _others_label("Top Labs")
     display = _stacked_display(_pivot(frame, "all", "tokens"), TOP_N_BY_ENTITY["Top Labs"], others)
 
-    # 20 named labs + the residual band.
+    # Up to 20 named labs per date + the residual band; the historical union can
+    # contain more than 20 labs as the ranking changes.
     assert TOP_N_BY_ENTITY["Top Labs"] == 20
     assert others == "Others (smaller labs)"
-    assert display.shape[1] == 21
+    assert display.shape[1] >= 21
+    assert (display.drop(columns=[others]).ne(0).sum(axis=1) <= 20).all()
     assert ((display.sum(axis=1) - 100.0).abs() < 1e-6).all()
 
 
