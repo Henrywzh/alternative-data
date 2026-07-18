@@ -219,10 +219,10 @@ def test_watchlist_runner_refresh_ticker_writes_expected_outputs(tmp_path: Path)
     raw_dir = tmp_path / "data" / "raw" / "google_trends"
     processed_dir = tmp_path / "data" / "processed" / "google_trends"
     assert (raw_dir / "tesla_worldwide_trends.parquet").exists()
-    assert (raw_dir / "tesla_model_y_us_trends.parquet").exists()
+    assert (raw_dir / "tesla_model_y_US_trends.parquet").exists()
     assert (raw_dir / "tsla_stock_daily.parquet").exists()
     assert (processed_dir / "tesla_worldwide_tsla_combined.parquet").exists()
-    assert (processed_dir / "tesla_model_y_us_tsla_combined.parquet").exists()
+    assert (processed_dir / "tesla_model_y_US_tsla_combined.parquet").exists()
 
     combined = pd.read_parquet(processed_dir / "tesla_worldwide_tsla_combined.parquet")
     assert list(combined["trend_value"]) == [62, 66, 70]
@@ -298,10 +298,10 @@ def test_watchlist_runner_refresh_enabled_with_fetcher_writes_expected_outputs(t
     raw_dir = tmp_path / "data" / "raw" / "google_trends"
     processed_dir = tmp_path / "data" / "processed" / "google_trends"
     assert (raw_dir / "tesla_worldwide_trends.parquet").exists()
-    assert (raw_dir / "tesla_model_y_us_trends.parquet").exists()
+    assert (raw_dir / "tesla_model_y_US_trends.parquet").exists()
     assert (raw_dir / "tsla_stock_daily.parquet").exists()
     assert (processed_dir / "tesla_worldwide_tsla_combined.parquet").exists()
-    assert (processed_dir / "tesla_model_y_us_tsla_combined.parquet").exists()
+    assert (processed_dir / "tesla_model_y_US_tsla_combined.parquet").exists()
 
 
 def test_watchlist_runner_refresh_enabled_with_fetcher_raises_without_writing_partial_outputs(tmp_path: Path) -> None:

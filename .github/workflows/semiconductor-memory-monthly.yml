@@ -45,11 +45,11 @@ jobs:
         (github.event.inputs.command == 'adata-update' || github.event.inputs.command == 'adata-backfill')
       || (github.event_name == 'schedule' && contains(github.event.schedule, '1-5'))
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.event.repository.default_branch }}
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
 
@@ -117,11 +117,11 @@ jobs:
     env:
       FRED_API_KEY: ${{ secrets.SEMICONDUCTOR_FRED_API_KEY }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.event.repository.default_branch }}
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
 
