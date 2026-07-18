@@ -65,7 +65,7 @@ def _auth_headers() -> dict[str, str]:
 
 
 @st.cache_data(ttl=300, show_spinner=False, max_entries=24)
-def latest_data_sha(path_prefix: str = DATA_PATH_PREFIX) -> str | None:
+def _latest_data_sha_cached(path_prefix: str) -> str | None:
     """Latest commit SHA touching one data domain, or None on failure.
 
     A domain-specific path prevents an unrelated workflow push from duplicating
@@ -85,8 +85,22 @@ def latest_data_sha(path_prefix: str = DATA_PATH_PREFIX) -> str | None:
     return None
 
 
+def latest_data_sha(path_prefix: str = DATA_PATH_PREFIX) -> str | None:
+    """Return the latest data SHA without letting cache failures stop the app.
+
+    Streamlit's cache wrapper executes outside the network error handling in
+    ``_latest_data_sha_cached``.  If the cache layer itself raises (for example
+    while hashing or materializing a value), treat it like any other remote
+    lookup failure and let callers use the committed local checkout.
+    """
+    try:
+        return _latest_data_sha_cached(path_prefix)
+    except Exception:
+        return None
+
+
 @st.cache_data(ttl=1800, show_spinner=False, max_entries=24)
-def fetch_bytes(rel_path: str, sha: str) -> bytes | None:
+def _fetch_bytes_cached(rel_path: str, sha: str) -> bytes | None:
     """Fetch a repo file at a pinned commit SHA, or None if not found/unreachable.
 
     Keyed by the immutable SHA, so cached content is always correct for that SHA.
@@ -100,5 +114,13 @@ def fetch_bytes(rel_path: str, sha: str) -> bytes | None:
             return None
         resp.raise_for_status()
         return resp.content
+    except Exception:
+        return None
+
+
+def fetch_bytes(rel_path: str, sha: str) -> bytes | None:
+    """Fetch remote bytes, falling back cleanly if Streamlit caching fails."""
+    try:
+        return _fetch_bytes_cached(rel_path, sha)
     except Exception:
         return None
