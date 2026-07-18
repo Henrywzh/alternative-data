@@ -59,12 +59,12 @@ jobs:
       COMTRADE_API_KEY: ${{ secrets.SEMICONDUCTOR_COMTRADE_API_KEY }}
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.event.repository.default_branch }}
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
 
