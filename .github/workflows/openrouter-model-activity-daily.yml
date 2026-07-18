@@ -67,10 +67,18 @@ jobs:
           echo "Failed to push model activity dataset after 3 attempts"
           exit 1
 
+      - name: Package raw snapshots for debugging
+        if: always()
+        run: |
+          if [ -d data/raw/openrouter ]; then
+            tar -czf "$RUNNER_TEMP/openrouter-model-activity-raw.tar.gz" -C data/raw/openrouter .
+          fi
+
       - name: Upload short-lived raw snapshots for debugging
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: openrouter-model-activity-raw
-          path: data/raw/openrouter/
+          path: ${{ runner.temp }}/openrouter-model-activity-raw.tar.gz
           if-no-files-found: warn
           retention-days: 7
