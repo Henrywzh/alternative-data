@@ -120,6 +120,66 @@ def test_model_activity_precedes_provider_fallback_for_same_model_day() -> None:
     assert by_date.loc[pd.Timestamp("2026-07-17"), "source"] == "Provider fallback"
 
 
+def test_free_variant_is_not_collapsed_into_paid_model_activity() -> None:
+    catalog = _prepare_explorer_catalog(pd.DataFrame([
+        {
+            "model_id": "tencent/hy3",
+            "canonical_slug": "tencent/hy3-20260706",
+            "model_name": "Tencent: Hy3",
+            "provider_prefix": "tencent",
+            "created_at": 1_783_000_000,
+            "context_length": 262144,
+            "architecture": "text->text",
+            "pricing_prompt": 0.0000002,
+            "pricing_completion": 0.0000008,
+        },
+        {
+            "model_id": "tencent/hy3:free",
+            "canonical_slug": "tencent/hy3-20260706",
+            "model_name": "Tencent: Hy3 (free)",
+            "provider_prefix": "tencent",
+            "created_at": 1_783_000_000,
+            "context_length": 262144,
+            "architecture": "text->text",
+            "pricing_prompt": 0.0,
+            "pricing_completion": 0.0,
+        },
+    ]))
+    aliases = _catalog_alias_map(catalog)
+    assert aliases["tencent/hy3-20260706"] == "tencent/hy3"
+    assert aliases["tencent/hy3-20260706:free"] == "tencent/hy3:free"
+
+    provider = _normalize_explorer_activity(pd.DataFrame([
+        {
+            "usage_date": "2026-07-16",
+            "model_permaslug": "tencent/hy3-20260706",
+            "entity_id": "tencent",
+            "total_tokens": 100,
+        },
+        {
+            "usage_date": "2026-07-16",
+            "model_permaslug": "tencent/hy3-20260706:free",
+            "entity_id": "tencent",
+            "total_tokens": 900,
+        },
+    ]), aliases)
+    detail = _normalize_explorer_activity(pd.DataFrame([
+        {
+            "usage_date": "2026-07-16",
+            "model_permaslug": "tencent/hy3-20260706",
+            "category_slug": "all",
+            "total_tokens": 80,
+            "request_count": 10,
+        },
+    ]), aliases)
+
+    combined = _combine_explorer_activity(provider, detail)
+    assert combined.groupby("model_id")["total_tokens"].sum().to_dict() == {
+        "tencent/hy3": 80,
+        "tencent/hy3:free": 900,
+    }
+
+
 def test_openrouter_latest_aliases_group_under_underlying_company() -> None:
     catalog = _prepare_explorer_catalog(pd.DataFrame([{
         "model_id": "~anthropic/claude-opus-latest",
