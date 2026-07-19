@@ -28,6 +28,7 @@ package-mode = false
 
 [project.optional-dependencies]
 dev = [
+  "PyYAML>=6.0.2",
   "pytest>=8.2",
 ]
 
