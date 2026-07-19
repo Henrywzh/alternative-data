@@ -1,11 +1,16 @@
 from __future__ import annotations
 
 import json
+from datetime import date
 from pathlib import Path
 
 import pandas as pd
 import pytest
 
+from openrouter_derived_data import (
+    compute_workload_intensity_daily,
+    compute_workload_intensity_models,
+)
 from openrouter_derived_data.identity import (
     compatible_activity_ids,
     load_capability_map,
@@ -160,3 +165,51 @@ def test_capability_map_returns_only_exact_compatible_activity_routes(tmp_path: 
         {"openai/gpt-5.6-sol", "openai/gpt-5.6-sol-pro"}
     )
     assert compatible_activity_ids(capability_map, "not-mapped") == frozenset()
+
+
+def test_workload_intensity_uses_matching_rows_and_rolling_ratio_of_sums() -> None:
+    activity = pd.DataFrame(
+        [
+            {"usage_date": "2026-07-16", "model_permaslug": "a/model", "entity_id": "a", "total_tokens": 1000, "prompt_tokens": 800, "completion_tokens": 200, "request_count": 10},
+            {"usage_date": "2026-07-16", "model_permaslug": "b/model", "entity_id": "b", "total_tokens": 9000, "prompt_tokens": 6000, "completion_tokens": 3000, "request_count": 90},
+            {"usage_date": "2026-07-17", "model_permaslug": "a/model", "entity_id": "a", "total_tokens": 4000, "prompt_tokens": 3000, "completion_tokens": 1000, "request_count": 20},
+            {"usage_date": "2026-07-17", "model_permaslug": "zero/model", "entity_id": "zero", "total_tokens": 999999, "prompt_tokens": 1, "completion_tokens": 1, "request_count": 0},
+            {"usage_date": "2026-07-18", "model_permaslug": "a/model", "entity_id": "a", "total_tokens": 999999, "prompt_tokens": 1, "completion_tokens": 1, "request_count": 1},
+        ]
+    )
+
+    result = compute_workload_intensity_daily(activity, today=date(2026, 7, 18))
+
+    total_1d = result[
+        (result.metric_id == "total_tokens_per_request")
+        & (result.rolling_window_days == 1)
+    ]
+    assert total_1d.set_index("usage_date").loc["2026-07-16", "value"] == pytest.approx(100.0)
+    total_7d = result[
+        (result.metric_id == "total_tokens_per_request")
+        & (result.rolling_window_days == 7)
+    ]
+    assert total_7d.iloc[-1]["value"] == pytest.approx(14000 / 120)
+    assert "2026-07-18" not in set(result["usage_date"])
+    assert result["excluded_zero_request_rows"].eq(1).all()
+
+
+def test_workload_intensity_models_uses_one_eligible_row_set_for_shares() -> None:
+    activity = pd.DataFrame(
+        [
+            {"usage_date": "2026-06-17", "model_permaslug": "outside/window", "entity_id": "outside", "total_tokens": 100000, "prompt_tokens": 90000, "completion_tokens": 10000, "request_count": 1},
+            {"usage_date": "2026-06-18", "model_permaslug": "a/model", "entity_id": "a", "total_tokens": 1000, "prompt_tokens": 700, "completion_tokens": 300, "request_count": 10},
+            {"usage_date": "2026-07-17", "model_permaslug": "b/model", "entity_id": "b", "total_tokens": 9000, "prompt_tokens": 6000, "completion_tokens": 3000, "request_count": 90},
+            {"usage_date": "2026-07-17", "model_permaslug": "zero/model", "entity_id": "zero", "total_tokens": 999999, "prompt_tokens": 1, "completion_tokens": 1, "request_count": 0},
+            {"usage_date": "2026-07-18", "model_permaslug": "current/model", "entity_id": "current", "total_tokens": 999999, "prompt_tokens": 1, "completion_tokens": 1, "request_count": 1},
+        ]
+    )
+
+    result = compute_workload_intensity_models(activity, today=date(2026, 7, 18))
+
+    assert set(result["model_id"]) == {"a/model", "b/model"}
+    assert result["window_start_date"].eq("2026-06-18").all()
+    assert result["window_end_date"].eq("2026-07-17").all()
+    assert result["token_share"].sum() == pytest.approx(1.0)
+    assert result["request_share"].sum() == pytest.approx(1.0)
+    assert (result["intensity_ratio"] == result["token_share"] / result["request_share"]).all()
