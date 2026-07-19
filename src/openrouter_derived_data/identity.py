@@ -155,8 +155,16 @@ def rank_capability_families(
     models: pd.DataFrame,
     usage_dates: pd.Series,
     capability_map: CapabilityMap,
+    *,
+    backfill_latest_snapshot: bool = False,
 ) -> pd.DataFrame:
-    """Rank mapped model families using the latest eligible benchmark snapshot per day."""
+    """Rank model families using strict or explicitly backfilled benchmark scores.
+
+    Strict mode uses the latest Artificial Analysis snapshot available on or
+    before each usage date. Backfill mode uses the latest available snapshot
+    for every usage date, while still enforcing each model's release date. The
+    latter is a deliberately labeled current-score historical proxy.
+    """
     required_columns = {"as_of_date", "model_id", "model_name", "release_date", "intelligence_index"}
     missing_columns = required_columns - set(models.columns)
     if missing_columns:
@@ -170,10 +178,16 @@ def rank_capability_families(
     normalized_usage_dates = _normalize_days(pd.Series(usage_dates)).dropna().drop_duplicates().sort_values()
     ranked_days: list[pd.DataFrame] = []
     for usage_date in normalized_usage_dates:
-        snapshots_as_of_usage = prepared.loc[prepared["as_of_date"] <= usage_date]
+        if backfill_latest_snapshot:
+            benchmark_snapshot_date = prepared["as_of_date"].max()
+            snapshots_as_of_usage = prepared.loc[prepared["as_of_date"].eq(benchmark_snapshot_date)]
+        else:
+            snapshots_as_of_usage = prepared.loc[prepared["as_of_date"] <= usage_date]
+            if snapshots_as_of_usage.empty:
+                continue
+            benchmark_snapshot_date = snapshots_as_of_usage["as_of_date"].max()
         if snapshots_as_of_usage.empty:
             continue
-        benchmark_snapshot_date = snapshots_as_of_usage["as_of_date"].max()
         eligible = snapshots_as_of_usage.loc[
             (snapshots_as_of_usage["as_of_date"] == benchmark_snapshot_date)
             & (snapshots_as_of_usage["release_date"] <= usage_date)
@@ -208,7 +222,11 @@ def rank_capability_families(
         eligible["benchmark_snapshot_date"] = benchmark_snapshot_date
         eligible["representative_aa_model_id"] = eligible["model_id"]
         eligible["representative_model_name"] = eligible["model_name"]
-        eligible["model_match_status"] = "exact_curated_match"
+        eligible["model_match_status"] = (
+            "backfilled_current_score_exact_match"
+            if backfill_latest_snapshot
+            else "exact_curated_match"
+        )
         eligible["methodology_version"] = capability_map.methodology_version
         ranked_days.append(eligible[RANKING_COLUMNS])
     if not ranked_days:

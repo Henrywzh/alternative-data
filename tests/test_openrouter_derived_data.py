@@ -148,6 +148,35 @@ def test_rank_capability_families_does_not_rewind_when_latest_snapshot_is_future
     assert ranked.empty
 
 
+def test_rank_capability_families_backfills_latest_scores_after_release(tmp_path: Path) -> None:
+    _write_capability_map(tmp_path)
+    models = _artificial_analysis_rows().loc[lambda frame: frame["as_of_date"].ne("2026-07-19")]
+
+    ranked = rank_capability_families(
+        models,
+        pd.Series(["2026-07-10", "2026-07-18"]),
+        load_capability_map(tmp_path),
+        backfill_latest_snapshot=True,
+    )
+
+    assert set(ranked["usage_date"].astype(str)) == {"2026-07-10", "2026-07-18"}
+    assert ranked["model_match_status"].eq("backfilled_current_score_exact_match").all()
+    assert ranked["benchmark_snapshot_date"].astype(str).eq("2026-07-17").all()
+
+
+def test_backfilled_capability_family_never_precedes_release_date(tmp_path: Path) -> None:
+    _write_capability_map(tmp_path)
+
+    ranked = rank_capability_families(
+        _artificial_analysis_rows(),
+        pd.Series(["2026-06-30"]),
+        load_capability_map(tmp_path),
+        backfill_latest_snapshot=True,
+    )
+
+    assert ranked.empty
+
+
 def test_load_capability_map_rejects_duplicate_or_malformed_entries(tmp_path: Path) -> None:
     config_dir = tmp_path / "config"
     config_dir.mkdir()

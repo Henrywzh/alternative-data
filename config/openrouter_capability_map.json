@@ -1,71 +1,117 @@
 {
-  "methodology_version": "openrouter-derived-v1",
+  "methodology_version": "openrouter-derived-v2-backfilled-aa-score",
   "models": [
     {
       "aa_model_id": "cd55210d-358e-4df1-ba9c-9acb5f186cc9",
       "family_id": "anthropic/claude-fable-5",
       "effective_from": "2026-06-09",
-      "openrouter_routes": [{"model_id": "anthropic/claude-fable-5", "effective_from": "2026-06-10"}]
+      "openrouter_routes": [
+        {"model_id": "anthropic/claude-fable-5", "effective_from": "2026-06-10"},
+        {"model_id": "anthropic/claude-5-fable-20260609", "effective_from": "2026-06-10"}
+      ]
     },
     {
       "aa_model_id": "d93edfe8-bf35-49ad-b56e-b18116142a1c",
       "family_id": "openai/gpt-5.6-sol",
       "effective_from": "2026-07-09",
-      "openrouter_routes": [{"model_id": "openai/gpt-5.6-sol", "effective_from": "2026-07-17"}, {"model_id": "openai/gpt-5.6-sol-pro", "effective_from": "2026-07-17"}]
+      "openrouter_routes": [
+        {"model_id": "openai/gpt-5.6-sol", "effective_from": "2026-07-17"},
+        {"model_id": "openai/gpt-5.6-sol-pro", "effective_from": "2026-07-17"},
+        {"model_id": "openai/gpt-5.6-sol-20260709", "effective_from": "2026-07-17"},
+        {"model_id": "openai/gpt-5.6-sol-pro-20260709", "effective_from": "2026-07-17"}
+      ]
     },
     {
       "aa_model_id": "d998db47-9b67-4727-a2bb-2e1261020ac0",
       "family_id": "openai/gpt-5.6-sol",
       "effective_from": "2026-07-09",
-      "openrouter_routes": [{"model_id": "openai/gpt-5.6-sol", "effective_from": "2026-07-17"}, {"model_id": "openai/gpt-5.6-sol-pro", "effective_from": "2026-07-17"}]
+      "openrouter_routes": [
+        {"model_id": "openai/gpt-5.6-sol", "effective_from": "2026-07-17"},
+        {"model_id": "openai/gpt-5.6-sol-pro", "effective_from": "2026-07-17"},
+        {"model_id": "openai/gpt-5.6-sol-20260709", "effective_from": "2026-07-17"},
+        {"model_id": "openai/gpt-5.6-sol-pro-20260709", "effective_from": "2026-07-17"}
+      ]
     },
     {
       "aa_model_id": "f7d2fc3e-1f7b-405f-818c-07952a4af78f",
       "family_id": "moonshotai/kimi-k3",
       "effective_from": "2026-07-16",
-      "openrouter_routes": [{"model_id": "moonshotai/kimi-k3", "effective_from": "2026-07-17"}]
+      "openrouter_routes": [
+        {"model_id": "moonshotai/kimi-k3", "effective_from": "2026-07-17"},
+        {"model_id": "moonshotai/kimi-k3-20260715", "effective_from": "2026-07-17"}
+      ]
     },
     {
       "aa_model_id": "f7a4ea75-e548-4069-80d4-9be8bc7c009b",
       "family_id": "z-ai/glm-5.2",
       "effective_from": "2026-06-16",
-      "openrouter_routes": [{"model_id": "z-ai/glm-5.2", "effective_from": "2026-06-17"}]
+      "openrouter_routes": [
+        {"model_id": "z-ai/glm-5.2", "effective_from": "2026-06-17"},
+        {"model_id": "z-ai/glm-5.2-20260616", "effective_from": "2026-06-17"}
+      ]
     },
     {
       "aa_model_id": "8afc250d-b538-45a2-812a-4605f4ffd87e",
       "family_id": "openai/gpt-5.6-sol",
       "effective_from": "2026-07-09",
-      "openrouter_routes": [{"model_id": "openai/gpt-5.6-sol", "effective_from": "2026-07-17"}, {"model_id": "openai/gpt-5.6-sol-pro", "effective_from": "2026-07-17"}]
+      "openrouter_routes": [
+        {"model_id": "openai/gpt-5.6-sol", "effective_from": "2026-07-17"},
+        {"model_id": "openai/gpt-5.6-sol-pro", "effective_from": "2026-07-17"},
+        {"model_id": "openai/gpt-5.6-sol-20260709", "effective_from": "2026-07-17"},
+        {"model_id": "openai/gpt-5.6-sol-pro-20260709", "effective_from": "2026-07-17"}
+      ]
     },
     {
       "aa_model_id": "992b7b84-5069-4c6a-9295-834252553d50",
       "family_id": "anthropic/claude-opus-4.8",
       "effective_from": "2026-05-28",
-      "openrouter_routes": [{"model_id": "anthropic/claude-opus-4.8", "effective_from": "2026-05-29"}]
+      "openrouter_routes": [
+        {"model_id": "anthropic/claude-opus-4.8", "effective_from": "2026-05-29"},
+        {"model_id": "anthropic/claude-4.8-opus-20260528", "effective_from": "2026-05-29"},
+        {"model_id": "anthropic/claude-4.8-opus-fast-20260528", "effective_from": "2026-05-29"}
+      ]
     },
     {
       "aa_model_id": "bcf8db0a-3bb6-4d82-9516-0f57370c85a6",
       "family_id": "openai/gpt-5.6-terra",
       "effective_from": "2026-07-09",
-      "openrouter_routes": [{"model_id": "openai/gpt-5.6-terra", "effective_from": "2026-07-17"}, {"model_id": "openai/gpt-5.6-terra-pro", "effective_from": "2026-07-17"}]
+      "openrouter_routes": [
+        {"model_id": "openai/gpt-5.6-terra", "effective_from": "2026-07-17"},
+        {"model_id": "openai/gpt-5.6-terra-pro", "effective_from": "2026-07-17"},
+        {"model_id": "openai/gpt-5.6-terra-20260709", "effective_from": "2026-07-17"},
+        {"model_id": "openai/gpt-5.6-terra-pro-20260709", "effective_from": "2026-07-17"}
+      ]
     },
     {
       "aa_model_id": "1f054429-397e-4fdb-9e71-67bc92c1735e",
       "family_id": "openai/gpt-5.5",
       "effective_from": "2026-04-23",
-      "openrouter_routes": [{"model_id": "openai/gpt-5.5", "effective_from": "2026-04-25"}, {"model_id": "openai/gpt-5.5-pro", "effective_from": "2026-04-25"}]
+      "openrouter_routes": [
+        {"model_id": "openai/gpt-5.5", "effective_from": "2026-04-25"},
+        {"model_id": "openai/gpt-5.5-pro", "effective_from": "2026-04-25"},
+        {"model_id": "openai/gpt-5.5-20260423", "effective_from": "2026-04-25"},
+        {"model_id": "openai/gpt-5.5-pro-20260423", "effective_from": "2026-04-25"}
+      ]
     },
     {
       "aa_model_id": "794f69b5-cede-482b-b1cc-d769478497cd",
       "family_id": "x-ai/grok-4.5",
       "effective_from": "2026-07-08",
-      "openrouter_routes": [{"model_id": "x-ai/grok-4.5", "effective_from": "2026-07-17"}]
+      "openrouter_routes": [
+        {"model_id": "x-ai/grok-4.5", "effective_from": "2026-07-17"},
+        {"model_id": "x-ai/grok-4.5-20260708", "effective_from": "2026-07-17"}
+      ]
     },
     {
       "aa_model_id": "6f174934-5b7d-4333-86cb-f5ebf4a862e3",
       "family_id": "openai/gpt-5.6-sol",
       "effective_from": "2026-07-09",
-      "openrouter_routes": [{"model_id": "openai/gpt-5.6-sol", "effective_from": "2026-07-17"}, {"model_id": "openai/gpt-5.6-sol-pro", "effective_from": "2026-07-17"}]
+      "openrouter_routes": [
+        {"model_id": "openai/gpt-5.6-sol", "effective_from": "2026-07-17"},
+        {"model_id": "openai/gpt-5.6-sol-pro", "effective_from": "2026-07-17"},
+        {"model_id": "openai/gpt-5.6-sol-20260709", "effective_from": "2026-07-17"},
+        {"model_id": "openai/gpt-5.6-sol-pro-20260709", "effective_from": "2026-07-17"}
+      ]
     }
   ]
 }
