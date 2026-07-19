@@ -114,27 +114,25 @@ def rank_capability_families(
     prepared["release_date"] = _normalize_days(prepared["release_date"])
     prepared["intelligence_index"] = pd.to_numeric(prepared["intelligence_index"], errors="coerce")
     prepared = prepared.dropna(subset=["as_of_date", "release_date", "model_id", "intelligence_index"])
-    prepared = prepared.merge(
-        pd.DataFrame(
-            [
-                {"model_id": entry.aa_model_id, "family_id": entry.family_id}
-                for entry in capability_map.entries
-            ]
-        ),
-        on="model_id",
-        how="inner",
-        validate="many_to_one",
+    mapped_entries = pd.DataFrame(
+        [
+            {"model_id": entry.aa_model_id, "family_id": entry.family_id}
+            for entry in capability_map.entries
+        ]
     )
     normalized_usage_dates = _normalize_days(pd.Series(usage_dates)).dropna().drop_duplicates().sort_values()
     ranked_days: list[pd.DataFrame] = []
     for usage_date in normalized_usage_dates:
-        eligible = prepared.loc[
-            (prepared["as_of_date"] <= usage_date) & (prepared["release_date"] <= usage_date)
-        ].copy()
+        snapshots_as_of_usage = prepared.loc[prepared["as_of_date"] <= usage_date]
+        if snapshots_as_of_usage.empty:
+            continue
+        benchmark_snapshot_date = snapshots_as_of_usage["as_of_date"].max()
+        eligible = snapshots_as_of_usage.loc[
+            (snapshots_as_of_usage["as_of_date"] == benchmark_snapshot_date)
+            & (snapshots_as_of_usage["release_date"] <= usage_date)
+        ].merge(mapped_entries, on="model_id", how="inner", validate="many_to_one")
         if eligible.empty:
             continue
-        benchmark_snapshot_date = eligible["as_of_date"].max()
-        eligible = eligible.loc[eligible["as_of_date"] == benchmark_snapshot_date].copy()
         eligible = eligible.sort_values(
             ["family_id", "intelligence_index", "release_date", "model_id"],
             ascending=[True, False, False, True],
