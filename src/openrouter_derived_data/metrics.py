@@ -247,6 +247,12 @@ def compute_price_metrics(
     dates = pd.date_range(source_dates[0], source_dates[-1], freq="D")
 
     provenance = _activity_provenance(economics)
+    sota_daily, sota_daily_coverage = _prepare_sota_daily(
+        prepared_economics,
+        prepared_rankings,
+        prepared_pricing,
+        capability_map,
+    )
     rows: list[dict[str, object]] = []
     for usage_date in dates:
         window_start = usage_date - pd.Timedelta(days=6)
@@ -276,7 +282,7 @@ def compute_price_metrics(
         ):
             tier_rankings = daily_rankings.loc[
                 daily_rankings["capability_tier"].eq(tier)
-            ].drop_duplicates("family_id", keep="first")
+            ].copy()
             rows.append(
                 _list_price_row(
                     usage_date,
@@ -292,10 +298,11 @@ def compute_price_metrics(
         rows.append(
             _realized_sota_row(
                 usage_date,
-                window,
                 daily_rankings.loc[
                     daily_rankings["capability_tier"].eq("sota")
-                ].drop_duplicates("family_id", keep="first"),
+                ].copy(),
+                sota_daily,
+                sota_daily_coverage,
                 prepared_pricing,
                 capability_map,
                 provenance,
@@ -316,6 +323,7 @@ def compute_price_metrics(
                 cohort_window,
                 provenance,
                 pricing_status="as_recorded_pricing",
+                coverage_window=window,
             )
             rows.append(row)
             cohort_rows[cohort_id] = row
@@ -366,6 +374,9 @@ def _prepare_economics(economics: pd.DataFrame) -> pd.DataFrame:
         ~prepared["is_free"]
         & prepared["estimated_revenue"].notna()
         & prepared["total_tokens"].gt(0)
+        & prepared["pricing_snapshot_date"].notna()
+        & prepared["pricing_prompt"].notna()
+        & prepared["pricing_completion"].notna()
         & ~statuses.str.contains(
             "unpriced|unresolved|synthetic", case=False, na=False
         )
@@ -424,6 +435,7 @@ def _prepare_rankings(rankings: pd.DataFrame) -> pd.DataFrame:
         "family_id",
         "capability_tier",
         "representative_aa_model_id",
+        "family_rank",
     ):
         if column not in prepared:
             prepared[column] = pd.NA
@@ -431,7 +443,34 @@ def _prepare_rankings(rankings: pd.DataFrame) -> pd.DataFrame:
         prepared[column] = pd.to_datetime(
             prepared[column], errors="coerce", utc=True
         ).dt.tz_localize(None).dt.normalize()
+    prepared["family_rank"] = pd.to_numeric(
+        prepared["family_rank"], errors="coerce"
+    )
     return prepared.dropna(subset=["usage_date"])
+
+
+def _tier_cohort(
+    rankings: pd.DataFrame, tier: str
+) -> tuple[pd.DataFrame, bool]:
+    required_ranks = (
+        frozenset(range(1, 6))
+        if tier == "sota"
+        else frozenset(range(6, 11))
+    )
+    cohort = rankings.loc[
+        rankings["capability_tier"].eq(tier)
+        & rankings["family_rank"].isin(required_ranks)
+    ].copy()
+    cohort = cohort.sort_values(
+        ["family_rank", "family_id", "representative_aa_model_id"],
+        kind="stable",
+    ).drop_duplicates(["family_rank", "family_id"], keep="first")
+    complete = (
+        frozenset(cohort["family_rank"].dropna().astype(int)) == required_ranks
+        and cohort["family_id"].nunique() == 5
+        and len(cohort) == 5
+    )
+    return cohort, complete
 
 
 def _routes_for_rankings(
@@ -521,11 +560,15 @@ def _realized_row(
     provenance: dict[str, object],
     *,
     pricing_status: str | None = None,
+    coverage_window: pd.DataFrame | None = None,
 ) -> dict[str, object]:
     row = _base_daily_row(usage_date, metric_id, cohort_id, provenance)
     paid = window.loc[window["is_paid_priced"]].copy()
-    free = window.loc[window["is_free"]]
-    unpriced = window.loc[~window["is_free"] & ~window["is_paid_priced"]]
+    coverage = window if coverage_window is None else coverage_window
+    free = coverage.loc[coverage["is_free"]]
+    unpriced = coverage.loc[
+        ~coverage["is_free"] & ~coverage["is_paid_priced"]
+    ]
     numerator = paid["estimated_revenue"].sum(min_count=1)
     denominator = paid["total_tokens"].sum(min_count=1)
     row.update(
@@ -559,6 +602,8 @@ def _list_price_row(
 ) -> dict[str, object]:
     row = _base_daily_row(usage_date, metric_id, cohort_id, provenance)
     row["rolling_window_days"] = 1
+    tier = "sota" if cohort_id == "sota" else "frontier_contender"
+    rankings, complete_cohort = _tier_cohort(rankings, tier)
     route_prices = _asof_route_prices(
         usage_date, rankings, pricing, capability_map
     )
@@ -571,17 +616,18 @@ def _list_price_row(
     family_prices = paid_prices.groupby("family_id")[
         "blended_price_per_million"
     ].median()
-    expected_count = rankings["family_id"].nunique()
     priced_count = len(family_prices)
     benchmark_dates = rankings["benchmark_snapshot_date"].dropna()
     row.update(
         {
-            "value": family_prices.median() if priced_count >= 3 else pd.NA,
+            "value": family_prices.median()
+            if complete_cohort and priced_count >= 3
+            else pd.NA,
             "numerator": family_prices.sum(min_count=1),
             "denominator": priced_count,
             "benchmark_snapshot_date": _latest_date(benchmark_dates),
             "pricing_snapshot_date": _latest_date(paid_prices["snapshot_date"]),
-            "expected_family_count": expected_count,
+            "expected_family_count": 5,
             "priced_family_count": priced_count,
             "pricing_join_status": "strict_asof_pricing",
             "methodology_version": capability_map.methodology_version,
@@ -592,8 +638,9 @@ def _list_price_row(
 
 def _realized_sota_row(
     usage_date: pd.Timestamp,
-    window: pd.DataFrame,
-    rankings: pd.DataFrame,
+    current_rankings: pd.DataFrame,
+    daily_sota: pd.DataFrame,
+    daily_coverage: pd.DataFrame,
     pricing: pd.DataFrame,
     capability_map: CapabilityMap,
     provenance: dict[str, object],
@@ -601,54 +648,37 @@ def _realized_sota_row(
     row = _base_daily_row(
         usage_date, "realized_sota_price", "sota", provenance
     )
-    routes = _routes_for_rankings(rankings, capability_map)
-    route_prices = _asof_route_prices(
-        usage_date, rankings, pricing, capability_map
+    current_rankings, complete_current_cohort = _tier_cohort(
+        current_rankings, "sota"
     )
-    paid_route_prices = route_prices.loc[
-        ~route_prices.get("is_free", pd.Series(dtype=bool)).fillna(False)
-        & route_prices.get(
+    current_route_prices = _asof_route_prices(
+        usage_date, current_rankings, pricing, capability_map
+    )
+    current_paid_route_prices = current_route_prices.loc[
+        ~current_route_prices.get("is_free", pd.Series(dtype=bool)).fillna(False)
+        & current_route_prices.get(
             "blended_price_per_million", pd.Series(dtype=float)
         ).notna()
     ]
-    valid_paid_routes = set(paid_route_prices["model_id"].astype(str))
-    route_family = (
-        routes.drop_duplicates("model_id").set_index("model_id")["family_id"]
-        if not routes.empty
-        else pd.Series(dtype="object")
-    )
-    compatible = window.loc[
-        window["model_permaslug"]
-        .astype("string")
-        .isin(set(routes["model_id"].astype(str)))
-    ].copy()
-    compatible["family_id"] = compatible["model_permaslug"].map(route_family)
-    strict_snapshot = compatible["pricing_snapshot_date"].notna() & compatible[
-        "pricing_snapshot_date"
-    ].le(compatible["usage_date"])
-    not_backcast = ~compatible["pricing_join_status"].astype("string").str.contains(
-        "backcast", case=False, na=False
-    )
-    paid = compatible.loc[
-        compatible["model_permaslug"].astype("string").isin(valid_paid_routes)
-        & compatible["is_paid_priced"]
-        & strict_snapshot
-        & not_backcast
-    ].copy()
-    free = compatible.loc[compatible["is_free"]]
-    unpriced = compatible.loc[
-        ~compatible["is_free"] & ~compatible.index.isin(paid.index)
+    window_start = usage_date - pd.Timedelta(days=6)
+    paid = daily_sota.loc[
+        daily_sota["usage_date"].between(window_start, usage_date)
     ]
-    numerator = paid["estimated_revenue"].sum(min_count=1)
-    denominator = paid["total_tokens"].sum(min_count=1)
+    coverage = daily_coverage.loc[
+        daily_coverage["usage_date"].between(window_start, usage_date)
+    ]
+    numerator = paid["numerator"].sum(min_count=1)
+    denominator = paid["denominator"].sum(min_count=1)
     observed_count = paid["family_id"].nunique()
-    priced_count = paid_route_prices["family_id"].nunique()
-    guarded = observed_count >= 3 and priced_count >= 3
-    contributing_route_prices = paid_route_prices.loc[
-        paid_route_prices["model_id"].astype("string").isin(
-            set(paid["model_permaslug"].astype(str))
-        )
-    ]
+    observed_models: set[str] = set()
+    for model_ids in paid["model_ids"]:
+        observed_models.update(model_ids)
+    priced_count = current_paid_route_prices["family_id"].nunique()
+    guarded = (
+        complete_current_cohort
+        and observed_count >= 3
+        and priced_count >= 3
+    )
     row.update(
         {
             "value": numerator / denominator * 1_000_000
@@ -657,23 +687,140 @@ def _realized_sota_row(
             "numerator": numerator,
             "denominator": denominator,
             "benchmark_snapshot_date": _latest_date(
-                rankings["benchmark_snapshot_date"].dropna()
+                current_rankings["benchmark_snapshot_date"].dropna()
             ),
             "pricing_snapshot_date": _latest_date(
-                contributing_route_prices["snapshot_date"]
+                coverage["pricing_snapshot_date"]
             ),
-            "expected_family_count": rankings["family_id"].nunique(),
+            "expected_family_count": 5,
             "priced_family_count": priced_count,
             "observed_family_count": observed_count,
-            "observed_model_count": paid["model_permaslug"].nunique(),
+            "observed_model_count": len(observed_models),
             "included_tokens": denominator,
-            "excluded_free_tokens": free["total_tokens"].sum(),
-            "excluded_unpriced_tokens": unpriced["total_tokens"].sum(),
+            "excluded_free_tokens": coverage["excluded_free_tokens"].sum(),
+            "excluded_unpriced_tokens": coverage[
+                "excluded_unpriced_tokens"
+            ].sum(),
             "pricing_join_status": "strict_asof_pricing",
             "methodology_version": capability_map.methodology_version,
         }
     )
     return row
+
+
+def _prepare_sota_daily(
+    economics: pd.DataFrame,
+    rankings: pd.DataFrame,
+    pricing: pd.DataFrame,
+    capability_map: CapabilityMap,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    paid_days: list[pd.DataFrame] = []
+    coverage_rows: list[dict[str, object]] = []
+    for activity_date, activity_day in economics.groupby("usage_date"):
+        daily_rankings, complete_cohort = _tier_cohort(
+            rankings.loc[rankings["usage_date"].eq(activity_date)], "sota"
+        )
+        if not complete_cohort:
+            continue
+        daily_routes = _routes_for_rankings(daily_rankings, capability_map)
+        daily_route_prices = _asof_route_prices(
+            activity_date, daily_rankings, pricing, capability_map
+        )
+        daily_paid_route_prices = daily_route_prices.loc[
+            ~daily_route_prices.get(
+                "is_free", pd.Series(dtype=bool)
+            ).fillna(False)
+            & daily_route_prices.get(
+                "blended_price_per_million", pd.Series(dtype=float)
+            ).notna()
+        ]
+        valid_paid_routes = set(daily_paid_route_prices["model_id"].astype(str))
+        route_family = (
+            daily_routes.drop_duplicates("model_id")
+            .set_index("model_id")["family_id"]
+            if not daily_routes.empty
+            else pd.Series(dtype="object")
+        )
+        compatible = activity_day.loc[
+            activity_day["model_permaslug"]
+            .astype("string")
+            .isin(set(daily_routes["model_id"].astype(str)))
+        ].copy()
+        compatible["family_id"] = compatible["model_permaslug"].map(
+            route_family
+        )
+        strict_snapshot = compatible["pricing_snapshot_date"].notna() & compatible[
+            "pricing_snapshot_date"
+        ].le(compatible["usage_date"])
+        not_backcast = ~compatible["pricing_join_status"].astype(
+            "string"
+        ).str.contains("backcast", case=False, na=False)
+        paid = compatible.loc[
+            compatible["model_permaslug"]
+            .astype("string")
+            .isin(valid_paid_routes)
+            & compatible["is_paid_priced"]
+            & strict_snapshot
+            & not_backcast
+        ].copy()
+        free = compatible.loc[compatible["is_free"]]
+        unpriced = compatible.loc[
+            ~compatible["is_free"] & ~compatible.index.isin(paid.index)
+        ]
+        grouped = (
+            paid.groupby("family_id", as_index=False)
+            .agg(
+                numerator=(
+                    "estimated_revenue",
+                    lambda values: values.sum(min_count=1),
+                ),
+                denominator=("total_tokens", lambda values: values.sum(min_count=1)),
+                model_ids=(
+                    "model_permaslug",
+                    lambda values: frozenset(values.dropna().astype(str)),
+                ),
+            )
+        )
+        grouped["usage_date"] = activity_date
+        paid_days.append(grouped)
+        contributing_prices = daily_paid_route_prices.loc[
+            daily_paid_route_prices["model_id"].astype("string").isin(
+                set(paid["model_permaslug"].astype(str))
+            )
+        ]
+        coverage_rows.append(
+            {
+                "usage_date": activity_date,
+                "excluded_free_tokens": free["total_tokens"].sum(),
+                "excluded_unpriced_tokens": unpriced["total_tokens"].sum(),
+                "pricing_snapshot_date": contributing_prices[
+                    "snapshot_date"
+                ].max(),
+            }
+        )
+    daily = (
+        pd.concat(paid_days, ignore_index=True)
+        if paid_days
+        else pd.DataFrame(
+            columns=[
+                "usage_date",
+                "family_id",
+                "numerator",
+                "denominator",
+                "model_ids",
+            ]
+        )
+    )
+    coverage = pd.DataFrame(
+        coverage_rows,
+        columns=[
+            "usage_date",
+            "excluded_free_tokens",
+            "excluded_unpriced_tokens",
+            "pricing_snapshot_date",
+        ],
+    )
+    return daily, coverage
 
 
 def _fixed_basket_row(
@@ -711,6 +858,22 @@ def _fixed_basket_row(
                     cohorts[cohort]["pricing_snapshot_date"]
                     for cohort in weights
                     if pd.notna(cohorts[cohort]["pricing_snapshot_date"])
+                ),
+                default=pd.NA,
+            ),
+            "excluded_free_tokens": max(
+                (
+                    float(cohorts[cohort]["excluded_free_tokens"])
+                    for cohort in weights
+                    if pd.notna(cohorts[cohort]["excluded_free_tokens"])
+                ),
+                default=pd.NA,
+            ),
+            "excluded_unpriced_tokens": max(
+                (
+                    float(cohorts[cohort]["excluded_unpriced_tokens"])
+                    for cohort in weights
+                    if pd.notna(cohorts[cohort]["excluded_unpriced_tokens"])
                 ),
                 default=pd.NA,
             ),
