@@ -258,8 +258,30 @@ def compute_price_metrics(
     dates = pd.date_range(source_dates[0], source_dates[-1], freq="D")
 
     provenance = _price_provenance(economics, derived_provenance)
+    # Company-level economics may contain explicitly labelled historical route
+    # fills.  Keep those out of the SOTA input so its own route-specific
+    # backfill remains the sole historical-pricing rule for the SOTA metric.
+    sota_economics = prepared_economics.copy()
+    company_fill = sota_economics["pricing_join_status"].astype("string").eq(
+        "historical_route_price_fill"
+    )
+    if company_fill.any():
+        for column in (
+            "estimated_revenue",
+            "pricing_snapshot_ts",
+            "pricing_snapshot_date",
+            "pricing_prompt",
+            "pricing_completion",
+            "is_paid_priced",
+            "blended_price",
+            "price_cohort",
+        ):
+            if column in sota_economics.columns:
+                sota_economics.loc[company_fill, column] = pd.NA
+        sota_economics.loc[company_fill, "pricing_join_status"] = "unresolved_missing_pricing"
+
     sota_daily, sota_daily_coverage = _prepare_sota_daily(
-        prepared_economics,
+        _backfill_sota_route_prices(sota_economics),
         prepared_rankings,
         prepared_pricing,
         capability_map,
@@ -608,6 +630,71 @@ def _prepare_economics(economics: pd.DataFrame) -> pd.DataFrame:
     return prepared.dropna(subset=["usage_date"])
 
 
+def _backfill_sota_route_prices(economics: pd.DataFrame) -> pd.DataFrame:
+    """Backfill exact activity-route prices for the SOTA capability proxy.
+
+    OpenRouter's historical activity feed often has an unresolved price on a
+    route's first days, while a later snapshot records that same route's
+    price.  The original price indices already used this backward-fill.  SOTA
+    ATP uses the same route-exact fill, but marks it explicitly and retains
+    the real future snapshot date so the dashboard can distinguish a proxy
+    from as-recorded economics.
+    """
+    prepared = economics.copy()
+    if prepared.empty:
+        return prepared
+    prepared["_sota_price_fill"] = False
+    for model_id, indices in prepared.groupby("model_permaslug", sort=False).groups.items():
+        if str(model_id).endswith(":free"):
+            continue
+        group = prepared.loc[indices].sort_values("usage_date")
+        known = group.loc[
+            group["pricing_prompt"].notna()
+            & group["pricing_completion"].notna()
+            & group["pricing_prompt"].gt(0)
+            & group["pricing_completion"].gt(0)
+        ]
+        if known.empty:
+            continue
+        prompt = group["pricing_prompt"].bfill()
+        completion = group["pricing_completion"].bfill()
+        fillable = (
+            group["pricing_prompt"].isna()
+            | group["pricing_completion"].isna()
+        ) & prompt.notna() & completion.notna()
+        if not fillable.any():
+            continue
+        fill_indices = group.index[fillable]
+        prepared.loc[fill_indices, "pricing_prompt"] = prompt.loc[fillable]
+        prepared.loc[fill_indices, "pricing_completion"] = completion.loc[fillable]
+        snapshot_dates = group["pricing_snapshot_date"].bfill()
+        prepared.loc[fill_indices, "pricing_snapshot_date"] = snapshot_dates.loc[fillable]
+        prompt_tokens = prepared.loc[fill_indices, "prompt_tokens"].fillna(0)
+        completion_tokens = prepared.loc[fill_indices, "completion_tokens"].fillna(0)
+        total_tokens = prepared.loc[fill_indices, "total_tokens"]
+        blended = (
+            prepared.loc[fill_indices, "pricing_prompt"] * 0.977
+            + prepared.loc[fill_indices, "pricing_completion"] * 0.023
+        )
+        revenue = prompt_tokens * prepared.loc[fill_indices, "pricing_prompt"] + completion_tokens * prepared.loc[fill_indices, "pricing_completion"]
+        no_split = prompt_tokens.eq(0) & completion_tokens.eq(0)
+        revenue.loc[no_split] = total_tokens.loc[no_split] * blended.loc[no_split]
+        prepared.loc[fill_indices, "estimated_revenue"] = revenue
+        prepared.loc[fill_indices, "blended_price"] = blended
+        prepared.loc[fill_indices, "is_free"] = False
+        prepared.loc[fill_indices, "is_paid_priced"] = (
+            prepared.loc[fill_indices, "total_tokens"].gt(0)
+            & revenue.notna()
+            & prepared.loc[fill_indices, "pricing_snapshot_date"].notna()
+        )
+        prepared.loc[fill_indices, "price_cohort"] = "mid_priced"
+        prepared.loc[fill_indices[blended.ge(2.0e-6)], "price_cohort"] = "premium_priced"
+        prepared.loc[fill_indices[blended.lt(0.5e-6)], "price_cohort"] = "low_priced"
+        prepared.loc[fill_indices, "pricing_join_status"] = "sota_route_historical_fill"
+        prepared.loc[fill_indices, "_sota_price_fill"] = True
+    return prepared
+
+
 def _prepare_pricing(pricing: pd.DataFrame) -> pd.DataFrame:
     prepared = pricing.copy()
     for column in ("model_id", "snapshot_ts", "pricing_prompt", "pricing_completion"):
@@ -903,15 +990,6 @@ def _realized_sota_row(
     current_rankings, complete_current_cohort = _tier_cohort(
         current_rankings, "sota"
     )
-    current_route_prices = _asof_route_prices(
-        usage_date, current_rankings, pricing, capability_map
-    )
-    current_paid_route_prices = current_route_prices.loc[
-        ~current_route_prices.get("is_free", pd.Series(dtype=bool)).fillna(False)
-        & current_route_prices.get(
-            "blended_price_per_million", pd.Series(dtype=float)
-        ).notna()
-    ]
     window_start = usage_date - pd.Timedelta(days=6)
     paid = daily_sota.loc[
         daily_sota["usage_date"].between(window_start, usage_date)
@@ -925,7 +1003,16 @@ def _realized_sota_row(
     observed_models: set[str] = set()
     for model_ids in paid["model_ids"]:
         observed_models.update(model_ids)
-    priced_count = current_paid_route_prices["family_id"].nunique()
+    # Coverage is based on priced activity in the seven-day window, not on
+    # whether a route still appears in today's models catalog.  This preserves
+    # historical SOTA observations for dated, preview, and fast routes after
+    # those routes are retired from the current catalog.
+    priced_count = paid.loc[paid["denominator"].gt(0), "family_id"].nunique()
+    historical_fill_used = bool(
+        coverage.get("historical_fill_used", pd.Series(dtype=bool))
+        .fillna(False)
+        .any()
+    )
     guarded = (
         complete_current_cohort
         and observed_count >= 3
@@ -953,7 +1040,11 @@ def _realized_sota_row(
             "excluded_unpriced_tokens": coverage[
                 "excluded_unpriced_tokens"
             ].sum(),
-            "pricing_join_status": "strict_asof_pricing",
+            "pricing_join_status": (
+                "sota_route_historical_fill"
+                if historical_fill_used
+                else "strict_asof_pricing"
+            ),
             "methodology_version": capability_map.methodology_version,
         }
     )
@@ -977,24 +1068,6 @@ def _prepare_sota_daily(
         daily_routes = _routes_for_rankings(
             daily_rankings, capability_map, activity_date
         )
-        daily_route_prices = _asof_route_prices(
-            activity_date, daily_rankings, pricing, capability_map
-        )
-        daily_paid_route_prices = daily_route_prices.loc[
-            ~daily_route_prices.get(
-                "is_free", pd.Series(dtype=bool)
-            ).fillna(False)
-            & daily_route_prices.get(
-                "blended_price_per_million", pd.Series(dtype=float)
-            ).notna()
-        ]
-        # Pricing snapshots often expose a canonical route while activity is
-        # recorded against a dated/variant route (for example
-        # ``gpt-5.6-sol-20260709``).  The activity row already carries the
-        # exact route's as-of price join, so use priced *families* for the
-        # coverage guard rather than requiring the canonical pricing ID to be
-        # byte-for-byte identical to the activity slug.
-        priced_families = set(daily_paid_route_prices["family_id"].astype(str))
         route_family = (
             daily_routes.drop_duplicates("model_id")
             .set_index("model_id")["family_id"]
@@ -1012,13 +1085,19 @@ def _prepare_sota_daily(
         strict_snapshot = compatible["pricing_snapshot_date"].notna() & compatible[
             "pricing_snapshot_date"
         ].le(compatible["usage_date"])
+        historical_fill = compatible["pricing_join_status"].astype("string").isin(
+            {"sota_route_historical_fill", "historical_route_price_fill"}
+        )
         not_backcast = ~compatible["pricing_join_status"].astype(
             "string"
         ).str.contains("backcast", case=False, na=False)
+        # The economics mart is the authoritative as-recorded price join for
+        # activity.  Do not require the route to still exist in the latest
+        # models catalog: dated/preview/fast routes can disappear from that
+        # catalog even though their historical priced observations remain.
         paid = compatible.loc[
-            compatible["family_id"].astype("string").isin(priced_families)
-            & compatible["is_paid_priced"]
-            & strict_snapshot
+            compatible["is_paid_priced"]
+            & (strict_snapshot | historical_fill)
             & not_backcast
         ].copy()
         free = compatible.loc[compatible["is_free"]]
@@ -1041,19 +1120,18 @@ def _prepare_sota_daily(
         )
         grouped["usage_date"] = activity_date
         paid_days.append(grouped)
-        contributing_prices = daily_paid_route_prices.loc[
-            daily_paid_route_prices["model_id"].astype("string").isin(
-                set(paid["model_permaslug"].astype(str))
-            )
-        ]
+        contributing_prices = paid.loc[paid["pricing_snapshot_date"].notna()]
         coverage_rows.append(
             {
                 "usage_date": activity_date,
                 "excluded_free_tokens": free["total_tokens"].sum(),
                 "excluded_unpriced_tokens": unpriced["total_tokens"].sum(),
                 "pricing_snapshot_date": contributing_prices[
-                    "snapshot_date"
+                    "pricing_snapshot_date"
                 ].max(),
+                "historical_fill_used": paid["pricing_join_status"].astype(
+                    "string"
+                ).eq("sota_route_historical_fill").any(),
             }
         )
     daily = (
@@ -1076,6 +1154,7 @@ def _prepare_sota_daily(
             "excluded_free_tokens",
             "excluded_unpriced_tokens",
             "pricing_snapshot_date",
+            "historical_fill_used",
         ],
     )
     return daily, coverage

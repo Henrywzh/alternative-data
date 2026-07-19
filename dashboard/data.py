@@ -773,6 +773,25 @@ DATASET_REGISTRY: dict[str, dict[str, object]] = {
             "methodology_version",
         ],
     },
+    "daily_provider_economics": {
+        "label": "Daily Model-Origin Economics",
+        "domain": "openrouter_derived",
+        "requires_core_provenance": False,
+        "natural_keys": ["usage_date", "provider_slug", "model_permaslug"],
+        "primary_date_column": "usage_date",
+        "metric_column": "estimated_revenue",
+        "required_columns": [
+            "usage_date",
+            "provider_slug",
+            "provider_name",
+            "model_permaslug",
+            "total_tokens",
+            "estimated_revenue",
+            "pricing_join_status",
+            "has_pricing",
+            "revenue_method",
+        ],
+    },
     "openrouter_workload_intensity_models": {
         "label": "OpenRouter Workload Intensity Models",
         "domain": "openrouter_derived",
@@ -845,6 +864,7 @@ DOMAIN_ORDER = {
     ],
     "openrouter_derived": [
         "openrouter_usage_economics_daily",
+        "daily_provider_economics",
         "openrouter_workload_intensity_models",
     ],
     "openrouter_workloads": [
@@ -858,10 +878,13 @@ DOMAIN_ORDER = {
         "apps_global_ranking_snapshots",
         "apps_trending_snapshots",
     ],
-    # The dedicated Models tab needs only catalog, activity, and app-usage
-    # detail. Keeping these focused domains separate avoids loading every
-    # rankings and Apps panel merely to render the explorer.
+    # The dedicated Models tab needs catalog, activity, weekly ranking context,
+    # compact economics, and app-usage detail. Keeping these focused domains
+    # separate avoids loading every rankings and Apps panel merely to render
+    # the explorer.
     "openrouter_model_explorer": [
+        "top_models",
+        "provider_weekly_requests",
         "openrouter_model_activity",
         "provider_daily_activity",
         "app_metadata_snapshots",
@@ -1387,6 +1410,17 @@ OPENROUTER_LOAD_COLUMNS: dict[str, list[str]] = {
         "excluded_zero_request_rows",
         "pricing_join_status",
         "methodology_version",
+    ],
+    "daily_provider_economics": [
+        "usage_date",
+        "provider_slug",
+        "provider_name",
+        "model_permaslug",
+        "total_tokens",
+        "estimated_revenue",
+        "pricing_join_status",
+        "has_pricing",
+        "revenue_method",
     ],
     "openrouter_workload_intensity_models": [
         "window_start_date",
