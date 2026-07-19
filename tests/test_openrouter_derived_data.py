@@ -103,6 +103,36 @@ def test_rank_capability_families_collapses_configurations_and_uses_asof_snapsho
     assert july_18.iloc[0]["representative_aa_model_id"] == "claude"
 
 
+def test_rank_capability_families_does_not_rewind_when_latest_snapshot_is_future_only(tmp_path: Path) -> None:
+    _write_capability_map(tmp_path)
+    models = pd.DataFrame(
+        [
+            {
+                "as_of_date": "2026-07-09",
+                "model_id": "claude",
+                "model_name": "Claude Fable 5",
+                "release_date": "2026-07-01",
+                "intelligence_index": 100,
+            },
+            {
+                "as_of_date": "2026-07-17",
+                "model_id": "future",
+                "model_name": "Future model",
+                "release_date": "2026-07-19",
+                "intelligence_index": 110,
+            },
+        ]
+    )
+
+    ranked = rank_capability_families(
+        models,
+        pd.Series(["2026-07-18"]),
+        load_capability_map(tmp_path),
+    )
+
+    assert ranked.empty
+
+
 def test_load_capability_map_rejects_duplicate_or_malformed_entries(tmp_path: Path) -> None:
     config_dir = tmp_path / "config"
     config_dir.mkdir()
