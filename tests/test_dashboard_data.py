@@ -62,6 +62,7 @@ from dashboard.sections.openrouter import (
     _workload_intensity_section_state,
     _weekly_usage_section_state,
     _derived_metric_pivot,
+    _legacy_original_price_series,
     model_explorer_state,
 )
 from dashboard.sections.semiconductor import (
@@ -3142,14 +3143,14 @@ def test_weekly_usage_section_state_switches_between_tokens_and_requests() -> No
 def test_usage_window_defaults_to_weekly_and_supports_daily_totals() -> None:
     provider_daily = pd.DataFrame(
         {
-            "usage_date": ["2026-04-01", "2026-04-02"],
+            "usage_date": ["2026-06-17", "2026-06-18"],
             "entity_name": ["OpenAI", "Anthropic"],
             "total_tokens": [1000.0, 2500.0],
         }
     )
     model_activity = pd.DataFrame(
         {
-            "usage_date": ["2026-04-01", "2026-04-02"],
+            "usage_date": ["2026-06-17", "2026-06-18"],
             "category_slug": ["all", "all"],
             "request_count": [10.0, 25.0],
         }
@@ -3162,9 +3163,9 @@ def test_usage_window_defaults_to_weekly_and_supports_daily_totals() -> None:
         "source_path": None,
         "missing_columns": [],
         "duplicate_rows": 0,
-        "first_date": "2026-04-01",
-        "latest_date": "2026-04-02",
-        "latest_scraped_at": "2026-04-02T00:00:00Z",
+        "first_date": "2026-06-17",
+        "latest_date": "2026-06-18",
+        "latest_scraped_at": "2026-06-18T00:00:00Z",
     }
     datasets = {
         "provider_daily_activity": DatasetLoadResult(
@@ -3190,9 +3191,9 @@ def test_usage_window_defaults_to_weekly_and_supports_daily_totals() -> None:
     assert weekly["window"] == "Weekly"
     assert daily_tokens["window"] == "Daily"
     assert daily_tokens["pivot"].columns.tolist() == ["Total Tokens"]
-    assert daily_tokens["pivot"].loc["2026-04-02", "Total Tokens"] == 2500.0
+    assert daily_tokens["pivot"].loc["2026-06-18", "Total Tokens"] == 2500.0
     assert daily_requests["pivot"].columns.tolist() == ["Total Requests"]
-    assert daily_requests["pivot"].loc["2026-04-02", "Total Requests"] == 25.0
+    assert daily_requests["pivot"].loc["2026-06-18", "Total Requests"] == 25.0
 
 
 def test_workload_intensity_state_is_total_only_for_usage_chart() -> None:
@@ -3200,6 +3201,78 @@ def test_workload_intensity_state_is_total_only_for_usage_chart() -> None:
 
     assert state["component"] == "Total"
     assert state["metric_id"] == "total_tokens_per_request"
+
+
+def test_workload_intensity_defaults_to_weekly_snapshots() -> None:
+    state = _weekly_usage_section_state(_derived_datasets(), {}, "Workload Intensity")
+
+    assert state["window"] == "Weekly"
+    assert state["pivot"].index.tolist() == ["2026-07-06", "2026-07-13"]
+    assert state["pivot"].iloc[-1, 0] == 120.0
+
+
+def test_daily_usage_totals_are_continuous_from_june_17_and_preserve_gaps() -> None:
+    provider_daily = pd.DataFrame(
+        {
+            "usage_date": ["2026-06-17", "2026-06-19"],
+            "entity_name": ["OpenAI", "OpenAI"],
+            "total_tokens": [1000.0, 2500.0],
+        }
+    )
+    datasets = {
+        "provider_daily_activity": DatasetLoadResult(
+            dataset_id="provider_daily_activity",
+            label="Provider Daily Activity",
+            frame=provider_daily,
+            row_count=2,
+            domain="rankings",
+            primary_date_column="usage_date",
+            metric_column="total_tokens",
+            source_format="parquet",
+            source_path=None,
+            missing_columns=[],
+            duplicate_rows=0,
+            first_date="2026-06-17",
+            latest_date="2026-06-19",
+            latest_scraped_at="2026-06-19T00:00:00Z",
+        )
+    }
+
+    state = _weekly_usage_section_state(datasets, {}, "Tokens", window="Daily")
+
+    assert state["pivot"].index.tolist() == ["2026-06-17", "2026-06-18", "2026-06-19"]
+    assert pd.isna(state["pivot"].loc["2026-06-18", "Total Tokens"])
+
+
+def test_legacy_original_price_series_backfills_and_smooths_all_calendar_dates() -> None:
+    economics = pd.DataFrame(
+        [
+            {
+                "usage_date": "2026-01-01",
+                "model_permaslug": "provider/model",
+                "total_tokens": 100.0,
+                "prompt_tokens": 80.0,
+                "completion_tokens": 20.0,
+                "pricing_prompt": pd.NA,
+                "pricing_completion": pd.NA,
+            },
+            {
+                "usage_date": "2026-01-03",
+                "model_permaslug": "provider/model",
+                "total_tokens": 100.0,
+                "prompt_tokens": 80.0,
+                "completion_tokens": 20.0,
+                "pricing_prompt": 2e-6,
+                "pricing_completion": 4e-6,
+            },
+        ]
+    )
+
+    series = _legacy_original_price_series(economics)
+
+    assert series.index.tolist() == ["2026-01-01", "2026-01-02", "2026-01-03"]
+    assert series[["Spend-Weighted TEI", "Original Volume-Weighted TEI", "Frontier"]].notna().all().all()
+    assert series.loc["2026-01-02", "Original Volume-Weighted TEI"] == series.loc["2026-01-01", "Original Volume-Weighted TEI"]
 
 
 def _derived_datasets() -> dict[str, DatasetLoadResult]:

@@ -21,6 +21,7 @@ from openrouter_revenue import (build_price_context, build_conservative_provider
 from semiconductor_memory_data.sources.config import AI_DEMAND_PPI_WEIGHTS
 from dashboard.theme import (ACCENT, BG, SIDEBAR, CARD, BORDER, TEXT, MUTED, GREEN, RED, YELLOW, GRID, TICK, MODEL_COLORS)
 from dashboard.components import (format_metric, _empty_dataset_frame, _styler_applymap_compat, WEEKLY_MONTHLY_OTHER_PROVIDERS, DAILY_OTHER_PROVIDERS, US_PROVIDER_ORDER, CHINA_PROVIDER_ORDER, order_provider_columns, regroup_provider_pivot_for_display, render_dataset_guard, format_scraped_at_display, dataframe_for_display, make_stacked_bar, make_stacked_area_chart, make_line_chart, kpi_card_html, kpi_grid_html, _top_n_with_others)
+from openrouter_derived_data.metrics import compute_legacy_original_price_series
 
 
 REVENUE_CACHE_VERSION = "2026-07-01-pricing-perf-v1"
@@ -1516,6 +1517,13 @@ DIAGNOSTIC_PRICE_METRIC_IDS = [
     "low_priced_realized",
     "fixed_workload_basket",
 ]
+
+
+def _legacy_original_price_series(economics: pd.DataFrame) -> pd.DataFrame:
+    """Dashboard-accessible wrapper for the persisted legacy price logic."""
+    return compute_legacy_original_price_series(economics)
+
+
 PRICE_METRIC_ROLLING_WINDOWS = {
     "original_spend_weighted_tei": 7,
     "original_cpi_workload_basket": 7,
@@ -1532,6 +1540,7 @@ PRICE_METRIC_ROLLING_WINDOWS = {
     "low_priced_realized": 7,
     "fixed_workload_basket": 7,
 }
+DAILY_USAGE_START_DATE = pd.Timestamp("2026-06-17")
 WORKLOAD_COMPONENT_METRIC_IDS = {
     "Total": "total_tokens_per_request",
     "Prompt": "prompt_tokens_per_request",
@@ -1653,6 +1662,23 @@ def _workload_model_table(frame: pd.DataFrame) -> pd.DataFrame:
     )
 
 
+def _weekly_snapshot_pivot(daily_pivot: pd.DataFrame) -> pd.DataFrame:
+    """Sample the latest available rolling observation in each calendar week."""
+    if daily_pivot.empty:
+        return daily_pivot.copy()
+    prepared = daily_pivot.copy()
+    prepared.index = pd.to_datetime(prepared.index, errors="coerce")
+    prepared = prepared.loc[prepared.index.notna()].sort_index()
+    if prepared.empty:
+        return daily_pivot.iloc[0:0].copy()
+    week_start = prepared.index - pd.to_timedelta(prepared.index.weekday, unit="D")
+    prepared["_week_start"] = week_start
+    weekly = prepared.groupby("_week_start", sort=True).tail(1).set_index("_week_start")
+    weekly.index = weekly.index.strftime("%Y-%m-%d")
+    weekly.index.name = None
+    return weekly
+
+
 def _workload_intensity_section_state(
     datasets: dict[str, DatasetLoadResult],
     component: str,
@@ -1665,6 +1691,7 @@ def _workload_intensity_section_state(
     metric_id = WORKLOAD_COMPONENT_METRIC_IDS[selected_component]
     raw_daily_pivot = _derived_metric_pivot(daily, [metric_id], rolling_window_days=1)
     seven_day_pivot = _derived_metric_pivot(daily, [metric_id], rolling_window_days=7)
+    weekly_pivot = _weekly_snapshot_pivot(seven_day_pivot)
     all_components = _derived_metric_pivot(
         daily,
         list(WORKLOAD_COMPONENT_METRIC_IDS.values()),
@@ -1716,7 +1743,9 @@ def _workload_intensity_section_state(
         "metric": "Workload Intensity",
         "component": selected_component,
         "metric_id": metric_id,
-        "pivot": seven_day_pivot,
+        "window": "Weekly",
+        "pivot": weekly_pivot,
+        "weekly_pivot": weekly_pivot,
         "raw_daily_pivot": raw_daily_pivot,
         "seven_day_pivot": seven_day_pivot,
         "latest_values": latest_values,
@@ -1855,12 +1884,18 @@ def _daily_total_usage_pivot(
         )
     else:
         prepared["period"] = prepared["usage_date_dt"]
+        prepared = prepared.loc[prepared["period"].ge(DAILY_USAGE_START_DATE)].copy()
+        if prepared.empty:
+            return pd.DataFrame(columns=[f"Total {metric}"]), requested_window, result.latest_scraped_at if result else None
     pivot = (
         prepared.groupby("period", as_index=True)["value"]
         .sum()
         .to_frame(f"Total {metric}")
         .sort_index()
     )
+    if requested_window == "Daily":
+        full_days = pd.date_range(pivot.index.min(), pivot.index.max(), freq="D")
+        pivot = pivot.reindex(full_days)
     pivot.index = pivot.index.strftime("%Y-%m-%d")
     latest_scraped_at = result.latest_scraped_at if result else None
     return pivot, requested_window, latest_scraped_at
@@ -2081,23 +2116,23 @@ def render_weekly_usage_section(datasets: dict[str, DatasetLoadResult], openrout
     workload_window = "7-Day"
     usage_window = "Weekly"
     if metric == "Workload Intensity":
-        window_options = ["Raw Daily", "7-Day"]
+        window_options = ["Weekly", "Daily"]
         if hasattr(st, "segmented_control"):
             workload_window = st.segmented_control(
                 "Window",
                 window_options,
-                default="7-Day",
-                key="openrouter_workload_window",
+                default="Weekly",
+                key="openrouter_workload_window_v2",
             )
         else:
             workload_window = st.radio(
                 "Window",
                 window_options,
                 horizontal=True,
-                key="openrouter_workload_window",
+                key="openrouter_workload_window_v2",
             )
         state = _weekly_usage_section_state(datasets, openrouter_views, "Workload Intensity")
-        workload_window = str(workload_window or "7-Day")
+        workload_window = str(workload_window or "Weekly")
     elif metric == "Average Price":
         state = _average_price_section_state(datasets)
     else:
@@ -2119,8 +2154,8 @@ def render_weekly_usage_section(datasets: dict[str, DatasetLoadResult], openrout
         state = _weekly_usage_section_state(datasets, openrouter_views, metric, window=str(usage_window or "Weekly"))
 
     pivot = state["pivot"]
-    if metric == "Workload Intensity" and workload_window == "Raw Daily":
-        pivot = state["raw_daily_pivot"]
+    if metric == "Workload Intensity" and workload_window == "Daily":
+        pivot = state["seven_day_pivot"]
 
     if state.get("scraped_at"):
         st.markdown(
@@ -2248,7 +2283,7 @@ def render_weekly_usage_section(datasets: dict[str, DatasetLoadResult], openrout
                 pivot,
                 PRICE_INDEX_COLORS if metric == "Average Price" else [ACCENT],
                 y_title=str(state["y_title"]),
-                x_title="Usage Date (Daily)",
+                x_title=("Usage Date (Daily)" if metric == "Average Price" or workload_window == "Daily" else "Usage Week (Starting)"),
                 hover_suffix=str(state["hover_suffix"]),
                 value_format=",.4f" if metric == "Average Price" else ",.1f",
                 mode="lines",
@@ -2262,7 +2297,7 @@ def render_weekly_usage_section(datasets: dict[str, DatasetLoadResult], openrout
                 pivot,
                 MODEL_COLORS,
                 y_title=str(state["y_title"]),
-                x_title=f"Usage {state.get('window', 'Weekly')} Period",
+                x_title=("Usage Week (Starting)" if state.get("window") == "Weekly" else "Usage Date (Daily)"),
                 hover_suffix=str(state["hover_suffix"]),
             ),
             width="stretch",

@@ -248,6 +248,7 @@ def compute_price_metrics(
     prepared_rankings = prepared_rankings.loc[
         prepared_rankings["usage_date"].lt(cutoff)
     ].copy()
+    legacy_prices = compute_legacy_original_price_series(prepared_economics)
     source_dates = sorted(
         set(prepared_economics["usage_date"].dropna())
         | set(prepared_rankings["usage_date"].dropna())
@@ -283,14 +284,22 @@ def compute_price_metrics(
             )
         )
         market_row = rows[-1]
-        original_volume_row = market_row.copy()
-        original_volume_row["metric_id"] = "original_volume_weighted_tei"
-        rows.append(original_volume_row)
+        legacy_key = usage_date.strftime("%Y-%m-%d")
+        legacy_row = legacy_prices.loc[legacy_key] if legacy_key in legacy_prices.index else pd.Series(dtype="object")
+        legacy_value = lambda column, fallback: legacy_row.get(column) if pd.notna(legacy_row.get(column)) else fallback
         rows.append(
-            _spend_weighted_row(
+            _legacy_price_row(
+                usage_date,
+                "original_volume_weighted_tei",
+                legacy_value("Original Volume-Weighted TEI", market_row.get("value")),
+                provenance,
+            )
+        )
+        rows.append(
+            _legacy_price_row(
                 usage_date,
                 "original_spend_weighted_tei",
-                window,
+                legacy_value("Spend-Weighted TEI", _spend_weighted_row(usage_date, "_legacy_fallback", window, provenance).get("value")),
                 provenance,
             )
         )
@@ -353,17 +362,159 @@ def compute_price_metrics(
             cohort_rows[cohort_id] = row
         fixed_basket_row = _fixed_basket_row(usage_date, cohort_rows, provenance)
         rows.append(fixed_basket_row)
-        original_frontier_row = cohort_rows["premium_priced"].copy()
-        original_frontier_row["metric_id"] = "original_frontier_tei"
-        rows.append(original_frontier_row)
-        original_value_row = cohort_rows["low_priced"].copy()
-        original_value_row["metric_id"] = "original_value_tei"
-        rows.append(original_value_row)
-        original_basket_row = fixed_basket_row.copy()
-        original_basket_row["metric_id"] = "original_cpi_workload_basket"
-        rows.append(original_basket_row)
+        rows.append(
+            _legacy_price_row(
+                usage_date,
+                "original_frontier_tei",
+                legacy_value("Frontier", cohort_rows["premium_priced"].get("value")),
+                provenance,
+            )
+        )
+        rows.append(
+            _legacy_price_row(
+                usage_date,
+                "original_value_tei",
+                legacy_value("Value", cohort_rows["low_priced"].get("value")),
+                provenance,
+            )
+        )
+        rows.append(
+            _legacy_price_row(
+                usage_date,
+                "original_cpi_workload_basket",
+                legacy_value("CPI Workload Basket Index (50/40/10)", fixed_basket_row.get("value")),
+                provenance,
+            )
+        )
 
     return pd.DataFrame(rows, columns=_DAILY_COLUMNS)
+
+
+def compute_legacy_original_price_series(
+    economics: pd.DataFrame,
+    *,
+    today: date | None = None,
+) -> pd.DataFrame:
+    """Reproduce the original smooth five-index price chart.
+
+    This is intentionally separate from guarded as-of economics. The original
+    chart backfilled each model's first known price, forward/backfilled tier
+    indices across dates, and applied a seven-day display smoother. Keeping it
+    as a named legacy series preserves that historical visual while the newer
+    guarded metrics remain available for auditability.
+    """
+    frame = economics.copy()
+    required = {
+        "usage_date",
+        "model_permaslug",
+        "total_tokens",
+        "prompt_tokens",
+        "completion_tokens",
+        "pricing_prompt",
+        "pricing_completion",
+    }
+    for column in required - set(frame.columns):
+        frame[column] = pd.NA
+    frame["usage_date"] = pd.to_datetime(frame["usage_date"], errors="coerce").dt.normalize()
+    cutoff = pd.Timestamp(today or _utc_today())
+    frame = frame.loc[frame["usage_date"].notna() & frame["usage_date"].lt(cutoff)].copy()
+    if frame.empty:
+        return pd.DataFrame(
+            columns=[
+                "Spend-Weighted TEI",
+                "CPI Workload Basket Index (50/40/10)",
+                "Original Volume-Weighted TEI",
+                "Frontier",
+                "Value",
+            ]
+        )
+    for column in (
+        "total_tokens",
+        "prompt_tokens",
+        "completion_tokens",
+        "pricing_prompt",
+        "pricing_completion",
+    ):
+        frame[column] = pd.to_numeric(frame[column], errors="coerce")
+    frame["model_permaslug"] = frame["model_permaslug"].astype("string")
+    frame = frame.loc[~frame["model_permaslug"].eq("Others")].copy()
+    frame = frame.sort_values(["model_permaslug", "usage_date"], kind="stable")
+    frame["filled_prompt"] = frame.groupby("model_permaslug")["pricing_prompt"].bfill()
+    frame["filled_completion"] = frame.groupby("model_permaslug")["pricing_completion"].bfill()
+    frame["filled_blended"] = (
+        frame["filled_prompt"] * 0.977 + frame["filled_completion"] * 0.023
+    )
+    frame["filled_blended"] = frame["filled_blended"].fillna(frame["filled_prompt"]).fillna(frame["filled_completion"])
+    split_tokens = frame["prompt_tokens"].fillna(0).gt(0) | frame["completion_tokens"].fillna(0).gt(0)
+    frame["filled_revenue"] = frame["total_tokens"] * frame["filled_blended"]
+    frame.loc[split_tokens, "filled_revenue"] = (
+        frame.loc[split_tokens, "prompt_tokens"].fillna(0) * frame.loc[split_tokens, "filled_prompt"]
+        + frame.loc[split_tokens, "completion_tokens"].fillna(0) * frame.loc[split_tokens, "filled_completion"]
+    )
+    free = frame["model_permaslug"].str.endswith(":free", na=False) | frame["filled_blended"].fillna(0).eq(0)
+    frame.loc[free, "filled_revenue"] = 0.0
+    frame = frame.loc[frame["filled_blended"].notna() & frame["total_tokens"].gt(0)].copy()
+    if frame.empty:
+        return pd.DataFrame()
+    frame["price_sq_tokens"] = frame["filled_blended"] * frame["filled_revenue"]
+    daily = (
+        frame.groupby("usage_date", as_index=True)
+        .agg(
+            total_tokens=("total_tokens", "sum"),
+            total_revenue=("filled_revenue", "sum"),
+            total_price_sq_tokens=("price_sq_tokens", "sum"),
+        )
+    )
+    calendar = pd.date_range(daily.index.min(), daily.index.max(), freq="D")
+    daily = daily.reindex(calendar)
+    daily["Original Volume-Weighted TEI"] = daily["total_revenue"].div(daily["total_tokens"]).mul(1_000_000)
+    daily["Spend-Weighted TEI"] = daily["total_price_sq_tokens"].div(daily["total_revenue"]).mul(1_000_000)
+
+    frame["tier"] = "Mid-Tier"
+    frame.loc[frame["filled_blended"].ge(2.0e-6), "tier"] = "Frontier"
+    frame.loc[frame["filled_blended"].lt(0.5e-6), "tier"] = "Value"
+    segmented = (
+        frame.groupby(["usage_date", "tier"], as_index=False)
+        .agg(total_tokens=("total_tokens", "sum"), total_revenue=("filled_revenue", "sum"))
+    )
+    segmented["tei"] = segmented["total_revenue"].div(segmented["total_tokens"]).mul(1_000_000)
+    tiers = segmented.pivot(index="usage_date", columns="tier", values="tei").reindex(calendar)
+    tiers = tiers.ffill().bfill()
+    frontier = tiers["Frontier"] if "Frontier" in tiers.columns else pd.Series(float("nan"), index=tiers.index, dtype="float64")
+    mid = tiers["Mid-Tier"] if "Mid-Tier" in tiers.columns else pd.Series(float("nan"), index=tiers.index, dtype="float64")
+    value = tiers["Value"] if "Value" in tiers.columns else pd.Series(float("nan"), index=tiers.index, dtype="float64")
+    daily["Frontier"] = frontier
+    daily["Value"] = value
+    daily["CPI Workload Basket Index (50/40/10)"] = (
+        0.5 * daily["Frontier"] + 0.4 * mid + 0.1 * daily["Value"]
+    )
+    columns = [
+        "Spend-Weighted TEI",
+        "CPI Workload Basket Index (50/40/10)",
+        "Original Volume-Weighted TEI",
+        "Frontier",
+        "Value",
+    ]
+    daily[columns] = daily[columns].ffill().bfill().rolling(7, min_periods=1).mean()
+    daily.index = daily.index.strftime("%Y-%m-%d")
+    return daily.loc[:, columns]
+
+
+def _legacy_price_row(
+    usage_date: pd.Timestamp,
+    metric_id: str,
+    value: object,
+    provenance: dict[str, object],
+) -> dict[str, object]:
+    row = _base_daily_row(usage_date, metric_id, "legacy_original_index", provenance)
+    row.update(
+        {
+            "value": value if pd.notna(value) else pd.NA,
+            "rolling_window_days": 7,
+            "pricing_join_status": "legacy_backfilled_price_index",
+        }
+    )
+    return row
 
 
 def _price_provenance(
