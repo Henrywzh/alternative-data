@@ -191,7 +191,8 @@ def test_workload_intensity_uses_matching_rows_and_rolling_ratio_of_sums() -> No
     ]
     assert total_7d.iloc[-1]["value"] == pytest.approx(14000 / 120)
     assert "2026-07-18" not in set(result["usage_date"])
-    assert result["excluded_zero_request_rows"].eq(1).all()
+    assert total_1d.set_index("usage_date").loc["2026-07-16", "excluded_zero_request_rows"] == 0
+    assert total_1d.set_index("usage_date").loc["2026-07-17", "excluded_zero_request_rows"] == 1
 
 
 def test_workload_intensity_models_uses_one_eligible_row_set_for_shares() -> None:
@@ -213,3 +214,41 @@ def test_workload_intensity_models_uses_one_eligible_row_set_for_shares() -> Non
     assert result["token_share"].sum() == pytest.approx(1.0)
     assert result["request_share"].sum() == pytest.approx(1.0)
     assert (result["intensity_ratio"] == result["token_share"] / result["request_share"]).all()
+
+
+def test_workload_intensity_uses_metric_specific_calendar_windows_and_coverage() -> None:
+    activity = pd.DataFrame(
+        [
+            {"usage_date": "2026-07-01", "model_permaslug": "a/model", "entity_id": "a", "total_tokens": 100, "prompt_tokens": None, "completion_tokens": 10, "request_count": 2},
+            {"usage_date": "2026-07-01", "model_permaslug": "invalid/model", "entity_id": "invalid", "total_tokens": 999, "prompt_tokens": 999, "completion_tokens": 999, "request_count": 0},
+            {"usage_date": "2026-07-02", "model_permaslug": "b/model", "entity_id": "b", "total_tokens": None, "prompt_tokens": 20, "completion_tokens": None, "request_count": 3},
+            {"usage_date": "2026-07-05", "model_permaslug": "b/model", "entity_id": "b", "total_tokens": 40, "prompt_tokens": 30, "completion_tokens": 10, "request_count": 4},
+            {"usage_date": "2026-07-05", "model_permaslug": "partial/model", "entity_id": "partial", "total_tokens": None, "prompt_tokens": 5, "completion_tokens": None, "request_count": 100},
+            {"usage_date": "2026-07-06", "model_permaslug": "missing/model", "entity_id": "missing", "total_tokens": None, "prompt_tokens": None, "completion_tokens": None, "request_count": 1},
+            {"usage_date": "2026-07-08", "model_permaslug": "c/model", "entity_id": "c", "total_tokens": 70, "prompt_tokens": 50, "completion_tokens": 20, "request_count": 7},
+            {"usage_date": "2026-07-09", "model_permaslug": "current/model", "entity_id": "current", "total_tokens": 999, "prompt_tokens": 999, "completion_tokens": 999, "request_count": 0},
+        ]
+    )
+
+    result = compute_workload_intensity_daily(activity, today=date(2026, 7, 9))
+
+    total_1d = result[(result.metric_id == "total_tokens_per_request") & (result.rolling_window_days == 1)].set_index("usage_date")
+    prompt_1d = result[(result.metric_id == "prompt_tokens_per_request") & (result.rolling_window_days == 1)].set_index("usage_date")
+    completion_1d = result[(result.metric_id == "completion_tokens_per_request") & (result.rolling_window_days == 1)].set_index("usage_date")
+    total_7d = result[(result.metric_id == "total_tokens_per_request") & (result.rolling_window_days == 7)].set_index("usage_date")
+
+    assert pd.isna(total_1d.loc["2026-07-02", "value"])
+    assert pd.isna(total_1d.loc["2026-07-02", "numerator"])
+    assert pd.isna(total_1d.loc["2026-07-02", "denominator"])
+    assert total_1d.loc["2026-07-05", "value"] == pytest.approx(10.0)
+    assert prompt_1d.loc["2026-07-05", "value"] == pytest.approx(35 / 104)
+    assert pd.isna(completion_1d.loc["2026-07-02", "value"])
+    assert pd.isna(completion_1d.loc["2026-07-06", "value"])
+
+    assert total_7d.loc["2026-07-07", "value"] == pytest.approx(140 / 6)
+    assert total_7d.loc["2026-07-07", "observed_model_count"] == 2
+    assert total_7d.loc["2026-07-08", "value"] == pytest.approx(110 / 11)
+    assert total_1d.loc["2026-07-01", "excluded_zero_request_rows"] == 1
+    assert total_1d.loc["2026-07-07", "excluded_zero_request_rows"] == 0
+    assert total_7d.loc["2026-07-07", "excluded_zero_request_rows"] == 1
+    assert total_7d.loc["2026-07-08", "excluded_zero_request_rows"] == 0
