@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import sys
+import tomllib
 from datetime import date
 from pathlib import Path
 
@@ -8,6 +10,7 @@ import pandas as pd
 import pytest
 
 from openrouter_derived_data import (
+    OpenRouterDerivedPipeline,
     compute_price_metrics,
     compute_workload_intensity_daily,
     compute_workload_intensity_models,
@@ -19,6 +22,7 @@ from openrouter_derived_data.identity import (
     load_capability_map,
     rank_capability_families,
 )
+from openrouter_derived_data.cli import main
 
 
 def _write_capability_map(base_dir: Path) -> None:
@@ -638,3 +642,282 @@ def test_missing_price_component_stays_unpriced_and_cannot_support_basket() -> N
     assert mid["excluded_unpriced_tokens"] == pytest.approx(1_000.0)
     assert pd.isna(basket["value"])
     assert basket["excluded_unpriced_tokens"] == pytest.approx(1_000.0)
+
+
+_DAILY_MART_COLUMNS = [
+    "dataset_id",
+    "source_url",
+    "source_run_id",
+    "scraped_at",
+    "usage_date",
+    "metric_id",
+    "cohort_id",
+    "value",
+    "numerator",
+    "denominator",
+    "rolling_window_days",
+    "benchmark_snapshot_date",
+    "pricing_snapshot_date",
+    "expected_family_count",
+    "priced_family_count",
+    "observed_family_count",
+    "observed_model_count",
+    "included_tokens",
+    "excluded_free_tokens",
+    "excluded_unpriced_tokens",
+    "excluded_zero_request_rows",
+    "pricing_join_status",
+    "methodology_version",
+]
+_MODEL_MART_COLUMNS = [
+    "window_start_date",
+    "window_end_date",
+    "model_id",
+    "company_id",
+    "total_tokens",
+    "prompt_tokens",
+    "completion_tokens",
+    "request_count",
+    "token_share",
+    "request_share",
+    "tokens_per_request",
+    "intensity_ratio",
+    "model_match_status",
+    "methodology_version",
+]
+
+
+def _seed_pipeline_inputs(base_dir: Path) -> dict[str, Path]:
+    _write_capability_map(base_dir)
+    activity_path = base_dir / "data/normalized/openrouter/openrouter_model_activity.parquet"
+    economics_path = base_dir / "data/normalized/marts/daily_provider_economics.parquet"
+    pricing_path = base_dir / "data/normalized/compute_availability/raw_openrouter_models.parquet"
+    models_path = base_dir / "data/normalized/artificial_analysis/artificial_analysis_models_daily.parquet"
+    for path in (activity_path, economics_path, pricing_path, models_path):
+        path.parent.mkdir(parents=True, exist_ok=True)
+
+    activity = pd.DataFrame(
+        [
+            {
+                "usage_date": "2026-07-16",
+                "model_permaslug": "provider/a",
+                "entity_id": "provider-a",
+                "total_tokens": 200.0,
+                "prompt_tokens": 150.0,
+                "completion_tokens": 50.0,
+                "request_count": 2.0,
+                "source_url": "https://openrouter.ai/activity",
+                "source_run_id": "activity-run",
+                "scraped_at": "2026-07-19T00:00:00Z",
+            },
+            {
+                "usage_date": "2026-07-17",
+                "model_permaslug": "provider/b",
+                "entity_id": "provider-b",
+                "total_tokens": 800.0,
+                "prompt_tokens": 600.0,
+                "completion_tokens": 200.0,
+                "request_count": 4.0,
+                "source_url": "https://openrouter.ai/activity",
+                "source_run_id": "activity-run",
+                "scraped_at": "2026-07-19T00:00:00Z",
+            },
+        ]
+    )
+    economics = _economics().assign(
+        source_url="https://openrouter.ai/economics",
+        source_run_id="economics-run",
+        scraped_at="2026-07-19T00:00:00Z",
+    )
+    activity.to_parquet(activity_path, index=False)
+    economics.to_parquet(economics_path, index=False)
+    _pricing_history().to_parquet(pricing_path, index=False)
+    _artificial_analysis_rows().to_parquet(models_path, index=False)
+    return {
+        "activity": activity_path,
+        "economics": economics_path,
+        "pricing": pricing_path,
+        "models": models_path,
+    }
+
+
+def test_pipeline_builds_both_marts_and_preserves_last_valid_files_on_failure(tmp_path: Path) -> None:
+    paths = _seed_pipeline_inputs(tmp_path)
+
+    result = OpenRouterDerivedPipeline(tmp_path).build(today=date(2026, 7, 19))
+
+    assert result["openrouter_usage_economics_daily"] > 0
+    assert result["openrouter_workload_intensity_models"] > 0
+    economics_path = tmp_path / "data/normalized/marts/openrouter_usage_economics_daily.parquet"
+    models_path = tmp_path / "data/normalized/marts/openrouter_workload_intensity_models.parquet"
+    assert list(pd.read_parquet(economics_path).columns) == _DAILY_MART_COLUMNS
+    assert list(pd.read_parquet(models_path).columns) == _MODEL_MART_COLUMNS
+    previous_economics = economics_path.read_bytes()
+    previous_models = models_path.read_bytes()
+
+    paths["activity"].unlink()
+
+    with pytest.raises(FileNotFoundError):
+        OpenRouterDerivedPipeline(tmp_path).build(today=date(2026, 7, 19))
+
+    assert economics_path.read_bytes() == previous_economics
+    assert models_path.read_bytes() == previous_models
+    assert not list(economics_path.parent.glob("*.parquet.tmp"))
+
+
+@pytest.mark.parametrize(
+    ("invalid_input", "error_type"),
+    [
+        ("missing_required_column", ValueError),
+        ("duplicate_natural_key", ValueError),
+        ("no_complete_activity", ValueError),
+        ("no_artificial_analysis_snapshot", ValueError),
+        ("all_output_values_missing", ValueError),
+    ],
+)
+def test_pipeline_rejects_invalid_inputs_before_writing_marts(
+    tmp_path: Path, invalid_input: str, error_type: type[Exception]
+) -> None:
+    paths = _seed_pipeline_inputs(tmp_path)
+    activity = pd.read_parquet(paths["activity"])
+    economics = pd.read_parquet(paths["economics"])
+    models = pd.read_parquet(paths["models"])
+    if invalid_input == "missing_required_column":
+        activity = activity.drop(columns="request_count")
+        activity.to_parquet(paths["activity"], index=False)
+    elif invalid_input == "duplicate_natural_key":
+        pd.concat([activity, activity.iloc[[0]]], ignore_index=True).to_parquet(
+            paths["activity"], index=False
+        )
+    elif invalid_input == "no_complete_activity":
+        activity["usage_date"] = "2026-07-19"
+        activity.to_parquet(paths["activity"], index=False)
+    elif invalid_input == "no_artificial_analysis_snapshot":
+        models["as_of_date"] = "2026-07-20"
+        models.to_parquet(paths["models"], index=False)
+    else:
+        activity[["total_tokens", "prompt_tokens", "completion_tokens"]] = pd.NA
+        activity.to_parquet(paths["activity"], index=False)
+        economics[["estimated_revenue", "pricing_prompt", "pricing_completion"]] = pd.NA
+        economics.to_parquet(paths["economics"], index=False)
+
+    with pytest.raises(error_type):
+        OpenRouterDerivedPipeline(tmp_path).build(today=date(2026, 7, 19))
+
+    mart_dir = tmp_path / "data/normalized/marts"
+    assert not (mart_dir / "openrouter_usage_economics_daily.parquet").exists()
+    assert not (mart_dir / "openrouter_workload_intensity_models.parquet").exists()
+
+
+def test_pipeline_allows_guarded_sota_gaps_when_workload_and_market_outputs_are_valid(tmp_path: Path) -> None:
+    paths = _seed_pipeline_inputs(tmp_path)
+    models = pd.read_parquet(paths["models"])
+    models.loc[~models["model_id"].isin(["claude", "sol-max"]), "release_date"] = "2026-07-20"
+    models.to_parquet(paths["models"], index=False)
+
+    result = OpenRouterDerivedPipeline(tmp_path).build(today=date(2026, 7, 19))
+    daily = pd.read_parquet(
+        tmp_path / "data/normalized/marts/openrouter_usage_economics_daily.parquet"
+    )
+
+    assert result["openrouter_usage_economics_daily"] == len(daily)
+    assert daily.loc[
+        daily["metric_id"].eq("total_tokens_per_request"), "value"
+    ].notna().any()
+    assert daily.loc[
+        daily["metric_id"].eq("realized_market_average"), "value"
+    ].notna().any()
+    assert daily.loc[
+        daily["metric_id"].eq("sota_median_list_price"), "value"
+    ].isna().all()
+
+
+def test_pipeline_builds_from_category_keyed_activity_with_null_entity_ids(tmp_path: Path) -> None:
+    paths = _seed_pipeline_inputs(tmp_path)
+    activity = pd.read_parquet(paths["activity"])
+    activity["category_slug"] = ["chat", "programming"]
+    activity["entity_id"] = pd.NA
+    activity.to_parquet(paths["activity"], index=False)
+
+    result = OpenRouterDerivedPipeline(tmp_path).build(today=date(2026, 7, 19))
+    models = pd.read_parquet(
+        tmp_path / "data/normalized/marts/openrouter_workload_intensity_models.parquet"
+    )
+
+    assert result["openrouter_workload_intensity_models"] == len(models)
+    assert models["company_id"].isna().all()
+
+
+def test_pipeline_rejects_duplicate_natural_dates_after_normalization(tmp_path: Path) -> None:
+    paths = _seed_pipeline_inputs(tmp_path)
+    activity = pd.read_parquet(paths["activity"])
+    activity["category_slug"] = ["chat", "chat"]
+    activity.loc[1, "usage_date"] = "2026-07-16T00:00:00Z"
+    activity.loc[1, "model_permaslug"] = activity.loc[0, "model_permaslug"]
+    activity.to_parquet(paths["activity"], index=False)
+
+    with pytest.raises(ValueError, match="duplicate natural keys"):
+        OpenRouterDerivedPipeline(tmp_path).build(today=date(2026, 7, 19))
+
+
+def test_pipeline_rolls_back_both_marts_when_second_final_replace_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _seed_pipeline_inputs(tmp_path)
+    pipeline = OpenRouterDerivedPipeline(tmp_path)
+    pipeline.build(today=date(2026, 7, 19))
+    mart_dir = tmp_path / "data/normalized/marts"
+    economics_path = mart_dir / "openrouter_usage_economics_daily.parquet"
+    models_path = mart_dir / "openrouter_workload_intensity_models.parquet"
+    previous_economics = economics_path.read_bytes()
+    previous_models = models_path.read_bytes()
+    original_replace = Path.replace
+    failed_temporary = models_path.with_suffix(".parquet.tmp")
+
+    def fail_models_replace(source: Path, target: str | Path) -> Path:
+        if source == failed_temporary:
+            raise OSError("simulated replacement failure")
+        return original_replace(source, target)
+
+    monkeypatch.setattr(Path, "replace", fail_models_replace)
+
+    with pytest.raises(OSError, match="simulated replacement failure"):
+        pipeline.build(today=date(2026, 7, 19))
+
+    assert economics_path.read_bytes() == previous_economics
+    assert models_path.read_bytes() == previous_models
+    assert not list(mart_dir.glob("*.tmp"))
+    assert not list(mart_dir.glob("*.backup"))
+
+
+def test_cli_builds_marts_with_deterministic_row_count_output(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    _seed_pipeline_inputs(tmp_path)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "openrouter-derived-data",
+            "--base-dir",
+            str(tmp_path),
+            "build",
+            "--today",
+            "2026-07-19",
+        ],
+    )
+
+    main()
+
+    assert capsys.readouterr().out.splitlines() == [
+        "openrouter_usage_economics_daily: 20 rows",
+        "openrouter_workload_intensity_models: 2 rows",
+    ]
+
+
+def test_project_registers_openrouter_derived_data_cli() -> None:
+    project = tomllib.loads(Path("pyproject.toml").read_text())
+
+    assert project["project"]["scripts"]["openrouter-derived-data"] == (
+        "openrouter_derived_data.cli:main"
+    )
