@@ -821,6 +821,28 @@ def test_missing_price_component_stays_unpriced_and_cannot_support_basket() -> N
     assert basket["excluded_unpriced_tokens"] == pytest.approx(1_000.0)
 
 
+def test_price_metrics_emit_original_indices_and_volume_weighted_sota_atp() -> None:
+    result = compute_price_metrics(
+        _economics(),
+        _pricing_history(),
+        _price_rankings(),
+        _price_capability_map(),
+    )
+
+    assert {
+        "original_spend_weighted_tei",
+        "original_cpi_workload_basket",
+        "original_volume_weighted_tei",
+        "original_frontier_tei",
+        "original_value_tei",
+        "sota_volume_weighted_atp",
+    } <= set(result["metric_id"])
+    sota = result.loc[result["metric_id"].eq("sota_volume_weighted_atp")].iloc[-1]
+    assert sota["value"] == pytest.approx(
+        sota["numerator"] / sota["denominator"] * 1_000_000
+    )
+
+
 def test_price_metrics_exclude_current_day_and_preserve_prior_values() -> None:
     economics = _economics()
     prior = compute_price_metrics(
@@ -1157,7 +1179,7 @@ def test_cli_builds_marts_with_deterministic_row_count_output(
     main()
 
     assert capsys.readouterr().out.splitlines() == [
-        "openrouter_usage_economics_daily: 20 rows",
+        "openrouter_usage_economics_daily: 26 rows",
         "openrouter_workload_intensity_models: 2 rows",
     ]
 

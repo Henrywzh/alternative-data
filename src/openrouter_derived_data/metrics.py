@@ -282,6 +282,18 @@ def compute_price_metrics(
                 provenance,
             )
         )
+        market_row = rows[-1]
+        original_volume_row = market_row.copy()
+        original_volume_row["metric_id"] = "original_volume_weighted_tei"
+        rows.append(original_volume_row)
+        rows.append(
+            _spend_weighted_row(
+                usage_date,
+                "original_spend_weighted_tei",
+                window,
+                provenance,
+            )
+        )
         for tier, metric_id, cohort_id in (
             ("sota", "sota_median_list_price", "sota"),
             (
@@ -305,19 +317,21 @@ def compute_price_metrics(
                 )
             )
 
-        rows.append(
-            _realized_sota_row(
-                usage_date,
-                daily_rankings.loc[
-                    daily_rankings["capability_tier"].eq("sota")
-                ].copy(),
-                sota_daily,
-                sota_daily_coverage,
-                prepared_pricing,
-                capability_map,
-                provenance,
-            )
+        sota_row = _realized_sota_row(
+            usage_date,
+            daily_rankings.loc[
+                daily_rankings["capability_tier"].eq("sota")
+            ].copy(),
+            sota_daily,
+            sota_daily_coverage,
+            prepared_pricing,
+            capability_map,
+            provenance,
         )
+        rows.append(sota_row)
+        sota_atp_row = sota_row.copy()
+        sota_atp_row["metric_id"] = "sota_volume_weighted_atp"
+        rows.append(sota_atp_row)
 
         cohort_rows: dict[str, dict[str, object]] = {}
         for cohort_id, metric_id in (
@@ -338,6 +352,15 @@ def compute_price_metrics(
             rows.append(row)
             cohort_rows[cohort_id] = row
         rows.append(_fixed_basket_row(usage_date, cohort_rows, provenance))
+        original_frontier_row = cohort_rows["premium_priced"].copy()
+        original_frontier_row["metric_id"] = "original_frontier_tei"
+        rows.append(original_frontier_row)
+        original_value_row = cohort_rows["low_priced"].copy()
+        original_value_row["metric_id"] = "original_value_tei"
+        rows.append(original_value_row)
+        original_basket_row = rows[-3].copy()
+        original_basket_row["metric_id"] = "original_cpi_workload_basket"
+        rows.append(original_basket_row)
 
     return pd.DataFrame(rows, columns=_DAILY_COLUMNS)
 
@@ -625,6 +648,44 @@ def _realized_row(
             "pricing_join_status": pricing_status
             if pricing_status is not None
             else _status_summary(paid["pricing_join_status"]),
+        }
+    )
+    return row
+
+
+def _spend_weighted_row(
+    usage_date: pd.Timestamp,
+    metric_id: str,
+    window: pd.DataFrame,
+    provenance: dict[str, object],
+) -> dict[str, object]:
+    """Return the legacy spend-weighted price index for a rolling window."""
+    row = _base_daily_row(usage_date, metric_id, "all_models", provenance)
+    paid = window.loc[
+        window["is_paid_priced"] & window["blended_price"].notna()
+    ].copy()
+    spend = paid["estimated_revenue"].sum(min_count=1)
+    weighted_price = (paid["blended_price"] * paid["estimated_revenue"]).sum(
+        min_count=1
+    )
+    coverage = window
+    free = coverage.loc[coverage["is_free"]]
+    unpriced = coverage.loc[
+        ~coverage["is_free"] & ~coverage["is_paid_priced"]
+    ]
+    row.update(
+        {
+            "value": weighted_price / spend * 1_000_000
+            if pd.notna(spend) and spend > 0
+            else pd.NA,
+            "numerator": weighted_price,
+            "denominator": spend,
+            "observed_model_count": paid["model_permaslug"].nunique(),
+            "included_tokens": paid["total_tokens"].sum(min_count=1),
+            "excluded_free_tokens": free["total_tokens"].sum(),
+            "excluded_unpriced_tokens": unpriced["total_tokens"].sum(),
+            "pricing_snapshot_date": _latest_date(paid["pricing_snapshot_date"]),
+            "pricing_join_status": _status_summary(paid["pricing_join_status"]),
         }
     )
     return row
