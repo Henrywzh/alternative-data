@@ -18,6 +18,7 @@ from openrouter_derived_data import (
 from openrouter_derived_data.identity import (
     CapabilityEntry,
     CapabilityMap,
+    CapabilityRoute,
     compatible_activity_ids,
     load_capability_map,
     rank_capability_families,
@@ -33,17 +34,17 @@ def _write_capability_map(base_dir: Path) -> None:
             {
                 "methodology_version": "openrouter-derived-v1",
                 "models": [
-                    {"aa_model_id": "claude", "family_id": "anthropic/claude-fable-5", "openrouter_model_ids": ["anthropic/claude-fable-5"]},
-                    {"aa_model_id": "sol-max", "family_id": "openai/gpt-5.6-sol", "openrouter_model_ids": ["openai/gpt-5.6-sol", "openai/gpt-5.6-sol-pro"]},
-                    {"aa_model_id": "sol-xhigh", "family_id": "openai/gpt-5.6-sol", "openrouter_model_ids": ["openai/gpt-5.6-sol", "openai/gpt-5.6-sol-pro"]},
-                    {"aa_model_id": "kimi", "family_id": "moonshotai/kimi-k3", "openrouter_model_ids": ["moonshotai/kimi-k3"]},
-                    {"aa_model_id": "glm", "family_id": "z-ai/glm-5.2", "openrouter_model_ids": ["z-ai/glm-5.2"]},
-                    {"aa_model_id": "family-6", "family_id": "provider/family-6", "openrouter_model_ids": []},
-                    {"aa_model_id": "family-7", "family_id": "provider/family-7", "openrouter_model_ids": []},
-                    {"aa_model_id": "family-8", "family_id": "provider/family-8", "openrouter_model_ids": []},
-                    {"aa_model_id": "family-9", "family_id": "provider/family-9", "openrouter_model_ids": []},
-                    {"aa_model_id": "family-10", "family_id": "provider/family-10", "openrouter_model_ids": []},
-                    {"aa_model_id": "future", "family_id": "future/model", "openrouter_model_ids": []},
+                    {"aa_model_id": "claude", "family_id": "anthropic/claude-fable-5", "effective_from": "2026-07-01", "openrouter_routes": [{"model_id": "anthropic/claude-fable-5", "effective_from": "2026-07-01"}]},
+                    {"aa_model_id": "sol-max", "family_id": "openai/gpt-5.6-sol", "effective_from": "2026-07-01", "openrouter_routes": [{"model_id": "openai/gpt-5.6-sol", "effective_from": "2026-07-01"}, {"model_id": "openai/gpt-5.6-sol-pro", "effective_from": "2026-07-05"}]},
+                    {"aa_model_id": "sol-xhigh", "family_id": "openai/gpt-5.6-sol", "effective_from": "2026-07-01", "openrouter_routes": [{"model_id": "openai/gpt-5.6-sol", "effective_from": "2026-07-01"}, {"model_id": "openai/gpt-5.6-sol-pro", "effective_from": "2026-07-05"}]},
+                    {"aa_model_id": "kimi", "family_id": "moonshotai/kimi-k3", "effective_from": "2026-07-01", "openrouter_routes": [{"model_id": "moonshotai/kimi-k3", "effective_from": "2026-07-01"}]},
+                    {"aa_model_id": "glm", "family_id": "z-ai/glm-5.2", "effective_from": "2026-07-01", "openrouter_routes": [{"model_id": "z-ai/glm-5.2", "effective_from": "2026-07-01"}]},
+                    {"aa_model_id": "family-6", "family_id": "provider/family-6", "effective_from": "2026-07-01", "openrouter_routes": []},
+                    {"aa_model_id": "family-7", "family_id": "provider/family-7", "effective_from": "2026-07-01", "openrouter_routes": []},
+                    {"aa_model_id": "family-8", "family_id": "provider/family-8", "effective_from": "2026-07-01", "openrouter_routes": []},
+                    {"aa_model_id": "family-9", "family_id": "provider/family-9", "effective_from": "2026-07-01", "openrouter_routes": []},
+                    {"aa_model_id": "family-10", "family_id": "provider/family-10", "effective_from": "2026-07-01", "openrouter_routes": []},
+                    {"aa_model_id": "future", "family_id": "future/model", "effective_from": "2026-07-15", "openrouter_routes": []},
                 ],
             }
         )
@@ -107,12 +108,14 @@ def test_rank_capability_families_collapses_configurations_and_uses_asof_snapsho
 
     july_18 = ranked[ranked["usage_date"] == pd.Timestamp("2026-07-18")]
     assert len(july_18[july_18["family_id"] == "openai/gpt-5.6-sol"]) == 1
-    assert july_18.iloc[:5]["capability_tier"].eq("sota").all()
-    assert july_18.iloc[5:10]["capability_tier"].eq("frontier_contender").all()
+    assert set(july_18["family_rank"]) == set(range(2, 12))
+    assert july_18.loc[july_18["family_rank"].le(5), "capability_tier"].eq("sota").all()
+    assert july_18.loc[july_18["family_rank"].between(6, 10), "capability_tier"].eq("frontier_contender").all()
     assert "future/model" not in set(ranked[ranked["usage_date"] == pd.Timestamp("2026-07-10")]["family_id"])
     assert "unmapped/model" not in set(july_18["family_id"])
     assert july_18.iloc[0]["benchmark_snapshot_date"] == pd.Timestamp("2026-07-17")
     assert july_18.iloc[0]["representative_aa_model_id"] == "claude"
+    assert july_18.iloc[0]["family_rank"] == 2
 
 
 def test_rank_capability_families_does_not_rewind_when_latest_snapshot_is_future_only(tmp_path: Path) -> None:
@@ -153,8 +156,8 @@ def test_load_capability_map_rejects_duplicate_or_malformed_entries(tmp_path: Pa
             {
                 "methodology_version": "openrouter-derived-v1",
                 "models": [
-                    {"aa_model_id": "model", "family_id": "provider/model", "openrouter_model_ids": []},
-                    {"aa_model_id": "model", "family_id": "provider/model-duplicate", "openrouter_model_ids": []},
+                    {"aa_model_id": "model", "family_id": "provider/model", "effective_from": "2026-01-01", "openrouter_routes": []},
+                    {"aa_model_id": "model", "family_id": "provider/model-duplicate", "effective_from": "2026-01-01", "openrouter_routes": []},
                 ],
             }
         )
@@ -172,8 +175,8 @@ def test_capability_map_rejects_route_shared_across_different_families(tmp_path:
             {
                 "methodology_version": "openrouter-derived-v1",
                 "models": [
-                    {"aa_model_id": "a", "family_id": "provider/family-a", "openrouter_model_ids": ["provider/shared"]},
-                    {"aa_model_id": "b", "family_id": "provider/family-b", "openrouter_model_ids": ["provider/shared"]},
+                    {"aa_model_id": "a", "family_id": "provider/family-a", "effective_from": "2026-01-01", "openrouter_routes": [{"model_id": "provider/shared", "effective_from": "2026-01-01"}]},
+                    {"aa_model_id": "b", "family_id": "provider/family-b", "effective_from": "2026-01-01", "openrouter_routes": [{"model_id": "provider/shared", "effective_from": "2026-01-01"}]},
                 ],
             }
         )
@@ -191,8 +194,8 @@ def test_capability_map_allows_route_shared_within_one_family(tmp_path: Path) ->
             {
                 "methodology_version": "openrouter-derived-v1",
                 "models": [
-                    {"aa_model_id": "a-max", "family_id": "provider/family-a", "openrouter_model_ids": ["provider/shared"]},
-                    {"aa_model_id": "a-xhigh", "family_id": "provider/family-a", "openrouter_model_ids": ["provider/shared"]},
+                    {"aa_model_id": "a-max", "family_id": "provider/family-a", "effective_from": "2026-01-01", "openrouter_routes": [{"model_id": "provider/shared", "effective_from": "2026-01-01"}]},
+                    {"aa_model_id": "a-xhigh", "family_id": "provider/family-a", "effective_from": "2026-01-01", "openrouter_routes": [{"model_id": "provider/shared", "effective_from": "2026-01-01"}]},
                 ],
             }
         )
@@ -207,10 +210,109 @@ def test_capability_map_returns_only_exact_compatible_activity_routes(tmp_path: 
     _write_capability_map(tmp_path)
     capability_map = load_capability_map(tmp_path)
 
-    assert compatible_activity_ids(capability_map, "sol-max") == frozenset(
+    assert compatible_activity_ids(capability_map, "sol-max", pd.Timestamp("2026-07-04")) == frozenset(
+        {"openai/gpt-5.6-sol"}
+    )
+    assert compatible_activity_ids(capability_map, "sol-max", pd.Timestamp("2026-07-05")) == frozenset(
         {"openai/gpt-5.6-sol", "openai/gpt-5.6-sol-pro"}
     )
-    assert compatible_activity_ids(capability_map, "not-mapped") == frozenset()
+    assert compatible_activity_ids(capability_map, "not-mapped", pd.Timestamp("2026-07-05")) == frozenset()
+
+
+def test_future_capability_entry_and_route_do_not_leak_backward(tmp_path: Path) -> None:
+    _write_capability_map(tmp_path)
+    capability_map = load_capability_map(tmp_path)
+
+    before_entry = rank_capability_families(
+        _artificial_analysis_rows(), pd.Series(["2026-07-10"]), capability_map
+    )
+
+    assert "future/model" not in set(before_entry["family_id"])
+    assert compatible_activity_ids(
+        capability_map, "sol-max", pd.Timestamp("2026-07-04")
+    ) == frozenset({"openai/gpt-5.6-sol"})
+
+
+def test_unmapped_benchmark_leaders_leave_explicit_top_five_and_top_ten_rank_gaps() -> None:
+    entries = tuple(
+        CapabilityEntry(
+            aa_model_id=f"mapped-{index}",
+            family_id=f"provider/family-{index}",
+            effective_from=pd.Timestamp("2026-01-01"),
+            openrouter_routes=(
+                CapabilityRoute(
+                    f"provider/model-{index}", pd.Timestamp("2026-01-01")
+                ),
+            ),
+        )
+        for index in range(1, 11)
+    )
+    capability_map = CapabilityMap("coverage-test-v1", entries)
+    model_rows = [
+        {
+            "as_of_date": "2026-07-17",
+            "model_id": f"mapped-{index}",
+            "model_name": f"Mapped {index}",
+            "release_date": "2026-01-01",
+            "intelligence_index": 100 - index,
+        }
+        for index in range(1, 11)
+    ]
+    model_rows.extend(
+        [
+            {
+                "as_of_date": "2026-07-17",
+                "model_id": "unmapped-top",
+                "model_name": "Unmapped top",
+                "release_date": "2026-01-01",
+                "intelligence_index": 110,
+            },
+            {
+                "as_of_date": "2026-07-17",
+                "model_id": "unmapped-middle",
+                "model_name": "Unmapped middle",
+                "release_date": "2026-01-01",
+                "intelligence_index": 94.5,
+            },
+        ]
+    )
+
+    ranked = rank_capability_families(
+        pd.DataFrame(model_rows), pd.Series(["2026-07-17"]), capability_map
+    )
+
+    ranks = set(ranked["family_rank"])
+    assert 1 not in ranks
+    assert 7 not in ranks
+    assert set(range(1, 6)) - ranks == {1}
+    assert set(range(6, 11)) - ranks == {7}
+
+    pricing = pd.DataFrame(
+        [
+            {
+                "model_id": f"provider/model-{index}",
+                "snapshot_ts": "2026-07-16T00:00:00Z",
+                "pricing_prompt": index / 1_000_000,
+                "pricing_completion": index / 1_000_000,
+            }
+            for index in range(1, 11)
+        ]
+    )
+    price_metrics = compute_price_metrics(
+        _economics(),
+        pricing,
+        ranked,
+        capability_map,
+        today=date(2026, 7, 18),
+    )
+    sota = _price_metric(price_metrics, "sota_median_list_price")
+    contenders = _price_metric(
+        price_metrics, "frontier_contenders_median_list_price"
+    )
+    assert sota["priced_family_count"] == 4
+    assert pd.isna(sota["value"])
+    assert contenders["priced_family_count"] == 4
+    assert pd.isna(contenders["value"])
 
 
 def test_workload_intensity_uses_matching_rows_and_rolling_ratio_of_sums() -> None:
@@ -301,18 +403,25 @@ def test_workload_intensity_uses_metric_specific_calendar_windows_and_coverage()
 
 
 def _price_capability_map() -> CapabilityMap:
+    def entry(aa_model_id: str, family_id: str, *model_ids: str) -> CapabilityEntry:
+        return CapabilityEntry(
+            aa_model_id=aa_model_id,
+            family_id=family_id,
+            effective_from=pd.Timestamp("2026-01-01"),
+            openrouter_routes=tuple(
+                CapabilityRoute(model_id, pd.Timestamp("2026-01-01"))
+                for model_id in model_ids
+            ),
+        )
+
     entries = [
-        CapabilityEntry("aa-a", "family-a", frozenset({"provider/a", "provider/a:free"})),
-        CapabilityEntry(
-            "aa-a-lower",
-            "family-a",
-            frozenset({"provider/a-lower-capability"}),
-        ),
-        CapabilityEntry("aa-b", "family-b", frozenset({"provider/b", "provider/b:fast"})),
-        CapabilityEntry("aa-c", "family-c", frozenset({"provider/c"})),
-        CapabilityEntry("aa-d", "family-d", frozenset({"provider/d"})),
-        CapabilityEntry("aa-e", "family-e", frozenset({"provider/e"})),
-        CapabilityEntry("aa-f", "family-f", frozenset({"provider/f"})),
+        entry("aa-a", "family-a", "provider/a", "provider/a:free"),
+        entry("aa-a-lower", "family-a", "provider/a-lower-capability"),
+        entry("aa-b", "family-b", "provider/b", "provider/b:fast"),
+        entry("aa-c", "family-c", "provider/c"),
+        entry("aa-d", "family-d", "provider/d"),
+        entry("aa-e", "family-e", "provider/e"),
+        entry("aa-f", "family-f", "provider/f"),
     ]
     return CapabilityMap(methodology_version="price-test-v1", entries=tuple(entries))
 

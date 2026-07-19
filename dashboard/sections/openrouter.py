@@ -1658,6 +1658,16 @@ def _workload_intensity_section_state(
             observed_model_count = int(counts.iloc[-1])
     latest_values["observed_model_count"] = observed_model_count
     latest_values["seven_day_change_pct"] = seven_day_change_pct
+    workload_scraped_at = None
+    if not daily.empty and {"metric_id", "scraped_at"}.issubset(daily.columns):
+        workload_rows = daily.loc[
+            daily["metric_id"].astype("string").isin(WORKLOAD_COMPONENT_METRIC_IDS.values())
+        ]
+        workload_timestamps = pd.to_datetime(
+            workload_rows["scraped_at"], errors="coerce", utc=True
+        ).dropna()
+        if not workload_timestamps.empty:
+            workload_scraped_at = workload_timestamps.max()
 
     return {
         "metric": "Workload Intensity",
@@ -1673,7 +1683,7 @@ def _workload_intensity_section_state(
         "empty_message": "No derived workload-intensity data is available yet.",
         "caption": "Tracked-model workload intensity is a request-demand proxy: it describes workload composition, not model efficiency.",
         "source_status": "Derived OpenRouter workload intensity · complete daily observations",
-        "scraped_at": daily_result.latest_scraped_at if daily_result else None,
+        "scraped_at": workload_scraped_at,
     }
 
 

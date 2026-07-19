@@ -3372,6 +3372,22 @@ def test_average_price_freshness_uses_only_price_rows() -> None:
     assert state["scraped_at"] == pd.Timestamp("2026-07-18T06:00:00Z")
 
 
+def test_workload_freshness_uses_only_workload_rows() -> None:
+    datasets = _derived_datasets()
+    daily = datasets["openrouter_usage_economics_daily"].frame
+    workload_mask = daily["metric_id"].astype("string").str.endswith("tokens_per_request")
+    daily.loc[workload_mask, "scraped_at"] = "2026-07-18T06:00:00Z"
+    daily.loc[~workload_mask, "scraped_at"] = "2026-07-19T12:00:00Z"
+    datasets["openrouter_usage_economics_daily"] = replace(
+        datasets["openrouter_usage_economics_daily"],
+        latest_scraped_at=pd.Timestamp("2026-07-19T12:00:00Z"),
+    )
+
+    state = _workload_intensity_section_state(datasets, "Total")
+
+    assert state["scraped_at"] == pd.Timestamp("2026-07-18T06:00:00Z")
+
+
 def test_usage_economics_state_missing_marts_is_scoped_from_tokens_and_requests() -> None:
     token_pivot = pd.DataFrame({"Total Tokens": [100.0]}, index=["2026-07-14"])
     request_pivot = pd.DataFrame({"OpenAI": [50.0]}, index=["2026-07-14"])
