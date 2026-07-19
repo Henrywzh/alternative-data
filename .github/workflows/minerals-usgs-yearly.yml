@@ -28,6 +28,7 @@ jobs:
   ingest:
     name: Ingest USGS MCS PDF
     runs-on: ubuntu-latest
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v7
         with:
@@ -87,7 +88,7 @@ jobs:
           git pull --rebase origin "${{ github.event.repository.default_branch }}"
           git push
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: minerals-usgs-processed
           path: data/processed/minerals_usgs/

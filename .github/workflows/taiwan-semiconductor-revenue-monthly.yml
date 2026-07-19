@@ -41,6 +41,7 @@ permissions:
 jobs:
   taiwan-semiconductor-revenue:
     runs-on: ubuntu-latest
+    timeout-minutes: 120
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
@@ -128,7 +129,7 @@ jobs:
 
       - name: Upload raw snapshots
         if: github.event_name == 'schedule' || github.event.inputs.command == 'update-latest' || github.event.inputs.command == 'backfill'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: taiwan-semiconductor-revenue-raw-snapshots
           path: data/raw/taiwan_semiconductor_revenue/
@@ -136,7 +137,7 @@ jobs:
 
       - name: Upload normalized datasets
         if: github.event_name == 'schedule' || github.event.inputs.command == 'update-latest' || github.event.inputs.command == 'backfill'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: taiwan-semiconductor-revenue-normalized-datasets
           path: data/normalized/taiwan_semiconductor_revenue/

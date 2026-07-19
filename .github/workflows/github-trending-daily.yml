@@ -11,6 +11,7 @@ permissions:
 jobs:
   scrape-trending:
     runs-on: ubuntu-latest
+    timeout-minutes: 120
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
@@ -49,7 +50,7 @@ jobs:
           git push
 
       - name: Upload normalized datasets
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: github-trending-datasets
           path: data/normalized/github_trending/

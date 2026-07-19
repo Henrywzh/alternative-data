@@ -11,6 +11,7 @@ permissions:
 jobs:
   scrape-vercel-ai:
     runs-on: ubuntu-latest
+    timeout-minutes: 120
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
@@ -64,7 +65,7 @@ jobs:
           exit 1
 
       - name: Upload normalized datasets
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: vercel-ai-gateway-data
           path: data/normalized/vercel_ai/

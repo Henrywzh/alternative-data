@@ -39,6 +39,7 @@ jobs:
   adata-update:
     name: ADATA Monthly Update
     runs-on: ubuntu-latest
+    timeout-minutes: 120
     # Run on scheduled trigger (days 1-5) OR manual adata-update/adata-backfill
     if: |
       github.event_name == 'workflow_dispatch' &&
@@ -101,7 +102,7 @@ jobs:
           git pull --rebase origin "${{ github.event.repository.default_branch }}"
           git push
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: semiconductor-memory-normalized-adata
           path: data/normalized/semiconductor_memory/
@@ -110,6 +111,7 @@ jobs:
   fred-update:
     name: FRED PPI Update
     runs-on: ubuntu-latest
+    timeout-minutes: 120
     # Run on scheduled trigger (days 14-16) OR manual fred-update
     if: |
       github.event_name == 'workflow_dispatch' && github.event.inputs.command == 'fred-update'
@@ -151,7 +153,7 @@ jobs:
           git pull --rebase origin "${{ github.event.repository.default_branch }}"
           git push
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: semiconductor-memory-normalized-fred
           path: data/normalized/semiconductor_memory/

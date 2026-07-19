@@ -21,6 +21,7 @@ permissions:
 jobs:
   scrape-store-counts:
     runs-on: ubuntu-latest
+    timeout-minutes: 120
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
@@ -60,7 +61,7 @@ jobs:
           git push
 
       - name: Upload store-count dataset
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: action-stores-dataset
           path: data/processed/action_stores/

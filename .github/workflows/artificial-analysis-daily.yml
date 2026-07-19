@@ -11,6 +11,7 @@ permissions:
 jobs:
   artificial-analysis:
     runs-on: ubuntu-latest
+    timeout-minutes: 120
     env:
       ARTIFICIAL_ANALYSIS_API_KEY: ${{ secrets.ARTIFICIAL_ANALYSIS_API_KEY }}
     steps:
@@ -52,14 +53,14 @@ jobs:
           git push
 
       - name: Upload raw snapshots
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: artificial-analysis-raw-snapshots
           path: data/raw/artificial_analysis/
           if-no-files-found: error
 
       - name: Upload normalized datasets
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: artificial-analysis-normalized-datasets
           path: data/normalized/artificial_analysis/
