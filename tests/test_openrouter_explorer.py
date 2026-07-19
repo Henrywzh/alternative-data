@@ -90,6 +90,135 @@ def test_company_and_model_explorer_states_join_catalog_activity_and_apps() -> N
     assert model["apps"].iloc[0]["App"] == "Example App"
 
 
+def test_company_explorer_builds_source_aware_metric_views() -> None:
+    catalog = _catalog()
+    aliases = _catalog_alias_map(catalog)
+    provider_activity = _normalize_explorer_activity(pd.DataFrame([
+        {"usage_date": "2026-06-16", "model_permaslug": "openai/gpt-test-20260701", "entity_id": "openai", "total_tokens": 500},
+        {"usage_date": "2026-06-17", "model_permaslug": "openai/gpt-test-20260701", "entity_id": "openai", "total_tokens": 1000},
+        {"usage_date": "2026-06-18", "model_permaslug": "openai/gpt-test-20260701", "entity_id": "openai", "total_tokens": 1500},
+    ]), aliases)
+    model_activity = _normalize_explorer_activity(pd.DataFrame([
+        {
+            "usage_date": "2026-04-22", "model_permaslug": "openai/gpt-test-20260701",
+            "category_slug": "programming", "total_tokens": 50, "request_count": 7,
+        },
+        {
+            "usage_date": "2026-06-17", "model_permaslug": "openai/gpt-test-20260701",
+            "category_slug": "all", "total_tokens": 1000, "request_count": 100,
+        },
+        {
+            "usage_date": "2026-06-18", "model_permaslug": "openai/gpt-test-20260701",
+            "category_slug": "all", "total_tokens": 1500, "request_count": 100,
+        },
+    ]), aliases)
+    economics = pd.DataFrame([
+        {
+            "usage_date_dt": pd.Timestamp("2026-06-17"), "provider_slug": "openai",
+            "model_permaslug": "openai/gpt-test", "total_tokens": 1000.0,
+            "estimated_revenue": 0.003,  # $3/M
+        },
+        {
+            "usage_date_dt": pd.Timestamp("2026-06-18"), "provider_slug": "openai",
+            "model_permaslug": "openai/gpt-test", "total_tokens": 1500.0,
+            "estimated_revenue": 0.006,  # $4/M
+        },
+    ])
+    catalog["tokens_30d"] = [2500.0, 0.0]
+    views = {
+        "catalog": catalog,
+        "combined_activity": provider_activity,
+        "model_activity": model_activity,
+        "economics": economics,
+        "weekly_company_tokens": pd.DataFrame([
+            {"usage_week": pd.Timestamp("2025-08-04"), "company_slug": "openai", "tokens": 10_000.0},
+            {"usage_week": pd.Timestamp("2025-08-11"), "company_slug": "openai", "tokens": 20_000.0},
+        ]),
+        "weekly_company_requests": pd.DataFrame([
+            {"usage_week": pd.Timestamp("2025-08-04"), "company_slug": "openai", "requests": 100.0},
+            {"usage_week": pd.Timestamp("2025-08-11"), "company_slug": "openai", "requests": 100.0},
+        ]),
+    }
+
+    state = company_explorer_state(views, "openai")
+
+    assert state["weekly_metrics"]["Tokens"].index.tolist() == [pd.Timestamp("2025-08-04"), pd.Timestamp("2025-08-11")]
+    assert state["weekly_metrics"]["Tokens / Request"].iloc[-1, 0] == 200.0
+    assert state["daily_metrics"]["Requests"].index[0] == pd.Timestamp("2026-04-16")
+    assert state["daily_metrics"]["Requests"].loc[pd.Timestamp("2026-04-22"), "Requests"] == 7
+    assert state["daily_request_proxy"] is True
+    assert state["daily_metrics"]["Tokens / Request"].index[0] == pd.Timestamp("2026-04-16")
+    assert state["daily_metrics"]["Realized Price"].index[0] == pd.Timestamp("2026-04-16")
+    assert state["daily_metrics"]["Tokens / Request"].iloc[-1, 0] == 15.0
+    assert state["daily_metrics"]["Realized Price"].iloc[-1, 0] == 4.0
+    assert state["price_coverage_daily"].iloc[-1, 0] == 100.0
+    assert state["historical_pricing_coverage"] == 100.0
+
+
+def test_company_explorer_reports_historical_pricing_coverage() -> None:
+    catalog = _catalog()
+    catalog["tokens_30d"] = [0.0, 0.0]
+    state = company_explorer_state(
+        {
+            "catalog": catalog,
+            "combined_activity": pd.DataFrame(),
+            "model_activity": pd.DataFrame(),
+            "economics": pd.DataFrame([
+                {
+                    "usage_date_dt": pd.Timestamp("2026-04-16"),
+                    "provider_slug": "openai",
+                    "total_tokens": 100.0,
+                    "estimated_revenue": 0.001,
+                },
+                {
+                    "usage_date_dt": pd.Timestamp("2026-04-17"),
+                    "provider_slug": "openai",
+                    "total_tokens": 100.0,
+                    "estimated_revenue": pd.NA,
+                },
+            ]),
+        },
+        "openai",
+    )
+
+    assert state["historical_pricing_coverage"] == 50.0
+
+
+def test_company_explorer_falls_back_to_daily_activity_for_missing_weekly_company_rows() -> None:
+    catalog = _catalog()
+    aliases = _catalog_alias_map(catalog)
+    provider_activity = _normalize_explorer_activity(pd.DataFrame([
+        {"usage_date": "2026-06-17", "model_permaslug": "openai/gpt-test-20260701", "entity_id": "openai", "total_tokens": 1000},
+        {"usage_date": "2026-06-18", "model_permaslug": "openai/gpt-test-20260701", "entity_id": "openai", "total_tokens": 1500},
+    ]), aliases)
+    model_activity = _normalize_explorer_activity(pd.DataFrame([
+        {
+            "usage_date": "2026-06-17", "model_permaslug": "openai/gpt-test-20260701",
+            "category_slug": "all", "total_tokens": 1000, "request_count": 100,
+        },
+        {
+            "usage_date": "2026-06-18", "model_permaslug": "openai/gpt-test-20260701",
+            "category_slug": "all", "total_tokens": 1500, "request_count": 100,
+        },
+    ]), aliases)
+    catalog["tokens_30d"] = [2500.0, 0.0]
+    state = company_explorer_state(
+        {
+            "catalog": catalog,
+            "combined_activity": provider_activity,
+            "model_activity": model_activity,
+            "weekly_company_tokens": pd.DataFrame(columns=["usage_week", "company_slug", "tokens"]),
+            "weekly_company_requests": pd.DataFrame(columns=["usage_week", "company_slug", "requests"]),
+        },
+        "openai",
+    )
+
+    assert not state["weekly_metrics"]["Tokens"].empty
+    assert not state["weekly_metrics"]["Requests"].empty
+    assert state["weekly_token_source"] == "Daily activity aggregated to weekly totals"
+    assert state["weekly_request_source"] == "Daily model activity aggregated to weekly totals"
+
+
 def test_model_activity_precedes_provider_fallback_for_same_model_day() -> None:
     aliases = {"openai/gpt-test": "openai/gpt-test"}
     provider = _normalize_explorer_activity(pd.DataFrame([

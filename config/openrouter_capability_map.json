@@ -2,6 +2,180 @@
   "methodology_version": "openrouter-derived-v2-backfilled-aa-score",
   "models": [
     {
+      "aa_model_id": "90e078f2-051b-4c63-8919-76618971cb3f",
+      "family_id": "anthropic/claude-4.5-sonnet",
+      "effective_from": "2025-09-29",
+      "openrouter_routes": [{"model_id": "anthropic/claude-4.5-sonnet-20250929", "effective_from": "2025-09-29"}]
+    },
+    {
+      "aa_model_id": "4dc12a38-b18f-4c43-8e1b-678f8434b5b1",
+      "family_id": "openai/gpt-5.1",
+      "effective_from": "2025-11-13",
+      "openrouter_routes": [
+        {"model_id": "openai/gpt-5.1-20251113", "effective_from": "2025-11-13"},
+        {"model_id": "openai/gpt-5.1-chat-20251113", "effective_from": "2025-11-13"}
+      ]
+    },
+    {
+      "aa_model_id": "d1122eff-ee85-4fdc-8a9f-23bee6590667",
+      "family_id": "google/gemini-3-pro",
+      "effective_from": "2025-11-18",
+      "openrouter_routes": [{"model_id": "google/gemini-3-pro-preview-20251117", "effective_from": "2025-11-18"}]
+    },
+    {
+      "aa_model_id": "2660d74f-ce79-48a8-8b53-6e668e2071a2",
+      "family_id": "anthropic/claude-opus-4.5",
+      "effective_from": "2025-11-24",
+      "openrouter_routes": [{"model_id": "anthropic/claude-4.5-opus-20251124", "effective_from": "2025-11-24"}]
+    },
+    {
+      "aa_model_id": "019e86f6-e66b-42d8-8a50-235a06b53003",
+      "family_id": "openai/gpt-5.2-codex",
+      "effective_from": "2025-12-11",
+      "openrouter_routes": [{"model_id": "openai/gpt-5.2-codex-20260114", "effective_from": "2025-12-11"}]
+    },
+    {
+      "aa_model_id": "498862c3-f9ac-49d2-852f-16a02bb0c38f",
+      "family_id": "openai/gpt-5.2",
+      "effective_from": "2025-12-11",
+      "openrouter_routes": [
+        {"model_id": "openai/gpt-5.2-20251211", "effective_from": "2025-12-11"},
+        {"model_id": "openai/gpt-5.2", "effective_from": "2025-12-11"},
+        {"model_id": "openai/gpt-5.2-chat", "effective_from": "2025-12-11"}
+      ]
+    },
+    {
+      "aa_model_id": "7c73c3be-7f51-4d14-bec8-d5789488df25",
+      "family_id": "google/gemini-3-flash",
+      "effective_from": "2025-12-17",
+      "openrouter_routes": [{"model_id": "google/gemini-3-flash-preview-20251217", "effective_from": "2025-12-17"}]
+    },
+    {
+      "aa_model_id": "84e3f11e-d659-4941-8988-1dbfabbaf538",
+      "family_id": "openai/gpt-5.2",
+      "effective_from": "2025-12-11",
+      "openrouter_routes": [{"model_id": "openai/gpt-5.2-20251211", "effective_from": "2025-12-11"}]
+    },
+    {
+      "aa_model_id": "53c98840-47af-49aa-94e6-469fb17e9a1b",
+      "family_id": "anthropic/claude-opus-4.6",
+      "effective_from": "2026-02-05",
+      "openrouter_routes": [
+        {"model_id": "anthropic/claude-4.6-opus-20260205", "effective_from": "2026-02-05"},
+        {"model_id": "anthropic/claude-4.6-opus-fast-20260407", "effective_from": "2026-04-07"}
+      ]
+    },
+    {
+      "aa_model_id": "4386585e-71b4-4a0c-8a63-afb333419cd6",
+      "family_id": "anthropic/claude-opus-4.6",
+      "effective_from": "2026-02-05",
+      "openrouter_routes": [{"model_id": "anthropic/claude-4.6-opus-20260205", "effective_from": "2026-02-05"}]
+    },
+    {
+      "aa_model_id": "40663ad2-b218-471e-bdd4-a1e0c2360e2b",
+      "family_id": "z-ai/glm-5",
+      "effective_from": "2026-02-11",
+      "openrouter_routes": [{"model_id": "z-ai/glm-5-20260211", "effective_from": "2026-02-11"}]
+    },
+    {
+      "aa_model_id": "df8d14e0-3997-4e4d-b4ad-9c047acc9c69",
+      "family_id": "anthropic/claude-sonnet-4.6",
+      "effective_from": "2026-02-17",
+      "openrouter_routes": [{"model_id": "anthropic/claude-4.6-sonnet-20260217", "effective_from": "2026-02-17"}]
+    },
+    {
+      "aa_model_id": "bbd93ebe-80da-4594-bb19-61e69d0331df",
+      "family_id": "google/gemini-3.1-pro",
+      "effective_from": "2026-02-19",
+      "openrouter_routes": [
+        {"model_id": "google/gemini-3.1-pro-preview-20260219", "effective_from": "2026-02-19"},
+        {"model_id": "google/gemini-3.1-pro-preview-customtools-20260219", "effective_from": "2026-02-19"}
+      ]
+    },
+    {
+      "aa_model_id": "59b5b14b-5365-4ee7-824a-18a8e6309644",
+      "family_id": "openai/gpt-5.3-codex",
+      "effective_from": "2026-02-05",
+      "openrouter_routes": [{"model_id": "openai/gpt-5.3-codex-20260224", "effective_from": "2026-02-24"}]
+    },
+    {
+      "aa_model_id": "a89c4b28-2d8c-456e-88ea-255fb51fd2b6",
+      "family_id": "openai/gpt-5.4",
+      "effective_from": "2026-03-05",
+      "openrouter_routes": [
+        {"model_id": "openai/gpt-5.4-20260305", "effective_from": "2026-03-05"},
+        {"model_id": "openai/gpt-5.4-mini-20260317", "effective_from": "2026-03-17"},
+        {"model_id": "openai/gpt-5.4-nano-20260317", "effective_from": "2026-03-17"}
+      ]
+    },
+    {
+      "aa_model_id": "5d8183dc-24f4-46c5-a1d0-d937de149364",
+      "family_id": "xiaomi/mimo-v2-pro",
+      "effective_from": "2026-03-18",
+      "openrouter_routes": [{"model_id": "xiaomi/mimo-v2-pro-20260318", "effective_from": "2026-03-18"}]
+    },
+    {
+      "aa_model_id": "e9a09db3-8fd6-41dd-ba2f-20e0a2bff7f2",
+      "family_id": "anthropic/claude-opus-4.7",
+      "effective_from": "2026-04-16",
+      "openrouter_routes": [
+        {"model_id": "anthropic/claude-4.7-opus-20260416", "effective_from": "2026-04-16"},
+        {"model_id": "anthropic/claude-4.7-opus-fast-20260512", "effective_from": "2026-05-12"}
+      ]
+    },
+    {
+      "aa_model_id": "1f054429-397e-4fdb-9e71-67bc92c1735e",
+      "family_id": "openai/gpt-5.5",
+      "effective_from": "2026-04-23",
+      "openrouter_routes": [{"model_id": "openai/gpt-5.5-20260423", "effective_from": "2026-04-23"}]
+    },
+    {
+      "aa_model_id": "0de67206-4d36-4d10-b8f6-cf37fa747a03",
+      "family_id": "moonshotai/kimi-k2.6",
+      "effective_from": "2026-04-20",
+      "openrouter_routes": [{"model_id": "moonshotai/kimi-k2.6-20260420", "effective_from": "2026-04-20"}]
+    },
+    {
+      "aa_model_id": "bf220674-68bd-43cc-a1b8-ce5ed4d2f18d",
+      "family_id": "deepseek/deepseek-v4-pro",
+      "effective_from": "2026-04-24",
+      "openrouter_routes": [{"model_id": "deepseek/deepseek-v4-pro-20260423", "effective_from": "2026-04-24"}]
+    },
+    {
+      "aa_model_id": "0097ebf5-124f-42f6-9463-33b00e711f03",
+      "family_id": "google/gemini-3.5-flash",
+      "effective_from": "2026-05-19",
+      "openrouter_routes": [{"model_id": "google/gemini-3.5-flash-20260519", "effective_from": "2026-05-20"}]
+    },
+    {
+      "aa_model_id": "992b7b84-5069-4c6a-9295-834252553d50",
+      "family_id": "anthropic/claude-opus-4.8",
+      "effective_from": "2026-05-28",
+      "openrouter_routes": [
+        {"model_id": "anthropic/claude-opus-4.8", "effective_from": "2026-05-29"},
+        {"model_id": "anthropic/claude-4.8-opus-20260528", "effective_from": "2026-05-29"},
+        {"model_id": "anthropic/claude-4.8-opus-fast-20260528", "effective_from": "2026-05-29"}
+      ]
+    },
+    {
+      "aa_model_id": "b13c1257-d746-4027-8fc8-4892dc14701c",
+      "family_id": "openai/gpt-5.5",
+      "effective_from": "2026-04-23",
+      "openrouter_routes": [{"model_id": "openai/gpt-5.5-20260423", "effective_from": "2026-04-23"}]
+    },
+    {
+      "aa_model_id": "6b79f899-e3c0-45f6-923c-243faccdb2fc",
+      "family_id": "openai/gpt-5.5",
+      "effective_from": "2026-04-23",
+      "openrouter_routes": [{"model_id": "openai/gpt-5.5-20260423", "effective_from": "2026-04-23"}]
+    },
+    {
+      "aa_model_id": "23c86e4a-c769-43c0-a056-79e3cd15834f",
+      "family_id": "anthropic/claude-sonnet-5",
+      "effective_from": "2026-06-30",
+      "openrouter_routes": [{"model_id": "anthropic/claude-sonnet-5-20260630", "effective_from": "2026-06-30"}]
+    },
+    {
       "aa_model_id": "cd55210d-358e-4df1-ba9c-9acb5f186cc9",
       "family_id": "anthropic/claude-fable-5",
       "effective_from": "2026-06-09",
@@ -11,15 +185,37 @@
       ]
     },
     {
+      "aa_model_id": "f7a4ea75-e548-4069-80d4-9be8bc7c009b",
+      "family_id": "z-ai/glm-5.2",
+      "effective_from": "2026-06-16",
+      "openrouter_routes": [{"model_id": "z-ai/glm-5.2-20260616", "effective_from": "2026-06-17"}]
+    },
+    {
+      "aa_model_id": "794f69b5-cede-482b-b1cc-d769478497cd",
+      "family_id": "x-ai/grok-4.5",
+      "effective_from": "2026-07-08",
+      "openrouter_routes": [{"model_id": "x-ai/grok-4.5-20260708", "effective_from": "2026-07-08"}]
+    },
+    {
       "aa_model_id": "d93edfe8-bf35-49ad-b56e-b18116142a1c",
       "family_id": "openai/gpt-5.6-sol",
       "effective_from": "2026-07-09",
       "openrouter_routes": [
-        {"model_id": "openai/gpt-5.6-sol", "effective_from": "2026-07-17"},
-        {"model_id": "openai/gpt-5.6-sol-pro", "effective_from": "2026-07-17"},
-        {"model_id": "openai/gpt-5.6-sol-20260709", "effective_from": "2026-07-17"},
-        {"model_id": "openai/gpt-5.6-sol-pro-20260709", "effective_from": "2026-07-17"}
+        {"model_id": "openai/gpt-5.6-sol-20260709", "effective_from": "2026-07-10"},
+        {"model_id": "openai/gpt-5.6-sol-pro-20260709", "effective_from": "2026-07-10"}
       ]
+    },
+    {
+      "aa_model_id": "bcf8db0a-3bb6-4d82-9516-0f57370c85a6",
+      "family_id": "openai/gpt-5.6-terra",
+      "effective_from": "2026-07-09",
+      "openrouter_routes": [{"model_id": "openai/gpt-5.6-terra-20260709", "effective_from": "2026-07-16"}]
+    },
+    {
+      "aa_model_id": "f7d2fc3e-1f7b-405f-818c-07952a4af78f",
+      "family_id": "moonshotai/kimi-k3",
+      "effective_from": "2026-07-16",
+      "openrouter_routes": [{"model_id": "moonshotai/kimi-k3-20260715", "effective_from": "2026-07-16"}]
     },
     {
       "aa_model_id": "d998db47-9b67-4727-a2bb-2e1261020ac0",
@@ -33,24 +229,6 @@
       ]
     },
     {
-      "aa_model_id": "f7d2fc3e-1f7b-405f-818c-07952a4af78f",
-      "family_id": "moonshotai/kimi-k3",
-      "effective_from": "2026-07-16",
-      "openrouter_routes": [
-        {"model_id": "moonshotai/kimi-k3", "effective_from": "2026-07-17"},
-        {"model_id": "moonshotai/kimi-k3-20260715", "effective_from": "2026-07-17"}
-      ]
-    },
-    {
-      "aa_model_id": "f7a4ea75-e548-4069-80d4-9be8bc7c009b",
-      "family_id": "z-ai/glm-5.2",
-      "effective_from": "2026-06-16",
-      "openrouter_routes": [
-        {"model_id": "z-ai/glm-5.2", "effective_from": "2026-06-17"},
-        {"model_id": "z-ai/glm-5.2-20260616", "effective_from": "2026-06-17"}
-      ]
-    },
-    {
       "aa_model_id": "8afc250d-b538-45a2-812a-4605f4ffd87e",
       "family_id": "openai/gpt-5.6-sol",
       "effective_from": "2026-07-09",
@@ -59,47 +237,6 @@
         {"model_id": "openai/gpt-5.6-sol-pro", "effective_from": "2026-07-17"},
         {"model_id": "openai/gpt-5.6-sol-20260709", "effective_from": "2026-07-17"},
         {"model_id": "openai/gpt-5.6-sol-pro-20260709", "effective_from": "2026-07-17"}
-      ]
-    },
-    {
-      "aa_model_id": "992b7b84-5069-4c6a-9295-834252553d50",
-      "family_id": "anthropic/claude-opus-4.8",
-      "effective_from": "2026-05-28",
-      "openrouter_routes": [
-        {"model_id": "anthropic/claude-opus-4.8", "effective_from": "2026-05-29"},
-        {"model_id": "anthropic/claude-4.8-opus-20260528", "effective_from": "2026-05-29"},
-        {"model_id": "anthropic/claude-4.8-opus-fast-20260528", "effective_from": "2026-05-29"}
-      ]
-    },
-    {
-      "aa_model_id": "bcf8db0a-3bb6-4d82-9516-0f57370c85a6",
-      "family_id": "openai/gpt-5.6-terra",
-      "effective_from": "2026-07-09",
-      "openrouter_routes": [
-        {"model_id": "openai/gpt-5.6-terra", "effective_from": "2026-07-17"},
-        {"model_id": "openai/gpt-5.6-terra-pro", "effective_from": "2026-07-17"},
-        {"model_id": "openai/gpt-5.6-terra-20260709", "effective_from": "2026-07-17"},
-        {"model_id": "openai/gpt-5.6-terra-pro-20260709", "effective_from": "2026-07-17"}
-      ]
-    },
-    {
-      "aa_model_id": "1f054429-397e-4fdb-9e71-67bc92c1735e",
-      "family_id": "openai/gpt-5.5",
-      "effective_from": "2026-04-23",
-      "openrouter_routes": [
-        {"model_id": "openai/gpt-5.5", "effective_from": "2026-04-25"},
-        {"model_id": "openai/gpt-5.5-pro", "effective_from": "2026-04-25"},
-        {"model_id": "openai/gpt-5.5-20260423", "effective_from": "2026-04-25"},
-        {"model_id": "openai/gpt-5.5-pro-20260423", "effective_from": "2026-04-25"}
-      ]
-    },
-    {
-      "aa_model_id": "794f69b5-cede-482b-b1cc-d769478497cd",
-      "family_id": "x-ai/grok-4.5",
-      "effective_from": "2026-07-08",
-      "openrouter_routes": [
-        {"model_id": "x-ai/grok-4.5", "effective_from": "2026-07-17"},
-        {"model_id": "x-ai/grok-4.5-20260708", "effective_from": "2026-07-17"}
       ]
     },
     {

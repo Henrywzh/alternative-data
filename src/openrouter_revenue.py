@@ -30,6 +30,11 @@ CONSERVATIVE_ECONOMICS_COLUMNS = [
     "split_source",
 ]
 
+# These providers have substantial historical activity before the first
+# complete OpenRouter pricing snapshots.  We allow an exact route's first
+# later paid price to be used as an explicitly labelled historical proxy.
+HISTORICAL_ROUTE_FILL_PROVIDERS = frozenset({"x-ai", "meta-llama", "google"})
+
 
 def is_free_model_slug(value: object) -> bool:
     slug = clean_slug(value)
@@ -549,6 +554,69 @@ def _attach_latest_prior_pricing(usage: pd.DataFrame, pricing: pd.DataFrame) -> 
     return joined.drop(columns=["_usage_row_id", "_usage_date", "usage_alias_priority"], errors="ignore")
 
 
+def _forward_fill_target_route_pricing(priced: pd.DataFrame, pricing: pd.DataFrame) -> pd.DataFrame:
+    """Fill unresolved target-provider routes from their first later paid price.
+
+    This is deliberately route-exact and provider-scoped.  It does not use a
+    provider or global median, and it leaves routes with no positive future
+    price unresolved.  The future snapshot is retained in the output so the
+    resulting revenue estimate is auditable as a historical proxy.
+    """
+    if priced.empty or pricing.empty:
+        return priced
+    aliases = _prepare_pricing_aliases(pricing)
+    if aliases.empty:
+        return priced
+    aliases["pricing_prompt"] = pd.to_numeric(aliases["pricing_prompt"], errors="coerce")
+    aliases["pricing_completion"] = pd.to_numeric(aliases["pricing_completion"], errors="coerce")
+    aliases = aliases.loc[
+        aliases["pricing_prompt"].gt(0) & aliases["pricing_completion"].gt(0)
+    ].copy()
+    if aliases.empty:
+        return priced
+
+    by_alias = {
+        key: group.sort_values("snapshot_ts", kind="stable")
+        for key, group in aliases.groupby("pricing_lookup_key", sort=False)
+    }
+    usage_dates = pd.to_datetime(priced["usage_date"], errors="coerce", utc=True).dt.normalize()
+    providers = priced["provider_slug"].astype("string").str.casefold().str.lstrip("~")
+    model_ids = priced["model_permaslug"].astype("string")
+    needs_fill = (
+        providers.isin(HISTORICAL_ROUTE_FILL_PROVIDERS)
+        & usage_dates.notna()
+        & priced["pricing_snapshot_ts"].isna()
+        & ~model_ids.str.endswith(":free", na=False)
+    )
+    if not needs_fill.any():
+        return priced
+
+    result = priced.copy()
+    for index in priced.index[needs_fill]:
+        model_id = model_ids.at[index]
+        usage_date = usage_dates.at[index]
+        candidates: list[pd.DataFrame] = []
+        for priority, alias in enumerate(generate_candidate_aliases(model_id)):
+            group = by_alias.get(alias)
+            if group is None:
+                continue
+            future = group.loc[group["snapshot_ts"] > usage_date].copy()
+            if not future.empty:
+                future["_alias_priority"] = priority
+                candidates.append(future)
+        if not candidates:
+            continue
+        future_prices = pd.concat(candidates, ignore_index=True).sort_values(
+            ["snapshot_ts", "_alias_priority"], kind="stable"
+        )
+        selected = future_prices.iloc[0]
+        result.at[index, "pricing_snapshot_ts"] = selected["snapshot_ts"]
+        result.at[index, "pricing_prompt"] = selected["pricing_prompt"]
+        result.at[index, "pricing_completion"] = selected["pricing_completion"]
+        result.at[index, "pricing_join_status"] = "historical_route_price_fill"
+    return result
+
+
 def build_conservative_provider_economics(
     provider_activity: pd.DataFrame,
     pricing: pd.DataFrame,
@@ -589,6 +657,12 @@ def build_conservative_provider_economics(
     priced["completion_tokens"] = pd.to_numeric(priced["completion_tokens"], errors="coerce")
     priced["reasoning_tokens"] = pd.to_numeric(priced["reasoning_tokens"], errors="coerce")
 
+    priced["pricing_join_status"] = "unresolved_missing_pricing"
+    priced = _forward_fill_target_route_pricing(priced, pricing)
+    historical_fill = priced["pricing_join_status"].astype("string").eq(
+        "historical_route_price_fill"
+    )
+
     has_pricing = priced["pricing_snapshot_ts"].notna() & (
         priced["pricing_prompt"].notna() | priced["pricing_completion"].notna()
     )
@@ -609,12 +683,16 @@ def build_conservative_provider_economics(
     priced["has_pricing"] = has_pricing
     priced["has_split_tokens"] = has_split
     priced["pricing_join_status"] = np.where(has_pricing, "matched_asof", "unresolved_missing_pricing")
+    priced.loc[historical_fill & has_pricing, "pricing_join_status"] = "historical_route_price_fill"
     priced.loc[priced["model_permaslug"].eq("Others"), "pricing_join_status"] = "synthetic_unpriced"
     priced.loc[priced["model_permaslug"].eq("Others"), "estimated_revenue"] = np.nan
     priced["revenue_method"] = "unpriced"
     priced.loc[has_pricing & has_split & priced["split_source"].eq("source"), "revenue_method"] = "exact_split_priced"
     priced.loc[has_pricing & has_split & priced["split_source"].eq("model_activity"), "revenue_method"] = "model_split_inferred"
     priced.loc[blended_priced, "revenue_method"] = "model_blended_no_split"
+    priced.loc[historical_fill & has_pricing & has_split & priced["split_source"].eq("source"), "revenue_method"] = "historical_exact_split_priced"
+    priced.loc[historical_fill & has_pricing & has_split & priced["split_source"].eq("model_activity"), "revenue_method"] = "historical_model_split_inferred"
+    priced.loc[historical_fill & blended_priced, "revenue_method"] = "historical_model_blended_no_split"
     priced.loc[priced["model_permaslug"].eq("Others"), "revenue_method"] = "unpriced"
     priced.loc[free_mask, "pricing_prompt"] = 0.0
     priced.loc[free_mask, "pricing_completion"] = 0.0
