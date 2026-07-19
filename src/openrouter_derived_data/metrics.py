@@ -69,8 +69,8 @@ def _utc_today() -> date:
     return datetime.now(timezone.utc).date()
 
 
-def _prepare_activity(activity: pd.DataFrame, *, today: date) -> tuple[pd.DataFrame, int]:
-    """Normalize activity rows and retain only complete, ratio-eligible records."""
+def _prepare_activity(activity: pd.DataFrame, *, today: date) -> pd.DataFrame:
+    """Normalize activity rows and retain only complete observation dates."""
     required_columns = {
         "usage_date",
         "model_permaslug",
@@ -90,10 +90,7 @@ def _prepare_activity(activity: pd.DataFrame, *, today: date) -> tuple[pd.DataFr
         normalized[column] = pd.to_numeric(normalized[column], errors="coerce")
 
     complete_day_rows = normalized["usage_date"].lt(pd.Timestamp(today))
-    non_positive_requests = normalized["request_count"].isna() | normalized["request_count"].le(0)
-    excluded_zero_request_rows = int((complete_day_rows & non_positive_requests).sum())
-    eligible = normalized.loc[complete_day_rows & ~non_positive_requests].copy()
-    return eligible, excluded_zero_request_rows
+    return normalized.loc[complete_day_rows].copy()
 
 
 def _activity_provenance(activity: pd.DataFrame) -> dict[str, object]:
@@ -108,37 +105,59 @@ def _activity_provenance(activity: pd.DataFrame) -> dict[str, object]:
 def compute_workload_intensity_daily(
     activity: pd.DataFrame, *, today: date | None = None
 ) -> pd.DataFrame:
-    """Return daily and seven-observation rolling token-per-request ratios."""
-    eligible, excluded_zero_request_rows = _prepare_activity(activity, today=today or _utc_today())
-    if eligible.empty:
+    """Return daily and seven-calendar-day rolling token-per-request ratios."""
+    complete_activity = _prepare_activity(activity, today=today or _utc_today())
+    if complete_activity.empty:
         return _empty_daily()
 
-    daily = (
-        eligible.groupby("usage_date", as_index=False)
-        .agg(
-            total_tokens=("total_tokens", "sum"),
-            prompt_tokens=("prompt_tokens", "sum"),
-            completion_tokens=("completion_tokens", "sum"),
-            request_count=("request_count", "sum"),
-            observed_model_count=("model_permaslug", "nunique"),
-        )
-        .sort_values("usage_date", kind="stable")
-        .reset_index(drop=True)
+    calendar_days = pd.date_range(
+        complete_activity["usage_date"].min(),
+        complete_activity["usage_date"].max(),
+        freq="D",
+    )
+    invalid_request_rows = (
+        complete_activity["request_count"].isna()
+        | complete_activity["request_count"].le(0)
+    )
+    excluded_by_day = (
+        complete_activity.loc[invalid_request_rows]
+        .groupby("usage_date")
+        .size()
+        .reindex(calendar_days, fill_value=0)
     )
     provenance = _activity_provenance(activity)
     rows: list[dict[str, object]] = []
-    for window in (1, 7):
-        rolling_requests = daily["request_count"].rolling(window, min_periods=1).sum()
-        rolling_model_counts = daily["observed_model_count"].rolling(window, min_periods=1).max()
-        for metric_id, source_column in TOKEN_METRICS.items():
-            rolling_tokens = daily[source_column].rolling(window, min_periods=1).sum()
-            values = rolling_tokens / rolling_requests.replace(0, pd.NA)
-            for index, day in daily.iterrows():
+    for metric_id, source_column in TOKEN_METRICS.items():
+        metric_eligible = complete_activity.loc[
+            complete_activity["request_count"].gt(0)
+            & complete_activity[source_column].notna()
+        ].copy()
+        tokens_by_day = (
+            metric_eligible.groupby("usage_date")[source_column]
+            .sum()
+            .reindex(calendar_days)
+        )
+        requests_by_day = (
+            metric_eligible.groupby("usage_date")["request_count"]
+            .sum()
+            .reindex(calendar_days)
+        )
+        for window in (1, 7):
+            rolling_tokens = tokens_by_day.rolling(window, min_periods=1).sum()
+            rolling_requests = requests_by_day.rolling(window, min_periods=1).sum()
+            values = rolling_tokens / rolling_requests
+            excluded_in_window = excluded_by_day.rolling(window, min_periods=1).sum()
+            for index, day in enumerate(calendar_days):
+                window_start = day - pd.Timedelta(days=window - 1)
+                contributing_models = metric_eligible.loc[
+                    metric_eligible["usage_date"].between(window_start, day),
+                    "model_permaslug",
+                ]
                 rows.append(
                     {
                         "dataset_id": DAILY_DATASET_ID,
                         **provenance,
-                        "usage_date": day["usage_date"].strftime("%Y-%m-%d"),
+                        "usage_date": day.strftime("%Y-%m-%d"),
                         "metric_id": metric_id,
                         "cohort_id": "all_models",
                         "value": values.iloc[index],
@@ -150,11 +169,11 @@ def compute_workload_intensity_daily(
                         "expected_family_count": pd.NA,
                         "priced_family_count": pd.NA,
                         "observed_family_count": pd.NA,
-                        "observed_model_count": rolling_model_counts.iloc[index],
+                        "observed_model_count": contributing_models.nunique(),
                         "included_tokens": rolling_tokens.iloc[index],
                         "excluded_free_tokens": pd.NA,
                         "excluded_unpriced_tokens": pd.NA,
-                        "excluded_zero_request_rows": excluded_zero_request_rows,
+                        "excluded_zero_request_rows": excluded_in_window.iloc[index],
                         "methodology_version": METHODOLOGY_VERSION,
                     }
                 )
@@ -168,7 +187,10 @@ def compute_workload_intensity_models(
     if window_days < 1:
         raise ValueError("window_days must be positive")
 
-    eligible, _ = _prepare_activity(activity, today=today or _utc_today())
+    eligible = _prepare_activity(activity, today=today or _utc_today())
+    eligible = eligible.loc[
+        eligible["request_count"].gt(0) & eligible["total_tokens"].notna()
+    ].copy()
     if eligible.empty:
         return _empty_models()
 
@@ -178,9 +200,9 @@ def compute_workload_intensity_models(
     grouped = (
         window.groupby(["model_permaslug", "entity_id"], dropna=False, as_index=False)
         .agg(
-            total_tokens=("total_tokens", "sum"),
-            prompt_tokens=("prompt_tokens", "sum"),
-            completion_tokens=("completion_tokens", "sum"),
+            total_tokens=("total_tokens", lambda values: values.sum(min_count=1)),
+            prompt_tokens=("prompt_tokens", lambda values: values.sum(min_count=1)),
+            completion_tokens=("completion_tokens", lambda values: values.sum(min_count=1)),
             request_count=("request_count", "sum"),
         )
         .rename(columns={"model_permaslug": "model_id", "entity_id": "company_id"})
