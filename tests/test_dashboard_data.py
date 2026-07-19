@@ -3182,12 +3182,21 @@ def _derived_datasets() -> dict[str, DatasetLoadResult]:
     }
     for usage_date, values in price_values.items():
         for metric_id, value in values.items():
+            rolling_window_days = (
+                1
+                if metric_id
+                in {
+                    "sota_median_list_price",
+                    "frontier_contenders_median_list_price",
+                }
+                else 7
+            )
             daily_rows.append(
                 {
                     "usage_date": usage_date,
                     "metric_id": metric_id,
                     "value": value,
-                    "rolling_window_days": 7,
+                    "rolling_window_days": rolling_window_days,
                     "expected_family_count": 5 if "sota" in metric_id else pd.NA,
                     "priced_family_count": 5 if "sota" in metric_id else pd.NA,
                     "observed_family_count": 4 if metric_id == "realized_sota_price" else pd.NA,
@@ -3269,6 +3278,7 @@ def test_usage_economics_state_exposes_workload_and_guarded_sota_lines() -> None
         "SOTA Median List Price",
         "Realized SOTA Price",
     ]
+    assert price["pivot"].loc["2026-07-17", "SOTA Median List Price"] == 3.2
     assert price["coverage_label"] == "Observed 4/5 SOTA families · priced 5/5"
 
 
@@ -3312,6 +3322,37 @@ def test_average_price_state_keeps_sota_gaps_and_diagnostics_opt_in() -> None:
         "Low-priced Realized Price",
         "Fixed Workload Basket",
     ]
+
+
+def test_average_price_state_combines_production_cadences_without_filling_gaps() -> None:
+    datasets = _derived_datasets()
+    daily = datasets["openrouter_usage_economics_daily"].frame
+    daily.loc[
+        daily["usage_date"].eq("2026-07-10")
+        & daily["metric_id"].eq("realized_sota_price"),
+        "value",
+    ] = pd.NA
+
+    state = _average_price_section_state(
+        datasets,
+        ["frontier_contenders_median_list_price"],
+    )
+
+    assert state["pivot"].loc["2026-07-17", "SOTA Median List Price"] == 3.2
+    assert state["pivot"].loc[
+        "2026-07-17", "Frontier Contenders Median List Price"
+    ] == 2.4
+    assert pd.isna(state["pivot"].loc["2026-07-10", "Realized SOTA Price"])
+
+
+def test_average_price_state_describes_strict_and_as_recorded_provenance() -> None:
+    state = _average_price_section_state(_derived_datasets())
+
+    assert state["backcast_note"] == (
+        "SOTA Median List Price, Frontier Contenders Median List Price, and Realized SOTA Price use strict as-of pricing. "
+        "Realized Market Average and the Premium-priced, Mid-priced, Low-priced, and Fixed Workload Basket diagnostics "
+        "use as-recorded economics and may include explicitly labelled earliest-price backcasts."
+    )
 
 
 def test_usage_economics_state_missing_marts_is_scoped_from_tokens_and_requests() -> None:
