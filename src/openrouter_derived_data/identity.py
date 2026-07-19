@@ -63,6 +63,7 @@ def load_capability_map(base_dir: Path) -> CapabilityMap:
 
     entries: list[CapabilityEntry] = []
     seen_aa_model_ids: set[str] = set()
+    activity_id_families: dict[str, str] = {}
     for index, row in enumerate(rows):
         if not isinstance(row, dict) or set(row) != _ENTRY_KEYS:
             raise ValueError(f"capability map entry {index} has an invalid schema")
@@ -81,6 +82,14 @@ def load_capability_map(base_dir: Path) -> CapabilityMap:
             or len(activity_ids) != len(set(activity_ids))
         ):
             raise ValueError(f"capability map entry {index} openrouter_model_ids must be unique non-empty strings")
+        for activity_id in activity_ids:
+            existing_family = activity_id_families.get(activity_id)
+            if existing_family is not None and existing_family != family_id:
+                raise ValueError(
+                    f"openrouter_model_id {activity_id} is assigned to multiple families: "
+                    f"{existing_family}, {family_id}"
+                )
+            activity_id_families[activity_id] = family_id
         seen_aa_model_ids.add(aa_model_id)
         entries.append(
             CapabilityEntry(

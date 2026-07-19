@@ -1697,6 +1697,16 @@ def _average_price_section_state(
     ]
     displayed_metric_ids = [*DEFAULT_PRICE_METRIC_IDS, *diagnostics]
     pivot = _average_price_pivot(daily, displayed_metric_ids)
+    price_scraped_at = None
+    if not daily.empty and {"metric_id", "scraped_at"}.issubset(daily.columns):
+        price_rows = daily.loc[
+            daily["metric_id"].astype("string").isin(displayed_metric_ids)
+        ]
+        price_timestamps = pd.to_datetime(
+            price_rows["scraped_at"], errors="coerce", utc=True
+        ).dropna()
+        if not price_timestamps.empty:
+            price_scraped_at = price_timestamps.max()
 
     expected_count = 5
     observed_count = None
@@ -1741,7 +1751,7 @@ def _average_price_section_state(
             "use as-recorded economics and may include explicitly labelled earliest-price backcasts."
         ),
         "source_status": "Derived OpenRouter price metrics · 7-day realized · daily list price",
-        "scraped_at": daily_result.latest_scraped_at if daily_result else None,
+        "scraped_at": price_scraped_at,
     }
 
 

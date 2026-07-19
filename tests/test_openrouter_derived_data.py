@@ -164,6 +164,45 @@ def test_load_capability_map_rejects_duplicate_or_malformed_entries(tmp_path: Pa
         load_capability_map(tmp_path)
 
 
+def test_capability_map_rejects_route_shared_across_different_families(tmp_path: Path) -> None:
+    config_dir = tmp_path / "config"
+    config_dir.mkdir()
+    (config_dir / "openrouter_capability_map.json").write_text(
+        json.dumps(
+            {
+                "methodology_version": "openrouter-derived-v1",
+                "models": [
+                    {"aa_model_id": "a", "family_id": "provider/family-a", "openrouter_model_ids": ["provider/shared"]},
+                    {"aa_model_id": "b", "family_id": "provider/family-b", "openrouter_model_ids": ["provider/shared"]},
+                ],
+            }
+        )
+    )
+
+    with pytest.raises(ValueError, match="assigned to multiple families"):
+        load_capability_map(tmp_path)
+
+
+def test_capability_map_allows_route_shared_within_one_family(tmp_path: Path) -> None:
+    config_dir = tmp_path / "config"
+    config_dir.mkdir()
+    (config_dir / "openrouter_capability_map.json").write_text(
+        json.dumps(
+            {
+                "methodology_version": "openrouter-derived-v1",
+                "models": [
+                    {"aa_model_id": "a-max", "family_id": "provider/family-a", "openrouter_model_ids": ["provider/shared"]},
+                    {"aa_model_id": "a-xhigh", "family_id": "provider/family-a", "openrouter_model_ids": ["provider/shared"]},
+                ],
+            }
+        )
+    )
+
+    capability_map = load_capability_map(tmp_path)
+
+    assert len(capability_map.entries) == 2
+
+
 def test_capability_map_returns_only_exact_compatible_activity_routes(tmp_path: Path) -> None:
     _write_capability_map(tmp_path)
     capability_map = load_capability_map(tmp_path)
@@ -642,6 +681,76 @@ def test_missing_price_component_stays_unpriced_and_cannot_support_basket() -> N
     assert mid["excluded_unpriced_tokens"] == pytest.approx(1_000.0)
     assert pd.isna(basket["value"])
     assert basket["excluded_unpriced_tokens"] == pytest.approx(1_000.0)
+
+
+def test_price_metrics_exclude_current_day_and_preserve_prior_values() -> None:
+    economics = _economics()
+    prior = compute_price_metrics(
+        economics,
+        _pricing_history(),
+        _price_rankings(),
+        _price_capability_map(),
+        today=date(2026, 7, 18),
+    )
+    current_day = economics.iloc[[0]].copy()
+    current_day["usage_date"] = "2026-07-18"
+    current_day["total_tokens"] = 10**15
+    current_day["estimated_revenue"] = 10**12
+    current_day_pricing = _pricing_history().iloc[[0]].copy()
+    current_day_pricing["snapshot_ts"] = "2026-07-18T12:00:00Z"
+    current_day_pricing[["pricing_prompt", "pricing_completion"]] = 999.0
+
+    result = compute_price_metrics(
+        pd.concat([economics, current_day], ignore_index=True),
+        pd.concat([_pricing_history(), current_day_pricing], ignore_index=True),
+        _price_rankings(),
+        _price_capability_map(),
+        today=date(2026, 7, 18),
+    )
+
+    assert pd.to_datetime(result["usage_date"]).max() == pd.Timestamp("2026-07-17")
+    pd.testing.assert_frame_equal(result.reset_index(drop=True), prior.reset_index(drop=True))
+
+
+def test_price_metrics_choose_one_latest_complete_provenance_tuple() -> None:
+    economics = _economics()
+    old_run = economics.iloc[:5].assign(
+        source_url="https://old.example",
+        source_run_id="old-run",
+        scraped_at="2026-07-17T00:00:00Z",
+    )
+    new_run = economics.iloc[5:].assign(
+        source_url="https://new.example",
+        source_run_id="new-run",
+        scraped_at="2026-07-18T00:00:00Z",
+    )
+    economics = pd.concat([new_run, old_run], ignore_index=True)
+
+    result = compute_price_metrics(
+        economics,
+        _pricing_history(),
+        _price_rankings(),
+        _price_capability_map(),
+        today=date(2026, 7, 18),
+    )
+
+    assert set(result["source_url"]) == {"https://new.example"}
+    assert set(result["source_run_id"]) == {"new-run"}
+    assert set(result["scraped_at"]) == {"2026-07-18T00:00:00Z"}
+
+
+def test_price_metrics_fail_closed_when_economics_provenance_is_missing() -> None:
+    result = compute_price_metrics(
+        _economics(),
+        _pricing_history(),
+        _price_rankings(),
+        _price_capability_map(),
+        today=date(2026, 7, 18),
+    )
+
+    assert set(result["source_url"]) == {"derived://openrouter-price-metrics"}
+    assert set(result["source_run_id"]) == {"derived-unattributed"}
+    assert result["scraped_at"].isna().all()
 
 
 _DAILY_MART_COLUMNS = [
