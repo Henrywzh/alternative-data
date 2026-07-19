@@ -65,6 +65,14 @@ _EXTERNAL_DATA_TOKENS = (
 _INSTALL_DEPENDENCIES_RUN = """\
 python -m pip install --upgrade pip
 python -m pip install -e .[dev]"""
+_SYNC_INPUTS_RUN = """\
+for attempt in 1 2 3; do
+  if git pull --rebase origin "${{ github.event.repository.default_branch }}"; then
+    exit 0
+  fi
+  sleep $((attempt * 5))
+done
+exit 1"""
 _COMMIT_DERIVED_MARTS_RUN = """\
 git config user.name "github-actions[bot]"
 git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -77,7 +85,7 @@ fi
 git commit -m "chore: update OpenRouter derived metrics [$(date -u +%Y-%m-%d)]"
 
 for attempt in 1 2 3; do
-  if git pull --rebase origin "${{ github.event.repository.default_branch }}" && git push; then
+  if git push; then
     exit 0
   fi
   sleep $((attempt * 5))
@@ -106,6 +114,10 @@ _APPROVED_DERIVED_STEPS = [
     {
         "name": "Install dependencies",
         "run": _normalize_run_body(_INSTALL_DEPENDENCIES_RUN),
+    },
+    {
+        "name": "Synchronize committed inputs",
+        "run": _normalize_run_body(_SYNC_INPUTS_RUN),
     },
     {
         "name": "Build compact derived marts from committed inputs",
@@ -233,7 +245,30 @@ def test_openrouter_derived_workflow_rejects_an_extra_action_only_step() -> None
 
 def test_openrouter_derived_workflow_rejects_an_appended_collector_command() -> None:
     workflow = deepcopy(_openrouter_derived_workflow())
-    _derived_build_steps(workflow)[3]["run"] += "\npython -m another_collector"
+    _derived_build_steps(workflow)[4]["run"] += "\npython -m another_collector"
 
     with pytest.raises(AssertionError):
         _assert_openrouter_derived_workflow_contract(workflow)
+
+
+def test_openrouter_derived_workflow_builds_only_after_successful_sync() -> None:
+    steps = _derived_build_steps(_openrouter_derived_workflow())
+    names = [step["name"] for step in steps]
+
+    assert names.index("Synchronize committed inputs") < names.index(
+        "Build compact derived marts from committed inputs"
+    )
+
+
+def test_openrouter_derived_workflow_has_no_sync_after_build() -> None:
+    steps = _derived_build_steps(_openrouter_derived_workflow())
+    build_index = next(
+        index
+        for index, step in enumerate(steps)
+        if step["name"] == "Build compact derived marts from committed inputs"
+    )
+
+    for step in steps[build_index + 1 :]:
+        run = str(step.get("run", "")).lower()
+        assert "git pull" not in run
+        assert "git rebase" not in run

@@ -3,6 +3,7 @@
 from .identity import (
     CapabilityEntry,
     CapabilityMap,
+    CapabilityRoute,
     compatible_activity_ids,
     load_capability_map,
     rank_capability_families,
@@ -17,6 +18,7 @@ from .pipeline import OpenRouterDerivedPipeline
 __all__ = [
     "CapabilityEntry",
     "CapabilityMap",
+    "CapabilityRoute",
     "compatible_activity_ids",
     "load_capability_map",
     "rank_capability_families",

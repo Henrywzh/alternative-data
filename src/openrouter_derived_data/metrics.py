@@ -511,12 +511,14 @@ def _tier_cohort(
 
 
 def _routes_for_rankings(
-    rankings: pd.DataFrame, capability_map: CapabilityMap
+    rankings: pd.DataFrame,
+    capability_map: CapabilityMap,
+    usage_date: pd.Timestamp,
 ) -> pd.DataFrame:
     rows: list[dict[str, str]] = []
     for ranking in rankings.itertuples(index=False):
         for model_id in compatible_activity_ids(
-            capability_map, ranking.representative_aa_model_id
+            capability_map, ranking.representative_aa_model_id, usage_date
         ):
             rows.append({"family_id": ranking.family_id, "model_id": model_id})
     return pd.DataFrame(rows, columns=["family_id", "model_id"]).drop_duplicates()
@@ -528,7 +530,7 @@ def _asof_route_prices(
     pricing: pd.DataFrame,
     capability_map: CapabilityMap,
 ) -> pd.DataFrame:
-    routes = _routes_for_rankings(rankings, capability_map)
+    routes = _routes_for_rankings(rankings, capability_map, usage_date)
     if routes.empty or pricing.empty:
         return pd.DataFrame(
             columns=[
@@ -759,7 +761,9 @@ def _prepare_sota_daily(
         )
         if not complete_cohort:
             continue
-        daily_routes = _routes_for_rankings(daily_rankings, capability_map)
+        daily_routes = _routes_for_rankings(
+            daily_rankings, capability_map, activity_date
+        )
         daily_route_prices = _asof_route_prices(
             activity_date, daily_rankings, pricing, capability_map
         )
