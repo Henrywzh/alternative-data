@@ -1482,6 +1482,16 @@ DIAGNOSTIC_PRICE_METRIC_IDS = [
     "low_priced_realized",
     "fixed_workload_basket",
 ]
+PRICE_METRIC_ROLLING_WINDOWS = {
+    "realized_market_average": 7,
+    "sota_median_list_price": 1,
+    "realized_sota_price": 7,
+    "frontier_contenders_median_list_price": 1,
+    "premium_priced_realized": 7,
+    "mid_priced_realized": 7,
+    "low_priced_realized": 7,
+    "fixed_workload_basket": 7,
+}
 WORKLOAD_COMPONENT_METRIC_IDS = {
     "Total": "total_tokens_per_request",
     "Prompt": "prompt_tokens_per_request",
@@ -1531,6 +1541,24 @@ def _latest_pivot_values(pivot: pd.DataFrame) -> dict[str, float | None]:
         str(column): (float(value) if pd.notna(value) else None)
         for column, value in latest.items()
     }
+
+
+def _average_price_pivot(frame: pd.DataFrame, metric_ids: list[str]) -> pd.DataFrame:
+    """Combine each price metric at its stored cadence without filling date gaps."""
+    requested = list(dict.fromkeys(metric_ids))
+    parts = [
+        _derived_metric_pivot(
+            frame,
+            [metric_id],
+            rolling_window_days=PRICE_METRIC_ROLLING_WINDOWS[metric_id],
+        )
+        for metric_id in requested
+        if metric_id in PRICE_METRIC_ROLLING_WINDOWS
+    ]
+    if not parts:
+        return pd.DataFrame()
+    combined = pd.concat(parts, axis=1).sort_index()
+    return combined.reindex(columns=[PRICE_LABELS[metric_id] for metric_id in requested])
 
 
 def _workload_model_table(frame: pd.DataFrame) -> pd.DataFrame:
@@ -1668,7 +1696,7 @@ def _average_price_section_state(
         if metric_id in DIAGNOSTIC_PRICE_METRIC_IDS
     ]
     displayed_metric_ids = [*DEFAULT_PRICE_METRIC_IDS, *diagnostics]
-    pivot = _derived_metric_pivot(daily, displayed_metric_ids, rolling_window_days=7)
+    pivot = _average_price_pivot(daily, displayed_metric_ids)
 
     expected_count = 5
     observed_count = None
@@ -1676,8 +1704,12 @@ def _average_price_section_state(
     if not daily.empty and {"usage_date", "metric_id", "rolling_window_days"}.issubset(daily.columns):
         sota_rows = daily.loc[
             daily["metric_id"].astype("string").isin(["sota_median_list_price", "realized_sota_price"])
-            & pd.to_numeric(daily["rolling_window_days"], errors="coerce").eq(7)
         ].copy()
+        sota_rows = sota_rows.loc[
+            pd.to_numeric(sota_rows["rolling_window_days"], errors="coerce").eq(
+                sota_rows["metric_id"].map(PRICE_METRIC_ROLLING_WINDOWS)
+            )
+        ]
         sota_rows["usage_date"] = pd.to_datetime(sota_rows["usage_date"], errors="coerce")
         sota_rows = sota_rows.dropna(subset=["usage_date"])
         if not sota_rows.empty:
@@ -1703,8 +1735,12 @@ def _average_price_section_state(
         "empty_message": "No derived OpenRouter price data is available yet.",
         "caption": "Seven-day realized and point-in-time list-price series from the compact OpenRouter economics mart.",
         "coverage_note": "Guarded SOTA values remain gaps when family coverage is insufficient; a gap is not a zero price.",
-        "backcast_note": "Only Realized Market Average may contain labelled earliest-price backcasts; SOTA and diagnostic lines use point-in-time pricing.",
-        "source_status": "Derived OpenRouter price metrics · 7-day window",
+        "backcast_note": (
+            "SOTA Median List Price, Frontier Contenders Median List Price, and Realized SOTA Price use strict as-of pricing. "
+            "Realized Market Average and the Premium-priced, Mid-priced, Low-priced, and Fixed Workload Basket diagnostics "
+            "use as-recorded economics and may include explicitly labelled earliest-price backcasts."
+        ),
+        "source_status": "Derived OpenRouter price metrics · 7-day realized · daily list price",
         "scraped_at": daily_result.latest_scraped_at if daily_result else None,
     }
 
