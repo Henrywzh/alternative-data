@@ -1339,9 +1339,33 @@ def model_explorer_state(views: dict[str, object], model_id: str) -> dict[str, o
     detail_rows = model_activity[model_activity["model_id"] == model_id].copy() if not model_activity.empty else pd.DataFrame()
 
     activity = pd.DataFrame()
+    request_granularity = "unavailable"
     if not token_rows.empty or not detail_rows.empty:
         tokens = token_rows.groupby("usage_date_dt")["total_tokens"].sum().rename("Tokens") if not token_rows.empty else pd.Series(dtype="float64")
-        requests = detail_rows.groupby("usage_date_dt")["request_count"].sum().rename("Requests") if not detail_rows.empty else pd.Series(dtype="float64")
+        requests = pd.Series(dtype="float64")
+        if not detail_rows.empty:
+            request_dates = pd.to_datetime(detail_rows["usage_date_dt"], errors="coerce").dropna().dt.normalize()
+            token_dates = pd.to_datetime(token_rows["usage_date_dt"], errors="coerce").dropna().dt.normalize()
+            request_granularity = "daily"
+            has_complete_all_category = (
+                "category_slug" in detail_rows.columns
+                and detail_rows["category_slug"].astype("string").str.casefold().eq("all").any()
+            )
+            if not request_dates.empty and has_complete_all_category:
+                token_day_count = token_dates.nunique()
+                request_day_count = request_dates.nunique()
+                coverage = request_day_count / token_day_count if token_day_count else 1.0
+                if token_day_count and coverage < 0.75:
+                    request_weeks = request_dates - pd.to_timedelta(request_dates.dt.weekday, unit="D")
+                    requests = detail_rows.assign(_request_week=request_weeks).groupby("_request_week")["request_count"].sum().rename("Requests")
+                    request_granularity = "weekly"
+                else:
+                    requests = detail_rows.assign(_request_date=request_dates).groupby("_request_date")["request_count"].sum().rename("Requests")
+            elif not request_dates.empty:
+                # Category splits are the only request detail available for
+                # some historical snapshots; keep them daily rather than
+                # inventing a weekly fallback intended for complete totals.
+                requests = detail_rows.assign(_request_date=request_dates).groupby("_request_date")["request_count"].sum().rename("Requests")
         activity = pd.concat([tokens, requests], axis=1).sort_index()
 
     categories = pd.DataFrame()
@@ -1368,6 +1392,7 @@ def model_explorer_state(views: dict[str, object], model_id: str) -> dict[str, o
     return {
         "info": info,
         "activity": activity,
+        "request_granularity": request_granularity,
         "categories": categories,
         "apps": apps,
         "total_tokens": float(token_rows["total_tokens"].sum()) if not token_rows.empty else 0.0,
@@ -1456,6 +1481,12 @@ def render_kpi_row(datasets: dict[str, DatasetLoadResult], openrouter_views: dic
 
 
 PRICE_LABELS = {
+    "original_spend_weighted_tei": "Spend-Weighted TEI",
+    "original_cpi_workload_basket": "CPI Workload Basket Index (50/40/10)",
+    "original_volume_weighted_tei": "Original Volume-Weighted TEI",
+    "original_frontier_tei": "Frontier",
+    "original_value_tei": "Value",
+    "sota_volume_weighted_atp": "SOTA Volume-Weighted ATP (backfilled AA score)",
     "realized_market_average": "Realized Market Average",
     "sota_median_list_price": "SOTA Median List Price",
     "realized_sota_price": "Realized SOTA Price",
@@ -1471,9 +1502,12 @@ WORKLOAD_LABELS = {
     "completion_tokens_per_request": "Completion tokens/request",
 }
 DEFAULT_PRICE_METRIC_IDS = [
-    "realized_market_average",
-    "sota_median_list_price",
-    "realized_sota_price",
+    "original_spend_weighted_tei",
+    "original_cpi_workload_basket",
+    "original_volume_weighted_tei",
+    "original_frontier_tei",
+    "original_value_tei",
+    "sota_volume_weighted_atp",
 ]
 DIAGNOSTIC_PRICE_METRIC_IDS = [
     "frontier_contenders_median_list_price",
@@ -1483,6 +1517,12 @@ DIAGNOSTIC_PRICE_METRIC_IDS = [
     "fixed_workload_basket",
 ]
 PRICE_METRIC_ROLLING_WINDOWS = {
+    "original_spend_weighted_tei": 7,
+    "original_cpi_workload_basket": 7,
+    "original_volume_weighted_tei": 7,
+    "original_frontier_tei": 7,
+    "original_value_tei": 7,
+    "sota_volume_weighted_atp": 7,
     "realized_market_average": 7,
     "sota_median_list_price": 1,
     "realized_sota_price": 7,
@@ -1528,6 +1568,9 @@ def _derived_metric_pivot(
     prepared = prepared.drop_duplicates(subset=["usage_date", "metric_id"], keep="last")
     pivot = prepared.pivot(index="usage_date", columns="metric_id", values="value")
     pivot = pivot.reindex(columns=requested).rename(columns=labels).sort_index()
+    # Do not let dates with no valid value for any selected series create a
+    # misleading blank block at the front or between disjoint cadences.
+    pivot = pivot.dropna(how="all")
     pivot.columns.name = None
     pivot.index.name = None
     return pivot
@@ -1700,12 +1743,10 @@ def _average_price_section_state(
 ) -> dict[str, object]:
     daily_result = datasets.get("openrouter_usage_economics_daily")
     daily = daily_result.frame.copy() if daily_result and not daily_result.frame.empty else pd.DataFrame()
-    diagnostics = [
-        metric_id
-        for metric_id in dict.fromkeys(diagnostic_metric_ids or [])
-        if metric_id in DIAGNOSTIC_PRICE_METRIC_IDS
-    ]
-    displayed_metric_ids = [*DEFAULT_PRICE_METRIC_IDS, *diagnostics]
+    # All approved lines are always shown together.  Keep the argument for
+    # backwards compatibility with older callers, but deliberately ignore it:
+    # diagnostics made the chart look like a configurable debugging panel.
+    displayed_metric_ids = list(DEFAULT_PRICE_METRIC_IDS)
     pivot = _average_price_pivot(daily, displayed_metric_ids)
     price_scraped_at = None
     if not daily.empty and {"metric_id", "scraped_at"}.issubset(daily.columns):
@@ -1723,7 +1764,7 @@ def _average_price_section_state(
     priced_count = None
     if not daily.empty and {"usage_date", "metric_id", "rolling_window_days"}.issubset(daily.columns):
         sota_rows = daily.loc[
-            daily["metric_id"].astype("string").isin(["sota_median_list_price", "realized_sota_price"])
+            daily["metric_id"].astype("string").isin(["sota_volume_weighted_atp", "realized_sota_price"])
         ].copy()
         sota_rows = sota_rows.loc[
             pd.to_numeric(sota_rows["rolling_window_days"], errors="coerce").eq(
@@ -1736,7 +1777,7 @@ def _average_price_section_state(
             latest_sota_rows = sota_rows.loc[sota_rows["usage_date"].eq(sota_rows["usage_date"].max())]
             expected_count = _coverage_count(latest_sota_rows, "expected_family_count") or 5
             observed_count = _coverage_count(
-                latest_sota_rows.loc[latest_sota_rows["metric_id"].eq("realized_sota_price")],
+                latest_sota_rows.loc[latest_sota_rows["metric_id"].eq("sota_volume_weighted_atp")],
                 "observed_family_count",
             )
             priced_count = _coverage_count(latest_sota_rows, "priced_family_count")
@@ -1746,29 +1787,91 @@ def _average_price_section_state(
     return {
         "metric": "Average Price",
         "metric_ids": displayed_metric_ids,
-        "diagnostic_metric_ids": diagnostics,
+        "diagnostic_metric_ids": [],
         "pivot": pivot,
         "latest_values": _latest_pivot_values(pivot),
         "coverage_label": f"Observed {observed_label}/{expected_count} SOTA families · priced {priced_label}/{expected_count}",
         "y_title": "Price per Million Tokens ($)",
         "hover_suffix": "/M tokens",
         "empty_message": "No derived OpenRouter price data is available yet.",
-        "caption": "Seven-day realized and point-in-time list-price series from the compact OpenRouter economics mart.",
+        "caption": "Original TEI price indices plus the new SOTA volume-weighted ATP. All lines are seven-day series; SOTA membership uses a backfilled Artificial Analysis intelligence score.",
         "coverage_note": "Guarded SOTA values remain gaps when family coverage is insufficient; a gap is not a zero price.",
         "backcast_note": (
-            "SOTA Median List Price, Frontier Contenders Median List Price, and Realized SOTA Price use strict as-of pricing. "
-            "Realized Market Average and the Premium-priced, Mid-priced, Low-priced, and Fixed Workload Basket diagnostics "
-            "use as-recorded economics and may include explicitly labelled earliest-price backcasts."
+            "SOTA ATP uses the latest available Artificial Analysis intelligence score backfilled across historical usage dates "
+            "as a transparent capability proxy; pricing routes remain exact (including fast, preview, free, pro, and dated variants). "
+            "The five original indices preserve the prior dashboard definitions and use as-recorded economics where available."
         ),
-        "source_status": "Derived OpenRouter price metrics · 7-day realized · daily list price",
+        "source_status": "Derived OpenRouter price metrics · seven-day original indices + SOTA ATP",
         "scraped_at": price_scraped_at,
     }
+
+
+def _daily_total_usage_pivot(
+    datasets: dict[str, DatasetLoadResult],
+    metric: str,
+    *,
+    window: str,
+) -> tuple[pd.DataFrame, str, str | None]:
+    """Return one total series for daily or weekly usage.
+
+    Provider daily activity is the broadest token source.  Requests use the
+    model-activity ``all`` category when available because provider activity
+    currently does not publish request counts.  Weekly requests intentionally
+    prefer the longer provider-weekly feed, while daily requests use the
+    granular model feed and are labelled as such in the UI.
+    """
+    requested_window = "Daily" if str(window).casefold() == "daily" else "Weekly"
+    if metric == "Tokens":
+        result = datasets.get("provider_daily_activity")
+        frame = result.frame.copy() if result and not result.frame.empty else pd.DataFrame()
+        date_column = "usage_date"
+        value_column = "total_tokens"
+    else:
+        result = datasets.get("openrouter_model_activity")
+        frame = result.frame.copy() if result and not result.frame.empty else pd.DataFrame()
+        if not frame.empty and "category_slug" in frame.columns:
+            categories = frame["category_slug"].astype("string").str.casefold()
+            if categories.eq("all").any():
+                frame = frame.loc[categories.eq("all")].copy()
+        date_column = "usage_date"
+        value_column = "request_count"
+
+    if frame.empty or date_column not in frame.columns or value_column not in frame.columns:
+        return pd.DataFrame(columns=[f"Total {metric}" ]), requested_window, None
+
+    prepared = pd.DataFrame(
+        {
+            "usage_date_dt": pd.to_datetime(frame[date_column], errors="coerce").dt.normalize(),
+            "value": pd.to_numeric(frame[value_column], errors="coerce"),
+        }
+    ).dropna(subset=["usage_date_dt", "value"])
+    prepared = prepared[prepared["value"] >= 0]
+    if prepared.empty:
+        return pd.DataFrame(columns=[f"Total {metric}" ]), requested_window, None
+
+    if requested_window == "Weekly":
+        prepared["period"] = prepared["usage_date_dt"] - pd.to_timedelta(
+            prepared["usage_date_dt"].dt.weekday, unit="D"
+        )
+    else:
+        prepared["period"] = prepared["usage_date_dt"]
+    pivot = (
+        prepared.groupby("period", as_index=True)["value"]
+        .sum()
+        .to_frame(f"Total {metric}")
+        .sort_index()
+    )
+    pivot.index = pivot.index.strftime("%Y-%m-%d")
+    latest_scraped_at = result.latest_scraped_at if result else None
+    return pivot, requested_window, latest_scraped_at
 
 
 def _weekly_usage_section_state(
     datasets: dict[str, DatasetLoadResult],
     openrouter_views: dict[str, object],
     metric: str,
+    *,
+    window: str = "Weekly",
 ) -> dict[str, object]:
     if metric == "Workload Intensity":
         return _workload_intensity_section_state(datasets, "Total")
@@ -1776,25 +1879,54 @@ def _weekly_usage_section_state(
         return _average_price_section_state(datasets)
 
     if metric == "Requests":
+        if str(window).casefold() == "daily":
+            daily_pivot, actual_window, scraped_at = _daily_total_usage_pivot(
+                datasets, "Requests", window="Daily"
+            )
+            if not daily_pivot.empty:
+                latest_total = float(daily_pivot.iloc[-1, 0])
+                wow_pct = None
+                if len(daily_pivot) >= 2 and float(daily_pivot.iloc[-2, 0]) > 0:
+                    wow_pct = (latest_total - float(daily_pivot.iloc[-2, 0])) / float(daily_pivot.iloc[-2, 0]) * 100
+                return {
+                    "metric": "Requests",
+                    "window": actual_window,
+                    "pivot": daily_pivot,
+                    "latest_total": latest_total,
+                    "wow_pct": wow_pct,
+                    "dominant_label": None,
+                    "provider_count": None,
+                    "latest_week": str(daily_pivot.index[-1]),
+                    "y_title": "Requests",
+                    "hover_suffix": "requests",
+                    "empty_message": "No daily model request data is available yet.",
+                    "caption": "Daily total requests from the model-activity feed (all category). Provider-level request history is not published daily.",
+                    "source_status": "Raw daily requests from OpenRouter model activity",
+                    "scraped_at": scraped_at,
+                }
         request_view = openrouter_views.get("provider_weekly_requests", {})
         pivot_requests = request_view.get("pivot_weekly", pd.DataFrame())
+        provider_count = int(pivot_requests.shape[1]) if not pivot_requests.empty else 0
+        if not pivot_requests.empty:
+            pivot_requests = pivot_requests.apply(pd.to_numeric, errors="coerce").fillna(0).sum(axis=1).to_frame("Total Requests")
+        else:
+            pivot_requests, _, _ = _daily_total_usage_pivot(datasets, "Requests", window="Weekly")
         latest_total = None
         wow_pct = None
         dominant_provider = None
-        provider_count = 0
         latest_week = pivot_requests.index[-1] if not pivot_requests.empty else "n/a"
         if not pivot_requests.empty:
             latest_row = pivot_requests.iloc[-1]
             latest_total = float(latest_row.sum())
-            provider_count = int((latest_row > 0).sum())
-            if latest_total > 0:
-                dominant_provider = latest_row.idxmax()
+            # The chart intentionally presents one total series, so provider
+            # identity is not implied by the plotted line.
             if len(pivot_requests) >= 2:
                 previous_total = float(pivot_requests.iloc[-2].sum())
                 if previous_total > 0:
                     wow_pct = (latest_total - previous_total) / previous_total * 100
         return {
             "metric": "Requests",
+            "window": "Weekly",
             "pivot": pivot_requests,
             "latest_total": latest_total,
             "wow_pct": wow_pct,
@@ -1804,10 +1936,41 @@ def _weekly_usage_section_state(
             "y_title": "Requests",
             "hover_suffix": "requests",
             "empty_message": "No provider weekly request data is available yet.",
-            "caption": "This request-volume signal is separate from token-volume charts and should not be mixed with token usage.",
+            "caption": "Total weekly request volume from Rankings Market Share. Requests are shown as a single demand series, separate from token volume.",
             "source_status": "Raw weekly requests from Rankings Market Share",
             "scraped_at": datasets.get("provider_weekly_requests").latest_scraped_at if datasets.get("provider_weekly_requests") else None,
         }
+
+    if str(window).casefold() == "daily":
+        daily_pivot, actual_window, scraped_at = _daily_total_usage_pivot(
+            datasets, "Tokens", window="Daily"
+        )
+        if not daily_pivot.empty:
+            latest_total = float(daily_pivot.iloc[-1, 0])
+            wow_pct = None
+            if len(daily_pivot) >= 2 and float(daily_pivot.iloc[-2, 0]) > 0:
+                wow_pct = (latest_total - float(daily_pivot.iloc[-2, 0])) / float(daily_pivot.iloc[-2, 0]) * 100
+            return {
+                "metric": "Tokens",
+                "window": actual_window,
+                "pivot": daily_pivot,
+                "latest_total": latest_total,
+                "wow_pct": wow_pct,
+                "dominant_label": None,
+                "provider_count": None,
+                "top_model": None,
+                "market_leader": None,
+                "market_leader_pct": None,
+                "latest_week": str(daily_pivot.index[-1]),
+                "latest_source": "provider_daily_activity",
+                "total_source": "provider_daily_activity",
+                "y_title": "Tokens",
+                "hover_suffix": "tokens",
+                "empty_message": "No daily token data is available yet.",
+                "caption": "Daily total token volume from Provider Daily Activity.",
+                "source_status": "Raw daily tokens from Provider Daily Activity",
+                "scraped_at": scraped_at,
+            }
 
     top_view = openrouter_views.get("top_models", {})
     total_source = top_view.get("total_source", "top_models")
@@ -1862,6 +2025,7 @@ def _weekly_usage_section_state(
                 market_leader_pct = float(market_named.iloc[0]["metric_value"]) / total_market * 100
     return {
         "metric": "Tokens",
+        "window": "Weekly",
         "pivot": pivot_total,
         "latest_total": latest_total,
         "wow_pct": wow_pct,
@@ -1915,60 +2079,44 @@ def render_weekly_usage_section(datasets: dict[str, DatasetLoadResult], openrout
     metric = str(metric or "Tokens")
 
     workload_window = "7-Day"
+    usage_window = "Weekly"
     if metric == "Workload Intensity":
-        control_columns = st.columns(2)
-        with control_columns[0]:
-            component_options = ["Total", "Prompt", "Completion"]
-            if hasattr(st, "segmented_control"):
-                component = st.segmented_control(
-                    "Component",
-                    component_options,
-                    default="Total",
-                    key="openrouter_workload_component",
-                )
-            else:
-                component = st.radio(
-                    "Component",
-                    component_options,
-                    horizontal=True,
-                    key="openrouter_workload_component",
-                )
-        with control_columns[1]:
-            window_options = ["Raw Daily", "7-Day"]
-            if hasattr(st, "segmented_control"):
-                workload_window = st.segmented_control(
-                    "Window",
-                    window_options,
-                    default="7-Day",
-                    key="openrouter_workload_window",
-                )
-            else:
-                workload_window = st.radio(
-                    "Window",
-                    window_options,
-                    horizontal=True,
-                    key="openrouter_workload_window",
-                )
-        state = _workload_intensity_section_state(datasets, str(component or "Total"))
+        window_options = ["Raw Daily", "7-Day"]
+        if hasattr(st, "segmented_control"):
+            workload_window = st.segmented_control(
+                "Window",
+                window_options,
+                default="7-Day",
+                key="openrouter_workload_window",
+            )
+        else:
+            workload_window = st.radio(
+                "Window",
+                window_options,
+                horizontal=True,
+                key="openrouter_workload_window",
+            )
+        state = _weekly_usage_section_state(datasets, openrouter_views, "Workload Intensity")
         workload_window = str(workload_window or "7-Day")
     elif metric == "Average Price":
-        with st.expander("Price diagnostics", expanded=False):
-            diagnostic_labels = [PRICE_LABELS[metric_id] for metric_id in DIAGNOSTIC_PRICE_METRIC_IDS]
-            selected_labels = st.multiselect(
-                "Optional series",
-                diagnostic_labels,
-                default=[],
-                key="openrouter_price_diagnostics",
-            )
-            st.caption("Add contender, price-cohort, or fixed-basket series to the main price chart.")
-        diagnostic_ids = [
-            metric_id
-            for metric_id in DIAGNOSTIC_PRICE_METRIC_IDS
-            if PRICE_LABELS[metric_id] in selected_labels
-        ]
-        state = _average_price_section_state(datasets, diagnostic_ids)
+        state = _average_price_section_state(datasets)
     else:
-        state = _weekly_usage_section_state(datasets, openrouter_views, metric)
+        window_options = ["Weekly", "Daily"]
+        if hasattr(st, "segmented_control"):
+            usage_window = st.segmented_control(
+                "Window",
+                window_options,
+                default="Weekly",
+                key="openrouter_usage_window",
+            )
+        else:
+            usage_window = st.radio(
+                "Window",
+                window_options,
+                horizontal=True,
+                key="openrouter_usage_window",
+            )
+        state = _weekly_usage_section_state(datasets, openrouter_views, metric, window=str(usage_window or "Weekly"))
 
     pivot = state["pivot"]
     if metric == "Workload Intensity" and workload_window == "Raw Daily":
@@ -1989,18 +2137,20 @@ def render_weekly_usage_section(datasets: dict[str, DatasetLoadResult], openrout
     if metric == "Requests":
         latest_total = state.get("latest_total")
         wow_pct = state.get("wow_pct")
+        period_label = "Day" if state.get("window") == "Daily" else "Week"
+        period_change_label = "DoD" if period_label == "Day" else "WoW"
         if wow_pct is not None:
             delta_cls = "up" if float(wow_pct) >= 0 else "down"
-            delta_text = f"{'↑' if float(wow_pct) >= 0 else '↓'} {abs(float(wow_pct)):.1f}% WoW"
+            delta_text = f"{'↑' if float(wow_pct) >= 0 else '↓'} {abs(float(wow_pct)):.1f}% {period_change_label}"
             wow_str = f"{'+' if float(wow_pct) >= 0 else ''}{float(wow_pct):.1f}%"
         else:
             delta_cls, delta_text, wow_str = "flat", "—", "—"
         st.markdown(
             kpi_grid_html(
-                kpi_card_html("Total Requests (Latest Week)", format_metric(latest_total) if latest_total else "—", delta=delta_text, delta_class=delta_cls),
-                kpi_card_html("WoW Change", wow_str, delta="vs prior week"),
-                kpi_card_html("Dominant Provider", str(state.get("dominant_label") or "—"), delta="by request share this week"),
-                kpi_card_html("Providers Tracked", f"{state.get('provider_count') or 0}", delta=f"latest week {state.get('latest_week')}"),
+                kpi_card_html(f"Total Requests (Latest {period_label})", format_metric(latest_total) if latest_total else "—", delta=delta_text, delta_class=delta_cls),
+                kpi_card_html(f"{period_change_label} Change", wow_str, delta=f"vs prior {period_label.casefold()}"),
+                kpi_card_html("Request Series", "Total", delta="all tracked providers"),
+                kpi_card_html("Providers Included", f"{state.get('provider_count') or 0}", delta=f"latest week {state.get('latest_week')}"),
             ),
             unsafe_allow_html=True,
         )
@@ -2044,19 +2194,19 @@ def render_weekly_usage_section(datasets: dict[str, DatasetLoadResult], openrout
         st.markdown(
             kpi_grid_html(
                 kpi_card_html(
-                    "Realized Market Average",
-                    _format_optional_number(vals.get("Realized Market Average"), prefix="$", decimals=3),
+                    "Original Volume-Weighted TEI",
+                    _format_optional_number(vals.get("Original Volume-Weighted TEI"), prefix="$", decimals=3),
                     delta="per million tokens",
                 ),
                 kpi_card_html(
-                    "SOTA Median List Price",
-                    _format_optional_number(vals.get("SOTA Median List Price"), prefix="$", decimals=3),
-                    delta="point-in-time routes",
+                    "Spend-Weighted TEI",
+                    _format_optional_number(vals.get("Spend-Weighted TEI"), prefix="$", decimals=3),
+                    delta="per million tokens",
                 ),
                 kpi_card_html(
-                    "Realized SOTA Price",
-                    _format_optional_number(vals.get("Realized SOTA Price"), prefix="$", decimals=3),
-                    delta="guarded observed usage",
+                    "SOTA Volume-Weighted ATP",
+                    _format_optional_number(vals.get("SOTA Volume-Weighted ATP (backfilled AA score)"), prefix="$", decimals=3),
+                    delta="backfilled AA score · exact routes",
                 ),
             ),
             unsafe_allow_html=True,
@@ -2065,9 +2215,11 @@ def render_weekly_usage_section(datasets: dict[str, DatasetLoadResult], openrout
     else:
         latest_total = state.get("latest_total")
         wow_pct = state.get("wow_pct")
+        period_label = "Day" if state.get("window") == "Daily" else "Week"
+        period_change_label = "DoD" if period_label == "Day" else "WoW"
         if wow_pct is not None:
             delta_cls = "up" if float(wow_pct) >= 0 else "down"
-            delta_text = f"{'↑' if float(wow_pct) >= 0 else '↓'} {abs(float(wow_pct)):.1f}% WoW"
+            delta_text = f"{'↑' if float(wow_pct) >= 0 else '↓'} {abs(float(wow_pct)):.1f}% {period_change_label}"
             wow_str = f"{'+' if float(wow_pct) >= 0 else ''}{float(wow_pct):.1f}%"
         else:
             delta_cls, delta_text, wow_str = "flat", "—", "—"
@@ -2082,8 +2234,8 @@ def render_weekly_usage_section(datasets: dict[str, DatasetLoadResult], openrout
             market_leader_label = str(market_leader or "—")
         st.markdown(
             kpi_grid_html(
-                kpi_card_html("Total Tokens (Latest Week)", format_metric(latest_total) if latest_total else "—", delta=delta_text, delta_class=delta_cls),
-                kpi_card_html("WoW Change", wow_str, delta="vs prior week"),
+                kpi_card_html(f"Total Tokens (Latest {period_label})", format_metric(latest_total) if latest_total else "—", delta=delta_text, delta_class=delta_cls),
+                kpi_card_html(f"{period_change_label} Change", wow_str, delta=f"vs prior {period_label.casefold()}"),
                 kpi_card_html("Top Model", top_model, delta="by tokens this week", value_style="font-size:1.1rem;"),
                 kpi_card_html("Market Leader", market_leader_label, delta="latest market-share week", value_style="font-size:1.1rem;"),
             ),
@@ -2110,15 +2262,7 @@ def render_weekly_usage_section(datasets: dict[str, DatasetLoadResult], openrout
                 pivot,
                 MODEL_COLORS,
                 y_title=str(state["y_title"]),
-                x_title="Usage Week (Starting)",
-                hover_suffix=str(state["hover_suffix"]),
-            ) if metric == "Tokens" else make_stacked_area_chart(
-                pivot,
-                list(pivot.index.astype(str)),
-                MODEL_COLORS,
-                x_title="Usage Week (Starting)",
-                y_title=str(state["y_title"]),
-                value_format=",.0f",
+                x_title=f"Usage {state.get('window', 'Weekly')} Period",
                 hover_suffix=str(state["hover_suffix"]),
             ),
             width="stretch",
@@ -3199,9 +3343,16 @@ def _render_model_explorer(views: dict[str, object]) -> None:
         ),
         unsafe_allow_html=True,
     )
+    request_granularity = state.get("request_granularity", "unavailable")
+    request_note = (
+        " Request traffic is aggregated weekly because daily request coverage is sparse."
+        if request_granularity == "weekly"
+        else ""
+    )
     st.caption(
         f"Activity coverage: {int(info['observed_days'])}/30 days · {info['activity_source']}. "
         "A dash means no activity was observed, not confirmed zero traffic."
+        + request_note
     )
 
     description = _safe_catalog_text(info.get("description"))
@@ -3251,9 +3402,11 @@ def _render_model_explorer(views: dict[str, object]) -> None:
                 hovertemplate="%{x|%Y-%m-%d}<br>%{y:,.0f} tokens<extra></extra>",
             ))
         if "Requests" in activity and activity["Requests"].notna().any():
+            request_label = "Requests (weekly)" if request_granularity == "weekly" else "Requests"
             fig.add_trace(go.Scatter(
-                x=activity.index, y=activity["Requests"], name="Requests", mode="lines",
+                x=activity.index, y=activity["Requests"], name=request_label, mode="lines",
                 line=dict(color="#F97316", width=2), yaxis="y2",
+                connectgaps=request_granularity == "weekly",
                 hovertemplate="%{x|%Y-%m-%d}<br>%{y:,.0f} requests<extra></extra>",
             ))
         fig.update_layout(

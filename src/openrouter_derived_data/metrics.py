@@ -351,14 +351,15 @@ def compute_price_metrics(
             )
             rows.append(row)
             cohort_rows[cohort_id] = row
-        rows.append(_fixed_basket_row(usage_date, cohort_rows, provenance))
+        fixed_basket_row = _fixed_basket_row(usage_date, cohort_rows, provenance)
+        rows.append(fixed_basket_row)
         original_frontier_row = cohort_rows["premium_priced"].copy()
         original_frontier_row["metric_id"] = "original_frontier_tei"
         rows.append(original_frontier_row)
         original_value_row = cohort_rows["low_priced"].copy()
         original_value_row["metric_id"] = "original_value_tei"
         rows.append(original_value_row)
-        original_basket_row = rows[-3].copy()
+        original_basket_row = fixed_basket_row.copy()
         original_basket_row["metric_id"] = "original_cpi_workload_basket"
         rows.append(original_basket_row)
 
@@ -836,7 +837,13 @@ def _prepare_sota_daily(
                 "blended_price_per_million", pd.Series(dtype=float)
             ).notna()
         ]
-        valid_paid_routes = set(daily_paid_route_prices["model_id"].astype(str))
+        # Pricing snapshots often expose a canonical route while activity is
+        # recorded against a dated/variant route (for example
+        # ``gpt-5.6-sol-20260709``).  The activity row already carries the
+        # exact route's as-of price join, so use priced *families* for the
+        # coverage guard rather than requiring the canonical pricing ID to be
+        # byte-for-byte identical to the activity slug.
+        priced_families = set(daily_paid_route_prices["family_id"].astype(str))
         route_family = (
             daily_routes.drop_duplicates("model_id")
             .set_index("model_id")["family_id"]
@@ -858,9 +865,7 @@ def _prepare_sota_daily(
             "string"
         ).str.contains("backcast", case=False, na=False)
         paid = compatible.loc[
-            compatible["model_permaslug"]
-            .astype("string")
-            .isin(valid_paid_routes)
+            compatible["family_id"].astype("string").isin(priced_families)
             & compatible["is_paid_priced"]
             & strict_snapshot
             & not_backcast
