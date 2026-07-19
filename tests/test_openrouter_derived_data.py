@@ -269,6 +269,7 @@ def _price_capability_map() -> CapabilityMap:
         CapabilityEntry("aa-c", "family-c", frozenset({"provider/c"})),
         CapabilityEntry("aa-d", "family-d", frozenset({"provider/d"})),
         CapabilityEntry("aa-e", "family-e", frozenset({"provider/e"})),
+        CapabilityEntry("aa-f", "family-f", frozenset({"provider/f"})),
     ]
     return CapabilityMap(methodology_version="price-test-v1", entries=tuple(entries))
 
@@ -455,3 +456,185 @@ def test_price_metrics_emit_calendar_day_rolling_rows_for_sparse_activity() -> N
         result.loc[result.metric_id.eq("realized_market_average"), "usage_date"]
     )
     assert "2026-07-12" in market_dates
+
+
+def _ranked_families(
+    usage_date: str,
+    letters: str,
+    *,
+    first_rank: int = 1,
+) -> pd.DataFrame:
+    tier = "sota" if first_rank == 1 else "frontier_contender"
+    return pd.DataFrame(
+        [
+            {
+                "usage_date": usage_date,
+                "benchmark_snapshot_date": usage_date,
+                "family_id": f"family-{letter}",
+                "family_rank": rank,
+                "capability_tier": tier,
+                "representative_aa_model_id": f"aa-{letter}",
+                "model_match_status": "exact_curated_match",
+                "methodology_version": "price-test-v1",
+            }
+            for rank, letter in enumerate(letters, start=first_rank)
+        ]
+    )
+
+
+def test_realized_sota_price_uses_each_activity_days_point_in_time_membership() -> None:
+    economics = _economics().loc[
+        lambda frame: frame.model_permaslug.isin(
+            ["provider/a", "provider/b", "provider/c"]
+        )
+    ].copy()
+    economics.loc[
+        economics.model_permaslug.eq("provider/a"), "usage_date"
+    ] = "2026-07-11"
+    economics.loc[
+        economics.model_permaslug.eq("provider/a"), "pricing_snapshot_ts"
+    ] = "2026-07-10T12:00:00Z"
+    earlier_future_member = economics.loc[
+        economics.model_permaslug.eq("provider/a")
+    ].copy()
+    earlier_future_member["model_permaslug"] = "provider/f"
+    earlier_future_member["total_tokens"] = 1_000.0
+    earlier_future_member["estimated_revenue"] = 0.01
+    earlier_future_member["pricing_prompt"] = 10e-6
+    earlier_future_member["pricing_completion"] = 10e-6
+    economics = pd.concat([economics, earlier_future_member], ignore_index=True)
+    pricing = pd.concat(
+        [
+            _pricing_history(),
+            pd.DataFrame(
+                [
+                    {
+                        "model_id": "provider/a",
+                        "snapshot_ts": "2026-07-10T12:00:00Z",
+                        "pricing_prompt": 1e-6,
+                        "pricing_completion": 1e-6,
+                    },
+                    {
+                        "model_id": "provider/f",
+                        "snapshot_ts": "2026-07-10T12:00:00Z",
+                        "pricing_prompt": 10e-6,
+                        "pricing_completion": 10e-6,
+                    }
+                ]
+            ),
+        ],
+        ignore_index=True,
+    )
+    rankings = pd.concat(
+        [
+            _ranked_families("2026-07-11", "abcde"),
+            _ranked_families("2026-07-17", "bcdef"),
+        ],
+        ignore_index=True,
+    )
+
+    result = compute_price_metrics(
+        economics, pricing, rankings, _price_capability_map()
+    )
+
+    realized = _price_metric(result, "realized_sota_price")
+    assert realized["numerator"] == pytest.approx(0.0006)
+    assert realized["denominator"] == pytest.approx(300.0)
+    assert realized["observed_family_count"] == 3
+
+
+def test_sota_price_metrics_require_the_complete_rank_one_to_five_cohort() -> None:
+    partial_rankings = _price_rankings().loc[lambda frame: frame.family_rank.le(3)]
+
+    result = compute_price_metrics(
+        _economics(),
+        _pricing_history(),
+        partial_rankings,
+        _price_capability_map(),
+    )
+
+    list_price = _price_metric(result, "sota_median_list_price")
+    realized = _price_metric(result, "realized_sota_price")
+    assert list_price["expected_family_count"] == 5
+    assert list_price["priced_family_count"] == 3
+    assert pd.isna(list_price["value"])
+    assert realized["expected_family_count"] == 5
+    assert pd.isna(realized["value"])
+
+
+def test_frontier_contender_price_requires_complete_ranks_six_to_ten() -> None:
+    complete = _ranked_families("2026-07-17", "abcde", first_rank=6)
+
+    complete_result = compute_price_metrics(
+        _economics(), _pricing_history(), complete, _price_capability_map()
+    )
+    complete_metric = _price_metric(
+        complete_result, "frontier_contenders_median_list_price"
+    )
+    assert complete_metric["expected_family_count"] == 5
+    assert complete_metric["priced_family_count"] == 5
+    assert complete_metric["value"] == pytest.approx(3.0)
+
+    partial_result = compute_price_metrics(
+        _economics(),
+        _pricing_history(),
+        complete.loc[lambda frame: frame.family_rank.le(8)],
+        _price_capability_map(),
+    )
+    partial_metric = _price_metric(
+        partial_result, "frontier_contenders_median_list_price"
+    )
+    assert partial_metric["expected_family_count"] == 5
+    assert partial_metric["priced_family_count"] == 3
+    assert pd.isna(partial_metric["value"])
+
+
+def test_missing_price_component_stays_unpriced_and_cannot_support_basket() -> None:
+    economics = pd.DataFrame(
+        [
+            {
+                "usage_date": "2026-07-17",
+                "model_permaslug": "provider/premium",
+                "total_tokens": 100.0,
+                "estimated_revenue": 0.0005,
+                "pricing_snapshot_ts": "2026-07-16T12:00:00Z",
+                "pricing_prompt": 5e-6,
+                "pricing_completion": 5e-6,
+                "pricing_join_status": "matched_asof",
+            },
+            {
+                "usage_date": "2026-07-17",
+                "model_permaslug": "provider/low",
+                "total_tokens": 100.0,
+                "estimated_revenue": 0.00001,
+                "pricing_snapshot_ts": "2026-07-16T12:00:00Z",
+                "pricing_prompt": 0.1e-6,
+                "pricing_completion": 0.1e-6,
+                "pricing_join_status": "matched_asof",
+            },
+            {
+                "usage_date": "2026-07-17",
+                "model_permaslug": "provider/missing-completion",
+                "total_tokens": 1_000.0,
+                "estimated_revenue": 0.001,
+                "pricing_snapshot_ts": "2026-07-16T12:00:00Z",
+                "pricing_prompt": 1e-6,
+                "pricing_completion": None,
+                "pricing_join_status": "matched_asof",
+            },
+        ]
+    )
+
+    result = compute_price_metrics(
+        economics, pd.DataFrame(), pd.DataFrame(), _price_capability_map()
+    )
+
+    market = _price_metric(result, "realized_market_average")
+    assert market["denominator"] == pytest.approx(200.0)
+    assert market["excluded_unpriced_tokens"] == pytest.approx(1_000.0)
+    mid = _price_metric(result, "mid_priced_realized")
+    basket = _price_metric(result, "fixed_workload_basket")
+    assert pd.isna(mid["value"])
+    assert mid["excluded_unpriced_tokens"] == pytest.approx(1_000.0)
+    assert pd.isna(basket["value"])
+    assert basket["excluded_unpriced_tokens"] == pytest.approx(1_000.0)
