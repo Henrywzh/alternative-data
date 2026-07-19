@@ -420,6 +420,50 @@ def test_build_daily_provider_economics_uses_latest_prior_snapshot_and_marks_mis
     assert pd.isna(missing["estimated_revenue"])
 
 
+def test_build_conservative_economics_forward_fills_target_routes_with_explicit_status() -> None:
+    activity = pd.DataFrame([
+        {
+            "usage_date": "2026-01-16",
+            "entity_id": "x-ai",
+            "entity_name": "xAI",
+            "model_permaslug": "x-ai/grok-4.5-20260708",
+            "total_tokens": 100.0,
+            "prompt_tokens": 70.0,
+            "completion_tokens": 30.0,
+        },
+        {
+            "usage_date": "2026-01-16",
+            "entity_id": "openai",
+            "entity_name": "OpenAI",
+            "model_permaslug": "openai/unknown-model",
+            "total_tokens": 100.0,
+            "prompt_tokens": 70.0,
+            "completion_tokens": 30.0,
+        },
+    ])
+    pricing = pd.DataFrame([
+        {
+            "snapshot_ts": "2026-07-17T00:00:00Z",
+            "model_id": "x-ai/grok-4.5",
+            "canonical_slug": "x-ai/grok-4.5-20260708",
+            "provider_prefix": "x-ai",
+            "pricing_prompt": 0.000002,
+            "pricing_completion": 0.000006,
+        },
+    ])
+
+    mart = build_conservative_provider_economics(activity, pricing)
+    filled = mart[mart["model_permaslug"] == "x-ai/grok-4.5-20260708"].iloc[0]
+    unresolved = mart[mart["model_permaslug"] == "openai/unknown-model"].iloc[0]
+
+    assert filled["pricing_join_status"] == "historical_route_price_fill"
+    assert filled["revenue_method"] == "historical_exact_split_priced"
+    assert filled["pricing_snapshot_ts"] == "2026-07-17T00:00:00Z"
+    assert filled["estimated_revenue"] == pytest.approx(0.00032)
+    assert unresolved["pricing_join_status"] == "unresolved_missing_pricing"
+    assert pd.isna(unresolved["estimated_revenue"])
+
+
 def test_build_daily_provider_economics_canonicalizes_model_ids(tmp_path: Path) -> None:
     _seed_research_inputs(tmp_path)
 

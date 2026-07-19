@@ -113,8 +113,8 @@ SECTION_DESCRIPTIONS = {
 
 SECTION_DOMAIN_MAP = {
     "Overview": ("overview",),
-    "OpenRouter Intelligence": ("openrouter_intelligence", "compute_availability", "openrouter_official_market"),
-    "OpenRouter Models": ("openrouter_model_explorer", "openrouter_catalog"),
+    "OpenRouter Intelligence": ("openrouter_intelligence", "compute_availability", "openrouter_official_market", "openrouter_derived"),
+    "OpenRouter Models": ("openrouter_model_explorer", "openrouter_catalog", "openrouter_derived"),
     "OpenRouter Workloads": ("openrouter_workloads", "apps"),
     "Vercel AI": ("vercel_ai",),
     "Ramp": ("ramp",),

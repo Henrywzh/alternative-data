@@ -741,6 +741,83 @@ DATASET_REGISTRY: dict[str, dict[str, object]] = {
         "metric_column": "row_count",
         "required_columns": ["source_id", "source_kind", "status", "row_count"],
     },
+    "openrouter_usage_economics_daily": {
+        "label": "OpenRouter Usage Economics Daily",
+        "domain": "openrouter_derived",
+        "natural_keys": ["usage_date", "metric_id", "cohort_id", "rolling_window_days"],
+        "primary_date_column": "usage_date",
+        "metric_column": "value",
+        "required_columns": [
+            "dataset_id",
+            "source_url",
+            "source_run_id",
+            "scraped_at",
+            "usage_date",
+            "metric_id",
+            "cohort_id",
+            "value",
+            "numerator",
+            "denominator",
+            "rolling_window_days",
+            "benchmark_snapshot_date",
+            "pricing_snapshot_date",
+            "expected_family_count",
+            "priced_family_count",
+            "observed_family_count",
+            "observed_model_count",
+            "included_tokens",
+            "excluded_free_tokens",
+            "excluded_unpriced_tokens",
+            "excluded_zero_request_rows",
+            "pricing_join_status",
+            "methodology_version",
+        ],
+    },
+    "daily_provider_economics": {
+        "label": "Daily Model-Origin Economics",
+        "domain": "openrouter_derived",
+        "requires_core_provenance": False,
+        "natural_keys": ["usage_date", "provider_slug", "model_permaslug"],
+        "primary_date_column": "usage_date",
+        "metric_column": "estimated_revenue",
+        "required_columns": [
+            "usage_date",
+            "provider_slug",
+            "provider_name",
+            "model_permaslug",
+            "total_tokens",
+            "estimated_revenue",
+            "pricing_join_status",
+            "has_pricing",
+            "revenue_method",
+        ],
+    },
+    "openrouter_workload_intensity_models": {
+        "label": "OpenRouter Workload Intensity Models",
+        "domain": "openrouter_derived",
+        "natural_keys": ["window_end_date", "model_id"],
+        "primary_date_column": "window_end_date",
+        "metric_column": "intensity_ratio",
+        # The compact workload mart is derived from already-provenanced daily
+        # activity and intentionally stores no per-row source metadata.
+        "requires_core_provenance": False,
+        "required_columns": [
+            "window_start_date",
+            "window_end_date",
+            "model_id",
+            "company_id",
+            "total_tokens",
+            "prompt_tokens",
+            "completion_tokens",
+            "request_count",
+            "token_share",
+            "request_share",
+            "tokens_per_request",
+            "intensity_ratio",
+            "model_match_status",
+            "methodology_version",
+        ],
+    },
 }
 
 
@@ -785,6 +862,11 @@ DOMAIN_ORDER = {
         "provider_daily_activity",
         "openrouter_task_spend",
     ],
+    "openrouter_derived": [
+        "openrouter_usage_economics_daily",
+        "daily_provider_economics",
+        "openrouter_workload_intensity_models",
+    ],
     "openrouter_workloads": [
         "context_length_requests",
         "modality_rankings",
@@ -796,10 +878,13 @@ DOMAIN_ORDER = {
         "apps_global_ranking_snapshots",
         "apps_trending_snapshots",
     ],
-    # The dedicated Models tab needs only catalog, activity, and app-usage
-    # detail. Keeping these focused domains separate avoids loading every
-    # rankings and Apps panel merely to render the explorer.
+    # The dedicated Models tab needs catalog, activity, weekly ranking context,
+    # compact economics, and app-usage detail. Keeping these focused domains
+    # separate avoids loading every rankings and Apps panel merely to render
+    # the explorer.
     "openrouter_model_explorer": [
+        "top_models",
+        "provider_weekly_requests",
         "openrouter_model_activity",
         "provider_daily_activity",
         "app_metadata_snapshots",
@@ -1298,6 +1383,61 @@ OPENROUTER_LOAD_COLUMNS: dict[str, list[str]] = {
         "growth_percent",
     ],
     "raw_openrouter_models": [*CORE_COLUMNS, *OPENROUTER_MODEL_COLUMNS],
+    # These marts are the dashboard contract for usage economics. Keep their
+    # compact storage schemas exact: the dashboard must not load raw activity,
+    # pricing, or benchmark tables to reconstruct these views at runtime.
+    "openrouter_usage_economics_daily": [
+        "dataset_id",
+        "source_url",
+        "source_run_id",
+        "scraped_at",
+        "usage_date",
+        "metric_id",
+        "cohort_id",
+        "value",
+        "numerator",
+        "denominator",
+        "rolling_window_days",
+        "benchmark_snapshot_date",
+        "pricing_snapshot_date",
+        "expected_family_count",
+        "priced_family_count",
+        "observed_family_count",
+        "observed_model_count",
+        "included_tokens",
+        "excluded_free_tokens",
+        "excluded_unpriced_tokens",
+        "excluded_zero_request_rows",
+        "pricing_join_status",
+        "methodology_version",
+    ],
+    "daily_provider_economics": [
+        "usage_date",
+        "provider_slug",
+        "provider_name",
+        "model_permaslug",
+        "total_tokens",
+        "estimated_revenue",
+        "pricing_join_status",
+        "has_pricing",
+        "revenue_method",
+    ],
+    "openrouter_workload_intensity_models": [
+        "window_start_date",
+        "window_end_date",
+        "model_id",
+        "company_id",
+        "total_tokens",
+        "prompt_tokens",
+        "completion_tokens",
+        "request_count",
+        "token_share",
+        "request_share",
+        "tokens_per_request",
+        "intensity_ratio",
+        "model_match_status",
+        "methodology_version",
+    ],
 }
 
 PROVIDER_ADOPTION_LOAD_COLUMNS: dict[str, list[str]] = {
@@ -1943,6 +2083,8 @@ def dataset_source_for_domain(domain: str) -> str:
         return "compute_availability"
     if domain == "openrouter_catalog":
         return "compute_availability"
+    if domain == "openrouter_derived":
+        return "marts"
     if domain in {"openrouter_official", "openrouter_official_market"}:
         return "openrouter_official"
     if domain == "artificial_analysis":
@@ -1981,9 +2123,9 @@ def load_dataset(
     parquet_path = base / f"{dataset_id}.parquet"
     csv_path = base / f"{dataset_id}.csv"
 
-    required_columns = list(dict.fromkeys(
-        list(CORE_COLUMNS) + list(registry_entry.get("required_columns", []))
-    ))
+    required_columns = list(registry_entry.get("required_columns", []))
+    if registry_entry.get("requires_core_provenance", True):
+        required_columns = list(dict.fromkeys([*CORE_COLUMNS, *required_columns]))
     frame = pd.DataFrame(columns=load_columns or required_columns)
     source_format: str | None = None
     source_path: Path | None = None
