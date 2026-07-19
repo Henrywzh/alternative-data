@@ -37,6 +37,7 @@ from dashboard.data import (
     EXPECTED_COLUMNS,
     DATASET_REGISTRY,
     DatasetLoadResult,
+    DOMAIN_ORDER,
     OPENROUTER_LOAD_COLUMNS,
     dataset_source_for_domain,
     domain_dataset_ids,
@@ -867,12 +868,10 @@ def test_openrouter_analytical_schemas_cover_registry_contracts() -> None:
     for dataset_id, columns in OPENROUTER_LOAD_COLUMNS.items():
         assert len(columns) == len(set(columns)), dataset_id
         required = {
-            "dataset_id",
-            "source_url",
-            "source_run_id",
-            "scraped_at",
             *DATASET_REGISTRY[dataset_id]["required_columns"],
         }
+        if DATASET_REGISTRY[dataset_id].get("requires_core_provenance", True):
+            required.update({"dataset_id", "source_url", "source_run_id", "scraped_at"})
         assert required.issubset(columns), dataset_id
 
 
@@ -962,6 +961,109 @@ def test_openrouter_loader_uses_compact_dataset_schema_and_arrow_strings(tmp_pat
     assert result.frame.iloc[0]["total_tokens"] == 1234
     assert isinstance(result.frame["model_permaslug"].dtype, pd.StringDtype)
     assert result.frame["model_permaslug"].dtype.storage == "pyarrow"
+
+
+def test_openrouter_derived_registry_uses_compact_mart_projection() -> None:
+    assert dataset_source_for_domain("openrouter_derived") == "marts"
+    assert DOMAIN_ORDER["openrouter_derived"] == [
+        "openrouter_usage_economics_daily",
+        "openrouter_workload_intensity_models",
+    ]
+    assert len(OPENROUTER_LOAD_COLUMNS["openrouter_usage_economics_daily"]) < 30
+    assert len(OPENROUTER_LOAD_COLUMNS["openrouter_workload_intensity_models"]) < 25
+    assert "openrouter_derived" in section_domains("OpenRouter Intelligence")
+    assert "openrouter_derived" not in section_domains("OpenRouter Models")
+    assert "openrouter_derived" not in section_domains("OpenRouter Workloads")
+
+
+def test_openrouter_derived_marts_load_only_compact_projected_schemas(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    mart_root = tmp_path / "data" / "normalized" / "marts"
+    mart_root.mkdir(parents=True)
+    rows = {
+        "openrouter_usage_economics_daily": {
+            "dataset_id": "openrouter_usage_economics_daily",
+            "source_url": "fixture://activity",
+            "source_run_id": "derived-run",
+            "scraped_at": "2026-07-18T00:00:00Z",
+            "usage_date": "2026-07-17",
+            "metric_id": "total_tokens_per_request",
+            "cohort_id": "all_models",
+            "value": 120.0,
+            "numerator": 1200.0,
+            "denominator": 10.0,
+            "rolling_window_days": 7,
+            "benchmark_snapshot_date": "2026-07-16",
+            "pricing_snapshot_date": "2026-07-16",
+            "expected_family_count": 5,
+            "priced_family_count": 5,
+            "observed_family_count": 4,
+            "observed_model_count": 7,
+            "included_tokens": 1200.0,
+            "excluded_free_tokens": 0.0,
+            "excluded_unpriced_tokens": 0.0,
+            "excluded_zero_request_rows": 0.0,
+            "pricing_join_status": "as_recorded_pricing",
+            "methodology_version": "openrouter-derived-v1",
+        },
+        "openrouter_workload_intensity_models": {
+            "window_start_date": "2026-06-18",
+            "window_end_date": "2026-07-17",
+            "model_id": "openai/gpt-test",
+            "company_id": "openai",
+            "total_tokens": 1200.0,
+            "prompt_tokens": 900.0,
+            "completion_tokens": 300.0,
+            "request_count": 10,
+            "token_share": 0.75,
+            "request_share": 0.5,
+            "tokens_per_request": 120.0,
+            "intensity_ratio": 1.5,
+            "model_match_status": "canonical",
+            "methodology_version": "openrouter-derived-v1",
+        },
+    }
+    remote_payloads: dict[str, bytes] = {}
+    for dataset_id, row in rows.items():
+        frame = pd.DataFrame([{**row, "unused_raw_payload": "x" * 10_000}])
+        path = mart_root / f"{dataset_id}.parquet"
+        frame.to_parquet(path, index=False)
+        remote_payloads[
+            f"data/normalized/marts/{dataset_id}.parquet"
+        ] = path.read_bytes()
+
+    local = load_domain_datasets("openrouter_derived", base_dir=tmp_path)
+
+    assert set(local) == set(rows)
+    for dataset_id, result in local.items():
+        assert list(result.frame.columns) == OPENROUTER_LOAD_COLUMNS[dataset_id]
+        assert result.missing_columns == []
+        assert "unused_raw_payload" not in result.frame.columns
+        assert result.source_path == mart_root / f"{dataset_id}.parquet"
+
+    fetched_paths: list[str] = []
+
+    def fetch_mart_bytes(path: str, sha: str) -> bytes | None:
+        assert sha == "derived-sha"
+        fetched_paths.append(path)
+        return remote_payloads.get(path)
+
+    monkeypatch.setattr("dashboard.data.remote.remote_enabled", lambda: True)
+    monkeypatch.setattr("dashboard.data.remote.fetch_bytes", fetch_mart_bytes)
+
+    remote_datasets = load_domain_datasets(
+        "openrouter_derived", data_sha="derived-sha"
+    )
+
+    assert fetched_paths == [
+        "data/normalized/marts/openrouter_usage_economics_daily.parquet",
+        "data/normalized/marts/openrouter_workload_intensity_models.parquet",
+    ]
+    assert all("data/raw/" not in path for path in fetched_paths)
+    for dataset_id, result in remote_datasets.items():
+        assert list(result.frame.columns) == OPENROUTER_LOAD_COLUMNS[dataset_id]
+        assert result.missing_columns == []
 
 
 def test_unprojected_legacy_dataset_keeps_stored_schema_without_global_padding(tmp_path: Path) -> None:
@@ -1150,7 +1252,7 @@ def test_load_latest_manifest_can_skip_raw_manifest_scan_when_datasets_provided(
 def test_section_domains_loads_only_selected_dashboard_inputs() -> None:
     assert section_domains("Overview") == ("overview",)
     assert section_domains("OpenRouter Intelligence") == (
-        "openrouter_intelligence", "compute_availability", "openrouter_official_market",
+        "openrouter_intelligence", "compute_availability", "openrouter_official_market", "openrouter_derived",
     )
     assert section_domains("OpenRouter Models") == (
         "openrouter_model_explorer", "openrouter_catalog",
