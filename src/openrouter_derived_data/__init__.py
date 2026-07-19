@@ -7,7 +7,11 @@ from .identity import (
     load_capability_map,
     rank_capability_families,
 )
-from .metrics import compute_workload_intensity_daily, compute_workload_intensity_models
+from .metrics import (
+    compute_price_metrics,
+    compute_workload_intensity_daily,
+    compute_workload_intensity_models,
+)
 
 __all__ = [
     "CapabilityEntry",
@@ -15,6 +19,7 @@ __all__ = [
     "compatible_activity_ids",
     "load_capability_map",
     "rank_capability_families",
+    "compute_price_metrics",
     "compute_workload_intensity_daily",
     "compute_workload_intensity_models",
 ]
