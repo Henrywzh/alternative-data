@@ -1,522 +1,592 @@
-# X-Only AI and Semiconductor Intelligence Engine
+Yes—but precisely speaking, X lets us measure **narrative consensus, attention momentum, and social crowding**. It does not directly reveal true market positioning, earnings consensus, or factor returns.
 
-## 1. Objective
+The key is to define consensus around an explicit proposition. We cannot measure “consensus about Kimi K3” generically. We can measure consensus around statements such as:
 
-Build a configurable sector-intelligence engine for AI, LLMs and semiconductors.
+- H1: “Kimi K3 materially closes the US–China capability gap.”
+- H2: “Kimi K3 weakens proprietary-model pricing power.”
+- H3: “Kimi K3 is positive for aggregate accelerator demand.”
+- H4: “Kimi K3 threatens NVIDIA’s earnings.”
+- H5: “Open models are becoming commoditized infrastructure.”
 
-It should not be positioned as:
+Different propositions can produce completely different factor implications.
 
-> An AI tool that summarises X.
+## 1. What we collect from X
 
-It should be:
-
-> A system that detects emerging sector events on X, tracks how evidence evolves, maps events to companies and value-chain exposures, and delivers different intelligence to different investment pods.
-
-Because the first version uses only X, it can state:
-
-* official X-account announcement;
-* provider-reported benchmark claim;
-* independently tested by developers on X;
-* supported by several apparently independent X sources;
-* widely discussed on X.
-
-It should not claim external verification or objective truth.
-
----
-
-## 2. Core architecture
+For every relevant post, request:
 
 ```text
-X API
-→ post normalisation and relationship reconstruction
-→ relevance filtering
-→ entity and claim extraction
-→ event clustering
-→ evidence and provenance tracking
-→ event summarisation
-→ sector-impact mapping
-→ pod-specific routing
-→ alerts and briefs
+tweet.fields=
+  author_id,
+  created_at,
+  lang,
+  conversation_id,
+  referenced_tweets,
+  public_metrics,
+  entities,
+  context_annotations
+
+expansions=
+  author_id,
+  referenced_tweets.id
 ```
 
-The system has three layers:
+`public_metrics` includes reposts, replies, likes, quotes, impressions and bookmarks. `referenced_tweets` tells us whether something is a reply, repost or quote. [X data dictionary](https://docs.x.com/x-api/fundamentals/data-dictionary)
 
-### Shared intelligence layer
+The main endpoints are:
 
-Common across pods:
+| Measurement | X endpoint |
+|---|---|
+| Posts per minute/hour | `/2/tweets/counts/recent` |
+| Actual post content | `/2/tweets/search/recent` or filtered stream |
+| Quote-post interpretations | `/2/tweets/:id/quote_tweets` |
+| Repost diffusion | `/2/tweets/:id/retweeted_by` |
+| Conversation development | Search using `conversation_id:` |
+| Geographic/language breadth | Separate `lang:` and location queries |
+| Expert panels | User timelines and curated X Lists |
+| Mainstream trend confirmation | `/2/trends/by/woeid/:id` |
 
-* posts;
-* entities;
-* claims;
-* events;
-* evidence state;
-* sector implications.
+The counts endpoint supports minute, hour and day granularity without returning every post, making it useful for anomaly detection. [X Post Counts documentation](https://docs.x.com/x-api/posts/counts/introduction)
 
-### Pod configuration layer
+## 2. Split posts by behaviour
 
-Each pod defines:
-
-* companies and technologies;
-* subsectors and geographies;
-* suppliers and customers;
-* investment horizon;
-* priority event types;
-* active research theses;
-* alert sensitivity.
-
-### Output layer
-
-For each pod, answer:
+For event query \(Q\), collect separate time series:
 
 ```text
-What happened?
-What changed?
-What is confirmed or uncertain?
-Which companies are affected?
-Through what economic channel?
-What should the analyst monitor next?
+Q -is:retweet -is:reply -is:quote    # independent original posts
+Q is:quote                           # interpretations
+Q is:reply                           # discussion
+Q is:retweet                         # amplification
+Q lang:en -is:retweet                # English originals
+Q lang:zh-CN -is:retweet             # Chinese originals
+Q lang:ja -is:retweet                # Japanese originals
 ```
 
----
+X supports exact phrases, Boolean logic, language, conversation, quote, reply and repost operators. [X search-operator documentation](https://docs.x.com/x-api/posts/search/integrate/operators)
 
-## 3. Initial sector scope
-
-Focus on the AI-compute value chain:
+For Kimi, \(Q\) should include aliases and source links:
 
 ```text
-Model development and adoption
-→ cloud and compute demand
-→ accelerators and networking
-→ HBM and memory
-→ foundry and advanced packaging
-→ semiconductor equipment
-→ data-centre infrastructure
+("Kimi K3" OR "Kimi-K3" OR kimi_k3 OR
+ url:"kimi.com/.../kimi-k3")
 ```
 
-Initial topics:
-
-* model releases and benchmarks;
-* API pricing and open weights;
-* developer adoption;
-* hyperscaler capex;
-* GPUs and custom accelerators;
-* HBM and memory;
-* foundry capacity and yields;
-* advanced packaging;
-* semiconductor equipment;
-* export controls and regulation.
-
----
-
-## 4. X collection strategy
-
-Use three collection methods.
-
-### Curated accounts
-
-Monitor:
-
-* official company and model-lab accounts;
-* researchers and engineers;
-* benchmark evaluators;
-* semiconductor analysts;
-* specialist journalists;
-* credible pseudonymous accounts;
-* fast aggregators.
-
-### Topic streams
-
-Track combinations of:
-
-* company names and tickers;
-* model and product names;
-* benchmark names;
-* semiconductor technologies;
-* event terms such as delay, yield, capacity and pricing.
-
-### Search recovery
-
-Streaming connections may fail. Store ingestion checkpoints and use recent search to recover missing posts without duplication.
-
----
-
-## 5. Source and provenance model
-
-Do not use one universal source-reputation score.
-
-Classify accounts by role:
-
-| Role                 | Function                           |
-| -------------------- | ---------------------------------- |
-| Official             | Company or provider statement      |
-| First-hand technical | Testing or direct observation      |
-| Journalist           | Source-based reporting             |
-| Industry analyst     | Sector interpretation              |
-| Benchmark evaluator  | Model-performance testing          |
-| Aggregator           | Fast redistribution                |
-| Commentator          | Opinion and reaction               |
-| Unknown              | Discovery source requiring caution |
-
-Authority should be topic-specific.
-
-The system must distinguish:
-
-* original post;
-* repost;
-* quote post;
-* reply;
-* thread continuation;
-* copied or paraphrased information;
-* multiple posts derived from one source.
-
-Twenty accounts repeating one official announcement still represent one evidence origin.
-
----
-
-## 6. Entities and taxonomy
-
-Resolve aliases such as:
+Then dynamically add associated terms discovered from the first posts:
 
 ```text
-TSMC / Taiwan Semiconductor / 台积电 / TSM
-NVIDIA / NVDA / 英伟达 / Blackwell / GB200
-Moonshot AI / 月之暗面 / Kimi / Kimi K3
+"2.8T"
+"Moonshot AI"
+"open 3T"
+"Kimi Delta Attention"
 ```
 
-Start with a compact event taxonomy.
+The query must be updated carefully: expanding it too aggressively creates an artificial acceleration.
 
-### AI events
+## 3. Measure attention momentum
 
-* model release;
-* benchmark result;
-* pricing change;
-* API or weight availability;
-* technical architecture;
-* partnership;
-* developer adoption;
-* outage or security;
-* regulation.
+For each five-minute bucket:
 
-### Semiconductor events
+- \(V_t\): total posts.
+- \(O_t\): original posts.
+- \(A_t\): unique original authors.
+- \(Q_t\): quote posts.
+- \(R_t\): reposts.
+- \(E_t\): total engagement.
+- \(L_t\): number of languages.
+- \(G_t\): number of geographic communities.
+- \(K_t\): number of independent network communities.
 
-* product launch;
-* capacity or capex change;
-* production or yield issue;
-* shipment or qualification;
-* supply constraint;
-* design win or loss;
-* pricing or demand;
-* regulation.
+Useful ratios:
 
----
+\[
+\text{Originality}_t = \frac{O_t}{V_t}
+\]
 
-## 7. Event and claim engine
+\[
+\text{Amplification}_t = \frac{R_t}{O_t}
+\]
 
-Posts are observations; events are the main intelligence objects.
+\[
+\text{Interpretation depth}_t = \frac{Q_t+\text{replies}_t}{R_t}
+\]
 
-For each new post:
+A high repost ratio means viral amplification. A high original-author and quote ratio means many people are independently processing the event.
 
-1. retrieve candidate events using embeddings, entities, time, URLs and X relationships;
-2. determine whether it starts a new event or updates an existing one;
-3. classify the post as:
+### Abnormal attention
 
-   * new claim;
-   * confirmation;
-   * contradiction;
-   * correction;
-   * analysis;
-   * repetition;
-4. update the event state only when material information changes.
+Compare current volume to the topic’s historical day-of-week and time-of-day baseline:
+
+\[
+Z^{volume}_t=
+\frac{\log(1+V_t)-\mu_{\text{topic,hour}}}
+{\sigma_{\text{topic,hour}}}
+\]
+
+Then calculate velocity and acceleration:
+
+\[
+Velocity_t = V_t-V_{t-1}
+\]
+
+\[
+Acceleration_t = Velocity_t-Velocity_{t-1}
+\]
+
+“HUGE early” is generally not the largest \(V_t\). It is an extreme acceleration in credible original authors while absolute volume is still relatively small.
+
+## 4. Turn posts into measurable consensus
+
+Every post is classified against a proposition \(H\):
+
+```text
+support
+oppose
+uncertain
+irrelevant
+```
+
+Represent stance as:
+
+\[
+s_{i,H}\in[-1,+1]
+\]
+
+For example:
+
+- “K3 fundamentally changes open-model economics” → \(+0.9\)
+- “Benchmarks are first-party; wait for weights” → \(-0.4\)
+- “K3 was released today” → \(0\), because it reports the event but expresses no view on the proposition.
+
+Each classification should also include:
+
+- Confidence.
+- Evidence supplied.
+- Whether evidence is primary or repeated.
+- Asset mentioned.
+- Factor channel.
+- Expected direction.
+- Time horizon.
+
+A post-level output might be:
+
+```json
+{
+  "hypothesis": "K3 weakens proprietary-model pricing power",
+  "stance": 0.8,
+  "confidence": 0.9,
+  "evidence_type": "technical_analysis",
+  "factor": "quality",
+  "assets": ["proprietary_model_providers"],
+  "horizon": "12-36 months"
+}
+```
+
+## 5. Weight authors properly
+
+A thousand anonymous reposts should not outweigh five independent model researchers.
+
+Each author receives a dynamic weight:
+
+\[
+w_i =
+Expertise_i
+\times HistoricalAccuracy_i
+\times Independence_i
+\times Specificity_i
+\]
+
+Possible components:
+
+### Expertise
+
+- Relevant biography.
+- History of posting on the subject.
+- Technical vocabulary.
+- Primary-source access.
+- Membership in a curated expert panel.
+- Whether other credible experts engage with them.
+
+### Historical accuracy
+
+For previous events:
+
+- Was the claim eventually confirmed?
+- How early was the author?
+- Did the author delete or reverse it?
+- Did their predicted market/fundamental consequence occur?
+
+### Independence
+
+Downweight an author if:
+
+- They repeat the same source.
+- Their wording is nearly identical.
+- They belong to the same amplification cluster.
+- Their post follows a highly viral root without new evidence.
+
+### Specificity
+
+“Massive model!” receives less weight than a post specifying benchmark results, deployment requirements or economic implications.
+
+Follower count should be only a weak input. It measures distribution, not correctness.
+
+## 6. Calculate consensus and consensus change
+
+For author group \(g\) and hypothesis \(H\):
+
+\[
+C_{g,H,t}
+=
+\frac{\sum_i w_i s_{i,H}}
+{\sum_i w_i}
+\]
+
+Where \(-1\) is strong opposition and \(+1\) is strong support.
+
+But the important measurement is:
+
+\[
+\Delta C_{g,H,t}
+=
+C_{g,H,t}-C_{g,H,t_0}
+\]
+
+Here, \(t_0\) is immediately before the event or a rolling historical baseline.
+
+Track consensus separately for:
+
+- Builders/engineers.
+- Domain experts.
+- Investors.
+- Company insiders.
+- Journalists.
+- General public.
+- English X.
+- Chinese X.
+- Japanese X.
+- Other relevant regions.
+
+This produces an extremely useful lead-lag measurement:
+
+\[
+LeadGap_t =
+\Delta C_{\text{experts},t}
+-
+\Delta C_{\text{general public},t}
+\]
+
+A large expert shift with little mass awareness is potentially early alpha.
+
+A large public shift after experts moved twelve hours ago is probably late.
+
+## 7. Measure belief switching
+
+Consensus change is more convincing when the same credible people visibly change their minds.
+
+For each recurring author:
+
+\[
+Switch_{i,H} =
+s_{i,H,\text{after}}-s_{i,H,\text{before}}
+\]
+
+Report:
+
+- Number of credible switchers.
+- Direction of switches.
+- Average magnitude.
+- Evidence that caused the switch.
+- Time between the primary event and switching.
+- Whether switching crossed multiple independent communities.
 
 Example:
 
 ```text
-Kimi K3 event
-→ release rumour
-→ official X announcement
-→ benchmark claims
-→ API and pricing details
-→ developer testing
-→ contradictory results
+AI researchers tracked:        82
+Expressed a pre-event view:    39
+Meaningful post-event switch:  14
+Negative → positive:           12
+Positive → negative:            2
+Median switch magnitude:      +0.58
 ```
 
-Each atomic claim should retain:
+That is much stronger than generic positive sentiment.
 
-* source post;
-* supporting text;
-* author;
-* provider claim or independent observation;
-* supporting and contradicting sources;
-* evidence status;
-* timestamps.
+## 8. Measure agreement and disagreement
 
-Evidence labels:
+A consensus score of zero can mean either:
+
+- Everybody is neutral; or
+- Half strongly agree and half strongly disagree.
+
+Therefore, also calculate stance entropy:
+
+\[
+Entropy_t=-\sum_k p_k\log(p_k)
+\]
+
+Where \(k\) represents support, opposition and uncertainty.
+
+Interpretation:
+
+| Consensus movement | Entropy movement | Meaning |
+|---|---|---|
+| Stronger | Falling | Genuine convergence |
+| Stronger | Rising | Directional shift, but debate expanding |
+| Stable | Rising | Event is creating disagreement |
+| Stable | Falling | Existing view becoming entrenched |
+
+Sometimes rising disagreement is the earliest important signal. It shows an accepted thesis is beginning to fracture before consensus actually reverses.
+
+## 9. Measure independent breadth
+
+Construct a graph:
+
+- Authors are nodes.
+- Reposts, quotes, replies and mentions are edges.
+- Root posts and shared URLs identify information sources.
+- Community detection identifies clusters.
+
+Then measure:
+
+\[
+Breadth_t =
+\text{number of independent communities supporting }H
+\]
+
+For example:
 
 ```text
-E0 — unknown single source
-E1 — established specialist
-E2 — multiple apparently independent sources
-E3 — official X-account statement
-E4 — official statement plus independent X-based observations
+Community 1: Chinese model engineers
+Community 2: US benchmark researchers
+Community 3: cloud-infrastructure engineers
+Community 4: technology investors
+Community 5: mainstream journalists
 ```
 
----
+Five independent clusters responding to different evidence is powerful.
 
-## 8. Summary and impact mapping
+Five thousand accounts downstream of one viral influencer is not.
 
-A summary should separate:
+A useful effective sample size is:
 
-```text
-What happened
-What changed
-Official statements
-Provider claims
-Independent X observations
-Contradictions
-Unknowns
-Affected entities
-Impact channels
-```
+\[
+N_{\text{eff}} =
+\frac{(\sum_i w_i)^2}{\sum_i w_i^2}
+\]
 
-The higher-value feature is impact mapping:
+If one famous account dominates all weighting, effective sample size remains low.
+
+## 10. Measure factor narratives from X
+
+For each post, extract:
 
 ```text
-Event
-→ affected company or value-chain node
-→ economic channel
+event
+→ affected asset/sector
+→ causal channel
+→ factor
 → direction
-→ time horizon
-→ uncertainty
-```
-
-For example, a more efficient model could imply:
-
-* lower compute cost per task;
-* higher AI adoption;
-* more aggregate inference demand;
-* pricing pressure for model providers;
-* ambiguous accelerator-demand impact.
-
-The engine should preserve ambiguity rather than force a bullish or bearish conclusion.
-
----
-
-## 9. Pod-specific routing
-
-There should not be one universal news score.
-
-Shared event features:
-
-* novelty;
-* evidence state;
-* event type;
-* source authority;
-* independent-source breadth;
-* discussion acceleration.
-
-Pod-specific features:
-
-* company overlap;
-* technology overlap;
-* value-chain relevance;
-* thesis relevance;
-* investment horizon;
-* alert tolerance.
-
-Route each event as:
-
-```text
-Immediate
-Daily
-Weekly
-Suppress
+→ horizon
 ```
 
 Example:
 
-| Event                  | AI pod    | Semiconductor pod | China-tech pod |
-| ---------------------- | --------- | ----------------- | -------------- |
-| Kimi K3 frontier claim | Immediate | Daily             | Immediate      |
-| HBM capacity update    | Daily     | Immediate         | Daily          |
-| Minor API feature      | Daily     | Suppress          | Daily          |
-
----
-
-## 10. Delivery system
-
-Use four outputs from the same event database.
-
-### Immediate alert
-
-Trigger when:
-
 ```text
-Pod relevance is high
-AND materiality is high
-AND the event state changed materially
-AND the evidence is official, independently supported,
-or extremely important despite being unconfirmed
+Kimi K3
+→ US proprietary model vendors
+→ reduced scarcity/pricing power
+→ quality / growth-duration
+→ negative
+→ medium term
 ```
 
-Subject labels should show evidence status:
+Or:
 
 ```text
-[RUMOUR]
-[OFFICIAL X ANNOUNCEMENT]
-[PROVIDER-CLAIMED]
-[INDEPENDENTLY TESTED ON X]
-[DISPUTED]
-[CORRECTED]
+Kimi K3
+→ accelerators
+→ broader open-model inference adoption
+→ AI capex / momentum
+→ positive
+→ medium term
 ```
 
-Immediate alerts should contain:
+Then calculate consensus separately for each factor-channel pair:
 
-* what happened;
-* why it matters;
-* what is supported;
-* what remains uncertain;
-* affected entities;
-* key X sources;
-* what to watch next.
+\[
+F_{k,H,t}
+=
+\frac{\sum_i w_i s_{i,k,H}}
+{\sum_i w_i}
+\]
 
-### Event update
+The output should preserve competing causal channels:
 
-Send when an alerted event receives:
+| Factor channel | X narrative consensus | Change |
+|---|---:|---:|
+| Proprietary-model moat | Negative | −0.51 |
+| Model pricing power | Negative | −0.43 |
+| Aggregate compute demand | Positive | +0.22 |
+| NVIDIA earnings | Divided | −0.05 |
+| China AI competitiveness | Positive | +0.68 |
+| Application software margins | Slightly positive | +0.17 |
 
-* official confirmation;
-* correction or denial;
-* benchmark evidence;
-* API, weight or pricing availability;
-* major technical details;
-* customer or deployment confirmation.
+Do not prematurely collapse these into “Kimi bullish/negative for tech.”
 
-### Daily brief
+## 11. What “crowding” can X measure?
 
-Answer:
+X can estimate **narrative crowding**:
 
-> What materially changed today?
+- One-sided stance distribution.
+- Repeated identical theses.
+- High concentration among a few influential accounts.
+- Large repost-to-original ratio.
+- Low community independence.
+- Rapid convergence around a small number of slogans.
+- Concentrated cashtag usage.
+- Absence of counterarguments receiving engagement.
 
-Include:
+A possible social-crowding score:
 
-* executive summary;
-* top events;
-* updates to existing events;
-* pod watchlist implications;
-* unverified but noteworthy reports.
+\[
+SC_t =
+OneSidedness
+\times Concentration
+\times Amplification
+\times (1-Independence)
+\]
 
-### Weekly review
+But X cannot tell us:
 
-Answer:
+- Gross or net hedge-fund exposure.
+- Leverage.
+- Prime-broker crowding.
+- Actual institutional position sizes.
+- CTA exposure.
+- Dealer gamma.
+- Short-interest changes in real time.
 
-> Which sector narratives strengthened or weakened?
+Therefore, the system must label this honestly:
 
-Include:
+> “Narrative crowding: high; capital crowding: unknown.”
 
-* major event clusters;
-* emerging themes;
-* value-chain implications;
-* thesis-supporting and contradicting evidence;
-* next week’s catalysts.
+Narrative crowding becomes much more valuable once joined with holdings, short interest, options and price data.
 
-Core principle:
+## 12. Cost-efficient operating model
 
-> Immediate alerts report events; daily briefs report changes; weekly reviews report meaning.
+Do not continuously download everything.
 
----
+### Tier 1: cheap monitoring
 
-## 11. Data, evaluation and infrastructure
+Use counts queries for:
 
-Core data objects:
+- Event names.
+- Company and product aliases.
+- Sector themes.
+- Predefined consensus propositions.
+- Language-specific slices.
+
+Calculate volume anomaly every 5–15 minutes.
+
+### Tier 2: anomaly activation
+
+When one of these occurs:
+
+- Volume \(Z>3\).
+- Original-author acceleration exceeds threshold.
+- Credible source posts.
+- Multiple expert communities activate.
+- Previously dormant proposition appears.
+
+Then retrieve the actual posts using recent search or activate a filtered-stream rule.
+
+### Tier 3: deep consensus analysis
+
+Only for activated events:
+
+- Fetch quote posts.
+- Expand authors.
+- Snapshot public metrics.
+- Reconstruct conversation graphs.
+- Classify stance and factor implications.
+- Monitor belief switching.
+
+### Tier 4: decay
+
+Reduce collection frequency when:
+
+- Acceleration declines.
+- No new evidence appears.
+- Consensus stabilizes.
+- Mainstream awareness saturates.
+- Market pricing catches up.
+
+This preserves the two-million-post monthly allowance.
+
+## 13. What the event card could look like
+
+Illustrative—not actual Kimi measurements:
 
 ```text
-posts
-post_relationships
-sources
-entities
-claims
-events
-event_versions
-event_impacts
-themes
-pod_profiles
-pod_routes
-alerts
-briefs
-feedback
-model_runs
+EVENT: Kimi K3 release
+AGE: 4h 37m
+
+ATTENTION
+Posts/hour:                 8.2× baseline
+Acceleration:               97th percentile
+Unique original authors:    184
+Repost share:               71%
+Independent communities:      6
+Languages with acceleration:  5
+
+CONSENSUS PROPOSITION
+“K3 materially closes the US–China capability gap”
+
+Expert consensus:
+  Before event:             +0.08
+  Current:                  +0.64
+  Change:                   +0.56
+
+Investor consensus:
+  Before event:             +0.03
+  Current:                  +0.27
+  Change:                   +0.24
+
+General-public consensus:   +0.11
+Expert–public lead gap:     +0.53
+
+Credible view switchers:       17
+Effective expert sample:       43
+Disagreement entropy:       falling
+
+FACTOR NARRATIVES
+China AI competitiveness:   +0.73
+US proprietary moat:        -0.48
+Model pricing power:        -0.41
+Compute demand:             +0.29
+NVIDIA earnings:            divided
+
+CROWDING
+Narrative crowding:         medium
+Capital crowding:           unknown
+Priced in:                  requires market data
+
+STATUS
+Potential consensus break; independent validation incomplete.
 ```
 
-Store separate timestamps for:
+That is how X becomes measurable: not by treating likes as consensus, but by measuring **proposition-specific stance changes among independent, credibility-weighted communities over time**.
 
-* X publication;
-* ingestion;
-* processing;
-* event update;
-* alert delivery.
+The most important X-derived signal would be:
 
-Evaluation should measure:
+\[
+\boxed{
+\text{Expert Consensus Delta}
+\times
+\text{Independent Breadth}
+\times
+\text{Attention Acceleration}
+}
+\]
 
-* event merge and split accuracy;
-* duplicate-event rate;
-* unsupported summary claims;
-* missed material facts;
-* alert precision and latency;
-* duplicate alerts;
-* pod usefulness.
-
-Feedback options:
-
-```text
-Useful
-Relevant but not urgent
-Duplicate
-Irrelevant
-Misleading summary
-Should have alerted sooner
-Wrong delivery tier
-```
-
-Initial infrastructure:
-
-```text
-X API
-→ Python async ingestion
-→ lightweight durable queue
-→ PostgreSQL and pgvector
-→ background workers
-→ external embedding and LLM APIs
-→ email delivery
-```
-
-Kafka, Flink, GraphRAG and self-hosted large models are unnecessary for the first version.
-
----
-
-## 12. MVP
-
-The first version should:
-
-1. monitor 100–300 selected X accounts;
-2. run narrow AI and semiconductor topic rules;
-3. reconstruct repost, quote, reply and thread relationships;
-4. resolve major entities and aliases;
-5. cluster posts into evolving events;
-6. extract claims and evidence state;
-7. generate evidence-aware summaries;
-8. map events to sector impact channels;
-9. route events by pod;
-10. send immediate, daily and weekly emails;
-11. collect analyst feedback;
-12. support historical replay.
-
-The core product is:
-
-```text
-X posts
-→ provenance
-→ claims
-→ evolving events
-→ evidence state
-→ sector implications
-→ pod-specific delivery
-```
+Then external market and positioning data determine whether that early narrative change is actually investable.
