@@ -87,6 +87,8 @@ class OpenRouterDerivedPipeline:
     def build(self, *, today: date | None = None) -> dict[str, int]:
         """Validate inputs, build both marts, and publish them as a verified pair."""
         target_day = today or datetime.now(timezone.utc).date()
+        derived_scraped_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+        derived_run_id = f"openrouter-derived-{uuid4().hex}"
         inputs = self._load_inputs()
         self._validate_inputs(inputs, today=target_day)
 
@@ -98,7 +100,16 @@ class OpenRouterDerivedPipeline:
             inputs["activity"], today=target_day
         )
         price_metrics = compute_price_metrics(
-            inputs["economics"], inputs["pricing"], rankings, capability_map
+            inputs["economics"],
+            inputs["pricing"],
+            rankings,
+            capability_map,
+            today=target_day,
+            derived_provenance={
+                "source_url": "derived://openrouter-derived-pipeline",
+                "source_run_id": derived_run_id,
+                "scraped_at": derived_scraped_at,
+            },
         )
         outputs = {
             DAILY_DATASET_ID: pd.concat(

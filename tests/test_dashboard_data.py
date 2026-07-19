@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 from pathlib import Path
 
 import pandas as pd
@@ -3353,6 +3354,22 @@ def test_average_price_state_describes_strict_and_as_recorded_provenance() -> No
         "Realized Market Average and the Premium-priced, Mid-priced, Low-priced, and Fixed Workload Basket diagnostics "
         "use as-recorded economics and may include explicitly labelled earliest-price backcasts."
     )
+
+
+def test_average_price_freshness_uses_only_price_rows() -> None:
+    datasets = _derived_datasets()
+    daily = datasets["openrouter_usage_economics_daily"].frame
+    workload_mask = daily["metric_id"].astype("string").str.endswith("tokens_per_request")
+    daily.loc[workload_mask, "scraped_at"] = "2026-07-19T12:00:00Z"
+    daily.loc[~workload_mask, "scraped_at"] = "2026-07-18T06:00:00Z"
+    datasets["openrouter_usage_economics_daily"] = replace(
+        datasets["openrouter_usage_economics_daily"],
+        latest_scraped_at=pd.Timestamp("2026-07-19T12:00:00Z"),
+    )
+
+    state = _average_price_section_state(datasets)
+
+    assert state["scraped_at"] == pd.Timestamp("2026-07-18T06:00:00Z")
 
 
 def test_usage_economics_state_missing_marts_is_scoped_from_tokens_and_requests() -> None:

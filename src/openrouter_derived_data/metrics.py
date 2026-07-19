@@ -228,6 +228,9 @@ def compute_price_metrics(
     pricing: pd.DataFrame,
     rankings: pd.DataFrame,
     capability_map: CapabilityMap,
+    *,
+    today: date | None = None,
+    derived_provenance: dict[str, object] | None = None,
 ) -> pd.DataFrame:
     """Build guarded realized and capability-aware price indices.
 
@@ -238,6 +241,13 @@ def compute_price_metrics(
     prepared_economics = _prepare_economics(economics)
     prepared_pricing = _prepare_pricing(pricing)
     prepared_rankings = _prepare_rankings(rankings)
+    cutoff = pd.Timestamp(today or _utc_today())
+    prepared_economics = prepared_economics.loc[
+        prepared_economics["usage_date"].lt(cutoff)
+    ].copy()
+    prepared_rankings = prepared_rankings.loc[
+        prepared_rankings["usage_date"].lt(cutoff)
+    ].copy()
     source_dates = sorted(
         set(prepared_economics["usage_date"].dropna())
         | set(prepared_rankings["usage_date"].dropna())
@@ -246,7 +256,7 @@ def compute_price_metrics(
         return _empty_daily()
     dates = pd.date_range(source_dates[0], source_dates[-1], freq="D")
 
-    provenance = _activity_provenance(economics)
+    provenance = _price_provenance(economics, derived_provenance)
     sota_daily, sota_daily_coverage = _prepare_sota_daily(
         prepared_economics,
         prepared_rankings,
@@ -330,6 +340,33 @@ def compute_price_metrics(
         rows.append(_fixed_basket_row(usage_date, cohort_rows, provenance))
 
     return pd.DataFrame(rows, columns=_DAILY_COLUMNS)
+
+
+def _price_provenance(
+    economics: pd.DataFrame,
+    derived_provenance: dict[str, object] | None,
+) -> dict[str, object]:
+    """Select one coherent upstream run, or explicitly label derived provenance."""
+    columns = ["source_url", "source_run_id", "scraped_at"]
+    if set(columns).issubset(economics.columns):
+        candidates = economics.loc[:, columns].dropna().drop_duplicates().copy()
+        if not candidates.empty:
+            candidates["_scraped_at"] = pd.to_datetime(
+                candidates["scraped_at"], errors="coerce", utc=True
+            )
+            candidates = candidates.dropna(subset=["_scraped_at"])
+            if not candidates.empty:
+                selected = candidates.sort_values(
+                    ["_scraped_at", "source_run_id", "source_url"], kind="stable"
+                ).iloc[-1]
+                return {column: selected[column] for column in columns}
+    if derived_provenance is not None:
+        return {column: derived_provenance.get(column, pd.NA) for column in columns}
+    return {
+        "source_url": "derived://openrouter-price-metrics",
+        "source_run_id": "derived-unattributed",
+        "scraped_at": pd.NA,
+    }
 
 
 def _prepare_economics(economics: pd.DataFrame) -> pd.DataFrame:
