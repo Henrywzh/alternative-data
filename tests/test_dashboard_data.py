@@ -61,6 +61,8 @@ from dashboard.sections.openrouter import (
     _pivot_to_share_percent,
     _workload_intensity_section_state,
     _weekly_usage_section_state,
+    _derived_metric_pivot,
+    model_explorer_state,
 )
 from dashboard.sections.semiconductor import (
     _private_panel_code_matches,
@@ -3131,10 +3133,73 @@ def test_weekly_usage_section_state_switches_between_tokens_and_requests() -> No
     assert token_state["market_leader"] == "google"
     assert token_state["market_leader_pct"] == 60.0
     assert request_state["metric"] == "Requests"
-    assert request_state["pivot"].equals(request_pivot)
+    assert request_state["pivot"].equals(pd.DataFrame({"Total Requests": [2000.0, 2200.0]}, index=request_pivot.index))
     assert request_state["y_title"] == "Requests"
     assert request_state["latest_total"] == 2200.0
-    assert request_state["dominant_label"] == "OpenAI"
+    assert request_state["dominant_label"] is None
+
+
+def test_usage_window_defaults_to_weekly_and_supports_daily_totals() -> None:
+    provider_daily = pd.DataFrame(
+        {
+            "usage_date": ["2026-04-01", "2026-04-02"],
+            "entity_name": ["OpenAI", "Anthropic"],
+            "total_tokens": [1000.0, 2500.0],
+        }
+    )
+    model_activity = pd.DataFrame(
+        {
+            "usage_date": ["2026-04-01", "2026-04-02"],
+            "category_slug": ["all", "all"],
+            "request_count": [10.0, 25.0],
+        }
+    )
+    result_kwargs = {
+        "domain": "rankings",
+        "primary_date_column": "usage_date",
+        "metric_column": "total_tokens",
+        "source_format": "parquet",
+        "source_path": None,
+        "missing_columns": [],
+        "duplicate_rows": 0,
+        "first_date": "2026-04-01",
+        "latest_date": "2026-04-02",
+        "latest_scraped_at": "2026-04-02T00:00:00Z",
+    }
+    datasets = {
+        "provider_daily_activity": DatasetLoadResult(
+            dataset_id="provider_daily_activity",
+            label="Provider Daily Activity",
+            frame=provider_daily,
+            row_count=2,
+            **result_kwargs,
+        ),
+        "openrouter_model_activity": DatasetLoadResult(
+            dataset_id="openrouter_model_activity",
+            label="Model Activity",
+            frame=model_activity,
+            row_count=2,
+            **result_kwargs,
+        ),
+    }
+
+    weekly = _weekly_usage_section_state(datasets, {}, "Tokens")
+    daily_tokens = _weekly_usage_section_state(datasets, {}, "Tokens", window="Daily")
+    daily_requests = _weekly_usage_section_state(datasets, {}, "Requests", window="Daily")
+
+    assert weekly["window"] == "Weekly"
+    assert daily_tokens["window"] == "Daily"
+    assert daily_tokens["pivot"].columns.tolist() == ["Total Tokens"]
+    assert daily_tokens["pivot"].loc["2026-04-02", "Total Tokens"] == 2500.0
+    assert daily_requests["pivot"].columns.tolist() == ["Total Requests"]
+    assert daily_requests["pivot"].loc["2026-04-02", "Total Requests"] == 25.0
+
+
+def test_workload_intensity_state_is_total_only_for_usage_chart() -> None:
+    state = _weekly_usage_section_state(_derived_datasets(), {}, "Workload Intensity")
+
+    assert state["component"] == "Total"
+    assert state["metric_id"] == "total_tokens_per_request"
 
 
 def _derived_datasets() -> dict[str, DatasetLoadResult]:
@@ -3169,11 +3234,23 @@ def _derived_datasets() -> dict[str, DatasetLoadResult]:
             "realized_market_average": 2.0,
             "sota_median_list_price": 3.0,
             "realized_sota_price": 2.5,
+            "original_spend_weighted_tei": 2.1,
+            "original_cpi_workload_basket": 1.7,
+            "original_volume_weighted_tei": 2.0,
+            "original_frontier_tei": 3.4,
+            "original_value_tei": 0.3,
+            "sota_volume_weighted_atp": 2.5,
         },
         "2026-07-17": {
             "realized_market_average": 1.8,
             "sota_median_list_price": 3.2,
             "realized_sota_price": 2.8,
+            "original_spend_weighted_tei": 1.9,
+            "original_cpi_workload_basket": 1.6,
+            "original_volume_weighted_tei": 1.8,
+            "original_frontier_tei": 3.1,
+            "original_value_tei": 0.25,
+            "sota_volume_weighted_atp": 2.8,
             "frontier_contenders_median_list_price": 2.4,
             "premium_priced_realized": 4.1,
             "mid_priced_realized": 1.1,
@@ -3183,15 +3260,7 @@ def _derived_datasets() -> dict[str, DatasetLoadResult]:
     }
     for usage_date, values in price_values.items():
         for metric_id, value in values.items():
-            rolling_window_days = (
-                1
-                if metric_id
-                in {
-                    "sota_median_list_price",
-                    "frontier_contenders_median_list_price",
-                }
-                else 7
-            )
+            rolling_window_days = 1 if metric_id in {"sota_median_list_price", "frontier_contenders_median_list_price"} else 7
             daily_rows.append(
                 {
                     "usage_date": usage_date,
@@ -3200,7 +3269,7 @@ def _derived_datasets() -> dict[str, DatasetLoadResult]:
                     "rolling_window_days": rolling_window_days,
                     "expected_family_count": 5 if "sota" in metric_id else pd.NA,
                     "priced_family_count": 5 if "sota" in metric_id else pd.NA,
-                    "observed_family_count": 4 if metric_id == "realized_sota_price" else pd.NA,
+                    "observed_family_count": 4 if metric_id in {"realized_sota_price", "sota_volume_weighted_atp"} else pd.NA,
                     "observed_model_count": 4 if metric_id == "realized_sota_price" else pd.NA,
                     "pricing_join_status": (
                         "matched_model_median|backcast_earliest_pricing"
@@ -3275,11 +3344,14 @@ def test_usage_economics_state_exposes_workload_and_guarded_sota_lines() -> None
 
     price = _weekly_usage_section_state(_derived_datasets(), {}, "Average Price")
     assert price["pivot"].columns.tolist() == [
-        "Realized Market Average",
-        "SOTA Median List Price",
-        "Realized SOTA Price",
+        "Spend-Weighted TEI",
+        "CPI Workload Basket Index (50/40/10)",
+        "Original Volume-Weighted TEI",
+        "Frontier",
+        "Value",
+        "SOTA Volume-Weighted ATP (backfilled AA score)",
     ]
-    assert price["pivot"].loc["2026-07-17", "SOTA Median List Price"] == 3.2
+    assert price["pivot"].loc["2026-07-17", "SOTA Volume-Weighted ATP (backfilled AA score)"] == 2.8
     assert price["coverage_label"] == "Observed 4/5 SOTA families · priced 5/5"
 
 
@@ -3296,32 +3368,25 @@ def test_workload_intensity_state_selects_prompt_and_completion_metric_ids() -> 
     assert completion["pivot"].columns.tolist() == ["Completion tokens/request"]
 
 
-def test_average_price_state_keeps_sota_gaps_and_diagnostics_opt_in() -> None:
+def test_average_price_state_keeps_sota_gaps_and_displays_all_approved_lines() -> None:
     datasets = _derived_datasets()
     daily = datasets["openrouter_usage_economics_daily"].frame
     daily.loc[
         daily["usage_date"].eq("2026-07-17")
-        & daily["metric_id"].eq("realized_sota_price"),
+        & daily["metric_id"].eq("sota_volume_weighted_atp"),
         "value",
     ] = pd.NA
 
     default = _weekly_usage_section_state(datasets, {}, "Average Price")
-    assert pd.isna(default["pivot"].loc["2026-07-17", "Realized SOTA Price"])
+    assert pd.isna(default["pivot"].loc["2026-07-17", "SOTA Volume-Weighted ATP (backfilled AA score)"])
     assert "Premium-priced Realized Price" not in default["pivot"].columns
-
-    with_diagnostics = _average_price_section_state(
-        datasets,
-        ["premium_priced_realized", "low_priced_realized", "fixed_workload_basket"],
-    )
-    assert with_diagnostics["diagnostic_metric_ids"] == [
-        "premium_priced_realized",
-        "low_priced_realized",
-        "fixed_workload_basket",
-    ]
-    assert with_diagnostics["pivot"].columns.tolist()[-3:] == [
-        "Premium-priced Realized Price",
-        "Low-priced Realized Price",
-        "Fixed Workload Basket",
+    assert default["metric_ids"] == [
+        "original_spend_weighted_tei",
+        "original_cpi_workload_basket",
+        "original_volume_weighted_tei",
+        "original_frontier_tei",
+        "original_value_tei",
+        "sota_volume_weighted_atp",
     ]
 
 
@@ -3330,30 +3395,71 @@ def test_average_price_state_combines_production_cadences_without_filling_gaps()
     daily = datasets["openrouter_usage_economics_daily"].frame
     daily.loc[
         daily["usage_date"].eq("2026-07-10")
-        & daily["metric_id"].eq("realized_sota_price"),
+        & daily["metric_id"].eq("sota_volume_weighted_atp"),
         "value",
     ] = pd.NA
 
-    state = _average_price_section_state(
-        datasets,
-        ["frontier_contenders_median_list_price"],
+    state = _average_price_section_state(datasets)
+
+    assert state["pivot"].loc["2026-07-17", "SOTA Volume-Weighted ATP (backfilled AA score)"] == 2.8
+    assert state["pivot"].loc["2026-07-17", "Frontier"] == 3.1
+    assert pd.isna(state["pivot"].loc["2026-07-10", "SOTA Volume-Weighted ATP (backfilled AA score)"])
+
+
+def test_derived_metric_pivot_removes_dates_with_no_selected_values() -> None:
+    frame = pd.DataFrame(
+        [
+            {"usage_date": "2026-01-01", "metric_id": "realized_market_average", "value": pd.NA, "rolling_window_days": 7},
+            {"usage_date": "2026-01-01", "metric_id": "sota_median_list_price", "value": pd.NA, "rolling_window_days": 1},
+            {"usage_date": "2026-01-02", "metric_id": "realized_market_average", "value": 1.25, "rolling_window_days": 7},
+            {"usage_date": "2026-01-02", "metric_id": "sota_median_list_price", "value": pd.NA, "rolling_window_days": 1},
+        ]
     )
 
-    assert state["pivot"].loc["2026-07-17", "SOTA Median List Price"] == 3.2
-    assert state["pivot"].loc[
-        "2026-07-17", "Frontier Contenders Median List Price"
-    ] == 2.4
-    assert pd.isna(state["pivot"].loc["2026-07-10", "Realized SOTA Price"])
+    pivot = _derived_metric_pivot(
+        frame,
+        ["realized_market_average", "sota_median_list_price"],
+        rolling_window_days=7,
+    )
+
+    assert pivot.index.tolist() == ["2026-01-02"]
+    assert pivot.loc["2026-01-02", "Realized Market Average"] == 1.25
+
+
+def test_model_explorer_aggregates_sparse_request_detail_weekly() -> None:
+    token_activity = pd.DataFrame(
+        {
+            "usage_date_dt": pd.to_datetime(["2026-01-01", "2026-01-02", "2026-01-03", "2026-01-04"]),
+            "model_id": ["provider/model"] * 4,
+            "total_tokens": [100.0, 100.0, 100.0, 100.0],
+        }
+    )
+    request_activity = pd.DataFrame(
+        {
+            "usage_date_dt": pd.to_datetime(["2026-01-01", "2026-01-08"]),
+            "model_id": ["provider/model"] * 2,
+            "total_tokens": [100.0, 200.0],
+            "request_count": [10.0, 20.0],
+            "category_slug": ["all", "all"],
+        }
+    )
+
+    state = model_explorer_state(
+        {"catalog": pd.DataFrame(), "combined_activity": token_activity, "model_activity": request_activity},
+        "provider/model",
+    )
+
+    assert state["request_granularity"] == "weekly"
+    requests = state["activity"]["Requests"].dropna()
+    assert requests.index.tolist() == [pd.Timestamp("2025-12-29"), pd.Timestamp("2026-01-05")]
+    assert requests.tolist() == [10.0, 20.0]
 
 
 def test_average_price_state_describes_strict_and_as_recorded_provenance() -> None:
     state = _average_price_section_state(_derived_datasets())
 
-    assert state["backcast_note"] == (
-        "SOTA Median List Price, Frontier Contenders Median List Price, and Realized SOTA Price use strict as-of pricing. "
-        "Realized Market Average and the Premium-priced, Mid-priced, Low-priced, and Fixed Workload Basket diagnostics "
-        "use as-recorded economics and may include explicitly labelled earliest-price backcasts."
-    )
+    assert "SOTA ATP uses the latest available Artificial Analysis intelligence score" in state["backcast_note"]
+    assert "pricing routes remain exact" in state["backcast_note"]
 
 
 def test_average_price_freshness_uses_only_price_rows() -> None:
@@ -3410,7 +3516,7 @@ def test_usage_economics_state_missing_marts_is_scoped_from_tokens_and_requests(
     assert price["pivot"].empty
     assert price["empty_message"] == "No derived OpenRouter price data is available yet."
     assert tokens["pivot"].equals(token_pivot)
-    assert requests["pivot"].equals(request_pivot)
+    assert requests["pivot"].equals(pd.DataFrame({"Total Requests": [50.0]}, index=request_pivot.index))
 
 
 def test_compute_openrouter_views_falls_back_to_top_models_when_market_share_undercounts() -> None:

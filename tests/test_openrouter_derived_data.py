@@ -843,6 +843,32 @@ def test_price_metrics_emit_original_indices_and_volume_weighted_sota_atp() -> N
     )
 
 
+def test_sota_atp_accepts_dated_activity_route_with_canonical_snapshot_price() -> None:
+    economics = _economics().copy()
+    economics.loc[economics["model_permaslug"].eq("provider/a"), "model_permaslug"] = "provider/a-20260709"
+    capability = _price_capability_map()
+    first = capability.entries[0]
+    dated_first = CapabilityEntry(
+        aa_model_id=first.aa_model_id,
+        family_id=first.family_id,
+        effective_from=first.effective_from,
+        openrouter_routes=first.openrouter_routes
+        + (CapabilityRoute("provider/a-20260709", first.effective_from),),
+    )
+    capability = CapabilityMap(
+        methodology_version=capability.methodology_version,
+        entries=(dated_first, *capability.entries[1:]),
+    )
+
+    result = compute_price_metrics(
+        economics, _pricing_history(), _price_rankings(), capability
+    )
+
+    sota = _price_metric(result, "sota_volume_weighted_atp")
+    assert sota["observed_family_count"] == 5
+    assert pd.notna(sota["value"])
+
+
 def test_price_metrics_exclude_current_day_and_preserve_prior_values() -> None:
     economics = _economics()
     prior = compute_price_metrics(
