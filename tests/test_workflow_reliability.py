@@ -44,3 +44,18 @@ def test_fred_workflow_accepts_the_existing_semiconductor_fred_secret() -> None:
     workflow = (WORKFLOWS / "fred-macro-daily.yml").read_text(encoding="utf-8")
 
     assert "secrets.FRED_API_KEY || secrets.SEMICONDUCTOR_FRED_API_KEY" in workflow
+
+
+def test_openrouter_derived_workflow_is_bounded_and_no_network() -> None:
+    workflow = (WORKFLOWS / "openrouter-derived-daily.yml").read_text(encoding="utf-8")
+
+    assert 'cron: "30 9 * * *"' in workflow
+    assert "workflow_dispatch:" in workflow
+    assert "timeout-minutes: 20" in workflow
+    assert "openrouter-derived-data --base-dir . build" in workflow
+    assert "secrets." not in workflow
+    assert "openrouter_data.cli" not in workflow
+    assert "openrouter_official_data.cli" not in workflow
+    assert "git add data/normalized/marts/openrouter_usage_economics_daily.parquet \\" in workflow
+    assert "data/normalized/marts/openrouter_workload_intensity_models.parquet" in workflow
+    assert workflow.count("git add ") == 1
