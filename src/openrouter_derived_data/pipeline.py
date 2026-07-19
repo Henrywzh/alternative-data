@@ -94,7 +94,10 @@ class OpenRouterDerivedPipeline:
 
         capability_map = load_capability_map(self.base_dir)
         rankings = rank_capability_families(
-            inputs["models"], inputs["economics"]["usage_date"], capability_map
+            inputs["models"],
+            inputs["economics"]["usage_date"],
+            capability_map,
+            backfill_latest_snapshot=True,
         )
         workload_daily = compute_workload_intensity_daily(
             inputs["activity"], today=target_day
@@ -228,6 +231,11 @@ class OpenRouterDerivedPipeline:
             raise ValueError("workload intensity output has no non-missing values")
         if not market.notna().any():
             raise ValueError("market-price output has no non-missing values")
+        original_volume = daily.loc[
+            daily["metric_id"].eq("original_volume_weighted_tei"), "value"
+        ]
+        if not original_volume.notna().any():
+            raise ValueError("original volume-weighted index has no non-missing values")
 
     def _validate_output(
         self,
