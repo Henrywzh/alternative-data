@@ -1283,6 +1283,17 @@ def build_openrouter_explorer_views(datasets: dict[str, DatasetLoadResult]) -> d
         catalog_with_usage["activity_source"] = catalog_with_usage["activity_source"].fillna("Not observed")
         catalog_with_usage["observed_days"] = catalog_with_usage["observed_days"].fillna(0).astype(int)
 
+    # ``top_models`` is a top-10 model ranking, so it cannot provide a
+    # complete company token series. The provider-level market-share ranking
+    # is the authoritative weekly token-volume source; its Sunday labels are
+    # aligned to the Monday convention used by requests.
+    market_share = dataset_frame("market_share")
+    if not market_share.empty and "week_start_date" in market_share.columns:
+        market_share = market_share.copy()
+        market_share["week_start_date"] = _align_rankings_week_to_monday(
+            market_share["week_start_date"]
+        )
+
     return {
         "catalog": catalog_with_usage,
         "top_models": dataset_frame("top_models"),
@@ -1290,7 +1301,7 @@ def build_openrouter_explorer_views(datasets: dict[str, DatasetLoadResult]) -> d
         "model_activity": model_activity,
         "combined_activity": combined_activity,
         "economics": economics,
-        "weekly_company_tokens": _weekly_company_tokens(dataset_frame("top_models")),
+        "weekly_company_tokens": _weekly_company_tokens(market_share),
         "weekly_company_requests": _weekly_company_requests(dataset_frame("provider_weekly_requests")),
         "app_usage": app_usage,
         "app_metadata": app_metadata,
@@ -1547,7 +1558,7 @@ def company_explorer_state(views: dict[str, object], provider_slug: str) -> dict
         weekly_requests[weekly_requests["company_slug"].eq(provider_slug)].set_index("usage_week")["requests"]
         if not weekly_requests.empty else pd.Series(dtype="float64")
     )
-    weekly_token_source = "Rankings weekly model tokens"
+    weekly_token_source = "Rankings weekly provider token volume"
     weekly_request_source = "Rankings provider-request buckets"
     if weekly_tokens_series.empty and not daily_total.empty:
         weekly_tokens_series = _daily_series_to_weekly(daily_total["Tokens"], "tokens")

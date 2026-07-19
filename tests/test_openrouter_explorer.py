@@ -4,9 +4,11 @@ from pathlib import Path
 
 import pandas as pd
 
+from dashboard.data import DatasetLoadResult
 from dashboard.sections.openrouter import (
     _catalog_alias_map,
     _combine_explorer_activity,
+    build_openrouter_explorer_views,
     _normalize_explorer_activity,
     _prepare_explorer_catalog,
     company_explorer_state,
@@ -14,6 +16,25 @@ from dashboard.sections.openrouter import (
 )
 from openrouter_data.models import DatasetRecord
 from openrouter_data.storage import StorageManager
+
+
+def _dataset_result(dataset_id: str, frame: pd.DataFrame) -> DatasetLoadResult:
+    return DatasetLoadResult(
+        dataset_id=dataset_id,
+        label=dataset_id,
+        domain="rankings",
+        primary_date_column="week_start_date",
+        metric_column="metric_value",
+        frame=frame,
+        source_format="parquet",
+        source_path=None,
+        missing_columns=[],
+        duplicate_rows=0,
+        first_date=None,
+        latest_date=None,
+        latest_scraped_at=None,
+        row_count=len(frame),
+    )
 
 
 def _catalog() -> pd.DataFrame:
@@ -217,6 +238,56 @@ def test_company_explorer_falls_back_to_daily_activity_for_missing_weekly_compan
     assert not state["weekly_metrics"]["Requests"].empty
     assert state["weekly_token_source"] == "Daily activity aggregated to weekly totals"
     assert state["weekly_request_source"] == "Daily model activity aggregated to weekly totals"
+
+
+def test_company_weekly_tokens_use_provider_market_share_not_top_model_ranking(monkeypatch) -> None:
+    catalog_frame = pd.DataFrame([
+        {
+            "model_id": "openai/gpt-test",
+            "canonical_slug": "openai/gpt-test-20260701",
+            "model_name": "OpenAI: GPT Test",
+            "provider_prefix": "openai",
+            "created_at": 1_782_864_000,
+            "context_length": 1_048_576,
+            "architecture": "text->text",
+            "pricing_prompt": 0.000001,
+            "pricing_completion": 0.000006,
+        }
+    ])
+    monkeypatch.setattr(
+        "dashboard.sections.openrouter.compute_compute_availability_views",
+        lambda datasets: {
+            "models_latest": catalog_frame,
+            "models_history_start": pd.Timestamp("2026-01-01"),
+            "models_history_end": pd.Timestamp("2026-07-06"),
+        },
+    )
+    top_models = pd.DataFrame([
+        {"week_start_date": "2026-06-29", "entity_id": "openai/gpt-test", "metric_value": 999_000.0},
+    ])
+    market_share = pd.DataFrame([
+        {"week_start_date": "2026-06-28", "entity_id": "openai", "metric_value": 100_000.0},
+        {"week_start_date": "2026-07-05", "entity_id": "openai", "metric_value": 200_000.0},
+    ])
+    provider_requests = pd.DataFrame([
+        {"week_start_date": "2026-06-29", "entity_id": "openai", "metric_value": 1_000.0},
+        {"week_start_date": "2026-07-06", "entity_id": "openai", "metric_value": 2_000.0},
+    ])
+
+    views = build_openrouter_explorer_views({
+        "raw_openrouter_models": _dataset_result("raw_openrouter_models", catalog_frame),
+        "top_models": _dataset_result("top_models", top_models),
+        "market_share": _dataset_result("market_share", market_share),
+        "provider_weekly_requests": _dataset_result("provider_weekly_requests", provider_requests),
+    })
+
+    company_tokens = views["weekly_company_tokens"]
+    assert company_tokens["company_slug"].eq("openai").all()
+    assert company_tokens["usage_week"].tolist() == [
+        pd.Timestamp("2026-06-29"),
+        pd.Timestamp("2026-07-06"),
+    ]
+    assert company_tokens["tokens"].tolist() == [100_000.0, 200_000.0]
 
 
 def test_model_activity_precedes_provider_fallback_for_same_model_day() -> None:
