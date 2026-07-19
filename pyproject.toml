@@ -35,6 +35,7 @@ dev = [
 [project.scripts]
 openrouter-data = "openrouter_data.cli:main"
 openrouter-official-data = "openrouter_official_data.cli:main"
+openrouter-derived-data = "openrouter_derived_data.cli:main"
 github-trending-data = "github_trending_data.cli:main"
 provider-adoption-data = "provider_adoption_data.cli:main"
 semiconductor-memory-data = "semiconductor_memory_data.cli:main"

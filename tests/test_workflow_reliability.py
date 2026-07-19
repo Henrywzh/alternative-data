@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from copy import deepcopy
 from pathlib import Path
 
+import pytest
 import yaml
 
 
@@ -44,3 +46,229 @@ def test_fred_workflow_accepts_the_existing_semiconductor_fred_secret() -> None:
     workflow = (WORKFLOWS / "fred-macro-daily.yml").read_text(encoding="utf-8")
 
     assert "secrets.FRED_API_KEY || secrets.SEMICONDUCTOR_FRED_API_KEY" in workflow
+
+
+_DERIVED_BUILD_COMMAND = "openrouter-derived-data --base-dir . build"
+_DERIVED_TEST_COMMAND = "python -m pytest -q tests/test_openrouter_derived_data.py"
+_EXTERNAL_DATA_TOKENS = (
+    "curl",
+    "wget",
+    "http://",
+    "https://",
+    "requests",
+    "urllib",
+    "openrouter_data.cli",
+    "openrouter_official_data.cli",
+    "openrouter-data",
+    "openrouter-official-data",
+)
+_INSTALL_DEPENDENCIES_RUN = """\
+python -m pip install --upgrade pip
+python -m pip install -e .[dev]"""
+_SYNC_INPUTS_RUN = """\
+for attempt in 1 2 3; do
+  if git pull --rebase origin "${{ github.event.repository.default_branch }}"; then
+    exit 0
+  fi
+  sleep $((attempt * 5))
+done
+exit 1"""
+_COMMIT_DERIVED_MARTS_RUN = """\
+git config user.name "github-actions[bot]"
+git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+git add data/normalized/marts/openrouter_usage_economics_daily.parquet \\
+        data/normalized/marts/openrouter_workload_intensity_models.parquet
+if git diff --staged --quiet; then
+  echo "No OpenRouter derived metric changes to commit"
+  exit 0
+fi
+git commit -m "chore: update OpenRouter derived metrics [$(date -u +%Y-%m-%d)]"
+
+for attempt in 1 2 3; do
+  if git push; then
+    exit 0
+  fi
+  sleep $((attempt * 5))
+done
+exit 1"""
+
+
+def _normalize_run_body(run: str) -> str:
+    return "\n".join(line.rstrip() for line in run.strip().splitlines())
+
+
+_APPROVED_DERIVED_STEPS = [
+    {
+        "name": "Check out repository",
+        "uses": "actions/checkout@v7",
+        "with": {
+            "ref": "${{ github.event.repository.default_branch }}",
+            "fetch-depth": "0",
+        },
+    },
+    {
+        "name": "Set up Python",
+        "uses": "actions/setup-python@v6",
+        "with": {"python-version": "3.11"},
+    },
+    {
+        "name": "Install dependencies",
+        "run": _normalize_run_body(_INSTALL_DEPENDENCIES_RUN),
+    },
+    {
+        "name": "Synchronize committed inputs",
+        "run": _normalize_run_body(_SYNC_INPUTS_RUN),
+    },
+    {
+        "name": "Build compact derived marts from committed inputs",
+        "run": _DERIVED_BUILD_COMMAND,
+    },
+    {
+        "name": "Run derived-mart quality tests",
+        "run": _DERIVED_TEST_COMMAND,
+    },
+    {
+        "name": "Commit compact derived marts",
+        "run": _normalize_run_body(_COMMIT_DERIVED_MARTS_RUN),
+    },
+]
+
+
+def _openrouter_derived_workflow() -> dict[str, object]:
+    path = WORKFLOWS / "openrouter-derived-daily.yml"
+    return yaml.load(path.read_text(encoding="utf-8"), Loader=yaml.BaseLoader)
+
+
+def _derived_build_job(workflow: dict[str, object]) -> dict[str, object]:
+    jobs = workflow["jobs"]
+    assert isinstance(jobs, dict)
+    assert list(jobs) == ["build"]
+    build_job = jobs["build"]
+    assert isinstance(build_job, dict)
+    return build_job
+
+
+def _derived_build_steps(workflow: dict[str, object]) -> list[dict[str, object]]:
+    steps = _derived_build_job(workflow).get("steps")
+    assert isinstance(steps, list)
+    assert all(isinstance(step, dict) for step in steps)
+    return steps
+
+
+def _assert_openrouter_derived_workflow_contract(workflow: dict[str, object]) -> None:
+    assert workflow["on"]["schedule"] == [{"cron": "30 9 * * *"}]
+    assert "workflow_dispatch" in workflow["on"]
+    assert workflow["concurrency"]["group"]
+    assert workflow["concurrency"]["cancel-in-progress"] == "false"
+
+    build_job = _derived_build_job(workflow)
+    assert set(build_job) == {"runs-on", "timeout-minutes", "steps"}
+    assert build_job["runs-on"] == "ubuntu-latest"
+    assert build_job["timeout-minutes"] == "20"
+    steps = _derived_build_steps(workflow)
+    normalized_steps = [
+        {
+            **step,
+            "run": _normalize_run_body(step["run"]),
+        }
+        if "run" in step
+        else step
+        for step in steps
+    ]
+    assert normalized_steps == _APPROVED_DERIVED_STEPS
+
+    for step in steps:
+        if "run" not in step:
+            continue
+        run = step["run"]
+        assert isinstance(run, str)
+        assert not any(
+            token in run.lower() for token in _EXTERNAL_DATA_TOKENS
+        ), f"external data or network command found in {step.get('name')!r}"
+
+
+def test_openrouter_derived_workflow_is_bounded_and_no_network() -> None:
+    workflow_path = WORKFLOWS / "openrouter-derived-daily.yml"
+    workflow_text = workflow_path.read_text(encoding="utf-8")
+    workflow = _openrouter_derived_workflow()
+
+    assert "secrets." not in workflow_text
+    _assert_openrouter_derived_workflow_contract(workflow)
+
+
+def test_openrouter_derived_workflow_rejects_an_external_data_step() -> None:
+    workflow = deepcopy(_openrouter_derived_workflow())
+    _derived_build_steps(workflow)[2]["run"] += "\ncurl https://example.com"
+
+    with pytest.raises(AssertionError):
+        _assert_openrouter_derived_workflow_contract(workflow)
+
+
+def test_openrouter_derived_workflow_rejects_a_missing_timeout() -> None:
+    workflow = deepcopy(_openrouter_derived_workflow())
+    build_job = _derived_build_job(workflow)
+    build_job.pop("timeout-minutes")
+
+    with pytest.raises(AssertionError):
+        _assert_openrouter_derived_workflow_contract(workflow)
+
+
+def test_openrouter_derived_workflow_rejects_a_timeout_moved_to_another_job() -> None:
+    workflow = deepcopy(_openrouter_derived_workflow())
+    build_job = _derived_build_job(workflow)
+    build_job.pop("timeout-minutes")
+    workflow["jobs"]["unrelated"] = {"timeout-minutes": 20, "steps": []}
+
+    with pytest.raises(AssertionError):
+        _assert_openrouter_derived_workflow_contract(workflow)
+
+
+def test_openrouter_derived_workflow_rejects_an_extra_collector_job() -> None:
+    workflow = deepcopy(_openrouter_derived_workflow())
+    workflow["jobs"]["collector"] = {
+        "steps": [{"name": "Collect data", "run": "python scripts/collect_openrouter.py"}]
+    }
+
+    with pytest.raises(AssertionError):
+        _assert_openrouter_derived_workflow_contract(workflow)
+
+
+def test_openrouter_derived_workflow_rejects_an_extra_action_only_step() -> None:
+    workflow = deepcopy(_openrouter_derived_workflow())
+    _derived_build_steps(workflow).append(
+        {"name": "Cache dependencies", "uses": "actions/cache@v4"}
+    )
+
+    with pytest.raises(AssertionError):
+        _assert_openrouter_derived_workflow_contract(workflow)
+
+
+def test_openrouter_derived_workflow_rejects_an_appended_collector_command() -> None:
+    workflow = deepcopy(_openrouter_derived_workflow())
+    _derived_build_steps(workflow)[4]["run"] += "\npython -m another_collector"
+
+    with pytest.raises(AssertionError):
+        _assert_openrouter_derived_workflow_contract(workflow)
+
+
+def test_openrouter_derived_workflow_builds_only_after_successful_sync() -> None:
+    steps = _derived_build_steps(_openrouter_derived_workflow())
+    names = [step["name"] for step in steps]
+
+    assert names.index("Synchronize committed inputs") < names.index(
+        "Build compact derived marts from committed inputs"
+    )
+
+
+def test_openrouter_derived_workflow_has_no_sync_after_build() -> None:
+    steps = _derived_build_steps(_openrouter_derived_workflow())
+    build_index = next(
+        index
+        for index, step in enumerate(steps)
+        if step["name"] == "Build compact derived marts from committed inputs"
+    )
+
+    for step in steps[build_index + 1 :]:
+        run = str(step.get("run", "")).lower()
+        assert "git pull" not in run
+        assert "git rebase" not in run
