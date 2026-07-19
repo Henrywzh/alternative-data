@@ -11,6 +11,7 @@ permissions:
 jobs:
   provider-adoption:
     runs-on: ubuntu-latest
+    timeout-minutes: 120
     env:
       GITHUB_TOKEN: ${{ secrets.PROVIDER_ADOPTION_GITHUB_TOKEN != '' && secrets.PROVIDER_ADOPTION_GITHUB_TOKEN || github.token }}
       HF_TOKEN: ${{ secrets.PROVIDER_ADOPTION_HF_TOKEN }}
@@ -103,14 +104,14 @@ jobs:
           done < <(sort -u "$dirs_file")
 
       - name: Upload raw snapshots
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: provider-adoption-raw-snapshots
           path: ${{ runner.temp }}/provider-adoption-raw-artifact/
           if-no-files-found: error
 
       - name: Upload normalized datasets
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: provider-adoption-normalized-datasets
           path: data/normalized/provider_adoption/

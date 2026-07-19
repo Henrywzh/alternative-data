@@ -17,6 +17,7 @@ jobs:
   scrape-tungsten-molybdenum:
     name: Scrape Daily Tungsten, Molybdenum, and Rare Earth Prices
     runs-on: ubuntu-latest
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v7
         with:

@@ -11,6 +11,7 @@ permissions:
 jobs:
   update-task-spend:
     runs-on: ubuntu-latest
+    timeout-minutes: 120
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
@@ -50,14 +51,14 @@ jobs:
           git push
 
       - name: Upload raw snapshots
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: openrouter-task-spend-raw-snapshots
           path: data/raw/openrouter/
           if-no-files-found: error
 
       - name: Upload normalized dataset
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: openrouter-task-spend-normalized-dataset
           path: |

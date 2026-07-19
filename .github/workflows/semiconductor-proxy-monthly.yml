@@ -55,6 +55,7 @@ permissions:
 jobs:
   semiconductor-proxy:
     runs-on: ubuntu-latest
+    timeout-minutes: 120
     env:
       COMTRADE_API_KEY: ${{ secrets.SEMICONDUCTOR_COMTRADE_API_KEY }}
     steps:
@@ -174,7 +175,7 @@ jobs:
 
       - name: Upload raw snapshots
         if: github.event_name == 'schedule' || github.event.inputs.command == 'update-latest' || github.event.inputs.command == 'backfill' || github.event.inputs.command == 'compare-backup'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: semiconductor-proxy-raw-snapshots
           path: data/raw/semiconductor_proxies/
@@ -182,7 +183,7 @@ jobs:
 
       - name: Upload normalized datasets
         if: github.event_name == 'schedule' || github.event.inputs.command == 'update-latest' || github.event.inputs.command == 'backfill' || github.event.inputs.command == 'compare-backup'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: semiconductor-proxy-normalized-datasets
           path: data/normalized/semiconductor_proxies/

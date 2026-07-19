@@ -26,6 +26,7 @@ jobs:
   run-live:
     name: Refresh live minerals dashboard datasets
     runs-on: ubuntu-latest
+    timeout-minutes: 120
     env:
       # FRED powers the lead/zinc/tin price series; reuse the existing repo secret.
       FRED_API_KEY: ${{ secrets.SEMICONDUCTOR_FRED_API_KEY }}
@@ -73,7 +74,7 @@ jobs:
           git pull --rebase origin "${{ github.event.repository.default_branch }}"
           git push
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: minerals-signal-latest
           path: data/processed/minerals_signal_data/**/latest/
