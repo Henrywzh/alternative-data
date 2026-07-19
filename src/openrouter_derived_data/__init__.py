@@ -12,6 +12,7 @@ from .metrics import (
     compute_workload_intensity_daily,
     compute_workload_intensity_models,
 )
+from .pipeline import OpenRouterDerivedPipeline
 
 __all__ = [
     "CapabilityEntry",
@@ -22,4 +23,5 @@ __all__ = [
     "compute_price_metrics",
     "compute_workload_intensity_daily",
     "compute_workload_intensity_models",
+    "OpenRouterDerivedPipeline",
 ]
