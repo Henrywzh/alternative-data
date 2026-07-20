@@ -435,6 +435,15 @@ def test_build_conservative_economics_forward_fills_target_routes_with_explicit_
             "usage_date": "2026-01-16",
             "entity_id": "openai",
             "entity_name": "OpenAI",
+            "model_permaslug": "openai/gpt-5.4-20260305",
+            "total_tokens": 100.0,
+            "prompt_tokens": 70.0,
+            "completion_tokens": 30.0,
+        },
+        {
+            "usage_date": "2026-01-16",
+            "entity_id": "openai",
+            "entity_name": "OpenAI",
             "model_permaslug": "openai/unknown-model",
             "total_tokens": 100.0,
             "prompt_tokens": 70.0,
@@ -450,6 +459,14 @@ def test_build_conservative_economics_forward_fills_target_routes_with_explicit_
             "pricing_prompt": 0.000002,
             "pricing_completion": 0.000006,
         },
+        {
+            "snapshot_ts": "2026-07-17T00:00:00Z",
+            "model_id": "openai/gpt-5.4",
+            "canonical_slug": "openai/gpt-5.4-20260305",
+            "provider_prefix": "openai",
+            "pricing_prompt": 0.000001,
+            "pricing_completion": 0.000003,
+        },
     ])
 
     mart = build_conservative_provider_economics(activity, pricing)
@@ -460,6 +477,11 @@ def test_build_conservative_economics_forward_fills_target_routes_with_explicit_
     assert filled["revenue_method"] == "historical_exact_split_priced"
     assert filled["pricing_snapshot_ts"] == "2026-07-17T00:00:00Z"
     assert filled["estimated_revenue"] == pytest.approx(0.00032)
+    openai_filled = mart[mart["model_permaslug"] == "openai/gpt-5.4-20260305"].iloc[0]
+    assert openai_filled["pricing_join_status"] == "historical_route_price_fill"
+    assert openai_filled["revenue_method"] == "historical_exact_split_priced"
+    assert openai_filled["pricing_snapshot_ts"] == "2026-07-17T00:00:00Z"
+    assert openai_filled["estimated_revenue"] == pytest.approx(0.00016)
     assert unresolved["pricing_join_status"] == "unresolved_missing_pricing"
     assert pd.isna(unresolved["estimated_revenue"])
 

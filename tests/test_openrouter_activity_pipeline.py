@@ -117,6 +117,54 @@ def test_activity_source_leaves_reasoning_tokens_null_when_missing() -> None:
     assert record.total_tokens == 1000.0
 
 
+def test_model_activity_validation_rejects_partial_latest_scrape() -> None:
+    records = [
+        DatasetRecord(
+            dataset_id="openrouter_model_activity",
+            source_url="fixture://activity",
+            source_run_id="run-1",
+            scraped_at="2026-07-20T00:00:00Z",
+            usage_date="2026-07-20",
+            model_permaslug="openai/gpt-5.6",
+            category_slug="all",
+            request_count=10,
+            total_tokens=1000,
+        )
+    ]
+
+    with pytest.raises(ExtractionError, match="latest complete date has 1 models"):
+        ActivitySource.validate_records(
+            records,
+            scraped_at=pd.Timestamp("2026-07-20T00:00:00Z").to_pydatetime(),
+            min_models_latest=2,
+        )
+
+
+def test_model_activity_validation_accepts_complete_latest_scrape() -> None:
+    records = [
+        DatasetRecord(
+            dataset_id="openrouter_model_activity",
+            source_url="fixture://activity",
+            source_run_id="run-1",
+            scraped_at="2026-07-20T00:00:00Z",
+            usage_date="2026-07-20",
+            model_permaslug=f"openai/model-{index}",
+            category_slug="all",
+            request_count=10,
+            total_tokens=1000,
+        )
+        for index in range(2)
+    ]
+
+    summary = ActivitySource.validate_records(
+        records,
+        scraped_at=pd.Timestamp("2026-07-20T00:00:00Z").to_pydatetime(),
+        min_models_latest=2,
+    )
+
+    assert summary["latest_model_count"] == 2
+
+
 def test_openrouter_model_activity_storage_roundtrips_reasoning_tokens(tmp_path: Path) -> None:
     storage = StorageManager(tmp_path)
 
@@ -178,6 +226,30 @@ def test_provider_daily_activity_storage_is_parquet_only(tmp_path: Path) -> None
     assert float(loaded.loc[0, "total_tokens"]) == 1250.0
 
 
+def test_provider_daily_activity_keeps_same_day_others_per_provider(tmp_path: Path) -> None:
+    storage = StorageManager(tmp_path)
+    records = [
+        DatasetRecord(
+            dataset_id="provider_daily_activity",
+            source_url=f"fixture://provider/{provider}",
+            source_run_id="run-1",
+            scraped_at="2026-04-24T00:00:00Z",
+            entity_id=provider,
+            entity_name=display,
+            usage_date="2026-04-24",
+            model_permaslug="Others",
+            total_tokens=tokens,
+        )
+        for provider, display, tokens in (("openai", "OpenAI", 100.0), ("meta", "Meta", 200.0))
+    ]
+
+    written = storage.upsert_dataset("provider_daily_activity", records)
+
+    assert len(written) == 2
+    assert set(written["entity_id"]) == {"openai", "meta"}
+    assert written["total_tokens"].sum() == 300.0
+
+
 def test_provider_activity_source_still_emits_total_tokens_only() -> None:
     payload = [
         "$",
@@ -237,6 +309,33 @@ def test_provider_activity_validation_accepts_healthy_provider_rows() -> None:
 
     assert summary["openai"]["date_count"] == 6
     assert summary["openai"]["latest_date"] == "2026-06-30"
+
+
+def test_provider_activity_validation_allows_new_provider_short_history() -> None:
+    records = [
+        DatasetRecord(
+            dataset_id="provider_daily_activity",
+            source_url="fixture://provider/meta",
+            source_run_id="run-1",
+            scraped_at="2026-06-30T00:00:00Z",
+            entity_id="meta",
+            entity_name="Meta",
+            usage_date=f"2026-06-{day:02d}",
+            model_permaslug="meta/muse-spark-1.1-20260709",
+            total_tokens=1_000_000.0,
+        )
+        for day in range(26, 31)
+    ]
+
+    summary = ProviderActivitySource.validate_records(
+        records,
+        expected_providers={"meta": "Meta"},
+        scraped_at=pd.Timestamp("2026-06-30T00:00:00Z").to_pydatetime(),
+        min_days_by_provider={"meta": 5},
+        max_lag_days=1,
+    )
+
+    assert summary["meta"]["date_count"] == 5
 
 
 def test_provider_activity_validation_rejects_html_drift_partial_rows() -> None:
@@ -318,6 +417,10 @@ def test_provider_config_tracks_tencent() -> None:
 
 def test_provider_config_tracks_stepfun() -> None:
     assert PROVIDER_SLUGS["stepfun"] == "StepFun"
+
+
+def test_provider_config_tracks_meta() -> None:
+    assert PROVIDER_SLUGS["meta"] == "Meta"
 
 
 def test_provider_activity_source_emits_tencent_rows() -> None:

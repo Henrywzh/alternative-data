@@ -42,6 +42,25 @@ def test_model_activity_workflow_stages_archive_only_when_it_exists() -> None:
     assert "git add data/normalized/openrouter_archive" in workflow
 
 
+@pytest.mark.parametrize(
+    "workflow_name",
+    [
+        "openrouter-apps-daily.yml",
+        "openrouter-task-spend-daily.yml",
+        "openrouter-rankings-weekly.yml",
+    ],
+)
+def test_openrouter_write_workflows_are_serialized_and_retry_pushes(workflow_name: str) -> None:
+    workflow = (WORKFLOWS / workflow_name).read_text(encoding="utf-8")
+    parsed = yaml.load(workflow, Loader=yaml.BaseLoader)
+
+    assert parsed["concurrency"]["cancel-in-progress"] == "false"
+    assert "fetch-depth: 0" in workflow
+    assert "for attempt in 1 2 3; do" in workflow
+    assert "git pull --rebase" in workflow
+    assert "git push" in workflow
+
+
 def test_fred_workflow_accepts_the_existing_semiconductor_fred_secret() -> None:
     workflow = (WORKFLOWS / "fred-macro-daily.yml").read_text(encoding="utf-8")
 

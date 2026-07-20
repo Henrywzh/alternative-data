@@ -24,7 +24,11 @@ class _FakeStreamlit:
         self.captions: list[str] = []
         self.metrics: list[tuple[str, str]] = []
         self.selectbox_options: list[str] = []
+        self.selectedbox_value: str | None = None
+        self.default_selectbox_value: str | None = None
+        self.selectbox_choice: str | None = None
         self.multiselect_calls: list[dict[str, object]] = []
+        self.slider_calls: list[dict[str, object]] = []
         self.figures = []
 
     def markdown(self, *args, **kwargs) -> None:
@@ -45,7 +49,16 @@ class _FakeStreamlit:
 
     def selectbox(self, label: str, options, index: int = 0):
         self.selectbox_options = list(options)
-        return options[index]
+        self.default_selectbox_value = options[index]
+        selected_index = options.index(self.selectbox_choice) if self.selectbox_choice else index
+        self.selectedbox_value = options[selected_index]
+        return self.selectedbox_value
+
+    def slider(self, label: str, min_value, max_value, value, **kwargs):
+        self.slider_calls.append(
+            {"label": label, "min_value": min_value, "max_value": max_value, "value": value}
+        )
+        return value
 
     def multiselect(self, label: str, options, default=None, format_func=None):
         self.multiselect_calls.append(
@@ -59,6 +72,7 @@ class _FakeStreamlit:
 
 def test_render_minerals_section_uses_live_selector_and_proxy_labels(monkeypatch) -> None:
     fake_st = _FakeStreamlit()
+    fake_st.selectbox_choice = "Graphite"
     price_universe = pd.DataFrame(
         [
             {
@@ -125,6 +139,8 @@ def test_render_minerals_section_uses_live_selector_and_proxy_labels(monkeypatch
 
     minerals.render_minerals_section()
 
+    assert fake_st.default_selectbox_value == "Tungsten"
+    assert fake_st.selectedbox_value == "Graphite"
     assert "Graphite" in fake_st.selectbox_options
     assert "Tungsten" in fake_st.selectbox_options
     assert "Molybdenum" in fake_st.selectbox_options
@@ -136,6 +152,7 @@ def test_render_minerals_section_uses_live_selector_and_proxy_labels(monkeypatch
     assert fake_st.figures
     assert all(trace.name != "Bullish week" for trace in fake_st.figures[0].data)
     assert fake_st.figures[0].layout.xaxis.range == fake_st.figures[1].layout.xaxis.range
+    assert fake_st.slider_calls[0]["label"] == "Date range for both charts"
 
 
 def test_format_stock_label_uses_chinese_names_for_mapped_china_tungsten_stocks() -> None:

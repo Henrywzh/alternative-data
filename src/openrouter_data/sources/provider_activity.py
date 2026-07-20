@@ -22,6 +22,7 @@ PROVIDER_SLUGS: dict[str, str] = {
     "openai": "OpenAI",
     "anthropic": "Anthropic",
     "google": "Google",
+    "meta": "Meta",
     "meta-llama": "Meta (Llama)",
     "mistralai": "Mistral AI",
     "deepseek": "DeepSeek",
@@ -140,6 +141,7 @@ class ProviderActivitySource(SourceExtractor):
         expected_providers: dict[str, str],
         scraped_at: datetime,
         min_days: int = 60,
+        min_days_by_provider: dict[str, int] | None = None,
         max_lag_days: int = 2,
         min_total_tokens: float = 1.0,
     ) -> dict[str, dict[str, Any]]:
@@ -176,6 +178,7 @@ class ProviderActivitySource(SourceExtractor):
 
         latest_allowed = scraped_at.date() - timedelta(days=max_lag_days)
         summary: dict[str, dict[str, Any]] = {}
+        provider_min_days = min_days_by_provider or {}
         for provider_slug in sorted(present_providers & set(expected_providers)):
             provider_frame = frame[frame["entity_id"] == provider_slug].copy()
             dates = sorted(provider_frame["usage_date_dt"].dropna().unique().tolist())
@@ -191,8 +194,11 @@ class ProviderActivitySource(SourceExtractor):
                 "total_tokens": total_tokens,
             }
 
-            if len(dates) < min_days:
-                errors.append(f"{provider_slug}: only {len(dates)} dates extracted; expected at least {min_days}")
+            required_days = provider_min_days.get(provider_slug, min_days)
+            if len(dates) < required_days:
+                errors.append(
+                    f"{provider_slug}: only {len(dates)} dates extracted; expected at least {required_days}"
+                )
             if latest_date is None or latest_date < latest_allowed:
                 latest_label = latest_date.isoformat() if latest_date else "none"
                 errors.append(

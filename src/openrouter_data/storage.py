@@ -24,7 +24,10 @@ NATURAL_KEYS: dict[str, list[str]] = {
     "apps_global_ranking_snapshots": ["snapshot_date", "period", "rank"],
     "apps_trending_snapshots": ["snapshot_date", "rank"],
     "openrouter_model_activity": ["usage_date", "model_permaslug", "category_slug"],
-    "provider_daily_activity": ["usage_date", "model_permaslug"],
+    # Provider pages can emit the synthetic `Others` bucket for every
+    # provider.  Keep provider identity in the grain so same-day buckets do
+    # not overwrite one another during the upsert.
+    "provider_daily_activity": ["usage_date", "entity_id", "model_permaslug"],
     "openrouter_task_spend": ["snapshot_date", "period", "window_days", "category_slug", "model_permaslug"],
 }
 
@@ -110,7 +113,7 @@ SORT_KEYS: dict[str, list[str]] = {
     "apps_global_ranking_snapshots": ["snapshot_date", "period", "rank", "origin_url"],
     "apps_trending_snapshots": ["snapshot_date", "rank", "origin_url"],
     "openrouter_model_activity": ["usage_date", "model_permaslug", "category_slug"],
-    "provider_daily_activity": ["usage_date", "model_permaslug"],
+    "provider_daily_activity": ["usage_date", "entity_id", "model_permaslug"],
     "openrouter_task_spend": ["snapshot_date", "period", "category_slug", "rank", "model_permaslug"],
 }
 PARQUET_ONLY_DATASETS = {"provider_daily_activity", "openrouter_model_activity"}

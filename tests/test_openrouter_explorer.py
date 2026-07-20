@@ -7,7 +7,9 @@ import pandas as pd
 from dashboard.data import DatasetLoadResult
 from dashboard.sections.openrouter import (
     _catalog_alias_map,
+    _clean_provider_request_frame,
     _combine_explorer_activity,
+    _format_price_per_m,
     build_openrouter_explorer_views,
     _normalize_explorer_activity,
     _prepare_explorer_catalog,
@@ -62,6 +64,43 @@ def _catalog() -> pd.DataFrame:
             "pricing_completion": 0.000015,
         },
     ]))
+
+
+def test_unavailable_catalog_prices_are_missing_not_negative_prices() -> None:
+    catalog = _prepare_explorer_catalog(pd.DataFrame([
+        {
+            "model_id": "openrouter/auto",
+            "canonical_slug": "openrouter/auto",
+            "model_name": "OpenRouter Auto",
+            "provider_prefix": "openrouter",
+            "created_at": 1_782_864_000,
+            "context_length": 128000,
+            "architecture": "text->text",
+            "pricing_prompt": -1.0,
+            "pricing_completion": -1.0,
+        }
+    ]))
+
+    row = catalog.iloc[0]
+    assert pd.isna(row["pricing_prompt"])
+    assert pd.isna(row["input_price_per_m"])
+    assert _format_price_per_m(-1.0) == "n/a"
+
+
+def test_legacy_provider_request_rows_that_duplicate_market_share_are_ignored() -> None:
+    request = pd.DataFrame([
+        {"week_start_date": "2026-07-13", "entity_id": "openai", "metric_value": 500.0},
+        {"week_start_date": "2026-07-13", "entity_id": "anthropic", "metric_value": 42.0},
+    ])
+    market = pd.DataFrame([
+        {"week_start_date": "2026-07-13", "entity_id": "openai", "metric_value": 500.0},
+    ])
+
+    cleaned = _clean_provider_request_frame(request, market)
+
+    assert cleaned[["week_start_date", "entity_id"]].to_dict("records") == [
+        {"week_start_date": "2026-07-13", "entity_id": "anthropic"}
+    ]
 
 
 def test_company_and_model_explorer_states_join_catalog_activity_and_apps() -> None:
@@ -240,7 +279,7 @@ def test_company_explorer_falls_back_to_daily_activity_for_missing_weekly_compan
     assert state["weekly_request_source"] == "Daily model activity aggregated to weekly totals"
 
 
-def test_company_weekly_tokens_use_provider_market_share_not_top_model_ranking(monkeypatch) -> None:
+def test_company_weekly_tokens_use_complete_provider_activity_not_top_model_ranking(monkeypatch) -> None:
     catalog_frame = pd.DataFrame([
         {
             "model_id": "openai/gpt-test",
@@ -265,9 +304,10 @@ def test_company_weekly_tokens_use_provider_market_share_not_top_model_ranking(m
     top_models = pd.DataFrame([
         {"week_start_date": "2026-06-29", "entity_id": "openai/gpt-test", "metric_value": 999_000.0},
     ])
-    market_share = pd.DataFrame([
-        {"week_start_date": "2026-06-28", "entity_id": "openai", "metric_value": 100_000.0},
-        {"week_start_date": "2026-07-05", "entity_id": "openai", "metric_value": 200_000.0},
+    provider_activity = pd.DataFrame([
+        {"usage_date": "2026-07-06", "model_permaslug": "openai/gpt-test", "total_tokens": 100_000.0},
+        {"usage_date": "2026-07-07", "model_permaslug": "openai/gpt-test", "total_tokens": 50_000.0},
+        {"usage_date": "2026-07-13", "model_permaslug": "openai/gpt-test", "total_tokens": 200_000.0},
     ])
     provider_requests = pd.DataFrame([
         {"week_start_date": "2026-06-29", "entity_id": "openai", "metric_value": 1_000.0},
@@ -277,17 +317,20 @@ def test_company_weekly_tokens_use_provider_market_share_not_top_model_ranking(m
     views = build_openrouter_explorer_views({
         "raw_openrouter_models": _dataset_result("raw_openrouter_models", catalog_frame),
         "top_models": _dataset_result("top_models", top_models),
-        "market_share": _dataset_result("market_share", market_share),
+        "provider_daily_activity": _dataset_result("provider_daily_activity", provider_activity),
         "provider_weekly_requests": _dataset_result("provider_weekly_requests", provider_requests),
     })
 
     company_tokens = views["weekly_company_tokens"]
     assert company_tokens["company_slug"].eq("openai").all()
     assert company_tokens["usage_week"].tolist() == [
-        pd.Timestamp("2026-06-29"),
         pd.Timestamp("2026-07-06"),
+        pd.Timestamp("2026-07-13"),
     ]
-    assert company_tokens["tokens"].tolist() == [100_000.0, 200_000.0]
+    assert company_tokens["tokens"].tolist() == [150_000.0, 200_000.0]
+    state = company_explorer_state(views, "openai")
+    assert "openai/gpt-test" in state["weekly_model_pivot"].columns
+    assert state["weekly_token_source"] == "Provider daily model activity aggregated to weekly totals"
 
 
 def test_model_activity_precedes_provider_fallback_for_same_model_day() -> None:

@@ -3,7 +3,7 @@ from __future__ import annotations
 import inspect
 import re
 import sys
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 
 import numpy as np
@@ -357,6 +357,16 @@ def _shared_price_axis_range(mineral_prices: pd.DataFrame, stock_prices: pd.Data
     return [pd.Timestamp(min(dates)).strftime("%Y-%m-%d"), pd.Timestamp(max(dates)).strftime("%Y-%m-%d")]
 
 
+def _shared_price_date_bounds(
+    mineral_prices: pd.DataFrame, stock_prices: pd.DataFrame
+) -> tuple[date, date] | None:
+    """Return date bounds for the one control shared by both price charts."""
+    axis_range = _shared_price_axis_range(mineral_prices, stock_prices)
+    if axis_range is None:
+        return None
+    return date.fromisoformat(axis_range[0]), date.fromisoformat(axis_range[1])
+
+
 def render_minerals_section() -> None:
     st.markdown("## ⛏️ Critical Minerals")
     st.caption(
@@ -392,7 +402,10 @@ def render_minerals_section() -> None:
 
     sel_col, _ = st.columns([2, 3])
     with sel_col:
-        selected_label = st.selectbox("Mineral", labels, index=0)
+        default_mineral_id = "tungsten" if "tungsten" in tracked_ids else tracked_ids[0]
+        selected_label = st.selectbox(
+            "Mineral", labels, index=tracked_ids.index(default_mineral_id)
+        )
     selected_id = tracked_ids[labels.index(selected_label)]
     selected_name = name_by_id.get(selected_id, selected_id)
 
@@ -440,8 +453,30 @@ def render_minerals_section() -> None:
         stock_prices["ticker_normalized"].isin(linked_tickers)
     ] if not stock_prices.empty and linked_tickers else pd.DataFrame()
     shared_xrange = _shared_price_axis_range(m_prices, linked_stock_prices)
+    shared_bounds = _shared_price_date_bounds(m_prices, linked_stock_prices)
+    selected_start = selected_end = None
+    if shared_bounds is not None:
+        if shared_bounds[0] < shared_bounds[1]:
+            selected_start, selected_end = st.slider(
+                "Date range for both charts",
+                min_value=shared_bounds[0],
+                max_value=shared_bounds[1],
+                value=shared_bounds,
+                format="YYYY-MM-DD",
+                help="This single range controls both the mineral and related-stock charts.",
+            )
+        else:
+            selected_start, selected_end = shared_bounds
+        shared_xrange = [selected_start.isoformat(), selected_end.isoformat()]
+
+    m_chart_prices = m_prices
+    if selected_start is not None:
+        m_chart_dates = pd.to_datetime(m_prices["date"], errors="coerce").dt.date
+        m_chart_prices = m_prices.loc[
+            (m_chart_dates >= selected_start) & (m_chart_dates <= selected_end)
+        ].copy()
     if is_chinatungsten:
-        product_rows = m_prices.dropna(subset=["product_series"]).copy()
+        product_rows = m_chart_prices.dropna(subset=["product_series"]).copy()
         product_options = [
             series_id
             for series_id in _CHINATUNGSTEN_SERIES[selected_id]["series"]
@@ -547,10 +582,16 @@ def render_minerals_section() -> None:
     if pd.notna(latest_stock_date):
         st.caption(f"Stock prices shown through {latest_stock_date.date()}.")
 
+    sp_chart = sp
+    if selected_start is not None:
+        sp_dates = pd.to_datetime(sp["date"], errors="coerce").dt.date
+        sp_chart = sp.loc[(sp_dates >= selected_start) & (sp_dates <= selected_end)].copy()
+
     fig2 = go.Figure()
-    for index, (ticker, group) in enumerate(sp.groupby("ticker_normalized")):
+    for index, (ticker, group) in enumerate(sp_chart.groupby("ticker_normalized")):
         group = group.sort_values("date")
-        base = group["adj_close"].iloc[0]
+        full_group = sp.loc[sp["ticker_normalized"] == ticker].sort_values("date")
+        base = full_group["adj_close"].iloc[0]
         if not base or pd.isna(base):
             continue
         rebased = group["adj_close"] / base * 100.0
