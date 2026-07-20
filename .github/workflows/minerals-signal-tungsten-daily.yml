@@ -20,9 +20,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 120
     env:
+      MINERALS_REPORT_ENV: production
       GMAIL_SENDER: ${{ secrets.GMAIL_SENDER }}
       GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
-      GMAIL_RECIPIENT: ${{ secrets.GMAIL_RECIPIENT }}
+      GMAIL_RECIPIENTS: ${{ secrets.GMAIL_RECIPIENTS }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -46,7 +47,7 @@ jobs:
         run: |
           test -n "$GMAIL_SENDER" || { echo "Missing GMAIL_SENDER repository secret"; exit 1; }
           test -n "$GMAIL_APP_PASSWORD" || { echo "Missing GMAIL_APP_PASSWORD repository secret"; exit 1; }
-          test -n "$GMAIL_RECIPIENT" || { echo "Missing GMAIL_RECIPIENT repository secret"; exit 1; }
+          test -n "$GMAIL_RECIPIENTS" || { echo "Missing GMAIL_RECIPIENTS repository secret"; exit 1; }
 
       - name: Run scraper tests
         run: |

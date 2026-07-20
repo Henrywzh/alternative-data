@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from minerals_signal_data.daily_report import REPORT_SPECS, _build_email_html, _source_summary
+from minerals_signal_data.daily_report import REPORT_SPECS, _build_email_html, _load_config, _source_summary
 
 
 def test_daily_report_email_keeps_titles_outside_chart_images() -> None:
@@ -28,3 +28,19 @@ def test_daily_report_source_summary_prioritizes_same_day_sources() -> None:
     prices = pd.DataFrame({"price_source": ["yfinance", "tencent", "akshare_eastmoney"]})
 
     assert _source_summary(prices) == "Tencent, AKShare/Eastmoney, Yahoo Finance"
+
+
+def test_load_config_supports_multiple_recipients(tmp_path) -> None:
+    (tmp_path / ".config").write_text(
+        "GMAIL_SENDER=sender@gmail.com\n"
+        "GMAIL_APP_PASSWORD=test-password\n"
+        "GMAIL_RECIPIENT=one@gmail.com\n"
+        "GMAIL_RECIPIENTS=one@gmail.com, two@qq.com;three@263.net\n",
+        encoding="utf-8",
+    )
+
+    config = _load_config(tmp_path)
+
+    assert config["GMAIL_RECIPIENTS"] == "one@gmail.com"
+    production_config = _load_config(tmp_path, production=True)
+    assert production_config["GMAIL_RECIPIENTS"] == "one@gmail.com, two@qq.com, three@263.net"
