@@ -1,9 +1,10 @@
-name: Minerals Signal Tungsten, Molybdenum, and Rare Earth Daily
+name: Minerals Daily Price Report
 
 on:
   schedule:
-    # Run Monday through Friday at 12:00 UTC (20:00 Beijing Time)
-    - cron: "0 12 * * 1-5"
+    # Run Monday through Friday at 13:00 UTC (21:00 Beijing/Hong Kong Time),
+    # after the China and Hong Kong closes and normal quote publication lag.
+    - cron: "0 13 * * 1-5"
   workflow_dispatch:
 
 concurrency:
@@ -15,9 +16,13 @@ permissions:
 
 jobs:
   scrape-tungsten-molybdenum:
-    name: Scrape Daily Tungsten, Molybdenum, and Rare Earth Prices
+    name: Refresh prices and send daily mineral reports
     runs-on: ubuntu-latest
     timeout-minutes: 120
+    env:
+      GMAIL_SENDER: ${{ secrets.GMAIL_SENDER }}
+      GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+      GMAIL_RECIPIENT: ${{ secrets.GMAIL_RECIPIENT }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -30,16 +35,22 @@ jobs:
       - name: Install system dependencies (Tesseract OCR)
         run: |
           sudo apt-get update
-          sudo apt-get install -y tesseract-ocr
+          sudo apt-get install -y tesseract-ocr fonts-noto-cjk
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           python -m pip install -e .[dev]
 
+      - name: Validate Gmail configuration
+        run: |
+          test -n "$GMAIL_SENDER" || { echo "Missing GMAIL_SENDER repository secret"; exit 1; }
+          test -n "$GMAIL_APP_PASSWORD" || { echo "Missing GMAIL_APP_PASSWORD repository secret"; exit 1; }
+          test -n "$GMAIL_RECIPIENT" || { echo "Missing GMAIL_RECIPIENT repository secret"; exit 1; }
+
       - name: Run scraper tests
         run: |
-          pytest tests/test_minerals_tungsten_scraper.py tests/test_ctia_scraper.py -q
+          pytest tests/test_minerals_tungsten_scraper.py tests/test_ctia_scraper.py tests/test_minerals_market_data.py tests/test_minerals_daily_report.py -q
 
       - name: Run bounded CTIA daily scraper
         run: |
@@ -104,6 +115,10 @@ jobs:
           if not recent.empty:
               print(recent[fields].replace("", pd.NA).notna().sum().to_string())
           PY
+
+      - name: Send daily Tungsten and Molybdenum reports
+        run: |
+          minerals-signal-data send-daily-report --base-dir .
 
       - name: Commit and push updates
         run: |

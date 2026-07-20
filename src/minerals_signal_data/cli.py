@@ -69,6 +69,15 @@ def build_parser() -> argparse.ArgumentParser:
     run_live.add_argument("--start-date", default="2022-01-01", help="Price history start date")
     run_live.add_argument("--end-date", help="Optional price history end date")
 
+    daily_report = subparsers.add_parser(
+        "send-daily-report",
+        parents=[shared],
+        help="Build and email the daily Tungsten and Molybdenum price reports",
+    )
+    daily_report.add_argument("--report-date", help="Report date in YYYY-MM-DD format")
+    daily_report.add_argument("--output-dir", help="Optional directory for generated chart files")
+    daily_report.add_argument("--dry-run", action="store_true", help="Generate charts without sending email")
+
     subparsers.add_parser("validate", parents=[shared], help="Validate workbook coverage and mappings")
 
     tungsten = subparsers.add_parser("scrape-tungsten", help="Scrape daily tungsten prices from Chinatungsten/CTIA")
@@ -143,6 +152,18 @@ def main() -> int:
             end_date=args.end_date,
             run_label=args.run_label,
         )
+    elif args.command == "send-daily-report":
+        from minerals_signal_data.daily_report import send_daily_reports
+
+        results = send_daily_reports(
+            args.base_dir,
+            report_date=args.report_date,
+            output_dir=args.output_dir,
+            send_email=not args.dry_run,
+        )
+        for mineral_id, values in results.items():
+            print(f"{mineral_id}={values}")
+        return 0
     elif args.command == "scrape-tungsten":
         from minerals_signal_data.chinatungsten_scraper import scrape_range
 

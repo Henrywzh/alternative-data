@@ -2,5 +2,6 @@ pandas>=2.2
 plotly>=5.24
 pyarrow>=16.0.0
 requests>=2.31
+akshare>=1.18.40
 streamlit==1.56.0
 yfinance>=0.2.54

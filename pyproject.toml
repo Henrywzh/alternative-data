@@ -19,6 +19,7 @@ dependencies = [
   "streamlit>=1.56.0",
   "plotly>=5.24",
   "matplotlib>=3.8",
+  "akshare>=1.18.40",
   "yfinance>=0.2.54",
   "trendspyg>=0.6.1",
 ]
