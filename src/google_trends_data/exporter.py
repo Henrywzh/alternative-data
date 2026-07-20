@@ -34,48 +34,64 @@ class GoogleTrendsCsvExporter:
         output_dir: str | Path,
         headless: bool,
     ) -> Path:
-        from playwright.sync_api import sync_playwright
-
         target_dir = Path(output_dir)
         target_dir.mkdir(parents=True, exist_ok=True)
         self.profile_dir.mkdir(parents=True, exist_ok=True)
         target_path = target_dir / f"{self._slug(keyword)}_{geo.lower() if geo else 'worldwide'}_interest_over_time.csv"
 
         url = self.build_explore_url(keyword=keyword, geo=geo, timeframe=timeframe, hl=hl)
+        last_error: Exception | None = None
 
         for attempt in range(1, self.max_attempts + 1):
-            with sync_playwright() as playwright:
-                context = playwright.chromium.launch_persistent_context(
-                    user_data_dir=str(self.profile_dir),
-                    accept_downloads=True,
+            try:
+                self._export_attempt(
+                    url=url,
+                    target_path=target_path,
                     headless=headless,
                 )
-                try:
-                    page = context.pages[0] if context.pages else context.new_page()
-                    page.goto(url, wait_until="domcontentloaded", timeout=self.timeout_ms)
-                    download_buttons = self._wait_for_download_buttons(page)
-                    for download_button in download_buttons:
+                return target_path
+            except Exception as exc:
+                last_error = exc
+
+            if attempt < self.max_attempts:
+                sleep(min(attempt * 2, 10))
+
+        if last_error is not None:
+            raise last_error
+        raise ValueError("Google Trends CSV export did not run")
+
+    def _export_attempt(self, *, url: str, target_path: Path, headless: bool) -> None:
+        from playwright.sync_api import sync_playwright
+
+        with sync_playwright() as playwright:
+            context = playwright.chromium.launch_persistent_context(
+                user_data_dir=str(self.profile_dir),
+                accept_downloads=True,
+                headless=headless,
+            )
+            try:
+                page = context.pages[0] if context.pages else context.new_page()
+                page.goto(url, wait_until="domcontentloaded", timeout=self.timeout_ms)
+                download_buttons = self._wait_for_download_buttons(page)
+                for download_button in download_buttons:
+                    try:
                         with page.expect_download(timeout=self.timeout_ms) as download_info:
                             download_button.click()
                         download = download_info.value
                         download.save_as(str(target_path))
-                        if self._download_contains_timeseries_header(target_path):
-                            return target_path
-                finally:
-                    context.close()
+                    except Exception:
+                        continue
+                    if self._download_contains_timeseries_header(target_path):
+                        return
+            finally:
+                context.close()
 
-            if attempt < self.max_attempts:
-                sleep(min(attempt * 2, 10))
-                continue
-
-            preview = self._download_preview(target_path)
-            raise ValueError(
-                "Downloaded Google Trends CSV did not contain a Day/Week/Month header. "
-                f"Preview: {preview}. This usually means the automation clicked a non-timeseries export "
-                "or Google Trends served an incomplete/blocked page state."
-            )
-
-        return target_path
+        preview = self._download_preview(target_path) if target_path.exists() else ""
+        raise ValueError(
+            "Downloaded Google Trends CSV did not contain a Day/Week/Month header. "
+            f"Preview: {preview}. This usually means the automation clicked a non-timeseries export "
+            "or Google Trends served an incomplete/blocked page state."
+        )
 
     @staticmethod
     def _slug(value: str) -> str:
@@ -87,6 +103,7 @@ class GoogleTrendsCsvExporter:
             "Accept all",
             "Accept",
             "Got it",
+            "OK, got it",
         ]
         for label in dialog_labels:
             locator = page.get_by_role("button", name=label)

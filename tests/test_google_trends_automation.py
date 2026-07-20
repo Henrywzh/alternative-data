@@ -378,6 +378,35 @@ def test_csv_exporter_wait_for_download_button_times_out(monkeypatch: pytest.Mon
     assert page.wait_calls == [1000, 1000]
 
 
+def test_csv_exporter_retries_failed_browser_attempt(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    import google_trends_data.exporter as exporter_module
+
+    exporter = GoogleTrendsCsvExporter(profile_dir=tmp_path / "profile", timeout_ms=1000, max_attempts=2)
+    calls = {"count": 0}
+    sleeps: list[int] = []
+
+    def fake_attempt(**_kwargs) -> None:
+        calls["count"] += 1
+        if calls["count"] == 1:
+            raise ValueError("Could not locate Google Trends CSV download button")
+
+    monkeypatch.setattr(exporter, "_export_attempt", fake_attempt)
+    monkeypatch.setattr(exporter_module, "sleep", sleeps.append)
+
+    result = exporter.export_interest_over_time(
+        keyword="Tesla",
+        geo="US",
+        timeframe="today 5-y",
+        hl="en-US",
+        output_dir=tmp_path / "downloads",
+        headless=True,
+    )
+
+    assert result == tmp_path / "downloads" / "tesla_us_interest_over_time.csv"
+    assert calls["count"] == 2
+    assert sleeps == [2]
+
+
 def test_csv_exporter_prefers_topmost_csv_button() -> None:
     exporter = GoogleTrendsCsvExporter(profile_dir=Path("/tmp/profile"))
     lower = _FakeButton(y=900)
