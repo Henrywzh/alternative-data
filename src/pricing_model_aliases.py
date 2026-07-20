@@ -27,6 +27,19 @@ def derive_provider_prefix(value: object) -> str | None:
     return slug.split("/", 1)[0]
 
 
+def canonical_provider_slug(value: object) -> str | None:
+    """Return the model-origin provider slug used for company-level views.
+
+    OpenRouter exposes Meta's direct models under ``meta`` and its Llama
+    catalogue under ``meta-llama``.  They are separate source routes, but the
+    dashboard's company and economics views should report one Meta total.
+    """
+    slug = clean_slug(value)
+    if slug is None:
+        return None
+    return "meta" if slug.casefold() == "meta-llama" else slug
+
+
 def strip_supported_tag(value: object) -> str | None:
     slug = clean_slug(value)
     if slug is None:

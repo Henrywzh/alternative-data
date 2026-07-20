@@ -103,6 +103,41 @@ def test_legacy_provider_request_rows_that_duplicate_market_share_are_ignored() 
     ]
 
 
+def test_meta_and_meta_llama_share_one_company_in_catalog_and_activity() -> None:
+    catalog = _prepare_explorer_catalog(pd.DataFrame([
+        {
+            "model_id": "meta/muse-spark",
+            "canonical_slug": "meta/muse-spark",
+            "model_name": "Meta: Muse Spark",
+            "provider_prefix": "meta",
+            "created_at": 1_782_864_000,
+            "context_length": 1_000_000,
+            "architecture": "text->text",
+            "pricing_prompt": 0.000001,
+            "pricing_completion": 0.000003,
+        },
+        {
+            "model_id": "meta-llama/llama-4",
+            "canonical_slug": "meta-llama/llama-4",
+            "model_name": "Meta: Llama 4",
+            "provider_prefix": "meta-llama",
+            "created_at": 1_782_864_000,
+            "context_length": 1_000_000,
+            "architecture": "text->text",
+            "pricing_prompt": 0.000001,
+            "pricing_completion": 0.000003,
+        },
+    ]))
+    activity = _normalize_explorer_activity(pd.DataFrame([
+        {"usage_date": "2026-07-20", "model_permaslug": "meta/muse-spark", "entity_id": "meta", "total_tokens": 100},
+        {"usage_date": "2026-07-20", "model_permaslug": "meta-llama/llama-4", "entity_id": "meta-llama", "total_tokens": 200},
+    ]), _catalog_alias_map(catalog))
+
+    assert set(catalog["provider_slug"]) == {"meta"}
+    assert set(catalog["company"]) == {"Meta"}
+    assert set(activity["entity_id"]) == {"meta"}
+
+
 def test_company_and_model_explorer_states_join_catalog_activity_and_apps() -> None:
     catalog = _catalog()
     aliases = _catalog_alias_map(catalog)
