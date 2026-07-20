@@ -163,11 +163,6 @@ class RankingsSource(SourceExtractor):
         return {
             TOP_MODELS_SPEC.dataset_id: self._records_from_chart(charts[TOP_MODELS_SPEC.dataset_id], TOP_MODELS_SPEC, context),
             MARKET_SHARE_SPEC.dataset_id: self._records_from_chart(charts[MARKET_SHARE_SPEC.dataset_id], MARKET_SHARE_SPEC, context),
-            PROVIDER_WEEKLY_REQUESTS_SPEC.dataset_id: self._records_from_chart(
-                charts[PROVIDER_WEEKLY_REQUESTS_SPEC.dataset_id],
-                PROVIDER_WEEKLY_REQUESTS_SPEC,
-                context,
-            ),
             CATEGORIES_PROGRAMMING_SPEC.dataset_id: self._records_from_chart(
                 charts[CATEGORIES_PROGRAMMING_SPEC.dataset_id],
                 CATEGORIES_PROGRAMMING_SPEC,
@@ -175,6 +170,17 @@ class RankingsSource(SourceExtractor):
             ),
             **self._extract_context_length_records(charts, context),
             **self._extract_modality_records(charts, context),
+            **(
+                {
+                    PROVIDER_WEEKLY_REQUESTS_SPEC.dataset_id: self._records_from_chart(
+                        charts[PROVIDER_WEEKLY_REQUESTS_SPEC.dataset_id],
+                        PROVIDER_WEEKLY_REQUESTS_SPEC,
+                        context,
+                    )
+                }
+                if charts.get(PROVIDER_WEEKLY_REQUESTS_SPEC.dataset_id)
+                else {}
+            ),
         }
 
     def _extract_context_length_records(
@@ -252,9 +258,10 @@ class RankingsSource(SourceExtractor):
                 modality_payload = json.loads(modality_snapshot.body)
                 market_share_data = modality_payload.get("data", {}).get("marketShareData")
                 if RankingsSource._is_chart_data(market_share_data):
-                    chart = {"data": market_share_data}
-                    charts[MARKET_SHARE_SPEC.dataset_id] = chart
-                    charts[PROVIDER_WEEKLY_REQUESTS_SPEC.dataset_id] = chart
+                    # `marketShareData` is provider token volume.  It is not a
+                    # request-count feed; never publish the same payload under
+                    # the requests dataset.
+                    charts[MARKET_SHARE_SPEC.dataset_id] = {"data": market_share_data}
             except (AttributeError, json.JSONDecodeError):
                 pass
 
@@ -304,11 +311,6 @@ class RankingsSource(SourceExtractor):
                 rankings_html,
                 predicate=self._looks_like_market_share_chart,
                 label=MARKET_SHARE_SPEC.dataset_id,
-            ),
-            PROVIDER_WEEKLY_REQUESTS_SPEC.dataset_id: self._find_chart(
-                rankings_html,
-                predicate=self._looks_like_market_share_chart,
-                label=PROVIDER_WEEKLY_REQUESTS_SPEC.dataset_id,
             ),
             CATEGORIES_PROGRAMMING_SPEC.dataset_id: self._find_first_chart(
                 programming_html,
@@ -423,11 +425,6 @@ class RankingsSource(SourceExtractor):
                                 page,
                                 section_selector="#market-share",
                                 label=MARKET_SHARE_SPEC.dataset_id,
-                            ),
-                            PROVIDER_WEEKLY_REQUESTS_SPEC.dataset_id: self._extract_runtime_chart_from_page(
-                                page,
-                                section_selector="#market-share",
-                                label=PROVIDER_WEEKLY_REQUESTS_SPEC.dataset_id,
                             ),
                             CATEGORIES_PROGRAMMING_SPEC.dataset_id: self._extract_runtime_chart_from_page(
                                 page,

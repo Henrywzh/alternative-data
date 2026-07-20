@@ -113,7 +113,6 @@ def _runtime_fallback_charts() -> dict[str, dict]:
     return {
         "top_models": {"data": payloads["top_models"], "forecast": "forecast-1w"},
         "market_share": {"data": payloads["market_share"]},
-        "provider_weekly_requests": {"data": payloads["market_share"]},
         "categories_programming": {
             "data": payloads["categories_programming"],
             "testId": "model-rankings-categories-chart",
@@ -121,24 +120,18 @@ def _runtime_fallback_charts() -> dict[str, dict]:
     }
 
 
-def test_parse_fixture_snapshots_for_all_three_datasets() -> None:
+def test_parse_fixture_snapshots_for_rankings_datasets() -> None:
     html = build_fixture_html()
     source = RankingsSource()
     context = RunContext(run_id="test-run", scraped_at=pd.Timestamp("2024-02-01", tz="UTC").to_pydatetime())
 
     extracted = source.extract(make_snapshots(html), context)
 
-    assert set(extracted) == {"top_models", "market_share", "provider_weekly_requests", "categories_programming"}
+    assert set(extracted) == {"top_models", "market_share", "categories_programming"}
     assert len(extracted["top_models"]) == 9
     assert len(extracted["market_share"]) == 9
-    assert len(extracted["provider_weekly_requests"]) == 9
     assert len(extracted["categories_programming"]) == 9
     assert extracted["top_models"][0].rank == 1
-    assert extracted["provider_weekly_requests"][0].metric_name == "requests"
-    assert extracted["provider_weekly_requests"][0].metric_unit == "requests"
-    assert extracted["provider_weekly_requests"][0].entity_id == "author-a"
-    assert extracted["provider_weekly_requests"][0].metric_value == 5500.0
-    assert extracted["provider_weekly_requests"][1].rank == 2
     assert extracted["categories_programming"][0].category_slug == "programming"
 
 
@@ -172,7 +165,7 @@ def test_extract_prefers_rankings_api_payloads_for_top_models_and_market_share(
 
     assert len(extracted["top_models"]) == 9
     assert len(extracted["market_share"]) == 9
-    assert len(extracted["provider_weekly_requests"]) == 9
+    assert "provider_weekly_requests" not in extracted
     assert extracted["market_share"][0].entity_id == "author-a"
 
 
@@ -297,7 +290,7 @@ def test_browser_fallback_is_used_when_static_chart_payloads_are_missing(monkeyp
     extracted = source.extract(make_snapshots("<html><body>missing</body></html>"), context)
 
     assert called["value"] is True
-    assert set(extracted) == {"top_models", "market_share", "provider_weekly_requests", "categories_programming"}
+    assert set(extracted) == {"top_models", "market_share", "categories_programming"}
     assert len(extracted["top_models"]) == 9
 
 
@@ -326,16 +319,11 @@ def test_normalize_repeated_runs_are_idempotent(tmp_path: Path, monkeypatch: pyt
     provider_requests_csv = tmp_path / "data" / "normalized" / "openrouter" / "provider_weekly_requests.csv"
     provider_requests_parquet = tmp_path / "data" / "normalized" / "openrouter" / "provider_weekly_requests.parquet"
     assert len(top_models) == 6
-    assert provider_requests_csv.exists()
-    assert provider_requests_parquet.exists()
-    provider_requests = pd.read_csv(provider_requests_csv)
-    assert len(provider_requests) == 6
+    assert not provider_requests_csv.exists()
+    assert not provider_requests_parquet.exists()
     assert first.datasets_written["top_models"] == 6
     assert second.datasets_written["top_models"] == 6
-    assert first.datasets_written["provider_weekly_requests"] == 6
-    assert second.datasets_written["provider_weekly_requests"] == 6
     assert top_models[["week_start_date", "entity_id"]].duplicated().sum() == 0
-    assert provider_requests[["week_start_date", "entity_id"]].duplicated().sum() == 0
 
 
 def test_weekly_update_adds_one_new_week(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -358,10 +346,7 @@ def test_weekly_update_adds_one_new_week(tmp_path: Path, monkeypatch: pytest.Mon
     pipeline.run_weekly_update()
 
     market_share = pd.read_csv(tmp_path / "data" / "normalized" / "openrouter" / "market_share.csv")
-    provider_requests = pd.read_csv(tmp_path / "data" / "normalized" / "openrouter" / "provider_weekly_requests.csv")
     assert sorted(market_share["week_start_date"].unique().tolist()) == ["2024-01-07", "2024-01-14", "2024-01-21"]
-    assert sorted(provider_requests["week_start_date"].unique().tolist()) == ["2024-01-07", "2024-01-14", "2024-01-21"]
-    assert provider_requests["metric_name"].eq("requests").all()
 
 
 def test_validate_and_weekly_update_share_the_same_fallback_extraction_path(
@@ -379,7 +364,6 @@ def test_validate_and_weekly_update_share_the_same_fallback_extraction_path(
     assert counts["top_models"] == 9
     assert weekly.datasets_written["top_models"] == 9
     assert weekly.datasets_written["market_share"] == 9
-    assert weekly.datasets_written["provider_weekly_requests"] == 9
     assert weekly.datasets_written["categories_programming"] == 9
 
 
@@ -416,7 +400,6 @@ def test_raw_manifest_written_for_each_run(tmp_path: Path, monkeypatch: pytest.M
     assert {item["dataset_id"] for item in manifest["datasets"]} == {
         "top_models",
         "market_share",
-        "provider_weekly_requests",
         "categories_programming",
     }
 

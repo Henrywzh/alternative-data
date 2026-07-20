@@ -135,7 +135,7 @@ class BasePipeline:
 
 class RankingsPipeline(BasePipeline):
     dataset_ids = RANKINGS_DATASET_IDS
-    optional_dataset_ids = {"context_length_requests", "modality_rankings"}
+    optional_dataset_ids = {"provider_weekly_requests", "context_length_requests", "modality_rankings"}
 
     def __init__(self, base_dir: Path) -> None:
         super().__init__(base_dir, RankingsSource())
@@ -329,6 +329,7 @@ class ActivityPipeline(BasePipeline):
 
     def run_daily_update(self, limit: int = 0) -> PipelineResult:
         """Discover model slugs for the configured major providers, then ingest activity."""
+        self._activity_min_models = max(1, min(50, limit if limit else 50))
         slugs = self._discover_activity_slugs(limit=limit)
         if not slugs:
             slugs = self.source.fetch_popular_slugs(limit=limit or 200)
@@ -441,8 +442,22 @@ class ActivityPipeline(BasePipeline):
         mode: str,
         extracted: dict[str, list[DatasetRecord]],
     ) -> dict[str, list[DatasetRecord]]:
-        # For activity daily update, we typically keep all extracted rows for the day 
-        # (duplicates are handled by StorageManager natural keys)
+        if mode != "activity-daily-update":
+            raise ValueError(f"Unsupported mode: {mode}")
+        records = extracted.get("openrouter_model_activity", [])
+        scraped_at = datetime.now(timezone.utc)
+        for record in records:
+            if record.scraped_at:
+                try:
+                    scraped_at = datetime.fromisoformat(record.scraped_at.replace("Z", "+00:00"))
+                except ValueError:
+                    pass
+                break
+        ActivitySource.validate_records(
+            records,
+            scraped_at=scraped_at,
+            min_models_latest=getattr(self, "_activity_min_models", 50),
+        )
         return extracted
 
 
@@ -453,7 +468,7 @@ class ProviderActivityPipeline(BasePipeline):
     """Scrapes openrouter.ai/{provider} for all priority providers daily.
 
     Self-healing: each run ingests the full 91-day trailing window and upserts
-    on (usage_date, model_permaslug), so missed days are automatically backfilled
+    on (usage_date, provider, model_permaslug), so missed days are automatically backfilled
     on the next successful run.
     """
 
@@ -475,6 +490,7 @@ class ProviderActivityPipeline(BasePipeline):
             extracted.get(PROVIDER_ACTIVITY_DATASET_ID, []),
             expected_providers=self._provider_slugs,
             scraped_at=context.scraped_at,
+            min_days_by_provider={"meta": 5},
         )
 
     def _filter_for_mode(
@@ -498,5 +514,6 @@ class ProviderActivityPipeline(BasePipeline):
             records,
             expected_providers=self._provider_slugs,
             scraped_at=scraped_at,
+            min_days_by_provider={"meta": 5},
         )
         return extracted

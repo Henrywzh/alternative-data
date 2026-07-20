@@ -411,7 +411,10 @@ def compute_openrouter_views(
 
     requests_result = datasets.get("provider_weekly_requests")
     if requests_result and not requests_result.frame.empty:
-        request_frame = requests_result.frame.copy()
+        request_frame = _clean_provider_request_frame(
+            requests_result.frame,
+            market_share_result.frame if market_share_result else pd.DataFrame(),
+        )
         request_frame["usage_week"] = _align_rankings_week_to_monday(request_frame["week_start_date"].astype(str))
         request_frame["metric_value"] = pd.to_numeric(request_frame["metric_value"], errors="coerce")
         request_frame["provider_label"] = request_frame["entity_id"].astype("string").str.lower().map(OPENROUTER_PROVIDER_MAP)
@@ -477,6 +480,38 @@ def _market_share_weekly_totals(frame: pd.DataFrame) -> pd.Series:
         .rename("market_share")
         .sort_index()
     )
+
+
+def _clean_provider_request_frame(
+    request_frame: pd.DataFrame,
+    market_share_frame: pd.DataFrame,
+) -> pd.DataFrame:
+    """Remove the legacy rankings payload that duplicated provider token volume.
+
+    Before the rankings API split was understood, ``marketShareData`` was
+    written to both ``market_share`` and ``provider_weekly_requests``.  Those
+    rows are byte-for-byte equal on the natural key and are not request counts.
+    Keep genuine request rows (if a future endpoint supplies them), while
+    excluding only exact market-share duplicates.
+    """
+    if request_frame.empty:
+        return request_frame.copy()
+    cleaned = request_frame.copy()
+    if market_share_frame.empty:
+        return cleaned
+    request_keys = ["week_start_date", "entity_id", "metric_value"]
+    if not set(request_keys).issubset(cleaned.columns) or not set(request_keys).issubset(market_share_frame.columns):
+        return cleaned
+    right = market_share_frame[request_keys].copy()
+    for frame in (cleaned, right):
+        frame["week_start_date"] = frame["week_start_date"].astype("string")
+        frame["entity_id"] = frame["entity_id"].astype("string")
+        frame["metric_value"] = pd.to_numeric(frame["metric_value"], errors="coerce").round(6)
+    right["_market_share_duplicate"] = True
+    duplicate_keys = right.drop_duplicates(request_keys)
+    cleaned = cleaned.merge(duplicate_keys, on=request_keys, how="left")
+    cleaned = cleaned[cleaned["_market_share_duplicate"].isna()].drop(columns="_market_share_duplicate")
+    return cleaned
 
 
 def _period_coverage(frame: pd.DataFrame, period_column: str, date_column: str, expected_days: int) -> pd.DataFrame:
@@ -1116,6 +1151,12 @@ def _prepare_explorer_catalog(frame: pd.DataFrame) -> pd.DataFrame:
         "top_provider_max_completion_tokens",
     ):
         catalog[column] = pd.to_numeric(catalog.get(column), errors="coerce")
+    # OpenRouter uses -1 as an unavailable-price sentinel for routing-only
+    # models.  Treat it as missing before deriving per-million display values.
+    for column in (
+        "pricing_prompt", "pricing_completion", "pricing_input_cache_read", "pricing_input_cache_write",
+    ):
+        catalog[column] = catalog[column].mask(catalog[column] < 0)
     catalog["provider_slug"] = catalog.get("provider_prefix", pd.Series(pd.NA, index=catalog.index)).astype("string")
     inferred_provider = catalog["model_id"].astype("string").str.split("/", n=1).str[0]
     catalog["provider_slug"] = catalog["provider_slug"].fillna(inferred_provider)
@@ -1283,17 +1324,6 @@ def build_openrouter_explorer_views(datasets: dict[str, DatasetLoadResult]) -> d
         catalog_with_usage["activity_source"] = catalog_with_usage["activity_source"].fillna("Not observed")
         catalog_with_usage["observed_days"] = catalog_with_usage["observed_days"].fillna(0).astype(int)
 
-    # ``top_models`` is a top-10 model ranking, so it cannot provide a
-    # complete company token series. The provider-level market-share ranking
-    # is the authoritative weekly token-volume source; its Sunday labels are
-    # aligned to the Monday convention used by requests.
-    market_share = dataset_frame("market_share")
-    if not market_share.empty and "week_start_date" in market_share.columns:
-        market_share = market_share.copy()
-        market_share["week_start_date"] = _align_rankings_week_to_monday(
-            market_share["week_start_date"]
-        )
-
     return {
         "catalog": catalog_with_usage,
         "top_models": dataset_frame("top_models"),
@@ -1301,8 +1331,15 @@ def build_openrouter_explorer_views(datasets: dict[str, DatasetLoadResult]) -> d
         "model_activity": model_activity,
         "combined_activity": combined_activity,
         "economics": economics,
-        "weekly_company_tokens": _weekly_company_tokens(market_share),
-        "weekly_company_requests": _weekly_company_requests(dataset_frame("provider_weekly_requests")),
+        # The global top-model ranking is intentionally limited to ten rows;
+        # use complete provider model activity for company weekly tokens and
+        # the stacked model breakdown instead of implying that top-ranked
+        # models are the company's full usage.
+        "weekly_company_tokens": _weekly_company_tokens(provider_activity),
+        "weekly_company_requests": _weekly_company_requests(
+            dataset_frame("provider_weekly_requests"),
+            dataset_frame("market_share"),
+        ),
         "app_usage": app_usage,
         "app_metadata": app_metadata,
         "aliases": aliases,
@@ -1323,11 +1360,19 @@ def _weekly_company_tokens(frame: pd.DataFrame) -> pd.DataFrame:
     if frame.empty:
         return pd.DataFrame(columns=["usage_week", "company_slug", "tokens"])
     prepared = frame.copy()
-    prepared["usage_week"] = pd.to_datetime(prepared.get("week_start_date"), errors="coerce")
-    prepared["company_slug"] = prepared.get("parent_entity_id", pd.Series(pd.NA, index=prepared.index)).map(_model_origin_slug)
-    fallback_company = prepared.get("entity_id", pd.Series(pd.NA, index=prepared.index)).map(_model_origin_slug)
-    prepared["company_slug"] = prepared["company_slug"].fillna(fallback_company)
-    prepared["metric_value"] = pd.to_numeric(prepared.get("metric_value"), errors="coerce")
+    if {"usage_date_dt", "model_id", "total_tokens"}.issubset(prepared.columns):
+        prepared["usage_week"] = pd.to_datetime(prepared["usage_date_dt"], errors="coerce")
+        prepared["usage_week"] = prepared["usage_week"] - pd.to_timedelta(
+            prepared["usage_week"].dt.weekday, unit="D"
+        )
+        prepared["company_slug"] = prepared["model_id"].map(_model_origin_slug)
+        prepared["metric_value"] = pd.to_numeric(prepared["total_tokens"], errors="coerce")
+    else:
+        prepared["usage_week"] = pd.to_datetime(prepared.get("week_start_date"), errors="coerce")
+        prepared["company_slug"] = prepared.get("parent_entity_id", pd.Series(pd.NA, index=prepared.index)).map(_model_origin_slug)
+        fallback_company = prepared.get("entity_id", pd.Series(pd.NA, index=prepared.index)).map(_model_origin_slug)
+        prepared["company_slug"] = prepared["company_slug"].fillna(fallback_company)
+        prepared["metric_value"] = pd.to_numeric(prepared.get("metric_value"), errors="coerce")
     prepared = prepared.dropna(subset=["usage_week", "company_slug", "metric_value"])
     return (
         prepared.groupby(["usage_week", "company_slug"], as_index=False)["metric_value"]
@@ -1336,7 +1381,13 @@ def _weekly_company_tokens(frame: pd.DataFrame) -> pd.DataFrame:
     )
 
 
-def _weekly_company_requests(frame: pd.DataFrame) -> pd.DataFrame:
+def _weekly_company_requests(frame: pd.DataFrame, market_share_frame: pd.DataFrame | None = None) -> pd.DataFrame:
+    if frame.empty:
+        return pd.DataFrame(columns=["usage_week", "company_slug", "requests"])
+    frame = _clean_provider_request_frame(
+        frame,
+        market_share_frame if market_share_frame is not None else pd.DataFrame(),
+    )
     if frame.empty:
         return pd.DataFrame(columns=["usage_week", "company_slug", "requests"])
     prepared = frame.copy()
@@ -1355,16 +1406,25 @@ def _weekly_company_model_pivot(frame: pd.DataFrame, company_slug: str) -> pd.Da
     if frame.empty:
         return pd.DataFrame()
     prepared = frame.copy()
-    prepared["usage_week"] = pd.to_datetime(prepared.get("week_start_date"), errors="coerce")
-    prepared["company_slug"] = prepared.get("parent_entity_id", pd.Series(pd.NA, index=prepared.index)).map(_model_origin_slug)
-    fallback_company = prepared.get("entity_id", pd.Series(pd.NA, index=prepared.index)).map(_model_origin_slug)
-    prepared["company_slug"] = prepared["company_slug"].fillna(fallback_company)
-    prepared["metric_value"] = pd.to_numeric(prepared.get("metric_value"), errors="coerce")
+    if {"usage_date_dt", "model_id", "total_tokens"}.issubset(prepared.columns):
+        prepared["usage_week"] = pd.to_datetime(prepared["usage_date_dt"], errors="coerce")
+        prepared["usage_week"] = prepared["usage_week"] - pd.to_timedelta(
+            prepared["usage_week"].dt.weekday, unit="D"
+        )
+        prepared["company_slug"] = prepared["model_id"].map(_model_origin_slug)
+        prepared["metric_value"] = pd.to_numeric(prepared["total_tokens"], errors="coerce")
+        prepared["model_id"] = prepared["model_id"].astype("string")
+    else:
+        prepared["usage_week"] = pd.to_datetime(prepared.get("week_start_date"), errors="coerce")
+        prepared["company_slug"] = prepared.get("parent_entity_id", pd.Series(pd.NA, index=prepared.index)).map(_model_origin_slug)
+        fallback_company = prepared.get("entity_id", pd.Series(pd.NA, index=prepared.index)).map(_model_origin_slug)
+        prepared["company_slug"] = prepared["company_slug"].fillna(fallback_company)
+        prepared["metric_value"] = pd.to_numeric(prepared.get("metric_value"), errors="coerce")
+        model_column = prepared.get("entity_id", pd.Series(pd.NA, index=prepared.index)).astype("string")
+        prepared["model_id"] = model_column
     prepared = prepared.loc[prepared["company_slug"].eq(company_slug)].dropna(subset=["usage_week", "metric_value"])
     if prepared.empty:
         return pd.DataFrame()
-    model_column = prepared.get("entity_id", pd.Series(pd.NA, index=prepared.index)).astype("string")
-    prepared["model_id"] = model_column
     leaders = prepared.groupby("model_id")["metric_value"].sum().nlargest(8).index
     prepared["display_model"] = prepared["model_id"].where(prepared["model_id"].isin(leaders), "Other models")
     result = (
@@ -1558,7 +1618,7 @@ def company_explorer_state(views: dict[str, object], provider_slug: str) -> dict
         weekly_requests[weekly_requests["company_slug"].eq(provider_slug)].set_index("usage_week")["requests"]
         if not weekly_requests.empty else pd.Series(dtype="float64")
     )
-    weekly_token_source = "Rankings weekly provider token volume"
+    weekly_token_source = "Provider daily model activity aggregated to weekly totals"
     weekly_request_source = "Rankings provider-request buckets"
     if weekly_tokens_series.empty and not daily_total.empty:
         weekly_tokens_series = _daily_series_to_weekly(daily_total["Tokens"], "tokens")
@@ -1570,7 +1630,9 @@ def company_explorer_state(views: dict[str, object], provider_slug: str) -> dict
     if not weekly_ratio.empty:
         weekly_ratio["Tokens / Request"] = weekly_ratio["Tokens"].div(weekly_ratio["Requests"].where(weekly_ratio["Requests"].gt(0)))
     weekly_price, weekly_coverage = _weekly_company_price(economics, provider_slug)
-    weekly_model_pivot = _weekly_company_model_pivot(views.get("top_models", pd.DataFrame()), provider_slug)
+    weekly_model_pivot = _weekly_company_model_pivot(
+        views.get("provider_activity", pd.DataFrame()), provider_slug
+    )
 
     company_models = company_models.sort_values(["tokens_30d", "model_name"], ascending=[False, True]) if not company_models.empty else company_models
     return {
@@ -2262,10 +2324,10 @@ def _daily_total_usage_pivot(
     """Return one total series for daily or weekly usage.
 
     Provider daily activity is the broadest token source.  Requests use the
-    model-activity ``all`` category when available because provider activity
-    currently does not publish request counts.  Weekly requests intentionally
-    prefer the longer provider-weekly feed, while daily requests use the
-    granular model feed and are labelled as such in the UI.
+    model-activity ``all`` category because provider activity currently does
+    not publish request counts.  The former rankings ``provider_weekly_requests``
+    payload duplicated provider token volume and is ignored until a true
+    request endpoint is available.
     """
     requested_window = "Daily" if str(window).casefold() == "daily" else "Weekly"
     if metric == "Tokens":
@@ -2371,10 +2433,14 @@ def _weekly_usage_section_state(
         request_view = openrouter_views.get("provider_weekly_requests", {})
         pivot_requests = request_view.get("pivot_weekly", pd.DataFrame())
         provider_count = int(pivot_requests.shape[1]) if not pivot_requests.empty else 0
+        request_scraped_at = (
+            datasets.get("provider_weekly_requests").latest_scraped_at
+            if datasets.get("provider_weekly_requests") else None
+        )
         if not pivot_requests.empty:
             pivot_requests = pivot_requests.apply(pd.to_numeric, errors="coerce").fillna(0).sum(axis=1).to_frame("Total Requests")
         else:
-            pivot_requests, _, _ = _daily_total_usage_pivot(datasets, "Requests", window="Weekly")
+            pivot_requests, _, request_scraped_at = _daily_total_usage_pivot(datasets, "Requests", window="Weekly")
         pivot_requests = _clip_weekly_usage_pivot(pivot_requests)
         latest_total = None
         wow_pct = None
@@ -2400,10 +2466,10 @@ def _weekly_usage_section_state(
             "latest_week": str(latest_week),
             "y_title": "Requests",
             "hover_suffix": "requests",
-            "empty_message": "No provider weekly request data is available yet.",
-            "caption": "Total weekly request volume from Rankings Market Share. Requests are shown as a single demand series, separate from token volume.",
-            "source_status": "Raw weekly requests from Rankings Market Share · history starts 2025-08-04",
-            "scraped_at": datasets.get("provider_weekly_requests").latest_scraped_at if datasets.get("provider_weekly_requests") else None,
+            "empty_message": "No weekly model request data is available yet.",
+            "caption": "Total weekly request volume from the OpenRouter model-activity feed. Requests are shown as a single demand series, separate from token volume.",
+            "source_status": "Raw weekly requests from OpenRouter model activity · history starts 2026-06-15 when complete model totals are available",
+            "scraped_at": request_scraped_at,
         }
 
     if str(window).casefold() == "daily":
@@ -3663,7 +3729,7 @@ def _format_context_window(value: object) -> str:
 
 def _format_price_per_m(value: object) -> str:
     number = pd.to_numeric(pd.Series([value]), errors="coerce").iloc[0]
-    return "n/a" if pd.isna(number) else f"${number:,.4g} / 1M"
+    return "n/a" if pd.isna(number) or number < 0 else f"${number:,.4g} / 1M"
 
 
 def _json_list(value: object) -> list[str]:

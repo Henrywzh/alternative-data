@@ -30,10 +30,11 @@ CONSERVATIVE_ECONOMICS_COLUMNS = [
     "split_source",
 ]
 
-# These providers have substantial historical activity before the first
-# complete OpenRouter pricing snapshots.  We allow an exact route's first
-# later paid price to be used as an explicitly labelled historical proxy.
-HISTORICAL_ROUTE_FILL_PROVIDERS = frozenset({"x-ai", "meta-llama", "google"})
+# Historical OpenRouter activity predates the first complete pricing snapshots
+# for many providers.  An exact route's first later paid price may therefore be
+# used as an explicitly labelled historical proxy.  The fill is intentionally
+# route-exact and never falls back to a provider/global median; routes with no
+# later paid price remain unresolved.
 
 
 def is_free_model_slug(value: object) -> bool:
@@ -555,9 +556,9 @@ def _attach_latest_prior_pricing(usage: pd.DataFrame, pricing: pd.DataFrame) -> 
 
 
 def _forward_fill_target_route_pricing(priced: pd.DataFrame, pricing: pd.DataFrame) -> pd.DataFrame:
-    """Fill unresolved target-provider routes from their first later paid price.
+    """Fill unresolved model routes from their first later paid price.
 
-    This is deliberately route-exact and provider-scoped.  It does not use a
+    This is deliberately route-exact across all providers.  It does not use a
     provider or global median, and it leaves routes with no positive future
     price unresolved.  The future snapshot is retained in the output so the
     resulting revenue estimate is auditable as a historical proxy.
@@ -580,13 +581,13 @@ def _forward_fill_target_route_pricing(priced: pd.DataFrame, pricing: pd.DataFra
         for key, group in aliases.groupby("pricing_lookup_key", sort=False)
     }
     usage_dates = pd.to_datetime(priced["usage_date"], errors="coerce", utc=True).dt.normalize()
-    providers = priced["provider_slug"].astype("string").str.casefold().str.lstrip("~")
     model_ids = priced["model_permaslug"].astype("string")
+    identity_hazard = xiaomi_mimo_backpricing_hazard(priced)
     needs_fill = (
-        providers.isin(HISTORICAL_ROUTE_FILL_PROVIDERS)
-        & usage_dates.notna()
+        usage_dates.notna()
         & priced["pricing_snapshot_ts"].isna()
         & ~model_ids.str.endswith(":free", na=False)
+        & ~identity_hazard
     )
     if not needs_fill.any():
         return priced
