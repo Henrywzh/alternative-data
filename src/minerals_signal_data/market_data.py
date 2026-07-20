@@ -3,6 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 import os
 from io import StringIO
+import re
+from datetime import timedelta
 
 import pandas as pd
 import requests
@@ -243,6 +245,247 @@ def to_yfinance_equity_symbol(ticker_normalized: str, market: str) -> str:
     raise ValueError(f"Unsupported market: {market}")
 
 
+def to_tencent_equity_symbol(ticker_normalized: str, market: str) -> str | None:
+    """Convert normalized tickers to Tencent's undocumented quote symbols."""
+    if market == "CN_A":
+        code, suffix = ticker_normalized.upper().split(".", 1)
+        prefix = {"SH": "sh", "SZ": "sz", "BJ": "bj"}.get(suffix)
+        return f"{prefix}{code}" if prefix else None
+    if market == "HK":
+        code = ticker_normalized.split(".", 1)[0].zfill(5)
+        return f"hk{code}"
+    return None
+
+
+def _empty_quote_frame() -> pd.DataFrame:
+    return pd.DataFrame(
+        columns=[
+            "date",
+            "adj_close",
+            "ticker_normalized",
+            "market",
+            "price_source",
+            "source_timestamp",
+            "price_is_adjusted",
+        ]
+    )
+
+
+def _parse_tencent_timestamp(value: str) -> pd.Timestamp | pd.NaT:
+    value = str(value or "").strip()
+    for fmt in ("%Y%m%d%H%M%S", "%Y/%m/%d %H:%M:%S"):
+        parsed = pd.to_datetime(value, format=fmt, errors="coerce")
+        if not pd.isna(parsed):
+            return parsed.tz_localize("Asia/Shanghai")
+    return pd.NaT
+
+
+def _extract_tencent_payload(body: str, symbol: str) -> str:
+    marker = f'v_{symbol}="'
+    start = body.find(marker)
+    if start < 0:
+        return ""
+    start += len(marker)
+    end = body.find('"', start)
+    return body[start:end] if end >= 0 else ""
+
+
+def fetch_tencent_quotes(stock_mapping: pd.DataFrame, *, timeout: int = 20) -> pd.DataFrame:
+    """Fetch current A-share/HK quotes from Tencent's public quote endpoint."""
+    requested: list[tuple[str, str, str]] = []
+    for row in stock_mapping[["ticker_normalized", "market"]].drop_duplicates().itertuples(index=False):
+        symbol = to_tencent_equity_symbol(row.ticker_normalized, row.market)
+        if symbol:
+            requested.append((symbol, row.ticker_normalized, row.market))
+    if not requested:
+        return _empty_quote_frame()
+
+    response = requests.get(
+        "https://qt.gtimg.cn/q=" + ",".join(item[0] for item in requested),
+        timeout=timeout,
+        headers={"User-Agent": "Mozilla/5.0"},
+    )
+    response.raise_for_status()
+    rows: list[dict[str, object]] = []
+    for symbol, ticker, market in requested:
+        payload = _extract_tencent_payload(response.text, symbol)
+        fields = payload.split("~")
+        if len(fields) <= 30:
+            continue
+        try:
+            price = float(fields[3])
+        except (TypeError, ValueError):
+            continue
+        if price <= 0:
+            continue
+        source_timestamp = _parse_tencent_timestamp(fields[30])
+        if pd.isna(source_timestamp):
+            continue
+        rows.append(
+            {
+                "date": source_timestamp.tz_convert("Asia/Shanghai").normalize().tz_localize(None),
+                "adj_close": price,
+                "ticker_normalized": ticker,
+                "market": market,
+                "price_source": "tencent",
+                "source_timestamp": source_timestamp,
+                "price_is_adjusted": False,
+            }
+        )
+    return pd.DataFrame(rows) if rows else _empty_quote_frame()
+
+
+def _akshare_quote_rows(
+    frame: pd.DataFrame,
+    *,
+    market: str,
+    requested: set[str],
+    retrieved_at: pd.Timestamp,
+) -> list[dict[str, object]]:
+    if frame.empty or "代码" not in frame.columns or "最新价" not in frame.columns:
+        return []
+    rows: list[dict[str, object]] = []
+    for row in frame[["代码", "最新价"]].itertuples(index=False):
+        code = str(row[0]).split(".", 1)[0].strip()
+        code = re.sub(r"\.0$", "", code)
+        code = code.zfill(6 if market == "CN_A" else 5)
+        ticker = f"{code}.{'SZ' if code.startswith(('0', '3')) and market == 'CN_A' else 'SH'}" if market == "CN_A" else f"{code}.HK"
+        if ticker not in requested:
+            continue
+        try:
+            price = float(row[1])
+        except (TypeError, ValueError):
+            continue
+        if price <= 0:
+            continue
+        rows.append(
+            {
+                "date": retrieved_at.tz_convert("Asia/Shanghai").normalize().tz_localize(None),
+                "adj_close": price,
+                "ticker_normalized": ticker,
+                "market": market,
+                "price_source": "akshare_eastmoney",
+                "source_timestamp": retrieved_at,
+                "price_is_adjusted": False,
+            }
+        )
+    return rows
+
+
+def fetch_akshare_quotes(stock_mapping: pd.DataFrame) -> pd.DataFrame:
+    """Fetch missing current quotes through AKShare/Eastmoney."""
+    import akshare as ak
+
+    retrieved_at = pd.Timestamp.now(tz="UTC")
+    requested_by_market = {
+        market: set(group["ticker_normalized"])
+        for market, group in stock_mapping.groupby("market")
+        if market in {"CN_A", "HK"}
+    }
+    rows: list[dict[str, object]] = []
+    if requested_by_market.get("CN_A"):
+        rows.extend(
+            _akshare_quote_rows(
+                ak.stock_zh_a_spot_em(),
+                market="CN_A",
+                requested=requested_by_market["CN_A"],
+                retrieved_at=retrieved_at,
+            )
+        )
+    if requested_by_market.get("HK"):
+        rows.extend(
+            _akshare_quote_rows(
+                ak.stock_hk_spot_em(),
+                market="HK",
+                requested=requested_by_market["HK"],
+                retrieved_at=retrieved_at,
+            )
+        )
+    return pd.DataFrame(rows) if rows else _empty_quote_frame()
+
+
+def fetch_yfinance_latest_quote(
+    ticker_normalized: str,
+    market: str,
+    *,
+    as_of_date: pd.Timestamp,
+) -> pd.DataFrame:
+    symbol = to_yfinance_equity_symbol(ticker_normalized, market)
+    frame = fetch_yfinance_history(
+        symbol,
+        start_date=(as_of_date - timedelta(days=10)).date().isoformat(),
+        end_date=(as_of_date + timedelta(days=1)).date().isoformat(),
+    )
+    if frame.empty:
+        return _empty_quote_frame()
+    frame = frame.dropna(subset=["price"]).sort_values("date")
+    if frame.empty:
+        return _empty_quote_frame()
+    latest = frame.iloc[-1]
+    latest_date = pd.Timestamp(latest["date"])
+    latest_date = latest_date.tz_convert(None) if latest_date.tzinfo else latest_date
+    return pd.DataFrame(
+        [
+            {
+                "date": latest_date,
+                "adj_close": float(latest["price"]),
+                "ticker_normalized": ticker_normalized,
+                "market": market,
+                "price_source": "yfinance",
+                "source_timestamp": pd.NaT,
+                "price_is_adjusted": True,
+            }
+        ]
+    )
+
+
+def fetch_same_day_stock_quotes(
+    stock_mapping: pd.DataFrame,
+    *,
+    as_of_date: str | None = None,
+) -> pd.DataFrame:
+    """Fetch the latest quote with Tencent -> AKShare -> Yahoo fallback."""
+    if stock_mapping.empty:
+        return _empty_quote_frame()
+    target_date = pd.Timestamp(as_of_date).normalize() if as_of_date else pd.Timestamp.now(tz="Asia/Shanghai").normalize().tz_localize(None)
+    requested = stock_mapping[["ticker_normalized", "market"]].drop_duplicates()
+    rows: list[pd.DataFrame] = []
+    try:
+        tencent = fetch_tencent_quotes(requested)
+    except Exception:
+        tencent = _empty_quote_frame()
+    if not tencent.empty:
+        rows.append(tencent)
+    covered = set(tencent["ticker_normalized"]) if not tencent.empty else set()
+    missing = requested.loc[~requested["ticker_normalized"].isin(covered)].copy()
+
+    if not missing.empty:
+        try:
+            akshare = fetch_akshare_quotes(missing)
+        except Exception:
+            akshare = _empty_quote_frame()
+        if not akshare.empty:
+            rows.append(akshare)
+        covered |= set(akshare["ticker_normalized"]) if not akshare.empty else set()
+
+    missing = requested.loc[~requested["ticker_normalized"].isin(covered)].copy()
+    for row in missing.itertuples(index=False):
+        try:
+            fallback = fetch_yfinance_latest_quote(
+                row.ticker_normalized,
+                row.market,
+                as_of_date=target_date,
+            )
+        except Exception:
+            fallback = _empty_quote_frame()
+        if not fallback.empty:
+            rows.append(fallback)
+    if not rows:
+        return _empty_quote_frame()
+    result = pd.concat(rows, ignore_index=True)
+    return result.loc[result["date"] <= target_date].reset_index(drop=True)
+
+
 def fetch_public_stock_prices(
     stock_mapping: pd.DataFrame,
     *,
@@ -261,8 +504,25 @@ def fetch_public_stock_prices(
         frame["ticker_normalized"] = row.ticker_normalized
         frame["market"] = row.market
         frame = frame.rename(columns={"price": "adj_close"})
+        frame["price_source"] = "yfinance"
+        frame["source_timestamp"] = pd.NaT
+        frame["price_is_adjusted"] = True
         frames.append(frame)
-    return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
+    result = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
+    if end_date is None or pd.Timestamp(end_date).normalize() >= pd.Timestamp.now(tz="Asia/Shanghai").normalize().tz_localize(None):
+        same_day = fetch_same_day_stock_quotes(stock_mapping)
+        if not same_day.empty:
+            if start_date:
+                same_day = same_day.loc[same_day["date"] >= pd.Timestamp(start_date)].copy()
+            if end_date:
+                same_day = same_day.loc[same_day["date"] <= pd.Timestamp(end_date)].copy()
+            if result.empty:
+                result = same_day
+            else:
+                keys = ["ticker_normalized", "market", "date"]
+                result = pd.concat([result, same_day], ignore_index=True)
+                result = result.drop_duplicates(keys, keep="last")
+    return result.reset_index(drop=True) if not result.empty else result
 
 
 def fetch_fx_to_usd_history(*, start_date: str | None = None, end_date: str | None = None) -> pd.DataFrame:
