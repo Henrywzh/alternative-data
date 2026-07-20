@@ -21,7 +21,6 @@ from openrouter_revenue import (
     build_price_context,
     build_conservative_provider_economics,
     build_provider_revenue_estimates,
-    canonical_provider_slug,
     estimate_usage_revenue,
     summarize_economics_coverage,
 )
@@ -34,6 +33,22 @@ from openrouter_derived_data.metrics import compute_legacy_original_price_series
 REVENUE_CACHE_VERSION = "2026-07-01-pricing-perf-v1"
 CHANGE_DISPLAY_MIN_PCT = -100.0
 CHANGE_DISPLAY_MAX_PCT = 300.0
+
+
+def canonical_provider_slug(value: object) -> str | None:
+    """Normalize company identity without importing a standalone ``src`` module.
+
+    Streamlit Cloud can load the dashboard module from a different import path
+    than the local editable install.  Keeping this tiny display-level helper
+    here avoids making dashboard startup depend on a separately packaged module;
+    revenue estimation still uses the shared implementation in ``src``.
+    """
+    if value is None:
+        return None
+    slug = str(value).strip()
+    if not slug or slug.casefold() in {"nan", "none", "null", "<na>"}:
+        return None
+    return "meta" if slug.casefold() == "meta-llama" else slug
 
 
 def grouped_revenue_token_pivots(
