@@ -160,8 +160,12 @@ class OpenRouterDerivedPipeline:
         benchmark_dates = pd.to_datetime(
             inputs["models"]["as_of_date"], errors="coerce", utc=True
         ).dt.tz_localize(None).dt.normalize()
-        if not benchmark_dates.le(economics_dates.max()).any():
-            raise ValueError("no Artificial Analysis snapshot exists for input dates")
+        # The benchmark feed can publish the current day's snapshot before
+        # the prior day's economics mart is committed.  Ranking explicitly
+        # supports this one-day (or short) lag via ``backfill_latest_snapshot``;
+        # only snapshots from after the build date are unsafe future data.
+        if not benchmark_dates.le(pd.Timestamp(today)).any():
+            raise ValueError("no Artificial Analysis snapshot exists on or before build date")
 
     @staticmethod
     def _input_natural_key(

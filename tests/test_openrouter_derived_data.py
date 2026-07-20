@@ -1060,6 +1060,18 @@ def test_pipeline_builds_both_marts_and_preserves_last_valid_files_on_failure(tm
     assert not list(economics_path.parent.glob("*.parquet.tmp"))
 
 
+def test_pipeline_accepts_current_day_benchmark_when_economics_lag_one_day(tmp_path: Path) -> None:
+    paths = _seed_pipeline_inputs(tmp_path)
+    models = pd.read_parquet(paths["models"])
+    models["as_of_date"] = "2026-07-19"
+    models = models.drop_duplicates("model_id", keep="last")
+    models.to_parquet(paths["models"], index=False)
+
+    result = OpenRouterDerivedPipeline(tmp_path).build(today=date(2026, 7, 19))
+
+    assert result["openrouter_usage_economics_daily"] > 0
+
+
 @pytest.mark.parametrize(
     ("invalid_input", "error_type"),
     [
