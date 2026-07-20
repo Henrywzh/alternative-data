@@ -17,12 +17,18 @@ import yfinance as yf
 from dashboard import remote
 from dashboard.checks import CheckResult, run_checks
 from dashboard.data import (DOMAIN_ORDER, DATASET_REGISTRY, DatasetLoadResult, FreshnessInfo, dataset_source_for_domain, domain_dataset_ids, load_domain_datasets, load_latest_manifest)
-from openrouter_revenue import (build_price_context, build_conservative_provider_economics, build_provider_revenue_estimates, estimate_usage_revenue, summarize_economics_coverage)
+from openrouter_revenue import (
+    build_price_context,
+    build_conservative_provider_economics,
+    build_provider_revenue_estimates,
+    canonical_provider_slug,
+    estimate_usage_revenue,
+    summarize_economics_coverage,
+)
 from semiconductor_memory_data.sources.config import AI_DEMAND_PPI_WEIGHTS
 from dashboard.theme import (ACCENT, BG, SIDEBAR, CARD, BORDER, TEXT, MUTED, GREEN, RED, YELLOW, GRID, TICK, MODEL_COLORS)
 from dashboard.components import (format_metric, _empty_dataset_frame, _styler_applymap_compat, WEEKLY_MONTHLY_OTHER_PROVIDERS, DAILY_OTHER_PROVIDERS, US_PROVIDER_ORDER, CHINA_PROVIDER_ORDER, order_provider_columns, regroup_provider_pivot_for_display, render_dataset_guard, format_scraped_at_display, dataframe_for_display, make_stacked_bar, make_stacked_area_chart, make_line_chart, kpi_card_html, kpi_grid_html, _top_n_with_others)
 from openrouter_derived_data.metrics import compute_legacy_original_price_series
-from pricing_model_aliases import canonical_provider_slug
 
 
 REVENUE_CACHE_VERSION = "2026-07-01-pricing-perf-v1"
