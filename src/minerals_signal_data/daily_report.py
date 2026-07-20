@@ -5,6 +5,7 @@ from email.message import EmailMessage
 from email.utils import formatdate
 from pathlib import Path
 import os
+import re
 import smtplib
 import ssl
 import tempfile
@@ -95,10 +96,10 @@ def _stock_mapping(tickers: tuple[str, ...]) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def _load_config(base_dir: Path) -> dict[str, str]:
+def _load_config(base_dir: Path, *, production: bool = False) -> dict[str, str]:
     values = {
         key: os.environ[key]
-        for key in ("GMAIL_SENDER", "GMAIL_APP_PASSWORD", "GMAIL_RECIPIENT")
+        for key in ("GMAIL_SENDER", "GMAIL_APP_PASSWORD", "GMAIL_RECIPIENT", "GMAIL_RECIPIENTS")
         if os.environ.get(key)
     }
     config_path = base_dir / ".config"
@@ -109,7 +110,16 @@ def _load_config(base_dir: Path) -> dict[str, str]:
                 continue
             key, value = line.split("=", 1)
             values.setdefault(key.strip(), value.strip().strip('"').strip("'"))
-    missing = [key for key in ("GMAIL_SENDER", "GMAIL_APP_PASSWORD", "GMAIL_RECIPIENT") if not values.get(key)]
+    if production:
+        recipient_value = values.get("GMAIL_RECIPIENTS") or values.get("GMAIL_RECIPIENT", "")
+    else:
+        # Local/manual runs intentionally deliver only to the owner account.
+        recipient_value = values.get("GMAIL_RECIPIENT", "")
+    recipients = [item.strip() for item in re.split(r"[,;]", recipient_value) if item.strip()]
+    values["GMAIL_RECIPIENTS"] = ", ".join(recipients)
+    missing = [key for key in ("GMAIL_SENDER", "GMAIL_APP_PASSWORD") if not values.get(key)]
+    if not recipients:
+        missing.append("GMAIL_RECIPIENTS")
     if missing:
         raise RuntimeError("Missing Gmail configuration: " + ", ".join(missing))
     return values
@@ -259,7 +269,8 @@ def _send_email(
     )
     message = EmailMessage()
     message["From"] = config["GMAIL_SENDER"]
-    message["To"] = config["GMAIL_RECIPIENT"]
+    recipients = [item.strip() for item in config["GMAIL_RECIPIENTS"].split(",") if item.strip()]
+    message["To"] = ", ".join(recipients)
     message["Date"] = formatdate(localtime=True)
     message["Subject"] = f"{spec.mineral_name}每日图表简报 | {report_date}"
     message.set_content(plain_body)
@@ -271,7 +282,7 @@ def _send_email(
         html_part.add_attachment(path.read_bytes(), maintype="image", subtype="png", filename=path.name)
     with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=ssl.create_default_context(), timeout=30) as smtp:
         smtp.login(config["GMAIL_SENDER"], config["GMAIL_APP_PASSWORD"])
-        smtp.send_message(message)
+        smtp.send_message(message, to_addrs=recipients)
 
 
 def send_daily_reports(
@@ -281,26 +292,37 @@ def send_daily_reports(
     output_dir: str | Path | None = None,
     send_email: bool = True,
 ) -> dict[str, dict[str, str]]:
-    """Build and send the daily Tungsten and Molybdenum Gmail reports."""
+    """Build and send the daily Tungsten and Molybdenum Gmail reports.
+
+    Local runs use the single ``GMAIL_RECIPIENT`` by default. The scheduled
+    GitHub Action sets ``MINERALS_REPORT_ENV=production`` to enable the full
+    ``GMAIL_RECIPIENTS`` distribution list.
+    """
     base = Path(base_dir).resolve()
     _configure_font()
     local_today = pd.Timestamp.now(tz="Asia/Shanghai").normalize().tz_localize(None)
     run_date = pd.Timestamp(report_date).normalize() if report_date else local_today
     start = run_date.replace(month=1, day=1)
     end = run_date
-    config = _load_config(base) if send_email else {}
+    production = os.environ.get("MINERALS_REPORT_ENV", "").strip().lower() == "production"
+    config = _load_config(base, production=production) if send_email else {}
     temp_context = tempfile.TemporaryDirectory(prefix="minerals-daily-report-") if output_dir is None else None
     output = Path(output_dir) if output_dir is not None else Path(temp_context.name)
     output.mkdir(parents=True, exist_ok=True)
     results: dict[str, dict[str, str]] = {}
+    prepared_reports: list[dict[str, object]] = []
     try:
         for spec in REPORT_SPECS:
             mineral = _load_mineral_frame(base, spec)
             mineral = mineral.loc[mineral["date"].between(start, end)].copy()
+            if mineral.empty:
+                raise RuntimeError(f"No {spec.mineral_name} mineral prices available for {run_date.date()}")
             mapping = _stock_mapping(spec.stock_tickers)
             stock = fetch_public_stock_prices(mapping, start_date=start.date().isoformat())
             stock["date"] = pd.to_datetime(stock["date"], errors="coerce")
             stock = stock.dropna(subset=["date", "adj_close"])
+            if stock.empty:
+                raise RuntimeError(f"No {spec.mineral_name} stock prices available for {run_date.date()}")
             all_dates = [start, end]
             if not mineral.empty:
                 all_dates.append(mineral["date"].max())
@@ -318,24 +340,28 @@ def send_daily_reports(
             _build_stock_chart(stock, spec, start=start, end=chart_end, path=original_stock, mobile=False)
             mineral_date_text = pd.Timestamp(mineral_date).date().isoformat() if not pd.isna(mineral_date) else "—"
             stock_date_text = pd.Timestamp(stock_date).date().isoformat() if not pd.isna(stock_date) else "—"
-            if send_email:
-                _send_email(
-                    config,
-                    spec=spec,
-                    report_date=run_date.date().isoformat(),
-                    mineral_date=mineral_date_text,
-                    stock_date=stock_date_text,
-                    source_summary=_source_summary(stock),
-                    mobile_mineral=mobile_mineral,
-                    mobile_stock=mobile_stock,
-                    original_mineral=original_mineral,
-                    original_stock=original_stock,
-                )
+            prepared_reports.append(
+                {
+                    "spec": spec,
+                    "report_date": run_date.date().isoformat(),
+                    "mineral_date": mineral_date_text,
+                    "stock_date": stock_date_text,
+                    "source_summary": _source_summary(stock),
+                    "mobile_mineral": mobile_mineral,
+                    "mobile_stock": mobile_stock,
+                    "original_mineral": original_mineral,
+                    "original_stock": original_stock,
+                }
+            )
             results[spec.mineral_id] = {
                 "mineral_date": mineral_date_text,
                 "stock_date": stock_date_text,
                 "stock_sources": _source_summary(stock),
             }
+        if send_email:
+            # Do not send a partial distribution if either report failed to build.
+            for report in prepared_reports:
+                _send_email(config, **report)
     finally:
         if temp_context is not None:
             temp_context.cleanup()
