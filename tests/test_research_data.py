@@ -508,6 +508,53 @@ def test_build_daily_provider_economics_canonicalizes_model_ids(tmp_path: Path) 
     assert qwen_row["estimated_revenue"] == pytest.approx(0.0000208455)
 
 
+def test_provider_economics_combines_meta_and_meta_llama_under_meta() -> None:
+    activity = pd.DataFrame([
+        {
+            "usage_date": "2026-07-20",
+            "entity_id": "meta",
+            "entity_name": "Meta",
+            "model_permaslug": "meta/muse-spark",
+            "total_tokens": 100.0,
+            "prompt_tokens": 70.0,
+            "completion_tokens": 30.0,
+        },
+        {
+            "usage_date": "2026-07-20",
+            "entity_id": "meta-llama",
+            "entity_name": "Meta (Llama)",
+            "model_permaslug": "meta-llama/llama-4",
+            "total_tokens": 200.0,
+            "prompt_tokens": 140.0,
+            "completion_tokens": 60.0,
+        },
+    ])
+    pricing = pd.DataFrame([
+        {
+            "snapshot_ts": "2026-07-20T00:00:00Z",
+            "model_id": "meta/muse-spark",
+            "canonical_slug": "meta/muse-spark",
+            "provider_prefix": "meta",
+            "pricing_prompt": 0.000001,
+            "pricing_completion": 0.000003,
+        },
+        {
+            "snapshot_ts": "2026-07-20T00:00:00Z",
+            "model_id": "meta-llama/llama-4",
+            "canonical_slug": "meta-llama/llama-4",
+            "provider_prefix": "meta-llama",
+            "pricing_prompt": 0.000001,
+            "pricing_completion": 0.000003,
+        },
+    ])
+
+    economics = build_conservative_provider_economics(activity, pricing)
+
+    assert set(economics["provider_slug"]) == {"meta"}
+    assert set(economics["provider_name"]) == {"Meta"}
+    assert economics["total_tokens"].sum() == pytest.approx(300.0)
+
+
 def test_build_daily_provider_economics_infers_split_tokens_from_model_activity(tmp_path: Path) -> None:
     _seed_research_inputs(tmp_path)
     _write_dataset(

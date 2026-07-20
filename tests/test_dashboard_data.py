@@ -2075,7 +2075,7 @@ def test_regroup_provider_pivot_for_display_daily_uses_daily_bucket_rules() -> N
         {
             "OpenAI": [100.0],
             "Microsoft": [20.0],
-            "Meta (Llama)": [30.0],
+            "Meta": [30.0],
             "Mistral AI": [40.0],
             "Google": [50.0],
             "Tencent": [60.0],
@@ -2085,8 +2085,8 @@ def test_regroup_provider_pivot_for_display_daily_uses_daily_bucket_rules() -> N
 
     regrouped = regroup_provider_pivot_for_display(pivot, "daily")
 
-    assert list(regrouped.columns) == ["OpenAI", "Google", "Tencent", "Others"]
-    assert regrouped.loc["2026-04-05", "Others"] == 90.0
+    assert list(regrouped.columns) == ["OpenAI", "Google", "Meta", "Tencent", "Others"]
+    assert regrouped.loc["2026-04-05", "Others"] == 60.0
     assert regrouped.loc["2026-04-05", "Tencent"] == 60.0
 
 
@@ -2136,7 +2136,7 @@ def test_order_provider_columns_groups_us_china_other_and_others_last() -> None:
 
 
 def test_derive_provider_name_normalizes_meta_llama_slug() -> None:
-    assert _derive_provider_name("meta-llama/model", None) == "Meta (Llama)"
+    assert _derive_provider_name("meta-llama/model", None) == "Meta"
 
 
 def test_derive_provider_name_normalizes_tencent_slug() -> None:
@@ -3070,6 +3070,55 @@ def test_compute_openrouter_views_exposes_provider_weekly_request_volume() -> No
     assert request_view["weeks"] == ["2026-04-06", "2026-03-30"]
     assert pivot.loc["2026-04-06", "OpenAI"] == 1_500_000.0
     assert pivot.loc["2026-04-06", "Anthropic"] == 700_000.0
+
+
+def test_compute_openrouter_views_combines_meta_request_routes() -> None:
+    provider_requests = _provider_weekly_requests_frame().iloc[:0].copy()
+    rows = []
+    for provider, requests in [("meta", 100.0), ("meta-llama", 250.0)]:
+        row = _base_row("provider_weekly_requests")
+        row.update(
+            {
+                "week_label": "2026-04-06",
+                "week_start_date": "2026-04-06",
+                "entity_id": provider,
+                "entity_name": provider,
+                "metric_name": "requests",
+                "metric_unit": "requests",
+                "metric_value": requests,
+                "rank": 1,
+                "source_run_id": "requests-2026-04-06",
+                "scraped_at": "2026-04-06T00:00:00Z",
+            }
+        )
+        rows.append(row)
+    provider_requests = pd.DataFrame(rows, columns=EXPECTED_COLUMNS)
+    result_kwargs = {
+        "domain": "rankings",
+        "primary_date_column": "week_start_date",
+        "metric_column": "metric_value",
+        "source_format": "csv",
+        "source_path": None,
+        "missing_columns": [],
+        "duplicate_rows": 0,
+        "first_date": "2026-04-06",
+        "latest_date": "2026-04-06",
+        "latest_scraped_at": "2026-04-06T00:00:00Z",
+    }
+
+    views = compute_openrouter_views(
+        {
+            "provider_weekly_requests": DatasetLoadResult(
+                dataset_id="provider_weekly_requests",
+                label="Provider Weekly Requests",
+                frame=provider_requests,
+                row_count=len(provider_requests),
+                **result_kwargs,
+            )
+        }
+    )
+
+    assert views["provider_weekly_requests"]["pivot_weekly"].loc["2026-04-06", "Meta"] == 350.0
 
 
 def test_weekly_usage_section_state_switches_between_tokens_and_requests() -> None:

@@ -22,6 +22,7 @@ from semiconductor_memory_data.sources.config import AI_DEMAND_PPI_WEIGHTS
 from dashboard.theme import (ACCENT, BG, SIDEBAR, CARD, BORDER, TEXT, MUTED, GREEN, RED, YELLOW, GRID, TICK, MODEL_COLORS)
 from dashboard.components import (format_metric, _empty_dataset_frame, _styler_applymap_compat, WEEKLY_MONTHLY_OTHER_PROVIDERS, DAILY_OTHER_PROVIDERS, US_PROVIDER_ORDER, CHINA_PROVIDER_ORDER, order_provider_columns, regroup_provider_pivot_for_display, render_dataset_guard, format_scraped_at_display, dataframe_for_display, make_stacked_bar, make_stacked_area_chart, make_line_chart, kpi_card_html, kpi_grid_html, _top_n_with_others)
 from openrouter_derived_data.metrics import compute_legacy_original_price_series
+from pricing_model_aliases import canonical_provider_slug
 
 
 REVENUE_CACHE_VERSION = "2026-07-01-pricing-perf-v1"
@@ -246,7 +247,7 @@ OPENROUTER_PROVIDER_MAP = {
     "anthropic": "Anthropic",
     "google": "Google",
     "meta": "Meta",
-    "meta-llama": "Meta (Llama)",
+    "meta-llama": "Meta",
     "mistralai": "Mistral AI",
     "cohere": "Cohere",
     "qwen": "Alibaba (Qwen)",
@@ -295,6 +296,7 @@ def _derive_provider_name(model_id: str, official_provider: str | None) -> str:
         
     if "/" in model_id:
         slug_prefix = model_id.split("/")[0].lower()
+        slug_prefix = canonical_provider_slug(slug_prefix) or slug_prefix
         return OPENROUTER_PROVIDER_MAP.get(slug_prefix, slug_prefix.capitalize())
     
     return "Unknown"
@@ -397,6 +399,9 @@ def compute_openrouter_views(
     if result and not result.frame.empty:
         frame = result.frame.copy()
         frame["week_start_date"] = frame["week_start_date"].astype(str)
+        # Company-level displays merge Meta's direct and Llama routes into one
+        # origin company while preserving the raw ranking dataset unchanged.
+        frame["entity_id"] = frame["entity_id"].map(canonical_provider_slug)
         pivot = (
             frame.pivot_table(index="week_start_date", columns="entity_id", values="metric_value", aggfunc="sum")
             .fillna(0)
@@ -417,6 +422,7 @@ def compute_openrouter_views(
         )
         request_frame["usage_week"] = _align_rankings_week_to_monday(request_frame["week_start_date"].astype(str))
         request_frame["metric_value"] = pd.to_numeric(request_frame["metric_value"], errors="coerce")
+        request_frame["entity_id"] = request_frame["entity_id"].map(canonical_provider_slug)
         request_frame["provider_label"] = request_frame["entity_id"].astype("string").str.lower().map(OPENROUTER_PROVIDER_MAP)
         fallback_label = request_frame.get("entity_name", request_frame["entity_id"]).astype("string")
         request_frame["provider_label"] = request_frame["provider_label"].fillna(fallback_label)
@@ -801,7 +807,10 @@ def _compute_revenue_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, 
         modern_tok["usage_date_str"] = modern_tok["usage_date_dt"].dt.strftime("%Y-%m-%d")
         modern_tok["usage_week"] = _week_start(modern_tok["usage_date_dt"])
         modern_tok["usage_month"] = modern_tok["usage_date_dt"].dt.strftime("%Y-%m")
-        modern_tok["provider_label"] = modern_tok["entity_name"].fillna(modern_tok["entity_id"])
+        modern_tok["provider_slug"] = modern_tok["entity_id"].map(canonical_provider_slug)
+        modern_tok["provider_label"] = modern_tok["provider_slug"].map(
+            lambda value: _derive_provider_name(f"{value}/model", None) if pd.notna(value) else "Unknown"
+        )
         modern_tok["total_tokens"] = pd.to_numeric(modern_tok["total_tokens"], errors="coerce")
         pivot_tok_daily = modern_tok.pivot_table(index="usage_date_str", columns="provider_label", values="total_tokens", aggfunc="sum").fillna(0).sort_index()
         pivot_tok_weekly_modern_raw = modern_tok.pivot_table(index="usage_week", columns="provider_label", values="total_tokens", aggfunc="sum").fillna(0)
@@ -855,7 +864,7 @@ def _compute_revenue_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, 
     pivot_tok_monthly = pivot_tok_monthly.groupby(level=0).sum() if not pivot_tok_monthly.empty else pivot_tok_monthly
 
     big_tech_display = [
-        "OpenAI", "Anthropic", "Google", "Meta (Llama)", "DeepSeek",
+        "OpenAI", "Anthropic", "Google", "Meta", "DeepSeek",
         "Alibaba (Qwen)", "智谱AI (Z.ai)", "Moonshot AI", "xAI (Grok)",
         "Mistral AI", "Microsoft",
     ]
@@ -884,7 +893,10 @@ def _compute_revenue_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, 
             modern_with_price["usage_date_str"] = modern_with_price["usage_date_dt"].dt.strftime("%Y-%m-%d")
             modern_with_price["usage_week"] = _week_start(modern_with_price["usage_date_dt"])
             modern_with_price["usage_month"] = modern_with_price["usage_date_dt"].dt.strftime("%Y-%m")
-            modern_with_price["provider_label"] = modern_with_price["entity_name"].fillna(modern_with_price["provider_slug"])
+            modern_with_price["provider_slug"] = modern_with_price["provider_slug"].map(canonical_provider_slug)
+            modern_with_price["provider_label"] = modern_with_price["provider_slug"].map(
+                lambda value: _derive_provider_name(f"{value}/model", None) if pd.notna(value) else "Unknown"
+            )
 
             modern_pivot_daily = (
                 modern_with_price.pivot_table(index="usage_date_str", columns="provider_label", values="revenue_usd", aggfunc="sum")
@@ -916,6 +928,7 @@ def _compute_revenue_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, 
         share_df = market_share_res.frame.copy()
         macro_df["usage_week"] = _align_rankings_week_to_monday(macro_df["week_start_date"].astype(str))
         share_df["usage_week"] = _align_rankings_week_to_monday(share_df["week_start_date"].astype(str))
+        share_df["entity_id"] = share_df["entity_id"].map(canonical_provider_slug)
 
         macro_usage = macro_df.copy()
         macro_usage["usage_date"] = macro_usage["usage_week"]
@@ -1165,7 +1178,7 @@ def _prepare_explorer_catalog(frame: pd.DataFrame) -> pd.DataFrame:
         | catalog["provider_slug"].str.startswith("~", na=False)
     )
     # OpenRouter's ~...-latest entries are routing aliases, not separate companies.
-    catalog["provider_slug"] = catalog["provider_slug"].str.lstrip("~")
+    catalog["provider_slug"] = catalog["provider_slug"].str.lstrip("~").map(canonical_provider_slug)
     catalog["company"] = [
         _derive_provider_name(f"{provider}/{str(model_id).split('/', 1)[-1]}", None)
         for model_id, provider in zip(catalog["model_id"].astype("string"), catalog["provider_slug"])
@@ -1243,7 +1256,8 @@ def _normalize_explorer_activity(frame: pd.DataFrame, aliases: dict[str, str]) -
     activity["entity_id"] = activity["entity_id"].fillna(
         activity["model_id"].astype("string").str.split("/", n=1).str[0]
     )
-    activity["entity_id"] = activity["entity_id"].astype("string").str.lstrip("~")
+    activity["entity_id"] = activity["entity_id"].astype("string").str.lstrip("~").map(canonical_provider_slug)
+    activity.loc[activity["entity_id"].eq("meta"), "entity_name"] = "Meta"
     return activity
 
 
@@ -1297,7 +1311,8 @@ def build_openrouter_explorer_views(datasets: dict[str, DatasetLoadResult]) -> d
     economics = dataset_frame("daily_provider_economics")
     if not economics.empty:
         economics["usage_date_dt"] = pd.to_datetime(economics.get("usage_date"), errors="coerce").dt.normalize()
-        economics["provider_slug"] = economics.get("provider_slug", pd.Series(pd.NA, index=economics.index)).astype("string").str.lstrip("~")
+        economics["provider_slug"] = economics.get("provider_slug", pd.Series(pd.NA, index=economics.index)).astype("string").str.lstrip("~").map(canonical_provider_slug)
+        economics.loc[economics["provider_slug"].eq("meta"), "provider_name"] = "Meta"
         economics["total_tokens"] = pd.to_numeric(economics.get("total_tokens"), errors="coerce").fillna(0.0)
         economics["estimated_revenue"] = pd.to_numeric(economics.get("estimated_revenue"), errors="coerce")
         economics = economics.dropna(subset=["usage_date_dt", "provider_slug"]).copy()
@@ -1353,7 +1368,8 @@ def _model_origin_slug(value: object) -> str | None:
     if value is None or pd.isna(value):
         return None
     text = str(value).strip().lstrip("~")
-    return text.split("/", 1)[0] if "/" in text else (text or None)
+    prefix = text.split("/", 1)[0] if "/" in text else (text or None)
+    return canonical_provider_slug(prefix)
 
 
 def _weekly_company_tokens(frame: pd.DataFrame) -> pd.DataFrame:

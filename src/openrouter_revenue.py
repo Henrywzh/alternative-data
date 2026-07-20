@@ -5,7 +5,7 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 
-from pricing_model_aliases import clean_slug, derive_provider_prefix, generate_candidate_aliases
+from pricing_model_aliases import canonical_provider_slug, clean_slug, derive_provider_prefix, generate_candidate_aliases
 
 
 NO_SPLIT_PROMPT_SHARE = 0.977
@@ -115,6 +115,7 @@ def build_price_context(pricing: pd.DataFrame) -> PriceContext:
     prepared["provider_prefix"] = prepared["provider_prefix"].fillna(
         prepared["canonical_slug"].map(derive_provider_prefix)
     ).fillna(prepared["model_id"].map(derive_provider_prefix))
+    prepared["provider_prefix"] = prepared["provider_prefix"].map(canonical_provider_slug)
     prepared["snapshot_ts"] = _to_datetime(prepared["snapshot_ts"], utc=True)
     prepared["pricing_prompt"] = pd.to_numeric(prepared["pricing_prompt"], errors="coerce")
     prepared["pricing_completion"] = pd.to_numeric(prepared["pricing_completion"], errors="coerce")
@@ -330,6 +331,7 @@ def estimate_usage_revenue(
     estimated["model_permaslug"] = _clean_model_id(estimated["model_permaslug"])
     provider_series = estimated["provider_slug"] if "provider_slug" in estimated.columns else pd.Series(pd.NA, index=estimated.index)
     estimated["provider_slug"] = _clean_model_id(provider_series).fillna(estimated["model_permaslug"].map(derive_provider_prefix))
+    estimated["provider_slug"] = estimated["provider_slug"].map(canonical_provider_slug)
     if "usage_date" not in estimated.columns or "snapshot_ts" not in pricing.columns:
         context = build_price_context(pricing)
         return _estimate_with_context(
@@ -417,7 +419,9 @@ def _prepare_usage_for_economics(provider_activity: pd.DataFrame) -> pd.DataFram
     entity_id = usage["entity_id"] if "entity_id" in usage.columns else pd.Series(pd.NA, index=usage.index)
     entity_name = usage["entity_name"] if "entity_name" in usage.columns else pd.Series(pd.NA, index=usage.index)
     usage["provider_slug"] = _clean_model_id(entity_id).fillna(usage["model_permaslug"].map(derive_provider_prefix))
+    usage["provider_slug"] = usage["provider_slug"].map(canonical_provider_slug)
     usage["provider_name"] = entity_name.astype("string").fillna(usage["provider_slug"])
+    usage.loc[usage["provider_slug"].eq("meta"), "provider_name"] = "Meta"
     usage["total_tokens"] = pd.to_numeric(usage["total_tokens"], errors="coerce")
     for column in ["prompt_tokens", "completion_tokens", "reasoning_tokens"]:
         if column not in usage.columns:
@@ -465,6 +469,7 @@ def _prepare_pricing_aliases(pricing: pd.DataFrame) -> pd.DataFrame:
     prepared["provider_prefix"] = prepared["provider_prefix"].fillna(
         prepared["canonical_slug"].map(derive_provider_prefix)
     ).fillna(prepared["model_id"].map(derive_provider_prefix))
+    prepared["provider_prefix"] = prepared["provider_prefix"].map(canonical_provider_slug)
     prepared["snapshot_ts"] = _to_datetime(prepared["snapshot_ts"], utc=True)
     prepared["pricing_prompt"] = pd.to_numeric(prepared["pricing_prompt"], errors="coerce")
     prepared["pricing_completion"] = pd.to_numeric(prepared["pricing_completion"], errors="coerce")

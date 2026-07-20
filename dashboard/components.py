@@ -51,7 +51,6 @@ WEEKLY_MONTHLY_OTHER_PROVIDERS = {
 
 DAILY_OTHER_PROVIDERS = {
     "Microsoft",
-    "Meta (Llama)",
     "Mistral AI",
 }
 
@@ -60,7 +59,7 @@ US_PROVIDER_ORDER = [
     "OpenAI",
     "Anthropic",
     "Google",
-    "Meta (Llama)",
+    "Meta",
     "xAI (Grok)",
     "Microsoft",
 ]
