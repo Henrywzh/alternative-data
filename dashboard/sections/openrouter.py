@@ -482,6 +482,17 @@ def _align_rankings_week_to_monday(series: pd.Series) -> pd.Series:
 
 
 def _market_share_weekly_totals(frame: pd.DataFrame) -> pd.Series:
+    """Return one coherent rankings-volume snapshot per aligned week.
+
+    ``market_share`` is an append-only history assembled from several
+    rankings snapshots.  A week can therefore contain an older Sunday
+    snapshot, a newer Monday snapshot, and (for a few runs) a partial or
+    malformed provider batch.  Summing every row makes those snapshots look
+    like one observation and can inflate the request chart by thousands of
+    times.  Prefer the newest *complete* snapshot for each week (with row
+    count as the completeness guard), then retain the Monday snapshot when a
+    Sunday/Monday pair exists.
+    """
     if frame.empty:
         return pd.Series(dtype="float64", name="market_share")
     market = frame.copy()
@@ -489,18 +500,69 @@ def _market_share_weekly_totals(frame: pd.DataFrame) -> pd.Series:
     market["original_week_start_date"] = original_dates.dt.normalize()
     market["week_start_date"] = _align_rankings_week_to_monday(market["week_start_date"].astype(str))
     market["metric_value"] = pd.to_numeric(market["metric_value"], errors="coerce")
-    totals = (
-        market.dropna(subset=["original_week_start_date", "week_start_date"])
-        .groupby(["week_start_date", "original_week_start_date"], as_index=False)["metric_value"]
-        .sum()
+    market = market.dropna(subset=["original_week_start_date", "week_start_date", "metric_value"])
+    if market.empty:
+        return pd.Series(dtype="float64", name="market_share")
+
+    # Each scraper run is a snapshot.  Select the most complete/latest run
+    # for an aligned week before resolving Sunday/Monday duplicate dates.
+    # This removes partial legacy batches (including the known four-provider
+    # trillion-scale rows) without applying an arbitrary value threshold.
+    source_run = market.get("source_run_id")
+    scraped_at = (
+        pd.to_datetime(market.get("scraped_at"), errors="coerce", format="mixed")
+        if "scraped_at" in market
+        else None
     )
+    if source_run is not None:
+        market["_snapshot_id"] = source_run.astype("string").fillna("")
+        market["_snapshot_at"] = scraped_at if scraped_at is not None else pd.NaT
+        snapshot_dates = (
+            market.groupby(
+                ["week_start_date", "_snapshot_id", "original_week_start_date"],
+                as_index=False,
+            )
+            .agg(
+                metric_value=("metric_value", "sum"),
+                snapshot_rows=("metric_value", "size"),
+                snapshot_at=("_snapshot_at", "max"),
+            )
+        )
+        snapshot_runs = (
+            snapshot_dates.groupby(["week_start_date", "_snapshot_id"], as_index=False)
+            .agg(
+                snapshot_rows=("snapshot_rows", "sum"),
+                snapshot_at=("snapshot_at", "max"),
+            )
+            .sort_values(
+                ["week_start_date", "snapshot_rows", "snapshot_at", "_snapshot_id"],
+                ascending=[True, False, False, False],
+            )
+            .drop_duplicates("week_start_date", keep="first")
+        )
+        selected = snapshot_dates.merge(
+            snapshot_runs[["week_start_date", "_snapshot_id"]],
+            on=["week_start_date", "_snapshot_id"],
+            how="inner",
+        )
+        selected["is_aligned_monday"] = (
+            selected["original_week_start_date"].dt.strftime("%Y-%m-%d")
+            == selected["week_start_date"]
+        )
+        totals = selected.sort_values(
+            ["week_start_date", "is_aligned_monday", "original_week_start_date"],
+            ascending=[True, False, False],
+        )
+    else:
+        totals = (
+            market.groupby(["week_start_date", "original_week_start_date"], as_index=False)["metric_value"]
+            .sum()
+        )
+        totals["is_aligned_monday"] = (
+            totals["original_week_start_date"].dt.strftime("%Y-%m-%d") == totals["week_start_date"]
+        )
     if totals.empty:
         return pd.Series(dtype="float64", name="market_share")
-    totals["is_aligned_monday"] = totals["original_week_start_date"].dt.strftime("%Y-%m-%d") == totals["week_start_date"]
-    totals = totals.sort_values(
-        ["week_start_date", "is_aligned_monday", "metric_value", "original_week_start_date"],
-        ascending=[True, False, False, False],
-    )
     return (
         totals.drop_duplicates(subset=["week_start_date"], keep="first")
         .set_index("week_start_date")["metric_value"]

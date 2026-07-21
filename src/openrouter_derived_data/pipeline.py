@@ -171,6 +171,11 @@ class OpenRouterDerivedPipeline:
     def _input_natural_key(
         dataset_id: str, frame: pd.DataFrame
     ) -> tuple[str, ...]:
+        if dataset_id == "economics" and "provider_slug" in frame.columns:
+            # The synthetic ``Others`` bucket is emitted once per provider.
+            # Keep the provider dimension in the validation key so those
+            # intentionally separate rows are not rejected as duplicates.
+            return ("usage_date", "model_permaslug", "provider_slug")
         if dataset_id != "activity":
             return _INPUT_NATURAL_KEYS[dataset_id]
         if "category_slug" in frame:
