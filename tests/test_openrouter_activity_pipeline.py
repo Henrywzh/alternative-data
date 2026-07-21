@@ -91,6 +91,41 @@ def test_activity_source_extracts_current_stats_api_payload() -> None:
     assert records[0].total_tokens == 1250.0
 
 
+def test_activity_source_preserves_requested_route_variant() -> None:
+    payload = {
+        "data": {
+            "analytics": [{
+                "date": "2026-07-20 00:00:00",
+                # OpenRouter currently strips :free from the response slug.
+                "model_permaslug": "tencent/hy3-20260706",
+                "total_prompt_tokens": 100,
+                "total_completion_tokens": 25,
+                "count": 10,
+            }]
+        }
+    }
+    source = ActivitySource()
+    context = RunContext(run_id="activity-variant-test", scraped_at=pd.Timestamp("2026-07-21T00:00:00Z").to_pydatetime())
+    snapshots = [
+        Snapshot(
+            name="paid",
+            source_url="https://openrouter.ai/api/frontend/v1/stats/model-activity?permaslug=tencent%2Fhy3-20260706&variant=standard",
+            body=json.dumps(payload),
+        ),
+        Snapshot(
+            name="free",
+            source_url="https://openrouter.ai/api/frontend/v1/stats/model-activity?permaslug=tencent%2Fhy3-20260706%3Afree&variant=standard",
+            body=json.dumps(payload),
+        ),
+    ]
+
+    records = source.extract(snapshots, context)["openrouter_model_activity"]
+    assert {record.model_permaslug for record in records} == {
+        "tencent/hy3-20260706",
+        "tencent/hy3-20260706:free",
+    }
+
+
 def test_activity_source_leaves_reasoning_tokens_null_when_missing() -> None:
     html = _build_activity_html(
         [

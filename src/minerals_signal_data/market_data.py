@@ -547,25 +547,46 @@ def attach_fx_to_stock_prices(stock_prices: pd.DataFrame, fx_history: pd.DataFra
     if stock_prices.empty:
         return stock_prices.copy()
     frame = stock_prices.copy()
-    frame["date"] = pd.to_datetime(frame["date"])
+    # Normalize to one timezone-naive nanosecond dtype before merge_asof.
+    # pandas 3 can otherwise reject equivalent date columns with different
+    # resolutions (for example datetime64[us] versus datetime64[s]).
+    frame["date"] = (
+        pd.to_datetime(frame["date"], errors="coerce", utc=True)
+        .dt.tz_localize(None)
+        .dt.normalize()
+        .astype("datetime64[ns]")
+    )
     frame["fx_to_usd"] = 1.0
     if fx_history.empty:
         return frame
 
     fx_frame = fx_history.copy()
-    fx_frame["date"] = pd.to_datetime(fx_frame["date"])
+    fx_frame["date"] = (
+        pd.to_datetime(fx_frame["date"], errors="coerce", utc=True)
+        .dt.tz_localize(None)
+        .dt.normalize()
+        .astype("datetime64[ns]")
+    )
     for market in ("HK", "CN_A"):
         market_mask = frame["market"] == market
         if not market_mask.any():
             continue
-        market_fx = fx_frame.loc[fx_frame["market"] == market, ["date", "fx_to_usd"]].sort_values("date")
+        market_fx = (
+            fx_frame.loc[fx_frame["market"] == market, ["date", "fx_to_usd"]]
+            .rename(columns={"fx_to_usd": "fx_rate"})
+            .sort_values("date")
+        )
         if market_fx.empty:
             continue
+        market_rows = frame.loc[market_mask].copy()
+        market_rows["_row_index"] = market_rows.index
         merged = pd.merge_asof(
-            frame.loc[market_mask].sort_values("date"),
+            market_rows.sort_values("date"),
             market_fx,
             on="date",
             direction="backward",
         )
-        frame.loc[market_mask, "fx_to_usd"] = merged["fx_to_usd_y"].ffill().bfill().values
+        merged["fx_rate"] = merged["fx_rate"].ffill().bfill()
+        values = merged.set_index("_row_index")["fx_rate"].reindex(market_rows.index)
+        frame.loc[market_mask, "fx_to_usd"] = values.to_numpy()
     return frame
