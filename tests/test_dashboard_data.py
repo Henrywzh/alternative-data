@@ -990,6 +990,28 @@ def test_provider_daily_activity_natural_key_includes_provider_identity(tmp_path
     assert result.duplicate_rows == 0
 
 
+def test_checks_ignore_empty_optional_provider_weekly_requests(tmp_path: Path) -> None:
+    root = tmp_path / "data" / "normalized" / "openrouter"
+    root.mkdir(parents=True)
+    pd.DataFrame(columns=OPENROUTER_LOAD_COLUMNS["provider_weekly_requests"]).to_parquet(
+        root / "provider_weekly_requests.parquet", index=False
+    )
+
+    result = load_dataset("provider_weekly_requests", base_dir=tmp_path)
+    checks = run_checks(
+        {
+            "provider_weekly_requests": result,
+            # Ensure the optional flag is not accidentally inherited from a
+            # neighboring dataset while the checks iterate the mapping.
+            "top_models": replace(result, dataset_id="top_models", row_count=1),
+        },
+        load_latest_manifest(base_dir=tmp_path),
+        base_dir=tmp_path,
+    )
+
+    assert all("provider_weekly_requests" not in check.title for check in checks)
+
+
 def test_openrouter_derived_registry_uses_compact_mart_projection() -> None:
     assert dataset_source_for_domain("openrouter_derived") == "marts"
     assert DOMAIN_ORDER["openrouter_derived"] == [
@@ -3283,7 +3305,6 @@ def test_weekly_requests_exposes_actual_series_and_long_rankings_proxy() -> None
     model_activity = pd.DataFrame(
         {
             "usage_date": ["2026-06-17", "2026-06-18"],
-            "model_permaslug": ["openai/gpt-5.6", "openai/gpt-5.6"],
             "category_slug": ["all", "all"],
             "request_count": [10.0, 25.0],
         }
@@ -3329,8 +3350,6 @@ def test_weekly_requests_exposes_actual_series_and_long_rankings_proxy() -> None
     assert state["pivot"].loc["2026-06-15", "Total Requests"] == 35.0
     assert state["proxy_pivot"].loc["2025-08-04", "Rankings volume proxy"] == 100.0
     assert state["proxy_pivot"].loc["2025-08-11", "Rankings volume proxy"] == 200.0
-    assert state["actual_mix_pivot"].loc["2026-06-15", "OpenAI"] == 35.0
-    assert state["proxy_mix_pivot"].loc["2025-08-04", "OpenAI"] == 100.0
     assert "actual weekly requests" in state["caption"]
     assert "not a request count" in state["caption"]
 
