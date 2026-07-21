@@ -3302,7 +3302,7 @@ def test_usage_window_defaults_to_weekly_and_supports_daily_totals() -> None:
     assert daily_requests["pivot"].loc["2026-06-18", "Total Requests"] == 25.0
 
 
-def test_weekly_requests_exposes_actual_series_and_long_rankings_proxy() -> None:
+def test_weekly_requests_exposes_actual_series_and_recovered_rankings_history() -> None:
     model_activity = pd.DataFrame(
         {
             "usage_date": ["2026-06-17", "2026-06-18"],
@@ -3314,7 +3314,18 @@ def test_weekly_requests_exposes_actual_series_and_long_rankings_proxy() -> None
         {
             "week_start_date": ["2025-08-03", "2025-08-10"],
             "entity_id": ["openai", "openai"],
+            # Token-volume snapshots are intentionally on a different scale;
+            # they must never become the request-series context line.
+            "metric_value": [100_000_000_000.0, 200_000_000_000.0],
+        }
+    )
+    provider_requests = pd.DataFrame(
+        {
+            "week_start_date": ["2025-08-03", "2025-08-10"],
+            "entity_id": ["openai", "openai"],
             "metric_value": [100.0, 200.0],
+            "source_run_id": ["requests-run", "requests-run"],
+            "scraped_at": ["2026-07-20T00:00:00Z", "2026-07-20T00:00:00Z"],
         }
     )
     result_kwargs = {
@@ -3344,22 +3355,29 @@ def test_weekly_requests_exposes_actual_series_and_long_rankings_proxy() -> None
             row_count=len(market_share),
             **result_kwargs,
         ),
+        "provider_weekly_requests": DatasetLoadResult(
+            dataset_id="provider_weekly_requests",
+            label="Provider Weekly Requests",
+            frame=provider_requests,
+            row_count=len(provider_requests),
+            **result_kwargs,
+        ),
     }
 
     state = _weekly_usage_section_state(datasets, {}, "Requests")
 
     assert state["pivot"].loc["2026-06-15", "Total Requests"] == 35.0
-    assert state["proxy_pivot"].loc["2025-08-04", "Rankings volume proxy"] == 100.0
-    assert state["proxy_pivot"].loc["2025-08-11", "Rankings volume proxy"] == 200.0
+    assert state["proxy_pivot"].loc["2025-08-04", "Historical rankings requests"] == 100.0
+    assert state["proxy_pivot"].loc["2025-08-11", "Historical rankings requests"] == 200.0
     assert "actual weekly requests" in state["caption"]
-    assert "not a request count" in state["caption"]
+    assert "trillion-scale market-share token series is excluded" in state["caption"]
 
 
 def test_market_share_weekly_totals_choose_complete_latest_snapshot() -> None:
     frame = pd.DataFrame(
         [
-            # A partial malformed batch must not be summed into the request
-            # proxy when a later complete snapshot covers the same week.
+            # A partial malformed batch must not be summed into a downstream
+            # volume series when a later complete snapshot covers the week.
             {
                 "week_start_date": "2026-06-08",
                 "entity_id": "others",
