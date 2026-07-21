@@ -1036,6 +1036,21 @@ def _seed_pipeline_inputs(base_dir: Path) -> dict[str, Path]:
     }
 
 
+def test_pipeline_scopes_economics_natural_key_by_provider_for_synthetic_rows() -> None:
+    economics = pd.DataFrame(
+        {
+            "usage_date": ["2026-07-17", "2026-07-17"],
+            "model_permaslug": ["Others", "Others"],
+            "provider_slug": ["openai", "google"],
+        }
+    )
+
+    key = OpenRouterDerivedPipeline._input_natural_key("economics", economics)
+
+    assert key == ("usage_date", "model_permaslug", "provider_slug")
+    OpenRouterDerivedPipeline._validate_natural_key("economics", economics, key)
+
+
 def test_pipeline_builds_both_marts_and_preserves_last_valid_files_on_failure(tmp_path: Path) -> None:
     paths = _seed_pipeline_inputs(tmp_path)
 

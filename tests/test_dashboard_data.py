@@ -63,6 +63,7 @@ from dashboard.sections.openrouter import (
     _weekly_usage_section_state,
     _derived_metric_pivot,
     _legacy_original_price_series,
+    _market_share_weekly_totals,
     model_explorer_state,
 )
 from dashboard.sections.semiconductor import (
@@ -3352,6 +3353,40 @@ def test_weekly_requests_exposes_actual_series_and_long_rankings_proxy() -> None
     assert state["proxy_pivot"].loc["2025-08-11", "Rankings volume proxy"] == 200.0
     assert "actual weekly requests" in state["caption"]
     assert "not a request count" in state["caption"]
+
+
+def test_market_share_weekly_totals_choose_complete_latest_snapshot() -> None:
+    frame = pd.DataFrame(
+        [
+            # A partial malformed batch must not be summed into the request
+            # proxy when a later complete snapshot covers the same week.
+            {
+                "week_start_date": "2026-06-08",
+                "entity_id": "others",
+                "metric_value": 5_000_000_000_000.0,
+                "source_run_id": "partial-bad",
+                "scraped_at": "2026-06-22T20:26:32Z",
+            },
+            {
+                "week_start_date": "2026-06-08",
+                "entity_id": "google",
+                "metric_value": 1_800.0,
+                "source_run_id": "complete-good",
+                "scraped_at": "2026-07-06T09:40:37Z",
+            },
+            {
+                "week_start_date": "2026-06-08",
+                "entity_id": "openai",
+                "metric_value": 1_200.0,
+                "source_run_id": "complete-good",
+                "scraped_at": "2026-07-06T09:40:37Z",
+            },
+        ]
+    )
+
+    totals = _market_share_weekly_totals(frame)
+
+    assert totals.loc["2026-06-08"] == 3_000.0
 
 
 def test_workload_intensity_state_is_total_only_for_usage_chart() -> None:
