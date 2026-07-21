@@ -30,7 +30,10 @@ def test_daily_report_source_summary_prioritizes_same_day_sources() -> None:
     assert _source_summary(prices) == "Tencent, AKShare/Eastmoney, Yahoo Finance"
 
 
-def test_load_config_supports_multiple_recipients(tmp_path) -> None:
+def test_load_config_supports_multiple_recipients(tmp_path, monkeypatch) -> None:
+    for key in ("GMAIL_SENDER", "GMAIL_APP_PASSWORD", "GMAIL_RECIPIENT", "GMAIL_RECIPIENTS"):
+        monkeypatch.delenv(key, raising=False)
+
     (tmp_path / ".config").write_text(
         "GMAIL_SENDER=sender@gmail.com\n"
         "GMAIL_APP_PASSWORD=test-password\n"
