@@ -437,10 +437,11 @@ def compute_openrouter_views(
 
     requests_result = datasets.get("provider_weekly_requests")
     if requests_result and not requests_result.frame.empty:
-        request_frame = _clean_provider_request_frame(
-            requests_result.frame,
-            market_share_result.frame if market_share_result else pd.DataFrame(),
-        )
+        # ``provider_weekly_requests`` is a separately labelled historical
+        # request series.  Do not de-duplicate it against ``market_share``:
+        # the latter is token-volume data and can legitimately share provider
+        # keys/values on newer rankings snapshots.
+        request_frame = requests_result.frame.copy()
         request_frame["usage_week"] = _align_rankings_week_to_monday(request_frame["week_start_date"].astype(str))
         request_frame["metric_value"] = pd.to_numeric(request_frame["metric_value"], errors="coerce")
         request_frame["entity_id"] = request_frame["entity_id"].map(canonical_provider_slug)
@@ -488,8 +489,8 @@ def _market_share_weekly_totals(frame: pd.DataFrame) -> pd.Series:
     rankings snapshots.  A week can therefore contain an older Sunday
     snapshot, a newer Monday snapshot, and (for a few runs) a partial or
     malformed provider batch.  Summing every row makes those snapshots look
-    like one observation and can inflate the request chart by thousands of
-    times.  Prefer the newest *complete* snapshot for each week (with row
+    like one observation and can inflate downstream volume charts by thousands
+    of times.  Prefer the newest *complete* snapshot for each week (with row
     count as the completeness guard), then retain the Monday snapshot when a
     Sunday/Monday pair exists.
     """
@@ -575,32 +576,29 @@ def _clean_provider_request_frame(
     request_frame: pd.DataFrame,
     market_share_frame: pd.DataFrame,
 ) -> pd.DataFrame:
-    """Remove the legacy rankings payload that duplicated provider token volume.
+    """Explicitly remove known duplicated payloads for legacy callers.
 
-    Before the rankings API split was understood, ``marketShareData`` was
-    written to both ``market_share`` and ``provider_weekly_requests``.  Those
-    rows are byte-for-byte equal on the natural key and are not request counts.
-    Keep genuine request rows (if a future endpoint supplies them), while
-    excluding only exact market-share duplicates.
+    The dashboard no longer applies this heuristic to the recovered request
+    history: a request-labelled dataset must not be discarded merely because
+    its values happen to match a token snapshot.  The helper remains for
+    compatibility with older analysis code and tests that opt into that
+    conservative de-duplication explicitly.
     """
-    if request_frame.empty:
+    if request_frame.empty or market_share_frame.empty:
+        return request_frame.copy()
+    request_keys = ["week_start_date", "entity_id", "metric_value"]
+    if not set(request_keys).issubset(request_frame.columns) or not set(request_keys).issubset(market_share_frame.columns):
         return request_frame.copy()
     cleaned = request_frame.copy()
-    if market_share_frame.empty:
-        return cleaned
-    request_keys = ["week_start_date", "entity_id", "metric_value"]
-    if not set(request_keys).issubset(cleaned.columns) or not set(request_keys).issubset(market_share_frame.columns):
-        return cleaned
     right = market_share_frame[request_keys].copy()
-    for frame in (cleaned, right):
-        frame["week_start_date"] = frame["week_start_date"].astype("string")
-        frame["entity_id"] = frame["entity_id"].astype("string")
-        frame["metric_value"] = pd.to_numeric(frame["metric_value"], errors="coerce").round(6)
+    for current in (cleaned, right):
+        current["week_start_date"] = current["week_start_date"].astype("string")
+        current["entity_id"] = current["entity_id"].astype("string")
+        current["metric_value"] = pd.to_numeric(current["metric_value"], errors="coerce").round(6)
     right["_market_share_duplicate"] = True
     duplicate_keys = right.drop_duplicates(request_keys)
     cleaned = cleaned.merge(duplicate_keys, on=request_keys, how="left")
-    cleaned = cleaned[cleaned["_market_share_duplicate"].isna()].drop(columns="_market_share_duplicate")
-    return cleaned
+    return cleaned[cleaned["_market_share_duplicate"].isna()].drop(columns="_market_share_duplicate")
 
 
 def _period_coverage(frame: pd.DataFrame, period_column: str, date_column: str, expected_days: int) -> pd.DataFrame:
@@ -1434,10 +1432,7 @@ def build_openrouter_explorer_views(datasets: dict[str, DatasetLoadResult]) -> d
         # the stacked model breakdown instead of implying that top-ranked
         # models are the company's full usage.
         "weekly_company_tokens": _weekly_company_tokens(provider_activity),
-        "weekly_company_requests": _weekly_company_requests(
-            dataset_frame("provider_weekly_requests"),
-            dataset_frame("market_share"),
-        ),
+        "weekly_company_requests": _weekly_company_requests(dataset_frame("provider_weekly_requests")),
         "app_usage": app_usage,
         "app_metadata": app_metadata,
         "aliases": aliases,
@@ -1480,13 +1475,7 @@ def _weekly_company_tokens(frame: pd.DataFrame) -> pd.DataFrame:
     )
 
 
-def _weekly_company_requests(frame: pd.DataFrame, market_share_frame: pd.DataFrame | None = None) -> pd.DataFrame:
-    if frame.empty:
-        return pd.DataFrame(columns=["usage_week", "company_slug", "requests"])
-    frame = _clean_provider_request_frame(
-        frame,
-        market_share_frame if market_share_frame is not None else pd.DataFrame(),
-    )
+def _weekly_company_requests(frame: pd.DataFrame) -> pd.DataFrame:
     if frame.empty:
         return pd.DataFrame(columns=["usage_week", "company_slug", "requests"])
     prepared = frame.copy()
@@ -2323,7 +2312,7 @@ def _workload_total_ratio_state(
         ),
         "caption": (
             "Workload intensity uses total tokens ÷ actual model-activity requests. "
-            "The long-history rankings proxy shown on the request chart is excluded. "
+            "Recovered historical rankings requests shown on the request chart are excluded. "
             "It describes workload composition, not model efficiency."
         ),
         "source_status": (
@@ -2430,11 +2419,11 @@ def _daily_total_usage_pivot(
 ) -> tuple[pd.DataFrame, str, str | None]:
     """Return one total series for daily or weekly usage.
 
-    Provider daily activity is the broadest token source.  Requests use the
-    model-activity ``all`` category because provider activity currently does
-    not publish request counts.  The former rankings ``provider_weekly_requests``
-    payload duplicated provider token volume and is ignored until a true
-    request endpoint is available.
+    Provider daily activity is the broadest token source.  Daily requests use
+    the model-activity ``all`` category because provider activity does not
+    publish request counts.  Weekly requests use the separately stored
+    historical rankings request series when the complete model feed is not
+    available.
     """
     requested_window = "Daily" if str(window).casefold() == "daily" else "Weekly"
     if metric == "Tokens":
@@ -2502,21 +2491,57 @@ def _clip_weekly_usage_pivot(frame: pd.DataFrame) -> pd.DataFrame:
 def _rankings_volume_proxy_pivot(
     datasets: dict[str, DatasetLoadResult],
 ) -> pd.DataFrame:
-    """Build the long-history rankings volume context series.
+    """Build the recovered long-history rankings request context series.
 
-    The rankings endpoint historically exposed market-share volume under the
-    request dataset name.  Keep it available as a clearly labelled context
-    line, but never treat it as an actual request count.
+    Older commits contain a request-labelled rankings snapshot in
+    ``provider_weekly_requests``.  ``market_share`` is a different dataset:
+    it contains provider token volume and can reach trillion-scale values,
+    so it must never be used as a request proxy.
     """
-    result = datasets.get("market_share")
+    result = datasets.get("provider_weekly_requests")
     frame = result.frame.copy() if result and not result.frame.empty else pd.DataFrame()
+    column_name = "Historical rankings requests"
     if frame.empty or not {"week_start_date", "metric_value"}.issubset(frame.columns):
-        return pd.DataFrame(columns=["Rankings volume proxy"])
-    proxy = _market_share_weekly_totals(frame)
-    if proxy.empty:
-        return pd.DataFrame(columns=["Rankings volume proxy"])
-    proxy = proxy.loc[pd.to_datetime(proxy.index, errors="coerce") >= WEEKLY_USAGE_START_DATE]
-    return proxy.rename("Rankings volume proxy").to_frame()
+        return pd.DataFrame(columns=[column_name])
+
+    prepared = frame.copy()
+    prepared["original_week_start_date"] = pd.to_datetime(
+        prepared["week_start_date"].astype(str), errors="coerce"
+    ).dt.normalize()
+    prepared["usage_week"] = _align_rankings_week_to_monday(prepared["week_start_date"].astype(str))
+    prepared["metric_value"] = pd.to_numeric(prepared["metric_value"], errors="coerce")
+    prepared = prepared.dropna(subset=["original_week_start_date", "usage_week", "metric_value"])
+    if prepared.empty:
+        return pd.DataFrame(columns=[column_name])
+
+    # A scrape can contain several historical snapshots.  Pick the most
+    # complete/latest snapshot for each aligned week before summing providers.
+    if "source_run_id" in prepared.columns:
+        prepared["_snapshot_id"] = prepared["source_run_id"].astype("string").fillna("")
+        scraped_at = (
+            prepared["scraped_at"]
+            if "scraped_at" in prepared.columns
+            else pd.Series(pd.NaT, index=prepared.index)
+        )
+        prepared["_snapshot_at"] = pd.to_datetime(scraped_at, errors="coerce", format="mixed")
+        snapshots = (
+            prepared.groupby(["usage_week", "_snapshot_id"], as_index=False)
+            .agg(snapshot_rows=("metric_value", "size"), snapshot_at=("_snapshot_at", "max"))
+            .sort_values(
+                ["usage_week", "snapshot_rows", "snapshot_at", "_snapshot_id"],
+                ascending=[True, False, False, False],
+            )
+            .drop_duplicates("usage_week", keep="first")
+        )
+        prepared = prepared.merge(
+            snapshots[["usage_week", "_snapshot_id"]],
+            on=["usage_week", "_snapshot_id"],
+            how="inner",
+        )
+
+    totals = prepared.groupby("usage_week", as_index=True)["metric_value"].sum().sort_index()
+    totals = totals.loc[pd.to_datetime(totals.index, errors="coerce") >= WEEKLY_USAGE_START_DATE]
+    return totals.rename(column_name).to_frame()
 
 
 def _weekly_usage_section_state(
@@ -2574,7 +2599,7 @@ def _weekly_usage_section_state(
             # Retain fixture/backward compatibility and support older snapshots
             # while no actual model-activity dataset is available.
             pivot_requests = legacy_pivot.apply(pd.to_numeric, errors="coerce").fillna(0).sum(axis=1).to_frame("Total Requests")
-            request_source = "Legacy rankings request proxy"
+            request_source = "Recovered rankings requests"
             provider_count = int(legacy_pivot.shape[1])
             if model_activity_result is None:
                 request_scraped_at = (
@@ -2586,7 +2611,13 @@ def _weekly_usage_section_state(
             request_source = "Actual model activity"
             provider_count = None
         pivot_requests = _clip_weekly_usage_pivot(pivot_requests)
-        proxy_pivot = _rankings_volume_proxy_pivot(datasets)
+        # When model activity is absent, the recovered history is already the
+        # primary series; do not draw it a second time as a dashed context line.
+        proxy_pivot = (
+            _rankings_volume_proxy_pivot(datasets)
+            if request_source == "Actual model activity"
+            else pd.DataFrame(columns=["Historical rankings requests"])
+        )
         latest_total = None
         wow_pct = None
         dominant_provider = None
@@ -2614,14 +2645,15 @@ def _weekly_usage_section_state(
             "empty_message": "No weekly model request data is available yet.",
             "caption": (
                 "Solid: actual weekly requests from complete model-activity totals. "
-                "Dashed: long-history rankings volume proxy (not a request count). "
+                "Dashed: recovered historical rankings request snapshots. "
+                "The trillion-scale market-share token series is excluded from this chart. "
                 "Only actual requests are used for Tokens / Request."
             ),
             "source_status": (
                 f"{request_source} · actual history starts 2026-06-15 when complete model totals are available"
                 if request_source == "Actual model activity"
                 else f"{request_source} · history starts 2025-08-04"
-            ) + (" · rankings proxy starts 2025-08-04" if not proxy_pivot.empty else ""),
+            ) + (" · recovered rankings history starts 2025-08-04" if not proxy_pivot.empty else ""),
             "request_is_actual": request_source == "Actual model activity",
             "proxy_pivot": proxy_pivot,
             "scraped_at": request_scraped_at,
@@ -2842,7 +2874,7 @@ def render_weekly_usage_section(datasets: dict[str, DatasetLoadResult], openrout
                 kpi_card_html(
                     "Actual Series",
                     "Model activity" if state.get("request_is_actual") else "Unavailable",
-                    delta="complete model totals" if state.get("request_is_actual") else "legacy proxy in use",
+                    delta="complete model totals" if state.get("request_is_actual") else "recovered history in use",
                 ),
                 kpi_card_html(
                     "Long-history Context",
@@ -2958,7 +2990,7 @@ def render_weekly_usage_section(datasets: dict[str, DatasetLoadResult], openrout
             hover_suffix=str(state["hover_suffix"]),
         )
         for trace in request_chart_fig.data:
-            if trace.name == "Rankings volume proxy":
+            if trace.name == "Historical rankings requests":
                 trace.line.dash = "dash"
                 trace.line.width = 2
                 trace.opacity = 0.75
