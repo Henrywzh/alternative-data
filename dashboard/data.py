@@ -52,6 +52,10 @@ DATASET_REGISTRY: dict[str, dict[str, object]] = {
     "provider_weekly_requests": {
         "label": "Provider Weekly Requests",
         "domain": "rankings",
+        # OpenRouter's rankings page does not currently publish a provider
+        # request-count feed. Keep this contract for older snapshots, but do
+        # not treat its absence/empty state as a pipeline failure.
+        "optional": True,
         "natural_keys": ["week_start_date", "entity_id"],
         "primary_date_column": "week_start_date",
         "metric_column": "metric_value",

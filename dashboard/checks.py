@@ -38,6 +38,8 @@ def run_checks(
         root = normalized_root(base_dir, source=source)
         
         if not ((root / f"{dataset_id}.parquet").exists() or (root / f"{dataset_id}.csv").exists()):
+            if registry_entry.get("optional", False):
+                continue
             missing_files.append(dataset_id)
     
     if missing_files:
@@ -46,7 +48,8 @@ def run_checks(
     for dataset_id, result in datasets.items():
         if dataset_id == "provider_momentum_daily":
             continue
-        if result.row_count == 0:
+        registry_entry = DATASET_REGISTRY.get(dataset_id, {})
+        if result.row_count == 0 and not registry_entry.get("optional", False):
             checks.append(CheckResult("error", f"{dataset_id} is empty", "No rows available for this dataset.", result.domain))
         if result.missing_columns:
             checks.append(
