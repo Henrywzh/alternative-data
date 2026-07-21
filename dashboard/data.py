@@ -366,10 +366,14 @@ DATASET_REGISTRY: dict[str, dict[str, object]] = {
     "provider_daily_activity": {
         "label": "Provider Daily Activity",
         "domain": "rankings",
-        "natural_keys": ["usage_date", "model_permaslug"],
+        # Provider pages include the synthetic `Others` bucket alongside the
+        # named provider/model rows.  The same model key can therefore occur
+        # on multiple provider pages on one day; provider identity is part of
+        # the stored grain (matching openrouter_data.storage.NATURAL_KEYS).
+        "natural_keys": ["usage_date", "entity_id", "model_permaslug"],
         "primary_date_column": "usage_date",
         "metric_column": "total_tokens",
-        "required_columns": ["usage_date", "model_permaslug", "total_tokens"],
+        "required_columns": ["usage_date", "entity_id", "model_permaslug", "total_tokens"],
     },
     "openrouter_task_spend": {
         "label": "Task Spend Rankings",
