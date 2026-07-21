@@ -1655,8 +1655,12 @@ def company_explorer_state(views: dict[str, object], provider_slug: str) -> dict
         weekly_requests[weekly_requests["company_slug"].eq(provider_slug)].set_index("usage_week")["requests"]
         if not weekly_requests.empty else pd.Series(dtype="float64")
     )
-    weekly_token_source = "Provider daily model activity aggregated to weekly totals"
-    weekly_request_source = "Rankings provider-request buckets"
+    weekly_token_source = "No weekly token history"
+    weekly_request_source = "No weekly request history"
+    if not weekly_tokens_series.empty:
+        weekly_token_source = "Provider daily model activity aggregated to weekly totals"
+    if not weekly_requests_series.empty:
+        weekly_request_source = "Provider weekly request feed"
     if weekly_tokens_series.empty and not daily_total.empty:
         weekly_tokens_series = _daily_series_to_weekly(daily_total["Tokens"], "tokens")
         weekly_token_source = "Daily activity aggregated to weekly totals"
@@ -2453,6 +2457,67 @@ def _rankings_volume_proxy_pivot(
     return proxy.rename("Rankings volume proxy").to_frame()
 
 
+def _weekly_actual_request_mix_pivot(
+    datasets: dict[str, DatasetLoadResult],
+) -> pd.DataFrame:
+    """Return actual model-activity requests by model-origin company."""
+    result = datasets.get("openrouter_model_activity")
+    frame = result.frame.copy() if result and not result.frame.empty else pd.DataFrame()
+    required = {"usage_date", "model_permaslug", "category_slug", "request_count"}
+    if frame.empty or not required.issubset(frame.columns):
+        return pd.DataFrame()
+    categories = frame["category_slug"].astype("string").str.casefold()
+    frame = frame.loc[categories.eq("all")].copy()
+    frame["usage_date_dt"] = pd.to_datetime(frame["usage_date"], errors="coerce")
+    frame["request_count"] = pd.to_numeric(frame["request_count"], errors="coerce")
+    frame["company_slug"] = frame["model_permaslug"].map(_model_origin_slug)
+    frame = frame.dropna(subset=["usage_date_dt", "company_slug", "request_count"])
+    frame = frame.loc[frame["request_count"].ge(0)].copy()
+    if frame.empty:
+        return pd.DataFrame()
+    frame["usage_week"] = frame["usage_date_dt"] - pd.to_timedelta(
+        frame["usage_date_dt"].dt.weekday, unit="D"
+    )
+    frame["company"] = frame["company_slug"].map(OPENROUTER_PROVIDER_MAP).fillna(
+        frame["company_slug"].str.replace("-", " ").str.title()
+    )
+    pivot = (
+        frame.groupby(["usage_week", "company"], as_index=False)["request_count"]
+        .sum()
+        .pivot(index="usage_week", columns="company", values="request_count")
+        .fillna(0)
+        .sort_index()
+    )
+    return pivot.loc[pivot.index >= WEEKLY_USAGE_START_DATE]
+
+
+def _weekly_rankings_proxy_mix_pivot(
+    datasets: dict[str, DatasetLoadResult],
+) -> pd.DataFrame:
+    """Return the long-history rankings volume proxy by company."""
+    result = datasets.get("market_share")
+    frame = result.frame.copy() if result and not result.frame.empty else pd.DataFrame()
+    required = {"week_start_date", "entity_id", "metric_value"}
+    if frame.empty or not required.issubset(frame.columns):
+        return pd.DataFrame()
+    frame["usage_week"] = _align_rankings_week_to_monday(frame["week_start_date"].astype(str))
+    frame["metric_value"] = pd.to_numeric(frame["metric_value"], errors="coerce")
+    frame["company"] = frame["entity_id"].astype("string").str.lower().map(OPENROUTER_PROVIDER_MAP).fillna(
+        frame["entity_id"].astype("string").str.replace("-", " ").str.title()
+    )
+    frame = frame.dropna(subset=["usage_week", "company", "metric_value"])
+    if frame.empty:
+        return pd.DataFrame()
+    pivot = (
+        frame.groupby(["usage_week", "company"], as_index=False)["metric_value"]
+        .sum()
+        .pivot(index="usage_week", columns="company", values="metric_value")
+        .fillna(0)
+        .sort_index()
+    )
+    return pivot.loc[pd.to_datetime(pivot.index, errors="coerce") >= WEEKLY_USAGE_START_DATE]
+
+
 def _weekly_usage_section_state(
     datasets: dict[str, DatasetLoadResult],
     openrouter_views: dict[str, object],
@@ -2521,6 +2586,8 @@ def _weekly_usage_section_state(
             provider_count = None
         pivot_requests = _clip_weekly_usage_pivot(pivot_requests)
         proxy_pivot = _rankings_volume_proxy_pivot(datasets)
+        actual_mix_pivot = _weekly_actual_request_mix_pivot(datasets)
+        proxy_mix_pivot = _weekly_rankings_proxy_mix_pivot(datasets)
         latest_total = None
         wow_pct = None
         dominant_provider = None
@@ -2558,6 +2625,8 @@ def _weekly_usage_section_state(
             ) + (" · rankings proxy starts 2025-08-04" if not proxy_pivot.empty else ""),
             "request_is_actual": request_source == "Actual model activity",
             "proxy_pivot": proxy_pivot,
+            "actual_mix_pivot": actual_mix_pivot,
+            "proxy_mix_pivot": proxy_mix_pivot,
             "scraped_at": request_scraped_at,
         }
 
@@ -2880,23 +2949,71 @@ def render_weekly_usage_section(datasets: dict[str, DatasetLoadResult], openrout
             theme=None,
         )
     elif metric == "Requests":
-        request_chart = pivot.copy()
-        proxy_pivot = state.get("proxy_pivot", pd.DataFrame())
-        if isinstance(proxy_pivot, pd.DataFrame) and not proxy_pivot.empty:
-            request_chart = pd.concat([request_chart, proxy_pivot], axis=1).sort_index()
-        request_chart_fig = make_line_chart(
-            request_chart,
-            [ACCENT, YELLOW],
-            y_title=str(state["y_title"]),
-            x_title=("Usage Week (Starting)" if state.get("window") == "Weekly" else "Usage Date (Daily)"),
-            hover_suffix=str(state["hover_suffix"]),
-        )
-        for trace in request_chart_fig.data:
-            if trace.name == "Rankings volume proxy":
-                trace.line.dash = "dash"
-                trace.line.width = 2
-                trace.opacity = 0.75
-        st.plotly_chart(request_chart_fig, width="stretch", theme=None)
+        # Daily requests have only a short complete history, so keep the
+        # simple total line for that view.  The weekly view restores the
+        # useful company detail without pretending rankings volume is a
+        # request count: actual model-activity requests and the long-history
+        # rankings proxy are separate charts.
+        if state.get("window") != "Weekly":
+            st.plotly_chart(
+                make_line_chart(
+                    pivot,
+                    [ACCENT],
+                    y_title=str(state["y_title"]),
+                    x_title="Usage Date (Daily)",
+                    hover_suffix=str(state["hover_suffix"]),
+                ),
+                width="stretch",
+                theme=None,
+            )
+        else:
+            actual_mix = state.get("actual_mix_pivot", pd.DataFrame())
+            proxy_mix = state.get("proxy_mix_pivot", pd.DataFrame())
+            actual_tab, proxy_tab = st.tabs(
+                ["Actual requests · company mix", "Long-history proxy · company mix"]
+            )
+            with actual_tab:
+                if isinstance(actual_mix, pd.DataFrame) and not actual_mix.empty:
+                    st.plotly_chart(
+                        make_stacked_area_chart(
+                            actual_mix,
+                            list(actual_mix.index.astype(str)),
+                            MODEL_COLORS,
+                            x_title="Usage Week (Starting)",
+                            y_title="Requests",
+                            value_format=",.0f",
+                            hover_suffix="requests",
+                        ),
+                        width="stretch",
+                        theme=None,
+                    )
+                    st.caption(
+                        "Actual complete model-activity requests grouped by model-origin company. "
+                        "This series starts the week of Jun 15, 2026."
+                    )
+                else:
+                    st.info("No company-level model request mix is available yet.")
+            with proxy_tab:
+                if isinstance(proxy_mix, pd.DataFrame) and not proxy_mix.empty:
+                    st.plotly_chart(
+                        make_stacked_area_chart(
+                            proxy_mix,
+                            list(proxy_mix.index.astype(str)),
+                            MODEL_COLORS,
+                            x_title="Usage Week (Starting)",
+                            y_title="Rankings volume proxy",
+                            value_format=",.0f",
+                            hover_suffix="proxy volume",
+                        ),
+                        width="stretch",
+                        theme=None,
+                    )
+                    st.caption(
+                        "Long-history company mix from Rankings market-share volume, starting Aug 4, 2025. "
+                        "It is context only—not a request count—and is excluded from Tokens / Request."
+                    )
+                else:
+                    st.info("No long-history rankings volume proxy is available yet.")
     else:
         st.plotly_chart(
             make_line_chart(
