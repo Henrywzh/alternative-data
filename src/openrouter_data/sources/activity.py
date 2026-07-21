@@ -4,6 +4,7 @@ import json
 import re
 from datetime import datetime, timedelta, timezone
 from typing import Any
+from urllib.parse import parse_qs, urlparse
 
 import requests
 import pandas as pd
@@ -122,6 +123,24 @@ class ActivitySource(SourceExtractor):
                 print(f"Warning: Failed to fetch activity for {slug}: {e}")
         return snapshots
 
+    @staticmethod
+    def _requested_permaslug(source_url: str) -> str | None:
+        """Return the exact model route requested from the activity endpoint."""
+        try:
+            value = parse_qs(urlparse(source_url).query).get("permaslug", [None])[0]
+        except (TypeError, ValueError):
+            return None
+        return value.strip() if isinstance(value, str) and value.strip() else None
+
+    @classmethod
+    def _preserve_requested_variant(cls, returned_slug: Any, source_url: str) -> str | None:
+        """Keep route suffixes (for example ``:free``) stripped by the API."""
+        returned = str(returned_slug).strip() if returned_slug else ""
+        requested = cls._requested_permaslug(source_url)
+        if requested and returned and requested != returned and requested.startswith(f"{returned}:"):
+            return requested
+        return returned or requested or None
+
     def extract(self, snapshots: list[Snapshot], context: RunContext) -> dict[str, list[DatasetRecord]]:
         records: list[DatasetRecord] = []
         dataset_id = "openrouter_model_activity"
@@ -143,7 +162,10 @@ class ActivitySource(SourceExtractor):
                     if not isinstance(item, dict):
                         continue
                     usage_date = str(item.get("date", "")).split(" ")[0] or None
-                    model_slug = item.get("model_permaslug") or item.get("variant_permaslug")
+                    model_slug = self._preserve_requested_variant(
+                        item.get("model_permaslug") or item.get("variant_permaslug"),
+                        snapshot.source_url,
+                    )
                     if not usage_date or not model_slug:
                         continue
                     prompt_tokens = float(item.get("total_prompt_tokens", 0) or 0)
@@ -181,6 +203,7 @@ class ActivitySource(SourceExtractor):
             # Fallback for slug from URL if not in payload
             if not model_slug:
                 model_slug = snapshot.source_url.replace(self.MODEL_BASE_URL + "/", "").replace("/activity", "")
+            model_slug = self._preserve_requested_variant(model_slug, snapshot.source_url)
 
             for item in activity_data:
                 # expected fields: date, model, category, count, total_prompt_tokens, total_completion_tokens
@@ -195,7 +218,7 @@ class ActivitySource(SourceExtractor):
                         source_run_id=context.run_id,
                         scraped_at=scraped_at,
                         usage_date=usage_date,
-                        model_permaslug=item.get("model") or model_slug,
+                        model_permaslug=self._preserve_requested_variant(item.get("model") or model_slug, snapshot.source_url),
                         category_slug=category,
                         request_count=item.get("count"),
                         prompt_tokens=float(item.get("total_prompt_tokens", 0) or 0),

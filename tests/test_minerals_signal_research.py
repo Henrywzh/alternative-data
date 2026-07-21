@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import numpy as np
 import pandas as pd
 
 from minerals_signal_data.backtest import run_weekly_long_only_backtest
@@ -209,6 +210,28 @@ def test_attach_fx_to_stock_prices_maps_hk_and_cn_a_to_usd_series() -> None:
     assert attached.loc[attached["market"] == "US", "fx_to_usd"].iloc[0] == 1.0
     assert attached.loc[attached["market"] == "HK", "fx_to_usd"].iloc[0] == 1.0 / 7.8
     assert attached.loc[attached["market"] == "CN_A", "fx_to_usd"].iloc[0] == 1.0 / 7.3
+
+
+def test_attach_fx_handles_mixed_datetime_resolutions_and_unsorted_rows() -> None:
+    stock_prices = pd.DataFrame(
+        {
+            "ticker_normalized": ["0815.HK", "0815.HK"],
+            "market": ["HK", "HK"],
+            "date": np.array(["2025-01-04", "2025-01-03"], dtype="datetime64[us]"),
+            "adj_close": [8.0, 7.5],
+        }
+    )
+    fx_history = pd.DataFrame(
+        {
+            "date": np.array(["2025-01-02", "2025-01-04"], dtype="datetime64[s]"),
+            "market": ["HK", "HK"],
+            "fx_to_usd": [1.0 / 7.8, 1.0 / 7.7],
+        }
+    )
+
+    attached = attach_fx_to_stock_prices(stock_prices, fx_history)
+
+    assert attached["fx_to_usd"].tolist() == [1.0 / 7.7, 1.0 / 7.8]
 
 
 def test_fetch_tradingeconomics_history_parses_market_rows(monkeypatch) -> None:
