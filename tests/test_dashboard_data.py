@@ -3258,6 +3258,59 @@ def test_usage_window_defaults_to_weekly_and_supports_daily_totals() -> None:
     assert daily_requests["pivot"].loc["2026-06-18", "Total Requests"] == 25.0
 
 
+def test_weekly_requests_exposes_actual_series_and_long_rankings_proxy() -> None:
+    model_activity = pd.DataFrame(
+        {
+            "usage_date": ["2026-06-17", "2026-06-18"],
+            "category_slug": ["all", "all"],
+            "request_count": [10.0, 25.0],
+        }
+    )
+    market_share = pd.DataFrame(
+        {
+            "week_start_date": ["2025-08-03", "2025-08-10"],
+            "entity_id": ["openai", "openai"],
+            "metric_value": [100.0, 200.0],
+        }
+    )
+    result_kwargs = {
+        "domain": "rankings",
+        "primary_date_column": "usage_date",
+        "metric_column": "request_count",
+        "source_format": "parquet",
+        "source_path": None,
+        "missing_columns": [],
+        "duplicate_rows": 0,
+        "first_date": "2026-06-17",
+        "latest_date": "2026-06-18",
+        "latest_scraped_at": "2026-06-18T00:00:00Z",
+    }
+    datasets = {
+        "openrouter_model_activity": DatasetLoadResult(
+            dataset_id="openrouter_model_activity",
+            label="Model Activity",
+            frame=model_activity,
+            row_count=len(model_activity),
+            **result_kwargs,
+        ),
+        "market_share": DatasetLoadResult(
+            dataset_id="market_share",
+            label="Market Share",
+            frame=market_share,
+            row_count=len(market_share),
+            **result_kwargs,
+        ),
+    }
+
+    state = _weekly_usage_section_state(datasets, {}, "Requests")
+
+    assert state["pivot"].loc["2026-06-15", "Total Requests"] == 35.0
+    assert state["proxy_pivot"].loc["2025-08-04", "Rankings volume proxy"] == 100.0
+    assert state["proxy_pivot"].loc["2025-08-11", "Rankings volume proxy"] == 200.0
+    assert "actual weekly requests" in state["caption"]
+    assert "not a request count" in state["caption"]
+
+
 def test_workload_intensity_state_is_total_only_for_usage_chart() -> None:
     state = _weekly_usage_section_state(_derived_datasets(), {}, "Workload Intensity")
 
