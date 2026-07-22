@@ -2,9 +2,9 @@ name: Minerals Daily Price Report
 
 on:
   schedule:
-    # Run Monday through Friday at 13:00 UTC (21:00 Beijing/Hong Kong Time),
-    # after the China and Hong Kong closes and normal quote publication lag.
-    - cron: "0 13 * * 1-5"
+    # Run Monday through Friday at 09:15 UTC (17:15 Beijing/Hong Kong Time),
+    # after the China and Hong Kong closes, CTIA publication, and quote lag.
+    - cron: "15 9 * * 1-5"
   workflow_dispatch:
 
 concurrency:
