@@ -2197,6 +2197,56 @@ def _workload_intensity_section_state(
     }
 
 
+def _weekly_model_request_totals_with_coverage(
+    datasets: dict[str, DatasetLoadResult],
+) -> tuple[pd.DataFrame, pd.DataFrame, str | None]:
+    """Aggregate model-activity requests and observed dates by week."""
+    result = datasets.get("openrouter_model_activity")
+    frame = result.frame.copy() if result and not result.frame.empty else pd.DataFrame()
+    required = {"usage_date", "request_count"}
+    if frame.empty or not required.issubset(frame.columns):
+        return (
+            pd.DataFrame(columns=["Total Requests"]),
+            pd.DataFrame(columns=["observed_days", "is_closed_week"]),
+            None,
+        )
+    if "category_slug" in frame.columns:
+        categories = frame["category_slug"].astype("string").str.casefold()
+        if categories.eq("all").any():
+            frame = frame.loc[categories.eq("all")].copy()
+    prepared = pd.DataFrame(
+        {
+            "usage_date": pd.to_datetime(frame["usage_date"], errors="coerce").dt.normalize(),
+            "requests": pd.to_numeric(frame["request_count"], errors="coerce"),
+        }
+    ).dropna(subset=["usage_date", "requests"])
+    prepared = prepared.loc[prepared["requests"].ge(0)].copy()
+    if prepared.empty:
+        return (
+            pd.DataFrame(columns=["Total Requests"]),
+            pd.DataFrame(columns=["observed_days", "is_closed_week"]),
+            result.latest_scraped_at,
+        )
+    prepared["usage_week"] = prepared["usage_date"] - pd.to_timedelta(
+        prepared["usage_date"].dt.weekday, unit="D"
+    )
+    weekly = prepared.groupby("usage_week", as_index=True).agg(
+        **{
+            "Total Requests": ("requests", "sum"),
+            "observed_days": ("usage_date", "nunique"),
+        }
+    )
+    weekly["is_closed_week"] = (weekly.index + pd.Timedelta(days=6)) < prepared["usage_date"].max()
+    weekly.index = weekly.index.strftime("%Y-%m-%d")
+    return (
+        weekly[["Total Requests"]].sort_index(),
+        weekly[["observed_days", "is_closed_week"]].astype(
+            {"observed_days": "Int64", "is_closed_week": "boolean"}
+        ).sort_index(),
+        result.latest_scraped_at,
+    )
+
+
 def _workload_total_ratio_state(
     datasets: dict[str, DatasetLoadResult],
     openrouter_views: dict[str, object],
@@ -2213,6 +2263,7 @@ def _workload_total_ratio_state(
     requested_window = "Daily" if str(window).casefold() == "daily" else "Weekly"
     fallback = _workload_intensity_section_state(datasets, "Total")
 
+    request_source_by_week: dict[str, str] = {}
     if requested_window == "Daily":
         token_pivot, _, token_scraped_at = _daily_total_usage_pivot(
             datasets, "Tokens", window="Daily"
@@ -2239,21 +2290,47 @@ def _workload_total_ratio_state(
                 else None
             )
 
-        # Workload intensity must use actual model request totals, never the
-        # long-history rankings volume proxy. Keep the legacy view fallback for
-        # fixture/older snapshots that have no model-activity dataset at all.
-        request_pivot, _, request_scraped_at = _daily_total_usage_pivot(
-            datasets, "Requests", window="Weekly"
+        request_view = openrouter_views.get("provider_weekly_requests", {})
+        historical_pivot = request_view.get("pivot_weekly", pd.DataFrame())
+        if isinstance(historical_pivot, pd.DataFrame) and not historical_pivot.empty:
+            historical_requests = (
+                historical_pivot.apply(pd.to_numeric, errors="coerce")
+                .sum(axis=1, min_count=1)
+                .rename("Total Requests")
+                .sort_index()
+            )
+        else:
+            historical_requests = pd.Series(dtype="float64", name="Total Requests")
+
+        model_requests, request_coverage, request_scraped_at = _weekly_model_request_totals_with_coverage(datasets)
+        complete_mask = (
+            request_coverage["observed_days"].eq(7)
+            & request_coverage["is_closed_week"].fillna(False)
+        ).reindex(model_requests.index, fill_value=False)
+        complete_model_requests = model_requests.loc[
+            complete_mask
+        ]["Total Requests"]
+
+        # Historical provider totals extend the series and replace incomplete
+        # model-activity overlaps. Complete seven-day model activity is the
+        # canonical value whenever it is available.
+        selected_requests = historical_requests.copy()
+        request_sources = pd.Series(
+            "Historical provider requests",
+            index=selected_requests.index,
+            dtype="string",
         )
-        if request_pivot.empty:
-            request_view = openrouter_views.get("provider_weekly_requests", {})
-            request_pivot = request_view.get("pivot_weekly", pd.DataFrame())
-            if isinstance(request_pivot, pd.DataFrame) and not request_pivot.empty:
-                request_scraped_at = (
-                    datasets.get("provider_weekly_requests").latest_scraped_at
-                    if datasets.get("provider_weekly_requests")
-                    else None
-                )
+        for usage_week, value in complete_model_requests.items():
+            selected_requests.loc[usage_week] = value
+            request_sources.loc[usage_week] = "Complete model activity"
+        request_pivot = selected_requests.sort_index().to_frame("Total Requests")
+        request_source_by_week = request_sources.reindex(request_pivot.index).dropna().astype(str).to_dict()
+        if request_scraped_at is None and not historical_requests.empty:
+            request_scraped_at = (
+                datasets.get("provider_weekly_requests").latest_scraped_at
+                if datasets.get("provider_weekly_requests")
+                else None
+            )
 
         token_pivot = _clip_weekly_usage_pivot(token_pivot)
         request_pivot = _clip_weekly_usage_pivot(request_pivot)
@@ -2272,6 +2349,11 @@ def _workload_total_ratio_state(
     tokens = _total_series(token_pivot, "Total Tokens")
     requests = _total_series(request_pivot, "Total Requests")
     aligned = pd.concat([tokens, requests], axis=1).sort_index()
+    if requested_window == "Weekly":
+        # Weekly points represent completed common periods only. This removes
+        # unmatched current partial weeks instead of plotting a misleading gap
+        # or extrapolated ratio.
+        aligned = aligned.dropna(subset=["Total Tokens", "Total Requests"])
     if aligned.empty or aligned["Total Tokens"].notna().sum() == 0 or aligned["Total Requests"].notna().sum() == 0:
         # Keep fixture/backward compatibility when only the derived mart is
         # supplied; real dashboard data takes the graph-total path above.
@@ -2311,18 +2393,24 @@ def _workload_total_ratio_state(
             else "Weekly total tokens ÷ weekly total requests"
         ),
         "caption": (
-            "Workload intensity uses total tokens ÷ actual model-activity requests. "
-            "Recovered historical rankings requests shown on the request chart are excluded. "
+            "Daily workload intensity uses total tokens ÷ daily model-activity requests; missing dates remain gaps. "
             "It describes workload composition, not model efficiency."
+            if requested_window == "Daily"
+            else "Weekly workload intensity uses the displayed weekly token total ÷ requests. Historical provider requests extend the series; complete seven-day model activity replaces overlapping weeks, and unmatched partial weeks are omitted. It describes workload composition, not model efficiency."
         ),
         "source_status": (
             "Derived OpenRouter workload intensity · graph totals"
             + (
                 " · daily series starts 2026-06-17"
                 if requested_window == "Daily"
-                else " · weekly history starts 2025-08-04"
+                else " · weekly history starts 2025-08-04 · incomplete weeks omitted"
             )
         ),
+        "request_source_by_week": {
+            week: request_source_by_week[week]
+            for week in ratio.index
+            if week in request_source_by_week
+        },
         "scraped_at": scraped_at,
     }
 
@@ -2488,15 +2576,14 @@ def _clip_weekly_usage_pivot(frame: pd.DataFrame) -> pd.DataFrame:
     return frame.loc[dates.notna() & (dates >= WEEKLY_USAGE_START_DATE)].copy()
 
 
-def _rankings_volume_proxy_pivot(
+def _historical_weekly_request_pivot(
     datasets: dict[str, DatasetLoadResult],
 ) -> pd.DataFrame:
     """Build the recovered long-history rankings request context series.
 
     Older commits contain a request-labelled rankings snapshot in
-    ``provider_weekly_requests``.  ``market_share`` is a different dataset:
-    it contains provider token volume and can reach trillion-scale values,
-    so it must never be used as a request proxy.
+    ``provider_weekly_requests``.  ``market_share`` is a different, mixed-
+    provenance dataset and must never substitute for request counts.
     """
     result = datasets.get("provider_weekly_requests")
     frame = result.frame.copy() if result and not result.frame.empty else pd.DataFrame()
@@ -2613,8 +2700,8 @@ def _weekly_usage_section_state(
         pivot_requests = _clip_weekly_usage_pivot(pivot_requests)
         # When model activity is absent, the recovered history is already the
         # primary series; do not draw it a second time as a dashed context line.
-        proxy_pivot = (
-            _rankings_volume_proxy_pivot(datasets)
+        historical_request_pivot = (
+            _historical_weekly_request_pivot(datasets)
             if request_source == "Actual model activity"
             else pd.DataFrame(columns=["Historical rankings requests"])
         )
@@ -2646,16 +2733,16 @@ def _weekly_usage_section_state(
             "caption": (
                 "Solid: actual weekly requests from complete model-activity totals. "
                 "Dashed: recovered historical rankings request snapshots. "
-                "The trillion-scale market-share token series is excluded from this chart. "
+                "The mixed-provenance market_share series is excluded from this chart. "
                 "Only actual requests are used for Tokens / Request."
             ),
             "source_status": (
                 f"{request_source} · actual history starts 2026-06-15 when complete model totals are available"
                 if request_source == "Actual model activity"
                 else f"{request_source} · history starts 2025-08-04"
-            ) + (" · recovered rankings history starts 2025-08-04" if not proxy_pivot.empty else ""),
+            ) + (" · historical provider requests start 2025-08-04" if not historical_request_pivot.empty else ""),
             "request_is_actual": request_source == "Actual model activity",
-            "proxy_pivot": proxy_pivot,
+            "historical_request_pivot": historical_request_pivot,
             "scraped_at": request_scraped_at,
         }
 
@@ -2877,9 +2964,9 @@ def render_weekly_usage_section(datasets: dict[str, DatasetLoadResult], openrout
                     delta="complete model totals" if state.get("request_is_actual") else "recovered history in use",
                 ),
                 kpi_card_html(
-                    "Long-history Context",
-                    "Rankings proxy" if not state.get("proxy_pivot", pd.DataFrame()).empty else "—",
-                    delta="from Aug 2025" if not state.get("proxy_pivot", pd.DataFrame()).empty else "not available",
+                    "Historical Series",
+                    "Provider requests" if not state.get("historical_request_pivot", pd.DataFrame()).empty else "—",
+                    delta="from Aug 2025" if not state.get("historical_request_pivot", pd.DataFrame()).empty else "not available",
                 ),
             ),
             unsafe_allow_html=True,
@@ -2979,9 +3066,9 @@ def render_weekly_usage_section(datasets: dict[str, DatasetLoadResult], openrout
         )
     elif metric == "Requests":
         request_chart = pivot.copy()
-        proxy_pivot = state.get("proxy_pivot", pd.DataFrame())
-        if isinstance(proxy_pivot, pd.DataFrame) and not proxy_pivot.empty:
-            request_chart = pd.concat([request_chart, proxy_pivot], axis=1).sort_index()
+        historical_request_pivot = state.get("historical_request_pivot", pd.DataFrame())
+        if isinstance(historical_request_pivot, pd.DataFrame) and not historical_request_pivot.empty:
+            request_chart = pd.concat([request_chart, historical_request_pivot], axis=1).sort_index()
         request_chart_fig = make_line_chart(
             request_chart,
             [ACCENT, YELLOW],
