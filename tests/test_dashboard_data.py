@@ -3367,10 +3367,10 @@ def test_weekly_requests_exposes_actual_series_and_recovered_rankings_history() 
     state = _weekly_usage_section_state(datasets, {}, "Requests")
 
     assert state["pivot"].loc["2026-06-15", "Total Requests"] == 35.0
-    assert state["proxy_pivot"].loc["2025-08-04", "Historical rankings requests"] == 100.0
-    assert state["proxy_pivot"].loc["2025-08-11", "Historical rankings requests"] == 200.0
+    assert state["historical_request_pivot"].loc["2025-08-04", "Historical rankings requests"] == 100.0
+    assert state["historical_request_pivot"].loc["2025-08-11", "Historical rankings requests"] == 200.0
     assert "actual weekly requests" in state["caption"]
-    assert "trillion-scale market-share token series is excluded" in state["caption"]
+    assert "mixed-provenance market_share series is excluded" in state["caption"]
 
 
 def test_market_share_weekly_totals_choose_complete_latest_snapshot() -> None:
@@ -3438,6 +3438,77 @@ def test_workload_weekly_ratio_uses_tokens_and_requests_graph_totals() -> None:
     assert state["pivot"].loc["2026-06-29", "Total tokens/request"] == 10.0
     assert state["pivot"].loc["2026-07-06", "Total tokens/request"] == 15.0
     assert state["calculation_note"] == "Weekly total tokens ÷ weekly total requests"
+
+
+def test_workload_weekly_splices_history_and_omits_unmatched_partial_weeks() -> None:
+    token_pivot = pd.DataFrame(
+        {"Total Tokens": [1_000.0, 3_000.0, 2_800.0, 900.0]},
+        index=["2025-08-04", "2026-06-15", "2026-06-22", "2026-07-20"],
+    )
+    historical_requests = pd.DataFrame(
+        {"OpenAI": [60.0, 180.0, 190.0], "Anthropic": [40.0, 120.0, 110.0]},
+        index=["2025-08-04", "2026-06-15", "2026-06-22"],
+    )
+    activity_rows = []
+    for usage_date, requests in [
+        # Five observed dates: the complete historical week must win.
+        ("2026-06-17", 10.0),
+        ("2026-06-18", 10.0),
+        ("2026-06-19", 10.0),
+        ("2026-06-20", 10.0),
+        ("2026-06-21", 10.0),
+        # Seven observed dates: complete model activity must win.
+        *((f"2026-06-{day:02d}", 20.0) for day in range(22, 29)),
+        # Two observed dates and no historical replacement: omit the week.
+        ("2026-07-20", 30.0),
+        ("2026-07-21", 30.0),
+    ]:
+        activity_rows.append(
+            {
+                "usage_date": usage_date,
+                "category_slug": "all",
+                "request_count": requests,
+            }
+        )
+    model_activity = pd.DataFrame(activity_rows)
+    datasets = {
+        "openrouter_model_activity": DatasetLoadResult(
+            dataset_id="openrouter_model_activity",
+            label="Model Activity",
+            domain="rankings",
+            primary_date_column="usage_date",
+            metric_column="request_count",
+            frame=model_activity,
+            source_format="parquet",
+            source_path=None,
+            missing_columns=[],
+            duplicate_rows=0,
+            first_date="2026-06-17",
+            latest_date="2026-07-21",
+            latest_scraped_at="2026-07-21T12:00:00Z",
+            row_count=len(model_activity),
+        )
+    }
+    views = {
+        "top_models": {
+            "pivot_total": token_pivot,
+            "total_source": "hybrid",
+            "source_by_week": {week: "top_models" for week in token_pivot.index},
+        },
+        "provider_weekly_requests": {"pivot_weekly": historical_requests},
+    }
+
+    state = _weekly_usage_section_state(datasets, views, "Workload Intensity")
+
+    assert state["pivot"].index.tolist() == ["2025-08-04", "2026-06-15", "2026-06-22"]
+    assert state["pivot"].loc["2025-08-04", "Total tokens/request"] == 10.0
+    assert state["pivot"].loc["2026-06-15", "Total tokens/request"] == 10.0
+    assert state["pivot"].loc["2026-06-22", "Total tokens/request"] == 20.0
+    assert state["request_source_by_week"] == {
+        "2025-08-04": "Historical provider requests",
+        "2026-06-15": "Historical provider requests",
+        "2026-06-22": "Complete model activity",
+    }
 
 
 def test_weekly_token_and_request_history_starts_august_4_2025() -> None:
