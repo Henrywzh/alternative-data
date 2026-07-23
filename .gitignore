@@ -159,6 +159,20 @@ data/normalized/sec_edgar/*
 data/normalized/marts/*
 !data/normalized/marts/*.parquet
 
+# ai_news: commit normalized parquet files + raw run manifests only
+!data/normalized/ai_news/
+data/normalized/ai_news/*
+!data/normalized/ai_news/*.parquet
+!data/raw/ai_news/
+data/raw/ai_news/**
+!data/raw/ai_news/**/
+!data/raw/ai_news/**/manifest.json
+
+# ai_news_signal: guard/engine triage output (audit log + daily brief)
+!data/normalized/ai_news_signal/
+data/normalized/ai_news_signal/*
+!data/normalized/ai_news_signal/*.parquet
+
 # minerals: curated reference inputs (CSV-ified workbook sheets)
 !data/reference/
 data/reference/*

@@ -1,0 +1,79 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - link "Asia Markets home" [ref=e3] [cursor=pointer]:
+      - /url: /
+      - generic [ref=e4]: AM
+      - generic [ref=e5]: Asia Markets
+    - navigation "Primary" [ref=e6]:
+      - link "Sectors" [ref=e7] [cursor=pointer]:
+        - /url: /
+      - link "Data status" [ref=e8] [cursor=pointer]:
+        - /url: /data-status/
+  - main [ref=e9]:
+    - generic [ref=e10]:
+      - generic [ref=e11]:
+        - paragraph [ref=e12]: Research monitors / 2026
+        - heading "Sector signals, with the source trail intact." [level=1] [ref=e13]: Sector signals,with the source trail intact.
+      - generic [ref=e14]:
+        - generic [ref=e15]: Latest release
+        - strong [ref=e16]: 2026-07-22
+        - generic [ref=e17]: HK real estate snapshot
+        - code [ref=e18]: 4d85695e6fade13a
+    - region [ref=e19]:
+      - generic [ref=e20]:
+        - heading "Sector index" [level=2] [ref=e21]
+        - paragraph [ref=e22]: Published surfaces first; research-only sectors remain clearly labeled.
+      - generic [ref=e23]:
+        - 'link "Hong Kong Real Estate: Open monitor" [ref=e24] [cursor=pointer]':
+          - /url: /sectors/hk-real-estate/
+          - generic [ref=e25]: "01"
+          - generic [ref=e26]:
+            - strong [ref=e27]: Hong Kong Real Estate
+            - generic [ref=e28]: 5 live measures · data through 2026-07-20
+          - generic [ref=e29]: Healthy
+          - generic [ref=e31]:
+            - text: Open monitor
+            - generic [ref=e32]: ↗
+        - 'link "Stablecoin & Crypto: Planned" [ref=e33] [cursor=pointer]':
+          - /url: "#future-sectors"
+          - generic [ref=e34]: "02"
+          - generic [ref=e35]:
+            - strong [ref=e36]: Stablecoin & Crypto
+            - generic [ref=e37]: Source map and company coverage complete; dashboard not yet published.
+          - generic [ref=e38]: Research ready
+          - generic [ref=e40]:
+            - text: Planned
+            - generic [ref=e41]: ↗
+        - 'link "Commercial Aerospace: Planned" [ref=e42] [cursor=pointer]':
+          - /url: "#future-sectors"
+          - generic [ref=e43]: "03"
+          - generic [ref=e44]:
+            - strong [ref=e45]: Commercial Aerospace
+            - generic [ref=e46]: Company and signal framework complete; dashboard not yet published.
+          - generic [ref=e47]: Research ready
+          - generic [ref=e49]:
+            - text: Planned
+            - generic [ref=e50]: ↗
+        - 'link "Consumer Trends: Planned" [ref=e51] [cursor=pointer]':
+          - /url: "#future-sectors"
+          - generic [ref=e52]: "04"
+          - generic [ref=e53]:
+            - strong [ref=e54]: Consumer Trends
+            - generic [ref=e55]: Company list established; source access remains uneven.
+          - generic [ref=e56]: Research
+          - generic [ref=e58]:
+            - text: Planned
+            - generic [ref=e59]: ↗
+    - generic [ref=e60]:
+      - generic [ref=e61]:
+        - paragraph [ref=e62]: Portable release
+        - heading "Take the real-estate monitor offline." [level=2] [ref=e63]
+        - paragraph [ref=e64]: The hosted page and the downloadable HTML are generated from the same validated snapshot and contain identical dashboard bytes.
+      - generic [ref=e65]:
+        - link "Download offline HTML" [ref=e66] [cursor=pointer]:
+          - /url: /exports/hk-real-estate-dashboard-2026-07-22.html
+        - link "Inspect source status →" [ref=e67] [cursor=pointer]:
+          - /url: /data-status/
+  - contentinfo [ref=e68]:
+    - generic [ref=e69]: Published research snapshots
+    - generic [ref=e70]: Not investment advice

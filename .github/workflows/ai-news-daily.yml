@@ -1,0 +1,61 @@
+name: AI News Daily
+
+on:
+  schedule:
+    - cron: "0 9 * * *" # Runs daily at 09:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  ingest-ai-news:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .[dev]
+
+      - name: Run AI news ingestion
+        run: |
+          python -m src.ai_news_data.cli --sources all
+
+      # Runs even if the ingestion step above reported a failure (e.g. Reddit
+      # rate-limited): the other sources still wrote their updates and those
+      # must not be silently dropped for the day.
+      - name: Commit normalized datasets
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add data/normalized/ai_news || true
+
+          if git diff --staged --quiet; then
+            echo "No normalized dataset changes to commit"
+            exit 0
+          fi
+
+          git commit -m "chore: update normalized AI news datasets"
+          git pull --rebase origin "${{ github.event.repository.default_branch }}"
+          git push
+
+      - name: Upload normalized datasets
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ai-news-datasets
+          path: data/normalized/ai_news/
+          if-no-files-found: error

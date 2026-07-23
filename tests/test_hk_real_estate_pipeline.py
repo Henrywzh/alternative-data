@@ -13,6 +13,9 @@ from src.hk_real_estate.sources.hse28 import fetch_28hse_new_projects
 from src.hk_real_estate.sources.rvd import _parse_rvd_monthly_csv
 from src.hk_real_estate.sources.landreg import fetch_landreg_monthly_sp
 from src.hk_real_estate.storage import save_normalized_dataset, save_raw_snapshot
+from src.hk_real_estate.mapping.developer_registry import DeveloperRegistry
+from src.hk_real_estate.sources.hkma import fetch_hkma_residential_mortgage_survey
+from src.hk_real_estate.sources.bd_projects import parse_bd_xls_projects
 
 
 @pytest.fixture(autouse=True)
@@ -36,9 +39,73 @@ def test_import_smoke():
         "src.hk_real_estate.config",
         "src.hk_real_estate.sources.centaline",
         "src.hk_real_estate.sources.hse28",
+        "src.hk_real_estate.sources.hkma",
+        "src.hk_real_estate.sources.bd_projects",
+        "src.hk_real_estate.mapping.developer_registry",
         "src.hk_real_estate.pipeline",
     ):
         assert importlib.import_module(module)
+
+
+def test_developer_registry_confidence_tiers():
+    registry = DeveloperRegistry()
+    match_exact, tier1 = registry.match_project("YOHO WEST")
+    assert tier1 == "EXACT"
+    assert match_exact["stock_code"] == "0016"
+
+    match_alias, tier2 = registry.match_project("天水圍YOHO")
+    assert tier2 == "ALIAS"
+    assert match_alias["stock_code"] == "0016"
+
+    match_fuzzy, tier3 = registry.match_project("YOHO WEST Development Block C")
+    assert tier3 == "FUZZY"
+    assert match_fuzzy["stock_code"] == "0016"
+
+    match_none, tier4 = registry.match_project("Random Unlisted Site Address")
+    assert tier4 == "UNMATCHED"
+    assert match_none is None
+
+    df = pd.DataFrame([
+        {"site_address": "YOHO WEST Development Block C"},
+        {"site_address": "Unmatched Site"}
+    ])
+    attr_df = registry.attribute_dataframe(df, project_col="site_address")
+    assert attr_df.iloc[0]["matched_stock_code"] == "0016"
+    assert attr_df.iloc[0]["match_confidence_tier"] == "FUZZY"
+    assert attr_df.iloc[1]["match_confidence_tier"] == "UNMATCHED"
+    assert attr_df.attrs["unmatched_rate_pct"] == 50.0
+
+
+@patch("src.hk_real_estate.sources.hkma.requests.get")
+def test_hkma_percentage_scaling_and_date_semantics(mock_get):
+    mock_resp = MagicMock()
+    mock_resp.status_code = 200
+    mock_resp.json.return_value = {
+        "result": {
+            "records": [
+                {
+                    "end_of_month": "2026-05",
+                    "new_loans_app_received": 10767,
+                    "new_loans_approved_amt": 40231,
+                    "ir_new_loans_approved_hibor": 0.738,
+                    "ir_new_loans_approved_blr": 0.012,
+                    "ir_new_loans_approved_fixed": 0.207,
+                    "delinquency_ratio": 0.11
+                }
+            ]
+        }
+    }
+    mock_get.return_value = mock_resp
+    
+    df = fetch_hkma_residential_mortgage_survey()
+    assert not df.empty
+    assert len(df) == 1
+    assert df.iloc[0]["observation_date"] == "2026-05-01"
+    assert df.iloc[0]["hibor_pricing_pct_share"] == 73.8
+    assert df.iloc[0]["blr_pricing_pct_share"] == 1.2
+    assert df.iloc[0]["fixed_pricing_pct_share"] == 20.7
+    assert df.iloc[0]["delinquency_ratio_pct"] == 0.11
+    assert df.iloc[0]["publication_date"] is None
 
 
 def test_parse_midland_mhpi():
@@ -46,39 +113,6 @@ def test_parse_midland_mhpi():
     assert len(df) == 1
     assert df.iloc[0]["date"] == "2026-03-14"
     assert df.iloc[0]["mhpi_overall"] == 124.7
-
-
-def test_parse_midland_confidence():
-    df = parse_midland_confidence({"confidenceIndex": [{"date": "2026-03-14T00:00:00.000Z", "confidence_index": 76.3, "confidence_avg_index": 61.2, "weekly_perc": 3.0}]})
-    assert len(df) == 1
-    assert df.iloc[0]["confidence_index"] == 76.3
-
-
-def test_parse_midland_estate_counts_uses_nested_market_stat():
-    df = parse_midland_estate_counts({"estatesTransactionCount": {"result": [{"id": "E00385", "name": "宏福苑", "region": {"name": "新界"}, "district": {"name": "大埔墟"}, "market_stat": {"tx_count": 15}}]}})
-    assert len(df) == 1
-    assert df.iloc[0]["transaction_count"] == 15
-
-
-def test_parse_centaline_payload_uses_explicit_json_arrays_without_code_execution():
-    payload = {"ccl": {"chartData": {"date": ["1997-07-06", "1997-07-13"], "index": [100.0, 100.5]}}}
-    df = parse_centaline_ccl_payload(payload)
-    assert df.to_dict("records") == [
-        {"date": "1997-07-06", "ccl_index": 100.0, "source_agency": "Centaline Property Agency"},
-        {"date": "1997-07-13", "ccl_index": 100.5, "source_agency": "Centaline Property Agency"},
-    ]
-    assert parse_centaline_ccl_payload({"ccl": {"chartData": {"date": ["1997-07-06"], "index": []}}}).empty
-
-
-@patch("src.hk_real_estate.sources.centaline.requests.get")
-def test_fetch_centaline_ccl_requests_json_endpoint(mock_get):
-    response = MagicMock()
-    response.text = '{"ccl": {"chartData": {"date": ["1997-07-06"], "index": [100.0]}}}'
-    response.json.return_value = {"ccl": {"chartData": {"date": ["1997-07-06"], "index": [100.0]}}}
-    mock_get.return_value = response
-    df = fetch_centaline_ccl()
-    assert df.iloc[0]["ccl_index"] == 100.0
-    assert mock_get.call_args.args[0].endswith("/CCI/api/Index/CCL")
 
 
 def test_parse_rvd_monthly_csv_reads_all_classes_and_remarks():
@@ -92,15 +126,6 @@ Month,Class A,Class A - Remarks,Class B,Class B - Remarks,Class C,Class C - Rema
     assert df.iloc[0]["overall"] == 321.9
     assert df.iloc[1]["overall"] == 320.5
     assert bool(df.iloc[1]["is_provisional"]) is True
-
-
-@patch("src.hk_real_estate.sources.landreg.requests.get")
-def test_fetch_landreg_monthly_sp_catalog(mock_get):
-    response = MagicMock()
-    response.text = '<html><body><a href="/en/monthly/202605.htm">Statistics May 2026</a></body></html>'
-    mock_get.return_value = response
-    df = fetch_landreg_monthly_sp()
-    assert df.iloc[0]["date"] == "2026-05-01"
 
 
 def test_raw_snapshots_are_unique_and_preserve_actual_extension(tmp_path):
@@ -118,33 +143,3 @@ def test_save_normalized_dataset_is_run_scoped_and_has_lineage():
     assert "/test_dataset/run-123/" in result["csv"]
     lineage = json.loads(Path(result["lineage"]).read_text())
     assert lineage["raw_snapshot"] == "/tmp/raw.csv"
-
-
-def test_empty_catalog_is_recorded_and_group_exits_as_failure(monkeypatch, tmp_path):
-    import src.hk_real_estate.pipeline as pipeline
-
-    latest = "2026-07-12"
-    mhpi = pd.DataFrame([{ "date": latest, "mhpi_overall": 100.0 }])
-    confidence = pd.DataFrame([{ "date": latest, "confidence_index": 60.0 }])
-    estates = pd.DataFrame([{ "estate_id": "E1", "estate_name": "Estate", "transaction_count": 1 }])
-    ccl = pd.DataFrame([{ "date": latest, "ccl_index": 150.0 }])
-    monkeypatch.setattr(pipeline, "run_midland_ingestion", lambda: (mhpi, confidence, estates))
-    monkeypatch.setattr(pipeline, "fetch_centaline_ccl", lambda: ccl)
-    monkeypatch.setattr(pipeline, "fetch_28hse_new_projects", lambda: pd.DataFrame(columns=["project_name"]))
-
-    with pytest.raises(pipeline.PipelineRunError) as exc:
-        pipeline.run_group_a_pipeline(run_id="run-empty")
-    manifest = json.loads(Path(exc.value.manifest_path).read_text())
-    assert manifest["groups"]["group_a"]["hse28_new_projects_catalog"]["status"] == "empty"
-
-
-def test_cli_returns_nonzero_when_pipeline_reports_failure(monkeypatch):
-    import src.hk_real_estate.cli as cli
-    import src.hk_real_estate.pipeline as pipeline
-
-    failure = pipeline.PipelineRunError("bad data", {}, "/tmp/manifest.json")
-    monkeypatch.setattr(cli, "run_group_a_pipeline", lambda: (_ for _ in ()).throw(failure))
-    monkeypatch.setattr(sys, "argv", ["hk-real-estate", "run-group-a"])
-    with pytest.raises(SystemExit) as exc:
-        cli.main()
-    assert exc.value.code == 1

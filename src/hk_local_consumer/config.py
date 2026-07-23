@@ -57,6 +57,10 @@ CONSUMER_COUNCIL_PRICE_WATCH_URL = "https://online-price-watch.consumer.org.hk/o
 CONSUMER_COUNCIL_PRICE_WATCH_JSON_URL = "https://online-price-watch.consumer.org.hk/opw/opendata/pricewatch.json"
 CONSUMER_COUNCIL_DATA_GOV_HK_URL = "https://data.gov.hk/en-data/dataset/cc-pricewatch-pricewatch"
 
+# HK Immigration Department "Statistics on Daily Passenger Traffic" open data CSV
+IMMIGRATION_PASSENGER_TRAFFIC_URL = "https://www.immd.gov.hk/opendata/eng/transport/immigration_clearance/statistics_on_daily_passenger_traffic.csv"
+IMMIGRATION_DATA_GOV_HK_URL = "https://data.gov.hk/en-data/dataset/hk-immd-stat-stat-passenger-traffic"
+
 # CenStatD "web table" static data files. The web_table.html viewer pages
 # are JS-rendered (fetching a bot-block-able HTML shell if requested
 # directly), but the underlying per-series CSV files they load are plain,

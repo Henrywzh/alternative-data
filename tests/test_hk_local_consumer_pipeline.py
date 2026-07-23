@@ -114,6 +114,16 @@ def test_censtatd_restaurant_survey():
     assert "All restaurants" in set(df["sub_sector"])
 
 
+def test_fetch_immigration_flow():
+    from src.hk_local_consumer.sources.immigration_flow import fetch_immigration_flow
+    df = fetch_immigration_flow()
+    assert not df.empty
+    assert "hk_resident_departures" in df.columns
+    assert "mainland_visitor_arrivals" in df.columns
+    assert "hk_resident_departures_7d_ma" in df.columns
+    assert len(df) > 100
+
+
 def test_stage_1_pipeline_execution(tmp_path):
     results = run_stage_1_pipeline()
     assert results is not None
@@ -123,6 +133,7 @@ def test_stage_1_pipeline_execution(tmp_path):
     assert "hk_consumer_ticker_valuations_daily" in results
     assert "cnsd_retail_sales_monthly" in results
     assert "censtatd_fast_food_survey_quarterly" in results
+    assert "immigration_passenger_traffic_daily" in results
 
     manifest_file = tmp_path / "normalized" / "runs"
     assert manifest_file.exists()

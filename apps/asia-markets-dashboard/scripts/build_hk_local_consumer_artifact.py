@@ -33,6 +33,7 @@ from src.hk_local_consumer.sources.sge_gold import fetch_sge_gold_benchmark
 from src.hk_local_consumer.sources.hk_valuation import fetch_hk_consumer_valuations
 from src.hk_local_consumer.sources.cnsd_retail import fetch_cnsd_retail_sales
 from src.hk_local_consumer.sources.censtatd_restaurant import fetch_censtatd_restaurant_survey
+from src.hk_local_consumer.sources.immigration_flow import fetch_immigration_flow
 
 
 PUBLIC_SOURCES = {
@@ -107,6 +108,22 @@ PUBLIC_SOURCES = {
             "metric_definitions": [
                 "Purchases are only published sector-wide, not broken out by restaurant type.",
                 "Quarter and year movements are latest divided by the prior quarter or the observation four quarters earlier, minus one.",
+            ],
+        },
+    },
+    "immigration_flow": {
+        "id": "immigration_flow",
+        "label": "HK Immigration Department Daily Passenger Traffic",
+        "href": "https://www.immd.gov.hk/opendata/eng/transport/immigration_clearance/statistics_on_daily_passenger_traffic.csv",
+        "query": {
+            "engine": "official CSV",
+            "url": "https://www.immd.gov.hk/opendata/eng/transport/immigration_clearance/statistics_on_daily_passenger_traffic.csv",
+            "language": "CSV",
+            "description": "Daily passenger clearance counts across 17 control points for HK Residents, Mainland Visitors, and Other Visitors.",
+            "metric_definitions": [
+                "Northbound (北上) flow is daily HK resident departures (total & land control points).",
+                "Southbound (南下) flow is daily Mainland visitor arrivals.",
+                "7-day moving averages (7d MA) smooth out day-of-week seasonality (weekend shopping spikes).",
             ],
         },
     },
@@ -267,6 +284,22 @@ def _validate_restaurant_survey(df: pd.DataFrame, now: datetime) -> pd.DataFrame
     return result.sort_values(["sub_sector", "date"]).reset_index(drop=True)
 
 
+def _validate_immigration(df: pd.DataFrame, now: datetime) -> pd.DataFrame:
+    if df is None or df.empty:
+        raise ValueError("Immigration daily traffic: no data returned")
+    result = df.copy()
+    result["date"] = pd.to_datetime(result["date"], errors="coerce")
+    for col in ("hk_resident_departures", "mainland_visitor_arrivals", "hk_resident_departures_7d_ma", "mainland_visitor_arrivals_7d_ma"):
+        result[col] = pd.to_numeric(result[col], errors="coerce")
+    result = result.dropna(subset=["date", "hk_resident_departures", "mainland_visitor_arrivals"])
+    if len(result) < 100:
+        raise ValueError(f"Immigration daily traffic: expected at least 100 days of data, received {len(result)}")
+    age_days = (now.replace(tzinfo=None) - result["date"].max()).days
+    if age_days > 20:
+        raise ValueError(f"Immigration daily traffic: latest observation is stale by {age_days} days")
+    return result.sort_values("date").reset_index(drop=True)
+
+
 def _comparison_row(frame: pd.DataFrame, value_column: str, now: datetime) -> dict[str, Any]:
     latest = frame.iloc[-1]
     prior = frame.iloc[-2]
@@ -307,6 +340,7 @@ def build_artifact(
     raw_valuation: pd.DataFrame,
     raw_retail: pd.DataFrame,
     raw_restaurant: pd.DataFrame,
+    raw_immigration: pd.DataFrame | None = None,
     *,
     now: datetime | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
@@ -314,11 +348,15 @@ def build_artifact(
     if now.tzinfo is None:
         now = now.replace(tzinfo=timezone.utc)
 
+    if raw_immigration is None:
+        raw_immigration = fetch_immigration_flow()
+
     gold = _validate_gold(raw_gold, now)
     afcd = _validate_afcd(raw_afcd)
     valuation = _validate_valuation(raw_valuation, now)
     retail = _validate_retail_sales(raw_retail, now)
     restaurant = _validate_restaurant_survey(raw_restaurant, now)
+    immigration = _validate_immigration(raw_immigration, now)
 
     generated_at = now.isoformat().replace("+00:00", "Z")
     gold_kpi = _comparison_row(gold, "gold_benchmark_pm_rmb_gram", now)
@@ -340,6 +378,17 @@ def build_artifact(
     restaurant_snapshot = restaurant_latest_by_type.sort_values("total_receipts_hkd_m", ascending=False).reset_index(drop=True)
     restaurant_chart_rows = restaurant_snapshot[restaurant_snapshot["sub_sector"] != "All restaurants"]
 
+    # Cross-border immigration KPIs and trend charts
+    northbound_kpi = _comparison_row(immigration, "hk_resident_departures_7d_ma", now)
+    southbound_kpi = _comparison_row(immigration, "mainland_visitor_arrivals_7d_ma", now)
+
+    imm_chart_window = immigration.tail(365).copy()
+    imm_north = imm_chart_window[["date", "hk_resident_departures_7d_ma"]].rename(columns={"hk_resident_departures_7d_ma": "value"})
+    imm_north["flow_type"] = "Northbound Flow (HK Residents)"
+    imm_south = imm_chart_window[["date", "mainland_visitor_arrivals_7d_ma"]].rename(columns={"mainland_visitor_arrivals_7d_ma": "value"})
+    imm_south["flow_type"] = "Southbound Flow (Mainland Visitors)"
+    immigration_trend_rows = pd.concat([imm_north, imm_south], ignore_index=True).sort_values(["date", "flow_type"])
+
     category_summary = (
         afcd.groupby("category", as_index=False)
         .agg(avg_price_hkd_per_kg=("avg_price_hkd_per_kg", "mean"), commodities=("commodity_name", "size"))
@@ -351,6 +400,16 @@ def build_artifact(
     valuation_chart_rows = valuation_chart_rows[valuation_chart_rows["pe_ttm"] > 0]
 
     health = [
+        {
+            "source": PUBLIC_SOURCES["immigration_flow"]["label"],
+            "dataset": "Immigration Passenger Clearance",
+            "type": "Measure",
+            "status": "Healthy",
+            "latest_observation": immigration["date"].max().strftime("%Y-%m-%d"),
+            "records": int(len(immigration)),
+            "freshness": f"{(now.replace(tzinfo=None) - immigration['date'].max()).days}d old",
+            "notes": "Daily clearance across 17 control points for HK residents & Mainland visitors.",
+        },
         {
             "source": PUBLIC_SOURCES["sge_gold"]["label"],
             "dataset": "SGE Gold Benchmark",
@@ -409,6 +468,9 @@ def build_artifact(
     gold_chart_window = gold.tail(1_800)
 
     datasets = {
+        "kpi_northbound": [northbound_kpi],
+        "kpi_southbound": [southbound_kpi],
+        "immigration_trend_history": _records(immigration_trend_rows, ["date", "value", "flow_type"]),
         "kpi_gold": [gold_kpi],
         "kpi_median_pe": [{"latest": round(median_pe_latest, 2)}] if median_pe_latest is not None else [],
         "gold_history": _records(
@@ -461,6 +523,28 @@ def build_artifact(
 
     cards = [
         {
+            "id": "northbound_card",
+            "description": "Daily HK resident departures (7-day MA); day-on-day and year-on-year movements.",
+            "dataset": "kpi_northbound",
+            "sourceId": "immigration_flow",
+            "metrics": [
+                {"label": "Northbound 7d MA", "field": "latest", "format": "number"},
+                {"label": "DoD", "field": "period_change", "format": "percent", "signed": True},
+                {"label": "YoY", "field": "year_change", "format": "percent", "signed": True},
+            ],
+        },
+        {
+            "id": "southbound_card",
+            "description": "Daily Mainland visitor arrivals (7-day MA); day-on-day and year-on-year movements.",
+            "dataset": "kpi_southbound",
+            "sourceId": "immigration_flow",
+            "metrics": [
+                {"label": "Southbound 7d MA", "field": "latest", "format": "number"},
+                {"label": "DoD", "field": "period_change", "format": "percent", "signed": True},
+                {"label": "YoY", "field": "year_change", "format": "percent", "signed": True},
+            ],
+        },
+        {
             "id": "gold_card",
             "description": "Latest published SGE PM benchmark fixing; day and year-on-year movements.",
             "dataset": "kpi_gold",
@@ -510,6 +594,23 @@ def build_artifact(
     )
 
     charts = [
+        {
+            "id": "immigration_trend",
+            "title": "Cross-border passenger traffic (7-day MA)",
+            "subtitle": "Daily passenger flows: Northbound (HK resident departures) vs Southbound (Mainland visitor arrivals).",
+            "type": "line",
+            "intent": "trend",
+            "dataset": "immigration_trend_history",
+            "sourceId": "immigration_flow",
+            "encodings": {
+                "x": {"field": "date", "type": "temporal", "label": "Date"},
+                "y": {"field": "value", "type": "quantitative", "label": "Passengers / day (7d MA)"},
+                "color": {"field": "flow_type", "type": "nominal", "label": "Flow direction"},
+            },
+            "valueFormat": "number",
+            "layout": "full",
+            "maxRows": 800,
+        },
         {
             "id": "gold_trend",
             "title": "Shanghai Gold Exchange PM benchmark",
@@ -802,13 +903,14 @@ def build_artifact(
     return artifact, status
 
 
-def fetch_live_frames() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+def fetch_live_frames() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     return (
         fetch_sge_gold_benchmark(),
         fetch_afcd_food_prices(),
         fetch_hk_consumer_valuations(),
         fetch_cnsd_retail_sales(),
         fetch_censtatd_restaurant_survey(),
+        fetch_immigration_flow(),
     )
 
 
@@ -818,8 +920,8 @@ def main() -> int:
     parser.add_argument("--status-output", type=Path, required=True, help="Compact Astro status JSON output path")
     args = parser.parse_args()
 
-    gold, afcd, valuation, retail, restaurant = fetch_live_frames()
-    artifact, status = build_artifact(gold, afcd, valuation, retail, restaurant)
+    gold, afcd, valuation, retail, restaurant, immigration = fetch_live_frames()
+    artifact, status = build_artifact(gold, afcd, valuation, retail, restaurant, immigration)
     _atomic_json(args.output, artifact)
     _atomic_json(args.status_output, status)
     print(

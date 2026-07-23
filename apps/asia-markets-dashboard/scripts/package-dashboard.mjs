@@ -92,14 +92,17 @@ const HK_REAL_ESTATE_ZH = {
 
 const HK_LOCAL_CONSUMER_ZH = {
   title: "香港本地消费监测",
-  description: "黄金原料成本、鲜活食品批发价与观察名单估值的来源快照。",
+  description: "跨境出入境人流（北上/南下）、黄金原料成本、鲜活食品批发价与观察名单估值的来源快照。",
   cards: {
+    northbound_card: { label: "北上人流 (7日均值)", description: "每日香港居民出境人次（7日移动平均）；日环比与同比变动。", cadence: "日环比" },
+    southbound_card: { label: "南下人流 (7日均值)", description: "每日内地访客入境人次（7日移动平均）；日环比与同比变动。", cadence: "日环比" },
     gold_card: { label: "黄金晚盘 (RMB/克)", description: "最新公布的上海金交所晚盘基准价；日环比与同比变动。", cadence: "日环比" },
     median_pe_card: { label: "市盈率中位数 (TTM)", description: "香港本地消费观察名单（11 家公司）的市盈率中位数。" },
     retail_card: { label: "零售销售指数", description: "全零售商总销货价值指数；月环比与同比变动。", cadence: "月环比" },
     restaurant_card: { label: "餐饮总收益 (百万港元)", description: "全行业季度餐饮收益；季环比与同比变动。", cadence: "季环比" },
   },
   charts: {
+    immigration_trend: ["跨境旅客流量走势 (7日均值)", "每日人流方向：北上（香港居民出境人次）对比 南下（内地访客入境人次）。", "日期", "人次 / 日 (7日均值)", "人流方向"],
     gold_trend: ["上海黄金交易所晚盘基准价", "以人民币/克计的每日定盘价，近约7年；是香港黄金珠宝行业原料成本的主要参考。", "日期", "人民币/克"],
     afcd_category_chart: ["按类别划分的 AFCD 批发价", "今日各类别商品的平均批发价（每公斤）。", "类别", "港元/公斤"],
     valuation_pe_chart: ["观察名单市盈率对比", "各公司最新的正值市盈率（TTM）；亏损公司不在此图中显示。", "公司", "市盈率 (TTM)"],
@@ -141,11 +144,12 @@ const HK_LOCAL_CONSUMER_ZH = {
     },
   },
   sources: {
-    afcd_wholesale: "AFCD 鲜活食品批发价格",
-    sge_gold: "上海黄金交易所早晚盘基准价",
-    hk_valuation: "百度股市通港股估值数据",
-    cnsd_retail: "政府统计处零售销售价值/数量指数",
-    censtatd_restaurant: "政府统计处季度餐饮收益及采购调查",
+    immigration_flow: "香港入境事务处每日出入境旅客流量",
+    afcd_wholesale: "农渔护理署鲜活食品批发价",
+    sge_gold: "上海黄金交易所早/晚盘基准价",
+    hk_valuation: "百度股市通港股估值",
+    cnsd_retail: "政府统计处零售业销货额指数",
+    censtatd_restaurant: "政府统计处季度食肆收益及购货额按月统计调查",
     source_registry: "香港本地消费 dashboard 来源登记表",
   },
   snapshotBody: (artifact) =>

@@ -1,10 +1,11 @@
 import re
+import json
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 from typing import Dict, Any
 
-from ..config import LANDREG_PRESS_RELEASES_URL, DEFAULT_HEADERS
+from ..config import LANDREG_MONTHLY_JSON_BASE, LANDREG_MONTHLY_URL, LANDREG_PRESS_RELEASES_URL, DEFAULT_HEADERS
 from ..storage import save_raw_snapshot
 
 def fetch_landreg_monthly_sp() -> pd.DataFrame:
@@ -48,3 +49,94 @@ def fetch_landreg_monthly_sp() -> pd.DataFrame:
         df = df.drop_duplicates(subset=['date']).sort_values('date').reset_index(drop=True)
     df.attrs.update(raw_snapshot=str(raw_path), source_url=LANDREG_PRESS_RELEASES_URL)
     return df
+
+
+def _number(value: object) -> float | None:
+    if value is None:
+        return None
+    text = re.sub(r"[^0-9.\-]", "", str(value))
+    try:
+        return float(text) if text else None
+    except ValueError:
+        return None
+
+
+def _month_date(item: dict) -> str | None:
+    try:
+        return f"{int(item['Year']):04d}-{int(item['Month']):02d}-01"
+    except (KeyError, TypeError, ValueError):
+        return None
+
+
+def fetch_landreg_monthly_statistics() -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Fetch the public monthly JSON tables behind Land Registry's page.
+
+    The site publishes the tables as first-party JSON under ``/json``.  This
+    is deliberately a light long-form parse: descriptions are kept verbatim so
+    the schema does not pretend to have a stable semantic taxonomy yet.
+    """
+    page = requests.get(LANDREG_MONTHLY_URL, headers=DEFAULT_HEADERS, timeout=30)
+    page.raise_for_status()
+    tables: dict[str, object] = {}
+    for table_name in ("t1", "t2", "t3", "t6"):
+        response = requests.get(
+            f"{LANDREG_MONTHLY_JSON_BASE}/{table_name}.json",
+            headers=DEFAULT_HEADERS,
+            timeout=30,
+        )
+        response.raise_for_status()
+        tables[table_name] = response.json()
+
+    raw_path = save_raw_snapshot(
+        "landreg_monthly_statistics",
+        json.dumps({"page_html": page.text, "tables": tables}, ensure_ascii=False),
+        file_ext="json",
+        source_url=LANDREG_MONTHLY_URL,
+    )
+
+    facts: list[dict] = []
+    for table_name in ("t1", "t2", "t6"):
+        for item_index, item in enumerate(tables.get(table_name, [])):
+            if not isinstance(item, dict):
+                continue
+            period = _month_date(item)
+            description = item.get("Description")
+            if not period or not description:
+                continue
+            facts.append(
+                {
+                    "source_record_id": f"{table_name}-{item_index}",
+                    "date": period,
+                    "table_id": table_name,
+                    "statistic_name": str(description),
+                    "units": _number(item.get("Units")),
+                    "consideration_million": _number(item.get("Consideration (nearest $ million)")),
+                    "region": str(description).replace(" transactions", "") if table_name == "t6" else None,
+                    "source_agency": "Hong Kong Land Registry",
+                    "basis": "registration_receipt_month",
+                }
+            )
+
+    series: list[dict] = []
+    for item in tables.get("t3", []):
+        if not isinstance(item, dict):
+            continue
+        period = _month_date(item)
+        if not period:
+            continue
+        series.append(
+            {
+                "date": period,
+                "all_building_units_asp": _number(item.get("Total Number of Urban & New Territories deeds received for registration (ASP Building Units)")),
+                "residential_units_asp": _number(item.get("Number of ASP for Residential Building Units")),
+                "all_asp_12m_moving_average": _number(item.get("12-month moving average for all ASP")),
+                "source_agency": "Hong Kong Land Registry",
+                "basis": "registration_receipt_month",
+            }
+        )
+
+    facts_df = pd.DataFrame(facts)
+    series_df = pd.DataFrame(series)
+    for frame in (facts_df, series_df):
+        frame.attrs.update(raw_snapshot=str(raw_path), source_url=LANDREG_MONTHLY_URL)
+    return facts_df, series_df

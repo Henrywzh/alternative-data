@@ -5,7 +5,7 @@
     "surface": "dashboard",
     "title": "Hong Kong Local Consumer Monitor",
     "description": "A source-backed snapshot of gold input costs, fresh-food wholesale prices, and watchlist valuations for HK local-consumer names.",
-    "generatedAt": "2026-07-23T20:46:33.287570Z",
+    "generatedAt": "2026-07-23T20:56:55.378445Z",
     "cards": [
       {
         "id": "gold_card",
@@ -550,7 +550,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**Data snapshot:** `79dc0817f8844b31` · generated 2026-07-23T20:46:33.287570Z.  This is a published snapshot, not a live connection. Consumer Council price-watch coverage remains planned; it is not shown with placeholder values."
+        "body": "**Data snapshot:** `79dc0817f8844b31` · generated 2026-07-23T20:56:55.378445Z.  This is a published snapshot, not a live connection. Consumer Council price-watch coverage remains planned; it is not shown with placeholder values."
       },
       {
         "id": "market_pulse",
@@ -640,7 +640,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-23T20:46:33.287570Z",
+    "generatedAt": "2026-07-23T20:56:55.378445Z",
     "status": "ready",
     "datasets": {
       "kpi_gold": [
@@ -659,7 +659,7 @@
       "gold_history": [
         {
           "date": "2019-02-21",
-          "value": 289.0
+          "value": 289
         },
         {
           "date": "2019-02-24",
@@ -1707,7 +1707,7 @@
         },
         {
           "date": "2020-03-19",
-          "value": 339.0
+          "value": 339
         },
         {
           "date": "2020-03-22",
@@ -1827,7 +1827,7 @@
         },
         {
           "date": "2020-05-06",
-          "value": 378.0
+          "value": 378
         },
         {
           "date": "2020-05-07",
@@ -2555,7 +2555,7 @@
         },
         {
           "date": "2021-01-28",
-          "value": 385.0
+          "value": 385
         },
         {
           "date": "2021-01-31",
@@ -3295,7 +3295,7 @@
         },
         {
           "date": "2021-11-08",
-          "value": 376.0
+          "value": 376
         },
         {
           "date": "2021-11-09",
@@ -3419,7 +3419,7 @@
         },
         {
           "date": "2021-12-21",
-          "value": 368.0
+          "value": 368
         },
         {
           "date": "2021-12-22",
@@ -3447,7 +3447,7 @@
         },
         {
           "date": "2021-12-30",
-          "value": 374.0
+          "value": 374
         },
         {
           "date": "2022-01-03",
@@ -4243,7 +4243,7 @@
         },
         {
           "date": "2022-10-31",
-          "value": 392.0
+          "value": 392
         },
         {
           "date": "2022-11-01",
@@ -4375,7 +4375,7 @@
         },
         {
           "date": "2022-12-15",
-          "value": 403.0
+          "value": 403
         },
         {
           "date": "2022-12-18",
@@ -4527,7 +4527,7 @@
         },
         {
           "date": "2023-02-15",
-          "value": 412.0
+          "value": 412
         },
         {
           "date": "2023-02-16",
@@ -4911,7 +4911,7 @@
         },
         {
           "date": "2023-07-09",
-          "value": 451.0
+          "value": 451
         },
         {
           "date": "2023-07-10",
@@ -4923,7 +4923,7 @@
         },
         {
           "date": "2023-07-12",
-          "value": 455.0
+          "value": 455
         },
         {
           "date": "2023-07-13",
@@ -5099,7 +5099,7 @@
         },
         {
           "date": "2023-09-12",
-          "value": 470.0
+          "value": 470
         },
         {
           "date": "2023-09-13",
@@ -5419,7 +5419,7 @@
         },
         {
           "date": "2024-01-11",
-          "value": 480.0
+          "value": 480
         },
         {
           "date": "2024-01-14",
@@ -5947,7 +5947,7 @@
         },
         {
           "date": "2024-07-30",
-          "value": 564.0
+          "value": 564
         },
         {
           "date": "2024-07-31",
@@ -6875,7 +6875,7 @@
         },
         {
           "date": "2025-07-16",
-          "value": 772.0
+          "value": 772
         },
         {
           "date": "2025-07-17",
@@ -7239,7 +7239,7 @@
         },
         {
           "date": "2025-11-30",
-          "value": 958.0
+          "value": 958
         },
         {
           "date": "2025-12-01",
@@ -7375,7 +7375,7 @@
         },
         {
           "date": "2026-01-19",
-          "value": 1055.0
+          "value": 1055
         },
         {
           "date": "2026-01-20",
@@ -7719,7 +7719,7 @@
         },
         {
           "date": "2026-06-02",
-          "value": 975.0
+          "value": 975
         },
         {
           "date": "2026-06-03",
@@ -8033,7 +8033,7 @@
         {
           "category": "Vegetables",
           "commodity_name": "Chinese Kale",
-          "avg_price_hkd_per_kg": 8.0,
+          "avg_price_hkd_per_kg": 8,
           "num_readings": 14
         },
         {
@@ -8211,7 +8211,7 @@
       ],
       "kpi_retail": [
         {
-          "latest": 121.0,
+          "latest": 121,
           "period_change": 0.076512,
           "year_change": 0.13936,
           "observation_date": "2026-05-01"
@@ -8428,7 +8428,7 @@
         },
         {
           "date": "2009-02-01",
-          "value": 71.0
+          "value": 71
         },
         {
           "date": "2009-03-01",
@@ -8464,7 +8464,7 @@
         },
         {
           "date": "2009-11-01",
-          "value": 82.0
+          "value": 82
         },
         {
           "date": "2009-12-01",
@@ -8472,7 +8472,7 @@
         },
         {
           "date": "2010-01-01",
-          "value": 105.0
+          "value": 105
         },
         {
           "date": "2010-02-01",
@@ -8504,7 +8504,7 @@
         },
         {
           "date": "2010-09-01",
-          "value": 90.0
+          "value": 90
         },
         {
           "date": "2010-10-01",
@@ -8544,7 +8544,7 @@
         },
         {
           "date": "2011-07-01",
-          "value": 126.0
+          "value": 126
         },
         {
           "date": "2011-08-01",
@@ -8572,11 +8572,11 @@
         },
         {
           "date": "2012-02-01",
-          "value": 121.0
+          "value": 121
         },
         {
           "date": "2012-03-01",
-          "value": 131.0
+          "value": 131
         },
         {
           "date": "2012-04-01",
@@ -8676,7 +8676,7 @@
         },
         {
           "date": "2014-04-01",
-          "value": 139.0
+          "value": 139
         },
         {
           "date": "2014-05-01",
@@ -8684,7 +8684,7 @@
         },
         {
           "date": "2014-06-01",
-          "value": 133.0
+          "value": 133
         },
         {
           "date": "2014-07-01",
@@ -8744,7 +8744,7 @@
         },
         {
           "date": "2015-09-01",
-          "value": 126.0
+          "value": 126
         },
         {
           "date": "2015-10-01",
@@ -8792,7 +8792,7 @@
         },
         {
           "date": "2016-09-01",
-          "value": 121.0
+          "value": 121
         },
         {
           "date": "2016-10-01",
@@ -8832,7 +8832,7 @@
         },
         {
           "date": "2017-07-01",
-          "value": 129.0
+          "value": 129
         },
         {
           "date": "2017-08-01",
@@ -8860,7 +8860,7 @@
         },
         {
           "date": "2018-02-01",
-          "value": 162.0
+          "value": 162
         },
         {
           "date": "2018-03-01",
@@ -8888,7 +8888,7 @@
         },
         {
           "date": "2018-09-01",
-          "value": 131.0
+          "value": 131
         },
         {
           "date": "2018-10-01",
@@ -8920,7 +8920,7 @@
         },
         {
           "date": "2019-05-01",
-          "value": 143.0
+          "value": 143
         },
         {
           "date": "2019-06-01",
@@ -8972,7 +8972,7 @@
         },
         {
           "date": "2020-06-01",
-          "value": 95.0
+          "value": 95
         },
         {
           "date": "2020-07-01",
@@ -9060,7 +9060,7 @@
         },
         {
           "date": "2022-04-01",
-          "value": 108.0
+          "value": 108
         },
         {
           "date": "2022-05-01",
@@ -9104,7 +9104,7 @@
         },
         {
           "date": "2023-03-01",
-          "value": 120.0
+          "value": 120
         },
         {
           "date": "2023-04-01",
@@ -9164,7 +9164,7 @@
         },
         {
           "date": "2024-06-01",
-          "value": 107.0
+          "value": 107
         },
         {
           "date": "2024-07-01",
@@ -9228,7 +9228,7 @@
         },
         {
           "date": "2025-10-01",
-          "value": 126.0
+          "value": 126
         },
         {
           "date": "2025-11-01",
@@ -9256,7 +9256,7 @@
         },
         {
           "date": "2026-05-01",
-          "value": 121.0
+          "value": 121
         }
       ],
       "retail_category_snapshot": [
@@ -9280,7 +9280,7 @@
         },
         {
           "category": "All retail outlet",
-          "sales_value_index": 121.0,
+          "sales_value_index": 121,
           "sales_volume_index": 107.4,
           "date": "2026-05-01"
         },
@@ -9293,7 +9293,7 @@
         {
           "category": "Food, alcoholic drinks and tobacco (other than supermarkets)",
           "sales_value_index": 94.5,
-          "sales_volume_index": 83.0,
+          "sales_volume_index": 83,
           "date": "2026-05-01"
         },
         {
@@ -9351,7 +9351,7 @@
       ],
       "kpi_restaurant": [
         {
-          "latest": 28358.0,
+          "latest": 28358,
           "period_change": 0.019082,
           "year_change": 0.046614,
           "observation_date": "2026-03-31"
@@ -9360,388 +9360,388 @@
       "restaurant_history": [
         {
           "date": "2004-12-31",
-          "value": 13864.0
+          "value": 13864
         },
         {
           "date": "2005-03-31",
-          "value": 13874.0
+          "value": 13874
         },
         {
           "date": "2005-06-30",
-          "value": 13471.0
+          "value": 13471
         },
         {
           "date": "2005-09-30",
-          "value": 14322.0
+          "value": 14322
         },
         {
           "date": "2005-12-31",
-          "value": 14840.0
+          "value": 14840
         },
         {
           "date": "2006-03-31",
-          "value": 15115.0
+          "value": 15115
         },
         {
           "date": "2006-06-30",
-          "value": 14977.0
+          "value": 14977
         },
         {
           "date": "2006-09-30",
-          "value": 15354.0
+          "value": 15354
         },
         {
           "date": "2006-12-31",
-          "value": 16461.0
+          "value": 16461
         },
         {
           "date": "2007-03-31",
-          "value": 16908.0
+          "value": 16908
         },
         {
           "date": "2007-06-30",
-          "value": 16707.0
+          "value": 16707
         },
         {
           "date": "2007-09-30",
-          "value": 17705.0
+          "value": 17705
         },
         {
           "date": "2007-12-31",
-          "value": 18882.0
+          "value": 18882
         },
         {
           "date": "2008-03-31",
-          "value": 19593.0
+          "value": 19593
         },
         {
           "date": "2008-06-30",
-          "value": 19328.0
+          "value": 19328
         },
         {
           "date": "2008-09-30",
-          "value": 20042.0
+          "value": 20042
         },
         {
           "date": "2008-12-31",
-          "value": 20427.0
+          "value": 20427
         },
         {
           "date": "2009-03-31",
-          "value": 19870.0
+          "value": 19870
         },
         {
           "date": "2009-06-30",
-          "value": 19194.0
+          "value": 19194
         },
         {
           "date": "2009-09-30",
-          "value": 19984.0
+          "value": 19984
         },
         {
           "date": "2009-12-31",
-          "value": 20832.0
+          "value": 20832
         },
         {
           "date": "2010-03-31",
-          "value": 20883.0
+          "value": 20883
         },
         {
           "date": "2010-06-30",
-          "value": 20047.0
+          "value": 20047
         },
         {
           "date": "2010-09-30",
-          "value": 21018.0
+          "value": 21018
         },
         {
           "date": "2010-12-31",
-          "value": 22009.0
+          "value": 22009
         },
         {
           "date": "2011-03-31",
-          "value": 22121.0
+          "value": 22121
         },
         {
           "date": "2011-06-30",
-          "value": 21241.0
+          "value": 21241
         },
         {
           "date": "2011-09-30",
-          "value": 22312.0
+          "value": 22312
         },
         {
           "date": "2011-12-31",
-          "value": 23626.0
+          "value": 23626
         },
         {
           "date": "2012-03-31",
-          "value": 23473.0
+          "value": 23473
         },
         {
           "date": "2012-06-30",
-          "value": 22143.0
+          "value": 22143
         },
         {
           "date": "2012-09-30",
-          "value": 23291.0
+          "value": 23291
         },
         {
           "date": "2012-12-31",
-          "value": 24844.0
+          "value": 24844
         },
         {
           "date": "2013-03-31",
-          "value": 24335.0
+          "value": 24335
         },
         {
           "date": "2013-06-30",
-          "value": 23151.0
+          "value": 23151
         },
         {
           "date": "2013-09-30",
-          "value": 24186.0
+          "value": 24186
         },
         {
           "date": "2013-12-31",
-          "value": 25348.0
+          "value": 25348
         },
         {
           "date": "2014-03-31",
-          "value": 25211.0
+          "value": 25211
         },
         {
           "date": "2014-06-30",
-          "value": 24030.0
+          "value": 24030
         },
         {
           "date": "2014-09-30",
-          "value": 25377.0
+          "value": 25377
         },
         {
           "date": "2014-12-31",
-          "value": 25798.0
+          "value": 25798
         },
         {
           "date": "2015-03-31",
-          "value": 26132.0
+          "value": 26132
         },
         {
           "date": "2015-06-30",
-          "value": 25212.0
+          "value": 25212
         },
         {
           "date": "2015-09-30",
-          "value": 26259.0
+          "value": 26259
         },
         {
           "date": "2015-12-31",
-          "value": 26729.0
+          "value": 26729
         },
         {
           "date": "2016-03-31",
-          "value": 26638.0
+          "value": 26638
         },
         {
           "date": "2016-06-30",
-          "value": 25958.0
+          "value": 25958
         },
         {
           "date": "2016-09-30",
-          "value": 26943.0
+          "value": 26943
         },
         {
           "date": "2016-12-31",
-          "value": 27836.0
+          "value": 27836
         },
         {
           "date": "2017-03-31",
-          "value": 27763.0
+          "value": 27763
         },
         {
           "date": "2017-06-30",
-          "value": 26990.0
+          "value": 26990
         },
         {
           "date": "2017-09-30",
-          "value": 28291.0
+          "value": 28291
         },
         {
           "date": "2017-12-31",
-          "value": 29694.0
+          "value": 29694
         },
         {
           "date": "2018-03-31",
-          "value": 30543.0
+          "value": 30543
         },
         {
           "date": "2018-06-30",
-          "value": 28797.0
+          "value": 28797
         },
         {
           "date": "2018-09-30",
-          "value": 29847.0
+          "value": 29847
         },
         {
           "date": "2018-12-31",
-          "value": 30368.0
+          "value": 30368
         },
         {
           "date": "2019-03-31",
-          "value": 31485.0
+          "value": 31485
         },
         {
           "date": "2019-06-30",
-          "value": 28642.0
+          "value": 28642
         },
         {
           "date": "2019-09-30",
-          "value": 26319.0
+          "value": 26319
         },
         {
           "date": "2019-12-31",
-          "value": 26001.0
+          "value": 26001
         },
         {
           "date": "2020-03-31",
-          "value": 21625.0
+          "value": 21625
         },
         {
           "date": "2020-06-30",
-          "value": 21192.0
+          "value": 21192
         },
         {
           "date": "2020-09-30",
-          "value": 17066.0
+          "value": 17066
         },
         {
           "date": "2020-12-31",
-          "value": 19453.0
+          "value": 19453
         },
         {
           "date": "2021-03-31",
-          "value": 19729.0
+          "value": 19729
         },
         {
           "date": "2021-06-30",
-          "value": 23314.0
+          "value": 23314
         },
         {
           "date": "2021-09-30",
-          "value": 24555.0
+          "value": 24555
         },
         {
           "date": "2021-12-31",
-          "value": 25091.0
+          "value": 25091
         },
         {
           "date": "2022-03-31",
-          "value": 15166.0
+          "value": 15166
         },
         {
           "date": "2022-06-30",
-          "value": 22064.0
+          "value": 22064
         },
         {
           "date": "2022-09-30",
-          "value": 24084.0
+          "value": 24084
         },
         {
           "date": "2022-12-31",
-          "value": 25519.0
+          "value": 25519
         },
         {
           "date": "2023-03-31",
-          "value": 27567.0
+          "value": 27567
         },
         {
           "date": "2023-06-30",
-          "value": 27430.0
+          "value": 27430
         },
         {
           "date": "2023-09-30",
-          "value": 27096.0
+          "value": 27096
         },
         {
           "date": "2023-12-31",
-          "value": 27445.0
+          "value": 27445
         },
         {
           "date": "2024-03-31",
-          "value": 28208.0
+          "value": 28208
         },
         {
           "date": "2024-06-30",
-          "value": 26871.0
+          "value": 26871
         },
         {
           "date": "2024-09-30",
-          "value": 26748.0
+          "value": 26748
         },
         {
           "date": "2024-12-31",
-          "value": 27566.0
+          "value": 27566
         },
         {
           "date": "2025-03-31",
-          "value": 28036.0
+          "value": 28036
         },
         {
           "date": "2025-06-30",
-          "value": 27095.0
+          "value": 27095
         },
         {
           "date": "2025-09-30",
-          "value": 26675.0
+          "value": 26675
         },
         {
           "date": "2025-12-31",
-          "value": 27827.0
+          "value": 27827
         },
         {
           "date": "2026-03-31",
-          "value": 28358.0
+          "value": 28358
         }
       ],
       "restaurant_snapshot": [
         {
           "sub_sector": "All restaurants",
-          "total_receipts_hkd_m": 28358.0,
-          "total_purchases_hkd_m": 9094.0,
+          "total_receipts_hkd_m": 28358,
+          "total_purchases_hkd_m": 9094,
           "receipts_value_index": 132.1,
           "date": "2026-03-31"
         },
         {
           "sub_sector": "Non-Chinese restaurants",
-          "total_receipts_hkd_m": 10131.0,
+          "total_receipts_hkd_m": 10131,
           "total_purchases_hkd_m": null,
           "receipts_value_index": 155.5,
           "date": "2026-03-31"
         },
         {
           "sub_sector": "Chinese restaurants",
-          "total_receipts_hkd_m": 9699.0,
+          "total_receipts_hkd_m": 9699,
           "total_purchases_hkd_m": null,
           "receipts_value_index": 118.2,
           "date": "2026-03-31"
         },
         {
           "sub_sector": "Fast food shops",
-          "total_receipts_hkd_m": 6074.0,
+          "total_receipts_hkd_m": 6074,
           "total_purchases_hkd_m": null,
           "receipts_value_index": 126.3,
           "date": "2026-03-31"
         },
         {
           "sub_sector": "Miscellaneous eating and drinking places",
-          "total_receipts_hkd_m": 2175.0,
+          "total_receipts_hkd_m": 2175,
           "total_purchases_hkd_m": null,
           "receipts_value_index": 129.3,
           "date": "2026-03-31"
         },
         {
           "sub_sector": "Bars",
-          "total_receipts_hkd_m": 280.0,
+          "total_receipts_hkd_m": 280,
           "total_purchases_hkd_m": null,
           "receipts_value_index": 109.2,
           "date": "2026-03-31"
@@ -9750,23 +9750,23 @@
       "restaurant_chart": [
         {
           "sub_sector": "Non-Chinese restaurants",
-          "total_receipts_hkd_m": 10131.0
+          "total_receipts_hkd_m": 10131
         },
         {
           "sub_sector": "Chinese restaurants",
-          "total_receipts_hkd_m": 9699.0
+          "total_receipts_hkd_m": 9699
         },
         {
           "sub_sector": "Fast food shops",
-          "total_receipts_hkd_m": 6074.0
+          "total_receipts_hkd_m": 6074
         },
         {
           "sub_sector": "Miscellaneous eating and drinking places",
-          "total_receipts_hkd_m": 2175.0
+          "total_receipts_hkd_m": 2175
         },
         {
           "sub_sector": "Bars",
-          "total_receipts_hkd_m": 280.0
+          "total_receipts_hkd_m": 280
         }
       ],
       "source_health": [
@@ -9898,7 +9898,7 @@
         "metric_definitions": [
           "Each commodity's price is the mean of same-day readings across the wholesale markets/sources AFCD reports for it."
         ],
-        "executed_at": "2026-07-23T20:46:33.287570Z"
+        "executed_at": "2026-07-23T20:56:55.378445Z"
       }
     },
     {
@@ -9914,7 +9914,7 @@
           "Latest is the most recent published PM benchmark fixing.",
           "Day and year movements are latest divided by the prior trading day or the observation on/before one year earlier, minus one."
         ],
-        "executed_at": "2026-07-23T20:46:33.287570Z"
+        "executed_at": "2026-07-23T20:56:55.378445Z"
       }
     },
     {
@@ -9930,7 +9930,7 @@
           "PE (TTM), PB, and market cap (HKD bn) are each ticker's latest published daily value.",
           "No dividend-yield indicator exists on this endpoint; yield is not reported here."
         ],
-        "executed_at": "2026-07-23T20:46:33.287570Z"
+        "executed_at": "2026-07-23T20:56:55.378445Z"
       }
     },
     {
@@ -9946,7 +9946,7 @@
           "All retail outlet is the classification group's own published total across all outlet types.",
           "Month and year movements are latest divided by the prior month or the observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-07-23T20:46:33.287570Z"
+        "executed_at": "2026-07-23T20:56:55.378445Z"
       }
     },
     {
@@ -9962,7 +9962,7 @@
           "Purchases are only published sector-wide, not broken out by restaurant type.",
           "Quarter and year movements are latest divided by the prior quarter or the observation four quarters earlier, minus one."
         ],
-        "executed_at": "2026-07-23T20:46:33.287570Z"
+        "executed_at": "2026-07-23T20:56:55.378445Z"
       }
     },
     {
@@ -9976,7 +9976,7 @@
           "Validated live measure frames",
           "Declared future-source registry"
         ],
-        "executed_at": "2026-07-23T20:46:33.287570Z"
+        "executed_at": "2026-07-23T20:56:55.378445Z"
       }
     }
   ],
