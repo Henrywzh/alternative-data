@@ -1,0 +1,56 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import status from "../data/dashboard-status.json";
+---
+
+<BaseLayout
+  title="Data Status — Asia Markets"
+  description="Freshness, coverage and release metadata for Asia Markets dashboards."
+>
+  <section class="status-intro">
+    <div>
+      <p class="eyebrow">Release control</p>
+      <h1>Data status</h1>
+      <p>One compact view of what is live, partial, catalog-only, or still planned.</p>
+    </div>
+    <dl class="status-summary">
+      <div><dt>Overall</dt><dd class="healthy">{status.overall_status}</dd></div>
+      <div><dt>Data as of</dt><dd>{status.data_as_of}</dd></div>
+      <div><dt>Generated</dt><dd>{status.generated_at.replace("T", " ").slice(0, 19)} UTC</dd></div>
+      <div><dt>Snapshot</dt><dd><code>{status.snapshot_id}</code></dd></div>
+    </dl>
+  </section>
+
+  <section class="status-table-section">
+    <div class="section-heading">
+      <h2>HK real-estate coverage</h2>
+      <p>Catalog discovery is not counted as a live market measure.</p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Source / dataset</th>
+            <th>Type</th>
+            <th>Status</th>
+            <th>Latest</th>
+            <th>Rows</th>
+            <th>Freshness / caveat</th>
+          </tr>
+        </thead>
+        <tbody>
+          {status.sources.map((source) => (
+            <tr>
+              <td><strong>{source.dataset}</strong><small>{source.source}</small></td>
+              <td>{source.type}</td>
+              <td><span class:list={["status-label", source.status === "Healthy" && "status-good"]}>{source.status}</span></td>
+              <td>{source.latest_observation}</td>
+              <td>{source.records || "—"}</td>
+              <td><strong>{source.freshness}</strong><small>{source.notes}</small></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</BaseLayout>
