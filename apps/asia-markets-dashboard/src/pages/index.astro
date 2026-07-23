@@ -2,10 +2,14 @@
 import BaseLayout from "../layouts/BaseLayout.astro";
 import realEstateStatus from "../data/dashboard-status.json";
 import localConsumerStatus from "../data/dashboard-status-hk-local-consumer.json";
+import utilitiesStatus from "../data/dashboard-status-hk-utilities.json";
+import transportStatus from "../data/dashboard-status-hk-transport.json";
 
 const liveSectors = [
   { status: realEstateStatus, name: "Hong Kong Real Estate", href: "/sectors/hk-real-estate/" },
   { status: localConsumerStatus, name: "Hong Kong Local Consumer", href: "/sectors/hk-local-consumer/" },
+  { status: utilitiesStatus, name: "Hong Kong Utilities & Infrastructure", href: "/sectors/hk-utilities/" },
+  { status: transportStatus, name: "Hong Kong Transport & Aviation", href: "/sectors/hk-transport/" },
 ];
 
 const sectors = [
@@ -19,7 +23,7 @@ const sectors = [
     isLive: true,
   })),
   {
-    code: "03",
+    code: "05",
     name: "Hong Kong REITs",
     state: "Research ready",
     detail: "Price/quote pipeline built and tested; the live source (Eastmoney, via akshare) is currently unreachable, and REIT fundamentals (yield, NAV, occupancy) are not covered by any confirmed free API. Publication is paused pending a working data source.",
@@ -28,7 +32,7 @@ const sectors = [
     isLive: false,
   },
   {
-    code: "04",
+    code: "06",
     name: "Stablecoin & Crypto",
     state: "Research ready",
     detail: "Source map and company coverage complete; dashboard not yet published.",
@@ -37,7 +41,7 @@ const sectors = [
     isLive: false,
   },
   {
-    code: "05",
+    code: "07",
     name: "Commercial Aerospace",
     state: "Research ready",
     detail: "Company and signal framework complete; dashboard not yet published.",
@@ -46,7 +50,7 @@ const sectors = [
     isLive: false,
   },
   {
-    code: "06",
+    code: "08",
     name: "Consumer Trends",
     state: "Research",
     detail: "Company list established; source access remains uneven.",

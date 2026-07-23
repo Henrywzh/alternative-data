@@ -65,6 +65,22 @@ const SECTORS = [
   },
   {
     code: "03",
+    id: "hk-utilities",
+    nameEn: "Hong Kong Utilities & Infrastructure",
+    nameZh: "香港公用事业与基础设施",
+    statusFile: "dashboard-status-hk-utilities.json",
+    route: "sectors/hk-utilities",
+  },
+  {
+    code: "04",
+    id: "hk-transport",
+    nameEn: "Hong Kong Transport & Aviation",
+    nameZh: "香港交通与航空",
+    statusFile: "dashboard-status-hk-transport.json",
+    route: "sectors/hk-transport",
+  },
+  {
+    code: "05",
     nameEn: "Hong Kong REITs",
     nameZh: "香港房地产信托基金（REITs）",
     stateEn: "Research ready",
@@ -73,7 +89,7 @@ const SECTORS = [
     detailZh: "价格/报价管道已构建并测试；实时来源（Eastmoney，经 akshare）目前无法访问，且 REIT 基本面数据（收益率、资产净值、出租率）没有任何已确认的免费 API 覆盖。发布暂缓，等待可用的数据来源。",
   },
   {
-    code: "04",
+    code: "06",
     nameEn: "Stablecoin & Crypto",
     nameZh: "稳定币与加密资产",
     stateEn: "Research ready",
@@ -82,7 +98,7 @@ const SECTORS = [
     detailZh: "来源图谱及公司覆盖已完成；dashboard 尚未发布。",
   },
   {
-    code: "05",
+    code: "07",
     nameEn: "Commercial Aerospace",
     nameZh: "商业航天",
     stateEn: "Research ready",
@@ -91,7 +107,7 @@ const SECTORS = [
     detailZh: "公司及信号框架已完成；dashboard 尚未发布。",
   },
   {
-    code: "06",
+    code: "08",
     nameEn: "Consumer Trends",
     nameZh: "消费趋势",
     stateEn: "Research",
