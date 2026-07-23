@@ -196,6 +196,37 @@ const HK_TRANSPORT_ZH = {
   methodologyBody: "## 如何阅读本 dashboard\n\n港铁客运量按服务类型拆解（本地重铁、跨境及高铁）；机场与国泰数据反映国际与区域航空客货运复苏进度。",
 };
 
+const HK_TELECOM_ZH = {
+  title: "香港电讯监测",
+  description: "香港电讯（HKT）、数码通（SmarTone）及和记电讯（3 HK）的半年度用户与 ARPU 披露数据，以及通讯办全运营商手机号码段配额快照。",
+  cards: {
+    hkt_card: { label: "香港电讯 后付费 ARPU (港元)", description: "半年度后付费退出 ARPU 及后付费用户数（千户）。", cadence: "半年环比" },
+    smartone_card: { label: "数码通 后付费 ARPU (港元)", description: "半年度后付费 ARPU 及后付费用户数（千户）。", cadence: "同比" },
+    hutchison_card: { label: "和记电讯（3 HK）后付费毛 ARPU (港元)", description: "半年度后付费毛/净 ARPU。", cadence: "半年环比" },
+  },
+  charts: {
+    hkt_arpu_chart: ["香港电讯后付费退出 ARPU 走势 (港元)", "半年度后付费退出 ARPU，取自香港电讯自身业绩公告的叙述文本。", "期间", "港元"],
+    smartone_arpu_chart: ["数码通后付费 ARPU 与用户数走势", "半年度后付费 ARPU（港元）及后付费用户基础（千户）。", "期间", "港元"],
+    hutchison_arpu_chart: ["和记电讯（3 HK）后付费毛/净 ARPU 对比", "半年度后付费毛 ARPU 与净 ARPU（港元）——三家运营商中披露最细的单用户经济数据。", "期间", "港元"],
+  },
+  tables: {
+    numbering_plan_table: {
+      title: "通讯办按运营商划分的手机号码段配额",
+      subtitle: "覆盖全部 4 家持牌移动网络运营商及虚拟运营商的粗略结构性代理指标。号码段是已发放的号码容量，并非在网用户数——无法得知已分配号码段的实际使用比例，且重新分配为不定期、事件驱动式。请将此视为单一容量快照，而非用户数走势。",
+      columns: { allocatee: "运营商 / 持牌人", num_blocks: "号码段数量", total_numbers_allocated: "已分配号码数" },
+    },
+  },
+  sources: {
+    hkt_operating_drivers: "香港电讯信托及香港电讯有限公司（6823.HK）业绩公告",
+    smartone_operating_drivers: "数码通电讯控股（0315.HK）业绩简报",
+    hutchison_telecom_operating_drivers: "和记电讯香港控股（0215.HK，「3 HK」）业绩公告",
+    numbering_plan: "通讯事务管理局办公室编号计划（手机号码段配额）",
+  },
+  snapshotBody: (artifact) => `**数据快照：** \`${artifact.package_info.snapshotId}\` · 生成于 ${artifact.manifest.generatedAt}。这是已发布快照，不是实时连接。`,
+  methodologyBody:
+    "## 如何阅读本 dashboard\n\n三家运营商的后付费 ARPU 与用户数均取自其各自的 HKEX 业绩公告或投资者简报的叙述文本或表格，半年度更新。手机号码段配额表是粗略的全运营商结构性代理指标，反映已发放容量而非在网用户数，更新不定期，不应被解读为用户数走势。本 dashboard 不提供股票排名、预测或投资建议。",
+};
+
 function localizeArtifact(input, zh) {
   const artifact = JSON.parse(JSON.stringify(input));
   artifact.manifest.title = zh.title;
@@ -292,6 +323,7 @@ const SECTORS = [
   { id: "hk-local-consumer", statusFile: "dashboard-status-hk-local-consumer.json", zh: HK_LOCAL_CONSUMER_ZH },
   { id: "hk-utilities", statusFile: "dashboard-status-hk-utilities.json", zh: HK_UTILITIES_ZH },
   { id: "hk-transport", statusFile: "dashboard-status-hk-transport.json", zh: HK_TRANSPORT_ZH },
+  { id: "hk-telecom", statusFile: "dashboard-status-hk-telecom.json", zh: HK_TELECOM_ZH },
 ];
 
 if (!existsSync(distDir)) {

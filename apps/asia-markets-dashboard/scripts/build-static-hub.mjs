@@ -80,6 +80,14 @@ const SECTORS = [
     route: "sectors/hk-transport",
   },
   {
+    code: "09",
+    id: "hk-telecom",
+    nameEn: "Hong Kong Telecom",
+    nameZh: "香港电讯",
+    statusFile: "dashboard-status-hk-telecom.json",
+    route: "sectors/hk-telecom",
+  },
+  {
     code: "05",
     nameEn: "Hong Kong REITs",
     nameZh: "香港房地产信托基金（REITs）",
