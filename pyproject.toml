@@ -58,6 +58,10 @@ provider-incident-data = "provider_incident_data.cli:main"
 ai-hiring-data = "ai_hiring_data.cli:main"
 fred-macro-data = "fred_macro_data.cli:main"
 sec-edgar-data = "sec_edgar_data.cli:main"
+ai-news-data = "ai_news_data.cli:main"
+ai-news-signal-data = "ai_news_signal_data.cli:main"
+hk-local-consumer-data = "hk_local_consumer.cli:main"
+hk-reit-data = "hk_reit.cli:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

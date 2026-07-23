@@ -10,8 +10,8 @@ from src.hk_local_consumer.sources.afcd_food import fetch_afcd_food_prices, pars
 from src.hk_local_consumer.sources.consumer_council import fetch_consumer_council_prices, parse_consumer_council_payload
 from src.hk_local_consumer.sources.sge_gold import fetch_sge_gold_benchmark
 from src.hk_local_consumer.sources.hk_valuation import fetch_hk_consumer_valuations
-from src.hk_local_consumer.sources.cnsd_retail import fetch_cnsd_retail_sales, parse_cnsd_retail_payload
-from src.hk_local_consumer.sources.censtatd_restaurant import fetch_censtatd_restaurant_survey, parse_censtatd_restaurant_payload
+from src.hk_local_consumer.sources.cnsd_retail import fetch_cnsd_retail_sales
+from src.hk_local_consumer.sources.censtatd_restaurant import fetch_censtatd_restaurant_survey
 from src.hk_local_consumer.pipeline import run_stage_1_pipeline, QUALITY_SPECS
 from src.hk_local_consumer.storage import save_normalized_dataset, save_raw_snapshot
 
@@ -100,19 +100,18 @@ def test_hk_consumer_valuations():
 
 
 def test_cnsd_retail_sales():
-    # The configured endpoint (CNSD_API_BASE_URL) is a documented dead end
-    # (see config.py) -- this must come back honestly empty, never
-    # substituted with fabricated rows.
     df = fetch_cnsd_retail_sales()
-    assert df.empty
+    assert not df.empty
     assert "sales_value_index" in df.columns
+    assert "Supermarkets" in set(df["category"])
 
 
 def test_censtatd_restaurant_survey():
-    # Same documented gap as retail sales -- honestly empty, not fabricated.
     df = fetch_censtatd_restaurant_survey()
-    assert df.empty
+    assert not df.empty
     assert "total_receipts_hkd_m" in df.columns
+    assert "Fast food shops" in set(df["sub_sector"])
+    assert "All restaurants" in set(df["sub_sector"])
 
 
 def test_stage_1_pipeline_execution(tmp_path):

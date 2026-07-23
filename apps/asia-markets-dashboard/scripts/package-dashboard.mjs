@@ -96,11 +96,17 @@ const HK_LOCAL_CONSUMER_ZH = {
   cards: {
     gold_card: { label: "黄金晚盘 (RMB/克)", description: "最新公布的上海金交所晚盘基准价；日环比与同比变动。", cadence: "日环比" },
     median_pe_card: { label: "市盈率中位数 (TTM)", description: "香港本地消费观察名单（11 家公司）的市盈率中位数。" },
+    retail_card: { label: "零售销售指数", description: "全零售商总销货价值指数；月环比与同比变动。", cadence: "月环比" },
+    restaurant_card: { label: "餐饮总收益 (百万港元)", description: "全行业季度餐饮收益；季环比与同比变动。", cadence: "季环比" },
   },
   charts: {
     gold_trend: ["上海黄金交易所晚盘基准价", "以人民币/克计的每日定盘价，近约7年；是香港黄金珠宝行业原料成本的主要参考。", "日期", "人民币/克"],
     afcd_category_chart: ["按类别划分的 AFCD 批发价", "今日各类别商品的平均批发价（每公斤）。", "类别", "港元/公斤"],
     valuation_pe_chart: ["观察名单市盈率对比", "各公司最新的正值市盈率（TTM）；亏损公司不在此图中显示。", "公司", "市盈率 (TTM)"],
+    retail_trend: ["零售销售价值指数（全零售商）", "政府统计处月度价值指数，完整已公布历史。", "月份", "价值指数"],
+    retail_category_chart: ["按类别划分的零售销售价值指数", "最新已公布月份，按零售商类型划分。", "类别", "价值指数"],
+    restaurant_trend: ["餐饮收益（全行业）", "季度全行业收益，百万港元，完整已公布历史。", "季度", "百万港元"],
+    restaurant_chart: ["按类型划分的餐饮收益", "最新已公布季度，百万港元。", "餐饮类型", "百万港元"],
   },
   tables: {
     afcd_commodity_table: {
@@ -112,6 +118,16 @@ const HK_LOCAL_CONSUMER_ZH = {
       title: "消费观察名单估值快照",
       subtitle: "各公司最新的市盈率、市净率与市值。",
       columns: { company_name: "公司", ticker: "股票代码", pe_ttm: "市盈率(TTM)", pb_ratio: "市净率", market_cap_hkd_b: "市值(十亿港元)", date: "截至日期" },
+    },
+    retail_category_table: {
+      title: "按类别划分的零售销售快照",
+      subtitle: "最新已公布月份；按零售商类型划分的价值与数量指数。",
+      columns: { category: "类别", sales_value_index: "价值指数", sales_volume_index: "数量指数", date: "截至日期" },
+    },
+    restaurant_snapshot_table: {
+      title: "按类型划分的餐饮收益快照",
+      subtitle: "最新已公布季度；采购额仅在「全行业」总计中提供。",
+      columns: { sub_sector: "餐饮类型", total_receipts_hkd_m: "收益(百万港元)", total_purchases_hkd_m: "采购额(百万港元)", receipts_value_index: "收益价值指数", date: "截至日期" },
     },
     source_health_table: {
       title: "实时来源健康度",
@@ -128,12 +144,14 @@ const HK_LOCAL_CONSUMER_ZH = {
     afcd_wholesale: "AFCD 鲜活食品批发价格",
     sge_gold: "上海黄金交易所早晚盘基准价",
     hk_valuation: "百度股市通港股估值数据",
+    cnsd_retail: "政府统计处零售销售价值/数量指数",
+    censtatd_restaurant: "政府统计处季度餐饮收益及采购调查",
     source_registry: "香港本地消费 dashboard 来源登记表",
   },
   snapshotBody: (artifact) =>
-    `**数据快照：** \`${artifact.package_info.snapshotId}\` · 生成于 ${artifact.manifest.generatedAt}。这是已发布快照，不是实时连接；消费者委员会、零售销售及餐饮调查覆盖仍在计划中，未以占位值展示。`,
+    `**数据快照：** \`${artifact.package_info.snapshotId}\` · 生成于 ${artifact.manifest.generatedAt}。这是已发布快照，不是实时连接；消费者委员会价格观察覆盖仍在计划中，未以占位值展示。`,
   methodologyBody:
-    "## 如何阅读本 dashboard\n\n黄金是珠宝行业原料成本的粗略参考，并非股价预测。批发食品价格为单日快照，按 AFCD 当日采样的市场平均计算。覆盖表区分实时指标与端点仍损坏或未经验证的来源。本 dashboard 不提供股票排名、预测或投资建议。",
+    "## 如何阅读本 dashboard\n\n黄金是珠宝行业原料成本的粗略参考，并非股价预测。批发食品价格为单日快照，按 AFCD 当日采样的市场平均计算。零售销售及餐饮收益为官方月度/季度指数，并非实时数据。覆盖表区分实时指标与端点仍损坏或未经验证的来源。本 dashboard 不提供股票排名、预测或投资建议。",
 };
 
 function localizeArtifact(input, zh) {
