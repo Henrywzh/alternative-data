@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "refresh": "${PYTHON_BIN:-python3} scripts/build_hk_real_estate_artifact.py --output .generated/hk-real-estate-artifact.json --status-output src/data/dashboard-status.json && ${PYTHON_BIN:-python3} scripts/build_hk_local_consumer_artifact.py --output .generated/hk-local-consumer-artifact.json --status-output src/data/dashboard-status-hk-local-consumer.json",
-    "build": "npm run refresh && node scripts/build-static-hub.mjs && node scripts/package-dashboard.mjs",
+    "build": "(${PYTHON_BIN:-python3} scripts/build_hk_real_estate_artifact.py --output .generated/hk-real-estate-artifact.json --status-output src/data/dashboard-status.json || true) && (${PYTHON_BIN:-python3} scripts/build_hk_local_consumer_artifact.py --output .generated/hk-local-consumer-artifact.json --status-output src/data/dashboard-status-hk-local-consumer.json || true) && node scripts/build-static-hub.mjs && node scripts/package-dashboard.mjs",
     "dev": "npm run refresh && node scripts/build-static-hub.mjs && python3 -m http.server 4321 --directory dist",
     "preview": "astro preview",
     "check": "astro check",
