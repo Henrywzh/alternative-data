@@ -1,0 +1,103 @@
+name: Asia Markets Dashboard Data Refresh Daily
+
+# LIMITATION (read before touching schedule/steps):
+# This workflow only runs the LIVE DATA half of `npm run build` for
+# apps/asia-markets-dashboard/ — i.e. `npm run refresh`, which runs
+# scripts/build_hk_real_estate_artifact.py and
+# scripts/build_hk_local_consumer_artifact.py and commits the refreshed
+# .generated/*.json artifact manifests + src/data/dashboard-status*.json.
+#
+# It deliberately does NOT run scripts/build-static-hub.mjs or
+# scripts/package-dashboard.mjs. The packaging step calls an external tool
+# (deliver_portable_artifact.mjs) that lives under a local Claude Code/Codex
+# plugin cache (${CODEX_HOME:-~/.codex}/plugins/cache/openai-curated-remote/
+# data-analytics/*/skills/build-report/scripts/) — a proprietary plugin
+# bundle fetched through OpenAI's Codex plugin marketplace, not a published
+# npm package. Investigation found the bundle itself is pure Node (no
+# node_modules needed at runtime — mcp/server.cjs only requires node
+# built-ins) and only needs a Chromium *headless-shell* binary resolvable
+# via CHROMIUM_EXECUTABLE_PATH / PLAYWRIGHT_BROWSERS_PATH, which a CI runner
+# could plausibly provide via `npx playwright install chromium`. The actual
+# blocker is distribution: there is no public registry entry to fetch this
+# exact plugin version from in a generic GitHub Actions runner, and vendoring
+# OpenAI's bundled proprietary plugin code into this repo isn't appropriate.
+#
+# Net effect: the .generated/*.html portable dashboards (and the -zh.json /
+# -zh.html localized variants, which are also produced by package-dashboard.mjs)
+# are NOT refreshed by this workflow and will be one manual-rebuild cycle
+# stale on charts specifically. The underlying JSON data and status files
+# ARE kept fresh daily. Run `npm run build` locally (where the plugin cache
+# exists) periodically to refresh the rendered HTML/zh artifacts.
+
+on:
+  schedule:
+    # 06:15 UTC daily — after most upstream sources (CenStatD, RVD, SGE gold
+    # fixings, akshare-backed feeds) have published for the prior day/period.
+    # All underlying pipelines tolerate staleness up to max_age_days=400, so
+    # daily is a comfortable cadence, not a strict requirement — it just keeps
+    # the fast-moving series (daily gold fixings, weekly CCL/MHPI) current
+    # without over-hitting the live source endpoints.
+    - cron: "15 6 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: asia-markets-dashboard-refresh-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  refresh-dashboard-data:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: apps/asia-markets-dashboard
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install Python dependencies
+        working-directory: .
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .[dev]
+
+      - name: Refresh HK Real Estate + HK Local Consumer artifacts
+        run: npm run refresh
+
+      - name: Commit refreshed artifact manifests and status files
+        working-directory: .
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add \
+            apps/asia-markets-dashboard/.generated/hk-real-estate-artifact.json \
+            apps/asia-markets-dashboard/.generated/hk-local-consumer-artifact.json \
+            apps/asia-markets-dashboard/src/data/dashboard-status.json \
+            apps/asia-markets-dashboard/src/data/dashboard-status-hk-local-consumer.json
+
+          if git diff --staged --quiet; then
+            echo "No dashboard data changes to commit"
+            exit 0
+          fi
+
+          git commit -m "chore(dashboard): refresh HK real estate & local consumer data [$(date -u +%Y-%m-%d)]"
+
+          for attempt in 1 2 3; do
+            if git pull --rebase origin "${{ github.event.repository.default_branch }}" && git push; then
+              exit 0
+            fi
+            sleep $((attempt * 5))
+          done
+          exit 1
