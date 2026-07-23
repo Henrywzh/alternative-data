@@ -1,0 +1,71 @@
+{
+  "generated_at": "2026-07-23T20:43:03.675882Z",
+  "snapshot_id": "79dc0817f8844b31",
+  "data_as_of": "2026-07-21",
+  "overall_status": "Healthy",
+  "live_sources": 5,
+  "planned_sources": 1,
+  "sources": [
+    {
+      "source": "Shanghai Gold Exchange AM/PM Benchmark",
+      "dataset": "SGE Gold Benchmark",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2026-07-21",
+      "records": 2493,
+      "freshness": "2d old",
+      "notes": "Daily AM/PM benchmark fixing."
+    },
+    {
+      "source": "AFCD Fresh Food Wholesale Prices",
+      "dataset": "AFCD Wholesale Food Prices",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2026-07-23",
+      "records": 31,
+      "freshness": "Same-day snapshot",
+      "notes": "31 commodities across 5 categories; averaged across same-day market readings."
+    },
+    {
+      "source": "Baidu Gushitong HK Equity Valuation",
+      "dataset": "HK Consumer Ticker Valuations",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2026-07-23",
+      "records": 11,
+      "freshness": "0d old",
+      "notes": "PE (TTM), PB, and market cap only; no dividend-yield indicator is available from this endpoint."
+    },
+    {
+      "source": "C&SD Retail Sales Value/Volume Index",
+      "dataset": "Retail Sales Value/Volume Index",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2026-05-01",
+      "records": 6500,
+      "freshness": "83d old",
+      "notes": "25 outlet-type categories, monthly since 2004."
+    },
+    {
+      "source": "CenStatD Quarterly Restaurant Receipts & Purchases Survey",
+      "dataset": "Restaurant Receipts & Purchases Survey",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2026-03-31",
+      "records": 516,
+      "freshness": "114d old",
+      "notes": "Sector-wide purchases only; per-type purchases are not published."
+    },
+    {
+      "source": "HK Consumer Council",
+      "dataset": "Online Price Watch (personal care / cosmetics prices)",
+      "type": "Measure",
+      "status": "Planned",
+      "latest_observation": "—",
+      "records": 0,
+      "freshness": "Endpoint returns no data",
+      "notes": "Configured JSON/CSV endpoints do not resolve to real payloads; data.gov.hk listing needs re-verification before this can go live."
+    }
+  ],
+  "attachment_filename": "hk-local-consumer-dashboard-2026-07-23.html"
+}
