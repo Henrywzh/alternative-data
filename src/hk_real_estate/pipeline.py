@@ -11,10 +11,14 @@ import pandas as pd
 from .sources.midland import run_midland_ingestion
 from .sources.centaline import fetch_centaline_ccl
 from .sources.hse28 import fetch_28hse_new_projects
+from .sources.hse28 import fetch_28hse_transaction_pilot
+from .sources.epi import fetch_28hse_epi_eri
 from .sources.rvd import run_rvd_ingestion
-from .sources.landreg import fetch_landreg_monthly_sp
+from .sources.landreg import fetch_landreg_monthly_sp, fetch_landreg_monthly_statistics
 from .sources.srpe import fetch_srpe_project_documents
-from .sources.buildings_dept import fetch_buildings_dept_digests
+from .sources.buildings_dept import fetch_buildings_dept_digests, fetch_buildings_dept_monthly_stats
+from .sources.hkma import fetch_hkma_residential_mortgage_survey
+from .sources.bd_projects import fetch_bd_project_lifecycle_events
 from .storage import save_normalized_dataset, NORMALIZED_DIR
 
 
@@ -31,9 +35,6 @@ class PipelineRunError(RuntimeError):
         self.manifest_path = manifest_path
 
 
-# Measures require a usable time key and critical numeric fields.  Catalogues
-# are deliberately lighter-weight: they describe discoverable endpoints, not
-# transaction or official-statistic facts, but cannot silently succeed empty.
 QUALITY_SPECS: Dict[str, Dict[str, Any]] = {
     "midland_mhpi_weekly": {"kind": "measure", "required": ["date", "mhpi_overall"], "max_age_days": 400},
     "midland_confidence_weekly": {"kind": "measure", "required": ["date", "confidence_index"], "max_age_days": 400},
@@ -45,6 +46,13 @@ QUALITY_SPECS: Dict[str, Dict[str, Any]] = {
     "landreg_press_releases_catalog": {"kind": "catalog", "required": ["date", "release_title", "release_url"]},
     "srpe_document_endpoints_catalog": {"kind": "catalog", "required": ["action_endpoint"]},
     "buildings_dept_monthly_digests_catalog": {"kind": "catalog", "required": ["date", "digest_url"]},
+    "hse28_epi_eri_weekly": {"kind": "measure", "required": ["date", "period_start", "period_end", "index_type", "index_value"], "max_age_days": 400},
+    "hse28_transaction_pilot": {"kind": "measure", "required": ["date", "transaction_date", "source_record_id", "price_hkd"], "max_age_days": 400},
+    "landreg_monthly_facts": {"kind": "measure", "required": ["date", "statistic_name", "units"], "max_age_days": 400},
+    "landreg_asp_series": {"kind": "measure", "required": ["date", "all_building_units_asp", "residential_units_asp"], "max_age_days": 400},
+    "buildings_dept_monthly_stats": {"kind": "catalog", "required": ["date", "table_id", "numeric_values"]},
+    "hkma_residential_mortgage_survey": {"kind": "measure", "required": ["observation_date", "approved_loans_amount_mhkd"], "max_age_days": 400},
+    "bd_project_lifecycle_events": {"kind": "catalog", "required": ["permit_stage", "site_address"]},
 }
 
 
@@ -60,11 +68,16 @@ def _quality_errors(dataset_name: str, df: pd.DataFrame) -> list[str]:
         return [f"required columns contain null values: {', '.join(null_columns)}"]
 
     if spec["kind"] == "measure":
-        dates = pd.to_datetime(df["date"], errors="coerce", utc=True)
+        date_col = "observation_date" if "observation_date" in df.columns else "date"
+        dates = pd.to_datetime(df[date_col], errors="coerce", utc=True)
         if dates.isna().any():
-            return ["date contains invalid values"]
-        if dates.duplicated().any():
-            return ["date contains duplicate observations"]
+            return [f"{date_col} contains invalid values"]
+        duplicate_key = [date_col]
+        for candidate in ("index_type", "statistic_name", "table_id", "source_record_id"):
+            if candidate in df.columns:
+                duplicate_key.append(candidate)
+        if df.duplicated(subset=duplicate_key).any():
+            return [f"{date_col} contains duplicate observations"]
         latest = dates.max()
         now = pd.Timestamp.now(tz="UTC")
         if latest > now + pd.Timedelta(days=7):
@@ -124,7 +137,7 @@ def _record_many(run_id: str, results: Dict[str, Any], datasets: Mapping[str, pd
     for dataset_name, df in datasets.items():
         try:
             results[dataset_name] = _store_dataset(run_id, dataset_name, df)
-        except Exception as exc:  # storage errors must be visible in the manifest
+        except Exception as exc:
             logger.exception("Failed to store %s", dataset_name)
             results[dataset_name] = _error_result(exc)
 
@@ -197,16 +210,67 @@ def run_group_c_pipeline(run_id: str | None = None, *, _raise_on_failure: bool =
     return _finalize_group(run_id, "group_c", results, _raise_on_failure)
 
 
+def run_stage_2_pipeline(run_id: str | None = None, *, _raise_on_failure: bool = False) -> Dict[str, Any]:
+    """Run Stage 2: Credit Baseline & Project Stock Attribution."""
+    run_id = run_id or str(uuid.uuid4())
+    results: Dict[str, Any] = {}
+    try:
+        logger.info("Ingesting HKMA Residential Mortgage Survey (RMS) API...")
+        _record_many(run_id, results, {"hkma_residential_mortgage_survey": fetch_hkma_residential_mortgage_survey()})
+    except Exception as exc:
+        logger.exception("HKMA RMS API ingestion failed")
+        results["hkma_residential_mortgage_survey"] = _error_result(exc)
+    try:
+        logger.info("Ingesting BD Project Lifecycle Events (Tables 5.3-5.6) with Stock Attribution...")
+        _record_many(run_id, results, {"bd_project_lifecycle_events": fetch_bd_project_lifecycle_events()})
+    except Exception as exc:
+        logger.exception("BD project-level ingestion failed")
+        results["bd_project_lifecycle_events"] = _error_result(exc)
+    return _finalize_group(run_id, "stage_2", results, _raise_on_failure)
+
+
 def run_all_pipelines() -> Dict[str, Any]:
     run_id = str(uuid.uuid4())
     merged: Dict[str, Any] = {}
-    for runner in (run_group_a_pipeline, run_group_b_pipeline, run_group_c_pipeline):
+    for runner in (run_group_a_pipeline, run_group_b_pipeline, run_group_c_pipeline, run_stage_2_pipeline):
         merged.update(runner(run_id, _raise_on_failure=False))
     manifest_path = write_run_manifest(run_id, "all", merged)
     failures = {name: value for name, value in merged.items() if value["status"] != "success"}
     if failures:
         raise PipelineRunError(f"Full ingestion failed; manifest: {manifest_path}", merged, manifest_path)
     return merged
+
+
+def run_stage_1_pipeline(run_id: str | None = None, *, _raise_on_failure: bool = False) -> Dict[str, Any]:
+    run_id = run_id or str(uuid.uuid4())
+    results: Dict[str, Any] = {}
+    try:
+        logger.info("Ingesting 28Hse EPI / ERI history...")
+        _record_many(run_id, results, {"hse28_epi_eri_weekly": fetch_28hse_epi_eri()})
+    except Exception as exc:
+        logger.exception("28Hse EPI / ERI ingestion failed")
+        results["hse28_epi_eri_weekly"] = _error_result(exc)
+    try:
+        logger.info("Ingesting bounded 28Hse transaction pilot...")
+        _record_many(run_id, results, {"hse28_transaction_pilot": fetch_28hse_transaction_pilot()})
+    except Exception as exc:
+        logger.exception("28Hse transaction pilot failed")
+        results["hse28_transaction_pilot"] = _error_result(exc)
+    try:
+        logger.info("Ingesting Land Registry monthly facts...")
+        facts, series = fetch_landreg_monthly_statistics()
+        _record_many(run_id, results, {"landreg_monthly_facts": facts, "landreg_asp_series": series})
+    except Exception as exc:
+        logger.exception("Land Registry monthly ingestion failed")
+        results["landreg_monthly_facts"] = _error_result(exc)
+        results["landreg_asp_series"] = _error_result(exc)
+    try:
+        logger.info("Ingesting Buildings Department monthly tables...")
+        _record_many(run_id, results, {"buildings_dept_monthly_stats": fetch_buildings_dept_monthly_stats()})
+    except Exception as exc:
+        logger.exception("Buildings Department monthly ingestion failed")
+        results["buildings_dept_monthly_stats"] = _error_result(exc)
+    return _finalize_group(run_id, "stage_1", results, _raise_on_failure)
 
 
 if __name__ == "__main__":

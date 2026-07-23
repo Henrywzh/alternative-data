@@ -4,8 +4,8 @@
     "version": 1,
     "surface": "dashboard",
     "title": "香港本地消费监测",
-    "description": "黄金原料成本、鲜活食品批发价与观察名单估值的来源快照。",
-    "generatedAt": "2026-07-23T20:43:55.981115Z",
+    "description": "跨境出入境人流（北上/南下）、黄金原料成本、鲜活食品批发价与观察名单估值的来源快照。",
+    "generatedAt": "2026-07-23T20:56:55.378445Z",
     "cards": [
       {
         "id": "gold_card",
@@ -512,31 +512,31 @@
     "sources": [
       {
         "id": "afcd_wholesale",
-        "label": "AFCD 鲜活食品批发价格",
+        "label": "农渔护理署鲜活食品批发价",
         "href": "https://www.afcd.gov.hk/english/agriculture/agr_fresh/agr_fresh_pri/agr_fresh_pri.html",
         "path": "sources/afcd_wholesale.sql"
       },
       {
         "id": "sge_gold",
-        "label": "上海黄金交易所早晚盘基准价",
+        "label": "上海黄金交易所早/晚盘基准价",
         "href": "https://www.sge.com.cn/",
         "path": "sources/sge_gold.sql"
       },
       {
         "id": "hk_valuation",
-        "label": "百度股市通港股估值数据",
+        "label": "百度股市通港股估值",
         "href": "https://gushitong.baidu.com/",
         "path": "sources/hk_valuation.sql"
       },
       {
         "id": "cnsd_retail",
-        "label": "政府统计处零售销售价值/数量指数",
+        "label": "政府统计处零售业销货额指数",
         "href": "https://www.censtatd.gov.hk/en/web_table.html?id=620-67002",
         "path": "sources/cnsd_retail.sql"
       },
       {
         "id": "censtatd_restaurant",
-        "label": "政府统计处季度餐饮收益及采购调查",
+        "label": "政府统计处季度食肆收益及购货额按月统计调查",
         "href": "https://www.censtatd.gov.hk/en/web_table.html?id=625-68003",
         "path": "sources/censtatd_restaurant.sql"
       },
@@ -550,7 +550,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**数据快照：** `d24037556f0e0f53` · 生成于 2026-07-23T20:43:55.981115Z。这是已发布快照，不是实时连接；消费者委员会价格观察覆盖仍在计划中，未以占位值展示。"
+        "body": "**数据快照：** `79dc0817f8844b31` · 生成于 2026-07-23T20:56:55.378445Z。这是已发布快照，不是实时连接；消费者委员会价格观察覆盖仍在计划中，未以占位值展示。"
       },
       {
         "id": "market_pulse",
@@ -640,7 +640,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-23T20:43:55.981115Z",
+    "generatedAt": "2026-07-23T20:56:55.378445Z",
     "status": "ready",
     "datasets": {
       "kpi_gold": [
@@ -653,7 +653,7 @@
       ],
       "kpi_median_pe": [
         {
-          "latest": 11.91
+          "latest": 13.3
         }
       ],
       "gold_history": [
@@ -8077,7 +8077,7 @@
         {
           "ticker": "01929.HK",
           "company_name": "Chow Tai Fook Jewellery",
-          "pe_ttm": null,
+          "pe_ttm": 13.71,
           "pb_ratio": 3.99,
           "market_cap_hkd_b": 123.428,
           "date": "2026-07-23"
@@ -8164,6 +8164,10 @@
         }
       ],
       "valuation_pe_chart": [
+        {
+          "company_name": "Chow Tai Fook Jewellery",
+          "pe_ttm": 13.71
+        },
         {
           "company_name": "Prada",
           "pe_ttm": 13.3
@@ -9884,81 +9888,81 @@
   "sources": [
     {
       "id": "afcd_wholesale",
-      "label": "AFCD 鲜活食品批发价格",
+      "label": "农渔护理署鲜活食品批发价",
       "href": "https://www.afcd.gov.hk/english/agriculture/agr_fresh/agr_fresh_pri/agr_fresh_pri.html",
       "query": {
         "engine": "official CSV",
         "url": "https://www.afcd.gov.hk/english/agriculture/agr_fresh/files/Wholesale_Prices.csv",
         "language": "CSV",
-        "description": "构建时从公开来源读取并校验 AFCD 鲜活食品批发价格。",
+        "description": "构建时从公开来源读取并校验 农渔护理署鲜活食品批发价。",
         "metric_definitions": [
           "Each commodity's price is the mean of same-day readings across the wholesale markets/sources AFCD reports for it."
         ],
-        "executed_at": "2026-07-23T20:43:55.981115Z"
+        "executed_at": "2026-07-23T20:56:55.378445Z"
       }
     },
     {
       "id": "sge_gold",
-      "label": "上海黄金交易所早晚盘基准价",
+      "label": "上海黄金交易所早/晚盘基准价",
       "href": "https://www.sge.com.cn/",
       "query": {
         "engine": "akshare",
         "url": "akshare.spot_golden_benchmark_sge",
         "language": "Python",
-        "description": "构建时从公开来源读取并校验 上海黄金交易所早晚盘基准价。",
+        "description": "构建时从公开来源读取并校验 上海黄金交易所早/晚盘基准价。",
         "metric_definitions": [
           "Latest is the most recent published PM benchmark fixing.",
           "Day and year movements are latest divided by the prior trading day or the observation on/before one year earlier, minus one."
         ],
-        "executed_at": "2026-07-23T20:43:55.981115Z"
+        "executed_at": "2026-07-23T20:56:55.378445Z"
       }
     },
     {
       "id": "hk_valuation",
-      "label": "百度股市通港股估值数据",
+      "label": "百度股市通港股估值",
       "href": "https://gushitong.baidu.com/",
       "query": {
         "engine": "akshare",
         "url": "akshare.stock_hk_valuation_baidu",
         "language": "Python",
-        "description": "构建时从公开来源读取并校验 百度股市通港股估值数据。",
+        "description": "构建时从公开来源读取并校验 百度股市通港股估值。",
         "metric_definitions": [
           "PE (TTM), PB, and market cap (HKD bn) are each ticker's latest published daily value.",
           "No dividend-yield indicator exists on this endpoint; yield is not reported here."
         ],
-        "executed_at": "2026-07-23T20:43:55.981115Z"
+        "executed_at": "2026-07-23T20:56:55.378445Z"
       }
     },
     {
       "id": "cnsd_retail",
-      "label": "政府统计处零售销售价值/数量指数",
+      "label": "政府统计处零售业销货额指数",
       "href": "https://www.censtatd.gov.hk/en/web_table.html?id=620-67002",
       "query": {
         "engine": "official CSV",
         "url": "https://www.censtatd.gov.hk/data/MDT_75_620-67002_VAL_IDX_RS_Raw_1dp_idx_n.csv",
         "language": "CSV",
-        "description": "构建时从公开来源读取并校验 政府统计处零售销售价值/数量指数。",
+        "description": "构建时从公开来源读取并校验 政府统计处零售业销货额指数。",
         "metric_definitions": [
           "All retail outlet is the classification group's own published total across all outlet types.",
           "Month and year movements are latest divided by the prior month or the observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-07-23T20:43:55.981115Z"
+        "executed_at": "2026-07-23T20:56:55.378445Z"
       }
     },
     {
       "id": "censtatd_restaurant",
-      "label": "政府统计处季度餐饮收益及采购调查",
+      "label": "政府统计处季度食肆收益及购货额按月统计调查",
       "href": "https://www.censtatd.gov.hk/en/web_table.html?id=625-68003",
       "query": {
         "engine": "official CSV",
         "url": "https://www.censtatd.gov.hk/data/MDT_90_625-68003_VAL_RR_Raw_M_hkd_d.csv",
         "language": "CSV",
-        "description": "构建时从公开来源读取并校验 政府统计处季度餐饮收益及采购调查。",
+        "description": "构建时从公开来源读取并校验 政府统计处季度食肆收益及购货额按月统计调查。",
         "metric_definitions": [
           "Purchases are only published sector-wide, not broken out by restaurant type.",
           "Quarter and year movements are latest divided by the prior quarter or the observation four quarters earlier, minus one."
         ],
-        "executed_at": "2026-07-23T20:43:55.981115Z"
+        "executed_at": "2026-07-23T20:56:55.378445Z"
       }
     },
     {
@@ -9972,13 +9976,13 @@
           "Validated live measure frames",
           "Declared future-source registry"
         ],
-        "executed_at": "2026-07-23T20:43:55.981115Z"
+        "executed_at": "2026-07-23T20:56:55.378445Z"
       }
     }
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-local-consumer/",
-    "snapshotId": "d24037556f0e0f53",
+    "snapshotId": "79dc0817f8844b31",
     "dataAsOf": "2026-07-21"
   }
 }

@@ -1,11 +1,21 @@
 {
-  "generated_at": "2026-07-23T20:46:33.287570Z",
-  "snapshot_id": "79dc0817f8844b31",
+  "generated_at": "2026-07-23T21:52:11.487352Z",
+  "snapshot_id": "4bb9c2dc37417ee8",
   "data_as_of": "2026-07-21",
   "overall_status": "Healthy",
-  "live_sources": 5,
+  "live_sources": 6,
   "planned_sources": 1,
   "sources": [
+    {
+      "source": "HK Immigration Department Daily Passenger Traffic",
+      "dataset": "Immigration Passenger Clearance",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2026-07-22",
+      "records": 2029,
+      "freshness": "1d old",
+      "notes": "Daily clearance across 17 control points for HK residents & Mainland visitors."
+    },
     {
       "source": "Shanghai Gold Exchange AM/PM Benchmark",
       "dataset": "SGE Gold Benchmark",

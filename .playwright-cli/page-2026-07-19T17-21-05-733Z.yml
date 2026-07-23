@@ -1,0 +1,274 @@
+- generic [ref=e2]:
+  - generic [ref=e7]:
+    - button "keyboard_double_arrow_left" [ref=e542] [cursor=pointer]
+    - generic [ref=e11]:
+      - generic [ref=e15]:
+        - generic [ref=e16]: Alternative Data
+        - generic [ref=e17]: Research dashboard
+      - button [ref=e545] [cursor=pointer]:
+        - paragraph [ref=e549]: Overview
+      - generic [ref=e25]: AI Usage
+      - button [ref=e32] [cursor=pointer]:
+        - paragraph [ref=e36]: OpenRouter Intelligence
+      - button [ref=e39] [cursor=pointer]:
+        - paragraph [ref=e43]: OpenRouter Models
+      - button [ref=e550] [cursor=pointer]:
+        - paragraph [ref=e554]: OpenRouter Workloads
+      - button [ref=e53] [cursor=pointer]:
+        - paragraph [ref=e57]: Vercel AI
+      - generic [ref=e58]: Adoption
+      - button [ref=e65] [cursor=pointer]:
+        - paragraph [ref=e69]: Ramp
+      - button [ref=e72] [cursor=pointer]:
+        - paragraph [ref=e76]: Provider Adoption
+      - button [ref=e79] [cursor=pointer]:
+        - paragraph [ref=e83]: AI Hiring Demand
+      - generic [ref=e84]: Analysis
+      - button [ref=e91] [cursor=pointer]:
+        - paragraph [ref=e95]: Artificial Analysis
+      - generic [ref=e96]: Infrastructure
+      - button [ref=e103] [cursor=pointer]:
+        - paragraph [ref=e107]: Semiconductor Analysis
+      - button [ref=e110] [cursor=pointer]:
+        - paragraph [ref=e114]: Minerals
+      - generic [ref=e115]: Signals
+      - button [ref=e122] [cursor=pointer]:
+        - paragraph [ref=e126]: Google Trends Signal
+      - button [ref=e129] [cursor=pointer]:
+        - paragraph [ref=e133]: Provider Incidents
+      - separator [ref=e138]
+      - button [ref=e141] [cursor=pointer]:
+        - paragraph [ref=e145]: 🔄 Refresh data
+  - generic [ref=e3]:
+    - banner
+    - generic [ref=e148]:
+      - generic [ref=e153]:
+        - generic [ref=e154]: Alternative Data Dashboard
+        - heading "OpenRouter Workloads" [level=1] [ref=e555]:
+          - text: OpenRouter Workloads
+          - generic [ref=e157]:
+            - link "Link to heading":
+              - /url: "#overview"
+        - generic [ref=e158]: Tracks request context lengths, modality mix, and the public apps generating OpenRouter traffic.
+        - generic [ref=e159]: "Latest available update: 2026-07-19 03:57 UTC"
+      - generic [ref=e160]: Context Length Usage
+      - generic [ref=e189]: Requests by prompt & completion length on OpenRouter Rankings, with raw volume and share views.
+      - generic [ref=e557]:
+        - generic [ref=e561]:
+          - paragraph [ref=e565]: Prompt + completion length
+          - generic [ref=e567]:
+            - generic [ref=e568]:
+              - generic [ref=e569]: 1K-10K
+              - combobox "Selected 1K-10K. Prompt + completion length" [ref=e571]
+            - img "open" [ref=e573]
+        - generic [ref=e578]:
+          - paragraph [ref=e582]: View
+          - radiogroup "button group" [ref=e583]:
+            - button [ref=e584] [cursor=pointer]:
+              - paragraph [ref=e588]: Raw requests
+            - button [ref=e589] [cursor=pointer]:
+              - paragraph [ref=e593]: Share (%)
+      - generic [ref=e598]:
+        - generic [ref=e599]:
+          - generic [ref=e600]: Requests (Latest Week)
+          - generic [ref=e601]: 1.6B
+          - generic [ref=e602]: 1K-10K
+        - generic [ref=e603]:
+          - generic [ref=e604]: Top Model
+          - generic [ref=e605]: deepseek/deepseek-v4-flash-2…
+          - generic [ref=e606]: 18.6% share
+        - generic [ref=e607]:
+          - generic [ref=e608]: Models Shown
+          - generic [ref=e609]: "23"
+          - generic [ref=e610]: includes Other models
+        - generic [ref=e611]:
+          - generic [ref=e612]: Latest Week
+          - generic [ref=e613]: 2026-07-06
+          - generic [ref=e614]: week starting
+      - generic [ref=e615]: "OpenRouter Rankings context-length endpoint · weekly request counts · Scraped: 2026-07-18 13:49 UTC"
+      - generic [ref=e625]:
+        - img:
+          - generic:
+            - generic:
+              - generic:
+                - generic: Feb 2026
+                - generic: Mar 2026
+                - generic: Apr 2026
+                - generic: May 2026
+                - generic: Jun 2026
+              - generic:
+                - generic: "0"
+                - generic: 0.5B
+                - generic: 1B
+                - generic: 1.5B
+        - img:
+          - generic:
+            - generic [ref=e642]:
+              - generic [ref=e643]: x-ai/grok-4-fast
+              - generic [ref=e652]: openai/gpt-5-mini-2025-08-07
+              - generic [ref=e661]: xiaomi/mimo-v2-flash-20251210:free
+              - generic [ref=e670]: google/gemma-4-31b-it-20260402
+              - generic [ref=e679]: inclusionai/ling-2.6-flash-20260421
+              - generic [ref=e688]: qwen/qwen3-235b-a22b-07-25
+              - generic [ref=e697]: openai/gpt-oss-20b
+              - generic [ref=e706]: google/gemma-4-26b-a4b-it-20260403
+              - generic [ref=e715]: google/gemini-2.0-flash-001
+              - generic [ref=e724]: google/gemini-3.1-flash-lite-preview-20260303
+              - generic [ref=e733]: google/gemini-3.1-flash-lite-20260507
+              - generic [ref=e742]: z-ai/glm-4.5-air
+              - generic [ref=e751]: mistralai/mistral-nemo
+              - generic [ref=e760]: meta-llama/llama-3.1-8b-instruct
+              - generic [ref=e769]: openai/gpt-4o-mini
+              - generic [ref=e778]: x-ai/grok-4.1-fast
+              - generic [ref=e787]: deepseek/deepseek-v3.2-20251201
+              - generic [ref=e796]: openai/gpt-oss-120b
+              - generic [ref=e805]: google/gemini-3-flash-preview-20251217
+              - generic [ref=e814]: deepseek/deepseek-v4-flash-20260423
+              - generic [ref=e823]: google/gemini-2.5-flash
+              - generic [ref=e832]: google/gemini-2.5-flash-lite
+              - generic [ref=e841]: Others
+            - generic: Usage Week (Starting)
+            - generic: Requests
+        - toolbar [ref=e851]:
+          - button "Download plot as a PNG" [ref=e853] [cursor=pointer]
+          - generic [ref=e856]:
+            - button "Zoom" [ref=e857] [cursor=pointer]
+            - button "Pan" [ref=e860] [cursor=pointer]
+          - generic [ref=e863]:
+            - button "Zoom in" [ref=e864] [cursor=pointer]
+            - button "Zoom out" [ref=e867] [cursor=pointer]
+            - button "Autoscale" [ref=e870] [cursor=pointer]
+            - button "Reset axes" [ref=e873] [cursor=pointer]
+          - button "Fullscreen" [ref=e877] [cursor=pointer]
+      - generic [ref=e883]:
+        - button "Show/hide columns" [ref=e887] [cursor=pointer]
+        - button "Download as CSV" [ref=e893] [cursor=pointer]
+        - button "Search" [ref=e899] [cursor=pointer]
+        - button "Fullscreen" [ref=e905] [cursor=pointer]
+      - paragraph [ref=e917]: The buckets describe the combined prompt and completion length of requests, not a model's maximum context window. Raw values are requests; percentage values are each model's share of the selected bucket for that week.
+      - generic [ref=e918]: Modality Rankings
+      - generic [ref=e375]: Weekly model rankings on OpenRouter Rankings for image, embeddings, rerank, video, speech, and transcription models.
+      - generic [ref=e924]:
+        - paragraph [ref=e928]: Modality
+        - generic [ref=e930]:
+          - generic [ref=e931]:
+            - generic [ref=e932]: Image
+            - combobox "Selected Image. Modality" [ref=e934]
+          - img "open" [ref=e936]
+      - generic [ref=e942]:
+        - generic [ref=e943]:
+          - generic [ref=e944]: Volume (Latest Week)
+          - generic [ref=e945]: 5.3M
+          - generic [ref=e946]: Image
+        - generic [ref=e947]:
+          - generic [ref=e948]: Top Model
+          - generic [ref=e949]: google/gemini-2.5-flash-imag…
+          - generic [ref=e950]: 31.6% share
+        - generic [ref=e951]:
+          - generic [ref=e952]: Models Shown
+          - generic [ref=e953]: "30"
+          - generic [ref=e954]: includes Other models
+        - generic [ref=e955]:
+          - generic [ref=e956]: Latest Week
+          - generic [ref=e957]: 2026-07-06
+          - generic [ref=e958]: week starting
+      - generic [ref=e471]: "OpenRouter Rankings modality endpoint · weekly volume by model · Scraped: 2026-07-18 14:26 UTC"
+      - generic [ref=e964]:
+        - img:
+          - generic:
+            - generic:
+              - generic:
+                - generic: Sep 2025
+                - generic: Nov 2025
+                - generic: Jan 2026
+                - generic: Mar 2026
+                - generic: May 2026
+              - generic:
+                - generic: "0"
+                - generic: 2M
+                - generic: 4M
+                - generic: 6M
+                - generic: 8M
+        - img:
+          - generic:
+            - generic [ref=e981]:
+              - generic [ref=e982]: openai/gpt-4.1-mini-2025-04-14
+              - generic [ref=e991]: google/gemini-2.0-flash-exp:free
+              - generic [ref=e1000]: openai/gpt-4.1-2025-04-14
+              - generic [ref=e1009]: openai/gpt-5.1-20251113
+              - generic [ref=e1018]: sourceful/riverflow-v2-fast-preview
+              - generic [ref=e1027]: sourceful/riverflow-v2-max-preview
+              - generic [ref=e1036]: black-forest-labs/flux.2-flex
+              - generic [ref=e1045]: sourceful/riverflow-v2-pro-20260130
+              - generic [ref=e1054]: sourceful/riverflow-v2-standard-preview
+              - generic [ref=e1063]: sourceful/riverflow-v2.5-fast-20260605:free
+              - generic [ref=e1072]: sourceful/riverflow-v2.5-pro-20260605:free
+              - generic [ref=e1081]: black-forest-labs/flux.2-max
+              - generic [ref=e1090]: sourceful/riverflow-v2-fast-20260130
+              - generic [ref=e1099]: openai/gpt-image-2
+              - generic [ref=e1108]: openai/gpt-5-image
+              - generic [ref=e1117]: google/gemini-3.1-flash-lite-image-20260630
+              - generic [ref=e1126]: openai/gpt-5-image-mini
+              - generic [ref=e1135]: black-forest-labs/flux.2-pro
+              - generic [ref=e1144]: google/gemini-3-pro-image-20260528
+              - generic [ref=e1153]: black-forest-labs/flux.2-klein-4b
+              - generic [ref=e1162]: x-ai/grok-imagine-image-quality-20260512
+              - generic [ref=e1171]: google/gemini-2.5-flash-image-preview:free
+              - generic [ref=e1180]: google/gemini-3.1-flash-image-20260528
+              - generic [ref=e1189]: Others
+              - generic [ref=e1198]: openai/gpt-5.4-image-2-20260421
+              - generic [ref=e1207]: bytedance-seed/seedream-4.5-20251203
+              - generic [ref=e1216]: google/gemini-2.5-flash-image-preview
+              - generic [ref=e1225]: google/gemini-3.1-flash-image-preview-20260226
+              - generic [ref=e1234]: google/gemini-3-pro-image-preview-20251120
+              - generic [ref=e1243]: google/gemini-2.5-flash-image
+            - generic: Usage Week (Starting)
+            - generic: Volume
+        - toolbar [ref=e1253]:
+          - button "Download plot as a PNG" [ref=e1255] [cursor=pointer]
+          - generic [ref=e1258]:
+            - button "Zoom" [ref=e1259] [cursor=pointer]
+            - button "Pan" [ref=e1262] [cursor=pointer]
+          - generic [ref=e1265]:
+            - button "Zoom in" [ref=e1266] [cursor=pointer]
+            - button "Zoom out" [ref=e1269] [cursor=pointer]
+            - button "Autoscale" [ref=e1272] [cursor=pointer]
+            - button "Reset axes" [ref=e1275] [cursor=pointer]
+          - button "Fullscreen" [ref=e1279] [cursor=pointer]
+      - generic [ref=e485]:
+        - button "Show/hide columns" [ref=e489] [cursor=pointer]
+        - button "Download as CSV" [ref=e495] [cursor=pointer]
+        - button "Search" [ref=e501] [cursor=pointer]
+        - button "Fullscreen" [ref=e507] [cursor=pointer]
+      - paragraph [ref=e1286]: "Volume units vary by modality: tokens for image and embeddings, requests for rerank, seconds for video, speech, and transcription."
+      - generic [ref=e1287]: App Rankings & Trends
+      - generic [ref=e1293]:
+        - tablist [ref=e1295]:
+          - tab [selected] [ref=e1296] [cursor=pointer]:
+            - paragraph [ref=e1298]: Global Rankings
+          - tab [ref=e1299] [cursor=pointer]:
+            - paragraph [ref=e1301]: Trending Apps
+          - tab [ref=e1302] [cursor=pointer]:
+            - paragraph [ref=e1304]: Monitored Apps
+        - tabpanel "Global Rankings" [ref=e1307]:
+          - generic [ref=e1308]:
+            - generic [ref=e1310]:
+              - paragraph [ref=e1314]: Period
+              - generic [ref=e1316]:
+                - generic [ref=e1317]:
+                  - generic [ref=e1318]: week
+                  - combobox "Selected week. Period" [ref=e1320]
+                - img "open" [ref=e1322]
+            - generic [ref=e1332]:
+              - generic [ref=e1333]: Tokens in Top 25 (2026-07-19)
+              - generic [ref=e1334]: 16.54T
+            - generic [ref=e1341]:
+              - button "Show/hide columns" [ref=e1345] [cursor=pointer]
+              - button "Download as CSV" [ref=e1351] [cursor=pointer]
+              - button "Search" [ref=e1357] [cursor=pointer]
+              - button "Fullscreen" [ref=e1363] [cursor=pointer]
+      - group [ref=e1377]:
+        - generic "keyboard_arrow_right Data Health — 2 ok · 0 warning · 0 error" [ref=e1378] [cursor=pointer]:
+          - generic [ref=e1379]:
+            - generic [ref=e1380]: keyboard_arrow_right
+            - paragraph [ref=e1384]: Data Health — 2 ok · 0 warning · 0 error

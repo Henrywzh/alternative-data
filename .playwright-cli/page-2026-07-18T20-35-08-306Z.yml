@@ -1,0 +1,118 @@
+- generic [ref=e2]:
+  - generic [ref=e7]:
+    - button "keyboard_double_arrow_left" [ref=e334] [cursor=pointer]
+    - generic [ref=e11]:
+      - generic [ref=e15]:
+        - generic [ref=e16]: Alternative Data
+        - generic [ref=e17]: Research dashboard
+      - button [ref=e20] [cursor=pointer]:
+        - paragraph [ref=e24]: Overview
+      - generic [ref=e25]: AI Usage
+      - button [active] [ref=e32] [cursor=pointer]:
+        - paragraph [ref=e36]: OpenRouter Intelligence
+      - button [ref=e39] [cursor=pointer]:
+        - paragraph [ref=e43]: OpenRouter Models
+      - button [ref=e46] [cursor=pointer]:
+        - paragraph [ref=e50]: Vercel AI
+      - generic [ref=e51]: Adoption
+      - button [ref=e58] [cursor=pointer]:
+        - paragraph [ref=e62]: Ramp
+      - button [ref=e65] [cursor=pointer]:
+        - paragraph [ref=e69]: Provider Adoption
+      - button [ref=e72] [cursor=pointer]:
+        - paragraph [ref=e76]: AI Hiring Demand
+      - generic [ref=e77]: Analysis
+      - button [ref=e84] [cursor=pointer]:
+        - paragraph [ref=e88]: Artificial Analysis
+      - generic [ref=e89]: Infrastructure
+      - button [ref=e96] [cursor=pointer]:
+        - paragraph [ref=e100]: Semiconductor Analysis
+      - button [ref=e103] [cursor=pointer]:
+        - paragraph [ref=e107]: Minerals
+      - generic [ref=e108]: Signals
+      - button [ref=e115] [cursor=pointer]:
+        - paragraph [ref=e119]: Google Trends Signal
+      - button [ref=e122] [cursor=pointer]:
+        - paragraph [ref=e126]: Provider Incidents
+      - separator [ref=e131]
+      - button [ref=e134] [cursor=pointer]:
+        - paragraph [ref=e138]: 🔄 Refresh data
+  - generic [ref=e141]:
+    - generic [ref=e146]:
+      - generic [ref=e147]: Alternative Data Dashboard
+      - heading "OpenRouter Intelligence" [level=1] [ref=e337]:
+        - text: OpenRouter Intelligence
+        - generic [ref=e150]:
+          - link "Link to heading":
+            - /url: "#overview"
+      - generic [ref=e151]: Tracks token and request volume, provider share, estimated revenue, task usage, context length, modalities, catalog growth, and public apps.
+      - generic [ref=e152]: "Latest available update: 2026-07-18 16:37 UTC"
+    - generic [ref=e157]:
+      - generic [ref=e158]:
+        - generic [ref=e159]: OpenRouter Daily Tokens
+        - generic [ref=e160]: 9.62T
+        - generic [ref=e161]: ↑ 0.0% DoD
+      - generic [ref=e162]:
+        - generic [ref=e163]: Model Catalog
+        - generic [ref=e164]: "439"
+        - generic [ref=e165]: 36 added in 30d
+      - generic [ref=e166]:
+        - generic [ref=e167]: Business AI Adoption
+        - generic [ref=e168]: 55.0%
+        - generic [ref=e169]: +12.2 pts YoY · Ramp
+      - generic [ref=e170]:
+        - generic [ref=e171]: Frontier Intelligence
+        - generic [ref=e172]: "59.9"
+        - generic [ref=e173]: Claude Fable 5 (Adaptive Re… · Anthropic
+      - generic [ref=e174]:
+        - generic [ref=e175]: AI Demand PPI
+        - generic [ref=e176]: "148.5"
+        - generic [ref=e177]: +0.09% MoM
+    - generic [ref=e178]: Daily OpenRouter Usage
+    - generic [ref=e183]: Broad daily market volume from OpenRouter’s documented rankings API. Detailed provider, model, request, and revenue views live under AI Usage.
+    - generic [ref=e193]:
+      - img:
+        - generic:
+          - generic:
+            - generic:
+              - generic: Jun 142026
+              - generic: Jun 21
+              - generic: Jun 28
+              - generic: Jul 5
+              - generic: Jul 12
+            - generic:
+              - generic: "0"
+              - generic: 2T
+              - generic: 4T
+              - generic: 6T
+              - generic: 8T
+              - generic: 10T
+      - img:
+        - generic:
+          - generic [ref=e210]:
+            - generic [ref=e211]: All tokens
+            - generic [ref=e217]: Named top models
+          - generic: Tokens
+    - generic [ref=e220]: Current Leaders
+    - generic [ref=e225]: The latest high-signal leader from four independent datasets; each row retains its own source date.
+    - generic [ref=e234]:
+      - button "Show/hide columns" [ref=e238] [cursor=pointer]
+      - button "Download as CSV" [ref=e244] [cursor=pointer]
+      - button "Search" [ref=e250] [cursor=pointer]
+      - button "Fullscreen" [ref=e256] [cursor=pointer]
+    - generic [ref=e268]: What This Dashboard Tracks
+    - generic [ref=e277]:
+      - button "Show/hide columns" [ref=e281] [cursor=pointer]
+      - button "Download as CSV" [ref=e287] [cursor=pointer]
+      - button "Search" [ref=e293] [cursor=pointer]
+      - button "Fullscreen" [ref=e299] [cursor=pointer]
+    - group [ref=e313]:
+      - generic "keyboard_arrow_right Source dates and lineage" [ref=e314] [cursor=pointer]:
+        - generic [ref=e315]:
+          - generic [ref=e316]: keyboard_arrow_right
+          - paragraph [ref=e320]: Source dates and lineage
+    - group [ref=e323]:
+      - generic "keyboard_arrow_right Data Health — 1 ok · 0 warning · 0 error" [ref=e324] [cursor=pointer]:
+        - generic [ref=e325]:
+          - generic [ref=e326]: keyboard_arrow_right
+          - paragraph [ref=e330]: Data Health — 1 ok · 0 warning · 0 error

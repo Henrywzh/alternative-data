@@ -14,6 +14,7 @@ from .sources.sge_gold import fetch_sge_gold_benchmark
 from .sources.hk_valuation import fetch_hk_consumer_valuations
 from .sources.cnsd_retail import fetch_cnsd_retail_sales
 from .sources.censtatd_restaurant import fetch_censtatd_restaurant_survey
+from .sources.immigration_flow import fetch_immigration_flow
 from .storage import save_normalized_dataset, NORMALIZED_DIR
 
 
@@ -58,6 +59,11 @@ QUALITY_SPECS: Dict[str, Dict[str, Any]] = {
     "censtatd_fast_food_survey_quarterly": {
         "kind": "measure",
         "required": ["quarter", "date", "sub_sector"],
+        "max_age_days": 400,
+    },
+    "immigration_passenger_traffic_daily": {
+        "kind": "measure",
+        "required": ["date", "hk_resident_departures", "mainland_visitor_arrivals"],
         "max_age_days": 400,
     },
 }
@@ -195,6 +201,13 @@ def run_stage_1_pipeline(run_id: str | None = None, *, _raise_on_failure: bool =
     except Exception as exc:
         logger.exception("CenStatD Restaurant Survey ingestion failed")
         results["censtatd_fast_food_survey_quarterly"] = _error_result(exc)
+
+    try:
+        logger.info("Ingesting HK Immigration Department daily passenger traffic...")
+        _record_many(run_id, results, {"immigration_passenger_traffic_daily": fetch_immigration_flow()})
+    except Exception as exc:
+        logger.exception("Immigration Department daily passenger traffic ingestion failed")
+        results["immigration_passenger_traffic_daily"] = _error_result(exc)
 
     return _finalize_group(run_id, "stage_1", results, _raise_on_failure)
 

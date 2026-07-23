@@ -1,0 +1,496 @@
+- generic [ref=e2]:
+  - generic [ref=e11]:
+    - generic [ref=e15]:
+      - generic [ref=e16]: Alternative Data
+      - generic [ref=e17]: Research dashboard
+    - button [ref=e545] [cursor=pointer]:
+      - paragraph [ref=e549]: Overview
+    - generic [ref=e25]: AI Usage
+    - button [ref=e1385] [cursor=pointer]:
+      - paragraph [ref=e1389]: OpenRouter Intelligence
+    - button [ref=e39] [cursor=pointer]:
+      - paragraph [ref=e43]: OpenRouter Models
+    - button [ref=e1390] [cursor=pointer]:
+      - paragraph [ref=e1394]: OpenRouter Workloads
+    - button [ref=e53] [cursor=pointer]:
+      - paragraph [ref=e57]: Vercel AI
+    - generic [ref=e58]: Adoption
+    - button [ref=e65] [cursor=pointer]:
+      - paragraph [ref=e69]: Ramp
+    - button [ref=e72] [cursor=pointer]:
+      - paragraph [ref=e76]: Provider Adoption
+    - button [ref=e79] [cursor=pointer]:
+      - paragraph [ref=e83]: AI Hiring Demand
+    - generic [ref=e84]: Analysis
+    - button [ref=e91] [cursor=pointer]:
+      - paragraph [ref=e95]: Artificial Analysis
+    - generic [ref=e96]: Infrastructure
+    - button [ref=e103] [cursor=pointer]:
+      - paragraph [ref=e107]: Semiconductor Analysis
+    - button [ref=e110] [cursor=pointer]:
+      - paragraph [ref=e114]: Minerals
+    - generic [ref=e115]: Signals
+    - button [ref=e122] [cursor=pointer]:
+      - paragraph [ref=e126]: Google Trends Signal
+    - button [ref=e129] [cursor=pointer]:
+      - paragraph [ref=e133]: Provider Incidents
+    - separator [ref=e138]
+    - button [ref=e141] [cursor=pointer]:
+      - paragraph [ref=e145]: 🔄 Refresh data
+  - generic [ref=e3]:
+    - banner
+    - generic [ref=e148]:
+      - generic [ref=e153]:
+        - generic [ref=e154]: Alternative Data Dashboard
+        - heading "OpenRouter Intelligence" [level=1] [ref=e1395]:
+          - text: OpenRouter Intelligence
+          - generic [ref=e157]:
+            - link "Link to heading":
+              - /url: "#overview"
+        - generic [ref=e158]: Tracks model and provider usage, estimated revenue, task leaders, market coverage, and catalog economics.
+        - generic [ref=e159]: "Latest available update: 2026-07-19 17:20 UTC"
+      - generic [ref=e160]: OpenRouter Usage & Economics
+      - generic [ref=e189]: Monitor token and request demand, workload composition, and derived price signals in one workspace.
+      - generic [ref=e1397]:
+        - paragraph [ref=e1401]: Metric
+        - radiogroup "button group" [ref=e1402]:
+          - button [ref=e3123] [cursor=pointer]:
+            - paragraph [ref=e3127]: Tokens
+          - button [ref=e3128] [cursor=pointer]:
+            - paragraph [ref=e3132]: Requests
+          - button [ref=e3133] [cursor=pointer]:
+            - paragraph [ref=e3137]: Workload Intensity
+          - button [ref=e3138] [cursor=pointer]:
+            - paragraph [ref=e3142]: Average Price
+      - generic [ref=e3143]: "Derived OpenRouter price metrics · seven-day original indices + SOTA ATP · Scraped: 2026-07-19 17:20 UTC"
+      - generic [ref=e619]:
+        - generic [ref=e3148]:
+          - generic [ref=e3149]: Original Volume-Weighted TEI
+          - generic [ref=e3150]: $1.003
+          - generic [ref=e3151]: per million tokens
+        - generic [ref=e3152]:
+          - generic [ref=e3153]: Spend-Weighted TEI
+          - generic [ref=e3154]: $4.437
+          - generic [ref=e3155]: per million tokens
+        - generic [ref=e3156]:
+          - generic [ref=e3157]: SOTA Volume-Weighted ATP
+          - generic [ref=e3158]: $5.833
+          - generic [ref=e3159]: backfilled AA score · exact routes
+      - generic [ref=e1440]: Observed 5/5 SOTA families · priced 5/5
+      - generic [ref=e3165]:
+        - img:
+          - generic:
+            - generic:
+              - generic:
+                - generic: Feb 2026
+                - generic: Mar 2026
+                - generic: Apr 2026
+                - generic: May 2026
+                - generic: Jun 2026
+                - generic: Jul 2026
+              - generic:
+                - generic: "0"
+                - generic: "2"
+                - generic: "4"
+                - generic: "6"
+        - img:
+          - generic:
+            - generic [ref=e3182]:
+              - generic [ref=e3183]: Spend-Weighted TEI
+              - generic [ref=e3186]: CPI Workload Basket Index (50/40/10)
+              - generic [ref=e3189]: Original Volume-Weighted TEI
+              - generic [ref=e3192]: Frontier
+              - generic [ref=e3195]: Value
+              - generic [ref=e3198]: SOTA Volume-Weighted ATP (backfilled AA score)
+            - generic: Usage Date (Daily)
+            - generic: Price per Million Tokens ($)
+        - toolbar [ref=e3201]:
+          - button "Download plot as a PNG" [ref=e3203] [cursor=pointer]
+          - generic [ref=e3206]:
+            - button "Zoom" [ref=e3207] [cursor=pointer]
+            - button "Pan" [ref=e3210] [cursor=pointer]
+          - generic [ref=e3213]:
+            - button "Zoom in" [ref=e3214] [cursor=pointer]
+            - button "Zoom out" [ref=e3217] [cursor=pointer]
+            - button "Autoscale" [ref=e3220] [cursor=pointer]
+            - button "Reset axes" [ref=e3223] [cursor=pointer]
+          - button "Fullscreen" [ref=e3227] [cursor=pointer]
+      - paragraph [ref=e3234]: Original TEI price indices plus the new SOTA volume-weighted ATP. All lines are seven-day series; SOTA membership uses a backfilled Artificial Analysis intelligence score.
+      - paragraph [ref=e2344]: Guarded SOTA values remain gaps when family coverage is insufficient; a gap is not a zero price.
+      - paragraph [ref=e2345]: SOTA ATP uses the latest available Artificial Analysis intelligence score backfilled across historical usage dates as a transparent capability proxy; pricing routes remain exact (including fast, preview, free, pro, and dated variants). When a route's first historical days lack a price, its first later non-free route price is backward-filled and labeled as a historical route-price proxy. The five original indices preserve the prior dashboard definitions and use as-recorded economics where available.
+      - generic [ref=e1509]: Provider Revenue & Token Volume
+      - generic [ref=e2384]: Estimated revenue and observed token consumption for configured priority providers, switchable between absolute values, normalized share, and aggregate change. This is not full-market OpenRouter volume.
+      - paragraph [ref=e3240]: "Coverage note: OpenRouter’s official ‘Other’ bucket contains models below the daily top 50 across all providers. This priority-provider series already captures some of those long-tail models, so ‘Other’ is not the missing-provider gap."
+      - generic [ref=e3242]:
+        - generic [ref=e3246]:
+          - paragraph [ref=e3250]: Metric
+          - radiogroup "button group" [ref=e3251]:
+            - button [ref=e3252] [cursor=pointer]:
+              - paragraph [ref=e3256]: Revenue
+            - button [ref=e3257] [cursor=pointer]:
+              - paragraph [ref=e3261]: Tokens
+        - generic [ref=e3265]:
+          - paragraph [ref=e3269]: View
+          - radiogroup "button group" [ref=e3270]:
+            - button [ref=e3271] [cursor=pointer]:
+              - paragraph [ref=e3275]: Absolute
+            - button [ref=e3276] [cursor=pointer]:
+              - paragraph [ref=e3280]: Share (%)
+            - button [ref=e3281] [cursor=pointer]:
+              - paragraph [ref=e3285]: WoW (%)
+      - generic [ref=e3286]:
+        - generic [ref=e3287]:
+          - generic [ref=e3288]: Estimated Revenue
+          - generic [ref=e3289]: $690,815,900
+          - generic [ref=e3290]: modeled from OpenRouter pricing
+        - generic [ref=e3291]:
+          - generic [ref=e3292]: Provider Coverage
+          - generic [ref=e3293]: "15"
+          - generic [ref=e3294]: active priced providers
+        - generic [ref=e3295]:
+          - generic [ref=e3296]: Model-Priced Tokens
+          - generic [ref=e3297]: 98.0%
+          - generic [ref=e3298]: matched or free model pricing
+        - generic [ref=e3299]:
+          - generic [ref=e3300]: Fallback-Priced Tokens
+          - generic [ref=e3301]: 1.0%
+          - generic [ref=e3302]: 0.9% unpriced/synthetic
+      - generic [ref=e3304]:
+        - tablist [ref=e3306]:
+          - tab [selected] [ref=e3307] [cursor=pointer]:
+            - paragraph [ref=e3309]: Weekly
+          - tab [ref=e3310] [cursor=pointer]:
+            - paragraph [ref=e3312]: Monthly
+          - tab [ref=e3313] [cursor=pointer]:
+            - paragraph [ref=e3315]: Daily
+        - tabpanel "Weekly" [ref=e3318]:
+          - generic [ref=e3319]:
+            - generic [ref=e3325]:
+              - img:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic: May 2025
+                      - generic: Jul 2025
+                      - generic: Sep 2025
+                      - generic: Nov 2025
+                      - generic: Jan 2026
+                      - generic: Mar 2026
+                      - generic: May 2026
+                    - generic:
+                      - generic: "0"
+                      - generic: 10M
+                      - generic: 20M
+                      - generic: 30M
+                      - generic: 40M
+                      - generic: 50M
+              - img:
+                - generic:
+                  - generic [ref=e3342]:
+                    - generic [ref=e3343]: Others
+                    - generic [ref=e3352]: Mistral AI
+                    - generic [ref=e3361]: StepFun
+                    - generic [ref=e3370]: Tencent
+                    - generic [ref=e3379]: Xiaomi
+                    - generic [ref=e3388]: MiniMax
+                    - generic [ref=e3397]: Moonshot AI
+                    - generic [ref=e3406]: 智谱AI (Z.ai)
+                    - generic [ref=e3415]: Alibaba (Qwen)
+                    - generic [ref=e3424]: DeepSeek
+                    - generic [ref=e3433]: xAI (Grok)
+                    - generic [ref=e3442]: Meta (Llama)
+                    - generic [ref=e3451]: Google
+                    - generic [ref=e3460]: Anthropic
+                    - generic [ref=e3469]: OpenAI
+                  - generic: Usage Week (Starting)
+                  - generic: Revenue (USD)
+              - toolbar [ref=e3478]:
+                - button "Download plot as a PNG" [ref=e3480] [cursor=pointer]
+                - generic [ref=e3483]:
+                  - button "Zoom" [ref=e3484] [cursor=pointer]
+                  - button "Pan" [ref=e3487] [cursor=pointer]
+                - generic [ref=e3490]:
+                  - button "Zoom in" [ref=e3491] [cursor=pointer]
+                  - button "Zoom out" [ref=e3494] [cursor=pointer]
+                  - button "Autoscale" [ref=e3497] [cursor=pointer]
+                  - button "Reset axes" [ref=e3500] [cursor=pointer]
+                - button "Fullscreen" [ref=e3504] [cursor=pointer]
+            - paragraph [ref=e3511]: Weekly revenue combines legacy Market Share plus Top Models fallback estimates before mid-January 2026, then switches to observed provider activity with pricing fallbacks.
+      - paragraph [ref=e3512]: "Methodology: dashboard revenue uses a hybrid estimate. Legacy weekly history starts from Market Share provider totals, prices the ranked model subset, and tops up uncovered provider volume with provider/global blended pricing benchmarks. Modern daily history uses observed provider/model activity with OpenRouter pricing plus provider/global fallbacks when exact as-of matches are unavailable. Models whose OpenRouter slug ends in :free are included in token volume and zero-rated for revenue."
+      - separator [ref=e3517]
+      - generic [ref=e2664]: Task-Level Model Leaders
+      - generic [ref=e1829]: OpenRouter task rankings from the new spend/token views. Rows are rolling-window shares, not absolute dollars or token counts.
+      - generic [ref=e3521]:
+        - generic [ref=e3525]:
+          - paragraph [ref=e3529]: Task ranking view
+          - generic [ref=e3531]:
+            - generic [ref=e3532]:
+              - generic [ref=e3533]: Spend share
+              - combobox "Selected Spend share. Task ranking view" [ref=e3535]
+            - img "open" [ref=e3537]
+        - generic [ref=e3542]:
+          - paragraph [ref=e3546]: Rolling window
+          - generic [ref=e3548]:
+            - generic [ref=e3549]:
+              - generic [ref=e3550]: 7 days
+              - combobox "Selected 7 days. Rolling window" [ref=e3552]
+            - img "open" [ref=e3554]
+      - generic [ref=e2674]:
+        - generic [ref=e3556]:
+          - generic [ref=e3557]: Snapshot
+          - generic [ref=e3558]: 2026-07-19
+          - generic [ref=e3559]: rolling 7d
+        - generic [ref=e3560]:
+          - generic [ref=e3561]: Tasks
+          - generic [ref=e3562]: "29"
+          - generic [ref=e3563]: Spend view
+        - generic [ref=e3564]:
+          - generic [ref=e3565]: Top Task
+          - generic [ref=e3566]: Agent · Workflow Execution
+          - generic [ref=e3567]: 20.0% of total spend
+        - generic [ref=e3568]:
+          - generic [ref=e3569]: Top Model In Task
+          - generic [ref=e3570]: anthropic/claude-4.8-opus-20260528
+          - generic [ref=e3571]: ranked within top task
+      - generic [ref=e3572]: Top Tasks
+      - generic [ref=e2737]:
+        - img:
+          - generic:
+            - generic:
+              - generic: General
+              - generic: Agent
+              - generic: Code
+              - generic: Data
+              - generic: Classification Tagging
+              - generic: Content Writing
+              - generic: Qa Knowledge
+              - generic: Research Report
+              - generic: Conversational Reply
+              - generic: Roleplay Fiction
+              - generic: Summarization
+              - generic: Customer Support
+              - generic: Finance Trading
+              - generic: Math
+              - generic: Security Audit
+              - generic: Devops
+              - generic: Translation
+              - generic: Agent · Workflow Execution
+              - generic: Agent · Multi Step Planning
+              - generic: Agent · Web Search
+              - generic: Agent · Tool Dispatch
+              - generic: Agent · Memory Extraction
+              - generic: Code · General Impl
+              - generic: Code · Debugging
+              - generic: Code · File Read Write
+              - generic: Code · Frontend Ui
+              - generic: Code · Shell Execution
+              - generic: Code · Review Security
+              - generic: Code · Repo Scan
+              - generic: Code · Sql Database
+              - generic: Code · Devops Config
+              - generic: Data · Extraction
+              - generic: Data · Transformation
+        - toolbar [ref=e2772]:
+          - button "Download plot as a PNG" [ref=e2774] [cursor=pointer]
+          - button "Fullscreen" [ref=e2778] [cursor=pointer]
+      - generic [ref=e2731]:
+        - generic [ref=e3577]:
+          - text: General
+          - generic [ref=e3579]: 33.9%
+        - generic [ref=e3580]:
+          - text: Agent
+          - generic [ref=e3582]: 32.0%
+        - generic [ref=e3583]:
+          - text: Code
+          - generic [ref=e3585]: 23.0%
+        - generic [ref=e3586]:
+          - text: Data
+          - generic [ref=e3588]: 11.1%
+      - generic [ref=e3589]: Macro Category Share Over Time
+      - generic [ref=e1931]:
+        - img:
+          - generic:
+            - generic:
+              - generic:
+                - generic: Jun 292026
+                - generic: Jul 2
+                - generic: Jul 5
+                - generic: Jul 8
+                - generic: Jul 11
+                - generic: Jul 14
+                - generic: Jul 17
+              - generic:
+                - generic: "5"
+                - generic: "10"
+                - generic: "15"
+                - generic: "20"
+                - generic: "25"
+                - generic: "30"
+                - generic: "35"
+        - img:
+          - generic:
+            - generic [ref=e1948]:
+              - generic [ref=e1949]: Agent
+              - generic [ref=e1956]: Code
+              - generic [ref=e1963]: Data
+              - generic [ref=e1970]: General
+            - generic: Snapshot Date
+            - generic: Spend Share (%)
+        - toolbar [ref=e1977]:
+          - button "Download plot as a PNG" [ref=e1979] [cursor=pointer]
+          - generic [ref=e1982]:
+            - button "Zoom" [ref=e1983] [cursor=pointer]
+            - button "Pan" [ref=e1986] [cursor=pointer]
+          - generic [ref=e1989]:
+            - button "Zoom in" [ref=e1990] [cursor=pointer]
+            - button "Zoom out" [ref=e1993] [cursor=pointer]
+            - button "Autoscale" [ref=e1996] [cursor=pointer]
+            - button "Reset axes" [ref=e1999] [cursor=pointer]
+          - button "Fullscreen" [ref=e2003] [cursor=pointer]
+      - paragraph [ref=e3594]: Rolling 7-day spend share per macro category, one point per daily snapshot. Compare the 7d/30d/90d windows like fast/medium/slow moving averages to read trend speed.
+      - generic [ref=e2012]:
+        - paragraph [ref=e2016]: Inspect task leaders
+        - generic [ref=e2018]:
+          - generic [ref=e2019]:
+            - generic [ref=e2020]: Agent · Workflow Execution
+            - combobox "Selected Agent · Workflow Execution. Inspect task leaders" [ref=e2022]
+          - img "open" [ref=e2024]
+      - generic [ref=e3596]:
+        - generic [ref=e3603]:
+          - generic [ref=e3604]:
+            - generic [ref=e3605]: "1."
+            - generic [ref=e3606]:
+              - generic [ref=e3607]: claude-4.8-opus
+              - generic [ref=e3608]: by Anthropic
+            - generic [ref=e3609]: 25.0%
+          - generic [ref=e3610]:
+            - generic [ref=e3611]: "2."
+            - generic [ref=e3612]:
+              - generic [ref=e3613]: claude-4.7-opus
+              - generic [ref=e3614]: by Anthropic
+            - generic [ref=e3615]: 19.4%
+          - generic [ref=e3616]:
+            - generic [ref=e3617]: "3."
+            - generic [ref=e3618]:
+              - generic [ref=e3619]: glm-5.2
+              - generic [ref=e3620]: by 智谱AI (Z.ai)
+            - generic [ref=e3621]: 8.0%
+          - generic [ref=e3622]:
+            - generic [ref=e3623]: "4."
+            - generic [ref=e3624]:
+              - generic [ref=e3625]: gpt-5.5
+              - generic [ref=e3626]: by OpenAI
+            - generic [ref=e3627]: 6.9%
+          - generic [ref=e3628]:
+            - generic [ref=e3629]: "5."
+            - generic [ref=e3630]:
+              - generic [ref=e3631]: claude-5-fable
+              - generic [ref=e3632]: by Anthropic
+            - generic [ref=e3633]: 6.7%
+        - generic [ref=e3640]:
+          - generic [ref=e3641]:
+            - generic [ref=e3642]: "6."
+            - generic [ref=e3643]:
+              - generic [ref=e3644]: gpt-5.6-sol
+              - generic [ref=e3645]: by OpenAI
+            - generic [ref=e3646]: 4.1%
+          - generic [ref=e3647]:
+            - generic [ref=e3648]: "7."
+            - generic [ref=e3649]:
+              - generic [ref=e3650]: claude-sonnet-5
+              - generic [ref=e3651]: by Anthropic
+            - generic [ref=e3652]: 4.0%
+          - generic [ref=e3653]:
+            - generic [ref=e3654]: "8."
+            - generic [ref=e3655]:
+              - generic [ref=e3656]: gpt-5.4
+              - generic [ref=e3657]: by OpenAI
+            - generic [ref=e3658]: 3.6%
+          - generic [ref=e3659]:
+            - generic [ref=e3660]: "9."
+            - generic [ref=e3661]:
+              - generic [ref=e3662]: claude-4.6-sonnet
+              - generic [ref=e3663]: by Anthropic
+            - generic [ref=e3664]: 3.3%
+          - generic [ref=e3665]:
+            - generic [ref=e3666]: "10."
+            - generic [ref=e3667]:
+              - generic [ref=e3668]: claude-4.6-opus
+              - generic [ref=e3669]: by Anthropic
+            - generic [ref=e3670]: 2.2%
+      - paragraph [ref=e3675]: "Source: OpenRouter frontend task rankings endpoint. Spend/token shares are normalized shares from rolling-window task classifications."
+      - group [ref=e3677]:
+        - generic "keyboard_arrow_right 📊 Revenue ÷ Token Accuracy Check (implied $/token)" [ref=e3678] [cursor=pointer]:
+          - generic [ref=e3679]:
+            - generic [ref=e3680]: keyboard_arrow_right
+            - paragraph [ref=e3684]: 📊 Revenue ÷ Token Accuracy Check (implied $/token)
+      - generic [ref=e2868]: Compute Evolution
+      - generic [ref=e3686]:
+        - generic [ref=e3688]:
+          - generic [ref=e3689]: OpenRouter Model Catalog Growth
+          - generic [ref=e3699]:
+            - img:
+              - generic:
+                - generic:
+                  - generic:
+                    - generic: May 2026
+                    - generic: Jun 2026
+                    - generic: Jul 2026
+                  - generic:
+                    - generic: "0"
+                    - generic: "100"
+                    - generic: "200"
+                    - generic: "300"
+                    - generic: "400"
+            - img:
+              - generic: Model Catalog Growth
+            - toolbar [ref=e3713]:
+              - button "Download plot as a PNG" [ref=e3715] [cursor=pointer]
+              - generic [ref=e3718]:
+                - button "Zoom" [ref=e3719] [cursor=pointer]
+                - button "Pan" [ref=e3722] [cursor=pointer]
+              - generic [ref=e3725]:
+                - button "Zoom in" [ref=e3726] [cursor=pointer]
+                - button "Zoom out" [ref=e3729] [cursor=pointer]
+                - button "Autoscale" [ref=e3732] [cursor=pointer]
+                - button "Reset axes" [ref=e3735] [cursor=pointer]
+              - button "Fullscreen" [ref=e3739] [cursor=pointer]
+          - paragraph [ref=e3746]: History reflects the normalized OpenRouter catalog snapshots currently on disk (2026-04-15 to 2026-07-18).
+          - paragraph [ref=e3751]: Catalog history is change-only between full snapshots. A downward step indicates a full upstream catalog refresh removed stale carry-forward models; it should not be read as a precise daily deletion count.
+        - generic [ref=e3753]:
+          - generic [ref=e3754]: Context Window vs. Pricing Prompt
+          - generic [ref=e3764]:
+            - img:
+              - generic:
+                - generic:
+                  - generic:
+                    - generic: "0"
+                    - generic: 5M
+                    - generic: 10M
+                  - generic:
+                    - generic: "0.01"
+                    - generic: "1"
+                    - generic: "100"
+                    - generic: 10k
+                    - generic: 1M
+            - img:
+              - generic:
+                - generic: Price vs. Context
+                - generic: Context Length
+                - generic: Price per 1M Tokens ($)
+            - toolbar [ref=e3778]:
+              - button "Download plot as a PNG" [ref=e3780] [cursor=pointer]
+              - generic [ref=e3783]:
+                - button "Zoom" [ref=e3784] [cursor=pointer]
+                - button "Pan" [ref=e3787] [cursor=pointer]
+              - generic [ref=e3790]:
+                - button "Zoom in" [ref=e3791] [cursor=pointer]
+                - button "Zoom out" [ref=e3794] [cursor=pointer]
+                - button "Autoscale" [ref=e3797] [cursor=pointer]
+                - button "Reset axes" [ref=e3800] [cursor=pointer]
+              - button "Fullscreen" [ref=e3804] [cursor=pointer]
+      - group [ref=e3809]:
+        - generic "keyboard_arrow_right Data Health — 4 ok · 0 warning · 0 error" [ref=e3810] [cursor=pointer]:
+          - generic [ref=e3811]:
+            - generic [ref=e3812]: keyboard_arrow_right
+            - paragraph [ref=e3816]: Data Health — 4 ok · 0 warning · 0 error

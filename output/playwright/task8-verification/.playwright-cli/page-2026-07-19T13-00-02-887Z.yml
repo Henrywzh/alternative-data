@@ -1,0 +1,164 @@
+- generic [ref=e2]:
+  - generic [ref=e7]:
+    - button "keyboard_double_arrow_left" [ref=e542] [cursor=pointer]
+    - generic [ref=e11]:
+      - generic [ref=e15]:
+        - generic [ref=e16]: Alternative Data
+        - generic [ref=e17]: Research dashboard
+      - button [ref=e545] [cursor=pointer]:
+        - paragraph [ref=e549]: Overview
+      - generic [ref=e25]: AI Usage
+      - button [ref=e3275] [cursor=pointer]:
+        - paragraph [ref=e3279]: OpenRouter Intelligence
+      - button [ref=e3280] [cursor=pointer]:
+        - paragraph [ref=e3284]: OpenRouter Models
+      - button [ref=e46] [cursor=pointer]:
+        - paragraph [ref=e50]: OpenRouter Workloads
+      - button [ref=e53] [cursor=pointer]:
+        - paragraph [ref=e57]: Vercel AI
+      - generic [ref=e58]: Adoption
+      - button [ref=e65] [cursor=pointer]:
+        - paragraph [ref=e69]: Ramp
+      - button [ref=e72] [cursor=pointer]:
+        - paragraph [ref=e76]: Provider Adoption
+      - button [ref=e79] [cursor=pointer]:
+        - paragraph [ref=e83]: AI Hiring Demand
+      - generic [ref=e84]: Analysis
+      - button [ref=e91] [cursor=pointer]:
+        - paragraph [ref=e95]: Artificial Analysis
+      - generic [ref=e96]: Infrastructure
+      - button [ref=e103] [cursor=pointer]:
+        - paragraph [ref=e107]: Semiconductor Analysis
+      - button [ref=e110] [cursor=pointer]:
+        - paragraph [ref=e114]: Minerals
+      - generic [ref=e115]: Signals
+      - button [ref=e122] [cursor=pointer]:
+        - paragraph [ref=e126]: Google Trends Signal
+      - button [ref=e129] [cursor=pointer]:
+        - paragraph [ref=e133]: Provider Incidents
+      - separator [ref=e138]
+      - button [ref=e141] [cursor=pointer]:
+        - paragraph [ref=e145]: 🔄 Refresh data
+  - generic [ref=e3]:
+    - banner
+    - generic [ref=e148]:
+      - generic [ref=e153]:
+        - generic [ref=e154]: Alternative Data Dashboard
+        - heading "OpenRouter Models" [level=1] [ref=e3285]:
+          - text: OpenRouter Models
+          - generic [ref=e157]:
+            - link "Link to heading":
+              - /url: "#overview"
+        - generic [ref=e158]: Explore OpenRouter companies and models by activity, pricing, context window, release date, capabilities, and public-app usage.
+        - generic [ref=e159]: "Latest available update: 2026-07-19 07:16 UTC"
+      - generic [ref=e160]: OpenRouter Data Explorer
+      - generic [ref=e189]: Inspect company traffic, model activity and pricing, or search the full current catalog.
+      - alert [ref=e3288]:
+        - generic [ref=e3291]:
+          - generic [ref=e3292]: ℹ️
+          - paragraph [ref=e3296]:
+            - text: "Data source: complete model-activity totals are preferred; provider daily totals fill gaps. Older category-only activity rows are used for workload detail but never replace provider totals. Entries beginning with"
+            - code [ref=e3297]: ~
+            - text: are OpenRouter latest-routing aliases grouped under the underlying company.
+      - generic [ref=e3299]:
+        - paragraph [ref=e3303]: View
+        - radiogroup "button group" [ref=e3304]:
+          - button [ref=e3305] [cursor=pointer]:
+            - paragraph [ref=e3309]: Company & model
+          - button [ref=e3310] [cursor=pointer]:
+            - paragraph [ref=e3314]: All models
+      - generic [ref=e3316]:
+        - paragraph [ref=e3320]: Explore by
+        - radiogroup "button group" [ref=e3321]:
+          - button [ref=e3322] [cursor=pointer]:
+            - paragraph [ref=e3326]: Company
+          - button [ref=e3327] [cursor=pointer]:
+            - paragraph [ref=e3331]: Model
+      - generic [ref=e3333]:
+        - paragraph [ref=e3337]: Company
+        - generic [ref=e3339]:
+          - generic [ref=e3340]:
+            - generic [ref=e3341]: OpenAI
+            - combobox "Selected OpenAI. Company" [ref=e3343]
+          - img "open" [ref=e3345]
+      - generic [ref=e3007]:
+        - generic [ref=e3347]:
+          - generic [ref=e3348]: Tokens in stored window
+          - generic [ref=e3349]: 54.81T
+          - generic [ref=e3350]: observed activity
+        - generic [ref=e3351]:
+          - generic [ref=e3352]: Catalog entries
+          - generic [ref=e3353]: "81"
+          - generic [ref=e3354]: aliases included
+        - generic [ref=e3355]:
+          - generic [ref=e3356]: Latest activity
+          - generic [ref=e3357]: Jul 19, 2026
+          - generic [ref=e3358]: daily coverage
+        - generic [ref=e3359]:
+          - generic [ref=e3360]: Models with 1M+ context
+          - generic [ref=e3361]: "14"
+          - generic [ref=e3362]: current catalog
+      - generic [ref=e3368]:
+        - img:
+          - generic:
+            - generic:
+              - generic:
+                - generic: Feb 2026
+                - generic: Mar 2026
+                - generic: Apr 2026
+                - generic: May 2026
+                - generic: Jun 2026
+                - generic: Jul 2026
+              - generic:
+                - generic: "0"
+                - generic: 100B
+                - generic: 200B
+                - generic: 300B
+                - generic: 400B
+                - generic: 500B
+                - generic: 600B
+                - generic: 700B
+        - img:
+          - generic:
+            - generic [ref=e3385]:
+              - generic [ref=e3386]: openai/gpt-oss-120b
+              - generic [ref=e3395]: openai/gpt-5.5
+              - generic [ref=e3404]: openai/gpt-5.4-mini
+              - generic [ref=e3413]: openai/gpt-5.4
+              - generic [ref=e3422]: openai/gpt-5.3-codex
+              - generic [ref=e3431]: openai/gpt-5-nano
+              - generic [ref=e3440]: openai/gpt-5-mini
+              - generic [ref=e3449]: openai/gpt-4o-mini
+              - generic [ref=e3458]: Other models
+            - generic: Date
+            - generic: Tokens
+        - toolbar [ref=e3467]:
+          - button "Download plot as a PNG" [ref=e3469] [cursor=pointer]
+          - generic [ref=e3472]:
+            - button "Zoom" [ref=e3473] [cursor=pointer]
+            - button "Pan" [ref=e3476] [cursor=pointer]
+          - generic [ref=e3479]:
+            - button "Zoom in" [ref=e3480] [cursor=pointer]
+            - button "Zoom out" [ref=e3483] [cursor=pointer]
+            - button "Autoscale" [ref=e3486] [cursor=pointer]
+            - button "Reset axes" [ref=e3489] [cursor=pointer]
+          - button "Fullscreen" [ref=e3493] [cursor=pointer]
+      - heading "Models by trailing 30-day token volume" [level=4] [ref=e3497]:
+        - text: Models by trailing 30-day token volume
+        - generic [ref=e3498]:
+          - link "Link to heading":
+            - /url: "#models-by-trailing-30-day-token-volume"
+      - generic [ref=e3500]:
+        - paragraph [ref=e3504]: Filter company models
+        - textbox "Filter company models" [ref=e3507]:
+          - /placeholder: Search name or model ID, e.g. gpt-5.6
+      - generic [ref=e3511]:
+        - button "Show/hide columns" [ref=e3515] [cursor=pointer]
+        - button "Download as CSV" [ref=e3521] [cursor=pointer]
+        - button "Search" [ref=e3527] [cursor=pointer]
+        - button "Fullscreen" [ref=e3533] [cursor=pointer]
+      - group [ref=e3547]:
+        - generic "keyboard_arrow_right Data Health — 2 ok · 0 warning · 0 error" [ref=e3548] [cursor=pointer]:
+          - generic [ref=e3549]:
+            - generic [ref=e3550]: keyboard_arrow_right
+            - paragraph [ref=e3554]: Data Health — 2 ok · 0 warning · 0 error
