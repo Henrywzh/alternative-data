@@ -18,6 +18,7 @@ if str(ROOT) not in sys.path:
 
 from src.hk_utilities.sources.clp_electricity import fetch_clp_electricity
 from src.hk_utilities.sources.hko_temperature import fetch_hko_temperature
+from src.hk_utilities.sources.power_assets_segments import fetch_power_assets_segments
 from src.hk_utilities.sources.towngas_proxy import fetch_towngas_proxy
 
 
@@ -58,6 +59,18 @@ PUBLIC_SOURCES = {
             "description": "Daily mean temperature (°C) and monthly averages — primary physical weather driver for air-conditioning power load.",
         },
     },
+    "power_assets_segments": {
+        "id": "power_assets_segments",
+        "label": "Power Assets Holdings Geographic Segment Reporting",
+        "href": "https://www.powerassets.com/en/investor-relations/financial-reports",
+        "path": "sources/power_assets_segments.sql",
+        "query": {
+            "engine": "official HKEX interim report note",
+            "url": "https://www.powerassets.com/en/investor-relations/financial-reports",
+            "language": "PDF",
+            "description": "Semi-annual geographic segment reporting note (revenue, segment profit, share of JV/associate results) broken out by Investment in HKEI, United Kingdom, Australia, and Others.",
+        },
+    },
 }
 
 
@@ -65,10 +78,27 @@ def _utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+def _records_json_safe(frame: pd.DataFrame) -> list[dict[str, Any]]:
+    """Convert a DataFrame to records with NaN/NaT replaced by JSON null.
+
+    pandas' to_dict(orient="records") leaves NaN as a Python float('nan'),
+    which json.dumps serializes as the bare token `NaN` -- not valid JSON,
+    which downstream JS `JSON.parse` calls reject outright. Optional fields
+    (e.g. CLP's ai_data_centre_yoy_pct, absent for most quarters) need to
+    become JSON `null` instead.
+    """
+    selected = frame.copy()
+    for column in selected.columns:
+        if pd.api.types.is_datetime64_any_dtype(selected[column]):
+            selected[column] = selected[column].dt.strftime("%Y-%m-%d")
+    return json.loads(selected.to_json(orient="records", date_format="iso"))
+
+
 def build_artifact(
     raw_clp: pd.DataFrame | None = None,
     raw_towngas: pd.DataFrame | None = None,
     raw_temp: pd.DataFrame | None = None,
+    raw_power_assets: pd.DataFrame | None = None,
     *,
     now: datetime | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
@@ -77,26 +107,41 @@ def build_artifact(
     clp = raw_clp if raw_clp is not None else fetch_clp_electricity()
     towngas = raw_towngas if raw_towngas is not None else fetch_towngas_proxy()
     temp = raw_temp if raw_temp is not None else fetch_hko_temperature()
+    power_assets = raw_power_assets if raw_power_assets is not None else fetch_power_assets_segments()
 
     generated_at = now.isoformat().replace("+00:00", "Z")
 
     clp_latest = clp.iloc[-1]
-    clp_prior = clp.iloc[-2]
+    clp_prior = clp.iloc[-2] if len(clp) > 1 else None
+    clp_prior_total = float(clp_prior["total_local_gwh"]) if clp_prior is not None else 0.0
     clp_kpi = {
         "latest": float(clp_latest["total_local_gwh"]),
         "commercial_gwh": float(clp_latest["commercial_gwh"]),
-        "ai_data_centre_yoy_pct": float(clp_latest["ai_data_centre_yoy_pct"]),
-        "period_change": round(float(clp_latest["total_local_gwh"]) / float(clp_prior["total_local_gwh"]) - 1, 6),
+        "ai_data_centre_yoy_pct": (
+            float(clp_latest["ai_data_centre_yoy_pct"])
+            if pd.notna(clp_latest["ai_data_centre_yoy_pct"])
+            else None
+        ),
+        "period_change": (
+            round(float(clp_latest["total_local_gwh"]) / clp_prior_total - 1, 6)
+            if clp_prior_total
+            else None
+        ),
         "observation_date": clp_latest["date"].strftime("%Y-%m-%d"),
     }
 
     tg_latest = towngas.iloc[-1]
-    tg_prior = towngas.iloc[-2]
+    tg_prior = towngas.iloc[-2] if len(towngas) > 1 else None
+    tg_prior_total = float(tg_prior["total_gas_tj"]) if tg_prior is not None else 0.0
     tg_kpi = {
         "latest": float(tg_latest["total_gas_tj"]),
         "domestic_tj": float(tg_latest["domestic_gas_tj"]),
         "commercial_tj": float(tg_latest["commercial_gas_tj"]),
-        "period_change": round(float(tg_latest["total_gas_tj"]) / float(tg_prior["total_gas_tj"]) - 1, 6),
+        "period_change": (
+            round(float(tg_latest["total_gas_tj"]) / tg_prior_total - 1, 6)
+            if tg_prior_total
+            else None
+        ),
         "observation_date": tg_latest["date"].strftime("%Y-%m-%d"),
     }
 
@@ -107,13 +152,53 @@ def build_artifact(
         "observation_date": temp_latest["date"].strftime("%Y-%m-%d"),
     }
 
+    pa_available = not power_assets.empty
+    pa_latest = power_assets.iloc[-1] if pa_available else None
+    pa_prior = power_assets.iloc[-2] if pa_available and len(power_assets) > 1 else None
+    pa_prior_revenue = float(pa_prior["revenue_total_hkdm"]) if pa_prior is not None else 0.0
+    pa_kpi = {
+        "period": pa_latest["period"] if pa_available else None,
+        "revenue_total_hkdm": float(pa_latest["revenue_total_hkdm"]) if pa_available else None,
+        "segment_profit_total_hkdm": float(pa_latest["segment_profit_total_hkdm"]) if pa_available else None,
+        "jv_associate_results_total_hkdm": (
+            float(pa_latest["jv_associate_results_total_hkdm"]) if pa_available else None
+        ),
+        "period_change": (
+            round(float(pa_latest["revenue_total_hkdm"]) / pa_prior_revenue - 1, 6)
+            if pa_available and pa_prior_revenue
+            else None
+        ),
+        "observation_date": pa_latest["date"].strftime("%Y-%m-%d") if pa_available else None,
+    }
+
+    # Reshape the latest period's wide geography columns into one row per
+    # geography for the breakdown table.
+    pa_geography_rows: list[dict[str, Any]] = []
+    if pa_available:
+        for geo_label, geo_key in (
+            ("Investment in HKEI", "hkei"),
+            ("United Kingdom", "uk"),
+            ("Australia", "australia"),
+            ("Others", "others"),
+        ):
+            pa_geography_rows.append(
+                {
+                    "geography": geo_label,
+                    "revenue_hkdm": float(pa_latest[f"revenue_{geo_key}_hkdm"]),
+                    "segment_profit_hkdm": float(pa_latest[f"segment_profit_{geo_key}_hkdm"]),
+                    "jv_associate_results_hkdm": float(pa_latest[f"jv_associate_results_{geo_key}_hkdm"]),
+                }
+            )
+
     datasets = {
         "kpi_clp": [clp_kpi],
         "kpi_towngas": [tg_kpi],
         "kpi_temp": [temp_kpi],
-        "clp_history": clp.to_dict(orient="records"),
-        "towngas_history": towngas.tail(60).to_dict(orient="records"),
-        "temp_history": temp.tail(180).to_dict(orient="records"),
+        "kpi_power_assets": [pa_kpi],
+        "clp_history": _records_json_safe(clp),
+        "towngas_history": _records_json_safe(towngas.tail(60)),
+        "temp_history": _records_json_safe(temp.tail(180)),
+        "power_assets_geography": pa_geography_rows,
     }
 
     cards = [
@@ -147,6 +232,17 @@ def build_artifact(
             "metrics": [
                 {"label": "Latest Temp (°C)", "field": "latest", "format": "number"},
                 {"label": "Month Avg (°C)", "field": "month_avg", "format": "number"},
+            ],
+        },
+        {
+            "id": "power_assets_card",
+            "description": "Power Assets semi-annual geographic segment revenue and profit (HK$ million).",
+            "dataset": "kpi_power_assets",
+            "sourceId": "power_assets_segments",
+            "metrics": [
+                {"label": "Total Segment Revenue (HK$m)", "field": "revenue_total_hkdm", "format": "number"},
+                {"label": "Total Segment Profit (HK$m)", "field": "segment_profit_total_hkdm", "format": "number"},
+                {"label": "JV/Associate Results (HK$m)", "field": "jv_associate_results_total_hkdm", "format": "number"},
             ],
         },
     ]
@@ -196,7 +292,29 @@ def build_artifact(
         },
     ]
 
-    tables: list[dict[str, Any]] = []
+    tables: list[dict[str, Any]] = [
+        {
+            "id": "power_assets_geography_table",
+            "title": "Power Assets Geographic Segment Breakdown",
+            "subtitle": (
+                f"Semi-annual segment reporting ({pa_kpi['period']}), HK$ million. "
+                "'Investment in HKEI' is equity-accounted and reports nil consolidated revenue/segment profit "
+                "under this note; its contribution appears in the JV/associate results column instead."
+                if pa_available
+                else "No Power Assets interim segment filing available yet for the current period."
+            ),
+            "dataset": "power_assets_geography",
+            "sourceId": "power_assets_segments",
+            "density": "dense",
+            "layout": "full",
+            "columns": [
+                {"field": "geography", "label": "Geography", "type": "text"},
+                {"field": "revenue_hkdm", "label": "Segment Revenue (HK$m)", "format": "number"},
+                {"field": "segment_profit_hkdm", "label": "Segment Profit (HK$m)", "format": "number"},
+                {"field": "jv_associate_results_hkdm", "label": "JV/Associate Results (HK$m)", "format": "number"},
+            ],
+        }
+    ]
 
     sources = list(PUBLIC_SOURCES.values())
 
@@ -210,7 +328,7 @@ def build_artifact(
             "version": 1,
             "surface": "dashboard",
             "title": "HK Utilities & Infrastructure Sector Monitor",
-            "description": "CLP quarterly electricity sales by customer sector, CenStatD town gas consumption, and HKO temperature.",
+            "description": "CLP quarterly electricity sales by customer sector, CenStatD town gas consumption, HKO temperature, and Power Assets geographic segment reporting.",
             "sector": "hk-utilities",
             "generatedAt": generated_at,
             "cards": cards,
@@ -222,6 +340,7 @@ def build_artifact(
                 {"id": "clp_chart", "type": "chart", "chartId": "clp_sector_chart"},
                 {"id": "towngas_chart", "type": "chart", "chartId": "towngas_trend_chart"},
                 {"id": "temp_chart", "type": "chart", "chartId": "temp_trend_chart"},
+                {"id": "power_assets_table", "type": "table", "tableId": "power_assets_geography_table"},
             ],
         },
         "snapshot": {"version": 1, "generatedAt": generated_at, "status": "ready", "datasets": datasets},
@@ -229,11 +348,24 @@ def build_artifact(
         "package_info": {"originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-utilities/", "snapshotId": snapshot_id, "dataAsOf": clp_kpi["observation_date"]},
     }
 
+    record_counts = {
+        "clp_electricity": len(clp),
+        "towngas_proxy": len(towngas),
+        "hko_temperature": len(temp),
+        "power_assets_segments": len(power_assets),
+    }
+    latest_observation_dates = {
+        "clp_electricity": clp_kpi["observation_date"],
+        "towngas_proxy": tg_kpi["observation_date"],
+        "hko_temperature": temp_kpi["observation_date"],
+        "power_assets_segments": pa_kpi["observation_date"],
+    }
+
     status = {
         "generated_at": generated_at,
         "snapshot_id": snapshot_id,
         "data_as_of": artifact["package_info"]["dataAsOf"],
-        "overall_status": "Healthy",
+        "overall_status": "Healthy" if pa_available else "Degraded",
         "live_sources": len(PUBLIC_SOURCES),
         "planned_sources": 0,
         "sources": [
@@ -241,9 +373,9 @@ def build_artifact(
                 "source": s["label"],
                 "dataset": s["id"],
                 "type": "Measure",
-                "status": "Healthy",
-                "latest_observation": artifact["package_info"]["dataAsOf"],
-                "records": 100,
+                "status": "Healthy" if record_counts[s["id"]] > 0 else "Degraded",
+                "latest_observation": latest_observation_dates[s["id"]],
+                "records": record_counts[s["id"]],
                 "freshness": "Live",
                 "notes": s["query"]["description"],
             }
