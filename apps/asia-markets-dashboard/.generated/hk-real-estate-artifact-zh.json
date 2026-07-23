@@ -5,7 +5,7 @@
     "surface": "dashboard",
     "title": "香港房地产市场监测",
     "description": "基于来源的住宅价格、租金和市场信心指标快照。",
-    "generatedAt": "2026-07-23T21:52:31.707357Z",
+    "generatedAt": "2026-07-23T22:16:09.889997Z",
     "cards": [
       {
         "id": "ccl_card",
@@ -419,7 +419,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**数据快照：** `4f12860c9584ab55` · 生成于 2026-07-23T21:52:31.707357Z。这是已发布快照，不是实时连接；RVD 标记为 provisional 的观测可能会修订。"
+        "body": "**数据快照：** `4f12860c9584ab55` · 生成于 2026-07-23T22:16:09.889997Z。这是已发布快照，不是实时连接；RVD 标记为 provisional 的观测可能会修订。"
       },
       {
         "id": "market_pulse",
@@ -477,7 +477,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-23T21:52:31.707357Z",
+    "generatedAt": "2026-07-23T22:16:09.889997Z",
     "status": "ready",
     "datasets": {
       "kpi_ccl": [
@@ -15421,7 +15421,7 @@
           "CCL latest is the most recent published weekly Centaline City Leading Index observation.",
           "Weekly and yearly movements are latest divided by the prior observation or latest observation on/before one year earlier, minus one."
         ],
-        "executed_at": "2026-07-23T21:52:31.707357Z"
+        "executed_at": "2026-07-23T22:16:09.889997Z"
       }
     },
     {
@@ -15437,7 +15437,7 @@
           "MHPI latest is the most recent published overall weekly Midland Hong Kong Property Price Index observation.",
           "Weekly and yearly movements are latest divided by the prior observation or latest observation on/before one year earlier, minus one."
         ],
-        "executed_at": "2026-07-23T21:52:31.707357Z"
+        "executed_at": "2026-07-23T22:16:09.889997Z"
       }
     },
     {
@@ -15452,7 +15452,7 @@
         "metric_definitions": [
           "The confidence series is a supporting market-sentiment measure published by Midland Realty."
         ],
-        "executed_at": "2026-07-23T21:52:31.707357Z"
+        "executed_at": "2026-07-23T22:16:09.889997Z"
       }
     },
     {
@@ -15468,7 +15468,7 @@
           "RVD price latest is the All Classes monthly private domestic price index.",
           "Monthly and yearly movements are latest divided by the prior month or observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-07-23T21:52:31.707357Z"
+        "executed_at": "2026-07-23T22:16:09.889997Z"
       }
     },
     {
@@ -15484,7 +15484,7 @@
           "RVD rent latest is the All Classes monthly private domestic rental index.",
           "Monthly and yearly movements are latest divided by the prior month or observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-07-23T21:52:31.707357Z"
+        "executed_at": "2026-07-23T22:16:09.889997Z"
       }
     },
     {
@@ -15503,7 +15503,7 @@
           "RVD 1.4M.csv",
           "RVD 1.3M.csv"
         ],
-        "executed_at": "2026-07-23T21:52:31.707357Z"
+        "executed_at": "2026-07-23T22:16:09.889997Z"
       }
     },
     {
@@ -15517,7 +15517,7 @@
           "Validated core measure frames",
           "Declared future-source registry"
         ],
-        "executed_at": "2026-07-23T21:52:31.707357Z"
+        "executed_at": "2026-07-23T22:16:09.889997Z"
       }
     }
   ],

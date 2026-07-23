@@ -15,6 +15,7 @@ from .sources.hk_valuation import fetch_hk_consumer_valuations
 from .sources.cnsd_retail import fetch_cnsd_retail_sales
 from .sources.censtatd_restaurant import fetch_censtatd_restaurant_survey
 from .sources.immigration_flow import fetch_immigration_flow
+from .sources.weather_demand_drivers import fetch_weather_demand_drivers
 from .storage import save_normalized_dataset, NORMALIZED_DIR
 
 
@@ -64,6 +65,11 @@ QUALITY_SPECS: Dict[str, Dict[str, Any]] = {
     "immigration_passenger_traffic_daily": {
         "kind": "measure",
         "required": ["date", "hk_resident_departures", "mainland_visitor_arrivals"],
+        "max_age_days": 400,
+    },
+    "weather_demand_drivers_monthly": {
+        "kind": "measure",
+        "required": ["date", "month", "signal_8_plus_hours", "red_black_rain_hours"],
         "max_age_days": 400,
     },
 }
@@ -208,6 +214,13 @@ def run_stage_1_pipeline(run_id: str | None = None, *, _raise_on_failure: bool =
     except Exception as exc:
         logger.exception("Immigration Department daily passenger traffic ingestion failed")
         results["immigration_passenger_traffic_daily"] = _error_result(exc)
+
+    try:
+        logger.info("Ingesting HKO weather warnings & FRED FX demand drivers...")
+        _record_many(run_id, results, {"weather_demand_drivers_monthly": fetch_weather_demand_drivers()})
+    except Exception as exc:
+        logger.exception("Weather and demand drivers ingestion failed")
+        results["weather_demand_drivers_monthly"] = _error_result(exc)
 
     return _finalize_group(run_id, "stage_1", results, _raise_on_failure)
 

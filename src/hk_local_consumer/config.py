@@ -61,6 +61,14 @@ CONSUMER_COUNCIL_DATA_GOV_HK_URL = "https://data.gov.hk/en-data/dataset/cc-price
 IMMIGRATION_PASSENGER_TRAFFIC_URL = "https://www.immd.gov.hk/opendata/eng/transport/immigration_clearance/statistics_on_daily_passenger_traffic.csv"
 IMMIGRATION_DATA_GOV_HK_URL = "https://data.gov.hk/en-data/dataset/hk-immd-stat-stat-passenger-traffic"
 
+# HKO Severe Weather Warning Databases (Rainstorm & Tropical Cyclone signal histories)
+HKO_RAINSTORM_URL = "https://www.hko.gov.hk/dps/wxinfo/climat/warndb/rstorm.dat"
+HKO_TYPHOON_URL = "https://www.hko.gov.hk/dps/wxinfo/climat/warndb/tc.dat"
+
+# FRED Daily FX Rates for HKD and CNY vs USD (used to derive HKD/RMB cross rate)
+FRED_DEXHKUS_URL = "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DEXHKUS"
+FRED_DEXCHUS_URL = "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DEXCHUS"
+
 # CenStatD "web table" static data files. The web_table.html viewer pages
 # are JS-rendered (fetching a bot-block-able HTML shell if requested
 # directly), but the underlying per-series CSV files they load are plain,

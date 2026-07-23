@@ -92,8 +92,10 @@ const HK_REAL_ESTATE_ZH = {
 
 const HK_LOCAL_CONSUMER_ZH = {
   title: "香港本地消费监测",
-  description: "跨境出入境人流（北上/南下）、黄金原料成本、鲜活食品批发价与观察名单估值的来源快照。",
+  description: "极端天气干扰时长、港元/人民币汇率、跨境出入境人流（北上/南下）、黄金原料成本与零售餐饮数据的来源快照。",
   cards: {
+    weather_card: { label: "极端天气干扰 (小时/月)", description: "月度八号及以上风球与红/黑色暴雨警告总持续时长。" },
+    fx_card: { label: "人民币 / 100 港元", description: "基于 FRED 每日报价计算的月度平均港元/人民币交叉汇率。" },
     northbound_card: { label: "北上人流 (7日均值)", description: "每日香港居民出境人次（7日移动平均）；日环比与同比变动。", cadence: "日环比" },
     southbound_card: { label: "南下人流 (7日均值)", description: "每日内地访客入境人次（7日移动平均）；日环比与同比变动。", cadence: "日环比" },
     gold_card: { label: "黄金晚盘 (RMB/克)", description: "最新公布的上海金交所晚盘基准价；日环比与同比变动。", cadence: "日环比" },
@@ -102,6 +104,7 @@ const HK_LOCAL_CONSUMER_ZH = {
     restaurant_card: { label: "餐饮总收益 (百万港元)", description: "全行业季度餐饮收益；季环比与同比变动。", cadence: "季环比" },
   },
   charts: {
+    severe_weather_trend: ["月度极端天气干扰时长", "香港八号及以上热带气旋风球与红/黑色暴雨警告的月度总时长（小时）。", "月份", "干扰时长 (小时)"],
     immigration_trend: ["跨境旅客流量走势 (7日均值)", "每日人流方向：北上（香港居民出境人次）对比 南下（内地访客入境人次）。", "日期", "人次 / 日 (7日均值)", "人流方向"],
     gold_trend: ["上海黄金交易所晚盘基准价", "以人民币/克计的每日定盘价，近约7年；是香港黄金珠宝行业原料成本的主要参考。", "日期", "人民币/克"],
     afcd_category_chart: ["按类别划分的 AFCD 批发价", "今日各类别商品的平均批发价（每公斤）。", "类别", "港元/公斤"],
@@ -112,6 +115,11 @@ const HK_LOCAL_CONSUMER_ZH = {
     restaurant_chart: ["按类型划分的餐饮收益", "最新已公布季度，百万港元。", "餐饮类型", "百万港元"],
   },
   tables: {
+    severe_weather_log_table: {
+      title: "近期极端天气警告日志",
+      subtitle: "近期红/黑色暴雨及八号以上风球警告的生效时间、解除时间与持续时长。",
+      columns: { signal_name: "警告信号", start: "生效时间 (HKT)", end: "解除时间 (HKT)", duration_hours: "持续时长 (小时)" },
+    },
     afcd_commodity_table: {
       title: "AFCD 批发价快照",
       subtitle: "当日各商品平均价格，港元/公斤（由公布的港元/斤换算而来）。",
@@ -144,6 +152,7 @@ const HK_LOCAL_CONSUMER_ZH = {
     },
   },
   sources: {
+    weather_demand_drivers: "香港天文台暴雨/风球警告数据库 & FRED 汇率",
     immigration_flow: "香港入境事务处每日出入境旅客流量",
     afcd_wholesale: "农渔护理署鲜活食品批发价",
     sge_gold: "上海黄金交易所早/晚盘基准价",
@@ -155,7 +164,7 @@ const HK_LOCAL_CONSUMER_ZH = {
   snapshotBody: (artifact) =>
     `**数据快照：** \`${artifact.package_info.snapshotId}\` · 生成于 ${artifact.manifest.generatedAt}。这是已发布快照，不是实时连接；消费者委员会价格观察覆盖仍在计划中，未以占位值展示。`,
   methodologyBody:
-    "## 如何阅读本 dashboard\n\n黄金是珠宝行业原料成本的粗略参考，并非股价预测。批发食品价格为单日快照，按 AFCD 当日采样的市场平均计算。零售销售及餐饮收益为官方月度/季度指数，并非实时数据。覆盖表区分实时指标与端点仍损坏或未经验证的来源。本 dashboard 不提供股票排名、预测或投资建议。",
+    "## 如何阅读本 dashboard\n\n极端天气干扰时长（八号风球及红/黑雨）用于评估客流压制效应。港元/人民币汇率反映港人赴深消费性价比。黄金是珠宝行业原料成本参考而非股价预测。本 dashboard 不提供股票排名、预测或投资建议。",
 };
 
 function localizeArtifact(input, zh) {
