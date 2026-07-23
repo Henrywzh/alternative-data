@@ -1,0 +1,500 @@
+{
+  "surface": "dashboard",
+  "manifest": {
+    "version": 1,
+    "surface": "dashboard",
+    "title": "香港电讯监测",
+    "description": "香港电讯（HKT）、数码通（SmarTone）及和记电讯（3 HK）的半年度用户与 ARPU 披露数据，以及通讯办全运营商手机号码段配额快照。",
+    "sector": "hk-telecom",
+    "generatedAt": "2026-07-23T23:46:08.071601Z",
+    "cards": [
+      {
+        "id": "hkt_card",
+        "description": "半年度后付费退出 ARPU 及后付费用户数（千户）。",
+        "dataset": "kpi_hkt",
+        "sourceId": "hkt_operating_drivers",
+        "metrics": [
+          {
+            "label": "香港电讯 后付费 ARPU (港元)",
+            "field": "latest_arpu",
+            "format": "number"
+          },
+          {
+            "label": "半年环比",
+            "field": "postpaid_subscribers_thousands",
+            "format": "number"
+          },
+          {
+            "label": "同比",
+            "field": "period_change",
+            "format": "percent"
+          }
+        ]
+      },
+      {
+        "id": "smartone_card",
+        "description": "半年度后付费 ARPU 及后付费用户数（千户）。",
+        "dataset": "kpi_smartone",
+        "sourceId": "smartone_operating_drivers",
+        "metrics": [
+          {
+            "label": "数码通 后付费 ARPU (港元)",
+            "field": "latest_arpu",
+            "format": "number"
+          },
+          {
+            "label": "同比",
+            "field": "postpaid_subscribers_thousands",
+            "format": "number"
+          },
+          {
+            "label": "同比",
+            "field": "period_change",
+            "format": "percent"
+          }
+        ]
+      },
+      {
+        "id": "hutchison_card",
+        "description": "半年度后付费毛/净 ARPU。",
+        "dataset": "kpi_hutchison",
+        "sourceId": "hutchison_telecom_operating_drivers",
+        "metrics": [
+          {
+            "label": "和记电讯（3 HK）后付费毛 ARPU (港元)",
+            "field": "latest_gross_arpu",
+            "format": "number"
+          },
+          {
+            "label": "半年环比",
+            "field": "latest_net_arpu",
+            "format": "number"
+          },
+          {
+            "label": "同比",
+            "field": "period_change",
+            "format": "percent"
+          }
+        ]
+      }
+    ],
+    "charts": [
+      {
+        "id": "hkt_arpu_chart",
+        "title": "香港电讯后付费退出 ARPU 走势 (港元)",
+        "subtitle": "半年度后付费退出 ARPU，取自香港电讯自身业绩公告的叙述文本。",
+        "type": "line",
+        "dataset": "hkt_history",
+        "sourceId": "hkt_operating_drivers",
+        "encodings": {
+          "x": {
+            "field": "date",
+            "type": "temporal",
+            "label": "期间"
+          },
+          "y": {
+            "field": "mobile_postpaid_arpu_hkd",
+            "type": "quantitative",
+            "label": "港元"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "full"
+      },
+      {
+        "id": "smartone_arpu_chart",
+        "title": "数码通后付费 ARPU 与用户数走势",
+        "subtitle": "半年度后付费 ARPU（港元）及后付费用户基础（千户）。",
+        "type": "line",
+        "dataset": "smartone_history",
+        "sourceId": "smartone_operating_drivers",
+        "encodings": {
+          "x": {
+            "field": "date",
+            "type": "temporal",
+            "label": "期间"
+          },
+          "y": {
+            "field": "postpaid_arpu_hkd",
+            "type": "quantitative",
+            "label": "港元"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "full"
+      },
+      {
+        "id": "hutchison_arpu_chart",
+        "title": "和记电讯（3 HK）后付费毛/净 ARPU 对比",
+        "subtitle": "半年度后付费毛 ARPU 与净 ARPU（港元）——三家运营商中披露最细的单用户经济数据。",
+        "type": "line",
+        "dataset": "hutchison_history",
+        "sourceId": "hutchison_telecom_operating_drivers",
+        "encodings": {
+          "x": {
+            "field": "date",
+            "type": "temporal",
+            "label": "期间"
+          },
+          "y": {
+            "field": "postpaid_gross_arpu_hkd",
+            "type": "quantitative",
+            "label": "港元"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "full"
+      }
+    ],
+    "tables": [
+      {
+        "id": "numbering_plan_table",
+        "title": "通讯办按运营商划分的手机号码段配额",
+        "subtitle": "覆盖全部 4 家持牌移动网络运营商及虚拟运营商的粗略结构性代理指标。号码段是已发放的号码容量，并非在网用户数——无法得知已分配号码段的实际使用比例，且重新分配为不定期、事件驱动式。请将此视为单一容量快照，而非用户数走势。",
+        "dataset": "numbering_plan_snapshot",
+        "sourceId": "numbering_plan",
+        "density": "dense",
+        "layout": "full",
+        "columns": [
+          {
+            "field": "allocatee",
+            "label": "运营商 / 持牌人",
+            "type": "text"
+          },
+          {
+            "field": "num_blocks",
+            "label": "号码段数量",
+            "format": "number"
+          },
+          {
+            "field": "total_numbers_allocated",
+            "label": "已分配号码数",
+            "format": "number"
+          }
+        ]
+      }
+    ],
+    "sources": [
+      {
+        "id": "hkt_operating_drivers",
+        "label": "香港电讯信托及香港电讯有限公司（6823.HK）业绩公告",
+        "href": "https://www.hkt.com/en/about-hkt/investor-relations/financial-results/",
+        "path": "sources/hkt_operating_drivers.sql",
+        "query": {
+          "engine": "official HKEX results announcement (PDF)",
+          "url": "https://www.hkt.com/en/about-hkt/investor-relations/financial-results/",
+          "language": "PDF",
+          "description": "Semi-annual Key Operating Drivers table (mobile postpaid/prepaid subscribers, consumer broadband lines, Pay TV base) plus postpaid exit ARPU and FTTH share, extracted from HKT's own results announcement narrative text."
+        }
+      },
+      {
+        "id": "smartone_operating_drivers",
+        "label": "数码通电讯控股（0315.HK）业绩简报",
+        "href": "https://www.smartoneholdings.com/about/investor/results/",
+        "path": "sources/smartone_operating_drivers.sql",
+        "query": {
+          "engine": "official investor-relations results presentation (PDF)",
+          "url": "https://www.smartoneholdings.com/about/investor/results/",
+          "language": "PDF",
+          "description": "Semi-annual mobile postpaid customer count, postpaid ARPU trend, and 5G-vs-4G ARPU ratio from SmarTone's own results presentation deck."
+        }
+      },
+      {
+        "id": "hutchison_telecom_operating_drivers",
+        "label": "和记电讯香港控股（0215.HK，「3 HK」）业绩公告",
+        "href": "https://www.hthkh.com/en/ir/fin_results.php",
+        "path": "sources/hutchison_telecom_operating_drivers.sql",
+        "query": {
+          "engine": "official HKEX results announcement (PDF)",
+          "url": "https://www.hthkh.com/en/ir/fin_results.php",
+          "language": "PDF",
+          "description": "Semi-annual Key Performance Indicators table: postpaid/prepaid customers, monthly postpaid churn rate, postpaid gross & net ARPU, and 5G penetration rate."
+        }
+      },
+      {
+        "id": "numbering_plan",
+        "label": "通讯事务管理局办公室编号计划（手机号码段配额）",
+        "href": "https://www.ofca.gov.hk/filemanager/ofca/common/datagovhk/tel_no_en_tc.csv",
+        "path": "sources/numbering_plan.sql",
+        "query": {
+          "engine": "official open data CSV",
+          "url": "https://www.ofca.gov.hk/filemanager/ofca/common/datagovhk/tel_no_en_tc.csv",
+          "language": "CSV",
+          "description": "Mobile number block allocations by operator, all 4 licensed MNOs plus MVNOs -- a capacity/footprint proxy, not a subscriber-count or time-series metric (see table caveat)."
+        }
+      }
+    ],
+    "blocks": [
+      {
+        "id": "kpi_grid",
+        "type": "metric-strip",
+        "cardIds": [
+          "hkt_card",
+          "smartone_card",
+          "hutchison_card"
+        ]
+      },
+      {
+        "id": "hkt_chart",
+        "type": "chart",
+        "chartId": "hkt_arpu_chart"
+      },
+      {
+        "id": "smartone_chart",
+        "type": "chart",
+        "chartId": "smartone_arpu_chart"
+      },
+      {
+        "id": "hutchison_chart",
+        "type": "chart",
+        "chartId": "hutchison_arpu_chart"
+      },
+      {
+        "id": "numbering_plan_table_block",
+        "type": "table",
+        "tableId": "numbering_plan_table"
+      }
+    ]
+  },
+  "snapshot": {
+    "version": 1,
+    "generatedAt": "2026-07-23T23:46:08.071601Z",
+    "status": "ready",
+    "datasets": {
+      "kpi_hkt": [
+        {
+          "latest_arpu": 195,
+          "postpaid_subscribers_thousands": 3494,
+          "consumer_broadband_lines_thousands": 1488,
+          "period_change": 0.010363,
+          "observation_date": "2025-12-31"
+        }
+      ],
+      "kpi_smartone": [
+        {
+          "latest_arpu": 224,
+          "postpaid_subscribers_thousands": 3158,
+          "arpu_5g_to_4g_ratio": 2,
+          "period_change": 0.009009,
+          "observation_date": "2025-12-31"
+        }
+      ],
+      "kpi_hutchison": [
+        {
+          "latest_gross_arpu": 187,
+          "latest_net_arpu": 176,
+          "postpaid_customers_thousands": 1289,
+          "churn_rate_pct": 0.9,
+          "penetration_5g_pct": 62,
+          "period_change": 0.033149,
+          "observation_date": "2025-12-31"
+        }
+      ],
+      "hkt_history": [
+        {
+          "period": "2024-06-30",
+          "date": "2024-06-30",
+          "mobile_postpaid_subscribers_thousands": 3433,
+          "mobile_prepaid_subscribers_thousands": 1451,
+          "total_mobile_subscribers_thousands": 4884,
+          "consumer_broadband_lines_thousands": 1472,
+          "ftth_connections_thousands": null,
+          "ftth_share_pct": null,
+          "pay_tv_installed_base_thousands": 1430,
+          "mobile_postpaid_arpu_hkd": 192
+        },
+        {
+          "period": "2024-12-31",
+          "date": "2024-12-31",
+          "mobile_postpaid_subscribers_thousands": 3459,
+          "mobile_prepaid_subscribers_thousands": 1346,
+          "total_mobile_subscribers_thousands": 4805,
+          "consumer_broadband_lines_thousands": 1474,
+          "ftth_connections_thousands": null,
+          "ftth_share_pct": null,
+          "pay_tv_installed_base_thousands": 1433,
+          "mobile_postpaid_arpu_hkd": 193
+        },
+        {
+          "period": "2025-06-30",
+          "date": "2025-06-30",
+          "mobile_postpaid_subscribers_thousands": 3478,
+          "mobile_prepaid_subscribers_thousands": 1397,
+          "total_mobile_subscribers_thousands": 4875,
+          "consumer_broadband_lines_thousands": 1482,
+          "ftth_connections_thousands": 1055,
+          "ftth_share_pct": 71,
+          "pay_tv_installed_base_thousands": 1448,
+          "mobile_postpaid_arpu_hkd": 193
+        },
+        {
+          "period": "2025-12-31",
+          "date": "2025-12-31",
+          "mobile_postpaid_subscribers_thousands": 3494,
+          "mobile_prepaid_subscribers_thousands": 1323,
+          "total_mobile_subscribers_thousands": 4817,
+          "consumer_broadband_lines_thousands": 1488,
+          "ftth_connections_thousands": 1086,
+          "ftth_share_pct": 73,
+          "pay_tv_installed_base_thousands": 1464,
+          "mobile_postpaid_arpu_hkd": 195
+        }
+      ],
+      "smartone_history": [
+        {
+          "period": "2023-12-31",
+          "date": "2023-12-31",
+          "postpaid_subscribers_thousands": 2647,
+          "postpaid_arpu_hkd": 224,
+          "arpu_5g_to_4g_ratio": null
+        },
+        {
+          "period": "2024-12-31",
+          "date": "2024-12-31",
+          "postpaid_subscribers_thousands": 2873,
+          "postpaid_arpu_hkd": 222,
+          "arpu_5g_to_4g_ratio": null
+        },
+        {
+          "period": "2025-12-31",
+          "date": "2025-12-31",
+          "postpaid_subscribers_thousands": 3158,
+          "postpaid_arpu_hkd": 224,
+          "arpu_5g_to_4g_ratio": 2
+        }
+      ],
+      "hutchison_history": [
+        {
+          "period": "2024-06-30",
+          "date": "2024-06-30",
+          "postpaid_customers_thousands": 1444,
+          "prepaid_customers_thousands": 2827,
+          "total_customers_thousands": 4271,
+          "postpaid_churn_rate_pct": 1,
+          "postpaid_gross_arpu_hkd": 184,
+          "postpaid_net_arpu_hkd": 168,
+          "postpaid_net_ampu_hkd": 148,
+          "penetration_5g_pct": null
+        },
+        {
+          "period": "2024-12-31",
+          "date": "2024-12-31",
+          "postpaid_customers_thousands": 1316,
+          "prepaid_customers_thousands": 3162,
+          "total_customers_thousands": 4478,
+          "postpaid_churn_rate_pct": 1,
+          "postpaid_gross_arpu_hkd": 190,
+          "postpaid_net_arpu_hkd": 175,
+          "postpaid_net_ampu_hkd": 153,
+          "penetration_5g_pct": null
+        },
+        {
+          "period": "2025-06-30",
+          "date": "2025-06-30",
+          "postpaid_customers_thousands": 1399,
+          "prepaid_customers_thousands": 4735,
+          "total_customers_thousands": 6134,
+          "postpaid_churn_rate_pct": 0.9,
+          "postpaid_gross_arpu_hkd": 181,
+          "postpaid_net_arpu_hkd": 171,
+          "postpaid_net_ampu_hkd": 146,
+          "penetration_5g_pct": 57
+        },
+        {
+          "period": "2025-12-31",
+          "date": "2025-12-31",
+          "postpaid_customers_thousands": 1289,
+          "prepaid_customers_thousands": 6843,
+          "total_customers_thousands": 8132,
+          "postpaid_churn_rate_pct": 0.9,
+          "postpaid_gross_arpu_hkd": 187,
+          "postpaid_net_arpu_hkd": 176,
+          "postpaid_net_ampu_hkd": 149,
+          "penetration_5g_pct": 62
+        }
+      ],
+      "numbering_plan_snapshot": [
+        {
+          "allocatee": "HKT",
+          "num_blocks": 99,
+          "total_numbers_allocated": 9340000
+        },
+        {
+          "allocatee": "China Mobile Hong Kong (CMHK)",
+          "num_blocks": 83,
+          "total_numbers_allocated": 7610000
+        },
+        {
+          "allocatee": "Hutchison Telephone (3 HK)",
+          "num_blocks": 67,
+          "total_numbers_allocated": 6440000
+        },
+        {
+          "allocatee": "SmarTone",
+          "num_blocks": 39,
+          "total_numbers_allocated": 3120000
+        },
+        {
+          "allocatee": "Other MVNO / licensee",
+          "num_blocks": 84,
+          "total_numbers_allocated": 2701000
+        }
+      ]
+    }
+  },
+  "sources": [
+    {
+      "id": "hkt_operating_drivers",
+      "label": "香港电讯信托及香港电讯有限公司（6823.HK）业绩公告",
+      "href": "https://www.hkt.com/en/about-hkt/investor-relations/financial-results/",
+      "path": "sources/hkt_operating_drivers.sql",
+      "query": {
+        "engine": "official HKEX results announcement (PDF)",
+        "url": "https://www.hkt.com/en/about-hkt/investor-relations/financial-results/",
+        "language": "PDF",
+        "description": "构建时从公开来源读取并校验 香港电讯信托及香港电讯有限公司（6823.HK）业绩公告。"
+      }
+    },
+    {
+      "id": "smartone_operating_drivers",
+      "label": "数码通电讯控股（0315.HK）业绩简报",
+      "href": "https://www.smartoneholdings.com/about/investor/results/",
+      "path": "sources/smartone_operating_drivers.sql",
+      "query": {
+        "engine": "official investor-relations results presentation (PDF)",
+        "url": "https://www.smartoneholdings.com/about/investor/results/",
+        "language": "PDF",
+        "description": "构建时从公开来源读取并校验 数码通电讯控股（0315.HK）业绩简报。"
+      }
+    },
+    {
+      "id": "hutchison_telecom_operating_drivers",
+      "label": "和记电讯香港控股（0215.HK，「3 HK」）业绩公告",
+      "href": "https://www.hthkh.com/en/ir/fin_results.php",
+      "path": "sources/hutchison_telecom_operating_drivers.sql",
+      "query": {
+        "engine": "official HKEX results announcement (PDF)",
+        "url": "https://www.hthkh.com/en/ir/fin_results.php",
+        "language": "PDF",
+        "description": "构建时从公开来源读取并校验 和记电讯香港控股（0215.HK，「3 HK」）业绩公告。"
+      }
+    },
+    {
+      "id": "numbering_plan",
+      "label": "通讯事务管理局办公室编号计划（手机号码段配额）",
+      "href": "https://www.ofca.gov.hk/filemanager/ofca/common/datagovhk/tel_no_en_tc.csv",
+      "path": "sources/numbering_plan.sql",
+      "query": {
+        "engine": "official open data CSV",
+        "url": "https://www.ofca.gov.hk/filemanager/ofca/common/datagovhk/tel_no_en_tc.csv",
+        "language": "CSV",
+        "description": "构建时从公开来源读取并校验 通讯事务管理局办公室编号计划（手机号码段配额）。"
+      }
+    }
+  ],
+  "package_info": {
+    "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-telecom/",
+    "snapshotId": "1b151cd4d761b58f",
+    "dataAsOf": "2025-12-31"
+  }
+}
