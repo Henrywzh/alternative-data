@@ -1,0 +1,500 @@
+{
+  "surface": "dashboard",
+  "manifest": {
+    "version": 1,
+    "surface": "dashboard",
+    "title": "Hong Kong Telecom Sector Monitor",
+    "description": "HKT, SmarTone, and Hutchison Telecom (3 HK) semi-annual postpaid subscriber and ARPU disclosures, plus an OFCA all-operator mobile-number-block capacity snapshot.",
+    "sector": "hk-telecom",
+    "generatedAt": "2026-07-23T23:46:08.071601Z",
+    "cards": [
+      {
+        "id": "hkt_card",
+        "description": "HKT (6823.HK) postpaid exit ARPU and postpaid subscribers, semi-annual.",
+        "dataset": "kpi_hkt",
+        "sourceId": "hkt_operating_drivers",
+        "metrics": [
+          {
+            "label": "Postpaid ARPU (HK$)",
+            "field": "latest_arpu",
+            "format": "number"
+          },
+          {
+            "label": "Postpaid Subscribers ('000)",
+            "field": "postpaid_subscribers_thousands",
+            "format": "number"
+          },
+          {
+            "label": "Half-on-Half",
+            "field": "period_change",
+            "format": "percent"
+          }
+        ]
+      },
+      {
+        "id": "smartone_card",
+        "description": "SmarTone (0315.HK) postpaid ARPU and postpaid subscribers, semi-annual.",
+        "dataset": "kpi_smartone",
+        "sourceId": "smartone_operating_drivers",
+        "metrics": [
+          {
+            "label": "Postpaid ARPU (HK$)",
+            "field": "latest_arpu",
+            "format": "number"
+          },
+          {
+            "label": "Postpaid Subscribers ('000)",
+            "field": "postpaid_subscribers_thousands",
+            "format": "number"
+          },
+          {
+            "label": "Year-on-Year",
+            "field": "period_change",
+            "format": "percent"
+          }
+        ]
+      },
+      {
+        "id": "hutchison_card",
+        "description": "Hutchison Telecom / 3 HK (0215.HK) postpaid gross & net ARPU and churn, semi-annual.",
+        "dataset": "kpi_hutchison",
+        "sourceId": "hutchison_telecom_operating_drivers",
+        "metrics": [
+          {
+            "label": "Postpaid Gross ARPU (HK$)",
+            "field": "latest_gross_arpu",
+            "format": "number"
+          },
+          {
+            "label": "Postpaid Net ARPU (HK$)",
+            "field": "latest_net_arpu",
+            "format": "number"
+          },
+          {
+            "label": "Half-on-Half",
+            "field": "period_change",
+            "format": "percent"
+          }
+        ]
+      }
+    ],
+    "charts": [
+      {
+        "id": "hkt_arpu_chart",
+        "title": "HKT Postpaid Exit ARPU Trend (HK$)",
+        "subtitle": "Semi-annual postpaid exit ARPU, extracted from HKT's own results announcement narrative text.",
+        "type": "line",
+        "dataset": "hkt_history",
+        "sourceId": "hkt_operating_drivers",
+        "encodings": {
+          "x": {
+            "field": "date",
+            "type": "temporal",
+            "label": "Period"
+          },
+          "y": {
+            "field": "mobile_postpaid_arpu_hkd",
+            "type": "quantitative",
+            "label": "HK$"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "full"
+      },
+      {
+        "id": "smartone_arpu_chart",
+        "title": "SmarTone Postpaid ARPU & Subscriber Trend",
+        "subtitle": "Semi-annual postpaid ARPU (HK$) and postpaid subscriber base ('000s).",
+        "type": "line",
+        "dataset": "smartone_history",
+        "sourceId": "smartone_operating_drivers",
+        "encodings": {
+          "x": {
+            "field": "date",
+            "type": "temporal",
+            "label": "Period"
+          },
+          "y": {
+            "field": "postpaid_arpu_hkd",
+            "type": "quantitative",
+            "label": "HK$"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "full"
+      },
+      {
+        "id": "hutchison_arpu_chart",
+        "title": "Hutchison Telecom (3 HK) Gross vs Net Postpaid ARPU",
+        "subtitle": "Semi-annual postpaid gross and net ARPU (HK$) -- the richest per-user economics disclosure of the three operators.",
+        "type": "line",
+        "dataset": "hutchison_history",
+        "sourceId": "hutchison_telecom_operating_drivers",
+        "encodings": {
+          "x": {
+            "field": "date",
+            "type": "temporal",
+            "label": "Period"
+          },
+          "y": {
+            "field": "postpaid_gross_arpu_hkd",
+            "type": "quantitative",
+            "label": "HK$"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "full"
+      }
+    ],
+    "tables": [
+      {
+        "id": "numbering_plan_table",
+        "title": "OFCA Mobile Number Block Allocations by Operator",
+        "subtitle": "Coarse structural proxy covering all 4 licensed mobile network operators plus MVNOs. Number blocks are issued mobile-number capacity, not active subscriber counts -- there is no visibility into what fraction of an allocated block is actually in use, and reassignment is irregular/event-driven. Treat this as a single capacity snapshot, not a subscriber trend.",
+        "dataset": "numbering_plan_snapshot",
+        "sourceId": "numbering_plan",
+        "density": "dense",
+        "layout": "full",
+        "columns": [
+          {
+            "field": "allocatee",
+            "label": "Operator / Licensee",
+            "type": "text"
+          },
+          {
+            "field": "num_blocks",
+            "label": "Number Blocks",
+            "format": "number"
+          },
+          {
+            "field": "total_numbers_allocated",
+            "label": "Numbers Allocated",
+            "format": "number"
+          }
+        ]
+      }
+    ],
+    "sources": [
+      {
+        "id": "hkt_operating_drivers",
+        "label": "HKT Trust & HKT Limited (6823.HK) Results Announcements",
+        "href": "https://www.hkt.com/en/about-hkt/investor-relations/financial-results/",
+        "path": "sources/hkt_operating_drivers.sql",
+        "query": {
+          "engine": "official HKEX results announcement (PDF)",
+          "url": "https://www.hkt.com/en/about-hkt/investor-relations/financial-results/",
+          "language": "PDF",
+          "description": "Semi-annual Key Operating Drivers table (mobile postpaid/prepaid subscribers, consumer broadband lines, Pay TV base) plus postpaid exit ARPU and FTTH share, extracted from HKT's own results announcement narrative text."
+        }
+      },
+      {
+        "id": "smartone_operating_drivers",
+        "label": "SmarTone Telecommunications Holdings (0315.HK) Results Presentations",
+        "href": "https://www.smartoneholdings.com/about/investor/results/",
+        "path": "sources/smartone_operating_drivers.sql",
+        "query": {
+          "engine": "official investor-relations results presentation (PDF)",
+          "url": "https://www.smartoneholdings.com/about/investor/results/",
+          "language": "PDF",
+          "description": "Semi-annual mobile postpaid customer count, postpaid ARPU trend, and 5G-vs-4G ARPU ratio from SmarTone's own results presentation deck."
+        }
+      },
+      {
+        "id": "hutchison_telecom_operating_drivers",
+        "label": "Hutchison Telecom HK Holdings (0215.HK, \"3 HK\") Results Announcements",
+        "href": "https://www.hthkh.com/en/ir/fin_results.php",
+        "path": "sources/hutchison_telecom_operating_drivers.sql",
+        "query": {
+          "engine": "official HKEX results announcement (PDF)",
+          "url": "https://www.hthkh.com/en/ir/fin_results.php",
+          "language": "PDF",
+          "description": "Semi-annual Key Performance Indicators table: postpaid/prepaid customers, monthly postpaid churn rate, postpaid gross & net ARPU, and 5G penetration rate."
+        }
+      },
+      {
+        "id": "numbering_plan",
+        "label": "OFCA Numbering Plan (Mobile Number Block Allocations)",
+        "href": "https://www.ofca.gov.hk/filemanager/ofca/common/datagovhk/tel_no_en_tc.csv",
+        "path": "sources/numbering_plan.sql",
+        "query": {
+          "engine": "official open data CSV",
+          "url": "https://www.ofca.gov.hk/filemanager/ofca/common/datagovhk/tel_no_en_tc.csv",
+          "language": "CSV",
+          "description": "Mobile number block allocations by operator, all 4 licensed MNOs plus MVNOs -- a capacity/footprint proxy, not a subscriber-count or time-series metric (see table caveat)."
+        }
+      }
+    ],
+    "blocks": [
+      {
+        "id": "kpi_grid",
+        "type": "metric-strip",
+        "cardIds": [
+          "hkt_card",
+          "smartone_card",
+          "hutchison_card"
+        ]
+      },
+      {
+        "id": "hkt_chart",
+        "type": "chart",
+        "chartId": "hkt_arpu_chart"
+      },
+      {
+        "id": "smartone_chart",
+        "type": "chart",
+        "chartId": "smartone_arpu_chart"
+      },
+      {
+        "id": "hutchison_chart",
+        "type": "chart",
+        "chartId": "hutchison_arpu_chart"
+      },
+      {
+        "id": "numbering_plan_table_block",
+        "type": "table",
+        "tableId": "numbering_plan_table"
+      }
+    ]
+  },
+  "snapshot": {
+    "version": 1,
+    "generatedAt": "2026-07-23T23:46:08.071601Z",
+    "status": "ready",
+    "datasets": {
+      "kpi_hkt": [
+        {
+          "latest_arpu": 195,
+          "postpaid_subscribers_thousands": 3494,
+          "consumer_broadband_lines_thousands": 1488,
+          "period_change": 0.010363,
+          "observation_date": "2025-12-31"
+        }
+      ],
+      "kpi_smartone": [
+        {
+          "latest_arpu": 224,
+          "postpaid_subscribers_thousands": 3158,
+          "arpu_5g_to_4g_ratio": 2,
+          "period_change": 0.009009,
+          "observation_date": "2025-12-31"
+        }
+      ],
+      "kpi_hutchison": [
+        {
+          "latest_gross_arpu": 187,
+          "latest_net_arpu": 176,
+          "postpaid_customers_thousands": 1289,
+          "churn_rate_pct": 0.9,
+          "penetration_5g_pct": 62,
+          "period_change": 0.033149,
+          "observation_date": "2025-12-31"
+        }
+      ],
+      "hkt_history": [
+        {
+          "period": "2024-06-30",
+          "date": "2024-06-30",
+          "mobile_postpaid_subscribers_thousands": 3433,
+          "mobile_prepaid_subscribers_thousands": 1451,
+          "total_mobile_subscribers_thousands": 4884,
+          "consumer_broadband_lines_thousands": 1472,
+          "ftth_connections_thousands": null,
+          "ftth_share_pct": null,
+          "pay_tv_installed_base_thousands": 1430,
+          "mobile_postpaid_arpu_hkd": 192
+        },
+        {
+          "period": "2024-12-31",
+          "date": "2024-12-31",
+          "mobile_postpaid_subscribers_thousands": 3459,
+          "mobile_prepaid_subscribers_thousands": 1346,
+          "total_mobile_subscribers_thousands": 4805,
+          "consumer_broadband_lines_thousands": 1474,
+          "ftth_connections_thousands": null,
+          "ftth_share_pct": null,
+          "pay_tv_installed_base_thousands": 1433,
+          "mobile_postpaid_arpu_hkd": 193
+        },
+        {
+          "period": "2025-06-30",
+          "date": "2025-06-30",
+          "mobile_postpaid_subscribers_thousands": 3478,
+          "mobile_prepaid_subscribers_thousands": 1397,
+          "total_mobile_subscribers_thousands": 4875,
+          "consumer_broadband_lines_thousands": 1482,
+          "ftth_connections_thousands": 1055,
+          "ftth_share_pct": 71,
+          "pay_tv_installed_base_thousands": 1448,
+          "mobile_postpaid_arpu_hkd": 193
+        },
+        {
+          "period": "2025-12-31",
+          "date": "2025-12-31",
+          "mobile_postpaid_subscribers_thousands": 3494,
+          "mobile_prepaid_subscribers_thousands": 1323,
+          "total_mobile_subscribers_thousands": 4817,
+          "consumer_broadband_lines_thousands": 1488,
+          "ftth_connections_thousands": 1086,
+          "ftth_share_pct": 73,
+          "pay_tv_installed_base_thousands": 1464,
+          "mobile_postpaid_arpu_hkd": 195
+        }
+      ],
+      "smartone_history": [
+        {
+          "period": "2023-12-31",
+          "date": "2023-12-31",
+          "postpaid_subscribers_thousands": 2647,
+          "postpaid_arpu_hkd": 224,
+          "arpu_5g_to_4g_ratio": null
+        },
+        {
+          "period": "2024-12-31",
+          "date": "2024-12-31",
+          "postpaid_subscribers_thousands": 2873,
+          "postpaid_arpu_hkd": 222,
+          "arpu_5g_to_4g_ratio": null
+        },
+        {
+          "period": "2025-12-31",
+          "date": "2025-12-31",
+          "postpaid_subscribers_thousands": 3158,
+          "postpaid_arpu_hkd": 224,
+          "arpu_5g_to_4g_ratio": 2
+        }
+      ],
+      "hutchison_history": [
+        {
+          "period": "2024-06-30",
+          "date": "2024-06-30",
+          "postpaid_customers_thousands": 1444,
+          "prepaid_customers_thousands": 2827,
+          "total_customers_thousands": 4271,
+          "postpaid_churn_rate_pct": 1,
+          "postpaid_gross_arpu_hkd": 184,
+          "postpaid_net_arpu_hkd": 168,
+          "postpaid_net_ampu_hkd": 148,
+          "penetration_5g_pct": null
+        },
+        {
+          "period": "2024-12-31",
+          "date": "2024-12-31",
+          "postpaid_customers_thousands": 1316,
+          "prepaid_customers_thousands": 3162,
+          "total_customers_thousands": 4478,
+          "postpaid_churn_rate_pct": 1,
+          "postpaid_gross_arpu_hkd": 190,
+          "postpaid_net_arpu_hkd": 175,
+          "postpaid_net_ampu_hkd": 153,
+          "penetration_5g_pct": null
+        },
+        {
+          "period": "2025-06-30",
+          "date": "2025-06-30",
+          "postpaid_customers_thousands": 1399,
+          "prepaid_customers_thousands": 4735,
+          "total_customers_thousands": 6134,
+          "postpaid_churn_rate_pct": 0.9,
+          "postpaid_gross_arpu_hkd": 181,
+          "postpaid_net_arpu_hkd": 171,
+          "postpaid_net_ampu_hkd": 146,
+          "penetration_5g_pct": 57
+        },
+        {
+          "period": "2025-12-31",
+          "date": "2025-12-31",
+          "postpaid_customers_thousands": 1289,
+          "prepaid_customers_thousands": 6843,
+          "total_customers_thousands": 8132,
+          "postpaid_churn_rate_pct": 0.9,
+          "postpaid_gross_arpu_hkd": 187,
+          "postpaid_net_arpu_hkd": 176,
+          "postpaid_net_ampu_hkd": 149,
+          "penetration_5g_pct": 62
+        }
+      ],
+      "numbering_plan_snapshot": [
+        {
+          "allocatee": "HKT",
+          "num_blocks": 99,
+          "total_numbers_allocated": 9340000
+        },
+        {
+          "allocatee": "China Mobile Hong Kong (CMHK)",
+          "num_blocks": 83,
+          "total_numbers_allocated": 7610000
+        },
+        {
+          "allocatee": "Hutchison Telephone (3 HK)",
+          "num_blocks": 67,
+          "total_numbers_allocated": 6440000
+        },
+        {
+          "allocatee": "SmarTone",
+          "num_blocks": 39,
+          "total_numbers_allocated": 3120000
+        },
+        {
+          "allocatee": "Other MVNO / licensee",
+          "num_blocks": 84,
+          "total_numbers_allocated": 2701000
+        }
+      ]
+    }
+  },
+  "sources": [
+    {
+      "id": "hkt_operating_drivers",
+      "label": "HKT Trust & HKT Limited (6823.HK) Results Announcements",
+      "href": "https://www.hkt.com/en/about-hkt/investor-relations/financial-results/",
+      "path": "sources/hkt_operating_drivers.sql",
+      "query": {
+        "engine": "official HKEX results announcement (PDF)",
+        "url": "https://www.hkt.com/en/about-hkt/investor-relations/financial-results/",
+        "language": "PDF",
+        "description": "Semi-annual Key Operating Drivers table (mobile postpaid/prepaid subscribers, consumer broadband lines, Pay TV base) plus postpaid exit ARPU and FTTH share, extracted from HKT's own results announcement narrative text."
+      }
+    },
+    {
+      "id": "smartone_operating_drivers",
+      "label": "SmarTone Telecommunications Holdings (0315.HK) Results Presentations",
+      "href": "https://www.smartoneholdings.com/about/investor/results/",
+      "path": "sources/smartone_operating_drivers.sql",
+      "query": {
+        "engine": "official investor-relations results presentation (PDF)",
+        "url": "https://www.smartoneholdings.com/about/investor/results/",
+        "language": "PDF",
+        "description": "Semi-annual mobile postpaid customer count, postpaid ARPU trend, and 5G-vs-4G ARPU ratio from SmarTone's own results presentation deck."
+      }
+    },
+    {
+      "id": "hutchison_telecom_operating_drivers",
+      "label": "Hutchison Telecom HK Holdings (0215.HK, \"3 HK\") Results Announcements",
+      "href": "https://www.hthkh.com/en/ir/fin_results.php",
+      "path": "sources/hutchison_telecom_operating_drivers.sql",
+      "query": {
+        "engine": "official HKEX results announcement (PDF)",
+        "url": "https://www.hthkh.com/en/ir/fin_results.php",
+        "language": "PDF",
+        "description": "Semi-annual Key Performance Indicators table: postpaid/prepaid customers, monthly postpaid churn rate, postpaid gross & net ARPU, and 5G penetration rate."
+      }
+    },
+    {
+      "id": "numbering_plan",
+      "label": "OFCA Numbering Plan (Mobile Number Block Allocations)",
+      "href": "https://www.ofca.gov.hk/filemanager/ofca/common/datagovhk/tel_no_en_tc.csv",
+      "path": "sources/numbering_plan.sql",
+      "query": {
+        "engine": "official open data CSV",
+        "url": "https://www.ofca.gov.hk/filemanager/ofca/common/datagovhk/tel_no_en_tc.csv",
+        "language": "CSV",
+        "description": "Mobile number block allocations by operator, all 4 licensed MNOs plus MVNOs -- a capacity/footprint proxy, not a subscriber-count or time-series metric (see table caveat)."
+      }
+    }
+  ],
+  "package_info": {
+    "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-telecom/",
+    "snapshotId": "1b151cd4d761b58f",
+    "dataAsOf": "2025-12-31"
+  }
+}
