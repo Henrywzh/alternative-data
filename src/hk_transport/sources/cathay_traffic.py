@@ -1,17 +1,33 @@
 """Cathay Pacific & HKIA Monthly Aviation Traffic Statistics.
 
 Ingests CAD HKIA Monthly Airport Traffic Excel workbook (Stat Webpage.xlsx) and
-Cathay Pacific Group operating traffic disclosures:
+Cathay Pacific Group monthly traffic figures announcements (PDF, filed on Cathay's
+own investor-relations site under a deterministic URL pattern):
 - HKIA Aircraft Movements, Passenger Volume, Freight Tonnage
 - Cathay Pacific Passengers carried, ASK ('000), RPK ('000), Passenger Load Factor (%)
+
+Cathay traffic source: Cathay's investor-relations announcements are published each
+month at a predictable URL:
+    https://www.cathaypacific.com/content/dam/cx/about-us/investor-relations/
+        announcements/en/<YYYYMM>_cx_traffic_en.pdf
+where <YYYYMM> is the *announcement* month; the traffic figures inside are always
+for the *prior* calendar month (e.g. the PDF published as 202607 contains June 2026
+data, released ~22 July 2026). This has been verified working (200 OK, correct
+content) across multiple months, so no discovery/crawl step is needed -- we just
+construct and fetch each candidate month directly. This replaces an earlier
+implementation that used a hardcoded, unsourced dict of "historical" Cathay figures
+instead of fetching real data.
 """
 
 from __future__ import annotations
 
 import io
 import logging
+import re
+from datetime import datetime, timezone
 
 import pandas as pd
+import pdfplumber
 import requests
 
 from ..config import CAD_HKIA_XLSX_URL, DEFAULT_HEADERS
@@ -31,34 +47,141 @@ SCHEMA_COLUMNS = [
     "cathay_passenger_load_factor_pct",
 ]
 
-# Baseline historical Cathay Pacific Group monthly disclosures
-# (Sourced from Cathay Group Monthly Traffic Releases 2024-2026)
-CATHAY_HISTORICAL_DATA = {
-    "2025-01": {"cathay_passengers": 2210000, "cathay_rpk_thousands": 9450000, "cathay_ask_thousands": 11200000, "cathay_passenger_load_factor_pct": 84.4},
-    "2025-02": {"cathay_passengers": 2180000, "cathay_rpk_thousands": 9210000, "cathay_ask_thousands": 10950000, "cathay_passenger_load_factor_pct": 84.1},
-    "2025-03": {"cathay_passengers": 2290000, "cathay_rpk_thousands": 9680000, "cathay_ask_thousands": 11410000, "cathay_passenger_load_factor_pct": 84.8},
-    "2025-04": {"cathay_passengers": 2350000, "cathay_rpk_thousands": 9890000, "cathay_ask_thousands": 11620000, "cathay_passenger_load_factor_pct": 85.1},
-    "2025-05": {"cathay_passengers": 2270000, "cathay_rpk_thousands": 9560000, "cathay_ask_thousands": 11350000, "cathay_passenger_load_factor_pct": 84.2},
-    "2025-06": {"cathay_passengers": 2420000, "cathay_rpk_thousands": 10150000, "cathay_ask_thousands": 11880000, "cathay_passenger_load_factor_pct": 85.4},
-    "2025-07": {"cathay_passengers": 2580000, "cathay_rpk_thousands": 10620000, "cathay_ask_thousands": 12210000, "cathay_passenger_load_factor_pct": 87.0},
-    "2025-08": {"cathay_passengers": 2610000, "cathay_rpk_thousands": 10780000, "cathay_ask_thousands": 12340000, "cathay_passenger_load_factor_pct": 87.4},
-    "2025-09": {"cathay_passengers": 2320000, "cathay_rpk_thousands": 9780000, "cathay_ask_thousands": 11480000, "cathay_passenger_load_factor_pct": 85.2},
-    "2025-10": {"cathay_passengers": 2480000, "cathay_rpk_thousands": 10320000, "cathay_ask_thousands": 12050000, "cathay_passenger_load_factor_pct": 85.6},
-    "2025-11": {"cathay_passengers": 2380000, "cathay_rpk_thousands": 9980000, "cathay_ask_thousands": 11720000, "cathay_passenger_load_factor_pct": 85.2},
-    "2025-12": {"cathay_passengers": 2690000, "cathay_rpk_thousands": 11020000, "cathay_ask_thousands": 12610000, "cathay_passenger_load_factor_pct": 87.4},
-    "2026-01": {"cathay_passengers": 2450000, "cathay_rpk_thousands": 10210000, "cathay_ask_thousands": 11950000, "cathay_passenger_load_factor_pct": 85.4},
-    "2026-02": {"cathay_passengers": 2410000, "cathay_rpk_thousands": 10080000, "cathay_ask_thousands": 11820000, "cathay_passenger_load_factor_pct": 85.3},
-    "2026-03": {"cathay_passengers": 2510000, "cathay_rpk_thousands": 10450000, "cathay_ask_thousands": 12110000, "cathay_passenger_load_factor_pct": 86.3},
-    "2026-04": {"cathay_passengers": 2540000, "cathay_rpk_thousands": 10580000, "cathay_ask_thousands": 12220000, "cathay_passenger_load_factor_pct": 86.6},
-    "2026-05": {"cathay_passengers": 2470000, "cathay_rpk_thousands": 10310000, "cathay_ask_thousands": 11980000, "cathay_passenger_load_factor_pct": 86.1},
-    "2026-06": {"cathay_passengers": 2582868, "cathay_rpk_thousands": 10690055, "cathay_ask_thousands": 12232841, "cathay_passenger_load_factor_pct": 87.4},
-}
-
 MONTH_MAP = {
     "Jan": "01", "Feb": "02", "Mar": "03", "Apr": "04",
     "May": "05", "Jun": "06", "Jul": "07", "Aug": "08",
     "Sep": "09", "Oct": "10", "Nov": "11", "Dec": "12",
 }
+
+CATHAY_PDF_URL_TEMPLATE = (
+    "https://www.cathaypacific.com/content/dam/cx/about-us/investor-relations/"
+    "announcements/en/{yyyymm}_cx_traffic_en.pdf"
+)
+
+# How many announcement months (going backward from the current month) to probe.
+CATHAY_LOOKBACK_MONTHS = 24
+# Stop early once this many consecutive 404s have been seen (bounds runtime once
+# we've walked back past the start of Cathay's published PDF history).
+CATHAY_MAX_CONSECUTIVE_MISSES = 3
+
+
+def _add_months(year: int, month: int, delta: int) -> tuple[int, int]:
+    """Shift (year, month) by delta months (delta may be negative)."""
+    idx = (year * 12 + (month - 1)) + delta
+    return idx // 12, idx % 12 + 1
+
+
+def _clean_number(val: str) -> float:
+    cleaned = re.sub(r"[^\d.\-]", "", val or "")
+    try:
+        return float(cleaned)
+    except ValueError:
+        return 0.0
+
+
+def _find_metric_table(tables: list[list[list[str | None]]]) -> list[list[str | None]] | None:
+    for table in tables:
+        if table and table[0] and table[0][0] and "CATHAY PACIFIC" in str(table[0][0]).upper():
+            return table
+    return None
+
+
+def _parse_cathay_pdf(content: bytes, month_key: str) -> dict | None:
+    """Parse a single Cathay traffic-figures PDF into the metrics we track."""
+    with pdfplumber.open(io.BytesIO(content)) as pdf:
+        table = None
+        for page in pdf.pages:
+            tables = page.extract_tables()
+            table = _find_metric_table(tables)
+            if table:
+                break
+
+    if not table:
+        logger.warning("Cathay traffic PDF for %s: no CATHAY PACIFIC table found.", month_key)
+        return None
+
+    metrics: dict[str, float] = {}
+    for row in table[1:]:
+        if not row or not row[0]:
+            continue
+        label = " ".join(row[0].split()).lower()
+        value = row[1] if len(row) > 1 else None
+        if value is None:
+            continue
+        if "available seat kilometres" in label:
+            metrics["cathay_ask_thousands"] = _clean_number(value)
+        elif "revenue passenger kilometres" in label:
+            metrics["cathay_rpk_thousands"] = _clean_number(value)
+        elif "passengers carried" in label:
+            metrics["cathay_passengers"] = _clean_number(value)
+        elif "passenger load factor" in label:
+            metrics["cathay_passenger_load_factor_pct"] = _clean_number(value)
+
+    required = {"cathay_ask_thousands", "cathay_rpk_thousands", "cathay_passengers", "cathay_passenger_load_factor_pct"}
+    if not required.issubset(metrics.keys()):
+        logger.warning("Cathay traffic PDF for %s: missing fields %s", month_key, required - metrics.keys())
+        return None
+
+    return metrics
+
+
+def _fetch_cathay_monthly() -> pd.DataFrame:
+    """Fetch Cathay Group monthly traffic figures by walking back through the
+    deterministic per-month PDF URL pattern until data runs out."""
+    now = datetime.now(timezone.utc)
+    ann_year, ann_month = now.year, now.month
+
+    rows: list[dict] = []
+    consecutive_misses = 0
+
+    for offset in range(CATHAY_LOOKBACK_MONTHS):
+        y, m = _add_months(ann_year, ann_month, -offset)
+        yyyymm = f"{y:04d}{m:02d}"
+        url = CATHAY_PDF_URL_TEMPLATE.format(yyyymm=yyyymm)
+
+        try:
+            resp = requests.get(url, headers=DEFAULT_HEADERS, timeout=20)
+        except requests.RequestException as exc:
+            logger.warning("Cathay traffic fetch error for %s: %s", yyyymm, exc)
+            consecutive_misses += 1
+            if rows and consecutive_misses >= CATHAY_MAX_CONSECUTIVE_MISSES:
+                break
+            continue
+
+        if resp.status_code != 200:
+            consecutive_misses += 1
+            if rows and consecutive_misses >= CATHAY_MAX_CONSECUTIVE_MISSES:
+                break
+            continue
+
+        # Traffic figures inside the PDF are for the prior calendar month.
+        data_year, data_month = _add_months(y, m, -1)
+        month_key = f"{data_year:04d}-{data_month:02d}"
+
+        metrics = _parse_cathay_pdf(resp.content, month_key)
+        if metrics is None:
+            consecutive_misses += 1
+            if rows and consecutive_misses >= CATHAY_MAX_CONSECUTIVE_MISSES:
+                break
+            continue
+
+        consecutive_misses = 0
+        rows.append({"month": month_key, "source_pdf_url": url, **metrics})
+
+    if not rows:
+        logger.warning("No Cathay traffic figures parsed from any candidate PDF URL.")
+        return pd.DataFrame(columns=["month", "cathay_passengers", "cathay_rpk_thousands", "cathay_ask_thousands", "cathay_passenger_load_factor_pct"])
+
+    df = pd.DataFrame(rows).drop_duplicates(subset=["month"]).sort_values("month").reset_index(drop=True)
+
+    raw_path = save_raw_snapshot(
+        "cathay_traffic_pdf",
+        df.to_dict(orient="records"),
+        file_ext="json",
+        source_url=CATHAY_PDF_URL_TEMPLATE,
+    )
+    df.attrs["raw_snapshot"] = str(raw_path)
+    return df
 
 
 def fetch_cathay_traffic() -> pd.DataFrame:
@@ -75,7 +198,19 @@ def fetch_cathay_traffic() -> pd.DataFrame:
         yr_val = str(row.iloc[0]).strip() if pd.notna(row.iloc[0]) else None
         mth_val = str(row.iloc[1]).strip() if pd.notna(row.iloc[1]) else None
 
-        if yr_val in ("2021", "2022", "2023", "2024", "2025", "2026"):
+        # The workbook contains an annual summary table (Year column filled,
+        # Month blank, years 1998-2026) BEFORE the monthly breakdown table
+        # (which also starts back at 1998). Only treat a Year cell as
+        # starting a new year block when it's paired with a real month value
+        # in the same row -- that only happens in the monthly table, at the
+        # first month of each year. A prior version of this code updated
+        # current_year off a fixed whitelist of "2021".."2026" years alone,
+        # which meant it picked up "2026" from the annual table's last row
+        # before the monthly table even began, then never reset for years
+        # 1998-2020 (not in the whitelist) -- silently mislabeling 1998
+        # monthly data as 2026 and (via drop_duplicates keeping the first
+        # occurrence) clobbering the real, later 2026 rows entirely.
+        if yr_val and re.fullmatch(r"(19|20)\d{2}", yr_val) and mth_val in MONTH_MAP:
             current_year = yr_val
 
         if current_year and mth_val in MONTH_MAP:
@@ -84,7 +219,14 @@ def fetch_cathay_traffic() -> pd.DataFrame:
             date_key = f"{month_key}-01"
 
             try:
-                movements = float(row.iloc[4]) if pd.notna(row.iloc[4]) else 0.0
+                # Column layout (verified against a live fetch of the workbook):
+                # 0 Year, 1 Month, 2 provisional/revised flag, 3 Landing, 4 Take-off,
+                # 5 Total (Aircraft), 6 YoY%, 7 Arrival, 8 Departure, 9 Total (Passenger),
+                # 10 YoY%, 11 Unloaded, 12 Loaded, 13 Total (Freight, tonnes), 14 YoY%.
+                # NOTE: aircraft movements must come from column 5 ("Total"), not
+                # column 4 ("Take-off") -- using Take-off alone understates total
+                # movements by roughly half.
+                movements = float(row.iloc[5]) if pd.notna(row.iloc[5]) else 0.0
                 passengers = float(row.iloc[9]) if pd.notna(row.iloc[9]) else 0.0
                 freight = float(row.iloc[13]) if pd.notna(row.iloc[13]) else 0.0
 
@@ -106,11 +248,8 @@ def fetch_cathay_traffic() -> pd.DataFrame:
     hkia_df["date"] = pd.to_datetime(hkia_df["date"])
     hkia_df = hkia_df.drop_duplicates(subset=["month"]).sort_values("date").reset_index(drop=True)
 
-    # Attach Cathay disclosures
-    c_rows = []
-    for m, cdata in CATHAY_HISTORICAL_DATA.items():
-        c_rows.append({"month": m, **cdata})
-    c_df = pd.DataFrame(c_rows)
+    # Attach Cathay disclosures, fetched live from Cathay's own IR-site PDFs.
+    c_df = _fetch_cathay_monthly()
 
     merged = hkia_df.merge(c_df, on="month", how="left")
 
@@ -119,6 +258,14 @@ def fetch_cathay_traffic() -> pd.DataFrame:
             merged[col] = 0.0
         else:
             merged[col] = merged[col].fillna(0.0)
+
+    # Keep only months where we have both HKIA and Cathay data so the trend chart
+    # doesn't show fabricated/zero Cathay figures for months we never fetched.
+    merged = merged[merged["cathay_passengers"] > 0].reset_index(drop=True)
+
+    if merged.empty:
+        logger.warning("No overlapping HKIA/Cathay months after merge.")
+        return pd.DataFrame(columns=SCHEMA_COLUMNS)
 
     result = merged[SCHEMA_COLUMNS].sort_values("date").reset_index(drop=True)
 
