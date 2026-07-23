@@ -198,6 +198,12 @@ data/raw/minerals_signal_data/*
 !data/raw/minerals_signal_data/*.parquet
 data/raw/minerals_signal_data/images/
 
+# hk_real_estate developer/project registry: small, hand-curated reference table
+# required at test/runtime by DeveloperRegistry — must be committed, not regenerated.
+!data/registries/
+data/registries/*
+!data/registries/hk_developer_project_registry.csv
+
 # Repo-size control: never commit normalized CSVs — the dashboard loader reads the
 # parquet twin first (dashboard/data.py load_dataset), so committing the CSV too just
 # bloats git history (these are regenerated daily). Keep parquet only.
