@@ -1,41 +1,66 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import status from "../data/dashboard-status.json";
+import realEstateStatus from "../data/dashboard-status.json";
+import localConsumerStatus from "../data/dashboard-status-hk-local-consumer.json";
+
+const liveSectors = [
+  { status: realEstateStatus, name: "Hong Kong Real Estate", href: "/sectors/hk-real-estate/" },
+  { status: localConsumerStatus, name: "Hong Kong Local Consumer", href: "/sectors/hk-local-consumer/" },
+];
 
 const sectors = [
+  ...liveSectors.map((sector, index) => ({
+    code: String(index + 1).padStart(2, "0"),
+    name: sector.name,
+    state: sector.status.overall_status,
+    detail: `${sector.status.live_sources} live measures · data through ${sector.status.data_as_of}`,
+    href: sector.href,
+    action: "Open monitor",
+    isLive: true,
+  })),
   {
-    code: "01",
-    name: "Hong Kong Real Estate",
-    state: status.overall_status,
-    detail: `${status.live_sources} live measures · data through ${status.data_as_of}`,
-    href: "/sectors/hk-real-estate/",
-    action: "Open monitor"
+    code: "03",
+    name: "Hong Kong REITs",
+    state: "Research ready",
+    detail: "Price/quote pipeline built and tested; the live source (Eastmoney, via akshare) is currently unreachable, and REIT fundamentals (yield, NAV, occupancy) are not covered by any confirmed free API. Publication is paused pending a working data source.",
+    href: "#future-sectors",
+    action: "Planned",
+    isLive: false,
   },
   {
-    code: "02",
+    code: "04",
     name: "Stablecoin & Crypto",
     state: "Research ready",
     detail: "Source map and company coverage complete; dashboard not yet published.",
     href: "#future-sectors",
-    action: "Planned"
+    action: "Planned",
+    isLive: false,
   },
   {
-    code: "03",
+    code: "05",
     name: "Commercial Aerospace",
     state: "Research ready",
     detail: "Company and signal framework complete; dashboard not yet published.",
     href: "#future-sectors",
-    action: "Planned"
+    action: "Planned",
+    isLive: false,
   },
   {
-    code: "04",
+    code: "06",
     name: "Consumer Trends",
     state: "Research",
     detail: "Company list established; source access remains uneven.",
     href: "#future-sectors",
-    action: "Planned"
-  }
+    action: "Planned",
+    isLive: false,
+  },
 ];
+
+const latestGeneratedAt = liveSectors.reduce(
+  (max, sector) => (sector.status.generated_at > max ? sector.status.generated_at : max),
+  liveSectors[0].status.generated_at
+);
+const totalLiveMeasures = liveSectors.reduce((sum, sector) => sum + sector.status.live_sources, 0);
 ---
 
 <BaseLayout
@@ -49,9 +74,8 @@ const sectors = [
     </div>
     <div class="intro-meta">
       <span>Latest release</span>
-      <strong>{status.generated_at.slice(0, 10)}</strong>
-      <span>HK real estate snapshot</span>
-      <code>{status.snapshot_id}</code>
+      <strong>{latestGeneratedAt.slice(0, 10)}</strong>
+      <span>{totalLiveMeasures} live measures across {liveSectors.length} published sectors</span>
     </div>
   </section>
 
@@ -61,9 +85,9 @@ const sectors = [
       <p>Published surfaces first; research-only sectors remain clearly labeled.</p>
     </div>
     <div class="sector-list">
-      {sectors.map((sector, index) => (
+      {sectors.map((sector) => (
         <a
-          class:list={["sector-row", index === 0 && "sector-row-live"]}
+          class:list={["sector-row", sector.isLive && "sector-row-live"]}
           href={sector.href}
           aria-label={`${sector.name}: ${sector.action}`}
         >
@@ -82,16 +106,18 @@ const sectors = [
   <section class="release-panel" id="future-sectors">
     <div>
       <p class="eyebrow">Portable release</p>
-      <h2>Take the real-estate monitor offline.</h2>
+      <h2>Take these monitors offline.</h2>
       <p>
-        The hosted page and the downloadable HTML are generated from the same validated snapshot and
+        Each hosted page and its downloadable HTML are generated from the same validated snapshot and
         contain identical dashboard bytes.
       </p>
     </div>
     <div class="release-actions">
-      <a class="primary-action" href={`/exports/${status.attachment_filename}`} download>
-        Download offline HTML
-      </a>
+      {liveSectors.map((sector) => (
+        <a class="primary-action" href={`/exports/${sector.status.attachment_filename}`} download>
+          Download {sector.name} HTML
+        </a>
+      ))}
       <a class="text-action" href="/data-status/">Inspect source status →</a>
     </div>
   </section>

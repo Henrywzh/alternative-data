@@ -1,0 +1,127 @@
+"""HK REIT price data via akshare.
+
+Only price/quote data is sourced here. akshare's HK fundamentals
+functions (`stock_hk_dividend_payout_em`, `stock_hk_valuation_baidu`,
+`stock_hk_financial_indicator_em`) were checked directly against every
+ticker in HK_REIT_TICKERS before this module was written and confirmed to
+return empty results or raise for all of them — REITs are not covered by
+those endpoints in the underlying data source. That gap is documented,
+not silently papered over with fabricated numbers.
+"""
+
+from __future__ import annotations
+
+import logging
+from datetime import date, datetime, timedelta, timezone
+from typing import Optional
+
+import pandas as pd
+
+from ..config import HK_REIT_TICKERS
+from ..storage import save_raw_snapshot
+
+logger = logging.getLogger(__name__)
+
+SOURCE_NAME = "reit_price_akshare"
+SOURCE_URL = "akshare.stock_hk_spot_em / akshare.stock_hk_hist"
+
+
+def fetch_reit_spot_quotes(*, run_id: Optional[str] = None) -> pd.DataFrame:
+    """Latest spot quote (price, day change, volume) for every REIT ticker."""
+    try:
+        import akshare as ak
+    except ImportError:
+        logger.error("akshare is not installed; cannot fetch REIT spot quotes.")
+        return pd.DataFrame()
+
+    try:
+        spot = ak.stock_hk_spot_em()
+    except Exception:
+        logger.exception("stock_hk_spot_em() fetch failed.")
+        return pd.DataFrame()
+
+    if spot.empty or "代码" not in spot.columns:
+        logger.warning("stock_hk_spot_em() returned no usable data.")
+        return pd.DataFrame()
+
+    subset = spot[spot["代码"].isin(HK_REIT_TICKERS.keys())].copy()
+    if subset.empty:
+        logger.warning("None of the configured REIT tickers were found in stock_hk_spot_em().")
+        return pd.DataFrame()
+
+    save_raw_snapshot(
+        SOURCE_NAME + "_spot",
+        subset.to_json(orient="records", force_ascii=False),
+        file_ext="json",
+        source_url=SOURCE_URL,
+        run_id=run_id,
+    )
+
+    out = pd.DataFrame(
+        {
+            "date": pd.Timestamp(datetime.now(timezone.utc).date()),
+            "ticker": subset["代码"].astype(str).str.zfill(5),
+            "company_name": subset["代码"].astype(str).str.zfill(5).map(HK_REIT_TICKERS),
+            "latest_price_hkd": pd.to_numeric(subset.get("最新价"), errors="coerce"),
+            "change_pct": pd.to_numeric(subset.get("涨跌幅"), errors="coerce"),
+            "volume": pd.to_numeric(subset.get("成交量"), errors="coerce"),
+            "turnover_hkd": pd.to_numeric(subset.get("成交额"), errors="coerce"),
+        }
+    )
+    return out.reset_index(drop=True)
+
+
+def fetch_reit_price_history(
+    *, lookback_days: int = 400, run_id: Optional[str] = None
+) -> pd.DataFrame:
+    """Daily OHLC history for every REIT ticker, `lookback_days` back from today."""
+    try:
+        import akshare as ak
+    except ImportError:
+        logger.error("akshare is not installed; cannot fetch REIT price history.")
+        return pd.DataFrame()
+
+    end = date.today()
+    start = end - timedelta(days=lookback_days)
+    frames: list[pd.DataFrame] = []
+    for ticker, name in HK_REIT_TICKERS.items():
+        try:
+            hist = ak.stock_hk_hist(
+                symbol=ticker,
+                period="daily",
+                start_date=start.strftime("%Y%m%d"),
+                end_date=end.strftime("%Y%m%d"),
+                adjust="",
+            )
+        except Exception:
+            logger.exception("stock_hk_hist(%s) failed for %s.", ticker, name)
+            continue
+        if hist is None or hist.empty:
+            logger.warning("stock_hk_hist(%s) returned no data for %s.", ticker, name)
+            continue
+        frame = pd.DataFrame(
+            {
+                "date": pd.to_datetime(hist.get("日期"), errors="coerce"),
+                "ticker": ticker,
+                "company_name": name,
+                "open_hkd": pd.to_numeric(hist.get("开盘"), errors="coerce"),
+                "high_hkd": pd.to_numeric(hist.get("最高"), errors="coerce"),
+                "low_hkd": pd.to_numeric(hist.get("最低"), errors="coerce"),
+                "close_hkd": pd.to_numeric(hist.get("收盘"), errors="coerce"),
+                "volume": pd.to_numeric(hist.get("成交量"), errors="coerce"),
+            }
+        )
+        frames.append(frame.dropna(subset=["date"]))
+
+    if not frames:
+        return pd.DataFrame()
+
+    combined = pd.concat(frames, ignore_index=True)
+    save_raw_snapshot(
+        SOURCE_NAME + "_history",
+        combined.to_json(orient="records", force_ascii=False, date_format="iso"),
+        file_ext="json",
+        source_url=SOURCE_URL,
+        run_id=run_id,
+    )
+    return combined.sort_values(["ticker", "date"]).reset_index(drop=True)
