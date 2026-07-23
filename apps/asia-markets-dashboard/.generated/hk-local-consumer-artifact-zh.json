@@ -5,7 +5,7 @@
     "surface": "dashboard",
     "title": "香港本地消费监测",
     "description": "黄金原料成本、鲜活食品批发价与观察名单估值的来源快照。",
-    "generatedAt": "2026-07-23T20:42:52.214392Z",
+    "generatedAt": "2026-07-23T20:43:55.981115Z",
     "cards": [
       {
         "id": "gold_card",
@@ -550,7 +550,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**数据快照：** `79dc0817f8844b31` · 生成于 2026-07-23T20:42:52.214392Z。这是已发布快照，不是实时连接；消费者委员会价格观察覆盖仍在计划中，未以占位值展示。"
+        "body": "**数据快照：** `d24037556f0e0f53` · 生成于 2026-07-23T20:43:55.981115Z。这是已发布快照，不是实时连接；消费者委员会价格观察覆盖仍在计划中，未以占位值展示。"
       },
       {
         "id": "market_pulse",
@@ -640,7 +640,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-23T20:42:52.214392Z",
+    "generatedAt": "2026-07-23T20:43:55.981115Z",
     "status": "ready",
     "datasets": {
       "kpi_gold": [
@@ -653,7 +653,7 @@
       ],
       "kpi_median_pe": [
         {
-          "latest": 13.3
+          "latest": 11.91
         }
       ],
       "gold_history": [
@@ -8077,7 +8077,7 @@
         {
           "ticker": "01929.HK",
           "company_name": "Chow Tai Fook Jewellery",
-          "pe_ttm": 13.71,
+          "pe_ttm": null,
           "pb_ratio": 3.99,
           "market_cap_hkd_b": 123.428,
           "date": "2026-07-23"
@@ -8164,10 +8164,6 @@
         }
       ],
       "valuation_pe_chart": [
-        {
-          "company_name": "Chow Tai Fook Jewellery",
-          "pe_ttm": 13.71
-        },
         {
           "company_name": "Prada",
           "pe_ttm": 13.3
@@ -9898,7 +9894,7 @@
         "metric_definitions": [
           "Each commodity's price is the mean of same-day readings across the wholesale markets/sources AFCD reports for it."
         ],
-        "executed_at": "2026-07-23T20:42:52.214392Z"
+        "executed_at": "2026-07-23T20:43:55.981115Z"
       }
     },
     {
@@ -9914,7 +9910,7 @@
           "Latest is the most recent published PM benchmark fixing.",
           "Day and year movements are latest divided by the prior trading day or the observation on/before one year earlier, minus one."
         ],
-        "executed_at": "2026-07-23T20:42:52.214392Z"
+        "executed_at": "2026-07-23T20:43:55.981115Z"
       }
     },
     {
@@ -9930,7 +9926,7 @@
           "PE (TTM), PB, and market cap (HKD bn) are each ticker's latest published daily value.",
           "No dividend-yield indicator exists on this endpoint; yield is not reported here."
         ],
-        "executed_at": "2026-07-23T20:42:52.214392Z"
+        "executed_at": "2026-07-23T20:43:55.981115Z"
       }
     },
     {
@@ -9946,7 +9942,7 @@
           "All retail outlet is the classification group's own published total across all outlet types.",
           "Month and year movements are latest divided by the prior month or the observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-07-23T20:42:52.214392Z"
+        "executed_at": "2026-07-23T20:43:55.981115Z"
       }
     },
     {
@@ -9962,7 +9958,7 @@
           "Purchases are only published sector-wide, not broken out by restaurant type.",
           "Quarter and year movements are latest divided by the prior quarter or the observation four quarters earlier, minus one."
         ],
-        "executed_at": "2026-07-23T20:42:52.214392Z"
+        "executed_at": "2026-07-23T20:43:55.981115Z"
       }
     },
     {
@@ -9976,13 +9972,13 @@
           "Validated live measure frames",
           "Declared future-source registry"
         ],
-        "executed_at": "2026-07-23T20:42:52.214392Z"
+        "executed_at": "2026-07-23T20:43:55.981115Z"
       }
     }
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-local-consumer/",
-    "snapshotId": "79dc0817f8844b31",
+    "snapshotId": "d24037556f0e0f53",
     "dataAsOf": "2026-07-21"
   }
 }
