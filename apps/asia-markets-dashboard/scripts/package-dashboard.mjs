@@ -96,7 +96,7 @@ const HK_LOCAL_CONSUMER_ZH = {
   cards: {
     weather_card: { label: "极端天气干扰 (小时/月)", description: "月度八号及以上风球与红/黑色暴雨警告总持续时长。" },
     fx_card: { label: "人民币 / 100 港元", description: "基于 FRED 每日报价计算的月度平均港元/人民币交叉汇率。" },
-    northbound_card: { label: "北上人流 (7日均值)", description: "每日香港居民出境人次（7日移动平均）；日环比与同比变动。", cadence: "日环比" },
+    northbound_card: { label: "北上人流 (7日均值，陆路口岸)", description: "每日经陆路口岸（不含机场及邮轮/渡轮码头）出境的香港居民人次（7日移动平均）；日环比与同比变动。", cadence: "日环比" },
     southbound_card: { label: "南下人流 (7日均值)", description: "每日内地访客入境人次（7日移动平均）；日环比与同比变动。", cadence: "日环比" },
     gold_card: { label: "黄金晚盘 (RMB/克)", description: "最新公布的上海金交所晚盘基准价；日环比与同比变动。", cadence: "日环比" },
     median_pe_card: { label: "市盈率中位数 (TTM)", description: "香港本地消费观察名单（11 家公司）的市盈率中位数。" },

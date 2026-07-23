@@ -122,8 +122,8 @@ PUBLIC_SOURCES = {
             "language": "CSV",
             "description": "Daily passenger clearance counts across 17 control points for HK Residents, Mainland Visitors, and Other Visitors.",
             "metric_definitions": [
-                "Northbound (北上) flow is daily HK resident departures (total & land control points).",
-                "Southbound (南下) flow is daily Mainland visitor arrivals.",
+                "Northbound (北上) flow is daily HK resident departures through the 9 land control points only (Lo Wu, Lok Ma Chau, Lok Ma Chau Spur Line, Shenzhen Bay, Heung Yuen Wai, Man Kam To, Sha Tau Kok, HZMB, Express Rail Link West Kowloon) -- this excludes the Airport and other cruise/ferry terminals so it isolates cross-border day-trippers from residents flying abroad.",
+                "Southbound (南下) flow is daily Mainland visitor arrivals across all 17 control points, since Mainland visitors legitimately arrive by air, rail, and sea, not just by land.",
                 "7-day moving averages (7d MA) smooth out day-of-week seasonality (weekend shopping spikes).",
             ],
         },
@@ -306,7 +306,13 @@ def _validate_immigration(df: pd.DataFrame, now: datetime) -> pd.DataFrame:
         raise ValueError("Immigration daily traffic: no data returned")
     result = df.copy()
     result["date"] = pd.to_datetime(result["date"], errors="coerce")
-    for col in ("hk_resident_departures", "mainland_visitor_arrivals", "hk_resident_departures_7d_ma", "mainland_visitor_arrivals_7d_ma"):
+    for col in (
+        "hk_resident_departures",
+        "mainland_visitor_arrivals",
+        "hk_resident_departures_7d_ma",
+        "mainland_visitor_arrivals_7d_ma",
+        "land_hk_resident_departures_7d_ma",
+    ):
         result[col] = pd.to_numeric(result[col], errors="coerce")
     result = result.dropna(subset=["date", "hk_resident_departures", "mainland_visitor_arrivals"])
     if len(result) < 100:
@@ -339,10 +345,12 @@ def _comparison_row(frame: pd.DataFrame, value_column: str, now: datetime) -> di
     value = float(latest[value_column])
     prior_value = float(prior[value_column])
     yearly_value = float(yearly[value_column])
+    period_change = round(value / prior_value - 1, 6) if prior_value else None
+    year_change = round(value / yearly_value - 1, 6) if yearly_value else None
     return {
         "latest": round(value, 2),
-        "period_change": round(value / prior_value - 1, 6),
-        "year_change": round(value / yearly_value - 1, 6),
+        "period_change": period_change,
+        "year_change": year_change,
         "observation_date": latest["date"].strftime("%Y-%m-%d"),
     }
 
@@ -413,11 +421,11 @@ def build_artifact(
     restaurant_chart_rows = restaurant_snapshot[restaurant_snapshot["sub_sector"] != "All restaurants"]
 
     # Cross-border immigration KPIs and trend charts
-    northbound_kpi = _comparison_row(immigration, "hk_resident_departures_7d_ma", now)
+    northbound_kpi = _comparison_row(immigration, "land_hk_resident_departures_7d_ma", now)
     southbound_kpi = _comparison_row(immigration, "mainland_visitor_arrivals_7d_ma", now)
 
     imm_chart_window = immigration.tail(365).copy()
-    imm_north = imm_chart_window[["date", "hk_resident_departures_7d_ma"]].rename(columns={"hk_resident_departures_7d_ma": "value"})
+    imm_north = imm_chart_window[["date", "land_hk_resident_departures_7d_ma"]].rename(columns={"land_hk_resident_departures_7d_ma": "value"})
     imm_north["flow_type"] = "Northbound Flow (HK Residents)"
     imm_south = imm_chart_window[["date", "mainland_visitor_arrivals_7d_ma"]].rename(columns={"mainland_visitor_arrivals_7d_ma": "value"})
     imm_south["flow_type"] = "Southbound Flow (Mainland Visitors)"
@@ -581,11 +589,11 @@ def build_artifact(
     cards = [
         {
             "id": "northbound_card",
-            "description": "Daily HK resident departures (7-day MA); day-on-day and year-on-year movements.",
+            "description": "Daily HK resident departures via land control points only (7-day MA); day-on-day and year-on-year movements.",
             "dataset": "kpi_northbound",
             "sourceId": "immigration_flow",
             "metrics": [
-                {"label": "Northbound 7d MA", "field": "latest", "format": "number"},
+                {"label": "Northbound 7d MA (land)", "field": "latest", "format": "number"},
                 {"label": "DoD", "field": "period_change", "format": "percent", "signed": True},
                 {"label": "YoY", "field": "year_change", "format": "percent", "signed": True},
             ],
@@ -691,7 +699,7 @@ def build_artifact(
         {
             "id": "immigration_trend",
             "title": "Cross-border passenger traffic (7-day MA)",
-            "subtitle": "Daily passenger flows: Northbound (HK resident departures) vs Southbound (Mainland visitor arrivals).",
+            "subtitle": "Daily passenger flows: Northbound (HK resident departures via land control points only) vs Southbound (Mainland visitor arrivals, all control points).",
             "type": "line",
             "intent": "trend",
             "dataset": "immigration_trend_history",

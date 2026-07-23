@@ -1,4 +1,5 @@
 import importlib
+import importlib.util
 import json
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -121,7 +122,15 @@ def test_fetch_immigration_flow():
     assert "hk_resident_departures" in df.columns
     assert "mainland_visitor_arrivals" in df.columns
     assert "hk_resident_departures_7d_ma" in df.columns
+    assert "land_hk_resident_departures_7d_ma" in df.columns
     assert len(df) > 100
+    # land-only ("northbound") departures must never exceed the all-control-point
+    # total -- the land figure is a strict subset (9 of 17 control points).
+    # This is the exact invariant whose absence let the "northbound" KPI/chart
+    # get wired to the wrong (all-points) column instead of the land-only one.
+    land = df["land_hk_resident_departures_7d_ma"].dropna()
+    total = df.loc[land.index, "hk_resident_departures_7d_ma"]
+    assert (land <= total).all()
 
 
 def test_fetch_weather_demand_drivers():
@@ -164,3 +173,54 @@ def test_save_normalized_dataset():
     assert "run-999" in res["parquet"]
     lineage = json.loads(Path(res["lineage"]).read_text())
     assert lineage["records"] == 1
+
+
+def _load_comparison_row():
+    """Import _comparison_row from the artifact builder script, which lives
+    outside the src/ package tree (apps/asia-markets-dashboard/scripts)."""
+    scripts_dir = Path(__file__).resolve().parents[1] / "apps" / "asia-markets-dashboard" / "scripts"
+    spec = importlib.util.spec_from_file_location(
+        "build_hk_local_consumer_artifact", scripts_dir / "build_hk_local_consumer_artifact.py"
+    )
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module._comparison_row
+
+
+def test_comparison_row_zero_prior_value_does_not_raise():
+    """Regression test: total_disruption_hours is genuinely 0.0 in most quiet
+    months (HK's dry season). _comparison_row must not raise ZeroDivisionError
+    when the prior-period or year-ago value is 0 -- previously this crashed the
+    entire dashboard build, not just the weather card."""
+    comparison_row = _load_comparison_row()
+    import datetime as dt
+
+    now = dt.datetime(2026, 7, 23, tzinfo=dt.timezone.utc)
+    frame = pd.DataFrame(
+        [
+            {"date": pd.Timestamp("2025-07-01"), "total_disruption_hours": 0.0},
+            {"date": pd.Timestamp("2026-06-01"), "total_disruption_hours": 0.0},
+            {"date": pd.Timestamp("2026-07-01"), "total_disruption_hours": 12.5},
+        ]
+    )
+    result = comparison_row(frame, "total_disruption_hours", now)
+    assert result["latest"] == 12.5
+    assert result["period_change"] is None
+    assert result["year_change"] is None
+
+
+def test_comparison_row_nonzero_still_computes_percent():
+    comparison_row = _load_comparison_row()
+    import datetime as dt
+
+    now = dt.datetime(2026, 7, 23, tzinfo=dt.timezone.utc)
+    frame = pd.DataFrame(
+        [
+            {"date": pd.Timestamp("2025-07-01"), "total_disruption_hours": 10.0},
+            {"date": pd.Timestamp("2026-06-01"), "total_disruption_hours": 20.0},
+            {"date": pd.Timestamp("2026-07-01"), "total_disruption_hours": 25.0},
+        ]
+    )
+    result = comparison_row(frame, "total_disruption_hours", now)
+    assert result["period_change"] == pytest.approx(0.25)
+    assert result["year_change"] == pytest.approx(1.5)

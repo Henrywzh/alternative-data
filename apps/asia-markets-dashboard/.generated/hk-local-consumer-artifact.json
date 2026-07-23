@@ -5,16 +5,16 @@
     "surface": "dashboard",
     "title": "Hong Kong Local Consumer Monitor",
     "description": "A source-backed snapshot of gold input costs, fresh-food wholesale prices, and watchlist valuations for HK local-consumer names.",
-    "generatedAt": "2026-07-23T22:16:50.833181Z",
+    "generatedAt": "2026-07-23T22:32:29.738019Z",
     "cards": [
       {
         "id": "northbound_card",
-        "description": "Daily HK resident departures (7-day MA); day-on-day and year-on-year movements.",
+        "description": "Daily HK resident departures via land control points only (7-day MA); day-on-day and year-on-year movements.",
         "dataset": "kpi_northbound",
         "sourceId": "immigration_flow",
         "metrics": [
           {
-            "label": "Northbound 7d MA",
+            "label": "Northbound 7d MA (land)",
             "field": "latest",
             "format": "number"
           },
@@ -218,7 +218,7 @@
       {
         "id": "immigration_trend",
         "title": "Cross-border passenger traffic (7-day MA)",
-        "subtitle": "Daily passenger flows: Northbound (HK resident departures) vs Southbound (Mainland visitor arrivals).",
+        "subtitle": "Daily passenger flows: Northbound (HK resident departures via land control points only) vs Southbound (Mainland visitor arrivals, all control points).",
         "type": "line",
         "intent": "trend",
         "dataset": "immigration_trend_history",
@@ -744,7 +744,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**Data snapshot:** `1d4f257fc8fb7bd7` · generated 2026-07-23T22:16:50.833181Z.  This is a published snapshot, not a live connection. Consumer Council price-watch coverage remains planned; it is not shown with placeholder values."
+        "body": "**Data snapshot:** `21b3138617f99837` · generated 2026-07-23T22:32:29.738019Z.  This is a published snapshot, not a live connection. Consumer Council price-watch coverage remains planned; it is not shown with placeholder values."
       },
       {
         "id": "market_pulse",
@@ -838,7 +838,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-23T22:16:50.833181Z",
+    "generatedAt": "2026-07-23T22:32:29.738019Z",
     "status": "ready",
     "datasets": {
       "kpi_weather": [
@@ -1295,9 +1295,9 @@
       ],
       "kpi_northbound": [
         {
-          "latest": 344784.6,
-          "period_change": 0.007882,
-          "year_change": 0.218162,
+          "latest": 297820.3,
+          "period_change": 0.008938,
+          "year_change": 0.237093,
           "observation_date": "2026-07-22"
         }
       ],
@@ -1312,7 +1312,7 @@
       "immigration_trend_history": [
         {
           "date": "2025-07-23",
-          "value": 283036.7,
+          "value": 240742,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1322,7 +1322,7 @@
         },
         {
           "date": "2025-07-24",
-          "value": 282365.6,
+          "value": 240005.7,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1332,7 +1332,7 @@
         },
         {
           "date": "2025-07-25",
-          "value": 283512.9,
+          "value": 241343.4,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1342,7 +1342,7 @@
         },
         {
           "date": "2025-07-26",
-          "value": 295572.7,
+          "value": 253264,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1352,7 +1352,7 @@
         },
         {
           "date": "2025-07-27",
-          "value": 342806.1,
+          "value": 295680.4,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1362,7 +1362,7 @@
         },
         {
           "date": "2025-07-28",
-          "value": 345817.1,
+          "value": 299324,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1372,7 +1372,7 @@
         },
         {
           "date": "2025-07-29",
-          "value": 341562.3,
+          "value": 295649.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1382,7 +1382,7 @@
         },
         {
           "date": "2025-07-30",
-          "value": 339618.4,
+          "value": 293962.3,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1392,7 +1392,7 @@
         },
         {
           "date": "2025-07-31",
-          "value": 337705.9,
+          "value": 292006.4,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1402,7 +1402,7 @@
         },
         {
           "date": "2025-08-01",
-          "value": 337574.6,
+          "value": 291371.7,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1412,7 +1412,7 @@
         },
         {
           "date": "2025-08-02",
-          "value": 327901.1,
+          "value": 281864,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1422,7 +1422,7 @@
         },
         {
           "date": "2025-08-03",
-          "value": 320869.7,
+          "value": 275230.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1432,7 +1432,7 @@
         },
         {
           "date": "2025-08-04",
-          "value": 315591.3,
+          "value": 270161.3,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1442,7 +1442,7 @@
         },
         {
           "date": "2025-08-05",
-          "value": 305543.7,
+          "value": 260527.9,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1452,7 +1452,7 @@
         },
         {
           "date": "2025-08-06",
-          "value": 302413.3,
+          "value": 257538,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1462,7 +1462,7 @@
         },
         {
           "date": "2025-08-07",
-          "value": 304356.3,
+          "value": 259745.7,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1472,7 +1472,7 @@
         },
         {
           "date": "2025-08-08",
-          "value": 304811.1,
+          "value": 261065.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1482,7 +1482,7 @@
         },
         {
           "date": "2025-08-09",
-          "value": 313435.9,
+          "value": 270125.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1492,7 +1492,7 @@
         },
         {
           "date": "2025-08-10",
-          "value": 319770.7,
+          "value": 276421.3,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1502,7 +1502,7 @@
         },
         {
           "date": "2025-08-11",
-          "value": 325790.4,
+          "value": 282512.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1512,7 +1512,7 @@
         },
         {
           "date": "2025-08-12",
-          "value": 340279.7,
+          "value": 296746.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1522,7 +1522,7 @@
         },
         {
           "date": "2025-08-13",
-          "value": 344250.1,
+          "value": 300723.4,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1532,7 +1532,7 @@
         },
         {
           "date": "2025-08-14",
-          "value": 333314.7,
+          "value": 290530.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1542,7 +1542,7 @@
         },
         {
           "date": "2025-08-15",
-          "value": 330692.6,
+          "value": 288344.4,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1552,7 +1552,7 @@
         },
         {
           "date": "2025-08-16",
-          "value": 329342.1,
+          "value": 287645.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1562,7 +1562,7 @@
         },
         {
           "date": "2025-08-17",
-          "value": 325397.4,
+          "value": 284410.3,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1572,7 +1572,7 @@
         },
         {
           "date": "2025-08-18",
-          "value": 321234.3,
+          "value": 280536,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1582,7 +1582,7 @@
         },
         {
           "date": "2025-08-19",
-          "value": 317230.3,
+          "value": 276537.7,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1592,7 +1592,7 @@
         },
         {
           "date": "2025-08-20",
-          "value": 317947.7,
+          "value": 277296.9,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1602,7 +1602,7 @@
         },
         {
           "date": "2025-08-21",
-          "value": 329385,
+          "value": 288296.3,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1612,7 +1612,7 @@
         },
         {
           "date": "2025-08-22",
-          "value": 332243,
+          "value": 290857.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1622,7 +1622,7 @@
         },
         {
           "date": "2025-08-23",
-          "value": 333669.4,
+          "value": 291905,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1632,7 +1632,7 @@
         },
         {
           "date": "2025-08-24",
-          "value": 335997.1,
+          "value": 293835,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1642,7 +1642,7 @@
         },
         {
           "date": "2025-08-25",
-          "value": 339726.3,
+          "value": 297593.3,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1652,7 +1652,7 @@
         },
         {
           "date": "2025-08-26",
-          "value": 344710.6,
+          "value": 302865.3,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1662,7 +1662,7 @@
         },
         {
           "date": "2025-08-27",
-          "value": 345630.3,
+          "value": 304529,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1672,7 +1672,7 @@
         },
         {
           "date": "2025-08-28",
-          "value": 345296.7,
+          "value": 305277,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1682,7 +1682,7 @@
         },
         {
           "date": "2025-08-29",
-          "value": 344264.9,
+          "value": 305664.4,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1692,7 +1692,7 @@
         },
         {
           "date": "2025-08-30",
-          "value": 338037.3,
+          "value": 300908.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1702,7 +1702,7 @@
         },
         {
           "date": "2025-08-31",
-          "value": 329852.3,
+          "value": 294159.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1712,7 +1712,7 @@
         },
         {
           "date": "2025-09-01",
-          "value": 325612.3,
+          "value": 290989.7,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1722,7 +1722,7 @@
         },
         {
           "date": "2025-09-02",
-          "value": 321198.6,
+          "value": 287609.3,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1732,7 +1732,7 @@
         },
         {
           "date": "2025-09-03",
-          "value": 315136.3,
+          "value": 282516.6,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1742,7 +1742,7 @@
         },
         {
           "date": "2025-09-04",
-          "value": 310758.6,
+          "value": 278717.3,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1752,7 +1752,7 @@
         },
         {
           "date": "2025-09-05",
-          "value": 308141.1,
+          "value": 276365,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1762,7 +1762,7 @@
         },
         {
           "date": "2025-09-06",
-          "value": 306899,
+          "value": 275191.7,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1772,7 +1772,7 @@
         },
         {
           "date": "2025-09-07",
-          "value": 303450.7,
+          "value": 272083.3,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1782,7 +1782,7 @@
         },
         {
           "date": "2025-09-08",
-          "value": 286922.6,
+          "value": 256662.7,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1792,7 +1792,7 @@
         },
         {
           "date": "2025-09-09",
-          "value": 287138.7,
+          "value": 256860,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1802,7 +1802,7 @@
         },
         {
           "date": "2025-09-10",
-          "value": 289456.3,
+          "value": 258763.4,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1812,7 +1812,7 @@
         },
         {
           "date": "2025-09-11",
-          "value": 291065.3,
+          "value": 260134.3,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1822,7 +1822,7 @@
         },
         {
           "date": "2025-09-12",
-          "value": 294626.9,
+          "value": 263132.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1832,7 +1832,7 @@
         },
         {
           "date": "2025-09-13",
-          "value": 299359.1,
+          "value": 267539,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1842,7 +1842,7 @@
         },
         {
           "date": "2025-09-14",
-          "value": 306117.4,
+          "value": 273824.7,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1852,7 +1852,7 @@
         },
         {
           "date": "2025-09-15",
-          "value": 324562.7,
+          "value": 291037.4,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1862,7 +1862,7 @@
         },
         {
           "date": "2025-09-16",
-          "value": 325936.6,
+          "value": 292269,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1872,7 +1872,7 @@
         },
         {
           "date": "2025-09-17",
-          "value": 325294.4,
+          "value": 291716,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1882,7 +1882,7 @@
         },
         {
           "date": "2025-09-18",
-          "value": 324615.7,
+          "value": 290721.7,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1892,7 +1892,7 @@
         },
         {
           "date": "2025-09-19",
-          "value": 317665.9,
+          "value": 284307.9,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1902,7 +1902,7 @@
         },
         {
           "date": "2025-09-20",
-          "value": 304299.7,
+          "value": 271041.3,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1912,7 +1912,7 @@
         },
         {
           "date": "2025-09-21",
-          "value": 297088,
+          "value": 263886.6,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1922,7 +1922,7 @@
         },
         {
           "date": "2025-09-22",
-          "value": 302425.9,
+          "value": 268512.3,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1932,7 +1932,7 @@
         },
         {
           "date": "2025-09-23",
-          "value": 278953.9,
+          "value": 246758.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1942,7 +1942,7 @@
         },
         {
           "date": "2025-09-24",
-          "value": 241441.6,
+          "value": 213475.7,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1952,7 +1952,7 @@
         },
         {
           "date": "2025-09-25",
-          "value": 234659.9,
+          "value": 206951.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1962,7 +1962,7 @@
         },
         {
           "date": "2025-09-26",
-          "value": 242752.4,
+          "value": 213625.7,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1972,7 +1972,7 @@
         },
         {
           "date": "2025-09-27",
-          "value": 256781,
+          "value": 226678.9,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1982,7 +1982,7 @@
         },
         {
           "date": "2025-09-28",
-          "value": 265761.3,
+          "value": 235521.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -1992,7 +1992,7 @@
         },
         {
           "date": "2025-09-29",
-          "value": 263581,
+          "value": 234809.7,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2002,7 +2002,7 @@
         },
         {
           "date": "2025-09-30",
-          "value": 296247.3,
+          "value": 265150.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2012,7 +2012,7 @@
         },
         {
           "date": "2025-10-01",
-          "value": 330115.1,
+          "value": 294584.3,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2022,7 +2022,7 @@
         },
         {
           "date": "2025-10-02",
-          "value": 333002.3,
+          "value": 298134.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2032,7 +2032,7 @@
         },
         {
           "date": "2025-10-03",
-          "value": 328061.7,
+          "value": 294477.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2042,7 +2042,7 @@
         },
         {
           "date": "2025-10-04",
-          "value": 320060.3,
+          "value": 286724.3,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2052,7 +2052,7 @@
         },
         {
           "date": "2025-10-05",
-          "value": 311111.4,
+          "value": 278430.7,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2062,7 +2062,7 @@
         },
         {
           "date": "2025-10-06",
-          "value": 310355.9,
+          "value": 277279.6,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2072,7 +2072,7 @@
         },
         {
           "date": "2025-10-07",
-          "value": 303098,
+          "value": 269742.3,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2082,7 +2082,7 @@
         },
         {
           "date": "2025-10-08",
-          "value": 305966.9,
+          "value": 272545.9,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2092,7 +2092,7 @@
         },
         {
           "date": "2025-10-09",
-          "value": 312021.1,
+          "value": 277829.6,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2102,7 +2102,7 @@
         },
         {
           "date": "2025-10-10",
-          "value": 314769.6,
+          "value": 280356.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2112,7 +2112,7 @@
         },
         {
           "date": "2025-10-11",
-          "value": 320408.3,
+          "value": 286407.7,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2122,7 +2122,7 @@
         },
         {
           "date": "2025-10-12",
-          "value": 326368,
+          "value": 291448,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2132,7 +2132,7 @@
         },
         {
           "date": "2025-10-13",
-          "value": 325117,
+          "value": 289499.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2142,7 +2142,7 @@
         },
         {
           "date": "2025-10-14",
-          "value": 324076.1,
+          "value": 288919,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2152,7 +2152,7 @@
         },
         {
           "date": "2025-10-15",
-          "value": 327495.9,
+          "value": 291994.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2162,7 +2162,7 @@
         },
         {
           "date": "2025-10-16",
-          "value": 327663.4,
+          "value": 291678.9,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2172,7 +2172,7 @@
         },
         {
           "date": "2025-10-17",
-          "value": 329033.9,
+          "value": 292303.9,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2182,7 +2182,7 @@
         },
         {
           "date": "2025-10-18",
-          "value": 329748.4,
+          "value": 292724.7,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2192,7 +2192,7 @@
         },
         {
           "date": "2025-10-19",
-          "value": 330784.1,
+          "value": 293565.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2202,7 +2202,7 @@
         },
         {
           "date": "2025-10-20",
-          "value": 330022.6,
+          "value": 292933.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2212,7 +2212,7 @@
         },
         {
           "date": "2025-10-21",
-          "value": 326407.6,
+          "value": 289725.3,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2222,7 +2222,7 @@
         },
         {
           "date": "2025-10-22",
-          "value": 323310.1,
+          "value": 286894.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2232,7 +2232,7 @@
         },
         {
           "date": "2025-10-23",
-          "value": 323211.3,
+          "value": 286365.6,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2242,7 +2242,7 @@
         },
         {
           "date": "2025-10-24",
-          "value": 325450.6,
+          "value": 288018.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2252,7 +2252,7 @@
         },
         {
           "date": "2025-10-25",
-          "value": 327883,
+          "value": 289263.6,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2262,7 +2262,7 @@
         },
         {
           "date": "2025-10-26",
-          "value": 328709.1,
+          "value": 289627,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2272,7 +2272,7 @@
         },
         {
           "date": "2025-10-27",
-          "value": 331281.4,
+          "value": 291679.6,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2282,7 +2282,7 @@
         },
         {
           "date": "2025-10-28",
-          "value": 350382,
+          "value": 308897.7,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2292,7 +2292,7 @@
         },
         {
           "date": "2025-10-29",
-          "value": 367383,
+          "value": 323696.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2302,7 +2302,7 @@
         },
         {
           "date": "2025-10-30",
-          "value": 365864.7,
+          "value": 323211.6,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2312,7 +2312,7 @@
         },
         {
           "date": "2025-10-31",
-          "value": 361525.9,
+          "value": 320286.3,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2322,7 +2322,7 @@
         },
         {
           "date": "2025-11-01",
-          "value": 355608.7,
+          "value": 315786.7,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2332,7 +2332,7 @@
         },
         {
           "date": "2025-11-02",
-          "value": 353074,
+          "value": 313849.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2342,7 +2342,7 @@
         },
         {
           "date": "2025-11-03",
-          "value": 351408.9,
+          "value": 312702.6,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2352,7 +2352,7 @@
         },
         {
           "date": "2025-11-04",
-          "value": 335345.3,
+          "value": 298268.4,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2362,7 +2362,7 @@
         },
         {
           "date": "2025-11-05",
-          "value": 321084.4,
+          "value": 286170.6,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2372,7 +2372,7 @@
         },
         {
           "date": "2025-11-06",
-          "value": 323239.6,
+          "value": 287849.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2382,7 +2382,7 @@
         },
         {
           "date": "2025-11-07",
-          "value": 327116,
+          "value": 291242.3,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2392,7 +2392,7 @@
         },
         {
           "date": "2025-11-08",
-          "value": 331168.9,
+          "value": 294749.7,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2402,7 +2402,7 @@
         },
         {
           "date": "2025-11-09",
-          "value": 334880.6,
+          "value": 298404.4,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2412,7 +2412,7 @@
         },
         {
           "date": "2025-11-10",
-          "value": 336356.1,
+          "value": 299701.9,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2422,7 +2422,7 @@
         },
         {
           "date": "2025-11-11",
-          "value": 337965.3,
+          "value": 301232.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2432,7 +2432,7 @@
         },
         {
           "date": "2025-11-12",
-          "value": 338196.7,
+          "value": 301507.4,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2442,7 +2442,7 @@
         },
         {
           "date": "2025-11-13",
-          "value": 339038.6,
+          "value": 302050.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2452,7 +2452,7 @@
         },
         {
           "date": "2025-11-14",
-          "value": 340272.9,
+          "value": 303071.7,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2462,7 +2462,7 @@
         },
         {
           "date": "2025-11-15",
-          "value": 340799.1,
+          "value": 303895.4,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2472,7 +2472,7 @@
         },
         {
           "date": "2025-11-16",
-          "value": 342066,
+          "value": 305193.3,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2482,7 +2482,7 @@
         },
         {
           "date": "2025-11-17",
-          "value": 342620.1,
+          "value": 305620.4,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2492,7 +2492,7 @@
         },
         {
           "date": "2025-11-18",
-          "value": 342959.6,
+          "value": 305874.7,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2502,7 +2502,7 @@
         },
         {
           "date": "2025-11-19",
-          "value": 341841.3,
+          "value": 304710.7,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2512,7 +2512,7 @@
         },
         {
           "date": "2025-11-20",
-          "value": 340728.3,
+          "value": 303657.9,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2522,7 +2522,7 @@
         },
         {
           "date": "2025-11-21",
-          "value": 339496.1,
+          "value": 302822,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2532,7 +2532,7 @@
         },
         {
           "date": "2025-11-22",
-          "value": 340944.7,
+          "value": 304353.7,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2542,7 +2542,7 @@
         },
         {
           "date": "2025-11-23",
-          "value": 339868,
+          "value": 303119.4,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2552,7 +2552,7 @@
         },
         {
           "date": "2025-11-24",
-          "value": 338896,
+          "value": 302560.6,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2562,7 +2562,7 @@
         },
         {
           "date": "2025-11-25",
-          "value": 339217.7,
+          "value": 302973.3,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2572,7 +2572,7 @@
         },
         {
           "date": "2025-11-26",
-          "value": 341677.6,
+          "value": 305142.7,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2582,7 +2582,7 @@
         },
         {
           "date": "2025-11-27",
-          "value": 342759.3,
+          "value": 306087.6,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2592,7 +2592,7 @@
         },
         {
           "date": "2025-11-28",
-          "value": 344212,
+          "value": 307367.9,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2602,7 +2602,7 @@
         },
         {
           "date": "2025-11-29",
-          "value": 344369.1,
+          "value": 307323.4,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2612,7 +2612,7 @@
         },
         {
           "date": "2025-11-30",
-          "value": 342794.3,
+          "value": 306187.9,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2622,7 +2622,7 @@
         },
         {
           "date": "2025-12-01",
-          "value": 340222.1,
+          "value": 303332.7,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2632,7 +2632,7 @@
         },
         {
           "date": "2025-12-02",
-          "value": 337886.1,
+          "value": 300966.6,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2642,7 +2642,7 @@
         },
         {
           "date": "2025-12-03",
-          "value": 334910.1,
+          "value": 298286.4,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2652,7 +2652,7 @@
         },
         {
           "date": "2025-12-04",
-          "value": 333554.7,
+          "value": 296899.7,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2662,7 +2662,7 @@
         },
         {
           "date": "2025-12-05",
-          "value": 331290.4,
+          "value": 294516.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2672,7 +2672,7 @@
         },
         {
           "date": "2025-12-06",
-          "value": 329944.7,
+          "value": 293238.9,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2682,7 +2682,7 @@
         },
         {
           "date": "2025-12-07",
-          "value": 336452.3,
+          "value": 299637.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2692,7 +2692,7 @@
         },
         {
           "date": "2025-12-08",
-          "value": 343201.1,
+          "value": 306201.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2702,7 +2702,7 @@
         },
         {
           "date": "2025-12-09",
-          "value": 345995.9,
+          "value": 308445.3,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2712,7 +2712,7 @@
         },
         {
           "date": "2025-12-10",
-          "value": 348035,
+          "value": 310101.7,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2722,7 +2722,7 @@
         },
         {
           "date": "2025-12-11",
-          "value": 349443.3,
+          "value": 311411.4,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2732,7 +2732,7 @@
         },
         {
           "date": "2025-12-12",
-          "value": 349093.1,
+          "value": 310504.7,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2742,7 +2742,7 @@
         },
         {
           "date": "2025-12-13",
-          "value": 345982.3,
+          "value": 306593.3,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2752,7 +2752,7 @@
         },
         {
           "date": "2025-12-14",
-          "value": 340306.3,
+          "value": 299691.7,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2762,7 +2762,7 @@
         },
         {
           "date": "2025-12-15",
-          "value": 338064.3,
+          "value": 296671.3,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2772,7 +2772,7 @@
         },
         {
           "date": "2025-12-16",
-          "value": 339565.3,
+          "value": 297452.3,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2782,7 +2782,7 @@
         },
         {
           "date": "2025-12-17",
-          "value": 343135.1,
+          "value": 299491.6,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2792,7 +2792,7 @@
         },
         {
           "date": "2025-12-18",
-          "value": 346609.3,
+          "value": 301087.9,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2802,7 +2802,7 @@
         },
         {
           "date": "2025-12-19",
-          "value": 352953.7,
+          "value": 304930.3,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2812,7 +2812,7 @@
         },
         {
           "date": "2025-12-20",
-          "value": 359118,
+          "value": 308610,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2822,7 +2822,7 @@
         },
         {
           "date": "2025-12-21",
-          "value": 364679.7,
+          "value": 312030.7,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2832,7 +2832,7 @@
         },
         {
           "date": "2025-12-22",
-          "value": 376157.1,
+          "value": 320997.9,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2842,7 +2842,7 @@
         },
         {
           "date": "2025-12-23",
-          "value": 390761.1,
+          "value": 332248.9,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2852,7 +2852,7 @@
         },
         {
           "date": "2025-12-24",
-          "value": 430186.4,
+          "value": 367422.7,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2862,7 +2862,7 @@
         },
         {
           "date": "2025-12-25",
-          "value": 478173.9,
+          "value": 412538.4,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2872,7 +2872,7 @@
         },
         {
           "date": "2025-12-26",
-          "value": 479157.4,
+          "value": 415132.7,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2882,7 +2882,7 @@
         },
         {
           "date": "2025-12-27",
-          "value": 457066.6,
+          "value": 395806.9,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2892,7 +2892,7 @@
         },
         {
           "date": "2025-12-28",
-          "value": 445076,
+          "value": 386197.3,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2902,7 +2902,7 @@
         },
         {
           "date": "2025-12-29",
-          "value": 437001.9,
+          "value": 380682.6,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2912,7 +2912,7 @@
         },
         {
           "date": "2025-12-30",
-          "value": 424584.6,
+          "value": 371748.7,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2922,7 +2922,7 @@
         },
         {
           "date": "2025-12-31",
-          "value": 392159.3,
+          "value": 344398.9,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2932,7 +2932,7 @@
         },
         {
           "date": "2026-01-01",
-          "value": 333135.3,
+          "value": 291047.3,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2942,7 +2942,7 @@
         },
         {
           "date": "2026-01-02",
-          "value": 312623.9,
+          "value": 274194.9,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2952,7 +2952,7 @@
         },
         {
           "date": "2026-01-03",
-          "value": 315971,
+          "value": 279695.9,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2962,7 +2962,7 @@
         },
         {
           "date": "2026-01-04",
-          "value": 314840.7,
+          "value": 279758.9,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2972,7 +2972,7 @@
         },
         {
           "date": "2026-01-05",
-          "value": 307853.1,
+          "value": 273847.3,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2982,7 +2982,7 @@
         },
         {
           "date": "2026-01-06",
-          "value": 301934.7,
+          "value": 269285.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -2992,7 +2992,7 @@
         },
         {
           "date": "2026-01-07",
-          "value": 289276.1,
+          "value": 257936.4,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3002,7 +3002,7 @@
         },
         {
           "date": "2026-01-08",
-          "value": 293842.4,
+          "value": 262636,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3012,7 +3012,7 @@
         },
         {
           "date": "2026-01-09",
-          "value": 304411.9,
+          "value": 271709,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3022,7 +3022,7 @@
         },
         {
           "date": "2026-01-10",
-          "value": 316471,
+          "value": 283217.3,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3032,7 +3032,7 @@
         },
         {
           "date": "2026-01-11",
-          "value": 322143.9,
+          "value": 288881.7,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3042,7 +3042,7 @@
         },
         {
           "date": "2026-01-12",
-          "value": 323273,
+          "value": 290220.4,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3052,7 +3052,7 @@
         },
         {
           "date": "2026-01-13",
-          "value": 324589.1,
+          "value": 291651.9,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3062,7 +3062,7 @@
         },
         {
           "date": "2026-01-14",
-          "value": 326370.6,
+          "value": 293624.3,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3072,7 +3072,7 @@
         },
         {
           "date": "2026-01-15",
-          "value": 329321.9,
+          "value": 296601.4,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3082,7 +3082,7 @@
         },
         {
           "date": "2026-01-16",
-          "value": 332509.9,
+          "value": 299869,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3092,7 +3092,7 @@
         },
         {
           "date": "2026-01-17",
-          "value": 336126.3,
+          "value": 303448.7,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3102,7 +3102,7 @@
         },
         {
           "date": "2026-01-18",
-          "value": 338305.4,
+          "value": 305717.3,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3112,7 +3112,7 @@
         },
         {
           "date": "2026-01-19",
-          "value": 338926.7,
+          "value": 306540.4,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3122,7 +3122,7 @@
         },
         {
           "date": "2026-01-20",
-          "value": 338899,
+          "value": 306852.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3132,7 +3132,7 @@
         },
         {
           "date": "2026-01-21",
-          "value": 337820.4,
+          "value": 306200.4,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3142,7 +3142,7 @@
         },
         {
           "date": "2026-01-22",
-          "value": 335791.6,
+          "value": 304488.9,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3152,7 +3152,7 @@
         },
         {
           "date": "2026-01-23",
-          "value": 334225.4,
+          "value": 303334.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3162,7 +3162,7 @@
         },
         {
           "date": "2026-01-24",
-          "value": 334601.1,
+          "value": 303758,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3172,7 +3172,7 @@
         },
         {
           "date": "2026-01-25",
-          "value": 334853.7,
+          "value": 304409.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3182,7 +3182,7 @@
         },
         {
           "date": "2026-01-26",
-          "value": 334870.6,
+          "value": 304604.9,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3192,7 +3192,7 @@
         },
         {
           "date": "2026-01-27",
-          "value": 335676.4,
+          "value": 305455.6,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3202,7 +3202,7 @@
         },
         {
           "date": "2026-01-28",
-          "value": 337951.1,
+          "value": 307560,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3212,7 +3212,7 @@
         },
         {
           "date": "2026-01-29",
-          "value": 339810.7,
+          "value": 309406.7,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3222,7 +3222,7 @@
         },
         {
           "date": "2026-01-30",
-          "value": 341230.6,
+          "value": 311147.9,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3232,7 +3232,7 @@
         },
         {
           "date": "2026-01-31",
-          "value": 339657.6,
+          "value": 309861.6,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3242,7 +3242,7 @@
         },
         {
           "date": "2026-02-01",
-          "value": 338921.6,
+          "value": 309363.9,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3252,7 +3252,7 @@
         },
         {
           "date": "2026-02-02",
-          "value": 337840.1,
+          "value": 308468.6,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3262,7 +3262,7 @@
         },
         {
           "date": "2026-02-03",
-          "value": 337170.4,
+          "value": 307923,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3272,7 +3272,7 @@
         },
         {
           "date": "2026-02-04",
-          "value": 336407.4,
+          "value": 307290.7,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3282,7 +3282,7 @@
         },
         {
           "date": "2026-02-05",
-          "value": 336559.4,
+          "value": 307425.3,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3292,7 +3292,7 @@
         },
         {
           "date": "2026-02-06",
-          "value": 335738.6,
+          "value": 306514.4,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3302,7 +3302,7 @@
         },
         {
           "date": "2026-02-07",
-          "value": 334746.9,
+          "value": 305347.6,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3312,7 +3312,7 @@
         },
         {
           "date": "2026-02-08",
-          "value": 336135.6,
+          "value": 306767.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3322,7 +3322,7 @@
         },
         {
           "date": "2026-02-09",
-          "value": 338453.1,
+          "value": 309001.9,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3332,7 +3332,7 @@
         },
         {
           "date": "2026-02-10",
-          "value": 340573.6,
+          "value": 310383.7,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3342,7 +3342,7 @@
         },
         {
           "date": "2026-02-11",
-          "value": 343398.3,
+          "value": 311770.9,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3352,7 +3352,7 @@
         },
         {
           "date": "2026-02-12",
-          "value": 349580.4,
+          "value": 315602.3,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3362,7 +3362,7 @@
         },
         {
           "date": "2026-02-13",
-          "value": 364042.6,
+          "value": 325082.9,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3372,7 +3372,7 @@
         },
         {
           "date": "2026-02-14",
-          "value": 374642.7,
+          "value": 330059.9,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3382,7 +3382,7 @@
         },
         {
           "date": "2026-02-15",
-          "value": 378915.9,
+          "value": 329686.9,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3392,7 +3392,7 @@
         },
         {
           "date": "2026-02-16",
-          "value": 381929.7,
+          "value": 328991.4,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3402,7 +3402,7 @@
         },
         {
           "date": "2026-02-17",
-          "value": 390105.1,
+          "value": 334309.6,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3412,7 +3412,7 @@
         },
         {
           "date": "2026-02-18",
-          "value": 403747,
+          "value": 345721.7,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3422,7 +3422,7 @@
         },
         {
           "date": "2026-02-19",
-          "value": 404661.4,
+          "value": 346434.9,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3432,7 +3432,7 @@
         },
         {
           "date": "2026-02-20",
-          "value": 383437.4,
+          "value": 328454.4,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3442,7 +3442,7 @@
         },
         {
           "date": "2026-02-21",
-          "value": 351231.6,
+          "value": 300766.6,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3452,7 +3452,7 @@
         },
         {
           "date": "2026-02-22",
-          "value": 330435,
+          "value": 283097.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3462,7 +3462,7 @@
         },
         {
           "date": "2026-02-23",
-          "value": 320238,
+          "value": 275446.3,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3472,7 +3472,7 @@
         },
         {
           "date": "2026-02-24",
-          "value": 306177.3,
+          "value": 263808.7,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3482,7 +3482,7 @@
         },
         {
           "date": "2026-02-25",
-          "value": 285078.1,
+          "value": 245536.6,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3492,7 +3492,7 @@
         },
         {
           "date": "2026-02-26",
-          "value": 273209.1,
+          "value": 235820,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3502,7 +3502,7 @@
         },
         {
           "date": "2026-02-27",
-          "value": 273509,
+          "value": 237068.9,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3512,7 +3512,7 @@
         },
         {
           "date": "2026-02-28",
-          "value": 285471.9,
+          "value": 249535.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3522,7 +3522,7 @@
         },
         {
           "date": "2026-03-01",
-          "value": 295271.1,
+          "value": 260017.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3532,7 +3532,7 @@
         },
         {
           "date": "2026-03-02",
-          "value": 297298.7,
+          "value": 262960.6,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3542,7 +3542,7 @@
         },
         {
           "date": "2026-03-03",
-          "value": 296445.7,
+          "value": 263002.9,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3552,7 +3552,7 @@
         },
         {
           "date": "2026-03-04",
-          "value": 296985,
+          "value": 263837.3,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3562,7 +3562,7 @@
         },
         {
           "date": "2026-03-05",
-          "value": 299278.6,
+          "value": 266280.9,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3572,7 +3572,7 @@
         },
         {
           "date": "2026-03-06",
-          "value": 304988.7,
+          "value": 272076.3,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3582,7 +3582,7 @@
         },
         {
           "date": "2026-03-07",
-          "value": 314617.3,
+          "value": 281945.6,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3592,7 +3592,7 @@
         },
         {
           "date": "2026-03-08",
-          "value": 320702.9,
+          "value": 287942.4,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3602,7 +3602,7 @@
         },
         {
           "date": "2026-03-09",
-          "value": 324909,
+          "value": 291761,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3612,7 +3612,7 @@
         },
         {
           "date": "2026-03-10",
-          "value": 329335,
+          "value": 295884.9,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3622,7 +3622,7 @@
         },
         {
           "date": "2026-03-11",
-          "value": 333185.3,
+          "value": 299743.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3632,7 +3632,7 @@
         },
         {
           "date": "2026-03-12",
-          "value": 335847.3,
+          "value": 301861.4,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3642,7 +3642,7 @@
         },
         {
           "date": "2026-03-13",
-          "value": 338744,
+          "value": 304414.7,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3652,7 +3652,7 @@
         },
         {
           "date": "2026-03-14",
-          "value": 341128.1,
+          "value": 306725.7,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3662,7 +3662,7 @@
         },
         {
           "date": "2026-03-15",
-          "value": 341417.1,
+          "value": 307216.7,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3672,7 +3672,7 @@
         },
         {
           "date": "2026-03-16",
-          "value": 341529.4,
+          "value": 307340.6,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3682,7 +3682,7 @@
         },
         {
           "date": "2026-03-17",
-          "value": 342034.7,
+          "value": 307728.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3692,7 +3692,7 @@
         },
         {
           "date": "2026-03-18",
-          "value": 343088.7,
+          "value": 308384,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3702,7 +3702,7 @@
         },
         {
           "date": "2026-03-19",
-          "value": 343533.1,
+          "value": 308844.3,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3712,7 +3712,7 @@
         },
         {
           "date": "2026-03-20",
-          "value": 345069.1,
+          "value": 310367,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3722,7 +3722,7 @@
         },
         {
           "date": "2026-03-21",
-          "value": 345609.4,
+          "value": 310708.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3732,7 +3732,7 @@
         },
         {
           "date": "2026-03-22",
-          "value": 345226,
+          "value": 310088.3,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3742,7 +3742,7 @@
         },
         {
           "date": "2026-03-23",
-          "value": 345509,
+          "value": 309902.9,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3752,7 +3752,7 @@
         },
         {
           "date": "2026-03-24",
-          "value": 346359.7,
+          "value": 310262.3,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3762,7 +3762,7 @@
         },
         {
           "date": "2026-03-25",
-          "value": 347923.1,
+          "value": 310941.7,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3772,7 +3772,7 @@
         },
         {
           "date": "2026-03-26",
-          "value": 349967,
+          "value": 311912.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3782,7 +3782,7 @@
         },
         {
           "date": "2026-03-27",
-          "value": 353004.1,
+          "value": 312785.3,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3792,7 +3792,7 @@
         },
         {
           "date": "2026-03-28",
-          "value": 357690.4,
+          "value": 314784.3,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3802,7 +3802,7 @@
         },
         {
           "date": "2026-03-29",
-          "value": 362920.7,
+          "value": 317816.4,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3812,7 +3812,7 @@
         },
         {
           "date": "2026-03-30",
-          "value": 366757.1,
+          "value": 320221,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3822,7 +3822,7 @@
         },
         {
           "date": "2026-03-31",
-          "value": 373898.4,
+          "value": 324599.6,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3832,7 +3832,7 @@
         },
         {
           "date": "2026-04-01",
-          "value": 389607,
+          "value": 336241,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3842,7 +3842,7 @@
         },
         {
           "date": "2026-04-02",
-          "value": 433734.7,
+          "value": 374503.6,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3852,7 +3852,7 @@
         },
         {
           "date": "2026-04-03",
-          "value": 473853.9,
+          "value": 409840,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3862,7 +3862,7 @@
         },
         {
           "date": "2026-04-04",
-          "value": 478921,
+          "value": 413967.6,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3872,7 +3872,7 @@
         },
         {
           "date": "2026-04-05",
-          "value": 490258,
+          "value": 424837.9,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3882,7 +3882,7 @@
         },
         {
           "date": "2026-04-06",
-          "value": 503159.1,
+          "value": 437658.9,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3892,7 +3892,7 @@
         },
         {
           "date": "2026-04-07",
-          "value": 488886.7,
+          "value": 424782.4,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3902,7 +3902,7 @@
         },
         {
           "date": "2026-04-08",
-          "value": 470872.3,
+          "value": 410827.6,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3912,7 +3912,7 @@
         },
         {
           "date": "2026-04-09",
-          "value": 424151.6,
+          "value": 371111.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3922,7 +3922,7 @@
         },
         {
           "date": "2026-04-10",
-          "value": 375583,
+          "value": 330108.4,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3932,7 +3932,7 @@
         },
         {
           "date": "2026-04-11",
-          "value": 357719.1,
+          "value": 316222,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3942,7 +3942,7 @@
         },
         {
           "date": "2026-04-12",
-          "value": 337585.9,
+          "value": 298691.4,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3952,7 +3952,7 @@
         },
         {
           "date": "2026-04-13",
-          "value": 320101.6,
+          "value": 283146.4,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3962,7 +3962,7 @@
         },
         {
           "date": "2026-04-14",
-          "value": 326399,
+          "value": 291383.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3972,7 +3972,7 @@
         },
         {
           "date": "2026-04-15",
-          "value": 326552.3,
+          "value": 292564,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3982,7 +3982,7 @@
         },
         {
           "date": "2026-04-16",
-          "value": 326351.3,
+          "value": 292668.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -3992,7 +3992,7 @@
         },
         {
           "date": "2026-04-17",
-          "value": 327469.4,
+          "value": 293739.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4002,7 +4002,7 @@
         },
         {
           "date": "2026-04-18",
-          "value": 334863.7,
+          "value": 301030,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4012,7 +4012,7 @@
         },
         {
           "date": "2026-04-19",
-          "value": 338361.1,
+          "value": 304492,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4022,7 +4022,7 @@
         },
         {
           "date": "2026-04-20",
-          "value": 338139.3,
+          "value": 304280.3,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4032,7 +4032,7 @@
         },
         {
           "date": "2026-04-21",
-          "value": 337815,
+          "value": 303735.7,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4042,7 +4042,7 @@
         },
         {
           "date": "2026-04-22",
-          "value": 338570.1,
+          "value": 304255.6,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4052,7 +4052,7 @@
         },
         {
           "date": "2026-04-23",
-          "value": 337304.6,
+          "value": 302699,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4062,7 +4062,7 @@
         },
         {
           "date": "2026-04-24",
-          "value": 334854.3,
+          "value": 299835.7,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4072,7 +4072,7 @@
         },
         {
           "date": "2026-04-25",
-          "value": 334212.4,
+          "value": 299240.7,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4082,7 +4082,7 @@
         },
         {
           "date": "2026-04-26",
-          "value": 334491.9,
+          "value": 300033.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4092,7 +4092,7 @@
         },
         {
           "date": "2026-04-27",
-          "value": 335417.4,
+          "value": 301549,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4102,7 +4102,7 @@
         },
         {
           "date": "2026-04-28",
-          "value": 335929.3,
+          "value": 302606.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4112,7 +4112,7 @@
         },
         {
           "date": "2026-04-29",
-          "value": 335602.1,
+          "value": 302739.6,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4122,7 +4122,7 @@
         },
         {
           "date": "2026-04-30",
-          "value": 360003.7,
+          "value": 326076.4,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4132,7 +4132,7 @@
         },
         {
           "date": "2026-05-01",
-          "value": 370050.9,
+          "value": 336406.7,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4142,7 +4142,7 @@
         },
         {
           "date": "2026-05-02",
-          "value": 352406.4,
+          "value": 320526.6,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4152,7 +4152,7 @@
         },
         {
           "date": "2026-05-03",
-          "value": 336679.7,
+          "value": 305919.9,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4162,7 +4162,7 @@
         },
         {
           "date": "2026-05-04",
-          "value": 329228.3,
+          "value": 299006.4,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4172,7 +4172,7 @@
         },
         {
           "date": "2026-05-05",
-          "value": 323547.1,
+          "value": 293396.6,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4182,7 +4182,7 @@
         },
         {
           "date": "2026-05-06",
-          "value": 322879.7,
+          "value": 292875.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4192,7 +4192,7 @@
         },
         {
           "date": "2026-05-07",
-          "value": 299776.6,
+          "value": 271055.6,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4202,7 +4202,7 @@
         },
         {
           "date": "2026-05-08",
-          "value": 292075.3,
+          "value": 263401.3,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4212,7 +4212,7 @@
         },
         {
           "date": "2026-05-09",
-          "value": 308594.3,
+          "value": 278229.4,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4222,7 +4222,7 @@
         },
         {
           "date": "2026-05-10",
-          "value": 326381.6,
+          "value": 294418.9,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4232,7 +4232,7 @@
         },
         {
           "date": "2026-05-11",
-          "value": 335677.3,
+          "value": 301841.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4242,7 +4242,7 @@
         },
         {
           "date": "2026-05-12",
-          "value": 342373.7,
+          "value": 307655.3,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4252,7 +4252,7 @@
         },
         {
           "date": "2026-05-13",
-          "value": 343745.4,
+          "value": 308300.9,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4262,7 +4262,7 @@
         },
         {
           "date": "2026-05-14",
-          "value": 341595.1,
+          "value": 305806.4,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4272,7 +4272,7 @@
         },
         {
           "date": "2026-05-15",
-          "value": 340147.3,
+          "value": 303737.3,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4282,7 +4282,7 @@
         },
         {
           "date": "2026-05-16",
-          "value": 337587.1,
+          "value": 300754.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4292,7 +4292,7 @@
         },
         {
           "date": "2026-05-17",
-          "value": 333283.6,
+          "value": 296371.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4302,7 +4302,7 @@
         },
         {
           "date": "2026-05-18",
-          "value": 330813.9,
+          "value": 294357.4,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4312,7 +4312,7 @@
         },
         {
           "date": "2026-05-19",
-          "value": 327720.4,
+          "value": 291428.6,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4322,7 +4322,7 @@
         },
         {
           "date": "2026-05-20",
-          "value": 326331,
+          "value": 289906.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4332,7 +4332,7 @@
         },
         {
           "date": "2026-05-21",
-          "value": 324751.3,
+          "value": 287350.4,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4342,7 +4342,7 @@
         },
         {
           "date": "2026-05-22",
-          "value": 334852.6,
+          "value": 295557.4,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4352,7 +4352,7 @@
         },
         {
           "date": "2026-05-23",
-          "value": 358448.9,
+          "value": 316550.6,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4362,7 +4362,7 @@
         },
         {
           "date": "2026-05-24",
-          "value": 384508,
+          "value": 341748.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4372,7 +4372,7 @@
         },
         {
           "date": "2026-05-25",
-          "value": 387482.4,
+          "value": 345065.7,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4382,7 +4382,7 @@
         },
         {
           "date": "2026-05-26",
-          "value": 388201.3,
+          "value": 345719.3,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4392,7 +4392,7 @@
         },
         {
           "date": "2026-05-27",
-          "value": 386925.1,
+          "value": 345043.9,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4402,7 +4402,7 @@
         },
         {
           "date": "2026-05-28",
-          "value": 388344.4,
+          "value": 347726.4,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4412,7 +4412,7 @@
         },
         {
           "date": "2026-05-29",
-          "value": 376037.7,
+          "value": 338154,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4422,7 +4422,7 @@
         },
         {
           "date": "2026-05-30",
-          "value": 346950.3,
+          "value": 312160.6,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4432,7 +4432,7 @@
         },
         {
           "date": "2026-05-31",
-          "value": 315757.7,
+          "value": 282363.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4442,7 +4442,7 @@
         },
         {
           "date": "2026-06-01",
-          "value": 310153.9,
+          "value": 276847.9,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4452,7 +4452,7 @@
         },
         {
           "date": "2026-06-02",
-          "value": 308775.1,
+          "value": 275930.9,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4462,7 +4462,7 @@
         },
         {
           "date": "2026-06-03",
-          "value": 307330.3,
+          "value": 274760.4,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4472,7 +4472,7 @@
         },
         {
           "date": "2026-06-04",
-          "value": 305589.3,
+          "value": 273295.7,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4482,7 +4482,7 @@
         },
         {
           "date": "2026-06-05",
-          "value": 306230.9,
+          "value": 273983.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4492,7 +4492,7 @@
         },
         {
           "date": "2026-06-06",
-          "value": 307262,
+          "value": 275185.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4502,7 +4502,7 @@
         },
         {
           "date": "2026-06-07",
-          "value": 308981.9,
+          "value": 276866,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4512,7 +4512,7 @@
         },
         {
           "date": "2026-06-08",
-          "value": 308620.6,
+          "value": 276477.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4522,7 +4522,7 @@
         },
         {
           "date": "2026-06-09",
-          "value": 309331.1,
+          "value": 277093,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4532,7 +4532,7 @@
         },
         {
           "date": "2026-06-10",
-          "value": 312171.7,
+          "value": 279600.9,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4542,7 +4542,7 @@
         },
         {
           "date": "2026-06-11",
-          "value": 315223,
+          "value": 282320.7,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4552,7 +4552,7 @@
         },
         {
           "date": "2026-06-12",
-          "value": 318855.9,
+          "value": 285116.9,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4562,7 +4562,7 @@
         },
         {
           "date": "2026-06-13",
-          "value": 323809.3,
+          "value": 289228.6,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4572,7 +4572,7 @@
         },
         {
           "date": "2026-06-14",
-          "value": 326540.4,
+          "value": 291511.6,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4582,7 +4582,7 @@
         },
         {
           "date": "2026-06-15",
-          "value": 326507.4,
+          "value": 291239.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4592,7 +4592,7 @@
         },
         {
           "date": "2026-06-16",
-          "value": 324645.1,
+          "value": 288862.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4602,7 +4602,7 @@
         },
         {
           "date": "2026-06-17",
-          "value": 325772.9,
+          "value": 288821.7,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4612,7 +4612,7 @@
         },
         {
           "date": "2026-06-18",
-          "value": 349188.7,
+          "value": 309132.6,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4622,7 +4622,7 @@
         },
         {
           "date": "2026-06-19",
-          "value": 369888,
+          "value": 328193.7,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4632,7 +4632,7 @@
         },
         {
           "date": "2026-06-20",
-          "value": 362600.3,
+          "value": 321473.4,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4642,7 +4642,7 @@
         },
         {
           "date": "2026-06-21",
-          "value": 356232.9,
+          "value": 315219.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4652,7 +4652,7 @@
         },
         {
           "date": "2026-06-22",
-          "value": 360186.7,
+          "value": 318411.9,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4662,7 +4662,7 @@
         },
         {
           "date": "2026-06-23",
-          "value": 364191.1,
+          "value": 322103.6,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4672,7 +4672,7 @@
         },
         {
           "date": "2026-06-24",
-          "value": 362921.6,
+          "value": 321349.7,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4682,7 +4682,7 @@
         },
         {
           "date": "2026-06-25",
-          "value": 340359.3,
+          "value": 300970.4,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4692,7 +4692,7 @@
         },
         {
           "date": "2026-06-26",
-          "value": 318082.1,
+          "value": 279162.3,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4702,7 +4702,7 @@
         },
         {
           "date": "2026-06-27",
-          "value": 325986.6,
+          "value": 284883.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4712,7 +4712,7 @@
         },
         {
           "date": "2026-06-28",
-          "value": 332045.1,
+          "value": 289805.9,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4722,7 +4722,7 @@
         },
         {
           "date": "2026-06-29",
-          "value": 331669.1,
+          "value": 289607.4,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4732,7 +4732,7 @@
         },
         {
           "date": "2026-06-30",
-          "value": 344041,
+          "value": 300509.3,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4742,7 +4742,7 @@
         },
         {
           "date": "2026-07-01",
-          "value": 353271.9,
+          "value": 308273.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4752,7 +4752,7 @@
         },
         {
           "date": "2026-07-02",
-          "value": 351247.3,
+          "value": 306907.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4762,7 +4762,7 @@
         },
         {
           "date": "2026-07-03",
-          "value": 347097.3,
+          "value": 304171,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4772,7 +4772,7 @@
         },
         {
           "date": "2026-07-04",
-          "value": 338242.3,
+          "value": 297288.9,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4782,7 +4782,7 @@
         },
         {
           "date": "2026-07-05",
-          "value": 337195.1,
+          "value": 297214.6,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4792,7 +4792,7 @@
         },
         {
           "date": "2026-07-06",
-          "value": 333564.1,
+          "value": 294274.6,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4802,7 +4802,7 @@
         },
         {
           "date": "2026-07-07",
-          "value": 315833.6,
+          "value": 278912,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4812,7 +4812,7 @@
         },
         {
           "date": "2026-07-08",
-          "value": 304919,
+          "value": 270126.4,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4822,7 +4822,7 @@
         },
         {
           "date": "2026-07-09",
-          "value": 306359.3,
+          "value": 271409.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4832,7 +4832,7 @@
         },
         {
           "date": "2026-07-10",
-          "value": 310479.3,
+          "value": 275456.6,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4842,7 +4842,7 @@
         },
         {
           "date": "2026-07-11",
-          "value": 320038.4,
+          "value": 284955.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4852,7 +4852,7 @@
         },
         {
           "date": "2026-07-12",
-          "value": 322949.9,
+          "value": 287423.9,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4862,7 +4862,7 @@
         },
         {
           "date": "2026-07-13",
-          "value": 327246.9,
+          "value": 291093,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4872,7 +4872,7 @@
         },
         {
           "date": "2026-07-14",
-          "value": 332055.7,
+          "value": 294671.9,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4882,7 +4882,7 @@
         },
         {
           "date": "2026-07-15",
-          "value": 334407,
+          "value": 295274.9,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4892,7 +4892,7 @@
         },
         {
           "date": "2026-07-16",
-          "value": 333995.1,
+          "value": 293394.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4902,7 +4902,7 @@
         },
         {
           "date": "2026-07-17",
-          "value": 334612.6,
+          "value": 292240.9,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4912,7 +4912,7 @@
         },
         {
           "date": "2026-07-18",
-          "value": 338703,
+          "value": 294099.3,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4922,7 +4922,7 @@
         },
         {
           "date": "2026-07-19",
-          "value": 344340.9,
+          "value": 298610.7,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4932,7 +4932,7 @@
         },
         {
           "date": "2026-07-20",
-          "value": 341325.1,
+          "value": 294695.7,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4942,7 +4942,7 @@
         },
         {
           "date": "2026-07-21",
-          "value": 342088.1,
+          "value": 295182.1,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -4952,7 +4952,7 @@
         },
         {
           "date": "2026-07-22",
-          "value": 344784.6,
+          "value": 297820.3,
           "flow_type": "Northbound Flow (HK Residents)"
         },
         {
@@ -14256,7 +14256,7 @@
         "metric_definitions": [
           "Each commodity's price is the mean of same-day readings across the wholesale markets/sources AFCD reports for it."
         ],
-        "executed_at": "2026-07-23T22:16:50.833181Z"
+        "executed_at": "2026-07-23T22:32:29.738019Z"
       }
     },
     {
@@ -14272,7 +14272,7 @@
           "Latest is the most recent published PM benchmark fixing.",
           "Day and year movements are latest divided by the prior trading day or the observation on/before one year earlier, minus one."
         ],
-        "executed_at": "2026-07-23T22:16:50.833181Z"
+        "executed_at": "2026-07-23T22:32:29.738019Z"
       }
     },
     {
@@ -14288,7 +14288,7 @@
           "PE (TTM), PB, and market cap (HKD bn) are each ticker's latest published daily value.",
           "No dividend-yield indicator exists on this endpoint; yield is not reported here."
         ],
-        "executed_at": "2026-07-23T22:16:50.833181Z"
+        "executed_at": "2026-07-23T22:32:29.738019Z"
       }
     },
     {
@@ -14304,7 +14304,7 @@
           "All retail outlet is the classification group's own published total across all outlet types.",
           "Month and year movements are latest divided by the prior month or the observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-07-23T22:16:50.833181Z"
+        "executed_at": "2026-07-23T22:32:29.738019Z"
       }
     },
     {
@@ -14320,7 +14320,7 @@
           "Purchases are only published sector-wide, not broken out by restaurant type.",
           "Quarter and year movements are latest divided by the prior quarter or the observation four quarters earlier, minus one."
         ],
-        "executed_at": "2026-07-23T22:16:50.833181Z"
+        "executed_at": "2026-07-23T22:32:29.738019Z"
       }
     },
     {
@@ -14333,11 +14333,11 @@
         "language": "CSV",
         "description": "Daily passenger clearance counts across 17 control points for HK Residents, Mainland Visitors, and Other Visitors.",
         "metric_definitions": [
-          "Northbound (北上) flow is daily HK resident departures (total & land control points).",
-          "Southbound (南下) flow is daily Mainland visitor arrivals.",
+          "Northbound (北上) flow is daily HK resident departures through the 9 land control points only (Lo Wu, Lok Ma Chau, Lok Ma Chau Spur Line, Shenzhen Bay, Heung Yuen Wai, Man Kam To, Sha Tau Kok, HZMB, Express Rail Link West Kowloon) -- this excludes the Airport and other cruise/ferry terminals so it isolates cross-border day-trippers from residents flying abroad.",
+          "Southbound (南下) flow is daily Mainland visitor arrivals across all 17 control points, since Mainland visitors legitimately arrive by air, rail, and sea, not just by land.",
           "7-day moving averages (7d MA) smooth out day-of-week seasonality (weekend shopping spikes)."
         ],
-        "executed_at": "2026-07-23T22:16:50.833181Z"
+        "executed_at": "2026-07-23T22:32:29.738019Z"
       }
     },
     {
@@ -14354,7 +14354,7 @@
           "Red/Black Rainstorm hours measures total duration under Red or Black rainstorm warnings.",
           "RMB per 100 HKD is derived from FRED daily DEXCHUS and DEXHKUS rates."
         ],
-        "executed_at": "2026-07-23T22:16:50.833181Z"
+        "executed_at": "2026-07-23T22:32:29.738019Z"
       }
     },
     {
@@ -14368,13 +14368,13 @@
           "Validated live measure frames",
           "Declared future-source registry"
         ],
-        "executed_at": "2026-07-23T22:16:50.833181Z"
+        "executed_at": "2026-07-23T22:32:29.738019Z"
       }
     }
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-local-consumer/",
-    "snapshotId": "1d4f257fc8fb7bd7",
+    "snapshotId": "21b3138617f99837",
     "dataAsOf": "2026-07-21"
   }
 }
