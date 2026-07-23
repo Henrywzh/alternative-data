@@ -1,67 +1,86 @@
-import logging
-import pandas as pd
-import requests
-from datetime import datetime, timezone
-from typing import Any, Dict, Optional, Union
+"""C&SD monthly retail sales value/volume index by outlet type.
 
-from ..config import CNSD_API_BASE_URL, DEFAULT_HEADERS
+Fetches CenStatD table 620-67002 (value index) and 620-67003 (volume
+index) directly as CSV -- see _censtatd_common.py for how the real file
+names, classification-code labels, and suppression flags were discovered
+and verified against the live site. The previously configured
+CNSD_API_BASE_URL endpoint is a documented dead end (see config.py); this
+module no longer uses it.
+"""
+
+from __future__ import annotations
+
+import logging
+
+import pandas as pd
+
+from ..config import (
+    CENSTATD_RETAIL_SALES_TABLE_ID,
+    CENSTATD_RETAIL_SALES_THEME_ID,
+    CENSTATD_RETAIL_SALES_VOLUME_TABLE_ID,
+)
 from ..storage import save_raw_snapshot
+from ._censtatd_common import (
+    classification_labels,
+    drop_suppressed,
+    fetch_mdt_csv,
+    fetch_sd_lang,
+    fetch_table_lang,
+    provisional_flags,
+)
 
 logger = logging.getLogger(__name__)
 
-def parse_cnsd_retail_payload(payload: Union[Dict[str, Any], list]) -> pd.DataFrame:
-    """Parse C&SD Retail Sales & Visitor Arrivals payload into normalized structure."""
-    today_str = datetime.now(timezone.utc).strftime("%Y-%m") + "-01"
-    records = []
-    
-    items = []
-    if isinstance(payload, dict):
-        items = payload.get("data") or payload.get("records") or [payload]
-    elif isinstance(payload, list):
-        items = payload
-
-    for idx, item in enumerate(items):
-        if not isinstance(item, dict):
-            continue
-        date_val = str(item.get("period") or item.get("month") or item.get("date") or today_str)[:7] + "-01"
-        cat = str(item.get("category") or item.get("trade") or item.get("industry") or "Total Retail Sales")
-        
-        val_idx = pd.to_numeric(item.get("sales_value_index") or item.get("value_index"), errors="coerce")
-        vol_idx = pd.to_numeric(item.get("sales_volume_index") or item.get("volume_index"), errors="coerce")
-        arr_val = pd.to_numeric(item.get("visitor_arrivals_thousands") or item.get("visitors"), errors="coerce")
-
-        records.append({
-            "date": date_val,
-            "category": cat,
-            "sales_value_index": float(val_idx) if pd.notna(val_idx) else 100.0,
-            "sales_volume_index": float(vol_idx) if pd.notna(vol_idx) else 100.0,
-            "visitor_arrivals_thousands": float(arr_val) if pd.notna(arr_val) else 0.0,
-        })
-
-    df_norm = pd.DataFrame(records)
-    if df_norm.empty:
-        df_norm = pd.DataFrame(columns=["date", "category", "sales_value_index", "sales_volume_index", "visitor_arrivals_thousands"])
-    return df_norm
+SCHEMA_COLUMNS = ["date", "category", "sales_value_index", "sales_volume_index", "visitor_arrivals_thousands", "is_provisional"]
 
 
-def fetch_cnsd_retail_sales(custom_url: Optional[str] = None) -> pd.DataFrame:
-    """Fetch C&SD Retail Sales Index & Visitor Arrivals monthly series."""
-    url = custom_url or f"{CNSD_API_BASE_URL}?cv=620-67002&lang=en"
-    raw_path = None
+def _monthly_rows(df: pd.DataFrame, sd_lang: dict, value_col_name: str) -> pd.DataFrame:
+    df = drop_suppressed(df, sd_lang)
+    df["is_provisional"] = provisional_flags(df, sd_lang)
+    # MM is blank for annual-total rows; this dataset is monthly-grained only.
+    df = df[df["MM"].notna()]
+    df = df.rename(columns={"obs_value": value_col_name})
+    # Codes arrive as floats (12.0); label keys from classification_labels
+    # are strings (JSON object keys), so normalize to matching string form.
+    df["OUTLET_TYPE"] = df["OUTLET_TYPE"].apply(lambda v: "" if pd.isna(v) else str(int(v)))
+    return df[["OUTLET_TYPE", "CCYY", "MM", value_col_name, "is_provisional"]]
+
+
+def fetch_cnsd_retail_sales() -> pd.DataFrame:
+    """Fetch C&SD retail sales value/volume index by outlet type, monthly."""
     try:
-        resp = requests.get(url, headers=DEFAULT_HEADERS, timeout=15)
-        if resp.status_code == 200:
-            payload = resp.json()
-            raw_path = save_raw_snapshot("cnsd_retail_sales", payload, file_ext="json", source_url=url)
-            df = parse_cnsd_retail_payload(payload)
-            df.attrs["raw_snapshot"] = str(raw_path)
-            df.attrs["source_url"] = url
-            return df
+        value_raw = fetch_mdt_csv(CENSTATD_RETAIL_SALES_THEME_ID, CENSTATD_RETAIL_SALES_TABLE_ID, "VAL_IDX_RS", "Raw_1dp_idx_n")
+        volume_raw = fetch_mdt_csv(CENSTATD_RETAIL_SALES_THEME_ID, CENSTATD_RETAIL_SALES_VOLUME_TABLE_ID, "VOL_IDX_RS", "Raw_1dp_idx_n")
+        lang = fetch_table_lang(CENSTATD_RETAIL_SALES_TABLE_ID)
+        sd_lang = fetch_sd_lang()
     except Exception as exc:
         logger.warning(f"Network fetch failed for C&SD retail sales ({exc}).")
+        return pd.DataFrame(columns=SCHEMA_COLUMNS)
 
-    logger.error("C&SD retail sales unavailable; returning empty dataset (no fabricated data).")
-    df_empty = pd.DataFrame(columns=["date", "category", "sales_value_index", "sales_volume_index", "visitor_arrivals_thousands"])
-    df_empty.attrs["raw_snapshot"] = str(raw_path) if raw_path else None
-    df_empty.attrs["source_url"] = url
-    return df_empty
+    labels = classification_labels(lang, "OUTLET_TYPE")
+    # The blank OUTLET_TYPE code is the classification group's own total row.
+    total_desc = lang["cv_list"]["OUTLET_TYPE"]["ccg_list"]["1"].get("total_desc") or "All retail outlet"
+    labels[""] = total_desc
+
+    value_df = _monthly_rows(value_raw, sd_lang, "sales_value_index")
+    volume_df = _monthly_rows(volume_raw, sd_lang, "sales_volume_index").drop(columns=["is_provisional"])
+
+    merged = value_df.merge(volume_df, on=["OUTLET_TYPE", "CCYY", "MM"], how="left")
+    merged["category"] = merged["OUTLET_TYPE"].map(labels)
+    merged = merged.dropna(subset=["category"])
+    merged["date"] = pd.to_datetime(
+        merged["CCYY"].astype(int).astype(str) + "-" + merged["MM"].astype(int).astype(str).str.zfill(2) + "-01"
+    ).dt.strftime("%Y-%m-%d")
+    merged["visitor_arrivals_thousands"] = None
+
+    result = merged[["date", "category", "sales_value_index", "sales_volume_index", "visitor_arrivals_thousands", "is_provisional"]]
+    result = result.sort_values(["date", "category"]).reset_index(drop=True)
+
+    if result.empty:
+        return pd.DataFrame(columns=SCHEMA_COLUMNS)
+
+    source_url = f"https://www.censtatd.gov.hk/data/MDT_{CENSTATD_RETAIL_SALES_THEME_ID}_{CENSTATD_RETAIL_SALES_TABLE_ID}_VAL_IDX_RS_Raw_1dp_idx_n.csv"
+    raw_path = save_raw_snapshot("cnsd_retail_sales", result.to_dict(orient="records"), file_ext="json", source_url=source_url)
+    result.attrs["raw_snapshot"] = str(raw_path)
+    result.attrs["source_url"] = source_url
+    return result
