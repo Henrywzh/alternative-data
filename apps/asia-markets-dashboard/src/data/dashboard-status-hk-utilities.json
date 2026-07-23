@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-07-23T23:13:54.464124Z",
-  "snapshot_id": "a3adc4d6e85f48eb",
+  "generated_at": "2026-07-23T23:43:38.601830Z",
+  "snapshot_id": "9d0db2546408e687",
   "data_as_of": "2026-03-31",
   "overall_status": "Healthy",
-  "live_sources": 3,
+  "live_sources": 4,
   "planned_sources": 0,
   "sources": [
     {
@@ -12,7 +12,7 @@
       "type": "Measure",
       "status": "Healthy",
       "latest_observation": "2026-03-31",
-      "records": 100,
+      "records": 4,
       "freshness": "Live",
       "notes": "Quarterly electricity sales in GWh broken down by customer sector (Residential, Commercial, Infrastructure & Public Services, Manufacturing) plus AI Data-Centre demand growth."
     },
@@ -21,8 +21,8 @@
       "dataset": "towngas_proxy",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-03-31",
-      "records": 100,
+      "latest_observation": "2026-05-01",
+      "records": 569,
       "freshness": "Live",
       "notes": "Monthly town gas consumption in Terajoules (TJ) by user type (Domestic, Commercial, Industrial) \u2014 de facto Towngas monopoly operational proxy."
     },
@@ -31,10 +31,20 @@
       "dataset": "hko_temperature",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-03-31",
-      "records": 100,
+      "latest_observation": "2026-06-30",
+      "records": 2007,
       "freshness": "Live",
       "notes": "Daily mean temperature (\u00b0C) and monthly averages \u2014 primary physical weather driver for air-conditioning power load."
+    },
+    {
+      "source": "Power Assets Holdings Geographic Segment Reporting",
+      "dataset": "power_assets_segments",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2025-06-30",
+      "records": 1,
+      "freshness": "Live",
+      "notes": "Semi-annual geographic segment reporting note (revenue, segment profit, share of JV/associate results) broken out by Investment in HKEI, United Kingdom, Australia, and Others."
     }
   ],
   "attachment_filename": "hk-utilities-dashboard-2026-07-23.html"

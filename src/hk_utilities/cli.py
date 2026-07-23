@@ -8,6 +8,7 @@ import json
 from .pipeline import run_stage_1_pipeline
 from .sources.clp_electricity import fetch_clp_electricity
 from .sources.hko_temperature import fetch_hko_temperature
+from .sources.power_assets_segments import fetch_power_assets_segments
 from .sources.towngas_proxy import fetch_towngas_proxy
 
 
@@ -20,6 +21,7 @@ def main():
     subparsers.add_parser("run-clp", help="Run CLP electricity sales ingestion")
     subparsers.add_parser("run-towngas", help="Run Towngas proxy gas consumption ingestion")
     subparsers.add_parser("run-hko-temp", help="Run HKO mean temperature ingestion")
+    subparsers.add_parser("run-power-assets", help="Run Power Assets geographic segment ingestion")
 
     args = parser.parse_args()
 
@@ -36,6 +38,9 @@ def main():
         elif args.command == "run-hko-temp":
             df = fetch_hko_temperature()
             print(f"Fetched HKO mean temperature: {len(df)} records\n", df.head())
+        elif args.command == "run-power-assets":
+            df = fetch_power_assets_segments()
+            print(f"Fetched Power Assets segments: {len(df)} records\n", df.head())
         else:
             parser.print_help()
     except Exception as e:
