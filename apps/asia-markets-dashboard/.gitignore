@@ -3,4 +3,5 @@ dist/
 .astro/
 .generated/
 src/data/dashboard-status.json
+src/data/dashboard-status-hk-local-consumer.json
 *.log

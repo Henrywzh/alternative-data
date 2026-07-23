@@ -9,11 +9,6 @@ import { fileURLToPath } from "node:url";
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const generatedDir = join(projectRoot, ".generated");
-const artifactPath = join(generatedDir, "hk-real-estate-artifact.json");
-const artifactZhPath = join(generatedDir, "hk-real-estate-artifact-zh.json");
-const portablePath = join(generatedDir, "hk-real-estate-dashboard.html");
-const portableZhPath = join(generatedDir, "hk-real-estate-dashboard-zh.html");
-const statusPath = join(projectRoot, "src/data/dashboard-status.json");
 const distDir = join(projectRoot, "dist");
 
 function findPortableBuilder() {
@@ -47,7 +42,13 @@ function sha256(path) {
   return createHash("sha256").update(readFileSync(path)).digest("hex");
 }
 
-const ZH = {
+// --- Per-sector Chinese localization -----------------------------------
+// Each sector supplies its own copy dict; localizeArtifact below is
+// sector-agnostic and just looks values up by card/chart/table id.
+
+const HK_REAL_ESTATE_ZH = {
+  title: "香港房地产市场监测",
+  description: "基于来源的住宅价格、租金和市场信心指标快照。",
   cards: {
     ccl_card: { label: "CCL", description: "最新发布指数；周环比与同比变动。", cadence: "周环比" },
     mhpi_card: { label: "MHPI", description: "最新发布指数；周环比与同比变动。", cadence: "周环比" },
@@ -83,24 +84,74 @@ const ZH = {
     cross_source: "跨来源标准化比较",
     source_registry: "香港房地产 dashboard 来源登记表",
   },
+  snapshotBody: (artifact) =>
+    `**数据快照：** \`${artifact.package_info.snapshotId}\` · 生成于 ${artifact.manifest.generatedAt}。这是已发布快照，不是实时连接；RVD 标记为 provisional 的观测可能会修订。`,
+  methodologyBody:
+    "## 如何阅读本 dashboard\n\n不同发布方的指数基期不同。请在重设基准图中比较方向，不要直接比较原始数值水平。覆盖表区分实时指标、来源目录和计划中的采集工作。本 dashboard 不提供股票排名、预测或投资建议。",
 };
 
-function localizeArtifact(input) {
+const HK_LOCAL_CONSUMER_ZH = {
+  title: "香港本地消费监测",
+  description: "黄金原料成本、鲜活食品批发价与观察名单估值的来源快照。",
+  cards: {
+    gold_card: { label: "黄金晚盘 (RMB/克)", description: "最新公布的上海金交所晚盘基准价；日环比与同比变动。", cadence: "日环比" },
+    median_pe_card: { label: "市盈率中位数 (TTM)", description: "香港本地消费观察名单（11 家公司）的市盈率中位数。" },
+  },
+  charts: {
+    gold_trend: ["上海黄金交易所晚盘基准价", "以人民币/克计的每日定盘价，近约7年；是香港黄金珠宝行业原料成本的主要参考。", "日期", "人民币/克"],
+    afcd_category_chart: ["按类别划分的 AFCD 批发价", "今日各类别商品的平均批发价（每公斤）。", "类别", "港元/公斤"],
+    valuation_pe_chart: ["观察名单市盈率对比", "各公司最新的正值市盈率（TTM）；亏损公司不在此图中显示。", "公司", "市盈率 (TTM)"],
+  },
+  tables: {
+    afcd_commodity_table: {
+      title: "AFCD 批发价快照",
+      subtitle: "当日各商品平均价格，港元/公斤（由公布的港元/斤换算而来）。",
+      columns: { category: "类别", commodity_name: "商品", avg_price_hkd_per_kg: "港元/公斤", num_readings: "读数个数" },
+    },
+    valuation_table: {
+      title: "消费观察名单估值快照",
+      subtitle: "各公司最新的市盈率、市净率与市值。",
+      columns: { company_name: "公司", ticker: "股票代码", pe_ttm: "市盈率(TTM)", pb_ratio: "市净率", market_cap_hkd_b: "市值(十亿港元)", date: "截至日期" },
+    },
+    source_health_table: {
+      title: "实时来源健康度",
+      subtitle: "以上指标的构建时校验结果。",
+      columns: { dataset: "数据集", status: "状态", latest_observation: "最新日期", records: "记录数", freshness: "新鲜度", notes: "备注" },
+    },
+    coverage_table: {
+      title: "覆盖范围与下一步采集目标",
+      subtitle: "端点损坏或未经验证的来源在此处追踪，而不是以占位值展示。",
+      columns: { source: "来源", dataset: "数据集", type: "类型", status: "状态", freshness: "新鲜度", notes: "范围 / 限制" },
+    },
+  },
+  sources: {
+    afcd_wholesale: "AFCD 鲜活食品批发价格",
+    sge_gold: "上海黄金交易所早晚盘基准价",
+    hk_valuation: "百度股市通港股估值数据",
+    source_registry: "香港本地消费 dashboard 来源登记表",
+  },
+  snapshotBody: (artifact) =>
+    `**数据快照：** \`${artifact.package_info.snapshotId}\` · 生成于 ${artifact.manifest.generatedAt}。这是已发布快照，不是实时连接；消费者委员会、零售销售及餐饮调查覆盖仍在计划中，未以占位值展示。`,
+  methodologyBody:
+    "## 如何阅读本 dashboard\n\n黄金是珠宝行业原料成本的粗略参考，并非股价预测。批发食品价格为单日快照，按 AFCD 当日采样的市场平均计算。覆盖表区分实时指标与端点仍损坏或未经验证的来源。本 dashboard 不提供股票排名、预测或投资建议。",
+};
+
+function localizeArtifact(input, zh) {
   const artifact = JSON.parse(JSON.stringify(input));
-  artifact.manifest.title = "香港房地产市场监测";
-  artifact.manifest.description = "基于来源的住宅价格、租金和市场信心指标快照。";
+  artifact.manifest.title = zh.title;
+  artifact.manifest.description = zh.description;
   artifact.manifest.cards.forEach((card) => {
-    const copy = ZH.cards[card.id];
+    const copy = zh.cards[card.id];
     if (!copy) return;
     card.description = copy.description;
     card.metrics.forEach((metric, index) => {
       if (index === 0) metric.label = copy.label;
-      if (index === 1) metric.label = copy.cadence;
+      if (index === 1 && copy.cadence) metric.label = copy.cadence;
       if (index === 2) metric.label = "同比";
     });
   });
   artifact.manifest.charts.forEach((chart) => {
-    const copy = ZH.charts[chart.id];
+    const copy = zh.charts[chart.id];
     if (!copy) return;
     chart.title = copy[0];
     chart.subtitle = copy[1];
@@ -111,7 +162,7 @@ function localizeArtifact(input) {
     if (chart.comparisonContext?.normalization) chart.comparisonContext.normalization = "首个可用月份 = 100";
   });
   artifact.manifest.tables.forEach((table) => {
-    const copy = ZH.tables[table.id];
+    const copy = zh.tables[table.id];
     if (!copy) return;
     table.title = copy.title;
     table.subtitle = copy.subtitle;
@@ -121,36 +172,29 @@ function localizeArtifact(input) {
   });
   artifact.manifest.sources = artifact.manifest.sources.map((source) => ({
     ...source,
-    label: ZH.sources[source.id] || source.label,
+    label: zh.sources[source.id] || source.label,
   }));
   artifact.sources = artifact.sources.map((source) => ({
     ...source,
-    label: ZH.sources[source.id] || source.label,
+    label: zh.sources[source.id] || source.label,
     query: source.query ? {
       ...source.query,
       description: source.query.description
-        ? `构建时从公开来源读取并校验 ${ZH.sources[source.id] || source.label}。`
+        ? `构建时从公开来源读取并校验 ${zh.sources[source.id] || source.label}。`
         : source.query.description,
     } : source.query,
   }));
   const snapshot = artifact.manifest.blocks.find((block) => block.id === "snapshot_context");
-  if (snapshot) {
-    snapshot.body = `**数据快照：** \`${artifact.snapshot.datasets.kpi_ccl?.[0]?.snapshot_id || artifact.package_info.snapshotId}\` · 生成于 ${artifact.manifest.generatedAt}。这是已发布快照，不是实时连接；RVD 标记为 provisional 的观测可能会修订。`;
-  }
+  if (snapshot) snapshot.body = zh.snapshotBody(artifact);
   const methodology = artifact.manifest.blocks.find((block) => block.id === "methodology");
-  if (methodology) {
-    methodology.body = "## 如何阅读本 dashboard\n\n不同发布方的指数基期不同。请在重设基准图中比较方向，不要直接比较原始数值水平。覆盖表区分实时指标、来源目录和计划中的采集工作。本 dashboard 不提供股票排名、预测或投资建议。";
-  }
-  artifact.package_info.originUrl = "https://asia-markets-dashboard.pages.dev/sectors/hk-real-estate/zh/";
+  if (methodology) methodology.body = zh.methodologyBody;
   return artifact;
 }
 
-function addNavigation(html, locale) {
+function addNavigation(html, { locale, homeEn, homeZh, routeEn, routeZh }) {
   const chinese = locale === "zh";
-  const home = chinese ? "https://asia-markets-dashboard.pages.dev/zh/" : "https://asia-markets-dashboard.pages.dev/";
-  const languageHref = chinese
-    ? "https://asia-markets-dashboard.pages.dev/sectors/hk-real-estate/"
-    : "https://asia-markets-dashboard.pages.dev/sectors/hk-real-estate/zh/";
+  const home = chinese ? homeZh : homeEn;
+  const languageHref = chinese ? routeEn : routeZh;
   const backLabel = chinese ? "← 返回主 dashboard" : "← Back to main dashboard";
   const languageLabel = chinese ? "English" : "简体中文";
   const css = `<style>.am-dashboard-nav{position:fixed;top:12px;left:12px;z-index:1000;display:flex;gap:8px;align-items:center;font:500 12px/1.2 system-ui,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif}.am-dashboard-nav a{display:inline-flex;align-items:center;min-height:30px;padding:0 10px;border:1px solid rgba(128,128,128,.35);border-radius:999px;background:rgba(255,255,255,.94);color:#1f2937;text-decoration:none;box-shadow:0 2px 8px rgba(0,0,0,.08)}.am-dashboard-nav a:hover{background:#f2f4f7}@media(prefers-color-scheme:dark){.am-dashboard-nav a{background:rgba(25,25,25,.94);color:#f3f4f6;border-color:rgba(255,255,255,.25)}}</style>`;
@@ -158,7 +202,7 @@ function addNavigation(html, locale) {
   return html.replace("</head>", `${css}</head>`).replace("<body>", `<body>${nav}`);
 }
 
-function deliverPortable({ artifactFile, portableFile, locale }) {
+function deliverPortable({ deliveryScript, artifactFile, portableFile, locale }) {
   const failureScreenshot = join(generatedDir, `portable-verification-failure-${locale}.png`);
   const maxAttempts = Math.max(1, Number(process.env.PORTABLE_DELIVERY_RETRIES || 2));
   let lastDelivery = null;
@@ -183,20 +227,24 @@ function deliverPortable({ artifactFile, portableFile, locale }) {
   throw new Error(`Portable dashboard delivery failed (${locale}) after ${maxAttempts} attempt(s).`);
 }
 
-if (!existsSync(artifactPath) || !existsSync(statusPath) || !existsSync(distDir)) {
-  throw new Error("Run the refresh and static hub build steps before packaging the dashboard.");
+const SECTORS = [
+  { id: "hk-real-estate", statusFile: "dashboard-status.json", zh: HK_REAL_ESTATE_ZH },
+  { id: "hk-local-consumer", statusFile: "dashboard-status-hk-local-consumer.json", zh: HK_LOCAL_CONSUMER_ZH },
+];
+
+if (!existsSync(distDir)) {
+  throw new Error("Run the static hub build step before packaging dashboards.");
 }
 
 mkdirSync(generatedDir, { recursive: true });
 const deliveryScript = findPortableBuilder();
 const portableModuleRoot = dirname(deliveryScript);
 const { verifyPortableArtifactStructure } = await import(join(portableModuleRoot, "verify_portable_artifact.mjs"));
-const artifact = JSON.parse(readFileSync(artifactPath, "utf8"));
-const status = JSON.parse(readFileSync(statusPath, "utf8"));
-function packageLocale({ artifact: localeArtifact, artifactFile, portableFile, locale, route, attachment }) {
+
+function packageLocale({ deliveryScript, artifact: localeArtifact, artifactFile, portableFile, locale, route, attachment, homeEn, homeZh, routeEn, routeZh }) {
   writeFileSync(artifactFile, `${JSON.stringify(localeArtifact, null, 2)}\n`, "utf8");
-  const receipt = deliverPortable({ artifactFile, portableFile, locale });
-  const html = addNavigation(readFileSync(portableFile, "utf8"), locale);
+  const receipt = deliverPortable({ deliveryScript, artifactFile, portableFile, locale });
+  const html = addNavigation(readFileSync(portableFile, "utf8"), { locale, homeEn, homeZh, routeEn, routeZh });
   writeFileSync(portableFile, html, "utf8");
   const structural = verifyPortableArtifactStructure({ artifactPath: artifactFile, htmlPath: portableFile });
   if (!structural?.ok) throw new Error(`Portable dashboard structural verification failed (${locale}): ${JSON.stringify(structural)}`);
@@ -217,12 +265,37 @@ function packageLocale({ artifact: localeArtifact, artifactFile, portableFile, l
   return { locale, route: `/${route}/`, attachment: `/exports/${attachment}`, sha256: routeHash, bytes: readFileSync(routePath).byteLength, svg_count: svgCount, portable_verification: receipt.stages.verification };
 }
 
-const dateSuffix = status.attachment_filename.replace(/^hk-real-estate-dashboard-/, "");
-const releases = [
-  packageLocale({ artifact, artifactFile: artifactPath, portableFile: portablePath, locale: "en", route: "sectors/hk-real-estate", attachment: status.attachment_filename }),
-  packageLocale({ artifact: localizeArtifact(artifact), artifactFile: artifactZhPath, portableFile: portableZhPath, locale: "zh", route: "sectors/hk-real-estate/zh", attachment: `hk-real-estate-dashboard-zh-${dateSuffix}` }),
-];
-const release = { generated_at: status.generated_at, snapshot_id: status.snapshot_id, data_as_of: status.data_as_of, releases };
+const sectorReleases = [];
+for (const sector of SECTORS) {
+  const artifactPath = join(generatedDir, `${sector.id}-artifact.json`);
+  const artifactZhPath = join(generatedDir, `${sector.id}-artifact-zh.json`);
+  const portablePath = join(generatedDir, `${sector.id}-dashboard.html`);
+  const portableZhPath = join(generatedDir, `${sector.id}-dashboard-zh.html`);
+  const statusPath = join(projectRoot, "src/data", sector.statusFile);
+  if (!existsSync(artifactPath) || !existsSync(statusPath)) {
+    throw new Error(`Run the refresh step for ${sector.id} before packaging (missing ${artifactPath} or ${statusPath}).`);
+  }
+  const artifact = JSON.parse(readFileSync(artifactPath, "utf8"));
+  const status = JSON.parse(readFileSync(statusPath, "utf8"));
+  const dateSuffix = status.attachment_filename.replace(`${sector.id}-dashboard-`, "");
+  const homeEn = "https://asia-markets-dashboard.pages.dev/";
+  const homeZh = "https://asia-markets-dashboard.pages.dev/zh/";
+  const routeEn = `https://asia-markets-dashboard.pages.dev/sectors/${sector.id}/`;
+  const routeZh = `https://asia-markets-dashboard.pages.dev/sectors/${sector.id}/zh/`;
+
+  const releases = [
+    packageLocale({
+      deliveryScript, artifact, artifactFile: artifactPath, portableFile: portablePath, locale: "en",
+      route: `sectors/${sector.id}`, attachment: status.attachment_filename, homeEn, homeZh, routeEn, routeZh,
+    }),
+    packageLocale({
+      deliveryScript, artifact: localizeArtifact(artifact, sector.zh), artifactFile: artifactZhPath, portableFile: portableZhPath, locale: "zh",
+      route: `sectors/${sector.id}/zh`, attachment: `${sector.id}-dashboard-zh-${dateSuffix}`, homeEn, homeZh, routeEn, routeZh,
+    }),
+  ];
+  sectorReleases.push({ sector: sector.id, generated_at: status.generated_at, snapshot_id: status.snapshot_id, data_as_of: status.data_as_of, releases });
+}
+
 mkdirSync(join(distDir, "data"), { recursive: true });
-writeFileSync(join(distDir, "data/release.json"), `${JSON.stringify(release, null, 2)}\n`, "utf8");
-process.stdout.write(`${JSON.stringify({ ok: true, release })}\n`);
+writeFileSync(join(distDir, "data/release.json"), `${JSON.stringify({ sectors: sectorReleases }, null, 2)}\n`, "utf8");
+process.stdout.write(`${JSON.stringify({ ok: true, sectors: sectorReleases })}\n`);
