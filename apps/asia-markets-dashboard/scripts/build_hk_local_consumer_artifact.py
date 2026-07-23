@@ -34,6 +34,7 @@ from src.hk_local_consumer.sources.hk_valuation import fetch_hk_consumer_valuati
 from src.hk_local_consumer.sources.cnsd_retail import fetch_cnsd_retail_sales
 from src.hk_local_consumer.sources.censtatd_restaurant import fetch_censtatd_restaurant_survey
 from src.hk_local_consumer.sources.immigration_flow import fetch_immigration_flow
+from src.hk_local_consumer.sources.weather_demand_drivers import fetch_weather_demand_drivers
 
 
 PUBLIC_SOURCES = {
@@ -124,6 +125,22 @@ PUBLIC_SOURCES = {
                 "Northbound (北上) flow is daily HK resident departures (total & land control points).",
                 "Southbound (南下) flow is daily Mainland visitor arrivals.",
                 "7-day moving averages (7d MA) smooth out day-of-week seasonality (weekend shopping spikes).",
+            ],
+        },
+    },
+    "weather_demand_drivers": {
+        "id": "weather_demand_drivers",
+        "label": "HKO Severe Weather Warnings & FRED Exchange Rate",
+        "href": "https://www.hko.gov.hk/en/wxinfo/climat/warndb/warndb3.shtml",
+        "query": {
+            "engine": "official DAT & FRED CSV",
+            "url": "https://www.hko.gov.hk/dps/wxinfo/climat/warndb/rstorm.dat",
+            "language": "DAT",
+            "description": "Monthly severe weather disruption hours (Typhoon Signal 8+ and Red/Black Rainstorm warnings) alongside monthly HKD/RMB cross exchange rate.",
+            "metric_definitions": [
+                "Typhoon Signal 8+ hours measures total duration under Signal 8, 9, or 10.",
+                "Red/Black Rainstorm hours measures total duration under Red or Black rainstorm warnings.",
+                "RMB per 100 HKD is derived from FRED daily DEXCHUS and DEXHKUS rates.",
             ],
         },
     },
@@ -300,6 +317,19 @@ def _validate_immigration(df: pd.DataFrame, now: datetime) -> pd.DataFrame:
     return result.sort_values("date").reset_index(drop=True)
 
 
+def _validate_weather(df: pd.DataFrame, now: datetime) -> pd.DataFrame:
+    if df is None or df.empty:
+        raise ValueError("Weather and demand drivers: no data returned")
+    result = df.copy()
+    result["date"] = pd.to_datetime(result["date"], errors="coerce")
+    for col in ("signal_8_plus_hours", "red_black_rain_hours", "total_disruption_hours", "rmb_per_100_hkd"):
+        result[col] = pd.to_numeric(result[col], errors="coerce")
+    result = result.dropna(subset=["date", "total_disruption_hours"])
+    if len(result) < 20:
+        raise ValueError(f"Weather and demand drivers: expected at least 20 months of data, received {len(result)}")
+    return result.sort_values("date").reset_index(drop=True)
+
+
 def _comparison_row(frame: pd.DataFrame, value_column: str, now: datetime) -> dict[str, Any]:
     latest = frame.iloc[-1]
     prior = frame.iloc[-2]
@@ -341,6 +371,7 @@ def build_artifact(
     raw_retail: pd.DataFrame,
     raw_restaurant: pd.DataFrame,
     raw_immigration: pd.DataFrame | None = None,
+    raw_weather: pd.DataFrame | None = None,
     *,
     now: datetime | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
@@ -350,6 +381,8 @@ def build_artifact(
 
     if raw_immigration is None:
         raw_immigration = fetch_immigration_flow()
+    if raw_weather is None:
+        raw_weather = fetch_weather_demand_drivers()
 
     gold = _validate_gold(raw_gold, now)
     afcd = _validate_afcd(raw_afcd)
@@ -357,6 +390,7 @@ def build_artifact(
     retail = _validate_retail_sales(raw_retail, now)
     restaurant = _validate_restaurant_survey(raw_restaurant, now)
     immigration = _validate_immigration(raw_immigration, now)
+    weather = _validate_weather(raw_weather, now)
 
     generated_at = now.isoformat().replace("+00:00", "Z")
     gold_kpi = _comparison_row(gold, "gold_benchmark_pm_rmb_gram", now)
@@ -389,6 +423,11 @@ def build_artifact(
     imm_south["flow_type"] = "Southbound Flow (Mainland Visitors)"
     immigration_trend_rows = pd.concat([imm_north, imm_south], ignore_index=True).sort_values(["date", "flow_type"])
 
+    # Severe weather & FX demand driver KPIs and charts
+    weather_kpi = _comparison_row(weather, "total_disruption_hours", now)
+    fx_kpi = _comparison_row(weather, "rmb_per_100_hkd", now)
+    weather_chart_rows = weather.tail(36).copy()
+
     category_summary = (
         afcd.groupby("category", as_index=False)
         .agg(avg_price_hkd_per_kg=("avg_price_hkd_per_kg", "mean"), commodities=("commodity_name", "size"))
@@ -400,6 +439,16 @@ def build_artifact(
     valuation_chart_rows = valuation_chart_rows[valuation_chart_rows["pe_ttm"] > 0]
 
     health = [
+        {
+            "source": PUBLIC_SOURCES["weather_demand_drivers"]["label"],
+            "dataset": "HKO Severe Weather & FRED FX",
+            "type": "Measure",
+            "status": "Healthy",
+            "latest_observation": weather["date"].max().strftime("%Y-%m-%d"),
+            "records": int(len(weather)),
+            "freshness": f"{(now.replace(tzinfo=None) - weather['date'].max()).days}d old",
+            "notes": "Monthly hours under Typhoon Signal 8+ & Red/Black Rainstorm warnings alongside HKD/RMB FX.",
+        },
         {
             "source": PUBLIC_SOURCES["immigration_flow"]["label"],
             "dataset": "Immigration Passenger Clearance",
@@ -467,7 +516,15 @@ def build_artifact(
     # windowed to the portable artifact's 2,000-row-per-dataset cap.
     gold_chart_window = gold.tail(1_800)
 
+    recent_weather_events = weather.attrs.get("recent_events", [])
+
     datasets = {
+        "kpi_weather": [weather_kpi],
+        "kpi_fx": [fx_kpi],
+        "severe_weather_history": _records(
+            weather_chart_rows, ["date", "month", "signal_8_plus_hours", "red_black_rain_hours", "total_disruption_hours"]
+        ),
+        "severe_weather_log": recent_weather_events,
         "kpi_northbound": [northbound_kpi],
         "kpi_southbound": [southbound_kpi],
         "immigration_trend_history": _records(immigration_trend_rows, ["date", "value", "flow_type"]),
@@ -545,6 +602,27 @@ def build_artifact(
             ],
         },
         {
+            "id": "weather_card",
+            "description": "Monthly severe weather disruption hours (Signal 8+ Typhoons & Red/Black Rainstorm Warnings).",
+            "dataset": "kpi_weather",
+            "sourceId": "weather_demand_drivers",
+            "metrics": [
+                {"label": "Severe weather (hrs/mo)", "field": "latest", "format": "number"},
+                {"label": "YoY", "field": "year_change", "format": "percent", "signed": True},
+            ],
+        },
+        {
+            "id": "fx_card",
+            "description": "Monthly average RMB per 100 HKD cross rate derived from FRED daily quotes.",
+            "dataset": "kpi_fx",
+            "sourceId": "weather_demand_drivers",
+            "metrics": [
+                {"label": "RMB / 100 HKD", "field": "latest", "format": "number"},
+                {"label": "MoM", "field": "period_change", "format": "percent", "signed": True},
+                {"label": "YoY", "field": "year_change", "format": "percent", "signed": True},
+            ],
+        },
+        {
             "id": "gold_card",
             "description": "Latest published SGE PM benchmark fixing; day and year-on-year movements.",
             "dataset": "kpi_gold",
@@ -594,6 +672,22 @@ def build_artifact(
     )
 
     charts = [
+        {
+            "id": "severe_weather_trend",
+            "title": "Monthly severe weather disruption hours",
+            "subtitle": "Total duration (hours per month) under Typhoon Signal 8+ and Red/Black Rainstorm warnings in Hong Kong.",
+            "type": "bar",
+            "intent": "trend",
+            "dataset": "severe_weather_history",
+            "sourceId": "weather_demand_drivers",
+            "encodings": {
+                "x": {"field": "month", "type": "temporal", "label": "Month"},
+                "y": {"field": "total_disruption_hours", "type": "quantitative", "label": "Disruption Hours"},
+            },
+            "valueFormat": "number",
+            "layout": "full",
+            "maxRows": 60,
+        },
         {
             "id": "immigration_trend",
             "title": "Cross-border passenger traffic (7-day MA)",
@@ -722,6 +816,22 @@ def build_artifact(
     ]
 
     tables = [
+        {
+            "id": "severe_weather_log_table",
+            "title": "Recent severe weather warning events log",
+            "subtitle": "Start time, end time, and duration for recent Red/Black Rainstorm and Typhoon Signal 8+ warnings.",
+            "dataset": "severe_weather_log",
+            "sourceId": "weather_demand_drivers",
+            "defaultSort": {"field": "start", "direction": "desc"},
+            "density": "dense",
+            "layout": "full",
+            "columns": [
+                {"field": "signal_name", "label": "Warning Signal", "type": "text"},
+                {"field": "start", "label": "Start Time (HKT)", "type": "text"},
+                {"field": "end", "label": "End Time (HKT)", "type": "text"},
+                {"field": "duration_hours", "label": "Duration (Hours)", "format": "number"},
+            ],
+        },
         {
             "id": "afcd_commodity_table",
             "title": "AFCD wholesale price snapshot",
@@ -903,7 +1013,7 @@ def build_artifact(
     return artifact, status
 
 
-def fetch_live_frames() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+def fetch_live_frames() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     return (
         fetch_sge_gold_benchmark(),
         fetch_afcd_food_prices(),
@@ -911,6 +1021,7 @@ def fetch_live_frames() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.Da
         fetch_cnsd_retail_sales(),
         fetch_censtatd_restaurant_survey(),
         fetch_immigration_flow(),
+        fetch_weather_demand_drivers(),
     )
 
 
@@ -920,8 +1031,8 @@ def main() -> int:
     parser.add_argument("--status-output", type=Path, required=True, help="Compact Astro status JSON output path")
     args = parser.parse_args()
 
-    gold, afcd, valuation, retail, restaurant, immigration = fetch_live_frames()
-    artifact, status = build_artifact(gold, afcd, valuation, retail, restaurant, immigration)
+    gold, afcd, valuation, retail, restaurant, immigration, weather = fetch_live_frames()
+    artifact, status = build_artifact(gold, afcd, valuation, retail, restaurant, immigration, weather)
     _atomic_json(args.output, artifact)
     _atomic_json(args.status_output, status)
     print(

@@ -1,11 +1,21 @@
 {
-  "generated_at": "2026-07-23T21:53:06.297623Z",
-  "snapshot_id": "4bb9c2dc37417ee8",
+  "generated_at": "2026-07-23T22:16:50.833181Z",
+  "snapshot_id": "1d4f257fc8fb7bd7",
   "data_as_of": "2026-07-21",
   "overall_status": "Healthy",
-  "live_sources": 6,
+  "live_sources": 7,
   "planned_sources": 1,
   "sources": [
+    {
+      "source": "HKO Severe Weather Warnings & FRED Exchange Rate",
+      "dataset": "HKO Severe Weather & FRED FX",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2026-07-01",
+      "records": 67,
+      "freshness": "22d old",
+      "notes": "Monthly hours under Typhoon Signal 8+ & Red/Black Rainstorm warnings alongside HKD/RMB FX."
+    },
     {
       "source": "HK Immigration Department Daily Passenger Traffic",
       "dataset": "Immigration Passenger Clearance",

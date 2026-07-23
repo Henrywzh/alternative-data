@@ -124,6 +124,16 @@ def test_fetch_immigration_flow():
     assert len(df) > 100
 
 
+def test_fetch_weather_demand_drivers():
+    from src.hk_local_consumer.sources.weather_demand_drivers import fetch_weather_demand_drivers
+    df = fetch_weather_demand_drivers()
+    assert not df.empty
+    assert "signal_8_plus_hours" in df.columns
+    assert "red_black_rain_hours" in df.columns
+    assert "rmb_per_100_hkd" in df.columns
+    assert len(df) >= 30
+
+
 def test_stage_1_pipeline_execution(tmp_path):
     results = run_stage_1_pipeline()
     assert results is not None
@@ -134,6 +144,7 @@ def test_stage_1_pipeline_execution(tmp_path):
     assert "cnsd_retail_sales_monthly" in results
     assert "censtatd_fast_food_survey_quarterly" in results
     assert "immigration_passenger_traffic_daily" in results
+    assert "weather_demand_drivers_monthly" in results
 
     manifest_file = tmp_path / "normalized" / "runs"
     assert manifest_file.exists()

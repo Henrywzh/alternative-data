@@ -13,6 +13,7 @@ from .sources.hk_valuation import fetch_hk_consumer_valuations
 from .sources.cnsd_retail import fetch_cnsd_retail_sales
 from .sources.censtatd_restaurant import fetch_censtatd_restaurant_survey
 from .sources.immigration_flow import fetch_immigration_flow
+from .sources.weather_demand_drivers import fetch_weather_demand_drivers
 
 
 def main():
@@ -28,6 +29,7 @@ def main():
     subparsers.add_parser("run-cnsd", help="Run C&SD retail sales index ingestion")
     subparsers.add_parser("run-censtatd", help="Run CenStatD restaurant survey ingestion")
     subparsers.add_parser("run-immigration", help="Run HK Immigration Department daily traffic ingestion")
+    subparsers.add_parser("run-weather", help="Run HKO weather & FX demand drivers ingestion")
 
     args = parser.parse_args()
 
@@ -56,6 +58,9 @@ def main():
         elif args.command == "run-immigration":
             df = fetch_immigration_flow()
             print(f"Fetched Immigration Passenger Traffic: {len(df)} records\n", df.head())
+        elif args.command == "run-weather":
+            df = fetch_weather_demand_drivers()
+            print(f"Fetched Weather & Demand Drivers: {len(df)} records\n", df.head())
         else:
             parser.print_help()
     except Exception as e:

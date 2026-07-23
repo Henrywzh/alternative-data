@@ -5,7 +5,7 @@
     "surface": "dashboard",
     "title": "Hong Kong Local Consumer Monitor",
     "description": "A source-backed snapshot of gold input costs, fresh-food wholesale prices, and watchlist valuations for HK local-consumer names.",
-    "generatedAt": "2026-07-23T21:53:06.297623Z",
+    "generatedAt": "2026-07-23T22:16:50.833181Z",
     "cards": [
       {
         "id": "northbound_card",
@@ -45,6 +45,50 @@
           },
           {
             "label": "DoD",
+            "field": "period_change",
+            "format": "percent",
+            "signed": true
+          },
+          {
+            "label": "YoY",
+            "field": "year_change",
+            "format": "percent",
+            "signed": true
+          }
+        ]
+      },
+      {
+        "id": "weather_card",
+        "description": "Monthly severe weather disruption hours (Signal 8+ Typhoons & Red/Black Rainstorm Warnings).",
+        "dataset": "kpi_weather",
+        "sourceId": "weather_demand_drivers",
+        "metrics": [
+          {
+            "label": "Severe weather (hrs/mo)",
+            "field": "latest",
+            "format": "number"
+          },
+          {
+            "label": "YoY",
+            "field": "year_change",
+            "format": "percent",
+            "signed": true
+          }
+        ]
+      },
+      {
+        "id": "fx_card",
+        "description": "Monthly average RMB per 100 HKD cross rate derived from FRED daily quotes.",
+        "dataset": "kpi_fx",
+        "sourceId": "weather_demand_drivers",
+        "metrics": [
+          {
+            "label": "RMB / 100 HKD",
+            "field": "latest",
+            "format": "number"
+          },
+          {
+            "label": "MoM",
             "field": "period_change",
             "format": "percent",
             "signed": true
@@ -147,6 +191,30 @@
       }
     ],
     "charts": [
+      {
+        "id": "severe_weather_trend",
+        "title": "Monthly severe weather disruption hours",
+        "subtitle": "Total duration (hours per month) under Typhoon Signal 8+ and Red/Black Rainstorm warnings in Hong Kong.",
+        "type": "bar",
+        "intent": "trend",
+        "dataset": "severe_weather_history",
+        "sourceId": "weather_demand_drivers",
+        "encodings": {
+          "x": {
+            "field": "month",
+            "type": "temporal",
+            "label": "Month"
+          },
+          "y": {
+            "field": "total_disruption_hours",
+            "type": "quantitative",
+            "label": "Disruption Hours"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "full",
+        "maxRows": 60
+      },
       {
         "id": "immigration_trend",
         "title": "Cross-border passenger traffic (7-day MA)",
@@ -342,6 +410,41 @@
       }
     ],
     "tables": [
+      {
+        "id": "severe_weather_log_table",
+        "title": "Recent severe weather warning events log",
+        "subtitle": "Start time, end time, and duration for recent Red/Black Rainstorm and Typhoon Signal 8+ warnings.",
+        "dataset": "severe_weather_log",
+        "sourceId": "weather_demand_drivers",
+        "defaultSort": {
+          "field": "start",
+          "direction": "desc"
+        },
+        "density": "dense",
+        "layout": "full",
+        "columns": [
+          {
+            "field": "signal_name",
+            "label": "Warning Signal",
+            "type": "text"
+          },
+          {
+            "field": "start",
+            "label": "Start Time (HKT)",
+            "type": "text"
+          },
+          {
+            "field": "end",
+            "label": "End Time (HKT)",
+            "type": "text"
+          },
+          {
+            "field": "duration_hours",
+            "label": "Duration (Hours)",
+            "format": "number"
+          }
+        ]
+      },
       {
         "id": "afcd_commodity_table",
         "title": "AFCD wholesale price snapshot",
@@ -626,6 +729,12 @@
         "path": "sources/immigration_flow.sql"
       },
       {
+        "id": "weather_demand_drivers",
+        "label": "HKO Severe Weather Warnings & FRED Exchange Rate",
+        "href": "https://www.hko.gov.hk/en/wxinfo/climat/warndb/warndb3.shtml",
+        "path": "sources/weather_demand_drivers.sql"
+      },
+      {
         "id": "source_registry",
         "label": "HK Local Consumer dashboard source registry",
         "path": "sources/source_registry.sql"
@@ -635,7 +744,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**Data snapshot:** `4bb9c2dc37417ee8` · generated 2026-07-23T21:53:06.297623Z.  This is a published snapshot, not a live connection. Consumer Council price-watch coverage remains planned; it is not shown with placeholder values."
+        "body": "**Data snapshot:** `1d4f257fc8fb7bd7` · generated 2026-07-23T22:16:50.833181Z.  This is a published snapshot, not a live connection. Consumer Council price-watch coverage remains planned; it is not shown with placeholder values."
       },
       {
         "id": "market_pulse",
@@ -643,6 +752,8 @@
         "cardIds": [
           "northbound_card",
           "southbound_card",
+          "weather_card",
+          "fx_card",
           "gold_card",
           "median_pe_card",
           "retail_card",
@@ -727,9 +838,461 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-23T21:53:06.297623Z",
+    "generatedAt": "2026-07-23T22:16:50.833181Z",
     "status": "ready",
     "datasets": {
+      "kpi_weather": [
+        {
+          "latest": 4.2,
+          "period_change": -0.684211,
+          "year_change": -0.857627,
+          "observation_date": "2026-07-01"
+        }
+      ],
+      "kpi_fx": [
+        {
+          "latest": 86.53,
+          "period_change": 0.000925,
+          "year_change": -0.053179,
+          "observation_date": "2026-07-01"
+        }
+      ],
+      "severe_weather_history": [
+        {
+          "date": "2023-08-01",
+          "month": "2023-08",
+          "signal_8_plus_hours": 0,
+          "red_black_rain_hours": 0,
+          "total_disruption_hours": 0
+        },
+        {
+          "date": "2023-09-01",
+          "month": "2023-09",
+          "signal_8_plus_hours": 37.7,
+          "red_black_rain_hours": 23.7,
+          "total_disruption_hours": 61.4
+        },
+        {
+          "date": "2023-10-01",
+          "month": "2023-10",
+          "signal_8_plus_hours": 23,
+          "red_black_rain_hours": 12.6,
+          "total_disruption_hours": 35.6
+        },
+        {
+          "date": "2023-11-01",
+          "month": "2023-11",
+          "signal_8_plus_hours": 0,
+          "red_black_rain_hours": 0,
+          "total_disruption_hours": 0
+        },
+        {
+          "date": "2023-12-01",
+          "month": "2023-12",
+          "signal_8_plus_hours": 0,
+          "red_black_rain_hours": 0,
+          "total_disruption_hours": 0
+        },
+        {
+          "date": "2024-01-01",
+          "month": "2024-01",
+          "signal_8_plus_hours": 0,
+          "red_black_rain_hours": 0,
+          "total_disruption_hours": 0
+        },
+        {
+          "date": "2024-02-01",
+          "month": "2024-02",
+          "signal_8_plus_hours": 0,
+          "red_black_rain_hours": 0,
+          "total_disruption_hours": 0
+        },
+        {
+          "date": "2024-03-01",
+          "month": "2024-03",
+          "signal_8_plus_hours": 0,
+          "red_black_rain_hours": 0,
+          "total_disruption_hours": 0
+        },
+        {
+          "date": "2024-04-01",
+          "month": "2024-04",
+          "signal_8_plus_hours": 0,
+          "red_black_rain_hours": 0,
+          "total_disruption_hours": 0
+        },
+        {
+          "date": "2024-05-01",
+          "month": "2024-05",
+          "signal_8_plus_hours": 0,
+          "red_black_rain_hours": 8.1,
+          "total_disruption_hours": 8.1
+        },
+        {
+          "date": "2024-06-01",
+          "month": "2024-06",
+          "signal_8_plus_hours": 0,
+          "red_black_rain_hours": 1.5,
+          "total_disruption_hours": 1.5
+        },
+        {
+          "date": "2024-07-01",
+          "month": "2024-07",
+          "signal_8_plus_hours": 0,
+          "red_black_rain_hours": 0,
+          "total_disruption_hours": 0
+        },
+        {
+          "date": "2024-08-01",
+          "month": "2024-08",
+          "signal_8_plus_hours": 0,
+          "red_black_rain_hours": 0,
+          "total_disruption_hours": 0
+        },
+        {
+          "date": "2024-09-01",
+          "month": "2024-09",
+          "signal_8_plus_hours": 18.3,
+          "red_black_rain_hours": 1.2,
+          "total_disruption_hours": 19.5
+        },
+        {
+          "date": "2024-10-01",
+          "month": "2024-10",
+          "signal_8_plus_hours": 0,
+          "red_black_rain_hours": 0,
+          "total_disruption_hours": 0
+        },
+        {
+          "date": "2024-11-01",
+          "month": "2024-11",
+          "signal_8_plus_hours": 11.2,
+          "red_black_rain_hours": 0,
+          "total_disruption_hours": 11.2
+        },
+        {
+          "date": "2024-12-01",
+          "month": "2024-12",
+          "signal_8_plus_hours": 0,
+          "red_black_rain_hours": 0,
+          "total_disruption_hours": 0
+        },
+        {
+          "date": "2025-01-01",
+          "month": "2025-01",
+          "signal_8_plus_hours": 0,
+          "red_black_rain_hours": 0,
+          "total_disruption_hours": 0
+        },
+        {
+          "date": "2025-02-01",
+          "month": "2025-02",
+          "signal_8_plus_hours": 0,
+          "red_black_rain_hours": 0,
+          "total_disruption_hours": 0
+        },
+        {
+          "date": "2025-03-01",
+          "month": "2025-03",
+          "signal_8_plus_hours": 0,
+          "red_black_rain_hours": 0,
+          "total_disruption_hours": 0
+        },
+        {
+          "date": "2025-04-01",
+          "month": "2025-04",
+          "signal_8_plus_hours": 0,
+          "red_black_rain_hours": 0,
+          "total_disruption_hours": 0
+        },
+        {
+          "date": "2025-05-01",
+          "month": "2025-05",
+          "signal_8_plus_hours": 0,
+          "red_black_rain_hours": 0,
+          "total_disruption_hours": 0
+        },
+        {
+          "date": "2025-06-01",
+          "month": "2025-06",
+          "signal_8_plus_hours": 0,
+          "red_black_rain_hours": 0,
+          "total_disruption_hours": 0
+        },
+        {
+          "date": "2025-07-01",
+          "month": "2025-07",
+          "signal_8_plus_hours": 19.3,
+          "red_black_rain_hours": 10.2,
+          "total_disruption_hours": 29.5
+        },
+        {
+          "date": "2025-08-01",
+          "month": "2025-08",
+          "signal_8_plus_hours": 0,
+          "red_black_rain_hours": 31,
+          "total_disruption_hours": 31
+        },
+        {
+          "date": "2025-09-01",
+          "month": "2025-09",
+          "signal_8_plus_hours": 45.8,
+          "red_black_rain_hours": 0,
+          "total_disruption_hours": 45.8
+        },
+        {
+          "date": "2025-10-01",
+          "month": "2025-10",
+          "signal_8_plus_hours": 0,
+          "red_black_rain_hours": 0,
+          "total_disruption_hours": 0
+        },
+        {
+          "date": "2025-11-01",
+          "month": "2025-11",
+          "signal_8_plus_hours": 0,
+          "red_black_rain_hours": 0,
+          "total_disruption_hours": 0
+        },
+        {
+          "date": "2025-12-01",
+          "month": "2025-12",
+          "signal_8_plus_hours": 0,
+          "red_black_rain_hours": 0,
+          "total_disruption_hours": 0
+        },
+        {
+          "date": "2026-01-01",
+          "month": "2026-01",
+          "signal_8_plus_hours": 0,
+          "red_black_rain_hours": 0,
+          "total_disruption_hours": 0
+        },
+        {
+          "date": "2026-02-01",
+          "month": "2026-02",
+          "signal_8_plus_hours": 0,
+          "red_black_rain_hours": 0,
+          "total_disruption_hours": 0
+        },
+        {
+          "date": "2026-03-01",
+          "month": "2026-03",
+          "signal_8_plus_hours": 0,
+          "red_black_rain_hours": 0,
+          "total_disruption_hours": 0
+        },
+        {
+          "date": "2026-04-01",
+          "month": "2026-04",
+          "signal_8_plus_hours": 0,
+          "red_black_rain_hours": 0,
+          "total_disruption_hours": 0
+        },
+        {
+          "date": "2026-05-01",
+          "month": "2026-05",
+          "signal_8_plus_hours": 0,
+          "red_black_rain_hours": 2.6,
+          "total_disruption_hours": 2.6
+        },
+        {
+          "date": "2026-06-01",
+          "month": "2026-06",
+          "signal_8_plus_hours": 0,
+          "red_black_rain_hours": 13.3,
+          "total_disruption_hours": 13.3
+        },
+        {
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "signal_8_plus_hours": 0,
+          "red_black_rain_hours": 4.2,
+          "total_disruption_hours": 4.2
+        }
+      ],
+      "severe_weather_log": [
+        {
+          "signal_name": "Red Rainstorm",
+          "start": "2026-07-20 08:05",
+          "end": "2026-07-20 09:30",
+          "duration_hours": 1.42
+        },
+        {
+          "signal_name": "Red Rainstorm",
+          "start": "2026-07-16 07:40",
+          "end": "2026-07-16 09:25",
+          "duration_hours": 1.75
+        },
+        {
+          "signal_name": "Red Rainstorm",
+          "start": "2026-07-06 21:45",
+          "end": "2026-07-06 22:45",
+          "duration_hours": 1
+        },
+        {
+          "signal_name": "Red Rainstorm",
+          "start": "2026-06-26 12:15",
+          "end": "2026-06-26 13:20",
+          "duration_hours": 1.08
+        },
+        {
+          "signal_name": "Red Rainstorm",
+          "start": "2026-06-18 20:30",
+          "end": "2026-06-18 21:05",
+          "duration_hours": 0.58
+        },
+        {
+          "signal_name": "Black Rainstorm",
+          "start": "2026-06-18 18:35",
+          "end": "2026-06-18 20:30",
+          "duration_hours": 1.92
+        },
+        {
+          "signal_name": "Red Rainstorm",
+          "start": "2026-06-18 18:10",
+          "end": "2026-06-18 18:35",
+          "duration_hours": 0.42
+        },
+        {
+          "signal_name": "Red Rainstorm",
+          "start": "2026-06-18 15:05",
+          "end": "2026-06-18 15:40",
+          "duration_hours": 0.58
+        },
+        {
+          "signal_name": "Black Rainstorm",
+          "start": "2026-06-18 12:55",
+          "end": "2026-06-18 15:05",
+          "duration_hours": 2.17
+        },
+        {
+          "signal_name": "Red Rainstorm",
+          "start": "2026-06-18 12:10",
+          "end": "2026-06-18 12:55",
+          "duration_hours": 0.75
+        },
+        {
+          "signal_name": "Red Rainstorm",
+          "start": "2026-06-08 21:35",
+          "end": "2026-06-08 22:05",
+          "duration_hours": 0.5
+        },
+        {
+          "signal_name": "Black Rainstorm",
+          "start": "2026-06-08 20:35",
+          "end": "2026-06-08 21:35",
+          "duration_hours": 1
+        },
+        {
+          "signal_name": "Red Rainstorm",
+          "start": "2026-06-08 19:50",
+          "end": "2026-06-08 20:35",
+          "duration_hours": 0.75
+        },
+        {
+          "signal_name": "Red Rainstorm",
+          "start": "2026-06-08 01:15",
+          "end": "2026-06-08 03:50",
+          "duration_hours": 2.58
+        },
+        {
+          "signal_name": "Red Rainstorm",
+          "start": "2026-06-06 19:55",
+          "end": "2026-06-06 20:55",
+          "duration_hours": 1
+        },
+        {
+          "signal_name": "Red Rainstorm",
+          "start": "2026-05-21 02:40",
+          "end": "2026-05-21 05:15",
+          "duration_hours": 2.58
+        },
+        {
+          "signal_name": "Typhoon Signal 8 (RAGASA)",
+          "start": "2025-09-24 13:20",
+          "end": "2025-09-24 20:20",
+          "duration_hours": 7
+        },
+        {
+          "signal_name": "Typhoon Signal 10 (RAGASA)",
+          "start": "2025-09-24 02:40",
+          "end": "2025-09-24 13:20",
+          "duration_hours": 10.67
+        },
+        {
+          "signal_name": "Typhoon Signal 9 (RAGASA)",
+          "start": "2025-09-24 01:40",
+          "end": "2025-09-24 02:40",
+          "duration_hours": 1
+        },
+        {
+          "signal_name": "Typhoon Signal 8 (RAGASA)",
+          "start": "2025-09-23 14:20",
+          "end": "2025-09-24 01:40",
+          "duration_hours": 11.33
+        },
+        {
+          "signal_name": "Typhoon Signal 8 (TAPAH)",
+          "start": "2025-09-07 21:20",
+          "end": "2025-09-08 13:10",
+          "duration_hours": 15.83
+        },
+        {
+          "signal_name": "Red Rainstorm",
+          "start": "2025-08-18 01:15",
+          "end": "2025-08-18 06:05",
+          "duration_hours": 4.83
+        },
+        {
+          "signal_name": "Red Rainstorm",
+          "start": "2025-08-14 11:10",
+          "end": "2025-08-14 12:10",
+          "duration_hours": 1
+        },
+        {
+          "signal_name": "Black Rainstorm",
+          "start": "2025-08-14 07:50",
+          "end": "2025-08-14 11:10",
+          "duration_hours": 3.33
+        },
+        {
+          "signal_name": "Red Rainstorm",
+          "start": "2025-08-14 06:35",
+          "end": "2025-08-14 07:50",
+          "duration_hours": 1.25
+        },
+        {
+          "signal_name": "Black Rainstorm",
+          "start": "2025-08-05 05:50",
+          "end": "2025-08-05 17:05",
+          "duration_hours": 11.25
+        },
+        {
+          "signal_name": "Red Rainstorm",
+          "start": "2025-08-05 05:20",
+          "end": "2025-08-05 05:50",
+          "duration_hours": 0.5
+        },
+        {
+          "signal_name": "Red Rainstorm",
+          "start": "2025-08-05 02:10",
+          "end": "2025-08-05 03:00",
+          "duration_hours": 0.83
+        },
+        {
+          "signal_name": "Black Rainstorm",
+          "start": "2025-08-04 23:45",
+          "end": "2025-08-05 02:10",
+          "duration_hours": 2.42
+        },
+        {
+          "signal_name": "Red Rainstorm",
+          "start": "2025-08-04 22:35",
+          "end": "2025-08-04 23:45",
+          "duration_hours": 1.17
+        }
+      ],
       "kpi_northbound": [
         {
           "latest": 344784.6,
@@ -13526,6 +14089,16 @@
       ],
       "source_health": [
         {
+          "source": "HKO Severe Weather Warnings & FRED Exchange Rate",
+          "dataset": "HKO Severe Weather & FRED FX",
+          "type": "Measure",
+          "status": "Healthy",
+          "latest_observation": "2026-07-01",
+          "records": 67,
+          "freshness": "22d old",
+          "notes": "Monthly hours under Typhoon Signal 8+ & Red/Black Rainstorm warnings alongside HKD/RMB FX."
+        },
+        {
           "source": "HK Immigration Department Daily Passenger Traffic",
           "dataset": "Immigration Passenger Clearance",
           "type": "Measure",
@@ -13587,6 +14160,16 @@
         }
       ],
       "source_coverage": [
+        {
+          "source": "HKO Severe Weather Warnings & FRED Exchange Rate",
+          "dataset": "HKO Severe Weather & FRED FX",
+          "type": "Measure",
+          "status": "Healthy",
+          "latest_observation": "2026-07-01",
+          "records": 67,
+          "freshness": "22d old",
+          "notes": "Monthly hours under Typhoon Signal 8+ & Red/Black Rainstorm warnings alongside HKD/RMB FX."
+        },
         {
           "source": "HK Immigration Department Daily Passenger Traffic",
           "dataset": "Immigration Passenger Clearance",
@@ -13673,7 +14256,7 @@
         "metric_definitions": [
           "Each commodity's price is the mean of same-day readings across the wholesale markets/sources AFCD reports for it."
         ],
-        "executed_at": "2026-07-23T21:53:06.297623Z"
+        "executed_at": "2026-07-23T22:16:50.833181Z"
       }
     },
     {
@@ -13689,7 +14272,7 @@
           "Latest is the most recent published PM benchmark fixing.",
           "Day and year movements are latest divided by the prior trading day or the observation on/before one year earlier, minus one."
         ],
-        "executed_at": "2026-07-23T21:53:06.297623Z"
+        "executed_at": "2026-07-23T22:16:50.833181Z"
       }
     },
     {
@@ -13705,7 +14288,7 @@
           "PE (TTM), PB, and market cap (HKD bn) are each ticker's latest published daily value.",
           "No dividend-yield indicator exists on this endpoint; yield is not reported here."
         ],
-        "executed_at": "2026-07-23T21:53:06.297623Z"
+        "executed_at": "2026-07-23T22:16:50.833181Z"
       }
     },
     {
@@ -13721,7 +14304,7 @@
           "All retail outlet is the classification group's own published total across all outlet types.",
           "Month and year movements are latest divided by the prior month or the observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-07-23T21:53:06.297623Z"
+        "executed_at": "2026-07-23T22:16:50.833181Z"
       }
     },
     {
@@ -13737,7 +14320,7 @@
           "Purchases are only published sector-wide, not broken out by restaurant type.",
           "Quarter and year movements are latest divided by the prior quarter or the observation four quarters earlier, minus one."
         ],
-        "executed_at": "2026-07-23T21:53:06.297623Z"
+        "executed_at": "2026-07-23T22:16:50.833181Z"
       }
     },
     {
@@ -13754,7 +14337,24 @@
           "Southbound (南下) flow is daily Mainland visitor arrivals.",
           "7-day moving averages (7d MA) smooth out day-of-week seasonality (weekend shopping spikes)."
         ],
-        "executed_at": "2026-07-23T21:53:06.297623Z"
+        "executed_at": "2026-07-23T22:16:50.833181Z"
+      }
+    },
+    {
+      "id": "weather_demand_drivers",
+      "label": "HKO Severe Weather Warnings & FRED Exchange Rate",
+      "href": "https://www.hko.gov.hk/en/wxinfo/climat/warndb/warndb3.shtml",
+      "query": {
+        "engine": "official DAT & FRED CSV",
+        "url": "https://www.hko.gov.hk/dps/wxinfo/climat/warndb/rstorm.dat",
+        "language": "DAT",
+        "description": "Monthly severe weather disruption hours (Typhoon Signal 8+ and Red/Black Rainstorm warnings) alongside monthly HKD/RMB cross exchange rate.",
+        "metric_definitions": [
+          "Typhoon Signal 8+ hours measures total duration under Signal 8, 9, or 10.",
+          "Red/Black Rainstorm hours measures total duration under Red or Black rainstorm warnings.",
+          "RMB per 100 HKD is derived from FRED daily DEXCHUS and DEXHKUS rates."
+        ],
+        "executed_at": "2026-07-23T22:16:50.833181Z"
       }
     },
     {
@@ -13768,13 +14368,13 @@
           "Validated live measure frames",
           "Declared future-source registry"
         ],
-        "executed_at": "2026-07-23T21:53:06.297623Z"
+        "executed_at": "2026-07-23T22:16:50.833181Z"
       }
     }
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-local-consumer/",
-    "snapshotId": "4bb9c2dc37417ee8",
+    "snapshotId": "1d4f257fc8fb7bd7",
     "dataAsOf": "2026-07-21"
   }
 }
