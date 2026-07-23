@@ -1,0 +1,98 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import status from "../data/dashboard-status.json";
+
+const sectors = [
+  {
+    code: "01",
+    name: "Hong Kong Real Estate",
+    state: status.overall_status,
+    detail: `${status.live_sources} live measures · data through ${status.data_as_of}`,
+    href: "/sectors/hk-real-estate/",
+    action: "Open monitor"
+  },
+  {
+    code: "02",
+    name: "Stablecoin & Crypto",
+    state: "Research ready",
+    detail: "Source map and company coverage complete; dashboard not yet published.",
+    href: "#future-sectors",
+    action: "Planned"
+  },
+  {
+    code: "03",
+    name: "Commercial Aerospace",
+    state: "Research ready",
+    detail: "Company and signal framework complete; dashboard not yet published.",
+    href: "#future-sectors",
+    action: "Planned"
+  },
+  {
+    code: "04",
+    name: "Consumer Trends",
+    state: "Research",
+    detail: "Company list established; source access remains uneven.",
+    href: "#future-sectors",
+    action: "Planned"
+  }
+];
+---
+
+<BaseLayout
+  title="Asia Markets — Research Monitors"
+  description="Source-backed Asia market research dashboards and published data snapshots."
+>
+  <section class="workspace-intro">
+    <div>
+      <p class="eyebrow">Research monitors / 2026</p>
+      <h1>Sector signals,<br />with the source trail intact.</h1>
+    </div>
+    <div class="intro-meta">
+      <span>Latest release</span>
+      <strong>{status.generated_at.slice(0, 10)}</strong>
+      <span>HK real estate snapshot</span>
+      <code>{status.snapshot_id}</code>
+    </div>
+  </section>
+
+  <section class="sector-index" aria-labelledby="sector-heading">
+    <div class="section-heading">
+      <h2 id="sector-heading">Sector index</h2>
+      <p>Published surfaces first; research-only sectors remain clearly labeled.</p>
+    </div>
+    <div class="sector-list">
+      {sectors.map((sector, index) => (
+        <a
+          class:list={["sector-row", index === 0 && "sector-row-live"]}
+          href={sector.href}
+          aria-label={`${sector.name}: ${sector.action}`}
+        >
+          <span class="sector-code">{sector.code}</span>
+          <span class="sector-main">
+            <strong>{sector.name}</strong>
+            <small>{sector.detail}</small>
+          </span>
+          <span class="sector-state"><i aria-hidden="true"></i>{sector.state}</span>
+          <span class="sector-action">{sector.action}<b aria-hidden="true">↗</b></span>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <section class="release-panel" id="future-sectors">
+    <div>
+      <p class="eyebrow">Portable release</p>
+      <h2>Take the real-estate monitor offline.</h2>
+      <p>
+        The hosted page and the downloadable HTML are generated from the same validated snapshot and
+        contain identical dashboard bytes.
+      </p>
+    </div>
+    <div class="release-actions">
+      <a class="primary-action" href={`/exports/${status.attachment_filename}`} download>
+        Download offline HTML
+      </a>
+      <a class="text-action" href="/data-status/">Inspect source status →</a>
+    </div>
+  </section>
+</BaseLayout>
