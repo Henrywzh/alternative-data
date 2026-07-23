@@ -167,6 +167,35 @@ const HK_LOCAL_CONSUMER_ZH = {
     "## 如何阅读本 dashboard\n\n极端天气干扰时长（八号风球及红/黑雨）用于评估客流压制效应。港元/人民币汇率反映港人赴深消费性价比。黄金是珠宝行业原料成本参考而非股价预测。本 dashboard 不提供股票排名、预测或投资建议。",
 };
 
+const HK_UTILITIES_ZH = {
+  title: "香港公用事业与基础设施监测",
+  description: "CLP 售电量分行业结构、Towngas 燃气消费量与天文台日均气温的来源快照。",
+  cards: {},
+  charts: {},
+  tables: {},
+  sources: {
+    clp_electricity: "中电控股 (CLP) 季度售电量披露",
+    towngas_proxy: "政府统计处能源统计 (Towngas 燃气消费量代理)",
+    hko_temperature: "香港天文台日平均气温",
+  },
+  snapshotBody: (artifact) => `**数据快照：** \`${artifact.package_info.snapshotId}\` · 生成于 ${artifact.manifest.generatedAt}。`,
+  methodologyBody: "## 如何阅读本 dashboard\n\n售电量与燃气消费量反映香港公用事业核心业务运营水平；日均气温为夏日用电负荷的物理驱动因素。",
+};
+
+const HK_TRANSPORT_ZH = {
+  title: "香港交通与航空监测",
+  description: "港铁月度客运量（本地/跨境/高铁）、国泰航空运营数据与香港国际机场流量的来源快照。",
+  cards: {},
+  charts: {},
+  tables: {},
+  sources: {
+    mtr_patronage: "港铁公司投资者关系月度客运量",
+    cathay_hkia_traffic: "民航处香港国际机场月度流量 & 国泰航空数据",
+  },
+  snapshotBody: (artifact) => `**数据快照：** \`${artifact.package_info.snapshotId}\` · 生成于 ${artifact.manifest.generatedAt}。`,
+  methodologyBody: "## 如何阅读本 dashboard\n\n港铁客运量按服务类型拆解（本地重铁、跨境及高铁）；机场与国泰数据反映国际与区域航空客货运复苏进度。",
+};
+
 function localizeArtifact(input, zh) {
   const artifact = JSON.parse(JSON.stringify(input));
   artifact.manifest.title = zh.title;
@@ -261,6 +290,8 @@ function deliverPortable({ deliveryScript, artifactFile, portableFile, locale })
 const SECTORS = [
   { id: "hk-real-estate", statusFile: "dashboard-status.json", zh: HK_REAL_ESTATE_ZH },
   { id: "hk-local-consumer", statusFile: "dashboard-status-hk-local-consumer.json", zh: HK_LOCAL_CONSUMER_ZH },
+  { id: "hk-utilities", statusFile: "dashboard-status-hk-utilities.json", zh: HK_UTILITIES_ZH },
+  { id: "hk-transport", statusFile: "dashboard-status-hk-transport.json", zh: HK_TRANSPORT_ZH },
 ];
 
 if (!existsSync(distDir)) {

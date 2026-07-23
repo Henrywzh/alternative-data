@@ -5,7 +5,7 @@
     "surface": "dashboard",
     "title": "香港本地消费监测",
     "description": "极端天气干扰时长、港元/人民币汇率、跨境出入境人流（北上/南下）、黄金原料成本与零售餐饮数据的来源快照。",
-    "generatedAt": "2026-07-23T22:32:29.738019Z",
+    "generatedAt": "2026-07-23T23:13:53.531962Z",
     "cards": [
       {
         "id": "northbound_card",
@@ -744,7 +744,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**数据快照：** `21b3138617f99837` · 生成于 2026-07-23T22:32:29.738019Z。这是已发布快照，不是实时连接；消费者委员会价格观察覆盖仍在计划中，未以占位值展示。"
+        "body": "**数据快照：** `21b3138617f99837` · 生成于 2026-07-23T23:13:53.531962Z。这是已发布快照，不是实时连接；消费者委员会价格观察覆盖仍在计划中，未以占位值展示。"
       },
       {
         "id": "market_pulse",
@@ -838,7 +838,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-23T22:32:29.738019Z",
+    "generatedAt": "2026-07-23T23:13:53.531962Z",
     "status": "ready",
     "datasets": {
       "kpi_weather": [
@@ -14256,7 +14256,7 @@
         "metric_definitions": [
           "Each commodity's price is the mean of same-day readings across the wholesale markets/sources AFCD reports for it."
         ],
-        "executed_at": "2026-07-23T22:32:29.738019Z"
+        "executed_at": "2026-07-23T23:13:53.531962Z"
       }
     },
     {
@@ -14272,7 +14272,7 @@
           "Latest is the most recent published PM benchmark fixing.",
           "Day and year movements are latest divided by the prior trading day or the observation on/before one year earlier, minus one."
         ],
-        "executed_at": "2026-07-23T22:32:29.738019Z"
+        "executed_at": "2026-07-23T23:13:53.531962Z"
       }
     },
     {
@@ -14288,7 +14288,7 @@
           "PE (TTM), PB, and market cap (HKD bn) are each ticker's latest published daily value.",
           "No dividend-yield indicator exists on this endpoint; yield is not reported here."
         ],
-        "executed_at": "2026-07-23T22:32:29.738019Z"
+        "executed_at": "2026-07-23T23:13:53.531962Z"
       }
     },
     {
@@ -14304,7 +14304,7 @@
           "All retail outlet is the classification group's own published total across all outlet types.",
           "Month and year movements are latest divided by the prior month or the observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-07-23T22:32:29.738019Z"
+        "executed_at": "2026-07-23T23:13:53.531962Z"
       }
     },
     {
@@ -14320,7 +14320,7 @@
           "Purchases are only published sector-wide, not broken out by restaurant type.",
           "Quarter and year movements are latest divided by the prior quarter or the observation four quarters earlier, minus one."
         ],
-        "executed_at": "2026-07-23T22:32:29.738019Z"
+        "executed_at": "2026-07-23T23:13:53.531962Z"
       }
     },
     {
@@ -14337,7 +14337,7 @@
           "Southbound (南下) flow is daily Mainland visitor arrivals across all 17 control points, since Mainland visitors legitimately arrive by air, rail, and sea, not just by land.",
           "7-day moving averages (7d MA) smooth out day-of-week seasonality (weekend shopping spikes)."
         ],
-        "executed_at": "2026-07-23T22:32:29.738019Z"
+        "executed_at": "2026-07-23T23:13:53.531962Z"
       }
     },
     {
@@ -14354,7 +14354,7 @@
           "Red/Black Rainstorm hours measures total duration under Red or Black rainstorm warnings.",
           "RMB per 100 HKD is derived from FRED daily DEXCHUS and DEXHKUS rates."
         ],
-        "executed_at": "2026-07-23T22:32:29.738019Z"
+        "executed_at": "2026-07-23T23:13:53.531962Z"
       }
     },
     {
@@ -14368,7 +14368,7 @@
           "Validated live measure frames",
           "Declared future-source registry"
         ],
-        "executed_at": "2026-07-23T22:32:29.738019Z"
+        "executed_at": "2026-07-23T23:13:53.531962Z"
       }
     }
   ],
