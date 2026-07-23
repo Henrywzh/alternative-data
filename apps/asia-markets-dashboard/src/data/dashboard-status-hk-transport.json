@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-07-23T23:14:31.937824Z",
-  "snapshot_id": "eb5f1428f46b3512",
+  "generated_at": "2026-07-23T23:28:21.772005Z",
+  "snapshot_id": "a87fdb3c87c458b5",
   "data_as_of": "2026-06-01",
   "overall_status": "Healthy",
   "live_sources": 2,
@@ -17,14 +17,14 @@
       "notes": "Monthly patronage counts and daily averages by rail service: Domestic, Airport Express, Cross-boundary (Lo Wu & Lok Ma Chau), Light Rail & Bus, and High Speed Rail (HSR)."
     },
     {
-      "source": "CAD HKIA Monthly Airport Traffic & Cathay Group Disclosures",
+      "source": "CAD HKIA Monthly Airport Traffic & Cathay Pacific IR Traffic Figures (PDF)",
       "dataset": "cathay_hkia_traffic",
       "type": "Measure",
       "status": "Healthy",
       "latest_observation": "2026-06-01",
       "records": 100,
       "freshness": "Live",
-      "notes": "HKIA airport monthly aircraft movements, passenger volume, and freight tonnage alongside Cathay Pacific passengers, RPK, ASK, and Passenger Load Factor (%)."
+      "notes": "HKIA airport monthly aircraft movements, passenger volume, and freight tonnage alongside Cathay Pacific passengers, RPK, ASK, and Passenger Load Factor (%), fetched directly from Cathay's own investor-relations traffic-figures PDF (deterministic per-month URL)."
     }
   ],
   "attachment_filename": "hk-transport-dashboard-2026-07-23.html"

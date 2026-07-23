@@ -35,14 +35,14 @@ PUBLIC_SOURCES = {
     },
     "cathay_hkia_traffic": {
         "id": "cathay_hkia_traffic",
-        "label": "CAD HKIA Monthly Airport Traffic & Cathay Group Disclosures",
-        "href": "https://www.cad.gov.hk/english/pdf/Stat%20Webpage.xlsx",
+        "label": "CAD HKIA Monthly Airport Traffic & Cathay Pacific IR Traffic Figures (PDF)",
+        "href": "https://www.cathaypacific.com/content/dam/cx/about-us/investor-relations/announcements/en/",
         "path": "sources/cathay_hkia_traffic.sql",
         "query": {
-            "engine": "official CAD Excel workbook",
-            "url": "https://www.cad.gov.hk/english/pdf/Stat%20Webpage.xlsx",
-            "language": "XLSX",
-            "description": "HKIA airport monthly aircraft movements, passenger volume, and freight tonnage alongside Cathay Pacific passengers, RPK, ASK, and Passenger Load Factor (%).",
+            "engine": "official CAD Excel workbook + Cathay Pacific IR monthly traffic-figures PDF",
+            "url": "https://www.cad.gov.hk/english/pdf/Stat%20Webpage.xlsx ; https://www.cathaypacific.com/content/dam/cx/about-us/investor-relations/announcements/en/<YYYYMM>_cx_traffic_en.pdf",
+            "language": "XLSX + PDF",
+            "description": "HKIA airport monthly aircraft movements, passenger volume, and freight tonnage alongside Cathay Pacific passengers, RPK, ASK, and Passenger Load Factor (%), fetched directly from Cathay's own investor-relations traffic-figures PDF (deterministic per-month URL).",
         },
     },
 }
@@ -72,7 +72,11 @@ def build_artifact(
         "domestic_thousands": float(mtr_latest["domestic_service_thousands"]),
         "cross_boundary_thousands": float(mtr_latest["cross_boundary_thousands"]),
         "hsr_thousands": float(mtr_latest["hsr_thousands"]),
-        "period_change": round(float(mtr_latest["total_mtr_patronage_thousands"]) / float(mtr_prior["total_mtr_patronage_thousands"]) - 1, 6),
+        "period_change": (
+            round(float(mtr_latest["total_mtr_patronage_thousands"]) / float(mtr_prior["total_mtr_patronage_thousands"]) - 1, 6)
+            if float(mtr_prior["total_mtr_patronage_thousands"]) > 0
+            else 0.0
+        ),
         "observation_date": mtr_latest["date"].strftime("%Y-%m-%d"),
     }
 
