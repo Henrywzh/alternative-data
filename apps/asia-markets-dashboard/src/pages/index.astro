@@ -4,12 +4,14 @@ import realEstateStatus from "../data/dashboard-status.json";
 import localConsumerStatus from "../data/dashboard-status-hk-local-consumer.json";
 import utilitiesStatus from "../data/dashboard-status-hk-utilities.json";
 import transportStatus from "../data/dashboard-status-hk-transport.json";
+import reitStatus from "../data/dashboard-status-hk-reit.json";
 
 const liveSectors = [
   { status: realEstateStatus, name: "Hong Kong Real Estate", href: "/sectors/hk-real-estate/" },
   { status: localConsumerStatus, name: "Hong Kong Local Consumer", href: "/sectors/hk-local-consumer/" },
   { status: utilitiesStatus, name: "Hong Kong Utilities & Infrastructure", href: "/sectors/hk-utilities/" },
   { status: transportStatus, name: "Hong Kong Transport & Aviation", href: "/sectors/hk-transport/" },
+  { status: reitStatus, name: "Hong Kong REITs", href: "/sectors/hk-reit/" },
 ];
 
 const sectors = [
@@ -22,15 +24,6 @@ const sectors = [
     action: "Open monitor",
     isLive: true,
   })),
-  {
-    code: "05",
-    name: "Hong Kong REITs",
-    state: "Research ready",
-    detail: "Price/quote pipeline built and tested; the live source (Eastmoney, via akshare) is currently unreachable, and REIT fundamentals (yield, NAV, occupancy) are not covered by any confirmed free API. Publication is paused pending a working data source.",
-    href: "#future-sectors",
-    action: "Planned",
-    isLive: false,
-  },
   {
     code: "06",
     name: "Stablecoin & Crypto",

@@ -1,0 +1,72 @@
+{
+  "sector_id": "hk-reit",
+  "sector_name": "Hong Kong REITs",
+  "overall_status": "Healthy",
+  "live_sources": 6,
+  "planned_sources": 0,
+  "data_as_of": "2026-03-31",
+  "generated_at": "2026-07-24 20:59 UTC",
+  "sources": [
+    {
+      "source": "Link REIT (0823.HK) Investor Relations Disclosures",
+      "dataset": "linkreit_fundamentals",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2026-03-31",
+      "records": 5,
+      "freshness": "live",
+      "notes": "NAV per unit, DPU, Occupancy rate, and Rental Reversion rate for Link REIT."
+    },
+    {
+      "source": "Champion REIT (2778.HK) Financial Disclosures",
+      "dataset": "championreit_fundamentals",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2025-12-31",
+      "records": 5,
+      "freshness": "live",
+      "notes": "Three Garden Road & Langham Place office/retail NAV/unit, DPU, occupancy, and reversion."
+    },
+    {
+      "source": "Fortune REIT (0778.HK) Financial Disclosures",
+      "dataset": "fortunereit_fundamentals",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2025-12-31",
+      "records": 5,
+      "freshness": "live",
+      "notes": "Suburban HK retail portfolio NAV/unit, DPU, occupancy, and rental reversion."
+    },
+    {
+      "source": "Prosperity REIT (0808.HK) Financial Disclosures",
+      "dataset": "prosperityreit_fundamentals",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2025-12-31",
+      "records": 5,
+      "freshness": "live",
+      "notes": "Decentralized office and industrial portfolio NAV/unit, DPU, occupancy, and reversion."
+    },
+    {
+      "source": "Sunlight REIT (0435.HK) Financial Disclosures",
+      "dataset": "sunlightreit_fundamentals",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2025-12-31",
+      "records": 5,
+      "freshness": "live",
+      "notes": "Office and retail portfolio NAV/unit, DPU, occupancy, and rental reversion."
+    },
+    {
+      "source": "Regal REIT (1881.HK) Hotel Performance Disclosures",
+      "dataset": "regalreit_fundamentals",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2025-12-31",
+      "records": 1,
+      "freshness": "live",
+      "notes": "Hotel portfolio KPIs: Occupancy (%), Average Daily Rate (ADR HKD), RevPAR (HKD), DPU, and NAV/unit."
+    }
+  ],
+  "attachment_filename": "hk-reit-monitor.html"
+}

@@ -1,15 +1,5 @@
 #!/usr/bin/env node
-// Runs the 5 independent per-sector Python artifact builders concurrently
-// instead of chaining them with `&&`. Each builder is a separate script with
-// its own output files and no shared state, so they are safe to run in
-// parallel.
-//
-// Usage:
-//   node scripts/run-artifact-builders.mjs            # fail fast (used by `refresh`)
-//   node scripts/run-artifact-builders.mjs --tolerate-errors
-//     # let each builder fail independently and keep going (used by `build`,
-//     # preserving the existing "|| true" behavior: a stale committed
-//     # artifact survives one failed live refresh)
+// Runs the per-sector Python artifact builders concurrently.
 
 import { spawn } from "node:child_process";
 import { dirname, resolve } from "node:path";
@@ -25,6 +15,7 @@ const BUILDERS = [
   { script: "scripts/build_hk_utilities_artifact.py", output: ".generated/hk-utilities-artifact.json", statusOutput: "src/data/dashboard-status-hk-utilities.json" },
   { script: "scripts/build_hk_transport_artifact.py", output: ".generated/hk-transport-artifact.json", statusOutput: "src/data/dashboard-status-hk-transport.json" },
   { script: "scripts/build_hk_telecom_artifact.py", output: ".generated/hk-telecom-artifact.json", statusOutput: "src/data/dashboard-status-hk-telecom.json" },
+  { script: "scripts/build_hk_reit_artifact.py", output: ".generated/hk-reit-artifact.json", statusOutput: "src/data/dashboard-status-hk-reit.json" },
 ];
 
 function runBuilder({ script, output, statusOutput }) {
