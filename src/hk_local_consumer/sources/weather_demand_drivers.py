@@ -14,8 +14,12 @@ from io import StringIO
 
 import pandas as pd
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 from ..config import (
+    DATA_SOURCE_FALLBACK,
+    DATA_SOURCE_LIVE,
     DEFAULT_HEADERS,
     FRED_DEXCHUS_URL,
     FRED_DEXHKUS_URL,
@@ -26,6 +30,29 @@ from ..storage import save_raw_snapshot
 
 logger = logging.getLogger(__name__)
 
+_RETRY_STATUS_CODES = (429, 500, 502, 503, 504)
+FALLBACK_RMB_PER_100_HKD = 92.0
+
+
+def _get_with_retry(url: str) -> requests.Response:
+    """GET a public source with bounded retries for transient gateway errors."""
+    retry = Retry(
+        total=2,
+        connect=2,
+        read=2,
+        status=2,
+        backoff_factor=0.5,
+        status_forcelist=_RETRY_STATUS_CODES,
+        allowed_methods=frozenset({"GET"}),
+        raise_on_status=False,
+    )
+    session = requests.Session()
+    session.mount("https://", HTTPAdapter(max_retries=retry))
+    session.mount("http://", HTTPAdapter(max_retries=retry))
+    response = session.get(url, headers=DEFAULT_HEADERS, timeout=(8, 15))
+    response.raise_for_status()
+    return response
+
 SCHEMA_COLUMNS = [
     "month",
     "date",
@@ -34,13 +61,13 @@ SCHEMA_COLUMNS = [
     "amber_rain_hours",
     "total_disruption_hours",
     "rmb_per_100_hkd",
+    "data_source",
 ]
 
 
 def _fetch_rstorm_events() -> pd.DataFrame:
     """Fetch and parse HKO Rainstorm Warning Signal database."""
-    resp = requests.get(HKO_RAINSTORM_URL, headers=DEFAULT_HEADERS, timeout=15)
-    resp.raise_for_status()
+    resp = _get_with_retry(HKO_RAINSTORM_URL)
     text = resp.content.decode("latin1").strip()
 
     events = []
@@ -67,8 +94,7 @@ def _fetch_rstorm_events() -> pd.DataFrame:
 
 def _fetch_tc_events() -> pd.DataFrame:
     """Fetch and parse HKO Tropical Cyclone Warning Signal database."""
-    resp = requests.get(HKO_TYPHOON_URL, headers=DEFAULT_HEADERS, timeout=15)
-    resp.raise_for_status()
+    resp = _get_with_retry(HKO_TYPHOON_URL)
     text = resp.content.decode("latin1").strip()
 
     events = []
@@ -105,8 +131,23 @@ def _fetch_tc_events() -> pd.DataFrame:
 
 def _fetch_fx_monthly() -> pd.DataFrame:
     """Fetch FRED DEXHKUS and DEXCHUS to derive monthly HKD/RMB exchange rate."""
-    hkus = pd.read_csv(FRED_DEXHKUS_URL)
-    chus = pd.read_csv(FRED_DEXCHUS_URL)
+    try:
+        hkus = pd.read_csv(StringIO(_get_with_retry(FRED_DEXHKUS_URL).text))
+        chus = pd.read_csv(StringIO(_get_with_retry(FRED_DEXCHUS_URL).text))
+    except Exception as exc:
+        # FRED occasionally returns a gateway timeout from CI runners. Keep
+        # the weather series usable and make the fallback explicit; callers
+        # can distinguish it through ``data_source`` instead of mistaking a
+        # flat operational fallback for live FX observations.
+        logger.warning("FRED FX unavailable after retries; using labeled fallback (%s).", exc)
+        months = pd.date_range("2021-01-01", pd.Timestamp.now(), freq="MS").strftime("%Y-%m")
+        return pd.DataFrame(
+            {
+                "month": months,
+                "rmb_per_100_hkd": FALLBACK_RMB_PER_100_HKD,
+                "data_source": DATA_SOURCE_FALLBACK,
+            }
+        )
 
     # Normalize date column name across FRED CSV format variations
     for frame in (hkus, chus):
@@ -122,18 +163,26 @@ def _fetch_fx_monthly() -> pd.DataFrame:
     merged["month"] = merged["DATE"].dt.strftime("%Y-%m")
 
     monthly_fx = merged.groupby("month")["rmb_per_100_hkd"].mean().round(2).reset_index()
+    monthly_fx["data_source"] = DATA_SOURCE_LIVE
     return monthly_fx
 
 
 def fetch_weather_demand_drivers() -> pd.DataFrame:
     """Fetch and aggregate severe weather disruption hours and HKD/RMB FX rate."""
+    weather_source = DATA_SOURCE_LIVE
     try:
         r_df = _fetch_rstorm_events()
-        t_df = _fetch_tc_events()
-        fx_df = _fetch_fx_monthly()
     except Exception as exc:
-        logger.warning(f"Failed to fetch weather or demand drivers ({exc}).")
-        return pd.DataFrame(columns=SCHEMA_COLUMNS)
+        logger.warning("Failed to fetch HKO rainstorm data; using zero-hour fallback (%s).", exc)
+        r_df = pd.DataFrame()
+        weather_source = DATA_SOURCE_FALLBACK
+    try:
+        t_df = _fetch_tc_events()
+    except Exception as exc:
+        logger.warning("Failed to fetch HKO typhoon data; using zero-hour fallback (%s).", exc)
+        t_df = pd.DataFrame()
+        weather_source = DATA_SOURCE_FALLBACK
+    fx_df = _fetch_fx_monthly()
 
     # Monthly severe weather aggregations
     r_agg = pd.DataFrame()
@@ -171,6 +220,9 @@ def fetch_weather_demand_drivers() -> pd.DataFrame:
     base_df["amber_rain_hours"] = base_df["amber_rain_hours"].fillna(0.0).round(1)
     base_df["signal_8_plus_hours"] = base_df["signal_8_plus_hours"].fillna(0.0).round(1)
     base_df["total_disruption_hours"] = (base_df["red_black_rain_hours"] + base_df["signal_8_plus_hours"]).round(1)
+    base_df["data_source"] = base_df["data_source"].fillna(DATA_SOURCE_LIVE)
+    if weather_source == DATA_SOURCE_FALLBACK:
+        base_df["data_source"] = DATA_SOURCE_FALLBACK
 
     result = base_df[SCHEMA_COLUMNS].sort_values("date").reset_index(drop=True)
 
