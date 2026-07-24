@@ -5,7 +5,7 @@
     "surface": "dashboard",
     "title": "Hong Kong Real Estate Monitor",
     "description": "A source-backed snapshot of residential price, rent, and market confidence measures.",
-    "generatedAt": "2026-07-23T23:13:11.552088Z",
+    "generatedAt": "2026-07-23T23:55:48.418620Z",
     "cards": [
       {
         "id": "ccl_card",
@@ -419,7 +419,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**Data snapshot:** `4f12860c9584ab55` · generated 2026-07-23T23:13:11.552088Z.  This is a published snapshot, not a live connection. RVD observations marked provisional may be revised."
+        "body": "**Data snapshot:** `4f12860c9584ab55` · generated 2026-07-23T23:55:48.418620Z.  This is a published snapshot, not a live connection. RVD observations marked provisional may be revised."
       },
       {
         "id": "market_pulse",
@@ -477,7 +477,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-23T23:13:11.552088Z",
+    "generatedAt": "2026-07-23T23:55:48.418620Z",
     "status": "ready",
     "datasets": {
       "kpi_ccl": [
@@ -15421,7 +15421,7 @@
           "CCL latest is the most recent published weekly Centaline City Leading Index observation.",
           "Weekly and yearly movements are latest divided by the prior observation or latest observation on/before one year earlier, minus one."
         ],
-        "executed_at": "2026-07-23T23:13:11.552088Z"
+        "executed_at": "2026-07-23T23:55:48.418620Z"
       }
     },
     {
@@ -15437,7 +15437,7 @@
           "MHPI latest is the most recent published overall weekly Midland Hong Kong Property Price Index observation.",
           "Weekly and yearly movements are latest divided by the prior observation or latest observation on/before one year earlier, minus one."
         ],
-        "executed_at": "2026-07-23T23:13:11.552088Z"
+        "executed_at": "2026-07-23T23:55:48.418620Z"
       }
     },
     {
@@ -15452,7 +15452,7 @@
         "metric_definitions": [
           "The confidence series is a supporting market-sentiment measure published by Midland Realty."
         ],
-        "executed_at": "2026-07-23T23:13:11.552088Z"
+        "executed_at": "2026-07-23T23:55:48.418620Z"
       }
     },
     {
@@ -15468,7 +15468,7 @@
           "RVD price latest is the All Classes monthly private domestic price index.",
           "Monthly and yearly movements are latest divided by the prior month or observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-07-23T23:13:11.552088Z"
+        "executed_at": "2026-07-23T23:55:48.418620Z"
       }
     },
     {
@@ -15484,7 +15484,7 @@
           "RVD rent latest is the All Classes monthly private domestic rental index.",
           "Monthly and yearly movements are latest divided by the prior month or observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-07-23T23:13:11.552088Z"
+        "executed_at": "2026-07-23T23:55:48.418620Z"
       }
     },
     {
@@ -15503,7 +15503,7 @@
           "RVD 1.4M.csv",
           "RVD 1.3M.csv"
         ],
-        "executed_at": "2026-07-23T23:13:11.552088Z"
+        "executed_at": "2026-07-23T23:55:48.418620Z"
       }
     },
     {
@@ -15517,7 +15517,7 @@
           "Validated core measure frames",
           "Declared future-source registry"
         ],
-        "executed_at": "2026-07-23T23:13:11.552088Z"
+        "executed_at": "2026-07-23T23:55:48.418620Z"
       }
     }
   ],
