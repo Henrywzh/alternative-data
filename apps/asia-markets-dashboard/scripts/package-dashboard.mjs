@@ -250,32 +250,37 @@ const HK_TELECOM_ZH = {
 const HK_REIT_ZH = {
   title: "香港房地产信托（REITs）基本面监测",
   description: "领展（Link REIT）、冠君（Champion REIT）、置富（Fortune REIT）、繁荣（Prosperity REIT）、阳光（Sunlight REIT）及富豪（Regal REIT）的每单位资产净值（NAV）、每基金单位分派（DPU）、出租率、租金检讨调升率及酒店 KPI 快照。",
-  // NOTE: the underlying manifest.cards / manifest.charts / manifest.tables are
-  // currently empty (build_hk_reit_artifact.py has not wired up dashboard
-  // blocks yet), so these translations are speculative -- keyed by the naming
-  // convention used elsewhere in this file -- and unverified against real ids.
-  // They are inert no-ops until the artifact builder emits matching card/
-  // chart/table ids.
   cards: {
-    nav_card: { description: "各 REIT 最新每单位资产净值（NAV）；环比与同比变动。", metricLabels: ["每单位资产净值 (港元)", "环比", "同比"] },
-    dpu_card: { description: "各 REIT 最新每基金单位分派（DPU）；环比与同比变动。", metricLabels: ["每基金单位分派 (港仙)", "环比", "同比"] },
-    occupancy_card: { description: "各 REIT 物业组合整体出租率；环比与同比变动。", metricLabels: ["出租率 (%)", "环比", "同比"] },
-    rental_reversion_card: { description: "续租/新租的租金检讨调升率；同比变动。", metricLabels: ["租金检讨调升率 (%)", "同比"] },
-    hotel_occupancy_card: { description: "富豪产业信托酒店组合平均出租率；同比变动。", metricLabels: ["酒店出租率 (%)", "同比"] },
-    hotel_adr_card: { description: "富豪产业信托酒店组合平均房价（ADR）；同比变动。", metricLabels: ["平均房价 ADR (港元)", "同比"] },
-    hotel_revpar_card: { description: "富豪产业信托酒店组合每间可出租客房收益（RevPAR）；同比变动。", metricLabels: ["RevPAR (港元)", "同比"] },
+    linkreit_card: { description: "领展房产基金（0823.HK）最新每单位资产净值、DPU 及出租率/租金检讨调升率披露。", metricLabels: ["每单位资产净值 (港元)", "每基金单位分派 (港元)", "出租率 (%)", "租金检讨调升率 (%)"] },
+    championreit_card: { description: "冠君产业信托（2778.HK）最新每单位资产净值、DPU 及出租率/租金检讨调升率披露。", metricLabels: ["每单位资产净值 (港元)", "每基金单位分派 (港元)", "出租率 (%)", "租金检讨调升率 (%)"] },
+    fortunereit_card: { description: "置富产业信托（0778.HK）最新每单位资产净值、DPU 及出租率/租金检讨调升率披露。", metricLabels: ["每单位资产净值 (港元)", "每基金单位分派 (港元)", "出租率 (%)", "租金检讨调升率 (%)"] },
+    prosperityreit_card: { description: "繁荣产业信托（0808.HK）最新每单位资产净值、DPU 及出租率/租金检讨调升率披露。", metricLabels: ["每单位资产净值 (港元)", "每基金单位分派 (港元)", "出租率 (%)", "租金检讨调升率 (%)"] },
+    sunlightreit_card: { description: "阳光房地产基金（0435.HK）最新每单位资产净值、DPU 及出租率/租金检讨调升率披露。", metricLabels: ["每单位资产净值 (港元)", "每基金单位分派 (港元)", "出租率 (%)", "租金检讨调升率 (%)"] },
+    regalreit_card: { description: "富豪产业信托（1881.HK）最新每单位资产净值、DPU 及酒店 KPI 披露。", metricLabels: ["每单位资产净值 (港元)", "每基金单位分派 (港元)", "酒店出租率 (%)", "RevPAR (港元)"] },
   },
   charts: {
-    nav_trend: ["各 REIT 每单位资产净值走势", "领展、冠君、置富、繁荣及阳光的每单位资产净值历史。", "期间", "港元 / 单位", "REIT"],
-    dpu_trend: ["各 REIT 每基金单位分派走势", "各 REIT 半年度或年度 DPU 历史。", "期间", "港仙 / 单位", "REIT"],
-    occupancy_trend: ["各 REIT 出租率走势", "写字楼及零售 REIT 的物业组合整体出租率。", "期间", "出租率 (%)", "REIT"],
-    hotel_kpi_trend: ["富豪产业信托酒店 KPI 走势", "酒店出租率、平均房价（ADR）及 RevPAR 历史。", "期间", "数值", "指标"],
+    nav_trend_chart: ["各 REIT 每单位资产净值走势 (港元)", "全部六家 REIT（按股票代码；全名见下方对比表）各自投资者关系披露的每单位资产净值历史。", "期间", "港元 / 单位", "股票代码"],
+    dpu_trend_chart: ["各 REIT 每基金单位分派走势 (港元)", "全部六家 REIT（按股票代码）的 DPU 历史；部分期间（如富豪产业信托 2025 上半年）分派为零属真实披露结果，并非数据缺失。", "期间", "港元 / 单位", "股票代码"],
+    occupancy_trend_chart: ["写字楼/零售 REIT 出租率走势 (%)", "领展 (0823)、冠君 (2778)、置富 (0778)、繁荣 (0808) 及阳光 (0435)——不含富豪产业信托（其组合为酒店而非写字楼/零售）。", "期间", "出租率 (%)", "股票代码"],
+    reversion_trend_chart: ["写字楼/零售 REIT 租金检讨调升率走势 (%)", "续租/新租相对原有租金的调升率，仅限五家写字楼/零售 REIT（按股票代码）。", "期间", "租金检讨调升率 (%)", "股票代码"],
+    regal_hotel_kpi_chart: ["富豪产业信托酒店 KPI：出租率、ADR 及 RevPAR", "富豪产业信托的酒店组合指标体系与其余五家写字楼/零售 REIT 完全不同，故不与其合并显示；出租率单位为 %，ADR 及 RevPAR 单位为港元，请以提示框中的具体数值为准。", "期间", "数值（单位不一）", "指标"],
   },
   tables: {
-    reit_fundamentals_table: {
-      title: "REIT 基本面快照",
-      subtitle: "各 REIT 最新每单位资产净值、DPU、出租率及租金检讨调升率。",
-      columns: { reit_name: "REIT 名称", ticker: "股票代码", nav_per_unit_hkd: "每单位资产净值 (港元)", dpu_hk_cents: "每基金单位分派 (港仙)", occupancy_pct: "出租率 (%)", rental_reversion_pct: "租金检讨调升率 (%)", date: "截至日期" },
+    reit_comparison_table: {
+      title: "香港 REIT 基本面对比",
+      subtitle: "全部六家 REIT 最新每单位资产净值及 DPU；出租率跨业务类型统一列示（富豪产业信托为酒店出租率）；租金检讨调升率及酒店房价指标在不适用的 REIT 上为空。",
+      columns: {
+        reit_name: "REIT 名称",
+        ticker: "股票代码",
+        business_type: "业务类型",
+        nav_per_unit_hkd: "每单位资产净值 (港元)",
+        dpu_hkd: "每基金单位分派 (港元)",
+        occupancy_pct: "出租率 (%)",
+        rental_reversion_pct: "租金检讨调升率 (%)",
+        average_daily_rate_hkd: "平均房价 ADR (港元)",
+        revpar_hkd: "RevPAR (港元)",
+        as_of_date: "截至日期",
+      },
     },
   },
   sources: {
@@ -287,7 +292,7 @@ const HK_REIT_ZH = {
     regalreit_fundamentals: "富豪产业信托（1881.HK）酒店业绩披露",
   },
   snapshotBody: (artifact) => `**数据快照：** \`${artifact.package_info.snapshotId}\` · 生成于 ${artifact.manifest.generatedAt}。`,
-  methodologyBody: "## 如何阅读本 dashboard\n\n各 REIT 涵盖不同物业类别（领展/置富为零售，冠君/阳光/繁荣为写字楼及零售，富豪为酒店）。富豪产业信托关注酒店指标（出租率、平均房价 ADR、RevPAR），其他 REIT 关注出租率与租金检讨调升率。本 dashboard 不提供股票排名、预测或投资建议。",
+  methodologyBody: "## 如何阅读本 dashboard\n\n五家 REIT（领展、冠君、置富、繁荣、阳光）为写字楼/零售业主，披露出租率与租金检讨调升率；富豪产业信托为酒店类 REIT，披露出租率、平均房价（ADR）及 RevPAR，其酒店指标从不与其余五家的写字楼/零售指标合并显示于同一图表。DPU 在个别期间可能为零（真实披露结果，非数据缺失），此时环比变动留空而非除以零。本 dashboard 不提供股票排名、预测或投资建议。",
 };
 
 function localizeArtifact(input, zh) {
@@ -417,6 +422,7 @@ const SECTORS = [
   { id: "hk-utilities", statusFile: "dashboard-status-hk-utilities.json", zh: HK_UTILITIES_ZH },
   { id: "hk-transport", statusFile: "dashboard-status-hk-transport.json", zh: HK_TRANSPORT_ZH },
   { id: "hk-telecom", statusFile: "dashboard-status-hk-telecom.json", zh: HK_TELECOM_ZH },
+  { id: "hk-reit", statusFile: "dashboard-status-hk-reit.json", zh: HK_REIT_ZH },
 ];
 
 if (!existsSync(distDir)) {

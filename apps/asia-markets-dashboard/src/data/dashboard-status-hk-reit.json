@@ -1,11 +1,10 @@
 {
-  "sector_id": "hk-reit",
-  "sector_name": "Hong Kong REITs",
+  "generated_at": "2026-07-24T23:44:03.738658Z",
+  "snapshot_id": "f36175aa1382806f",
+  "data_as_of": "2026-03-31",
   "overall_status": "Healthy",
   "live_sources": 6,
   "planned_sources": 0,
-  "data_as_of": "2026-03-31",
-  "generated_at": "2026-07-24 21:47 UTC",
   "sources": [
     {
       "source": "Link REIT (0823.HK) Investor Relations Disclosures",
@@ -15,7 +14,7 @@
       "latest_observation": "2026-03-31",
       "records": 5,
       "freshness": "live",
-      "notes": "NAV per unit, DPU, Occupancy rate, and Rental Reversion rate for Link REIT."
+      "notes": "NAV per unit, DPU, occupancy rate, and rental reversion rate for Link REIT."
     },
     {
       "source": "Champion REIT (2778.HK) Financial Disclosures",
@@ -65,7 +64,7 @@
       "latest_observation": "2025-12-31",
       "records": 1,
       "freshness": "live",
-      "notes": "Hotel portfolio KPIs: Occupancy (%), Average Daily Rate (ADR HKD), RevPAR (HKD), DPU, and NAV/unit."
+      "notes": "Hotel portfolio KPIs: occupancy (%), average daily rate (ADR, HK$), RevPAR (HK$), DPU, and NAV/unit."
     }
   ],
   "attachment_filename": "hk-reit-monitor.html"
