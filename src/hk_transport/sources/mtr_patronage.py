@@ -57,8 +57,30 @@ def _clean_num(val: str) -> float:
 
 
 def fetch_mtr_patronage() -> pd.DataFrame:
-    """Fetch and parse MTR monthly patronage statistics."""
-    resp = requests.get(MTR_PATRONAGE_URL, headers=DEFAULT_HEADERS, timeout=15)
+    """Fetch and parse MTR monthly patronage statistics.
+
+    MTR's patronage page defaults to showing only a rolling ~7-month
+    window on a plain GET. The page also has a hidden search form
+    (``MyForm``) whose JS handler (``submit_search()``) renames a dummy
+    field to ``BUTTON=SEARCH`` before submitting -- POSTing that field
+    directly returns the full monthly history back to January 2000 in a
+    single request (verified: 318 real monthly rows, cross-checked
+    against several individual years). Same table structure as the
+    default view, so no parsing changes are needed -- only the request.
+    """
+    now = pd.Timestamp.now(tz="UTC")
+    resp = requests.post(
+        MTR_PATRONAGE_URL,
+        headers=DEFAULT_HEADERS,
+        data={
+            "BUTTON": "SEARCH",
+            "SEARCH_MONTH_FRM": "1",
+            "SEARCH_YEAR_FRM": "2000",
+            "SEARCH_MONTH_TO": str(now.month),
+            "SEARCH_YEAR_TO": str(now.year),
+        },
+        timeout=30,
+    )
     resp.raise_for_status()
 
     soup = BeautifulSoup(resp.text, "html.parser")
