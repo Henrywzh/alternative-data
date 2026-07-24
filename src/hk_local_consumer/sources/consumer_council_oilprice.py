@@ -97,15 +97,9 @@ def fetch_consumer_council_oilprice() -> pd.DataFrame:
             raise ValueError("No records extracted from barChartData")
 
     except Exception as exc:
-        logger.warning(f"Failed to fetch Consumer Council Oil Price data: {exc}. Using fallback snapshot.")
+        logger.warning(f"Failed to fetch Consumer Council Oil Price data: {exc}. Returning empty frame (no fabricated data).")
         source_label = DATA_SOURCE_FALLBACK
-        df = pd.DataFrame([
-            {"date": today_str, "company": "Caltex", "fuel_type": "Standard Petrol", "discounted_price_hkd": 22.14, "walkin_discount_hkd": 10.2},
-            {"date": today_str, "company": "PetroChina", "fuel_type": "Standard Petrol", "discounted_price_hkd": 25.34, "walkin_discount_hkd": 7.0},
-            {"date": today_str, "company": "Shell", "fuel_type": "Standard Petrol", "discounted_price_hkd": 25.67, "walkin_discount_hkd": 7.0},
-            {"date": today_str, "company": "Sinopec", "fuel_type": "Standard Petrol", "discounted_price_hkd": 26.04, "walkin_discount_hkd": 6.2},
-            {"date": today_str, "company": "Esso", "fuel_type": "Standard Petrol", "discounted_price_hkd": 31.07, "walkin_discount_hkd": 1.6},
-        ])
+        df = pd.DataFrame(columns=[c for c in OILPRICE_COLUMNS if c != "data_source"])
 
     df["data_source"] = source_label
     result = df.reindex(columns=OILPRICE_COLUMNS).reset_index(drop=True)
