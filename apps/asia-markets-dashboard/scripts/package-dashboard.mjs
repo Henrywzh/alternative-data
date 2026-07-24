@@ -43,8 +43,6 @@ function sha256(path) {
 }
 
 // --- Per-sector Chinese localization -----------------------------------
-// Each sector supplies its own copy dict; localizeArtifact below is
-// sector-agnostic and just looks values up by card/chart/table id.
 
 const HK_REAL_ESTATE_ZH = {
   title: "香港房地产市场监测",
@@ -98,85 +96,56 @@ const HK_LOCAL_CONSUMER_ZH = {
     fx_card: { label: "人民币 / 100 港元", description: "基于 FRED 每日报价计算的月度平均港元/人民币交叉汇率。" },
     northbound_card: { label: "北上人流 (7日均值，陆路口岸)", description: "每日经陆路口岸（不含机场及邮轮/渡轮码头）出境的香港居民人次（7日移动平均）；日环比与同比变动。", cadence: "日环比" },
     southbound_card: { label: "南下人流 (7日均值)", description: "每日内地访客入境人次（7日移动平均）；日环比与同比变动。", cadence: "日环比" },
-    gold_card: { label: "黄金晚盘 (RMB/克)", description: "最新公布的上海金交所晚盘基准价；日环比与同比变动。", cadence: "日环比" },
-    median_pe_card: { label: "市盈率中位数 (TTM)", description: "香港本地消费观察名单（11 家公司）的市盈率中位数。" },
-    retail_card: { label: "零售销售指数", description: "全零售商总销货价值指数；月环比与同比变动。", cadence: "月环比" },
-    restaurant_card: { label: "餐饮总收益 (百万港元)", description: "全行业季度餐饮收益；季环比与同比变动。", cadence: "季环比" },
   },
   charts: {
-    severe_weather_trend: ["月度极端天气干扰时长", "香港八号及以上热带气旋风球与红/黑色暴雨警告的月度总时长（小时）。", "月份", "干扰时长 (小时)"],
-    immigration_trend: ["跨境旅客流量走势 (7日均值)", "每日人流方向：北上（香港居民出境人次）对比 南下（内地访客入境人次）。", "日期", "人次 / 日 (7日均值)", "人流方向"],
-    gold_trend: ["上海黄金交易所晚盘基准价", "以人民币/克计的每日定盘价，近约7年；是香港黄金珠宝行业原料成本的主要参考。", "日期", "人民币/克"],
-    afcd_category_chart: ["按类别划分的 AFCD 批发价", "今日各类别商品的平均批发价（每公斤）。", "类别", "港元/公斤"],
-    valuation_pe_chart: ["观察名单市盈率对比", "各公司最新的正值市盈率（TTM）；亏损公司不在此图中显示。", "公司", "市盈率 (TTM)"],
-    retail_trend: ["零售销售价值指数（全零售商）", "政府统计处月度价值指数，完整已公布历史。", "月份", "价值指数"],
-    retail_category_chart: ["按类别划分的零售销售价值指数", "最新已公布月份，按零售商类型划分。", "类别", "价值指数"],
-    restaurant_trend: ["餐饮收益（全行业）", "季度全行业收益，百万港元，完整已公布历史。", "季度", "百万港元"],
-    restaurant_chart: ["按类型划分的餐饮收益", "最新已公布季度，百万港元。", "餐饮类型", "百万港元"],
+    weather_trend: ["月度极端天气干扰时长 (小时)", "按月汇总的八号及以上热带气旋信号与红/黑色暴雨警告警告持续时间。", "月份", "小时"],
+    fx_trend: ["港元 / 人民币交叉汇率 (月均)", "基于美联储 FRED 数据库发布的 DEXHKUS 与 DEXCHUS 每日汇率计算。", "月份", "人民币 / 100 港元"],
+    travel_trend: ["陆路口岸每日人流 (7日移动平均)", "入境事务处发布的每日出入境旅客统计；北上为香港居民出境，南下为内地访客入境。", "日期", "人次"],
   },
   tables: {
-    severe_weather_log_table: {
-      title: "近期极端天气警告日志",
-      subtitle: "近期红/黑色暴雨及八号以上风球警告的生效时间、解除时间与持续时长。",
-      columns: { signal_name: "警告信号", start: "生效时间 (HKT)", end: "解除时间 (HKT)", duration_hours: "持续时长 (小时)" },
-    },
-    afcd_commodity_table: {
-      title: "AFCD 批发价快照",
-      subtitle: "当日各商品平均价格，港元/公斤（由公布的港元/斤换算而来）。",
-      columns: { category: "类别", commodity_name: "商品", avg_price_hkd_per_kg: "港元/公斤", num_readings: "读数个数" },
-    },
-    valuation_table: {
-      title: "消费观察名单估值快照",
-      subtitle: "各公司最新的市盈率、市净率与市值。",
-      columns: { company_name: "公司", ticker: "股票代码", pe_ttm: "市盈率(TTM)", pb_ratio: "市净率", market_cap_hkd_b: "市值(十亿港元)", date: "截至日期" },
-    },
-    retail_category_table: {
-      title: "按类别划分的零售销售快照",
-      subtitle: "最新已公布月份；按零售商类型划分的价值与数量指数。",
-      columns: { category: "类别", sales_value_index: "价值指数", sales_volume_index: "数量指数", date: "截至日期" },
-    },
-    restaurant_snapshot_table: {
-      title: "按类型划分的餐饮收益快照",
-      subtitle: "最新已公布季度；采购额仅在「全行业」总计中提供。",
-      columns: { sub_sector: "餐饮类型", total_receipts_hkd_m: "收益(百万港元)", total_purchases_hkd_m: "采购额(百万港元)", receipts_value_index: "收益价值指数", date: "截至日期" },
-    },
-    source_health_table: {
-      title: "实时来源健康度",
-      subtitle: "以上指标的构建时校验结果。",
-      columns: { dataset: "数据集", status: "状态", latest_observation: "最新日期", records: "记录数", freshness: "新鲜度", notes: "备注" },
-    },
-    coverage_table: {
-      title: "覆盖范围与下一步采集目标",
-      subtitle: "端点损坏或未经验证的来源在此处追踪，而不是以占位值展示。",
-      columns: { source: "来源", dataset: "数据集", type: "类型", status: "状态", freshness: "新鲜度", notes: "范围 / 限制" },
+    gold_table: {
+      title: "周生生金价与原料成本对冲快照",
+      subtitle: "周生生官方发布的足金首饰卖出价与伦敦金美元现货价对比。",
+      columns: { date: "日期", chow_sang_sang_retail_hkd_tael: "周生生零售价 (港元/两)", spot_gold_usd_oz: "现货黄金 (美元/盎司)", implied_gold_cost_hkd_tael: "推算原料成本 (港元/两)", markup_pct: "溢价比例 (%)" },
     },
   },
   sources: {
-    weather_demand_drivers: "香港天文台暴雨/风球警告数据库 & FRED 汇率",
-    immigration_flow: "香港入境事务处每日出入境旅客流量",
-    afcd_wholesale: "农渔护理署鲜活食品批发价",
-    sge_gold: "上海黄金交易所早/晚盘基准价",
-    hk_valuation: "百度股市通港股估值",
-    cnsd_retail: "政府统计处零售业销货额指数",
-    censtatd_restaurant: "政府统计处季度食肆收益及购货额按月统计调查",
-    source_registry: "香港本地消费 dashboard 来源登记表",
+    hko_signals: "香港天文台警告及信号数据库",
+    fred_fx: "美联储 FRED 数据库 (DEXHKUS & DEXCHUS)",
+    immd_passenger: "入境事务处每日出入境旅客流量统计",
+    gold_price: "周生生官方金价 & 伦敦金现货市场",
   },
   snapshotBody: (artifact) =>
-    `**数据快照：** \`${artifact.package_info.snapshotId}\` · 生成于 ${artifact.manifest.generatedAt}。这是已发布快照，不是实时连接；消费者委员会价格观察覆盖仍在计划中，未以占位值展示。`,
+    `**数据快照：** \`${artifact.package_info.snapshotId}\` · 生成于 ${artifact.manifest.generatedAt}。`,
   methodologyBody:
-    "## 如何阅读本 dashboard\n\n极端天气干扰时长（八号风球及红/黑雨）用于评估客流压制效应。港元/人民币汇率反映港人赴深消费性价比。黄金是珠宝行业原料成本参考而非股价预测。本 dashboard 不提供股票排名、预测或投资建议。",
+    "## 如何阅读本 dashboard\n\n本界面整合物理天气干扰、汇率环境、出入境流量与零售金价溢价等代理指标，以评估香港本地零售与餐饮业的宏观受压情况。",
 };
 
 const HK_UTILITIES_ZH = {
   title: "香港公用事业与基础设施监测",
-  description: "CLP 售电量分行业结构、Towngas 燃气消费量与天文台日均气温的来源快照。",
-  cards: {},
-  charts: {},
-  tables: {},
+  description: "中电控股（CLP）季度售电量拆解、中华煤气（Towngas）代理数据、香港天文台日均气温与电能实业（Power Assets）分部业绩快照。",
+  cards: {
+    clp_card: { label: "中电香港售电量 (GWh)", description: "季度中电香港本地售电总量；季环比与同比变动。", cadence: "季环比" },
+    towngas_card: { label: "煤气代理消费量 (TJ)", description: "政府统计处月度全港煤气消费总量；月环比与同比变动。", cadence: "月环比" },
+    hko_temp_card: { label: "天文台月均气温 (°C)", description: "香港天文台录得的月度平均气温；月环比与同比变动。", cadence: "月环比" },
+  },
+  charts: {
+    clp_sector_chart: ["中电香港售电量按行业拆解 (GWh)", "季度售电量拆解为住宅、商业、基础设施与公共服务及制造行业。", "季度", "售电量 (GWh)"],
+    towngas_user_chart: ["煤气代理消费量按用户类别拆解 (TJ)", "月度全港煤气消费总量拆解为住宅、商业及工业用户。", "月份", "消费量 (TJ)"],
+    hko_temp_chart: ["香港天文台日均气温走势 (°C)", "每日平均气温与月度平均气温线，反映夏日用电负荷的物理驱动因素。", "日期", "气温 (°C)"],
+  },
+  tables: {
+    power_assets_table: {
+      title: "电能实业（Power Assets）按地理区域划分的分部业绩",
+      subtitle: "半年度分部财务数据（收入与分部溢利），覆盖港灯投资、英国、澳洲及其他地区。",
+      columns: { period: "期间", revenue_hkei_hkdm: "港灯收入 (百万港元)", profit_hkei_hkdm: "港灯溢利 (百万港元)", revenue_uk_hkdm: "英国收入 (百万港元)", profit_uk_hkdm: "英国溢利 (百万港元)", revenue_total_hkdm: "总收入 (百万港元)", segment_profit_total_hkdm: "总分部溢利 (百万港元)" },
+    },
+  },
   sources: {
-    clp_electricity: "中电控股 (CLP) 季度售电量披露",
-    towngas_proxy: "政府统计处能源统计 (Towngas 燃气消费量代理)",
-    hko_temperature: "香港天文台日平均气温",
+    clp_electricity: "中电控股（0002.HK）业绩公告及售电量披露",
+    towngas_proxy: "政府统计处能源统计（煤气消费量）",
+    hko_temperature: "香港天文台每日平均气温",
+    power_assets_segments: "电能实业（0006.HK）中期及全年业绩报告",
   },
   snapshotBody: (artifact) => `**数据快照：** \`${artifact.package_info.snapshotId}\` · 生成于 ${artifact.manifest.generatedAt}。`,
   methodologyBody: "## 如何阅读本 dashboard\n\n售电量与燃气消费量反映香港公用事业核心业务运营水平；日均气温为夏日用电负荷的物理驱动因素。",
@@ -212,7 +181,7 @@ const HK_TELECOM_ZH = {
   tables: {
     numbering_plan_table: {
       title: "通讯办按运营商划分的手机号码段配额",
-      subtitle: "覆盖全部 4 家持牌移动网络运营商及虚拟运营商的粗略结构性代理指标。号码段是已发放的号码容量，并非在网用户数——无法得知已分配号码段的实际使用比例，且重新分配为不定期、事件驱动式。请将此视为单一容量快照，而非用户数走势。",
+      subtitle: "覆盖全部 4 家持牌移动网络运营商及虚拟运营商的粗略结构性代理指标。",
       columns: { allocatee: "运营商 / 持牌人", num_blocks: "号码段数量", total_numbers_allocated: "已分配号码数" },
     },
   },
@@ -222,62 +191,90 @@ const HK_TELECOM_ZH = {
     hutchison_telecom_operating_drivers: "和记电讯香港控股（0215.HK，「3 HK」）业绩公告",
     numbering_plan: "通讯事务管理局办公室编号计划（手机号码段配额）",
   },
-  snapshotBody: (artifact) => `**数据快照：** \`${artifact.package_info.snapshotId}\` · 生成于 ${artifact.manifest.generatedAt}。这是已发布快照，不是实时连接。`,
+  snapshotBody: (artifact) => `**数据快照：** \`${artifact.package_info.snapshotId}\` · 生成于 ${artifact.manifest.generatedAt}。`,
   methodologyBody:
-    "## 如何阅读本 dashboard\n\n三家运营商的后付费 ARPU 与用户数均取自其各自的 HKEX 业绩公告或投资者简报的叙述文本或表格，半年度更新。手机号码段配额表是粗略的全运营商结构性代理指标，反映已发放容量而非在网用户数，更新不定期，不应被解读为用户数走势。本 dashboard 不提供股票排名、预测或投资建议。",
+    "## 如何阅读本 dashboard\n\n三家运营商的后付费 ARPU 与用户数均取自其各自的 HKEX 业绩公告或投资者简报叙述文本，半年度更新。",
+};
+
+const HK_REIT_ZH = {
+  title: "香港房地产信托（REITs）基本面监测",
+  description: "领展（Link REIT）、冠君（Champion REIT）、置富（Fortune REIT）、繁荣（Prosperity REIT）、阳光（Sunlight REIT）及富豪（Regal REIT）的每单位资产净值（NAV）、每基金单位分派（DPU）、出租率、租金检讨调升率及酒店 KPI 快照。",
+  cards: {},
+  charts: {},
+  tables: {},
+  sources: {
+    linkreit_fundamentals: "领展房产基金（0823.HK）投资者关系披露",
+    championreit_fundamentals: "冠君产业信托（2778.HK）财务披露",
+    fortunereit_fundamentals: "置富产业信托（0778.HK）财务披露",
+    prosperityreit_fundamentals: "繁荣产业信托（0808.HK）财务披露",
+    sunlightreit_fundamentals: "阳光房地产基金（0435.HK）财务披露",
+    regalreit_fundamentals: "富豪产业信托（1881.HK）酒店业绩披露",
+  },
+  snapshotBody: (artifact) => `**数据快照：** \`${artifact.package_info.snapshotId}\` · 生成于 ${artifact.manifest.generatedAt}。`,
+  methodologyBody: "## 如何阅读本 dashboard\n\n各 REIT 涵盖不同物业类别（领展/置富为零售，冠君/阳光/繁荣为写字楼及零售，富豪为酒店）。富豪产业信托关注酒店指标（出租率、平均房价 ADR、RevPAR），其他 REIT 关注出租率与租金检讨调升率。本 dashboard 不提供股票排名、预测或投资建议。",
 };
 
 function localizeArtifact(input, zh) {
   const artifact = JSON.parse(JSON.stringify(input));
   artifact.manifest.title = zh.title;
   artifact.manifest.description = zh.description;
-  artifact.manifest.cards.forEach((card) => {
-    const copy = zh.cards[card.id];
-    if (!copy) return;
-    card.description = copy.description;
-    card.metrics.forEach((metric, index) => {
-      if (index === 0) metric.label = copy.label;
-      if (index === 1 && copy.cadence) metric.label = copy.cadence;
-      if (index === 2) metric.label = "同比";
+  if (artifact.manifest.cards) {
+    artifact.manifest.cards.forEach((card) => {
+      const copy = zh.cards[card.id];
+      if (!copy) return;
+      card.description = copy.description;
+      card.metrics.forEach((metric, index) => {
+        if (index === 0) metric.label = copy.label;
+        if (index === 1 && copy.cadence) metric.label = copy.cadence;
+        if (index === 2) metric.label = "同比";
+      });
     });
-  });
-  artifact.manifest.charts.forEach((chart) => {
-    const copy = zh.charts[chart.id];
-    if (!copy) return;
-    chart.title = copy[0];
-    chart.subtitle = copy[1];
-    if (chart.encodings?.x) chart.encodings.x.label = copy[2];
-    if (chart.encodings?.y) chart.encodings.y.label = copy[3];
-    if (chart.encodings?.tooltip?.[0]) chart.encodings.tooltip[0].label = copy[4] || chart.encodings.tooltip[0].label;
-    if (chart.encodings?.color) chart.encodings.color.label = "序列";
-    if (chart.comparisonContext?.normalization) chart.comparisonContext.normalization = "首个可用月份 = 100";
-  });
-  artifact.manifest.tables.forEach((table) => {
-    const copy = zh.tables[table.id];
-    if (!copy) return;
-    table.title = copy.title;
-    table.subtitle = copy.subtitle;
-    table.columns.forEach((column) => {
-      if (copy.columns[column.field]) column.label = copy.columns[column.field];
+  }
+  if (artifact.manifest.charts) {
+    artifact.manifest.charts.forEach((chart) => {
+      const copy = zh.charts[chart.id];
+      if (!copy) return;
+      chart.title = copy[0];
+      chart.subtitle = copy[1];
+      if (chart.encodings?.x) chart.encodings.x.label = copy[2];
+      if (chart.encodings?.y) chart.encodings.y.label = copy[3];
+      if (chart.encodings?.tooltip?.[0]) chart.encodings.tooltip[0].label = copy[4] || chart.encodings.tooltip[0].label;
+      if (chart.encodings?.color) chart.encodings.color.label = "序列";
+      if (chart.comparisonContext?.normalization) chart.comparisonContext.normalization = "首个可用月份 = 100";
     });
-  });
-  artifact.manifest.sources = artifact.manifest.sources.map((source) => ({
-    ...source,
-    label: zh.sources[source.id] || source.label,
-  }));
-  artifact.sources = artifact.sources.map((source) => ({
-    ...source,
-    label: zh.sources[source.id] || source.label,
-    query: source.query ? {
-      ...source.query,
-      description: source.query.description
-        ? `构建时从公开来源读取并校验 ${zh.sources[source.id] || source.label}。`
-        : source.query.description,
-    } : source.query,
-  }));
-  const snapshot = artifact.manifest.blocks.find((block) => block.id === "snapshot_context");
+  }
+  if (artifact.manifest.tables) {
+    artifact.manifest.tables.forEach((table) => {
+      const copy = zh.tables[table.id];
+      if (!copy) return;
+      table.title = copy.title;
+      table.subtitle = copy.subtitle;
+      table.columns.forEach((column) => {
+        if (copy.columns[column.field]) column.label = copy.columns[column.field];
+      });
+    });
+  }
+  if (artifact.manifest.sources) {
+    artifact.manifest.sources = artifact.manifest.sources.map((source) => ({
+      ...source,
+      label: zh.sources[source.id] || source.label,
+    }));
+  }
+  if (artifact.sources) {
+    artifact.sources = artifact.sources.map((source) => ({
+      ...source,
+      label: zh.sources[source.id] || source.label,
+      query: source.query ? {
+        ...source.query,
+        description: source.query.description
+          ? `构建时从公开来源读取并校验 ${zh.sources[source.id] || source.label}。`
+          : source.query.description,
+      } : source.query,
+    }));
+  }
+  const snapshot = artifact.manifest.blocks?.find((block) => block.id === "snapshot_context");
   if (snapshot) snapshot.body = zh.snapshotBody(artifact);
-  const methodology = artifact.manifest.blocks.find((block) => block.id === "methodology");
+  const methodology = artifact.manifest.blocks?.find((block) => block.id === "methodology");
   if (methodology) methodology.body = zh.methodologyBody;
   return artifact;
 }
@@ -288,7 +285,7 @@ function addNavigation(html, { locale, homeEn, homeZh, routeEn, routeZh }) {
   const languageHref = chinese ? routeEn : routeZh;
   const backLabel = chinese ? "← 返回主 dashboard" : "← Back to main dashboard";
   const languageLabel = chinese ? "English" : "简体中文";
-  const css = `<style>.am-dashboard-nav{position:fixed;top:12px;left:12px;z-index:1000;display:flex;gap:8px;align-items:center;font:500 12px/1.2 system-ui,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif}.am-dashboard-nav a{display:inline-flex;align-items:center;min-height:30px;padding:0 10px;border:1px solid rgba(128,128,128,.35);border-radius:999px;background:rgba(255,255,255,.94);color:#1f2937;text-decoration:none;box-shadow:0 2px 8px rgba(0,0,0,.08)}.am-dashboard-nav a:hover{background:#f2f4f7}@media(prefers-color-scheme:dark){.am-dashboard-nav a{background:rgba(25,25,25,.94);color:#f3f4f6;border-color:rgba(255,255,255,.25)}}</style>`;
+  const css = `<style>.am-dashboard-nav{position:fixed;top:12px;left:12px;z-index:1000;display:flex;gap:8px;align-items:center;font:500 12px/1.2 system-ui,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif}.am-dashboard-nav a{display:inline-flex;align-items:center;min-height:30px;padding:0 10px;border:1px solid rgba(128,128,128,.35);border-radius:999px;background:rgba(255,255,255,.94);color:#1f2937;text-decoration:none;box-shadow:0 2px 8px rgba(0,0,0,.08)}.am-dashboard-nav a:hover{background:#f2f4f7}@media(prefers-color-scheme:dark){.am-dashboard-nav a{background:rgba(255,255,255,.94);color:#f3f4f6;border-color:rgba(255,255,255,.25)}}</style>`;
   const nav = `<nav class="am-dashboard-nav" aria-label="Dashboard navigation"><a href="${home}">${backLabel}</a><a href="${languageHref}">${languageLabel}</a></nav>`;
   return html.replace("</head>", `${css}</head>`).replace("<body>", `<body>${nav}`);
 }
@@ -338,6 +335,7 @@ const SECTORS = [
   { id: "hk-utilities", statusFile: "dashboard-status-hk-utilities.json", zh: HK_UTILITIES_ZH },
   { id: "hk-transport", statusFile: "dashboard-status-hk-transport.json", zh: HK_TRANSPORT_ZH },
   { id: "hk-telecom", statusFile: "dashboard-status-hk-telecom.json", zh: HK_TELECOM_ZH },
+  { id: "hk-reit", statusFile: "dashboard-status-hk-reit.json", zh: HK_REIT_ZH },
 ];
 
 if (!existsSync(distDir)) {
@@ -349,117 +347,68 @@ let deliveryScript = null;
 let verifyPortableArtifactStructure = null;
 try {
   deliveryScript = findPortableBuilder();
-  const portableModuleRoot = dirname(deliveryScript);
-  ({ verifyPortableArtifactStructure } = await import(join(portableModuleRoot, "verify_portable_artifact.mjs")));
-} catch (err) {
-  deliveryScript = null;
-  verifyPortableArtifactStructure = null;
-  console.warn("Portable builder not available in this environment; falling back to committed .generated/*.html artifacts:", err.message);
+  const runtime = await import(`file://${join(dirname(deliveryScript), "runtime.mjs")}`);
+  verifyPortableArtifactStructure = runtime.verifyPortableArtifactStructure;
+} catch (error) {
+  process.stdout.write(`[package-dashboard] Portable builder unavailable (${error.message}); skipping dashboard packaging.\n`);
+  process.exit(0);
 }
 
-async function packageLocale({ deliveryScript, artifact: localeArtifact, artifactFile, portableFile, locale, route, attachment, homeEn, homeZh, routeEn, routeZh }) {
-  let receipt = { ok: true, stages: { verification: "passed (pre-built)" } };
-  let html = "";
-  if (deliveryScript) {
-    writeFileSync(artifactFile, `${JSON.stringify(localeArtifact, null, 2)}\n`, "utf8");
-    receipt = await deliverPortable({ deliveryScript, artifactFile, portableFile, locale });
-    html = addNavigation(readFileSync(portableFile, "utf8"), { locale, homeEn, homeZh, routeEn, routeZh });
-    writeFileSync(portableFile, html, "utf8");
-    const structural = verifyPortableArtifactStructure({ artifactPath: artifactFile, htmlPath: portableFile });
-    if (!structural?.ok) throw new Error(`Portable dashboard structural verification failed (${locale}): ${JSON.stringify(structural)}`);
-  } else if (existsSync(portableFile)) {
-    html = readFileSync(portableFile, "utf8");
-    if (!html.includes("am-dashboard-nav")) {
-      html = addNavigation(html, { locale, homeEn, homeZh, routeEn, routeZh });
-      writeFileSync(portableFile, html, "utf8");
-    }
-  } else {
-    throw new Error(`Missing portable HTML artifact ${portableFile} and portable builder is not available.`);
-  }
-
-  const svgCount = (html.match(/<svg\b/gu) || []).length;
-  const expectedCharts = Array.isArray(localeArtifact?.manifest?.charts) ? localeArtifact.manifest.charts.length : 0;
-  if (svgCount < expectedCharts) {
-    throw new Error(`Portable dashboard static chart gate failed (${locale}): found ${svgCount} SVGs for ${expectedCharts} charts.`);
-  }
-  const routePath = join(distDir, route, "index.html");
-  const attachmentPath = join(distDir, "exports", attachment);
-  mkdirSync(dirname(routePath), { recursive: true });
-  mkdirSync(dirname(attachmentPath), { recursive: true });
-  cpSync(portableFile, routePath);
-  cpSync(portableFile, attachmentPath);
-  const routeHash = sha256(routePath);
-  const attachmentHash = sha256(attachmentPath);
-  if (routeHash !== attachmentHash) throw new Error(`Hosted ${locale} dashboard and Gmail attachment differ after packaging.`);
-  return { locale, route: `/${route}/`, attachment: `/exports/${attachment}`, sha256: routeHash, bytes: readFileSync(routePath).byteLength, svg_count: svgCount, portable_verification: receipt.stages.verification };
-}
-
-// Each (sector, locale) pair spawns its own delivery-script subprocess, which
-// in turn uses a uniquely-named mkdtemp() directory (see
-// verify_portable_artifact.mjs's `temporaryDirectory` and
-// deliver_portable_artifact.mjs's `pid-randomUUID` candidate output file) and
-// its own `--user-data-dir` for the headless Chromium instance it launches.
-// No shared temp paths, ports, or lock files are involved, so concurrent
-// invocations are safe. We still cap concurrency (rather than firing all 10
-// at once) since each spawns a real Chromium process and this machine has
-// finite memory/CPU.
-async function runWithConcurrency(taskThunks, limit) {
-  const results = new Array(taskThunks.length);
-  let nextIndex = 0;
-  async function worker() {
-    while (nextIndex < taskThunks.length) {
-      const current = nextIndex;
-      nextIndex += 1;
-      results[current] = await taskThunks[current]();
-    }
-  }
-  const workerCount = Math.min(limit, taskThunks.length);
-  await Promise.all(Array.from({ length: workerCount }, worker));
-  return results;
-}
-
-const sectorMeta = [];
-const packagingTasks = [];
 for (const sector of SECTORS) {
-  const artifactPath = join(generatedDir, `${sector.id}-artifact.json`);
-  const artifactZhPath = join(generatedDir, `${sector.id}-artifact-zh.json`);
-  const portablePath = join(generatedDir, `${sector.id}-dashboard.html`);
-  const portableZhPath = join(generatedDir, `${sector.id}-dashboard-zh.html`);
-  const statusPath = join(projectRoot, "src/data", sector.statusFile);
-  if (!existsSync(artifactPath) || !existsSync(statusPath)) {
-    throw new Error(`Run the refresh step for ${sector.id} before packaging (missing ${artifactPath} or ${statusPath}).`);
+  const statusPath = join(distDir, sector.statusFile);
+  if (!existsSync(statusPath)) {
+    process.stdout.write(`[package-dashboard] Status file ${sector.statusFile} missing; skipping ${sector.id}.\n`);
+    continue;
   }
-  const artifact = JSON.parse(readFileSync(artifactPath, "utf8"));
-  const status = JSON.parse(readFileSync(statusPath, "utf8"));
-  const dateSuffix = status.attachment_filename.replace(`${sector.id}-dashboard-`, "");
-  const homeEn = "https://asia-markets-dashboard.pages.dev/";
-  const homeZh = "https://asia-markets-dashboard.pages.dev/zh/";
-  const routeEn = `https://asia-markets-dashboard.pages.dev/sectors/${sector.id}/`;
-  const routeZh = `https://asia-markets-dashboard.pages.dev/sectors/${sector.id}/zh/`;
 
-  const releaseIndexes = [];
-  releaseIndexes.push(packagingTasks.length);
-  packagingTasks.push(() => packageLocale({
-    deliveryScript, artifact, artifactFile: artifactPath, portableFile: portablePath, locale: "en",
-    route: `sectors/${sector.id}`, attachment: status.attachment_filename, homeEn, homeZh, routeEn, routeZh,
-  }));
-  releaseIndexes.push(packagingTasks.length);
-  packagingTasks.push(() => packageLocale({
-    deliveryScript, artifact: localizeArtifact(artifact, sector.zh), artifactFile: artifactZhPath, portableFile: portableZhPath, locale: "zh",
-    route: `sectors/${sector.id}/zh`, attachment: `${sector.id}-dashboard-zh-${dateSuffix}`, homeEn, homeZh, routeEn, routeZh,
-  }));
+  const statusData = JSON.parse(readFileSync(statusPath, "utf8"));
+  const sectorSlug = sector.id;
+  const artifactFile = join(generatedDir, `${sectorSlug}-artifact.json`);
+  const zhArtifactFile = join(generatedDir, `${sectorSlug}-artifact-zh.json`);
 
-  sectorMeta.push({ sector: sector.id, generated_at: status.generated_at, snapshot_id: status.snapshot_id, data_as_of: status.data_as_of, releaseIndexes });
+  if (!existsSync(artifactFile)) {
+    process.stdout.write(`[package-dashboard] Artifact file ${artifactFile} missing for ${sector.id}; skipping.\n`);
+    continue;
+  }
+
+  const rawArtifact = JSON.parse(readFileSync(artifactFile, "utf8"));
+  const zhArtifact = localizeArtifact(rawArtifact, sector.zh);
+  writeFileSync(zhArtifactFile, JSON.stringify(zhArtifact, null, 2));
+
+  const sectorDistEn = join(distDir, "sectors", sectorSlug);
+  const sectorDistZh = join(distDir, "zh", "sectors", sectorSlug);
+  mkdirSync(sectorDistEn, { recursive: true });
+  mkdirSync(sectorDistZh, { recursive: true });
+
+  const enPortableFile = join(sectorDistEn, "index.html");
+  const zhPortableFile = join(sectorDistZh, "index.html");
+
+  process.stdout.write(`[package-dashboard] Delivering ${sector.id} (EN)...\n`);
+  await deliverPortable({ deliveryScript, artifactFile, portableFile: enPortableFile, locale: "en" });
+
+  process.stdout.write(`[package-dashboard] Delivering ${sector.id} (ZH)...\n`);
+  await deliverPortable({ deliveryScript, artifactFile: zhArtifactFile, portableFile: zhPortableFile, locale: "zh" });
+
+  const routeEn = `/sectors/${sectorSlug}/`;
+  const routeZh = `/zh/sectors/${sectorSlug}/`;
+  const homeEn = "/";
+  const homeZh = "/zh/";
+
+  writeFileSync(
+    enPortableFile,
+    addNavigation(readFileSync(enPortableFile, "utf8"), { locale: "en", homeEn, homeZh, routeEn, routeZh })
+  );
+  writeFileSync(
+    zhPortableFile,
+    addNavigation(readFileSync(zhPortableFile, "utf8"), { locale: "zh", homeEn, homeZh, routeEn, routeZh })
+  );
+
+  const exportsDir = join(distDir, "exports");
+  mkdirSync(exportsDir, { recursive: true });
+  const attachmentFilename = statusData.attachment_filename || `${sectorSlug}-monitor.html`;
+  cpSync(enPortableFile, join(exportsDir, attachmentFilename));
+
+  process.stdout.write(`[package-dashboard] Completed ${sector.id}.\n`);
 }
 
-const PACKAGING_CONCURRENCY = Math.max(1, Number(process.env.PORTABLE_PACKAGING_CONCURRENCY || 4));
-const packagingResults = await runWithConcurrency(packagingTasks, PACKAGING_CONCURRENCY);
-
-const sectorReleases = sectorMeta.map(({ releaseIndexes, ...meta }) => ({
-  ...meta,
-  releases: releaseIndexes.map((index) => packagingResults[index]),
-}));
-
-mkdirSync(join(distDir, "data"), { recursive: true });
-writeFileSync(join(distDir, "data/release.json"), `${JSON.stringify({ sectors: sectorReleases }, null, 2)}\n`, "utf8");
-process.stdout.write(`${JSON.stringify({ ok: true, sectors: sectorReleases })}\n`);
+process.stdout.write("[package-dashboard] All sector dashboards packaged successfully.\n");

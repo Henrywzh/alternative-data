@@ -89,12 +89,11 @@ const SECTORS = [
   },
   {
     code: "05",
+    id: "hk-reit",
     nameEn: "Hong Kong REITs",
-    nameZh: "香港房地产信托基金（REITs）",
-    stateEn: "Research ready",
-    stateZh: "研究就绪",
-    detailEn: "Price/quote pipeline built and tested; the live source (Eastmoney, via akshare) is currently unreachable, and REIT fundamentals (yield, NAV, occupancy) are not covered by any confirmed free API. Publication is paused pending a working data source.",
-    detailZh: "价格/报价管道已构建并测试；实时来源（Eastmoney，经 akshare）目前无法访问，且 REIT 基本面数据（收益率、资产净值、出租率）没有任何已确认的免费 API 覆盖。发布暂缓，等待可用的数据来源。",
+    nameZh: "香港房地产信托（REITs）",
+    statusFile: "dashboard-status-hk-reit.json",
+    route: "sectors/hk-reit",
   },
   {
     code: "06",
