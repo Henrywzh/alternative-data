@@ -18,6 +18,16 @@ REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
 MIDLAND_MARKET_INSIGHT_URL = "https://www.midland.com.hk/zh-hk/market-insight"
 CENTALINE_CCI_URL = "https://hk.centanet.com/CCI/index"
 CENTALINE_CCL_API_URL = "https://hk.centanet.com/CCI/api/Index/CCL"
+
+# Midland's data.midland.com.hk backend (reverse-engineered from the
+# midland-transaction-history micro-frontend). Any midland.com.hk page visit
+# issues a "token" cookie usable as a Bearer token against this host.
+MIDLAND_DATA_API_BASE = "https://data.midland.com.hk"
+
+# Centaline's own real-time transaction search API (reverse-engineered from
+# the /findproperty Nuxt app's Transaction/Search vuex action). No auth
+# required; verified live against genuine HK sale transactions.
+CENTALINE_TRANSACTION_SEARCH_URL = "https://hk.centanet.com/findproperty/api/Transaction/Search"
 HSE28_NEW_PROPERTIES_URL = "https://www.28hse.com/new-properties"
 HSE28_ESTATE_INDEX_URL = "https://www.28hse.com/estate/"
 HSE28_EPI_URL = "https://www.28hse.com/epi/"
