@@ -9,6 +9,7 @@ from .pipeline import (
     run_all_pipelines,
     run_stage_1_pipeline,
     run_stage_2_pipeline,
+    run_all_incomplete_pipelines,
 )
 
 def main():
@@ -18,9 +19,10 @@ def main():
     subparsers.add_parser("run-group-a", help="Run Group A data ingestion")
     subparsers.add_parser("run-group-b", help="Run Group B data ingestion")
     subparsers.add_parser("run-group-c", help="Run Group C data ingestion")
-    subparsers.add_parser("run-all", help="Run full pipeline across Groups A, B, and C")
+    subparsers.add_parser("run-all", help="Run full pipeline across all data sources")
     subparsers.add_parser("run-stage-1", help="Run Stage 1 source ingestion")
     subparsers.add_parser("run-stage-2", help="Run Stage 2 financing & stock attribution ingestion")
+    subparsers.add_parser("run-incomplete-5", help="Run digestion pipeline for the 5 incomplete data sources")
 
     args = parser.parse_args()
 
@@ -43,6 +45,9 @@ def main():
         elif args.command == "run-stage-2":
             results = run_stage_2_pipeline()
             print("\nStage 2 Ingestion completed:\n" + json.dumps(results, indent=2))
+        elif args.command == "run-incomplete-5":
+            results = run_all_incomplete_pipelines()
+            print("\nIncomplete 5 Ingestion completed:\n" + json.dumps(results, indent=2))
         else:
             parser.print_help()
     except Exception as e:
