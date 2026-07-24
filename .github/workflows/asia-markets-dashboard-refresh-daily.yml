@@ -73,7 +73,12 @@ jobs:
           python -m pip install -e .[dev]
 
       - name: Refresh HK Real Estate + HK Local Consumer artifacts
-        run: npm run refresh
+        # A single upstream publisher (for example Midland returning a
+        # transient 403) must not block the other sector refreshes. The
+        # builder keeps the last committed artifact for the failed sector and
+        # reports the failure in the job log; successful sectors continue to
+        # produce fresh manifests and status files.
+        run: npm run refresh -- --tolerate-errors
 
       - name: Commit refreshed artifact manifests and status files
         working-directory: .
