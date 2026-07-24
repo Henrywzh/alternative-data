@@ -3,15 +3,15 @@
   "package_info": {
     "sector_id": "hk-reit",
     "sector_name": "Hong Kong REITs Sector Monitor",
-    "snapshotId": "hk_reit_20260724_213322_c960d0ec9199",
-    "generatedAt": "2026-07-24T21:33:22.589402+00:00"
+    "snapshotId": "hk_reit_20260724_214752_fdf557109f1f",
+    "generatedAt": "2026-07-24T21:47:52.012429+00:00"
   },
   "manifest": {
     "version": 1,
     "surface": "dashboard",
     "title": "Hong Kong REITs Sector Monitor",
     "description": "Fundamental disclosures and spot quote indicators for HK-listed REITs.",
-    "generatedAt": "2026-07-24 21:33 UTC",
+    "generatedAt": "2026-07-24 21:47 UTC",
     "dataAsOf": "2026-03-31",
     "liveSourcesCount": 6,
     "totalSourcesCount": 6,

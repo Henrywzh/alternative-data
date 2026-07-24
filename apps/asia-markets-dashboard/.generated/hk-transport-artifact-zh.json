@@ -6,26 +6,26 @@
     "title": "香港交通与航空监测",
     "description": "港铁月度客运量（本地/跨境/高铁）、国泰航空运营数据与香港国际机场流量的来源快照。",
     "sector": "hk-transport",
-    "generatedAt": "2026-07-24T21:33:22.585156Z",
+    "generatedAt": "2026-07-24T21:47:52.010747Z",
     "cards": [
       {
         "id": "mtr_card",
-        "description": "Monthly passenger journeys ('000s) across Domestic, Cross-boundary, and HSR lines.",
+        "description": "港铁月度总客运量，按本地及跨境服务拆解。",
         "dataset": "kpi_mtr",
         "sourceId": "mtr_patronage",
         "metrics": [
           {
-            "label": "Total Patronage ('000s)",
+            "label": "总客运量 (千人次)",
             "field": "latest",
             "format": "number"
           },
           {
-            "label": "Domestic ('000s)",
+            "label": "本地 (千人次)",
             "field": "domestic_thousands",
             "format": "number"
           },
           {
-            "label": "Cross-Boundary ('000s)",
+            "label": "跨境 (千人次)",
             "field": "cross_boundary_thousands",
             "format": "number"
           }
@@ -33,22 +33,22 @@
       },
       {
         "id": "cathay_card",
-        "description": "Monthly Cathay Group passengers carried and passenger load factor (%).",
+        "description": "国泰集团月度载客人数、载客率及香港国际机场客运量。",
         "dataset": "kpi_cathay",
         "sourceId": "cathay_hkia_traffic",
         "metrics": [
           {
-            "label": "Cathay Passengers",
+            "label": "国泰乘客人数",
             "field": "latest",
             "format": "number"
           },
           {
-            "label": "Load Factor (%)",
+            "label": "载客率 (%)",
             "field": "load_factor_pct",
             "format": "number"
           },
           {
-            "label": "HKIA Passengers",
+            "label": "机场乘客人数",
             "field": "hkia_passengers",
             "format": "number"
           }
@@ -58,8 +58,8 @@
     "charts": [
       {
         "id": "mtr_service_chart",
-        "title": "MTR Patronage Trend by Rail Service ('000s)",
-        "subtitle": "Monthly passenger journeys across Domestic heavy rail, Cross-boundary, HSR, Airport Express, and Light Rail.",
+        "title": "港铁客运量按服务类型走势 (千人次)",
+        "subtitle": "本地重铁、跨境、高铁、机场快线及轻铁的月度乘客人次。",
         "type": "line",
         "dataset": "mtr_history",
         "sourceId": "mtr_patronage",
@@ -67,12 +67,12 @@
           "x": {
             "field": "date",
             "type": "temporal",
-            "label": "Month"
+            "label": "月份"
           },
           "y": {
             "field": "total_mtr_patronage_thousands",
             "type": "quantitative",
-            "label": "Thousands ('000s)"
+            "label": "千人次"
           }
         },
         "valueFormat": "number",
@@ -80,8 +80,8 @@
       },
       {
         "id": "cathay_traffic_chart",
-        "title": "Cathay Pacific Passenger Volume & Load Factor (%)",
-        "subtitle": "Monthly Cathay Group passengers carried and passenger load factor trend.",
+        "title": "国泰航空客运量与载客率 (%)",
+        "subtitle": "国泰集团月度载客人数与载客率走势。",
         "type": "line",
         "dataset": "cathay_history",
         "sourceId": "cathay_hkia_traffic",
@@ -89,12 +89,12 @@
           "x": {
             "field": "date",
             "type": "temporal",
-            "label": "Month"
+            "label": "月份"
           },
           "y": {
             "field": "cathay_passengers",
             "type": "quantitative",
-            "label": "Passengers"
+            "label": "乘客人数"
           }
         },
         "valueFormat": "number",
@@ -151,7 +151,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-24T21:33:22.585156Z",
+    "generatedAt": "2026-07-24T21:47:52.010747Z",
     "status": "ready",
     "datasets": {
       "kpi_mtr": [

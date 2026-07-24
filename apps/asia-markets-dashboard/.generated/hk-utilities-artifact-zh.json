@@ -6,26 +6,26 @@
     "title": "香港公用事业与基础设施监测",
     "description": "中电控股（CLP）季度售电量拆解、中华煤气（Towngas）代理数据、香港天文台日均气温与电能实业（Power Assets）分部业绩快照。",
     "sector": "hk-utilities",
-    "generatedAt": "2026-07-24T21:33:22.516989Z",
+    "generatedAt": "2026-07-24T21:47:51.942767Z",
     "cards": [
       {
         "id": "clp_card",
-        "description": "季度中电香港本地售电总量；季环比与同比变动。",
+        "description": "季度中电香港本地售电总量、商业售电量及 AI 数据中心用电同比变动。",
         "dataset": "kpi_clp",
         "sourceId": "clp_electricity",
         "metrics": [
           {
-            "label": "中电香港售电量 (GWh)",
+            "label": "总售电量 (GWh)",
             "field": "latest",
             "format": "number"
           },
           {
-            "label": "季环比",
+            "label": "商业售电量 (GWh)",
             "field": "commercial_gwh",
             "format": "number"
           },
           {
-            "label": "同比",
+            "label": "AI 数据中心同比",
             "field": "ai_data_centre_yoy_pct",
             "format": "percent"
           }
@@ -33,22 +33,22 @@
       },
       {
         "id": "towngas_card",
-        "description": "政府统计处月度全港煤气消费总量；月环比与同比变动。",
+        "description": "政府统计处月度全港煤气消费总量，按住宅及商业用户拆解。",
         "dataset": "kpi_towngas",
         "sourceId": "towngas_proxy",
         "metrics": [
           {
-            "label": "煤气代理消费量 (TJ)",
+            "label": "总耗气量 (TJ)",
             "field": "latest",
             "format": "number"
           },
           {
-            "label": "月环比",
+            "label": "住宅耗气量 (TJ)",
             "field": "domestic_tj",
             "format": "number"
           },
           {
-            "label": "同比",
+            "label": "商业耗气量 (TJ)",
             "field": "commercial_tj",
             "format": "number"
           }
@@ -56,17 +56,17 @@
       },
       {
         "id": "temp_card",
-        "description": "Daily mean temperature and monthly average (°C).",
+        "description": "香港天文台录得的最新日均气温及月度平均气温。",
         "dataset": "kpi_temp",
         "sourceId": "hko_temperature",
         "metrics": [
           {
-            "label": "Latest Temp (°C)",
+            "label": "最新气温 (°C)",
             "field": "latest",
             "format": "number"
           },
           {
-            "label": "Month Avg (°C)",
+            "label": "月均气温 (°C)",
             "field": "month_avg",
             "format": "number"
           }
@@ -74,22 +74,22 @@
       },
       {
         "id": "power_assets_card",
-        "description": "Power Assets semi-annual geographic segment revenue and profit (HK$ million).",
+        "description": "电能实业半年度分部收入、分部溢利及合资/联营业绩总额。",
         "dataset": "kpi_power_assets",
         "sourceId": "power_assets_segments",
         "metrics": [
           {
-            "label": "Total Segment Revenue (HK$m)",
+            "label": "总分部收入 (百万港元)",
             "field": "revenue_total_hkdm",
             "format": "number"
           },
           {
-            "label": "Total Segment Profit (HK$m)",
+            "label": "总分部溢利 (百万港元)",
             "field": "segment_profit_total_hkdm",
             "format": "number"
           },
           {
-            "label": "JV/Associate Results (HK$m)",
+            "label": "合资/联营业绩 (百万港元)",
             "field": "jv_associate_results_total_hkdm",
             "format": "number"
           }
@@ -121,8 +121,8 @@
       },
       {
         "id": "towngas_trend_chart",
-        "title": "Hong Kong Town Gas Consumption Trend (TJ)",
-        "subtitle": "Monthly gas consumption split by Domestic, Commercial, and Industrial user types.",
+        "title": "香港煤气消费量走势 (TJ)",
+        "subtitle": "月度全港煤气消费总量拆解为住宅、商业及工业用户。",
         "type": "line",
         "dataset": "towngas_history",
         "sourceId": "towngas_proxy",
@@ -130,12 +130,12 @@
           "x": {
             "field": "date",
             "type": "temporal",
-            "label": "Month"
+            "label": "月份"
           },
           "y": {
             "field": "total_gas_tj",
             "type": "quantitative",
-            "label": "Terajoules (TJ)"
+            "label": "太焦耳 (TJ)"
           }
         },
         "valueFormat": "number",
@@ -143,8 +143,8 @@
       },
       {
         "id": "temp_trend_chart",
-        "title": "Hong Kong Observatory Daily Mean Temperature (°C)",
-        "subtitle": "Daily mean temperature history vs monthly averages.",
+        "title": "香港天文台日均气温走势 (°C)",
+        "subtitle": "每日平均气温历史与月度平均气温线对比。",
         "type": "line",
         "dataset": "temp_history",
         "sourceId": "hko_temperature",
@@ -152,7 +152,7 @@
           "x": {
             "field": "date",
             "type": "temporal",
-            "label": "Date"
+            "label": "日期"
           },
           "y": {
             "field": "mean_temp_c",
@@ -167,8 +167,8 @@
     "tables": [
       {
         "id": "power_assets_geography_table",
-        "title": "Power Assets Geographic Segment Breakdown",
-        "subtitle": "Semi-annual segment reporting (2025 H1), HK$ million. 'Investment in HKEI' is equity-accounted and reports nil consolidated revenue/segment profit under this note; its contribution appears in the JV/associate results column instead.",
+        "title": "电能实业（Power Assets）按地理区域划分的分部业绩",
+        "subtitle": "半年度分部财务数据（2025 上半年），百万港元；「港灯投资」按权益法入账，在本注释下的收入/分部溢利列示为零，其贡献计入合资/联营业绩一栏。",
         "dataset": "power_assets_geography",
         "sourceId": "power_assets_segments",
         "density": "dense",
@@ -176,22 +176,22 @@
         "columns": [
           {
             "field": "geography",
-            "label": "Geography",
+            "label": "地区",
             "type": "text"
           },
           {
             "field": "revenue_hkdm",
-            "label": "Segment Revenue (HK$m)",
+            "label": "分部收入 (百万港元)",
             "format": "number"
           },
           {
             "field": "segment_profit_hkdm",
-            "label": "Segment Profit (HK$m)",
+            "label": "分部溢利 (百万港元)",
             "format": "number"
           },
           {
             "field": "jv_associate_results_hkdm",
-            "label": "JV/Associate Results (HK$m)",
+            "label": "合资/联营业绩 (百万港元)",
             "format": "number"
           }
         ]
@@ -282,7 +282,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-24T21:33:22.516989Z",
+    "generatedAt": "2026-07-24T21:47:51.942767Z",
     "status": "ready",
     "datasets": {
       "kpi_clp": [
