@@ -2,6 +2,7 @@
 
 import json
 import logging
+import os
 import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, Mapping
@@ -103,7 +104,7 @@ def write_run_manifest(run_id: str, group_name: str, results_summary: Dict[str, 
         manifest_data = {"run_id": run_id, "started_at": datetime.now(timezone.utc).isoformat(), "groups": {}}
     manifest_data["groups"][group_name] = results_summary
     flattened = [item for group in manifest_data["groups"].values() for item in group.values()]
-    manifest_data["status"] = "success" if flattened and all(item.get("status") == "success" for item in flattened) else "failed"
+    manifest_data["status"] = "success" if flattened and all(item.get("status") in ("success", "skipped") for item in flattened) else "failed"
     manifest_data["updated_at"] = datetime.now(timezone.utc).isoformat()
     with open(manifest_path, "w", encoding="utf-8") as f:
         json.dump(manifest_data, f, indent=2)
@@ -112,6 +113,18 @@ def write_run_manifest(run_id: str, group_name: str, results_summary: Dict[str, 
 
 def _error_result(error: Exception | str) -> Dict[str, Any]:
     return {"status": "error", "records": 0, "error": str(error)}
+
+
+def _skip_result(reason: str) -> Dict[str, Any]:
+    return {"status": "skipped", "records": 0, "reason": reason}
+
+
+# Midland's WAF blocks GitHub Actions' datacenter IP range (confirmed 403,
+# reproducible from a residential IP) with no known bypass. Rather than
+# attempting the fetch and relying on --tolerate-errors to absorb the
+# failure, CI skips it outright and keeps the last committed snapshot;
+# run this pipeline locally (this env var unset) to refresh Midland data.
+SKIP_MIDLAND_ENV_VAR = "HK_RE_SKIP_MIDLAND"
 
 
 def _store_dataset(run_id: str, dataset_name: str, df: pd.DataFrame) -> Dict[str, Any]:
@@ -131,7 +144,7 @@ def _store_dataset(run_id: str, dataset_name: str, df: pd.DataFrame) -> Dict[str
 
 def _finalize_group(run_id: str, group_name: str, results: Dict[str, Any], raise_on_failure: bool) -> Dict[str, Any]:
     manifest_path = write_run_manifest(run_id, group_name, results)
-    failures = {name: value for name, value in results.items() if value["status"] != "success"}
+    failures = {name: value for name, value in results.items() if value["status"] not in ("success", "skipped")}
     if failures and raise_on_failure:
         raise PipelineRunError(f"{group_name} ingestion failed; manifest: {manifest_path}", results, manifest_path)
     return results
@@ -149,18 +162,23 @@ def _record_many(run_id: str, results: Dict[str, Any], datasets: Mapping[str, pd
 def run_group_a_pipeline(run_id: str | None = None, *, _raise_on_failure: bool = True) -> Dict[str, Any]:
     run_id = run_id or str(uuid.uuid4())
     results: Dict[str, Any] = {}
-    try:
-        logger.info("Ingesting Midland Market Insight data...")
-        mhpi, confidence, estates = run_midland_ingestion()
-        _record_many(run_id, results, {
-            "midland_mhpi_weekly": mhpi,
-            "midland_confidence_weekly": confidence,
-            "midland_top_estates_volume": estates,
-        })
-    except Exception as exc:
-        logger.exception("Midland ingestion failed")
+    if os.environ.get(SKIP_MIDLAND_ENV_VAR):
+        logger.info("Skipping Midland Market Insight ingestion (%s set) — WAF blocks this environment's IP range.", SKIP_MIDLAND_ENV_VAR)
         for name in ("midland_mhpi_weekly", "midland_confidence_weekly", "midland_top_estates_volume"):
-            results[name] = _error_result(exc)
+            results[name] = _skip_result(f"{SKIP_MIDLAND_ENV_VAR} set; run locally to refresh Midland data")
+    else:
+        try:
+            logger.info("Ingesting Midland Market Insight data...")
+            mhpi, confidence, estates = run_midland_ingestion()
+            _record_many(run_id, results, {
+                "midland_mhpi_weekly": mhpi,
+                "midland_confidence_weekly": confidence,
+                "midland_top_estates_volume": estates,
+            })
+        except Exception as exc:
+            logger.exception("Midland ingestion failed")
+            for name in ("midland_mhpi_weekly", "midland_confidence_weekly", "midland_top_estates_volume"):
+                results[name] = _error_result(exc)
     try:
         logger.info("Ingesting Centaline CCL data...")
         _record_many(run_id, results, {"centaline_ccl_weekly": fetch_centaline_ccl()})
@@ -322,7 +340,7 @@ def run_all_pipelines() -> Dict[str, Any]:
     for runner in (run_group_a_pipeline, run_group_b_pipeline, run_group_c_pipeline, run_stage_2_pipeline, run_all_incomplete_pipelines):
         merged.update(runner(run_id, _raise_on_failure=False))
     manifest_path = write_run_manifest(run_id, "all", merged)
-    failures = {name: value for name, value in merged.items() if value["status"] != "success"}
+    failures = {name: value for name, value in merged.items() if value["status"] not in ("success", "skipped")}
     if failures:
         raise PipelineRunError(f"Full ingestion failed; manifest: {manifest_path}", merged, manifest_path)
     return merged
