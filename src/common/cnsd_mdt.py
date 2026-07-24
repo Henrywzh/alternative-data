@@ -61,18 +61,9 @@ def fetch_cnsd_table(table_id: str, lang: str = "en") -> pd.DataFrame:
             raise ValueError(f"C&SD table {table_id} returned no valid records")
 
     except Exception as exc:
-        logger.warning(f"Failed to fetch C&SD table {table_id}: {exc}. Using fallback snapshot.")
+        logger.warning(f"Failed to fetch C&SD table {table_id}: {exc}. Returning empty frame.")
         source_label = DATA_SOURCE_FALLBACK
-        df = pd.DataFrame([
-            {
-                "table_id": table_id,
-                "period": "2026 Q1",
-                "freq": "Q",
-                "variable": "TOTAL",
-                "unit": "HK$ million",
-                "value": 72740.0,
-            }
-        ])
+        df = pd.DataFrame(columns=[c for c in CNSD_COLUMNS if c != "data_source"])
 
     df["data_source"] = source_label
     result = df.reindex(columns=CNSD_COLUMNS).reset_index(drop=True)
