@@ -6,7 +6,7 @@
     "title": "香港交通与航空监测",
     "description": "港铁月度客运量（本地/跨境/高铁）、国泰航空运营数据与香港国际机场流量的来源快照。",
     "sector": "hk-transport",
-    "generatedAt": "2026-07-23T23:55:43.525433Z",
+    "generatedAt": "2026-07-24T21:33:22.585156Z",
     "cards": [
       {
         "id": "mtr_card",
@@ -151,7 +151,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-23T23:55:43.525433Z",
+    "generatedAt": "2026-07-24T21:33:22.585156Z",
     "status": "ready",
     "datasets": {
       "kpi_mtr": [

@@ -4,28 +4,28 @@
     "version": 1,
     "surface": "dashboard",
     "title": "香港公用事业与基础设施监测",
-    "description": "CLP 售电量分行业结构、Towngas 燃气消费量与天文台日均气温的来源快照。",
+    "description": "中电控股（CLP）季度售电量拆解、中华煤气（Towngas）代理数据、香港天文台日均气温与电能实业（Power Assets）分部业绩快照。",
     "sector": "hk-utilities",
-    "generatedAt": "2026-07-23T23:55:43.457263Z",
+    "generatedAt": "2026-07-24T21:33:22.516989Z",
     "cards": [
       {
         "id": "clp_card",
-        "description": "Quarterly electricity sales in GWh and AI Data-Centre growth.",
+        "description": "季度中电香港本地售电总量；季环比与同比变动。",
         "dataset": "kpi_clp",
         "sourceId": "clp_electricity",
         "metrics": [
           {
-            "label": "Total Local GWh",
+            "label": "中电香港售电量 (GWh)",
             "field": "latest",
             "format": "number"
           },
           {
-            "label": "Commercial GWh",
+            "label": "季环比",
             "field": "commercial_gwh",
             "format": "number"
           },
           {
-            "label": "AI Data Centre YoY",
+            "label": "同比",
             "field": "ai_data_centre_yoy_pct",
             "format": "percent"
           }
@@ -33,22 +33,22 @@
       },
       {
         "id": "towngas_card",
-        "description": "Monthly town gas consumption in Terajoules (TJ).",
+        "description": "政府统计处月度全港煤气消费总量；月环比与同比变动。",
         "dataset": "kpi_towngas",
         "sourceId": "towngas_proxy",
         "metrics": [
           {
-            "label": "Total Gas (TJ)",
+            "label": "煤气代理消费量 (TJ)",
             "field": "latest",
             "format": "number"
           },
           {
-            "label": "Domestic Gas (TJ)",
+            "label": "月环比",
             "field": "domestic_tj",
             "format": "number"
           },
           {
-            "label": "Commercial Gas (TJ)",
+            "label": "同比",
             "field": "commercial_tj",
             "format": "number"
           }
@@ -99,8 +99,8 @@
     "charts": [
       {
         "id": "clp_sector_chart",
-        "title": "CLP Electricity Sales by Sector (GWh)",
-        "subtitle": "Quarterly sales across Residential, Commercial, Infrastructure & Public Services, and Manufacturing.",
+        "title": "中电香港售电量按行业拆解 (GWh)",
+        "subtitle": "季度售电量拆解为住宅、商业、基础设施与公共服务及制造行业。",
         "type": "line",
         "dataset": "clp_history",
         "sourceId": "clp_electricity",
@@ -108,12 +108,12 @@
           "x": {
             "field": "date",
             "type": "temporal",
-            "label": "Quarter"
+            "label": "季度"
           },
           "y": {
             "field": "total_local_gwh",
             "type": "quantitative",
-            "label": "GWh"
+            "label": "售电量 (GWh)"
           }
         },
         "valueFormat": "number",
@@ -200,7 +200,7 @@
     "sources": [
       {
         "id": "clp_electricity",
-        "label": "中电控股 (CLP) 季度售电量披露",
+        "label": "中电控股（0002.HK）业绩公告及售电量披露",
         "href": "https://www.clpgroup.com/en/investors/financial-reports.html",
         "path": "sources/clp_electricity.sql",
         "query": {
@@ -212,7 +212,7 @@
       },
       {
         "id": "towngas_proxy",
-        "label": "政府统计处能源统计 (Towngas 燃气消费量代理)",
+        "label": "政府统计处能源统计（煤气消费量）",
         "href": "https://www.censtatd.gov.hk/en/web_table.html?id=915-91201",
         "path": "sources/towngas_proxy.sql",
         "query": {
@@ -224,7 +224,7 @@
       },
       {
         "id": "hko_temperature",
-        "label": "香港天文台日平均气温",
+        "label": "香港天文台每日平均气温",
         "href": "https://data.weather.gov.hk/weatherAPI/cis/csvfile/HKO/ALL/daily_HKO_TEMP_ALL.csv",
         "path": "sources/hko_temperature.sql",
         "query": {
@@ -236,7 +236,7 @@
       },
       {
         "id": "power_assets_segments",
-        "label": "Power Assets Holdings Geographic Segment Reporting",
+        "label": "电能实业（0006.HK）中期及全年业绩报告",
         "href": "https://www.powerassets.com/en/investor-relations/financial-reports",
         "path": "sources/power_assets_segments.sql",
         "query": {
@@ -282,7 +282,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-23T23:55:43.457263Z",
+    "generatedAt": "2026-07-24T21:33:22.516989Z",
     "status": "ready",
     "datasets": {
       "kpi_clp": [
@@ -1957,50 +1957,50 @@
   "sources": [
     {
       "id": "clp_electricity",
-      "label": "中电控股 (CLP) 季度售电量披露",
+      "label": "中电控股（0002.HK）业绩公告及售电量披露",
       "href": "https://www.clpgroup.com/en/investors/financial-reports.html",
       "path": "sources/clp_electricity.sql",
       "query": {
         "engine": "official HKEX statement",
         "url": "https://www.clpgroup.com/en/investors/financial-reports.html",
         "language": "PDF",
-        "description": "构建时从公开来源读取并校验 中电控股 (CLP) 季度售电量披露。"
+        "description": "构建时从公开来源读取并校验 中电控股（0002.HK）业绩公告及售电量披露。"
       }
     },
     {
       "id": "towngas_proxy",
-      "label": "政府统计处能源统计 (Towngas 燃气消费量代理)",
+      "label": "政府统计处能源统计（煤气消费量）",
       "href": "https://www.censtatd.gov.hk/en/web_table.html?id=915-91201",
       "path": "sources/towngas_proxy.sql",
       "query": {
         "engine": "official MDT CSV",
         "url": "https://www.censtatd.gov.hk/data/MDT_91_915-91201_GASC_LOCAL_Raw_Tjou_n.csv",
         "language": "CSV",
-        "description": "构建时从公开来源读取并校验 政府统计处能源统计 (Towngas 燃气消费量代理)。"
+        "description": "构建时从公开来源读取并校验 政府统计处能源统计（煤气消费量）。"
       }
     },
     {
       "id": "hko_temperature",
-      "label": "香港天文台日平均气温",
+      "label": "香港天文台每日平均气温",
       "href": "https://data.weather.gov.hk/weatherAPI/cis/csvfile/HKO/ALL/daily_HKO_TEMP_ALL.csv",
       "path": "sources/hko_temperature.sql",
       "query": {
         "engine": "official open data CSV",
         "url": "https://data.weather.gov.hk/weatherAPI/cis/csvfile/HKO/ALL/daily_HKO_TEMP_ALL.csv",
         "language": "CSV",
-        "description": "构建时从公开来源读取并校验 香港天文台日平均气温。"
+        "description": "构建时从公开来源读取并校验 香港天文台每日平均气温。"
       }
     },
     {
       "id": "power_assets_segments",
-      "label": "Power Assets Holdings Geographic Segment Reporting",
+      "label": "电能实业（0006.HK）中期及全年业绩报告",
       "href": "https://www.powerassets.com/en/investor-relations/financial-reports",
       "path": "sources/power_assets_segments.sql",
       "query": {
         "engine": "official HKEX interim report note",
         "url": "https://www.powerassets.com/en/investor-relations/financial-reports",
         "language": "PDF",
-        "description": "构建时从公开来源读取并校验 Power Assets Holdings Geographic Segment Reporting。"
+        "description": "构建时从公开来源读取并校验 电能实业（0006.HK）中期及全年业绩报告。"
       }
     }
   ],

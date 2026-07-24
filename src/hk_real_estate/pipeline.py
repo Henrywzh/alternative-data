@@ -47,7 +47,7 @@ QUALITY_SPECS: Dict[str, Dict[str, Any]] = {
     "rvd_rental_index_monthly": {"kind": "measure", "required": ["date", "overall", "is_provisional"], "max_age_days": 400},
     "landreg_press_releases_catalog": {"kind": "catalog", "required": ["date", "release_title", "release_url"]},
     "srpe_document_endpoints_catalog": {"kind": "catalog", "required": ["action_endpoint"]},
-    "srpe_firsthand_sales_digest": {"kind": "catalog", "required": ["document_category", "endpoint_url"]},
+    "srpe_firsthand_sales_digest": {"kind": "catalog", "required": ["document_category", "endpoint_url", "source_agency", "development_id", "document_id"]},
     "buildings_dept_monthly_digests_catalog": {"kind": "catalog", "required": ["date", "digest_url"]},
     "hse28_epi_eri_weekly": {"kind": "measure", "required": ["date", "period_start", "period_end", "index_type", "index_value"], "max_age_days": 400},
     "hse28_transaction_pilot": {"kind": "measure", "required": ["date", "transaction_date", "source_record_id", "price_hkd"], "max_age_days": 400},

@@ -6,7 +6,7 @@
     "title": "HK Utilities & Infrastructure Sector Monitor",
     "description": "CLP quarterly electricity sales by customer sector, CenStatD town gas consumption, HKO temperature, and Power Assets geographic segment reporting.",
     "sector": "hk-utilities",
-    "generatedAt": "2026-07-23T23:55:43.457263Z",
+    "generatedAt": "2026-07-24T21:33:22.516989Z",
     "cards": [
       {
         "id": "clp_card",
@@ -56,17 +56,17 @@
       },
       {
         "id": "temp_card",
-        "description": "Daily mean temperature and monthly average (°C).",
+        "description": "Daily mean temperature and monthly average (\u00b0C).",
         "dataset": "kpi_temp",
         "sourceId": "hko_temperature",
         "metrics": [
           {
-            "label": "Latest Temp (°C)",
+            "label": "Latest Temp (\u00b0C)",
             "field": "latest",
             "format": "number"
           },
           {
-            "label": "Month Avg (°C)",
+            "label": "Month Avg (\u00b0C)",
             "field": "month_avg",
             "format": "number"
           }
@@ -143,7 +143,7 @@
       },
       {
         "id": "temp_trend_chart",
-        "title": "Hong Kong Observatory Daily Mean Temperature (°C)",
+        "title": "Hong Kong Observatory Daily Mean Temperature (\u00b0C)",
         "subtitle": "Daily mean temperature history vs monthly averages.",
         "type": "line",
         "dataset": "temp_history",
@@ -157,7 +157,7 @@
           "y": {
             "field": "mean_temp_c",
             "type": "quantitative",
-            "label": "°C"
+            "label": "\u00b0C"
           }
         },
         "valueFormat": "number",
@@ -219,7 +219,7 @@
           "engine": "official MDT CSV",
           "url": "https://www.censtatd.gov.hk/data/MDT_91_915-91201_GASC_LOCAL_Raw_Tjou_n.csv",
           "language": "CSV",
-          "description": "Monthly town gas consumption in Terajoules (TJ) by user type (Domestic, Commercial, Industrial) — de facto Towngas monopoly operational proxy."
+          "description": "Monthly town gas consumption in Terajoules (TJ) by user type (Domestic, Commercial, Industrial) \u2014 de facto Towngas monopoly operational proxy."
         }
       },
       {
@@ -231,7 +231,7 @@
           "engine": "official open data CSV",
           "url": "https://data.weather.gov.hk/weatherAPI/cis/csvfile/HKO/ALL/daily_HKO_TEMP_ALL.csv",
           "language": "CSV",
-          "description": "Daily mean temperature (°C) and monthly averages — primary physical weather driver for air-conditioning power load."
+          "description": "Daily mean temperature (\u00b0C) and monthly averages \u2014 primary physical weather driver for air-conditioning power load."
         }
       },
       {
@@ -282,13 +282,13 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-23T23:55:43.457263Z",
+    "generatedAt": "2026-07-24T21:33:22.516989Z",
     "status": "ready",
     "datasets": {
       "kpi_clp": [
         {
-          "latest": 7319,
-          "commercial_gwh": 3032,
+          "latest": 7319.0,
+          "commercial_gwh": 3032.0,
           "ai_data_centre_yoy_pct": 11.1,
           "period_change": 0.032153,
           "observation_date": "2026-03-31"
@@ -313,9 +313,9 @@
       "kpi_power_assets": [
         {
           "period": "2025 H1",
-          "revenue_total_hkdm": 352,
-          "segment_profit_total_hkdm": 3042,
-          "jv_associate_results_total_hkdm": 2917,
+          "revenue_total_hkdm": 352.0,
+          "segment_profit_total_hkdm": 3042.0,
+          "jv_associate_results_total_hkdm": 2917.0,
           "period_change": null,
           "observation_date": "2025-06-30"
         }
@@ -324,41 +324,41 @@
         {
           "quarter": "2023 Q1",
           "date": "2023-03-31",
-          "residential_gwh": 1791,
-          "commercial_gwh": 2812,
-          "infrastructure_public_gwh": 2079,
-          "manufacturing_gwh": 334,
-          "total_local_gwh": 7016,
+          "residential_gwh": 1791.0,
+          "commercial_gwh": 2812.0,
+          "infrastructure_public_gwh": 2079.0,
+          "manufacturing_gwh": 334.0,
+          "total_local_gwh": 7016.0,
           "ai_data_centre_yoy_pct": null
         },
         {
           "quarter": "2024 Q1",
           "date": "2024-03-31",
-          "residential_gwh": 1841,
-          "commercial_gwh": 2915,
-          "infrastructure_public_gwh": 2183,
-          "manufacturing_gwh": 340,
-          "total_local_gwh": 7279,
+          "residential_gwh": 1841.0,
+          "commercial_gwh": 2915.0,
+          "infrastructure_public_gwh": 2183.0,
+          "manufacturing_gwh": 340.0,
+          "total_local_gwh": 7279.0,
           "ai_data_centre_yoy_pct": null
         },
         {
           "quarter": "2025 Q1",
           "date": "2025-03-31",
-          "residential_gwh": 1745,
-          "commercial_gwh": 2883,
-          "infrastructure_public_gwh": 2156,
-          "manufacturing_gwh": 307,
-          "total_local_gwh": 7091,
+          "residential_gwh": 1745.0,
+          "commercial_gwh": 2883.0,
+          "infrastructure_public_gwh": 2156.0,
+          "manufacturing_gwh": 307.0,
+          "total_local_gwh": 7091.0,
           "ai_data_centre_yoy_pct": null
         },
         {
           "quarter": "2026 Q1",
           "date": "2026-03-31",
-          "residential_gwh": 1694,
-          "commercial_gwh": 3032,
-          "infrastructure_public_gwh": 2270,
-          "manufacturing_gwh": 323,
-          "total_local_gwh": 7319,
+          "residential_gwh": 1694.0,
+          "commercial_gwh": 3032.0,
+          "infrastructure_public_gwh": 2270.0,
+          "manufacturing_gwh": 323.0,
+          "total_local_gwh": 7319.0,
           "ai_data_centre_yoy_pct": 11.1
         }
       ],
@@ -366,402 +366,402 @@
         {
           "date": "2021-06-01",
           "month": "2021-06",
-          "domestic_gas_tj": 985,
-          "commercial_gas_tj": 839,
-          "industrial_gas_tj": 131,
-          "total_gas_tj": 1955
+          "domestic_gas_tj": 985.0,
+          "commercial_gas_tj": 839.0,
+          "industrial_gas_tj": 131.0,
+          "total_gas_tj": 1955.0
         },
         {
           "date": "2021-07-01",
           "month": "2021-07",
-          "domestic_gas_tj": 982,
-          "commercial_gas_tj": 827,
-          "industrial_gas_tj": 125,
-          "total_gas_tj": 1934
+          "domestic_gas_tj": 982.0,
+          "commercial_gas_tj": 827.0,
+          "industrial_gas_tj": 125.0,
+          "total_gas_tj": 1934.0
         },
         {
           "date": "2021-08-01",
           "month": "2021-08",
-          "domestic_gas_tj": 1042,
-          "commercial_gas_tj": 864,
-          "industrial_gas_tj": 135,
-          "total_gas_tj": 2041
+          "domestic_gas_tj": 1042.0,
+          "commercial_gas_tj": 864.0,
+          "industrial_gas_tj": 135.0,
+          "total_gas_tj": 2041.0
         },
         {
           "date": "2021-09-01",
           "month": "2021-09",
-          "domestic_gas_tj": 1003,
-          "commercial_gas_tj": 865,
-          "industrial_gas_tj": 132,
-          "total_gas_tj": 2000
+          "domestic_gas_tj": 1003.0,
+          "commercial_gas_tj": 865.0,
+          "industrial_gas_tj": 132.0,
+          "total_gas_tj": 2000.0
         },
         {
           "date": "2021-10-01",
           "month": "2021-10",
-          "domestic_gas_tj": 891,
-          "commercial_gas_tj": 830,
-          "industrial_gas_tj": 127,
-          "total_gas_tj": 1848
+          "domestic_gas_tj": 891.0,
+          "commercial_gas_tj": 830.0,
+          "industrial_gas_tj": 127.0,
+          "total_gas_tj": 1848.0
         },
         {
           "date": "2021-11-01",
           "month": "2021-11",
-          "domestic_gas_tj": 1449,
-          "commercial_gas_tj": 914,
-          "industrial_gas_tj": 142,
-          "total_gas_tj": 2505
+          "domestic_gas_tj": 1449.0,
+          "commercial_gas_tj": 914.0,
+          "industrial_gas_tj": 142.0,
+          "total_gas_tj": 2505.0
         },
         {
           "date": "2021-12-01",
           "month": "2021-12",
-          "domestic_gas_tj": 1546,
-          "commercial_gas_tj": 922,
-          "industrial_gas_tj": 146,
-          "total_gas_tj": 2614
+          "domestic_gas_tj": 1546.0,
+          "commercial_gas_tj": 922.0,
+          "industrial_gas_tj": 146.0,
+          "total_gas_tj": 2614.0
         },
         {
           "date": "2022-01-01",
           "month": "2022-01",
-          "domestic_gas_tj": 1922,
-          "commercial_gas_tj": 978,
-          "industrial_gas_tj": 154,
-          "total_gas_tj": 3055
+          "domestic_gas_tj": 1922.0,
+          "commercial_gas_tj": 978.0,
+          "industrial_gas_tj": 154.0,
+          "total_gas_tj": 3055.0
         },
         {
           "date": "2022-02-01",
           "month": "2022-02",
-          "domestic_gas_tj": 1926,
-          "commercial_gas_tj": 791,
-          "industrial_gas_tj": 132,
-          "total_gas_tj": 2849
+          "domestic_gas_tj": 1926.0,
+          "commercial_gas_tj": 791.0,
+          "industrial_gas_tj": 132.0,
+          "total_gas_tj": 2849.0
         },
         {
           "date": "2022-03-01",
           "month": "2022-03",
-          "domestic_gas_tj": 1732,
-          "commercial_gas_tj": 568,
-          "industrial_gas_tj": 122,
-          "total_gas_tj": 2422
+          "domestic_gas_tj": 1732.0,
+          "commercial_gas_tj": 568.0,
+          "industrial_gas_tj": 122.0,
+          "total_gas_tj": 2422.0
         },
         {
           "date": "2022-04-01",
           "month": "2022-04",
-          "domestic_gas_tj": 1739,
-          "commercial_gas_tj": 583,
-          "industrial_gas_tj": 145,
-          "total_gas_tj": 2467
+          "domestic_gas_tj": 1739.0,
+          "commercial_gas_tj": 583.0,
+          "industrial_gas_tj": 145.0,
+          "total_gas_tj": 2467.0
         },
         {
           "date": "2022-05-01",
           "month": "2022-05",
-          "domestic_gas_tj": 1269,
-          "commercial_gas_tj": 766,
-          "industrial_gas_tj": 146,
-          "total_gas_tj": 2181
+          "domestic_gas_tj": 1269.0,
+          "commercial_gas_tj": 766.0,
+          "industrial_gas_tj": 146.0,
+          "total_gas_tj": 2181.0
         },
         {
           "date": "2022-06-01",
           "month": "2022-06",
-          "domestic_gas_tj": 1058,
-          "commercial_gas_tj": 759,
-          "industrial_gas_tj": 91,
-          "total_gas_tj": 1908
+          "domestic_gas_tj": 1058.0,
+          "commercial_gas_tj": 759.0,
+          "industrial_gas_tj": 91.0,
+          "total_gas_tj": 1908.0
         },
         {
           "date": "2022-07-01",
           "month": "2022-07",
-          "domestic_gas_tj": 923,
-          "commercial_gas_tj": 948,
-          "industrial_gas_tj": 200,
-          "total_gas_tj": 2071
+          "domestic_gas_tj": 923.0,
+          "commercial_gas_tj": 948.0,
+          "industrial_gas_tj": 200.0,
+          "total_gas_tj": 2071.0
         },
         {
           "date": "2022-08-01",
           "month": "2022-08",
-          "domestic_gas_tj": 964,
-          "commercial_gas_tj": 858,
-          "industrial_gas_tj": 146,
-          "total_gas_tj": 1968
+          "domestic_gas_tj": 964.0,
+          "commercial_gas_tj": 858.0,
+          "industrial_gas_tj": 146.0,
+          "total_gas_tj": 1968.0
         },
         {
           "date": "2022-09-01",
           "month": "2022-09",
-          "domestic_gas_tj": 894,
-          "commercial_gas_tj": 843,
-          "industrial_gas_tj": 139,
-          "total_gas_tj": 1877
+          "domestic_gas_tj": 894.0,
+          "commercial_gas_tj": 843.0,
+          "industrial_gas_tj": 139.0,
+          "total_gas_tj": 1877.0
         },
         {
           "date": "2022-10-01",
           "month": "2022-10",
-          "domestic_gas_tj": 932,
-          "commercial_gas_tj": 819,
-          "industrial_gas_tj": 135,
-          "total_gas_tj": 1887
+          "domestic_gas_tj": 932.0,
+          "commercial_gas_tj": 819.0,
+          "industrial_gas_tj": 135.0,
+          "total_gas_tj": 1887.0
         },
         {
           "date": "2022-11-01",
           "month": "2022-11",
-          "domestic_gas_tj": 1208,
-          "commercial_gas_tj": 880,
-          "industrial_gas_tj": 142,
-          "total_gas_tj": 2229
+          "domestic_gas_tj": 1208.0,
+          "commercial_gas_tj": 880.0,
+          "industrial_gas_tj": 142.0,
+          "total_gas_tj": 2229.0
         },
         {
           "date": "2022-12-01",
           "month": "2022-12",
-          "domestic_gas_tj": 1418,
-          "commercial_gas_tj": 914,
-          "industrial_gas_tj": 151,
-          "total_gas_tj": 2483
+          "domestic_gas_tj": 1418.0,
+          "commercial_gas_tj": 914.0,
+          "industrial_gas_tj": 151.0,
+          "total_gas_tj": 2483.0
         },
         {
           "date": "2023-01-01",
           "month": "2023-01",
-          "domestic_gas_tj": 1829,
-          "commercial_gas_tj": 963,
-          "industrial_gas_tj": 151,
-          "total_gas_tj": 2942
+          "domestic_gas_tj": 1829.0,
+          "commercial_gas_tj": 963.0,
+          "industrial_gas_tj": 151.0,
+          "total_gas_tj": 2942.0
         },
         {
           "date": "2023-02-01",
           "month": "2023-02",
-          "domestic_gas_tj": 1732,
-          "commercial_gas_tj": 972,
-          "industrial_gas_tj": 157,
-          "total_gas_tj": 2861
+          "domestic_gas_tj": 1732.0,
+          "commercial_gas_tj": 972.0,
+          "industrial_gas_tj": 157.0,
+          "total_gas_tj": 2861.0
         },
         {
           "date": "2023-03-01",
           "month": "2023-03",
-          "domestic_gas_tj": 1373,
-          "commercial_gas_tj": 872,
-          "industrial_gas_tj": 141,
-          "total_gas_tj": 2386
+          "domestic_gas_tj": 1373.0,
+          "commercial_gas_tj": 872.0,
+          "industrial_gas_tj": 141.0,
+          "total_gas_tj": 2386.0
         },
         {
           "date": "2023-04-01",
           "month": "2023-04",
-          "domestic_gas_tj": 1461,
-          "commercial_gas_tj": 935,
-          "industrial_gas_tj": 144,
-          "total_gas_tj": 2540
+          "domestic_gas_tj": 1461.0,
+          "commercial_gas_tj": 935.0,
+          "industrial_gas_tj": 144.0,
+          "total_gas_tj": 2540.0
         },
         {
           "date": "2023-05-01",
           "month": "2023-05",
-          "domestic_gas_tj": 1135,
-          "commercial_gas_tj": 888,
-          "industrial_gas_tj": 139,
-          "total_gas_tj": 2163
+          "domestic_gas_tj": 1135.0,
+          "commercial_gas_tj": 888.0,
+          "industrial_gas_tj": 139.0,
+          "total_gas_tj": 2163.0
         },
         {
           "date": "2023-06-01",
           "month": "2023-06",
-          "domestic_gas_tj": 1036,
-          "commercial_gas_tj": 890,
-          "industrial_gas_tj": 149,
-          "total_gas_tj": 2075
+          "domestic_gas_tj": 1036.0,
+          "commercial_gas_tj": 890.0,
+          "industrial_gas_tj": 149.0,
+          "total_gas_tj": 2075.0
         },
         {
           "date": "2023-07-01",
           "month": "2023-07",
-          "domestic_gas_tj": 879,
-          "commercial_gas_tj": 847,
-          "industrial_gas_tj": 144,
-          "total_gas_tj": 1871
+          "domestic_gas_tj": 879.0,
+          "commercial_gas_tj": 847.0,
+          "industrial_gas_tj": 144.0,
+          "total_gas_tj": 1871.0
         },
         {
           "date": "2023-08-01",
           "month": "2023-08",
-          "domestic_gas_tj": 859,
-          "commercial_gas_tj": 865,
-          "industrial_gas_tj": 153,
-          "total_gas_tj": 1877
+          "domestic_gas_tj": 859.0,
+          "commercial_gas_tj": 865.0,
+          "industrial_gas_tj": 153.0,
+          "total_gas_tj": 1877.0
         },
         {
           "date": "2023-09-01",
           "month": "2023-09",
-          "domestic_gas_tj": 911,
-          "commercial_gas_tj": 844,
-          "industrial_gas_tj": 147,
-          "total_gas_tj": 1902
+          "domestic_gas_tj": 911.0,
+          "commercial_gas_tj": 844.0,
+          "industrial_gas_tj": 147.0,
+          "total_gas_tj": 1902.0
         },
         {
           "date": "2023-10-01",
           "month": "2023-10",
-          "domestic_gas_tj": 915,
-          "commercial_gas_tj": 840,
-          "industrial_gas_tj": 140,
-          "total_gas_tj": 1895
+          "domestic_gas_tj": 915.0,
+          "commercial_gas_tj": 840.0,
+          "industrial_gas_tj": 140.0,
+          "total_gas_tj": 1895.0
         },
         {
           "date": "2023-11-01",
           "month": "2023-11",
-          "domestic_gas_tj": 1166,
-          "commercial_gas_tj": 899,
-          "industrial_gas_tj": 155,
-          "total_gas_tj": 2219
+          "domestic_gas_tj": 1166.0,
+          "commercial_gas_tj": 899.0,
+          "industrial_gas_tj": 155.0,
+          "total_gas_tj": 2219.0
         },
         {
           "date": "2023-12-01",
           "month": "2023-12",
-          "domestic_gas_tj": 1350,
-          "commercial_gas_tj": 920,
-          "industrial_gas_tj": 123,
-          "total_gas_tj": 2394
+          "domestic_gas_tj": 1350.0,
+          "commercial_gas_tj": 920.0,
+          "industrial_gas_tj": 123.0,
+          "total_gas_tj": 2394.0
         },
         {
           "date": "2024-01-01",
           "month": "2024-01",
-          "domestic_gas_tj": 1665,
-          "commercial_gas_tj": 997,
-          "industrial_gas_tj": 199,
-          "total_gas_tj": 2861
+          "domestic_gas_tj": 1665.0,
+          "commercial_gas_tj": 997.0,
+          "industrial_gas_tj": 199.0,
+          "total_gas_tj": 2861.0
         },
         {
           "date": "2024-02-01",
           "month": "2024-02",
-          "domestic_gas_tj": 1724,
-          "commercial_gas_tj": 1002,
-          "industrial_gas_tj": 156,
-          "total_gas_tj": 2882
+          "domestic_gas_tj": 1724.0,
+          "commercial_gas_tj": 1002.0,
+          "industrial_gas_tj": 156.0,
+          "total_gas_tj": 2882.0
         },
         {
           "date": "2024-03-01",
           "month": "2024-03",
-          "domestic_gas_tj": 1433,
-          "commercial_gas_tj": 908,
-          "industrial_gas_tj": 152,
-          "total_gas_tj": 2493
+          "domestic_gas_tj": 1433.0,
+          "commercial_gas_tj": 908.0,
+          "industrial_gas_tj": 152.0,
+          "total_gas_tj": 2493.0
         },
         {
           "date": "2024-04-01",
           "month": "2024-04",
-          "domestic_gas_tj": 1389,
-          "commercial_gas_tj": 930,
-          "industrial_gas_tj": 147,
-          "total_gas_tj": 2466
+          "domestic_gas_tj": 1389.0,
+          "commercial_gas_tj": 930.0,
+          "industrial_gas_tj": 147.0,
+          "total_gas_tj": 2466.0
         },
         {
           "date": "2024-05-01",
           "month": "2024-05",
-          "domestic_gas_tj": 1088,
-          "commercial_gas_tj": 876,
-          "industrial_gas_tj": 143,
-          "total_gas_tj": 2107
+          "domestic_gas_tj": 1088.0,
+          "commercial_gas_tj": 876.0,
+          "industrial_gas_tj": 143.0,
+          "total_gas_tj": 2107.0
         },
         {
           "date": "2024-06-01",
           "month": "2024-06",
-          "domestic_gas_tj": 1077,
-          "commercial_gas_tj": 894,
-          "industrial_gas_tj": 151,
-          "total_gas_tj": 2122
+          "domestic_gas_tj": 1077.0,
+          "commercial_gas_tj": 894.0,
+          "industrial_gas_tj": 151.0,
+          "total_gas_tj": 2122.0
         },
         {
           "date": "2024-07-01",
           "month": "2024-07",
-          "domestic_gas_tj": 893,
-          "commercial_gas_tj": 845,
-          "industrial_gas_tj": 148,
-          "total_gas_tj": 1886
+          "domestic_gas_tj": 893.0,
+          "commercial_gas_tj": 845.0,
+          "industrial_gas_tj": 148.0,
+          "total_gas_tj": 1886.0
         },
         {
           "date": "2024-08-01",
           "month": "2024-08",
-          "domestic_gas_tj": 875,
-          "commercial_gas_tj": 862,
-          "industrial_gas_tj": 153,
-          "total_gas_tj": 1890
+          "domestic_gas_tj": 875.0,
+          "commercial_gas_tj": 862.0,
+          "industrial_gas_tj": 153.0,
+          "total_gas_tj": 1890.0
         },
         {
           "date": "2024-09-01",
           "month": "2024-09",
-          "domestic_gas_tj": 873,
-          "commercial_gas_tj": 863,
-          "industrial_gas_tj": 143,
-          "total_gas_tj": 1879
+          "domestic_gas_tj": 873.0,
+          "commercial_gas_tj": 863.0,
+          "industrial_gas_tj": 143.0,
+          "total_gas_tj": 1879.0
         },
         {
           "date": "2024-10-01",
           "month": "2024-10",
-          "domestic_gas_tj": 893,
-          "commercial_gas_tj": 830,
-          "industrial_gas_tj": 138,
-          "total_gas_tj": 1860
+          "domestic_gas_tj": 893.0,
+          "commercial_gas_tj": 830.0,
+          "industrial_gas_tj": 138.0,
+          "total_gas_tj": 1860.0
         },
         {
           "date": "2024-11-01",
           "month": "2024-11",
-          "domestic_gas_tj": 1126,
-          "commercial_gas_tj": 884,
-          "industrial_gas_tj": 147,
-          "total_gas_tj": 2157
+          "domestic_gas_tj": 1126.0,
+          "commercial_gas_tj": 884.0,
+          "industrial_gas_tj": 147.0,
+          "total_gas_tj": 2157.0
         },
         {
           "date": "2024-12-01",
           "month": "2024-12",
-          "domestic_gas_tj": 1401,
-          "commercial_gas_tj": 997,
-          "industrial_gas_tj": 156,
-          "total_gas_tj": 2554
+          "domestic_gas_tj": 1401.0,
+          "commercial_gas_tj": 997.0,
+          "industrial_gas_tj": 156.0,
+          "total_gas_tj": 2554.0
         },
         {
           "date": "2025-01-01",
           "month": "2025-01",
-          "domestic_gas_tj": 1698,
-          "commercial_gas_tj": 931,
-          "industrial_gas_tj": 138,
-          "total_gas_tj": 2766
+          "domestic_gas_tj": 1698.0,
+          "commercial_gas_tj": 931.0,
+          "industrial_gas_tj": 138.0,
+          "total_gas_tj": 2766.0
         },
         {
           "date": "2025-02-01",
           "month": "2025-02",
-          "domestic_gas_tj": 1719,
-          "commercial_gas_tj": 1006,
-          "industrial_gas_tj": 127,
-          "total_gas_tj": 2852
+          "domestic_gas_tj": 1719.0,
+          "commercial_gas_tj": 1006.0,
+          "industrial_gas_tj": 127.0,
+          "total_gas_tj": 2852.0
         },
         {
           "date": "2025-03-01",
           "month": "2025-03",
-          "domestic_gas_tj": 1372,
-          "commercial_gas_tj": 898,
-          "industrial_gas_tj": 128,
-          "total_gas_tj": 2398
+          "domestic_gas_tj": 1372.0,
+          "commercial_gas_tj": 898.0,
+          "industrial_gas_tj": 128.0,
+          "total_gas_tj": 2398.0
         },
         {
           "date": "2025-04-01",
           "month": "2025-04",
-          "domestic_gas_tj": 1580,
-          "commercial_gas_tj": 952,
-          "industrial_gas_tj": 134,
-          "total_gas_tj": 2666
+          "domestic_gas_tj": 1580.0,
+          "commercial_gas_tj": 952.0,
+          "industrial_gas_tj": 134.0,
+          "total_gas_tj": 2666.0
         },
         {
           "date": "2025-05-01",
           "month": "2025-05",
-          "domestic_gas_tj": 1104,
-          "commercial_gas_tj": 885,
-          "industrial_gas_tj": 128,
-          "total_gas_tj": 2117
+          "domestic_gas_tj": 1104.0,
+          "commercial_gas_tj": 885.0,
+          "industrial_gas_tj": 128.0,
+          "total_gas_tj": 2117.0
         },
         {
           "date": "2025-06-01",
           "month": "2025-06",
-          "domestic_gas_tj": 1114,
-          "commercial_gas_tj": 892,
-          "industrial_gas_tj": 129,
-          "total_gas_tj": 2136
+          "domestic_gas_tj": 1114.0,
+          "commercial_gas_tj": 892.0,
+          "industrial_gas_tj": 129.0,
+          "total_gas_tj": 2136.0
         },
         {
           "date": "2025-07-01",
           "month": "2025-07",
-          "domestic_gas_tj": 916,
-          "commercial_gas_tj": 850,
-          "industrial_gas_tj": 122,
-          "total_gas_tj": 1888
+          "domestic_gas_tj": 916.0,
+          "commercial_gas_tj": 850.0,
+          "industrial_gas_tj": 122.0,
+          "total_gas_tj": 1888.0
         },
         {
           "date": "2025-08-01",
@@ -790,9 +790,9 @@
         {
           "date": "2025-11-01",
           "month": "2025-11",
-          "domestic_gas_tj": 1262,
+          "domestic_gas_tj": 1262.0,
           "commercial_gas_tj": 925.5,
-          "industrial_gas_tj": 130,
+          "industrial_gas_tj": 130.0,
           "total_gas_tj": 2317.5
         },
         {
@@ -814,7 +814,7 @@
         {
           "date": "2026-02-01",
           "month": "2026-02",
-          "domestic_gas_tj": 1656,
+          "domestic_gas_tj": 1656.0,
           "commercial_gas_tj": 997.1,
           "industrial_gas_tj": 135.5,
           "total_gas_tj": 2788.6
@@ -848,7 +848,7 @@
         {
           "date": "2026-01-02",
           "month": "2026-01",
-          "mean_temp_c": 15,
+          "mean_temp_c": 15.0,
           "month_avg_temp_c": 17.5
         },
         {
@@ -860,7 +860,7 @@
         {
           "date": "2026-01-04",
           "month": "2026-01",
-          "mean_temp_c": 17,
+          "mean_temp_c": 17.0,
           "month_avg_temp_c": 17.5
         },
         {
@@ -872,7 +872,7 @@
         {
           "date": "2026-01-06",
           "month": "2026-01",
-          "mean_temp_c": 14,
+          "mean_temp_c": 14.0,
           "month_avg_temp_c": 17.5
         },
         {
@@ -1088,7 +1088,7 @@
         {
           "date": "2026-02-11",
           "month": "2026-02",
-          "mean_temp_c": 21,
+          "mean_temp_c": 21.0,
           "month_avg_temp_c": 20.1
         },
         {
@@ -1118,7 +1118,7 @@
         {
           "date": "2026-02-16",
           "month": "2026-02",
-          "mean_temp_c": 24,
+          "mean_temp_c": 24.0,
           "month_avg_temp_c": 20.1
         },
         {
@@ -1148,7 +1148,7 @@
         {
           "date": "2026-02-21",
           "month": "2026-02",
-          "mean_temp_c": 21,
+          "mean_temp_c": 21.0,
           "month_avg_temp_c": 20.1
         },
         {
@@ -1190,7 +1190,7 @@
         {
           "date": "2026-02-28",
           "month": "2026-02",
-          "mean_temp_c": 20,
+          "mean_temp_c": 20.0,
           "month_avg_temp_c": 20.1
         },
         {
@@ -1226,7 +1226,7 @@
         {
           "date": "2026-03-06",
           "month": "2026-03",
-          "mean_temp_c": 20,
+          "mean_temp_c": 20.0,
           "month_avg_temp_c": 21.5
         },
         {
@@ -1334,7 +1334,7 @@
         {
           "date": "2026-03-24",
           "month": "2026-03",
-          "mean_temp_c": 24,
+          "mean_temp_c": 24.0,
           "month_avg_temp_c": 21.5
         },
         {
@@ -1346,7 +1346,7 @@
         {
           "date": "2026-03-26",
           "month": "2026-03",
-          "mean_temp_c": 25,
+          "mean_temp_c": 25.0,
           "month_avg_temp_c": 21.5
         },
         {
@@ -1388,7 +1388,7 @@
         {
           "date": "2026-04-02",
           "month": "2026-04",
-          "mean_temp_c": 23,
+          "mean_temp_c": 23.0,
           "month_avg_temp_c": 25.5
         },
         {
@@ -1400,13 +1400,13 @@
         {
           "date": "2026-04-04",
           "month": "2026-04",
-          "mean_temp_c": 25,
+          "mean_temp_c": 25.0,
           "month_avg_temp_c": 25.5
         },
         {
           "date": "2026-04-05",
           "month": "2026-04",
-          "mean_temp_c": 24,
+          "mean_temp_c": 24.0,
           "month_avg_temp_c": 25.5
         },
         {
@@ -1472,7 +1472,7 @@
         {
           "date": "2026-04-16",
           "month": "2026-04",
-          "mean_temp_c": 27,
+          "mean_temp_c": 27.0,
           "month_avg_temp_c": 25.5
         },
         {
@@ -1562,7 +1562,7 @@
         {
           "date": "2026-05-01",
           "month": "2026-05",
-          "mean_temp_c": 24,
+          "mean_temp_c": 24.0,
           "month_avg_temp_c": 26.8
         },
         {
@@ -1616,7 +1616,7 @@
         {
           "date": "2026-05-10",
           "month": "2026-05",
-          "mean_temp_c": 24,
+          "mean_temp_c": 24.0,
           "month_avg_temp_c": 26.8
         },
         {
@@ -1676,7 +1676,7 @@
         {
           "date": "2026-05-20",
           "month": "2026-05",
-          "mean_temp_c": 28,
+          "mean_temp_c": 28.0,
           "month_avg_temp_c": 26.8
         },
         {
@@ -1694,7 +1694,7 @@
         {
           "date": "2026-05-23",
           "month": "2026-05",
-          "mean_temp_c": 29,
+          "mean_temp_c": 29.0,
           "month_avg_temp_c": 26.8
         },
         {
@@ -1712,7 +1712,7 @@
         {
           "date": "2026-05-26",
           "month": "2026-05",
-          "mean_temp_c": 30,
+          "mean_temp_c": 30.0,
           "month_avg_temp_c": 26.8
         },
         {
@@ -1754,7 +1754,7 @@
         {
           "date": "2026-06-02",
           "month": "2026-06",
-          "mean_temp_c": 30,
+          "mean_temp_c": 30.0,
           "month_avg_temp_c": 28.6
         },
         {
@@ -1844,7 +1844,7 @@
         {
           "date": "2026-06-17",
           "month": "2026-06",
-          "mean_temp_c": 27,
+          "mean_temp_c": 27.0,
           "month_avg_temp_c": 28.6
         },
         {
@@ -1929,27 +1929,27 @@
       "power_assets_geography": [
         {
           "geography": "Investment in HKEI",
-          "revenue_hkdm": 0,
-          "segment_profit_hkdm": 334,
-          "jv_associate_results_hkdm": 334
+          "revenue_hkdm": 0.0,
+          "segment_profit_hkdm": 334.0,
+          "jv_associate_results_hkdm": 334.0
         },
         {
           "geography": "United Kingdom",
-          "revenue_hkdm": 171,
-          "segment_profit_hkdm": 1724,
-          "jv_associate_results_hkdm": 1553
+          "revenue_hkdm": 171.0,
+          "segment_profit_hkdm": 1724.0,
+          "jv_associate_results_hkdm": 1553.0
         },
         {
           "geography": "Australia",
-          "revenue_hkdm": 143,
-          "segment_profit_hkdm": 652,
-          "jv_associate_results_hkdm": 515
+          "revenue_hkdm": 143.0,
+          "segment_profit_hkdm": 652.0,
+          "jv_associate_results_hkdm": 515.0
         },
         {
           "geography": "Others",
-          "revenue_hkdm": 38,
-          "segment_profit_hkdm": 445,
-          "jv_associate_results_hkdm": 513
+          "revenue_hkdm": 38.0,
+          "segment_profit_hkdm": 445.0,
+          "jv_associate_results_hkdm": 513.0
         }
       ]
     }
@@ -1976,7 +1976,7 @@
         "engine": "official MDT CSV",
         "url": "https://www.censtatd.gov.hk/data/MDT_91_915-91201_GASC_LOCAL_Raw_Tjou_n.csv",
         "language": "CSV",
-        "description": "Monthly town gas consumption in Terajoules (TJ) by user type (Domestic, Commercial, Industrial) — de facto Towngas monopoly operational proxy."
+        "description": "Monthly town gas consumption in Terajoules (TJ) by user type (Domestic, Commercial, Industrial) \u2014 de facto Towngas monopoly operational proxy."
       }
     },
     {
@@ -1988,7 +1988,7 @@
         "engine": "official open data CSV",
         "url": "https://data.weather.gov.hk/weatherAPI/cis/csvfile/HKO/ALL/daily_HKO_TEMP_ALL.csv",
         "language": "CSV",
-        "description": "Daily mean temperature (°C) and monthly averages — primary physical weather driver for air-conditioning power load."
+        "description": "Daily mean temperature (\u00b0C) and monthly averages \u2014 primary physical weather driver for air-conditioning power load."
       }
     },
     {

@@ -164,26 +164,26 @@ PUBLIC_SOURCES = {
 # table_620-67002_lang.json); the finer ~14-row "1.1" breakdown is fetched
 # but not charted, to keep the comparison view readable.
 TOP_LEVEL_RETAIL_CATEGORIES = [
-    "Food, alcoholic drinks and tobacco (other than supermarkets)",
+    "Food, drinks & tobacco (excl. supermarkets)",
     "Supermarkets",
     "Fuels",
-    "Clothing, footwear and allied products",
+    "Clothing, footwear & allied products",
     "Consumer durable goods",
     "Department stores",
-    "Jewellery, watches and clocks, and valuable gifts",
+    "Jewellery, watches & valuable gifts",
     "Other consumer goods",
 ]
 
 PLANNED_COVERAGE = [
     {
         "source": "HK Consumer Council",
-        "dataset": "Online Price Watch (personal care / cosmetics prices)",
+        "dataset": "Online Price Watch",
         "type": "Measure",
         "status": "Planned",
         "latest_observation": "—",
         "records": 0,
         "freshness": "Endpoint returns no data",
-        "notes": "Configured JSON/CSV endpoints do not resolve to real payloads; data.gov.hk listing needs re-verification before this can go live.",
+        "notes": "Endpoint requires re-verification before going live.",
     },
 ]
 
@@ -426,9 +426,9 @@ def build_artifact(
 
     imm_chart_window = immigration.tail(365).copy()
     imm_north = imm_chart_window[["date", "land_hk_resident_departures_7d_ma"]].rename(columns={"land_hk_resident_departures_7d_ma": "value"})
-    imm_north["flow_type"] = "Northbound Flow (HK Residents)"
+    imm_north["flow_type"] = "Northbound"
     imm_south = imm_chart_window[["date", "mainland_visitor_arrivals_7d_ma"]].rename(columns={"mainland_visitor_arrivals_7d_ma": "value"})
-    imm_south["flow_type"] = "Southbound Flow (Mainland Visitors)"
+    imm_south["flow_type"] = "Southbound"
     immigration_trend_rows = pd.concat([imm_north, imm_south], ignore_index=True).sort_values(["date", "flow_type"])
 
     # Severe weather & FX demand driver KPIs and charts
@@ -711,7 +711,7 @@ def build_artifact(
             },
             "valueFormat": "number",
             "layout": "full",
-            "maxRows": 800,
+            "maxRows": 180,
         },
         {
             "id": "gold_trend",
@@ -727,7 +727,7 @@ def build_artifact(
             },
             "valueFormat": "number",
             "layout": "full",
-            "maxRows": 1_800,
+            "maxRows": 180,
         },
         {
             "id": "afcd_category_chart",
@@ -773,7 +773,7 @@ def build_artifact(
             },
             "valueFormat": "number",
             "layout": "full",
-            "maxRows": 400,
+            "maxRows": 120,
         },
         {
             "id": "retail_category_chart",
@@ -804,7 +804,7 @@ def build_artifact(
             },
             "valueFormat": "number",
             "layout": "full",
-            "maxRows": 200,
+            "maxRows": 80,
         },
         {
             "id": "restaurant_chart",
@@ -967,7 +967,10 @@ def build_artifact(
                         "remains planned; it is not shown with placeholder values."
                     ),
                 },
-                {"id": "market_pulse", "type": "metric-strip", "cardIds": [card["id"] for card in cards]},
+                {"id": "market_pulse_1", "type": "metric-strip", "cardIds": ["northbound_card", "southbound_card", "weather_card", "fx_card"]},
+                {"id": "market_pulse_2", "type": "metric-strip", "cardIds": ["gold_card", "retail_card", "restaurant_card"]},
+                {"id": "immigration_chart", "type": "chart", "chartId": "immigration_trend"},
+                {"id": "weather_chart", "type": "chart", "chartId": "severe_weather_trend"},
                 {"id": "gold_chart", "type": "chart", "chartId": "gold_trend"},
                 {"id": "afcd_chart", "type": "chart", "chartId": "afcd_category_chart", "layout": "half"},
                 {"id": "valuation_chart", "type": "chart", "chartId": "valuation_pe_chart", "layout": "half"},
