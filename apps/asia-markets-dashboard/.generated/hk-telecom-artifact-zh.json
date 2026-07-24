@@ -6,26 +6,26 @@
     "title": "香港电讯监测",
     "description": "香港电讯（HKT）、数码通（SmarTone）及和记电讯（3 HK）的半年度用户与 ARPU 披露数据，以及通讯办全运营商手机号码段配额快照。",
     "sector": "hk-telecom",
-    "generatedAt": "2026-07-24T21:33:22.515940Z",
+    "generatedAt": "2026-07-24T21:47:51.940487Z",
     "cards": [
       {
         "id": "hkt_card",
-        "description": "半年度后付费退出 ARPU 及后付费用户数（千户）。",
+        "description": "半年度后付费退出 ARPU 及后付费用户数（千户）；半年环比变动。",
         "dataset": "kpi_hkt",
         "sourceId": "hkt_operating_drivers",
         "metrics": [
           {
-            "label": "香港电讯 后付费 ARPU (港元)",
+            "label": "后付费 ARPU (港元)",
             "field": "latest_arpu",
             "format": "number"
           },
           {
-            "label": "半年环比",
+            "label": "后付费用户数 (千户)",
             "field": "postpaid_subscribers_thousands",
             "format": "number"
           },
           {
-            "label": "同比",
+            "label": "半年环比",
             "field": "period_change",
             "format": "percent"
           }
@@ -33,17 +33,17 @@
       },
       {
         "id": "smartone_card",
-        "description": "半年度后付费 ARPU 及后付费用户数（千户）。",
+        "description": "半年度后付费 ARPU 及后付费用户数（千户）；同比变动。",
         "dataset": "kpi_smartone",
         "sourceId": "smartone_operating_drivers",
         "metrics": [
           {
-            "label": "数码通 后付费 ARPU (港元)",
+            "label": "后付费 ARPU (港元)",
             "field": "latest_arpu",
             "format": "number"
           },
           {
-            "label": "同比",
+            "label": "后付费用户数 (千户)",
             "field": "postpaid_subscribers_thousands",
             "format": "number"
           },
@@ -56,22 +56,22 @@
       },
       {
         "id": "hutchison_card",
-        "description": "半年度后付费毛/净 ARPU。",
+        "description": "半年度后付费毛 ARPU 与净 ARPU；半年环比变动。",
         "dataset": "kpi_hutchison",
         "sourceId": "hutchison_telecom_operating_drivers",
         "metrics": [
           {
-            "label": "和记电讯（3 HK）后付费毛 ARPU (港元)",
+            "label": "后付费毛 ARPU (港元)",
             "field": "latest_gross_arpu",
             "format": "number"
           },
           {
-            "label": "半年环比",
+            "label": "后付费净 ARPU (港元)",
             "field": "latest_net_arpu",
             "format": "number"
           },
           {
-            "label": "同比",
+            "label": "半年环比",
             "field": "period_change",
             "format": "percent"
           }
@@ -258,7 +258,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-24T21:33:22.515940Z",
+    "generatedAt": "2026-07-24T21:47:51.940487Z",
     "status": "ready",
     "datasets": {
       "kpi_hkt": [

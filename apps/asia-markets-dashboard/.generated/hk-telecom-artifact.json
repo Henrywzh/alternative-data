@@ -6,7 +6,7 @@
     "title": "Hong Kong Telecom Sector Monitor",
     "description": "HKT, SmarTone, and Hutchison Telecom (3 HK) semi-annual postpaid subscriber and ARPU disclosures, plus an OFCA all-operator mobile-number-block capacity snapshot.",
     "sector": "hk-telecom",
-    "generatedAt": "2026-07-24T21:33:22.515940Z",
+    "generatedAt": "2026-07-24T21:47:51.940487Z",
     "cards": [
       {
         "id": "hkt_card",
@@ -258,7 +258,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-24T21:33:22.515940Z",
+    "generatedAt": "2026-07-24T21:47:51.940487Z",
     "status": "ready",
     "datasets": {
       "kpi_hkt": [

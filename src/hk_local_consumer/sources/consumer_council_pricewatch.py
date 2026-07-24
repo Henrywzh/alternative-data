@@ -73,19 +73,9 @@ def fetch_consumer_council_pricewatch() -> pd.DataFrame:
         df = df.dropna(subset=["price"])
 
     except Exception as exc:
-        logger.warning(f"Failed to fetch Consumer Council Price Watch CSV: {exc}. Using fallback snapshot.")
+        logger.warning(f"Failed to fetch Consumer Council Price Watch CSV: {exc}. Returning empty frame.")
         source_label = DATA_SOURCE_FALLBACK
-        df = pd.DataFrame([
-            {"category_1": "Bakery / Cereals / Spreads", "category_2": "Breads", "product_name": "White Bread 8 Slice", "price": 10.9},
-            {"category_1": "Dairy / Eggs / Ice Cream", "category_2": "Milk", "product_name": "Fresh Milk 1L", "price": 28.5},
-            {"category_1": "Personal Care", "category_2": "Shampoo", "product_name": "Moisturizing Shampoo 500ml", "price": 45.0},
-        ])
-        df["date"] = today_str
-        df["category_3"] = ""
-        df["product_code"] = ""
-        df["brand"] = ""
-        df["supermarket_code"] = ""
-        df["offers"] = ""
+        df = pd.DataFrame(columns=[c for c in PRICEWATCH_COLUMNS if c != "data_source"])
 
     df["data_source"] = source_label
     result = df.reindex(columns=PRICEWATCH_COLUMNS).reset_index(drop=True)
