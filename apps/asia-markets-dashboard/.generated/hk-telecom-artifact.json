@@ -6,7 +6,7 @@
     "title": "Hong Kong Telecom Sector Monitor",
     "description": "HKT, SmarTone, and Hutchison Telecom (3 HK) semi-annual postpaid subscriber and ARPU disclosures, plus an OFCA all-operator mobile-number-block capacity snapshot.",
     "sector": "hk-telecom",
-    "generatedAt": "2026-07-23T23:55:43.453878Z",
+    "generatedAt": "2026-07-24T21:33:22.515940Z",
     "cards": [
       {
         "id": "hkt_card",
@@ -258,34 +258,34 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-23T23:55:43.453878Z",
+    "generatedAt": "2026-07-24T21:33:22.515940Z",
     "status": "ready",
     "datasets": {
       "kpi_hkt": [
         {
-          "latest_arpu": 195,
-          "postpaid_subscribers_thousands": 3494,
-          "consumer_broadband_lines_thousands": 1488,
+          "latest_arpu": 195.0,
+          "postpaid_subscribers_thousands": 3494.0,
+          "consumer_broadband_lines_thousands": 1488.0,
           "period_change": 0.010363,
           "observation_date": "2025-12-31"
         }
       ],
       "kpi_smartone": [
         {
-          "latest_arpu": 224,
-          "postpaid_subscribers_thousands": 3158,
-          "arpu_5g_to_4g_ratio": 2,
+          "latest_arpu": 224.0,
+          "postpaid_subscribers_thousands": 3158.0,
+          "arpu_5g_to_4g_ratio": 2.0,
           "period_change": 0.009009,
           "observation_date": "2025-12-31"
         }
       ],
       "kpi_hutchison": [
         {
-          "latest_gross_arpu": 187,
-          "latest_net_arpu": 176,
-          "postpaid_customers_thousands": 1289,
+          "latest_gross_arpu": 187.0,
+          "latest_net_arpu": 176.0,
+          "postpaid_customers_thousands": 1289.0,
           "churn_rate_pct": 0.9,
-          "penetration_5g_pct": 62,
+          "penetration_5g_pct": 62.0,
           "period_change": 0.033149,
           "observation_date": "2025-12-31"
         }
@@ -294,123 +294,123 @@
         {
           "period": "2024-06-30",
           "date": "2024-06-30",
-          "mobile_postpaid_subscribers_thousands": 3433,
-          "mobile_prepaid_subscribers_thousands": 1451,
-          "total_mobile_subscribers_thousands": 4884,
-          "consumer_broadband_lines_thousands": 1472,
+          "mobile_postpaid_subscribers_thousands": 3433.0,
+          "mobile_prepaid_subscribers_thousands": 1451.0,
+          "total_mobile_subscribers_thousands": 4884.0,
+          "consumer_broadband_lines_thousands": 1472.0,
           "ftth_connections_thousands": null,
           "ftth_share_pct": null,
-          "pay_tv_installed_base_thousands": 1430,
-          "mobile_postpaid_arpu_hkd": 192
+          "pay_tv_installed_base_thousands": 1430.0,
+          "mobile_postpaid_arpu_hkd": 192.0
         },
         {
           "period": "2024-12-31",
           "date": "2024-12-31",
-          "mobile_postpaid_subscribers_thousands": 3459,
-          "mobile_prepaid_subscribers_thousands": 1346,
-          "total_mobile_subscribers_thousands": 4805,
-          "consumer_broadband_lines_thousands": 1474,
+          "mobile_postpaid_subscribers_thousands": 3459.0,
+          "mobile_prepaid_subscribers_thousands": 1346.0,
+          "total_mobile_subscribers_thousands": 4805.0,
+          "consumer_broadband_lines_thousands": 1474.0,
           "ftth_connections_thousands": null,
           "ftth_share_pct": null,
-          "pay_tv_installed_base_thousands": 1433,
-          "mobile_postpaid_arpu_hkd": 193
+          "pay_tv_installed_base_thousands": 1433.0,
+          "mobile_postpaid_arpu_hkd": 193.0
         },
         {
           "period": "2025-06-30",
           "date": "2025-06-30",
-          "mobile_postpaid_subscribers_thousands": 3478,
-          "mobile_prepaid_subscribers_thousands": 1397,
-          "total_mobile_subscribers_thousands": 4875,
-          "consumer_broadband_lines_thousands": 1482,
-          "ftth_connections_thousands": 1055,
-          "ftth_share_pct": 71,
-          "pay_tv_installed_base_thousands": 1448,
-          "mobile_postpaid_arpu_hkd": 193
+          "mobile_postpaid_subscribers_thousands": 3478.0,
+          "mobile_prepaid_subscribers_thousands": 1397.0,
+          "total_mobile_subscribers_thousands": 4875.0,
+          "consumer_broadband_lines_thousands": 1482.0,
+          "ftth_connections_thousands": 1055.0,
+          "ftth_share_pct": 71.0,
+          "pay_tv_installed_base_thousands": 1448.0,
+          "mobile_postpaid_arpu_hkd": 193.0
         },
         {
           "period": "2025-12-31",
           "date": "2025-12-31",
-          "mobile_postpaid_subscribers_thousands": 3494,
-          "mobile_prepaid_subscribers_thousands": 1323,
-          "total_mobile_subscribers_thousands": 4817,
-          "consumer_broadband_lines_thousands": 1488,
-          "ftth_connections_thousands": 1086,
-          "ftth_share_pct": 73,
-          "pay_tv_installed_base_thousands": 1464,
-          "mobile_postpaid_arpu_hkd": 195
+          "mobile_postpaid_subscribers_thousands": 3494.0,
+          "mobile_prepaid_subscribers_thousands": 1323.0,
+          "total_mobile_subscribers_thousands": 4817.0,
+          "consumer_broadband_lines_thousands": 1488.0,
+          "ftth_connections_thousands": 1086.0,
+          "ftth_share_pct": 73.0,
+          "pay_tv_installed_base_thousands": 1464.0,
+          "mobile_postpaid_arpu_hkd": 195.0
         }
       ],
       "smartone_history": [
         {
           "period": "2023-12-31",
           "date": "2023-12-31",
-          "postpaid_subscribers_thousands": 2647,
-          "postpaid_arpu_hkd": 224,
+          "postpaid_subscribers_thousands": 2647.0,
+          "postpaid_arpu_hkd": 224.0,
           "arpu_5g_to_4g_ratio": null
         },
         {
           "period": "2024-12-31",
           "date": "2024-12-31",
-          "postpaid_subscribers_thousands": 2873,
-          "postpaid_arpu_hkd": 222,
+          "postpaid_subscribers_thousands": 2873.0,
+          "postpaid_arpu_hkd": 222.0,
           "arpu_5g_to_4g_ratio": null
         },
         {
           "period": "2025-12-31",
           "date": "2025-12-31",
-          "postpaid_subscribers_thousands": 3158,
-          "postpaid_arpu_hkd": 224,
-          "arpu_5g_to_4g_ratio": 2
+          "postpaid_subscribers_thousands": 3158.0,
+          "postpaid_arpu_hkd": 224.0,
+          "arpu_5g_to_4g_ratio": 2.0
         }
       ],
       "hutchison_history": [
         {
           "period": "2024-06-30",
           "date": "2024-06-30",
-          "postpaid_customers_thousands": 1444,
-          "prepaid_customers_thousands": 2827,
-          "total_customers_thousands": 4271,
-          "postpaid_churn_rate_pct": 1,
-          "postpaid_gross_arpu_hkd": 184,
-          "postpaid_net_arpu_hkd": 168,
-          "postpaid_net_ampu_hkd": 148,
+          "postpaid_customers_thousands": 1444.0,
+          "prepaid_customers_thousands": 2827.0,
+          "total_customers_thousands": 4271.0,
+          "postpaid_churn_rate_pct": 1.0,
+          "postpaid_gross_arpu_hkd": 184.0,
+          "postpaid_net_arpu_hkd": 168.0,
+          "postpaid_net_ampu_hkd": 148.0,
           "penetration_5g_pct": null
         },
         {
           "period": "2024-12-31",
           "date": "2024-12-31",
-          "postpaid_customers_thousands": 1316,
-          "prepaid_customers_thousands": 3162,
-          "total_customers_thousands": 4478,
-          "postpaid_churn_rate_pct": 1,
-          "postpaid_gross_arpu_hkd": 190,
-          "postpaid_net_arpu_hkd": 175,
-          "postpaid_net_ampu_hkd": 153,
+          "postpaid_customers_thousands": 1316.0,
+          "prepaid_customers_thousands": 3162.0,
+          "total_customers_thousands": 4478.0,
+          "postpaid_churn_rate_pct": 1.0,
+          "postpaid_gross_arpu_hkd": 190.0,
+          "postpaid_net_arpu_hkd": 175.0,
+          "postpaid_net_ampu_hkd": 153.0,
           "penetration_5g_pct": null
         },
         {
           "period": "2025-06-30",
           "date": "2025-06-30",
-          "postpaid_customers_thousands": 1399,
-          "prepaid_customers_thousands": 4735,
-          "total_customers_thousands": 6134,
+          "postpaid_customers_thousands": 1399.0,
+          "prepaid_customers_thousands": 4735.0,
+          "total_customers_thousands": 6134.0,
           "postpaid_churn_rate_pct": 0.9,
-          "postpaid_gross_arpu_hkd": 181,
-          "postpaid_net_arpu_hkd": 171,
-          "postpaid_net_ampu_hkd": 146,
-          "penetration_5g_pct": 57
+          "postpaid_gross_arpu_hkd": 181.0,
+          "postpaid_net_arpu_hkd": 171.0,
+          "postpaid_net_ampu_hkd": 146.0,
+          "penetration_5g_pct": 57.0
         },
         {
           "period": "2025-12-31",
           "date": "2025-12-31",
-          "postpaid_customers_thousands": 1289,
-          "prepaid_customers_thousands": 6843,
-          "total_customers_thousands": 8132,
+          "postpaid_customers_thousands": 1289.0,
+          "prepaid_customers_thousands": 6843.0,
+          "total_customers_thousands": 8132.0,
           "postpaid_churn_rate_pct": 0.9,
-          "postpaid_gross_arpu_hkd": 187,
-          "postpaid_net_arpu_hkd": 176,
-          "postpaid_net_ampu_hkd": 149,
-          "penetration_5g_pct": 62
+          "postpaid_gross_arpu_hkd": 187.0,
+          "postpaid_net_arpu_hkd": 176.0,
+          "postpaid_net_ampu_hkd": 149.0,
+          "penetration_5g_pct": 62.0
         }
       ],
       "numbering_plan_snapshot": [

@@ -5,7 +5,7 @@
     "surface": "dashboard",
     "title": "Hong Kong Local Consumer Monitor",
     "description": "A source-backed snapshot of gold input costs, fresh-food wholesale prices, and watchlist valuations for HK local-consumer names.",
-    "generatedAt": "2026-07-23T23:56:48.675975Z",
+    "generatedAt": "2026-07-24T21:35:00.313860Z",
     "cards": [
       {
         "id": "northbound_card",
@@ -242,7 +242,7 @@
         },
         "valueFormat": "number",
         "layout": "full",
-        "maxRows": 800
+        "maxRows": 180
       },
       {
         "id": "gold_trend",
@@ -266,7 +266,7 @@
         },
         "valueFormat": "number",
         "layout": "full",
-        "maxRows": 1800
+        "maxRows": 180
       },
       {
         "id": "afcd_category_chart",
@@ -336,7 +336,7 @@
         },
         "valueFormat": "number",
         "layout": "full",
-        "maxRows": 400
+        "maxRows": 120
       },
       {
         "id": "retail_category_chart",
@@ -383,7 +383,7 @@
         },
         "valueFormat": "number",
         "layout": "full",
-        "maxRows": 200
+        "maxRows": 80
       },
       {
         "id": "restaurant_chart",
@@ -744,21 +744,36 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**Data snapshot:** `21b3138617f99837` · generated 2026-07-23T23:56:48.675975Z.  This is a published snapshot, not a live connection. Consumer Council price-watch coverage remains planned; it is not shown with placeholder values."
+        "body": "**Data snapshot:** `9287fc3c0f53c7c8` · generated 2026-07-24T21:35:00.313860Z.  This is a published snapshot, not a live connection. Consumer Council price-watch coverage remains planned; it is not shown with placeholder values."
       },
       {
-        "id": "market_pulse",
+        "id": "market_pulse_1",
         "type": "metric-strip",
         "cardIds": [
           "northbound_card",
           "southbound_card",
           "weather_card",
-          "fx_card",
+          "fx_card"
+        ]
+      },
+      {
+        "id": "market_pulse_2",
+        "type": "metric-strip",
+        "cardIds": [
           "gold_card",
-          "median_pe_card",
           "retail_card",
           "restaurant_card"
         ]
+      },
+      {
+        "id": "immigration_chart",
+        "type": "chart",
+        "chartId": "immigration_trend"
+      },
+      {
+        "id": "weather_chart",
+        "type": "chart",
+        "chartId": "severe_weather_trend"
       },
       {
         "id": "gold_chart",
@@ -838,7 +853,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-23T23:56:48.675975Z",
+    "generatedAt": "2026-07-24T21:35:00.313860Z",
     "status": "ready",
     "datasets": {
       "kpi_weather": [
@@ -851,9 +866,9 @@
       ],
       "kpi_fx": [
         {
-          "latest": 86.53,
-          "period_change": 0.000925,
-          "year_change": -0.053179,
+          "latest": 92.0,
+          "period_change": 0.0,
+          "year_change": 0.0,
           "observation_date": "2026-07-01"
         }
       ],
@@ -861,9 +876,9 @@
         {
           "date": "2023-08-01",
           "month": "2023-08",
-          "signal_8_plus_hours": 0,
-          "red_black_rain_hours": 0,
-          "total_disruption_hours": 0
+          "signal_8_plus_hours": 0.0,
+          "red_black_rain_hours": 0.0,
+          "total_disruption_hours": 0.0
         },
         {
           "date": "2023-09-01",
@@ -875,79 +890,79 @@
         {
           "date": "2023-10-01",
           "month": "2023-10",
-          "signal_8_plus_hours": 23,
+          "signal_8_plus_hours": 23.0,
           "red_black_rain_hours": 12.6,
           "total_disruption_hours": 35.6
         },
         {
           "date": "2023-11-01",
           "month": "2023-11",
-          "signal_8_plus_hours": 0,
-          "red_black_rain_hours": 0,
-          "total_disruption_hours": 0
+          "signal_8_plus_hours": 0.0,
+          "red_black_rain_hours": 0.0,
+          "total_disruption_hours": 0.0
         },
         {
           "date": "2023-12-01",
           "month": "2023-12",
-          "signal_8_plus_hours": 0,
-          "red_black_rain_hours": 0,
-          "total_disruption_hours": 0
+          "signal_8_plus_hours": 0.0,
+          "red_black_rain_hours": 0.0,
+          "total_disruption_hours": 0.0
         },
         {
           "date": "2024-01-01",
           "month": "2024-01",
-          "signal_8_plus_hours": 0,
-          "red_black_rain_hours": 0,
-          "total_disruption_hours": 0
+          "signal_8_plus_hours": 0.0,
+          "red_black_rain_hours": 0.0,
+          "total_disruption_hours": 0.0
         },
         {
           "date": "2024-02-01",
           "month": "2024-02",
-          "signal_8_plus_hours": 0,
-          "red_black_rain_hours": 0,
-          "total_disruption_hours": 0
+          "signal_8_plus_hours": 0.0,
+          "red_black_rain_hours": 0.0,
+          "total_disruption_hours": 0.0
         },
         {
           "date": "2024-03-01",
           "month": "2024-03",
-          "signal_8_plus_hours": 0,
-          "red_black_rain_hours": 0,
-          "total_disruption_hours": 0
+          "signal_8_plus_hours": 0.0,
+          "red_black_rain_hours": 0.0,
+          "total_disruption_hours": 0.0
         },
         {
           "date": "2024-04-01",
           "month": "2024-04",
-          "signal_8_plus_hours": 0,
-          "red_black_rain_hours": 0,
-          "total_disruption_hours": 0
+          "signal_8_plus_hours": 0.0,
+          "red_black_rain_hours": 0.0,
+          "total_disruption_hours": 0.0
         },
         {
           "date": "2024-05-01",
           "month": "2024-05",
-          "signal_8_plus_hours": 0,
+          "signal_8_plus_hours": 0.0,
           "red_black_rain_hours": 8.1,
           "total_disruption_hours": 8.1
         },
         {
           "date": "2024-06-01",
           "month": "2024-06",
-          "signal_8_plus_hours": 0,
+          "signal_8_plus_hours": 0.0,
           "red_black_rain_hours": 1.5,
           "total_disruption_hours": 1.5
         },
         {
           "date": "2024-07-01",
           "month": "2024-07",
-          "signal_8_plus_hours": 0,
-          "red_black_rain_hours": 0,
-          "total_disruption_hours": 0
+          "signal_8_plus_hours": 0.0,
+          "red_black_rain_hours": 0.0,
+          "total_disruption_hours": 0.0
         },
         {
           "date": "2024-08-01",
           "month": "2024-08",
-          "signal_8_plus_hours": 0,
-          "red_black_rain_hours": 0,
-          "total_disruption_hours": 0
+          "signal_8_plus_hours": 0.0,
+          "red_black_rain_hours": 0.0,
+          "total_disruption_hours": 0.0
         },
         {
           "date": "2024-09-01",
@@ -959,65 +974,65 @@
         {
           "date": "2024-10-01",
           "month": "2024-10",
-          "signal_8_plus_hours": 0,
-          "red_black_rain_hours": 0,
-          "total_disruption_hours": 0
+          "signal_8_plus_hours": 0.0,
+          "red_black_rain_hours": 0.0,
+          "total_disruption_hours": 0.0
         },
         {
           "date": "2024-11-01",
           "month": "2024-11",
           "signal_8_plus_hours": 11.2,
-          "red_black_rain_hours": 0,
+          "red_black_rain_hours": 0.0,
           "total_disruption_hours": 11.2
         },
         {
           "date": "2024-12-01",
           "month": "2024-12",
-          "signal_8_plus_hours": 0,
-          "red_black_rain_hours": 0,
-          "total_disruption_hours": 0
+          "signal_8_plus_hours": 0.0,
+          "red_black_rain_hours": 0.0,
+          "total_disruption_hours": 0.0
         },
         {
           "date": "2025-01-01",
           "month": "2025-01",
-          "signal_8_plus_hours": 0,
-          "red_black_rain_hours": 0,
-          "total_disruption_hours": 0
+          "signal_8_plus_hours": 0.0,
+          "red_black_rain_hours": 0.0,
+          "total_disruption_hours": 0.0
         },
         {
           "date": "2025-02-01",
           "month": "2025-02",
-          "signal_8_plus_hours": 0,
-          "red_black_rain_hours": 0,
-          "total_disruption_hours": 0
+          "signal_8_plus_hours": 0.0,
+          "red_black_rain_hours": 0.0,
+          "total_disruption_hours": 0.0
         },
         {
           "date": "2025-03-01",
           "month": "2025-03",
-          "signal_8_plus_hours": 0,
-          "red_black_rain_hours": 0,
-          "total_disruption_hours": 0
+          "signal_8_plus_hours": 0.0,
+          "red_black_rain_hours": 0.0,
+          "total_disruption_hours": 0.0
         },
         {
           "date": "2025-04-01",
           "month": "2025-04",
-          "signal_8_plus_hours": 0,
-          "red_black_rain_hours": 0,
-          "total_disruption_hours": 0
+          "signal_8_plus_hours": 0.0,
+          "red_black_rain_hours": 0.0,
+          "total_disruption_hours": 0.0
         },
         {
           "date": "2025-05-01",
           "month": "2025-05",
-          "signal_8_plus_hours": 0,
-          "red_black_rain_hours": 0,
-          "total_disruption_hours": 0
+          "signal_8_plus_hours": 0.0,
+          "red_black_rain_hours": 0.0,
+          "total_disruption_hours": 0.0
         },
         {
           "date": "2025-06-01",
           "month": "2025-06",
-          "signal_8_plus_hours": 0,
-          "red_black_rain_hours": 0,
-          "total_disruption_hours": 0
+          "signal_8_plus_hours": 0.0,
+          "red_black_rain_hours": 0.0,
+          "total_disruption_hours": 0.0
         },
         {
           "date": "2025-07-01",
@@ -1029,84 +1044,84 @@
         {
           "date": "2025-08-01",
           "month": "2025-08",
-          "signal_8_plus_hours": 0,
-          "red_black_rain_hours": 31,
-          "total_disruption_hours": 31
+          "signal_8_plus_hours": 0.0,
+          "red_black_rain_hours": 31.0,
+          "total_disruption_hours": 31.0
         },
         {
           "date": "2025-09-01",
           "month": "2025-09",
           "signal_8_plus_hours": 45.8,
-          "red_black_rain_hours": 0,
+          "red_black_rain_hours": 0.0,
           "total_disruption_hours": 45.8
         },
         {
           "date": "2025-10-01",
           "month": "2025-10",
-          "signal_8_plus_hours": 0,
-          "red_black_rain_hours": 0,
-          "total_disruption_hours": 0
+          "signal_8_plus_hours": 0.0,
+          "red_black_rain_hours": 0.0,
+          "total_disruption_hours": 0.0
         },
         {
           "date": "2025-11-01",
           "month": "2025-11",
-          "signal_8_plus_hours": 0,
-          "red_black_rain_hours": 0,
-          "total_disruption_hours": 0
+          "signal_8_plus_hours": 0.0,
+          "red_black_rain_hours": 0.0,
+          "total_disruption_hours": 0.0
         },
         {
           "date": "2025-12-01",
           "month": "2025-12",
-          "signal_8_plus_hours": 0,
-          "red_black_rain_hours": 0,
-          "total_disruption_hours": 0
+          "signal_8_plus_hours": 0.0,
+          "red_black_rain_hours": 0.0,
+          "total_disruption_hours": 0.0
         },
         {
           "date": "2026-01-01",
           "month": "2026-01",
-          "signal_8_plus_hours": 0,
-          "red_black_rain_hours": 0,
-          "total_disruption_hours": 0
+          "signal_8_plus_hours": 0.0,
+          "red_black_rain_hours": 0.0,
+          "total_disruption_hours": 0.0
         },
         {
           "date": "2026-02-01",
           "month": "2026-02",
-          "signal_8_plus_hours": 0,
-          "red_black_rain_hours": 0,
-          "total_disruption_hours": 0
+          "signal_8_plus_hours": 0.0,
+          "red_black_rain_hours": 0.0,
+          "total_disruption_hours": 0.0
         },
         {
           "date": "2026-03-01",
           "month": "2026-03",
-          "signal_8_plus_hours": 0,
-          "red_black_rain_hours": 0,
-          "total_disruption_hours": 0
+          "signal_8_plus_hours": 0.0,
+          "red_black_rain_hours": 0.0,
+          "total_disruption_hours": 0.0
         },
         {
           "date": "2026-04-01",
           "month": "2026-04",
-          "signal_8_plus_hours": 0,
-          "red_black_rain_hours": 0,
-          "total_disruption_hours": 0
+          "signal_8_plus_hours": 0.0,
+          "red_black_rain_hours": 0.0,
+          "total_disruption_hours": 0.0
         },
         {
           "date": "2026-05-01",
           "month": "2026-05",
-          "signal_8_plus_hours": 0,
+          "signal_8_plus_hours": 0.0,
           "red_black_rain_hours": 2.6,
           "total_disruption_hours": 2.6
         },
         {
           "date": "2026-06-01",
           "month": "2026-06",
-          "signal_8_plus_hours": 0,
+          "signal_8_plus_hours": 0.0,
           "red_black_rain_hours": 13.3,
           "total_disruption_hours": 13.3
         },
         {
           "date": "2026-07-01",
           "month": "2026-07",
-          "signal_8_plus_hours": 0,
+          "signal_8_plus_hours": 0.0,
           "red_black_rain_hours": 4.2,
           "total_disruption_hours": 4.2
         }
@@ -1128,7 +1143,7 @@
           "signal_name": "Red Rainstorm",
           "start": "2026-07-06 21:45",
           "end": "2026-07-06 22:45",
-          "duration_hours": 1
+          "duration_hours": 1.0
         },
         {
           "signal_name": "Red Rainstorm",
@@ -1182,7 +1197,7 @@
           "signal_name": "Black Rainstorm",
           "start": "2026-06-08 20:35",
           "end": "2026-06-08 21:35",
-          "duration_hours": 1
+          "duration_hours": 1.0
         },
         {
           "signal_name": "Red Rainstorm",
@@ -1200,7 +1215,7 @@
           "signal_name": "Red Rainstorm",
           "start": "2026-06-06 19:55",
           "end": "2026-06-06 20:55",
-          "duration_hours": 1
+          "duration_hours": 1.0
         },
         {
           "signal_name": "Red Rainstorm",
@@ -1212,7 +1227,7 @@
           "signal_name": "Typhoon Signal 8 (RAGASA)",
           "start": "2025-09-24 13:20",
           "end": "2025-09-24 20:20",
-          "duration_hours": 7
+          "duration_hours": 7.0
         },
         {
           "signal_name": "Typhoon Signal 10 (RAGASA)",
@@ -1224,7 +1239,7 @@
           "signal_name": "Typhoon Signal 9 (RAGASA)",
           "start": "2025-09-24 01:40",
           "end": "2025-09-24 02:40",
-          "duration_hours": 1
+          "duration_hours": 1.0
         },
         {
           "signal_name": "Typhoon Signal 8 (RAGASA)",
@@ -1248,7 +1263,7 @@
           "signal_name": "Red Rainstorm",
           "start": "2025-08-14 11:10",
           "end": "2025-08-14 12:10",
-          "duration_hours": 1
+          "duration_hours": 1.0
         },
         {
           "signal_name": "Black Rainstorm",
@@ -1295,3690 +1310,3686 @@
       ],
       "kpi_northbound": [
         {
-          "latest": 297820.3,
-          "period_change": 0.008938,
-          "year_change": 0.237093,
-          "observation_date": "2026-07-22"
+          "latest": 300913.1,
+          "period_change": 0.010385,
+          "year_change": 0.253775,
+          "observation_date": "2026-07-23"
         }
       ],
       "kpi_southbound": [
         {
-          "latest": 125171.1,
-          "period_change": 0.016827,
-          "year_change": 0.230321,
-          "observation_date": "2026-07-22"
+          "latest": 128334.6,
+          "period_change": 0.025273,
+          "year_change": 0.245758,
+          "observation_date": "2026-07-23"
         }
       ],
       "immigration_trend_history": [
         {
-          "date": "2025-07-23",
-          "value": 240742,
-          "flow_type": "Northbound Flow (HK Residents)"
-        },
-        {
-          "date": "2025-07-23",
-          "value": 101738.6,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
-        },
-        {
           "date": "2025-07-24",
           "value": 240005.7,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-07-24",
           "value": 103017.3,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-07-25",
           "value": 241343.4,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-07-25",
           "value": 105778.7,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-07-26",
-          "value": 253264,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "value": 253264.0,
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-07-26",
           "value": 111389.3,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-07-27",
           "value": 295680.4,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-07-27",
           "value": 129911.1,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-07-28",
-          "value": 299324,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "value": 299324.0,
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-07-28",
           "value": 133525.3,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-07-29",
           "value": 295649.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-07-29",
-          "value": 134710,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "value": 134710.0,
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-07-30",
           "value": 293962.3,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-07-30",
           "value": 134529.6,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-07-31",
           "value": 292006.4,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-07-31",
           "value": 133248.4,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-08-01",
           "value": 291371.7,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-08-01",
           "value": 132412.7,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-08-02",
-          "value": 281864,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "value": 281864.0,
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-08-02",
-          "value": 127939,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "value": 127939.0,
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-08-03",
           "value": 275230.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-08-03",
           "value": 124314.1,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-08-04",
           "value": 270161.3,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-08-04",
           "value": 121607.1,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-08-05",
           "value": 260527.9,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-08-05",
           "value": 117612.7,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-08-06",
-          "value": 257538,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "value": 257538.0,
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-08-06",
           "value": 117078.4,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-08-07",
           "value": 259745.7,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-08-07",
           "value": 119913.4,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-08-08",
           "value": 261065.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-08-08",
           "value": 123794.1,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-08-09",
           "value": 270125.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-08-09",
           "value": 130505.4,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-08-10",
           "value": 276421.3,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-08-10",
           "value": 136911.6,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-08-11",
           "value": 282512.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-08-11",
           "value": 140692.7,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-08-12",
           "value": 296746.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-08-12",
           "value": 146669.9,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-08-13",
           "value": 300723.4,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-08-13",
           "value": 149892.6,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-08-14",
           "value": 290530.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-08-14",
           "value": 144954.9,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-08-15",
           "value": 288344.4,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-08-15",
-          "value": 142854,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "value": 142854.0,
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-08-16",
           "value": 287645.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-08-16",
           "value": 144010.7,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-08-17",
           "value": 284410.3,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-08-17",
           "value": 143573.4,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-08-18",
-          "value": 280536,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "value": 280536.0,
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-08-18",
           "value": 141951.1,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-08-19",
           "value": 276537.7,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-08-19",
           "value": 143915.6,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-08-20",
           "value": 277296.9,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-08-20",
           "value": 146447.7,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-08-21",
           "value": 288296.3,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-08-21",
           "value": 151744.1,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-08-22",
           "value": 290857.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-08-22",
           "value": 152583.6,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-08-23",
-          "value": 291905,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "value": 291905.0,
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-08-23",
           "value": 149586.7,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-08-24",
-          "value": 293835,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "value": 293835.0,
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-08-24",
-          "value": 146266,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "value": 146266.0,
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-08-25",
           "value": 297593.3,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-08-25",
-          "value": 146435,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "value": 146435.0,
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-08-26",
           "value": 302865.3,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-08-26",
-          "value": 144478,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "value": 144478.0,
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-08-27",
-          "value": 304529,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "value": 304529.0,
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-08-27",
           "value": 139917.3,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-08-28",
-          "value": 305277,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "value": 305277.0,
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-08-28",
           "value": 136154.6,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-08-29",
           "value": 305664.4,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-08-29",
           "value": 131253.4,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-08-30",
           "value": 300908.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-08-30",
           "value": 124835.1,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-08-31",
           "value": 294159.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-08-31",
           "value": 117288.4,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-09-01",
           "value": 290989.7,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-09-01",
           "value": 110512.6,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-09-02",
           "value": 287609.3,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-09-02",
           "value": 103684.9,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-09-03",
           "value": 282516.6,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-09-03",
           "value": 97856.3,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-09-04",
           "value": 278717.3,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-09-04",
           "value": 93353.9,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-09-05",
-          "value": 276365,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "value": 276365.0,
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-09-05",
           "value": 89019.3,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-09-06",
           "value": 275191.7,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-09-06",
           "value": 83590.9,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-09-07",
           "value": 272083.3,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-09-07",
           "value": 81729.6,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-09-08",
           "value": 256662.7,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-09-08",
-          "value": 77430,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "value": 77430.0,
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-09-09",
-          "value": 256860,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "value": 256860.0,
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-09-09",
           "value": 76546.9,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-09-10",
           "value": 258763.4,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-09-10",
           "value": 76127.9,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-09-11",
           "value": 260134.3,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-09-11",
           "value": 76058.9,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-09-12",
           "value": 263132.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-09-12",
           "value": 76828.7,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-09-13",
-          "value": 267539,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "value": 267539.0,
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-09-13",
           "value": 78639.1,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-09-14",
           "value": 273824.7,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-09-14",
-          "value": 80452,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "value": 80452.0,
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-09-15",
           "value": 291037.4,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-09-15",
           "value": 85226.6,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-09-16",
-          "value": 292269,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "value": 292269.0,
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-09-16",
           "value": 86860.1,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-09-17",
-          "value": 291716,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "value": 291716.0,
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-09-17",
-          "value": 88259,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "value": 88259.0,
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-09-18",
           "value": 290721.7,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-09-18",
           "value": 88485.6,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-09-19",
           "value": 284307.9,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-09-19",
-          "value": 87672,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "value": 87672.0,
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-09-20",
           "value": 271041.3,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-09-20",
           "value": 84173.1,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-09-21",
           "value": 263886.6,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-09-21",
           "value": 82674.1,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-09-22",
           "value": 268512.3,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-09-22",
           "value": 83759.3,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-09-23",
           "value": 246758.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-09-23",
           "value": 75352.1,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-09-24",
           "value": 213475.7,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-09-24",
           "value": 64252.9,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-09-25",
           "value": 206951.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-09-25",
-          "value": 61945,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "value": 61945.0,
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-09-26",
           "value": 213625.7,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-09-26",
-          "value": 64571,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "value": 64571.0,
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-09-27",
           "value": 226678.9,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-09-27",
           "value": 71068.1,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-09-28",
           "value": 235521.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-09-28",
           "value": 73690.1,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-09-29",
           "value": 234809.7,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-09-29",
           "value": 76147.7,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-09-30",
           "value": 265150.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-09-30",
-          "value": 90343,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "value": 90343.0,
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-10-01",
           "value": 294584.3,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-10-01",
           "value": 123343.1,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-10-02",
           "value": 298134.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-10-02",
           "value": 146459.9,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-10-03",
           "value": 294477.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-10-03",
           "value": 164458.7,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-10-04",
           "value": 286724.3,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-10-04",
           "value": 172886.1,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-10-05",
           "value": 278430.7,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-10-05",
-          "value": 179764,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "value": 179764.0,
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-10-06",
           "value": 277279.6,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-10-06",
           "value": 183842.3,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-10-07",
           "value": 269742.3,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-10-07",
           "value": 184937.4,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-10-08",
           "value": 272545.9,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-10-08",
           "value": 167162.6,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-10-09",
           "value": 277829.6,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-10-09",
           "value": 147348.7,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-10-10",
           "value": 280356.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-10-10",
           "value": 127729.6,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-10-11",
           "value": 286407.7,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-10-11",
           "value": 109809.9,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-10-12",
-          "value": 291448,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "value": 291448.0,
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-10-12",
           "value": 102037.6,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-10-13",
           "value": 289499.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-10-13",
           "value": 95213.3,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-10-14",
-          "value": 288919,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "value": 288919.0,
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-10-14",
-          "value": 87828,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "value": 87828.0,
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-10-15",
           "value": 291994.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-10-15",
           "value": 83403.4,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-10-16",
           "value": 291678.9,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-10-16",
-          "value": 82442,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "value": 82442.0,
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-10-17",
           "value": 292303.9,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-10-17",
           "value": 83296.3,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-10-18",
           "value": 292724.7,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-10-18",
           "value": 91577.3,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-10-19",
           "value": 293565.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-10-19",
           "value": 92140.6,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-10-20",
           "value": 292933.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-10-20",
           "value": 92049.1,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-10-21",
           "value": 289725.3,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-10-21",
-          "value": 91228,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "value": 91228.0,
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-10-22",
           "value": 286894.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-10-22",
           "value": 90571.7,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-10-23",
           "value": 286365.6,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-10-23",
           "value": 90546.6,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-10-24",
           "value": 288018.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-10-24",
           "value": 90660.9,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-10-25",
           "value": 289263.6,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-10-25",
-          "value": 91214,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "value": 91214.0,
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-10-26",
-          "value": 289627,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "value": 289627.0,
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-10-26",
           "value": 91929.4,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-10-27",
           "value": 291679.6,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-10-27",
           "value": 92267.7,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-10-28",
           "value": 308897.7,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-10-28",
           "value": 93460.3,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-10-29",
           "value": 323696.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-10-29",
           "value": 92860.4,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-10-30",
           "value": 323211.6,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-10-30",
-          "value": 94094,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "value": 94094.0,
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-10-31",
           "value": 320286.3,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-10-31",
           "value": 94664.9,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-11-01",
           "value": 315786.7,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-11-01",
           "value": 94619.4,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-11-02",
           "value": 313849.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-11-02",
           "value": 93131.1,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-11-03",
           "value": 312702.6,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-11-03",
           "value": 92043.6,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-11-04",
           "value": 298268.4,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-11-04",
           "value": 91286.4,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-11-05",
           "value": 286170.6,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-11-05",
           "value": 92996.4,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-11-06",
           "value": 287849.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-11-06",
           "value": 92138.1,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-11-07",
           "value": 291242.3,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-11-07",
-          "value": 90826,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "value": 90826.0,
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-11-08",
           "value": 294749.7,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-11-08",
           "value": 90471.9,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-11-09",
           "value": 298404.4,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-11-09",
           "value": 91809.4,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-11-10",
           "value": 299701.9,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-11-10",
           "value": 92581.6,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-11-11",
           "value": 301232.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-11-11",
           "value": 93499.9,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-11-12",
           "value": 301507.4,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-11-12",
           "value": 95304.4,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-11-13",
           "value": 302050.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-11-13",
-          "value": 97321,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "value": 97321.0,
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-11-14",
           "value": 303071.7,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-11-14",
           "value": 99927.4,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-11-15",
           "value": 303895.4,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-11-15",
           "value": 103578.7,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-11-16",
           "value": 305193.3,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-11-16",
           "value": 105091.1,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-11-17",
           "value": 305620.4,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-11-17",
           "value": 105887.3,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-11-18",
           "value": 305874.7,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-11-18",
           "value": 106034.3,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-11-19",
           "value": 304710.7,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-11-19",
           "value": 104015.7,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-11-20",
           "value": 303657.9,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-11-20",
           "value": 102385.3,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-11-21",
-          "value": 302822,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "value": 302822.0,
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-11-21",
           "value": 101129.1,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-11-22",
           "value": 304353.7,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-11-22",
           "value": 100063.4,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-11-23",
           "value": 303119.4,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-11-23",
-          "value": 99999,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "value": 99999.0,
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-11-24",
           "value": 302560.6,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-11-24",
           "value": 99734.9,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-11-25",
           "value": 302973.3,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-11-25",
           "value": 100307.7,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-11-26",
           "value": 305142.7,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-11-26",
           "value": 101544.6,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-11-27",
           "value": 306087.6,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-11-27",
           "value": 102426.6,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-11-28",
           "value": 307367.9,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-11-28",
           "value": 104518.6,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-11-29",
           "value": 307323.4,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-11-29",
           "value": 105068.6,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-11-30",
           "value": 306187.9,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-11-30",
           "value": 103734.7,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-12-01",
           "value": 303332.7,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-12-01",
           "value": 103940.6,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-12-02",
           "value": 300966.6,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-12-02",
           "value": 103345.3,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-12-03",
           "value": 298286.4,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-12-03",
           "value": 102943.9,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-12-04",
           "value": 296899.7,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-12-04",
           "value": 103194.3,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-12-05",
           "value": 294516.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-12-05",
           "value": 101109.3,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-12-06",
           "value": 293238.9,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-12-06",
-          "value": 101525,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "value": 101525.0,
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-12-07",
           "value": 299637.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-12-07",
           "value": 104926.3,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-12-08",
           "value": 306201.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-12-08",
-          "value": 105979,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "value": 105979.0,
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-12-09",
           "value": 308445.3,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-12-09",
           "value": 106624.4,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-12-10",
           "value": 310101.7,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-12-10",
           "value": 107015.9,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-12-11",
           "value": 311411.4,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-12-11",
-          "value": 107326,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "value": 107326.0,
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-12-12",
           "value": 310504.7,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-12-12",
           "value": 107976.7,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-12-13",
           "value": 306593.3,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-12-13",
           "value": 108178.3,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-12-14",
           "value": 299691.7,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-12-14",
           "value": 107876.4,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-12-15",
           "value": 296671.3,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-12-15",
           "value": 107573.9,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-12-16",
           "value": 297452.3,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-12-16",
           "value": 108367.4,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-12-17",
           "value": 299491.6,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-12-17",
-          "value": 109784,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "value": 109784.0,
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-12-18",
           "value": 301087.9,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-12-18",
           "value": 110649.6,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-12-19",
           "value": 304930.3,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-12-19",
           "value": 111919.7,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-12-20",
-          "value": 308610,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "value": 308610.0,
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-12-20",
           "value": 115687.3,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-12-21",
           "value": 312030.7,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-12-21",
-          "value": 114867,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "value": 114867.0,
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-12-22",
           "value": 320997.9,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-12-22",
           "value": 116019.4,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-12-23",
           "value": 332248.9,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-12-23",
           "value": 117109.4,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-12-24",
           "value": 367422.7,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-12-24",
           "value": 117975.1,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-12-25",
           "value": 412538.4,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-12-25",
           "value": 115809.3,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-12-26",
           "value": 415132.7,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-12-26",
           "value": 111005.1,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-12-27",
           "value": 395806.9,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-12-27",
           "value": 104983.6,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-12-28",
           "value": 386197.3,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-12-28",
           "value": 102389.4,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-12-29",
           "value": 380682.6,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-12-29",
           "value": 101374.4,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-12-30",
           "value": 371748.7,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-12-30",
           "value": 100961.1,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2025-12-31",
           "value": 344398.9,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2025-12-31",
           "value": 107366.4,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-01-01",
           "value": 291047.3,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-01-01",
           "value": 126306.7,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-01-02",
           "value": 274194.9,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-01-02",
-          "value": 143402,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "value": 143402.0,
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-01-03",
           "value": 279695.9,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-01-03",
           "value": 136963.4,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-01-04",
           "value": 279758.9,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-01-04",
           "value": 133679.4,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-01-05",
           "value": 273847.3,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-01-05",
           "value": 132537.7,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-01-06",
           "value": 269285.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-01-06",
           "value": 130038.6,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-01-07",
           "value": 257936.4,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-01-07",
           "value": 120437.4,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-01-08",
-          "value": 262636,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "value": 262636.0,
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-01-08",
           "value": 101362.3,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-01-09",
-          "value": 271709,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "value": 271709.0,
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-01-09",
           "value": 87368.1,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-01-10",
           "value": 283217.3,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-01-10",
           "value": 92753.9,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-01-11",
           "value": 288881.7,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-01-11",
           "value": 97851.7,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-01-12",
           "value": 290220.4,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-01-12",
           "value": 98688.7,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-01-13",
           "value": 291651.9,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-01-13",
           "value": 101076.1,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-01-14",
           "value": 293624.3,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-01-14",
           "value": 102559.9,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-01-15",
           "value": 296601.4,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-01-15",
           "value": 103886.1,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-01-16",
-          "value": 299869,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "value": 299869.0,
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-01-16",
           "value": 104470.1,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-01-17",
           "value": 303448.7,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-01-17",
           "value": 106670.7,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-01-18",
           "value": 305717.3,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-01-18",
           "value": 107869.6,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-01-19",
           "value": 306540.4,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-01-19",
           "value": 109070.6,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-01-20",
           "value": 306852.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-01-20",
           "value": 109232.1,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-01-21",
           "value": 306200.4,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-01-21",
           "value": 109976.1,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-01-22",
           "value": 304488.9,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-01-22",
           "value": 110798.4,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-01-23",
           "value": 303334.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-01-23",
           "value": 112206.6,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-01-24",
-          "value": 303758,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "value": 303758.0,
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-01-24",
           "value": 117142.7,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-01-25",
           "value": 304409.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-01-25",
           "value": 123087.9,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-01-26",
           "value": 304604.9,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-01-26",
           "value": 127381.9,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-01-27",
           "value": 305455.6,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-01-27",
           "value": 129658.1,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-01-28",
-          "value": 307560,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "value": 307560.0,
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-01-28",
           "value": 132806.4,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-01-29",
           "value": 309406.7,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-01-29",
           "value": 135376.1,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-01-30",
           "value": 311147.9,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-01-30",
-          "value": 135418,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "value": 135418.0,
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-01-31",
           "value": 309861.6,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-01-31",
           "value": 131071.1,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-02-01",
           "value": 309363.9,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-02-01",
           "value": 130317.6,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-02-02",
           "value": 308468.6,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-02-02",
           "value": 130653.1,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-02-03",
-          "value": 307923,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "value": 307923.0,
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-02-03",
           "value": 132739.4,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-02-04",
           "value": 307290.7,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-02-04",
           "value": 134355.4,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-02-05",
           "value": 307425.3,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-02-05",
-          "value": 137136,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "value": 137136.0,
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-02-06",
           "value": 306514.4,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-02-06",
           "value": 141193.1,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-02-07",
           "value": 305347.6,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-02-07",
           "value": 146759.3,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-02-08",
           "value": 306767.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-02-08",
           "value": 150704.4,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-02-09",
           "value": 309001.9,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-02-09",
           "value": 153782.7,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-02-10",
           "value": 310383.7,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-02-10",
           "value": 156702.4,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-02-11",
           "value": 311770.9,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-02-11",
           "value": 160692.7,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-02-12",
           "value": 315602.3,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-02-12",
           "value": 164142.3,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-02-13",
           "value": 325082.9,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-02-13",
           "value": 166239.3,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-02-14",
           "value": 330059.9,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-02-14",
           "value": 159521.9,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-02-15",
           "value": 329686.9,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-02-15",
           "value": 152641.6,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-02-16",
           "value": 328991.4,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-02-16",
           "value": 142276.9,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-02-17",
           "value": 334309.6,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-02-17",
           "value": 138444.4,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-02-18",
           "value": 345721.7,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-02-18",
           "value": 146185.7,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-02-19",
           "value": 346434.9,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-02-19",
           "value": 153660.7,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-02-20",
           "value": 328454.4,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-02-20",
           "value": 161495.4,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-02-21",
           "value": 300766.6,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-02-21",
-          "value": 167190,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "value": 167190.0,
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-02-22",
           "value": 283097.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-02-22",
           "value": 172514.9,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-02-23",
           "value": 275446.3,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-02-23",
           "value": 182407.9,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-02-24",
           "value": 263808.7,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-02-24",
           "value": 182621.7,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-02-25",
           "value": 245536.6,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-02-25",
           "value": 170841.6,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-02-26",
-          "value": 235820,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "value": 235820.0,
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-02-26",
           "value": 157448.6,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-02-27",
           "value": 237068.9,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-02-27",
           "value": 143227.7,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-02-28",
           "value": 249535.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-02-28",
           "value": 133216.6,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-03-01",
           "value": 260017.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-03-01",
-          "value": 123967,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "value": 123967.0,
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-03-02",
           "value": 262960.6,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-03-02",
-          "value": 112775,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "value": 112775.0,
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-03-03",
           "value": 263002.9,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-03-03",
           "value": 103889.9,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-03-04",
           "value": 263837.3,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-03-04",
           "value": 95766.3,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-03-05",
           "value": 266280.9,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-03-05",
-          "value": 90541,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "value": 90541.0,
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-03-06",
           "value": 272076.3,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-03-06",
-          "value": 88018,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "value": 88018.0,
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-03-07",
           "value": 281945.6,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-03-07",
           "value": 90222.1,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-03-08",
           "value": 287942.4,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-03-08",
           "value": 89336.3,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-03-09",
-          "value": 291761,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "value": 291761.0,
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-03-09",
           "value": 90646.7,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-03-10",
           "value": 295884.9,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-03-10",
           "value": 93416.9,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-03-11",
           "value": 299743.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-03-11",
           "value": 95060.7,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-03-12",
           "value": 301861.4,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-03-12",
           "value": 95982.7,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-03-13",
           "value": 304414.7,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-03-13",
           "value": 98674.3,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-03-14",
           "value": 306725.7,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-03-14",
           "value": 100906.7,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-03-15",
           "value": 307216.7,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-03-15",
           "value": 103666.3,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-03-16",
           "value": 307340.6,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-03-16",
           "value": 104517.9,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-03-17",
           "value": 307728.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-03-17",
           "value": 105723.3,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-03-18",
-          "value": 308384,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "value": 308384.0,
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-03-18",
           "value": 106355.9,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-03-19",
           "value": 308844.3,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-03-19",
           "value": 106827.1,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-03-20",
-          "value": 310367,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "value": 310367.0,
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-03-20",
           "value": 104853.7,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-03-21",
           "value": 310708.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-03-21",
           "value": 105483.4,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-03-22",
           "value": 310088.3,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-03-22",
           "value": 105260.1,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-03-23",
           "value": 309902.9,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-03-23",
-          "value": 107209,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "value": 107209.0,
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-03-24",
           "value": 310262.3,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-03-24",
           "value": 108878.4,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-03-25",
           "value": 310941.7,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-03-25",
           "value": 111118.3,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-03-26",
           "value": 311912.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-03-26",
           "value": 111865.6,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-03-27",
           "value": 312785.3,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-03-27",
           "value": 115231.9,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-03-28",
           "value": 314784.3,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-03-28",
           "value": 116780.3,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-03-29",
           "value": 317816.4,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-03-29",
           "value": 117283.4,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-03-30",
-          "value": 320221,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "value": 320221.0,
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-03-30",
           "value": 114935.7,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-03-31",
           "value": 324599.6,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-03-31",
           "value": 111087.3,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-04-01",
-          "value": 336241,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "value": 336241.0,
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-04-01",
           "value": 107398.3,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-04-02",
           "value": 374503.6,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-04-02",
           "value": 105422.3,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-04-03",
-          "value": 409840,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "value": 409840.0,
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-04-03",
           "value": 99176.4,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-04-04",
           "value": 413967.6,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-04-04",
           "value": 94368.3,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-04-05",
           "value": 424837.9,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-04-05",
           "value": 93324.6,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-04-06",
           "value": 437658.9,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-04-06",
           "value": 92310.1,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-04-07",
           "value": 424782.4,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-04-07",
           "value": 90448.6,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-04-08",
           "value": 410827.6,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-04-08",
           "value": 91043.3,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-04-09",
           "value": 371111.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-04-09",
           "value": 91648.6,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-04-10",
           "value": 330108.4,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-04-10",
           "value": 94767.6,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-04-11",
-          "value": 316222,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "value": 316222.0,
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-04-11",
           "value": 94298.6,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-04-12",
           "value": 298691.4,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-04-12",
-          "value": 93587,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "value": 93587.0,
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-04-13",
           "value": 283146.4,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-04-13",
           "value": 96563.4,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-04-14",
           "value": 291383.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-04-14",
           "value": 101559.7,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-04-15",
-          "value": 292564,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "value": 292564.0,
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-04-15",
-          "value": 103551,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "value": 103551.0,
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-04-16",
           "value": 292668.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-04-16",
           "value": 105438.1,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-04-17",
           "value": 293739.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-04-17",
           "value": 107743.3,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-04-18",
-          "value": 301030,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "value": 301030.0,
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-04-18",
-          "value": 112461,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "value": 112461.0,
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-04-19",
-          "value": 304492,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "value": 304492.0,
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-04-19",
           "value": 113858.7,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-04-20",
           "value": 304280.3,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-04-20",
           "value": 114532.4,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-04-21",
           "value": 303735.7,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-04-21",
           "value": 114311.4,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-04-22",
           "value": 304255.6,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-04-22",
           "value": 114199.4,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-04-23",
-          "value": 302699,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "value": 302699.0,
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-04-23",
           "value": 112237.3,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-04-24",
           "value": 299835.7,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-04-24",
           "value": 107885.1,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-04-25",
           "value": 299240.7,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-04-25",
           "value": 103522.6,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-04-26",
           "value": 300033.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-04-26",
           "value": 104198.3,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-04-27",
-          "value": 301549,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "value": 301549.0,
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-04-27",
           "value": 103615.3,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-04-28",
           "value": 302606.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-04-28",
           "value": 103846.4,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-04-29",
           "value": 302739.6,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-04-29",
           "value": 104191.4,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-04-30",
           "value": 326076.4,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-04-30",
           "value": 110864.7,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-05-01",
           "value": 336406.7,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-05-01",
           "value": 134721.7,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-05-02",
           "value": 320526.6,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-05-02",
-          "value": 153544,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "value": 153544.0,
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-05-03",
           "value": 305919.9,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-05-03",
           "value": 163294.4,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-05-04",
           "value": 299006.4,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-05-04",
           "value": 175949.7,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-05-05",
           "value": 293396.6,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-05-05",
           "value": 177390.4,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-05-06",
           "value": 292875.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-05-06",
-          "value": 176691,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "value": 176691.0,
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-05-07",
           "value": 271055.6,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-05-07",
           "value": 169817.9,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-05-08",
           "value": 263401.3,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-05-08",
           "value": 145725.4,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-05-09",
           "value": 278229.4,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-05-09",
           "value": 120591.6,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-05-10",
           "value": 294418.9,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-05-10",
           "value": 106377.3,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-05-11",
           "value": 301841.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-05-11",
-          "value": 92389,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "value": 92389.0,
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-05-12",
           "value": 307655.3,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-05-12",
           "value": 89956.3,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-05-13",
           "value": 308300.9,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-05-13",
           "value": 88554.4,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-05-14",
           "value": 305806.4,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-05-14",
           "value": 87673.7,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-05-15",
           "value": 303737.3,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-05-15",
           "value": 88152.1,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-05-16",
           "value": 300754.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-05-16",
           "value": 93875.9,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-05-17",
           "value": 296371.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-05-17",
           "value": 94066.3,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-05-18",
           "value": 294357.4,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-05-18",
           "value": 93682.6,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-05-19",
           "value": 291428.6,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-05-19",
-          "value": 92696,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "value": 92696.0,
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-05-20",
           "value": 289906.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-05-20",
           "value": 92277.9,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-05-21",
           "value": 287350.4,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-05-21",
           "value": 91435.9,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-05-22",
           "value": 295557.4,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-05-22",
-          "value": 93579,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "value": 93579.0,
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-05-23",
           "value": 316550.6,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-05-23",
           "value": 96578.7,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-05-24",
           "value": 341748.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-05-24",
           "value": 97404.3,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-05-25",
           "value": 345065.7,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-05-25",
           "value": 96107.1,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-05-26",
           "value": 345719.3,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-05-26",
           "value": 98189.1,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-05-27",
           "value": 345043.9,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-05-27",
           "value": 99174.7,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-05-28",
           "value": 347726.4,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-05-28",
           "value": 101198.9,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-05-29",
-          "value": 338154,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "value": 338154.0,
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-05-29",
           "value": 100337.6,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-05-30",
           "value": 312160.6,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-05-30",
           "value": 98428.7,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-05-31",
           "value": 282363.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-05-31",
           "value": 97395.3,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-06-01",
           "value": 276847.9,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-06-01",
           "value": 98101.1,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-06-02",
           "value": 275930.9,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-06-02",
           "value": 95804.1,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-06-03",
           "value": 274760.4,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-06-03",
           "value": 94459.3,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-06-04",
           "value": 273295.7,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-06-04",
           "value": 93537.4,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-06-05",
           "value": 273983.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-06-05",
           "value": 93167.3,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-06-06",
           "value": 275185.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-06-06",
           "value": 93403.6,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-06-07",
-          "value": 276866,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "value": 276866.0,
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-06-07",
-          "value": 92508,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "value": 92508.0,
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-06-08",
           "value": 276477.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-06-08",
           "value": 92331.1,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-06-09",
-          "value": 277093,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "value": 277093.0,
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-06-09",
           "value": 91516.7,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-06-10",
           "value": 279600.9,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-06-10",
-          "value": 92237,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "value": 92237.0,
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-06-11",
           "value": 282320.7,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-06-11",
           "value": 92818.7,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-06-12",
           "value": 285116.9,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-06-12",
           "value": 93383.7,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-06-13",
           "value": 289228.6,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-06-13",
           "value": 92375.6,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-06-14",
           "value": 291511.6,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-06-14",
           "value": 92417.9,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-06-15",
           "value": 291239.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-06-15",
           "value": 91882.9,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-06-16",
           "value": 288862.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-06-16",
           "value": 91990.1,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-06-17",
           "value": 288821.7,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-06-17",
           "value": 91818.9,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-06-18",
           "value": 309132.6,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-06-18",
           "value": 92100.9,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-06-19",
           "value": 328193.7,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-06-19",
           "value": 97320.6,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-06-20",
           "value": 321473.4,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-06-20",
           "value": 101244.7,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-06-21",
           "value": 315219.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-06-21",
           "value": 101835.7,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-06-22",
           "value": 318411.9,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-06-22",
-          "value": 103828,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "value": 103828.0,
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-06-23",
           "value": 322103.6,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-06-23",
           "value": 105925.7,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-06-24",
           "value": 321349.7,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-06-24",
           "value": 106693.7,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-06-25",
           "value": 300970.4,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-06-25",
           "value": 107062.6,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-06-26",
           "value": 279162.3,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-06-26",
           "value": 101291.4,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-06-27",
           "value": 284883.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-06-27",
           "value": 98880.9,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-06-28",
           "value": 289805.9,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-06-28",
           "value": 99991.9,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-06-29",
           "value": 289607.4,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-06-29",
           "value": 99256.1,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-06-30",
           "value": 300509.3,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-06-30",
           "value": 98354.9,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-07-01",
           "value": 308273.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-07-01",
           "value": 97605.9,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-07-02",
           "value": 306907.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-07-02",
           "value": 97928.1,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-07-03",
-          "value": 304171,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "value": 304171.0,
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-07-03",
           "value": 97482.4,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-07-04",
           "value": 297288.9,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-07-04",
           "value": 93031.6,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-07-05",
           "value": 297214.6,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-07-05",
-          "value": 92335,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "value": 92335.0,
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-07-06",
           "value": 294274.6,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-07-06",
           "value": 93003.6,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-07-07",
-          "value": 278912,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "value": 278912.0,
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-07-07",
           "value": 93582.1,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-07-08",
           "value": 270126.4,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-07-08",
           "value": 96278.6,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-07-09",
           "value": 271409.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-07-09",
           "value": 98925.9,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-07-10",
           "value": 275456.6,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-07-10",
           "value": 104267.3,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-07-11",
           "value": 284955.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-07-11",
           "value": 114718.4,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-07-12",
           "value": 287423.9,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-07-12",
           "value": 121548.6,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-07-13",
-          "value": 291093,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "value": 291093.0,
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-07-13",
           "value": 124751.9,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-07-14",
           "value": 294671.9,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-07-14",
           "value": 126939.3,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-07-15",
           "value": 295274.9,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-07-15",
           "value": 127637.9,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-07-16",
           "value": 293394.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-07-16",
-          "value": 127075,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "value": 127075.0,
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-07-17",
           "value": 292240.9,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-07-17",
           "value": 125687.3,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-07-18",
           "value": 294099.3,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-07-18",
           "value": 122656.9,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-07-19",
           "value": 298610.7,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-07-19",
           "value": 121932.4,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-07-20",
           "value": 294695.7,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-07-20",
           "value": 121865.6,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-07-21",
           "value": 295182.1,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-07-21",
           "value": 123099.7,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
         },
         {
           "date": "2026-07-22",
           "value": 297820.3,
-          "flow_type": "Northbound Flow (HK Residents)"
+          "flow_type": "Northbound"
         },
         {
           "date": "2026-07-22",
           "value": 125171.1,
-          "flow_type": "Southbound Flow (Mainland Visitors)"
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2026-07-23",
+          "value": 300913.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2026-07-23",
+          "value": 128334.6,
+          "flow_type": "Southbound"
         }
       ],
       "kpi_gold": [
         {
-          "latest": 897.76,
-          "period_change": 0.009922,
-          "year_change": 0.158699,
-          "observation_date": "2026-07-21"
+          "latest": 896.63,
+          "period_change": -0.001259,
+          "year_change": 0.159545,
+          "observation_date": "2026-07-22"
         }
       ],
       "kpi_median_pe": [
         {
-          "latest": 13.3
+          "latest": 12.75
         }
       ],
       "gold_history": [
-        {
-          "date": "2019-02-21",
-          "value": 289
-        },
         {
           "date": "2019-02-24",
           "value": 288.58
@@ -6025,7 +6036,7 @@
         },
         {
           "date": "2020-03-19",
-          "value": 339
+          "value": 339.0
         },
         {
           "date": "2020-03-22",
@@ -6145,7 +6156,7 @@
         },
         {
           "date": "2020-05-06",
-          "value": 378
+          "value": 378.0
         },
         {
           "date": "2020-05-07",
@@ -6873,7 +6884,7 @@
         },
         {
           "date": "2021-01-28",
-          "value": 385
+          "value": 385.0
         },
         {
           "date": "2021-01-31",
@@ -7613,7 +7624,7 @@
         },
         {
           "date": "2021-11-08",
-          "value": 376
+          "value": 376.0
         },
         {
           "date": "2021-11-09",
@@ -7737,7 +7748,7 @@
         },
         {
           "date": "2021-12-21",
-          "value": 368
+          "value": 368.0
         },
         {
           "date": "2021-12-22",
@@ -7765,7 +7776,7 @@
         },
         {
           "date": "2021-12-30",
-          "value": 374
+          "value": 374.0
         },
         {
           "date": "2022-01-03",
@@ -8561,7 +8572,7 @@
         },
         {
           "date": "2022-10-31",
-          "value": 392
+          "value": 392.0
         },
         {
           "date": "2022-11-01",
@@ -8693,7 +8704,7 @@
         },
         {
           "date": "2022-12-15",
-          "value": 403
+          "value": 403.0
         },
         {
           "date": "2022-12-18",
@@ -8845,7 +8856,7 @@
         },
         {
           "date": "2023-02-15",
-          "value": 412
+          "value": 412.0
         },
         {
           "date": "2023-02-16",
@@ -9229,7 +9240,7 @@
         },
         {
           "date": "2023-07-09",
-          "value": 451
+          "value": 451.0
         },
         {
           "date": "2023-07-10",
@@ -9241,7 +9252,7 @@
         },
         {
           "date": "2023-07-12",
-          "value": 455
+          "value": 455.0
         },
         {
           "date": "2023-07-13",
@@ -9417,7 +9428,7 @@
         },
         {
           "date": "2023-09-12",
-          "value": 470
+          "value": 470.0
         },
         {
           "date": "2023-09-13",
@@ -9737,7 +9748,7 @@
         },
         {
           "date": "2024-01-11",
-          "value": 480
+          "value": 480.0
         },
         {
           "date": "2024-01-14",
@@ -10265,7 +10276,7 @@
         },
         {
           "date": "2024-07-30",
-          "value": 564
+          "value": 564.0
         },
         {
           "date": "2024-07-31",
@@ -11193,7 +11204,7 @@
         },
         {
           "date": "2025-07-16",
-          "value": 772
+          "value": 772.0
         },
         {
           "date": "2025-07-17",
@@ -11557,7 +11568,7 @@
         },
         {
           "date": "2025-11-30",
-          "value": 958
+          "value": 958.0
         },
         {
           "date": "2025-12-01",
@@ -11693,7 +11704,7 @@
         },
         {
           "date": "2026-01-19",
-          "value": 1055
+          "value": 1055.0
         },
         {
           "date": "2026-01-20",
@@ -12037,7 +12048,7 @@
         },
         {
           "date": "2026-06-02",
-          "value": 975
+          "value": 975.0
         },
         {
           "date": "2026-06-03",
@@ -12174,6 +12185,10 @@
         {
           "date": "2026-07-21",
           "value": 897.76
+        },
+        {
+          "date": "2026-07-22",
+          "value": 896.63
         }
       ],
       "afcd_category_summary": [
@@ -12351,7 +12366,7 @@
         {
           "category": "Vegetables",
           "commodity_name": "Chinese Kale",
-          "avg_price_hkd_per_kg": 8,
+          "avg_price_hkd_per_kg": 8.0,
           "num_readings": 14
         },
         {
@@ -12395,50 +12410,50 @@
         {
           "ticker": "01929.HK",
           "company_name": "Chow Tai Fook Jewellery",
-          "pe_ttm": 13.71,
-          "pb_ratio": 3.99,
-          "market_cap_hkd_b": 123.428,
-          "date": "2026-07-23"
+          "pe_ttm": 13.39,
+          "pb_ratio": 3.89,
+          "market_cap_hkd_b": 120.567,
+          "date": "2026-07-24"
         },
         {
           "ticker": "01913.HK",
           "company_name": "Prada",
-          "pe_ttm": 13.3,
-          "pb_ratio": 2.44,
-          "market_cap_hkd_b": 103.325,
-          "date": "2026-07-23"
+          "pe_ttm": 12.75,
+          "pb_ratio": 2.34,
+          "market_cap_hkd_b": 99.026,
+          "date": "2026-07-24"
         },
         {
           "ticker": "01910.HK",
           "company_name": "Samsonite",
-          "pe_ttm": 8.78,
-          "pb_ratio": 1.47,
-          "market_cap_hkd_b": 18.779,
-          "date": "2026-07-23"
+          "pe_ttm": 8.73,
+          "pb_ratio": 1.46,
+          "market_cap_hkd_b": 18.67,
+          "date": "2026-07-24"
         },
         {
           "ticker": "00590.HK",
           "company_name": "Luk Fook Holdings",
-          "pe_ttm": 7.01,
-          "pb_ratio": 0.95,
-          "market_cap_hkd_b": 14.337,
-          "date": "2026-07-23"
+          "pe_ttm": 6.9,
+          "pb_ratio": 0.94,
+          "market_cap_hkd_b": 14.126,
+          "date": "2026-07-24"
         },
         {
           "ticker": "00116.HK",
           "company_name": "Chow Sang Sang Holdings",
-          "pe_ttm": 4.65,
-          "pb_ratio": 0.55,
-          "market_cap_hkd_b": 7.98,
-          "date": "2026-07-23"
+          "pe_ttm": 4.54,
+          "pb_ratio": 0.54,
+          "market_cap_hkd_b": 7.805,
+          "date": "2026-07-24"
         },
         {
           "ticker": "00341.HK",
           "company_name": "Café de Coral Holdings",
-          "pe_ttm": 18.99,
-          "pb_ratio": 1.15,
-          "market_cap_hkd_b": 3.115,
-          "date": "2026-07-23"
+          "pe_ttm": 18.7,
+          "pb_ratio": 1.13,
+          "market_cap_hkd_b": 3.068,
+          "date": "2026-07-24"
         },
         {
           "ticker": "00178.HK",
@@ -12446,23 +12461,23 @@
           "pe_ttm": 13.78,
           "pb_ratio": 2.15,
           "market_cap_hkd_b": 2.762,
-          "date": "2026-07-23"
+          "date": "2026-07-24"
         },
         {
           "ticker": "00709.HK",
           "company_name": "Giordano International",
-          "pe_ttm": 10.35,
-          "pb_ratio": 1.11,
-          "market_cap_hkd_b": 2.247,
-          "date": "2026-07-23"
+          "pe_ttm": 10.43,
+          "pb_ratio": 1.12,
+          "market_cap_hkd_b": 2.263,
+          "date": "2026-07-24"
         },
         {
           "ticker": "06811.HK",
           "company_name": "Tai Hing Group",
-          "pe_ttm": 10.51,
-          "pb_ratio": 1.27,
-          "market_cap_hkd_b": 1.137,
-          "date": "2026-07-23"
+          "pe_ttm": 10.6,
+          "pb_ratio": 1.28,
+          "market_cap_hkd_b": 1.146,
+          "date": "2026-07-24"
         },
         {
           "ticker": "00052.HK",
@@ -12470,41 +12485,41 @@
           "pe_ttm": 13.9,
           "pb_ratio": 0.86,
           "market_cap_hkd_b": 0.578,
-          "date": "2026-07-23"
+          "date": "2026-07-24"
         },
         {
           "ticker": "01255.HK",
           "company_name": "TATA Health",
-          "pe_ttm": 42.75,
-          "pb_ratio": -10.48,
-          "market_cap_hkd_b": 0.571,
-          "date": "2026-07-23"
+          "pe_ttm": 39.11,
+          "pb_ratio": -9.59,
+          "market_cap_hkd_b": 0.522,
+          "date": "2026-07-24"
         }
       ],
       "valuation_pe_chart": [
         {
           "company_name": "Chow Tai Fook Jewellery",
-          "pe_ttm": 13.71
+          "pe_ttm": 13.39
         },
         {
           "company_name": "Prada",
-          "pe_ttm": 13.3
+          "pe_ttm": 12.75
         },
         {
           "company_name": "Samsonite",
-          "pe_ttm": 8.78
+          "pe_ttm": 8.73
         },
         {
           "company_name": "Luk Fook Holdings",
-          "pe_ttm": 7.01
+          "pe_ttm": 6.9
         },
         {
           "company_name": "Chow Sang Sang Holdings",
-          "pe_ttm": 4.65
+          "pe_ttm": 4.54
         },
         {
           "company_name": "Café de Coral Holdings",
-          "pe_ttm": 18.99
+          "pe_ttm": 18.7
         },
         {
           "company_name": "Sa Sa International",
@@ -12512,11 +12527,11 @@
         },
         {
           "company_name": "Giordano International",
-          "pe_ttm": 10.35
+          "pe_ttm": 10.43
         },
         {
           "company_name": "Tai Hing Group",
-          "pe_ttm": 10.51
+          "pe_ttm": 10.6
         },
         {
           "company_name": "Fairwood Holdings",
@@ -12524,12 +12539,12 @@
         },
         {
           "company_name": "TATA Health",
-          "pe_ttm": 42.75
+          "pe_ttm": 39.11
         }
       ],
       "kpi_retail": [
         {
-          "latest": 121,
+          "latest": 121.0,
           "period_change": 0.076512,
           "year_change": 0.13936,
           "observation_date": "2026-05-01"
@@ -12746,7 +12761,7 @@
         },
         {
           "date": "2009-02-01",
-          "value": 71
+          "value": 71.0
         },
         {
           "date": "2009-03-01",
@@ -12782,7 +12797,7 @@
         },
         {
           "date": "2009-11-01",
-          "value": 82
+          "value": 82.0
         },
         {
           "date": "2009-12-01",
@@ -12790,7 +12805,7 @@
         },
         {
           "date": "2010-01-01",
-          "value": 105
+          "value": 105.0
         },
         {
           "date": "2010-02-01",
@@ -12822,7 +12837,7 @@
         },
         {
           "date": "2010-09-01",
-          "value": 90
+          "value": 90.0
         },
         {
           "date": "2010-10-01",
@@ -12862,7 +12877,7 @@
         },
         {
           "date": "2011-07-01",
-          "value": 126
+          "value": 126.0
         },
         {
           "date": "2011-08-01",
@@ -12890,11 +12905,11 @@
         },
         {
           "date": "2012-02-01",
-          "value": 121
+          "value": 121.0
         },
         {
           "date": "2012-03-01",
-          "value": 131
+          "value": 131.0
         },
         {
           "date": "2012-04-01",
@@ -12994,7 +13009,7 @@
         },
         {
           "date": "2014-04-01",
-          "value": 139
+          "value": 139.0
         },
         {
           "date": "2014-05-01",
@@ -13002,7 +13017,7 @@
         },
         {
           "date": "2014-06-01",
-          "value": 133
+          "value": 133.0
         },
         {
           "date": "2014-07-01",
@@ -13062,7 +13077,7 @@
         },
         {
           "date": "2015-09-01",
-          "value": 126
+          "value": 126.0
         },
         {
           "date": "2015-10-01",
@@ -13110,7 +13125,7 @@
         },
         {
           "date": "2016-09-01",
-          "value": 121
+          "value": 121.0
         },
         {
           "date": "2016-10-01",
@@ -13150,7 +13165,7 @@
         },
         {
           "date": "2017-07-01",
-          "value": 129
+          "value": 129.0
         },
         {
           "date": "2017-08-01",
@@ -13178,7 +13193,7 @@
         },
         {
           "date": "2018-02-01",
-          "value": 162
+          "value": 162.0
         },
         {
           "date": "2018-03-01",
@@ -13206,7 +13221,7 @@
         },
         {
           "date": "2018-09-01",
-          "value": 131
+          "value": 131.0
         },
         {
           "date": "2018-10-01",
@@ -13238,7 +13253,7 @@
         },
         {
           "date": "2019-05-01",
-          "value": 143
+          "value": 143.0
         },
         {
           "date": "2019-06-01",
@@ -13290,7 +13305,7 @@
         },
         {
           "date": "2020-06-01",
-          "value": 95
+          "value": 95.0
         },
         {
           "date": "2020-07-01",
@@ -13378,7 +13393,7 @@
         },
         {
           "date": "2022-04-01",
-          "value": 108
+          "value": 108.0
         },
         {
           "date": "2022-05-01",
@@ -13422,7 +13437,7 @@
         },
         {
           "date": "2023-03-01",
-          "value": 120
+          "value": 120.0
         },
         {
           "date": "2023-04-01",
@@ -13482,7 +13497,7 @@
         },
         {
           "date": "2024-06-01",
-          "value": 107
+          "value": 107.0
         },
         {
           "date": "2024-07-01",
@@ -13546,7 +13561,7 @@
         },
         {
           "date": "2025-10-01",
-          "value": 126
+          "value": 126.0
         },
         {
           "date": "2025-11-01",
@@ -13574,16 +13589,10 @@
         },
         {
           "date": "2026-05-01",
-          "value": 121
+          "value": 121.0
         }
       ],
       "retail_category_snapshot": [
-        {
-          "category": "Jewellery, watches and clocks, and valuable gifts",
-          "sales_value_index": 170.9,
-          "sales_volume_index": 125.1,
-          "date": "2026-05-01"
-        },
         {
           "category": "Other consumer goods",
           "sales_value_index": 165.7,
@@ -13591,14 +13600,8 @@
           "date": "2026-05-01"
         },
         {
-          "category": "Clothing, footwear and allied products",
-          "sales_value_index": 139.4,
-          "sales_volume_index": 124.3,
-          "date": "2026-05-01"
-        },
-        {
           "category": "All retail outlet",
-          "sales_value_index": 121,
+          "sales_value_index": 121.0,
           "sales_volume_index": 107.4,
           "date": "2026-05-01"
         },
@@ -13606,12 +13609,6 @@
           "category": "Department stores",
           "sales_value_index": 106.8,
           "sales_volume_index": 97.3,
-          "date": "2026-05-01"
-        },
-        {
-          "category": "Food, alcoholic drinks and tobacco (other than supermarkets)",
-          "sales_value_index": 94.5,
-          "sales_volume_index": 83,
           "date": "2026-05-01"
         },
         {
@@ -13635,24 +13632,12 @@
       ],
       "retail_category_chart": [
         {
-          "category": "Jewellery, watches and clocks, and valuable gifts",
-          "sales_value_index": 170.9
-        },
-        {
           "category": "Other consumer goods",
           "sales_value_index": 165.7
         },
         {
-          "category": "Clothing, footwear and allied products",
-          "sales_value_index": 139.4
-        },
-        {
           "category": "Department stores",
           "sales_value_index": 106.8
-        },
-        {
-          "category": "Food, alcoholic drinks and tobacco (other than supermarkets)",
-          "sales_value_index": 94.5
         },
         {
           "category": "Consumer durable goods",
@@ -13669,7 +13654,7 @@
       ],
       "kpi_restaurant": [
         {
-          "latest": 28358,
+          "latest": 28358.0,
           "period_change": 0.019082,
           "year_change": 0.046614,
           "observation_date": "2026-03-31"
@@ -13678,388 +13663,388 @@
       "restaurant_history": [
         {
           "date": "2004-12-31",
-          "value": 13864
+          "value": 13864.0
         },
         {
           "date": "2005-03-31",
-          "value": 13874
+          "value": 13874.0
         },
         {
           "date": "2005-06-30",
-          "value": 13471
+          "value": 13471.0
         },
         {
           "date": "2005-09-30",
-          "value": 14322
+          "value": 14322.0
         },
         {
           "date": "2005-12-31",
-          "value": 14840
+          "value": 14840.0
         },
         {
           "date": "2006-03-31",
-          "value": 15115
+          "value": 15115.0
         },
         {
           "date": "2006-06-30",
-          "value": 14977
+          "value": 14977.0
         },
         {
           "date": "2006-09-30",
-          "value": 15354
+          "value": 15354.0
         },
         {
           "date": "2006-12-31",
-          "value": 16461
+          "value": 16461.0
         },
         {
           "date": "2007-03-31",
-          "value": 16908
+          "value": 16908.0
         },
         {
           "date": "2007-06-30",
-          "value": 16707
+          "value": 16707.0
         },
         {
           "date": "2007-09-30",
-          "value": 17705
+          "value": 17705.0
         },
         {
           "date": "2007-12-31",
-          "value": 18882
+          "value": 18882.0
         },
         {
           "date": "2008-03-31",
-          "value": 19593
+          "value": 19593.0
         },
         {
           "date": "2008-06-30",
-          "value": 19328
+          "value": 19328.0
         },
         {
           "date": "2008-09-30",
-          "value": 20042
+          "value": 20042.0
         },
         {
           "date": "2008-12-31",
-          "value": 20427
+          "value": 20427.0
         },
         {
           "date": "2009-03-31",
-          "value": 19870
+          "value": 19870.0
         },
         {
           "date": "2009-06-30",
-          "value": 19194
+          "value": 19194.0
         },
         {
           "date": "2009-09-30",
-          "value": 19984
+          "value": 19984.0
         },
         {
           "date": "2009-12-31",
-          "value": 20832
+          "value": 20832.0
         },
         {
           "date": "2010-03-31",
-          "value": 20883
+          "value": 20883.0
         },
         {
           "date": "2010-06-30",
-          "value": 20047
+          "value": 20047.0
         },
         {
           "date": "2010-09-30",
-          "value": 21018
+          "value": 21018.0
         },
         {
           "date": "2010-12-31",
-          "value": 22009
+          "value": 22009.0
         },
         {
           "date": "2011-03-31",
-          "value": 22121
+          "value": 22121.0
         },
         {
           "date": "2011-06-30",
-          "value": 21241
+          "value": 21241.0
         },
         {
           "date": "2011-09-30",
-          "value": 22312
+          "value": 22312.0
         },
         {
           "date": "2011-12-31",
-          "value": 23626
+          "value": 23626.0
         },
         {
           "date": "2012-03-31",
-          "value": 23473
+          "value": 23473.0
         },
         {
           "date": "2012-06-30",
-          "value": 22143
+          "value": 22143.0
         },
         {
           "date": "2012-09-30",
-          "value": 23291
+          "value": 23291.0
         },
         {
           "date": "2012-12-31",
-          "value": 24844
+          "value": 24844.0
         },
         {
           "date": "2013-03-31",
-          "value": 24335
+          "value": 24335.0
         },
         {
           "date": "2013-06-30",
-          "value": 23151
+          "value": 23151.0
         },
         {
           "date": "2013-09-30",
-          "value": 24186
+          "value": 24186.0
         },
         {
           "date": "2013-12-31",
-          "value": 25348
+          "value": 25348.0
         },
         {
           "date": "2014-03-31",
-          "value": 25211
+          "value": 25211.0
         },
         {
           "date": "2014-06-30",
-          "value": 24030
+          "value": 24030.0
         },
         {
           "date": "2014-09-30",
-          "value": 25377
+          "value": 25377.0
         },
         {
           "date": "2014-12-31",
-          "value": 25798
+          "value": 25798.0
         },
         {
           "date": "2015-03-31",
-          "value": 26132
+          "value": 26132.0
         },
         {
           "date": "2015-06-30",
-          "value": 25212
+          "value": 25212.0
         },
         {
           "date": "2015-09-30",
-          "value": 26259
+          "value": 26259.0
         },
         {
           "date": "2015-12-31",
-          "value": 26729
+          "value": 26729.0
         },
         {
           "date": "2016-03-31",
-          "value": 26638
+          "value": 26638.0
         },
         {
           "date": "2016-06-30",
-          "value": 25958
+          "value": 25958.0
         },
         {
           "date": "2016-09-30",
-          "value": 26943
+          "value": 26943.0
         },
         {
           "date": "2016-12-31",
-          "value": 27836
+          "value": 27836.0
         },
         {
           "date": "2017-03-31",
-          "value": 27763
+          "value": 27763.0
         },
         {
           "date": "2017-06-30",
-          "value": 26990
+          "value": 26990.0
         },
         {
           "date": "2017-09-30",
-          "value": 28291
+          "value": 28291.0
         },
         {
           "date": "2017-12-31",
-          "value": 29694
+          "value": 29694.0
         },
         {
           "date": "2018-03-31",
-          "value": 30543
+          "value": 30543.0
         },
         {
           "date": "2018-06-30",
-          "value": 28797
+          "value": 28797.0
         },
         {
           "date": "2018-09-30",
-          "value": 29847
+          "value": 29847.0
         },
         {
           "date": "2018-12-31",
-          "value": 30368
+          "value": 30368.0
         },
         {
           "date": "2019-03-31",
-          "value": 31485
+          "value": 31485.0
         },
         {
           "date": "2019-06-30",
-          "value": 28642
+          "value": 28642.0
         },
         {
           "date": "2019-09-30",
-          "value": 26319
+          "value": 26319.0
         },
         {
           "date": "2019-12-31",
-          "value": 26001
+          "value": 26001.0
         },
         {
           "date": "2020-03-31",
-          "value": 21625
+          "value": 21625.0
         },
         {
           "date": "2020-06-30",
-          "value": 21192
+          "value": 21192.0
         },
         {
           "date": "2020-09-30",
-          "value": 17066
+          "value": 17066.0
         },
         {
           "date": "2020-12-31",
-          "value": 19453
+          "value": 19453.0
         },
         {
           "date": "2021-03-31",
-          "value": 19729
+          "value": 19729.0
         },
         {
           "date": "2021-06-30",
-          "value": 23314
+          "value": 23314.0
         },
         {
           "date": "2021-09-30",
-          "value": 24555
+          "value": 24555.0
         },
         {
           "date": "2021-12-31",
-          "value": 25091
+          "value": 25091.0
         },
         {
           "date": "2022-03-31",
-          "value": 15166
+          "value": 15166.0
         },
         {
           "date": "2022-06-30",
-          "value": 22064
+          "value": 22064.0
         },
         {
           "date": "2022-09-30",
-          "value": 24084
+          "value": 24084.0
         },
         {
           "date": "2022-12-31",
-          "value": 25519
+          "value": 25519.0
         },
         {
           "date": "2023-03-31",
-          "value": 27567
+          "value": 27567.0
         },
         {
           "date": "2023-06-30",
-          "value": 27430
+          "value": 27430.0
         },
         {
           "date": "2023-09-30",
-          "value": 27096
+          "value": 27096.0
         },
         {
           "date": "2023-12-31",
-          "value": 27445
+          "value": 27445.0
         },
         {
           "date": "2024-03-31",
-          "value": 28208
+          "value": 28208.0
         },
         {
           "date": "2024-06-30",
-          "value": 26871
+          "value": 26871.0
         },
         {
           "date": "2024-09-30",
-          "value": 26748
+          "value": 26748.0
         },
         {
           "date": "2024-12-31",
-          "value": 27566
+          "value": 27566.0
         },
         {
           "date": "2025-03-31",
-          "value": 28036
+          "value": 28036.0
         },
         {
           "date": "2025-06-30",
-          "value": 27095
+          "value": 27095.0
         },
         {
           "date": "2025-09-30",
-          "value": 26675
+          "value": 26675.0
         },
         {
           "date": "2025-12-31",
-          "value": 27827
+          "value": 27827.0
         },
         {
           "date": "2026-03-31",
-          "value": 28358
+          "value": 28358.0
         }
       ],
       "restaurant_snapshot": [
         {
           "sub_sector": "All restaurants",
-          "total_receipts_hkd_m": 28358,
-          "total_purchases_hkd_m": 9094,
+          "total_receipts_hkd_m": 28358.0,
+          "total_purchases_hkd_m": 9094.0,
           "receipts_value_index": 132.1,
           "date": "2026-03-31"
         },
         {
           "sub_sector": "Non-Chinese restaurants",
-          "total_receipts_hkd_m": 10131,
+          "total_receipts_hkd_m": 10131.0,
           "total_purchases_hkd_m": null,
           "receipts_value_index": 155.5,
           "date": "2026-03-31"
         },
         {
           "sub_sector": "Chinese restaurants",
-          "total_receipts_hkd_m": 9699,
+          "total_receipts_hkd_m": 9699.0,
           "total_purchases_hkd_m": null,
           "receipts_value_index": 118.2,
           "date": "2026-03-31"
         },
         {
           "sub_sector": "Fast food shops",
-          "total_receipts_hkd_m": 6074,
+          "total_receipts_hkd_m": 6074.0,
           "total_purchases_hkd_m": null,
           "receipts_value_index": 126.3,
           "date": "2026-03-31"
         },
         {
           "sub_sector": "Miscellaneous eating and drinking places",
-          "total_receipts_hkd_m": 2175,
+          "total_receipts_hkd_m": 2175.0,
           "total_purchases_hkd_m": null,
           "receipts_value_index": 129.3,
           "date": "2026-03-31"
         },
         {
           "sub_sector": "Bars",
-          "total_receipts_hkd_m": 280,
+          "total_receipts_hkd_m": 280.0,
           "total_purchases_hkd_m": null,
           "receipts_value_index": 109.2,
           "date": "2026-03-31"
@@ -14068,23 +14053,23 @@
       "restaurant_chart": [
         {
           "sub_sector": "Non-Chinese restaurants",
-          "total_receipts_hkd_m": 10131
+          "total_receipts_hkd_m": 10131.0
         },
         {
           "sub_sector": "Chinese restaurants",
-          "total_receipts_hkd_m": 9699
+          "total_receipts_hkd_m": 9699.0
         },
         {
           "sub_sector": "Fast food shops",
-          "total_receipts_hkd_m": 6074
+          "total_receipts_hkd_m": 6074.0
         },
         {
           "sub_sector": "Miscellaneous eating and drinking places",
-          "total_receipts_hkd_m": 2175
+          "total_receipts_hkd_m": 2175.0
         },
         {
           "sub_sector": "Bars",
-          "total_receipts_hkd_m": 280
+          "total_receipts_hkd_m": 280.0
         }
       ],
       "source_health": [
@@ -14095,7 +14080,7 @@
           "status": "Healthy",
           "latest_observation": "2026-07-01",
           "records": 67,
-          "freshness": "22d old",
+          "freshness": "23d old",
           "notes": "Monthly hours under Typhoon Signal 8+ & Red/Black Rainstorm warnings alongside HKD/RMB FX."
         },
         {
@@ -14103,8 +14088,8 @@
           "dataset": "Immigration Passenger Clearance",
           "type": "Measure",
           "status": "Healthy",
-          "latest_observation": "2026-07-22",
-          "records": 2029,
+          "latest_observation": "2026-07-23",
+          "records": 2030,
           "freshness": "1d old",
           "notes": "Daily clearance across 17 control points for HK residents & Mainland visitors."
         },
@@ -14113,8 +14098,8 @@
           "dataset": "SGE Gold Benchmark",
           "type": "Measure",
           "status": "Healthy",
-          "latest_observation": "2026-07-21",
-          "records": 2493,
+          "latest_observation": "2026-07-22",
+          "records": 2494,
           "freshness": "2d old",
           "notes": "Daily AM/PM benchmark fixing."
         },
@@ -14123,7 +14108,7 @@
           "dataset": "AFCD Wholesale Food Prices",
           "type": "Measure",
           "status": "Healthy",
-          "latest_observation": "2026-07-23",
+          "latest_observation": "2026-07-24",
           "records": 31,
           "freshness": "Same-day snapshot",
           "notes": "31 commodities across 5 categories; averaged across same-day market readings."
@@ -14133,7 +14118,7 @@
           "dataset": "HK Consumer Ticker Valuations",
           "type": "Measure",
           "status": "Healthy",
-          "latest_observation": "2026-07-23",
+          "latest_observation": "2026-07-24",
           "records": 11,
           "freshness": "0d old",
           "notes": "PE (TTM), PB, and market cap only; no dividend-yield indicator is available from this endpoint."
@@ -14145,7 +14130,7 @@
           "status": "Healthy",
           "latest_observation": "2026-05-01",
           "records": 6500,
-          "freshness": "83d old",
+          "freshness": "84d old",
           "notes": "25 outlet-type categories, monthly since 2004."
         },
         {
@@ -14155,7 +14140,7 @@
           "status": "Healthy",
           "latest_observation": "2026-03-31",
           "records": 516,
-          "freshness": "114d old",
+          "freshness": "115d old",
           "notes": "Sector-wide purchases only; per-type purchases are not published."
         }
       ],
@@ -14167,7 +14152,7 @@
           "status": "Healthy",
           "latest_observation": "2026-07-01",
           "records": 67,
-          "freshness": "22d old",
+          "freshness": "23d old",
           "notes": "Monthly hours under Typhoon Signal 8+ & Red/Black Rainstorm warnings alongside HKD/RMB FX."
         },
         {
@@ -14175,8 +14160,8 @@
           "dataset": "Immigration Passenger Clearance",
           "type": "Measure",
           "status": "Healthy",
-          "latest_observation": "2026-07-22",
-          "records": 2029,
+          "latest_observation": "2026-07-23",
+          "records": 2030,
           "freshness": "1d old",
           "notes": "Daily clearance across 17 control points for HK residents & Mainland visitors."
         },
@@ -14185,8 +14170,8 @@
           "dataset": "SGE Gold Benchmark",
           "type": "Measure",
           "status": "Healthy",
-          "latest_observation": "2026-07-21",
-          "records": 2493,
+          "latest_observation": "2026-07-22",
+          "records": 2494,
           "freshness": "2d old",
           "notes": "Daily AM/PM benchmark fixing."
         },
@@ -14195,7 +14180,7 @@
           "dataset": "AFCD Wholesale Food Prices",
           "type": "Measure",
           "status": "Healthy",
-          "latest_observation": "2026-07-23",
+          "latest_observation": "2026-07-24",
           "records": 31,
           "freshness": "Same-day snapshot",
           "notes": "31 commodities across 5 categories; averaged across same-day market readings."
@@ -14205,7 +14190,7 @@
           "dataset": "HK Consumer Ticker Valuations",
           "type": "Measure",
           "status": "Healthy",
-          "latest_observation": "2026-07-23",
+          "latest_observation": "2026-07-24",
           "records": 11,
           "freshness": "0d old",
           "notes": "PE (TTM), PB, and market cap only; no dividend-yield indicator is available from this endpoint."
@@ -14217,7 +14202,7 @@
           "status": "Healthy",
           "latest_observation": "2026-05-01",
           "records": 6500,
-          "freshness": "83d old",
+          "freshness": "84d old",
           "notes": "25 outlet-type categories, monthly since 2004."
         },
         {
@@ -14227,18 +14212,18 @@
           "status": "Healthy",
           "latest_observation": "2026-03-31",
           "records": 516,
-          "freshness": "114d old",
+          "freshness": "115d old",
           "notes": "Sector-wide purchases only; per-type purchases are not published."
         },
         {
           "source": "HK Consumer Council",
-          "dataset": "Online Price Watch (personal care / cosmetics prices)",
+          "dataset": "Online Price Watch",
           "type": "Measure",
           "status": "Planned",
           "latest_observation": "—",
           "records": 0,
           "freshness": "Endpoint returns no data",
-          "notes": "Configured JSON/CSV endpoints do not resolve to real payloads; data.gov.hk listing needs re-verification before this can go live."
+          "notes": "Endpoint requires re-verification before going live."
         }
       ]
     }
@@ -14256,7 +14241,7 @@
         "metric_definitions": [
           "Each commodity's price is the mean of same-day readings across the wholesale markets/sources AFCD reports for it."
         ],
-        "executed_at": "2026-07-23T23:56:48.675975Z"
+        "executed_at": "2026-07-24T21:35:00.313860Z"
       }
     },
     {
@@ -14272,7 +14257,7 @@
           "Latest is the most recent published PM benchmark fixing.",
           "Day and year movements are latest divided by the prior trading day or the observation on/before one year earlier, minus one."
         ],
-        "executed_at": "2026-07-23T23:56:48.675975Z"
+        "executed_at": "2026-07-24T21:35:00.313860Z"
       }
     },
     {
@@ -14288,7 +14273,7 @@
           "PE (TTM), PB, and market cap (HKD bn) are each ticker's latest published daily value.",
           "No dividend-yield indicator exists on this endpoint; yield is not reported here."
         ],
-        "executed_at": "2026-07-23T23:56:48.675975Z"
+        "executed_at": "2026-07-24T21:35:00.313860Z"
       }
     },
     {
@@ -14304,7 +14289,7 @@
           "All retail outlet is the classification group's own published total across all outlet types.",
           "Month and year movements are latest divided by the prior month or the observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-07-23T23:56:48.675975Z"
+        "executed_at": "2026-07-24T21:35:00.313860Z"
       }
     },
     {
@@ -14320,7 +14305,7 @@
           "Purchases are only published sector-wide, not broken out by restaurant type.",
           "Quarter and year movements are latest divided by the prior quarter or the observation four quarters earlier, minus one."
         ],
-        "executed_at": "2026-07-23T23:56:48.675975Z"
+        "executed_at": "2026-07-24T21:35:00.313860Z"
       }
     },
     {
@@ -14337,7 +14322,7 @@
           "Southbound (南下) flow is daily Mainland visitor arrivals across all 17 control points, since Mainland visitors legitimately arrive by air, rail, and sea, not just by land.",
           "7-day moving averages (7d MA) smooth out day-of-week seasonality (weekend shopping spikes)."
         ],
-        "executed_at": "2026-07-23T23:56:48.675975Z"
+        "executed_at": "2026-07-24T21:35:00.313860Z"
       }
     },
     {
@@ -14354,7 +14339,7 @@
           "Red/Black Rainstorm hours measures total duration under Red or Black rainstorm warnings.",
           "RMB per 100 HKD is derived from FRED daily DEXCHUS and DEXHKUS rates."
         ],
-        "executed_at": "2026-07-23T23:56:48.675975Z"
+        "executed_at": "2026-07-24T21:35:00.313860Z"
       }
     },
     {
@@ -14368,13 +14353,13 @@
           "Validated live measure frames",
           "Declared future-source registry"
         ],
-        "executed_at": "2026-07-23T23:56:48.675975Z"
+        "executed_at": "2026-07-24T21:35:00.313860Z"
       }
     }
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-local-consumer/",
-    "snapshotId": "21b3138617f99837",
-    "dataAsOf": "2026-07-21"
+    "snapshotId": "9287fc3c0f53c7c8",
+    "dataAsOf": "2026-07-22"
   }
 }

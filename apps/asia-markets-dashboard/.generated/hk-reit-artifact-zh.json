@@ -3,15 +3,15 @@
   "package_info": {
     "sector_id": "hk-reit",
     "sector_name": "Hong Kong REITs Sector Monitor",
-    "snapshotId": "hk_reit_20260724_213322_c960d0ec9199",
-    "generatedAt": "2026-07-24T21:33:22.589402+00:00"
+    "snapshotId": "hk_reit_20260724_213115_a0a6f930ba3c",
+    "generatedAt": "2026-07-24T21:31:15.641547+00:00"
   },
   "manifest": {
     "version": 1,
     "surface": "dashboard",
-    "title": "Hong Kong REITs Sector Monitor",
-    "description": "Fundamental disclosures and spot quote indicators for HK-listed REITs.",
-    "generatedAt": "2026-07-24 21:33 UTC",
+    "title": "香港房地产信托（REITs）基本面监测",
+    "description": "领展（Link REIT）、冠君（Champion REIT）、置富（Fortune REIT）、繁荣（Prosperity REIT）、阳光（Sunlight REIT）及富豪（Regal REIT）的每单位资产净值（NAV）、每基金单位分派（DPU）、出租率、租金检讨调升率及酒店 KPI 快照。",
+    "generatedAt": "2026-07-24 21:31 UTC",
     "dataAsOf": "2026-03-31",
     "liveSourcesCount": 6,
     "totalSourcesCount": 6,
@@ -21,7 +21,7 @@
     "sources": [
       {
         "id": "linkreit_fundamentals",
-        "label": "Link REIT (0823.HK) Investor Relations Disclosures",
+        "label": "领展房产基金（0823.HK）投资者关系披露",
         "href": "https://www.linkreit.com/en/investor-relations/",
         "path": "sources/linkreit_fundamentals.sql",
         "query": {
@@ -33,7 +33,7 @@
       },
       {
         "id": "championreit_fundamentals",
-        "label": "Champion REIT (2778.HK) Financial Disclosures",
+        "label": "冠君产业信托（2778.HK）财务披露",
         "href": "https://www.championreit.com/en/investor-relations/",
         "path": "sources/championreit_fundamentals.sql",
         "query": {
@@ -45,7 +45,7 @@
       },
       {
         "id": "fortunereit_fundamentals",
-        "label": "Fortune REIT (0778.HK) Financial Disclosures",
+        "label": "置富产业信托（0778.HK）财务披露",
         "href": "https://www.fortunereit.com/en/investor-relations/",
         "path": "sources/fortunereit_fundamentals.sql",
         "query": {
@@ -57,7 +57,7 @@
       },
       {
         "id": "prosperityreit_fundamentals",
-        "label": "Prosperity REIT (0808.HK) Financial Disclosures",
+        "label": "繁荣产业信托（0808.HK）财务披露",
         "href": "https://www.prosperityreit.com/en/investor-relations/",
         "path": "sources/prosperityreit_fundamentals.sql",
         "query": {
@@ -69,7 +69,7 @@
       },
       {
         "id": "sunlightreit_fundamentals",
-        "label": "Sunlight REIT (0435.HK) Financial Disclosures",
+        "label": "阳光房地产基金（0435.HK）财务披露",
         "href": "https://www.sunlightreit.com/en/investor-relations/",
         "path": "sources/sunlightreit_fundamentals.sql",
         "query": {
@@ -81,7 +81,7 @@
       },
       {
         "id": "regalreit_fundamentals",
-        "label": "Regal REIT (1881.HK) Hotel Performance Disclosures",
+        "label": "富豪产业信托（1881.HK）酒店业绩披露",
         "href": "https://www.regalreit.com/en/investor-relations/",
         "path": "sources/regalreit_fundamentals.sql",
         "query": {
@@ -97,74 +97,74 @@
   "sources": [
     {
       "id": "linkreit_fundamentals",
-      "label": "Link REIT (0823.HK) Investor Relations Disclosures",
+      "label": "领展房产基金（0823.HK）投资者关系披露",
       "href": "https://www.linkreit.com/en/investor-relations/",
       "path": "sources/linkreit_fundamentals.sql",
       "query": {
         "engine": "official IR API",
         "url": "https://www.linkreit.com/en/investor-relations/",
         "language": "JSON",
-        "description": "NAV per unit, DPU, Occupancy rate, and Rental Reversion rate for Link REIT."
+        "description": "构建时从公开来源读取并校验 领展房产基金（0823.HK）投资者关系披露。"
       }
     },
     {
       "id": "championreit_fundamentals",
-      "label": "Champion REIT (2778.HK) Financial Disclosures",
+      "label": "冠君产业信托（2778.HK）财务披露",
       "href": "https://www.championreit.com/en/investor-relations/",
       "path": "sources/championreit_fundamentals.sql",
       "query": {
         "engine": "official IR API",
         "url": "https://www.championreit.com/en/investor-relations/",
         "language": "JSON",
-        "description": "Three Garden Road & Langham Place office/retail NAV/unit, DPU, occupancy, and reversion."
+        "description": "构建时从公开来源读取并校验 冠君产业信托（2778.HK）财务披露。"
       }
     },
     {
       "id": "fortunereit_fundamentals",
-      "label": "Fortune REIT (0778.HK) Financial Disclosures",
+      "label": "置富产业信托（0778.HK）财务披露",
       "href": "https://www.fortunereit.com/en/investor-relations/",
       "path": "sources/fortunereit_fundamentals.sql",
       "query": {
         "engine": "official IR API",
         "url": "https://www.fortunereit.com/en/investor-relations/",
         "language": "JSON",
-        "description": "Suburban HK retail portfolio NAV/unit, DPU, occupancy, and rental reversion."
+        "description": "构建时从公开来源读取并校验 置富产业信托（0778.HK）财务披露。"
       }
     },
     {
       "id": "prosperityreit_fundamentals",
-      "label": "Prosperity REIT (0808.HK) Financial Disclosures",
+      "label": "繁荣产业信托（0808.HK）财务披露",
       "href": "https://www.prosperityreit.com/en/investor-relations/",
       "path": "sources/prosperityreit_fundamentals.sql",
       "query": {
         "engine": "official IR API",
         "url": "https://www.prosperityreit.com/en/investor-relations/",
         "language": "JSON",
-        "description": "Decentralized office and industrial portfolio NAV/unit, DPU, occupancy, and reversion."
+        "description": "构建时从公开来源读取并校验 繁荣产业信托（0808.HK）财务披露。"
       }
     },
     {
       "id": "sunlightreit_fundamentals",
-      "label": "Sunlight REIT (0435.HK) Financial Disclosures",
+      "label": "阳光房地产基金（0435.HK）财务披露",
       "href": "https://www.sunlightreit.com/en/investor-relations/",
       "path": "sources/sunlightreit_fundamentals.sql",
       "query": {
         "engine": "official IR API",
         "url": "https://www.sunlightreit.com/en/investor-relations/",
         "language": "JSON",
-        "description": "Office and retail portfolio NAV/unit, DPU, occupancy, and rental reversion."
+        "description": "构建时从公开来源读取并校验 阳光房地产基金（0435.HK）财务披露。"
       }
     },
     {
       "id": "regalreit_fundamentals",
-      "label": "Regal REIT (1881.HK) Hotel Performance Disclosures",
+      "label": "富豪产业信托（1881.HK）酒店业绩披露",
       "href": "https://www.regalreit.com/en/investor-relations/",
       "path": "sources/regalreit_fundamentals.sql",
       "query": {
         "engine": "official IR API",
         "url": "https://www.regalreit.com/en/investor-relations/",
         "language": "JSON",
-        "description": "Hotel portfolio KPIs: Occupancy (%), Average Daily Rate (ADR HKD), RevPAR (HKD), DPU, and NAV/unit."
+        "description": "构建时从公开来源读取并校验 富豪产业信托（1881.HK）酒店业绩披露。"
       }
     }
   ],
@@ -255,7 +255,7 @@
         "reit_name": "Link REIT",
         "nav_per_unit_hkd": 70.02,
         "dpu_hkd": 2.6265,
-        "occupancy_pct": 98.0,
+        "occupancy_pct": 98,
         "rental_reversion_pct": 7.9,
         "source_agency": "Link REIT Investor Relations"
       },
@@ -266,7 +266,7 @@
         "reit_name": "Link REIT",
         "nav_per_unit_hkd": 73.98,
         "dpu_hkd": 2.7431,
-        "occupancy_pct": 98.0,
+        "occupancy_pct": 98,
         "rental_reversion_pct": 7.1,
         "source_agency": "Link REIT Investor Relations"
       },
@@ -290,10 +290,10 @@
         "reit_name": "Champion REIT",
         "nav_per_unit_hkd": 8.25,
         "dpu_hkd": 0.2275,
-        "three_garden_road_occupancy_pct": 89.0,
+        "three_garden_road_occupancy_pct": 89,
         "langham_place_office_occupancy_pct": 96.3,
-        "langham_place_mall_occupancy_pct": 100.0,
-        "occupancy_pct": 89.0,
+        "langham_place_mall_occupancy_pct": 100,
+        "occupancy_pct": 89,
         "rental_reversion_pct": null,
         "source_agency": "Champion REIT Investor Relations"
       },
@@ -306,7 +306,7 @@
         "dpu_hkd": 0.1954,
         "three_garden_road_occupancy_pct": 82.7,
         "langham_place_office_occupancy_pct": 93.3,
-        "langham_place_mall_occupancy_pct": 100.0,
+        "langham_place_mall_occupancy_pct": 100,
         "occupancy_pct": 82.7,
         "rental_reversion_pct": null,
         "source_agency": "Champion REIT Investor Relations"
@@ -373,7 +373,7 @@
         "reit_name": "Fortune REIT",
         "nav_per_unit_hkd": 13.21,
         "dpu_hkd": 0.3559,
-        "occupancy_pct": 95.0,
+        "occupancy_pct": 95,
         "rental_reversion_pct": null,
         "source_agency": "Fortune REIT Investor Relations"
       },
@@ -533,7 +533,7 @@
         "reit_name": "Regal REIT",
         "nav_per_unit_hkd": 3.898,
         "dpu_hkd": 0.0088,
-        "hotel_occupancy_pct": 73.0,
+        "hotel_occupancy_pct": 73,
         "average_daily_rate_hkd": 926.44,
         "revpar_hkd": 675.96,
         "source_agency": "Regal REIT Investor Relations"

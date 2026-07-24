@@ -165,7 +165,19 @@ def build_artifact(
     snapshot_hash = hashlib.sha256(f"hk_reit_{datestr}".encode("utf-8")).hexdigest()[:12]
     snapshot_id = f"hk_reit_{datestr}_{snapshot_hash}"
 
+    manifest_sources = [
+        {
+            "id": source["id"],
+            "label": source["label"],
+            "href": source["href"],
+            "path": source["path"],
+            "query": source.get("query"),
+        }
+        for source in PUBLIC_SOURCES.values()
+    ]
+
     artifact = {
+        "surface": "dashboard",
         "package_info": {
             "sector_id": "hk-reit",
             "sector_name": "Hong Kong REITs Sector Monitor",
@@ -173,12 +185,21 @@ def build_artifact(
             "generatedAt": generated_at.isoformat(),
         },
         "manifest": {
+            "version": 1,
+            "surface": "dashboard",
+            "title": "Hong Kong REITs Sector Monitor",
+            "description": "Fundamental disclosures and spot quote indicators for HK-listed REITs.",
             "generatedAt": generated_at.strftime("%Y-%m-%d %H:%M UTC"),
             "dataAsOf": data_as_of,
             "liveSourcesCount": live_count,
             "totalSourcesCount": len(PUBLIC_SOURCES),
+            "cards": [],
+            "charts": [],
+            "tables": [],
+            "sources": manifest_sources,
+            "blocks": [],
         },
-        "sources": PUBLIC_SOURCES,
+        "sources": manifest_sources,
         "source_health": status_entries,
         "data": {
             "linkreit": _records_json_safe(df_link),

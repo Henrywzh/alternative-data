@@ -223,7 +223,13 @@ function localizeArtifact(input, zh) {
       const copy = zh.cards[card.id];
       if (!copy) return;
       card.description = copy.description;
+      const labels = copy.metricLabels;
       card.metrics.forEach((metric, index) => {
+        if (Array.isArray(labels)) {
+          if (labels[index]) metric.label = labels[index];
+          return;
+        }
+        // Legacy shorthand for the common [value, cadence, YoY] card shape.
         if (index === 0) metric.label = copy.label;
         if (index === 1 && copy.cadence) metric.label = copy.cadence;
         if (index === 2) metric.label = "同比";
@@ -260,7 +266,7 @@ function localizeArtifact(input, zh) {
       label: zh.sources[source.id] || source.label,
     }));
   }
-  if (artifact.sources) {
+  if (Array.isArray(artifact.sources)) {
     artifact.sources = artifact.sources.map((source) => ({
       ...source,
       label: zh.sources[source.id] || source.label,
@@ -335,7 +341,6 @@ const SECTORS = [
   { id: "hk-utilities", statusFile: "dashboard-status-hk-utilities.json", zh: HK_UTILITIES_ZH },
   { id: "hk-transport", statusFile: "dashboard-status-hk-transport.json", zh: HK_TRANSPORT_ZH },
   { id: "hk-telecom", statusFile: "dashboard-status-hk-telecom.json", zh: HK_TELECOM_ZH },
-  { id: "hk-reit", statusFile: "dashboard-status-hk-reit.json", zh: HK_REIT_ZH },
 ];
 
 if (!existsSync(distDir)) {
@@ -347,15 +352,15 @@ let deliveryScript = null;
 let verifyPortableArtifactStructure = null;
 try {
   deliveryScript = findPortableBuilder();
-  const runtime = await import(`file://${join(dirname(deliveryScript), "runtime.mjs")}`);
-  verifyPortableArtifactStructure = runtime.verifyPortableArtifactStructure;
+  const verifyModule = await import(`file://${join(dirname(deliveryScript), "verify_portable_artifact.mjs")}`);
+  verifyPortableArtifactStructure = verifyModule.verifyPortableArtifactStructure;
 } catch (error) {
   process.stdout.write(`[package-dashboard] Portable builder unavailable (${error.message}); skipping dashboard packaging.\n`);
   process.exit(0);
 }
 
 for (const sector of SECTORS) {
-  const statusPath = join(distDir, sector.statusFile);
+  const statusPath = join(projectRoot, "src/data", sector.statusFile);
   if (!existsSync(statusPath)) {
     process.stdout.write(`[package-dashboard] Status file ${sector.statusFile} missing; skipping ${sector.id}.\n`);
     continue;
