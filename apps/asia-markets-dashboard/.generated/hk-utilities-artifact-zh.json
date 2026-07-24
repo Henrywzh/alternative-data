@@ -6,7 +6,7 @@
     "title": "香港公用事业与基础设施监测",
     "description": "CLP 售电量分行业结构、Towngas 燃气消费量与天文台日均气温的来源快照。",
     "sector": "hk-utilities",
-    "generatedAt": "2026-07-23T23:43:38.601830Z",
+    "generatedAt": "2026-07-23T23:55:43.457263Z",
     "cards": [
       {
         "id": "clp_card",
@@ -282,7 +282,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-23T23:43:38.601830Z",
+    "generatedAt": "2026-07-23T23:55:43.457263Z",
     "status": "ready",
     "datasets": {
       "kpi_clp": [

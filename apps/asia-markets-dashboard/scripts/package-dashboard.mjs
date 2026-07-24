@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { createHash } from "node:crypto";
-import { spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -293,20 +293,34 @@ function addNavigation(html, { locale, homeEn, homeZh, routeEn, routeZh }) {
   return html.replace("</head>", `${css}</head>`).replace("<body>", `<body>${nav}`);
 }
 
-function deliverPortable({ deliveryScript, artifactFile, portableFile, locale }) {
+function spawnDelivery(deliveryScript, args) {
+  return new Promise((resolvePromise) => {
+    const child = spawn(process.execPath, [deliveryScript, ...args], {
+      cwd: projectRoot,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    let stdout = "";
+    let stderr = "";
+    child.stdout.on("data", (chunk) => { stdout += chunk; });
+    child.stderr.on("data", (chunk) => { stderr += chunk; });
+    child.on("close", (code) => resolvePromise({ status: code, stdout, stderr }));
+    child.on("error", (error) => resolvePromise({ status: 1, stdout, stderr: `${stderr}\n${error.message}` }));
+  });
+}
+
+async function deliverPortable({ deliveryScript, artifactFile, portableFile, locale }) {
   const failureScreenshot = join(generatedDir, `portable-verification-failure-${locale}.png`);
   const maxAttempts = Math.max(1, Number(process.env.PORTABLE_DELIVERY_RETRIES || 2));
   let lastDelivery = null;
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-    const delivery = spawnSync(process.execPath, [
-      deliveryScript,
+    const delivery = await spawnDelivery(deliveryScript, [
       "--input", artifactFile,
       "--output", portableFile,
       "--screenshot", failureScreenshot,
       "--ready-timeout-ms", process.env.PORTABLE_READY_TIMEOUT_MS || "30000",
       "--action-timeout-ms", process.env.PORTABLE_ACTION_TIMEOUT_MS || "10000",
       "--timeout-ms", process.env.PORTABLE_VERIFY_TIMEOUT_MS || "60000",
-    ], { cwd: projectRoot, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+    ]);
     lastDelivery = delivery;
     if (delivery.status === 0) {
       const receipt = JSON.parse(delivery.stdout.trim());
@@ -343,12 +357,12 @@ try {
   console.warn("Portable builder not available in this environment; falling back to committed .generated/*.html artifacts:", err.message);
 }
 
-function packageLocale({ deliveryScript, artifact: localeArtifact, artifactFile, portableFile, locale, route, attachment, homeEn, homeZh, routeEn, routeZh }) {
+async function packageLocale({ deliveryScript, artifact: localeArtifact, artifactFile, portableFile, locale, route, attachment, homeEn, homeZh, routeEn, routeZh }) {
   let receipt = { ok: true, stages: { verification: "passed (pre-built)" } };
   let html = "";
   if (deliveryScript) {
     writeFileSync(artifactFile, `${JSON.stringify(localeArtifact, null, 2)}\n`, "utf8");
-    receipt = deliverPortable({ deliveryScript, artifactFile, portableFile, locale });
+    receipt = await deliverPortable({ deliveryScript, artifactFile, portableFile, locale });
     html = addNavigation(readFileSync(portableFile, "utf8"), { locale, homeEn, homeZh, routeEn, routeZh });
     writeFileSync(portableFile, html, "utf8");
     const structural = verifyPortableArtifactStructure({ artifactPath: artifactFile, htmlPath: portableFile });
@@ -380,7 +394,32 @@ function packageLocale({ deliveryScript, artifact: localeArtifact, artifactFile,
   return { locale, route: `/${route}/`, attachment: `/exports/${attachment}`, sha256: routeHash, bytes: readFileSync(routePath).byteLength, svg_count: svgCount, portable_verification: receipt.stages.verification };
 }
 
-const sectorReleases = [];
+// Each (sector, locale) pair spawns its own delivery-script subprocess, which
+// in turn uses a uniquely-named mkdtemp() directory (see
+// verify_portable_artifact.mjs's `temporaryDirectory` and
+// deliver_portable_artifact.mjs's `pid-randomUUID` candidate output file) and
+// its own `--user-data-dir` for the headless Chromium instance it launches.
+// No shared temp paths, ports, or lock files are involved, so concurrent
+// invocations are safe. We still cap concurrency (rather than firing all 10
+// at once) since each spawns a real Chromium process and this machine has
+// finite memory/CPU.
+async function runWithConcurrency(taskThunks, limit) {
+  const results = new Array(taskThunks.length);
+  let nextIndex = 0;
+  async function worker() {
+    while (nextIndex < taskThunks.length) {
+      const current = nextIndex;
+      nextIndex += 1;
+      results[current] = await taskThunks[current]();
+    }
+  }
+  const workerCount = Math.min(limit, taskThunks.length);
+  await Promise.all(Array.from({ length: workerCount }, worker));
+  return results;
+}
+
+const sectorMeta = [];
+const packagingTasks = [];
 for (const sector of SECTORS) {
   const artifactPath = join(generatedDir, `${sector.id}-artifact.json`);
   const artifactZhPath = join(generatedDir, `${sector.id}-artifact-zh.json`);
@@ -398,18 +437,28 @@ for (const sector of SECTORS) {
   const routeEn = `https://asia-markets-dashboard.pages.dev/sectors/${sector.id}/`;
   const routeZh = `https://asia-markets-dashboard.pages.dev/sectors/${sector.id}/zh/`;
 
-  const releases = [
-    packageLocale({
-      deliveryScript, artifact, artifactFile: artifactPath, portableFile: portablePath, locale: "en",
-      route: `sectors/${sector.id}`, attachment: status.attachment_filename, homeEn, homeZh, routeEn, routeZh,
-    }),
-    packageLocale({
-      deliveryScript, artifact: localizeArtifact(artifact, sector.zh), artifactFile: artifactZhPath, portableFile: portableZhPath, locale: "zh",
-      route: `sectors/${sector.id}/zh`, attachment: `${sector.id}-dashboard-zh-${dateSuffix}`, homeEn, homeZh, routeEn, routeZh,
-    }),
-  ];
-  sectorReleases.push({ sector: sector.id, generated_at: status.generated_at, snapshot_id: status.snapshot_id, data_as_of: status.data_as_of, releases });
+  const releaseIndexes = [];
+  releaseIndexes.push(packagingTasks.length);
+  packagingTasks.push(() => packageLocale({
+    deliveryScript, artifact, artifactFile: artifactPath, portableFile: portablePath, locale: "en",
+    route: `sectors/${sector.id}`, attachment: status.attachment_filename, homeEn, homeZh, routeEn, routeZh,
+  }));
+  releaseIndexes.push(packagingTasks.length);
+  packagingTasks.push(() => packageLocale({
+    deliveryScript, artifact: localizeArtifact(artifact, sector.zh), artifactFile: artifactZhPath, portableFile: portableZhPath, locale: "zh",
+    route: `sectors/${sector.id}/zh`, attachment: `${sector.id}-dashboard-zh-${dateSuffix}`, homeEn, homeZh, routeEn, routeZh,
+  }));
+
+  sectorMeta.push({ sector: sector.id, generated_at: status.generated_at, snapshot_id: status.snapshot_id, data_as_of: status.data_as_of, releaseIndexes });
 }
+
+const PACKAGING_CONCURRENCY = Math.max(1, Number(process.env.PORTABLE_PACKAGING_CONCURRENCY || 4));
+const packagingResults = await runWithConcurrency(packagingTasks, PACKAGING_CONCURRENCY);
+
+const sectorReleases = sectorMeta.map(({ releaseIndexes, ...meta }) => ({
+  ...meta,
+  releases: releaseIndexes.map((index) => packagingResults[index]),
+}));
 
 mkdirSync(join(distDir, "data"), { recursive: true });
 writeFileSync(join(distDir, "data/release.json"), `${JSON.stringify({ sectors: sectorReleases }, null, 2)}\n`, "utf8");
