@@ -73,11 +73,20 @@ jobs:
           python -m pip install -e .[dev]
 
       - name: Refresh HK Real Estate + HK Local Consumer artifacts
-        # A single upstream publisher (for example Midland returning a
-        # transient 403) must not block the other sector refreshes. The
-        # builder keeps the last committed artifact for the failed sector and
-        # reports the failure in the job log; successful sectors continue to
-        # produce fresh manifests and status files.
+        # A single upstream publisher must not block the other sector
+        # refreshes. The builder keeps the last committed artifact for the
+        # failed sector and reports the failure in the job log; successful
+        # sectors continue to produce fresh manifests and status files.
+        #
+        # Midland's market-insight page is WAF-blocked from GitHub Actions'
+        # datacenter IP range specifically (confirmed 403, reproducible;
+        # the same fetch succeeds from a residential IP with no code
+        # change) — HK_RE_SKIP_MIDLAND skips that fetch outright here and
+        # falls back to the last real snapshot instead of retrying a call
+        # that's known to fail in this environment. Run `npm run refresh`
+        # locally (this var unset) to actually refresh Midland's data.
+        env:
+          HK_RE_SKIP_MIDLAND: "1"
         run: npm run refresh -- --tolerate-errors
 
       - name: Commit refreshed artifact manifests and status files

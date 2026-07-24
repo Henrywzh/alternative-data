@@ -5,7 +5,7 @@
     "surface": "dashboard",
     "title": "Hong Kong Real Estate Monitor",
     "description": "A source-backed snapshot of residential price, rent, and market confidence measures.",
-    "generatedAt": "2026-07-23T23:55:48.418620Z",
+    "generatedAt": "2026-07-24T20:51:11.988833Z",
     "cards": [
       {
         "id": "ccl_card",
@@ -419,7 +419,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**Data snapshot:** `4f12860c9584ab55` · generated 2026-07-23T23:55:48.418620Z.  This is a published snapshot, not a live connection. RVD observations marked provisional may be revised."
+        "body": "**Data snapshot:** `dc1bf03c646850f6` · generated 2026-07-24T20:51:11.988833Z.  This is a published snapshot, not a live connection. RVD observations marked provisional may be revised."
       },
       {
         "id": "market_pulse",
@@ -477,22 +477,22 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-23T23:55:48.418620Z",
+    "generatedAt": "2026-07-24T20:51:11.988833Z",
     "status": "ready",
     "datasets": {
       "kpi_ccl": [
         {
-          "latest": 159.34,
-          "period_change": -0.001254,
-          "year_change": 0.167839,
-          "observation_date": "2026-07-12",
+          "latest": 160.54,
+          "period_change": 0.007531,
+          "year_change": 0.16536,
+          "observation_date": "2026-07-19",
           "is_provisional": false
         }
       ],
       "kpi_mhpi": [
         {
           "latest": 148.7,
-          "period_change": 0,
+          "period_change": 0.0,
           "year_change": 0.16719,
           "observation_date": "2026-07-20",
           "is_provisional": false
@@ -971,7 +971,7 @@
         },
         {
           "date": "1996-03-03",
-          "value": 60
+          "value": 60.0
         },
         {
           "date": "1996-03-10",
@@ -1099,7 +1099,7 @@
         },
         {
           "date": "1996-10-13",
-          "value": 69
+          "value": 69.0
         },
         {
           "date": "1996-10-20",
@@ -1251,7 +1251,7 @@
         },
         {
           "date": "1997-07-06",
-          "value": 100
+          "value": 100.0
         },
         {
           "date": "1997-07-13",
@@ -1603,7 +1603,7 @@
         },
         {
           "date": "1999-03-14",
-          "value": 55
+          "value": 55.0
         },
         {
           "date": "1999-03-21",
@@ -1735,7 +1735,7 @@
         },
         {
           "date": "1999-10-31",
-          "value": 51
+          "value": 51.0
         },
         {
           "date": "1999-11-07",
@@ -3099,7 +3099,7 @@
         },
         {
           "date": "2006-05-14",
-          "value": 54
+          "value": 54.0
         },
         {
           "date": "2006-05-21",
@@ -3627,7 +3627,7 @@
         },
         {
           "date": "2008-11-23",
-          "value": 57
+          "value": 57.0
         },
         {
           "date": "2008-11-30",
@@ -3739,7 +3739,7 @@
         },
         {
           "date": "2009-06-07",
-          "value": 65
+          "value": 65.0
         },
         {
           "date": "2009-06-14",
@@ -4183,7 +4183,7 @@
         },
         {
           "date": "2011-07-24",
-          "value": 99
+          "value": 99.0
         },
         {
           "date": "2011-07-31",
@@ -4359,7 +4359,7 @@
         },
         {
           "date": "2012-05-27",
-          "value": 104
+          "value": 104.0
         },
         {
           "date": "2012-06-03",
@@ -4639,7 +4639,7 @@
         },
         {
           "date": "2013-09-29",
-          "value": 120
+          "value": 120.0
         },
         {
           "date": "2013-10-06",
@@ -4815,7 +4815,7 @@
         },
         {
           "date": "2014-08-03",
-          "value": 124
+          "value": 124.0
         },
         {
           "date": "2014-08-10",
@@ -5571,7 +5571,7 @@
         },
         {
           "date": "2018-03-18",
-          "value": 174
+          "value": 174.0
         },
         {
           "date": "2018-03-25",
@@ -5591,7 +5591,7 @@
         },
         {
           "date": "2018-04-22",
-          "value": 180
+          "value": 180.0
         },
         {
           "date": "2018-04-29",
@@ -6015,7 +6015,7 @@
         },
         {
           "date": "2020-05-03",
-          "value": 175
+          "value": 175.0
         },
         {
           "date": "2020-05-10",
@@ -6523,7 +6523,7 @@
         },
         {
           "date": "2022-10-09",
-          "value": 170
+          "value": 170.0
         },
         {
           "date": "2022-10-16",
@@ -6859,7 +6859,7 @@
         },
         {
           "date": "2024-05-19",
-          "value": 144
+          "value": 144.0
         },
         {
           "date": "2024-05-26",
@@ -7308,6 +7308,10 @@
         {
           "date": "2026-07-12",
           "value": 159.34
+        },
+        {
+          "date": "2026-07-19",
+          "value": 160.54
         }
       ],
       "mhpi_history": [
@@ -7361,7 +7365,7 @@
         },
         {
           "date": "2016-06-06",
-          "value": 125
+          "value": 125.0
         },
         {
           "date": "2016-06-13",
@@ -7429,7 +7433,7 @@
         },
         {
           "date": "2016-10-03",
-          "value": 133
+          "value": 133.0
         },
         {
           "date": "2016-10-10",
@@ -7485,7 +7489,7 @@
         },
         {
           "date": "2017-01-09",
-          "value": 138
+          "value": 138.0
         },
         {
           "date": "2017-01-16",
@@ -7501,11 +7505,11 @@
         },
         {
           "date": "2017-02-06",
-          "value": 139
+          "value": 139.0
         },
         {
           "date": "2017-02-13",
-          "value": 139
+          "value": 139.0
         },
         {
           "date": "2017-02-20",
@@ -7533,7 +7537,7 @@
         },
         {
           "date": "2017-04-03",
-          "value": 143
+          "value": 143.0
         },
         {
           "date": "2017-04-10",
@@ -7593,7 +7597,7 @@
         },
         {
           "date": "2017-07-17",
-          "value": 150
+          "value": 150.0
         },
         {
           "date": "2017-07-24",
@@ -7601,7 +7605,7 @@
         },
         {
           "date": "2017-07-31",
-          "value": 151
+          "value": 151.0
         },
         {
           "date": "2017-08-07",
@@ -7629,7 +7633,7 @@
         },
         {
           "date": "2017-09-18",
-          "value": 151
+          "value": 151.0
         },
         {
           "date": "2017-09-25",
@@ -7645,7 +7649,7 @@
         },
         {
           "date": "2017-10-16",
-          "value": 152
+          "value": 152.0
         },
         {
           "date": "2017-10-23",
@@ -7665,7 +7669,7 @@
         },
         {
           "date": "2017-11-20",
-          "value": 155
+          "value": 155.0
         },
         {
           "date": "2017-11-27",
@@ -7673,7 +7677,7 @@
         },
         {
           "date": "2017-12-04",
-          "value": 155
+          "value": 155.0
         },
         {
           "date": "2017-12-11",
@@ -7693,7 +7697,7 @@
         },
         {
           "date": "2018-01-08",
-          "value": 157
+          "value": 157.0
         },
         {
           "date": "2018-01-15",
@@ -7709,7 +7713,7 @@
         },
         {
           "date": "2018-02-05",
-          "value": 160
+          "value": 160.0
         },
         {
           "date": "2018-02-12",
@@ -7753,7 +7757,7 @@
         },
         {
           "date": "2018-04-23",
-          "value": 167
+          "value": 167.0
         },
         {
           "date": "2018-04-30",
@@ -7781,7 +7785,7 @@
         },
         {
           "date": "2018-06-11",
-          "value": 171
+          "value": 171.0
         },
         {
           "date": "2018-06-18",
@@ -7829,7 +7833,7 @@
         },
         {
           "date": "2018-09-03",
-          "value": 176
+          "value": 176.0
         },
         {
           "date": "2018-09-10",
@@ -7853,7 +7857,7 @@
         },
         {
           "date": "2018-10-15",
-          "value": 173
+          "value": 173.0
         },
         {
           "date": "2018-10-22",
@@ -7861,7 +7865,7 @@
         },
         {
           "date": "2018-10-29",
-          "value": 171
+          "value": 171.0
         },
         {
           "date": "2018-11-05",
@@ -7901,7 +7905,7 @@
         },
         {
           "date": "2019-01-07",
-          "value": 161
+          "value": 161.0
         },
         {
           "date": "2019-01-14",
@@ -7921,11 +7925,11 @@
         },
         {
           "date": "2019-02-11",
-          "value": 159
+          "value": 159.0
         },
         {
           "date": "2019-02-18",
-          "value": 159
+          "value": 159.0
         },
         {
           "date": "2019-02-25",
@@ -8033,7 +8037,7 @@
         },
         {
           "date": "2019-08-26",
-          "value": 173
+          "value": 173.0
         },
         {
           "date": "2019-09-02",
@@ -8057,11 +8061,11 @@
         },
         {
           "date": "2019-10-07",
-          "value": 169
+          "value": 169.0
         },
         {
           "date": "2019-10-14",
-          "value": 168
+          "value": 168.0
         },
         {
           "date": "2019-10-21",
@@ -8109,7 +8113,7 @@
         },
         {
           "date": "2020-01-06",
-          "value": 165
+          "value": 165.0
         },
         {
           "date": "2020-01-13",
@@ -8181,7 +8185,7 @@
         },
         {
           "date": "2020-05-11",
-          "value": 161
+          "value": 161.0
         },
         {
           "date": "2020-05-18",
@@ -8241,7 +8245,7 @@
         },
         {
           "date": "2020-08-24",
-          "value": 165
+          "value": 165.0
         },
         {
           "date": "2020-08-31",
@@ -8265,7 +8269,7 @@
         },
         {
           "date": "2020-10-05",
-          "value": 164
+          "value": 164.0
         },
         {
           "date": "2020-10-12",
@@ -8349,7 +8353,7 @@
         },
         {
           "date": "2021-03-01",
-          "value": 164
+          "value": 164.0
         },
         {
           "date": "2021-03-08",
@@ -8389,7 +8393,7 @@
         },
         {
           "date": "2021-05-10",
-          "value": 170
+          "value": 170.0
         },
         {
           "date": "2021-05-17",
@@ -8409,7 +8413,7 @@
         },
         {
           "date": "2021-06-14",
-          "value": 173
+          "value": 173.0
         },
         {
           "date": "2021-06-21",
@@ -8485,7 +8489,7 @@
         },
         {
           "date": "2021-10-25",
-          "value": 174
+          "value": 174.0
         },
         {
           "date": "2021-11-01",
@@ -8493,7 +8497,7 @@
         },
         {
           "date": "2021-11-08",
-          "value": 174
+          "value": 174.0
         },
         {
           "date": "2021-11-15",
@@ -8557,11 +8561,11 @@
         },
         {
           "date": "2022-02-28",
-          "value": 169
+          "value": 169.0
         },
         {
           "date": "2022-03-07",
-          "value": 168
+          "value": 168.0
         },
         {
           "date": "2022-03-14",
@@ -8585,7 +8589,7 @@
         },
         {
           "date": "2022-04-18",
-          "value": 167
+          "value": 167.0
         },
         {
           "date": "2022-04-25",
@@ -8609,7 +8613,7 @@
         },
         {
           "date": "2022-05-30",
-          "value": 169
+          "value": 169.0
         },
         {
           "date": "2022-06-06",
@@ -8625,7 +8629,7 @@
         },
         {
           "date": "2022-06-27",
-          "value": 168
+          "value": 168.0
         },
         {
           "date": "2022-07-04",
@@ -8637,7 +8641,7 @@
         },
         {
           "date": "2022-07-18",
-          "value": 167
+          "value": 167.0
         },
         {
           "date": "2022-07-25",
@@ -8725,7 +8729,7 @@
         },
         {
           "date": "2022-12-19",
-          "value": 147
+          "value": 147.0
         },
         {
           "date": "2022-12-26",
@@ -8733,7 +8737,7 @@
         },
         {
           "date": "2023-01-02",
-          "value": 146
+          "value": 146.0
         },
         {
           "date": "2023-01-09",
@@ -8757,7 +8761,7 @@
         },
         {
           "date": "2023-02-13",
-          "value": 148
+          "value": 148.0
         },
         {
           "date": "2023-02-20",
@@ -8893,7 +8897,7 @@
         },
         {
           "date": "2023-10-09",
-          "value": 146
+          "value": 146.0
         },
         {
           "date": "2023-10-16",
@@ -8909,7 +8913,7 @@
         },
         {
           "date": "2023-11-06",
-          "value": 143
+          "value": 143.0
         },
         {
           "date": "2023-11-13",
@@ -8933,7 +8937,7 @@
         },
         {
           "date": "2023-12-18",
-          "value": 139
+          "value": 139.0
         },
         {
           "date": "2023-12-25",
@@ -9017,7 +9021,7 @@
         },
         {
           "date": "2024-05-13",
-          "value": 136
+          "value": 136.0
         },
         {
           "date": "2024-05-20",
@@ -9033,7 +9037,7 @@
         },
         {
           "date": "2024-06-10",
-          "value": 134
+          "value": 134.0
         },
         {
           "date": "2024-06-17",
@@ -9041,7 +9045,7 @@
         },
         {
           "date": "2024-06-24",
-          "value": 134
+          "value": 134.0
         },
         {
           "date": "2024-07-01",
@@ -9057,7 +9061,7 @@
         },
         {
           "date": "2024-07-22",
-          "value": 132
+          "value": 132.0
         },
         {
           "date": "2024-07-29",
@@ -9145,7 +9149,7 @@
         },
         {
           "date": "2024-12-23",
-          "value": 128
+          "value": 128.0
         },
         {
           "date": "2024-12-30",
@@ -9173,7 +9177,7 @@
         },
         {
           "date": "2025-02-10",
-          "value": 128
+          "value": 128.0
         },
         {
           "date": "2025-02-17",
@@ -9233,7 +9237,7 @@
         },
         {
           "date": "2025-05-26",
-          "value": 127
+          "value": 127.0
         },
         {
           "date": "2025-06-02",
@@ -9313,11 +9317,11 @@
         },
         {
           "date": "2025-10-13",
-          "value": 131
+          "value": 131.0
         },
         {
           "date": "2025-10-20",
-          "value": 132
+          "value": 132.0
         },
         {
           "date": "2025-10-27",
@@ -9377,7 +9381,7 @@
         },
         {
           "date": "2026-02-02",
-          "value": 137
+          "value": 137.0
         },
         {
           "date": "2026-02-09",
@@ -9425,7 +9429,7 @@
         },
         {
           "date": "2026-04-27",
-          "value": 144
+          "value": 144.0
         },
         {
           "date": "2026-05-04",
@@ -9433,7 +9437,7 @@
         },
         {
           "date": "2026-05-11",
-          "value": 145
+          "value": 145.0
         },
         {
           "date": "2026-05-18",
@@ -9461,7 +9465,7 @@
         },
         {
           "date": "2026-06-29",
-          "value": 148
+          "value": 148.0
         },
         {
           "date": "2026-07-06",
@@ -9495,7 +9499,7 @@
         },
         {
           "date": "2018-02-26",
-          "value": 81
+          "value": 81.0
         },
         {
           "date": "2018-03-05",
@@ -9503,11 +9507,11 @@
         },
         {
           "date": "2018-03-12",
-          "value": 80
+          "value": 80.0
         },
         {
           "date": "2018-03-19",
-          "value": 79
+          "value": 79.0
         },
         {
           "date": "2018-03-26",
@@ -9515,7 +9519,7 @@
         },
         {
           "date": "2018-04-02",
-          "value": 82
+          "value": 82.0
         },
         {
           "date": "2018-04-09",
@@ -9555,19 +9559,19 @@
         },
         {
           "date": "2018-06-11",
-          "value": 86
+          "value": 86.0
         },
         {
           "date": "2018-06-18",
-          "value": 85
+          "value": 85.0
         },
         {
           "date": "2018-06-25",
-          "value": 83
+          "value": 83.0
         },
         {
           "date": "2018-07-02",
-          "value": 82
+          "value": 82.0
         },
         {
           "date": "2018-07-09",
@@ -9579,7 +9583,7 @@
         },
         {
           "date": "2018-07-23",
-          "value": 83
+          "value": 83.0
         },
         {
           "date": "2018-07-30",
@@ -9591,7 +9595,7 @@
         },
         {
           "date": "2018-08-13",
-          "value": 81
+          "value": 81.0
         },
         {
           "date": "2018-08-20",
@@ -9615,7 +9619,7 @@
         },
         {
           "date": "2018-09-24",
-          "value": 64
+          "value": 64.0
         },
         {
           "date": "2018-10-01",
@@ -9627,7 +9631,7 @@
         },
         {
           "date": "2018-10-15",
-          "value": 65
+          "value": 65.0
         },
         {
           "date": "2018-10-22",
@@ -9643,7 +9647,7 @@
         },
         {
           "date": "2018-11-12",
-          "value": 37
+          "value": 37.0
         },
         {
           "date": "2018-11-19",
@@ -9655,7 +9659,7 @@
         },
         {
           "date": "2018-12-03",
-          "value": 37
+          "value": 37.0
         },
         {
           "date": "2018-12-10",
@@ -9663,7 +9667,7 @@
         },
         {
           "date": "2018-12-17",
-          "value": 36
+          "value": 36.0
         },
         {
           "date": "2018-12-24",
@@ -9687,7 +9691,7 @@
         },
         {
           "date": "2019-01-28",
-          "value": 38
+          "value": 38.0
         },
         {
           "date": "2019-02-04",
@@ -9719,11 +9723,11 @@
         },
         {
           "date": "2019-03-25",
-          "value": 53
+          "value": 53.0
         },
         {
           "date": "2019-04-01",
-          "value": 61
+          "value": 61.0
         },
         {
           "date": "2019-04-08",
@@ -9731,11 +9735,11 @@
         },
         {
           "date": "2019-04-15",
-          "value": 65
+          "value": 65.0
         },
         {
           "date": "2019-04-22",
-          "value": 70
+          "value": 70.0
         },
         {
           "date": "2019-04-29",
@@ -9747,11 +9751,11 @@
         },
         {
           "date": "2019-05-13",
-          "value": 77
+          "value": 77.0
         },
         {
           "date": "2019-05-20",
-          "value": 74
+          "value": 74.0
         },
         {
           "date": "2019-05-27",
@@ -9783,7 +9787,7 @@
         },
         {
           "date": "2019-07-15",
-          "value": 67
+          "value": 67.0
         },
         {
           "date": "2019-07-22",
@@ -9803,7 +9807,7 @@
         },
         {
           "date": "2019-08-19",
-          "value": 58
+          "value": 58.0
         },
         {
           "date": "2019-08-26",
@@ -9823,11 +9827,11 @@
         },
         {
           "date": "2019-09-23",
-          "value": 31
+          "value": 31.0
         },
         {
           "date": "2019-09-30",
-          "value": 37
+          "value": 37.0
         },
         {
           "date": "2019-10-07",
@@ -9835,7 +9839,7 @@
         },
         {
           "date": "2019-10-14",
-          "value": 41
+          "value": 41.0
         },
         {
           "date": "2019-10-21",
@@ -9843,11 +9847,11 @@
         },
         {
           "date": "2019-10-28",
-          "value": 42
+          "value": 42.0
         },
         {
           "date": "2019-11-04",
-          "value": 47
+          "value": 47.0
         },
         {
           "date": "2019-11-11",
@@ -9859,7 +9863,7 @@
         },
         {
           "date": "2019-11-25",
-          "value": 59
+          "value": 59.0
         },
         {
           "date": "2019-12-02",
@@ -9883,11 +9887,11 @@
         },
         {
           "date": "2020-01-06",
-          "value": 66
+          "value": 66.0
         },
         {
           "date": "2020-01-13",
-          "value": 68
+          "value": 68.0
         },
         {
           "date": "2020-01-20",
@@ -9899,7 +9903,7 @@
         },
         {
           "date": "2020-02-03",
-          "value": 66
+          "value": 66.0
         },
         {
           "date": "2020-02-10",
@@ -9911,7 +9915,7 @@
         },
         {
           "date": "2020-02-24",
-          "value": 52
+          "value": 52.0
         },
         {
           "date": "2020-03-02",
@@ -9927,7 +9931,7 @@
         },
         {
           "date": "2020-03-23",
-          "value": 59
+          "value": 59.0
         },
         {
           "date": "2020-03-30",
@@ -9943,7 +9947,7 @@
         },
         {
           "date": "2020-04-20",
-          "value": 47
+          "value": 47.0
         },
         {
           "date": "2020-04-27",
@@ -9963,7 +9967,7 @@
         },
         {
           "date": "2020-05-25",
-          "value": 69
+          "value": 69.0
         },
         {
           "date": "2020-06-01",
@@ -9975,15 +9979,15 @@
         },
         {
           "date": "2020-06-15",
-          "value": 72
+          "value": 72.0
         },
         {
           "date": "2020-06-22",
-          "value": 69
+          "value": 69.0
         },
         {
           "date": "2020-06-29",
-          "value": 68
+          "value": 68.0
         },
         {
           "date": "2020-07-06",
@@ -9999,7 +10003,7 @@
         },
         {
           "date": "2020-07-27",
-          "value": 65
+          "value": 65.0
         },
         {
           "date": "2020-08-03",
@@ -10011,11 +10015,11 @@
         },
         {
           "date": "2020-08-17",
-          "value": 56
+          "value": 56.0
         },
         {
           "date": "2020-08-24",
-          "value": 53
+          "value": 53.0
         },
         {
           "date": "2020-08-31",
@@ -10103,7 +10107,7 @@
         },
         {
           "date": "2021-01-25",
-          "value": 60
+          "value": 60.0
         },
         {
           "date": "2021-02-01",
@@ -10123,7 +10127,7 @@
         },
         {
           "date": "2021-03-01",
-          "value": 68
+          "value": 68.0
         },
         {
           "date": "2021-03-08",
@@ -10187,7 +10191,7 @@
         },
         {
           "date": "2021-06-21",
-          "value": 70
+          "value": 70.0
         },
         {
           "date": "2021-06-28",
@@ -10239,7 +10243,7 @@
         },
         {
           "date": "2021-09-20",
-          "value": 68
+          "value": 68.0
         },
         {
           "date": "2021-09-27",
@@ -10291,7 +10295,7 @@
         },
         {
           "date": "2021-12-20",
-          "value": 53
+          "value": 53.0
         },
         {
           "date": "2021-12-27",
@@ -10307,7 +10311,7 @@
         },
         {
           "date": "2022-01-17",
-          "value": 54
+          "value": 54.0
         },
         {
           "date": "2022-01-24",
@@ -10359,7 +10363,7 @@
         },
         {
           "date": "2022-04-18",
-          "value": 47
+          "value": 47.0
         },
         {
           "date": "2022-04-25",
@@ -10403,7 +10407,7 @@
         },
         {
           "date": "2022-07-04",
-          "value": 53
+          "value": 53.0
         },
         {
           "date": "2022-07-11",
@@ -10447,11 +10451,11 @@
         },
         {
           "date": "2022-09-19",
-          "value": 37
+          "value": 37.0
         },
         {
           "date": "2022-09-26",
-          "value": 36
+          "value": 36.0
         },
         {
           "date": "2022-10-03",
@@ -10491,7 +10495,7 @@
         },
         {
           "date": "2022-12-05",
-          "value": 34
+          "value": 34.0
         },
         {
           "date": "2022-12-12",
@@ -10515,7 +10519,7 @@
         },
         {
           "date": "2023-01-16",
-          "value": 65
+          "value": 65.0
         },
         {
           "date": "2023-01-23",
@@ -10523,7 +10527,7 @@
         },
         {
           "date": "2023-01-30",
-          "value": 69
+          "value": 69.0
         },
         {
           "date": "2023-02-06",
@@ -10563,7 +10567,7 @@
         },
         {
           "date": "2023-04-10",
-          "value": 65
+          "value": 65.0
         },
         {
           "date": "2023-04-17",
@@ -10575,7 +10579,7 @@
         },
         {
           "date": "2023-05-01",
-          "value": 61
+          "value": 61.0
         },
         {
           "date": "2023-05-08",
@@ -10587,7 +10591,7 @@
         },
         {
           "date": "2023-05-22",
-          "value": 60
+          "value": 60.0
         },
         {
           "date": "2023-05-29",
@@ -10611,7 +10615,7 @@
         },
         {
           "date": "2023-07-03",
-          "value": 59
+          "value": 59.0
         },
         {
           "date": "2023-07-10",
@@ -10639,7 +10643,7 @@
         },
         {
           "date": "2023-08-21",
-          "value": 56
+          "value": 56.0
         },
         {
           "date": "2023-08-28",
@@ -10675,7 +10679,7 @@
         },
         {
           "date": "2023-10-23",
-          "value": 53
+          "value": 53.0
         },
         {
           "date": "2023-10-30",
@@ -10695,7 +10699,7 @@
         },
         {
           "date": "2023-11-27",
-          "value": 51
+          "value": 51.0
         },
         {
           "date": "2023-12-04",
@@ -10707,7 +10711,7 @@
         },
         {
           "date": "2023-12-18",
-          "value": 55
+          "value": 55.0
         },
         {
           "date": "2023-12-25",
@@ -10759,7 +10763,7 @@
         },
         {
           "date": "2024-03-18",
-          "value": 58
+          "value": 58.0
         },
         {
           "date": "2024-03-25",
@@ -10779,7 +10783,7 @@
         },
         {
           "date": "2024-04-22",
-          "value": 65
+          "value": 65.0
         },
         {
           "date": "2024-04-29",
@@ -10807,7 +10811,7 @@
         },
         {
           "date": "2024-06-10",
-          "value": 60
+          "value": 60.0
         },
         {
           "date": "2024-06-17",
@@ -10879,7 +10883,7 @@
         },
         {
           "date": "2024-10-14",
-          "value": 59
+          "value": 59.0
         },
         {
           "date": "2024-10-21",
@@ -10923,7 +10927,7 @@
         },
         {
           "date": "2024-12-30",
-          "value": 62
+          "value": 62.0
         },
         {
           "date": "2025-01-06",
@@ -10931,7 +10935,7 @@
         },
         {
           "date": "2025-01-13",
-          "value": 63
+          "value": 63.0
         },
         {
           "date": "2025-01-20",
@@ -10975,7 +10979,7 @@
         },
         {
           "date": "2025-03-31",
-          "value": 61
+          "value": 61.0
         },
         {
           "date": "2025-04-07",
@@ -11027,7 +11031,7 @@
         },
         {
           "date": "2025-06-30",
-          "value": 68
+          "value": 68.0
         },
         {
           "date": "2025-07-07",
@@ -11067,7 +11071,7 @@
         },
         {
           "date": "2025-09-08",
-          "value": 76
+          "value": 76.0
         },
         {
           "date": "2025-09-15",
@@ -11171,11 +11175,11 @@
         },
         {
           "date": "2026-03-09",
-          "value": 85
+          "value": 85.0
         },
         {
           "date": "2026-03-16",
-          "value": 85
+          "value": 85.0
         },
         {
           "date": "2026-03-23",
@@ -11345,7 +11349,7 @@
         {
           "date": "1994-02-01",
           "price": 111.6,
-          "rent": 106,
+          "rent": 106.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -11365,7 +11369,7 @@
         },
         {
           "date": "1994-05-01",
-          "price": 116,
+          "price": 116.0,
           "rent": 119.4,
           "price_provisional": false,
           "rent_provisional": false
@@ -11421,7 +11425,7 @@
         },
         {
           "date": "1995-01-01",
-          "price": 110,
+          "price": 110.0,
           "rent": 122.7,
           "price_provisional": false,
           "rent_provisional": false
@@ -11450,7 +11454,7 @@
         {
           "date": "1995-05-01",
           "price": 110.1,
-          "rent": 123,
+          "rent": 123.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -11470,7 +11474,7 @@
         },
         {
           "date": "1995-08-01",
-          "price": 105,
+          "price": 105.0,
           "rent": 120.7,
           "price_provisional": false,
           "rent_provisional": false
@@ -11540,7 +11544,7 @@
         },
         {
           "date": "1996-06-01",
-          "price": 115,
+          "price": 115.0,
           "rent": 117.4,
           "price_provisional": false,
           "rent_provisional": false
@@ -11575,7 +11579,7 @@
         },
         {
           "date": "1996-11-01",
-          "price": 128,
+          "price": 128.0,
           "rent": 121.8,
           "price_provisional": false,
           "rent_provisional": false
@@ -11610,8 +11614,8 @@
         },
         {
           "date": "1997-04-01",
-          "price": 157,
-          "rent": 132,
+          "price": 157.0,
+          "rent": 132.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -11624,7 +11628,7 @@
         },
         {
           "date": "1997-06-01",
-          "price": 172,
+          "price": 172.0,
           "rent": 135.2,
           "price_provisional": false,
           "rent_provisional": false
@@ -11666,7 +11670,7 @@
         },
         {
           "date": "1997-12-01",
-          "price": 155,
+          "price": 155.0,
           "rent": 135.3,
           "price_provisional": false,
           "rent_provisional": false
@@ -11715,7 +11719,7 @@
         },
         {
           "date": "1998-07-01",
-          "price": 108,
+          "price": 108.0,
           "rent": 109.9,
           "price_provisional": false,
           "rent_provisional": false
@@ -11751,21 +11755,21 @@
         {
           "date": "1998-12-01",
           "price": 104.6,
-          "rent": 101,
+          "rent": 101.0,
           "price_provisional": false,
           "rent_provisional": false
         },
         {
           "date": "1999-01-01",
           "price": 103.8,
-          "rent": 102,
+          "rent": 102.0,
           "price_provisional": false,
           "rent_provisional": false
         },
         {
           "date": "1999-02-01",
-          "price": 102,
-          "rent": 101,
+          "price": 102.0,
+          "rent": 101.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -11778,7 +11782,7 @@
         },
         {
           "date": "1999-04-01",
-          "price": 102,
+          "price": 102.0,
           "rent": 100.6,
           "price_provisional": false,
           "rent_provisional": false
@@ -11842,7 +11846,7 @@
         {
           "date": "2000-01-01",
           "price": 97.5,
-          "rent": 98,
+          "rent": 98.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -11876,7 +11880,7 @@
         },
         {
           "date": "2000-06-01",
-          "price": 86,
+          "price": 86.0,
           "rent": 97.7,
           "price_provisional": false,
           "rent_provisional": false
@@ -11904,7 +11908,7 @@
         },
         {
           "date": "2000-10-01",
-          "price": 87,
+          "price": 87.0,
           "rent": 98.5,
           "price_provisional": false,
           "rent_provisional": false
@@ -11919,7 +11923,7 @@
         {
           "date": "2000-12-01",
           "price": 81.8,
-          "rent": 98,
+          "rent": 98.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -11954,7 +11958,7 @@
         {
           "date": "2001-05-01",
           "price": 80.5,
-          "rent": 97,
+          "rent": 97.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -12031,7 +12035,7 @@
         {
           "date": "2002-04-01",
           "price": 72.3,
-          "rent": 86,
+          "rent": 86.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -12073,7 +12077,7 @@
         {
           "date": "2002-10-01",
           "price": 65.4,
-          "rent": 80,
+          "rent": 80.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -12108,7 +12112,7 @@
         {
           "date": "2003-03-01",
           "price": 61.2,
-          "rent": 76,
+          "rent": 76.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -12192,14 +12196,14 @@
         {
           "date": "2004-03-01",
           "price": 78.1,
-          "rent": 76,
+          "rent": 76.0,
           "price_provisional": false,
           "rent_provisional": false
         },
         {
           "date": "2004-04-01",
           "price": 79.4,
-          "rent": 77,
+          "rent": 77.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -12213,7 +12217,7 @@
         {
           "date": "2004-06-01",
           "price": 74.7,
-          "rent": 78,
+          "rent": 78.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -12317,7 +12321,7 @@
         },
         {
           "date": "2005-09-01",
-          "price": 94,
+          "price": 94.0,
           "rent": 89.5,
           "price_provisional": false,
           "rent_provisional": false
@@ -12332,7 +12336,7 @@
         {
           "date": "2005-11-01",
           "price": 88.5,
-          "rent": 90,
+          "rent": 90.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -12373,8 +12377,8 @@
         },
         {
           "date": "2006-05-01",
-          "price": 94,
-          "rent": 91,
+          "price": 94.0,
+          "rent": 91.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -12394,7 +12398,7 @@
         },
         {
           "date": "2006-08-01",
-          "price": 93,
+          "price": 93.0,
           "rent": 91.9,
           "price_provisional": false,
           "rent_provisional": false
@@ -12402,7 +12406,7 @@
         {
           "date": "2006-09-01",
           "price": 93.3,
-          "rent": 93,
+          "rent": 93.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -12415,7 +12419,7 @@
         },
         {
           "date": "2006-11-01",
-          "price": 93,
+          "price": 93.0,
           "rent": 94.3,
           "price_provisional": false,
           "rent_provisional": false
@@ -12478,7 +12482,7 @@
         },
         {
           "date": "2007-08-01",
-          "price": 104,
+          "price": 104.0,
           "rent": 103.8,
           "price_provisional": false,
           "rent_provisional": false
@@ -12500,14 +12504,14 @@
         {
           "date": "2007-11-01",
           "price": 113.3,
-          "rent": 108,
+          "rent": 108.0,
           "price_provisional": false,
           "rent_provisional": false
         },
         {
           "date": "2007-12-01",
           "price": 117.9,
-          "rent": 110,
+          "rent": 110.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -12724,7 +12728,7 @@
         {
           "date": "2010-07-01",
           "price": 151.3,
-          "rent": 120,
+          "rent": 120.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -12745,7 +12749,7 @@
         {
           "date": "2010-10-01",
           "price": 160.2,
-          "rent": 126,
+          "rent": 126.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -12758,7 +12762,7 @@
         },
         {
           "date": "2010-12-01",
-          "price": 163,
+          "price": 163.0,
           "rent": 127.4,
           "price_provisional": false,
           "rent_provisional": false
@@ -12835,7 +12839,7 @@
         },
         {
           "date": "2011-11-01",
-          "price": 182,
+          "price": 182.0,
           "rent": 136.9,
           "price_provisional": false,
           "rent_provisional": false
@@ -12940,7 +12944,7 @@
         },
         {
           "date": "2013-02-01",
-          "price": 240,
+          "price": 240.0,
           "rent": 152.4,
           "price_provisional": false,
           "rent_provisional": false
@@ -12969,7 +12973,7 @@
         {
           "date": "2013-06-01",
           "price": 243.3,
-          "rent": 154,
+          "rent": 154.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -12997,13 +13001,13 @@
         {
           "date": "2013-10-01",
           "price": 245.4,
-          "rent": 157,
+          "rent": 157.0,
           "price_provisional": false,
           "rent_provisional": false
         },
         {
           "date": "2013-11-01",
-          "price": 245,
+          "price": 245.0,
           "rent": 157.2,
           "price_provisional": false,
           "rent_provisional": false
@@ -13025,7 +13029,7 @@
         {
           "date": "2014-02-01",
           "price": 244.3,
-          "rent": 155,
+          "rent": 155.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -13038,8 +13042,8 @@
         },
         {
           "date": "2014-04-01",
-          "price": 245,
-          "rent": 156,
+          "price": 245.0,
+          "rent": 156.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -13060,7 +13064,7 @@
         {
           "date": "2014-07-01",
           "price": 256.4,
-          "rent": 159,
+          "rent": 159.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -13151,7 +13155,7 @@
         {
           "date": "2015-08-01",
           "price": 305.3,
-          "rent": 177,
+          "rent": 177.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -13178,14 +13182,14 @@
         },
         {
           "date": "2015-12-01",
-          "price": 285,
+          "price": 285.0,
           "rent": 171.2,
           "price_provisional": false,
           "rent_provisional": false
         },
         {
           "date": "2016-01-01",
-          "price": 279,
+          "price": 279.0,
           "rent": 168.8,
           "price_provisional": false,
           "rent_provisional": false
@@ -13256,7 +13260,7 @@
         {
           "date": "2016-11-01",
           "price": 306.7,
-          "rent": 172,
+          "rent": 172.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -13276,7 +13280,7 @@
         },
         {
           "date": "2017-02-01",
-          "price": 314,
+          "price": 314.0,
           "rent": 176.6,
           "price_provisional": false,
           "rent_provisional": false
@@ -13290,7 +13294,7 @@
         },
         {
           "date": "2017-04-01",
-          "price": 330,
+          "price": 330.0,
           "rent": 179.7,
           "price_provisional": false,
           "rent_provisional": false
@@ -13326,7 +13330,7 @@
         {
           "date": "2017-09-01",
           "price": 340.8,
-          "rent": 186,
+          "rent": 186.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -13367,15 +13371,15 @@
         },
         {
           "date": "2018-03-01",
-          "price": 370,
+          "price": 370.0,
           "rent": 189.1,
           "price_provisional": false,
           "rent_provisional": false
         },
         {
           "date": "2018-04-01",
-          "price": 377,
-          "rent": 191,
+          "price": 377.0,
+          "rent": 191.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -13437,14 +13441,14 @@
         },
         {
           "date": "2019-01-01",
-          "price": 361,
+          "price": 361.0,
           "rent": 192.5,
           "price_provisional": false,
           "rent_provisional": false
         },
         {
           "date": "2019-02-01",
-          "price": 367,
+          "price": 367.0,
           "rent": 191.9,
           "price_provisional": false,
           "rent_provisional": false
@@ -13529,7 +13533,7 @@
         {
           "date": "2020-02-01",
           "price": 373.4,
-          "rent": 185,
+          "rent": 185.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -13570,7 +13574,7 @@
         },
         {
           "date": "2020-08-01",
-          "price": 382,
+          "price": 382.0,
           "rent": 181.2,
           "price_provisional": false,
           "rent_provisional": false
@@ -13626,7 +13630,7 @@
         },
         {
           "date": "2021-04-01",
-          "price": 391,
+          "price": 391.0,
           "rent": 177.5,
           "price_provisional": false,
           "rent_provisional": false
@@ -13640,14 +13644,14 @@
         },
         {
           "date": "2021-06-01",
-          "price": 394,
+          "price": 394.0,
           "rent": 179.3,
           "price_provisional": false,
           "rent_provisional": false
         },
         {
           "date": "2021-07-01",
-          "price": 398,
+          "price": 398.0,
           "rent": 180.3,
           "price_provisional": false,
           "rent_provisional": false
@@ -13668,7 +13672,7 @@
         },
         {
           "date": "2021-10-01",
-          "price": 396,
+          "price": 396.0,
           "rent": 184.3,
           "price_provisional": false,
           "rent_provisional": false
@@ -13710,7 +13714,7 @@
         },
         {
           "date": "2022-04-01",
-          "price": 385,
+          "price": 385.0,
           "rent": 177.3,
           "price_provisional": false,
           "rent_provisional": false
@@ -13725,7 +13729,7 @@
         {
           "date": "2022-06-01",
           "price": 381.8,
-          "rent": 178,
+          "rent": 178.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -13746,14 +13750,14 @@
         {
           "date": "2022-09-01",
           "price": 360.3,
-          "rent": 179,
+          "rent": 179.0,
           "price_provisional": false,
           "rent_provisional": false
         },
         {
           "date": "2022-10-01",
           "price": 350.2,
-          "rent": 178,
+          "rent": 178.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -13815,14 +13819,14 @@
         },
         {
           "date": "2023-07-01",
-          "price": 344,
-          "rent": 182,
+          "price": 344.0,
+          "rent": 182.0,
           "price_provisional": false,
           "rent_provisional": false
         },
         {
           "date": "2023-08-01",
-          "price": 337,
+          "price": 337.0,
           "rent": 184.9,
           "price_provisional": false,
           "rent_provisional": false
@@ -13836,7 +13840,7 @@
         },
         {
           "date": "2023-10-01",
-          "price": 322,
+          "price": 322.0,
           "rent": 185.4,
           "price_provisional": false,
           "rent_provisional": false
@@ -13851,7 +13855,7 @@
         {
           "date": "2023-12-01",
           "price": 311.3,
-          "rent": 186,
+          "rent": 186.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -13886,7 +13890,7 @@
         {
           "date": "2024-05-01",
           "price": 305.5,
-          "rent": 190,
+          "rent": 190.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -13906,7 +13910,7 @@
         },
         {
           "date": "2024-08-01",
-          "price": 292,
+          "price": 292.0,
           "rent": 195.1,
           "price_provisional": false,
           "rent_provisional": false
@@ -13920,7 +13924,7 @@
         },
         {
           "date": "2024-10-01",
-          "price": 291,
+          "price": 291.0,
           "rent": 192.7,
           "price_provisional": false,
           "rent_provisional": false
@@ -13949,7 +13953,7 @@
         {
           "date": "2025-02-01",
           "price": 285.6,
-          "rent": 193,
+          "rent": 193.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -14040,7 +14044,7 @@
         {
           "date": "2026-03-01",
           "price": 313.9,
-          "rent": 202,
+          "rent": 202.0,
           "price_provisional": true,
           "rent_provisional": true
         },
@@ -14063,12 +14067,12 @@
         {
           "date": "2021-07-31",
           "series": "CCL",
-          "value": 100
+          "value": 100.0
         },
         {
           "date": "2021-07-31",
           "series": "MHPI",
-          "value": 100
+          "value": 100.0
         },
         {
           "date": "2021-08-31",
@@ -14083,12 +14087,12 @@
         {
           "date": "2021-08-31",
           "series": "RVD Price",
-          "value": 100
+          "value": 100.0
         },
         {
           "date": "2021-08-31",
           "series": "RVD Rent",
-          "value": 100
+          "value": 100.0
         },
         {
           "date": "2021-09-30",
@@ -15243,7 +15247,7 @@
         {
           "date": "2026-07-31",
           "series": "CCL",
-          "value": 84.4096
+          "value": 85.0453
         },
         {
           "date": "2026-07-31",
@@ -15257,9 +15261,9 @@
           "dataset": "Centaline CCL",
           "type": "Measure",
           "status": "Healthy",
-          "latest_observation": "2026-07-12",
-          "records": 1698,
-          "freshness": "11d old",
+          "latest_observation": "2026-07-19",
+          "records": 1699,
+          "freshness": "5d old",
           "notes": "Latest observation is published without a provisional flag."
         },
         {
@@ -15269,7 +15273,7 @@
           "status": "Healthy",
           "latest_observation": "2026-07-20",
           "records": 541,
-          "freshness": "3d old",
+          "freshness": "4d old",
           "notes": "Latest observation is published without a provisional flag."
         },
         {
@@ -15279,7 +15283,7 @@
           "status": "Healthy",
           "latest_observation": "2026-07-20",
           "records": 443,
-          "freshness": "3d old",
+          "freshness": "4d old",
           "notes": "Latest observation is published without a provisional flag."
         },
         {
@@ -15289,7 +15293,7 @@
           "status": "Healthy",
           "latest_observation": "2026-05-01",
           "records": 401,
-          "freshness": "83d old",
+          "freshness": "84d old",
           "notes": "Latest observation is provisional."
         },
         {
@@ -15299,7 +15303,7 @@
           "status": "Healthy",
           "latest_observation": "2026-05-01",
           "records": 401,
-          "freshness": "83d old",
+          "freshness": "84d old",
           "notes": "Latest observation is provisional."
         }
       ],
@@ -15309,9 +15313,9 @@
           "dataset": "Centaline CCL",
           "type": "Measure",
           "status": "Healthy",
-          "latest_observation": "2026-07-12",
-          "records": 1698,
-          "freshness": "11d old",
+          "latest_observation": "2026-07-19",
+          "records": 1699,
+          "freshness": "5d old",
           "notes": "Latest observation is published without a provisional flag."
         },
         {
@@ -15321,7 +15325,7 @@
           "status": "Healthy",
           "latest_observation": "2026-07-20",
           "records": 541,
-          "freshness": "3d old",
+          "freshness": "4d old",
           "notes": "Latest observation is published without a provisional flag."
         },
         {
@@ -15331,7 +15335,7 @@
           "status": "Healthy",
           "latest_observation": "2026-07-20",
           "records": 443,
-          "freshness": "3d old",
+          "freshness": "4d old",
           "notes": "Latest observation is published without a provisional flag."
         },
         {
@@ -15341,7 +15345,7 @@
           "status": "Healthy",
           "latest_observation": "2026-05-01",
           "records": 401,
-          "freshness": "83d old",
+          "freshness": "84d old",
           "notes": "Latest observation is provisional."
         },
         {
@@ -15351,7 +15355,7 @@
           "status": "Healthy",
           "latest_observation": "2026-05-01",
           "records": 401,
-          "freshness": "83d old",
+          "freshness": "84d old",
           "notes": "Latest observation is provisional."
         },
         {
@@ -15421,7 +15425,7 @@
           "CCL latest is the most recent published weekly Centaline City Leading Index observation.",
           "Weekly and yearly movements are latest divided by the prior observation or latest observation on/before one year earlier, minus one."
         ],
-        "executed_at": "2026-07-23T23:55:48.418620Z"
+        "executed_at": "2026-07-24T20:51:11.988833Z"
       }
     },
     {
@@ -15437,7 +15441,7 @@
           "MHPI latest is the most recent published overall weekly Midland Hong Kong Property Price Index observation.",
           "Weekly and yearly movements are latest divided by the prior observation or latest observation on/before one year earlier, minus one."
         ],
-        "executed_at": "2026-07-23T23:55:48.418620Z"
+        "executed_at": "2026-07-24T20:51:11.988833Z"
       }
     },
     {
@@ -15452,7 +15456,7 @@
         "metric_definitions": [
           "The confidence series is a supporting market-sentiment measure published by Midland Realty."
         ],
-        "executed_at": "2026-07-23T23:55:48.418620Z"
+        "executed_at": "2026-07-24T20:51:11.988833Z"
       }
     },
     {
@@ -15468,7 +15472,7 @@
           "RVD price latest is the All Classes monthly private domestic price index.",
           "Monthly and yearly movements are latest divided by the prior month or observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-07-23T23:55:48.418620Z"
+        "executed_at": "2026-07-24T20:51:11.988833Z"
       }
     },
     {
@@ -15484,7 +15488,7 @@
           "RVD rent latest is the All Classes monthly private domestic rental index.",
           "Monthly and yearly movements are latest divided by the prior month or observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-07-23T23:55:48.418620Z"
+        "executed_at": "2026-07-24T20:51:11.988833Z"
       }
     },
     {
@@ -15503,7 +15507,7 @@
           "RVD 1.4M.csv",
           "RVD 1.3M.csv"
         ],
-        "executed_at": "2026-07-23T23:55:48.418620Z"
+        "executed_at": "2026-07-24T20:51:11.988833Z"
       }
     },
     {
@@ -15517,13 +15521,13 @@
           "Validated core measure frames",
           "Declared future-source registry"
         ],
-        "executed_at": "2026-07-23T23:55:48.418620Z"
+        "executed_at": "2026-07-24T20:51:11.988833Z"
       }
     }
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-real-estate/",
-    "snapshotId": "4f12860c9584ab55",
+    "snapshotId": "dc1bf03c646850f6",
     "dataAsOf": "2026-07-20"
   }
 }

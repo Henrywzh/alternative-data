@@ -26,9 +26,11 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+from src.hk_real_estate.pipeline import SKIP_MIDLAND_ENV_VAR
 from src.hk_real_estate.sources.centaline import fetch_centaline_ccl
 from src.hk_real_estate.sources.midland import run_midland_ingestion
 from src.hk_real_estate.sources.rvd import run_rvd_ingestion
+from src.hk_real_estate.storage import load_latest_normalized
 
 
 @dataclass(frozen=True)
@@ -641,7 +643,15 @@ def build_artifact(raw_frames: dict[str, pd.DataFrame], *, now: datetime | None 
 
 
 def fetch_live_frames() -> dict[str, pd.DataFrame]:
-    mhpi, confidence, _estates = run_midland_ingestion()
+    if os.environ.get(SKIP_MIDLAND_ENV_VAR):
+        # Midland's WAF blocks GitHub Actions' datacenter IP range (confirmed
+        # 403, reproducible from a residential IP, no known bypass). Fall
+        # back to the last real snapshot rather than attempting a fetch
+        # that's known to fail here and blocking the whole sector refresh.
+        mhpi = load_latest_normalized("midland_mhpi_weekly")
+        confidence = load_latest_normalized("midland_confidence_weekly")
+    else:
+        mhpi, confidence, _estates = run_midland_ingestion()
     rvd_price, rvd_rent = run_rvd_ingestion()
     return {
         "ccl": fetch_centaline_ccl(),

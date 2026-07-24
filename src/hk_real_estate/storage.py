@@ -8,6 +8,26 @@ from typing import Any, Dict, Optional, Union
 
 from .config import RAW_DIR, NORMALIZED_DIR
 
+
+def load_latest_normalized(dataset_name: str) -> pd.DataFrame:
+    """Load the most recently written normalized snapshot for a dataset.
+
+    Used when a source is deliberately skipped in an environment where its
+    live fetch can't succeed (see HK_RE_SKIP_MIDLAND) — falls back to the
+    last real data actually fetched, rather than fabricating a value.
+    """
+    dataset_dir = NORMALIZED_DIR / dataset_name
+    if not dataset_dir.is_dir():
+        return pd.DataFrame()
+    run_dirs = [d for d in dataset_dir.iterdir() if d.is_dir()]
+    if not run_dirs:
+        return pd.DataFrame()
+    latest_dir = max(run_dirs, key=lambda d: d.stat().st_mtime)
+    parquet_path = latest_dir / f"{dataset_name}.parquet"
+    if not parquet_path.exists():
+        return pd.DataFrame()
+    return pd.read_parquet(parquet_path)
+
 def save_raw_snapshot(
     source_name: str,
     content: Union[str, bytes, Dict[str, Any]],
