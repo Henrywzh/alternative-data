@@ -10,6 +10,9 @@ import pandas as pd
 
 from .sources.afcd_food import fetch_afcd_food_prices
 from .sources.consumer_council import fetch_consumer_council_prices
+from .sources.consumer_council_pricewatch import fetch_consumer_council_pricewatch
+from .sources.consumer_council_oilprice import fetch_consumer_council_oilprice
+from .sources.consumer_council_complaints import fetch_consumer_council_complaints
 from .sources.sge_gold import fetch_sge_gold_benchmark
 from .sources.hk_valuation import fetch_hk_consumer_valuations
 from .sources.cnsd_retail import fetch_cnsd_retail_sales
@@ -41,6 +44,19 @@ QUALITY_SPECS: Dict[str, Dict[str, Any]] = {
     "consumer_council_price_watch_daily": {
         "kind": "catalog",
         "required": ["date", "product_id", "product_name", "price_hkd"],
+    },
+    "consumer_council_pricewatch_csv_daily": {
+        "kind": "catalog",
+        "required": ["date", "product_code", "product_name", "price"],
+    },
+    "consumer_council_oilprice_daily": {
+        "kind": "measure",
+        "required": ["date", "company", "fuel_type", "discounted_price_hkd"],
+        "max_age_days": 400,
+    },
+    "consumer_council_complaints_by_sector": {
+        "kind": "catalog",
+        "required": ["period", "category", "amount"],
     },
     "sge_gold_benchmark_daily": {
         "kind": "measure",
@@ -179,6 +195,27 @@ def run_stage_1_pipeline(run_id: str | None = None, *, _raise_on_failure: bool =
     except Exception as exc:
         logger.exception("Consumer Council ingestion failed")
         results["consumer_council_price_watch_daily"] = _error_result(exc)
+
+    try:
+        logger.info("Ingesting HK Consumer Council Online Price Watch (CSV open data)...")
+        _record_many(run_id, results, {"consumer_council_pricewatch_csv_daily": fetch_consumer_council_pricewatch()})
+    except Exception as exc:
+        logger.exception("Consumer Council pricewatch CSV ingestion failed")
+        results["consumer_council_pricewatch_csv_daily"] = _error_result(exc)
+
+    try:
+        logger.info("Ingesting HK Consumer Council Auto Fuel Oil Price Calculator...")
+        _record_many(run_id, results, {"consumer_council_oilprice_daily": fetch_consumer_council_oilprice()})
+    except Exception as exc:
+        logger.exception("Consumer Council oil price ingestion failed")
+        results["consumer_council_oilprice_daily"] = _error_result(exc)
+
+    try:
+        logger.info("Ingesting HK Consumer Council Complaint Statistics...")
+        _record_many(run_id, results, {"consumer_council_complaints_by_sector": fetch_consumer_council_complaints()})
+    except Exception as exc:
+        logger.exception("Consumer Council complaints ingestion failed")
+        results["consumer_council_complaints_by_sector"] = _error_result(exc)
 
     try:
         logger.info("Ingesting Shanghai Gold Exchange benchmark...")

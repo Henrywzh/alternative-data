@@ -72,15 +72,9 @@ def fetch_consumer_council_complaints() -> pd.DataFrame:
             raise ValueError("No complaint categories extracted")
 
     except Exception as exc:
-        logger.warning(f"Failed to fetch Consumer Council Complaints data: {exc}. Using fallback snapshot.")
+        logger.warning(f"Failed to fetch Consumer Council Complaints data: {exc}. Returning empty frame (no fabricated data).")
         source_label = DATA_SOURCE_FALLBACK
-        df = pd.DataFrame([
-            {"period": "2024 1-12", "category": "Foods & Drinks", "amount": 1289},
-            {"period": "2024 1-12", "category": "Medicine & Health Foods", "amount": 1373},
-            {"period": "2024 1-12", "category": "Jewellery & Watches", "amount": 554},
-            {"period": "2024 1-12", "category": "Cars & Car Services", "amount": 458},
-            {"period": "2024 1-12", "category": "Fuel", "amount": 45},
-        ])
+        df = pd.DataFrame(columns=[c for c in COMPLAINTS_COLUMNS if c != "data_source"])
 
     df["data_source"] = source_label
     result = df.reindex(columns=COMPLAINTS_COLUMNS).reset_index(drop=True)
