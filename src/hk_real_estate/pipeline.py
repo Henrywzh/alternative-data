@@ -13,6 +13,8 @@ from .sources.midland import run_midland_ingestion
 from .sources.centaline import fetch_centaline_ccl
 from .sources.hse28 import fetch_28hse_new_projects
 from .sources.hse28 import fetch_28hse_transaction_pilot
+from .sources.midland_transactions import fetch_midland_transaction_pilot
+from .sources.centaline_transactions import fetch_centaline_transaction_pilot
 from .sources.epi import fetch_28hse_epi_eri
 from .sources.rvd import run_rvd_ingestion
 from .sources.landreg import fetch_landreg_monthly_sp, fetch_landreg_monthly_statistics
@@ -290,10 +292,29 @@ def run_all_incomplete_pipelines(run_id: str | None = None, *, _raise_on_failure
         results["hse28_epi_eri_weekly"] = _error_result(exc)
 
     # 5. Unified Agency Transactions (Deduplicated)
+    # Feeds all three agencies that publish a genuine per-transaction record
+    # (estate/floor/unit/price/date), not just an index -- 28Hse, Midland
+    # (data.midland.com.hk/info/v1/transactions/buildings), and Centaline
+    # (findproperty/api/Transaction/Search). Each source is fetched
+    # independently so one agency's failure doesn't blank out the others;
+    # the dedup pass still runs (and is genuinely exercised across
+    # multiple sources) on whichever feeds succeeded.
     try:
         logger.info("Ingesting bounded agency transaction feeds & deduplicating...")
-        hse28_tx = fetch_28hse_transaction_pilot()
-        deduped_tx = deduplicate_agency_transactions([hse28_tx])
+        agency_transaction_frames = []
+        try:
+            agency_transaction_frames.append(fetch_28hse_transaction_pilot())
+        except Exception:
+            logger.exception("28Hse transaction feed failed (dedup will proceed without it)")
+        try:
+            agency_transaction_frames.append(fetch_midland_transaction_pilot())
+        except Exception:
+            logger.exception("Midland transaction feed failed (dedup will proceed without it)")
+        try:
+            agency_transaction_frames.append(fetch_centaline_transaction_pilot())
+        except Exception:
+            logger.exception("Centaline transaction feed failed (dedup will proceed without it)")
+        deduped_tx = deduplicate_agency_transactions(agency_transaction_frames)
         _record_many(run_id, results, {"unified_agency_transactions_deduped": deduped_tx})
     except Exception as exc:
         logger.exception("Unified agency transaction dedup failed")

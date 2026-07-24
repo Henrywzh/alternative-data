@@ -24,6 +24,27 @@ def deduplicate_agency_transactions(transaction_dfs: List[pd.DataFrame]) -> pd.D
     """
     Deduplicate transaction feeds across multiple property agencies (28Hse, Midland, Centaline).
     Returns a unified near-real-time transaction activity dataset with cross-agency record IDs.
+
+    As of 2026-07-24 this is genuinely fed by three independent, real,
+    per-transaction agency sources (not just 28Hse):
+      - ``sources.hse28.fetch_28hse_transaction_pilot`` (server-rendered
+        estate detail pages).
+      - ``sources.midland_transactions.fetch_midland_transaction_pilot``
+        (reverse-engineered ``data.midland.com.hk/info/v1/transactions/
+        buildings/<building_id>`` API; needs an anonymous Bearer token
+        obtained from any midland.com.hk page visit's ``token`` cookie).
+      - ``sources.centaline_transactions.fetch_centaline_transaction_pilot``
+        (reverse-engineered ``hk.centanet.com/findproperty/api/
+        Transaction/Search`` API; no auth required).
+    Ricacorp was investigated in an earlier session and ruled out (no
+    scrapable price index or transaction feed). All three wired-in sources
+    were verified live against known, real HK developments before being
+    added here -- see each source module's docstring for the specific
+    verification evidence (real prices, real addresses, byte-identical file
+    sizes, etc.). Midland's feed can legitimately come back empty in CI:
+    its WAF blocks some data-center IP ranges (see
+    ``pipeline.SKIP_MIDLAND_ENV_VAR``), in which case this function still
+    dedups whatever sources did succeed rather than failing the whole run.
     """
     if not transaction_dfs:
         return pd.DataFrame()
