@@ -15,10 +15,11 @@ from .sources.hse28 import fetch_28hse_transaction_pilot
 from .sources.epi import fetch_28hse_epi_eri
 from .sources.rvd import run_rvd_ingestion
 from .sources.landreg import fetch_landreg_monthly_sp, fetch_landreg_monthly_statistics
-from .sources.srpe import fetch_srpe_project_documents
+from .sources.srpe import fetch_srpe_project_documents, fetch_srpe_firsthand_sales_digest
 from .sources.buildings_dept import fetch_buildings_dept_digests, fetch_buildings_dept_monthly_stats
 from .sources.hkma import fetch_hkma_residential_mortgage_survey
-from .sources.bd_projects import fetch_bd_project_lifecycle_events
+from .sources.bd_projects import fetch_bd_project_lifecycle_events, fetch_bd_supply_leading_indicators
+from .dedup.transaction_dedup import deduplicate_agency_transactions
 from .storage import save_normalized_dataset, NORMALIZED_DIR
 
 
@@ -45,12 +46,15 @@ QUALITY_SPECS: Dict[str, Dict[str, Any]] = {
     "rvd_rental_index_monthly": {"kind": "measure", "required": ["date", "overall", "is_provisional"], "max_age_days": 400},
     "landreg_press_releases_catalog": {"kind": "catalog", "required": ["date", "release_title", "release_url"]},
     "srpe_document_endpoints_catalog": {"kind": "catalog", "required": ["action_endpoint"]},
+    "srpe_firsthand_sales_digest": {"kind": "catalog", "required": ["document_category", "endpoint_url"]},
     "buildings_dept_monthly_digests_catalog": {"kind": "catalog", "required": ["date", "digest_url"]},
     "hse28_epi_eri_weekly": {"kind": "measure", "required": ["date", "period_start", "period_end", "index_type", "index_value"], "max_age_days": 400},
     "hse28_transaction_pilot": {"kind": "measure", "required": ["date", "transaction_date", "source_record_id", "price_hkd"], "max_age_days": 400},
+    "unified_agency_transactions_deduped": {"kind": "measure", "required": ["transaction_date", "dedup_transaction_id"], "max_age_days": 400},
     "landreg_monthly_facts": {"kind": "measure", "required": ["date", "statistic_name", "units"], "max_age_days": 400},
     "landreg_asp_series": {"kind": "measure", "required": ["date", "all_building_units_asp", "residential_units_asp"], "max_age_days": 400},
     "buildings_dept_monthly_stats": {"kind": "catalog", "required": ["date", "table_id", "numeric_values"]},
+    "bd_supply_leading_indicators": {"kind": "measure", "required": ["date", "permit_stage", "region"], "max_age_days": 400},
     "hkma_residential_mortgage_survey": {"kind": "measure", "required": ["observation_date", "approved_loans_amount_mhkd"], "max_age_days": 400},
     "bd_project_lifecycle_events": {"kind": "catalog", "required": ["permit_stage", "site_address"]},
 }
@@ -73,7 +77,7 @@ def _quality_errors(dataset_name: str, df: pd.DataFrame) -> list[str]:
         if dates.isna().any():
             return [f"{date_col} contains invalid values"]
         duplicate_key = [date_col]
-        for candidate in ("index_type", "statistic_name", "table_id", "source_record_id"):
+        for candidate in ("index_type", "statistic_name", "table_id", "source_record_id", "dedup_transaction_id", "permit_stage", "region", "property_category"):
             if candidate in df.columns:
                 duplicate_key.append(candidate)
         if df.duplicated(subset=duplicate_key).any():
@@ -229,16 +233,55 @@ def run_stage_2_pipeline(run_id: str | None = None, *, _raise_on_failure: bool =
     return _finalize_group(run_id, "stage_2", results, _raise_on_failure)
 
 
-def run_all_pipelines() -> Dict[str, Any]:
-    run_id = str(uuid.uuid4())
-    merged: Dict[str, Any] = {}
-    for runner in (run_group_a_pipeline, run_group_b_pipeline, run_group_c_pipeline, run_stage_2_pipeline):
-        merged.update(runner(run_id, _raise_on_failure=False))
-    manifest_path = write_run_manifest(run_id, "all", merged)
-    failures = {name: value for name, value in merged.items() if value["status"] != "success"}
-    if failures:
-        raise PipelineRunError(f"Full ingestion failed; manifest: {manifest_path}", merged, manifest_path)
-    return merged
+def run_all_incomplete_pipelines(run_id: str | None = None, *, _raise_on_failure: bool = False) -> Dict[str, Any]:
+    """Run digestion pipeline for all 5 incomplete HK Real Estate data sources."""
+    run_id = run_id or str(uuid.uuid4())
+    results: Dict[str, Any] = {}
+    
+    # 1. SRPE First-hand Sales Digest
+    try:
+        logger.info("Ingesting SRPE First-hand Sales Digest...")
+        _record_many(run_id, results, {"srpe_firsthand_sales_digest": fetch_srpe_firsthand_sales_digest()})
+    except Exception as exc:
+        logger.exception("SRPE firsthand sales digest failed")
+        results["srpe_firsthand_sales_digest"] = _error_result(exc)
+
+    # 2. Land Registry Deed Facts
+    try:
+        logger.info("Ingesting Land Registry Deed Facts...")
+        facts, series = fetch_landreg_monthly_statistics()
+        _record_many(run_id, results, {"landreg_monthly_facts": facts, "landreg_asp_series": series})
+    except Exception as exc:
+        logger.exception("Land Registry deed facts failed")
+        results["landreg_monthly_facts"] = _error_result(exc)
+
+    # 3. Buildings Department Supply Leading Indicators
+    try:
+        logger.info("Ingesting BD Supply Leading Indicators...")
+        _record_many(run_id, results, {"bd_supply_leading_indicators": fetch_bd_supply_leading_indicators()})
+    except Exception as exc:
+        logger.exception("BD supply leading indicators failed")
+        results["bd_supply_leading_indicators"] = _error_result(exc)
+
+    # 4. 28Hse EPI / ERI Weekly Indices
+    try:
+        logger.info("Ingesting 28Hse EPI / ERI weekly index history...")
+        _record_many(run_id, results, {"hse28_epi_eri_weekly": fetch_28hse_epi_eri()})
+    except Exception as exc:
+        logger.exception("28Hse EPI / ERI ingestion failed")
+        results["hse28_epi_eri_weekly"] = _error_result(exc)
+
+    # 5. Unified Agency Transactions (Deduplicated)
+    try:
+        logger.info("Ingesting bounded agency transaction feeds & deduplicating...")
+        hse28_tx = fetch_28hse_transaction_pilot()
+        deduped_tx = deduplicate_agency_transactions([hse28_tx])
+        _record_many(run_id, results, {"unified_agency_transactions_deduped": deduped_tx})
+    except Exception as exc:
+        logger.exception("Unified agency transaction dedup failed")
+        results["unified_agency_transactions_deduped"] = _error_result(exc)
+
+    return _finalize_group(run_id, "incomplete_5", results, _raise_on_failure)
 
 
 def run_stage_1_pipeline(run_id: str | None = None, *, _raise_on_failure: bool = False) -> Dict[str, Any]:
@@ -271,6 +314,18 @@ def run_stage_1_pipeline(run_id: str | None = None, *, _raise_on_failure: bool =
         logger.exception("Buildings Department monthly ingestion failed")
         results["buildings_dept_monthly_stats"] = _error_result(exc)
     return _finalize_group(run_id, "stage_1", results, _raise_on_failure)
+
+
+def run_all_pipelines() -> Dict[str, Any]:
+    run_id = str(uuid.uuid4())
+    merged: Dict[str, Any] = {}
+    for runner in (run_group_a_pipeline, run_group_b_pipeline, run_group_c_pipeline, run_stage_2_pipeline, run_all_incomplete_pipelines):
+        merged.update(runner(run_id, _raise_on_failure=False))
+    manifest_path = write_run_manifest(run_id, "all", merged)
+    failures = {name: value for name, value in merged.items() if value["status"] != "success"}
+    if failures:
+        raise PipelineRunError(f"Full ingestion failed; manifest: {manifest_path}", merged, manifest_path)
+    return merged
 
 
 if __name__ == "__main__":
