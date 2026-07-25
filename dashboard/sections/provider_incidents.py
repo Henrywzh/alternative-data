@@ -200,7 +200,7 @@ def render(domain_states, datasets: dict[str, DatasetLoadResult]) -> None:
     _ = domain_states
     st.markdown('<div class="section-title" style="margin-top:0.25rem;">AI Provider Incidents</div>', unsafe_allow_html=True)
     st.markdown(
-        '<div class="section-subtitle">Provider-reported API and model-service incidents from eight official public status feeds. This is an operational disclosure tracker, not independent uptime measurement.</div>',
+        '<div class="section-subtitle">Provider-reported API and model-service incidents from ten official public status feeds. This is an operational disclosure tracker, not independent uptime measurement.</div>',
         unsafe_allow_html=True,
     )
     incidents = _prepare_incidents(datasets.get(INCIDENTS_ID))

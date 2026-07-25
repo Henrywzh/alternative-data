@@ -12,6 +12,8 @@ from provider_incident_data.models import FetchFailure, Snapshot, SourceSpec
 SOURCE_SPECS: tuple[SourceSpec, ...] = (
     SourceSpec("openai", "OpenAI", "statuspage_json", "https://status.openai.com/api/v2/incidents.json", "statuspage"),
     SourceSpec("anthropic", "Anthropic", "statuspage_json", "https://status.claude.com/api/v2/incidents.json", "statuspage"),
+    SourceSpec("moonshot", "Moonshot AI (Kimi)", "statuspage_json", "https://status.moonshot.cn/api/v2/incidents.json", "statuspage"),
+    SourceSpec("minimax", "MiniMax", "statuspage_json", "https://status.minimax.io/api/v2/incidents.json", "statuspage"),
     SourceSpec("google", "Google", "google_cloud_json", "https://status.cloud.google.com/incidents.json", "google"),
     SourceSpec("deepseek", "DeepSeek", "atom", "https://status.deepseek.com/feed.atom", "feed"),
     SourceSpec("xai", "xAI", "rss", "https://status.x.ai/feed.xml", "feed"),

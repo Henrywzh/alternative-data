@@ -9,6 +9,7 @@ from provider_incident_data.extract import extract_snapshot
 from provider_incident_data.models import Snapshot, SourceSpec
 from provider_incident_data.pipeline import ProviderIncidentPipeline
 from provider_incident_data.quality import validate_incidents
+from provider_incident_data.source import SOURCE_SPECS
 from provider_incident_data.storage import IncidentStorage
 from dashboard.sections.provider_incidents import _prepare_incidents
 
@@ -25,6 +26,53 @@ def _snapshot(provider_id: str, parser: str, body: str) -> Snapshot:
         status_code=200,
         response_ms=20,
     )
+
+
+def test_verified_moonshot_and_minimax_sources_use_statuspage_api() -> None:
+    specs = {spec.provider_id: spec for spec in SOURCE_SPECS}
+
+    assert specs["moonshot"].provider_name == "Moonshot AI (Kimi)"
+    assert specs["moonshot"].source_url == "https://status.moonshot.cn/api/v2/incidents.json"
+    assert specs["moonshot"].parser == "statuspage"
+    assert specs["minimax"].provider_name == "MiniMax"
+    assert specs["minimax"].source_url == "https://status.minimax.io/api/v2/incidents.json"
+    assert specs["minimax"].parser == "statuspage"
+
+
+def test_verified_statuspage_sources_extract_incidents_and_updates() -> None:
+    for provider_id in ("moonshot", "minimax"):
+        body = json.dumps(
+            {
+                "incidents": [
+                    {
+                        "id": f"{provider_id}-incident-1",
+                        "name": "Elevated API errors",
+                        "status": "resolved",
+                        "impact": "minor",
+                        "created_at": "2026-07-25T10:00:00Z",
+                        "resolved_at": "2026-07-25T10:30:00Z",
+                        "components": [{"id": "api", "name": "API"}],
+                        "incident_updates": [
+                            {
+                                "id": f"{provider_id}-update-1",
+                                "status": "resolved",
+                                "body": "Recovered",
+                                "created_at": "2026-07-25T10:30:00Z",
+                            }
+                        ],
+                    }
+                ]
+            }
+        )
+        extracted = extract_snapshot(
+            _snapshot(provider_id, "statuspage", body),
+            run_id="run",
+            scraped_at="2026-07-25T11:00:00Z",
+        )
+
+        assert len(extracted["provider_incidents"]) == 1
+        assert len(extracted["provider_incident_updates"]) == 1
+        assert extracted["provider_incidents"][0]["normalized_status"] == "resolved"
 
 
 def test_statuspage_extracts_incident_updates_and_components() -> None:
