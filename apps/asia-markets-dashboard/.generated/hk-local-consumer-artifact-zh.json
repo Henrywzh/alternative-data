@@ -5,7 +5,7 @@
     "surface": "dashboard",
     "title": "香港本地消费监测",
     "description": "极端天气干扰时长、港元/人民币汇率、跨境出入境人流（北上/南下）、黄金原料成本、零售销售、餐饮收益及消费股估值的来源快照。",
-    "generatedAt": "2026-07-25T11:02:13.185641Z",
+    "generatedAt": "2026-07-25T11:24:43.085893Z",
     "cards": [
       {
         "id": "northbound_card",
@@ -818,7 +818,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**数据快照：** `41c445340799041f` · 生成于 2026-07-25T11:02:13.185641Z。"
+        "body": "**数据快照：** `85aa7bf21373433a` · 生成于 2026-07-25T11:24:43.085893Z。"
       },
       {
         "id": "market_pulse_1",
@@ -939,7 +939,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-25T11:02:13.185641Z",
+    "generatedAt": "2026-07-25T11:24:43.085893Z",
     "status": "ready",
     "datasets": {
       "kpi_weather": [
@@ -1411,6 +1411,6356 @@
         }
       ],
       "immigration_trend_history": [
+        {
+          "date": "2023-10-29",
+          "value": 196015,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-10-29",
+          "value": 82020.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-10-30",
+          "value": 192080.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-10-30",
+          "value": 82560.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-10-31",
+          "value": 192106.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-10-31",
+          "value": 81376.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-11-01",
+          "value": 192753.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-11-01",
+          "value": 80118.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-11-02",
+          "value": 193494.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-11-02",
+          "value": 77756.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-11-03",
+          "value": 196343.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-11-03",
+          "value": 76276.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-11-04",
+          "value": 203274.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-11-04",
+          "value": 76357.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-11-05",
+          "value": 206863.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-11-05",
+          "value": 76845.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-11-06",
+          "value": 208185.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-11-06",
+          "value": 76367.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-11-07",
+          "value": 210026.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-11-07",
+          "value": 77028.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-11-08",
+          "value": 211212.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-11-08",
+          "value": 77804,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-11-09",
+          "value": 211800.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-11-09",
+          "value": 78372.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-11-10",
+          "value": 212416,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-11-10",
+          "value": 79024.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-11-11",
+          "value": 211521.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-11-11",
+          "value": 79917.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-11-12",
+          "value": 213138.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-11-12",
+          "value": 79660,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-11-13",
+          "value": 213741.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-11-13",
+          "value": 80231.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-11-14",
+          "value": 214177.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-11-14",
+          "value": 80922.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-11-15",
+          "value": 214526.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-11-15",
+          "value": 81419.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-11-16",
+          "value": 215998.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-11-16",
+          "value": 81936.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-11-17",
+          "value": 218102,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-11-17",
+          "value": 82319.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-11-18",
+          "value": 220430.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-11-18",
+          "value": 82742.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-11-19",
+          "value": 220101.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-11-19",
+          "value": 83873,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-11-20",
+          "value": 220303,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-11-20",
+          "value": 84542.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-11-21",
+          "value": 220928,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-11-21",
+          "value": 84629.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-11-22",
+          "value": 220671.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-11-22",
+          "value": 84661.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-11-23",
+          "value": 220137.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-11-23",
+          "value": 84876.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-11-24",
+          "value": 219262.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-11-24",
+          "value": 85661.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-11-25",
+          "value": 220464.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-11-25",
+          "value": 86470.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-11-26",
+          "value": 221213.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-11-26",
+          "value": 86106.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-11-27",
+          "value": 221437.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-11-27",
+          "value": 85217.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-11-28",
+          "value": 221796.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-11-28",
+          "value": 84413.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-11-29",
+          "value": 222059.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-11-29",
+          "value": 83400,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-11-30",
+          "value": 222224.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-11-30",
+          "value": 83061.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-12-01",
+          "value": 222931.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-12-01",
+          "value": 82204.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-12-02",
+          "value": 221103.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-12-02",
+          "value": 81534.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-12-03",
+          "value": 219246.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-12-03",
+          "value": 81197.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-12-04",
+          "value": 218788,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-12-04",
+          "value": 81158.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-12-05",
+          "value": 217722,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-12-05",
+          "value": 81269.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-12-06",
+          "value": 217073,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-12-06",
+          "value": 81884,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-12-07",
+          "value": 216287.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-12-07",
+          "value": 82652.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-12-08",
+          "value": 214030.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-12-08",
+          "value": 83479,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-12-09",
+          "value": 213780.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-12-09",
+          "value": 85691,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-12-10",
+          "value": 219615.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-12-10",
+          "value": 87324.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-12-11",
+          "value": 223391.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-12-11",
+          "value": 88840.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-12-12",
+          "value": 224161.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-12-12",
+          "value": 89576.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-12-13",
+          "value": 224551.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-12-13",
+          "value": 90109.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-12-14",
+          "value": 225323.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-12-14",
+          "value": 90420.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-12-15",
+          "value": 225654.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-12-15",
+          "value": 91047.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-12-16",
+          "value": 221436.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-12-16",
+          "value": 93354.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-12-17",
+          "value": 214193.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-12-17",
+          "value": 93425,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-12-18",
+          "value": 211560,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-12-18",
+          "value": 93945.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-12-19",
+          "value": 212546.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-12-19",
+          "value": 94361,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-12-20",
+          "value": 216532.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-12-20",
+          "value": 94755.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-12-21",
+          "value": 222785.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-12-21",
+          "value": 94000.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-12-22",
+          "value": 227311.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-12-22",
+          "value": 92609.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-12-23",
+          "value": 247059.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-12-23",
+          "value": 93485.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-12-24",
+          "value": 274634.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-12-24",
+          "value": 96278.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-12-25",
+          "value": 292815.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-12-25",
+          "value": 95367.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-12-26",
+          "value": 293239,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-12-26",
+          "value": 93427.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-12-27",
+          "value": 294706.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-12-27",
+          "value": 92217.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-12-28",
+          "value": 291817.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-12-28",
+          "value": 92134.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-12-29",
+          "value": 285811.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-12-29",
+          "value": 92943.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-12-30",
+          "value": 266677.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-12-30",
+          "value": 91463,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2023-12-31",
+          "value": 247649.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2023-12-31",
+          "value": 101954,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-01-01",
+          "value": 222328.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-01-01",
+          "value": 103439.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-01-02",
+          "value": 218244.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-01-02",
+          "value": 103561.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-01-03",
+          "value": 211791,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-01-03",
+          "value": 102976.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-01-04",
+          "value": 206381,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-01-04",
+          "value": 102184.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-01-05",
+          "value": 205215.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-01-05",
+          "value": 100137.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-01-06",
+          "value": 203446,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-01-06",
+          "value": 93208.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-01-07",
+          "value": 195133.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-01-07",
+          "value": 78548.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-01-08",
+          "value": 201421.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-01-08",
+          "value": 76990.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-01-09",
+          "value": 203857.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-01-09",
+          "value": 78169.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-01-10",
+          "value": 204853.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-01-10",
+          "value": 79021.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-01-11",
+          "value": 206443.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-01-11",
+          "value": 79995.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-01-12",
+          "value": 209270,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-01-12",
+          "value": 81534.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-01-13",
+          "value": 214970.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-01-13",
+          "value": 85310.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-01-14",
+          "value": 220236.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-01-14",
+          "value": 86395.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-01-15",
+          "value": 221426,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-01-15",
+          "value": 87540.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-01-16",
+          "value": 222130.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-01-16",
+          "value": 88880.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-01-17",
+          "value": 223485.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-01-17",
+          "value": 90447.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-01-18",
+          "value": 225028.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-01-18",
+          "value": 92732.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-01-19",
+          "value": 226858.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-01-19",
+          "value": 94088.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-01-20",
+          "value": 230006.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-01-20",
+          "value": 96158.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-01-21",
+          "value": 229232,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-01-21",
+          "value": 100613.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-01-22",
+          "value": 228293.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-01-22",
+          "value": 103536.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-01-23",
+          "value": 223848.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-01-23",
+          "value": 104275.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-01-24",
+          "value": 220330.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-01-24",
+          "value": 105077.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-01-25",
+          "value": 217897.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-01-25",
+          "value": 106761.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-01-26",
+          "value": 216571,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-01-26",
+          "value": 109545.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-01-27",
+          "value": 213261.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-01-27",
+          "value": 111396.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-01-28",
+          "value": 211608.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-01-28",
+          "value": 113387.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-01-29",
+          "value": 212269.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-01-29",
+          "value": 115249.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-01-30",
+          "value": 216775.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-01-30",
+          "value": 117893.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-01-31",
+          "value": 219641.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-01-31",
+          "value": 120632,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-02-01",
+          "value": 221312.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-02-01",
+          "value": 123516.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-02-02",
+          "value": 219633.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-02-02",
+          "value": 125036,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-02-03",
+          "value": 215464.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-02-03",
+          "value": 124720.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-02-04",
+          "value": 214145.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-02-04",
+          "value": 122615.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-02-05",
+          "value": 214643.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-02-05",
+          "value": 125959.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-02-06",
+          "value": 220612,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-02-06",
+          "value": 129956.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-02-07",
+          "value": 232778.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-02-07",
+          "value": 130836.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-02-08",
+          "value": 244857.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-02-08",
+          "value": 127496.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-02-09",
+          "value": 249233.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-02-09",
+          "value": 120090,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-02-10",
+          "value": 245960.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-02-10",
+          "value": 112597.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-02-11",
+          "value": 259673.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-02-11",
+          "value": 120086.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-02-12",
+          "value": 277922.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-02-12",
+          "value": 126536.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-02-13",
+          "value": 275945,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-02-13",
+          "value": 133499.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-02-14",
+          "value": 266656.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-02-14",
+          "value": 142417.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-02-15",
+          "value": 252352.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-02-15",
+          "value": 152629.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-02-16",
+          "value": 243052.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-02-16",
+          "value": 163772.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-02-17",
+          "value": 238535.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-02-17",
+          "value": 164620.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-02-18",
+          "value": 218176.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-02-18",
+          "value": 150947.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-02-19",
+          "value": 195781.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-02-19",
+          "value": 136698.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-02-20",
+          "value": 188801.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-02-20",
+          "value": 122232.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-02-21",
+          "value": 183751.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-02-21",
+          "value": 108088.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-02-22",
+          "value": 183671.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-02-22",
+          "value": 94380.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-02-23",
+          "value": 187896,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-02-23",
+          "value": 83924.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-02-24",
+          "value": 201160.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-02-24",
+          "value": 82239.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-02-25",
+          "value": 208642.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-02-25",
+          "value": 80865.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-02-26",
+          "value": 211346.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-02-26",
+          "value": 77799.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-02-27",
+          "value": 213581,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-02-27",
+          "value": 75403,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-02-28",
+          "value": 214841.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-02-28",
+          "value": 73330.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-02-29",
+          "value": 215852.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-02-29",
+          "value": 71808.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-03-01",
+          "value": 215790.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-03-01",
+          "value": 71045,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-03-02",
+          "value": 211630.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-03-02",
+          "value": 70532,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-03-03",
+          "value": 212037.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-03-03",
+          "value": 70061.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-03-04",
+          "value": 211668.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-03-04",
+          "value": 69889.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-03-05",
+          "value": 211837,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-03-05",
+          "value": 69151.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-03-06",
+          "value": 212278.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-03-06",
+          "value": 68475,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-03-07",
+          "value": 213702.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-03-07",
+          "value": 68369.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-03-08",
+          "value": 218048.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-03-08",
+          "value": 70383.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-03-09",
+          "value": 222455,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-03-09",
+          "value": 72049.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-03-10",
+          "value": 223056.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-03-10",
+          "value": 72194.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-03-11",
+          "value": 221969,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-03-11",
+          "value": 71579.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-03-12",
+          "value": 223758.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-03-12",
+          "value": 73012.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-03-13",
+          "value": 225272.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-03-13",
+          "value": 74483,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-03-14",
+          "value": 226044.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-03-14",
+          "value": 75240,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-03-15",
+          "value": 225739.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-03-15",
+          "value": 74420.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-03-16",
+          "value": 227408.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-03-16",
+          "value": 78046.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-03-17",
+          "value": 231092.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-03-17",
+          "value": 80655,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-03-18",
+          "value": 233664.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-03-18",
+          "value": 83301.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-03-19",
+          "value": 232665.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-03-19",
+          "value": 83396.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-03-20",
+          "value": 232974.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-03-20",
+          "value": 84118.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-03-21",
+          "value": 233349.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-03-21",
+          "value": 85090.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-03-22",
+          "value": 233401.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-03-22",
+          "value": 87147.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-03-23",
+          "value": 233883.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-03-23",
+          "value": 88116.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-03-24",
+          "value": 232856.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-03-24",
+          "value": 88989.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-03-25",
+          "value": 236022.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-03-25",
+          "value": 88990.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-03-26",
+          "value": 241337.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-03-26",
+          "value": 89793.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-03-27",
+          "value": 252381.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-03-27",
+          "value": 89587.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-03-28",
+          "value": 287481.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-03-28",
+          "value": 89270.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-03-29",
+          "value": 338222.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-03-29",
+          "value": 85764.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-03-30",
+          "value": 344654.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-03-30",
+          "value": 81295,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-03-31",
+          "value": 352854.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-03-31",
+          "value": 76701.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-04-01",
+          "value": 350933.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-04-01",
+          "value": 72731.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-04-02",
+          "value": 351172.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-04-02",
+          "value": 70143.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-04-03",
+          "value": 355254.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-04-03",
+          "value": 69260.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-04-04",
+          "value": 326755.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-04-04",
+          "value": 81192.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-04-05",
+          "value": 270969,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-04-05",
+          "value": 91914.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-04-06",
+          "value": 252418.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-04-06",
+          "value": 86217.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-04-07",
+          "value": 237067.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-04-07",
+          "value": 85079.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-04-08",
+          "value": 235864.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-04-08",
+          "value": 87917.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-04-09",
+          "value": 230364.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-04-09",
+          "value": 89804.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-04-10",
+          "value": 215710.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-04-10",
+          "value": 91955.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-04-11",
+          "value": 209000.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-04-11",
+          "value": 82251.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-04-12",
+          "value": 215921.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-04-12",
+          "value": 75551.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-04-13",
+          "value": 231238,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-04-13",
+          "value": 85384.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-04-14",
+          "value": 238420.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-04-14",
+          "value": 90711.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-04-15",
+          "value": 239356.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-04-15",
+          "value": 92240.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-04-16",
+          "value": 240463.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-04-16",
+          "value": 92851.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-04-17",
+          "value": 240480.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-04-17",
+          "value": 92280.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-04-18",
+          "value": 239800.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-04-18",
+          "value": 90512.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-04-19",
+          "value": 238679.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-04-19",
+          "value": 88550.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-04-20",
+          "value": 237003.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-04-20",
+          "value": 85187.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-04-21",
+          "value": 229911.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-04-21",
+          "value": 81440.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-04-22",
+          "value": 227038.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-04-22",
+          "value": 79683.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-04-23",
+          "value": 221403.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-04-23",
+          "value": 77377.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-04-24",
+          "value": 219899.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-04-24",
+          "value": 75820.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-04-25",
+          "value": 218461.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-04-25",
+          "value": 73893,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-04-26",
+          "value": 214227,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-04-26",
+          "value": 72236.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-04-27",
+          "value": 212434.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-04-27",
+          "value": 68548.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-04-28",
+          "value": 218304.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-04-28",
+          "value": 69290.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-04-29",
+          "value": 222750,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-04-29",
+          "value": 71785,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-04-30",
+          "value": 235032.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-04-30",
+          "value": 79371,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-05-01",
+          "value": 232382.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-05-01",
+          "value": 95642.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-05-02",
+          "value": 228051.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-05-02",
+          "value": 114305,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-05-03",
+          "value": 225026.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-05-03",
+          "value": 131379.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-05-04",
+          "value": 210533.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-05-04",
+          "value": 135516.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-05-05",
+          "value": 208370.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-05-05",
+          "value": 137472.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-05-06",
+          "value": 207217,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-05-06",
+          "value": 136391,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-05-07",
+          "value": 200451.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-05-07",
+          "value": 130965,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-05-08",
+          "value": 204605,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-05-08",
+          "value": 114375.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-05-09",
+          "value": 211743,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-05-09",
+          "value": 97054.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-05-10",
+          "value": 218976.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-05-10",
+          "value": 78848.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-05-11",
+          "value": 239052.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-05-11",
+          "value": 71886.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-05-12",
+          "value": 245198,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-05-12",
+          "value": 70186.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-05-13",
+          "value": 245882.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-05-13",
+          "value": 68407.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-05-14",
+          "value": 257343.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-05-14",
+          "value": 67087.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-05-15",
+          "value": 278429.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-05-15",
+          "value": 66621.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-05-16",
+          "value": 278272.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-05-16",
+          "value": 66894.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-05-17",
+          "value": 278193.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-05-17",
+          "value": 69704.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-05-18",
+          "value": 273776.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-05-18",
+          "value": 77698.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-05-19",
+          "value": 268398.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-05-19",
+          "value": 77165.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-05-20",
+          "value": 265737.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-05-20",
+          "value": 76754.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-05-21",
+          "value": 250902,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-05-21",
+          "value": 76012.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-05-22",
+          "value": 228062.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-05-22",
+          "value": 75982.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-05-23",
+          "value": 226581.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-05-23",
+          "value": 74468.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-05-24",
+          "value": 223528.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-05-24",
+          "value": 74174,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-05-25",
+          "value": 221601.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-05-25",
+          "value": 72482,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-05-26",
+          "value": 223444.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-05-26",
+          "value": 74338.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-05-27",
+          "value": 224471.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-05-27",
+          "value": 74329,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-05-28",
+          "value": 227189.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-05-28",
+          "value": 74419.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-05-29",
+          "value": 229069.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-05-29",
+          "value": 74344.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-05-30",
+          "value": 230131.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-05-30",
+          "value": 74112.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-05-31",
+          "value": 228914.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-05-31",
+          "value": 72097.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-06-01",
+          "value": 221369.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-06-01",
+          "value": 68927.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-06-02",
+          "value": 219050.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-06-02",
+          "value": 66685.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-06-03",
+          "value": 217240.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-06-03",
+          "value": 66038.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-06-04",
+          "value": 216723.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-06-04",
+          "value": 65394.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-06-05",
+          "value": 216072.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-06-05",
+          "value": 64881.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-06-06",
+          "value": 216288.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-06-06",
+          "value": 65782,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-06-07",
+          "value": 226941.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-06-07",
+          "value": 68027.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-06-08",
+          "value": 252066.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-06-08",
+          "value": 75084.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-06-09",
+          "value": 273596,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-06-09",
+          "value": 81445.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-06-10",
+          "value": 275814.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-06-10",
+          "value": 84293,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-06-11",
+          "value": 277930.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-06-11",
+          "value": 85677,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-06-12",
+          "value": 278792.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-06-12",
+          "value": 86903.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-06-13",
+          "value": 278368.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-06-13",
+          "value": 87072.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-06-14",
+          "value": 268212.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-06-14",
+          "value": 85468,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-06-15",
+          "value": 246576.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-06-15",
+          "value": 79878.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-06-16",
+          "value": 227596.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-06-16",
+          "value": 73734.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-06-17",
+          "value": 229152.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-06-17",
+          "value": 72451.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-06-18",
+          "value": 229241.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-06-18",
+          "value": 72592.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-06-19",
+          "value": 229987.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-06-19",
+          "value": 72667.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-06-20",
+          "value": 230563.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-06-20",
+          "value": 72724.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-06-21",
+          "value": 235192.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-06-21",
+          "value": 73639.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-06-22",
+          "value": 244104,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-06-22",
+          "value": 75481.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-06-23",
+          "value": 246527,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-06-23",
+          "value": 77672,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-06-24",
+          "value": 245918,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-06-24",
+          "value": 78019.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-06-25",
+          "value": 245458.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-06-25",
+          "value": 78434.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-06-26",
+          "value": 245006.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-06-26",
+          "value": 79110.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-06-27",
+          "value": 246278.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-06-27",
+          "value": 79637.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-06-28",
+          "value": 251771.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-06-28",
+          "value": 79581.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-06-29",
+          "value": 267405.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-06-29",
+          "value": 79209,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-06-30",
+          "value": 291700.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-06-30",
+          "value": 78754.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-07-01",
+          "value": 290305.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-07-01",
+          "value": 79269.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-07-02",
+          "value": 289026.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-07-02",
+          "value": 80298.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-07-03",
+          "value": 288658.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-07-03",
+          "value": 80480.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-07-04",
+          "value": 286512.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-07-04",
+          "value": 81010.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-07-05",
+          "value": 279102.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-07-05",
+          "value": 81933,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-07-06",
+          "value": 257332.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-07-06",
+          "value": 84424,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-07-07",
+          "value": 232087.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-07-07",
+          "value": 86981,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-07-08",
+          "value": 233779.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-07-08",
+          "value": 89404.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-07-09",
+          "value": 235192.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-07-09",
+          "value": 91299.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-07-10",
+          "value": 235797.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-07-10",
+          "value": 94021.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-07-11",
+          "value": 237457.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-07-11",
+          "value": 96131.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-07-12",
+          "value": 239419,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-07-12",
+          "value": 98106,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-07-13",
+          "value": 246774.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-07-13",
+          "value": 100428.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-07-14",
+          "value": 248387.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-07-14",
+          "value": 103318.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-07-15",
+          "value": 249999,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-07-15",
+          "value": 104805.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-07-16",
+          "value": 251691.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-07-16",
+          "value": 106386.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-07-17",
+          "value": 253790.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-07-17",
+          "value": 107362.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-07-18",
+          "value": 254999,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-07-18",
+          "value": 108100.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-07-19",
+          "value": 254528.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-07-19",
+          "value": 109092.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-07-20",
+          "value": 253141.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-07-20",
+          "value": 109902,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-07-21",
+          "value": 253527.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-07-21",
+          "value": 109973.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-07-22",
+          "value": 252641.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-07-22",
+          "value": 109928.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-07-23",
+          "value": 252273.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-07-23",
+          "value": 110325.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-07-24",
+          "value": 251867.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-07-24",
+          "value": 110976.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-07-25",
+          "value": 251555.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-07-25",
+          "value": 111383.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-07-26",
+          "value": 250404.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-07-26",
+          "value": 111887,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-07-27",
+          "value": 246994,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-07-27",
+          "value": 109276.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-07-28",
+          "value": 243713,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-07-28",
+          "value": 107132.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-07-29",
+          "value": 243238.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-07-29",
+          "value": 106815.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-07-30",
+          "value": 242292.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-07-30",
+          "value": 105698.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-07-31",
+          "value": 240214.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-07-31",
+          "value": 104237.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-08-01",
+          "value": 240550.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-08-01",
+          "value": 105581.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-08-02",
+          "value": 242339,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-08-02",
+          "value": 107164.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-08-03",
+          "value": 247450,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-08-03",
+          "value": 113406.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-08-04",
+          "value": 251960.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-08-04",
+          "value": 119003.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-08-05",
+          "value": 252411.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-08-05",
+          "value": 122003.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-08-06",
+          "value": 252001.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-08-06",
+          "value": 124330.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-08-07",
+          "value": 253883.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-08-07",
+          "value": 126935.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-08-08",
+          "value": 254101.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-08-08",
+          "value": 127884,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-08-09",
+          "value": 254807.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-08-09",
+          "value": 127549,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-08-10",
+          "value": 255868.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-08-10",
+          "value": 126910.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-08-11",
+          "value": 256234.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-08-11",
+          "value": 125648.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-08-12",
+          "value": 256542.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-08-12",
+          "value": 124933.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-08-13",
+          "value": 257876.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-08-13",
+          "value": 125266.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-08-14",
+          "value": 257654.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-08-14",
+          "value": 124529.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-08-15",
+          "value": 256497.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-08-15",
+          "value": 122808.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-08-16",
+          "value": 255962,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-08-16",
+          "value": 121776.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-08-17",
+          "value": 248518.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-08-17",
+          "value": 116608.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-08-18",
+          "value": 247126.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-08-18",
+          "value": 114218.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-08-19",
+          "value": 247130.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-08-19",
+          "value": 112292.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-08-20",
+          "value": 246774.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-08-20",
+          "value": 111304.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-08-21",
+          "value": 246451,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-08-21",
+          "value": 110346.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-08-22",
+          "value": 248513.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-08-22",
+          "value": 111999.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-08-23",
+          "value": 250586.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-08-23",
+          "value": 115166.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-08-24",
+          "value": 260998.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-08-24",
+          "value": 120037.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-08-25",
+          "value": 265444.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-08-25",
+          "value": 122825.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-08-26",
+          "value": 267740.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-08-26",
+          "value": 124074.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-08-27",
+          "value": 270104.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-08-27",
+          "value": 123352.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-08-28",
+          "value": 272752,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-08-28",
+          "value": 122591.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-08-29",
+          "value": 273465.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-08-29",
+          "value": 118258,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-08-30",
+          "value": 273800.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-08-30",
+          "value": 111515.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-08-31",
+          "value": 268712.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-08-31",
+          "value": 102250.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-09-01",
+          "value": 260546.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-09-01",
+          "value": 93132.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-09-02",
+          "value": 256567.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-09-02",
+          "value": 86434.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-09-03",
+          "value": 253578.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-09-03",
+          "value": 80922.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-09-04",
+          "value": 249702.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-09-04",
+          "value": 76448,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-09-05",
+          "value": 240318.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-09-05",
+          "value": 72319.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-09-06",
+          "value": 221044.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-09-06",
+          "value": 66046.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-09-07",
+          "value": 216341.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-09-07",
+          "value": 62449.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-09-08",
+          "value": 217753.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-09-08",
+          "value": 62766,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-09-09",
+          "value": 220167.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-09-09",
+          "value": 63531.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-09-10",
+          "value": 222135,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-09-10",
+          "value": 64321.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-09-11",
+          "value": 224232,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-09-11",
+          "value": 64610.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-09-12",
+          "value": 232508.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-09-12",
+          "value": 65745.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-09-13",
+          "value": 253202.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-09-13",
+          "value": 69861,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-09-14",
+          "value": 258517.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-09-14",
+          "value": 70263.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-09-15",
+          "value": 258750.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-09-15",
+          "value": 78909.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-09-16",
+          "value": 257598.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-09-16",
+          "value": 89035,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-09-17",
+          "value": 264113,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-09-17",
+          "value": 89086.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-09-18",
+          "value": 270169.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-09-18",
+          "value": 88147.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-09-19",
+          "value": 268854.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-09-19",
+          "value": 89155.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-09-20",
+          "value": 264842.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-09-20",
+          "value": 89484.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-09-21",
+          "value": 258503.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-09-21",
+          "value": 92047.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-09-22",
+          "value": 255541.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-09-22",
+          "value": 83738.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-09-23",
+          "value": 255422.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-09-23",
+          "value": 73615.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-09-24",
+          "value": 246381,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-09-24",
+          "value": 73050.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-09-25",
+          "value": 239747.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-09-25",
+          "value": 74354.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-09-26",
+          "value": 241111.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-09-26",
+          "value": 74031.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-09-27",
+          "value": 244255.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-09-27",
+          "value": 74439.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-09-28",
+          "value": 251475.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-09-28",
+          "value": 75093.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-09-29",
+          "value": 257473.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-09-29",
+          "value": 74432.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-09-30",
+          "value": 263561.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-09-30",
+          "value": 81137.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-10-01",
+          "value": 260732.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-10-01",
+          "value": 103588,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-10-02",
+          "value": 254744.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-10-02",
+          "value": 125125.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-10-03",
+          "value": 249727.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-10-03",
+          "value": 143578.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-10-04",
+          "value": 243793.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-10-04",
+          "value": 159473.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-10-05",
+          "value": 235983.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-10-05",
+          "value": 167946,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-10-06",
+          "value": 231149.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-10-06",
+          "value": 175240.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-10-07",
+          "value": 225856.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-10-07",
+          "value": 173795.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-10-08",
+          "value": 232745.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-10-08",
+          "value": 152856.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-10-09",
+          "value": 241275.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-10-09",
+          "value": 131447.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-10-10",
+          "value": 273782.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-10-10",
+          "value": 113398.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-10-11",
+          "value": 314628.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-10-11",
+          "value": 95138.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-10-12",
+          "value": 311171.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-10-12",
+          "value": 83330,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-10-13",
+          "value": 303719,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-10-13",
+          "value": 77784.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-10-14",
+          "value": 304700.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-10-14",
+          "value": 73909,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-10-15",
+          "value": 303380.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-10-15",
+          "value": 73195.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-10-16",
+          "value": 301502.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-10-16",
+          "value": 74060.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-10-17",
+          "value": 273853.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-10-17",
+          "value": 74392.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-10-18",
+          "value": 238621.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-10-18",
+          "value": 77991.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-10-19",
+          "value": 249679.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-10-19",
+          "value": 85355.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-10-20",
+          "value": 260507.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-10-20",
+          "value": 86143.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-10-21",
+          "value": 260574.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-10-21",
+          "value": 85476.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-10-22",
+          "value": 260431.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-10-22",
+          "value": 85416.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-10-23",
+          "value": 261018.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-10-23",
+          "value": 85145.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-10-24",
+          "value": 262032.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-10-24",
+          "value": 85491.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-10-25",
+          "value": 262539.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-10-25",
+          "value": 85023.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-10-26",
+          "value": 260368.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-10-26",
+          "value": 84238.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-10-27",
+          "value": 258896.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-10-27",
+          "value": 83847.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-10-28",
+          "value": 259162.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-10-28",
+          "value": 84487.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-10-29",
+          "value": 259882.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-10-29",
+          "value": 85156.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-10-30",
+          "value": 259904.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-10-30",
+          "value": 84851.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-10-31",
+          "value": 259527.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-10-31",
+          "value": 83958.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-11-01",
+          "value": 261883.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-11-01",
+          "value": 83023.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-11-02",
+          "value": 265750.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-11-02",
+          "value": 81865.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-11-03",
+          "value": 266401.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-11-03",
+          "value": 80270.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-11-04",
+          "value": 266104.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-11-04",
+          "value": 79007.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-11-05",
+          "value": 266038.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-11-05",
+          "value": 77730.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-11-06",
+          "value": 265876.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-11-06",
+          "value": 78348.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-11-07",
+          "value": 266930.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-11-07",
+          "value": 78374.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-11-08",
+          "value": 267244.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-11-08",
+          "value": 78986.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-11-09",
+          "value": 267220.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-11-09",
+          "value": 79576.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-11-10",
+          "value": 268850.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-11-10",
+          "value": 81479.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-11-11",
+          "value": 269717.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-11-11",
+          "value": 82285.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-11-12",
+          "value": 270213.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-11-12",
+          "value": 83453.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-11-13",
+          "value": 269950.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-11-13",
+          "value": 82937.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-11-14",
+          "value": 259587.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-11-14",
+          "value": 81852.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-11-15",
+          "value": 256991.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-11-15",
+          "value": 82433.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-11-16",
+          "value": 256932,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-11-16",
+          "value": 84433.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-11-17",
+          "value": 255328.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-11-17",
+          "value": 84949.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-11-18",
+          "value": 255100,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-11-18",
+          "value": 86055.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-11-19",
+          "value": 251915.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-11-19",
+          "value": 85126.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-11-20",
+          "value": 248687.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-11-20",
+          "value": 84158.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-11-21",
+          "value": 257361.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-11-21",
+          "value": 84955.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-11-22",
+          "value": 259610.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-11-22",
+          "value": 85879.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-11-23",
+          "value": 260429.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-11-23",
+          "value": 85725.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-11-24",
+          "value": 260234.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-11-24",
+          "value": 85581.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-11-25",
+          "value": 261258.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-11-25",
+          "value": 84326.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-11-26",
+          "value": 264878.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-11-26",
+          "value": 85257.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-11-27",
+          "value": 269219.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-11-27",
+          "value": 86724.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-11-28",
+          "value": 271532.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-11-28",
+          "value": 88033,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-11-29",
+          "value": 272334.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-11-29",
+          "value": 87864.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-11-30",
+          "value": 272747.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-11-30",
+          "value": 88643.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-12-01",
+          "value": 274157.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-12-01",
+          "value": 90204.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-12-02",
+          "value": 272888.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-12-02",
+          "value": 90620,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-12-03",
+          "value": 272097,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-12-03",
+          "value": 90241.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-12-04",
+          "value": 271913.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-12-04",
+          "value": 90549.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-12-05",
+          "value": 271215.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-12-05",
+          "value": 90834,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-12-06",
+          "value": 269120.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-12-06",
+          "value": 91700.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-12-07",
+          "value": 267500.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-12-07",
+          "value": 92679.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-12-08",
+          "value": 267829.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-12-08",
+          "value": 93742.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-12-09",
+          "value": 269456.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-12-09",
+          "value": 94195.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-12-10",
+          "value": 270243.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-12-10",
+          "value": 95361,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-12-11",
+          "value": 270649.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-12-11",
+          "value": 96055.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-12-12",
+          "value": 271001.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-12-12",
+          "value": 96509.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-12-13",
+          "value": 270101.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-12-13",
+          "value": 97040.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-12-14",
+          "value": 267384,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-12-14",
+          "value": 99332,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-12-15",
+          "value": 265922.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-12-15",
+          "value": 100539.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-12-16",
+          "value": 265967.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-12-16",
+          "value": 101892,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-12-17",
+          "value": 266581,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-12-17",
+          "value": 103027,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-12-18",
+          "value": 268063.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-12-18",
+          "value": 105051.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-12-19",
+          "value": 269910.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-12-19",
+          "value": 106304.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-12-20",
+          "value": 275744.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-12-20",
+          "value": 106316.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-12-21",
+          "value": 276518.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-12-21",
+          "value": 107533.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-12-22",
+          "value": 286667.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-12-22",
+          "value": 109023.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-12-23",
+          "value": 296024.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-12-23",
+          "value": 110166,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-12-24",
+          "value": 321984.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-12-24",
+          "value": 111314.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-12-25",
+          "value": 360201.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-12-25",
+          "value": 108964.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-12-26",
+          "value": 365015,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-12-26",
+          "value": 106357.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-12-27",
+          "value": 358747.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-12-27",
+          "value": 105251.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-12-28",
+          "value": 351298.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-12-28",
+          "value": 99138.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-12-29",
+          "value": 339285.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-12-29",
+          "value": 93909.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-12-30",
+          "value": 332038.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-12-30",
+          "value": 92703,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2024-12-31",
+          "value": 311390,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2024-12-31",
+          "value": 96210,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-01-01",
+          "value": 266514,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-01-01",
+          "value": 100082.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-01-02",
+          "value": 257209.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-01-02",
+          "value": 100503.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-01-03",
+          "value": 252880.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-01-03",
+          "value": 99807.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-01-04",
+          "value": 253042.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-01-04",
+          "value": 98724.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-01-05",
+          "value": 251630.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-01-05",
+          "value": 99255.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-01-06",
+          "value": 248180,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-01-06",
+          "value": 99301.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-01-07",
+          "value": 241793.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-01-07",
+          "value": 94310.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-01-08",
+          "value": 246615.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-01-08",
+          "value": 91440,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-01-09",
+          "value": 248591.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-01-09",
+          "value": 93235.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-01-10",
+          "value": 252694.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-01-10",
+          "value": 95369.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-01-11",
+          "value": 258760.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-01-11",
+          "value": 98511.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-01-12",
+          "value": 262231.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-01-12",
+          "value": 101847.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-01-13",
+          "value": 262794.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-01-13",
+          "value": 103604.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-01-14",
+          "value": 262974,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-01-14",
+          "value": 105648,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-01-15",
+          "value": 264347.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-01-15",
+          "value": 108344.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-01-16",
+          "value": 265521.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-01-16",
+          "value": 112615.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-01-17",
+          "value": 266826.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-01-17",
+          "value": 115381.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-01-18",
+          "value": 269002.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-01-18",
+          "value": 119539,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-01-19",
+          "value": 272230.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-01-19",
+          "value": 124456.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-01-20",
+          "value": 273297.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-01-20",
+          "value": 129286.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-01-21",
+          "value": 273997.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-01-21",
+          "value": 134025.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-01-22",
+          "value": 273346.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-01-22",
+          "value": 137520.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-01-23",
+          "value": 274401.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-01-23",
+          "value": 139907.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-01-24",
+          "value": 278715.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-01-24",
+          "value": 143393.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-01-25",
+          "value": 280578.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-01-25",
+          "value": 141236.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-01-26",
+          "value": 283711.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-01-26",
+          "value": 137772.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-01-27",
+          "value": 287342.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-01-27",
+          "value": 136542.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-01-28",
+          "value": 293234.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-01-28",
+          "value": 129074.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-01-29",
+          "value": 303202.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-01-29",
+          "value": 126320.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-01-30",
+          "value": 317361.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-01-30",
+          "value": 133955,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-01-31",
+          "value": 319106.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-01-31",
+          "value": 140393,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-02-01",
+          "value": 301930.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-02-01",
+          "value": 143609.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-02-02",
+          "value": 282823.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-02-02",
+          "value": 148187.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-02-03",
+          "value": 272639.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-02-03",
+          "value": 152029.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-02-04",
+          "value": 260116.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-02-04",
+          "value": 159557.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-02-05",
+          "value": 244403,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-02-05",
+          "value": 159507.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-02-06",
+          "value": 222962.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-02-06",
+          "value": 148421.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-02-07",
+          "value": 209366.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-02-07",
+          "value": 138232.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-02-08",
+          "value": 214061.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-02-08",
+          "value": 128530.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-02-09",
+          "value": 221952.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-02-09",
+          "value": 121367.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-02-10",
+          "value": 225021.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-02-10",
+          "value": 113042.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-02-11",
+          "value": 229573.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-02-11",
+          "value": 105475.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-02-12",
+          "value": 230524.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-02-12",
+          "value": 98507.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-02-13",
+          "value": 234687.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-02-13",
+          "value": 93120.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-02-14",
+          "value": 244923.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-02-14",
+          "value": 87888.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-02-15",
+          "value": 255812.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-02-15",
+          "value": 88980.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-02-16",
+          "value": 262572.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-02-16",
+          "value": 85675,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-02-17",
+          "value": 264742,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-02-17",
+          "value": 83496.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-02-18",
+          "value": 265918.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-02-18",
+          "value": 83124.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-02-19",
+          "value": 269504,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-02-19",
+          "value": 85406,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-02-20",
+          "value": 270665.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-02-20",
+          "value": 86302.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-02-21",
+          "value": 268243.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-02-21",
+          "value": 87368.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-02-22",
+          "value": 270092.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-02-22",
+          "value": 88411.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-02-23",
+          "value": 269405.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-02-23",
+          "value": 87973.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-02-24",
+          "value": 269239.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-02-24",
+          "value": 87135.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-02-25",
+          "value": 269069.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-02-25",
+          "value": 85823.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-02-26",
+          "value": 268896.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-02-26",
+          "value": 84285.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-02-27",
+          "value": 269179.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-02-27",
+          "value": 83111.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-02-28",
+          "value": 270411.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-02-28",
+          "value": 82021.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-03-01",
+          "value": 270184.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-03-01",
+          "value": 82570.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-03-02",
+          "value": 270016.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-03-02",
+          "value": 83762.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-03-03",
+          "value": 269632.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-03-03",
+          "value": 83719,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-03-04",
+          "value": 268562,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-03-04",
+          "value": 83270.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-03-05",
+          "value": 267640.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-03-05",
+          "value": 83207.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-03-06",
+          "value": 265324.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-03-06",
+          "value": 82399.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-03-07",
+          "value": 265126.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-03-07",
+          "value": 81614.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-03-08",
+          "value": 267914.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-03-08",
+          "value": 79855.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-03-09",
+          "value": 269435.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-03-09",
+          "value": 79150,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-03-10",
+          "value": 270949.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-03-10",
+          "value": 79933.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-03-11",
+          "value": 273240.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-03-11",
+          "value": 81678.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-03-12",
+          "value": 275428.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-03-12",
+          "value": 83281.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-03-13",
+          "value": 278842.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-03-13",
+          "value": 84929.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-03-14",
+          "value": 281824.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-03-14",
+          "value": 86259.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-03-15",
+          "value": 279390.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-03-15",
+          "value": 84775.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-03-16",
+          "value": 280689.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-03-16",
+          "value": 85422.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-03-17",
+          "value": 279650.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-03-17",
+          "value": 85693.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-03-18",
+          "value": 278936.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-03-18",
+          "value": 85737.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-03-19",
+          "value": 279178.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-03-19",
+          "value": 86054.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-03-20",
+          "value": 279345.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-03-20",
+          "value": 86770,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-03-21",
+          "value": 278722.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-03-21",
+          "value": 88181,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-03-22",
+          "value": 280914.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-03-22",
+          "value": 93775.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-03-23",
+          "value": 278794.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-03-23",
+          "value": 95751.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-03-24",
+          "value": 279709.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-03-24",
+          "value": 96165.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-03-25",
+          "value": 280381.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-03-25",
+          "value": 96741.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-03-26",
+          "value": 280570.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-03-26",
+          "value": 96869.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-03-27",
+          "value": 280930.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-03-27",
+          "value": 96802.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-03-28",
+          "value": 280131.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-03-28",
+          "value": 95883.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-03-29",
+          "value": 278828.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-03-29",
+          "value": 92131.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-03-30",
+          "value": 278152.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-03-30",
+          "value": 89273.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-03-31",
+          "value": 275698.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-03-31",
+          "value": 87479.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-04-01",
+          "value": 276002.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-04-01",
+          "value": 85206.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-04-02",
+          "value": 280452.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-04-02",
+          "value": 83169.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-04-03",
+          "value": 310875.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-04-03",
+          "value": 83045.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-04-04",
+          "value": 327751.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-04-04",
+          "value": 96393.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-04-05",
+          "value": 311073,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-04-05",
+          "value": 97765.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-04-06",
+          "value": 302091.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-04-06",
+          "value": 98001.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-04-07",
+          "value": 303911.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-04-07",
+          "value": 99134.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-04-08",
+          "value": 303756.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-04-08",
+          "value": 103092.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-04-09",
+          "value": 299128.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-04-09",
+          "value": 105839.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-04-10",
+          "value": 267937.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-04-10",
+          "value": 106717.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-04-11",
+          "value": 249780.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-04-11",
+          "value": 95117,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-04-12",
+          "value": 257081.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-04-12",
+          "value": 91053.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-04-13",
+          "value": 268884.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-04-13",
+          "value": 92707.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-04-14",
+          "value": 271935.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-04-14",
+          "value": 93737.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-04-15",
+          "value": 276588.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-04-15",
+          "value": 92358.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-04-16",
+          "value": 288402,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-04-16",
+          "value": 91640.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-04-17",
+          "value": 328669.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-04-17",
+          "value": 90650.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-04-18",
+          "value": 376114.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-04-18",
+          "value": 87035.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-04-19",
+          "value": 391288,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-04-19",
+          "value": 90228.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-04-20",
+          "value": 396660,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-04-20",
+          "value": 88165.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-04-21",
+          "value": 388372.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-04-21",
+          "value": 85279.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-04-22",
+          "value": 384495.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-04-22",
+          "value": 85291.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-04-23",
+          "value": 373446.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-04-23",
+          "value": 85824.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-04-24",
+          "value": 333079.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-04-24",
+          "value": 87217.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-04-25",
+          "value": 279916.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-04-25",
+          "value": 88937.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-04-26",
+          "value": 265630.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-04-26",
+          "value": 88351.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-04-27",
+          "value": 254418.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-04-27",
+          "value": 90075.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-04-28",
+          "value": 259410.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-04-28",
+          "value": 93190.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-04-29",
+          "value": 259895,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-04-29",
+          "value": 94831.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-04-30",
+          "value": 269191,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-04-30",
+          "value": 99692.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-05-01",
+          "value": 269561.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-05-01",
+          "value": 118743.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-05-02",
+          "value": 269599.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-05-02",
+          "value": 144824.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-05-03",
+          "value": 276351.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-05-03",
+          "value": 155549.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-05-04",
+          "value": 294685.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-05-04",
+          "value": 162104.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-05-05",
+          "value": 289611.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-05-05",
+          "value": 161790.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-05-06",
+          "value": 286223.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-05-06",
+          "value": 158754.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-05-07",
+          "value": 273792,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-05-07",
+          "value": 151121.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-05-08",
+          "value": 272603.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-05-08",
+          "value": 129322.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-05-09",
+          "value": 275232.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-05-09",
+          "value": 102977.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-05-10",
+          "value": 272568.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-05-10",
+          "value": 91028.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-05-11",
+          "value": 258905,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-05-11",
+          "value": 83127.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-05-12",
+          "value": 266357.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-05-12",
+          "value": 82447.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-05-13",
+          "value": 269025.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-05-13",
+          "value": 83814.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-05-14",
+          "value": 271484.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-05-14",
+          "value": 85353.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-05-15",
+          "value": 272602.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-05-15",
+          "value": 85449.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-05-16",
+          "value": 275659.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-05-16",
+          "value": 84489.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-05-17",
+          "value": 280056.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-05-17",
+          "value": 85681.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-05-18",
+          "value": 278911.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-05-18",
+          "value": 85430.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-05-19",
+          "value": 277068.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-05-19",
+          "value": 84938.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-05-20",
+          "value": 276364,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-05-20",
+          "value": 83228.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-05-21",
+          "value": 275356,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-05-21",
+          "value": 82368.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-05-22",
+          "value": 273664.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-05-22",
+          "value": 82844.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-05-23",
+          "value": 271447.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-05-23",
+          "value": 83821.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-05-24",
+          "value": 267378,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-05-24",
+          "value": 85212.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-05-25",
+          "value": 265961.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-05-25",
+          "value": 86999.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-05-26",
+          "value": 266359.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-05-26",
+          "value": 86352,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-05-27",
+          "value": 265975.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-05-27",
+          "value": 86454.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-05-28",
+          "value": 266352.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-05-28",
+          "value": 86110.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-05-29",
+          "value": 266199.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-05-29",
+          "value": 84764,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-05-30",
+          "value": 278853.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-05-30",
+          "value": 84965.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-05-31",
+          "value": 280122.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-05-31",
+          "value": 86660,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-06-01",
+          "value": 274974.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-06-01",
+          "value": 90289.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-06-02",
+          "value": 272084.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-06-02",
+          "value": 92787,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-06-03",
+          "value": 271669.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-06-03",
+          "value": 92150.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-06-04",
+          "value": 269310.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-06-04",
+          "value": 91982.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-06-05",
+          "value": 268924.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-06-05",
+          "value": 92983.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-06-06",
+          "value": 258453,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-06-06",
+          "value": 92911,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-06-07",
+          "value": 259875.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-06-07",
+          "value": 89478.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-06-08",
+          "value": 266367.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-06-08",
+          "value": 83311.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-06-09",
+          "value": 268559.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-06-09",
+          "value": 80635.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-06-10",
+          "value": 269083.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-06-10",
+          "value": 81013.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-06-11",
+          "value": 270664.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-06-11",
+          "value": 81609.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-06-12",
+          "value": 269261.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-06-12",
+          "value": 81451.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-06-13",
+          "value": 265887.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-06-13",
+          "value": 79657.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-06-14",
+          "value": 260796.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-06-14",
+          "value": 75461.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-06-15",
+          "value": 261503,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-06-15",
+          "value": 72892.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-06-16",
+          "value": 262981.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-06-16",
+          "value": 73147.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-06-17",
+          "value": 260226.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-06-17",
+          "value": 72645.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-06-18",
+          "value": 262986.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-06-18",
+          "value": 73767.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-06-19",
+          "value": 266945.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-06-19",
+          "value": 75533.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-06-20",
+          "value": 272784.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-06-20",
+          "value": 77445.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-06-21",
+          "value": 285183.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-06-21",
+          "value": 82492.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-06-22",
+          "value": 288789.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-06-22",
+          "value": 86532.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-06-23",
+          "value": 288608.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-06-23",
+          "value": 87748.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-06-24",
+          "value": 292183.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-06-24",
+          "value": 89900.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-06-25",
+          "value": 291868.9,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-06-25",
+          "value": 90804.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-06-26",
+          "value": 291203.6,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-06-26",
+          "value": 91314.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-06-27",
+          "value": 291176.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-06-27",
+          "value": 93928,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-06-28",
+          "value": 291592.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-06-28",
+          "value": 95927.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-06-29",
+          "value": 294279.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-06-29",
+          "value": 98759.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-06-30",
+          "value": 304372.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-06-30",
+          "value": 99428.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-07-01",
+          "value": 309138.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-07-01",
+          "value": 98893.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-07-02",
+          "value": 308046.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-07-02",
+          "value": 99507,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-07-03",
+          "value": 308165,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-07-03",
+          "value": 100126.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-07-04",
+          "value": 305295.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-07-04",
+          "value": 99688.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-07-05",
+          "value": 295434.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-07-05",
+          "value": 101084.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-07-06",
+          "value": 289760.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-07-06",
+          "value": 101794,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-07-07",
+          "value": 279114,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-07-07",
+          "value": 104203.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-07-08",
+          "value": 274635.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-07-08",
+          "value": 107245.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-07-09",
+          "value": 274824.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-07-09",
+          "value": 109288.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-07-10",
+          "value": 270303.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-07-10",
+          "value": 108779.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-07-11",
+          "value": 267278.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-07-11",
+          "value": 108111.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-07-12",
+          "value": 271262.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-07-12",
+          "value": 107263.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-07-13",
+          "value": 277921.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-07-13",
+          "value": 109587.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-07-14",
+          "value": 280298.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-07-14",
+          "value": 111558.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-07-15",
+          "value": 282274.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-07-15",
+          "value": 113874.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-07-16",
+          "value": 284870.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-07-16",
+          "value": 116144.4,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-07-17",
+          "value": 292161.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-07-17",
+          "value": 119634.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-07-18",
+          "value": 295888.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-07-18",
+          "value": 121822.1,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-07-19",
+          "value": 288863.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-07-19",
+          "value": 123296.3,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-07-20",
+          "value": 245654.3,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-07-20",
+          "value": 107352.7,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-07-21",
+          "value": 241467.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-07-21",
+          "value": 104896.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-07-22",
+          "value": 240209.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-07-22",
+          "value": 102949.9,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-07-23",
+          "value": 240742,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-07-23",
+          "value": 101738.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2025-07-24",
+          "value": 240005.7,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2025-07-24",
+          "value": 103017.3,
+          "flow_type": "Southbound"
+        },
         {
           "date": "2025-07-25",
           "value": 241343.4,
@@ -14366,7 +20716,7 @@
         "metric_definitions": [
           "Each commodity's price is the mean of same-day readings across the wholesale markets/sources AFCD reports for it."
         ],
-        "executed_at": "2026-07-25T11:02:13.185641Z"
+        "executed_at": "2026-07-25T11:24:43.085893Z"
       }
     },
     {
@@ -14382,7 +20732,7 @@
           "Latest is the most recent published PM benchmark fixing.",
           "Day and year movements are latest divided by the prior trading day or the observation on/before one year earlier, minus one."
         ],
-        "executed_at": "2026-07-25T11:02:13.185641Z"
+        "executed_at": "2026-07-25T11:24:43.085893Z"
       }
     },
     {
@@ -14398,7 +20748,7 @@
           "PE (TTM), PB, and market cap (HKD bn) are each ticker's latest published daily value.",
           "No dividend-yield indicator exists on this endpoint; yield is not reported here."
         ],
-        "executed_at": "2026-07-25T11:02:13.185641Z"
+        "executed_at": "2026-07-25T11:24:43.085893Z"
       }
     },
     {
@@ -14414,7 +20764,7 @@
           "All retail outlet is the classification group's own published total across all outlet types.",
           "Month and year movements are latest divided by the prior month or the observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-07-25T11:02:13.185641Z"
+        "executed_at": "2026-07-25T11:24:43.085893Z"
       }
     },
     {
@@ -14430,7 +20780,7 @@
           "Purchases are only published sector-wide, not broken out by restaurant type.",
           "Quarter and year movements are latest divided by the prior quarter or the observation four quarters earlier, minus one."
         ],
-        "executed_at": "2026-07-25T11:02:13.185641Z"
+        "executed_at": "2026-07-25T11:24:43.085893Z"
       }
     },
     {
@@ -14447,7 +20797,7 @@
           "Southbound (南下) flow is daily Mainland visitor arrivals across all 17 control points, since Mainland visitors legitimately arrive by air, rail, and sea, not just by land.",
           "7-day moving averages (7d MA) smooth out day-of-week seasonality (weekend shopping spikes)."
         ],
-        "executed_at": "2026-07-25T11:02:13.185641Z"
+        "executed_at": "2026-07-25T11:24:43.085893Z"
       }
     },
     {
@@ -14464,7 +20814,7 @@
           "Red/Black Rainstorm hours measures total duration under Red or Black rainstorm warnings.",
           "RMB per 100 HKD is derived from FRED daily DEXCHUS and DEXHKUS rates."
         ],
-        "executed_at": "2026-07-25T11:02:13.185641Z"
+        "executed_at": "2026-07-25T11:24:43.085893Z"
       }
     },
     {
@@ -14478,13 +20828,13 @@
           "Validated live measure frames",
           "Declared future-source registry"
         ],
-        "executed_at": "2026-07-25T11:02:13.185641Z"
+        "executed_at": "2026-07-25T11:24:43.085893Z"
       }
     }
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-local-consumer/",
-    "snapshotId": "41c445340799041f",
+    "snapshotId": "85aa7bf21373433a",
     "dataAsOf": "2026-07-22"
   }
 }

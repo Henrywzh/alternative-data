@@ -502,7 +502,13 @@ def build_artifact(
     northbound_kpi = _comparison_row(immigration, "land_hk_resident_departures_7d_ma", now)
     southbound_kpi = _comparison_row(immigration, "mainland_visitor_arrivals_7d_ma", now)
 
-    imm_chart_window = immigration.tail(365).copy()
+    # HK Immigration's daily CSV goes back to 2021-01-01 (~5.5 years) --
+    # much deeper than the old 1-year window. The portable-artifact plugin
+    # caps any single dataset at 2000 rows; this chart emits 2 rows/day
+    # (northbound + southbound), so 1000 days is the largest window that
+    # fits under that cap while still showing real history, not a
+    # fabricated extension.
+    imm_chart_window = immigration.tail(1000).copy()
     imm_north = imm_chart_window[["date", "land_hk_resident_departures_7d_ma"]].rename(columns={"land_hk_resident_departures_7d_ma": "value"})
     imm_north["flow_type"] = "Northbound"
     imm_south = imm_chart_window[["date", "mainland_visitor_arrivals_7d_ma"]].rename(columns={"mainland_visitor_arrivals_7d_ma": "value"})
