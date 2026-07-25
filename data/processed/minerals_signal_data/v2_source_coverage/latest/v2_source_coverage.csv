@@ -1,22 +1,22 @@
 normalized_mineral_id,mineral_name,trackability_grade,price_source_type,price_symbol_or_series_id,price_currency,price_unit,publish_lag_assumption_days,is_active_for_v1,proxy_target,proxy_type,proxy_instrument,proxy_display_name,has_fetched_history,history_row_count,fetch_status
-aluminum,Aluminum,direct,yfinance_futures,ALI=F,USD,metric ton,1,True,,,,,True,1143,fetched
-antimony,Antimony,proxy,yfinance_futures,HG=F,USD,lb,2,True,copper,commodity_cross_proxy,HG=F,COMEX Copper Futures,True,1145,fetched
-copper,Copper,direct,yfinance_futures,HG=F,USD,lb,1,True,,,,,True,1145,fetched
-graphite,Graphite,proxy,yfinance_futures,LIT,USD,etf_share,2,True,lithium,etf,LIT,Global X Lithium & Battery Tech ETF,True,1142,fetched
-lead,Lead,direct,fred_series,PLEADUSDM,USD,metric ton,30,True,,,,,True,1168,fetched
-lithium,Lithium,proxy,yfinance_futures,LIT,USD,etf_share,1,True,,etf,LIT,Global X Lithium & Battery Tech ETF,True,1142,fetched
-manganese,Manganese,proxy,yfinance_futures,S32.AX,AUD,equity_proxy,1,True,south32_producer_equity,producer_equity,S32.AX,South32 Ltd,True,1151,fetched
-neodymium,Neodymium,proxy,yfinance_futures,REMX,USD,etf_share,1,True,,etf,REMX,VanEck Rare Earth/Strategic Metals ETF,True,1142,fetched
-nickel,Nickel,direct,yfinance_futures,NIY=F,USD,metric ton,1,True,,,,,True,1144,fetched
-palladium,Palladium,direct,yfinance_futures,PA=F,USD,oz,1,True,,,,,True,1143,fetched
-platinum,Platinum,direct,yfinance_futures,PL=F,USD,oz,1,True,,,,,True,1144,fetched
-silicon,Silicon,proxy,yfinance_futures,GSM,USD,equity_proxy,1,True,ferroglobe_producer_equity,producer_equity,GSM,Ferroglobe PLC,True,1142,fetched
-silver,Silver,direct,yfinance_futures,SI=F,USD,oz,1,True,,,,,True,1144,fetched
-tantalum,Tantalum,proxy,yfinance_futures,AMG.AS,EUR,equity_proxy,1,True,amg_producer_equity,producer_equity,AMG.AS,AMG Critical Materials N.V.,True,1165,fetched
-tin,Tin,direct,fred_series,PTINUSDM,USD,metric ton,30,True,,,,,True,1168,fetched
-uranium,Uranium,proxy,yfinance_futures,URA,USD,etf_share,1,True,,etf,URA,Global X Uranium ETF,True,1142,fetched
-vanadium,Vanadium,proxy,yfinance_futures,LGO,USD,equity_proxy,1,True,largo_producer_equity,producer_equity,LGO,Largo Inc.,True,1142,fetched
-zinc,Zinc,direct,fred_series,PZINCUSDM,USD,metric ton,30,True,,,,,True,1168,fetched
+aluminum,Aluminum,direct,yfinance_futures,ALI=F,USD,metric ton,1,True,,,,,True,1144,fetched
+antimony,Antimony,proxy,yfinance_futures,HG=F,USD,lb,2,True,copper,commodity_cross_proxy,HG=F,COMEX Copper Futures,True,1146,fetched
+copper,Copper,direct,yfinance_futures,HG=F,USD,lb,1,True,,,,,True,1146,fetched
+graphite,Graphite,proxy,yfinance_futures,LIT,USD,etf_share,2,True,lithium,etf,LIT,Global X Lithium & Battery Tech ETF,True,1143,fetched
+lead,Lead,direct,fred_series,PLEADUSDM,USD,metric ton,30,True,,,,,True,1169,fetched
+lithium,Lithium,proxy,yfinance_futures,LIT,USD,etf_share,1,True,,etf,LIT,Global X Lithium & Battery Tech ETF,True,1143,fetched
+manganese,Manganese,proxy,yfinance_futures,S32.AX,AUD,equity_proxy,1,True,south32_producer_equity,producer_equity,S32.AX,South32 Ltd,True,1152,fetched
+neodymium,Neodymium,proxy,yfinance_futures,REMX,USD,etf_share,1,True,,etf,REMX,VanEck Rare Earth/Strategic Metals ETF,True,1143,fetched
+nickel,Nickel,direct,yfinance_futures,NIY=F,USD,metric ton,1,True,,,,,True,1145,fetched
+palladium,Palladium,direct,yfinance_futures,PA=F,USD,oz,1,True,,,,,True,1144,fetched
+platinum,Platinum,direct,yfinance_futures,PL=F,USD,oz,1,True,,,,,True,1145,fetched
+silicon,Silicon,proxy,yfinance_futures,GSM,USD,equity_proxy,1,True,ferroglobe_producer_equity,producer_equity,GSM,Ferroglobe PLC,True,1143,fetched
+silver,Silver,direct,yfinance_futures,SI=F,USD,oz,1,True,,,,,True,1145,fetched
+tantalum,Tantalum,proxy,yfinance_futures,AMG.AS,EUR,equity_proxy,1,True,amg_producer_equity,producer_equity,AMG.AS,AMG Critical Materials N.V.,True,1166,fetched
+tin,Tin,direct,fred_series,PTINUSDM,USD,metric ton,30,True,,,,,True,1169,fetched
+uranium,Uranium,proxy,yfinance_futures,URA,USD,etf_share,1,True,,etf,URA,Global X Uranium ETF,True,1143,fetched
+vanadium,Vanadium,proxy,yfinance_futures,LGO,USD,equity_proxy,1,True,largo_producer_equity,producer_equity,LGO,Largo Inc.,True,1143,fetched
+zinc,Zinc,direct,fred_series,PZINCUSDM,USD,metric ton,30,True,,,,,True,1169,fetched
 arsenic,Arsenic,unsupported,manual_proxy,,,,5,False,,,,,False,0,inactive
 barite,Barite,unsupported,manual_proxy,,,,5,False,,,,,False,0,inactive
 beryllium,Beryllium,unsupported,manual_proxy,,,,5,False,,,,,False,0,inactive
