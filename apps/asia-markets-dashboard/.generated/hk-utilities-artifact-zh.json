@@ -6,7 +6,7 @@
     "title": "香港公用事业与基础设施监测",
     "description": "中电控股（CLP）季度售电量拆解、中华煤气（Towngas）代理数据、香港天文台日均气温与电能实业（Power Assets）分部业绩快照。",
     "sector": "hk-utilities",
-    "generatedAt": "2026-07-24T21:47:51.942767Z",
+    "generatedAt": "2026-07-25T12:39:38.554498Z",
     "cards": [
       {
         "id": "clp_card",
@@ -106,7 +106,7 @@
         "sourceId": "clp_electricity",
         "encodings": {
           "x": {
-            "field": "date",
+            "field": "month",
             "type": "temporal",
             "label": "季度"
           },
@@ -128,7 +128,7 @@
         "sourceId": "towngas_proxy",
         "encodings": {
           "x": {
-            "field": "date",
+            "field": "month",
             "type": "temporal",
             "label": "月份"
           },
@@ -207,7 +207,7 @@
           "engine": "official HKEX statement",
           "url": "https://www.clpgroup.com/en/investors/financial-reports.html",
           "language": "PDF",
-          "description": "Quarterly electricity sales in GWh broken down by customer sector (Residential, Commercial, Infrastructure & Public Services, Manufacturing) plus AI Data-Centre demand growth."
+          "description": "构建时从公开来源读取并校验 中电控股（0002.HK）业绩公告及售电量披露。"
         }
       },
       {
@@ -219,7 +219,7 @@
           "engine": "official MDT CSV",
           "url": "https://www.censtatd.gov.hk/data/MDT_91_915-91201_GASC_LOCAL_Raw_Tjou_n.csv",
           "language": "CSV",
-          "description": "Monthly town gas consumption in Terajoules (TJ) by user type (Domestic, Commercial, Industrial) — de facto Towngas monopoly operational proxy."
+          "description": "构建时从公开来源读取并校验 政府统计处能源统计（煤气消费量）。"
         }
       },
       {
@@ -231,7 +231,7 @@
           "engine": "official open data CSV",
           "url": "https://data.weather.gov.hk/weatherAPI/cis/csvfile/HKO/ALL/daily_HKO_TEMP_ALL.csv",
           "language": "CSV",
-          "description": "Daily mean temperature (°C) and monthly averages — primary physical weather driver for air-conditioning power load."
+          "description": "构建时从公开来源读取并校验 香港天文台每日平均气温。"
         }
       },
       {
@@ -243,7 +243,7 @@
           "engine": "official HKEX interim report note",
           "url": "https://www.powerassets.com/en/investor-relations/financial-reports",
           "language": "PDF",
-          "description": "Semi-annual geographic segment reporting note (revenue, segment profit, share of JV/associate results) broken out by Investment in HKEI, United Kingdom, Australia, and Others."
+          "description": "构建时从公开来源读取并校验 电能实业（0006.HK）中期及全年业绩报告。"
         }
       }
     ],
@@ -282,7 +282,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-24T21:47:51.942767Z",
+    "generatedAt": "2026-07-25T12:39:38.554498Z",
     "status": "ready",
     "datasets": {
       "kpi_clp": [
@@ -329,7 +329,8 @@
           "infrastructure_public_gwh": 2079,
           "manufacturing_gwh": 334,
           "total_local_gwh": 7016,
-          "ai_data_centre_yoy_pct": null
+          "ai_data_centre_yoy_pct": null,
+          "month": "2023-03"
         },
         {
           "quarter": "2024 Q1",
@@ -339,7 +340,8 @@
           "infrastructure_public_gwh": 2183,
           "manufacturing_gwh": 340,
           "total_local_gwh": 7279,
-          "ai_data_centre_yoy_pct": null
+          "ai_data_centre_yoy_pct": null,
+          "month": "2024-03"
         },
         {
           "quarter": "2025 Q1",
@@ -349,7 +351,8 @@
           "infrastructure_public_gwh": 2156,
           "manufacturing_gwh": 307,
           "total_local_gwh": 7091,
-          "ai_data_centre_yoy_pct": null
+          "ai_data_centre_yoy_pct": null,
+          "month": "2025-03"
         },
         {
           "quarter": "2026 Q1",
@@ -359,7 +362,8 @@
           "infrastructure_public_gwh": 2270,
           "manufacturing_gwh": 323,
           "total_local_gwh": 7319,
-          "ai_data_centre_yoy_pct": 11.1
+          "ai_data_centre_yoy_pct": 11.1,
+          "month": "2026-03"
         }
       ],
       "towngas_history": [
@@ -2006,7 +2010,7 @@
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-utilities/",
-    "snapshotId": "9d0db2546408e687",
+    "snapshotId": "ed26dd16a82c7fd5",
     "dataAsOf": "2026-03-31"
   }
 }

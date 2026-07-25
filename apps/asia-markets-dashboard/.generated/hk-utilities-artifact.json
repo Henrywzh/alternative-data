@@ -6,7 +6,7 @@
     "title": "HK Utilities & Infrastructure Sector Monitor",
     "description": "CLP quarterly electricity sales by customer sector, CenStatD town gas consumption, HKO temperature, and Power Assets geographic segment reporting.",
     "sector": "hk-utilities",
-    "generatedAt": "2026-07-25T10:21:32.592766Z",
+    "generatedAt": "2026-07-25T12:39:38.554498Z",
     "cards": [
       {
         "id": "clp_card",
@@ -106,7 +106,7 @@
         "sourceId": "clp_electricity",
         "encodings": {
           "x": {
-            "field": "date",
+            "field": "month",
             "type": "temporal",
             "label": "Quarter"
           },
@@ -128,7 +128,7 @@
         "sourceId": "towngas_proxy",
         "encodings": {
           "x": {
-            "field": "date",
+            "field": "month",
             "type": "temporal",
             "label": "Month"
           },
@@ -282,7 +282,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-25T10:21:32.592766Z",
+    "generatedAt": "2026-07-25T12:39:38.554498Z",
     "status": "ready",
     "datasets": {
       "kpi_clp": [
@@ -329,7 +329,8 @@
           "infrastructure_public_gwh": 2079.0,
           "manufacturing_gwh": 334.0,
           "total_local_gwh": 7016.0,
-          "ai_data_centre_yoy_pct": null
+          "ai_data_centre_yoy_pct": null,
+          "month": "2023-03"
         },
         {
           "quarter": "2024 Q1",
@@ -339,7 +340,8 @@
           "infrastructure_public_gwh": 2183.0,
           "manufacturing_gwh": 340.0,
           "total_local_gwh": 7279.0,
-          "ai_data_centre_yoy_pct": null
+          "ai_data_centre_yoy_pct": null,
+          "month": "2024-03"
         },
         {
           "quarter": "2025 Q1",
@@ -349,7 +351,8 @@
           "infrastructure_public_gwh": 2156.0,
           "manufacturing_gwh": 307.0,
           "total_local_gwh": 7091.0,
-          "ai_data_centre_yoy_pct": null
+          "ai_data_centre_yoy_pct": null,
+          "month": "2025-03"
         },
         {
           "quarter": "2026 Q1",
@@ -359,7 +362,8 @@
           "infrastructure_public_gwh": 2270.0,
           "manufacturing_gwh": 323.0,
           "total_local_gwh": 7319.0,
-          "ai_data_centre_yoy_pct": 11.1
+          "ai_data_centre_yoy_pct": 11.1,
+          "month": "2026-03"
         }
       ],
       "towngas_history": [
@@ -2006,7 +2010,7 @@
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-utilities/",
-    "snapshotId": "9d0db2546408e687",
+    "snapshotId": "ed26dd16a82c7fd5",
     "dataAsOf": "2026-03-31"
   }
 }

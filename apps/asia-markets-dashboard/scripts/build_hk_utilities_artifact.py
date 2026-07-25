@@ -109,6 +109,16 @@ def build_artifact(
     temp = raw_temp if raw_temp is not None else fetch_hko_temperature()
     power_assets = raw_power_assets if raw_power_assets is not None else fetch_power_assets_segments()
 
+    # CLP's existing `quarter` column (e.g. "2023 Q1") repeats the same
+    # quarter label across different years (all 4 rows are "Q1"), and its
+    # `date` column is quarter-end day-granularity, which the portable-chart
+    # plugin's date-axis formatter renders without a year by default. A
+    # "YYYY-MM" `month` column is unambiguous across years (each quarter-end
+    # lands on a distinct month) and gets the year on every tick for free,
+    # since the plugin always includes the year for month-granularity values.
+    if "date" in clp.columns:
+        clp["month"] = clp["date"].dt.strftime("%Y-%m")
+
     generated_at = now.isoformat().replace("+00:00", "Z")
 
     clp_latest = clp.iloc[-1]
@@ -256,7 +266,7 @@ def build_artifact(
             "dataset": "clp_history",
             "sourceId": "clp_electricity",
             "encodings": {
-                "x": {"field": "date", "type": "temporal", "label": "Quarter"},
+                "x": {"field": "month", "type": "temporal", "label": "Quarter"},
                 "y": {"field": "total_local_gwh", "type": "quantitative", "label": "GWh"},
             },
             "valueFormat": "number",
@@ -270,7 +280,7 @@ def build_artifact(
             "dataset": "towngas_history",
             "sourceId": "towngas_proxy",
             "encodings": {
-                "x": {"field": "date", "type": "temporal", "label": "Month"},
+                "x": {"field": "month", "type": "temporal", "label": "Month"},
                 "y": {"field": "total_gas_tj", "type": "quantitative", "label": "Terajoules (TJ)"},
             },
             "valueFormat": "number",

@@ -6,7 +6,7 @@
     "title": "HK Transport & Aviation Sector Monitor",
     "description": "MTR Corporation monthly rail patronage, CAD HKIA airport traffic, and Cathay Pacific Group operating statistics.",
     "sector": "hk-transport",
-    "generatedAt": "2026-07-25T10:32:42.314291Z",
+    "generatedAt": "2026-07-25T12:39:38.622368Z",
     "cards": [
       {
         "id": "mtr_card",
@@ -75,7 +75,7 @@
         "sourceId": "mtr_patronage",
         "encodings": {
           "x": {
-            "field": "date",
+            "field": "month",
             "type": "temporal",
             "label": "Month"
           },
@@ -97,7 +97,7 @@
         "sourceId": "mtr_patronage",
         "encodings": {
           "x": {
-            "field": "date",
+            "field": "month",
             "type": "temporal",
             "label": "Month"
           },
@@ -124,7 +124,7 @@
         "sourceId": "cathay_hkia_traffic",
         "encodings": {
           "x": {
-            "field": "date",
+            "field": "month",
             "type": "temporal",
             "label": "Month"
           },
@@ -146,7 +146,7 @@
         "sourceId": "cathay_hkia_traffic",
         "encodings": {
           "x": {
-            "field": "date",
+            "field": "month",
             "type": "temporal",
             "label": "Month"
           },
@@ -168,7 +168,7 @@
         "sourceId": "cathay_hkia_traffic",
         "encodings": {
           "x": {
-            "field": "date",
+            "field": "month",
             "type": "temporal",
             "label": "Month"
           },
@@ -195,7 +195,7 @@
         "sourceId": "cathay_hkia_traffic",
         "encodings": {
           "x": {
-            "field": "date",
+            "field": "month",
             "type": "temporal",
             "label": "Month"
           },
@@ -281,7 +281,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-25T10:32:42.314291Z",
+    "generatedAt": "2026-07-25T12:39:38.622368Z",
     "status": "ready",
     "datasets": {
       "kpi_mtr": [
@@ -6546,2551 +6546,3061 @@
       "mtr_service_breakdown_history": [
         {
           "date": "2018-01-01",
+          "month": "2018-01",
           "series": "Airport Exp",
           "value": 1402.0
         },
         {
           "date": "2018-01-01",
+          "month": "2018-01",
           "series": "Domestic",
           "value": 142553.0
         },
         {
           "date": "2018-01-01",
+          "month": "2018-01",
           "series": "HSR",
           "value": 0.0
         },
         {
           "date": "2018-01-01",
+          "month": "2018-01",
           "series": "LR & Bus",
           "value": 19851.0
         },
         {
           "date": "2018-01-01",
+          "month": "2018-01",
           "series": "X-Boundary",
           "value": 9842.0
         },
         {
           "date": "2018-02-01",
+          "month": "2018-02",
           "series": "Airport Exp",
           "value": 1216.0
         },
         {
           "date": "2018-02-01",
+          "month": "2018-02",
           "series": "Domestic",
           "value": 125706.0
         },
         {
           "date": "2018-02-01",
+          "month": "2018-02",
           "series": "HSR",
           "value": 0.0
         },
         {
           "date": "2018-02-01",
+          "month": "2018-02",
           "series": "LR & Bus",
           "value": 17053.0
         },
         {
           "date": "2018-02-01",
+          "month": "2018-02",
           "series": "X-Boundary",
           "value": 9143.0
         },
         {
           "date": "2018-03-01",
+          "month": "2018-03",
           "series": "Airport Exp",
           "value": 1518.0
         },
         {
           "date": "2018-03-01",
+          "month": "2018-03",
           "series": "Domestic",
           "value": 142521.0
         },
         {
           "date": "2018-03-01",
+          "month": "2018-03",
           "series": "HSR",
           "value": 0.0
         },
         {
           "date": "2018-03-01",
+          "month": "2018-03",
           "series": "LR & Bus",
           "value": 19742.0
         },
         {
           "date": "2018-03-01",
+          "month": "2018-03",
           "series": "X-Boundary",
           "value": 9885.0
         },
         {
           "date": "2018-04-01",
+          "month": "2018-04",
           "series": "Airport Exp",
           "value": 1554.0
         },
         {
           "date": "2018-04-01",
+          "month": "2018-04",
           "series": "Domestic",
           "value": 132659.0
         },
         {
           "date": "2018-04-01",
+          "month": "2018-04",
           "series": "HSR",
           "value": 0.0
         },
         {
           "date": "2018-04-01",
+          "month": "2018-04",
           "series": "LR & Bus",
           "value": 18850.0
         },
         {
           "date": "2018-04-01",
+          "month": "2018-04",
           "series": "X-Boundary",
           "value": 10251.0
         },
         {
           "date": "2018-05-01",
+          "month": "2018-05",
           "series": "Airport Exp",
           "value": 1355.0
         },
         {
           "date": "2018-05-01",
+          "month": "2018-05",
           "series": "Domestic",
           "value": 138914.0
         },
         {
           "date": "2018-05-01",
+          "month": "2018-05",
           "series": "HSR",
           "value": 0.0
         },
         {
           "date": "2018-05-01",
+          "month": "2018-05",
           "series": "LR & Bus",
           "value": 20242.0
         },
         {
           "date": "2018-05-01",
+          "month": "2018-05",
           "series": "X-Boundary",
           "value": 9571.0
         },
         {
           "date": "2018-06-01",
+          "month": "2018-06",
           "series": "Airport Exp",
           "value": 1452.0
         },
         {
           "date": "2018-06-01",
+          "month": "2018-06",
           "series": "Domestic",
           "value": 133724.0
         },
         {
           "date": "2018-06-01",
+          "month": "2018-06",
           "series": "HSR",
           "value": 0.0
         },
         {
           "date": "2018-06-01",
+          "month": "2018-06",
           "series": "LR & Bus",
           "value": 19467.0
         },
         {
           "date": "2018-06-01",
+          "month": "2018-06",
           "series": "X-Boundary",
           "value": 9373.0
         },
         {
           "date": "2018-07-01",
+          "month": "2018-07",
           "series": "Airport Exp",
           "value": 1425.0
         },
         {
           "date": "2018-07-01",
+          "month": "2018-07",
           "series": "Domestic",
           "value": 139117.0
         },
         {
           "date": "2018-07-01",
+          "month": "2018-07",
           "series": "HSR",
           "value": 0.0
         },
         {
           "date": "2018-07-01",
+          "month": "2018-07",
           "series": "LR & Bus",
           "value": 19777.0
         },
         {
           "date": "2018-07-01",
+          "month": "2018-07",
           "series": "X-Boundary",
           "value": 10324.0
         },
         {
           "date": "2018-08-01",
+          "month": "2018-08",
           "series": "Airport Exp",
           "value": 1439.0
         },
         {
           "date": "2018-08-01",
+          "month": "2018-08",
           "series": "Domestic",
           "value": 141531.0
         },
         {
           "date": "2018-08-01",
+          "month": "2018-08",
           "series": "HSR",
           "value": 0.0
         },
         {
           "date": "2018-08-01",
+          "month": "2018-08",
           "series": "LR & Bus",
           "value": 19271.0
         },
         {
           "date": "2018-08-01",
+          "month": "2018-08",
           "series": "X-Boundary",
           "value": 10585.0
         },
         {
           "date": "2018-09-01",
+          "month": "2018-09",
           "series": "Airport Exp",
           "value": 1492.0
         },
         {
           "date": "2018-09-01",
+          "month": "2018-09",
           "series": "Domestic",
           "value": 135896.0
         },
         {
           "date": "2018-09-01",
+          "month": "2018-09",
           "series": "HSR",
           "value": 369.0
         },
         {
           "date": "2018-09-01",
+          "month": "2018-09",
           "series": "LR & Bus",
           "value": 19419.0
         },
         {
           "date": "2018-09-01",
+          "month": "2018-09",
           "series": "X-Boundary",
           "value": 9236.0
         },
         {
           "date": "2018-10-01",
+          "month": "2018-10",
           "series": "Airport Exp",
           "value": 1621.0
         },
         {
           "date": "2018-10-01",
+          "month": "2018-10",
           "series": "Domestic",
           "value": 145708.0
         },
         {
           "date": "2018-10-01",
+          "month": "2018-10",
           "series": "HSR",
           "value": 1629.0
         },
         {
           "date": "2018-10-01",
+          "month": "2018-10",
           "series": "LR & Bus",
           "value": 20517.0
         },
         {
           "date": "2018-10-01",
+          "month": "2018-10",
           "series": "X-Boundary",
           "value": 9731.0
         },
         {
           "date": "2018-11-01",
+          "month": "2018-11",
           "series": "Airport Exp",
           "value": 1600.0
         },
         {
           "date": "2018-11-01",
+          "month": "2018-11",
           "series": "Domestic",
           "value": 145747.0
         },
         {
           "date": "2018-11-01",
+          "month": "2018-11",
           "series": "HSR",
           "value": 1477.0
         },
         {
           "date": "2018-11-01",
+          "month": "2018-11",
           "series": "LR & Bus",
           "value": 20029.0
         },
         {
           "date": "2018-11-01",
+          "month": "2018-11",
           "series": "X-Boundary",
           "value": 9224.0
         },
         {
           "date": "2018-12-01",
+          "month": "2018-12",
           "series": "Airport Exp",
           "value": 1634.0
         },
         {
           "date": "2018-12-01",
+          "month": "2018-12",
           "series": "Domestic",
           "value": 145896.0
         },
         {
           "date": "2018-12-01",
+          "month": "2018-12",
           "series": "HSR",
           "value": 1827.0
         },
         {
           "date": "2018-12-01",
+          "month": "2018-12",
           "series": "LR & Bus",
           "value": 19848.0
         },
         {
           "date": "2018-12-01",
+          "month": "2018-12",
           "series": "X-Boundary",
           "value": 10283.0
         },
         {
           "date": "2019-01-01",
+          "month": "2019-01",
           "series": "Airport Exp",
           "value": 1511.0
         },
         {
           "date": "2019-01-01",
+          "month": "2019-01",
           "series": "Domestic",
           "value": 148219.0
         },
         {
           "date": "2019-01-01",
+          "month": "2019-01",
           "series": "HSR",
           "value": 1713.0
         },
         {
           "date": "2019-01-01",
+          "month": "2019-01",
           "series": "LR & Bus",
           "value": 20356.0
         },
         {
           "date": "2019-01-01",
+          "month": "2019-01",
           "series": "X-Boundary",
           "value": 10409.0
         },
         {
           "date": "2019-02-01",
+          "month": "2019-02",
           "series": "Airport Exp",
           "value": 1329.0
         },
         {
           "date": "2019-02-01",
+          "month": "2019-02",
           "series": "Domestic",
           "value": 126288.0
         },
         {
           "date": "2019-02-01",
+          "month": "2019-02",
           "series": "HSR",
           "value": 1740.0
         },
         {
           "date": "2019-02-01",
+          "month": "2019-02",
           "series": "LR & Bus",
           "value": 17269.0
         },
         {
           "date": "2019-02-01",
+          "month": "2019-02",
           "series": "X-Boundary",
           "value": 8377.0
         },
         {
           "date": "2019-03-01",
+          "month": "2019-03",
           "series": "Airport Exp",
           "value": 1645.0
         },
         {
           "date": "2019-03-01",
+          "month": "2019-03",
           "series": "Domestic",
           "value": 144919.0
         },
         {
           "date": "2019-03-01",
+          "month": "2019-03",
           "series": "HSR",
           "value": 1557.0
         },
         {
           "date": "2019-03-01",
+          "month": "2019-03",
           "series": "LR & Bus",
           "value": 19963.0
         },
         {
           "date": "2019-03-01",
+          "month": "2019-03",
           "series": "X-Boundary",
           "value": 9682.0
         },
         {
           "date": "2019-04-01",
+          "month": "2019-04",
           "series": "Airport Exp",
           "value": 1621.0
         },
         {
           "date": "2019-04-01",
+          "month": "2019-04",
           "series": "Domestic",
           "value": 132315.0
         },
         {
           "date": "2019-04-01",
+          "month": "2019-04",
           "series": "HSR",
           "value": 1770.0
         },
         {
           "date": "2019-04-01",
+          "month": "2019-04",
           "series": "LR & Bus",
           "value": 18505.0
         },
         {
           "date": "2019-04-01",
+          "month": "2019-04",
           "series": "X-Boundary",
           "value": 9931.0
         },
         {
           "date": "2019-05-01",
+          "month": "2019-05",
           "series": "Airport Exp",
           "value": 1443.0
         },
         {
           "date": "2019-05-01",
+          "month": "2019-05",
           "series": "Domestic",
           "value": 142502.0
         },
         {
           "date": "2019-05-01",
+          "month": "2019-05",
           "series": "HSR",
           "value": 1677.0
         },
         {
           "date": "2019-05-01",
+          "month": "2019-05",
           "series": "LR & Bus",
           "value": 20105.0
         },
         {
           "date": "2019-05-01",
+          "month": "2019-05",
           "series": "X-Boundary",
           "value": 9889.0
         },
         {
           "date": "2019-06-01",
+          "month": "2019-06",
           "series": "Airport Exp",
           "value": 1444.0
         },
         {
           "date": "2019-06-01",
+          "month": "2019-06",
           "series": "Domestic",
           "value": 135990.0
         },
         {
           "date": "2019-06-01",
+          "month": "2019-06",
           "series": "HSR",
           "value": 1494.0
         },
         {
           "date": "2019-06-01",
+          "month": "2019-06",
           "series": "LR & Bus",
           "value": 19420.0
         },
         {
           "date": "2019-06-01",
+          "month": "2019-06",
           "series": "X-Boundary",
           "value": 9340.0
         },
         {
           "date": "2019-07-01",
+          "month": "2019-07",
           "series": "Airport Exp",
           "value": 1458.0
         },
         {
           "date": "2019-07-01",
+          "month": "2019-07",
           "series": "Domestic",
           "value": 138219.0
         },
         {
           "date": "2019-07-01",
+          "month": "2019-07",
           "series": "HSR",
           "value": 1626.0
         },
         {
           "date": "2019-07-01",
+          "month": "2019-07",
           "series": "LR & Bus",
           "value": 18988.0
         },
         {
           "date": "2019-07-01",
+          "month": "2019-07",
           "series": "X-Boundary",
           "value": 9166.0
         },
         {
           "date": "2019-08-01",
+          "month": "2019-08",
           "series": "Airport Exp",
           "value": 1294.0
         },
         {
           "date": "2019-08-01",
+          "month": "2019-08",
           "series": "Domestic",
           "value": 130922.0
         },
         {
           "date": "2019-08-01",
+          "month": "2019-08",
           "series": "HSR",
           "value": 1144.0
         },
         {
           "date": "2019-08-01",
+          "month": "2019-08",
           "series": "LR & Bus",
           "value": 18547.0
         },
         {
           "date": "2019-08-01",
+          "month": "2019-08",
           "series": "X-Boundary",
           "value": 7982.0
         },
         {
           "date": "2019-09-01",
+          "month": "2019-09",
           "series": "Airport Exp",
           "value": 1035.0
         },
         {
           "date": "2019-09-01",
+          "month": "2019-09",
           "series": "Domestic",
           "value": 126948.0
         },
         {
           "date": "2019-09-01",
+          "month": "2019-09",
           "series": "HSR",
           "value": 936.0
         },
         {
           "date": "2019-09-01",
+          "month": "2019-09",
           "series": "LR & Bus",
           "value": 18379.0
         },
         {
           "date": "2019-09-01",
+          "month": "2019-09",
           "series": "X-Boundary",
           "value": 8012.0
         },
         {
           "date": "2019-10-01",
+          "month": "2019-10",
           "series": "Airport Exp",
           "value": 916.0
         },
         {
           "date": "2019-10-01",
+          "month": "2019-10",
           "series": "Domestic",
           "value": 108456.0
         },
         {
           "date": "2019-10-01",
+          "month": "2019-10",
           "series": "HSR",
           "value": 1067.0
         },
         {
           "date": "2019-10-01",
+          "month": "2019-10",
           "series": "LR & Bus",
           "value": 12417.0
         },
         {
           "date": "2019-10-01",
+          "month": "2019-10",
           "series": "X-Boundary",
           "value": 7182.0
         },
         {
           "date": "2019-11-01",
+          "month": "2019-11",
           "series": "Airport Exp",
           "value": 992.0
         },
         {
           "date": "2019-11-01",
+          "month": "2019-11",
           "series": "Domestic",
           "value": 110311.0
         },
         {
           "date": "2019-11-01",
+          "month": "2019-11",
           "series": "HSR",
           "value": 1059.0
         },
         {
           "date": "2019-11-01",
+          "month": "2019-11",
           "series": "LR & Bus",
           "value": 11317.0
         },
         {
           "date": "2019-11-01",
+          "month": "2019-11",
           "series": "X-Boundary",
           "value": 5892.0
         },
         {
           "date": "2019-12-01",
+          "month": "2019-12",
           "series": "Airport Exp",
           "value": 1075.0
         },
         {
           "date": "2019-12-01",
+          "month": "2019-12",
           "series": "Domestic",
           "value": 123107.0
         },
         {
           "date": "2019-12-01",
+          "month": "2019-12",
           "series": "HSR",
           "value": 1141.0
         },
         {
           "date": "2019-12-01",
+          "month": "2019-12",
           "series": "LR & Bus",
           "value": 13983.0
         },
         {
           "date": "2019-12-01",
+          "month": "2019-12",
           "series": "X-Boundary",
           "value": 8318.0
         },
         {
           "date": "2020-01-01",
+          "month": "2020-01",
           "series": "Airport Exp",
           "value": 972.0
         },
         {
           "date": "2020-01-01",
+          "month": "2020-01",
           "series": "Domestic",
           "value": 116523.0
         },
         {
           "date": "2020-01-01",
+          "month": "2020-01",
           "series": "HSR",
           "value": 1033.0
         },
         {
           "date": "2020-01-01",
+          "month": "2020-01",
           "series": "LR & Bus",
           "value": 14653.0
         },
         {
           "date": "2020-01-01",
+          "month": "2020-01",
           "series": "X-Boundary",
           "value": 7053.0
         },
         {
           "date": "2020-02-01",
+          "month": "2020-02",
           "series": "Airport Exp",
           "value": 374.0
         },
         {
           "date": "2020-02-01",
+          "month": "2020-02",
           "series": "Domestic",
           "value": 71405.0
         },
         {
           "date": "2020-02-01",
+          "month": "2020-02",
           "series": "HSR",
           "value": 0.0
         },
         {
           "date": "2020-02-01",
+          "month": "2020-02",
           "series": "LR & Bus",
           "value": 9391.0
         },
         {
           "date": "2020-02-01",
+          "month": "2020-02",
           "series": "X-Boundary",
           "value": 189.0
         },
         {
           "date": "2020-03-01",
+          "month": "2020-03",
           "series": "Airport Exp",
           "value": 259.0
         },
         {
           "date": "2020-03-01",
+          "month": "2020-03",
           "series": "Domestic",
           "value": 84048.0
         },
         {
           "date": "2020-03-01",
+          "month": "2020-03",
           "series": "HSR",
           "value": 0.0
         },
         {
           "date": "2020-03-01",
+          "month": "2020-03",
           "series": "LR & Bus",
           "value": 11009.0
         },
         {
           "date": "2020-03-01",
+          "month": "2020-03",
           "series": "X-Boundary",
           "value": 36.0
         },
         {
           "date": "2020-04-01",
+          "month": "2020-04",
           "series": "Airport Exp",
           "value": 134.0
         },
         {
           "date": "2020-04-01",
+          "month": "2020-04",
           "series": "Domestic",
           "value": 74543.0
         },
         {
           "date": "2020-04-01",
+          "month": "2020-04",
           "series": "HSR",
           "value": 0.0
         },
         {
           "date": "2020-04-01",
+          "month": "2020-04",
           "series": "LR & Bus",
           "value": 10395.0
         },
         {
           "date": "2020-04-01",
+          "month": "2020-04",
           "series": "X-Boundary",
           "value": 37.0
         },
         {
           "date": "2020-05-01",
+          "month": "2020-05",
           "series": "Airport Exp",
           "value": 156.0
         },
         {
           "date": "2020-05-01",
+          "month": "2020-05",
           "series": "Domestic",
           "value": 97001.0
         },
         {
           "date": "2020-05-01",
+          "month": "2020-05",
           "series": "HSR",
           "value": 0.0
         },
         {
           "date": "2020-05-01",
+          "month": "2020-05",
           "series": "LR & Bus",
           "value": 12868.0
         },
         {
           "date": "2020-05-01",
+          "month": "2020-05",
           "series": "X-Boundary",
           "value": 35.0
         },
         {
           "date": "2020-06-01",
+          "month": "2020-06",
           "series": "Airport Exp",
           "value": 177.0
         },
         {
           "date": "2020-06-01",
+          "month": "2020-06",
           "series": "Domestic",
           "value": 110061.0
         },
         {
           "date": "2020-06-01",
+          "month": "2020-06",
           "series": "HSR",
           "value": 0.0
         },
         {
           "date": "2020-06-01",
+          "month": "2020-06",
           "series": "LR & Bus",
           "value": 14831.0
         },
         {
           "date": "2020-06-01",
+          "month": "2020-06",
           "series": "X-Boundary",
           "value": 44.0
         },
         {
           "date": "2020-07-01",
+          "month": "2020-07",
           "series": "Airport Exp",
           "value": 167.0
         },
         {
           "date": "2020-07-01",
+          "month": "2020-07",
           "series": "Domestic",
           "value": 91097.0
         },
         {
           "date": "2020-07-01",
+          "month": "2020-07",
           "series": "HSR",
           "value": 0.0
         },
         {
           "date": "2020-07-01",
+          "month": "2020-07",
           "series": "LR & Bus",
           "value": 12624.0
         },
         {
           "date": "2020-07-01",
+          "month": "2020-07",
           "series": "X-Boundary",
           "value": 43.0
         },
         {
           "date": "2020-08-01",
+          "month": "2020-08",
           "series": "Airport Exp",
           "value": 148.0
         },
         {
           "date": "2020-08-01",
+          "month": "2020-08",
           "series": "Domestic",
           "value": 78520.0
         },
         {
           "date": "2020-08-01",
+          "month": "2020-08",
           "series": "HSR",
           "value": 0.0
         },
         {
           "date": "2020-08-01",
+          "month": "2020-08",
           "series": "LR & Bus",
           "value": 10930.0
         },
         {
           "date": "2020-08-01",
+          "month": "2020-08",
           "series": "X-Boundary",
           "value": 33.0
         },
         {
           "date": "2020-09-01",
+          "month": "2020-09",
           "series": "Airport Exp",
           "value": 179.0
         },
         {
           "date": "2020-09-01",
+          "month": "2020-09",
           "series": "Domestic",
           "value": 100948.0
         },
         {
           "date": "2020-09-01",
+          "month": "2020-09",
           "series": "HSR",
           "value": 0.0
         },
         {
           "date": "2020-09-01",
+          "month": "2020-09",
           "series": "LR & Bus",
           "value": 13434.0
         },
         {
           "date": "2020-09-01",
+          "month": "2020-09",
           "series": "X-Boundary",
           "value": 41.0
         },
         {
           "date": "2020-10-01",
+          "month": "2020-10",
           "series": "Airport Exp",
           "value": 174.0
         },
         {
           "date": "2020-10-01",
+          "month": "2020-10",
           "series": "Domestic",
           "value": 113558.0
         },
         {
           "date": "2020-10-01",
+          "month": "2020-10",
           "series": "HSR",
           "value": 0.0
         },
         {
           "date": "2020-10-01",
+          "month": "2020-10",
           "series": "LR & Bus",
           "value": 15564.0
         },
         {
           "date": "2020-10-01",
+          "month": "2020-10",
           "series": "X-Boundary",
           "value": 50.0
         },
         {
           "date": "2020-11-01",
+          "month": "2020-11",
           "series": "Airport Exp",
           "value": 171.0
         },
         {
           "date": "2020-11-01",
+          "month": "2020-11",
           "series": "Domestic",
           "value": 114346.0
         },
         {
           "date": "2020-11-01",
+          "month": "2020-11",
           "series": "HSR",
           "value": 0.0
         },
         {
           "date": "2020-11-01",
+          "month": "2020-11",
           "series": "LR & Bus",
           "value": 15496.0
         },
         {
           "date": "2020-11-01",
+          "month": "2020-11",
           "series": "X-Boundary",
           "value": 50.0
         },
         {
           "date": "2020-12-01",
+          "month": "2020-12",
           "series": "Airport Exp",
           "value": 159.0
         },
         {
           "date": "2020-12-01",
+          "month": "2020-12",
           "series": "Domestic",
           "value": 92985.0
         },
         {
           "date": "2020-12-01",
+          "month": "2020-12",
           "series": "HSR",
           "value": 0.0
         },
         {
           "date": "2020-12-01",
+          "month": "2020-12",
           "series": "LR & Bus",
           "value": 12848.0
         },
         {
           "date": "2020-12-01",
+          "month": "2020-12",
           "series": "X-Boundary",
           "value": 37.0
         },
         {
           "date": "2021-01-01",
+          "month": "2021-01",
           "series": "Airport Exp",
           "value": 156.0
         },
         {
           "date": "2021-01-01",
+          "month": "2021-01",
           "series": "Domestic",
           "value": 93236.0
         },
         {
           "date": "2021-01-01",
+          "month": "2021-01",
           "series": "HSR",
           "value": 0.0
         },
         {
           "date": "2021-01-01",
+          "month": "2021-01",
           "series": "LR & Bus",
           "value": 12789.0
         },
         {
           "date": "2021-01-01",
+          "month": "2021-01",
           "series": "X-Boundary",
           "value": 33.0
         },
         {
           "date": "2021-02-01",
+          "month": "2021-02",
           "series": "Airport Exp",
           "value": 144.0
         },
         {
           "date": "2021-02-01",
+          "month": "2021-02",
           "series": "Domestic",
           "value": 91409.0
         },
         {
           "date": "2021-02-01",
+          "month": "2021-02",
           "series": "HSR",
           "value": 0.0
         },
         {
           "date": "2021-02-01",
+          "month": "2021-02",
           "series": "LR & Bus",
           "value": 12412.0
         },
         {
           "date": "2021-02-01",
+          "month": "2021-02",
           "series": "X-Boundary",
           "value": 34.0
         },
         {
           "date": "2021-03-01",
+          "month": "2021-03",
           "series": "Airport Exp",
           "value": 178.0
         },
         {
           "date": "2021-03-01",
+          "month": "2021-03",
           "series": "Domestic",
           "value": 114487.0
         },
         {
           "date": "2021-03-01",
+          "month": "2021-03",
           "series": "HSR",
           "value": 0.0
         },
         {
           "date": "2021-03-01",
+          "month": "2021-03",
           "series": "LR & Bus",
           "value": 15420.0
         },
         {
           "date": "2021-03-01",
+          "month": "2021-03",
           "series": "X-Boundary",
           "value": 42.0
         },
         {
           "date": "2021-04-01",
+          "month": "2021-04",
           "series": "Airport Exp",
           "value": 156.0
         },
         {
           "date": "2021-04-01",
+          "month": "2021-04",
           "series": "Domestic",
           "value": 111075.0
         },
         {
           "date": "2021-04-01",
+          "month": "2021-04",
           "series": "HSR",
           "value": 0.0
         },
         {
           "date": "2021-04-01",
+          "month": "2021-04",
           "series": "LR & Bus",
           "value": 15030.0
         },
         {
           "date": "2021-04-01",
+          "month": "2021-04",
           "series": "X-Boundary",
           "value": 52.0
         },
         {
           "date": "2021-05-01",
+          "month": "2021-05",
           "series": "Airport Exp",
           "value": 164.0
         },
         {
           "date": "2021-05-01",
+          "month": "2021-05",
           "series": "Domestic",
           "value": 117755.0
         },
         {
           "date": "2021-05-01",
+          "month": "2021-05",
           "series": "HSR",
           "value": 0.0
         },
         {
           "date": "2021-05-01",
+          "month": "2021-05",
           "series": "LR & Bus",
           "value": 16573.0
         },
         {
           "date": "2021-05-01",
+          "month": "2021-05",
           "series": "X-Boundary",
           "value": 41.0
         },
         {
           "date": "2021-06-01",
+          "month": "2021-06",
           "series": "Airport Exp",
           "value": 172.0
         },
         {
           "date": "2021-06-01",
+          "month": "2021-06",
           "series": "Domestic",
           "value": 118153.0
         },
         {
           "date": "2021-06-01",
+          "month": "2021-06",
           "series": "HSR",
           "value": 0.0
         },
         {
           "date": "2021-06-01",
+          "month": "2021-06",
           "series": "LR & Bus",
           "value": 16363.0
         },
         {
           "date": "2021-06-01",
+          "month": "2021-06",
           "series": "X-Boundary",
           "value": 40.0
         },
         {
           "date": "2021-07-01",
+          "month": "2021-07",
           "series": "Airport Exp",
           "value": 183.0
         },
         {
           "date": "2021-07-01",
+          "month": "2021-07",
           "series": "Domestic",
           "value": 125666.0
         },
         {
           "date": "2021-07-01",
+          "month": "2021-07",
           "series": "HSR",
           "value": 0.0
         },
         {
           "date": "2021-07-01",
+          "month": "2021-07",
           "series": "LR & Bus",
           "value": 16869.0
         },
         {
           "date": "2021-07-01",
+          "month": "2021-07",
           "series": "X-Boundary",
           "value": 40.0
         },
         {
           "date": "2021-08-01",
+          "month": "2021-08",
           "series": "Airport Exp",
           "value": 209.0
         },
         {
           "date": "2021-08-01",
+          "month": "2021-08",
           "series": "Domestic",
           "value": 127696.0
         },
         {
           "date": "2021-08-01",
+          "month": "2021-08",
           "series": "HSR",
           "value": 0.0
         },
         {
           "date": "2021-08-01",
+          "month": "2021-08",
           "series": "LR & Bus",
           "value": 16795.0
         },
         {
           "date": "2021-08-01",
+          "month": "2021-08",
           "series": "X-Boundary",
           "value": 41.0
         },
         {
           "date": "2021-09-01",
+          "month": "2021-09",
           "series": "Airport Exp",
           "value": 197.0
         },
         {
           "date": "2021-09-01",
+          "month": "2021-09",
           "series": "Domestic",
           "value": 129596.0
         },
         {
           "date": "2021-09-01",
+          "month": "2021-09",
           "series": "HSR",
           "value": 0.0
         },
         {
           "date": "2021-09-01",
+          "month": "2021-09",
           "series": "LR & Bus",
           "value": 17788.0
         },
         {
           "date": "2021-09-01",
+          "month": "2021-09",
           "series": "X-Boundary",
           "value": 40.0
         },
         {
           "date": "2021-10-01",
+          "month": "2021-10",
           "series": "Airport Exp",
           "value": 186.0
         },
         {
           "date": "2021-10-01",
+          "month": "2021-10",
           "series": "Domestic",
           "value": 124953.0
         },
         {
           "date": "2021-10-01",
+          "month": "2021-10",
           "series": "HSR",
           "value": 0.0
         },
         {
           "date": "2021-10-01",
+          "month": "2021-10",
           "series": "LR & Bus",
           "value": 16857.0
         },
         {
           "date": "2021-10-01",
+          "month": "2021-10",
           "series": "X-Boundary",
           "value": 42.0
         },
         {
           "date": "2021-11-01",
+          "month": "2021-11",
           "series": "Airport Exp",
           "value": 178.0
         },
         {
           "date": "2021-11-01",
+          "month": "2021-11",
           "series": "Domestic",
           "value": 131602.0
         },
         {
           "date": "2021-11-01",
+          "month": "2021-11",
           "series": "HSR",
           "value": 0.0
         },
         {
           "date": "2021-11-01",
+          "month": "2021-11",
           "series": "LR & Bus",
           "value": 17514.0
         },
         {
           "date": "2021-11-01",
+          "month": "2021-11",
           "series": "X-Boundary",
           "value": 39.0
         },
         {
           "date": "2021-12-01",
+          "month": "2021-12",
           "series": "Airport Exp",
           "value": 228.0
         },
         {
           "date": "2021-12-01",
+          "month": "2021-12",
           "series": "Domestic",
           "value": 136110.0
         },
         {
           "date": "2021-12-01",
+          "month": "2021-12",
           "series": "HSR",
           "value": 0.0
         },
         {
           "date": "2021-12-01",
+          "month": "2021-12",
           "series": "LR & Bus",
           "value": 17553.0
         },
         {
           "date": "2021-12-01",
+          "month": "2021-12",
           "series": "X-Boundary",
           "value": 41.0
         },
         {
           "date": "2022-01-01",
+          "month": "2022-01",
           "series": "Airport Exp",
           "value": 175.0
         },
         {
           "date": "2022-01-01",
+          "month": "2022-01",
           "series": "Domestic",
           "value": 110197.0
         },
         {
           "date": "2022-01-01",
+          "month": "2022-01",
           "series": "HSR",
           "value": 0.0
         },
         {
           "date": "2022-01-01",
+          "month": "2022-01",
           "series": "LR & Bus",
           "value": 14856.0
         },
         {
           "date": "2022-01-01",
+          "month": "2022-01",
           "series": "X-Boundary",
           "value": 41.0
         },
         {
           "date": "2022-02-01",
+          "month": "2022-02",
           "series": "Airport Exp",
           "value": 120.0
         },
         {
           "date": "2022-02-01",
+          "month": "2022-02",
           "series": "Domestic",
           "value": 62787.0
         },
         {
           "date": "2022-02-01",
+          "month": "2022-02",
           "series": "HSR",
           "value": 0.0
         },
         {
           "date": "2022-02-01",
+          "month": "2022-02",
           "series": "LR & Bus",
           "value": 8913.0
         },
         {
           "date": "2022-02-01",
+          "month": "2022-02",
           "series": "X-Boundary",
           "value": 30.0
         },
         {
           "date": "2022-03-01",
+          "month": "2022-03",
           "series": "Airport Exp",
           "value": 136.0
         },
         {
           "date": "2022-03-01",
+          "month": "2022-03",
           "series": "Domestic",
           "value": 65250.0
         },
         {
           "date": "2022-03-01",
+          "month": "2022-03",
           "series": "HSR",
           "value": 0.0
         },
         {
           "date": "2022-03-01",
+          "month": "2022-03",
           "series": "LR & Bus",
           "value": 9124.0
         },
         {
           "date": "2022-03-01",
+          "month": "2022-03",
           "series": "X-Boundary",
           "value": 29.0
         },
         {
           "date": "2022-04-01",
+          "month": "2022-04",
           "series": "Airport Exp",
           "value": 155.0
         },
         {
           "date": "2022-04-01",
+          "month": "2022-04",
           "series": "Domestic",
           "value": 91033.0
         },
         {
           "date": "2022-04-01",
+          "month": "2022-04",
           "series": "HSR",
           "value": 0.0
         },
         {
           "date": "2022-04-01",
+          "month": "2022-04",
           "series": "LR & Bus",
           "value": 12183.0
         },
         {
           "date": "2022-04-01",
+          "month": "2022-04",
           "series": "X-Boundary",
           "value": 39.0
         },
         {
           "date": "2022-05-01",
+          "month": "2022-05",
           "series": "Airport Exp",
           "value": 182.0
         },
         {
           "date": "2022-05-01",
+          "month": "2022-05",
           "series": "Domestic",
           "value": 119645.0
         },
         {
           "date": "2022-05-01",
+          "month": "2022-05",
           "series": "HSR",
           "value": 0.0
         },
         {
           "date": "2022-05-01",
+          "month": "2022-05",
           "series": "LR & Bus",
           "value": 16124.0
         },
         {
           "date": "2022-05-01",
+          "month": "2022-05",
           "series": "X-Boundary",
           "value": 37.0
         },
         {
           "date": "2022-06-01",
+          "month": "2022-06",
           "series": "Airport Exp",
           "value": 195.0
         },
         {
           "date": "2022-06-01",
+          "month": "2022-06",
           "series": "Domestic",
           "value": 121634.0
         },
         {
           "date": "2022-06-01",
+          "month": "2022-06",
           "series": "HSR",
           "value": 0.0
         },
         {
           "date": "2022-06-01",
+          "month": "2022-06",
           "series": "LR & Bus",
           "value": 16508.0
         },
         {
           "date": "2022-06-01",
+          "month": "2022-06",
           "series": "X-Boundary",
           "value": 35.0
         },
         {
           "date": "2022-07-01",
+          "month": "2022-07",
           "series": "Airport Exp",
           "value": 213.0
         },
         {
           "date": "2022-07-01",
+          "month": "2022-07",
           "series": "Domestic",
           "value": 122877.0
         },
         {
           "date": "2022-07-01",
+          "month": "2022-07",
           "series": "HSR",
           "value": 0.0
         },
         {
           "date": "2022-07-01",
+          "month": "2022-07",
           "series": "LR & Bus",
           "value": 16639.0
         },
         {
           "date": "2022-07-01",
+          "month": "2022-07",
           "series": "X-Boundary",
           "value": 35.0
         },
         {
           "date": "2022-08-01",
+          "month": "2022-08",
           "series": "Airport Exp",
           "value": 278.0
         },
         {
           "date": "2022-08-01",
+          "month": "2022-08",
           "series": "Domestic",
           "value": 126912.0
         },
         {
           "date": "2022-08-01",
+          "month": "2022-08",
           "series": "HSR",
           "value": 0.0
         },
         {
           "date": "2022-08-01",
+          "month": "2022-08",
           "series": "LR & Bus",
           "value": 16504.0
         },
         {
           "date": "2022-08-01",
+          "month": "2022-08",
           "series": "X-Boundary",
           "value": 35.0
         },
         {
           "date": "2022-09-01",
+          "month": "2022-09",
           "series": "Airport Exp",
           "value": 294.0
         },
         {
           "date": "2022-09-01",
+          "month": "2022-09",
           "series": "Domestic",
           "value": 126923.0
         },
         {
           "date": "2022-09-01",
+          "month": "2022-09",
           "series": "HSR",
           "value": 0.0
         },
         {
           "date": "2022-09-01",
+          "month": "2022-09",
           "series": "LR & Bus",
           "value": 17314.0
         },
         {
           "date": "2022-09-01",
+          "month": "2022-09",
           "series": "X-Boundary",
           "value": 34.0
         },
         {
           "date": "2022-10-01",
+          "month": "2022-10",
           "series": "Airport Exp",
           "value": 361.0
         },
         {
           "date": "2022-10-01",
+          "month": "2022-10",
           "series": "Domestic",
           "value": 131427.0
         },
         {
           "date": "2022-10-01",
+          "month": "2022-10",
           "series": "HSR",
           "value": 0.0
         },
         {
           "date": "2022-10-01",
+          "month": "2022-10",
           "series": "LR & Bus",
           "value": 17885.0
         },
         {
           "date": "2022-10-01",
+          "month": "2022-10",
           "series": "X-Boundary",
           "value": 40.0
         },
         {
           "date": "2022-11-01",
+          "month": "2022-11",
           "series": "Airport Exp",
           "value": 451.0
         },
         {
           "date": "2022-11-01",
+          "month": "2022-11",
           "series": "Domestic",
           "value": 126820.0
         },
         {
           "date": "2022-11-01",
+          "month": "2022-11",
           "series": "HSR",
           "value": 0.0
         },
         {
           "date": "2022-11-01",
+          "month": "2022-11",
           "series": "LR & Bus",
           "value": 16996.0
         },
         {
           "date": "2022-11-01",
+          "month": "2022-11",
           "series": "X-Boundary",
           "value": 36.0
         },
         {
           "date": "2022-12-01",
+          "month": "2022-12",
           "series": "Airport Exp",
           "value": 542.0
         },
         {
           "date": "2022-12-01",
+          "month": "2022-12",
           "series": "Domestic",
           "value": 129086.0
         },
         {
           "date": "2022-12-01",
+          "month": "2022-12",
           "series": "HSR",
           "value": 0.0
         },
         {
           "date": "2022-12-01",
+          "month": "2022-12",
           "series": "LR & Bus",
           "value": 16899.0
         },
         {
           "date": "2022-12-01",
+          "month": "2022-12",
           "series": "X-Boundary",
           "value": 37.0
         },
         {
           "date": "2023-01-01",
+          "month": "2023-01",
           "series": "Airport Exp",
           "value": 614.0
         },
         {
           "date": "2023-01-01",
+          "month": "2023-01",
           "series": "Domestic",
           "value": 125744.0
         },
         {
           "date": "2023-01-01",
+          "month": "2023-01",
           "series": "HSR",
           "value": 264.0
         },
         {
           "date": "2023-01-01",
+          "month": "2023-01",
           "series": "LR & Bus",
           "value": 16810.0
         },
         {
           "date": "2023-01-01",
+          "month": "2023-01",
           "series": "X-Boundary",
           "value": 771.0
         },
         {
           "date": "2023-02-01",
+          "month": "2023-02",
           "series": "Airport Exp",
           "value": 589.0
         },
         {
           "date": "2023-02-01",
+          "month": "2023-02",
           "series": "Domestic",
           "value": 125939.0
         },
         {
           "date": "2023-02-01",
+          "month": "2023-02",
           "series": "HSR",
           "value": 783.0
         },
         {
           "date": "2023-02-01",
+          "month": "2023-02",
           "series": "LR & Bus",
           "value": 16388.0
         },
         {
           "date": "2023-02-01",
+          "month": "2023-02",
           "series": "X-Boundary",
           "value": 3685.0
         },
         {
           "date": "2023-03-01",
+          "month": "2023-03",
           "series": "Airport Exp",
           "value": 763.0
         },
         {
           "date": "2023-03-01",
+          "month": "2023-03",
           "series": "Domestic",
           "value": 139522.0
         },
         {
           "date": "2023-03-01",
+          "month": "2023-03",
           "series": "HSR",
           "value": 1205.0
         },
         {
           "date": "2023-03-01",
+          "month": "2023-03",
           "series": "LR & Bus",
           "value": 18110.0
         },
         {
           "date": "2023-03-01",
+          "month": "2023-03",
           "series": "X-Boundary",
           "value": 5670.0
         },
         {
           "date": "2023-04-01",
+          "month": "2023-04",
           "series": "Airport Exp",
           "value": 873.0
         },
         {
           "date": "2023-04-01",
+          "month": "2023-04",
           "series": "Domestic",
           "value": 124399.0
         },
         {
           "date": "2023-04-01",
+          "month": "2023-04",
           "series": "HSR",
           "value": 1979.0
         },
         {
           "date": "2023-04-01",
+          "month": "2023-04",
           "series": "LR & Bus",
           "value": 16262.0
         },
         {
           "date": "2023-04-01",
+          "month": "2023-04",
           "series": "X-Boundary",
           "value": 6144.0
         },
         {
           "date": "2023-05-01",
+          "month": "2023-05",
           "series": "Airport Exp",
           "value": 876.0
         },
         {
           "date": "2023-05-01",
+          "month": "2023-05",
           "series": "Domestic",
           "value": 131843.0
         },
         {
           "date": "2023-05-01",
+          "month": "2023-05",
           "series": "HSR",
           "value": 1751.0
         },
         {
           "date": "2023-05-01",
+          "month": "2023-05",
           "series": "LR & Bus",
           "value": 17603.0
         },
         {
           "date": "2023-05-01",
+          "month": "2023-05",
           "series": "X-Boundary",
           "value": 5966.0
         },
         {
           "date": "2023-06-01",
+          "month": "2023-06",
           "series": "Airport Exp",
           "value": 850.0
         },
         {
           "date": "2023-06-01",
+          "month": "2023-06",
           "series": "Domestic",
           "value": 129761.0
         },
         {
           "date": "2023-06-01",
+          "month": "2023-06",
           "series": "HSR",
           "value": 1610.0
         },
         {
           "date": "2023-06-01",
+          "month": "2023-06",
           "series": "LR & Bus",
           "value": 17427.0
         },
         {
           "date": "2023-06-01",
+          "month": "2023-06",
           "series": "X-Boundary",
           "value": 5838.0
         },
         {
           "date": "2023-07-01",
+          "month": "2023-07",
           "series": "Airport Exp",
           "value": 1000.0
         },
         {
           "date": "2023-07-01",
+          "month": "2023-07",
           "series": "Domestic",
           "value": 133236.0
         },
         {
           "date": "2023-07-01",
+          "month": "2023-07",
           "series": "HSR",
           "value": 2192.0
         },
         {
           "date": "2023-07-01",
+          "month": "2023-07",
           "series": "LR & Bus",
           "value": 17357.0
         },
         {
           "date": "2023-07-01",
+          "month": "2023-07",
           "series": "X-Boundary",
           "value": 6852.0
         },
         {
           "date": "2023-08-01",
+          "month": "2023-08",
           "series": "Airport Exp",
           "value": 1040.0
         },
         {
           "date": "2023-08-01",
+          "month": "2023-08",
           "series": "Domestic",
           "value": 137520.0
         },
         {
           "date": "2023-08-01",
+          "month": "2023-08",
           "series": "HSR",
           "value": 2495.0
         },
         {
           "date": "2023-08-01",
+          "month": "2023-08",
           "series": "LR & Bus",
           "value": 17260.0
         },
         {
           "date": "2023-08-01",
+          "month": "2023-08",
           "series": "X-Boundary",
           "value": 7579.0
         },
         {
           "date": "2023-09-01",
+          "month": "2023-09",
           "series": "Airport Exp",
           "value": 1005.0
         },
         {
           "date": "2023-09-01",
+          "month": "2023-09",
           "series": "Domestic",
           "value": 126706.0
         },
         {
           "date": "2023-09-01",
+          "month": "2023-09",
           "series": "HSR",
           "value": 1583.0
         },
         {
           "date": "2023-09-01",
+          "month": "2023-09",
           "series": "LR & Bus",
           "value": 17114.0
         },
         {
           "date": "2023-09-01",
+          "month": "2023-09",
           "series": "X-Boundary",
           "value": 6138.0
         },
         {
           "date": "2023-10-01",
+          "month": "2023-10",
           "series": "Airport Exp",
           "value": 1072.0
         },
         {
           "date": "2023-10-01",
+          "month": "2023-10",
           "series": "Domestic",
           "value": 135451.0
         },
         {
           "date": "2023-10-01",
+          "month": "2023-10",
           "series": "HSR",
           "value": 2055.0
         },
         {
           "date": "2023-10-01",
+          "month": "2023-10",
           "series": "LR & Bus",
           "value": 17796.0
         },
         {
           "date": "2023-10-01",
+          "month": "2023-10",
           "series": "X-Boundary",
           "value": 7261.0
         },
         {
           "date": "2023-11-01",
+          "month": "2023-11",
           "series": "Airport Exp",
           "value": 1005.0
         },
         {
           "date": "2023-11-01",
+          "month": "2023-11",
           "series": "Domestic",
           "value": 138381.0
         },
         {
           "date": "2023-11-01",
+          "month": "2023-11",
           "series": "HSR",
           "value": 1815.0
         },
         {
           "date": "2023-11-01",
+          "month": "2023-11",
           "series": "LR & Bus",
           "value": 18054.0
         },
         {
           "date": "2023-11-01",
+          "month": "2023-11",
           "series": "X-Boundary",
           "value": 7339.0
         },
         {
           "date": "2023-12-01",
+          "month": "2023-12",
           "series": "Airport Exp",
           "value": 1155.0
         },
         {
           "date": "2023-12-01",
+          "month": "2023-12",
           "series": "Domestic",
           "value": 138144.0
         },
         {
           "date": "2023-12-01",
+          "month": "2023-12",
           "series": "HSR",
           "value": 2367.0
         },
         {
           "date": "2023-12-01",
+          "month": "2023-12",
           "series": "LR & Bus",
           "value": 17512.0
         },
         {
           "date": "2023-12-01",
+          "month": "2023-12",
           "series": "X-Boundary",
           "value": 8275.0
         },
         {
           "date": "2024-01-01",
+          "month": "2024-01",
           "series": "Airport Exp",
           "value": 1158.0
         },
         {
           "date": "2024-01-01",
+          "month": "2024-01",
           "series": "Domestic",
           "value": 140238.0
         },
         {
           "date": "2024-01-01",
+          "month": "2024-01",
           "series": "HSR",
           "value": 2120.0
         },
         {
           "date": "2024-01-01",
+          "month": "2024-01",
           "series": "LR & Bus",
           "value": 18164.0
         },
         {
           "date": "2024-01-01",
+          "month": "2024-01",
           "series": "X-Boundary",
           "value": 7835.0
         },
         {
           "date": "2024-02-01",
+          "month": "2024-02",
           "series": "Airport Exp",
           "value": 973.0
         },
         {
           "date": "2024-02-01",
+          "month": "2024-02",
           "series": "Domestic",
           "value": 126604.0
         },
         {
           "date": "2024-02-01",
+          "month": "2024-02",
           "series": "HSR",
           "value": 2357.0
         },
         {
           "date": "2024-02-01",
+          "month": "2024-02",
           "series": "LR & Bus",
           "value": 16033.0
         },
         {
           "date": "2024-02-01",
+          "month": "2024-02",
           "series": "X-Boundary",
           "value": 7314.0
         },
         {
           "date": "2024-03-01",
+          "month": "2024-03",
           "series": "Airport Exp",
           "value": 1068.0
         },
         {
           "date": "2024-03-01",
+          "month": "2024-03",
           "series": "Domestic",
           "value": 134170.0
         },
         {
           "date": "2024-03-01",
+          "month": "2024-03",
           "series": "HSR",
           "value": 2070.0
         },
         {
           "date": "2024-03-01",
+          "month": "2024-03",
           "series": "LR & Bus",
           "value": 17615.0
         },
         {
           "date": "2024-03-01",
+          "month": "2024-03",
           "series": "X-Boundary",
           "value": 8049.0
         },
         {
           "date": "2024-04-01",
+          "month": "2024-04",
           "series": "Airport Exp",
           "value": 1006.0
         },
         {
           "date": "2024-04-01",
+          "month": "2024-04",
           "series": "Domestic",
           "value": 126810.0
         },
         {
           "date": "2024-04-01",
+          "month": "2024-04",
           "series": "HSR",
           "value": 2118.0
         },
         {
           "date": "2024-04-01",
+          "month": "2024-04",
           "series": "LR & Bus",
           "value": 17031.0
         },
         {
           "date": "2024-04-01",
+          "month": "2024-04",
           "series": "X-Boundary",
           "value": 7567.0
         },
         {
           "date": "2024-05-01",
+          "month": "2024-05",
           "series": "Airport Exp",
           "value": 997.0
         },
         {
           "date": "2024-05-01",
+          "month": "2024-05",
           "series": "Domestic",
           "value": 132781.0
         },
         {
           "date": "2024-05-01",
+          "month": "2024-05",
           "series": "HSR",
           "value": 1967.0
         },
         {
           "date": "2024-05-01",
+          "month": "2024-05",
           "series": "LR & Bus",
           "value": 18144.0
         },
         {
           "date": "2024-05-01",
+          "month": "2024-05",
           "series": "X-Boundary",
           "value": 7841.0
         },
         {
           "date": "2024-06-01",
+          "month": "2024-06",
           "series": "Airport Exp",
           "value": 1057.0
         },
         {
           "date": "2024-06-01",
+          "month": "2024-06",
           "series": "Domestic",
           "value": 126873.0
         },
         {
           "date": "2024-06-01",
+          "month": "2024-06",
           "series": "HSR",
           "value": 2046.0
         },
         {
           "date": "2024-06-01",
+          "month": "2024-06",
           "series": "LR & Bus",
           "value": 17513.0
         },
         {
           "date": "2024-06-01",
+          "month": "2024-06",
           "series": "X-Boundary",
           "value": 7899.0
         },
         {
           "date": "2024-07-01",
+          "month": "2024-07",
           "series": "Airport Exp",
           "value": 1114.0
         },
         {
           "date": "2024-07-01",
+          "month": "2024-07",
           "series": "Domestic",
           "value": 134109.0
         },
         {
           "date": "2024-07-01",
+          "month": "2024-07",
           "series": "HSR",
           "value": 2337.0
         },
         {
           "date": "2024-07-01",
+          "month": "2024-07",
           "series": "LR & Bus",
           "value": 17969.0
         },
         {
           "date": "2024-07-01",
+          "month": "2024-07",
           "series": "X-Boundary",
           "value": 8270.0
         },
         {
           "date": "2024-08-01",
+          "month": "2024-08",
           "series": "Airport Exp",
           "value": 1191.0
         },
         {
           "date": "2024-08-01",
+          "month": "2024-08",
           "series": "Domestic",
           "value": 135015.0
         },
         {
           "date": "2024-08-01",
+          "month": "2024-08",
           "series": "HSR",
           "value": 2703.0
         },
         {
           "date": "2024-08-01",
+          "month": "2024-08",
           "series": "LR & Bus",
           "value": 17479.0
         },
         {
           "date": "2024-08-01",
+          "month": "2024-08",
           "series": "X-Boundary",
           "value": 9061.0
         },
         {
           "date": "2024-09-01",
+          "month": "2024-09",
           "series": "Airport Exp",
           "value": 1059.0
         },
         {
           "date": "2024-09-01",
+          "month": "2024-09",
           "series": "Domestic",
           "value": 131494.0
         },
         {
           "date": "2024-09-01",
+          "month": "2024-09",
           "series": "HSR",
           "value": 1871.0
         },
         {
           "date": "2024-09-01",
+          "month": "2024-09",
           "series": "LR & Bus",
           "value": 18245.0
         },
         {
           "date": "2024-09-01",
+          "month": "2024-09",
           "series": "X-Boundary",
           "value": 7905.0
         },
         {
           "date": "2024-10-01",
+          "month": "2024-10",
           "series": "Airport Exp",
           "value": 1119.0
         },
         {
           "date": "2024-10-01",
+          "month": "2024-10",
           "series": "Domestic",
           "value": 139567.0
         },
         {
           "date": "2024-10-01",
+          "month": "2024-10",
           "series": "HSR",
           "value": 2230.0
         },
         {
           "date": "2024-10-01",
+          "month": "2024-10",
           "series": "LR & Bus",
           "value": 19026.0
         },
         {
           "date": "2024-10-01",
+          "month": "2024-10",
           "series": "X-Boundary",
           "value": 8854.0
         },
         {
           "date": "2024-11-01",
+          "month": "2024-11",
           "series": "Airport Exp",
           "value": 1149.0
         },
         {
           "date": "2024-11-01",
+          "month": "2024-11",
           "series": "Domestic",
           "value": 136031.0
         },
         {
           "date": "2024-11-01",
+          "month": "2024-11",
           "series": "HSR",
           "value": 2037.0
         },
         {
           "date": "2024-11-01",
+          "month": "2024-11",
           "series": "LR & Bus",
           "value": 18245.0
         },
         {
           "date": "2024-11-01",
+          "month": "2024-11",
           "series": "X-Boundary",
           "value": 8444.0
         },
         {
           "date": "2024-12-01",
+          "month": "2024-12",
           "series": "Airport Exp",
           "value": 1242.0
         },
         {
           "date": "2024-12-01",
+          "month": "2024-12",
           "series": "Domestic",
           "value": 137998.0
         },
         {
           "date": "2024-12-01",
+          "month": "2024-12",
           "series": "HSR",
           "value": 2874.0
         },
         {
           "date": "2024-12-01",
+          "month": "2024-12",
           "series": "LR & Bus",
           "value": 18060.0
         },
         {
           "date": "2024-12-01",
+          "month": "2024-12",
           "series": "X-Boundary",
           "value": 9347.0
         },
         {
           "date": "2025-01-01",
+          "month": "2025-01",
           "series": "Airport Exp",
           "value": 1116.0
         },
         {
           "date": "2025-01-01",
+          "month": "2025-01",
           "series": "Domestic",
           "value": 136513.0
         },
         {
           "date": "2025-01-01",
+          "month": "2025-01",
           "series": "HSR",
           "value": 2749.0
         },
         {
           "date": "2025-01-01",
+          "month": "2025-01",
           "series": "LR & Bus",
           "value": 18144.0
         },
         {
           "date": "2025-01-01",
+          "month": "2025-01",
           "series": "X-Boundary",
           "value": 8795.0
         },
         {
           "date": "2025-02-01",
+          "month": "2025-02",
           "series": "Airport Exp",
           "value": 962.0
         },
         {
           "date": "2025-02-01",
+          "month": "2025-02",
           "series": "Domestic",
           "value": 124880.0
         },
         {
           "date": "2025-02-01",
+          "month": "2025-02",
           "series": "HSR",
           "value": 2187.0
         },
         {
           "date": "2025-02-01",
+          "month": "2025-02",
           "series": "LR & Bus",
           "value": 16132.0
         },
         {
           "date": "2025-02-01",
+          "month": "2025-02",
           "series": "X-Boundary",
           "value": 7612.0
         },
         {
           "date": "2025-03-01",
+          "month": "2025-03",
           "series": "Airport Exp",
           "value": 1116.0
         },
         {
           "date": "2025-03-01",
+          "month": "2025-03",
           "series": "Domestic",
           "value": 137890.0
         },
         {
           "date": "2025-03-01",
+          "month": "2025-03",
           "series": "HSR",
           "value": 2274.0
         },
         {
           "date": "2025-03-01",
+          "month": "2025-03",
           "series": "LR & Bus",
           "value": 18377.0
         },
         {
           "date": "2025-03-01",
+          "month": "2025-03",
           "series": "X-Boundary",
           "value": 8801.0
         },
         {
           "date": "2025-04-01",
+          "month": "2025-04",
           "series": "Airport Exp",
           "value": 1148.0
         },
         {
           "date": "2025-04-01",
+          "month": "2025-04",
           "series": "Domestic",
           "value": 124808.0
         },
         {
           "date": "2025-04-01",
+          "month": "2025-04",
           "series": "HSR",
           "value": 2777.0
         },
         {
           "date": "2025-04-01",
+          "month": "2025-04",
           "series": "LR & Bus",
           "value": 16674.0
         },
         {
           "date": "2025-04-01",
+          "month": "2025-04",
           "series": "X-Boundary",
           "value": 8861.0
         },
         {
           "date": "2025-05-01",
+          "month": "2025-05",
           "series": "Airport Exp",
           "value": 1085.0
         },
         {
           "date": "2025-05-01",
+          "month": "2025-05",
           "series": "Domestic",
           "value": 132820.0
         },
         {
           "date": "2025-05-01",
+          "month": "2025-05",
           "series": "HSR",
           "value": 2454.0
         },
         {
           "date": "2025-05-01",
+          "month": "2025-05",
           "series": "LR & Bus",
           "value": 18329.0
         },
         {
           "date": "2025-05-01",
+          "month": "2025-05",
           "series": "X-Boundary",
           "value": 8768.0
         },
         {
           "date": "2025-06-01",
+          "month": "2025-06",
           "series": "Airport Exp",
           "value": 977.0
         },
         {
           "date": "2025-06-01",
+          "month": "2025-06",
           "series": "Domestic",
           "value": 129071.0
         },
         {
           "date": "2025-06-01",
+          "month": "2025-06",
           "series": "HSR",
           "value": 2291.0
         },
         {
           "date": "2025-06-01",
+          "month": "2025-06",
           "series": "LR & Bus",
           "value": 17783.0
         },
         {
           "date": "2025-06-01",
+          "month": "2025-06",
           "series": "X-Boundary",
           "value": 8350.0
         },
         {
           "date": "2025-07-01",
+          "month": "2025-07",
           "series": "Airport Exp",
           "value": 1120.0
         },
         {
           "date": "2025-07-01",
+          "month": "2025-07",
           "series": "Domestic",
           "value": 132527.0
         },
         {
           "date": "2025-07-01",
+          "month": "2025-07",
           "series": "HSR",
           "value": 2762.0
         },
         {
           "date": "2025-07-01",
+          "month": "2025-07",
           "series": "LR & Bus",
           "value": 17534.0
         },
         {
           "date": "2025-07-01",
+          "month": "2025-07",
           "series": "X-Boundary",
           "value": 8848.0
         },
         {
           "date": "2025-08-01",
+          "month": "2025-08",
           "series": "Airport Exp",
           "value": 1204.0
         },
         {
           "date": "2025-08-01",
+          "month": "2025-08",
           "series": "Domestic",
           "value": 132777.0
         },
         {
           "date": "2025-08-01",
+          "month": "2025-08",
           "series": "HSR",
           "value": 3242.0
         },
         {
           "date": "2025-08-01",
+          "month": "2025-08",
           "series": "LR & Bus",
           "value": 17110.0
         },
         {
           "date": "2025-08-01",
+          "month": "2025-08",
           "series": "X-Boundary",
           "value": 9904.0
         },
         {
           "date": "2025-09-01",
+          "month": "2025-09",
           "series": "Airport Exp",
           "value": 1042.0
         },
         {
           "date": "2025-09-01",
+          "month": "2025-09",
           "series": "Domestic",
           "value": 128279.0
         },
         {
           "date": "2025-09-01",
+          "month": "2025-09",
           "series": "HSR",
           "value": 2112.0
         },
         {
           "date": "2025-09-01",
+          "month": "2025-09",
           "series": "LR & Bus",
           "value": 17535.0
         },
         {
           "date": "2025-09-01",
+          "month": "2025-09",
           "series": "X-Boundary",
           "value": 8117.0
         },
         {
           "date": "2025-10-01",
+          "month": "2025-10",
           "series": "Airport Exp",
           "value": 1141.0
         },
         {
           "date": "2025-10-01",
+          "month": "2025-10",
           "series": "Domestic",
           "value": 140030.0
         },
         {
           "date": "2025-10-01",
+          "month": "2025-10",
           "series": "HSR",
           "value": 2773.0
         },
         {
           "date": "2025-10-01",
+          "month": "2025-10",
           "series": "LR & Bus",
           "value": 19046.0
         },
         {
           "date": "2025-10-01",
+          "month": "2025-10",
           "series": "X-Boundary",
           "value": 9444.0
         },
         {
           "date": "2025-11-01",
+          "month": "2025-11",
           "series": "Airport Exp",
           "value": 1145.0
         },
         {
           "date": "2025-11-01",
+          "month": "2025-11",
           "series": "Domestic",
           "value": 137035.0
         },
         {
           "date": "2025-11-01",
+          "month": "2025-11",
           "series": "HSR",
           "value": 2526.0
         },
         {
           "date": "2025-11-01",
+          "month": "2025-11",
           "series": "LR & Bus",
           "value": 18292.0
         },
         {
           "date": "2025-11-01",
+          "month": "2025-11",
           "series": "X-Boundary",
           "value": 9368.0
         },
         {
           "date": "2025-12-01",
+          "month": "2025-12",
           "series": "Airport Exp",
           "value": 1248.0
         },
         {
           "date": "2025-12-01",
+          "month": "2025-12",
           "series": "Domestic",
           "value": 137779.0
         },
         {
           "date": "2025-12-01",
+          "month": "2025-12",
           "series": "HSR",
           "value": 2950.0
         },
         {
           "date": "2025-12-01",
+          "month": "2025-12",
           "series": "LR & Bus",
           "value": 18065.0
         },
         {
           "date": "2025-12-01",
+          "month": "2025-12",
           "series": "X-Boundary",
           "value": 9805.0
         },
         {
           "date": "2026-01-01",
+          "month": "2026-01",
           "series": "Airport Exp",
           "value": 1125.0
         },
         {
           "date": "2026-01-01",
+          "month": "2026-01",
           "series": "Domestic",
           "value": 140775.0
         },
         {
           "date": "2026-01-01",
+          "month": "2026-01",
           "series": "HSR",
           "value": 2698.0
         },
         {
           "date": "2026-01-01",
+          "month": "2026-01",
           "series": "LR & Bus",
           "value": 18668.0
         },
         {
           "date": "2026-01-01",
+          "month": "2026-01",
           "series": "X-Boundary",
           "value": 9751.0
         },
         {
           "date": "2026-02-01",
+          "month": "2026-02",
           "series": "Airport Exp",
           "value": 952.0
         },
         {
           "date": "2026-02-01",
+          "month": "2026-02",
           "series": "Domestic",
           "value": 123313.0
         },
         {
           "date": "2026-02-01",
+          "month": "2026-02",
           "series": "HSR",
           "value": 3079.0
         },
         {
           "date": "2026-02-01",
+          "month": "2026-02",
           "series": "LR & Bus",
           "value": 16101.0
         },
         {
           "date": "2026-02-01",
+          "month": "2026-02",
           "series": "X-Boundary",
           "value": 8736.0
         },
         {
           "date": "2026-03-01",
+          "month": "2026-03",
           "series": "Airport Exp",
           "value": 1137.0
         },
         {
           "date": "2026-03-01",
+          "month": "2026-03",
           "series": "Domestic",
           "value": 140136.0
         },
         {
           "date": "2026-03-01",
+          "month": "2026-03",
           "series": "HSR",
           "value": 2573.0
         },
         {
           "date": "2026-03-01",
+          "month": "2026-03",
           "series": "LR & Bus",
           "value": 18822.0
         },
         {
           "date": "2026-03-01",
+          "month": "2026-03",
           "series": "X-Boundary",
           "value": 9362.0
         },
         {
           "date": "2026-04-01",
+          "month": "2026-04",
           "series": "Airport Exp",
           "value": 1082.0
         },
         {
           "date": "2026-04-01",
+          "month": "2026-04",
           "series": "Domestic",
           "value": 125306.0
         },
         {
           "date": "2026-04-01",
+          "month": "2026-04",
           "series": "HSR",
           "value": 2961.0
         },
         {
           "date": "2026-04-01",
+          "month": "2026-04",
           "series": "LR & Bus",
           "value": 17255.0
         },
         {
           "date": "2026-04-01",
+          "month": "2026-04",
           "series": "X-Boundary",
           "value": 9411.0
         },
         {
           "date": "2026-05-01",
+          "month": "2026-05",
           "series": "Airport Exp",
           "value": 1118.0
         },
         {
           "date": "2026-05-01",
+          "month": "2026-05",
           "series": "Domestic",
           "value": 131864.0
         },
         {
           "date": "2026-05-01",
+          "month": "2026-05",
           "series": "HSR",
           "value": 2750.0
         },
         {
           "date": "2026-05-01",
+          "month": "2026-05",
           "series": "LR & Bus",
           "value": 18488.0
         },
         {
           "date": "2026-05-01",
+          "month": "2026-05",
           "series": "X-Boundary",
           "value": 9533.0
         },
         {
           "date": "2026-06-01",
+          "month": "2026-06",
           "series": "Airport Exp",
           "value": 1030.0
         },
         {
           "date": "2026-06-01",
+          "month": "2026-06",
           "series": "Domestic",
           "value": 128248.0
         },
         {
           "date": "2026-06-01",
+          "month": "2026-06",
           "series": "HSR",
           "value": 2477.0
         },
         {
           "date": "2026-06-01",
+          "month": "2026-06",
           "series": "LR & Bus",
           "value": 18047.0
         },
         {
           "date": "2026-06-01",
+          "month": "2026-06",
           "series": "X-Boundary",
           "value": 8591.0
         }
@@ -9098,1331 +9608,1597 @@
       "cathay_capacity_demand_history": [
         {
           "date": "2012-12-01",
+          "month": "2012-12",
           "series": "ASK ('000)",
           "value": 10808557.0
         },
         {
           "date": "2012-12-01",
+          "month": "2012-12",
           "series": "RPK ('000)",
           "value": 8725036.0
         },
         {
           "date": "2013-02-01",
+          "month": "2013-02",
           "series": "ASK ('000)",
           "value": 9725310.0
         },
         {
           "date": "2013-02-01",
+          "month": "2013-02",
           "series": "RPK ('000)",
           "value": 7862365.0
         },
         {
           "date": "2013-05-01",
+          "month": "2013-05",
           "series": "ASK ('000)",
           "value": 10602951.0
         },
         {
           "date": "2013-05-01",
+          "month": "2013-05",
           "series": "RPK ('000)",
           "value": 8379354.0
         },
         {
           "date": "2013-06-01",
+          "month": "2013-06",
           "series": "ASK ('000)",
           "value": 10353881.0
         },
         {
           "date": "2013-06-01",
+          "month": "2013-06",
           "series": "RPK ('000)",
           "value": 8787467.0
         },
         {
           "date": "2013-07-01",
+          "month": "2013-07",
           "series": "ASK ('000)",
           "value": 11025903.0
         },
         {
           "date": "2013-07-01",
+          "month": "2013-07",
           "series": "RPK ('000)",
           "value": 9374541.0
         },
         {
           "date": "2013-08-01",
+          "month": "2013-08",
           "series": "ASK ('000)",
           "value": 11046938.0
         },
         {
           "date": "2013-08-01",
+          "month": "2013-08",
           "series": "RPK ('000)",
           "value": 9576963.0
         },
         {
           "date": "2013-12-01",
+          "month": "2013-12",
           "series": "ASK ('000)",
           "value": 11158190.0
         },
         {
           "date": "2013-12-01",
+          "month": "2013-12",
           "series": "RPK ('000)",
           "value": 9188999.0
         },
         {
           "date": "2014-01-01",
+          "month": "2014-01",
           "series": "ASK ('000)",
           "value": 11070054.0
         },
         {
           "date": "2014-01-01",
+          "month": "2014-01",
           "series": "RPK ('000)",
           "value": 9232619.0
         },
         {
           "date": "2014-02-01",
+          "month": "2014-02",
           "series": "ASK ('000)",
           "value": 10021121.0
         },
         {
           "date": "2014-02-01",
+          "month": "2014-02",
           "series": "RPK ('000)",
           "value": 8211410.0
         },
         {
           "date": "2014-03-01",
+          "month": "2014-03",
           "series": "ASK ('000)",
           "value": 11046510.0
         },
         {
           "date": "2014-03-01",
+          "month": "2014-03",
           "series": "RPK ('000)",
           "value": 9087367.0
         },
         {
           "date": "2014-05-01",
+          "month": "2014-05",
           "series": "ASK ('000)",
           "value": 11218579.0
         },
         {
           "date": "2014-05-01",
+          "month": "2014-05",
           "series": "RPK ('000)",
           "value": 9315326.0
         },
         {
           "date": "2014-06-01",
+          "month": "2014-06",
           "series": "ASK ('000)",
           "value": 11072700.0
         },
         {
           "date": "2014-06-01",
+          "month": "2014-06",
           "series": "RPK ('000)",
           "value": 9507234.0
         },
         {
           "date": "2014-07-01",
+          "month": "2014-07",
           "series": "ASK ('000)",
           "value": 11680468.0
         },
         {
           "date": "2014-07-01",
+          "month": "2014-07",
           "series": "RPK ('000)",
           "value": 9997266.0
         },
         {
           "date": "2014-09-01",
+          "month": "2014-09",
           "series": "ASK ('000)",
           "value": 11210123.0
         },
         {
           "date": "2014-09-01",
+          "month": "2014-09",
           "series": "RPK ('000)",
           "value": 9082966.0
         },
         {
           "date": "2014-12-01",
+          "month": "2014-12",
           "series": "ASK ('000)",
           "value": 11820975.0
         },
         {
           "date": "2014-12-01",
+          "month": "2014-12",
           "series": "RPK ('000)",
           "value": 9874982.0
         },
         {
           "date": "2015-01-01",
+          "month": "2015-01",
           "series": "ASK ('000)",
           "value": 11876449.0
         },
         {
           "date": "2015-01-01",
+          "month": "2015-01",
           "series": "RPK ('000)",
           "value": 9816684.0
         },
         {
           "date": "2015-02-01",
+          "month": "2015-02",
           "series": "ASK ('000)",
           "value": 10801044.0
         },
         {
           "date": "2015-02-01",
+          "month": "2015-02",
           "series": "RPK ('000)",
           "value": 9169869.0
         },
         {
           "date": "2015-04-01",
+          "month": "2015-04",
           "series": "ASK ('000)",
           "value": 11522897.0
         },
         {
           "date": "2015-04-01",
+          "month": "2015-04",
           "series": "RPK ('000)",
           "value": 10050866.0
         },
         {
           "date": "2015-07-01",
+          "month": "2015-07",
           "series": "ASK ('000)",
           "value": 12399240.0
         },
         {
           "date": "2015-07-01",
+          "month": "2015-07",
           "series": "RPK ('000)",
           "value": 10789397.0
         },
         {
           "date": "2015-08-01",
+          "month": "2015-08",
           "series": "ASK ('000)",
           "value": 12558154.0
         },
         {
           "date": "2015-08-01",
+          "month": "2015-08",
           "series": "RPK ('000)",
           "value": 11130977.0
         },
         {
           "date": "2015-09-01",
+          "month": "2015-09",
           "series": "ASK ('000)",
           "value": 11594776.0
         },
         {
           "date": "2015-09-01",
+          "month": "2015-09",
           "series": "RPK ('000)",
           "value": 9729611.0
         },
         {
           "date": "2015-10-01",
+          "month": "2015-10",
           "series": "ASK ('000)",
           "value": 12307735.0
         },
         {
           "date": "2015-10-01",
+          "month": "2015-10",
           "series": "RPK ('000)",
           "value": 10352018.0
         },
         {
           "date": "2015-11-01",
+          "month": "2015-11",
           "series": "ASK ('000)",
           "value": 11599726.0
         },
         {
           "date": "2015-11-01",
+          "month": "2015-11",
           "series": "RPK ('000)",
           "value": 9844913.0
         },
         {
           "date": "2016-01-01",
+          "month": "2016-01",
           "series": "ASK ('000)",
           "value": 12574463.0
         },
         {
           "date": "2016-01-01",
+          "month": "2016-01",
           "series": "RPK ('000)",
           "value": 10811995.0
         },
         {
           "date": "2016-02-01",
+          "month": "2016-02",
           "series": "ASK ('000)",
           "value": 11728128.0
         },
         {
           "date": "2016-02-01",
+          "month": "2016-02",
           "series": "RPK ('000)",
           "value": 9660521.0
         },
         {
           "date": "2016-03-01",
+          "month": "2016-03",
           "series": "ASK ('000)",
           "value": 12291864.0
         },
         {
           "date": "2016-03-01",
+          "month": "2016-03",
           "series": "RPK ('000)",
           "value": 10318339.0
         },
         {
           "date": "2016-04-01",
+          "month": "2016-04",
           "series": "ASK ('000)",
           "value": 11796619.0
         },
         {
           "date": "2016-04-01",
+          "month": "2016-04",
           "series": "RPK ('000)",
           "value": 10017301.0
         },
         {
           "date": "2016-05-01",
+          "month": "2016-05",
           "series": "ASK ('000)",
           "value": 12118716.0
         },
         {
           "date": "2016-05-01",
+          "month": "2016-05",
           "series": "RPK ('000)",
           "value": 10177766.0
         },
         {
           "date": "2016-06-01",
+          "month": "2016-06",
           "series": "ASK ('000)",
           "value": 12136720.0
         },
         {
           "date": "2016-06-01",
+          "month": "2016-06",
           "series": "RPK ('000)",
           "value": 10381627.0
         },
         {
           "date": "2016-07-01",
+          "month": "2016-07",
           "series": "ASK ('000)",
           "value": 12723458.0
         },
         {
           "date": "2016-07-01",
+          "month": "2016-07",
           "series": "RPK ('000)",
           "value": 11067866.0
         },
         {
           "date": "2016-09-01",
+          "month": "2016-09",
           "series": "ASK ('000)",
           "value": 11900705.0
         },
         {
           "date": "2016-09-01",
+          "month": "2016-09",
           "series": "RPK ('000)",
           "value": 9915000.0
         },
         {
           "date": "2016-11-01",
+          "month": "2016-11",
           "series": "ASK ('000)",
           "value": 11328962.0
         },
         {
           "date": "2016-11-01",
+          "month": "2016-11",
           "series": "RPK ('000)",
           "value": 9459449.0
         },
         {
           "date": "2016-12-01",
+          "month": "2016-12",
           "series": "ASK ('000)",
           "value": 12693382.0
         },
         {
           "date": "2016-12-01",
+          "month": "2016-12",
           "series": "RPK ('000)",
           "value": 10793824.0
         },
         {
           "date": "2017-01-01",
+          "month": "2017-01",
           "series": "ASK ('000)",
           "value": 12741323.0
         },
         {
           "date": "2017-01-01",
+          "month": "2017-01",
           "series": "RPK ('000)",
           "value": 11018892.0
         },
         {
           "date": "2017-02-01",
+          "month": "2017-02",
           "series": "ASK ('000)",
           "value": 11374142.0
         },
         {
           "date": "2017-02-01",
+          "month": "2017-02",
           "series": "RPK ('000)",
           "value": 9481241.0
         },
         {
           "date": "2017-05-01",
+          "month": "2017-05",
           "series": "ASK ('000)",
           "value": 12302168.0
         },
         {
           "date": "2017-05-01",
+          "month": "2017-05",
           "series": "RPK ('000)",
           "value": 10356585.0
         },
         {
           "date": "2017-06-01",
+          "month": "2017-06",
           "series": "ASK ('000)",
           "value": 12327267.0
         },
         {
           "date": "2017-06-01",
+          "month": "2017-06",
           "series": "RPK ('000)",
           "value": 10487156.0
         },
         {
           "date": "2017-08-01",
+          "month": "2017-08",
           "series": "ASK ('000)",
           "value": 13056610.0
         },
         {
           "date": "2017-08-01",
+          "month": "2017-08",
           "series": "RPK ('000)",
           "value": 11264978.0
         },
         {
           "date": "2017-12-01",
+          "month": "2017-12",
           "series": "ASK ('000)",
           "value": 13209584.0
         },
         {
           "date": "2017-12-01",
+          "month": "2017-12",
           "series": "RPK ('000)",
           "value": 11176191.0
         },
         {
           "date": "2018-01-01",
+          "month": "2018-01",
           "series": "ASK ('000)",
           "value": 13070796.0
         },
         {
           "date": "2018-01-01",
+          "month": "2018-01",
           "series": "RPK ('000)",
           "value": 11007372.0
         },
         {
           "date": "2018-02-01",
+          "month": "2018-02",
           "series": "ASK ('000)",
           "value": 11926392.0
         },
         {
           "date": "2018-02-01",
+          "month": "2018-02",
           "series": "RPK ('000)",
           "value": 10026960.0
         },
         {
           "date": "2018-03-01",
+          "month": "2018-03",
           "series": "ASK ('000)",
           "value": 12832998.0
         },
         {
           "date": "2018-03-01",
+          "month": "2018-03",
           "series": "RPK ('000)",
           "value": 10932831.0
         },
         {
           "date": "2018-05-01",
+          "month": "2018-05",
           "series": "ASK ('000)",
           "value": 12662581.0
         },
         {
           "date": "2018-05-01",
+          "month": "2018-05",
           "series": "RPK ('000)",
           "value": 10380791.0
         },
         {
           "date": "2018-06-01",
+          "month": "2018-06",
           "series": "ASK ('000)",
           "value": 12794574.0
         },
         {
           "date": "2018-06-01",
+          "month": "2018-06",
           "series": "RPK ('000)",
           "value": 10908153.0
         },
         {
           "date": "2018-08-01",
+          "month": "2018-08",
           "series": "ASK ('000)",
           "value": 13690681.0
         },
         {
           "date": "2018-08-01",
+          "month": "2018-08",
           "series": "RPK ('000)",
           "value": 11924629.0
         },
         {
           "date": "2018-10-01",
+          "month": "2018-10",
           "series": "ASK ('000)",
           "value": 13390172.0
         },
         {
           "date": "2018-10-01",
+          "month": "2018-10",
           "series": "RPK ('000)",
           "value": 10923474.0
         },
         {
           "date": "2018-11-01",
+          "month": "2018-11",
           "series": "ASK ('000)",
           "value": 12593062.0
         },
         {
           "date": "2018-11-01",
+          "month": "2018-11",
           "series": "RPK ('000)",
           "value": 10485790.0
         },
         {
           "date": "2018-12-01",
+          "month": "2018-12",
           "series": "ASK ('000)",
           "value": 13978669.0
         },
         {
           "date": "2018-12-01",
+          "month": "2018-12",
           "series": "RPK ('000)",
           "value": 11720855.0
         },
         {
           "date": "2019-03-01",
+          "month": "2019-03",
           "series": "ASK ('000)",
           "value": 13461313.0
         },
         {
           "date": "2019-03-01",
+          "month": "2019-03",
           "series": "RPK ('000)",
           "value": 11295302.0
         },
         {
           "date": "2019-05-01",
+          "month": "2019-05",
           "series": "ASK ('000)",
           "value": 13495182.0
         },
         {
           "date": "2019-05-01",
+          "month": "2019-05",
           "series": "RPK ('000)",
           "value": 11190050.0
         },
         {
           "date": "2019-06-01",
+          "month": "2019-06",
           "series": "ASK ('000)",
           "value": 13731593.0
         },
         {
           "date": "2019-06-01",
+          "month": "2019-06",
           "series": "RPK ('000)",
           "value": 11900997.0
         },
         {
           "date": "2019-08-01",
+          "month": "2019-08",
           "series": "ASK ('000)",
           "value": 14392234.0
         },
         {
           "date": "2019-08-01",
+          "month": "2019-08",
           "series": "RPK ('000)",
           "value": 11501041.0
         },
         {
           "date": "2019-10-01",
+          "month": "2019-10",
           "series": "ASK ('000)",
           "value": 13709615.0
         },
         {
           "date": "2019-10-01",
+          "month": "2019-10",
           "series": "RPK ('000)",
           "value": 10633529.0
         },
         {
           "date": "2019-11-01",
+          "month": "2019-11",
           "series": "ASK ('000)",
           "value": 12409574.0
         },
         {
           "date": "2019-11-01",
+          "month": "2019-11",
           "series": "RPK ('000)",
           "value": 9934989.0
         },
         {
           "date": "2019-12-01",
+          "month": "2019-12",
           "series": "ASK ('000)",
           "value": 13795313.0
         },
         {
           "date": "2019-12-01",
+          "month": "2019-12",
           "series": "RPK ('000)",
           "value": 11721757.0
         },
         {
           "date": "2020-01-01",
+          "month": "2020-01",
           "series": "ASK ('000)",
           "value": 13962739.0
         },
         {
           "date": "2020-01-01",
+          "month": "2020-01",
           "series": "RPK ('000)",
           "value": 11830575.0
         },
         {
           "date": "2020-02-01",
+          "month": "2020-02",
           "series": "ASK ('000)",
           "value": 8924428.0
         },
         {
           "date": "2020-02-01",
+          "month": "2020-02",
           "series": "RPK ('000)",
           "value": 4735301.0
         },
         {
           "date": "2020-03-01",
+          "month": "2020-03",
           "series": "ASK ('000)",
           "value": 3605276.0
         },
         {
           "date": "2020-03-01",
+          "month": "2020-03",
           "series": "RPK ('000)",
           "value": 1776537.0
         },
         {
           "date": "2020-04-01",
+          "month": "2020-04",
           "series": "ASK ('000)",
           "value": 368344.0
         },
         {
           "date": "2020-04-01",
+          "month": "2020-04",
           "series": "RPK ('000)",
           "value": 79799.0
         },
         {
           "date": "2020-05-01",
+          "month": "2020-05",
           "series": "ASK ('000)",
           "value": 338027.0
         },
         {
           "date": "2020-05-01",
+          "month": "2020-05",
           "series": "RPK ('000)",
           "value": 100133.0
         },
         {
           "date": "2020-06-01",
+          "month": "2020-06",
           "series": "ASK ('000)",
           "value": 533147.0
         },
         {
           "date": "2020-06-01",
+          "month": "2020-06",
           "series": "RPK ('000)",
           "value": 145713.0
         },
         {
           "date": "2020-07-01",
+          "month": "2020-07",
           "series": "ASK ('000)",
           "value": 1036254.0
         },
         {
           "date": "2020-07-01",
+          "month": "2020-07",
           "series": "RPK ('000)",
           "value": 242927.0
         },
         {
           "date": "2020-08-01",
+          "month": "2020-08",
           "series": "ASK ('000)",
           "value": 1119756.0
         },
         {
           "date": "2020-08-01",
+          "month": "2020-08",
           "series": "RPK ('000)",
           "value": 222544.0
         },
         {
           "date": "2020-09-01",
+          "month": "2020-09",
           "series": "ASK ('000)",
           "value": 1213977.0
         },
         {
           "date": "2020-09-01",
+          "month": "2020-09",
           "series": "RPK ('000)",
           "value": 301698.0
         },
         {
           "date": "2020-10-01",
+          "month": "2020-10",
           "series": "ASK ('000)",
           "value": 1153938.0
         },
         {
           "date": "2020-10-01",
+          "month": "2020-10",
           "series": "RPK ('000)",
           "value": 210168.0
         },
         {
           "date": "2020-11-01",
+          "month": "2020-11",
           "series": "ASK ('000)",
           "value": 1133508.0
         },
         {
           "date": "2020-11-01",
+          "month": "2020-11",
           "series": "RPK ('000)",
           "value": 210103.0
         },
         {
           "date": "2020-12-01",
+          "month": "2020-12",
           "series": "ASK ('000)",
           "value": 1219512.0
         },
         {
           "date": "2020-12-01",
+          "month": "2020-12",
           "series": "RPK ('000)",
           "value": 223781.0
         },
         {
           "date": "2021-01-01",
+          "month": "2021-01",
           "series": "ASK ('000)",
           "value": 1144614.0
         },
         {
           "date": "2021-01-01",
+          "month": "2021-01",
           "series": "RPK ('000)",
           "value": 152055.0
         },
         {
           "date": "2021-02-01",
+          "month": "2021-02",
           "series": "ASK ('000)",
           "value": 679186.0
         },
         {
           "date": "2021-02-01",
+          "month": "2021-02",
           "series": "RPK ('000)",
           "value": 94156.0
         },
         {
           "date": "2021-03-01",
+          "month": "2021-03",
           "series": "ASK ('000)",
           "value": 362075.0
         },
         {
           "date": "2021-03-01",
+          "month": "2021-03",
           "series": "RPK ('000)",
           "value": 76921.0
         },
         {
           "date": "2021-04-01",
+          "month": "2021-04",
           "series": "ASK ('000)",
           "value": 437780.0
         },
         {
           "date": "2021-04-01",
+          "month": "2021-04",
           "series": "RPK ('000)",
           "value": 105830.0
         },
         {
           "date": "2021-05-01",
+          "month": "2021-05",
           "series": "ASK ('000)",
           "value": 466599.0
         },
         {
           "date": "2021-05-01",
+          "month": "2021-05",
           "series": "RPK ('000)",
           "value": 124644.0
         },
         {
           "date": "2021-06-01",
+          "month": "2021-06",
           "series": "ASK ('000)",
           "value": 1076876.0
         },
         {
           "date": "2021-06-01",
+          "month": "2021-06",
           "series": "RPK ('000)",
           "value": 233940.0
         },
         {
           "date": "2021-07-01",
+          "month": "2021-07",
           "series": "ASK ('000)",
           "value": 1043681.0
         },
         {
           "date": "2021-07-01",
+          "month": "2021-07",
           "series": "RPK ('000)",
           "value": 297879.0
         },
         {
           "date": "2021-08-01",
+          "month": "2021-08",
           "series": "ASK ('000)",
           "value": 1891764.0
         },
         {
           "date": "2021-08-01",
+          "month": "2021-08",
           "series": "RPK ('000)",
           "value": 877057.0
         },
         {
           "date": "2021-09-01",
+          "month": "2021-09",
           "series": "ASK ('000)",
           "value": 1704768.0
         },
         {
           "date": "2021-09-01",
+          "month": "2021-09",
           "series": "RPK ('000)",
           "value": 780461.0
         },
         {
           "date": "2021-10-01",
+          "month": "2021-10",
           "series": "ASK ('000)",
           "value": 1383448.0
         },
         {
           "date": "2021-10-01",
+          "month": "2021-10",
           "series": "RPK ('000)",
           "value": 409797.0
         },
         {
           "date": "2021-11-01",
+          "month": "2021-11",
           "series": "ASK ('000)",
           "value": 1467977.0
         },
         {
           "date": "2021-11-01",
+          "month": "2021-11",
           "series": "RPK ('000)",
           "value": 393162.0
         },
         {
           "date": "2021-12-01",
+          "month": "2021-12",
           "series": "ASK ('000)",
           "value": 1568841.0
         },
         {
           "date": "2021-12-01",
+          "month": "2021-12",
           "series": "RPK ('000)",
           "value": 574024.0
         },
         {
           "date": "2022-01-01",
+          "month": "2022-01",
           "series": "ASK ('000)",
           "value": 288521.0
         },
         {
           "date": "2022-01-01",
+          "month": "2022-01",
           "series": "RPK ('000)",
           "value": 116402.0
         },
         {
           "date": "2022-02-01",
+          "month": "2022-02",
           "series": "ASK ('000)",
           "value": 207886.0
         },
         {
           "date": "2022-02-01",
+          "month": "2022-02",
           "series": "RPK ('000)",
           "value": 99027.0
         },
         {
           "date": "2022-03-01",
+          "month": "2022-03",
           "series": "ASK ('000)",
           "value": 244527.0
         },
         {
           "date": "2022-03-01",
+          "month": "2022-03",
           "series": "RPK ('000)",
           "value": 111448.0
         },
         {
           "date": "2022-04-01",
+          "month": "2022-04",
           "series": "ASK ('000)",
           "value": 305651.0
         },
         {
           "date": "2022-04-01",
+          "month": "2022-04",
           "series": "RPK ('000)",
           "value": 170055.0
         },
         {
           "date": "2022-05-01",
+          "month": "2022-05",
           "series": "ASK ('000)",
           "value": 545197.0
         },
         {
           "date": "2022-05-01",
+          "month": "2022-05",
           "series": "RPK ('000)",
           "value": 329592.0
         },
         {
           "date": "2022-06-01",
+          "month": "2022-06",
           "series": "ASK ('000)",
           "value": 1467026.0
         },
         {
           "date": "2022-06-01",
+          "month": "2022-06",
           "series": "RPK ('000)",
           "value": 983120.0
         },
         {
           "date": "2022-07-01",
+          "month": "2022-07",
           "series": "ASK ('000)",
           "value": 1822655.0
         },
         {
           "date": "2022-07-01",
+          "month": "2022-07",
           "series": "RPK ('000)",
           "value": 1335702.0
         },
         {
           "date": "2022-08-01",
+          "month": "2022-08",
           "series": "ASK ('000)",
           "value": 2336844.0
         },
         {
           "date": "2022-08-01",
+          "month": "2022-08",
           "series": "RPK ('000)",
           "value": 1602511.0
         },
         {
           "date": "2022-09-01",
+          "month": "2022-09",
           "series": "ASK ('000)",
           "value": 2177939.0
         },
         {
           "date": "2022-09-01",
+          "month": "2022-09",
           "series": "RPK ('000)",
           "value": 1578413.0
         },
         {
           "date": "2022-10-01",
+          "month": "2022-10",
           "series": "ASK ('000)",
           "value": 2877154.0
         },
         {
           "date": "2022-10-01",
+          "month": "2022-10",
           "series": "RPK ('000)",
           "value": 2117193.0
         },
         {
           "date": "2022-11-01",
+          "month": "2022-11",
           "series": "ASK ('000)",
           "value": 3334866.0
         },
         {
           "date": "2022-11-01",
+          "month": "2022-11",
           "series": "RPK ('000)",
           "value": 2616499.0
         },
         {
           "date": "2022-12-01",
+          "month": "2022-12",
           "series": "ASK ('000)",
           "value": 4447991.0
         },
         {
           "date": "2022-12-01",
+          "month": "2022-12",
           "series": "RPK ('000)",
           "value": 3703782.0
         },
         {
           "date": "2023-01-01",
+          "month": "2023-01",
           "series": "ASK ('000)",
           "value": 5242810.0
         },
         {
           "date": "2023-01-01",
+          "month": "2023-01",
           "series": "RPK ('000)",
           "value": 4548192.0
         },
         {
           "date": "2023-02-01",
+          "month": "2023-02",
           "series": "ASK ('000)",
           "value": 5534303.0
         },
         {
           "date": "2023-02-01",
+          "month": "2023-02",
           "series": "RPK ('000)",
           "value": 4772931.0
         },
         {
           "date": "2023-03-01",
+          "month": "2023-03",
           "series": "ASK ('000)",
           "value": 6074084.0
         },
         {
           "date": "2023-03-01",
+          "month": "2023-03",
           "series": "RPK ('000)",
           "value": 5491910.0
         },
         {
           "date": "2023-04-01",
+          "month": "2023-04",
           "series": "ASK ('000)",
           "value": 6336928.0
         },
         {
           "date": "2023-04-01",
+          "month": "2023-04",
           "series": "RPK ('000)",
           "value": 5508383.0
         },
         {
           "date": "2023-05-01",
+          "month": "2023-05",
           "series": "ASK ('000)",
           "value": 6828143.0
         },
         {
           "date": "2023-05-01",
+          "month": "2023-05",
           "series": "RPK ('000)",
           "value": 5814059.0
         },
         {
           "date": "2023-06-01",
+          "month": "2023-06",
           "series": "ASK ('000)",
           "value": 7036299.0
         },
         {
           "date": "2023-06-01",
+          "month": "2023-06",
           "series": "RPK ('000)",
           "value": 6172901.0
         },
         {
           "date": "2023-07-01",
+          "month": "2023-07",
           "series": "ASK ('000)",
           "value": 7804109.0
         },
         {
           "date": "2023-07-01",
+          "month": "2023-07",
           "series": "RPK ('000)",
           "value": 6967424.0
         },
         {
           "date": "2023-08-01",
+          "month": "2023-08",
           "series": "ASK ('000)",
           "value": 8060721.0
         },
         {
           "date": "2023-08-01",
+          "month": "2023-08",
           "series": "RPK ('000)",
           "value": 7095215.0
         },
         {
           "date": "2023-09-01",
+          "month": "2023-09",
           "series": "ASK ('000)",
           "value": 7849457.0
         },
         {
           "date": "2023-09-01",
+          "month": "2023-09",
           "series": "RPK ('000)",
           "value": 6566972.0
         },
         {
           "date": "2023-10-01",
+          "month": "2023-10",
           "series": "ASK ('000)",
           "value": 8144479.0
         },
         {
           "date": "2023-10-01",
+          "month": "2023-10",
           "series": "RPK ('000)",
           "value": 6898356.0
         },
         {
           "date": "2023-11-01",
+          "month": "2023-11",
           "series": "ASK ('000)",
           "value": 8067197.0
         },
         {
           "date": "2023-11-01",
+          "month": "2023-11",
           "series": "RPK ('000)",
           "value": 6495074.0
         },
         {
           "date": "2023-12-01",
+          "month": "2023-12",
           "series": "ASK ('000)",
           "value": 8628913.0
         },
         {
           "date": "2023-12-01",
+          "month": "2023-12",
           "series": "RPK ('000)",
           "value": 7010296.0
         },
         {
           "date": "2024-01-01",
+          "month": "2024-01",
           "series": "ASK ('000)",
           "value": 8607535.0
         },
         {
           "date": "2024-01-01",
+          "month": "2024-01",
           "series": "RPK ('000)",
           "value": 7125438.0
         },
         {
           "date": "2024-02-01",
+          "month": "2024-02",
           "series": "ASK ('000)",
           "value": 8705854.0
         },
         {
           "date": "2024-02-01",
+          "month": "2024-02",
           "series": "RPK ('000)",
           "value": 7173058.0
         },
         {
           "date": "2024-03-01",
+          "month": "2024-03",
           "series": "ASK ('000)",
           "value": 9046659.0
         },
         {
           "date": "2024-03-01",
+          "month": "2024-03",
           "series": "RPK ('000)",
           "value": 7584543.0
         },
         {
           "date": "2024-04-01",
+          "month": "2024-04",
           "series": "ASK ('000)",
           "value": 8633006.0
         },
         {
           "date": "2024-04-01",
+          "month": "2024-04",
           "series": "RPK ('000)",
           "value": 7040793.0
         },
         {
           "date": "2024-05-01",
+          "month": "2024-05",
           "series": "ASK ('000)",
           "value": 8742234.0
         },
         {
           "date": "2024-05-01",
+          "month": "2024-05",
           "series": "RPK ('000)",
           "value": 7021256.0
         },
         {
           "date": "2024-06-01",
+          "month": "2024-06",
           "series": "ASK ('000)",
           "value": 9145704.0
         },
         {
           "date": "2024-06-01",
+          "month": "2024-06",
           "series": "RPK ('000)",
           "value": 7637869.0
         },
         {
           "date": "2024-07-01",
+          "month": "2024-07",
           "series": "ASK ('000)",
           "value": 9456264.0
         },
         {
           "date": "2024-07-01",
+          "month": "2024-07",
           "series": "RPK ('000)",
           "value": 8085955.0
         },
         {
           "date": "2024-08-01",
+          "month": "2024-08",
           "series": "ASK ('000)",
           "value": 9659790.0
         },
         {
           "date": "2024-08-01",
+          "month": "2024-08",
           "series": "RPK ('000)",
           "value": 8225400.0
         },
         {
           "date": "2024-09-01",
+          "month": "2024-09",
           "series": "ASK ('000)",
           "value": 9553131.0
         },
         {
           "date": "2024-09-01",
+          "month": "2024-09",
           "series": "RPK ('000)",
           "value": 7773554.0
         },
         {
           "date": "2024-10-01",
+          "month": "2024-10",
           "series": "ASK ('000)",
           "value": 9883198.0
         },
         {
           "date": "2024-10-01",
+          "month": "2024-10",
           "series": "RPK ('000)",
           "value": 8212887.0
         },
         {
           "date": "2024-11-01",
+          "month": "2024-11",
           "series": "ASK ('000)",
           "value": 9785399.0
         },
         {
           "date": "2024-11-01",
+          "month": "2024-11",
           "series": "RPK ('000)",
           "value": 8168734.0
         },
         {
           "date": "2024-12-01",
+          "month": "2024-12",
           "series": "ASK ('000)",
           "value": 10570519.0
         },
         {
           "date": "2024-12-01",
+          "month": "2024-12",
           "series": "RPK ('000)",
           "value": 8966020.0
         },
         {
           "date": "2025-01-01",
+          "month": "2025-01",
           "series": "ASK ('000)",
           "value": 11269213.0
         },
         {
           "date": "2025-01-01",
+          "month": "2025-01",
           "series": "RPK ('000)",
           "value": 9732981.0
         },
         {
           "date": "2025-02-01",
+          "month": "2025-02",
           "series": "ASK ('000)",
           "value": 10187240.0
         },
         {
           "date": "2025-02-01",
+          "month": "2025-02",
           "series": "RPK ('000)",
           "value": 8450299.0
         },
         {
           "date": "2025-03-01",
+          "month": "2025-03",
           "series": "ASK ('000)",
           "value": 11357120.0
         },
         {
           "date": "2025-03-01",
+          "month": "2025-03",
           "series": "RPK ('000)",
           "value": 9390917.0
         },
         {
           "date": "2025-04-01",
+          "month": "2025-04",
           "series": "ASK ('000)",
           "value": 10973629.0
         },
         {
           "date": "2025-04-01",
+          "month": "2025-04",
           "series": "RPK ('000)",
           "value": 9483200.0
         },
         {
           "date": "2025-05-01",
+          "month": "2025-05",
           "series": "ASK ('000)",
           "value": 11466188.0
         },
         {
           "date": "2025-05-01",
+          "month": "2025-05",
           "series": "RPK ('000)",
           "value": 9716956.0
         },
         {
           "date": "2025-06-01",
+          "month": "2025-06",
           "series": "ASK ('000)",
           "value": 11539073.0
         },
         {
           "date": "2025-06-01",
+          "month": "2025-06",
           "series": "RPK ('000)",
           "value": 9876538.0
         },
         {
           "date": "2025-07-01",
+          "month": "2025-07",
           "series": "ASK ('000)",
           "value": 12256459.0
         },
         {
           "date": "2025-07-01",
+          "month": "2025-07",
           "series": "RPK ('000)",
           "value": 10533262.0
         },
         {
           "date": "2025-08-01",
+          "month": "2025-08",
           "series": "ASK ('000)",
           "value": 12770243.0
         },
         {
           "date": "2025-08-01",
+          "month": "2025-08",
           "series": "RPK ('000)",
           "value": 11074075.0
         },
         {
           "date": "2025-09-01",
+          "month": "2025-09",
           "series": "ASK ('000)",
           "value": 11430859.0
         },
         {
           "date": "2025-09-01",
+          "month": "2025-09",
           "series": "RPK ('000)",
           "value": 9407276.0
         },
         {
           "date": "2025-10-01",
+          "month": "2025-10",
           "series": "ASK ('000)",
           "value": 12479345.0
         },
         {
           "date": "2025-10-01",
+          "month": "2025-10",
           "series": "RPK ('000)",
           "value": 10710849.0
         },
         {
           "date": "2025-11-01",
+          "month": "2025-11",
           "series": "ASK ('000)",
           "value": 11923112.0
         },
         {
           "date": "2025-11-01",
+          "month": "2025-11",
           "series": "RPK ('000)",
           "value": 10374948.0
         },
         {
           "date": "2025-12-01",
+          "month": "2025-12",
           "series": "ASK ('000)",
           "value": 13028694.0
         },
         {
           "date": "2025-12-01",
+          "month": "2025-12",
           "series": "RPK ('000)",
           "value": 11124121.0
         },
         {
           "date": "2026-01-01",
+          "month": "2026-01",
           "series": "ASK ('000)",
           "value": 12876965.0
         },
         {
           "date": "2026-01-01",
+          "month": "2026-01",
           "series": "RPK ('000)",
           "value": 10934223.0
         },
         {
           "date": "2026-02-01",
+          "month": "2026-02",
           "series": "ASK ('000)",
           "value": 11804261.0
         },
         {
           "date": "2026-02-01",
+          "month": "2026-02",
           "series": "RPK ('000)",
           "value": 10106181.0
         },
         {
           "date": "2026-03-01",
+          "month": "2026-03",
           "series": "ASK ('000)",
           "value": 12418605.0
         },
         {
           "date": "2026-03-01",
+          "month": "2026-03",
           "series": "RPK ('000)",
           "value": 11446209.0
         },
         {
           "date": "2026-04-01",
+          "month": "2026-04",
           "series": "ASK ('000)",
           "value": 12667713.0
         },
         {
           "date": "2026-04-01",
+          "month": "2026-04",
           "series": "RPK ('000)",
           "value": 11169641.0
         },
         {
           "date": "2026-05-01",
+          "month": "2026-05",
           "series": "ASK ('000)",
           "value": 12661433.0
         },
         {
           "date": "2026-05-01",
+          "month": "2026-05",
           "series": "RPK ('000)",
           "value": 10988053.0
         },
         {
           "date": "2026-06-01",
+          "month": "2026-06",
           "series": "ASK ('000)",
           "value": 12232841.0
         },
         {
           "date": "2026-06-01",
+          "month": "2026-06",
           "series": "RPK ('000)",
           "value": 10690055.0
         }
@@ -10457,7 +11233,7 @@
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-transport/",
-    "snapshotId": "9390db37ded6f6a6",
+    "snapshotId": "1053e61617a1a219",
     "dataAsOf": "2026-06-01"
   }
 }

@@ -228,6 +228,16 @@ def _reit_kpi(df: pd.DataFrame, is_hotel: bool) -> dict[str, Any]:
 
 
 def _series_history(df: pd.DataFrame, series_label: str, value_column: str) -> list[dict[str, Any]]:
+    """Long-format {date, month, series, value} rows for a multi-series line chart.
+
+    `month` is a "YYYY-MM" string (month-granularity). The portable-chart
+    plugin's date-axis formatter always includes the year for
+    month-granularity values but omits it by default for day-granularity
+    ones, so multi-period charts encode their x axis against `month` to
+    stay unambiguous across years (reporting periods here are always
+    distinct months, e.g. HY/FY period-end dates, so this loses no
+    information).
+    """
     if df.empty or value_column not in df.columns:
         return []
     rows = []
@@ -239,6 +249,7 @@ def _series_history(df: pd.DataFrame, series_label: str, value_column: str) -> l
         rows.append(
             {
                 "date": date.strftime("%Y-%m-%d"),
+                "month": date.strftime("%Y-%m"),
                 "series": series_label,
                 "value": round(float(value), 4),
             }
@@ -368,7 +379,7 @@ def build_artifact(
             "dataset": "nav_history",
             "sourceId": "linkreit_fundamentals",
             "encodings": {
-                "x": {"field": "date", "type": "temporal", "label": "Period"},
+                "x": {"field": "month", "type": "temporal", "label": "Period"},
                 "y": {"field": "value", "type": "quantitative", "label": "HK$ / unit"},
                 "color": {"field": "series", "type": "nominal", "label": "Ticker"},
             },
@@ -383,7 +394,7 @@ def build_artifact(
             "dataset": "dpu_history",
             "sourceId": "linkreit_fundamentals",
             "encodings": {
-                "x": {"field": "date", "type": "temporal", "label": "Period"},
+                "x": {"field": "month", "type": "temporal", "label": "Period"},
                 "y": {"field": "value", "type": "quantitative", "label": "HK$ / unit"},
                 "color": {"field": "series", "type": "nominal", "label": "Ticker"},
             },
@@ -398,7 +409,7 @@ def build_artifact(
             "dataset": "occupancy_history",
             "sourceId": "linkreit_fundamentals",
             "encodings": {
-                "x": {"field": "date", "type": "temporal", "label": "Period"},
+                "x": {"field": "month", "type": "temporal", "label": "Period"},
                 "y": {"field": "value", "type": "quantitative", "label": "Occupancy (%)"},
                 "color": {"field": "series", "type": "nominal", "label": "Ticker"},
             },
@@ -413,7 +424,7 @@ def build_artifact(
             "dataset": "reversion_history",
             "sourceId": "linkreit_fundamentals",
             "encodings": {
-                "x": {"field": "date", "type": "temporal", "label": "Period"},
+                "x": {"field": "month", "type": "temporal", "label": "Period"},
                 "y": {"field": "value", "type": "quantitative", "label": "Rental reversion (%)"},
                 "color": {"field": "series", "type": "nominal", "label": "Ticker"},
             },

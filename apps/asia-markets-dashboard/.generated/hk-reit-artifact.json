@@ -6,7 +6,7 @@
     "title": "Hong Kong REITs Sector Monitor",
     "description": "NAV/unit, DPU, occupancy, rental reversion, and hotel KPI disclosures for all six HK-listed REITs.",
     "sector": "hk-reit",
-    "generatedAt": "2026-07-25T11:23:03.971061Z",
+    "generatedAt": "2026-07-25T12:39:38.624408Z",
     "dataAsOf": "2026-03-31",
     "liveSourcesCount": 6,
     "totalSourcesCount": 6,
@@ -190,7 +190,7 @@
         "sourceId": "linkreit_fundamentals",
         "encodings": {
           "x": {
-            "field": "date",
+            "field": "month",
             "type": "temporal",
             "label": "Period"
           },
@@ -217,7 +217,7 @@
         "sourceId": "linkreit_fundamentals",
         "encodings": {
           "x": {
-            "field": "date",
+            "field": "month",
             "type": "temporal",
             "label": "Period"
           },
@@ -244,7 +244,7 @@
         "sourceId": "linkreit_fundamentals",
         "encodings": {
           "x": {
-            "field": "date",
+            "field": "month",
             "type": "temporal",
             "label": "Period"
           },
@@ -271,7 +271,7 @@
         "sourceId": "linkreit_fundamentals",
         "encodings": {
           "x": {
-            "field": "date",
+            "field": "month",
             "type": "temporal",
             "label": "Period"
           },
@@ -458,7 +458,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**Data snapshot:** `d758ec34e2c85b92` \u00b7 generated 2026-07-25T11:23:03.971061Z.  Each REIT's figures come from that trust's own investor-relations disclosures (semi-annual or annual cadence), not a shared index provider."
+        "body": "**Data snapshot:** `de4cc44061bb5999` \u00b7 generated 2026-07-25T12:39:38.624408Z.  Each REIT's figures come from that trust's own investor-relations disclosures (semi-annual or annual cadence), not a shared index provider."
       },
       {
         "id": "kpi_grid",
@@ -513,7 +513,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-25T11:23:03.971061Z",
+    "generatedAt": "2026-07-25T12:39:38.624408Z",
     "status": "ready",
     "datasets": {
       "kpi_linkreit": [
@@ -586,131 +586,157 @@
       "nav_history": [
         {
           "date": "2021-06-30",
+          "month": "2021-06",
           "series": "0435",
           "value": 8.45
         },
         {
           "date": "2022-06-30",
+          "month": "2022-06",
           "series": "0435",
           "value": 8.36
         },
         {
           "date": "2023-06-30",
+          "month": "2023-06",
           "series": "0435",
           "value": 8.06
         },
         {
           "date": "2024-12-31",
+          "month": "2024-12",
           "series": "0435",
           "value": 7.53
         },
         {
           "date": "2025-12-31",
+          "month": "2025-12",
           "series": "0435",
           "value": 7.09
         },
         {
           "date": "2021-12-31",
+          "month": "2021-12",
           "series": "0778",
           "value": 14.79
         },
         {
           "date": "2022-12-31",
+          "month": "2022-12",
           "series": "0778",
           "value": 14.52
         },
         {
           "date": "2023-12-31",
+          "month": "2023-12",
           "series": "0778",
           "value": 13.94
         },
         {
           "date": "2024-12-31",
+          "month": "2024-12",
           "series": "0778",
           "value": 13.21
         },
         {
           "date": "2025-12-31",
+          "month": "2025-12",
           "series": "0778",
           "value": 12.22
         },
         {
           "date": "2021-12-31",
+          "month": "2021-12",
           "series": "0808",
           "value": 4.83
         },
         {
           "date": "2022-12-31",
+          "month": "2022-12",
           "series": "0808",
           "value": 4.71
         },
         {
           "date": "2023-12-31",
+          "month": "2023-12",
           "series": "0808",
           "value": 4.56
         },
         {
           "date": "2024-12-31",
+          "month": "2024-12",
           "series": "0808",
           "value": 4.31
         },
         {
           "date": "2025-12-31",
+          "month": "2025-12",
           "series": "0808",
           "value": 3.97
         },
         {
           "date": "2022-03-31",
+          "month": "2022-03",
           "series": "0823",
           "value": 77.1
         },
         {
           "date": "2023-03-31",
+          "month": "2023-03",
           "series": "0823",
           "value": 73.98
         },
         {
           "date": "2024-03-31",
+          "month": "2024-03",
           "series": "0823",
           "value": 70.02
         },
         {
           "date": "2025-03-31",
+          "month": "2025-03",
           "series": "0823",
           "value": 63.3
         },
         {
           "date": "2026-03-31",
+          "month": "2026-03",
           "series": "0823",
           "value": 57.75
         },
         {
           "date": "2025-12-31",
+          "month": "2025-12",
           "series": "1881",
           "value": 3.898
         },
         {
           "date": "2021-12-31",
+          "month": "2021-12",
           "series": "2778",
           "value": 8.25
         },
         {
           "date": "2022-12-31",
+          "month": "2022-12",
           "series": "2778",
           "value": 7.91
         },
         {
           "date": "2023-12-31",
+          "month": "2023-12",
           "series": "2778",
           "value": 7.72
         },
         {
           "date": "2024-12-31",
+          "month": "2024-12",
           "series": "2778",
           "value": 7.16
         },
         {
           "date": "2025-12-31",
+          "month": "2025-12",
           "series": "2778",
           "value": 6.45
         }
@@ -718,131 +744,157 @@
       "dpu_history": [
         {
           "date": "2021-06-30",
+          "month": "2021-06",
           "series": "0435",
           "value": 0.256
         },
         {
           "date": "2022-06-30",
+          "month": "2022-06",
           "series": "0435",
           "value": 0.25
         },
         {
           "date": "2023-06-30",
+          "month": "2023-06",
           "series": "0435",
           "value": 0.22
         },
         {
           "date": "2024-12-31",
+          "month": "2024-12",
           "series": "0435",
           "value": 0.274
         },
         {
           "date": "2025-12-31",
+          "month": "2025-12",
           "series": "0435",
           "value": 0.182
         },
         {
           "date": "2021-12-31",
+          "month": "2021-12",
           "series": "0778",
           "value": 0.4688
         },
         {
           "date": "2022-12-31",
+          "month": "2022-12",
           "series": "0778",
           "value": 0.4415
         },
         {
           "date": "2023-12-31",
+          "month": "2023-12",
           "series": "0778",
           "value": 0.4038
         },
         {
           "date": "2024-12-31",
+          "month": "2024-12",
           "series": "0778",
           "value": 0.3559
         },
         {
           "date": "2025-12-31",
+          "month": "2025-12",
           "series": "0778",
           "value": 0.3522
         },
         {
           "date": "2021-12-31",
+          "month": "2021-12",
           "series": "0808",
           "value": 0.1763
         },
         {
           "date": "2022-12-31",
+          "month": "2022-12",
           "series": "0808",
           "value": 0.1625
         },
         {
           "date": "2023-12-31",
+          "month": "2023-12",
           "series": "0808",
           "value": 0.1409
         },
         {
           "date": "2024-12-31",
+          "month": "2024-12",
           "series": "0808",
           "value": 0.1198
         },
         {
           "date": "2025-12-31",
+          "month": "2025-12",
           "series": "0808",
           "value": 0.1156
         },
         {
           "date": "2022-03-31",
+          "month": "2022-03",
           "series": "0823",
           "value": 3.0567
         },
         {
           "date": "2023-03-31",
+          "month": "2023-03",
           "series": "0823",
           "value": 2.7431
         },
         {
           "date": "2024-03-31",
+          "month": "2024-03",
           "series": "0823",
           "value": 2.6265
         },
         {
           "date": "2025-03-31",
+          "month": "2025-03",
           "series": "0823",
           "value": 2.7234
         },
         {
           "date": "2026-03-31",
+          "month": "2026-03",
           "series": "0823",
           "value": 2.5361
         },
         {
           "date": "2025-12-31",
+          "month": "2025-12",
           "series": "1881",
           "value": 0.0088
         },
         {
           "date": "2021-12-31",
+          "month": "2021-12",
           "series": "2778",
           "value": 0.2275
         },
         {
           "date": "2022-12-31",
+          "month": "2022-12",
           "series": "2778",
           "value": 0.1954
         },
         {
           "date": "2023-12-31",
+          "month": "2023-12",
           "series": "2778",
           "value": 0.1683
         },
         {
           "date": "2024-12-31",
+          "month": "2024-12",
           "series": "2778",
           "value": 0.1422
         },
         {
           "date": "2025-12-31",
+          "month": "2025-12",
           "series": "2778",
           "value": 0.1263
         }
@@ -850,106 +902,127 @@
       "occupancy_history": [
         {
           "date": "2025-12-31",
+          "month": "2025-12",
           "series": "0435",
           "value": 91.5
         },
         {
           "date": "2021-12-31",
+          "month": "2021-12",
           "series": "0778",
           "value": 94.3
         },
         {
           "date": "2022-12-31",
+          "month": "2022-12",
           "series": "0778",
           "value": 93.9
         },
         {
           "date": "2023-12-31",
+          "month": "2023-12",
           "series": "0778",
           "value": 94.4
         },
         {
           "date": "2024-12-31",
+          "month": "2024-12",
           "series": "0778",
           "value": 95.0
         },
         {
           "date": "2025-12-31",
+          "month": "2025-12",
           "series": "0778",
           "value": 95.8
         },
         {
           "date": "2021-12-31",
+          "month": "2021-12",
           "series": "0808",
           "value": 97.7
         },
         {
           "date": "2022-12-31",
+          "month": "2022-12",
           "series": "0808",
           "value": 96.3
         },
         {
           "date": "2023-12-31",
+          "month": "2023-12",
           "series": "0808",
           "value": 95.9
         },
         {
           "date": "2024-12-31",
+          "month": "2024-12",
           "series": "0808",
           "value": 94.2
         },
         {
           "date": "2025-12-31",
+          "month": "2025-12",
           "series": "0808",
           "value": 94.7
         },
         {
           "date": "2022-03-31",
+          "month": "2022-03",
           "series": "0823",
           "value": 97.7
         },
         {
           "date": "2023-03-31",
+          "month": "2023-03",
           "series": "0823",
           "value": 98.0
         },
         {
           "date": "2024-03-31",
+          "month": "2024-03",
           "series": "0823",
           "value": 98.0
         },
         {
           "date": "2025-03-31",
+          "month": "2025-03",
           "series": "0823",
           "value": 97.8
         },
         {
           "date": "2026-03-31",
+          "month": "2026-03",
           "series": "0823",
           "value": 97.8
         },
         {
           "date": "2021-12-31",
+          "month": "2021-12",
           "series": "2778",
           "value": 89.0
         },
         {
           "date": "2022-12-31",
+          "month": "2022-12",
           "series": "2778",
           "value": 82.7
         },
         {
           "date": "2023-12-31",
+          "month": "2023-12",
           "series": "2778",
           "value": 82.8
         },
         {
           "date": "2024-12-31",
+          "month": "2024-12",
           "series": "2778",
           "value": 82.6
         },
         {
           "date": "2025-12-31",
+          "month": "2025-12",
           "series": "2778",
           "value": 81.6
         }
@@ -957,56 +1030,67 @@
       "reversion_history": [
         {
           "date": "2025-12-31",
+          "month": "2025-12",
           "series": "0435",
           "value": -7.9
         },
         {
           "date": "2021-12-31",
+          "month": "2021-12",
           "series": "0808",
           "value": -7.7
         },
         {
           "date": "2022-12-31",
+          "month": "2022-12",
           "series": "0808",
           "value": -4.6
         },
         {
           "date": "2023-12-31",
+          "month": "2023-12",
           "series": "0808",
           "value": -1.8
         },
         {
           "date": "2024-12-31",
+          "month": "2024-12",
           "series": "0808",
           "value": -6.4
         },
         {
           "date": "2025-12-31",
+          "month": "2025-12",
           "series": "0808",
           "value": -9.3
         },
         {
           "date": "2022-03-31",
+          "month": "2022-03",
           "series": "0823",
           "value": 4.8
         },
         {
           "date": "2023-03-31",
+          "month": "2023-03",
           "series": "0823",
           "value": 7.1
         },
         {
           "date": "2024-03-31",
+          "month": "2024-03",
           "series": "0823",
           "value": 7.9
         },
         {
           "date": "2025-03-31",
+          "month": "2025-03",
           "series": "0823",
           "value": -2.2
         },
         {
           "date": "2026-03-31",
+          "month": "2026-03",
           "series": "0823",
           "value": -8.2
         }
@@ -1014,16 +1098,19 @@
       "regal_hotel_kpi_history": [
         {
           "date": "2025-12-31",
+          "month": "2025-12",
           "series": "ADR (HK$)",
           "value": 926.44
         },
         {
           "date": "2025-12-31",
+          "month": "2025-12",
           "series": "Occupancy (%)",
           "value": 73.0
         },
         {
           "date": "2025-12-31",
+          "month": "2025-12",
           "series": "RevPAR (HK$)",
           "value": 675.96
         }
@@ -1552,8 +1639,8 @@
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-reit/",
     "sector_id": "hk-reit",
     "sector_name": "Hong Kong REITs Sector Monitor",
-    "snapshotId": "d758ec34e2c85b92",
-    "generatedAt": "2026-07-25T11:23:03.971061Z",
+    "snapshotId": "de4cc44061bb5999",
+    "generatedAt": "2026-07-25T12:39:38.624408Z",
     "dataAsOf": "2026-03-31"
   }
 }

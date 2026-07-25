@@ -6,7 +6,7 @@
     "title": "香港电讯监测",
     "description": "香港电讯（HKT）、数码通（SmarTone）及和记电讯（3 HK）的半年度用户与 ARPU 披露数据，以及通讯办全运营商手机号码段配额快照。",
     "sector": "hk-telecom",
-    "generatedAt": "2026-07-24T21:47:51.940487Z",
+    "generatedAt": "2026-07-25T12:39:38.552809Z",
     "cards": [
       {
         "id": "hkt_card",
@@ -88,7 +88,7 @@
         "sourceId": "hkt_operating_drivers",
         "encodings": {
           "x": {
-            "field": "date",
+            "field": "month",
             "type": "temporal",
             "label": "期间"
           },
@@ -110,7 +110,7 @@
         "sourceId": "smartone_operating_drivers",
         "encodings": {
           "x": {
-            "field": "date",
+            "field": "month",
             "type": "temporal",
             "label": "期间"
           },
@@ -132,7 +132,7 @@
         "sourceId": "hutchison_telecom_operating_drivers",
         "encodings": {
           "x": {
-            "field": "date",
+            "field": "month",
             "type": "temporal",
             "label": "期间"
           },
@@ -184,7 +184,7 @@
           "engine": "official HKEX results announcement (PDF)",
           "url": "https://www.hkt.com/en/about-hkt/investor-relations/financial-results/",
           "language": "PDF",
-          "description": "Semi-annual Key Operating Drivers table (mobile postpaid/prepaid subscribers, consumer broadband lines, Pay TV base) plus postpaid exit ARPU and FTTH share, extracted from HKT's own results announcement narrative text."
+          "description": "构建时从公开来源读取并校验 香港电讯信托及香港电讯有限公司（6823.HK）业绩公告。"
         }
       },
       {
@@ -196,7 +196,7 @@
           "engine": "official investor-relations results presentation (PDF)",
           "url": "https://www.smartoneholdings.com/about/investor/results/",
           "language": "PDF",
-          "description": "Semi-annual mobile postpaid customer count, postpaid ARPU trend, and 5G-vs-4G ARPU ratio from SmarTone's own results presentation deck."
+          "description": "构建时从公开来源读取并校验 数码通电讯控股（0315.HK）业绩简报。"
         }
       },
       {
@@ -208,7 +208,7 @@
           "engine": "official HKEX results announcement (PDF)",
           "url": "https://www.hthkh.com/en/ir/fin_results.php",
           "language": "PDF",
-          "description": "Semi-annual Key Performance Indicators table: postpaid/prepaid customers, monthly postpaid churn rate, postpaid gross & net ARPU, and 5G penetration rate."
+          "description": "构建时从公开来源读取并校验 和记电讯香港控股（0215.HK，「3 HK」）业绩公告。"
         }
       },
       {
@@ -220,7 +220,7 @@
           "engine": "official open data CSV",
           "url": "https://www.ofca.gov.hk/filemanager/ofca/common/datagovhk/tel_no_en_tc.csv",
           "language": "CSV",
-          "description": "Mobile number block allocations by operator, all 4 licensed MNOs plus MVNOs -- a capacity/footprint proxy, not a subscriber-count or time-series metric (see table caveat)."
+          "description": "构建时从公开来源读取并校验 通讯事务管理局办公室编号计划（手机号码段配额）。"
         }
       }
     ],
@@ -258,7 +258,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-24T21:47:51.940487Z",
+    "generatedAt": "2026-07-25T12:39:38.552809Z",
     "status": "ready",
     "datasets": {
       "kpi_hkt": [
@@ -301,7 +301,8 @@
           "ftth_connections_thousands": null,
           "ftth_share_pct": null,
           "pay_tv_installed_base_thousands": 1430,
-          "mobile_postpaid_arpu_hkd": 192
+          "mobile_postpaid_arpu_hkd": 192,
+          "month": "2024-06"
         },
         {
           "period": "2024-12-31",
@@ -313,7 +314,8 @@
           "ftth_connections_thousands": null,
           "ftth_share_pct": null,
           "pay_tv_installed_base_thousands": 1433,
-          "mobile_postpaid_arpu_hkd": 193
+          "mobile_postpaid_arpu_hkd": 193,
+          "month": "2024-12"
         },
         {
           "period": "2025-06-30",
@@ -325,7 +327,8 @@
           "ftth_connections_thousands": 1055,
           "ftth_share_pct": 71,
           "pay_tv_installed_base_thousands": 1448,
-          "mobile_postpaid_arpu_hkd": 193
+          "mobile_postpaid_arpu_hkd": 193,
+          "month": "2025-06"
         },
         {
           "period": "2025-12-31",
@@ -337,7 +340,8 @@
           "ftth_connections_thousands": 1086,
           "ftth_share_pct": 73,
           "pay_tv_installed_base_thousands": 1464,
-          "mobile_postpaid_arpu_hkd": 195
+          "mobile_postpaid_arpu_hkd": 195,
+          "month": "2025-12"
         }
       ],
       "smartone_history": [
@@ -346,21 +350,24 @@
           "date": "2023-12-31",
           "postpaid_subscribers_thousands": 2647,
           "postpaid_arpu_hkd": 224,
-          "arpu_5g_to_4g_ratio": null
+          "arpu_5g_to_4g_ratio": null,
+          "month": "2023-12"
         },
         {
           "period": "2024-12-31",
           "date": "2024-12-31",
           "postpaid_subscribers_thousands": 2873,
           "postpaid_arpu_hkd": 222,
-          "arpu_5g_to_4g_ratio": null
+          "arpu_5g_to_4g_ratio": null,
+          "month": "2024-12"
         },
         {
           "period": "2025-12-31",
           "date": "2025-12-31",
           "postpaid_subscribers_thousands": 3158,
           "postpaid_arpu_hkd": 224,
-          "arpu_5g_to_4g_ratio": 2
+          "arpu_5g_to_4g_ratio": 2,
+          "month": "2025-12"
         }
       ],
       "hutchison_history": [
@@ -374,7 +381,8 @@
           "postpaid_gross_arpu_hkd": 184,
           "postpaid_net_arpu_hkd": 168,
           "postpaid_net_ampu_hkd": 148,
-          "penetration_5g_pct": null
+          "penetration_5g_pct": null,
+          "month": "2024-06"
         },
         {
           "period": "2024-12-31",
@@ -386,7 +394,8 @@
           "postpaid_gross_arpu_hkd": 190,
           "postpaid_net_arpu_hkd": 175,
           "postpaid_net_ampu_hkd": 153,
-          "penetration_5g_pct": null
+          "penetration_5g_pct": null,
+          "month": "2024-12"
         },
         {
           "period": "2025-06-30",
@@ -398,7 +407,8 @@
           "postpaid_gross_arpu_hkd": 181,
           "postpaid_net_arpu_hkd": 171,
           "postpaid_net_ampu_hkd": 146,
-          "penetration_5g_pct": 57
+          "penetration_5g_pct": 57,
+          "month": "2025-06"
         },
         {
           "period": "2025-12-31",
@@ -410,7 +420,8 @@
           "postpaid_gross_arpu_hkd": 187,
           "postpaid_net_arpu_hkd": 176,
           "postpaid_net_ampu_hkd": 149,
-          "penetration_5g_pct": 62
+          "penetration_5g_pct": 62,
+          "month": "2025-12"
         }
       ],
       "numbering_plan_snapshot": [
@@ -494,7 +505,7 @@
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-telecom/",
-    "snapshotId": "1b151cd4d761b58f",
+    "snapshotId": "bc956f505e1a4b38",
     "dataAsOf": "2025-12-31"
   }
 }
