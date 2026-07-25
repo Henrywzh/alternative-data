@@ -5,7 +5,7 @@
     "surface": "dashboard",
     "title": "Hong Kong Real Estate Monitor",
     "description": "A source-backed snapshot of residential price, rent, and market confidence measures.",
-    "generatedAt": "2026-07-25T13:17:29.321674Z",
+    "generatedAt": "2026-07-25T13:40:41.283067Z",
     "cards": [
       {
         "id": "ccl_card",
@@ -279,6 +279,29 @@
         "valueFormat": "number",
         "layout": "full",
         "maxRows": 1000
+      },
+      {
+        "id": "cnsd_construction_value_chart",
+        "title": "C&SD Gross Value of Construction Works (HK$ million)",
+        "subtitle": "Quarterly value of construction works performed by main contractors (supply-side pipeline).",
+        "type": "line",
+        "intent": "trend",
+        "dataset": "cnsd_construction_value",
+        "sourceId": "cnsd_construction",
+        "encodings": {
+          "x": {
+            "field": "date",
+            "type": "temporal",
+            "label": "Quarter"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "label": "HK$ million"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "full"
       }
     ],
     "tables": [
@@ -375,6 +398,18 @@
     ],
     "sources": [
       {
+        "id": "hkma_mortgage",
+        "label": "HKMA Residential Mortgage Survey",
+        "href": "https://www.hkma.gov.hk/",
+        "path": "sources/hkma_mortgage.sql"
+      },
+      {
+        "id": "cnsd_construction",
+        "label": "C&SD Gross Value of Construction Works (Table 615-66001)",
+        "href": "https://www.censtatd.gov.hk/",
+        "path": "sources/cnsd_construction.sql"
+      },
+      {
         "id": "centaline_ccl",
         "label": "Centaline City Leading Index (CCL)",
         "href": "https://hk.centanet.com/CCI/index",
@@ -419,7 +454,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**Data snapshot:** `3398dabc682d60e7` · generated 2026-07-25T13:17:29.321674Z.  This is a published snapshot, not a live connection. RVD observations marked provisional may be revised."
+        "body": "**Data snapshot:** `dbf2c99f01e3a499` · generated 2026-07-25T13:40:41.283067Z.  This is a published snapshot, not a live connection. RVD observations marked provisional may be revised."
       },
       {
         "id": "market_pulse",
@@ -444,9 +479,21 @@
         "layout": "half"
       },
       {
-        "id": "rvd_chart",
+        "id": "cnsd_construction_chart_block",
         "type": "chart",
-        "chartId": "rvd_trend"
+        "chartId": "cnsd_construction_value_chart"
+      },
+      {
+        "id": "rvd_price_chart",
+        "type": "chart",
+        "chartId": "rvd_trend",
+        "layout": "half"
+      },
+      {
+        "id": "rvd_rent_chart",
+        "type": "chart",
+        "chartId": "rvd_rent_trend",
+        "layout": "half"
       },
       {
         "id": "rebased_chart",
@@ -459,25 +506,20 @@
         "chartId": "confidence_trend"
       },
       {
-        "id": "source_health",
+        "id": "source_health_table",
         "type": "table",
         "tableId": "source_health_table"
       },
       {
-        "id": "coverage",
+        "id": "coverage_table",
         "type": "table",
         "tableId": "coverage_table"
-      },
-      {
-        "id": "methodology",
-        "type": "markdown",
-        "body": "## Reading the dashboard\n\nPublisher index levels use different bases. Compare their direction in the rebased chart, not their raw numeric levels. The coverage table distinguishes live measures from catalogs and planned ingestion work. No stock ranking, forecast, or investment recommendation is produced."
       }
     ]
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-25T13:17:29.321674Z",
+    "generatedAt": "2026-07-25T13:40:41.283067Z",
     "status": "ready",
     "datasets": {
       "kpi_ccl": [
@@ -15250,6 +15292,2629 @@
           "value": 85.1173
         }
       ],
+      "hkma_mortgage_rate_mix": [],
+      "cnsd_construction_value": [
+        {
+          "date": "2000",
+          "value": 122071.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200003",
+          "value": 31099.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200006",
+          "value": 29615.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200009",
+          "value": 30419.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200012",
+          "value": 30940.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "2001",
+          "value": 113986.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200103",
+          "value": 28649.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200106",
+          "value": 27717.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200109",
+          "value": 27080.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200112",
+          "value": 30540.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "2002",
+          "value": 106000.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200203",
+          "value": 26888.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200206",
+          "value": 27416.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200209",
+          "value": 25740.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200212",
+          "value": 25956.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "2003",
+          "value": 99032.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200303",
+          "value": 24775.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200306",
+          "value": 25681.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200309",
+          "value": 24827.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200312",
+          "value": 23749.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "2004",
+          "value": 93171.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200403",
+          "value": 23068.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200406",
+          "value": 22912.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200409",
+          "value": 23162.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200412",
+          "value": 24030.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "2005",
+          "value": 90851.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200503",
+          "value": 23229.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200506",
+          "value": 22343.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200509",
+          "value": 22612.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200512",
+          "value": 22667.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "2006",
+          "value": 90230.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200603",
+          "value": 21973.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200606",
+          "value": 22464.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200609",
+          "value": 22302.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200612",
+          "value": 23492.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "2007",
+          "value": 92866.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200703",
+          "value": 22247.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200706",
+          "value": 22983.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200709",
+          "value": 22744.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200712",
+          "value": 24893.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "2008",
+          "value": 99599.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200803",
+          "value": 24084.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200806",
+          "value": 25096.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200809",
+          "value": 24159.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200812",
+          "value": 26259.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "2009",
+          "value": 100944.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200903",
+          "value": 24317.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200906",
+          "value": 26123.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200909",
+          "value": 24805.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200912",
+          "value": 25700.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "2010",
+          "value": 111274.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201003",
+          "value": 24786.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201006",
+          "value": 28322.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201009",
+          "value": 28631.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201012",
+          "value": 29536.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "2011",
+          "value": 128535.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201103",
+          "value": 29580.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201106",
+          "value": 29341.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201109",
+          "value": 32959.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201112",
+          "value": 36654.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "2012",
+          "value": 161449.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201203",
+          "value": 37724.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201206",
+          "value": 37528.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201209",
+          "value": 38976.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201212",
+          "value": 47222.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "2013",
+          "value": 176575.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201303",
+          "value": 43644.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201306",
+          "value": 42780.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201309",
+          "value": 41678.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201312",
+          "value": 48473.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "2014",
+          "value": 199737.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201403",
+          "value": 49562.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201406",
+          "value": 48231.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201409",
+          "value": 47681.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201412",
+          "value": 54262.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "2015",
+          "value": 223947.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201503",
+          "value": 53607.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201506",
+          "value": 54992.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201509",
+          "value": 54533.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201512",
+          "value": 60815.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "2016",
+          "value": 236491.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201603",
+          "value": 55876.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201606",
+          "value": 55351.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201609",
+          "value": 60404.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201612",
+          "value": 64860.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "2017",
+          "value": 249919.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201703",
+          "value": 58752.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201706",
+          "value": 62554.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201709",
+          "value": 60939.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201712",
+          "value": 67674.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "2018",
+          "value": 252176.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201803",
+          "value": 64322.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201806",
+          "value": 62001.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201809",
+          "value": 60255.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201812",
+          "value": 65598.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "2019",
+          "value": 236438.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201903",
+          "value": 55953.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201906",
+          "value": 56216.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201909",
+          "value": 59212.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201912",
+          "value": 65056.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "2020",
+          "value": 229870.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "202003",
+          "value": 55855.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "202006",
+          "value": 53317.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "202009",
+          "value": 57214.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "202012",
+          "value": 63483.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "2021",
+          "value": 233722.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "202103",
+          "value": 56581.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "202106",
+          "value": 55061.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "202109",
+          "value": 58688.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "202112",
+          "value": 63391.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "2022",
+          "value": 249109.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "202203",
+          "value": 58233.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "202206",
+          "value": 61473.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "202209",
+          "value": 61000.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "202212",
+          "value": 68402.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "2023",
+          "value": 270903.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "202303",
+          "value": 63221.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "202306",
+          "value": 66771.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "202309",
+          "value": 69764.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "202312",
+          "value": 71147.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "2024",
+          "value": 290610.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "202403",
+          "value": 69174.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "202406",
+          "value": 68956.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "202409",
+          "value": 74544.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "202412",
+          "value": 77936.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "2025",
+          "value": 287460.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "202503",
+          "value": 70705.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "202506",
+          "value": 69543.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "202509",
+          "value": 73107.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "202512",
+          "value": 74106.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "202603",
+          "value": 72733.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "2000",
+          "value": -3.5,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200003",
+          "value": -4.1,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200006",
+          "value": -5.0,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200009",
+          "value": -2.7,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200012",
+          "value": -2.0,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "2001",
+          "value": -6.6,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200103",
+          "value": -7.9,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200106",
+          "value": -6.4,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200109",
+          "value": -11.0,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200112",
+          "value": -1.3,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "2002",
+          "value": -7.0,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200203",
+          "value": -6.1,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200206",
+          "value": -1.1,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200209",
+          "value": -4.9,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200212",
+          "value": -15.0,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "2003",
+          "value": -6.6,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200303",
+          "value": -7.9,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200306",
+          "value": -6.3,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200309",
+          "value": -3.5,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200312",
+          "value": -8.5,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "2004",
+          "value": -5.9,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200403",
+          "value": -6.9,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200406",
+          "value": -10.8,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200409",
+          "value": -6.7,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200412",
+          "value": 1.2,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "2005",
+          "value": -2.5,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200503",
+          "value": 0.7,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200506",
+          "value": -2.5,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200509",
+          "value": -2.4,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200512",
+          "value": -5.7,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "2006",
+          "value": -0.7,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200603",
+          "value": -5.4,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200606",
+          "value": 0.5,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200609",
+          "value": -1.4,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200612",
+          "value": 3.6,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "2007",
+          "value": 2.9,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200703",
+          "value": 1.2,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200706",
+          "value": 2.3,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200709",
+          "value": 2.0,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200712",
+          "value": 6.0,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "2008",
+          "value": 7.3,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200803",
+          "value": 8.3,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200806",
+          "value": 9.2,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200809",
+          "value": 6.2,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200812",
+          "value": 5.5,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "2009",
+          "value": 1.4,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200903",
+          "value": 1.0,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200906",
+          "value": 4.1,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200909",
+          "value": 2.7,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200912",
+          "value": -2.1,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "2010",
+          "value": 10.2,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201003",
+          "value": 1.9,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201006",
+          "value": 8.4,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201009",
+          "value": 15.4,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201012",
+          "value": 14.9,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "2011",
+          "value": 15.5,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201103",
+          "value": 19.3,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201106",
+          "value": 3.6,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201109",
+          "value": 15.1,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201112",
+          "value": 24.1,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "2012",
+          "value": 25.6,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201203",
+          "value": 27.5,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201206",
+          "value": 27.9,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201209",
+          "value": 18.3,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201212",
+          "value": 28.8,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "2013",
+          "value": 9.4,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201303",
+          "value": 15.7,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201306",
+          "value": 14.0,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201309",
+          "value": 6.9,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201312",
+          "value": 2.7,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "2014",
+          "value": 13.1,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201403",
+          "value": 13.6,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201406",
+          "value": 12.7,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201409",
+          "value": 14.4,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201412",
+          "value": 11.9,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "2015",
+          "value": 12.1,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201503",
+          "value": 8.2,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201506",
+          "value": 14.0,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201509",
+          "value": 14.4,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201512",
+          "value": 12.1,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "2016",
+          "value": 5.6,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201603",
+          "value": 4.2,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201606",
+          "value": 0.7,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201609",
+          "value": 10.8,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201612",
+          "value": 6.7,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "2017",
+          "value": 5.7,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201703",
+          "value": 5.1,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201706",
+          "value": 13.0,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201709",
+          "value": 0.9,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201712",
+          "value": 4.3,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "2018",
+          "value": 0.9,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201803",
+          "value": 9.5,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201806",
+          "value": -0.9,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201809",
+          "value": -1.1,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201812",
+          "value": -3.1,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "2019",
+          "value": -6.2,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201903",
+          "value": -13.0,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201906",
+          "value": -9.3,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201909",
+          "value": -1.7,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201912",
+          "value": -0.8,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "2020",
+          "value": -2.8,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "202003",
+          "value": -0.2,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "202006",
+          "value": -5.2,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "202009",
+          "value": -3.4,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "202012",
+          "value": -2.4,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "2021",
+          "value": 1.7,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "202103",
+          "value": 1.3,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "202106",
+          "value": 3.3,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "202109",
+          "value": 2.6,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "202112",
+          "value": -0.1,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "2022",
+          "value": 6.6,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "202203",
+          "value": 2.9,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "202206",
+          "value": 11.6,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "202209",
+          "value": 3.9,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "202212",
+          "value": 7.9,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "2023",
+          "value": 8.7,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "202303",
+          "value": 8.6,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "202306",
+          "value": 8.6,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "202309",
+          "value": 14.4,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "202312",
+          "value": 4.0,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "2024",
+          "value": 7.3,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "202403",
+          "value": 9.4,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "202406",
+          "value": 3.3,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "202409",
+          "value": 6.9,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "202412",
+          "value": 9.5,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "2025",
+          "value": -1.1,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "202503",
+          "value": 2.2,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "202506",
+          "value": 0.9,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "202509",
+          "value": -1.9,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "202512",
+          "value": -4.9,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "202603",
+          "value": 2.9,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "2000",
+          "value": 114691.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200003",
+          "value": 29102.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200006",
+          "value": 27740.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200009",
+          "value": 28519.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200012",
+          "value": 29330.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "2001",
+          "value": 111385.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200103",
+          "value": 27545.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200106",
+          "value": 26981.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200109",
+          "value": 26617.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200112",
+          "value": 30242.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "2002",
+          "value": 108677.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200203",
+          "value": 27072.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200206",
+          "value": 27829.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200209",
+          "value": 26587.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200212",
+          "value": 27188.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "2003",
+          "value": 106274.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200303",
+          "value": 26176.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200306",
+          "value": 27521.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200309",
+          "value": 26777.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200312",
+          "value": 25799.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "2004",
+          "value": 100615.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200403",
+          "value": 24849.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200406",
+          "value": 24740.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200409",
+          "value": 25110.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200412",
+          "value": 25916.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "2005",
+          "value": 98275.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200503",
+          "value": 25272.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200506",
+          "value": 24138.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200509",
+          "value": 24380.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200512",
+          "value": 24485.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "2006",
+          "value": 96269.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200603",
+          "value": 23663.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200606",
+          "value": 24003.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200609",
+          "value": 23652.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200612",
+          "value": 24951.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "2007",
+          "value": 96844.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200703",
+          "value": 23421.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200706",
+          "value": 24004.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200709",
+          "value": 23683.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200712",
+          "value": 25736.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "2008",
+          "value": 97024.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200803",
+          "value": 24432.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200806",
+          "value": 24703.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200809",
+          "value": 22856.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200812",
+          "value": 25033.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "2009",
+          "value": 93683.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200903",
+          "value": 22870.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200906",
+          "value": 24514.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200909",
+          "value": 22905.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "200912",
+          "value": 23394.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "2010",
+          "value": 100278.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201003",
+          "value": 22488.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201006",
+          "value": 25988.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201009",
+          "value": 25629.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201012",
+          "value": 26172.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "2011",
+          "value": 108263.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201103",
+          "value": 25847.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201106",
+          "value": 25243.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201109",
+          "value": 27203.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201112",
+          "value": 29970.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "2012",
+          "value": 126414.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201203",
+          "value": 30421.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201206",
+          "value": 30318.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201209",
+          "value": 29836.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201212",
+          "value": 35840.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "2013",
+          "value": 129868.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201303",
+          "value": 32900.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201306",
+          "value": 31788.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201309",
+          "value": 30384.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201312",
+          "value": 34796.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "2014",
+          "value": 138285.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201403",
+          "value": 34785.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201406",
+          "value": 33337.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201409",
+          "value": 33031.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201412",
+          "value": 37132.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "2015",
+          "value": 146978.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201503",
+          "value": 35717.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201506",
+          "value": 36365.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201509",
+          "value": 35360.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201512",
+          "value": 39536.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "2016",
+          "value": 149973.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201603",
+          "value": 36057.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201606",
+          "value": 35051.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201609",
+          "value": 38170.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201612",
+          "value": 40694.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "2017",
+          "value": 148942.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201703",
+          "value": 35573.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201706",
+          "value": 37393.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201709",
+          "value": 35976.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201712",
+          "value": 40001.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "2018",
+          "value": 143136.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201803",
+          "value": 37193.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201806",
+          "value": 35484.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201809",
+          "value": 34016.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201812",
+          "value": 36443.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "2019",
+          "value": 131111.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201903",
+          "value": 31445.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201906",
+          "value": 31117.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201909",
+          "value": 32788.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "201912",
+          "value": 35761.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "2020",
+          "value": 127147.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "202003",
+          "value": 30572.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "202006",
+          "value": 29413.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "202009",
+          "value": 31674.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "202012",
+          "value": 35487.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "2021",
+          "value": 126606.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "202103",
+          "value": 31243.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "202106",
+          "value": 30138.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "202109",
+          "value": 31806.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "202112",
+          "value": 33419.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "2022",
+          "value": 132588.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "202203",
+          "value": 30913.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "202206",
+          "value": 32450.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "202209",
+          "value": 32566.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "202212",
+          "value": 36660.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "2023",
+          "value": 145709.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "202303",
+          "value": 34064.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "202306",
+          "value": 35768.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "202309",
+          "value": 37628.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "202312",
+          "value": 38249.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "2024",
+          "value": 154853.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "202403",
+          "value": 37206.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "202406",
+          "value": 36909.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "202409",
+          "value": 39771.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "202412",
+          "value": 40967.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "2025",
+          "value": 148358.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "202503",
+          "value": 36974.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "202506",
+          "value": 35915.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "202509",
+          "value": 37487.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "202512",
+          "value": 37982.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "202603",
+          "value": 37332.0,
+          "unit": "HK$ million"
+        },
+        {
+          "date": "2000",
+          "value": -4.5,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200003",
+          "value": -7.1,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200006",
+          "value": -6.8,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200009",
+          "value": -1.4,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200012",
+          "value": -2.4,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "2001",
+          "value": -2.9,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200103",
+          "value": -5.4,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200106",
+          "value": -2.7,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200109",
+          "value": -6.7,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200112",
+          "value": 3.1,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "2002",
+          "value": -2.4,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200203",
+          "value": -1.7,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200206",
+          "value": 3.1,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200209",
+          "value": -0.1,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200212",
+          "value": -10.1,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "2003",
+          "value": -2.2,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200303",
+          "value": -3.3,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200306",
+          "value": -1.1,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200309",
+          "value": 0.7,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200312",
+          "value": -5.1,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "2004",
+          "value": -5.3,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200403",
+          "value": -5.1,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200406",
+          "value": -10.1,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200409",
+          "value": -6.2,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200412",
+          "value": 0.5,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "2005",
+          "value": -2.3,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200503",
+          "value": 1.7,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200506",
+          "value": -2.4,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200509",
+          "value": -2.9,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200512",
+          "value": -5.5,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "2006",
+          "value": -2.0,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200603",
+          "value": -6.4,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200606",
+          "value": -0.6,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200609",
+          "value": -3.0,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200612",
+          "value": 1.9,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "2007",
+          "value": 0.6,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200703",
+          "value": -1.0,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200706",
+          "value": 0.0,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200709",
+          "value": 0.1,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200712",
+          "value": 3.1,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "2008",
+          "value": 0.2,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200803",
+          "value": 4.3,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200806",
+          "value": 2.9,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200809",
+          "value": -3.5,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200812",
+          "value": -2.7,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "2009",
+          "value": -3.4,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200903",
+          "value": -6.4,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200906",
+          "value": -0.8,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200909",
+          "value": 0.2,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "200912",
+          "value": -6.5,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "2010",
+          "value": 7.0,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201003",
+          "value": -1.7,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201006",
+          "value": 6.0,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201009",
+          "value": 11.9,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201012",
+          "value": 11.9,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "2011",
+          "value": 8.0,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201103",
+          "value": 14.9,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201106",
+          "value": -2.9,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201109",
+          "value": 6.1,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201112",
+          "value": 14.5,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "2012",
+          "value": 16.8,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201203",
+          "value": 17.7,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201206",
+          "value": 20.1,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201209",
+          "value": 9.7,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201212",
+          "value": 19.6,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "2013",
+          "value": 2.7,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201303",
+          "value": 8.2,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201306",
+          "value": 4.9,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201309",
+          "value": 1.8,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201312",
+          "value": -2.9,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "2014",
+          "value": 6.5,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201403",
+          "value": 5.7,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201406",
+          "value": 4.9,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201409",
+          "value": 8.7,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201412",
+          "value": 6.7,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "2015",
+          "value": 6.3,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201503",
+          "value": 2.7,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201506",
+          "value": 9.1,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201509",
+          "value": 7.1,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201512",
+          "value": 6.5,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "2016",
+          "value": 2.0,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201603",
+          "value": 1.0,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201606",
+          "value": -3.6,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201609",
+          "value": 7.9,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201612",
+          "value": 2.9,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "2017",
+          "value": -0.7,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201703",
+          "value": -1.3,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201706",
+          "value": 6.7,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201709",
+          "value": -5.7,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201712",
+          "value": -1.7,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "2018",
+          "value": -3.9,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201803",
+          "value": 4.6,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201806",
+          "value": -5.1,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201809",
+          "value": -5.4,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201812",
+          "value": -8.9,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "2019",
+          "value": -8.4,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201903",
+          "value": -15.5,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201906",
+          "value": -12.3,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201909",
+          "value": -3.6,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "201912",
+          "value": -1.9,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "2020",
+          "value": -3.0,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "202003",
+          "value": -2.8,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "202006",
+          "value": -5.5,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "202009",
+          "value": -3.4,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "202012",
+          "value": -0.8,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "2021",
+          "value": -0.4,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "202103",
+          "value": 2.2,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "202106",
+          "value": 2.5,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "202109",
+          "value": 0.4,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "202112",
+          "value": -5.8,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "2022",
+          "value": 4.7,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "202203",
+          "value": -1.1,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "202206",
+          "value": 7.7,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "202209",
+          "value": 2.4,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "202212",
+          "value": 9.7,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "2023",
+          "value": 9.9,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "202303",
+          "value": 10.2,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "202306",
+          "value": 10.2,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "202309",
+          "value": 15.5,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "202312",
+          "value": 4.3,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "2024",
+          "value": 6.3,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "202403",
+          "value": 9.2,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "202406",
+          "value": 3.2,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "202409",
+          "value": 5.7,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "202412",
+          "value": 7.1,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "2025",
+          "value": -4.2,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "202503",
+          "value": -0.6,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "202506",
+          "value": -2.7,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "202509",
+          "value": -5.7,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "202512",
+          "value": -7.3,
+          "unit": "Year-on-year % change"
+        },
+        {
+          "date": "202603",
+          "value": 1.0,
+          "unit": "Year-on-year % change"
+        }
+      ],
       "source_health": [
         {
           "source": "Centaline City Leading Index (CCL)",
@@ -15408,6 +18073,30 @@
   },
   "sources": [
     {
+      "id": "hkma_mortgage",
+      "label": "HKMA Residential Mortgage Survey",
+      "href": "https://www.hkma.gov.hk/",
+      "query": {
+        "engine": "official HKMA API / open data",
+        "url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/banking/residential-mortgage-survey",
+        "language": "JSON",
+        "description": "Monthly mortgage loan approvals, LTV ratio, interest rate plan mix (HIBOR vs BLR), and delinquency rates.",
+        "executed_at": "2026-07-25T13:40:41.283067Z"
+      }
+    },
+    {
+      "id": "cnsd_construction",
+      "label": "C&SD Gross Value of Construction Works (Table 615-66001)",
+      "href": "https://www.censtatd.gov.hk/",
+      "query": {
+        "engine": "official C&SD JSON API",
+        "url": "https://www.censtatd.gov.hk/api/get.php?id=615-66001&lang=en&full_series=1",
+        "language": "JSON",
+        "description": "Quarterly gross value of construction works performed by main contractors.",
+        "executed_at": "2026-07-25T13:40:41.283067Z"
+      }
+    },
+    {
       "id": "centaline_ccl",
       "label": "Centaline City Leading Index (CCL)",
       "href": "https://hk.centanet.com/CCI/index",
@@ -15420,7 +18109,7 @@
           "CCL latest is the most recent published weekly Centaline City Leading Index observation.",
           "Weekly and yearly movements are latest divided by the prior observation or latest observation on/before one year earlier, minus one."
         ],
-        "executed_at": "2026-07-25T13:17:29.321674Z"
+        "executed_at": "2026-07-25T13:40:41.283067Z"
       }
     },
     {
@@ -15436,7 +18125,7 @@
           "MHPI latest is the most recent published overall weekly Midland Hong Kong Property Price Index observation.",
           "Weekly and yearly movements are latest divided by the prior observation or latest observation on/before one year earlier, minus one."
         ],
-        "executed_at": "2026-07-25T13:17:29.321674Z"
+        "executed_at": "2026-07-25T13:40:41.283067Z"
       }
     },
     {
@@ -15451,7 +18140,7 @@
         "metric_definitions": [
           "The confidence series is a supporting market-sentiment measure published by Midland Realty."
         ],
-        "executed_at": "2026-07-25T13:17:29.321674Z"
+        "executed_at": "2026-07-25T13:40:41.283067Z"
       }
     },
     {
@@ -15467,7 +18156,7 @@
           "RVD price latest is the All Classes monthly private domestic price index.",
           "Monthly and yearly movements are latest divided by the prior month or observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-07-25T13:17:29.321674Z"
+        "executed_at": "2026-07-25T13:40:41.283067Z"
       }
     },
     {
@@ -15483,7 +18172,7 @@
           "RVD rent latest is the All Classes monthly private domestic rental index.",
           "Monthly and yearly movements are latest divided by the prior month or observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-07-25T13:17:29.321674Z"
+        "executed_at": "2026-07-25T13:40:41.283067Z"
       }
     },
     {
@@ -15502,7 +18191,7 @@
           "RVD 1.4M.csv",
           "RVD 1.3M.csv"
         ],
-        "executed_at": "2026-07-25T13:17:29.321674Z"
+        "executed_at": "2026-07-25T13:40:41.283067Z"
       }
     },
     {
@@ -15516,13 +18205,13 @@
           "Validated core measure frames",
           "Declared future-source registry"
         ],
-        "executed_at": "2026-07-25T13:17:29.321674Z"
+        "executed_at": "2026-07-25T13:40:41.283067Z"
       }
     }
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-real-estate/",
-    "snapshotId": "3398dabc682d60e7",
+    "snapshotId": "dbf2c99f01e3a499",
     "dataAsOf": "2026-07-20"
   }
 }

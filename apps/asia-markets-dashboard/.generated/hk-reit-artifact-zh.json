@@ -6,7 +6,7 @@
     "title": "香港房地产信托（REITs）基本面监测",
     "description": "领展（Link REIT）、冠君（Champion REIT）、置富（Fortune REIT）、繁荣（Prosperity REIT）、阳光（Sunlight REIT）及富豪（Regal REIT）的每单位资产净值（NAV）、每基金单位分派（DPU）、出租率、租金检讨调升率及酒店 KPI 快照。",
     "sector": "hk-reit",
-    "generatedAt": "2026-07-25T13:17:24.615213Z",
+    "generatedAt": "2026-07-25T13:40:37.109880Z",
     "dataAsOf": "2026-03-31",
     "liveSourcesCount": 6,
     "totalSourcesCount": 7,
@@ -470,7 +470,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**数据快照：** `22ea05f2d7f320b9` · 生成于 2026-07-25T13:17:24.615213Z。"
+        "body": "**数据快照：** `bef3389cb2a69997` · 生成于 2026-07-25T13:40:37.109880Z。"
       },
       {
         "id": "kpi_grid",
@@ -525,7 +525,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-25T13:17:24.615213Z",
+    "generatedAt": "2026-07-25T13:40:37.109880Z",
     "status": "ready",
     "datasets": {
       "kpi_linkreit": [
@@ -1201,6 +1201,8 @@
           "as_of_date": "2025-12-31"
         }
       ],
+      "reit_spot_quotes": [],
+      "reit_price_history": [],
       "linkreit": [
         {
           "date": "2022-03-31",
@@ -1657,14 +1659,23 @@
       "latest_observation": "2025-12-31",
       "freshness": "live",
       "notes": "Hotel portfolio KPIs: occupancy (%), average daily rate (ADR, HK$), RevPAR (HK$), DPU, and NAV/unit."
+    },
+    {
+      "source_id": "reit_price_akshare",
+      "label": "Hong Kong REITs Daily Spot Quotes & History (akshare)",
+      "status": "stale/unreachable",
+      "records": 0,
+      "latest_observation": null,
+      "freshness": "stale/unreachable",
+      "notes": "Daily spot price quotes, percentage change, and OHLC daily history for all 6 HK REITs."
     }
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-reit/",
     "sector_id": "hk-reit",
     "sector_name": "Hong Kong REITs Sector Monitor",
-    "snapshotId": "22ea05f2d7f320b9",
-    "generatedAt": "2026-07-25T13:17:24.615213Z",
+    "snapshotId": "bef3389cb2a69997",
+    "generatedAt": "2026-07-25T13:40:37.109880Z",
     "dataAsOf": "2026-03-31"
   }
 }

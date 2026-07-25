@@ -514,6 +514,9 @@ def build_artifact(
         }
     ]
 
+    df_spot = fetch_reit_spot_quotes()
+    df_hist = fetch_reit_price_history()
+
     status_entries = []
     for key, ticker, name, source_id, is_hotel in REIT_META:
         df = frames[key]
@@ -532,6 +535,74 @@ def build_artifact(
             }
         )
 
+    # Add status for reit_price_akshare
+    spot_spec = PUBLIC_SOURCES["reit_price_akshare"]
+    spot_status = "success" if not df_spot.empty else "stale/unreachable"
+    spot_max_date = df_spot["date"].max().strftime("%Y-%m-%d") if not df_spot.empty and "date" in df_spot.columns else None
+    status_entries.append(
+        {
+            "source_id": "reit_price_akshare",
+            "label": spot_spec["label"],
+            "status": spot_status,
+            "records": len(df_spot),
+            "latest_observation": spot_max_date,
+            "freshness": "live" if spot_status == "success" else "stale/unreachable",
+            "notes": spot_spec["query"]["description"],
+        }
+    )
+
+    spot_rows = _records_json_safe(df_spot) if not df_spot.empty else []
+    hist_rows = []
+    if not df_hist.empty and "date" in df_hist.columns and "close_hkd" in df_hist.columns:
+        for _, r in df_hist.iterrows():
+            if pd.notna(r.get("close_hkd")) and pd.notna(r.get("date")):
+                hist_rows.append({
+                    "date": pd.to_datetime(r["date"]).strftime("%Y-%m-%d"),
+                    "ticker": str(r.get("ticker", "")),
+                    "series": str(r.get("company_name", r.get("ticker", ""))),
+                    "value": float(r["close_hkd"]),
+                })
+
+    if spot_rows:
+        tables.append(
+            {
+                "id": "reit_spot_summary_table",
+                "title": "Hong Kong REITs Market Spot Quotes",
+                "subtitle": "Daily spot price quotes, price change %, and daily volume via market feed.",
+                "dataset": "reit_spot_quotes",
+                "sourceId": "reit_price_akshare",
+                "density": "dense",
+                "layout": "full",
+                "columns": [
+                    {"field": "company_name", "label": "REIT Name", "type": "text"},
+                    {"field": "ticker", "label": "Ticker", "type": "text"},
+                    {"field": "latest_price_hkd", "label": "Price (HK$)", "format": "number"},
+                    {"field": "change_pct", "label": "Change (%)", "format": "number"},
+                    {"field": "volume", "label": "Volume", "format": "number"},
+                    {"field": "turnover_hkd", "label": "Turnover (HK$)", "format": "number"},
+                ],
+            }
+        )
+
+    if hist_rows:
+        charts.append(
+            {
+                "id": "reit_spot_price_history_chart",
+                "title": "HK REITs Daily Closing Price History (HK$)",
+                "subtitle": "Daily unit close prices for Hong Kong listed REITs.",
+                "type": "line",
+                "dataset": "reit_price_history",
+                "sourceId": "reit_price_akshare",
+                "encodings": {
+                    "x": {"field": "date", "type": "temporal", "label": "Date"},
+                    "y": {"field": "value", "type": "quantitative", "label": "Close (HK$)"},
+                    "color": {"field": "series", "type": "nominal", "label": "REIT"},
+                },
+                "valueFormat": "number",
+                "layout": "full",
+            }
+        )
+
     datasets = {
         **{f"kpi_{key}": [kpis[key]] for key, *_ in REIT_META},
         "nav_history": nav_history,
@@ -540,6 +611,8 @@ def build_artifact(
         "reversion_history": reversion_history,
         "regal_hotel_kpi_history": regal_hotel_kpi_history,
         "reit_comparison": comparison_rows,
+        "reit_spot_quotes": spot_rows,
+        "reit_price_history": hist_rows,
         **{key: _records_json_safe(frames[key]) for key, *_ in REIT_META},
     }
 
@@ -550,6 +623,46 @@ def build_artifact(
     snapshot_id = hashlib.sha256(
         json.dumps(fingerprint_payload, sort_keys=True, separators=(",", ":"), default=str).encode("utf-8")
     ).hexdigest()[:16]
+
+    blocks = [
+        {
+            "id": "snapshot_context",
+            "type": "markdown",
+            "body": (
+                f"**Data snapshot:** `{snapshot_id}` · generated {generated_at}.  "
+                "Each REIT's figures come from that trust's own investor-relations disclosures "
+                "(semi-annual or annual cadence), supplemented by market spot quotes."
+            ),
+        },
+        {"id": "kpi_grid", "type": "metric-strip", "cardIds": [card["id"] for card in cards]},
+    ]
+    if spot_rows:
+        blocks.append({"id": "reit_spot_table_block", "type": "table", "tableId": "reit_spot_summary_table"})
+    if hist_rows:
+        blocks.append({"id": "reit_price_chart_block", "type": "chart", "chartId": "reit_spot_price_history_chart"})
+
+    blocks.extend([
+        {"id": "nav_chart", "type": "chart", "chartId": "nav_trend_chart"},
+        {"id": "dpu_chart", "type": "chart", "chartId": "dpu_trend_chart"},
+        {"id": "occupancy_chart", "type": "chart", "chartId": "occupancy_trend_chart", "layout": "half"},
+        {"id": "reversion_chart", "type": "chart", "chartId": "reversion_trend_chart", "layout": "half"},
+        {"id": "regal_hotel_chart", "type": "chart", "chartId": "regal_hotel_kpi_chart"},
+        {"id": "reit_comparison_table_block", "type": "table", "tableId": "reit_comparison_table"},
+        {
+            "id": "methodology",
+            "type": "markdown",
+            "body": (
+                "## Reading the dashboard\n\n"
+                "Five REITs (Link, Champion, Fortune, Prosperity, Sunlight) are office/retail landlords "
+                "reporting occupancy and rental reversion. Regal REIT is a hotel-portfolio trust reporting "
+                "occupancy, average daily rate (ADR), and RevPAR instead -- its hotel KPIs are never combined "
+                "with the other five REITs' office/retail metrics in the same chart. DPU can be legitimately "
+                "nil in a period (a genuine disclosed distribution outcome, not a data gap); period-over-period "
+                "changes are left blank rather than divided by zero when this happens. No stock ranking, "
+                "forecast, or investment recommendation is produced."
+            ),
+        },
+    ])
 
     manifest_sources = list(PUBLIC_SOURCES.values())
 
@@ -569,38 +682,7 @@ def build_artifact(
             "charts": charts,
             "tables": tables,
             "sources": manifest_sources,
-            "blocks": [
-                {
-                    "id": "snapshot_context",
-                    "type": "markdown",
-                    "body": (
-                        f"**Data snapshot:** `{snapshot_id}` · generated {generated_at}.  "
-                        "Each REIT's figures come from that trust's own investor-relations disclosures "
-                        "(semi-annual or annual cadence), not a shared index provider."
-                    ),
-                },
-                {"id": "kpi_grid", "type": "metric-strip", "cardIds": [card["id"] for card in cards]},
-                {"id": "nav_chart", "type": "chart", "chartId": "nav_trend_chart"},
-                {"id": "dpu_chart", "type": "chart", "chartId": "dpu_trend_chart"},
-                {"id": "occupancy_chart", "type": "chart", "chartId": "occupancy_trend_chart", "layout": "half"},
-                {"id": "reversion_chart", "type": "chart", "chartId": "reversion_trend_chart", "layout": "half"},
-                {"id": "regal_hotel_chart", "type": "chart", "chartId": "regal_hotel_kpi_chart"},
-                {"id": "reit_comparison_table_block", "type": "table", "tableId": "reit_comparison_table"},
-                {
-                    "id": "methodology",
-                    "type": "markdown",
-                    "body": (
-                        "## Reading the dashboard\n\n"
-                        "Five REITs (Link, Champion, Fortune, Prosperity, Sunlight) are office/retail landlords "
-                        "reporting occupancy and rental reversion. Regal REIT is a hotel-portfolio trust reporting "
-                        "occupancy, average daily rate (ADR), and RevPAR instead -- its hotel KPIs are never combined "
-                        "with the other five REITs' office/retail metrics in the same chart. DPU can be legitimately "
-                        "nil in a period (a genuine disclosed distribution outcome, not a data gap); period-over-period "
-                        "changes are left blank rather than divided by zero when this happens. No stock ranking, "
-                        "forecast, or investment recommendation is produced."
-                    ),
-                },
-            ],
+            "blocks": blocks,
         },
         "snapshot": {"version": 1, "generatedAt": generated_at, "status": "ready", "datasets": datasets},
         "sources": manifest_sources,

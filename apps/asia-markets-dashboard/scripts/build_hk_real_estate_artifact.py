@@ -57,6 +57,28 @@ SERIES_RULES = {
 
 
 PUBLIC_SOURCES = {
+    "hkma_mortgage": {
+        "id": "hkma_mortgage",
+        "label": "HKMA Residential Mortgage Survey",
+        "href": "https://www.hkma.gov.hk/",
+        "query": {
+            "engine": "official HKMA API / open data",
+            "url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/banking/residential-mortgage-survey",
+            "language": "JSON",
+            "description": "Monthly mortgage loan approvals, LTV ratio, interest rate plan mix (HIBOR vs BLR), and delinquency rates.",
+        },
+    },
+    "cnsd_construction": {
+        "id": "cnsd_construction",
+        "label": "C&SD Gross Value of Construction Works (Table 615-66001)",
+        "href": "https://www.censtatd.gov.hk/",
+        "query": {
+            "engine": "official C&SD JSON API",
+            "url": "https://www.censtatd.gov.hk/api/get.php?id=615-66001&lang=en&full_series=1",
+            "language": "JSON",
+            "description": "Quarterly gross value of construction works performed by main contractors.",
+        },
+    },
     "centaline_ccl": {
         "id": "centaline_ccl",
         "label": "Centaline City Leading Index (CCL)",
@@ -369,7 +391,32 @@ def build_artifact(raw_frames: dict[str, pd.DataFrame], *, now: datetime | None 
         raise ValueError("RVD price and rent observation dates do not align")
     generated_at = now.isoformat().replace("+00:00", "Z")
     health = _source_health(frames, now)
+    df_hkma = fetch_hkma_residential_mortgage_survey()
+    df_cnsd = fetch_cnsd_table("615-66001")
+
+    hkma_rows = []
+    if not df_hkma.empty and "observation_date" in df_hkma.columns:
+        for _, r in df_hkma.iterrows():
+            obs_d = str(r["observation_date"])[:10]
+            hibor_pct = r.get("interest_rate_hibor_pct")
+            blr_pct = r.get("interest_rate_blr_pct")
+            if pd.notna(hibor_pct):
+                hkma_rows.append({"date": obs_d, "series": "HIBOR-based (%)", "value": float(hibor_pct)})
+            if pd.notna(blr_pct):
+                hkma_rows.append({"date": obs_d, "series": "Best Lending Rate (%)", "value": float(blr_pct)})
+
+    cnsd_const_rows = []
+    if not df_cnsd.empty and "period" in df_cnsd.columns and "value" in df_cnsd.columns:
+        for _, r in df_cnsd.iterrows():
+            if pd.notna(r.get("value")) and pd.notna(r.get("period")):
+                cnsd_const_rows.append({
+                    "date": str(r["period"]),
+                    "value": float(r["value"]),
+                    "unit": str(r.get("unit", "HK$ million")),
+                })
+
     coverage = health + PLANNED_COVERAGE
+
     datasets = {
         "kpi_ccl": [kpis["ccl"]],
         "kpi_mhpi": [kpis["mhpi"]],
@@ -389,6 +436,8 @@ def build_artifact(raw_frames: dict[str, pd.DataFrame], *, now: datetime | None 
             for (_, price), (_, rent) in zip(frames["rvd_price"].iterrows(), frames["rvd_rent"].iterrows())
         ],
         "rebased_five_year": _rebased_records(frames, now),
+        "hkma_mortgage_rate_mix": hkma_rows,
+        "cnsd_construction_value": cnsd_const_rows,
         "source_health": health,
         "source_coverage": coverage,
     }
@@ -537,6 +586,45 @@ def build_artifact(raw_frames: dict[str, pd.DataFrame], *, now: datetime | None 
         },
     ]
 
+    if hkma_rows:
+        charts.append(
+            {
+                "id": "hkma_mortgage_rate_mix_chart",
+                "title": "HKMA Residential Mortgage Interest Rate Plan Mix (%)",
+                "subtitle": "Percentage share of new mortgage approvals priced on HIBOR vs Best Lending Rate (Prime).",
+                "type": "line",
+                "intent": "trend",
+                "dataset": "hkma_mortgage_rate_mix",
+                "sourceId": "hkma_mortgage",
+                "encodings": {
+                    "x": {"field": "date", "type": "temporal", "label": "Month"},
+                    "y": {"field": "value", "type": "quantitative", "label": "% Share"},
+                    "color": {"field": "series", "type": "nominal", "label": "Rate Plan"},
+                },
+                "valueFormat": "number",
+                "layout": "full",
+            }
+        )
+
+    if cnsd_const_rows:
+        charts.append(
+            {
+                "id": "cnsd_construction_value_chart",
+                "title": "C&SD Gross Value of Construction Works (HK$ million)",
+                "subtitle": "Quarterly value of construction works performed by main contractors (supply-side pipeline).",
+                "type": "line",
+                "intent": "trend",
+                "dataset": "cnsd_construction_value",
+                "sourceId": "cnsd_construction",
+                "encodings": {
+                    "x": {"field": "date", "type": "temporal", "label": "Quarter"},
+                    "y": {"field": "value", "type": "quantitative", "label": "HK$ million"},
+                },
+                "valueFormat": "number",
+                "layout": "full",
+            }
+        )
+
     tables = [
         {
             "id": "source_health_table",
@@ -576,6 +664,33 @@ def build_artifact(raw_frames: dict[str, pd.DataFrame], *, now: datetime | None 
         },
     ]
 
+    blocks = [
+        {
+            "id": "snapshot_context",
+            "type": "markdown",
+            "body": (
+                f"**Data snapshot:** `{snapshot_id}` · generated {generated_at}.  "
+                "This is a published snapshot, not a live connection. RVD observations marked provisional may be revised."
+            ),
+        },
+        {"id": "market_pulse", "type": "metric-strip", "cardIds": [card["id"] for card in cards]},
+        {"id": "ccl_chart", "type": "chart", "chartId": "ccl_trend", "layout": "half"},
+        {"id": "mhpi_chart", "type": "chart", "chartId": "mhpi_trend", "layout": "half"},
+    ]
+    if hkma_rows:
+        blocks.append({"id": "hkma_mortgage_chart_block", "type": "chart", "chartId": "hkma_mortgage_rate_mix_chart"})
+    if cnsd_const_rows:
+        blocks.append({"id": "cnsd_construction_chart_block", "type": "chart", "chartId": "cnsd_construction_value_chart"})
+
+    blocks.extend([
+        {"id": "rvd_price_chart", "type": "chart", "chartId": "rvd_trend", "layout": "half"},
+        {"id": "rvd_rent_chart", "type": "chart", "chartId": "rvd_rent_trend", "layout": "half"},
+        {"id": "rebased_chart", "type": "chart", "chartId": "rebased_trend"},
+        {"id": "confidence_chart", "type": "chart", "chartId": "confidence_trend"},
+        {"id": "source_health_table", "type": "table", "tableId": "source_health_table"},
+        {"id": "coverage_table", "type": "table", "tableId": "coverage_table"},
+    ])
+
     artifact = {
         "surface": "dashboard",
         "manifest": {
@@ -588,34 +703,7 @@ def build_artifact(raw_frames: dict[str, pd.DataFrame], *, now: datetime | None 
             "charts": charts,
             "tables": tables,
             "sources": manifest_sources,
-            "blocks": [
-                {
-                    "id": "snapshot_context",
-                    "type": "markdown",
-                    "body": (
-                        f"**Data snapshot:** `{snapshot_id}` · generated {generated_at}.  "
-                        "This is a published snapshot, not a live connection. RVD observations marked provisional may be revised."
-                    ),
-                },
-                {"id": "market_pulse", "type": "metric-strip", "cardIds": [card["id"] for card in cards]},
-                {"id": "ccl_chart", "type": "chart", "chartId": "ccl_trend", "layout": "half"},
-                {"id": "mhpi_chart", "type": "chart", "chartId": "mhpi_trend", "layout": "half"},
-                {"id": "rvd_chart", "type": "chart", "chartId": "rvd_trend"},
-                {"id": "rebased_chart", "type": "chart", "chartId": "rebased_trend"},
-                {"id": "confidence_chart", "type": "chart", "chartId": "confidence_trend"},
-                {"id": "source_health", "type": "table", "tableId": "source_health_table"},
-                {"id": "coverage", "type": "table", "tableId": "coverage_table"},
-                {
-                    "id": "methodology",
-                    "type": "markdown",
-                    "body": (
-                        "## Reading the dashboard\n\n"
-                        "Publisher index levels use different bases. Compare their direction in the rebased chart, not their raw numeric levels. "
-                        "The coverage table distinguishes live measures from catalogs and planned ingestion work. "
-                        "No stock ranking, forecast, or investment recommendation is produced."
-                    ),
-                },
-            ],
+            "blocks": blocks,
         },
         "snapshot": {
             "version": 1,

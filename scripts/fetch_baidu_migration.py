@@ -7,6 +7,24 @@ huiyan.baidu.com to retrieve daily population migration data
 between Chinese cities.
 
 API endpoints (all verified 2026-07-25):
+
+History depth:
+  - 2024-2026: all dates return real data ✅
+  - 2022-2023: most dates work, some return empty (2023H2 spotty)
+  - 2021:      January works, some other months empty
+  - Pre-2020:  "date is not valid" error
+  - Overall:   reliable backfill is ~2022+, use --backfill with caution on older windows
+
+Important:
+  - This API is NOT tested from GitHub Actions shared IP ranges. Baidu is
+    known to block datacenter IPs. If scheduled runs fail, check IP blocking.
+  - Output goes to data/baidu_migration/*.parquet. Backfill data may be lost
+    on CI re-runs unless the path is gitignored properly.
+  - Cross-reference idea: compare Shenzhen/Guangzhou move_in% against
+    immigration_flow (Shenzhen Bay / Lok Ma Chau crossings). GBA migration
+    into the region plausibly leads HK northbound shopping-trip volume
+    by a few days -- testable against data you already have.
+
   lastdate.jsonp                    → latest available date
   cityrank.jsonp?dt=country&id=0    → national city ranking (top 100)
   cityrank.jsonp?dt=city&id={code}  → city-specific origin/dest ranking
@@ -299,31 +317,42 @@ def main():
     if args.backfill:
         start, end = args.backfill
         print(f"Backfill mode: {start} → {end}")
-        # Generate monthly midpoints
         months = pd.date_range(start + "-01", end + "-01", freq="MS", tz="UTC")
-        dates = [m.strftime("%Y%m") + "15" for m in months]  # ~mid-month
-        # Always include latest date
+        dates = [m.strftime("%Y%m") + "15" for m in months]
         if target_date and target_date not in dates:
             dates.append(target_date)
 
         national_concat = []
         city_concat = []
+        empty_dates = []
+        failed_dates = []
         for i, d in enumerate(dates):
-            print(f"  [{i+1}/{len(dates)}] Fetching {d}...")
+            sys.stdout.write(f"  [{i+1}/{len(dates)}] Fetching {d}...")
+            sys.stdout.flush()
             if do_national:
                 try:
                     df_nat = run_national_snapshot(d)
-                    national_concat.append(df_nat)
+                    if df_nat.empty:
+                        empty_dates.append(d)
+                        sys.stdout.write(" (empty)")
+                    else:
+                        national_concat.append(df_nat)
+                        sys.stdout.write(f" {len(df_nat)//2} cities")
                 except Exception as e:
-                    print(f"    Failed: {e}", file=sys.stderr)
-            if do_city:
-                try:
-                    cids = args.city_ids or DEFAULT_CITIES
-                    df_city = run_city_snapshot(cids, d)
-                    city_concat.append(df_city)
-                except Exception as e:
-                    print(f"    Failed: {e}", file=sys.stderr)
+                    failed_dates.append(d)
+                    sys.stdout.write(f" FAILED: {e}")
+            sys.stdout.write("\n")
+            sys.stdout.flush()
             time.sleep(1.0)
+
+        if empty_dates:
+            print(f"\n  ⚠ {len(empty_dates)} empty date(s) — no data for those periods:")
+            for ed in empty_dates[:10]:
+                print(f"      {ed}")
+            if len(empty_dates) > 10:
+                print(f"      ... and {len(empty_dates)-10} more")
+        if failed_dates:
+            print(f"  ✗ {len(failed_dates)} failed date(s)")
 
         if national_concat:
             df_nat_all = pd.concat(national_concat, ignore_index=True)

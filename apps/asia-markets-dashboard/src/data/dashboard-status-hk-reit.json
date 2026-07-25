@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-07-25T13:17:24.615213Z",
-  "snapshot_id": "22ea05f2d7f320b9",
+  "generated_at": "2026-07-25T13:40:37.109880Z",
+  "snapshot_id": "bef3389cb2a69997",
   "data_as_of": "2026-03-31",
   "overall_status": "Degraded",
   "live_sources": 6,
@@ -65,6 +65,16 @@
       "records": 1,
       "freshness": "live",
       "notes": "Hotel portfolio KPIs: occupancy (%), average daily rate (ADR, HK$), RevPAR (HK$), DPU, and NAV/unit."
+    },
+    {
+      "source": "Hong Kong REITs Daily Spot Quotes & History (akshare)",
+      "dataset": "reit_price_akshare",
+      "type": "Measure",
+      "status": "Degraded",
+      "latest_observation": "\u2014",
+      "records": 0,
+      "freshness": "stale/unreachable",
+      "notes": "Daily spot price quotes, percentage change, and OHLC daily history for all 6 HK REITs."
     }
   ],
   "attachment_filename": "hk-reit-monitor.html"
