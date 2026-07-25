@@ -1189,9 +1189,8 @@ def build_artifact(
                 "columns": [
                     {"field": "company", "label": "Oil Major", "type": "text"},
                     {"field": "fuel_type", "label": "Fuel Type", "type": "text"},
-                    {"field": "pump_price_hkd", "label": "Pump Price (HK$/L)", "format": "number"},
                     {"field": "walkin_discount_hkd", "label": "Walk-in Discount (HK$/L)", "format": "number"},
-                    {"field": "net_price_hkd", "label": "Net Price (HK$/L)", "format": "number"},
+                    {"field": "discounted_price_hkd", "label": "Net Price (HK$/L)", "format": "number"},
                 ],
             }
         )
@@ -1208,12 +1207,117 @@ def build_artifact(
                     "y": {"field": "walkin_discount_hkd", "type": "quantitative", "label": "Discount (HK$/L)"},
                 },
                 "valueFormat": "number",
-                "layout": "full",
+                "layout": "half",
+            }
+        )
+        charts.append(
+            {
+                "id": "consumer_council_oilprice_net_chart",
+                "title": "Auto Fuel Net Price Comparison (HK$/L)",
+                "subtitle": "Same-day net price-per-liter across Caltex, PetroChina, Shell, Sinopec, and Esso.",
+                "type": "bar",
+                "dataset": "consumer_council_oilprice",
+                "sourceId": "consumer_council_oilprice",
+                "encodings": {
+                    "x": {"field": "company", "type": "nominal", "label": "Oil Major"},
+                    "y": {"field": "discounted_price_hkd", "type": "quantitative", "label": "Net Price (HK$/L)"},
+                },
+                "valueFormat": "number",
+                "layout": "half",
             }
         )
 
+    # Build complaints table and chart data
+    complaint_table_rows: list[dict[str, Any]] = []
+    complaint_chart_rows: list[dict[str, Any]] = []
+    if complaint_rows:
+        latest_periods = sorted(set(r["period"] for r in complaint_rows), reverse=True)
+        latest_period = latest_periods[0] if latest_periods else ""
+        period_rows = [r for r in complaint_rows if r["period"] == latest_period]
+        period_rows.sort(key=lambda r: r["amount"], reverse=True)
+        complaint_table_rows = period_rows
+        # Top 10 categories for chart
+        top10 = period_rows[:10]
+        top10.reverse()  # horizontalBar renders bottom-to-top, so reverse for largest at top
+        for r in top10:
+            complaint_chart_rows.append({
+                "category": r["category"],
+                "amount": r["amount"],
+            })
+        # Add table
+        tables.append({
+            "id": "consumer_council_complaints_table",
+            "title": "Consumer Council Complaints by Category (Latest Period)",
+            "subtitle": f"All complaint categories during {latest_period}, sorted by number of complaints.",
+            "dataset": "consumer_council_complaints_table",
+            "sourceId": "consumer_council_complaints",
+            "defaultSort": {"field": "amount", "direction": "desc"},
+            "density": "dense",
+            "layout": "full",
+            "columns": [
+                {"field": "period", "label": "Period", "type": "text"},
+                {"field": "category", "label": "Category", "type": "text"},
+                {"field": "amount", "label": "Complaints", "format": "number"},
+            ],
+        })
+        # Add chart
+        charts.append({
+            "id": "consumer_council_complaints_chart",
+            "title": "Consumer Council Top Complaint Categories",
+            "subtitle": f"Top 10 categories during {latest_period}, by number of complaints.",
+            "type": "horizontalBar",
+            "intent": "comparison",
+            "dataset": "consumer_council_complaints_chart",
+            "sourceId": "consumer_council_complaints",
+            "encodings": {
+                "x": {"field": "category", "type": "nominal", "label": "Category"},
+                "y": {"field": "amount", "type": "quantitative", "label": "Complaints"},
+            },
+            "valueFormat": "number",
+            "layout": "half",
+        })
+
+    # Build checkpoint breakdown table from immigration attrs
+    checkpoint_rows: list[dict[str, Any]] = []
+    try:
+        raw_snapshot = immigration.attrs.get("latest_checkpoint_snapshot", [])
+        if raw_snapshot:
+            for entry in raw_snapshot:
+                checkpoint_rows.append({
+                    "control_point": entry.get("Control Point", ""),
+                    "direction": entry.get("Arrival / Departure", ""),
+                    "hk_residents": int(entry.get("Hong Kong Residents", 0)),
+                    "mainland_visitors": int(entry.get("Mainland Visitors", 0)),
+                    "other_visitors": int(entry.get("Other Visitors", 0)),
+                    "total": int(entry.get("Total", 0)),
+                })
+            checkpoint_rows.sort(key=lambda r: (r["control_point"], r["direction"]))
+            tables.append({
+                "id": "immigration_checkpoint_table",
+                "title": "Immigration Checkpoint Breakdown",
+                "subtitle": f"Latest date: {immigration.attrs.get('latest_date', '—')}. Passenger clearance by control point and direction.",
+                "dataset": "immigration_checkpoint_snapshot",
+                "sourceId": "immigration_flow",
+                "defaultSort": {"field": "control_point", "direction": "asc"},
+                "density": "dense",
+                "layout": "full",
+                "columns": [
+                    {"field": "control_point", "label": "Control Point", "type": "text"},
+                    {"field": "direction", "label": "Direction", "type": "text"},
+                    {"field": "hk_residents", "label": "HK Residents", "format": "number"},
+                    {"field": "mainland_visitors", "label": "Mainland Visitors", "format": "number"},
+                    {"field": "other_visitors", "label": "Other Visitors", "format": "number"},
+                    {"field": "total", "label": "Total", "format": "number"},
+                ],
+            })
+    except Exception:
+        pass
+
     datasets["consumer_council_oilprice"] = oil_rows
     datasets["consumer_council_complaints"] = complaint_rows
+    datasets["consumer_council_complaints_table"] = complaint_table_rows
+    datasets["consumer_council_complaints_chart"] = complaint_chart_rows
+    datasets["immigration_checkpoint_snapshot"] = checkpoint_rows
 
     artifact = {
         "surface": "dashboard",
@@ -1244,8 +1348,12 @@ def build_artifact(
                 {"id": "afcd_trend_chart", "type": "chart", "chartId": "afcd_category_trend", "layout": "half"},
                 {"id": "gold_chart", "type": "chart", "chartId": "gold_trend", "layout": "half"},
                 {"id": "valuation_chart", "type": "chart", "chartId": "valuation_pe_chart", "layout": "half"},
-                {"id": "oilprice_chart_block", "type": "chart", "chartId": "consumer_council_oilprice_chart"},
+                {"id": "oilprice_chart_block", "type": "chart", "chartId": "consumer_council_oilprice_chart", "layout": "half"},
+                {"id": "oilprice_net_chart_block", "type": "chart", "chartId": "consumer_council_oilprice_net_chart", "layout": "half"},
                 {"id": "oilprice_table_block", "type": "table", "tableId": "consumer_council_oilprice_table"},
+                {"id": "complaints_chart_block", "type": "chart", "chartId": "consumer_council_complaints_chart", "layout": "half"},
+                {"id": "complaints_table_block", "type": "table", "tableId": "consumer_council_complaints_table"},
+                {"id": "immigration_checkpoint_table_block", "type": "table", "tableId": "immigration_checkpoint_table"},
                 {"id": "afcd_table", "type": "table", "tableId": "afcd_commodity_table"},
                 {"id": "valuation_table_block", "type": "table", "tableId": "valuation_table"},
                 {"id": "retail_trend_chart", "type": "chart", "chartId": "retail_trend"},

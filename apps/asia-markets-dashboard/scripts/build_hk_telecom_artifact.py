@@ -122,6 +122,21 @@ def build_artifact(
     hkt_kpi = {
         "latest_arpu": float(hkt_latest["mobile_postpaid_arpu_hkd"]) if pd.notna(hkt_latest["mobile_postpaid_arpu_hkd"]) else None,
         "postpaid_subscribers_thousands": float(hkt_latest["mobile_postpaid_subscribers_thousands"]) if pd.notna(hkt_latest["mobile_postpaid_subscribers_thousands"]) else None,
+        "ftth_share_pct": (
+            float(hkt_latest["ftth_share_pct"])
+            if pd.notna(hkt_latest.get("ftth_share_pct"))
+            else None
+        ),
+        "ftth_connections_thousands": (
+            float(hkt_latest["ftth_connections_thousands"])
+            if pd.notna(hkt_latest.get("ftth_connections_thousands"))
+            else None
+        ),
+        "pay_tv_installed_base_thousands": (
+            float(hkt_latest["pay_tv_installed_base_thousands"])
+            if pd.notna(hkt_latest.get("pay_tv_installed_base_thousands"))
+            else None
+        ),
         "consumer_broadband_lines_thousands": float(hkt_latest["consumer_broadband_lines_thousands"]) if pd.notna(hkt_latest["consumer_broadband_lines_thousands"]) else None,
         "period_change": (
             round(float(hkt_latest["mobile_postpaid_arpu_hkd"]) / hkt_prior_arpu - 1, 6)
@@ -168,6 +183,18 @@ def build_artifact(
         "kpi_smartone": [st_kpi],
         "kpi_hutchison": [hu_kpi],
         "hkt_history": _records_json_safe(hkt),
+        "hkt_footprint_history": sorted(
+            (
+                r for _, row in hkt.iterrows()
+                for col, label in [("ftth_connections_thousands", "FTTH connections"), ("pay_tv_installed_base_thousands", "Pay TV base")]
+                for val in [row.get(col)]
+                if pd.notna(row.get("date")) and pd.notna(val)
+                for date_str in [row["date"].strftime("%Y-%m-%d") if hasattr(row["date"], "strftime") else str(row["date"])[:10]]
+                for month_str in [row.get("month") if pd.notna(row.get("month")) else date_str[:7]]
+                for r in [{"date": date_str, "month": str(month_str), "series": label, "value": round(float(val), 2)}]
+            ),
+            key=lambda r: (r["series"], r["date"]),
+        ),
         "smartone_history": _records_json_safe(smartone),
         "hutchison_history": _records_json_safe(hutchison),
         "numbering_plan_snapshot": _records_json_safe(numbering_plan),
@@ -183,6 +210,23 @@ def build_artifact(
                 {"label": "Postpaid ARPU (HK$)", "field": "latest_arpu", "format": "number"},
                 {"label": "Postpaid Subscribers ('000)", "field": "postpaid_subscribers_thousands", "format": "number"},
                 {"label": "Half-on-Half", "field": "period_change", "format": "percent"},
+                {
+                    "label": "FTTH Share (%)",
+                    "field": "ftth_share_pct",
+                    "format": "number",
+                },
+            ],
+        },
+        {
+            "id": "hkt_footprint_card",
+            "description": "HKT broadband access lines, FTTH connections, and Pay TV installed base ('000s).",
+            "dataset": "kpi_hkt",
+            "sourceId": "hkt_operating_drivers",
+            "metrics": [
+                {"label": "Broadband Lines ('000)", "field": "consumer_broadband_lines_thousands", "format": "number"},
+                {"label": "FTTH ('000)", "field": "ftth_connections_thousands", "format": "number"},
+                {"label": "Pay TV Base ('000)", "field": "pay_tv_installed_base_thousands", "format": "number"},
+                {"label": "FTTH Share (%)", "field": "ftth_share_pct", "format": "number"},
             ],
         },
         {
@@ -251,6 +295,22 @@ def build_artifact(
             },
             "valueFormat": "number",
             "layout": "full",
+        },
+        {
+            "id": "hkt_footprint_chart",
+            "title": "HKT Broadband & Pay TV Footprint ('000s)",
+            "subtitle": "Semi-annual FTTH connections and Pay TV installed base.",
+            "type": "line",
+            "intent": "comparison",
+            "dataset": "hkt_footprint_history",
+            "sourceId": "hkt_operating_drivers",
+            "encodings": {
+                "x": {"field": "month", "type": "temporal", "label": "Period"},
+                "y": {"field": "value", "type": "quantitative", "label": "'000s"},
+                "color": {"field": "series", "type": "nominal", "label": "Metric"},
+            },
+            "valueFormat": "number",
+            "layout": "half",
         },
     ]
 

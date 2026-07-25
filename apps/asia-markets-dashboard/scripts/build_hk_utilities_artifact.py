@@ -78,6 +78,29 @@ def _utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+def _series_history(df: pd.DataFrame, series_label: str, value_column: str) -> list[dict[str, Any]]:
+    """Long-format {date, month, series, value} rows for a multi-series line chart."""
+    if df.empty or value_column not in df.columns:
+        return []
+    rows = []
+    for _, row in df.iterrows():
+        value = row.get(value_column)
+        date = row.get("date")
+        if pd.isna(value) or pd.isna(date):
+            continue
+        date_str = date.strftime("%Y-%m-%d") if hasattr(date, "strftime") else str(date)[:10]
+        month_str = row.get("month", date_str[:7])
+        rows.append(
+            {
+                "date": date_str,
+                "month": str(month_str) if pd.notna(month_str) else date_str[:7],
+                "series": series_label,
+                "value": round(float(value), 4),
+            }
+        )
+    return rows
+
+
 def _records_json_safe(frame: pd.DataFrame) -> list[dict[str, Any]]:
     """Convert a DataFrame to records with NaN/NaT replaced by JSON null.
 
@@ -206,10 +229,29 @@ def build_artifact(
         "kpi_temp": [temp_kpi],
         "kpi_power_assets": [pa_kpi],
         "clp_history": _records_json_safe(clp),
+        "clp_sector_history": (
+            _series_history(clp, "Residential", "residential_gwh")
+            + _series_history(clp, "Commercial", "commercial_gwh")
+            + _series_history(clp, "Infra & Public", "infrastructure_public_gwh")
+            + _series_history(clp, "Manufacturing", "manufacturing_gwh")
+        ),
         "towngas_history": _records_json_safe(towngas.tail(60)),
+        "towngas_type_history": (
+            _series_history(towngas.tail(60), "Domestic", "domestic_gas_tj")
+            + _series_history(towngas.tail(60), "Commercial", "commercial_gas_tj")
+            + _series_history(towngas.tail(60), "Industrial", "industrial_gas_tj")
+        ),
         "temp_history": _records_json_safe(temp.tail(180)),
         "power_assets_geography": pa_geography_rows,
     }
+    # Sort the multi-series datasets by (series, date) so each series'
+    # points are contiguous in the array (same requirement as REIT charts)
+    clp_sector_sorted = sorted(datasets.get("clp_sector_history", []), key=lambda r: (r.get("series", ""), r.get("date", "")))
+    towngas_type_sorted = sorted(datasets.get("towngas_type_history", []), key=lambda r: (r.get("series", ""), r.get("date", "")))
+    if clp_sector_sorted:
+        datasets["clp_sector_history"] = clp_sector_sorted
+    if towngas_type_sorted:
+        datasets["towngas_type_history"] = towngas_type_sorted
 
     cards = [
         {
@@ -263,11 +305,13 @@ def build_artifact(
             "title": "CLP Electricity Sales by Sector (GWh)",
             "subtitle": "Quarterly sales across Residential, Commercial, Infrastructure & Public Services, and Manufacturing.",
             "type": "line",
-            "dataset": "clp_history",
+            "intent": "comparison",
+            "dataset": "clp_sector_history",
             "sourceId": "clp_electricity",
             "encodings": {
                 "x": {"field": "month", "type": "temporal", "label": "Quarter"},
-                "y": {"field": "total_local_gwh", "type": "quantitative", "label": "GWh"},
+                "y": {"field": "value", "type": "quantitative", "label": "GWh"},
+                "color": {"field": "series", "type": "nominal", "label": "Sector"},
             },
             "valueFormat": "number",
             "layout": "full",
@@ -277,11 +321,13 @@ def build_artifact(
             "title": "Hong Kong Town Gas Consumption Trend (TJ)",
             "subtitle": "Monthly gas consumption split by Domestic, Commercial, and Industrial user types.",
             "type": "line",
-            "dataset": "towngas_history",
+            "intent": "comparison",
+            "dataset": "towngas_type_history",
             "sourceId": "towngas_proxy",
             "encodings": {
                 "x": {"field": "month", "type": "temporal", "label": "Month"},
-                "y": {"field": "total_gas_tj", "type": "quantitative", "label": "Terajoules (TJ)"},
+                "y": {"field": "value", "type": "quantitative", "label": "Terajoules (TJ)"},
+                "color": {"field": "series", "type": "nominal", "label": "User Type"},
             },
             "valueFormat": "number",
             "layout": "full",

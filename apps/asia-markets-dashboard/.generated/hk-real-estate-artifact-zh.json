@@ -5,7 +5,7 @@
     "surface": "dashboard",
     "title": "香港房地产市场监测",
     "description": "基于来源的住宅价格、租金和市场信心指标快照。",
-    "generatedAt": "2026-07-25T14:20:45.220865Z",
+    "generatedAt": "2026-07-25T18:13:09.047382Z",
     "cards": [
       {
         "id": "ccl_card",
@@ -330,6 +330,57 @@
         },
         "valueFormat": "number",
         "layout": "full"
+      },
+      {
+        "id": "hkma_ltv_chart",
+        "title": "HKMA Average LTV Ratio (%)",
+        "subtitle": "Average loan-to-value ratio for new mortgage approvals.",
+        "type": "line",
+        "intent": "trend",
+        "dataset": "hkma_ltv_history",
+        "sourceId": "hkma_mortgage",
+        "encodings": {
+          "x": {
+            "field": "date",
+            "type": "temporal",
+            "label": "Month"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "label": "LTV (%)"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "half"
+      },
+      {
+        "id": "hkma_credit_quality_chart",
+        "title": "HKMA Mortgage Credit Quality (%)",
+        "subtitle": "Delinquency and rescheduled loan ratios -- a genuine credit-cycle risk indicator.",
+        "type": "line",
+        "intent": "comparison",
+        "dataset": "hkma_credit_quality_history",
+        "sourceId": "hkma_mortgage",
+        "encodings": {
+          "x": {
+            "field": "date",
+            "type": "temporal",
+            "label": "Month"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "label": "%"
+          },
+          "color": {
+            "field": "series",
+            "type": "nominal",
+            "label": "Metric"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "half"
       }
     ],
     "tables": [
@@ -422,6 +473,52 @@
             "type": "text"
           }
         ]
+      },
+      {
+        "id": "hkma_mortgage_activity_table",
+        "title": "HKMA Mortgage Market Activity",
+        "subtitle": "Monthly new applications, approved loans, and drawn-down amount (2026-05-01 shown latest).",
+        "dataset": "hkma_mortgage_activity",
+        "sourceId": "hkma_mortgage",
+        "density": "dense",
+        "layout": "full",
+        "columns": [
+          {
+            "field": "date",
+            "label": "Month",
+            "type": "date"
+          },
+          {
+            "field": "new_applications_count",
+            "label": "New Applications",
+            "format": "number"
+          },
+          {
+            "field": "approved_loans_amount_mhkd",
+            "label": "Approved Loans (HK$m)",
+            "format": "number"
+          },
+          {
+            "field": "approved_primary_presales_amount_mhkd",
+            "label": "Primary/Presales (HK$m)",
+            "format": "number"
+          },
+          {
+            "field": "approved_secondary_amount_mhkd",
+            "label": "Secondary (HK$m)",
+            "format": "number"
+          },
+          {
+            "field": "approved_refinancing_amount_mhkd",
+            "label": "Refinancing (HK$m)",
+            "format": "number"
+          },
+          {
+            "field": "drawn_down_amount_mhkd",
+            "label": "Drawn Down (HK$m)",
+            "format": "number"
+          }
+        ]
       }
     ],
     "sources": [
@@ -482,7 +579,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**数据快照：** `def305b42ba1f8e4` · 生成于 2026-07-25T14:20:45.220865Z。这是已发布快照，不是实时连接；RVD 标记为 provisional 的观测可能会修订。"
+        "body": "**数据快照：** `b3a0150afdc47a70` · 生成于 2026-07-25T18:13:09.047382Z。这是已发布快照，不是实时连接；RVD 标记为 provisional 的观测可能会修订。"
       },
       {
         "id": "market_pulse",
@@ -515,6 +612,23 @@
         "id": "cnsd_construction_chart_block",
         "type": "chart",
         "chartId": "cnsd_construction_value_chart"
+      },
+      {
+        "id": "hkma_ltv_chart_block",
+        "type": "chart",
+        "chartId": "hkma_ltv_chart",
+        "layout": "half"
+      },
+      {
+        "id": "hkma_credit_quality_chart_block",
+        "type": "chart",
+        "chartId": "hkma_credit_quality_chart",
+        "layout": "half"
+      },
+      {
+        "id": "hkma_mortgage_activity_table_block",
+        "type": "table",
+        "tableId": "hkma_mortgage_activity_table"
       },
       {
         "id": "rvd_price_chart",
@@ -552,7 +666,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-25T14:20:45.220865Z",
+    "generatedAt": "2026-07-25T18:13:09.047382Z",
     "status": "ready",
     "datasets": {
       "kpi_ccl": [
@@ -17037,6 +17151,2748 @@
           "value": 20.7
         }
       ],
+      "hkma_ltv_history": [
+        {
+          "date": "2016-12-01",
+          "series": "Average LTV (%)",
+          "value": 50.8
+        },
+        {
+          "date": "2017-01-01",
+          "series": "Average LTV (%)",
+          "value": 50.1
+        },
+        {
+          "date": "2017-02-01",
+          "series": "Average LTV (%)",
+          "value": 50.3
+        },
+        {
+          "date": "2017-03-01",
+          "series": "Average LTV (%)",
+          "value": 50.9
+        },
+        {
+          "date": "2017-04-01",
+          "series": "Average LTV (%)",
+          "value": 50.7
+        },
+        {
+          "date": "2017-05-01",
+          "series": "Average LTV (%)",
+          "value": 50.5
+        },
+        {
+          "date": "2017-06-01",
+          "series": "Average LTV (%)",
+          "value": 48.9
+        },
+        {
+          "date": "2017-07-01",
+          "series": "Average LTV (%)",
+          "value": 48.2
+        },
+        {
+          "date": "2017-08-01",
+          "series": "Average LTV (%)",
+          "value": 48.2
+        },
+        {
+          "date": "2017-09-01",
+          "series": "Average LTV (%)",
+          "value": 47.9
+        },
+        {
+          "date": "2017-10-01",
+          "series": "Average LTV (%)",
+          "value": 49
+        },
+        {
+          "date": "2017-11-01",
+          "series": "Average LTV (%)",
+          "value": 48.5
+        },
+        {
+          "date": "2017-12-01",
+          "series": "Average LTV (%)",
+          "value": 48.5
+        },
+        {
+          "date": "2018-01-01",
+          "series": "Average LTV (%)",
+          "value": 49
+        },
+        {
+          "date": "2018-02-01",
+          "series": "Average LTV (%)",
+          "value": 48.8
+        },
+        {
+          "date": "2018-03-01",
+          "series": "Average LTV (%)",
+          "value": 48.9
+        },
+        {
+          "date": "2018-04-01",
+          "series": "Average LTV (%)",
+          "value": 48
+        },
+        {
+          "date": "2018-05-01",
+          "series": "Average LTV (%)",
+          "value": 47.2
+        },
+        {
+          "date": "2018-06-01",
+          "series": "Average LTV (%)",
+          "value": 46.9
+        },
+        {
+          "date": "2018-07-01",
+          "series": "Average LTV (%)",
+          "value": 46.9
+        },
+        {
+          "date": "2018-08-01",
+          "series": "Average LTV (%)",
+          "value": 45.3
+        },
+        {
+          "date": "2018-09-01",
+          "series": "Average LTV (%)",
+          "value": 44.3
+        },
+        {
+          "date": "2018-10-01",
+          "series": "Average LTV (%)",
+          "value": 44.5
+        },
+        {
+          "date": "2018-11-01",
+          "series": "Average LTV (%)",
+          "value": 45.6
+        },
+        {
+          "date": "2018-12-01",
+          "series": "Average LTV (%)",
+          "value": 46.2
+        },
+        {
+          "date": "2019-01-01",
+          "series": "Average LTV (%)",
+          "value": 45.9
+        },
+        {
+          "date": "2019-02-01",
+          "series": "Average LTV (%)",
+          "value": 47.5
+        },
+        {
+          "date": "2019-03-01",
+          "series": "Average LTV (%)",
+          "value": 47.6
+        },
+        {
+          "date": "2019-04-01",
+          "series": "Average LTV (%)",
+          "value": 48
+        },
+        {
+          "date": "2019-05-01",
+          "series": "Average LTV (%)",
+          "value": 47
+        },
+        {
+          "date": "2019-06-01",
+          "series": "Average LTV (%)",
+          "value": 47.3
+        },
+        {
+          "date": "2019-07-01",
+          "series": "Average LTV (%)",
+          "value": 46.1
+        },
+        {
+          "date": "2019-08-01",
+          "series": "Average LTV (%)",
+          "value": 46.4
+        },
+        {
+          "date": "2019-09-01",
+          "series": "Average LTV (%)",
+          "value": 45.8
+        },
+        {
+          "date": "2019-10-01",
+          "series": "Average LTV (%)",
+          "value": 47.8
+        },
+        {
+          "date": "2019-11-01",
+          "series": "Average LTV (%)",
+          "value": 51
+        },
+        {
+          "date": "2019-12-01",
+          "series": "Average LTV (%)",
+          "value": 53.2
+        },
+        {
+          "date": "2020-01-01",
+          "series": "Average LTV (%)",
+          "value": 52.5
+        },
+        {
+          "date": "2020-02-01",
+          "series": "Average LTV (%)",
+          "value": 54.6
+        },
+        {
+          "date": "2020-03-01",
+          "series": "Average LTV (%)",
+          "value": 56.1
+        },
+        {
+          "date": "2020-04-01",
+          "series": "Average LTV (%)",
+          "value": 58.2
+        },
+        {
+          "date": "2020-05-01",
+          "series": "Average LTV (%)",
+          "value": 58.2
+        },
+        {
+          "date": "2020-06-01",
+          "series": "Average LTV (%)",
+          "value": 58.3
+        },
+        {
+          "date": "2020-07-01",
+          "series": "Average LTV (%)",
+          "value": 58.3
+        },
+        {
+          "date": "2020-08-01",
+          "series": "Average LTV (%)",
+          "value": 56.7
+        },
+        {
+          "date": "2020-09-01",
+          "series": "Average LTV (%)",
+          "value": 57
+        },
+        {
+          "date": "2020-10-01",
+          "series": "Average LTV (%)",
+          "value": 57.3
+        },
+        {
+          "date": "2020-11-01",
+          "series": "Average LTV (%)",
+          "value": 57.3
+        },
+        {
+          "date": "2020-12-01",
+          "series": "Average LTV (%)",
+          "value": 56.9
+        },
+        {
+          "date": "2021-01-01",
+          "series": "Average LTV (%)",
+          "value": 58
+        },
+        {
+          "date": "2021-02-01",
+          "series": "Average LTV (%)",
+          "value": 58.4
+        },
+        {
+          "date": "2021-03-01",
+          "series": "Average LTV (%)",
+          "value": 57.7
+        },
+        {
+          "date": "2021-04-01",
+          "series": "Average LTV (%)",
+          "value": 57.3
+        },
+        {
+          "date": "2021-05-01",
+          "series": "Average LTV (%)",
+          "value": 56.6
+        },
+        {
+          "date": "2021-06-01",
+          "series": "Average LTV (%)",
+          "value": 56.2
+        },
+        {
+          "date": "2021-07-01",
+          "series": "Average LTV (%)",
+          "value": 55.8
+        },
+        {
+          "date": "2021-08-01",
+          "series": "Average LTV (%)",
+          "value": 54.3
+        },
+        {
+          "date": "2021-09-01",
+          "series": "Average LTV (%)",
+          "value": 55.3
+        },
+        {
+          "date": "2021-10-01",
+          "series": "Average LTV (%)",
+          "value": 55.3
+        },
+        {
+          "date": "2021-11-01",
+          "series": "Average LTV (%)",
+          "value": 54.6
+        },
+        {
+          "date": "2021-12-01",
+          "series": "Average LTV (%)",
+          "value": 53.3
+        },
+        {
+          "date": "2022-01-01",
+          "series": "Average LTV (%)",
+          "value": 54.2
+        },
+        {
+          "date": "2022-02-01",
+          "series": "Average LTV (%)",
+          "value": 55.3
+        },
+        {
+          "date": "2022-03-01",
+          "series": "Average LTV (%)",
+          "value": 57.2
+        },
+        {
+          "date": "2022-04-01",
+          "series": "Average LTV (%)",
+          "value": 58.6
+        },
+        {
+          "date": "2022-05-01",
+          "series": "Average LTV (%)",
+          "value": 60.7
+        },
+        {
+          "date": "2022-06-01",
+          "series": "Average LTV (%)",
+          "value": 57.1
+        },
+        {
+          "date": "2022-07-01",
+          "series": "Average LTV (%)",
+          "value": 55.9
+        },
+        {
+          "date": "2022-08-01",
+          "series": "Average LTV (%)",
+          "value": 55.7
+        },
+        {
+          "date": "2022-09-01",
+          "series": "Average LTV (%)",
+          "value": 54.4
+        },
+        {
+          "date": "2022-10-01",
+          "series": "Average LTV (%)",
+          "value": 55.8
+        },
+        {
+          "date": "2022-11-01",
+          "series": "Average LTV (%)",
+          "value": 55.2
+        },
+        {
+          "date": "2022-12-01",
+          "series": "Average LTV (%)",
+          "value": 57.1
+        },
+        {
+          "date": "2023-01-01",
+          "series": "Average LTV (%)",
+          "value": 59.3
+        },
+        {
+          "date": "2023-02-01",
+          "series": "Average LTV (%)",
+          "value": 60.8
+        },
+        {
+          "date": "2023-03-01",
+          "series": "Average LTV (%)",
+          "value": 59.6
+        },
+        {
+          "date": "2023-04-01",
+          "series": "Average LTV (%)",
+          "value": 58.9
+        },
+        {
+          "date": "2023-05-01",
+          "series": "Average LTV (%)",
+          "value": 57.5
+        },
+        {
+          "date": "2023-06-01",
+          "series": "Average LTV (%)",
+          "value": 54.8
+        },
+        {
+          "date": "2023-07-01",
+          "series": "Average LTV (%)",
+          "value": 53.3
+        },
+        {
+          "date": "2023-08-01",
+          "series": "Average LTV (%)",
+          "value": 54.7
+        },
+        {
+          "date": "2023-09-01",
+          "series": "Average LTV (%)",
+          "value": 54.5
+        },
+        {
+          "date": "2023-10-01",
+          "series": "Average LTV (%)",
+          "value": 55.2
+        },
+        {
+          "date": "2023-11-01",
+          "series": "Average LTV (%)",
+          "value": 57.1
+        },
+        {
+          "date": "2023-12-01",
+          "series": "Average LTV (%)",
+          "value": 58.7
+        },
+        {
+          "date": "2024-01-01",
+          "series": "Average LTV (%)",
+          "value": 58.9
+        },
+        {
+          "date": "2024-02-01",
+          "series": "Average LTV (%)",
+          "value": 60.3
+        },
+        {
+          "date": "2024-03-01",
+          "series": "Average LTV (%)",
+          "value": 60.1
+        },
+        {
+          "date": "2024-04-01",
+          "series": "Average LTV (%)",
+          "value": 61.2
+        },
+        {
+          "date": "2024-05-01",
+          "series": "Average LTV (%)",
+          "value": 60.2
+        },
+        {
+          "date": "2024-06-01",
+          "series": "Average LTV (%)",
+          "value": 58.9
+        },
+        {
+          "date": "2024-07-01",
+          "series": "Average LTV (%)",
+          "value": 60.6
+        },
+        {
+          "date": "2024-08-01",
+          "series": "Average LTV (%)",
+          "value": 59.9
+        },
+        {
+          "date": "2024-09-01",
+          "series": "Average LTV (%)",
+          "value": 59.6
+        },
+        {
+          "date": "2024-10-01",
+          "series": "Average LTV (%)",
+          "value": 60.5
+        },
+        {
+          "date": "2024-11-01",
+          "series": "Average LTV (%)",
+          "value": 60.5
+        },
+        {
+          "date": "2024-12-01",
+          "series": "Average LTV (%)",
+          "value": 60.5
+        },
+        {
+          "date": "2025-01-01",
+          "series": "Average LTV (%)",
+          "value": 61.4
+        },
+        {
+          "date": "2025-02-01",
+          "series": "Average LTV (%)",
+          "value": 63.2
+        },
+        {
+          "date": "2025-03-01",
+          "series": "Average LTV (%)",
+          "value": 63.3
+        },
+        {
+          "date": "2025-04-01",
+          "series": "Average LTV (%)",
+          "value": 62.5
+        },
+        {
+          "date": "2025-05-01",
+          "series": "Average LTV (%)",
+          "value": 62.7
+        },
+        {
+          "date": "2025-06-01",
+          "series": "Average LTV (%)",
+          "value": 63.1
+        },
+        {
+          "date": "2025-07-01",
+          "series": "Average LTV (%)",
+          "value": 62.7
+        },
+        {
+          "date": "2025-08-01",
+          "series": "Average LTV (%)",
+          "value": 62.4
+        },
+        {
+          "date": "2025-09-01",
+          "series": "Average LTV (%)",
+          "value": 62.2
+        },
+        {
+          "date": "2025-10-01",
+          "series": "Average LTV (%)",
+          "value": 61.5
+        },
+        {
+          "date": "2025-11-01",
+          "series": "Average LTV (%)",
+          "value": 61.1
+        },
+        {
+          "date": "2025-12-01",
+          "series": "Average LTV (%)",
+          "value": 61
+        },
+        {
+          "date": "2026-01-01",
+          "series": "Average LTV (%)",
+          "value": 60.8
+        },
+        {
+          "date": "2026-02-01",
+          "series": "Average LTV (%)",
+          "value": 60.3
+        },
+        {
+          "date": "2026-03-01",
+          "series": "Average LTV (%)",
+          "value": 61.3
+        },
+        {
+          "date": "2026-04-01",
+          "series": "Average LTV (%)",
+          "value": 61.5
+        },
+        {
+          "date": "2026-05-01",
+          "series": "Average LTV (%)",
+          "value": 60.3
+        }
+      ],
+      "hkma_credit_quality_history": [
+        {
+          "date": "2016-12-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.03
+        },
+        {
+          "date": "2017-01-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.03
+        },
+        {
+          "date": "2017-02-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.04
+        },
+        {
+          "date": "2017-03-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.04
+        },
+        {
+          "date": "2017-04-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.03
+        },
+        {
+          "date": "2017-05-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.03
+        },
+        {
+          "date": "2017-06-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.03
+        },
+        {
+          "date": "2017-07-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.03
+        },
+        {
+          "date": "2017-08-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.03
+        },
+        {
+          "date": "2017-09-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.02
+        },
+        {
+          "date": "2017-10-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.02
+        },
+        {
+          "date": "2017-11-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.02
+        },
+        {
+          "date": "2017-12-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.03
+        },
+        {
+          "date": "2018-01-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.02
+        },
+        {
+          "date": "2018-02-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.02
+        },
+        {
+          "date": "2018-03-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.02
+        },
+        {
+          "date": "2018-04-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.02
+        },
+        {
+          "date": "2018-05-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.02
+        },
+        {
+          "date": "2018-06-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.02
+        },
+        {
+          "date": "2018-07-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.02
+        },
+        {
+          "date": "2018-08-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.02
+        },
+        {
+          "date": "2018-09-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.02
+        },
+        {
+          "date": "2018-10-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.02
+        },
+        {
+          "date": "2018-11-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.02
+        },
+        {
+          "date": "2018-12-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.02
+        },
+        {
+          "date": "2019-01-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.02
+        },
+        {
+          "date": "2019-02-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.02
+        },
+        {
+          "date": "2019-03-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.02
+        },
+        {
+          "date": "2019-04-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.02
+        },
+        {
+          "date": "2019-05-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.02
+        },
+        {
+          "date": "2019-06-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.02
+        },
+        {
+          "date": "2019-07-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.02
+        },
+        {
+          "date": "2019-08-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.02
+        },
+        {
+          "date": "2019-09-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.02
+        },
+        {
+          "date": "2019-10-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.02
+        },
+        {
+          "date": "2019-11-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.03
+        },
+        {
+          "date": "2019-12-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.03
+        },
+        {
+          "date": "2020-01-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.02
+        },
+        {
+          "date": "2020-02-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.03
+        },
+        {
+          "date": "2020-03-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.03
+        },
+        {
+          "date": "2020-04-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.03
+        },
+        {
+          "date": "2020-05-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.04
+        },
+        {
+          "date": "2020-06-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.04
+        },
+        {
+          "date": "2020-07-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.04
+        },
+        {
+          "date": "2020-08-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.04
+        },
+        {
+          "date": "2020-09-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.04
+        },
+        {
+          "date": "2020-10-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.04
+        },
+        {
+          "date": "2020-11-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.04
+        },
+        {
+          "date": "2020-12-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.04
+        },
+        {
+          "date": "2021-01-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.04
+        },
+        {
+          "date": "2021-02-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.04
+        },
+        {
+          "date": "2021-03-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.04
+        },
+        {
+          "date": "2021-04-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.04
+        },
+        {
+          "date": "2021-05-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.04
+        },
+        {
+          "date": "2021-06-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.04
+        },
+        {
+          "date": "2021-07-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.03
+        },
+        {
+          "date": "2021-08-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.03
+        },
+        {
+          "date": "2021-09-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.03
+        },
+        {
+          "date": "2021-10-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.03
+        },
+        {
+          "date": "2021-11-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.03
+        },
+        {
+          "date": "2021-12-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.04
+        },
+        {
+          "date": "2022-01-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.03
+        },
+        {
+          "date": "2022-02-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.04
+        },
+        {
+          "date": "2022-03-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.04
+        },
+        {
+          "date": "2022-04-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.04
+        },
+        {
+          "date": "2022-05-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.04
+        },
+        {
+          "date": "2022-06-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.05
+        },
+        {
+          "date": "2022-07-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.05
+        },
+        {
+          "date": "2022-08-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.05
+        },
+        {
+          "date": "2022-09-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.04
+        },
+        {
+          "date": "2022-10-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.04
+        },
+        {
+          "date": "2022-11-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.05
+        },
+        {
+          "date": "2022-12-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.06
+        },
+        {
+          "date": "2023-01-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.06
+        },
+        {
+          "date": "2023-02-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.06
+        },
+        {
+          "date": "2023-03-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.06
+        },
+        {
+          "date": "2023-04-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.06
+        },
+        {
+          "date": "2023-05-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.07
+        },
+        {
+          "date": "2023-06-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.07
+        },
+        {
+          "date": "2023-07-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.07
+        },
+        {
+          "date": "2023-08-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.07
+        },
+        {
+          "date": "2023-09-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.07
+        },
+        {
+          "date": "2023-10-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.07
+        },
+        {
+          "date": "2023-11-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.08
+        },
+        {
+          "date": "2023-12-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.08
+        },
+        {
+          "date": "2024-01-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.08
+        },
+        {
+          "date": "2024-02-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.09
+        },
+        {
+          "date": "2024-03-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.09
+        },
+        {
+          "date": "2024-04-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.09
+        },
+        {
+          "date": "2024-05-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.09
+        },
+        {
+          "date": "2024-06-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.1
+        },
+        {
+          "date": "2024-07-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.1
+        },
+        {
+          "date": "2024-08-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.1
+        },
+        {
+          "date": "2024-09-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.11
+        },
+        {
+          "date": "2024-10-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.12
+        },
+        {
+          "date": "2024-11-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.11
+        },
+        {
+          "date": "2024-12-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.11
+        },
+        {
+          "date": "2025-01-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.12
+        },
+        {
+          "date": "2025-02-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.12
+        },
+        {
+          "date": "2025-03-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.13
+        },
+        {
+          "date": "2025-04-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.13
+        },
+        {
+          "date": "2025-05-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.13
+        },
+        {
+          "date": "2025-06-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.13
+        },
+        {
+          "date": "2025-07-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.13
+        },
+        {
+          "date": "2025-08-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.13
+        },
+        {
+          "date": "2025-09-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.13
+        },
+        {
+          "date": "2025-10-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.13
+        },
+        {
+          "date": "2025-11-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.14
+        },
+        {
+          "date": "2025-12-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.14
+        },
+        {
+          "date": "2026-01-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.13
+        },
+        {
+          "date": "2026-02-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.13
+        },
+        {
+          "date": "2026-03-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.13
+        },
+        {
+          "date": "2026-04-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.12
+        },
+        {
+          "date": "2026-05-01",
+          "series": "Delinquency Ratio (%)",
+          "value": 0.11
+        },
+        {
+          "date": "2016-12-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2017-01-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2017-02-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2017-03-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2017-04-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2017-05-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2017-06-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2017-07-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2017-08-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2017-09-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2017-10-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2017-11-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2017-12-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2018-01-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2018-02-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2018-03-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2018-04-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2018-05-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2018-06-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2018-07-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2018-08-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2018-09-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2018-10-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2018-11-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2018-12-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2019-01-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2019-02-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2019-03-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2019-04-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2019-05-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2019-06-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2019-07-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2019-08-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2019-09-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2019-10-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2019-11-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2019-12-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2020-01-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2020-02-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2020-03-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2020-04-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2020-05-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2020-06-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2020-07-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2020-08-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2020-09-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2020-10-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2020-11-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2020-12-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2021-01-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2021-02-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2021-03-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2021-04-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2021-05-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2021-06-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2021-07-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2021-08-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2021-09-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2021-10-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2021-11-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2021-12-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2022-01-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2022-02-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2022-03-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2022-04-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2022-05-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2022-06-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2022-07-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2022-08-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2022-09-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2022-10-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2022-11-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2022-12-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2023-01-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2023-02-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2023-03-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2023-04-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2023-05-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2023-06-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2023-07-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2023-08-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2023-09-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2023-10-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2023-11-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2023-12-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2024-01-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2024-02-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2024-03-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2024-04-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2024-05-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2024-06-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2024-07-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2024-08-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2024-09-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2024-10-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2024-11-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2024-12-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2025-01-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2025-02-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2025-03-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2025-04-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2025-05-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2025-06-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2025-07-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2025-08-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2025-09-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2025-10-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2025-11-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2025-12-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2026-01-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2026-02-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2026-03-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2026-04-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        },
+        {
+          "date": "2026-05-01",
+          "series": "Rescheduled Loan Ratio (%)",
+          "value": 0
+        }
+      ],
+      "hkma_mortgage_activity": [
+        {
+          "date": "2016-12-01",
+          "new_applications_count": 10505,
+          "approved_loans_amount_mhkd": 32470,
+          "approved_primary_presales_amount_mhkd": 8249,
+          "approved_secondary_amount_mhkd": 15099,
+          "approved_refinancing_amount_mhkd": 9122,
+          "drawn_down_amount_mhkd": 29556
+        },
+        {
+          "date": "2017-01-01",
+          "new_applications_count": 10022,
+          "approved_loans_amount_mhkd": 28730,
+          "approved_primary_presales_amount_mhkd": 6851,
+          "approved_secondary_amount_mhkd": 13459,
+          "approved_refinancing_amount_mhkd": 8419,
+          "drawn_down_amount_mhkd": 25439
+        },
+        {
+          "date": "2017-02-01",
+          "new_applications_count": 10013,
+          "approved_loans_amount_mhkd": 28114,
+          "approved_primary_presales_amount_mhkd": 6909,
+          "approved_secondary_amount_mhkd": 12991,
+          "approved_refinancing_amount_mhkd": 8215,
+          "drawn_down_amount_mhkd": 21675
+        },
+        {
+          "date": "2017-03-01",
+          "new_applications_count": 15667,
+          "approved_loans_amount_mhkd": 37650,
+          "approved_primary_presales_amount_mhkd": 7533,
+          "approved_secondary_amount_mhkd": 19036,
+          "approved_refinancing_amount_mhkd": 11081,
+          "drawn_down_amount_mhkd": 25344
+        },
+        {
+          "date": "2017-04-01",
+          "new_applications_count": 13095,
+          "approved_loans_amount_mhkd": 32526,
+          "approved_primary_presales_amount_mhkd": 6222,
+          "approved_secondary_amount_mhkd": 17345,
+          "approved_refinancing_amount_mhkd": 8959,
+          "drawn_down_amount_mhkd": 21631
+        },
+        {
+          "date": "2017-05-01",
+          "new_applications_count": 14906,
+          "approved_loans_amount_mhkd": 42354,
+          "approved_primary_presales_amount_mhkd": 8526,
+          "approved_secondary_amount_mhkd": 21786,
+          "approved_refinancing_amount_mhkd": 12042,
+          "drawn_down_amount_mhkd": 29355
+        },
+        {
+          "date": "2017-06-01",
+          "new_applications_count": 14876,
+          "approved_loans_amount_mhkd": 44984,
+          "approved_primary_presales_amount_mhkd": 10163,
+          "approved_secondary_amount_mhkd": 19524,
+          "approved_refinancing_amount_mhkd": 15296,
+          "drawn_down_amount_mhkd": 32899
+        },
+        {
+          "date": "2017-07-01",
+          "new_applications_count": 9191,
+          "approved_loans_amount_mhkd": 34570,
+          "approved_primary_presales_amount_mhkd": 7490,
+          "approved_secondary_amount_mhkd": 14419,
+          "approved_refinancing_amount_mhkd": 12661,
+          "drawn_down_amount_mhkd": 33137
+        },
+        {
+          "date": "2017-08-01",
+          "new_applications_count": 11036,
+          "approved_loans_amount_mhkd": 30631,
+          "approved_primary_presales_amount_mhkd": 5922,
+          "approved_secondary_amount_mhkd": 13315,
+          "approved_refinancing_amount_mhkd": 11394,
+          "drawn_down_amount_mhkd": 28877
+        },
+        {
+          "date": "2017-09-01",
+          "new_applications_count": 11484,
+          "approved_loans_amount_mhkd": 30105,
+          "approved_primary_presales_amount_mhkd": 6311,
+          "approved_secondary_amount_mhkd": 13921,
+          "approved_refinancing_amount_mhkd": 9873,
+          "drawn_down_amount_mhkd": 28550
+        },
+        {
+          "date": "2017-10-01",
+          "new_applications_count": 11382,
+          "approved_loans_amount_mhkd": 29575,
+          "approved_primary_presales_amount_mhkd": 6028,
+          "approved_secondary_amount_mhkd": 14429,
+          "approved_refinancing_amount_mhkd": 9119,
+          "drawn_down_amount_mhkd": 22087
+        },
+        {
+          "date": "2017-11-01",
+          "new_applications_count": 12369,
+          "approved_loans_amount_mhkd": 36394,
+          "approved_primary_presales_amount_mhkd": 7009,
+          "approved_secondary_amount_mhkd": 18669,
+          "approved_refinancing_amount_mhkd": 10716,
+          "drawn_down_amount_mhkd": 26797
+        },
+        {
+          "date": "2017-12-01",
+          "new_applications_count": 10655,
+          "approved_loans_amount_mhkd": 28382,
+          "approved_primary_presales_amount_mhkd": 4655,
+          "approved_secondary_amount_mhkd": 15628,
+          "approved_refinancing_amount_mhkd": 8098,
+          "drawn_down_amount_mhkd": 23657
+        },
+        {
+          "date": "2018-01-01",
+          "new_applications_count": 14334,
+          "approved_loans_amount_mhkd": 38957,
+          "approved_primary_presales_amount_mhkd": 6641,
+          "approved_secondary_amount_mhkd": 22862,
+          "approved_refinancing_amount_mhkd": 9455,
+          "drawn_down_amount_mhkd": 27996
+        },
+        {
+          "date": "2018-02-01",
+          "new_applications_count": 11428,
+          "approved_loans_amount_mhkd": 33164,
+          "approved_primary_presales_amount_mhkd": 5434,
+          "approved_secondary_amount_mhkd": 19847,
+          "approved_refinancing_amount_mhkd": 7883,
+          "drawn_down_amount_mhkd": 21467
+        },
+        {
+          "date": "2018-03-01",
+          "new_applications_count": 14032,
+          "approved_loans_amount_mhkd": 41003,
+          "approved_primary_presales_amount_mhkd": 7645,
+          "approved_secondary_amount_mhkd": 22015,
+          "approved_refinancing_amount_mhkd": 11343,
+          "drawn_down_amount_mhkd": 30407
+        },
+        {
+          "date": "2018-04-01",
+          "new_applications_count": 15680,
+          "approved_loans_amount_mhkd": 38856,
+          "approved_primary_presales_amount_mhkd": 6501,
+          "approved_secondary_amount_mhkd": 20761,
+          "approved_refinancing_amount_mhkd": 11594,
+          "drawn_down_amount_mhkd": 27461
+        },
+        {
+          "date": "2018-05-01",
+          "new_applications_count": 14777,
+          "approved_loans_amount_mhkd": 44628,
+          "approved_primary_presales_amount_mhkd": 6366,
+          "approved_secondary_amount_mhkd": 24207,
+          "approved_refinancing_amount_mhkd": 14055,
+          "drawn_down_amount_mhkd": 32348
+        },
+        {
+          "date": "2018-06-01",
+          "new_applications_count": 14860,
+          "approved_loans_amount_mhkd": 42302,
+          "approved_primary_presales_amount_mhkd": 5609,
+          "approved_secondary_amount_mhkd": 24092,
+          "approved_refinancing_amount_mhkd": 12601,
+          "drawn_down_amount_mhkd": 35526
+        },
+        {
+          "date": "2018-07-01",
+          "new_applications_count": 14416,
+          "approved_loans_amount_mhkd": 45824,
+          "approved_primary_presales_amount_mhkd": 7955,
+          "approved_secondary_amount_mhkd": 23815,
+          "approved_refinancing_amount_mhkd": 14054,
+          "drawn_down_amount_mhkd": 31564
+        },
+        {
+          "date": "2018-08-01",
+          "new_applications_count": 18254,
+          "approved_loans_amount_mhkd": 49190,
+          "approved_primary_presales_amount_mhkd": 9444,
+          "approved_secondary_amount_mhkd": 20916,
+          "approved_refinancing_amount_mhkd": 18829,
+          "drawn_down_amount_mhkd": 33553
+        },
+        {
+          "date": "2018-09-01",
+          "new_applications_count": 8064,
+          "approved_loans_amount_mhkd": 32140,
+          "approved_primary_presales_amount_mhkd": 6233,
+          "approved_secondary_amount_mhkd": 11792,
+          "approved_refinancing_amount_mhkd": 14115,
+          "drawn_down_amount_mhkd": 33873
+        },
+        {
+          "date": "2018-10-01",
+          "new_applications_count": 10895,
+          "approved_loans_amount_mhkd": 30660,
+          "approved_primary_presales_amount_mhkd": 7987,
+          "approved_secondary_amount_mhkd": 10216,
+          "approved_refinancing_amount_mhkd": 12458,
+          "drawn_down_amount_mhkd": 31777
+        },
+        {
+          "date": "2018-11-01",
+          "new_applications_count": 9623,
+          "approved_loans_amount_mhkd": 30459,
+          "approved_primary_presales_amount_mhkd": 8701,
+          "approved_secondary_amount_mhkd": 8823,
+          "approved_refinancing_amount_mhkd": 12935,
+          "drawn_down_amount_mhkd": 26429
+        },
+        {
+          "date": "2018-12-01",
+          "new_applications_count": 7562,
+          "approved_loans_amount_mhkd": 24181,
+          "approved_primary_presales_amount_mhkd": 6506,
+          "approved_secondary_amount_mhkd": 7722,
+          "approved_refinancing_amount_mhkd": 9953,
+          "drawn_down_amount_mhkd": 21926
+        },
+        {
+          "date": "2019-01-01",
+          "new_applications_count": 11652,
+          "approved_loans_amount_mhkd": 28650,
+          "approved_primary_presales_amount_mhkd": 7226,
+          "approved_secondary_amount_mhkd": 10863,
+          "approved_refinancing_amount_mhkd": 10562,
+          "drawn_down_amount_mhkd": 30672
+        },
+        {
+          "date": "2019-02-01",
+          "new_applications_count": 10241,
+          "approved_loans_amount_mhkd": 26463,
+          "approved_primary_presales_amount_mhkd": 6783,
+          "approved_secondary_amount_mhkd": 11923,
+          "approved_refinancing_amount_mhkd": 7757,
+          "drawn_down_amount_mhkd": 16944
+        },
+        {
+          "date": "2019-03-01",
+          "new_applications_count": 15891,
+          "approved_loans_amount_mhkd": 37998,
+          "approved_primary_presales_amount_mhkd": 7910,
+          "approved_secondary_amount_mhkd": 18783,
+          "approved_refinancing_amount_mhkd": 11305,
+          "drawn_down_amount_mhkd": 20364
+        },
+        {
+          "date": "2019-04-01",
+          "new_applications_count": 15199,
+          "approved_loans_amount_mhkd": 40814,
+          "approved_primary_presales_amount_mhkd": 8377,
+          "approved_secondary_amount_mhkd": 21181,
+          "approved_refinancing_amount_mhkd": 11256,
+          "drawn_down_amount_mhkd": 21792
+        },
+        {
+          "date": "2019-05-01",
+          "new_applications_count": 17634,
+          "approved_loans_amount_mhkd": 53211,
+          "approved_primary_presales_amount_mhkd": 12477,
+          "approved_secondary_amount_mhkd": 26168,
+          "approved_refinancing_amount_mhkd": 14567,
+          "drawn_down_amount_mhkd": 34051
+        },
+        {
+          "date": "2019-06-01",
+          "new_applications_count": 12873,
+          "approved_loans_amount_mhkd": 45451,
+          "approved_primary_presales_amount_mhkd": 11455,
+          "approved_secondary_amount_mhkd": 18917,
+          "approved_refinancing_amount_mhkd": 15078,
+          "drawn_down_amount_mhkd": 39195
+        },
+        {
+          "date": "2019-07-01",
+          "new_applications_count": 15439,
+          "approved_loans_amount_mhkd": 47595,
+          "approved_primary_presales_amount_mhkd": 11330,
+          "approved_secondary_amount_mhkd": 16821,
+          "approved_refinancing_amount_mhkd": 19444,
+          "drawn_down_amount_mhkd": 41437
+        },
+        {
+          "date": "2019-08-01",
+          "new_applications_count": 11461,
+          "approved_loans_amount_mhkd": 46885,
+          "approved_primary_presales_amount_mhkd": 10923,
+          "approved_secondary_amount_mhkd": 16028,
+          "approved_refinancing_amount_mhkd": 19935,
+          "drawn_down_amount_mhkd": 37239
+        },
+        {
+          "date": "2019-09-01",
+          "new_applications_count": 9828,
+          "approved_loans_amount_mhkd": 36141,
+          "approved_primary_presales_amount_mhkd": 8722,
+          "approved_secondary_amount_mhkd": 11175,
+          "approved_refinancing_amount_mhkd": 16244,
+          "drawn_down_amount_mhkd": 35621
+        },
+        {
+          "date": "2019-10-01",
+          "new_applications_count": 9376,
+          "approved_loans_amount_mhkd": 33408,
+          "approved_primary_presales_amount_mhkd": 9125,
+          "approved_secondary_amount_mhkd": 12808,
+          "approved_refinancing_amount_mhkd": 11475,
+          "drawn_down_amount_mhkd": 28079
+        },
+        {
+          "date": "2019-11-01",
+          "new_applications_count": 9477,
+          "approved_loans_amount_mhkd": 28573,
+          "approved_primary_presales_amount_mhkd": 6463,
+          "approved_secondary_amount_mhkd": 15009,
+          "approved_refinancing_amount_mhkd": 7101,
+          "drawn_down_amount_mhkd": 23195
+        },
+        {
+          "date": "2019-12-01",
+          "new_applications_count": 7871,
+          "approved_loans_amount_mhkd": 27011,
+          "approved_primary_presales_amount_mhkd": 5322,
+          "approved_secondary_amount_mhkd": 15790,
+          "approved_refinancing_amount_mhkd": 5899,
+          "drawn_down_amount_mhkd": 21762
+        },
+        {
+          "date": "2020-01-01",
+          "new_applications_count": 9152,
+          "approved_loans_amount_mhkd": 25203,
+          "approved_primary_presales_amount_mhkd": 4628,
+          "approved_secondary_amount_mhkd": 14668,
+          "approved_refinancing_amount_mhkd": 5908,
+          "drawn_down_amount_mhkd": 23895
+        },
+        {
+          "date": "2020-02-01",
+          "new_applications_count": 8542,
+          "approved_loans_amount_mhkd": 23863,
+          "approved_primary_presales_amount_mhkd": 4529,
+          "approved_secondary_amount_mhkd": 14384,
+          "approved_refinancing_amount_mhkd": 4949,
+          "drawn_down_amount_mhkd": 18903
+        },
+        {
+          "date": "2020-03-01",
+          "new_applications_count": 13053,
+          "approved_loans_amount_mhkd": 33269,
+          "approved_primary_presales_amount_mhkd": 7700,
+          "approved_secondary_amount_mhkd": 18988,
+          "approved_refinancing_amount_mhkd": 6580,
+          "drawn_down_amount_mhkd": 20869
+        },
+        {
+          "date": "2020-04-01",
+          "new_applications_count": 10848,
+          "approved_loans_amount_mhkd": 32510,
+          "approved_primary_presales_amount_mhkd": 5861,
+          "approved_secondary_amount_mhkd": 20712,
+          "approved_refinancing_amount_mhkd": 5937,
+          "drawn_down_amount_mhkd": 17328
+        },
+        {
+          "date": "2020-05-01",
+          "new_applications_count": 15019,
+          "approved_loans_amount_mhkd": 40950,
+          "approved_primary_presales_amount_mhkd": 6517,
+          "approved_secondary_amount_mhkd": 28501,
+          "approved_refinancing_amount_mhkd": 5932,
+          "drawn_down_amount_mhkd": 23640
+        },
+        {
+          "date": "2020-06-01",
+          "new_applications_count": 13829,
+          "approved_loans_amount_mhkd": 47626,
+          "approved_primary_presales_amount_mhkd": 8379,
+          "approved_secondary_amount_mhkd": 33909,
+          "approved_refinancing_amount_mhkd": 5339,
+          "drawn_down_amount_mhkd": 29268
+        },
+        {
+          "date": "2020-07-01",
+          "new_applications_count": 13246,
+          "approved_loans_amount_mhkd": 42959,
+          "approved_primary_presales_amount_mhkd": 8209,
+          "approved_secondary_amount_mhkd": 29748,
+          "approved_refinancing_amount_mhkd": 5002,
+          "drawn_down_amount_mhkd": 31410
+        },
+        {
+          "date": "2020-08-01",
+          "new_applications_count": 10846,
+          "approved_loans_amount_mhkd": 37738,
+          "approved_primary_presales_amount_mhkd": 6465,
+          "approved_secondary_amount_mhkd": 26223,
+          "approved_refinancing_amount_mhkd": 5050,
+          "drawn_down_amount_mhkd": 30300
+        },
+        {
+          "date": "2020-09-01",
+          "new_applications_count": 12288,
+          "approved_loans_amount_mhkd": 37116,
+          "approved_primary_presales_amount_mhkd": 5623,
+          "approved_secondary_amount_mhkd": 26540,
+          "approved_refinancing_amount_mhkd": 4953,
+          "drawn_down_amount_mhkd": 27756
+        },
+        {
+          "date": "2020-10-01",
+          "new_applications_count": 10908,
+          "approved_loans_amount_mhkd": 34626,
+          "approved_primary_presales_amount_mhkd": 5442,
+          "approved_secondary_amount_mhkd": 24616,
+          "approved_refinancing_amount_mhkd": 4568,
+          "drawn_down_amount_mhkd": 22278
+        },
+        {
+          "date": "2020-11-01",
+          "new_applications_count": 11375,
+          "approved_loans_amount_mhkd": 37189,
+          "approved_primary_presales_amount_mhkd": 6077,
+          "approved_secondary_amount_mhkd": 26453,
+          "approved_refinancing_amount_mhkd": 4659,
+          "drawn_down_amount_mhkd": 25542
+        },
+        {
+          "date": "2020-12-01",
+          "new_applications_count": 11396,
+          "approved_loans_amount_mhkd": 38447,
+          "approved_primary_presales_amount_mhkd": 6403,
+          "approved_secondary_amount_mhkd": 26647,
+          "approved_refinancing_amount_mhkd": 5397,
+          "drawn_down_amount_mhkd": 26476
+        },
+        {
+          "date": "2021-01-01",
+          "new_applications_count": 13112,
+          "approved_loans_amount_mhkd": 37780,
+          "approved_primary_presales_amount_mhkd": 4963,
+          "approved_secondary_amount_mhkd": 27051,
+          "approved_refinancing_amount_mhkd": 5766,
+          "drawn_down_amount_mhkd": 24923
+        },
+        {
+          "date": "2021-02-01",
+          "new_applications_count": 12455,
+          "approved_loans_amount_mhkd": 38145,
+          "approved_primary_presales_amount_mhkd": 5211,
+          "approved_secondary_amount_mhkd": 27535,
+          "approved_refinancing_amount_mhkd": 5399,
+          "drawn_down_amount_mhkd": 19323
+        },
+        {
+          "date": "2021-03-01",
+          "new_applications_count": 17946,
+          "approved_loans_amount_mhkd": 53026,
+          "approved_primary_presales_amount_mhkd": 9720,
+          "approved_secondary_amount_mhkd": 36198,
+          "approved_refinancing_amount_mhkd": 7108,
+          "drawn_down_amount_mhkd": 30209
+        },
+        {
+          "date": "2021-04-01",
+          "new_applications_count": 16568,
+          "approved_loans_amount_mhkd": 50767,
+          "approved_primary_presales_amount_mhkd": 7611,
+          "approved_secondary_amount_mhkd": 36502,
+          "approved_refinancing_amount_mhkd": 6654,
+          "drawn_down_amount_mhkd": 29497
+        },
+        {
+          "date": "2021-05-01",
+          "new_applications_count": 15904,
+          "approved_loans_amount_mhkd": 56665,
+          "approved_primary_presales_amount_mhkd": 7237,
+          "approved_secondary_amount_mhkd": 40581,
+          "approved_refinancing_amount_mhkd": 8846,
+          "drawn_down_amount_mhkd": 35710
+        },
+        {
+          "date": "2021-06-01",
+          "new_applications_count": 15326,
+          "approved_loans_amount_mhkd": 58381,
+          "approved_primary_presales_amount_mhkd": 8387,
+          "approved_secondary_amount_mhkd": 39233,
+          "approved_refinancing_amount_mhkd": 10761,
+          "drawn_down_amount_mhkd": 39090
+        },
+        {
+          "date": "2021-07-01",
+          "new_applications_count": 15176,
+          "approved_loans_amount_mhkd": 54396,
+          "approved_primary_presales_amount_mhkd": 6888,
+          "approved_secondary_amount_mhkd": 38021,
+          "approved_refinancing_amount_mhkd": 9487,
+          "drawn_down_amount_mhkd": 39266
+        },
+        {
+          "date": "2021-08-01",
+          "new_applications_count": 13927,
+          "approved_loans_amount_mhkd": 54310,
+          "approved_primary_presales_amount_mhkd": 7459,
+          "approved_secondary_amount_mhkd": 36267,
+          "approved_refinancing_amount_mhkd": 10584,
+          "drawn_down_amount_mhkd": 39620
+        },
+        {
+          "date": "2021-09-01",
+          "new_applications_count": 13327,
+          "approved_loans_amount_mhkd": 52893,
+          "approved_primary_presales_amount_mhkd": 9057,
+          "approved_secondary_amount_mhkd": 32708,
+          "approved_refinancing_amount_mhkd": 11128,
+          "drawn_down_amount_mhkd": 40279
+        },
+        {
+          "date": "2021-10-01",
+          "new_applications_count": 11340,
+          "approved_loans_amount_mhkd": 48997,
+          "approved_primary_presales_amount_mhkd": 12412,
+          "approved_secondary_amount_mhkd": 26916,
+          "approved_refinancing_amount_mhkd": 9669,
+          "drawn_down_amount_mhkd": 31888
+        },
+        {
+          "date": "2021-11-01",
+          "new_applications_count": 12828,
+          "approved_loans_amount_mhkd": 51365,
+          "approved_primary_presales_amount_mhkd": 14040,
+          "approved_secondary_amount_mhkd": 26079,
+          "approved_refinancing_amount_mhkd": 11246,
+          "drawn_down_amount_mhkd": 33379
+        },
+        {
+          "date": "2021-12-01",
+          "new_applications_count": 10810,
+          "approved_loans_amount_mhkd": 44319,
+          "approved_primary_presales_amount_mhkd": 8840,
+          "approved_secondary_amount_mhkd": 24719,
+          "approved_refinancing_amount_mhkd": 10760,
+          "drawn_down_amount_mhkd": 36311
+        },
+        {
+          "date": "2022-01-01",
+          "new_applications_count": 10501,
+          "approved_loans_amount_mhkd": 42240,
+          "approved_primary_presales_amount_mhkd": 6979,
+          "approved_secondary_amount_mhkd": 23999,
+          "approved_refinancing_amount_mhkd": 11262,
+          "drawn_down_amount_mhkd": 31343
+        },
+        {
+          "date": "2022-02-01",
+          "new_applications_count": 6592,
+          "approved_loans_amount_mhkd": 26328,
+          "approved_primary_presales_amount_mhkd": 4475,
+          "approved_secondary_amount_mhkd": 14928,
+          "approved_refinancing_amount_mhkd": 6924,
+          "drawn_down_amount_mhkd": 23958
+        },
+        {
+          "date": "2022-03-01",
+          "new_applications_count": 9818,
+          "approved_loans_amount_mhkd": 34651,
+          "approved_primary_presales_amount_mhkd": 6284,
+          "approved_secondary_amount_mhkd": 19420,
+          "approved_refinancing_amount_mhkd": 8946,
+          "drawn_down_amount_mhkd": 25671
+        },
+        {
+          "date": "2022-04-01",
+          "new_applications_count": 11830,
+          "approved_loans_amount_mhkd": 38154,
+          "approved_primary_presales_amount_mhkd": 5730,
+          "approved_secondary_amount_mhkd": 23435,
+          "approved_refinancing_amount_mhkd": 8989,
+          "drawn_down_amount_mhkd": 19332
+        },
+        {
+          "date": "2022-05-01",
+          "new_applications_count": 12892,
+          "approved_loans_amount_mhkd": 54642,
+          "approved_primary_presales_amount_mhkd": 6824,
+          "approved_secondary_amount_mhkd": 37476,
+          "approved_refinancing_amount_mhkd": 10342,
+          "drawn_down_amount_mhkd": 23123
+        },
+        {
+          "date": "2022-06-01",
+          "new_applications_count": 10938,
+          "approved_loans_amount_mhkd": 51406,
+          "approved_primary_presales_amount_mhkd": 7142,
+          "approved_secondary_amount_mhkd": 31064,
+          "approved_refinancing_amount_mhkd": 13199,
+          "drawn_down_amount_mhkd": 29480
+        },
+        {
+          "date": "2022-07-01",
+          "new_applications_count": 9497,
+          "approved_loans_amount_mhkd": 40067,
+          "approved_primary_presales_amount_mhkd": 7380,
+          "approved_secondary_amount_mhkd": 21664,
+          "approved_refinancing_amount_mhkd": 11023,
+          "drawn_down_amount_mhkd": 30761
+        },
+        {
+          "date": "2022-08-01",
+          "new_applications_count": 10907,
+          "approved_loans_amount_mhkd": 38514,
+          "approved_primary_presales_amount_mhkd": 6888,
+          "approved_secondary_amount_mhkd": 19267,
+          "approved_refinancing_amount_mhkd": 12359,
+          "drawn_down_amount_mhkd": 30386
+        },
+        {
+          "date": "2022-09-01",
+          "new_applications_count": 8727,
+          "approved_loans_amount_mhkd": 34057,
+          "approved_primary_presales_amount_mhkd": 6772,
+          "approved_secondary_amount_mhkd": 16021,
+          "approved_refinancing_amount_mhkd": 11263,
+          "drawn_down_amount_mhkd": 25904
+        },
+        {
+          "date": "2022-10-01",
+          "new_applications_count": 7280,
+          "approved_loans_amount_mhkd": 32473,
+          "approved_primary_presales_amount_mhkd": 7762,
+          "approved_secondary_amount_mhkd": 15542,
+          "approved_refinancing_amount_mhkd": 9170,
+          "drawn_down_amount_mhkd": 21049
+        },
+        {
+          "date": "2022-11-01",
+          "new_applications_count": 7792,
+          "approved_loans_amount_mhkd": 28224,
+          "approved_primary_presales_amount_mhkd": 8203,
+          "approved_secondary_amount_mhkd": 12471,
+          "approved_refinancing_amount_mhkd": 7551,
+          "drawn_down_amount_mhkd": 21268
+        },
+        {
+          "date": "2022-12-01",
+          "new_applications_count": 7510,
+          "approved_loans_amount_mhkd": 25574,
+          "approved_primary_presales_amount_mhkd": 7031,
+          "approved_secondary_amount_mhkd": 12517,
+          "approved_refinancing_amount_mhkd": 6026,
+          "drawn_down_amount_mhkd": 21858
+        },
+        {
+          "date": "2023-01-01",
+          "new_applications_count": 7342,
+          "approved_loans_amount_mhkd": 26484,
+          "approved_primary_presales_amount_mhkd": 6496,
+          "approved_secondary_amount_mhkd": 14672,
+          "approved_refinancing_amount_mhkd": 5316,
+          "drawn_down_amount_mhkd": 17237
+        },
+        {
+          "date": "2023-02-01",
+          "new_applications_count": 9719,
+          "approved_loans_amount_mhkd": 34185,
+          "approved_primary_presales_amount_mhkd": 7691,
+          "approved_secondary_amount_mhkd": 21647,
+          "approved_refinancing_amount_mhkd": 4848,
+          "drawn_down_amount_mhkd": 17332
+        },
+        {
+          "date": "2023-03-01",
+          "new_applications_count": 11553,
+          "approved_loans_amount_mhkd": 44942,
+          "approved_primary_presales_amount_mhkd": 9591,
+          "approved_secondary_amount_mhkd": 29976,
+          "approved_refinancing_amount_mhkd": 5375,
+          "drawn_down_amount_mhkd": 18235
+        },
+        {
+          "date": "2023-04-01",
+          "new_applications_count": 8368,
+          "approved_loans_amount_mhkd": 35396,
+          "approved_primary_presales_amount_mhkd": 9664,
+          "approved_secondary_amount_mhkd": 21297,
+          "approved_refinancing_amount_mhkd": 4435,
+          "drawn_down_amount_mhkd": 17056
+        },
+        {
+          "date": "2023-05-01",
+          "new_applications_count": 9530,
+          "approved_loans_amount_mhkd": 42589,
+          "approved_primary_presales_amount_mhkd": 13521,
+          "approved_secondary_amount_mhkd": 22407,
+          "approved_refinancing_amount_mhkd": 6662,
+          "drawn_down_amount_mhkd": 23919
+        },
+        {
+          "date": "2023-06-01",
+          "new_applications_count": 8250,
+          "approved_loans_amount_mhkd": 34335,
+          "approved_primary_presales_amount_mhkd": 7680,
+          "approved_secondary_amount_mhkd": 17565,
+          "approved_refinancing_amount_mhkd": 9091,
+          "drawn_down_amount_mhkd": 28527
+        },
+        {
+          "date": "2023-07-01",
+          "new_applications_count": 8086,
+          "approved_loans_amount_mhkd": 28076,
+          "approved_primary_presales_amount_mhkd": 5869,
+          "approved_secondary_amount_mhkd": 13350,
+          "approved_refinancing_amount_mhkd": 8857,
+          "drawn_down_amount_mhkd": 26326
+        },
+        {
+          "date": "2023-08-01",
+          "new_applications_count": 8617,
+          "approved_loans_amount_mhkd": 35623,
+          "approved_primary_presales_amount_mhkd": 4709,
+          "approved_secondary_amount_mhkd": 14361,
+          "approved_refinancing_amount_mhkd": 16553,
+          "drawn_down_amount_mhkd": 20917
+        },
+        {
+          "date": "2023-09-01",
+          "new_applications_count": 8787,
+          "approved_loans_amount_mhkd": 25516,
+          "approved_primary_presales_amount_mhkd": 3199,
+          "approved_secondary_amount_mhkd": 9277,
+          "approved_refinancing_amount_mhkd": 13040,
+          "drawn_down_amount_mhkd": 20096
+        },
+        {
+          "date": "2023-10-01",
+          "new_applications_count": 5359,
+          "approved_loans_amount_mhkd": 24944,
+          "approved_primary_presales_amount_mhkd": 5611,
+          "approved_secondary_amount_mhkd": 8011,
+          "approved_refinancing_amount_mhkd": 11322,
+          "drawn_down_amount_mhkd": 20204
+        },
+        {
+          "date": "2023-11-01",
+          "new_applications_count": 6000,
+          "approved_loans_amount_mhkd": 24530,
+          "approved_primary_presales_amount_mhkd": 6180,
+          "approved_secondary_amount_mhkd": 9382,
+          "approved_refinancing_amount_mhkd": 8968,
+          "drawn_down_amount_mhkd": 16150
+        },
+        {
+          "date": "2023-12-01",
+          "new_applications_count": 4768,
+          "approved_loans_amount_mhkd": 18332,
+          "approved_primary_presales_amount_mhkd": 5171,
+          "approved_secondary_amount_mhkd": 8907,
+          "approved_refinancing_amount_mhkd": 4253,
+          "drawn_down_amount_mhkd": 12366
+        },
+        {
+          "date": "2024-01-01",
+          "new_applications_count": 6523,
+          "approved_loans_amount_mhkd": 21104,
+          "approved_primary_presales_amount_mhkd": 6252,
+          "approved_secondary_amount_mhkd": 11276,
+          "approved_refinancing_amount_mhkd": 3577,
+          "drawn_down_amount_mhkd": 16054
+        },
+        {
+          "date": "2024-02-01",
+          "new_applications_count": 5070,
+          "approved_loans_amount_mhkd": 17946,
+          "approved_primary_presales_amount_mhkd": 5313,
+          "approved_secondary_amount_mhkd": 9566,
+          "approved_refinancing_amount_mhkd": 3066,
+          "drawn_down_amount_mhkd": 11400
+        },
+        {
+          "date": "2024-03-01",
+          "new_applications_count": 8622,
+          "approved_loans_amount_mhkd": 19051,
+          "approved_primary_presales_amount_mhkd": 6750,
+          "approved_secondary_amount_mhkd": 9306,
+          "approved_refinancing_amount_mhkd": 2994,
+          "drawn_down_amount_mhkd": 11836
+        },
+        {
+          "date": "2024-04-01",
+          "new_applications_count": 9629,
+          "approved_loans_amount_mhkd": 29025,
+          "approved_primary_presales_amount_mhkd": 11127,
+          "approved_secondary_amount_mhkd": 15284,
+          "approved_refinancing_amount_mhkd": 2615,
+          "drawn_down_amount_mhkd": 13005
+        },
+        {
+          "date": "2024-05-01",
+          "new_applications_count": 8077,
+          "approved_loans_amount_mhkd": 31587,
+          "approved_primary_presales_amount_mhkd": 11537,
+          "approved_secondary_amount_mhkd": 17560,
+          "approved_refinancing_amount_mhkd": 2490,
+          "drawn_down_amount_mhkd": 16517
+        },
+        {
+          "date": "2024-06-01",
+          "new_applications_count": 6690,
+          "approved_loans_amount_mhkd": 24476,
+          "approved_primary_presales_amount_mhkd": 8582,
+          "approved_secondary_amount_mhkd": 13819,
+          "approved_refinancing_amount_mhkd": 2077,
+          "drawn_down_amount_mhkd": 24260
+        },
+        {
+          "date": "2024-07-01",
+          "new_applications_count": 6740,
+          "approved_loans_amount_mhkd": 24841,
+          "approved_primary_presales_amount_mhkd": 8641,
+          "approved_secondary_amount_mhkd": 13676,
+          "approved_refinancing_amount_mhkd": 2524,
+          "drawn_down_amount_mhkd": 16414
+        },
+        {
+          "date": "2024-08-01",
+          "new_applications_count": 5919,
+          "approved_loans_amount_mhkd": 21812,
+          "approved_primary_presales_amount_mhkd": 7631,
+          "approved_secondary_amount_mhkd": 11799,
+          "approved_refinancing_amount_mhkd": 2382,
+          "drawn_down_amount_mhkd": 15934
+        },
+        {
+          "date": "2024-09-01",
+          "new_applications_count": 4977,
+          "approved_loans_amount_mhkd": 17322,
+          "approved_primary_presales_amount_mhkd": 5555,
+          "approved_secondary_amount_mhkd": 9983,
+          "approved_refinancing_amount_mhkd": 1784,
+          "drawn_down_amount_mhkd": 15353
+        },
+        {
+          "date": "2024-10-01",
+          "new_applications_count": 7289,
+          "approved_loans_amount_mhkd": 18968,
+          "approved_primary_presales_amount_mhkd": 5422,
+          "approved_secondary_amount_mhkd": 11385,
+          "approved_refinancing_amount_mhkd": 2162,
+          "drawn_down_amount_mhkd": 11223
+        },
+        {
+          "date": "2024-11-01",
+          "new_applications_count": 7995,
+          "approved_loans_amount_mhkd": 24222,
+          "approved_primary_presales_amount_mhkd": 7927,
+          "approved_secondary_amount_mhkd": 13698,
+          "approved_refinancing_amount_mhkd": 2597,
+          "drawn_down_amount_mhkd": 10644
+        },
+        {
+          "date": "2024-12-01",
+          "new_applications_count": 6306,
+          "approved_loans_amount_mhkd": 25533,
+          "approved_primary_presales_amount_mhkd": 8619,
+          "approved_secondary_amount_mhkd": 13770,
+          "approved_refinancing_amount_mhkd": 3144,
+          "drawn_down_amount_mhkd": 13254
+        },
+        {
+          "date": "2025-01-01",
+          "new_applications_count": 6516,
+          "approved_loans_amount_mhkd": 24987,
+          "approved_primary_presales_amount_mhkd": 9958,
+          "approved_secondary_amount_mhkd": 12163,
+          "approved_refinancing_amount_mhkd": 2866,
+          "drawn_down_amount_mhkd": 15590
+        },
+        {
+          "date": "2025-02-01",
+          "new_applications_count": 6542,
+          "approved_loans_amount_mhkd": 26058,
+          "approved_primary_presales_amount_mhkd": 12109,
+          "approved_secondary_amount_mhkd": 10957,
+          "approved_refinancing_amount_mhkd": 2992,
+          "drawn_down_amount_mhkd": 17593
+        },
+        {
+          "date": "2025-03-01",
+          "new_applications_count": 8456,
+          "approved_loans_amount_mhkd": 24672,
+          "approved_primary_presales_amount_mhkd": 10076,
+          "approved_secondary_amount_mhkd": 11632,
+          "approved_refinancing_amount_mhkd": 2964,
+          "drawn_down_amount_mhkd": 15897
+        },
+        {
+          "date": "2025-04-01",
+          "new_applications_count": 7795,
+          "approved_loans_amount_mhkd": 25258,
+          "approved_primary_presales_amount_mhkd": 9316,
+          "approved_secondary_amount_mhkd": 13677,
+          "approved_refinancing_amount_mhkd": 2266,
+          "drawn_down_amount_mhkd": 17129
+        },
+        {
+          "date": "2025-05-01",
+          "new_applications_count": 8187,
+          "approved_loans_amount_mhkd": 26601,
+          "approved_primary_presales_amount_mhkd": 8923,
+          "approved_secondary_amount_mhkd": 14649,
+          "approved_refinancing_amount_mhkd": 3029,
+          "drawn_down_amount_mhkd": 16214
+        },
+        {
+          "date": "2025-06-01",
+          "new_applications_count": 8581,
+          "approved_loans_amount_mhkd": 27480,
+          "approved_primary_presales_amount_mhkd": 9300,
+          "approved_secondary_amount_mhkd": 14995,
+          "approved_refinancing_amount_mhkd": 3185,
+          "drawn_down_amount_mhkd": 17664
+        },
+        {
+          "date": "2025-07-01",
+          "new_applications_count": 9005,
+          "approved_loans_amount_mhkd": 30571,
+          "approved_primary_presales_amount_mhkd": 10826,
+          "approved_secondary_amount_mhkd": 16565,
+          "approved_refinancing_amount_mhkd": 3180,
+          "drawn_down_amount_mhkd": 18199
+        },
+        {
+          "date": "2025-08-01",
+          "new_applications_count": 8405,
+          "approved_loans_amount_mhkd": 28656,
+          "approved_primary_presales_amount_mhkd": 10745,
+          "approved_secondary_amount_mhkd": 14602,
+          "approved_refinancing_amount_mhkd": 3310,
+          "drawn_down_amount_mhkd": 19019
+        },
+        {
+          "date": "2025-09-01",
+          "new_applications_count": 8316,
+          "approved_loans_amount_mhkd": 31353,
+          "approved_primary_presales_amount_mhkd": 12623,
+          "approved_secondary_amount_mhkd": 15497,
+          "approved_refinancing_amount_mhkd": 3232,
+          "drawn_down_amount_mhkd": 20857
+        },
+        {
+          "date": "2025-10-01",
+          "new_applications_count": 8255,
+          "approved_loans_amount_mhkd": 31342,
+          "approved_primary_presales_amount_mhkd": 12363,
+          "approved_secondary_amount_mhkd": 16018,
+          "approved_refinancing_amount_mhkd": 2962,
+          "drawn_down_amount_mhkd": 20136
+        },
+        {
+          "date": "2025-11-01",
+          "new_applications_count": 8019,
+          "approved_loans_amount_mhkd": 29134,
+          "approved_primary_presales_amount_mhkd": 10810,
+          "approved_secondary_amount_mhkd": 15645,
+          "approved_refinancing_amount_mhkd": 2679,
+          "drawn_down_amount_mhkd": 19681
+        },
+        {
+          "date": "2025-12-01",
+          "new_applications_count": 7612,
+          "approved_loans_amount_mhkd": 31201,
+          "approved_primary_presales_amount_mhkd": 11697,
+          "approved_secondary_amount_mhkd": 16840,
+          "approved_refinancing_amount_mhkd": 2664,
+          "drawn_down_amount_mhkd": 20010
+        },
+        {
+          "date": "2026-01-01",
+          "new_applications_count": 8785,
+          "approved_loans_amount_mhkd": 32483,
+          "approved_primary_presales_amount_mhkd": 11335,
+          "approved_secondary_amount_mhkd": 18294,
+          "approved_refinancing_amount_mhkd": 2854,
+          "drawn_down_amount_mhkd": 21736
+        },
+        {
+          "date": "2026-02-01",
+          "new_applications_count": 8125,
+          "approved_loans_amount_mhkd": 28960,
+          "approved_primary_presales_amount_mhkd": 8614,
+          "approved_secondary_amount_mhkd": 17186,
+          "approved_refinancing_amount_mhkd": 3160,
+          "drawn_down_amount_mhkd": 16433
+        },
+        {
+          "date": "2026-03-01",
+          "new_applications_count": 10311,
+          "approved_loans_amount_mhkd": 40140,
+          "approved_primary_presales_amount_mhkd": 13427,
+          "approved_secondary_amount_mhkd": 23395,
+          "approved_refinancing_amount_mhkd": 3318,
+          "drawn_down_amount_mhkd": 26933
+        },
+        {
+          "date": "2026-04-01",
+          "new_applications_count": 9541,
+          "approved_loans_amount_mhkd": 36528,
+          "approved_primary_presales_amount_mhkd": 10698,
+          "approved_secondary_amount_mhkd": 21816,
+          "approved_refinancing_amount_mhkd": 4015,
+          "drawn_down_amount_mhkd": 22603
+        },
+        {
+          "date": "2026-05-01",
+          "new_applications_count": 10767,
+          "approved_loans_amount_mhkd": 40231,
+          "approved_primary_presales_amount_mhkd": 11701,
+          "approved_secondary_amount_mhkd": 23804,
+          "approved_refinancing_amount_mhkd": 4726,
+          "drawn_down_amount_mhkd": 23573
+        }
+      ],
       "cnsd_construction_value": [
         {
           "date": "2000",
@@ -19825,7 +22681,7 @@
         "url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/banking/residential-mortgage-survey",
         "language": "JSON",
         "description": "构建时从公开来源读取并校验 HKMA Residential Mortgage Survey。",
-        "executed_at": "2026-07-25T14:20:45.220865Z"
+        "executed_at": "2026-07-25T18:13:09.047382Z"
       }
     },
     {
@@ -19837,7 +22693,7 @@
         "url": "https://www.censtatd.gov.hk/api/get.php?id=615-66001&lang=en&full_series=1",
         "language": "JSON",
         "description": "构建时从公开来源读取并校验 C&SD Gross Value of Construction Works (Table 615-66001)。",
-        "executed_at": "2026-07-25T14:20:45.220865Z"
+        "executed_at": "2026-07-25T18:13:09.047382Z"
       }
     },
     {
@@ -19853,7 +22709,7 @@
           "CCL latest is the most recent published weekly Centaline City Leading Index observation.",
           "Weekly and yearly movements are latest divided by the prior observation or latest observation on/before one year earlier, minus one."
         ],
-        "executed_at": "2026-07-25T14:20:45.220865Z"
+        "executed_at": "2026-07-25T18:13:09.047382Z"
       }
     },
     {
@@ -19869,7 +22725,7 @@
           "MHPI latest is the most recent published overall weekly Midland Hong Kong Property Price Index observation.",
           "Weekly and yearly movements are latest divided by the prior observation or latest observation on/before one year earlier, minus one."
         ],
-        "executed_at": "2026-07-25T14:20:45.220865Z"
+        "executed_at": "2026-07-25T18:13:09.047382Z"
       }
     },
     {
@@ -19884,7 +22740,7 @@
         "metric_definitions": [
           "The confidence series is a supporting market-sentiment measure published by Midland Realty."
         ],
-        "executed_at": "2026-07-25T14:20:45.220865Z"
+        "executed_at": "2026-07-25T18:13:09.047382Z"
       }
     },
     {
@@ -19900,7 +22756,7 @@
           "RVD price latest is the All Classes monthly private domestic price index.",
           "Monthly and yearly movements are latest divided by the prior month or observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-07-25T14:20:45.220865Z"
+        "executed_at": "2026-07-25T18:13:09.047382Z"
       }
     },
     {
@@ -19916,7 +22772,7 @@
           "RVD rent latest is the All Classes monthly private domestic rental index.",
           "Monthly and yearly movements are latest divided by the prior month or observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-07-25T14:20:45.220865Z"
+        "executed_at": "2026-07-25T18:13:09.047382Z"
       }
     },
     {
@@ -19935,7 +22791,7 @@
           "RVD 1.4M.csv",
           "RVD 1.3M.csv"
         ],
-        "executed_at": "2026-07-25T14:20:45.220865Z"
+        "executed_at": "2026-07-25T18:13:09.047382Z"
       }
     },
     {
@@ -19949,13 +22805,13 @@
           "Validated core measure frames",
           "Declared future-source registry"
         ],
-        "executed_at": "2026-07-25T14:20:45.220865Z"
+        "executed_at": "2026-07-25T18:13:09.047382Z"
       }
     }
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-real-estate/",
-    "snapshotId": "def305b42ba1f8e4",
+    "snapshotId": "b3a0150afdc47a70",
     "dataAsOf": "2026-07-20"
   }
 }

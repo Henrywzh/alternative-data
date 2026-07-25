@@ -6,7 +6,7 @@
     "title": "HK Utilities & Infrastructure Sector Monitor",
     "description": "CLP quarterly electricity sales by customer sector, CenStatD town gas consumption, HKO temperature, and Power Assets geographic segment reporting.",
     "sector": "hk-utilities",
-    "generatedAt": "2026-07-25T14:20:41.121131Z",
+    "generatedAt": "2026-07-25T18:13:02.462196Z",
     "cards": [
       {
         "id": "clp_card",
@@ -102,7 +102,8 @@
         "title": "CLP Electricity Sales by Sector (GWh)",
         "subtitle": "Quarterly sales across Residential, Commercial, Infrastructure & Public Services, and Manufacturing.",
         "type": "line",
-        "dataset": "clp_history",
+        "intent": "comparison",
+        "dataset": "clp_sector_history",
         "sourceId": "clp_electricity",
         "encodings": {
           "x": {
@@ -111,9 +112,14 @@
             "label": "Quarter"
           },
           "y": {
-            "field": "total_local_gwh",
+            "field": "value",
             "type": "quantitative",
             "label": "GWh"
+          },
+          "color": {
+            "field": "series",
+            "type": "nominal",
+            "label": "Sector"
           }
         },
         "valueFormat": "number",
@@ -124,7 +130,8 @@
         "title": "Hong Kong Town Gas Consumption Trend (TJ)",
         "subtitle": "Monthly gas consumption split by Domestic, Commercial, and Industrial user types.",
         "type": "line",
-        "dataset": "towngas_history",
+        "intent": "comparison",
+        "dataset": "towngas_type_history",
         "sourceId": "towngas_proxy",
         "encodings": {
           "x": {
@@ -133,9 +140,14 @@
             "label": "Month"
           },
           "y": {
-            "field": "total_gas_tj",
+            "field": "value",
             "type": "quantitative",
             "label": "Terajoules (TJ)"
+          },
+          "color": {
+            "field": "series",
+            "type": "nominal",
+            "label": "User Type"
           }
         },
         "valueFormat": "number",
@@ -282,7 +294,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-25T14:20:41.121131Z",
+    "generatedAt": "2026-07-25T18:13:02.462196Z",
     "status": "ready",
     "datasets": {
       "kpi_clp": [
@@ -364,6 +376,104 @@
           "total_local_gwh": 7319.0,
           "ai_data_centre_yoy_pct": 11.1,
           "month": "2026-03"
+        }
+      ],
+      "clp_sector_history": [
+        {
+          "date": "2023-03-31",
+          "month": "2023-03",
+          "series": "Commercial",
+          "value": 2812.0
+        },
+        {
+          "date": "2024-03-31",
+          "month": "2024-03",
+          "series": "Commercial",
+          "value": 2915.0
+        },
+        {
+          "date": "2025-03-31",
+          "month": "2025-03",
+          "series": "Commercial",
+          "value": 2883.0
+        },
+        {
+          "date": "2026-03-31",
+          "month": "2026-03",
+          "series": "Commercial",
+          "value": 3032.0
+        },
+        {
+          "date": "2023-03-31",
+          "month": "2023-03",
+          "series": "Infra & Public",
+          "value": 2079.0
+        },
+        {
+          "date": "2024-03-31",
+          "month": "2024-03",
+          "series": "Infra & Public",
+          "value": 2183.0
+        },
+        {
+          "date": "2025-03-31",
+          "month": "2025-03",
+          "series": "Infra & Public",
+          "value": 2156.0
+        },
+        {
+          "date": "2026-03-31",
+          "month": "2026-03",
+          "series": "Infra & Public",
+          "value": 2270.0
+        },
+        {
+          "date": "2023-03-31",
+          "month": "2023-03",
+          "series": "Manufacturing",
+          "value": 334.0
+        },
+        {
+          "date": "2024-03-31",
+          "month": "2024-03",
+          "series": "Manufacturing",
+          "value": 340.0
+        },
+        {
+          "date": "2025-03-31",
+          "month": "2025-03",
+          "series": "Manufacturing",
+          "value": 307.0
+        },
+        {
+          "date": "2026-03-31",
+          "month": "2026-03",
+          "series": "Manufacturing",
+          "value": 323.0
+        },
+        {
+          "date": "2023-03-31",
+          "month": "2023-03",
+          "series": "Residential",
+          "value": 1791.0
+        },
+        {
+          "date": "2024-03-31",
+          "month": "2024-03",
+          "series": "Residential",
+          "value": 1841.0
+        },
+        {
+          "date": "2025-03-31",
+          "month": "2025-03",
+          "series": "Residential",
+          "value": 1745.0
+        },
+        {
+          "date": "2026-03-31",
+          "month": "2026-03",
+          "series": "Residential",
+          "value": 1694.0
         }
       ],
       "towngas_history": [
@@ -846,6 +956,1088 @@
           "commercial_gas_tj": 864.3,
           "industrial_gas_tj": 124.8,
           "total_gas_tj": 2047.8
+        }
+      ],
+      "towngas_type_history": [
+        {
+          "date": "2021-06-01",
+          "month": "2021-06",
+          "series": "Commercial",
+          "value": 839.0
+        },
+        {
+          "date": "2021-07-01",
+          "month": "2021-07",
+          "series": "Commercial",
+          "value": 827.0
+        },
+        {
+          "date": "2021-08-01",
+          "month": "2021-08",
+          "series": "Commercial",
+          "value": 864.0
+        },
+        {
+          "date": "2021-09-01",
+          "month": "2021-09",
+          "series": "Commercial",
+          "value": 865.0
+        },
+        {
+          "date": "2021-10-01",
+          "month": "2021-10",
+          "series": "Commercial",
+          "value": 830.0
+        },
+        {
+          "date": "2021-11-01",
+          "month": "2021-11",
+          "series": "Commercial",
+          "value": 914.0
+        },
+        {
+          "date": "2021-12-01",
+          "month": "2021-12",
+          "series": "Commercial",
+          "value": 922.0
+        },
+        {
+          "date": "2022-01-01",
+          "month": "2022-01",
+          "series": "Commercial",
+          "value": 978.0
+        },
+        {
+          "date": "2022-02-01",
+          "month": "2022-02",
+          "series": "Commercial",
+          "value": 791.0
+        },
+        {
+          "date": "2022-03-01",
+          "month": "2022-03",
+          "series": "Commercial",
+          "value": 568.0
+        },
+        {
+          "date": "2022-04-01",
+          "month": "2022-04",
+          "series": "Commercial",
+          "value": 583.0
+        },
+        {
+          "date": "2022-05-01",
+          "month": "2022-05",
+          "series": "Commercial",
+          "value": 766.0
+        },
+        {
+          "date": "2022-06-01",
+          "month": "2022-06",
+          "series": "Commercial",
+          "value": 759.0
+        },
+        {
+          "date": "2022-07-01",
+          "month": "2022-07",
+          "series": "Commercial",
+          "value": 948.0
+        },
+        {
+          "date": "2022-08-01",
+          "month": "2022-08",
+          "series": "Commercial",
+          "value": 858.0
+        },
+        {
+          "date": "2022-09-01",
+          "month": "2022-09",
+          "series": "Commercial",
+          "value": 843.0
+        },
+        {
+          "date": "2022-10-01",
+          "month": "2022-10",
+          "series": "Commercial",
+          "value": 819.0
+        },
+        {
+          "date": "2022-11-01",
+          "month": "2022-11",
+          "series": "Commercial",
+          "value": 880.0
+        },
+        {
+          "date": "2022-12-01",
+          "month": "2022-12",
+          "series": "Commercial",
+          "value": 914.0
+        },
+        {
+          "date": "2023-01-01",
+          "month": "2023-01",
+          "series": "Commercial",
+          "value": 963.0
+        },
+        {
+          "date": "2023-02-01",
+          "month": "2023-02",
+          "series": "Commercial",
+          "value": 972.0
+        },
+        {
+          "date": "2023-03-01",
+          "month": "2023-03",
+          "series": "Commercial",
+          "value": 872.0
+        },
+        {
+          "date": "2023-04-01",
+          "month": "2023-04",
+          "series": "Commercial",
+          "value": 935.0
+        },
+        {
+          "date": "2023-05-01",
+          "month": "2023-05",
+          "series": "Commercial",
+          "value": 888.0
+        },
+        {
+          "date": "2023-06-01",
+          "month": "2023-06",
+          "series": "Commercial",
+          "value": 890.0
+        },
+        {
+          "date": "2023-07-01",
+          "month": "2023-07",
+          "series": "Commercial",
+          "value": 847.0
+        },
+        {
+          "date": "2023-08-01",
+          "month": "2023-08",
+          "series": "Commercial",
+          "value": 865.0
+        },
+        {
+          "date": "2023-09-01",
+          "month": "2023-09",
+          "series": "Commercial",
+          "value": 844.0
+        },
+        {
+          "date": "2023-10-01",
+          "month": "2023-10",
+          "series": "Commercial",
+          "value": 840.0
+        },
+        {
+          "date": "2023-11-01",
+          "month": "2023-11",
+          "series": "Commercial",
+          "value": 899.0
+        },
+        {
+          "date": "2023-12-01",
+          "month": "2023-12",
+          "series": "Commercial",
+          "value": 920.0
+        },
+        {
+          "date": "2024-01-01",
+          "month": "2024-01",
+          "series": "Commercial",
+          "value": 997.0
+        },
+        {
+          "date": "2024-02-01",
+          "month": "2024-02",
+          "series": "Commercial",
+          "value": 1002.0
+        },
+        {
+          "date": "2024-03-01",
+          "month": "2024-03",
+          "series": "Commercial",
+          "value": 908.0
+        },
+        {
+          "date": "2024-04-01",
+          "month": "2024-04",
+          "series": "Commercial",
+          "value": 930.0
+        },
+        {
+          "date": "2024-05-01",
+          "month": "2024-05",
+          "series": "Commercial",
+          "value": 876.0
+        },
+        {
+          "date": "2024-06-01",
+          "month": "2024-06",
+          "series": "Commercial",
+          "value": 894.0
+        },
+        {
+          "date": "2024-07-01",
+          "month": "2024-07",
+          "series": "Commercial",
+          "value": 845.0
+        },
+        {
+          "date": "2024-08-01",
+          "month": "2024-08",
+          "series": "Commercial",
+          "value": 862.0
+        },
+        {
+          "date": "2024-09-01",
+          "month": "2024-09",
+          "series": "Commercial",
+          "value": 863.0
+        },
+        {
+          "date": "2024-10-01",
+          "month": "2024-10",
+          "series": "Commercial",
+          "value": 830.0
+        },
+        {
+          "date": "2024-11-01",
+          "month": "2024-11",
+          "series": "Commercial",
+          "value": 884.0
+        },
+        {
+          "date": "2024-12-01",
+          "month": "2024-12",
+          "series": "Commercial",
+          "value": 997.0
+        },
+        {
+          "date": "2025-01-01",
+          "month": "2025-01",
+          "series": "Commercial",
+          "value": 931.0
+        },
+        {
+          "date": "2025-02-01",
+          "month": "2025-02",
+          "series": "Commercial",
+          "value": 1006.0
+        },
+        {
+          "date": "2025-03-01",
+          "month": "2025-03",
+          "series": "Commercial",
+          "value": 898.0
+        },
+        {
+          "date": "2025-04-01",
+          "month": "2025-04",
+          "series": "Commercial",
+          "value": 952.0
+        },
+        {
+          "date": "2025-05-01",
+          "month": "2025-05",
+          "series": "Commercial",
+          "value": 885.0
+        },
+        {
+          "date": "2025-06-01",
+          "month": "2025-06",
+          "series": "Commercial",
+          "value": 892.0
+        },
+        {
+          "date": "2025-07-01",
+          "month": "2025-07",
+          "series": "Commercial",
+          "value": 850.0
+        },
+        {
+          "date": "2025-08-01",
+          "month": "2025-08",
+          "series": "Commercial",
+          "value": 870.2
+        },
+        {
+          "date": "2025-09-01",
+          "month": "2025-09",
+          "series": "Commercial",
+          "value": 882.4
+        },
+        {
+          "date": "2025-10-01",
+          "month": "2025-10",
+          "series": "Commercial",
+          "value": 846.2
+        },
+        {
+          "date": "2025-11-01",
+          "month": "2025-11",
+          "series": "Commercial",
+          "value": 925.5
+        },
+        {
+          "date": "2025-12-01",
+          "month": "2025-12",
+          "series": "Commercial",
+          "value": 914.9
+        },
+        {
+          "date": "2026-01-01",
+          "month": "2026-01",
+          "series": "Commercial",
+          "value": 1021.2
+        },
+        {
+          "date": "2026-02-01",
+          "month": "2026-02",
+          "series": "Commercial",
+          "value": 997.1
+        },
+        {
+          "date": "2026-03-01",
+          "month": "2026-03",
+          "series": "Commercial",
+          "value": 876.4
+        },
+        {
+          "date": "2026-04-01",
+          "month": "2026-04",
+          "series": "Commercial",
+          "value": 924.6
+        },
+        {
+          "date": "2026-05-01",
+          "month": "2026-05",
+          "series": "Commercial",
+          "value": 864.3
+        },
+        {
+          "date": "2021-06-01",
+          "month": "2021-06",
+          "series": "Domestic",
+          "value": 985.0
+        },
+        {
+          "date": "2021-07-01",
+          "month": "2021-07",
+          "series": "Domestic",
+          "value": 982.0
+        },
+        {
+          "date": "2021-08-01",
+          "month": "2021-08",
+          "series": "Domestic",
+          "value": 1042.0
+        },
+        {
+          "date": "2021-09-01",
+          "month": "2021-09",
+          "series": "Domestic",
+          "value": 1003.0
+        },
+        {
+          "date": "2021-10-01",
+          "month": "2021-10",
+          "series": "Domestic",
+          "value": 891.0
+        },
+        {
+          "date": "2021-11-01",
+          "month": "2021-11",
+          "series": "Domestic",
+          "value": 1449.0
+        },
+        {
+          "date": "2021-12-01",
+          "month": "2021-12",
+          "series": "Domestic",
+          "value": 1546.0
+        },
+        {
+          "date": "2022-01-01",
+          "month": "2022-01",
+          "series": "Domestic",
+          "value": 1922.0
+        },
+        {
+          "date": "2022-02-01",
+          "month": "2022-02",
+          "series": "Domestic",
+          "value": 1926.0
+        },
+        {
+          "date": "2022-03-01",
+          "month": "2022-03",
+          "series": "Domestic",
+          "value": 1732.0
+        },
+        {
+          "date": "2022-04-01",
+          "month": "2022-04",
+          "series": "Domestic",
+          "value": 1739.0
+        },
+        {
+          "date": "2022-05-01",
+          "month": "2022-05",
+          "series": "Domestic",
+          "value": 1269.0
+        },
+        {
+          "date": "2022-06-01",
+          "month": "2022-06",
+          "series": "Domestic",
+          "value": 1058.0
+        },
+        {
+          "date": "2022-07-01",
+          "month": "2022-07",
+          "series": "Domestic",
+          "value": 923.0
+        },
+        {
+          "date": "2022-08-01",
+          "month": "2022-08",
+          "series": "Domestic",
+          "value": 964.0
+        },
+        {
+          "date": "2022-09-01",
+          "month": "2022-09",
+          "series": "Domestic",
+          "value": 894.0
+        },
+        {
+          "date": "2022-10-01",
+          "month": "2022-10",
+          "series": "Domestic",
+          "value": 932.0
+        },
+        {
+          "date": "2022-11-01",
+          "month": "2022-11",
+          "series": "Domestic",
+          "value": 1208.0
+        },
+        {
+          "date": "2022-12-01",
+          "month": "2022-12",
+          "series": "Domestic",
+          "value": 1418.0
+        },
+        {
+          "date": "2023-01-01",
+          "month": "2023-01",
+          "series": "Domestic",
+          "value": 1829.0
+        },
+        {
+          "date": "2023-02-01",
+          "month": "2023-02",
+          "series": "Domestic",
+          "value": 1732.0
+        },
+        {
+          "date": "2023-03-01",
+          "month": "2023-03",
+          "series": "Domestic",
+          "value": 1373.0
+        },
+        {
+          "date": "2023-04-01",
+          "month": "2023-04",
+          "series": "Domestic",
+          "value": 1461.0
+        },
+        {
+          "date": "2023-05-01",
+          "month": "2023-05",
+          "series": "Domestic",
+          "value": 1135.0
+        },
+        {
+          "date": "2023-06-01",
+          "month": "2023-06",
+          "series": "Domestic",
+          "value": 1036.0
+        },
+        {
+          "date": "2023-07-01",
+          "month": "2023-07",
+          "series": "Domestic",
+          "value": 879.0
+        },
+        {
+          "date": "2023-08-01",
+          "month": "2023-08",
+          "series": "Domestic",
+          "value": 859.0
+        },
+        {
+          "date": "2023-09-01",
+          "month": "2023-09",
+          "series": "Domestic",
+          "value": 911.0
+        },
+        {
+          "date": "2023-10-01",
+          "month": "2023-10",
+          "series": "Domestic",
+          "value": 915.0
+        },
+        {
+          "date": "2023-11-01",
+          "month": "2023-11",
+          "series": "Domestic",
+          "value": 1166.0
+        },
+        {
+          "date": "2023-12-01",
+          "month": "2023-12",
+          "series": "Domestic",
+          "value": 1350.0
+        },
+        {
+          "date": "2024-01-01",
+          "month": "2024-01",
+          "series": "Domestic",
+          "value": 1665.0
+        },
+        {
+          "date": "2024-02-01",
+          "month": "2024-02",
+          "series": "Domestic",
+          "value": 1724.0
+        },
+        {
+          "date": "2024-03-01",
+          "month": "2024-03",
+          "series": "Domestic",
+          "value": 1433.0
+        },
+        {
+          "date": "2024-04-01",
+          "month": "2024-04",
+          "series": "Domestic",
+          "value": 1389.0
+        },
+        {
+          "date": "2024-05-01",
+          "month": "2024-05",
+          "series": "Domestic",
+          "value": 1088.0
+        },
+        {
+          "date": "2024-06-01",
+          "month": "2024-06",
+          "series": "Domestic",
+          "value": 1077.0
+        },
+        {
+          "date": "2024-07-01",
+          "month": "2024-07",
+          "series": "Domestic",
+          "value": 893.0
+        },
+        {
+          "date": "2024-08-01",
+          "month": "2024-08",
+          "series": "Domestic",
+          "value": 875.0
+        },
+        {
+          "date": "2024-09-01",
+          "month": "2024-09",
+          "series": "Domestic",
+          "value": 873.0
+        },
+        {
+          "date": "2024-10-01",
+          "month": "2024-10",
+          "series": "Domestic",
+          "value": 893.0
+        },
+        {
+          "date": "2024-11-01",
+          "month": "2024-11",
+          "series": "Domestic",
+          "value": 1126.0
+        },
+        {
+          "date": "2024-12-01",
+          "month": "2024-12",
+          "series": "Domestic",
+          "value": 1401.0
+        },
+        {
+          "date": "2025-01-01",
+          "month": "2025-01",
+          "series": "Domestic",
+          "value": 1698.0
+        },
+        {
+          "date": "2025-02-01",
+          "month": "2025-02",
+          "series": "Domestic",
+          "value": 1719.0
+        },
+        {
+          "date": "2025-03-01",
+          "month": "2025-03",
+          "series": "Domestic",
+          "value": 1372.0
+        },
+        {
+          "date": "2025-04-01",
+          "month": "2025-04",
+          "series": "Domestic",
+          "value": 1580.0
+        },
+        {
+          "date": "2025-05-01",
+          "month": "2025-05",
+          "series": "Domestic",
+          "value": 1104.0
+        },
+        {
+          "date": "2025-06-01",
+          "month": "2025-06",
+          "series": "Domestic",
+          "value": 1114.0
+        },
+        {
+          "date": "2025-07-01",
+          "month": "2025-07",
+          "series": "Domestic",
+          "value": 916.0
+        },
+        {
+          "date": "2025-08-01",
+          "month": "2025-08",
+          "series": "Domestic",
+          "value": 912.2
+        },
+        {
+          "date": "2025-09-01",
+          "month": "2025-09",
+          "series": "Domestic",
+          "value": 880.7
+        },
+        {
+          "date": "2025-10-01",
+          "month": "2025-10",
+          "series": "Domestic",
+          "value": 885.6
+        },
+        {
+          "date": "2025-11-01",
+          "month": "2025-11",
+          "series": "Domestic",
+          "value": 1262.0
+        },
+        {
+          "date": "2025-12-01",
+          "month": "2025-12",
+          "series": "Domestic",
+          "value": 1340.7
+        },
+        {
+          "date": "2026-01-01",
+          "month": "2026-01",
+          "series": "Domestic",
+          "value": 1598.4
+        },
+        {
+          "date": "2026-02-01",
+          "month": "2026-02",
+          "series": "Domestic",
+          "value": 1656.0
+        },
+        {
+          "date": "2026-03-01",
+          "month": "2026-03",
+          "series": "Domestic",
+          "value": 1255.2
+        },
+        {
+          "date": "2026-04-01",
+          "month": "2026-04",
+          "series": "Domestic",
+          "value": 1373.9
+        },
+        {
+          "date": "2026-05-01",
+          "month": "2026-05",
+          "series": "Domestic",
+          "value": 1058.6
+        },
+        {
+          "date": "2021-06-01",
+          "month": "2021-06",
+          "series": "Industrial",
+          "value": 131.0
+        },
+        {
+          "date": "2021-07-01",
+          "month": "2021-07",
+          "series": "Industrial",
+          "value": 125.0
+        },
+        {
+          "date": "2021-08-01",
+          "month": "2021-08",
+          "series": "Industrial",
+          "value": 135.0
+        },
+        {
+          "date": "2021-09-01",
+          "month": "2021-09",
+          "series": "Industrial",
+          "value": 132.0
+        },
+        {
+          "date": "2021-10-01",
+          "month": "2021-10",
+          "series": "Industrial",
+          "value": 127.0
+        },
+        {
+          "date": "2021-11-01",
+          "month": "2021-11",
+          "series": "Industrial",
+          "value": 142.0
+        },
+        {
+          "date": "2021-12-01",
+          "month": "2021-12",
+          "series": "Industrial",
+          "value": 146.0
+        },
+        {
+          "date": "2022-01-01",
+          "month": "2022-01",
+          "series": "Industrial",
+          "value": 154.0
+        },
+        {
+          "date": "2022-02-01",
+          "month": "2022-02",
+          "series": "Industrial",
+          "value": 132.0
+        },
+        {
+          "date": "2022-03-01",
+          "month": "2022-03",
+          "series": "Industrial",
+          "value": 122.0
+        },
+        {
+          "date": "2022-04-01",
+          "month": "2022-04",
+          "series": "Industrial",
+          "value": 145.0
+        },
+        {
+          "date": "2022-05-01",
+          "month": "2022-05",
+          "series": "Industrial",
+          "value": 146.0
+        },
+        {
+          "date": "2022-06-01",
+          "month": "2022-06",
+          "series": "Industrial",
+          "value": 91.0
+        },
+        {
+          "date": "2022-07-01",
+          "month": "2022-07",
+          "series": "Industrial",
+          "value": 200.0
+        },
+        {
+          "date": "2022-08-01",
+          "month": "2022-08",
+          "series": "Industrial",
+          "value": 146.0
+        },
+        {
+          "date": "2022-09-01",
+          "month": "2022-09",
+          "series": "Industrial",
+          "value": 139.0
+        },
+        {
+          "date": "2022-10-01",
+          "month": "2022-10",
+          "series": "Industrial",
+          "value": 135.0
+        },
+        {
+          "date": "2022-11-01",
+          "month": "2022-11",
+          "series": "Industrial",
+          "value": 142.0
+        },
+        {
+          "date": "2022-12-01",
+          "month": "2022-12",
+          "series": "Industrial",
+          "value": 151.0
+        },
+        {
+          "date": "2023-01-01",
+          "month": "2023-01",
+          "series": "Industrial",
+          "value": 151.0
+        },
+        {
+          "date": "2023-02-01",
+          "month": "2023-02",
+          "series": "Industrial",
+          "value": 157.0
+        },
+        {
+          "date": "2023-03-01",
+          "month": "2023-03",
+          "series": "Industrial",
+          "value": 141.0
+        },
+        {
+          "date": "2023-04-01",
+          "month": "2023-04",
+          "series": "Industrial",
+          "value": 144.0
+        },
+        {
+          "date": "2023-05-01",
+          "month": "2023-05",
+          "series": "Industrial",
+          "value": 139.0
+        },
+        {
+          "date": "2023-06-01",
+          "month": "2023-06",
+          "series": "Industrial",
+          "value": 149.0
+        },
+        {
+          "date": "2023-07-01",
+          "month": "2023-07",
+          "series": "Industrial",
+          "value": 144.0
+        },
+        {
+          "date": "2023-08-01",
+          "month": "2023-08",
+          "series": "Industrial",
+          "value": 153.0
+        },
+        {
+          "date": "2023-09-01",
+          "month": "2023-09",
+          "series": "Industrial",
+          "value": 147.0
+        },
+        {
+          "date": "2023-10-01",
+          "month": "2023-10",
+          "series": "Industrial",
+          "value": 140.0
+        },
+        {
+          "date": "2023-11-01",
+          "month": "2023-11",
+          "series": "Industrial",
+          "value": 155.0
+        },
+        {
+          "date": "2023-12-01",
+          "month": "2023-12",
+          "series": "Industrial",
+          "value": 123.0
+        },
+        {
+          "date": "2024-01-01",
+          "month": "2024-01",
+          "series": "Industrial",
+          "value": 199.0
+        },
+        {
+          "date": "2024-02-01",
+          "month": "2024-02",
+          "series": "Industrial",
+          "value": 156.0
+        },
+        {
+          "date": "2024-03-01",
+          "month": "2024-03",
+          "series": "Industrial",
+          "value": 152.0
+        },
+        {
+          "date": "2024-04-01",
+          "month": "2024-04",
+          "series": "Industrial",
+          "value": 147.0
+        },
+        {
+          "date": "2024-05-01",
+          "month": "2024-05",
+          "series": "Industrial",
+          "value": 143.0
+        },
+        {
+          "date": "2024-06-01",
+          "month": "2024-06",
+          "series": "Industrial",
+          "value": 151.0
+        },
+        {
+          "date": "2024-07-01",
+          "month": "2024-07",
+          "series": "Industrial",
+          "value": 148.0
+        },
+        {
+          "date": "2024-08-01",
+          "month": "2024-08",
+          "series": "Industrial",
+          "value": 153.0
+        },
+        {
+          "date": "2024-09-01",
+          "month": "2024-09",
+          "series": "Industrial",
+          "value": 143.0
+        },
+        {
+          "date": "2024-10-01",
+          "month": "2024-10",
+          "series": "Industrial",
+          "value": 138.0
+        },
+        {
+          "date": "2024-11-01",
+          "month": "2024-11",
+          "series": "Industrial",
+          "value": 147.0
+        },
+        {
+          "date": "2024-12-01",
+          "month": "2024-12",
+          "series": "Industrial",
+          "value": 156.0
+        },
+        {
+          "date": "2025-01-01",
+          "month": "2025-01",
+          "series": "Industrial",
+          "value": 138.0
+        },
+        {
+          "date": "2025-02-01",
+          "month": "2025-02",
+          "series": "Industrial",
+          "value": 127.0
+        },
+        {
+          "date": "2025-03-01",
+          "month": "2025-03",
+          "series": "Industrial",
+          "value": 128.0
+        },
+        {
+          "date": "2025-04-01",
+          "month": "2025-04",
+          "series": "Industrial",
+          "value": 134.0
+        },
+        {
+          "date": "2025-05-01",
+          "month": "2025-05",
+          "series": "Industrial",
+          "value": 128.0
+        },
+        {
+          "date": "2025-06-01",
+          "month": "2025-06",
+          "series": "Industrial",
+          "value": 129.0
+        },
+        {
+          "date": "2025-07-01",
+          "month": "2025-07",
+          "series": "Industrial",
+          "value": 122.0
+        },
+        {
+          "date": "2025-08-01",
+          "month": "2025-08",
+          "series": "Industrial",
+          "value": 131.9
+        },
+        {
+          "date": "2025-09-01",
+          "month": "2025-09",
+          "series": "Industrial",
+          "value": 126.1
+        },
+        {
+          "date": "2025-10-01",
+          "month": "2025-10",
+          "series": "Industrial",
+          "value": 121.3
+        },
+        {
+          "date": "2025-11-01",
+          "month": "2025-11",
+          "series": "Industrial",
+          "value": 130.0
+        },
+        {
+          "date": "2025-12-01",
+          "month": "2025-12",
+          "series": "Industrial",
+          "value": 128.8
+        },
+        {
+          "date": "2026-01-01",
+          "month": "2026-01",
+          "series": "Industrial",
+          "value": 137.2
+        },
+        {
+          "date": "2026-02-01",
+          "month": "2026-02",
+          "series": "Industrial",
+          "value": 135.5
+        },
+        {
+          "date": "2026-03-01",
+          "month": "2026-03",
+          "series": "Industrial",
+          "value": 124.1
+        },
+        {
+          "date": "2026-04-01",
+          "month": "2026-04",
+          "series": "Industrial",
+          "value": 129.1
+        },
+        {
+          "date": "2026-05-01",
+          "month": "2026-05",
+          "series": "Industrial",
+          "value": 124.8
         }
       ],
       "temp_history": [
@@ -2010,7 +3202,7 @@
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-utilities/",
-    "snapshotId": "ed26dd16a82c7fd5",
+    "snapshotId": "c175b8e628ccd260",
     "dataAsOf": "2026-03-31"
   }
 }
