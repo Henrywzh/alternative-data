@@ -5,7 +5,7 @@
     "surface": "dashboard",
     "title": "香港本地消费监测",
     "description": "极端天气干扰时长、港元/人民币汇率、跨境出入境人流（北上/南下）、黄金原料成本、零售销售、餐饮收益及消费股估值的来源快照。",
-    "generatedAt": "2026-07-25T19:20:31.367914Z",
+    "generatedAt": "2026-07-25T20:01:21.789565Z",
     "cards": [
       {
         "id": "northbound_card",
@@ -1003,7 +1003,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**数据快照：** `823a41ec6385afd0` · 生成于 2026-07-25T19:20:31.367914Z。"
+        "body": "**数据快照：** `823a41ec6385afd0` · 生成于 2026-07-25T20:01:21.789565Z。"
       },
       {
         "id": "market_pulse_1",
@@ -1157,7 +1157,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-25T19:20:31.367914Z",
+    "generatedAt": "2026-07-25T20:01:21.789565Z",
     "status": "ready",
     "datasets": {
       "kpi_weather": [
@@ -6589,7 +6589,7 @@
         "url": "https://oil-price.consumer.org.hk/en",
         "language": "JSON",
         "description": "构建时从公开来源读取并校验 Consumer Council Auto Fuel Calculator。",
-        "executed_at": "2026-07-25T19:20:31.367914Z"
+        "executed_at": "2026-07-25T20:01:21.789565Z"
       }
     },
     {
@@ -6601,7 +6601,7 @@
         "url": "https://www.consumer.org.hk/node/32290/export-complaints/json?lang=en",
         "language": "JSON",
         "description": "构建时从公开来源读取并校验 Consumer Council Complaints API。",
-        "executed_at": "2026-07-25T19:20:31.367914Z"
+        "executed_at": "2026-07-25T20:01:21.789565Z"
       }
     },
     {
@@ -6616,7 +6616,7 @@
         "metric_definitions": [
           "Each commodity's price is the mean of same-day readings across the wholesale markets/sources AFCD reports for it."
         ],
-        "executed_at": "2026-07-25T19:20:31.367914Z"
+        "executed_at": "2026-07-25T20:01:21.789565Z"
       }
     },
     {
@@ -6632,7 +6632,7 @@
           "Latest is the most recent published PM benchmark fixing.",
           "Day and year movements are latest divided by the prior trading day or the observation on/before one year earlier, minus one."
         ],
-        "executed_at": "2026-07-25T19:20:31.367914Z"
+        "executed_at": "2026-07-25T20:01:21.789565Z"
       }
     },
     {
@@ -6648,7 +6648,7 @@
           "PE (TTM), PB, and market cap (HKD bn) are each ticker's latest published daily value.",
           "No dividend-yield indicator exists on this endpoint; yield is not reported here."
         ],
-        "executed_at": "2026-07-25T19:20:31.367914Z"
+        "executed_at": "2026-07-25T20:01:21.789565Z"
       }
     },
     {
@@ -6664,7 +6664,7 @@
           "All retail outlet is the classification group's own published total across all outlet types.",
           "Month and year movements are latest divided by the prior month or the observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-07-25T19:20:31.367914Z"
+        "executed_at": "2026-07-25T20:01:21.789565Z"
       }
     },
     {
@@ -6680,7 +6680,7 @@
           "Purchases are only published sector-wide, not broken out by restaurant type.",
           "Quarter and year movements are latest divided by the prior quarter or the observation four quarters earlier, minus one."
         ],
-        "executed_at": "2026-07-25T19:20:31.367914Z"
+        "executed_at": "2026-07-25T20:01:21.789565Z"
       }
     },
     {
@@ -6697,7 +6697,7 @@
           "Southbound (南下) flow is daily Mainland visitor arrivals across all 17 control points, since Mainland visitors legitimately arrive by air, rail, and sea, not just by land.",
           "7-day moving averages (7d MA) smooth out day-of-week seasonality (weekend shopping spikes)."
         ],
-        "executed_at": "2026-07-25T19:20:31.367914Z"
+        "executed_at": "2026-07-25T20:01:21.789565Z"
       }
     },
     {
@@ -6714,7 +6714,7 @@
           "Red/Black Rainstorm hours measures total duration under Red or Black rainstorm warnings.",
           "RMB per 100 HKD is derived from FRED daily DEXCHUS and DEXHKUS rates."
         ],
-        "executed_at": "2026-07-25T19:20:31.367914Z"
+        "executed_at": "2026-07-25T20:01:21.789565Z"
       }
     },
     {
@@ -6728,7 +6728,7 @@
           "Validated live measure frames",
           "Declared future-source registry"
         ],
-        "executed_at": "2026-07-25T19:20:31.367914Z"
+        "executed_at": "2026-07-25T20:01:21.789565Z"
       }
     }
   ],
