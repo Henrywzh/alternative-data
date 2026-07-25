@@ -6,11 +6,11 @@
     "title": "香港交通与航空监测",
     "description": "港铁月度客运量（本地/跨境/高铁）、国泰航空运营数据与香港国际机场流量的来源快照。",
     "sector": "hk-transport",
-    "generatedAt": "2026-07-24T23:44:03.735424Z",
+    "generatedAt": "2026-07-25T10:32:42.314291Z",
     "cards": [
       {
         "id": "mtr_card",
-        "description": "港铁月度总客运量，按本地及跨境服务拆解。",
+        "description": "港铁月度总客运量，按本地及跨境服务拆解，并附对比 2019 年月均水平的复苏率。",
         "dataset": "kpi_mtr",
         "sourceId": "mtr_patronage",
         "metrics": [
@@ -28,12 +28,17 @@
             "label": "跨境 (千人次)",
             "field": "cross_boundary_thousands",
             "format": "number"
+          },
+          {
+            "label": "较 2019 年均值",
+            "field": "recovery_vs_2019_pct",
+            "format": "percent"
           }
         ]
       },
       {
         "id": "cathay_card",
-        "description": "国泰集团月度载客人数、载客率及香港国际机场客运量。",
+        "description": "国泰集团月度载客人数、载客率及香港国际机场客运量，并附对比 2019 年月均水平的复苏率。",
         "dataset": "kpi_cathay",
         "sourceId": "cathay_hkia_traffic",
         "metrics": [
@@ -51,15 +56,20 @@
             "label": "机场乘客人数",
             "field": "hkia_passengers",
             "format": "number"
+          },
+          {
+            "label": "较 2019 年均值",
+            "field": "recovery_vs_2019_pct",
+            "format": "percent"
           }
         ]
       }
     ],
     "charts": [
       {
-        "id": "mtr_service_chart",
-        "title": "港铁客运量按服务类型走势 (千人次)",
-        "subtitle": "本地重铁、跨境、高铁、机场快线及轻铁的月度乘客人次。",
+        "id": "mtr_total_patronage_chart",
+        "title": "港铁总客运量走势 (2000年至今，千人次)",
+        "subtitle": "26 年月度港铁总客运量数据，完整呈现 2003 年沙士（SARS）冲击（2003 年 4 月低点约 4,880 万人次）及更深、更持久的 2019-22 新冠疫情冲击（2022 年 2 月低点约 7,190 万人次），其后复苏至接近 2019 年疫情前月均水平。",
         "type": "line",
         "dataset": "mtr_history",
         "sourceId": "mtr_patronage",
@@ -79,9 +89,36 @@
         "layout": "full"
       },
       {
-        "id": "cathay_traffic_chart",
-        "title": "国泰航空客运量与载客率 (%)",
-        "subtitle": "国泰集团月度载客人数与载客率走势。",
+        "id": "mtr_service_breakdown_chart",
+        "title": "港铁客运量按服务类型走势 (2018年至今，千人次)",
+        "subtitle": "本地重铁、跨境、高铁、机场快线及轻铁与巴士的月度乘客人次，聚焦近 8 年数据以保持五条曲线清晰可读（完整 26 年总量走势见上图）。",
+        "type": "line",
+        "dataset": "mtr_service_breakdown_history",
+        "sourceId": "mtr_patronage",
+        "encodings": {
+          "x": {
+            "field": "date",
+            "type": "temporal",
+            "label": "月份"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "label": "千人次"
+          },
+          "color": {
+            "field": "series",
+            "type": "nominal",
+            "label": "序列"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "full"
+      },
+      {
+        "id": "cathay_passengers_chart",
+        "title": "国泰集团载客人数走势 (2012年至今)",
+        "subtitle": "13 年月度国泰集团载客人数，呈现新冠疫情期间近乎归零的冲击（由 2018 年 8 月约 328 万人次高点跌至 2020 年 4 月约 1.37 万人次低点，跌幅逾 99.5%）及其后的多年复苏。",
         "type": "line",
         "dataset": "cathay_history",
         "sourceId": "cathay_hkia_traffic",
@@ -93,6 +130,77 @@
           },
           "y": {
             "field": "cathay_passengers",
+            "type": "quantitative",
+            "label": "乘客人数"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "full"
+      },
+      {
+        "id": "cathay_load_factor_chart",
+        "title": "国泰集团载客率走势 (%)",
+        "subtitle": "月度载客率——相较于原始载客人数，更能反映国泰自身运力利用率与定价能力，因其已扣除国泰当时投放的运力规模。",
+        "type": "line",
+        "dataset": "cathay_history",
+        "sourceId": "cathay_hkia_traffic",
+        "encodings": {
+          "x": {
+            "field": "date",
+            "type": "temporal",
+            "label": "月份"
+          },
+          "y": {
+            "field": "cathay_passenger_load_factor_pct",
+            "type": "quantitative",
+            "label": "载客率 (%)"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "half"
+      },
+      {
+        "id": "cathay_capacity_demand_chart",
+        "title": "国泰集团运力与需求对比 (ASK 对比 RPK，千单位)",
+        "subtitle": "可用座位公里（投放运力）与收益乘客公里（实际填补需求）对比——两线差距与旁边载客率图表互为镜像。",
+        "type": "line",
+        "dataset": "cathay_capacity_demand_history",
+        "sourceId": "cathay_hkia_traffic",
+        "encodings": {
+          "x": {
+            "field": "date",
+            "type": "temporal",
+            "label": "月份"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "label": "千单位"
+          },
+          "color": {
+            "field": "series",
+            "type": "nominal",
+            "label": "序列"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "half"
+      },
+      {
+        "id": "hkia_passengers_chart",
+        "title": "香港国际机场总客运量走势",
+        "subtitle": "香港国际机场（民航处数据）全部航空公司合计的月度总客运量，较国泰专属图表更能反映航空需求的整体水平。",
+        "type": "line",
+        "dataset": "cathay_history",
+        "sourceId": "cathay_hkia_traffic",
+        "encodings": {
+          "x": {
+            "field": "date",
+            "type": "temporal",
+            "label": "月份"
+          },
+          "y": {
+            "field": "hkia_passengers",
             "type": "quantitative",
             "label": "乘客人数"
           }
@@ -138,20 +246,42 @@
         ]
       },
       {
-        "id": "mtr_chart",
+        "id": "mtr_total_chart",
         "type": "chart",
-        "chartId": "mtr_service_chart"
+        "chartId": "mtr_total_patronage_chart"
       },
       {
-        "id": "cathay_chart",
+        "id": "mtr_breakdown_chart",
         "type": "chart",
-        "chartId": "cathay_traffic_chart"
+        "chartId": "mtr_service_breakdown_chart"
+      },
+      {
+        "id": "cathay_passengers_chart_block",
+        "type": "chart",
+        "chartId": "cathay_passengers_chart"
+      },
+      {
+        "id": "cathay_load_factor_chart_block",
+        "type": "chart",
+        "chartId": "cathay_load_factor_chart",
+        "layout": "half"
+      },
+      {
+        "id": "cathay_capacity_demand_chart_block",
+        "type": "chart",
+        "chartId": "cathay_capacity_demand_chart",
+        "layout": "half"
+      },
+      {
+        "id": "hkia_passengers_chart_block",
+        "type": "chart",
+        "chartId": "hkia_passengers_chart"
       }
     ]
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-24T23:44:03.735424Z",
+    "generatedAt": "2026-07-25T10:32:42.314291Z",
     "status": "ready",
     "datasets": {
       "kpi_mtr": [
@@ -161,6 +291,7 @@
           "cross_boundary_thousands": 8591,
           "hsr_thousands": 2477,
           "period_change": -0.032732,
+          "recovery_vs_2019_pct": -0.007102,
           "observation_date": "2026-06-01"
         }
       ],
@@ -171,6 +302,7 @@
           "hkia_passengers": 5092000,
           "hkia_movements": 31940,
           "period_change": -0.032079,
+          "recovery_vs_2019_pct": -0.115425,
           "observation_date": "2026-06-01"
         }
       ],
@@ -5696,6 +5828,127 @@
           "cathay_passenger_load_factor_pct": 13.3
         },
         {
+          "date": "2021-02-01 00:00:00",
+          "month": "2021-02",
+          "hkia_passengers": 47729,
+          "hkia_aircraft_movements": 8492,
+          "hkia_freight_tonnes": 307315,
+          "cathay_passengers": 21134,
+          "cathay_rpk_thousands": 94156,
+          "cathay_ask_thousands": 679186,
+          "cathay_passenger_load_factor_pct": 13.9
+        },
+        {
+          "date": "2021-03-01 00:00:00",
+          "month": "2021-03",
+          "hkia_passengers": 58245,
+          "hkia_aircraft_movements": 10645,
+          "hkia_freight_tonnes": 393498,
+          "cathay_passengers": 18539,
+          "cathay_rpk_thousands": 76921,
+          "cathay_ask_thousands": 362075,
+          "cathay_passenger_load_factor_pct": 21.2
+        },
+        {
+          "date": "2021-04-01 00:00:00",
+          "month": "2021-04",
+          "hkia_passengers": 60166,
+          "hkia_aircraft_movements": 10379,
+          "hkia_freight_tonnes": 383010,
+          "cathay_passengers": 22404,
+          "cathay_rpk_thousands": 105830,
+          "cathay_ask_thousands": 437780,
+          "cathay_passenger_load_factor_pct": 24.2
+        },
+        {
+          "date": "2021-05-01 00:00:00",
+          "month": "2021-05",
+          "hkia_passengers": 59410,
+          "hkia_aircraft_movements": 10871,
+          "hkia_freight_tonnes": 401287,
+          "cathay_passengers": 24006,
+          "cathay_rpk_thousands": 124644,
+          "cathay_ask_thousands": 466599,
+          "cathay_passenger_load_factor_pct": 26.7
+        },
+        {
+          "date": "2021-06-01 00:00:00",
+          "month": "2021-06",
+          "hkia_passengers": 83280,
+          "hkia_aircraft_movements": 11046,
+          "hkia_freight_tonnes": 396395,
+          "cathay_passengers": 40651,
+          "cathay_rpk_thousands": 233940,
+          "cathay_ask_thousands": 1076876,
+          "cathay_passenger_load_factor_pct": 21.7
+        },
+        {
+          "date": "2021-07-01 00:00:00",
+          "month": "2021-07",
+          "hkia_passengers": 111593,
+          "hkia_aircraft_movements": 11848,
+          "hkia_freight_tonnes": 416111,
+          "cathay_passengers": 54092,
+          "cathay_rpk_thousands": 297879,
+          "cathay_ask_thousands": 1043681,
+          "cathay_passenger_load_factor_pct": 28.5
+        },
+        {
+          "date": "2021-08-01 00:00:00",
+          "month": "2021-08",
+          "hkia_passengers": 221412,
+          "hkia_aircraft_movements": 12839,
+          "hkia_freight_tonnes": 425290,
+          "cathay_passengers": 135353,
+          "cathay_rpk_thousands": 877057,
+          "cathay_ask_thousands": 1891764,
+          "cathay_passenger_load_factor_pct": 46.4
+        },
+        {
+          "date": "2021-09-01 00:00:00",
+          "month": "2021-09",
+          "hkia_passengers": 225641,
+          "hkia_aircraft_movements": 13931,
+          "hkia_freight_tonnes": 452026,
+          "cathay_passengers": 131774,
+          "cathay_rpk_thousands": 780461,
+          "cathay_ask_thousands": 1704768,
+          "cathay_passenger_load_factor_pct": 45.8
+        },
+        {
+          "date": "2021-10-01 00:00:00",
+          "month": "2021-10",
+          "hkia_passengers": 137776,
+          "hkia_aircraft_movements": 14001,
+          "hkia_freight_tonnes": 458326,
+          "cathay_passengers": 76430,
+          "cathay_rpk_thousands": 409797,
+          "cathay_ask_thousands": 1383448,
+          "cathay_passenger_load_factor_pct": 29.6
+        },
+        {
+          "date": "2021-11-01 00:00:00",
+          "month": "2021-11",
+          "hkia_passengers": 118705,
+          "hkia_aircraft_movements": 14872,
+          "hkia_freight_tonnes": 473866,
+          "cathay_passengers": 70047,
+          "cathay_rpk_thousands": 393162,
+          "cathay_ask_thousands": 1467977,
+          "cathay_passenger_load_factor_pct": 26.8
+        },
+        {
+          "date": "2021-12-01 00:00:00",
+          "month": "2021-12",
+          "hkia_passengers": 149826,
+          "hkia_aircraft_movements": 14506,
+          "hkia_freight_tonnes": 472635,
+          "cathay_passengers": 92219,
+          "cathay_rpk_thousands": 574024,
+          "cathay_ask_thousands": 1568841,
+          "cathay_passenger_load_factor_pct": 36.6
+        },
+        {
           "date": "2022-01-01 00:00:00",
           "month": "2022-01",
           "hkia_passengers": 69840,
@@ -6289,6 +6542,3890 @@
           "cathay_ask_thousands": 12232841,
           "cathay_passenger_load_factor_pct": 87.4
         }
+      ],
+      "mtr_service_breakdown_history": [
+        {
+          "date": "2018-01-01",
+          "series": "Airport Exp",
+          "value": 1402
+        },
+        {
+          "date": "2018-01-01",
+          "series": "Domestic",
+          "value": 142553
+        },
+        {
+          "date": "2018-01-01",
+          "series": "HSR",
+          "value": 0
+        },
+        {
+          "date": "2018-01-01",
+          "series": "LR & Bus",
+          "value": 19851
+        },
+        {
+          "date": "2018-01-01",
+          "series": "X-Boundary",
+          "value": 9842
+        },
+        {
+          "date": "2018-02-01",
+          "series": "Airport Exp",
+          "value": 1216
+        },
+        {
+          "date": "2018-02-01",
+          "series": "Domestic",
+          "value": 125706
+        },
+        {
+          "date": "2018-02-01",
+          "series": "HSR",
+          "value": 0
+        },
+        {
+          "date": "2018-02-01",
+          "series": "LR & Bus",
+          "value": 17053
+        },
+        {
+          "date": "2018-02-01",
+          "series": "X-Boundary",
+          "value": 9143
+        },
+        {
+          "date": "2018-03-01",
+          "series": "Airport Exp",
+          "value": 1518
+        },
+        {
+          "date": "2018-03-01",
+          "series": "Domestic",
+          "value": 142521
+        },
+        {
+          "date": "2018-03-01",
+          "series": "HSR",
+          "value": 0
+        },
+        {
+          "date": "2018-03-01",
+          "series": "LR & Bus",
+          "value": 19742
+        },
+        {
+          "date": "2018-03-01",
+          "series": "X-Boundary",
+          "value": 9885
+        },
+        {
+          "date": "2018-04-01",
+          "series": "Airport Exp",
+          "value": 1554
+        },
+        {
+          "date": "2018-04-01",
+          "series": "Domestic",
+          "value": 132659
+        },
+        {
+          "date": "2018-04-01",
+          "series": "HSR",
+          "value": 0
+        },
+        {
+          "date": "2018-04-01",
+          "series": "LR & Bus",
+          "value": 18850
+        },
+        {
+          "date": "2018-04-01",
+          "series": "X-Boundary",
+          "value": 10251
+        },
+        {
+          "date": "2018-05-01",
+          "series": "Airport Exp",
+          "value": 1355
+        },
+        {
+          "date": "2018-05-01",
+          "series": "Domestic",
+          "value": 138914
+        },
+        {
+          "date": "2018-05-01",
+          "series": "HSR",
+          "value": 0
+        },
+        {
+          "date": "2018-05-01",
+          "series": "LR & Bus",
+          "value": 20242
+        },
+        {
+          "date": "2018-05-01",
+          "series": "X-Boundary",
+          "value": 9571
+        },
+        {
+          "date": "2018-06-01",
+          "series": "Airport Exp",
+          "value": 1452
+        },
+        {
+          "date": "2018-06-01",
+          "series": "Domestic",
+          "value": 133724
+        },
+        {
+          "date": "2018-06-01",
+          "series": "HSR",
+          "value": 0
+        },
+        {
+          "date": "2018-06-01",
+          "series": "LR & Bus",
+          "value": 19467
+        },
+        {
+          "date": "2018-06-01",
+          "series": "X-Boundary",
+          "value": 9373
+        },
+        {
+          "date": "2018-07-01",
+          "series": "Airport Exp",
+          "value": 1425
+        },
+        {
+          "date": "2018-07-01",
+          "series": "Domestic",
+          "value": 139117
+        },
+        {
+          "date": "2018-07-01",
+          "series": "HSR",
+          "value": 0
+        },
+        {
+          "date": "2018-07-01",
+          "series": "LR & Bus",
+          "value": 19777
+        },
+        {
+          "date": "2018-07-01",
+          "series": "X-Boundary",
+          "value": 10324
+        },
+        {
+          "date": "2018-08-01",
+          "series": "Airport Exp",
+          "value": 1439
+        },
+        {
+          "date": "2018-08-01",
+          "series": "Domestic",
+          "value": 141531
+        },
+        {
+          "date": "2018-08-01",
+          "series": "HSR",
+          "value": 0
+        },
+        {
+          "date": "2018-08-01",
+          "series": "LR & Bus",
+          "value": 19271
+        },
+        {
+          "date": "2018-08-01",
+          "series": "X-Boundary",
+          "value": 10585
+        },
+        {
+          "date": "2018-09-01",
+          "series": "Airport Exp",
+          "value": 1492
+        },
+        {
+          "date": "2018-09-01",
+          "series": "Domestic",
+          "value": 135896
+        },
+        {
+          "date": "2018-09-01",
+          "series": "HSR",
+          "value": 369
+        },
+        {
+          "date": "2018-09-01",
+          "series": "LR & Bus",
+          "value": 19419
+        },
+        {
+          "date": "2018-09-01",
+          "series": "X-Boundary",
+          "value": 9236
+        },
+        {
+          "date": "2018-10-01",
+          "series": "Airport Exp",
+          "value": 1621
+        },
+        {
+          "date": "2018-10-01",
+          "series": "Domestic",
+          "value": 145708
+        },
+        {
+          "date": "2018-10-01",
+          "series": "HSR",
+          "value": 1629
+        },
+        {
+          "date": "2018-10-01",
+          "series": "LR & Bus",
+          "value": 20517
+        },
+        {
+          "date": "2018-10-01",
+          "series": "X-Boundary",
+          "value": 9731
+        },
+        {
+          "date": "2018-11-01",
+          "series": "Airport Exp",
+          "value": 1600
+        },
+        {
+          "date": "2018-11-01",
+          "series": "Domestic",
+          "value": 145747
+        },
+        {
+          "date": "2018-11-01",
+          "series": "HSR",
+          "value": 1477
+        },
+        {
+          "date": "2018-11-01",
+          "series": "LR & Bus",
+          "value": 20029
+        },
+        {
+          "date": "2018-11-01",
+          "series": "X-Boundary",
+          "value": 9224
+        },
+        {
+          "date": "2018-12-01",
+          "series": "Airport Exp",
+          "value": 1634
+        },
+        {
+          "date": "2018-12-01",
+          "series": "Domestic",
+          "value": 145896
+        },
+        {
+          "date": "2018-12-01",
+          "series": "HSR",
+          "value": 1827
+        },
+        {
+          "date": "2018-12-01",
+          "series": "LR & Bus",
+          "value": 19848
+        },
+        {
+          "date": "2018-12-01",
+          "series": "X-Boundary",
+          "value": 10283
+        },
+        {
+          "date": "2019-01-01",
+          "series": "Airport Exp",
+          "value": 1511
+        },
+        {
+          "date": "2019-01-01",
+          "series": "Domestic",
+          "value": 148219
+        },
+        {
+          "date": "2019-01-01",
+          "series": "HSR",
+          "value": 1713
+        },
+        {
+          "date": "2019-01-01",
+          "series": "LR & Bus",
+          "value": 20356
+        },
+        {
+          "date": "2019-01-01",
+          "series": "X-Boundary",
+          "value": 10409
+        },
+        {
+          "date": "2019-02-01",
+          "series": "Airport Exp",
+          "value": 1329
+        },
+        {
+          "date": "2019-02-01",
+          "series": "Domestic",
+          "value": 126288
+        },
+        {
+          "date": "2019-02-01",
+          "series": "HSR",
+          "value": 1740
+        },
+        {
+          "date": "2019-02-01",
+          "series": "LR & Bus",
+          "value": 17269
+        },
+        {
+          "date": "2019-02-01",
+          "series": "X-Boundary",
+          "value": 8377
+        },
+        {
+          "date": "2019-03-01",
+          "series": "Airport Exp",
+          "value": 1645
+        },
+        {
+          "date": "2019-03-01",
+          "series": "Domestic",
+          "value": 144919
+        },
+        {
+          "date": "2019-03-01",
+          "series": "HSR",
+          "value": 1557
+        },
+        {
+          "date": "2019-03-01",
+          "series": "LR & Bus",
+          "value": 19963
+        },
+        {
+          "date": "2019-03-01",
+          "series": "X-Boundary",
+          "value": 9682
+        },
+        {
+          "date": "2019-04-01",
+          "series": "Airport Exp",
+          "value": 1621
+        },
+        {
+          "date": "2019-04-01",
+          "series": "Domestic",
+          "value": 132315
+        },
+        {
+          "date": "2019-04-01",
+          "series": "HSR",
+          "value": 1770
+        },
+        {
+          "date": "2019-04-01",
+          "series": "LR & Bus",
+          "value": 18505
+        },
+        {
+          "date": "2019-04-01",
+          "series": "X-Boundary",
+          "value": 9931
+        },
+        {
+          "date": "2019-05-01",
+          "series": "Airport Exp",
+          "value": 1443
+        },
+        {
+          "date": "2019-05-01",
+          "series": "Domestic",
+          "value": 142502
+        },
+        {
+          "date": "2019-05-01",
+          "series": "HSR",
+          "value": 1677
+        },
+        {
+          "date": "2019-05-01",
+          "series": "LR & Bus",
+          "value": 20105
+        },
+        {
+          "date": "2019-05-01",
+          "series": "X-Boundary",
+          "value": 9889
+        },
+        {
+          "date": "2019-06-01",
+          "series": "Airport Exp",
+          "value": 1444
+        },
+        {
+          "date": "2019-06-01",
+          "series": "Domestic",
+          "value": 135990
+        },
+        {
+          "date": "2019-06-01",
+          "series": "HSR",
+          "value": 1494
+        },
+        {
+          "date": "2019-06-01",
+          "series": "LR & Bus",
+          "value": 19420
+        },
+        {
+          "date": "2019-06-01",
+          "series": "X-Boundary",
+          "value": 9340
+        },
+        {
+          "date": "2019-07-01",
+          "series": "Airport Exp",
+          "value": 1458
+        },
+        {
+          "date": "2019-07-01",
+          "series": "Domestic",
+          "value": 138219
+        },
+        {
+          "date": "2019-07-01",
+          "series": "HSR",
+          "value": 1626
+        },
+        {
+          "date": "2019-07-01",
+          "series": "LR & Bus",
+          "value": 18988
+        },
+        {
+          "date": "2019-07-01",
+          "series": "X-Boundary",
+          "value": 9166
+        },
+        {
+          "date": "2019-08-01",
+          "series": "Airport Exp",
+          "value": 1294
+        },
+        {
+          "date": "2019-08-01",
+          "series": "Domestic",
+          "value": 130922
+        },
+        {
+          "date": "2019-08-01",
+          "series": "HSR",
+          "value": 1144
+        },
+        {
+          "date": "2019-08-01",
+          "series": "LR & Bus",
+          "value": 18547
+        },
+        {
+          "date": "2019-08-01",
+          "series": "X-Boundary",
+          "value": 7982
+        },
+        {
+          "date": "2019-09-01",
+          "series": "Airport Exp",
+          "value": 1035
+        },
+        {
+          "date": "2019-09-01",
+          "series": "Domestic",
+          "value": 126948
+        },
+        {
+          "date": "2019-09-01",
+          "series": "HSR",
+          "value": 936
+        },
+        {
+          "date": "2019-09-01",
+          "series": "LR & Bus",
+          "value": 18379
+        },
+        {
+          "date": "2019-09-01",
+          "series": "X-Boundary",
+          "value": 8012
+        },
+        {
+          "date": "2019-10-01",
+          "series": "Airport Exp",
+          "value": 916
+        },
+        {
+          "date": "2019-10-01",
+          "series": "Domestic",
+          "value": 108456
+        },
+        {
+          "date": "2019-10-01",
+          "series": "HSR",
+          "value": 1067
+        },
+        {
+          "date": "2019-10-01",
+          "series": "LR & Bus",
+          "value": 12417
+        },
+        {
+          "date": "2019-10-01",
+          "series": "X-Boundary",
+          "value": 7182
+        },
+        {
+          "date": "2019-11-01",
+          "series": "Airport Exp",
+          "value": 992
+        },
+        {
+          "date": "2019-11-01",
+          "series": "Domestic",
+          "value": 110311
+        },
+        {
+          "date": "2019-11-01",
+          "series": "HSR",
+          "value": 1059
+        },
+        {
+          "date": "2019-11-01",
+          "series": "LR & Bus",
+          "value": 11317
+        },
+        {
+          "date": "2019-11-01",
+          "series": "X-Boundary",
+          "value": 5892
+        },
+        {
+          "date": "2019-12-01",
+          "series": "Airport Exp",
+          "value": 1075
+        },
+        {
+          "date": "2019-12-01",
+          "series": "Domestic",
+          "value": 123107
+        },
+        {
+          "date": "2019-12-01",
+          "series": "HSR",
+          "value": 1141
+        },
+        {
+          "date": "2019-12-01",
+          "series": "LR & Bus",
+          "value": 13983
+        },
+        {
+          "date": "2019-12-01",
+          "series": "X-Boundary",
+          "value": 8318
+        },
+        {
+          "date": "2020-01-01",
+          "series": "Airport Exp",
+          "value": 972
+        },
+        {
+          "date": "2020-01-01",
+          "series": "Domestic",
+          "value": 116523
+        },
+        {
+          "date": "2020-01-01",
+          "series": "HSR",
+          "value": 1033
+        },
+        {
+          "date": "2020-01-01",
+          "series": "LR & Bus",
+          "value": 14653
+        },
+        {
+          "date": "2020-01-01",
+          "series": "X-Boundary",
+          "value": 7053
+        },
+        {
+          "date": "2020-02-01",
+          "series": "Airport Exp",
+          "value": 374
+        },
+        {
+          "date": "2020-02-01",
+          "series": "Domestic",
+          "value": 71405
+        },
+        {
+          "date": "2020-02-01",
+          "series": "HSR",
+          "value": 0
+        },
+        {
+          "date": "2020-02-01",
+          "series": "LR & Bus",
+          "value": 9391
+        },
+        {
+          "date": "2020-02-01",
+          "series": "X-Boundary",
+          "value": 189
+        },
+        {
+          "date": "2020-03-01",
+          "series": "Airport Exp",
+          "value": 259
+        },
+        {
+          "date": "2020-03-01",
+          "series": "Domestic",
+          "value": 84048
+        },
+        {
+          "date": "2020-03-01",
+          "series": "HSR",
+          "value": 0
+        },
+        {
+          "date": "2020-03-01",
+          "series": "LR & Bus",
+          "value": 11009
+        },
+        {
+          "date": "2020-03-01",
+          "series": "X-Boundary",
+          "value": 36
+        },
+        {
+          "date": "2020-04-01",
+          "series": "Airport Exp",
+          "value": 134
+        },
+        {
+          "date": "2020-04-01",
+          "series": "Domestic",
+          "value": 74543
+        },
+        {
+          "date": "2020-04-01",
+          "series": "HSR",
+          "value": 0
+        },
+        {
+          "date": "2020-04-01",
+          "series": "LR & Bus",
+          "value": 10395
+        },
+        {
+          "date": "2020-04-01",
+          "series": "X-Boundary",
+          "value": 37
+        },
+        {
+          "date": "2020-05-01",
+          "series": "Airport Exp",
+          "value": 156
+        },
+        {
+          "date": "2020-05-01",
+          "series": "Domestic",
+          "value": 97001
+        },
+        {
+          "date": "2020-05-01",
+          "series": "HSR",
+          "value": 0
+        },
+        {
+          "date": "2020-05-01",
+          "series": "LR & Bus",
+          "value": 12868
+        },
+        {
+          "date": "2020-05-01",
+          "series": "X-Boundary",
+          "value": 35
+        },
+        {
+          "date": "2020-06-01",
+          "series": "Airport Exp",
+          "value": 177
+        },
+        {
+          "date": "2020-06-01",
+          "series": "Domestic",
+          "value": 110061
+        },
+        {
+          "date": "2020-06-01",
+          "series": "HSR",
+          "value": 0
+        },
+        {
+          "date": "2020-06-01",
+          "series": "LR & Bus",
+          "value": 14831
+        },
+        {
+          "date": "2020-06-01",
+          "series": "X-Boundary",
+          "value": 44
+        },
+        {
+          "date": "2020-07-01",
+          "series": "Airport Exp",
+          "value": 167
+        },
+        {
+          "date": "2020-07-01",
+          "series": "Domestic",
+          "value": 91097
+        },
+        {
+          "date": "2020-07-01",
+          "series": "HSR",
+          "value": 0
+        },
+        {
+          "date": "2020-07-01",
+          "series": "LR & Bus",
+          "value": 12624
+        },
+        {
+          "date": "2020-07-01",
+          "series": "X-Boundary",
+          "value": 43
+        },
+        {
+          "date": "2020-08-01",
+          "series": "Airport Exp",
+          "value": 148
+        },
+        {
+          "date": "2020-08-01",
+          "series": "Domestic",
+          "value": 78520
+        },
+        {
+          "date": "2020-08-01",
+          "series": "HSR",
+          "value": 0
+        },
+        {
+          "date": "2020-08-01",
+          "series": "LR & Bus",
+          "value": 10930
+        },
+        {
+          "date": "2020-08-01",
+          "series": "X-Boundary",
+          "value": 33
+        },
+        {
+          "date": "2020-09-01",
+          "series": "Airport Exp",
+          "value": 179
+        },
+        {
+          "date": "2020-09-01",
+          "series": "Domestic",
+          "value": 100948
+        },
+        {
+          "date": "2020-09-01",
+          "series": "HSR",
+          "value": 0
+        },
+        {
+          "date": "2020-09-01",
+          "series": "LR & Bus",
+          "value": 13434
+        },
+        {
+          "date": "2020-09-01",
+          "series": "X-Boundary",
+          "value": 41
+        },
+        {
+          "date": "2020-10-01",
+          "series": "Airport Exp",
+          "value": 174
+        },
+        {
+          "date": "2020-10-01",
+          "series": "Domestic",
+          "value": 113558
+        },
+        {
+          "date": "2020-10-01",
+          "series": "HSR",
+          "value": 0
+        },
+        {
+          "date": "2020-10-01",
+          "series": "LR & Bus",
+          "value": 15564
+        },
+        {
+          "date": "2020-10-01",
+          "series": "X-Boundary",
+          "value": 50
+        },
+        {
+          "date": "2020-11-01",
+          "series": "Airport Exp",
+          "value": 171
+        },
+        {
+          "date": "2020-11-01",
+          "series": "Domestic",
+          "value": 114346
+        },
+        {
+          "date": "2020-11-01",
+          "series": "HSR",
+          "value": 0
+        },
+        {
+          "date": "2020-11-01",
+          "series": "LR & Bus",
+          "value": 15496
+        },
+        {
+          "date": "2020-11-01",
+          "series": "X-Boundary",
+          "value": 50
+        },
+        {
+          "date": "2020-12-01",
+          "series": "Airport Exp",
+          "value": 159
+        },
+        {
+          "date": "2020-12-01",
+          "series": "Domestic",
+          "value": 92985
+        },
+        {
+          "date": "2020-12-01",
+          "series": "HSR",
+          "value": 0
+        },
+        {
+          "date": "2020-12-01",
+          "series": "LR & Bus",
+          "value": 12848
+        },
+        {
+          "date": "2020-12-01",
+          "series": "X-Boundary",
+          "value": 37
+        },
+        {
+          "date": "2021-01-01",
+          "series": "Airport Exp",
+          "value": 156
+        },
+        {
+          "date": "2021-01-01",
+          "series": "Domestic",
+          "value": 93236
+        },
+        {
+          "date": "2021-01-01",
+          "series": "HSR",
+          "value": 0
+        },
+        {
+          "date": "2021-01-01",
+          "series": "LR & Bus",
+          "value": 12789
+        },
+        {
+          "date": "2021-01-01",
+          "series": "X-Boundary",
+          "value": 33
+        },
+        {
+          "date": "2021-02-01",
+          "series": "Airport Exp",
+          "value": 144
+        },
+        {
+          "date": "2021-02-01",
+          "series": "Domestic",
+          "value": 91409
+        },
+        {
+          "date": "2021-02-01",
+          "series": "HSR",
+          "value": 0
+        },
+        {
+          "date": "2021-02-01",
+          "series": "LR & Bus",
+          "value": 12412
+        },
+        {
+          "date": "2021-02-01",
+          "series": "X-Boundary",
+          "value": 34
+        },
+        {
+          "date": "2021-03-01",
+          "series": "Airport Exp",
+          "value": 178
+        },
+        {
+          "date": "2021-03-01",
+          "series": "Domestic",
+          "value": 114487
+        },
+        {
+          "date": "2021-03-01",
+          "series": "HSR",
+          "value": 0
+        },
+        {
+          "date": "2021-03-01",
+          "series": "LR & Bus",
+          "value": 15420
+        },
+        {
+          "date": "2021-03-01",
+          "series": "X-Boundary",
+          "value": 42
+        },
+        {
+          "date": "2021-04-01",
+          "series": "Airport Exp",
+          "value": 156
+        },
+        {
+          "date": "2021-04-01",
+          "series": "Domestic",
+          "value": 111075
+        },
+        {
+          "date": "2021-04-01",
+          "series": "HSR",
+          "value": 0
+        },
+        {
+          "date": "2021-04-01",
+          "series": "LR & Bus",
+          "value": 15030
+        },
+        {
+          "date": "2021-04-01",
+          "series": "X-Boundary",
+          "value": 52
+        },
+        {
+          "date": "2021-05-01",
+          "series": "Airport Exp",
+          "value": 164
+        },
+        {
+          "date": "2021-05-01",
+          "series": "Domestic",
+          "value": 117755
+        },
+        {
+          "date": "2021-05-01",
+          "series": "HSR",
+          "value": 0
+        },
+        {
+          "date": "2021-05-01",
+          "series": "LR & Bus",
+          "value": 16573
+        },
+        {
+          "date": "2021-05-01",
+          "series": "X-Boundary",
+          "value": 41
+        },
+        {
+          "date": "2021-06-01",
+          "series": "Airport Exp",
+          "value": 172
+        },
+        {
+          "date": "2021-06-01",
+          "series": "Domestic",
+          "value": 118153
+        },
+        {
+          "date": "2021-06-01",
+          "series": "HSR",
+          "value": 0
+        },
+        {
+          "date": "2021-06-01",
+          "series": "LR & Bus",
+          "value": 16363
+        },
+        {
+          "date": "2021-06-01",
+          "series": "X-Boundary",
+          "value": 40
+        },
+        {
+          "date": "2021-07-01",
+          "series": "Airport Exp",
+          "value": 183
+        },
+        {
+          "date": "2021-07-01",
+          "series": "Domestic",
+          "value": 125666
+        },
+        {
+          "date": "2021-07-01",
+          "series": "HSR",
+          "value": 0
+        },
+        {
+          "date": "2021-07-01",
+          "series": "LR & Bus",
+          "value": 16869
+        },
+        {
+          "date": "2021-07-01",
+          "series": "X-Boundary",
+          "value": 40
+        },
+        {
+          "date": "2021-08-01",
+          "series": "Airport Exp",
+          "value": 209
+        },
+        {
+          "date": "2021-08-01",
+          "series": "Domestic",
+          "value": 127696
+        },
+        {
+          "date": "2021-08-01",
+          "series": "HSR",
+          "value": 0
+        },
+        {
+          "date": "2021-08-01",
+          "series": "LR & Bus",
+          "value": 16795
+        },
+        {
+          "date": "2021-08-01",
+          "series": "X-Boundary",
+          "value": 41
+        },
+        {
+          "date": "2021-09-01",
+          "series": "Airport Exp",
+          "value": 197
+        },
+        {
+          "date": "2021-09-01",
+          "series": "Domestic",
+          "value": 129596
+        },
+        {
+          "date": "2021-09-01",
+          "series": "HSR",
+          "value": 0
+        },
+        {
+          "date": "2021-09-01",
+          "series": "LR & Bus",
+          "value": 17788
+        },
+        {
+          "date": "2021-09-01",
+          "series": "X-Boundary",
+          "value": 40
+        },
+        {
+          "date": "2021-10-01",
+          "series": "Airport Exp",
+          "value": 186
+        },
+        {
+          "date": "2021-10-01",
+          "series": "Domestic",
+          "value": 124953
+        },
+        {
+          "date": "2021-10-01",
+          "series": "HSR",
+          "value": 0
+        },
+        {
+          "date": "2021-10-01",
+          "series": "LR & Bus",
+          "value": 16857
+        },
+        {
+          "date": "2021-10-01",
+          "series": "X-Boundary",
+          "value": 42
+        },
+        {
+          "date": "2021-11-01",
+          "series": "Airport Exp",
+          "value": 178
+        },
+        {
+          "date": "2021-11-01",
+          "series": "Domestic",
+          "value": 131602
+        },
+        {
+          "date": "2021-11-01",
+          "series": "HSR",
+          "value": 0
+        },
+        {
+          "date": "2021-11-01",
+          "series": "LR & Bus",
+          "value": 17514
+        },
+        {
+          "date": "2021-11-01",
+          "series": "X-Boundary",
+          "value": 39
+        },
+        {
+          "date": "2021-12-01",
+          "series": "Airport Exp",
+          "value": 228
+        },
+        {
+          "date": "2021-12-01",
+          "series": "Domestic",
+          "value": 136110
+        },
+        {
+          "date": "2021-12-01",
+          "series": "HSR",
+          "value": 0
+        },
+        {
+          "date": "2021-12-01",
+          "series": "LR & Bus",
+          "value": 17553
+        },
+        {
+          "date": "2021-12-01",
+          "series": "X-Boundary",
+          "value": 41
+        },
+        {
+          "date": "2022-01-01",
+          "series": "Airport Exp",
+          "value": 175
+        },
+        {
+          "date": "2022-01-01",
+          "series": "Domestic",
+          "value": 110197
+        },
+        {
+          "date": "2022-01-01",
+          "series": "HSR",
+          "value": 0
+        },
+        {
+          "date": "2022-01-01",
+          "series": "LR & Bus",
+          "value": 14856
+        },
+        {
+          "date": "2022-01-01",
+          "series": "X-Boundary",
+          "value": 41
+        },
+        {
+          "date": "2022-02-01",
+          "series": "Airport Exp",
+          "value": 120
+        },
+        {
+          "date": "2022-02-01",
+          "series": "Domestic",
+          "value": 62787
+        },
+        {
+          "date": "2022-02-01",
+          "series": "HSR",
+          "value": 0
+        },
+        {
+          "date": "2022-02-01",
+          "series": "LR & Bus",
+          "value": 8913
+        },
+        {
+          "date": "2022-02-01",
+          "series": "X-Boundary",
+          "value": 30
+        },
+        {
+          "date": "2022-03-01",
+          "series": "Airport Exp",
+          "value": 136
+        },
+        {
+          "date": "2022-03-01",
+          "series": "Domestic",
+          "value": 65250
+        },
+        {
+          "date": "2022-03-01",
+          "series": "HSR",
+          "value": 0
+        },
+        {
+          "date": "2022-03-01",
+          "series": "LR & Bus",
+          "value": 9124
+        },
+        {
+          "date": "2022-03-01",
+          "series": "X-Boundary",
+          "value": 29
+        },
+        {
+          "date": "2022-04-01",
+          "series": "Airport Exp",
+          "value": 155
+        },
+        {
+          "date": "2022-04-01",
+          "series": "Domestic",
+          "value": 91033
+        },
+        {
+          "date": "2022-04-01",
+          "series": "HSR",
+          "value": 0
+        },
+        {
+          "date": "2022-04-01",
+          "series": "LR & Bus",
+          "value": 12183
+        },
+        {
+          "date": "2022-04-01",
+          "series": "X-Boundary",
+          "value": 39
+        },
+        {
+          "date": "2022-05-01",
+          "series": "Airport Exp",
+          "value": 182
+        },
+        {
+          "date": "2022-05-01",
+          "series": "Domestic",
+          "value": 119645
+        },
+        {
+          "date": "2022-05-01",
+          "series": "HSR",
+          "value": 0
+        },
+        {
+          "date": "2022-05-01",
+          "series": "LR & Bus",
+          "value": 16124
+        },
+        {
+          "date": "2022-05-01",
+          "series": "X-Boundary",
+          "value": 37
+        },
+        {
+          "date": "2022-06-01",
+          "series": "Airport Exp",
+          "value": 195
+        },
+        {
+          "date": "2022-06-01",
+          "series": "Domestic",
+          "value": 121634
+        },
+        {
+          "date": "2022-06-01",
+          "series": "HSR",
+          "value": 0
+        },
+        {
+          "date": "2022-06-01",
+          "series": "LR & Bus",
+          "value": 16508
+        },
+        {
+          "date": "2022-06-01",
+          "series": "X-Boundary",
+          "value": 35
+        },
+        {
+          "date": "2022-07-01",
+          "series": "Airport Exp",
+          "value": 213
+        },
+        {
+          "date": "2022-07-01",
+          "series": "Domestic",
+          "value": 122877
+        },
+        {
+          "date": "2022-07-01",
+          "series": "HSR",
+          "value": 0
+        },
+        {
+          "date": "2022-07-01",
+          "series": "LR & Bus",
+          "value": 16639
+        },
+        {
+          "date": "2022-07-01",
+          "series": "X-Boundary",
+          "value": 35
+        },
+        {
+          "date": "2022-08-01",
+          "series": "Airport Exp",
+          "value": 278
+        },
+        {
+          "date": "2022-08-01",
+          "series": "Domestic",
+          "value": 126912
+        },
+        {
+          "date": "2022-08-01",
+          "series": "HSR",
+          "value": 0
+        },
+        {
+          "date": "2022-08-01",
+          "series": "LR & Bus",
+          "value": 16504
+        },
+        {
+          "date": "2022-08-01",
+          "series": "X-Boundary",
+          "value": 35
+        },
+        {
+          "date": "2022-09-01",
+          "series": "Airport Exp",
+          "value": 294
+        },
+        {
+          "date": "2022-09-01",
+          "series": "Domestic",
+          "value": 126923
+        },
+        {
+          "date": "2022-09-01",
+          "series": "HSR",
+          "value": 0
+        },
+        {
+          "date": "2022-09-01",
+          "series": "LR & Bus",
+          "value": 17314
+        },
+        {
+          "date": "2022-09-01",
+          "series": "X-Boundary",
+          "value": 34
+        },
+        {
+          "date": "2022-10-01",
+          "series": "Airport Exp",
+          "value": 361
+        },
+        {
+          "date": "2022-10-01",
+          "series": "Domestic",
+          "value": 131427
+        },
+        {
+          "date": "2022-10-01",
+          "series": "HSR",
+          "value": 0
+        },
+        {
+          "date": "2022-10-01",
+          "series": "LR & Bus",
+          "value": 17885
+        },
+        {
+          "date": "2022-10-01",
+          "series": "X-Boundary",
+          "value": 40
+        },
+        {
+          "date": "2022-11-01",
+          "series": "Airport Exp",
+          "value": 451
+        },
+        {
+          "date": "2022-11-01",
+          "series": "Domestic",
+          "value": 126820
+        },
+        {
+          "date": "2022-11-01",
+          "series": "HSR",
+          "value": 0
+        },
+        {
+          "date": "2022-11-01",
+          "series": "LR & Bus",
+          "value": 16996
+        },
+        {
+          "date": "2022-11-01",
+          "series": "X-Boundary",
+          "value": 36
+        },
+        {
+          "date": "2022-12-01",
+          "series": "Airport Exp",
+          "value": 542
+        },
+        {
+          "date": "2022-12-01",
+          "series": "Domestic",
+          "value": 129086
+        },
+        {
+          "date": "2022-12-01",
+          "series": "HSR",
+          "value": 0
+        },
+        {
+          "date": "2022-12-01",
+          "series": "LR & Bus",
+          "value": 16899
+        },
+        {
+          "date": "2022-12-01",
+          "series": "X-Boundary",
+          "value": 37
+        },
+        {
+          "date": "2023-01-01",
+          "series": "Airport Exp",
+          "value": 614
+        },
+        {
+          "date": "2023-01-01",
+          "series": "Domestic",
+          "value": 125744
+        },
+        {
+          "date": "2023-01-01",
+          "series": "HSR",
+          "value": 264
+        },
+        {
+          "date": "2023-01-01",
+          "series": "LR & Bus",
+          "value": 16810
+        },
+        {
+          "date": "2023-01-01",
+          "series": "X-Boundary",
+          "value": 771
+        },
+        {
+          "date": "2023-02-01",
+          "series": "Airport Exp",
+          "value": 589
+        },
+        {
+          "date": "2023-02-01",
+          "series": "Domestic",
+          "value": 125939
+        },
+        {
+          "date": "2023-02-01",
+          "series": "HSR",
+          "value": 783
+        },
+        {
+          "date": "2023-02-01",
+          "series": "LR & Bus",
+          "value": 16388
+        },
+        {
+          "date": "2023-02-01",
+          "series": "X-Boundary",
+          "value": 3685
+        },
+        {
+          "date": "2023-03-01",
+          "series": "Airport Exp",
+          "value": 763
+        },
+        {
+          "date": "2023-03-01",
+          "series": "Domestic",
+          "value": 139522
+        },
+        {
+          "date": "2023-03-01",
+          "series": "HSR",
+          "value": 1205
+        },
+        {
+          "date": "2023-03-01",
+          "series": "LR & Bus",
+          "value": 18110
+        },
+        {
+          "date": "2023-03-01",
+          "series": "X-Boundary",
+          "value": 5670
+        },
+        {
+          "date": "2023-04-01",
+          "series": "Airport Exp",
+          "value": 873
+        },
+        {
+          "date": "2023-04-01",
+          "series": "Domestic",
+          "value": 124399
+        },
+        {
+          "date": "2023-04-01",
+          "series": "HSR",
+          "value": 1979
+        },
+        {
+          "date": "2023-04-01",
+          "series": "LR & Bus",
+          "value": 16262
+        },
+        {
+          "date": "2023-04-01",
+          "series": "X-Boundary",
+          "value": 6144
+        },
+        {
+          "date": "2023-05-01",
+          "series": "Airport Exp",
+          "value": 876
+        },
+        {
+          "date": "2023-05-01",
+          "series": "Domestic",
+          "value": 131843
+        },
+        {
+          "date": "2023-05-01",
+          "series": "HSR",
+          "value": 1751
+        },
+        {
+          "date": "2023-05-01",
+          "series": "LR & Bus",
+          "value": 17603
+        },
+        {
+          "date": "2023-05-01",
+          "series": "X-Boundary",
+          "value": 5966
+        },
+        {
+          "date": "2023-06-01",
+          "series": "Airport Exp",
+          "value": 850
+        },
+        {
+          "date": "2023-06-01",
+          "series": "Domestic",
+          "value": 129761
+        },
+        {
+          "date": "2023-06-01",
+          "series": "HSR",
+          "value": 1610
+        },
+        {
+          "date": "2023-06-01",
+          "series": "LR & Bus",
+          "value": 17427
+        },
+        {
+          "date": "2023-06-01",
+          "series": "X-Boundary",
+          "value": 5838
+        },
+        {
+          "date": "2023-07-01",
+          "series": "Airport Exp",
+          "value": 1000
+        },
+        {
+          "date": "2023-07-01",
+          "series": "Domestic",
+          "value": 133236
+        },
+        {
+          "date": "2023-07-01",
+          "series": "HSR",
+          "value": 2192
+        },
+        {
+          "date": "2023-07-01",
+          "series": "LR & Bus",
+          "value": 17357
+        },
+        {
+          "date": "2023-07-01",
+          "series": "X-Boundary",
+          "value": 6852
+        },
+        {
+          "date": "2023-08-01",
+          "series": "Airport Exp",
+          "value": 1040
+        },
+        {
+          "date": "2023-08-01",
+          "series": "Domestic",
+          "value": 137520
+        },
+        {
+          "date": "2023-08-01",
+          "series": "HSR",
+          "value": 2495
+        },
+        {
+          "date": "2023-08-01",
+          "series": "LR & Bus",
+          "value": 17260
+        },
+        {
+          "date": "2023-08-01",
+          "series": "X-Boundary",
+          "value": 7579
+        },
+        {
+          "date": "2023-09-01",
+          "series": "Airport Exp",
+          "value": 1005
+        },
+        {
+          "date": "2023-09-01",
+          "series": "Domestic",
+          "value": 126706
+        },
+        {
+          "date": "2023-09-01",
+          "series": "HSR",
+          "value": 1583
+        },
+        {
+          "date": "2023-09-01",
+          "series": "LR & Bus",
+          "value": 17114
+        },
+        {
+          "date": "2023-09-01",
+          "series": "X-Boundary",
+          "value": 6138
+        },
+        {
+          "date": "2023-10-01",
+          "series": "Airport Exp",
+          "value": 1072
+        },
+        {
+          "date": "2023-10-01",
+          "series": "Domestic",
+          "value": 135451
+        },
+        {
+          "date": "2023-10-01",
+          "series": "HSR",
+          "value": 2055
+        },
+        {
+          "date": "2023-10-01",
+          "series": "LR & Bus",
+          "value": 17796
+        },
+        {
+          "date": "2023-10-01",
+          "series": "X-Boundary",
+          "value": 7261
+        },
+        {
+          "date": "2023-11-01",
+          "series": "Airport Exp",
+          "value": 1005
+        },
+        {
+          "date": "2023-11-01",
+          "series": "Domestic",
+          "value": 138381
+        },
+        {
+          "date": "2023-11-01",
+          "series": "HSR",
+          "value": 1815
+        },
+        {
+          "date": "2023-11-01",
+          "series": "LR & Bus",
+          "value": 18054
+        },
+        {
+          "date": "2023-11-01",
+          "series": "X-Boundary",
+          "value": 7339
+        },
+        {
+          "date": "2023-12-01",
+          "series": "Airport Exp",
+          "value": 1155
+        },
+        {
+          "date": "2023-12-01",
+          "series": "Domestic",
+          "value": 138144
+        },
+        {
+          "date": "2023-12-01",
+          "series": "HSR",
+          "value": 2367
+        },
+        {
+          "date": "2023-12-01",
+          "series": "LR & Bus",
+          "value": 17512
+        },
+        {
+          "date": "2023-12-01",
+          "series": "X-Boundary",
+          "value": 8275
+        },
+        {
+          "date": "2024-01-01",
+          "series": "Airport Exp",
+          "value": 1158
+        },
+        {
+          "date": "2024-01-01",
+          "series": "Domestic",
+          "value": 140238
+        },
+        {
+          "date": "2024-01-01",
+          "series": "HSR",
+          "value": 2120
+        },
+        {
+          "date": "2024-01-01",
+          "series": "LR & Bus",
+          "value": 18164
+        },
+        {
+          "date": "2024-01-01",
+          "series": "X-Boundary",
+          "value": 7835
+        },
+        {
+          "date": "2024-02-01",
+          "series": "Airport Exp",
+          "value": 973
+        },
+        {
+          "date": "2024-02-01",
+          "series": "Domestic",
+          "value": 126604
+        },
+        {
+          "date": "2024-02-01",
+          "series": "HSR",
+          "value": 2357
+        },
+        {
+          "date": "2024-02-01",
+          "series": "LR & Bus",
+          "value": 16033
+        },
+        {
+          "date": "2024-02-01",
+          "series": "X-Boundary",
+          "value": 7314
+        },
+        {
+          "date": "2024-03-01",
+          "series": "Airport Exp",
+          "value": 1068
+        },
+        {
+          "date": "2024-03-01",
+          "series": "Domestic",
+          "value": 134170
+        },
+        {
+          "date": "2024-03-01",
+          "series": "HSR",
+          "value": 2070
+        },
+        {
+          "date": "2024-03-01",
+          "series": "LR & Bus",
+          "value": 17615
+        },
+        {
+          "date": "2024-03-01",
+          "series": "X-Boundary",
+          "value": 8049
+        },
+        {
+          "date": "2024-04-01",
+          "series": "Airport Exp",
+          "value": 1006
+        },
+        {
+          "date": "2024-04-01",
+          "series": "Domestic",
+          "value": 126810
+        },
+        {
+          "date": "2024-04-01",
+          "series": "HSR",
+          "value": 2118
+        },
+        {
+          "date": "2024-04-01",
+          "series": "LR & Bus",
+          "value": 17031
+        },
+        {
+          "date": "2024-04-01",
+          "series": "X-Boundary",
+          "value": 7567
+        },
+        {
+          "date": "2024-05-01",
+          "series": "Airport Exp",
+          "value": 997
+        },
+        {
+          "date": "2024-05-01",
+          "series": "Domestic",
+          "value": 132781
+        },
+        {
+          "date": "2024-05-01",
+          "series": "HSR",
+          "value": 1967
+        },
+        {
+          "date": "2024-05-01",
+          "series": "LR & Bus",
+          "value": 18144
+        },
+        {
+          "date": "2024-05-01",
+          "series": "X-Boundary",
+          "value": 7841
+        },
+        {
+          "date": "2024-06-01",
+          "series": "Airport Exp",
+          "value": 1057
+        },
+        {
+          "date": "2024-06-01",
+          "series": "Domestic",
+          "value": 126873
+        },
+        {
+          "date": "2024-06-01",
+          "series": "HSR",
+          "value": 2046
+        },
+        {
+          "date": "2024-06-01",
+          "series": "LR & Bus",
+          "value": 17513
+        },
+        {
+          "date": "2024-06-01",
+          "series": "X-Boundary",
+          "value": 7899
+        },
+        {
+          "date": "2024-07-01",
+          "series": "Airport Exp",
+          "value": 1114
+        },
+        {
+          "date": "2024-07-01",
+          "series": "Domestic",
+          "value": 134109
+        },
+        {
+          "date": "2024-07-01",
+          "series": "HSR",
+          "value": 2337
+        },
+        {
+          "date": "2024-07-01",
+          "series": "LR & Bus",
+          "value": 17969
+        },
+        {
+          "date": "2024-07-01",
+          "series": "X-Boundary",
+          "value": 8270
+        },
+        {
+          "date": "2024-08-01",
+          "series": "Airport Exp",
+          "value": 1191
+        },
+        {
+          "date": "2024-08-01",
+          "series": "Domestic",
+          "value": 135015
+        },
+        {
+          "date": "2024-08-01",
+          "series": "HSR",
+          "value": 2703
+        },
+        {
+          "date": "2024-08-01",
+          "series": "LR & Bus",
+          "value": 17479
+        },
+        {
+          "date": "2024-08-01",
+          "series": "X-Boundary",
+          "value": 9061
+        },
+        {
+          "date": "2024-09-01",
+          "series": "Airport Exp",
+          "value": 1059
+        },
+        {
+          "date": "2024-09-01",
+          "series": "Domestic",
+          "value": 131494
+        },
+        {
+          "date": "2024-09-01",
+          "series": "HSR",
+          "value": 1871
+        },
+        {
+          "date": "2024-09-01",
+          "series": "LR & Bus",
+          "value": 18245
+        },
+        {
+          "date": "2024-09-01",
+          "series": "X-Boundary",
+          "value": 7905
+        },
+        {
+          "date": "2024-10-01",
+          "series": "Airport Exp",
+          "value": 1119
+        },
+        {
+          "date": "2024-10-01",
+          "series": "Domestic",
+          "value": 139567
+        },
+        {
+          "date": "2024-10-01",
+          "series": "HSR",
+          "value": 2230
+        },
+        {
+          "date": "2024-10-01",
+          "series": "LR & Bus",
+          "value": 19026
+        },
+        {
+          "date": "2024-10-01",
+          "series": "X-Boundary",
+          "value": 8854
+        },
+        {
+          "date": "2024-11-01",
+          "series": "Airport Exp",
+          "value": 1149
+        },
+        {
+          "date": "2024-11-01",
+          "series": "Domestic",
+          "value": 136031
+        },
+        {
+          "date": "2024-11-01",
+          "series": "HSR",
+          "value": 2037
+        },
+        {
+          "date": "2024-11-01",
+          "series": "LR & Bus",
+          "value": 18245
+        },
+        {
+          "date": "2024-11-01",
+          "series": "X-Boundary",
+          "value": 8444
+        },
+        {
+          "date": "2024-12-01",
+          "series": "Airport Exp",
+          "value": 1242
+        },
+        {
+          "date": "2024-12-01",
+          "series": "Domestic",
+          "value": 137998
+        },
+        {
+          "date": "2024-12-01",
+          "series": "HSR",
+          "value": 2874
+        },
+        {
+          "date": "2024-12-01",
+          "series": "LR & Bus",
+          "value": 18060
+        },
+        {
+          "date": "2024-12-01",
+          "series": "X-Boundary",
+          "value": 9347
+        },
+        {
+          "date": "2025-01-01",
+          "series": "Airport Exp",
+          "value": 1116
+        },
+        {
+          "date": "2025-01-01",
+          "series": "Domestic",
+          "value": 136513
+        },
+        {
+          "date": "2025-01-01",
+          "series": "HSR",
+          "value": 2749
+        },
+        {
+          "date": "2025-01-01",
+          "series": "LR & Bus",
+          "value": 18144
+        },
+        {
+          "date": "2025-01-01",
+          "series": "X-Boundary",
+          "value": 8795
+        },
+        {
+          "date": "2025-02-01",
+          "series": "Airport Exp",
+          "value": 962
+        },
+        {
+          "date": "2025-02-01",
+          "series": "Domestic",
+          "value": 124880
+        },
+        {
+          "date": "2025-02-01",
+          "series": "HSR",
+          "value": 2187
+        },
+        {
+          "date": "2025-02-01",
+          "series": "LR & Bus",
+          "value": 16132
+        },
+        {
+          "date": "2025-02-01",
+          "series": "X-Boundary",
+          "value": 7612
+        },
+        {
+          "date": "2025-03-01",
+          "series": "Airport Exp",
+          "value": 1116
+        },
+        {
+          "date": "2025-03-01",
+          "series": "Domestic",
+          "value": 137890
+        },
+        {
+          "date": "2025-03-01",
+          "series": "HSR",
+          "value": 2274
+        },
+        {
+          "date": "2025-03-01",
+          "series": "LR & Bus",
+          "value": 18377
+        },
+        {
+          "date": "2025-03-01",
+          "series": "X-Boundary",
+          "value": 8801
+        },
+        {
+          "date": "2025-04-01",
+          "series": "Airport Exp",
+          "value": 1148
+        },
+        {
+          "date": "2025-04-01",
+          "series": "Domestic",
+          "value": 124808
+        },
+        {
+          "date": "2025-04-01",
+          "series": "HSR",
+          "value": 2777
+        },
+        {
+          "date": "2025-04-01",
+          "series": "LR & Bus",
+          "value": 16674
+        },
+        {
+          "date": "2025-04-01",
+          "series": "X-Boundary",
+          "value": 8861
+        },
+        {
+          "date": "2025-05-01",
+          "series": "Airport Exp",
+          "value": 1085
+        },
+        {
+          "date": "2025-05-01",
+          "series": "Domestic",
+          "value": 132820
+        },
+        {
+          "date": "2025-05-01",
+          "series": "HSR",
+          "value": 2454
+        },
+        {
+          "date": "2025-05-01",
+          "series": "LR & Bus",
+          "value": 18329
+        },
+        {
+          "date": "2025-05-01",
+          "series": "X-Boundary",
+          "value": 8768
+        },
+        {
+          "date": "2025-06-01",
+          "series": "Airport Exp",
+          "value": 977
+        },
+        {
+          "date": "2025-06-01",
+          "series": "Domestic",
+          "value": 129071
+        },
+        {
+          "date": "2025-06-01",
+          "series": "HSR",
+          "value": 2291
+        },
+        {
+          "date": "2025-06-01",
+          "series": "LR & Bus",
+          "value": 17783
+        },
+        {
+          "date": "2025-06-01",
+          "series": "X-Boundary",
+          "value": 8350
+        },
+        {
+          "date": "2025-07-01",
+          "series": "Airport Exp",
+          "value": 1120
+        },
+        {
+          "date": "2025-07-01",
+          "series": "Domestic",
+          "value": 132527
+        },
+        {
+          "date": "2025-07-01",
+          "series": "HSR",
+          "value": 2762
+        },
+        {
+          "date": "2025-07-01",
+          "series": "LR & Bus",
+          "value": 17534
+        },
+        {
+          "date": "2025-07-01",
+          "series": "X-Boundary",
+          "value": 8848
+        },
+        {
+          "date": "2025-08-01",
+          "series": "Airport Exp",
+          "value": 1204
+        },
+        {
+          "date": "2025-08-01",
+          "series": "Domestic",
+          "value": 132777
+        },
+        {
+          "date": "2025-08-01",
+          "series": "HSR",
+          "value": 3242
+        },
+        {
+          "date": "2025-08-01",
+          "series": "LR & Bus",
+          "value": 17110
+        },
+        {
+          "date": "2025-08-01",
+          "series": "X-Boundary",
+          "value": 9904
+        },
+        {
+          "date": "2025-09-01",
+          "series": "Airport Exp",
+          "value": 1042
+        },
+        {
+          "date": "2025-09-01",
+          "series": "Domestic",
+          "value": 128279
+        },
+        {
+          "date": "2025-09-01",
+          "series": "HSR",
+          "value": 2112
+        },
+        {
+          "date": "2025-09-01",
+          "series": "LR & Bus",
+          "value": 17535
+        },
+        {
+          "date": "2025-09-01",
+          "series": "X-Boundary",
+          "value": 8117
+        },
+        {
+          "date": "2025-10-01",
+          "series": "Airport Exp",
+          "value": 1141
+        },
+        {
+          "date": "2025-10-01",
+          "series": "Domestic",
+          "value": 140030
+        },
+        {
+          "date": "2025-10-01",
+          "series": "HSR",
+          "value": 2773
+        },
+        {
+          "date": "2025-10-01",
+          "series": "LR & Bus",
+          "value": 19046
+        },
+        {
+          "date": "2025-10-01",
+          "series": "X-Boundary",
+          "value": 9444
+        },
+        {
+          "date": "2025-11-01",
+          "series": "Airport Exp",
+          "value": 1145
+        },
+        {
+          "date": "2025-11-01",
+          "series": "Domestic",
+          "value": 137035
+        },
+        {
+          "date": "2025-11-01",
+          "series": "HSR",
+          "value": 2526
+        },
+        {
+          "date": "2025-11-01",
+          "series": "LR & Bus",
+          "value": 18292
+        },
+        {
+          "date": "2025-11-01",
+          "series": "X-Boundary",
+          "value": 9368
+        },
+        {
+          "date": "2025-12-01",
+          "series": "Airport Exp",
+          "value": 1248
+        },
+        {
+          "date": "2025-12-01",
+          "series": "Domestic",
+          "value": 137779
+        },
+        {
+          "date": "2025-12-01",
+          "series": "HSR",
+          "value": 2950
+        },
+        {
+          "date": "2025-12-01",
+          "series": "LR & Bus",
+          "value": 18065
+        },
+        {
+          "date": "2025-12-01",
+          "series": "X-Boundary",
+          "value": 9805
+        },
+        {
+          "date": "2026-01-01",
+          "series": "Airport Exp",
+          "value": 1125
+        },
+        {
+          "date": "2026-01-01",
+          "series": "Domestic",
+          "value": 140775
+        },
+        {
+          "date": "2026-01-01",
+          "series": "HSR",
+          "value": 2698
+        },
+        {
+          "date": "2026-01-01",
+          "series": "LR & Bus",
+          "value": 18668
+        },
+        {
+          "date": "2026-01-01",
+          "series": "X-Boundary",
+          "value": 9751
+        },
+        {
+          "date": "2026-02-01",
+          "series": "Airport Exp",
+          "value": 952
+        },
+        {
+          "date": "2026-02-01",
+          "series": "Domestic",
+          "value": 123313
+        },
+        {
+          "date": "2026-02-01",
+          "series": "HSR",
+          "value": 3079
+        },
+        {
+          "date": "2026-02-01",
+          "series": "LR & Bus",
+          "value": 16101
+        },
+        {
+          "date": "2026-02-01",
+          "series": "X-Boundary",
+          "value": 8736
+        },
+        {
+          "date": "2026-03-01",
+          "series": "Airport Exp",
+          "value": 1137
+        },
+        {
+          "date": "2026-03-01",
+          "series": "Domestic",
+          "value": 140136
+        },
+        {
+          "date": "2026-03-01",
+          "series": "HSR",
+          "value": 2573
+        },
+        {
+          "date": "2026-03-01",
+          "series": "LR & Bus",
+          "value": 18822
+        },
+        {
+          "date": "2026-03-01",
+          "series": "X-Boundary",
+          "value": 9362
+        },
+        {
+          "date": "2026-04-01",
+          "series": "Airport Exp",
+          "value": 1082
+        },
+        {
+          "date": "2026-04-01",
+          "series": "Domestic",
+          "value": 125306
+        },
+        {
+          "date": "2026-04-01",
+          "series": "HSR",
+          "value": 2961
+        },
+        {
+          "date": "2026-04-01",
+          "series": "LR & Bus",
+          "value": 17255
+        },
+        {
+          "date": "2026-04-01",
+          "series": "X-Boundary",
+          "value": 9411
+        },
+        {
+          "date": "2026-05-01",
+          "series": "Airport Exp",
+          "value": 1118
+        },
+        {
+          "date": "2026-05-01",
+          "series": "Domestic",
+          "value": 131864
+        },
+        {
+          "date": "2026-05-01",
+          "series": "HSR",
+          "value": 2750
+        },
+        {
+          "date": "2026-05-01",
+          "series": "LR & Bus",
+          "value": 18488
+        },
+        {
+          "date": "2026-05-01",
+          "series": "X-Boundary",
+          "value": 9533
+        },
+        {
+          "date": "2026-06-01",
+          "series": "Airport Exp",
+          "value": 1030
+        },
+        {
+          "date": "2026-06-01",
+          "series": "Domestic",
+          "value": 128248
+        },
+        {
+          "date": "2026-06-01",
+          "series": "HSR",
+          "value": 2477
+        },
+        {
+          "date": "2026-06-01",
+          "series": "LR & Bus",
+          "value": 18047
+        },
+        {
+          "date": "2026-06-01",
+          "series": "X-Boundary",
+          "value": 8591
+        }
+      ],
+      "cathay_capacity_demand_history": [
+        {
+          "date": "2012-12-01",
+          "series": "ASK ('000)",
+          "value": 10808557
+        },
+        {
+          "date": "2012-12-01",
+          "series": "RPK ('000)",
+          "value": 8725036
+        },
+        {
+          "date": "2013-02-01",
+          "series": "ASK ('000)",
+          "value": 9725310
+        },
+        {
+          "date": "2013-02-01",
+          "series": "RPK ('000)",
+          "value": 7862365
+        },
+        {
+          "date": "2013-05-01",
+          "series": "ASK ('000)",
+          "value": 10602951
+        },
+        {
+          "date": "2013-05-01",
+          "series": "RPK ('000)",
+          "value": 8379354
+        },
+        {
+          "date": "2013-06-01",
+          "series": "ASK ('000)",
+          "value": 10353881
+        },
+        {
+          "date": "2013-06-01",
+          "series": "RPK ('000)",
+          "value": 8787467
+        },
+        {
+          "date": "2013-07-01",
+          "series": "ASK ('000)",
+          "value": 11025903
+        },
+        {
+          "date": "2013-07-01",
+          "series": "RPK ('000)",
+          "value": 9374541
+        },
+        {
+          "date": "2013-08-01",
+          "series": "ASK ('000)",
+          "value": 11046938
+        },
+        {
+          "date": "2013-08-01",
+          "series": "RPK ('000)",
+          "value": 9576963
+        },
+        {
+          "date": "2013-12-01",
+          "series": "ASK ('000)",
+          "value": 11158190
+        },
+        {
+          "date": "2013-12-01",
+          "series": "RPK ('000)",
+          "value": 9188999
+        },
+        {
+          "date": "2014-01-01",
+          "series": "ASK ('000)",
+          "value": 11070054
+        },
+        {
+          "date": "2014-01-01",
+          "series": "RPK ('000)",
+          "value": 9232619
+        },
+        {
+          "date": "2014-02-01",
+          "series": "ASK ('000)",
+          "value": 10021121
+        },
+        {
+          "date": "2014-02-01",
+          "series": "RPK ('000)",
+          "value": 8211410
+        },
+        {
+          "date": "2014-03-01",
+          "series": "ASK ('000)",
+          "value": 11046510
+        },
+        {
+          "date": "2014-03-01",
+          "series": "RPK ('000)",
+          "value": 9087367
+        },
+        {
+          "date": "2014-05-01",
+          "series": "ASK ('000)",
+          "value": 11218579
+        },
+        {
+          "date": "2014-05-01",
+          "series": "RPK ('000)",
+          "value": 9315326
+        },
+        {
+          "date": "2014-06-01",
+          "series": "ASK ('000)",
+          "value": 11072700
+        },
+        {
+          "date": "2014-06-01",
+          "series": "RPK ('000)",
+          "value": 9507234
+        },
+        {
+          "date": "2014-07-01",
+          "series": "ASK ('000)",
+          "value": 11680468
+        },
+        {
+          "date": "2014-07-01",
+          "series": "RPK ('000)",
+          "value": 9997266
+        },
+        {
+          "date": "2014-09-01",
+          "series": "ASK ('000)",
+          "value": 11210123
+        },
+        {
+          "date": "2014-09-01",
+          "series": "RPK ('000)",
+          "value": 9082966
+        },
+        {
+          "date": "2014-12-01",
+          "series": "ASK ('000)",
+          "value": 11820975
+        },
+        {
+          "date": "2014-12-01",
+          "series": "RPK ('000)",
+          "value": 9874982
+        },
+        {
+          "date": "2015-01-01",
+          "series": "ASK ('000)",
+          "value": 11876449
+        },
+        {
+          "date": "2015-01-01",
+          "series": "RPK ('000)",
+          "value": 9816684
+        },
+        {
+          "date": "2015-02-01",
+          "series": "ASK ('000)",
+          "value": 10801044
+        },
+        {
+          "date": "2015-02-01",
+          "series": "RPK ('000)",
+          "value": 9169869
+        },
+        {
+          "date": "2015-04-01",
+          "series": "ASK ('000)",
+          "value": 11522897
+        },
+        {
+          "date": "2015-04-01",
+          "series": "RPK ('000)",
+          "value": 10050866
+        },
+        {
+          "date": "2015-07-01",
+          "series": "ASK ('000)",
+          "value": 12399240
+        },
+        {
+          "date": "2015-07-01",
+          "series": "RPK ('000)",
+          "value": 10789397
+        },
+        {
+          "date": "2015-08-01",
+          "series": "ASK ('000)",
+          "value": 12558154
+        },
+        {
+          "date": "2015-08-01",
+          "series": "RPK ('000)",
+          "value": 11130977
+        },
+        {
+          "date": "2015-09-01",
+          "series": "ASK ('000)",
+          "value": 11594776
+        },
+        {
+          "date": "2015-09-01",
+          "series": "RPK ('000)",
+          "value": 9729611
+        },
+        {
+          "date": "2015-10-01",
+          "series": "ASK ('000)",
+          "value": 12307735
+        },
+        {
+          "date": "2015-10-01",
+          "series": "RPK ('000)",
+          "value": 10352018
+        },
+        {
+          "date": "2015-11-01",
+          "series": "ASK ('000)",
+          "value": 11599726
+        },
+        {
+          "date": "2015-11-01",
+          "series": "RPK ('000)",
+          "value": 9844913
+        },
+        {
+          "date": "2016-01-01",
+          "series": "ASK ('000)",
+          "value": 12574463
+        },
+        {
+          "date": "2016-01-01",
+          "series": "RPK ('000)",
+          "value": 10811995
+        },
+        {
+          "date": "2016-02-01",
+          "series": "ASK ('000)",
+          "value": 11728128
+        },
+        {
+          "date": "2016-02-01",
+          "series": "RPK ('000)",
+          "value": 9660521
+        },
+        {
+          "date": "2016-03-01",
+          "series": "ASK ('000)",
+          "value": 12291864
+        },
+        {
+          "date": "2016-03-01",
+          "series": "RPK ('000)",
+          "value": 10318339
+        },
+        {
+          "date": "2016-04-01",
+          "series": "ASK ('000)",
+          "value": 11796619
+        },
+        {
+          "date": "2016-04-01",
+          "series": "RPK ('000)",
+          "value": 10017301
+        },
+        {
+          "date": "2016-05-01",
+          "series": "ASK ('000)",
+          "value": 12118716
+        },
+        {
+          "date": "2016-05-01",
+          "series": "RPK ('000)",
+          "value": 10177766
+        },
+        {
+          "date": "2016-06-01",
+          "series": "ASK ('000)",
+          "value": 12136720
+        },
+        {
+          "date": "2016-06-01",
+          "series": "RPK ('000)",
+          "value": 10381627
+        },
+        {
+          "date": "2016-07-01",
+          "series": "ASK ('000)",
+          "value": 12723458
+        },
+        {
+          "date": "2016-07-01",
+          "series": "RPK ('000)",
+          "value": 11067866
+        },
+        {
+          "date": "2016-09-01",
+          "series": "ASK ('000)",
+          "value": 11900705
+        },
+        {
+          "date": "2016-09-01",
+          "series": "RPK ('000)",
+          "value": 9915000
+        },
+        {
+          "date": "2016-11-01",
+          "series": "ASK ('000)",
+          "value": 11328962
+        },
+        {
+          "date": "2016-11-01",
+          "series": "RPK ('000)",
+          "value": 9459449
+        },
+        {
+          "date": "2016-12-01",
+          "series": "ASK ('000)",
+          "value": 12693382
+        },
+        {
+          "date": "2016-12-01",
+          "series": "RPK ('000)",
+          "value": 10793824
+        },
+        {
+          "date": "2017-01-01",
+          "series": "ASK ('000)",
+          "value": 12741323
+        },
+        {
+          "date": "2017-01-01",
+          "series": "RPK ('000)",
+          "value": 11018892
+        },
+        {
+          "date": "2017-02-01",
+          "series": "ASK ('000)",
+          "value": 11374142
+        },
+        {
+          "date": "2017-02-01",
+          "series": "RPK ('000)",
+          "value": 9481241
+        },
+        {
+          "date": "2017-05-01",
+          "series": "ASK ('000)",
+          "value": 12302168
+        },
+        {
+          "date": "2017-05-01",
+          "series": "RPK ('000)",
+          "value": 10356585
+        },
+        {
+          "date": "2017-06-01",
+          "series": "ASK ('000)",
+          "value": 12327267
+        },
+        {
+          "date": "2017-06-01",
+          "series": "RPK ('000)",
+          "value": 10487156
+        },
+        {
+          "date": "2017-08-01",
+          "series": "ASK ('000)",
+          "value": 13056610
+        },
+        {
+          "date": "2017-08-01",
+          "series": "RPK ('000)",
+          "value": 11264978
+        },
+        {
+          "date": "2017-12-01",
+          "series": "ASK ('000)",
+          "value": 13209584
+        },
+        {
+          "date": "2017-12-01",
+          "series": "RPK ('000)",
+          "value": 11176191
+        },
+        {
+          "date": "2018-01-01",
+          "series": "ASK ('000)",
+          "value": 13070796
+        },
+        {
+          "date": "2018-01-01",
+          "series": "RPK ('000)",
+          "value": 11007372
+        },
+        {
+          "date": "2018-02-01",
+          "series": "ASK ('000)",
+          "value": 11926392
+        },
+        {
+          "date": "2018-02-01",
+          "series": "RPK ('000)",
+          "value": 10026960
+        },
+        {
+          "date": "2018-03-01",
+          "series": "ASK ('000)",
+          "value": 12832998
+        },
+        {
+          "date": "2018-03-01",
+          "series": "RPK ('000)",
+          "value": 10932831
+        },
+        {
+          "date": "2018-05-01",
+          "series": "ASK ('000)",
+          "value": 12662581
+        },
+        {
+          "date": "2018-05-01",
+          "series": "RPK ('000)",
+          "value": 10380791
+        },
+        {
+          "date": "2018-06-01",
+          "series": "ASK ('000)",
+          "value": 12794574
+        },
+        {
+          "date": "2018-06-01",
+          "series": "RPK ('000)",
+          "value": 10908153
+        },
+        {
+          "date": "2018-08-01",
+          "series": "ASK ('000)",
+          "value": 13690681
+        },
+        {
+          "date": "2018-08-01",
+          "series": "RPK ('000)",
+          "value": 11924629
+        },
+        {
+          "date": "2018-10-01",
+          "series": "ASK ('000)",
+          "value": 13390172
+        },
+        {
+          "date": "2018-10-01",
+          "series": "RPK ('000)",
+          "value": 10923474
+        },
+        {
+          "date": "2018-11-01",
+          "series": "ASK ('000)",
+          "value": 12593062
+        },
+        {
+          "date": "2018-11-01",
+          "series": "RPK ('000)",
+          "value": 10485790
+        },
+        {
+          "date": "2018-12-01",
+          "series": "ASK ('000)",
+          "value": 13978669
+        },
+        {
+          "date": "2018-12-01",
+          "series": "RPK ('000)",
+          "value": 11720855
+        },
+        {
+          "date": "2019-03-01",
+          "series": "ASK ('000)",
+          "value": 13461313
+        },
+        {
+          "date": "2019-03-01",
+          "series": "RPK ('000)",
+          "value": 11295302
+        },
+        {
+          "date": "2019-05-01",
+          "series": "ASK ('000)",
+          "value": 13495182
+        },
+        {
+          "date": "2019-05-01",
+          "series": "RPK ('000)",
+          "value": 11190050
+        },
+        {
+          "date": "2019-06-01",
+          "series": "ASK ('000)",
+          "value": 13731593
+        },
+        {
+          "date": "2019-06-01",
+          "series": "RPK ('000)",
+          "value": 11900997
+        },
+        {
+          "date": "2019-08-01",
+          "series": "ASK ('000)",
+          "value": 14392234
+        },
+        {
+          "date": "2019-08-01",
+          "series": "RPK ('000)",
+          "value": 11501041
+        },
+        {
+          "date": "2019-10-01",
+          "series": "ASK ('000)",
+          "value": 13709615
+        },
+        {
+          "date": "2019-10-01",
+          "series": "RPK ('000)",
+          "value": 10633529
+        },
+        {
+          "date": "2019-11-01",
+          "series": "ASK ('000)",
+          "value": 12409574
+        },
+        {
+          "date": "2019-11-01",
+          "series": "RPK ('000)",
+          "value": 9934989
+        },
+        {
+          "date": "2019-12-01",
+          "series": "ASK ('000)",
+          "value": 13795313
+        },
+        {
+          "date": "2019-12-01",
+          "series": "RPK ('000)",
+          "value": 11721757
+        },
+        {
+          "date": "2020-01-01",
+          "series": "ASK ('000)",
+          "value": 13962739
+        },
+        {
+          "date": "2020-01-01",
+          "series": "RPK ('000)",
+          "value": 11830575
+        },
+        {
+          "date": "2020-02-01",
+          "series": "ASK ('000)",
+          "value": 8924428
+        },
+        {
+          "date": "2020-02-01",
+          "series": "RPK ('000)",
+          "value": 4735301
+        },
+        {
+          "date": "2020-03-01",
+          "series": "ASK ('000)",
+          "value": 3605276
+        },
+        {
+          "date": "2020-03-01",
+          "series": "RPK ('000)",
+          "value": 1776537
+        },
+        {
+          "date": "2020-04-01",
+          "series": "ASK ('000)",
+          "value": 368344
+        },
+        {
+          "date": "2020-04-01",
+          "series": "RPK ('000)",
+          "value": 79799
+        },
+        {
+          "date": "2020-05-01",
+          "series": "ASK ('000)",
+          "value": 338027
+        },
+        {
+          "date": "2020-05-01",
+          "series": "RPK ('000)",
+          "value": 100133
+        },
+        {
+          "date": "2020-06-01",
+          "series": "ASK ('000)",
+          "value": 533147
+        },
+        {
+          "date": "2020-06-01",
+          "series": "RPK ('000)",
+          "value": 145713
+        },
+        {
+          "date": "2020-07-01",
+          "series": "ASK ('000)",
+          "value": 1036254
+        },
+        {
+          "date": "2020-07-01",
+          "series": "RPK ('000)",
+          "value": 242927
+        },
+        {
+          "date": "2020-08-01",
+          "series": "ASK ('000)",
+          "value": 1119756
+        },
+        {
+          "date": "2020-08-01",
+          "series": "RPK ('000)",
+          "value": 222544
+        },
+        {
+          "date": "2020-09-01",
+          "series": "ASK ('000)",
+          "value": 1213977
+        },
+        {
+          "date": "2020-09-01",
+          "series": "RPK ('000)",
+          "value": 301698
+        },
+        {
+          "date": "2020-10-01",
+          "series": "ASK ('000)",
+          "value": 1153938
+        },
+        {
+          "date": "2020-10-01",
+          "series": "RPK ('000)",
+          "value": 210168
+        },
+        {
+          "date": "2020-11-01",
+          "series": "ASK ('000)",
+          "value": 1133508
+        },
+        {
+          "date": "2020-11-01",
+          "series": "RPK ('000)",
+          "value": 210103
+        },
+        {
+          "date": "2020-12-01",
+          "series": "ASK ('000)",
+          "value": 1219512
+        },
+        {
+          "date": "2020-12-01",
+          "series": "RPK ('000)",
+          "value": 223781
+        },
+        {
+          "date": "2021-01-01",
+          "series": "ASK ('000)",
+          "value": 1144614
+        },
+        {
+          "date": "2021-01-01",
+          "series": "RPK ('000)",
+          "value": 152055
+        },
+        {
+          "date": "2021-02-01",
+          "series": "ASK ('000)",
+          "value": 679186
+        },
+        {
+          "date": "2021-02-01",
+          "series": "RPK ('000)",
+          "value": 94156
+        },
+        {
+          "date": "2021-03-01",
+          "series": "ASK ('000)",
+          "value": 362075
+        },
+        {
+          "date": "2021-03-01",
+          "series": "RPK ('000)",
+          "value": 76921
+        },
+        {
+          "date": "2021-04-01",
+          "series": "ASK ('000)",
+          "value": 437780
+        },
+        {
+          "date": "2021-04-01",
+          "series": "RPK ('000)",
+          "value": 105830
+        },
+        {
+          "date": "2021-05-01",
+          "series": "ASK ('000)",
+          "value": 466599
+        },
+        {
+          "date": "2021-05-01",
+          "series": "RPK ('000)",
+          "value": 124644
+        },
+        {
+          "date": "2021-06-01",
+          "series": "ASK ('000)",
+          "value": 1076876
+        },
+        {
+          "date": "2021-06-01",
+          "series": "RPK ('000)",
+          "value": 233940
+        },
+        {
+          "date": "2021-07-01",
+          "series": "ASK ('000)",
+          "value": 1043681
+        },
+        {
+          "date": "2021-07-01",
+          "series": "RPK ('000)",
+          "value": 297879
+        },
+        {
+          "date": "2021-08-01",
+          "series": "ASK ('000)",
+          "value": 1891764
+        },
+        {
+          "date": "2021-08-01",
+          "series": "RPK ('000)",
+          "value": 877057
+        },
+        {
+          "date": "2021-09-01",
+          "series": "ASK ('000)",
+          "value": 1704768
+        },
+        {
+          "date": "2021-09-01",
+          "series": "RPK ('000)",
+          "value": 780461
+        },
+        {
+          "date": "2021-10-01",
+          "series": "ASK ('000)",
+          "value": 1383448
+        },
+        {
+          "date": "2021-10-01",
+          "series": "RPK ('000)",
+          "value": 409797
+        },
+        {
+          "date": "2021-11-01",
+          "series": "ASK ('000)",
+          "value": 1467977
+        },
+        {
+          "date": "2021-11-01",
+          "series": "RPK ('000)",
+          "value": 393162
+        },
+        {
+          "date": "2021-12-01",
+          "series": "ASK ('000)",
+          "value": 1568841
+        },
+        {
+          "date": "2021-12-01",
+          "series": "RPK ('000)",
+          "value": 574024
+        },
+        {
+          "date": "2022-01-01",
+          "series": "ASK ('000)",
+          "value": 288521
+        },
+        {
+          "date": "2022-01-01",
+          "series": "RPK ('000)",
+          "value": 116402
+        },
+        {
+          "date": "2022-02-01",
+          "series": "ASK ('000)",
+          "value": 207886
+        },
+        {
+          "date": "2022-02-01",
+          "series": "RPK ('000)",
+          "value": 99027
+        },
+        {
+          "date": "2022-03-01",
+          "series": "ASK ('000)",
+          "value": 244527
+        },
+        {
+          "date": "2022-03-01",
+          "series": "RPK ('000)",
+          "value": 111448
+        },
+        {
+          "date": "2022-04-01",
+          "series": "ASK ('000)",
+          "value": 305651
+        },
+        {
+          "date": "2022-04-01",
+          "series": "RPK ('000)",
+          "value": 170055
+        },
+        {
+          "date": "2022-05-01",
+          "series": "ASK ('000)",
+          "value": 545197
+        },
+        {
+          "date": "2022-05-01",
+          "series": "RPK ('000)",
+          "value": 329592
+        },
+        {
+          "date": "2022-06-01",
+          "series": "ASK ('000)",
+          "value": 1467026
+        },
+        {
+          "date": "2022-06-01",
+          "series": "RPK ('000)",
+          "value": 983120
+        },
+        {
+          "date": "2022-07-01",
+          "series": "ASK ('000)",
+          "value": 1822655
+        },
+        {
+          "date": "2022-07-01",
+          "series": "RPK ('000)",
+          "value": 1335702
+        },
+        {
+          "date": "2022-08-01",
+          "series": "ASK ('000)",
+          "value": 2336844
+        },
+        {
+          "date": "2022-08-01",
+          "series": "RPK ('000)",
+          "value": 1602511
+        },
+        {
+          "date": "2022-09-01",
+          "series": "ASK ('000)",
+          "value": 2177939
+        },
+        {
+          "date": "2022-09-01",
+          "series": "RPK ('000)",
+          "value": 1578413
+        },
+        {
+          "date": "2022-10-01",
+          "series": "ASK ('000)",
+          "value": 2877154
+        },
+        {
+          "date": "2022-10-01",
+          "series": "RPK ('000)",
+          "value": 2117193
+        },
+        {
+          "date": "2022-11-01",
+          "series": "ASK ('000)",
+          "value": 3334866
+        },
+        {
+          "date": "2022-11-01",
+          "series": "RPK ('000)",
+          "value": 2616499
+        },
+        {
+          "date": "2022-12-01",
+          "series": "ASK ('000)",
+          "value": 4447991
+        },
+        {
+          "date": "2022-12-01",
+          "series": "RPK ('000)",
+          "value": 3703782
+        },
+        {
+          "date": "2023-01-01",
+          "series": "ASK ('000)",
+          "value": 5242810
+        },
+        {
+          "date": "2023-01-01",
+          "series": "RPK ('000)",
+          "value": 4548192
+        },
+        {
+          "date": "2023-02-01",
+          "series": "ASK ('000)",
+          "value": 5534303
+        },
+        {
+          "date": "2023-02-01",
+          "series": "RPK ('000)",
+          "value": 4772931
+        },
+        {
+          "date": "2023-03-01",
+          "series": "ASK ('000)",
+          "value": 6074084
+        },
+        {
+          "date": "2023-03-01",
+          "series": "RPK ('000)",
+          "value": 5491910
+        },
+        {
+          "date": "2023-04-01",
+          "series": "ASK ('000)",
+          "value": 6336928
+        },
+        {
+          "date": "2023-04-01",
+          "series": "RPK ('000)",
+          "value": 5508383
+        },
+        {
+          "date": "2023-05-01",
+          "series": "ASK ('000)",
+          "value": 6828143
+        },
+        {
+          "date": "2023-05-01",
+          "series": "RPK ('000)",
+          "value": 5814059
+        },
+        {
+          "date": "2023-06-01",
+          "series": "ASK ('000)",
+          "value": 7036299
+        },
+        {
+          "date": "2023-06-01",
+          "series": "RPK ('000)",
+          "value": 6172901
+        },
+        {
+          "date": "2023-07-01",
+          "series": "ASK ('000)",
+          "value": 7804109
+        },
+        {
+          "date": "2023-07-01",
+          "series": "RPK ('000)",
+          "value": 6967424
+        },
+        {
+          "date": "2023-08-01",
+          "series": "ASK ('000)",
+          "value": 8060721
+        },
+        {
+          "date": "2023-08-01",
+          "series": "RPK ('000)",
+          "value": 7095215
+        },
+        {
+          "date": "2023-09-01",
+          "series": "ASK ('000)",
+          "value": 7849457
+        },
+        {
+          "date": "2023-09-01",
+          "series": "RPK ('000)",
+          "value": 6566972
+        },
+        {
+          "date": "2023-10-01",
+          "series": "ASK ('000)",
+          "value": 8144479
+        },
+        {
+          "date": "2023-10-01",
+          "series": "RPK ('000)",
+          "value": 6898356
+        },
+        {
+          "date": "2023-11-01",
+          "series": "ASK ('000)",
+          "value": 8067197
+        },
+        {
+          "date": "2023-11-01",
+          "series": "RPK ('000)",
+          "value": 6495074
+        },
+        {
+          "date": "2023-12-01",
+          "series": "ASK ('000)",
+          "value": 8628913
+        },
+        {
+          "date": "2023-12-01",
+          "series": "RPK ('000)",
+          "value": 7010296
+        },
+        {
+          "date": "2024-01-01",
+          "series": "ASK ('000)",
+          "value": 8607535
+        },
+        {
+          "date": "2024-01-01",
+          "series": "RPK ('000)",
+          "value": 7125438
+        },
+        {
+          "date": "2024-02-01",
+          "series": "ASK ('000)",
+          "value": 8705854
+        },
+        {
+          "date": "2024-02-01",
+          "series": "RPK ('000)",
+          "value": 7173058
+        },
+        {
+          "date": "2024-03-01",
+          "series": "ASK ('000)",
+          "value": 9046659
+        },
+        {
+          "date": "2024-03-01",
+          "series": "RPK ('000)",
+          "value": 7584543
+        },
+        {
+          "date": "2024-04-01",
+          "series": "ASK ('000)",
+          "value": 8633006
+        },
+        {
+          "date": "2024-04-01",
+          "series": "RPK ('000)",
+          "value": 7040793
+        },
+        {
+          "date": "2024-05-01",
+          "series": "ASK ('000)",
+          "value": 8742234
+        },
+        {
+          "date": "2024-05-01",
+          "series": "RPK ('000)",
+          "value": 7021256
+        },
+        {
+          "date": "2024-06-01",
+          "series": "ASK ('000)",
+          "value": 9145704
+        },
+        {
+          "date": "2024-06-01",
+          "series": "RPK ('000)",
+          "value": 7637869
+        },
+        {
+          "date": "2024-07-01",
+          "series": "ASK ('000)",
+          "value": 9456264
+        },
+        {
+          "date": "2024-07-01",
+          "series": "RPK ('000)",
+          "value": 8085955
+        },
+        {
+          "date": "2024-08-01",
+          "series": "ASK ('000)",
+          "value": 9659790
+        },
+        {
+          "date": "2024-08-01",
+          "series": "RPK ('000)",
+          "value": 8225400
+        },
+        {
+          "date": "2024-09-01",
+          "series": "ASK ('000)",
+          "value": 9553131
+        },
+        {
+          "date": "2024-09-01",
+          "series": "RPK ('000)",
+          "value": 7773554
+        },
+        {
+          "date": "2024-10-01",
+          "series": "ASK ('000)",
+          "value": 9883198
+        },
+        {
+          "date": "2024-10-01",
+          "series": "RPK ('000)",
+          "value": 8212887
+        },
+        {
+          "date": "2024-11-01",
+          "series": "ASK ('000)",
+          "value": 9785399
+        },
+        {
+          "date": "2024-11-01",
+          "series": "RPK ('000)",
+          "value": 8168734
+        },
+        {
+          "date": "2024-12-01",
+          "series": "ASK ('000)",
+          "value": 10570519
+        },
+        {
+          "date": "2024-12-01",
+          "series": "RPK ('000)",
+          "value": 8966020
+        },
+        {
+          "date": "2025-01-01",
+          "series": "ASK ('000)",
+          "value": 11269213
+        },
+        {
+          "date": "2025-01-01",
+          "series": "RPK ('000)",
+          "value": 9732981
+        },
+        {
+          "date": "2025-02-01",
+          "series": "ASK ('000)",
+          "value": 10187240
+        },
+        {
+          "date": "2025-02-01",
+          "series": "RPK ('000)",
+          "value": 8450299
+        },
+        {
+          "date": "2025-03-01",
+          "series": "ASK ('000)",
+          "value": 11357120
+        },
+        {
+          "date": "2025-03-01",
+          "series": "RPK ('000)",
+          "value": 9390917
+        },
+        {
+          "date": "2025-04-01",
+          "series": "ASK ('000)",
+          "value": 10973629
+        },
+        {
+          "date": "2025-04-01",
+          "series": "RPK ('000)",
+          "value": 9483200
+        },
+        {
+          "date": "2025-05-01",
+          "series": "ASK ('000)",
+          "value": 11466188
+        },
+        {
+          "date": "2025-05-01",
+          "series": "RPK ('000)",
+          "value": 9716956
+        },
+        {
+          "date": "2025-06-01",
+          "series": "ASK ('000)",
+          "value": 11539073
+        },
+        {
+          "date": "2025-06-01",
+          "series": "RPK ('000)",
+          "value": 9876538
+        },
+        {
+          "date": "2025-07-01",
+          "series": "ASK ('000)",
+          "value": 12256459
+        },
+        {
+          "date": "2025-07-01",
+          "series": "RPK ('000)",
+          "value": 10533262
+        },
+        {
+          "date": "2025-08-01",
+          "series": "ASK ('000)",
+          "value": 12770243
+        },
+        {
+          "date": "2025-08-01",
+          "series": "RPK ('000)",
+          "value": 11074075
+        },
+        {
+          "date": "2025-09-01",
+          "series": "ASK ('000)",
+          "value": 11430859
+        },
+        {
+          "date": "2025-09-01",
+          "series": "RPK ('000)",
+          "value": 9407276
+        },
+        {
+          "date": "2025-10-01",
+          "series": "ASK ('000)",
+          "value": 12479345
+        },
+        {
+          "date": "2025-10-01",
+          "series": "RPK ('000)",
+          "value": 10710849
+        },
+        {
+          "date": "2025-11-01",
+          "series": "ASK ('000)",
+          "value": 11923112
+        },
+        {
+          "date": "2025-11-01",
+          "series": "RPK ('000)",
+          "value": 10374948
+        },
+        {
+          "date": "2025-12-01",
+          "series": "ASK ('000)",
+          "value": 13028694
+        },
+        {
+          "date": "2025-12-01",
+          "series": "RPK ('000)",
+          "value": 11124121
+        },
+        {
+          "date": "2026-01-01",
+          "series": "ASK ('000)",
+          "value": 12876965
+        },
+        {
+          "date": "2026-01-01",
+          "series": "RPK ('000)",
+          "value": 10934223
+        },
+        {
+          "date": "2026-02-01",
+          "series": "ASK ('000)",
+          "value": 11804261
+        },
+        {
+          "date": "2026-02-01",
+          "series": "RPK ('000)",
+          "value": 10106181
+        },
+        {
+          "date": "2026-03-01",
+          "series": "ASK ('000)",
+          "value": 12418605
+        },
+        {
+          "date": "2026-03-01",
+          "series": "RPK ('000)",
+          "value": 11446209
+        },
+        {
+          "date": "2026-04-01",
+          "series": "ASK ('000)",
+          "value": 12667713
+        },
+        {
+          "date": "2026-04-01",
+          "series": "RPK ('000)",
+          "value": 11169641
+        },
+        {
+          "date": "2026-05-01",
+          "series": "ASK ('000)",
+          "value": 12661433
+        },
+        {
+          "date": "2026-05-01",
+          "series": "RPK ('000)",
+          "value": 10988053
+        },
+        {
+          "date": "2026-06-01",
+          "series": "ASK ('000)",
+          "value": 12232841
+        },
+        {
+          "date": "2026-06-01",
+          "series": "RPK ('000)",
+          "value": 10690055
+        }
       ]
     }
   },
@@ -6320,7 +10457,7 @@
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-transport/",
-    "snapshotId": "c419c951004c5a42",
+    "snapshotId": "9390db37ded6f6a6",
     "dataAsOf": "2026-06-01"
   }
 }
