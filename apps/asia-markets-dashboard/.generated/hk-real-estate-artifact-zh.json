@@ -5,7 +5,7 @@
     "surface": "dashboard",
     "title": "香港房地产市场监测",
     "description": "基于来源的住宅价格、租金和市场信心指标快照。",
-    "generatedAt": "2026-07-24T21:47:58.352675Z",
+    "generatedAt": "2026-07-25T12:04:54.309939Z",
     "cards": [
       {
         "id": "ccl_card",
@@ -419,7 +419,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**数据快照：** `dc1bf03c646850f6` · 生成于 2026-07-24T21:47:58.352675Z。这是已发布快照，不是实时连接；RVD 标记为 provisional 的观测可能会修订。"
+        "body": "**数据快照：** `3398dabc682d60e7` · 生成于 2026-07-25T12:04:54.309939Z。这是已发布快照，不是实时连接；RVD 标记为 provisional 的观测可能会修订。"
       },
       {
         "id": "market_pulse",
@@ -477,7 +477,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-24T21:47:58.352675Z",
+    "generatedAt": "2026-07-25T12:04:54.309939Z",
     "status": "ready",
     "datasets": {
       "kpi_ccl": [
@@ -14066,18 +14066,13 @@
       "rebased_five_year": [
         {
           "date": "2021-07-31",
-          "series": "CCL",
-          "value": 100
-        },
-        {
-          "date": "2021-07-31",
           "series": "MHPI",
           "value": 100
         },
         {
           "date": "2021-08-31",
           "series": "CCL",
-          "value": 100.5192
+          "value": 100
         },
         {
           "date": "2021-08-31",
@@ -14097,7 +14092,7 @@
         {
           "date": "2021-09-30",
           "series": "CCL",
-          "value": 100.445
+          "value": 99.9262
         },
         {
           "date": "2021-09-30",
@@ -14117,7 +14112,7 @@
         {
           "date": "2021-10-31",
           "series": "CCL",
-          "value": 98.6756
+          "value": 98.166
         },
         {
           "date": "2021-10-31",
@@ -14137,7 +14132,7 @@
         {
           "date": "2021-11-30",
           "series": "CCL",
-          "value": 99.7722
+          "value": 99.2569
         },
         {
           "date": "2021-11-30",
@@ -14157,7 +14152,7 @@
         {
           "date": "2021-12-31",
           "series": "CCL",
-          "value": 97.7645
+          "value": 97.2596
         },
         {
           "date": "2021-12-31",
@@ -14177,7 +14172,7 @@
         {
           "date": "2022-01-31",
           "series": "CCL",
-          "value": 98.4955
+          "value": 97.9868
         },
         {
           "date": "2022-01-31",
@@ -14197,7 +14192,7 @@
         {
           "date": "2022-02-28",
           "series": "CCL",
-          "value": 94.8774
+          "value": 94.3874
         },
         {
           "date": "2022-02-28",
@@ -14217,7 +14212,7 @@
         {
           "date": "2022-03-31",
           "series": "CCL",
-          "value": 93.945
+          "value": 93.4598
         },
         {
           "date": "2022-03-31",
@@ -14237,7 +14232,7 @@
         {
           "date": "2022-04-30",
           "series": "CCL",
-          "value": 95.9157
+          "value": 95.4203
         },
         {
           "date": "2022-04-30",
@@ -14257,7 +14252,7 @@
         {
           "date": "2022-05-31",
           "series": "CCL",
-          "value": 95.868
+          "value": 95.3729
         },
         {
           "date": "2022-05-31",
@@ -14277,7 +14272,7 @@
         {
           "date": "2022-06-30",
           "series": "CCL",
-          "value": 96.0693
+          "value": 95.5731
         },
         {
           "date": "2022-06-30",
@@ -14297,7 +14292,7 @@
         {
           "date": "2022-07-31",
           "series": "CCL",
-          "value": 93.9927
+          "value": 93.5072
         },
         {
           "date": "2022-07-31",
@@ -14317,7 +14312,7 @@
         {
           "date": "2022-08-31",
           "series": "CCL",
-          "value": 91.7625
+          "value": 91.2885
         },
         {
           "date": "2022-08-31",
@@ -14337,7 +14332,7 @@
         {
           "date": "2022-09-30",
           "series": "CCL",
-          "value": 89.7123
+          "value": 89.249
         },
         {
           "date": "2022-09-30",
@@ -14357,7 +14352,7 @@
         {
           "date": "2022-10-31",
           "series": "CCL",
-          "value": 87.3603
+          "value": 86.9091
         },
         {
           "date": "2022-10-31",
@@ -14377,7 +14372,7 @@
         {
           "date": "2022-11-30",
           "series": "CCL",
-          "value": 84.3142
+          "value": 83.8788
         },
         {
           "date": "2022-11-30",
@@ -14397,7 +14392,7 @@
         {
           "date": "2022-12-31",
           "series": "CCL",
-          "value": 83.0482
+          "value": 82.6192
         },
         {
           "date": "2022-12-31",
@@ -14417,7 +14412,7 @@
         {
           "date": "2023-01-31",
           "series": "CCL",
-          "value": 84.097
+          "value": 83.6627
         },
         {
           "date": "2023-01-31",
@@ -14437,7 +14432,7 @@
         {
           "date": "2023-02-28",
           "series": "CCL",
-          "value": 87.0001
+          "value": 86.5507
         },
         {
           "date": "2023-02-28",
@@ -14457,7 +14452,7 @@
         {
           "date": "2023-03-31",
           "series": "CCL",
-          "value": 89.1826
+          "value": 88.722
         },
         {
           "date": "2023-03-31",
@@ -14477,7 +14472,7 @@
         {
           "date": "2023-04-30",
           "series": "CCL",
-          "value": 87.4503
+          "value": 86.9987
         },
         {
           "date": "2023-04-30",
@@ -14497,7 +14492,7 @@
         {
           "date": "2023-05-31",
           "series": "CCL",
-          "value": 88.4039
+          "value": 87.9473
         },
         {
           "date": "2023-05-31",
@@ -14517,7 +14512,7 @@
         {
           "date": "2023-06-30",
           "series": "CCL",
-          "value": 88.6211
+          "value": 88.1634
         },
         {
           "date": "2023-06-30",
@@ -14537,7 +14532,7 @@
         {
           "date": "2023-07-31",
           "series": "CCL",
-          "value": 87.2596
+          "value": 86.809
         },
         {
           "date": "2023-07-31",
@@ -14557,7 +14552,7 @@
         {
           "date": "2023-08-31",
           "series": "CCL",
-          "value": 86.0306
+          "value": 85.5863
         },
         {
           "date": "2023-08-31",
@@ -14577,7 +14572,7 @@
         {
           "date": "2023-09-30",
           "series": "CCL",
-          "value": 83.7633
+          "value": 83.3307
         },
         {
           "date": "2023-09-30",
@@ -14597,7 +14592,7 @@
         {
           "date": "2023-10-31",
           "series": "CCL",
-          "value": 81.4059
+          "value": 80.9855
         },
         {
           "date": "2023-10-31",
@@ -14617,7 +14612,7 @@
         {
           "date": "2023-11-30",
           "series": "CCL",
-          "value": 80.0233
+          "value": 79.61
         },
         {
           "date": "2023-11-30",
@@ -14637,7 +14632,7 @@
         {
           "date": "2023-12-31",
           "series": "CCL",
-          "value": 77.9838
+          "value": 77.581
         },
         {
           "date": "2023-12-31",
@@ -14657,7 +14652,7 @@
         {
           "date": "2024-01-31",
           "series": "CCL",
-          "value": 77.7719
+          "value": 77.3702
         },
         {
           "date": "2024-01-31",
@@ -14677,7 +14672,7 @@
         {
           "date": "2024-02-29",
           "series": "CCL",
-          "value": 77.0091
+          "value": 76.6113
         },
         {
           "date": "2024-02-29",
@@ -14697,7 +14692,7 @@
         {
           "date": "2024-03-31",
           "series": "CCL",
-          "value": 77.9149
+          "value": 77.5125
         },
         {
           "date": "2024-03-31",
@@ -14717,7 +14712,7 @@
         {
           "date": "2024-04-30",
           "series": "CCL",
-          "value": 77.5971
+          "value": 77.1963
         },
         {
           "date": "2024-04-30",
@@ -14737,7 +14732,7 @@
         {
           "date": "2024-05-31",
           "series": "CCL",
-          "value": 76.1668
+          "value": 75.7734
         },
         {
           "date": "2024-05-31",
@@ -14757,7 +14752,7 @@
         {
           "date": "2024-06-30",
           "series": "CCL",
-          "value": 75.1232
+          "value": 74.7352
         },
         {
           "date": "2024-06-30",
@@ -14777,7 +14772,7 @@
         {
           "date": "2024-07-31",
           "series": "CCL",
-          "value": 74.7523
+          "value": 74.3663
         },
         {
           "date": "2024-07-31",
@@ -14797,7 +14792,7 @@
         {
           "date": "2024-08-31",
           "series": "CCL",
-          "value": 73.1949
+          "value": 72.8169
         },
         {
           "date": "2024-08-31",
@@ -14817,7 +14812,7 @@
         {
           "date": "2024-09-30",
           "series": "CCL",
-          "value": 71.9712
+          "value": 71.5995
         },
         {
           "date": "2024-09-30",
@@ -14837,7 +14832,7 @@
         {
           "date": "2024-10-31",
           "series": "CCL",
-          "value": 72.5062
+          "value": 72.1318
         },
         {
           "date": "2024-10-31",
@@ -14857,7 +14852,7 @@
         {
           "date": "2024-11-30",
           "series": "CCL",
-          "value": 73.4015
+          "value": 73.0224
         },
         {
           "date": "2024-11-30",
@@ -14877,7 +14872,7 @@
         {
           "date": "2024-12-31",
           "series": "CCL",
-          "value": 72.9141
+          "value": 72.5375
         },
         {
           "date": "2024-12-31",
@@ -14897,7 +14892,7 @@
         {
           "date": "2025-01-31",
           "series": "CCL",
-          "value": 73.3856
+          "value": 73.0066
         },
         {
           "date": "2025-01-31",
@@ -14917,7 +14912,7 @@
         {
           "date": "2025-02-28",
           "series": "CCL",
-          "value": 72.5857
+          "value": 72.2108
         },
         {
           "date": "2025-02-28",
@@ -14937,7 +14932,7 @@
         {
           "date": "2025-03-31",
           "series": "CCL",
-          "value": 72.4797
+          "value": 72.1054
         },
         {
           "date": "2025-03-31",
@@ -14957,7 +14952,7 @@
         {
           "date": "2025-04-30",
           "series": "CCL",
-          "value": 72.4215
+          "value": 72.0474
         },
         {
           "date": "2025-04-30",
@@ -14977,7 +14972,7 @@
         {
           "date": "2025-05-31",
           "series": "CCL",
-          "value": 71.6004
+          "value": 71.2306
         },
         {
           "date": "2025-05-31",
@@ -14997,7 +14992,7 @@
         {
           "date": "2025-06-30",
           "series": "CCL",
-          "value": 72.342
+          "value": 71.9684
         },
         {
           "date": "2025-06-30",
@@ -15017,7 +15012,7 @@
         {
           "date": "2025-07-31",
           "series": "CCL",
-          "value": 73.5498
+          "value": 73.17
         },
         {
           "date": "2025-07-31",
@@ -15037,7 +15032,7 @@
         {
           "date": "2025-08-31",
           "series": "CCL",
-          "value": 72.6281
+          "value": 72.253
         },
         {
           "date": "2025-08-31",
@@ -15057,7 +15052,7 @@
         {
           "date": "2025-09-30",
           "series": "CCL",
-          "value": 74.1325
+          "value": 73.7497
         },
         {
           "date": "2025-09-30",
@@ -15077,7 +15072,7 @@
         {
           "date": "2025-10-31",
           "series": "CCL",
-          "value": 74.8477
+          "value": 74.4611
         },
         {
           "date": "2025-10-31",
@@ -15097,7 +15092,7 @@
         {
           "date": "2025-11-30",
           "series": "CCL",
-          "value": 75.7695
+          "value": 75.3781
         },
         {
           "date": "2025-11-30",
@@ -15117,7 +15112,7 @@
         {
           "date": "2025-12-31",
           "series": "CCL",
-          "value": 76.3416
+          "value": 75.9473
         },
         {
           "date": "2025-12-31",
@@ -15137,7 +15132,7 @@
         {
           "date": "2026-01-31",
           "series": "CCL",
-          "value": 77.5918
+          "value": 77.191
         },
         {
           "date": "2026-01-31",
@@ -15157,7 +15152,7 @@
         {
           "date": "2026-02-28",
           "series": "CCL",
-          "value": 79.1492
+          "value": 78.7404
         },
         {
           "date": "2026-02-28",
@@ -15177,7 +15172,7 @@
         {
           "date": "2026-03-31",
           "series": "CCL",
-          "value": 80.6113
+          "value": 80.195
         },
         {
           "date": "2026-03-31",
@@ -15197,7 +15192,7 @@
         {
           "date": "2026-04-30",
           "series": "CCL",
-          "value": 82.2165
+          "value": 81.7918
         },
         {
           "date": "2026-04-30",
@@ -15217,7 +15212,7 @@
         {
           "date": "2026-05-31",
           "series": "CCL",
-          "value": 83.668
+          "value": 83.2358
         },
         {
           "date": "2026-05-31",
@@ -15237,7 +15232,7 @@
         {
           "date": "2026-06-30",
           "series": "CCL",
-          "value": 85.1671
+          "value": 84.7273
         },
         {
           "date": "2026-06-30",
@@ -15247,7 +15242,7 @@
         {
           "date": "2026-07-31",
           "series": "CCL",
-          "value": 85.0453
+          "value": 84.6061
         },
         {
           "date": "2026-07-31",
@@ -15259,51 +15254,51 @@
         {
           "source": "Centaline City Leading Index (CCL)",
           "dataset": "Centaline CCL",
-          "type": "Measure",
-          "status": "Healthy",
+          "type": "指标",
+          "status": "健康",
           "latest_observation": "2026-07-19",
           "records": 1699,
-          "freshness": "5d old",
+          "freshness": "6 天前",
           "notes": "Latest observation is published without a provisional flag."
         },
         {
           "source": "Midland Realty Market Insight — MHPI",
           "dataset": "Midland MHPI",
-          "type": "Measure",
-          "status": "Healthy",
+          "type": "指标",
+          "status": "健康",
           "latest_observation": "2026-07-20",
           "records": 541,
-          "freshness": "4d old",
+          "freshness": "5 天前",
           "notes": "Latest observation is published without a provisional flag."
         },
         {
           "source": "Midland Realty Market Insight — Confidence Index",
           "dataset": "Midland Confidence Index",
-          "type": "Measure",
-          "status": "Healthy",
+          "type": "指标",
+          "status": "健康",
           "latest_observation": "2026-07-20",
           "records": 443,
-          "freshness": "4d old",
+          "freshness": "5 天前",
           "notes": "Latest observation is published without a provisional flag."
         },
         {
           "source": "Rating and Valuation Department — Private Domestic Price Index",
           "dataset": "RVD Residential Price Index",
-          "type": "Measure",
-          "status": "Healthy",
+          "type": "指标",
+          "status": "健康",
           "latest_observation": "2026-05-01",
           "records": 401,
-          "freshness": "84d old",
+          "freshness": "85 天前",
           "notes": "Latest observation is provisional."
         },
         {
           "source": "Rating and Valuation Department — Private Domestic Rental Index",
           "dataset": "RVD Residential Rental Index",
-          "type": "Measure",
-          "status": "Healthy",
+          "type": "指标",
+          "status": "健康",
           "latest_observation": "2026-05-01",
           "records": 401,
-          "freshness": "84d old",
+          "freshness": "85 天前",
           "notes": "Latest observation is provisional."
         }
       ],
@@ -15311,101 +15306,101 @@
         {
           "source": "Centaline City Leading Index (CCL)",
           "dataset": "Centaline CCL",
-          "type": "Measure",
-          "status": "Healthy",
+          "type": "指标",
+          "status": "健康",
           "latest_observation": "2026-07-19",
           "records": 1699,
-          "freshness": "5d old",
+          "freshness": "6 天前",
           "notes": "Latest observation is published without a provisional flag."
         },
         {
           "source": "Midland Realty Market Insight — MHPI",
           "dataset": "Midland MHPI",
-          "type": "Measure",
-          "status": "Healthy",
+          "type": "指标",
+          "status": "健康",
           "latest_observation": "2026-07-20",
           "records": 541,
-          "freshness": "4d old",
+          "freshness": "5 天前",
           "notes": "Latest observation is published without a provisional flag."
         },
         {
           "source": "Midland Realty Market Insight — Confidence Index",
           "dataset": "Midland Confidence Index",
-          "type": "Measure",
-          "status": "Healthy",
+          "type": "指标",
+          "status": "健康",
           "latest_observation": "2026-07-20",
           "records": 443,
-          "freshness": "4d old",
+          "freshness": "5 天前",
           "notes": "Latest observation is published without a provisional flag."
         },
         {
           "source": "Rating and Valuation Department — Private Domestic Price Index",
           "dataset": "RVD Residential Price Index",
-          "type": "Measure",
-          "status": "Healthy",
+          "type": "指标",
+          "status": "健康",
           "latest_observation": "2026-05-01",
           "records": 401,
-          "freshness": "84d old",
+          "freshness": "85 天前",
           "notes": "Latest observation is provisional."
         },
         {
           "source": "Rating and Valuation Department — Private Domestic Rental Index",
           "dataset": "RVD Residential Rental Index",
-          "type": "Measure",
-          "status": "Healthy",
+          "type": "指标",
+          "status": "健康",
           "latest_observation": "2026-05-01",
           "records": 401,
-          "freshness": "84d old",
+          "freshness": "85 天前",
           "notes": "Latest observation is provisional."
         },
         {
           "source": "28Hse",
           "dataset": "EPI / ERI",
-          "type": "Measure",
-          "status": "Planned",
+          "type": "指标",
+          "status": "计划中",
           "latest_observation": "—",
           "records": 0,
-          "freshness": "Not ingested",
+          "freshness": "尚未采集",
           "notes": "High-value index source; endpoint and history contract still require validation."
         },
         {
           "source": "Agency transactions",
           "dataset": "Centaline / Midland / 28Hse transactions",
-          "type": "Measure",
-          "status": "Planned",
+          "type": "指标",
+          "status": "计划中",
           "latest_observation": "—",
           "records": 0,
-          "freshness": "Not ingested",
+          "freshness": "尚未采集",
           "notes": "Target is a deduplicated near-real-time transaction activity measure."
         },
         {
           "source": "SRPE",
           "dataset": "First-hand residential project documents",
-          "type": "Catalog",
-          "status": "Catalog only",
+          "type": "目录",
+          "status": "仅目录",
           "latest_observation": "—",
           "records": 0,
-          "freshness": "Content parser pending",
+          "freshness": "内容解析待完成",
           "notes": "Current discovery code does not yet extract sales, units, price lists, or absorption facts."
         },
         {
           "source": "Land Registry",
           "dataset": "Registered sale and purchase facts",
-          "type": "Catalog",
-          "status": "Catalog only",
+          "type": "目录",
+          "status": "仅目录",
           "latest_observation": "—",
           "records": 0,
-          "freshness": "Content parser pending",
+          "freshness": "内容解析待完成",
           "notes": "Current code discovers releases; fact extraction and point-in-time semantics remain pending."
         },
         {
           "source": "Buildings Department",
           "dataset": "Approvals, starts and occupation permits",
-          "type": "Catalog",
-          "status": "Catalog only",
+          "type": "目录",
+          "status": "仅目录",
           "latest_observation": "—",
           "records": 0,
-          "freshness": "Content parser pending",
+          "freshness": "内容解析待完成",
           "notes": "Monthly digest discovery exists; structured project facts are not yet extracted."
         }
       ]
@@ -15425,7 +15420,7 @@
           "CCL latest is the most recent published weekly Centaline City Leading Index observation.",
           "Weekly and yearly movements are latest divided by the prior observation or latest observation on/before one year earlier, minus one."
         ],
-        "executed_at": "2026-07-24T21:47:58.352675Z"
+        "executed_at": "2026-07-25T12:04:54.309939Z"
       }
     },
     {
@@ -15441,7 +15436,7 @@
           "MHPI latest is the most recent published overall weekly Midland Hong Kong Property Price Index observation.",
           "Weekly and yearly movements are latest divided by the prior observation or latest observation on/before one year earlier, minus one."
         ],
-        "executed_at": "2026-07-24T21:47:58.352675Z"
+        "executed_at": "2026-07-25T12:04:54.309939Z"
       }
     },
     {
@@ -15456,7 +15451,7 @@
         "metric_definitions": [
           "The confidence series is a supporting market-sentiment measure published by Midland Realty."
         ],
-        "executed_at": "2026-07-24T21:47:58.352675Z"
+        "executed_at": "2026-07-25T12:04:54.309939Z"
       }
     },
     {
@@ -15472,7 +15467,7 @@
           "RVD price latest is the All Classes monthly private domestic price index.",
           "Monthly and yearly movements are latest divided by the prior month or observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-07-24T21:47:58.352675Z"
+        "executed_at": "2026-07-25T12:04:54.309939Z"
       }
     },
     {
@@ -15488,7 +15483,7 @@
           "RVD rent latest is the All Classes monthly private domestic rental index.",
           "Monthly and yearly movements are latest divided by the prior month or observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-07-24T21:47:58.352675Z"
+        "executed_at": "2026-07-25T12:04:54.309939Z"
       }
     },
     {
@@ -15507,7 +15502,7 @@
           "RVD 1.4M.csv",
           "RVD 1.3M.csv"
         ],
-        "executed_at": "2026-07-24T21:47:58.352675Z"
+        "executed_at": "2026-07-25T12:04:54.309939Z"
       }
     },
     {
@@ -15521,13 +15516,13 @@
           "Validated core measure frames",
           "Declared future-source registry"
         ],
-        "executed_at": "2026-07-24T21:47:58.352675Z"
+        "executed_at": "2026-07-25T12:04:54.309939Z"
       }
     }
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-real-estate/",
-    "snapshotId": "dc1bf03c646850f6",
+    "snapshotId": "3398dabc682d60e7",
     "dataAsOf": "2026-07-20"
   }
 }
