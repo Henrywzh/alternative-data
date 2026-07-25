@@ -6,7 +6,7 @@
     "title": "香港电讯监测",
     "description": "香港电讯（HKT）、数码通（SmarTone）及和记电讯（3 HK）的半年度用户与 ARPU 披露数据，以及通讯办全运营商手机号码段配额快照。",
     "sector": "hk-telecom",
-    "generatedAt": "2026-07-25T13:40:37.039072Z",
+    "generatedAt": "2026-07-25T14:20:41.120016Z",
     "cards": [
       {
         "id": "hkt_card",
@@ -258,7 +258,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-25T13:40:37.039072Z",
+    "generatedAt": "2026-07-25T14:20:41.120016Z",
     "status": "ready",
     "datasets": {
       "kpi_hkt": [

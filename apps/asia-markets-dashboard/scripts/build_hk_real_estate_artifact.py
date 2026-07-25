@@ -398,12 +398,15 @@ def build_artifact(raw_frames: dict[str, pd.DataFrame], *, now: datetime | None 
     if not df_hkma.empty and "observation_date" in df_hkma.columns:
         for _, r in df_hkma.iterrows():
             obs_d = str(r["observation_date"])[:10]
-            hibor_pct = r.get("interest_rate_hibor_pct")
-            blr_pct = r.get("interest_rate_blr_pct")
+            hibor_pct = r.get("hibor_pricing_pct_share")
+            blr_pct = r.get("blr_pricing_pct_share")
+            fixed_pct = r.get("fixed_pricing_pct_share")
             if pd.notna(hibor_pct):
                 hkma_rows.append({"date": obs_d, "series": "HIBOR-based (%)", "value": float(hibor_pct)})
             if pd.notna(blr_pct):
                 hkma_rows.append({"date": obs_d, "series": "Best Lending Rate (%)", "value": float(blr_pct)})
+            if pd.notna(fixed_pct):
+                hkma_rows.append({"date": obs_d, "series": "Fixed-rate (%)", "value": float(fixed_pct)})
 
     cnsd_const_rows = []
     if not df_cnsd.empty and "period" in df_cnsd.columns and "value" in df_cnsd.columns:
