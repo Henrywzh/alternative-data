@@ -854,6 +854,36 @@ def build_artifact(raw_frames: dict[str, pd.DataFrame], raw_hkma: pd.DataFrame |
     return artifact, status
 
 
+_COMMITTED_ARTIFACT_PATH = Path(__file__).resolve().parent.parent / ".generated" / "hk-real-estate-artifact.json"
+
+
+def _load_midland_fallback_from_committed_artifact(dataset_key: str, value_column: str) -> pd.DataFrame:
+    """Reconstruct a raw Midland frame from yesterday's committed artifact.
+
+    load_latest_normalized() reads data/normalized/hk_real_estate/, which is
+    entirely gitignored -- on a fresh CI checkout that directory never has
+    anything in it, so the fallback silently produced an empty, columnless
+    DataFrame that crashed _normalized_frame's schema check downstream
+    (confirmed via a real CI failure: "Midland MHPI: missing columns
+    ['date', 'mhpi_overall']"), taking the whole sector refresh down with it
+    even though CCL/RVD had nothing to do with Midland.
+
+    .generated/hk-real-estate-artifact.json, by contrast, IS committed to
+    git every successful run, so it always has real historical rows on a
+    fresh checkout. Re-derive a compatible raw frame from its own
+    mhpi_history/confidence_history datasets (which are {date, value} pairs)
+    as a real second-level fallback, rather than a fabricated one.
+    """
+    try:
+        data = json.loads(_COMMITTED_ARTIFACT_PATH.read_text(encoding="utf-8"))
+        rows = data["snapshot"]["datasets"][dataset_key]
+    except (FileNotFoundError, json.JSONDecodeError, KeyError):
+        return pd.DataFrame()
+    if not rows:
+        return pd.DataFrame()
+    return pd.DataFrame({"date": [r["date"] for r in rows], value_column: [r["value"] for r in rows]})
+
+
 def fetch_live_frames() -> dict[str, pd.DataFrame]:
     if os.environ.get(SKIP_MIDLAND_ENV_VAR):
         # Midland's WAF blocks GitHub Actions' datacenter IP range (confirmed
@@ -861,7 +891,11 @@ def fetch_live_frames() -> dict[str, pd.DataFrame]:
         # back to the last real snapshot rather than attempting a fetch
         # that's known to fail here and blocking the whole sector refresh.
         mhpi = load_latest_normalized("midland_mhpi_weekly")
+        if mhpi.empty:
+            mhpi = _load_midland_fallback_from_committed_artifact("mhpi_history", "mhpi_overall")
         confidence = load_latest_normalized("midland_confidence_weekly")
+        if confidence.empty:
+            confidence = _load_midland_fallback_from_committed_artifact("confidence_history", "confidence_index")
     else:
         mhpi, confidence, _estates = run_midland_ingestion()
     rvd_price, rvd_rent = run_rvd_ingestion()

@@ -5,7 +5,7 @@
     "surface": "dashboard",
     "title": "Hong Kong Local Consumer Monitor",
     "description": "A source-backed snapshot of cross-border passenger traffic, fresh-food wholesale prices, gold input costs, auto fuel pricing, and watchlist valuations for HK local-consumer names.",
-    "generatedAt": "2026-07-25T19:20:31.367914Z",
+    "generatedAt": "2026-07-25T20:01:21.789565Z",
     "cards": [
       {
         "id": "northbound_card",
@@ -1003,7 +1003,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**Data snapshot:** `823a41ec6385afd0` · generated 2026-07-25T19:20:31.367914Z.  This is a published snapshot, not a live connection. Includes official Consumer Council auto fuel calculator pricing."
+        "body": "**Data snapshot:** `823a41ec6385afd0` · generated 2026-07-25T20:01:21.789565Z.  This is a published snapshot, not a live connection. Includes official Consumer Council auto fuel calculator pricing."
       },
       {
         "id": "market_pulse_1",
@@ -1157,7 +1157,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-25T19:20:31.367914Z",
+    "generatedAt": "2026-07-25T20:01:21.789565Z",
     "status": "ready",
     "datasets": {
       "kpi_weather": [
@@ -6589,7 +6589,7 @@
         "url": "https://oil-price.consumer.org.hk/en",
         "language": "JSON",
         "description": "Daily auto-fuel pump prices, walk-in discounts, and net prices across Caltex, PetroChina, Shell, Sinopec, and Esso.",
-        "executed_at": "2026-07-25T19:20:31.367914Z"
+        "executed_at": "2026-07-25T20:01:21.789565Z"
       }
     },
     {
@@ -6601,7 +6601,7 @@
         "url": "https://www.consumer.org.hk/node/32290/export-complaints/json?lang=en",
         "language": "JSON",
         "description": "Annual consumer complaints by category across Hong Kong consumer sectors.",
-        "executed_at": "2026-07-25T19:20:31.367914Z"
+        "executed_at": "2026-07-25T20:01:21.789565Z"
       }
     },
     {
@@ -6616,7 +6616,7 @@
         "metric_definitions": [
           "Each commodity's price is the mean of same-day readings across the wholesale markets/sources AFCD reports for it."
         ],
-        "executed_at": "2026-07-25T19:20:31.367914Z"
+        "executed_at": "2026-07-25T20:01:21.789565Z"
       }
     },
     {
@@ -6632,7 +6632,7 @@
           "Latest is the most recent published PM benchmark fixing.",
           "Day and year movements are latest divided by the prior trading day or the observation on/before one year earlier, minus one."
         ],
-        "executed_at": "2026-07-25T19:20:31.367914Z"
+        "executed_at": "2026-07-25T20:01:21.789565Z"
       }
     },
     {
@@ -6648,7 +6648,7 @@
           "PE (TTM), PB, and market cap (HKD bn) are each ticker's latest published daily value.",
           "No dividend-yield indicator exists on this endpoint; yield is not reported here."
         ],
-        "executed_at": "2026-07-25T19:20:31.367914Z"
+        "executed_at": "2026-07-25T20:01:21.789565Z"
       }
     },
     {
@@ -6664,7 +6664,7 @@
           "All retail outlet is the classification group's own published total across all outlet types.",
           "Month and year movements are latest divided by the prior month or the observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-07-25T19:20:31.367914Z"
+        "executed_at": "2026-07-25T20:01:21.789565Z"
       }
     },
     {
@@ -6680,7 +6680,7 @@
           "Purchases are only published sector-wide, not broken out by restaurant type.",
           "Quarter and year movements are latest divided by the prior quarter or the observation four quarters earlier, minus one."
         ],
-        "executed_at": "2026-07-25T19:20:31.367914Z"
+        "executed_at": "2026-07-25T20:01:21.789565Z"
       }
     },
     {
@@ -6697,7 +6697,7 @@
           "Southbound (南下) flow is daily Mainland visitor arrivals across all 17 control points, since Mainland visitors legitimately arrive by air, rail, and sea, not just by land.",
           "7-day moving averages (7d MA) smooth out day-of-week seasonality (weekend shopping spikes)."
         ],
-        "executed_at": "2026-07-25T19:20:31.367914Z"
+        "executed_at": "2026-07-25T20:01:21.789565Z"
       }
     },
     {
@@ -6714,7 +6714,7 @@
           "Red/Black Rainstorm hours measures total duration under Red or Black rainstorm warnings.",
           "RMB per 100 HKD is derived from FRED daily DEXCHUS and DEXHKUS rates."
         ],
-        "executed_at": "2026-07-25T19:20:31.367914Z"
+        "executed_at": "2026-07-25T20:01:21.789565Z"
       }
     },
     {
@@ -6728,7 +6728,7 @@
           "Validated live measure frames",
           "Declared future-source registry"
         ],
-        "executed_at": "2026-07-25T19:20:31.367914Z"
+        "executed_at": "2026-07-25T20:01:21.789565Z"
       }
     }
   ],
