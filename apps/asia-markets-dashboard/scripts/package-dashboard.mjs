@@ -42,6 +42,154 @@ function sha256(path) {
   return createHash("sha256").update(readFileSync(path)).digest("hex");
 }
 
+// --- Chart/table data-value localization --------------------------------
+//
+// localizeArtifact() (below) only rewrites chart titles/subtitles/axis
+// labels and table column headers -- static config text. It does NOT touch
+// the actual row values inside artifact.snapshot.datasets, so any chart or
+// table that renders a categorical field's raw string value (a color-legend
+// entry, a bar-chart x-axis category, a table cell) shows whatever English
+// string the Python builder baked into the dataset, regardless of locale.
+// The helpers below patch known offending fields in-place on the (already
+// cloned) zh artifact. Only fields verified to hold a small, closed set of
+// translatable category/status strings are touched here -- ticker codes,
+// company/REIT/product names, and other proper nouns are deliberately left
+// alone (see per-sector comments for why).
+
+// Shared across every sector: the "real-time source health" and "coverage"
+// tables use the same status/type/freshness vocabulary everywhere they
+// appear (currently hk-real-estate and hk-local-consumer).
+const STATUS_VALUE_ZH = {
+  Healthy: "健康",
+  Degraded: "异常",
+  Planned: "计划中",
+  "Catalog only": "仅目录",
+};
+const TYPE_VALUE_ZH = {
+  Measure: "指标",
+  Catalog: "目录",
+  Context: "参考资料",
+};
+const FRESHNESS_VALUE_ZH = {
+  "Not ingested": "尚未采集",
+  "Content parser pending": "内容解析待完成",
+  "Endpoint returns no data": "接口无数据返回",
+  "Same-day snapshot": "同日快照",
+};
+function translateFreshnessValue(value) {
+  if (typeof value !== "string") return value;
+  if (FRESHNESS_VALUE_ZH[value]) return FRESHNESS_VALUE_ZH[value];
+  const dayMatch = /^(\d+)d old$/.exec(value);
+  return dayMatch ? `${dayMatch[1]} 天前` : value;
+}
+const HEALTH_COVERAGE_DATASET_IDS = [
+  "source_health",
+  "source_coverage",
+  "source_coverage_active",
+  "source_coverage_planned",
+];
+function localizeHealthCoverageDatasets(artifact) {
+  HEALTH_COVERAGE_DATASET_IDS.forEach((datasetId) => {
+    const rows = artifact.snapshot?.datasets?.[datasetId];
+    if (!Array.isArray(rows)) return;
+    rows.forEach((row) => {
+      if (!row || typeof row !== "object") return;
+      if (STATUS_VALUE_ZH[row.status]) row.status = STATUS_VALUE_ZH[row.status];
+      if (TYPE_VALUE_ZH[row.type]) row.type = TYPE_VALUE_ZH[row.type];
+      if (row.freshness) row.freshness = translateFreshnessValue(row.freshness);
+    });
+  });
+}
+
+// HKO warning names combine a fixed signal type with a free-form typhoon
+// name (e.g. "Typhoon Signal 8 (RAGASA)") -- a lookup table alone can't
+// cover every future typhoon name, so this parses the pattern instead.
+const HKO_SIGNAL_STATIC_ZH = {
+  "Black Rainstorm": "黑色暴雨警告信号",
+  "Red Rainstorm": "红色暴雨警告信号",
+};
+const HKO_SIGNAL_NUMBER_ZH = {
+  1: "一号戒备信号",
+  3: "三号强风信号",
+  8: "八号烈风或暴风信号",
+  9: "九号烈风或暴风风力增强信号",
+  10: "十号飓风信号",
+};
+function translateHkoSignalName(value) {
+  if (typeof value !== "string") return value;
+  if (HKO_SIGNAL_STATIC_ZH[value]) return HKO_SIGNAL_STATIC_ZH[value];
+  const match = /^Typhoon Signal (\d+)(?: \((.+)\))?$/.exec(value);
+  if (!match) return value;
+  const numberLabel = HKO_SIGNAL_NUMBER_ZH[match[1]] || `${match[1]}号信号`;
+  return match[2] ? `${numberLabel}（${match[2]}）` : numberLabel;
+}
+
+// Applies a per-sector `dataLabels` map (datasetId -> field -> translation)
+// to artifact.snapshot.datasets. A translation may be a plain {en: zh}
+// lookup object, or a function for values that combine a fixed vocabulary
+// with a variable part (see translateHkoSignalName above).
+function localizeDataLabels(artifact, dataLabels) {
+  if (!dataLabels) return;
+  Object.entries(dataLabels).forEach(([datasetId, fieldMap]) => {
+    const rows = artifact.snapshot?.datasets?.[datasetId];
+    if (!Array.isArray(rows)) return;
+    rows.forEach((row) => {
+      if (!row || typeof row !== "object") return;
+      Object.entries(fieldMap).forEach(([field, translation]) => {
+        const current = row[field];
+        if (typeof current !== "string") return;
+        if (typeof translation === "function") {
+          row[field] = translation(current);
+        } else if (translation[current]) {
+          row[field] = translation[current];
+        }
+      });
+    });
+  });
+}
+
+// hk-local-consumer: AFCD wholesale-price category names. Reused for both
+// the full-name field (category) and its narrow-legend abbreviation
+// (category_short) -- the abbreviation only exists because the portable
+// renderer can't wrap a multi-series legend onto multiple lines at mobile
+// width (see AFCD_CATEGORY_SHORT_LABELS in build_hk_local_consumer_artifact.py);
+// translating to short Chinese terms keeps that legend narrow too.
+const AFCD_CATEGORY_ZH = {
+  "Marine fish": "海鱼",
+  "Livestock / Poultry": "家畜/家禽",
+  "Freshwater fish": "淡水鱼",
+  Vegetables: "蔬菜",
+  Eggs: "蛋类",
+};
+const AFCD_CATEGORY_SHORT_ZH = {
+  "FW fish": "淡水鱼",
+  "Meat/Poultry": "畜禽",
+  Marine: "海鱼",
+  Veg: "蔬菜",
+  Eggs: "蛋类",
+};
+// hk-local-consumer: C&SD retail-sales-by-outlet-type categories (official
+// C&SD Chinese terminology).
+const RETAIL_CATEGORY_ZH = {
+  "All retail outlet": "所有零售店铺",
+  "Consumer durable goods": "耐用消费品",
+  "Department stores": "百货公司",
+  Fuels: "燃料",
+  "Other consumer goods": "其他消费品",
+  Supermarkets: "超级市场",
+};
+// hk-local-consumer: C&SD restaurant-receipts sub-sectors. "全部食肆" matches
+// the wording already used for the same concept in restaurant_snapshot_table's
+// zh subtitle above.
+const RESTAURANT_SUBSECTOR_ZH = {
+  "All restaurants": "全部食肆",
+  Bars: "酒吧",
+  "Chinese restaurants": "中式餐馆",
+  "Fast food shops": "快餐店",
+  "Miscellaneous eating and drinking places": "其他饮食场所",
+  "Non-Chinese restaurants": "非中式餐馆",
+};
+
 // --- Per-sector Chinese localization -----------------------------------
 
 const HK_REAL_ESTATE_ZH = {
@@ -169,6 +317,17 @@ const HK_LOCAL_CONSUMER_ZH = {
     `**数据快照：** \`${artifact.package_info.snapshotId}\` · 生成于 ${artifact.manifest.generatedAt}。`,
   methodologyBody:
     "## 如何阅读本 dashboard\n\n跨境人流（北上/南下）为本 dashboard 主打的消费需求信号。黄金为金饰原料成本的辅助参考，与农渔护理署批发食品成本并列展示以供毛利分析，而非独立的主打图表。农渔护理署批发价按类别走势图逐日累积真实观测值（该数据源无历史存档），因此初期数据量很薄，会随时间增长。本界面整合物理天气干扰、汇率环境、出入境流量、零售金价溢价、零售销售、餐饮收益与消费股估值等代理指标，以评估香港本地零售与餐饮业的宏观受压情况。「已跟踪数据信号」列出已有实时数据支撑的来源；「覆盖范围与下一步采集目标」追踪端点仍存在问题或未经验证的来源。",
+  dataLabels: {
+    immigration_trend_history: { flow_type: { Northbound: "北上", Southbound: "南下" } },
+    afcd_category_summary: { category: AFCD_CATEGORY_ZH },
+    afcd_commodity_table: { category: AFCD_CATEGORY_ZH },
+    afcd_category_trend_history: { category_short: AFCD_CATEGORY_SHORT_ZH },
+    retail_category_snapshot: { category: RETAIL_CATEGORY_ZH },
+    retail_category_chart: { category: RETAIL_CATEGORY_ZH },
+    restaurant_snapshot: { sub_sector: RESTAURANT_SUBSECTOR_ZH },
+    restaurant_chart: { sub_sector: RESTAURANT_SUBSECTOR_ZH },
+    severe_weather_log: { signal_name: translateHkoSignalName },
+  },
 };
 
 const HK_UTILITIES_ZH = {
@@ -224,6 +383,20 @@ const HK_TRANSPORT_ZH = {
   },
   snapshotBody: (artifact) => `**数据快照：** \`${artifact.package_info.snapshotId}\` · 生成于 ${artifact.manifest.generatedAt}。`,
   methodologyBody: "## 如何阅读本 dashboard\n\n港铁客运量按服务类型拆解（本地重铁、跨境及高铁）；机场与国泰数据反映国际与区域航空客货运复苏进度。",
+  dataLabels: {
+    // Cathay's ASK/RPK series are industry-standard aviation acronyms kept
+    // in English even in the zh chart title above -- not translated here,
+    // same treatment as REIT ticker codes.
+    mtr_service_breakdown_history: {
+      series: {
+        "Airport Exp": "机场快线",
+        Domestic: "本地",
+        HSR: "高铁",
+        "LR & Bus": "轻铁巴士",
+        "X-Boundary": "跨境",
+      },
+    },
+  },
 };
 
 const HK_TELECOM_ZH = {
@@ -303,10 +476,28 @@ const HK_REIT_ZH = {
   },
   snapshotBody: (artifact) => `**数据快照：** \`${artifact.package_info.snapshotId}\` · 生成于 ${artifact.manifest.generatedAt}。`,
   methodologyBody: "## 如何阅读本 dashboard\n\n五家 REIT（领展、冠君、置富、繁荣、阳光）为写字楼/零售业主，披露出租率与租金检讨调升率；富豪产业信托为酒店类 REIT，披露出租率、平均房价（ADR）及 RevPAR，其酒店指标从不与其余五家的写字楼/零售指标合并显示于同一图表。DPU 在个别期间可能为零（真实披露结果，非数据缺失），此时环比变动留空而非除以零。本 dashboard 不提供股票排名、预测或投资建议。",
+  dataLabels: {
+    // Only the Regal hotel-KPI chart's metric-name series need translating;
+    // nav/dpu/occupancy/reversion charts intentionally color by bare ticker
+    // code (0823, 2778, ...) for mobile-legend-width reasons -- those stay
+    // untouched, same as reit_name/ticker in reit_comparison below.
+    regal_hotel_kpi_history: {
+      series: {
+        "Occupancy (%)": "出租率 (%)",
+        "ADR (HK$)": "平均房价 ADR (港元)",
+        "RevPAR (HK$)": "RevPAR (港元)",
+      },
+    },
+    reit_comparison: {
+      business_type: { "Office/Retail": "写字楼/零售", Hotel: "酒店" },
+    },
+  },
 };
 
 function localizeArtifact(input, zh) {
   const artifact = JSON.parse(JSON.stringify(input));
+  localizeHealthCoverageDatasets(artifact);
+  localizeDataLabels(artifact, zh.dataLabels);
   artifact.manifest.title = zh.title;
   artifact.manifest.description = zh.description;
   if (artifact.manifest.cards) {
@@ -351,23 +542,27 @@ function localizeArtifact(input, zh) {
       });
     });
   }
+  const localizeSourceEntry = (source) => ({
+    ...source,
+    label: zh.sources[source.id] || source.label,
+    query: source.query ? {
+      ...source.query,
+      description: source.query.description
+        ? `构建时从公开来源读取并校验 ${zh.sources[source.id] || source.label}。`
+        : source.query.description,
+    } : source.query,
+  });
+  // Both artifact.manifest.sources and the top-level artifact.sources carry
+  // an English query.description (e.g. "Hotel portfolio KPIs: occupancy
+  // (%), average daily rate (ADR, HK$), RevPAR (HK$), ...") that is
+  // user-visible source-attribution text on the rendered page. Only
+  // artifact.sources used to have its description localized; manifest.sources
+  // was left untouched, which leaked the English description onto zh pages.
   if (artifact.manifest.sources) {
-    artifact.manifest.sources = artifact.manifest.sources.map((source) => ({
-      ...source,
-      label: zh.sources[source.id] || source.label,
-    }));
+    artifact.manifest.sources = artifact.manifest.sources.map(localizeSourceEntry);
   }
   if (Array.isArray(artifact.sources)) {
-    artifact.sources = artifact.sources.map((source) => ({
-      ...source,
-      label: zh.sources[source.id] || source.label,
-      query: source.query ? {
-        ...source.query,
-        description: source.query.description
-          ? `构建时从公开来源读取并校验 ${zh.sources[source.id] || source.label}。`
-          : source.query.description,
-      } : source.query,
-    }));
+    artifact.sources = artifact.sources.map(localizeSourceEntry);
   }
   const snapshot = artifact.manifest.blocks?.find((block) => block.id === "snapshot_context");
   if (snapshot) snapshot.body = zh.snapshotBody(artifact);
