@@ -3,13 +3,13 @@
   "manifest": {
     "version": 1,
     "surface": "dashboard",
-    "title": "香港房地产市场监测",
-    "description": "基于来源的住宅价格、租金和市场信心指标快照。",
-    "generatedAt": "2026-07-25T13:17:29.321674Z",
+    "title": "Hong Kong Real Estate Monitor",
+    "description": "A source-backed snapshot of residential price, rent, and market confidence measures.",
+    "generatedAt": "2026-07-25T13:13:31.185548Z",
     "cards": [
       {
         "id": "ccl_card",
-        "description": "最新发布指数；周环比与同比变动。",
+        "description": "Latest published index; WoW and year-on-year movements.",
         "dataset": "kpi_ccl",
         "sourceId": "centaline_ccl",
         "metrics": [
@@ -19,13 +19,13 @@
             "format": "number"
           },
           {
-            "label": "周环比",
+            "label": "WoW",
             "field": "period_change",
             "format": "percent",
             "signed": true
           },
           {
-            "label": "同比",
+            "label": "YoY",
             "field": "year_change",
             "format": "percent",
             "signed": true
@@ -34,7 +34,7 @@
       },
       {
         "id": "mhpi_card",
-        "description": "最新发布指数；周环比与同比变动。",
+        "description": "Latest published index; WoW and year-on-year movements.",
         "dataset": "kpi_mhpi",
         "sourceId": "midland_mhpi",
         "metrics": [
@@ -44,13 +44,13 @@
             "format": "number"
           },
           {
-            "label": "周环比",
+            "label": "WoW",
             "field": "period_change",
             "format": "percent",
             "signed": true
           },
           {
-            "label": "同比",
+            "label": "YoY",
             "field": "year_change",
             "format": "percent",
             "signed": true
@@ -59,23 +59,23 @@
       },
       {
         "id": "rvd_price_card",
-        "description": "官方月度指数；月环比与同比变动。",
+        "description": "Latest published index; MoM and year-on-year movements.",
         "dataset": "kpi_rvd_price",
         "sourceId": "rvd_price",
         "metrics": [
           {
-            "label": "RVD 价格",
+            "label": "RVD Price",
             "field": "latest",
             "format": "number"
           },
           {
-            "label": "月环比",
+            "label": "MoM",
             "field": "period_change",
             "format": "percent",
             "signed": true
           },
           {
-            "label": "同比",
+            "label": "YoY",
             "field": "year_change",
             "format": "percent",
             "signed": true
@@ -84,23 +84,23 @@
       },
       {
         "id": "rvd_rent_card",
-        "description": "官方月度指数；月环比与同比变动。",
+        "description": "Latest published index; MoM and year-on-year movements.",
         "dataset": "kpi_rvd_rent",
         "sourceId": "rvd_rent",
         "metrics": [
           {
-            "label": "RVD 租金",
+            "label": "RVD Rent",
             "field": "latest",
             "format": "number"
           },
           {
-            "label": "月环比",
+            "label": "MoM",
             "field": "period_change",
             "format": "percent",
             "signed": true
           },
           {
-            "label": "同比",
+            "label": "YoY",
             "field": "year_change",
             "format": "percent",
             "signed": true
@@ -111,8 +111,8 @@
     "charts": [
       {
         "id": "ccl_trend",
-        "title": "中原城市领先指数（CCL）",
-        "subtitle": "发布方周度指数；最新点可能早于构建日期。",
+        "title": "Centaline CCL",
+        "subtitle": "Weekly publisher level; the latest point may precede the build date.",
         "type": "line",
         "intent": "trend",
         "dataset": "ccl_history",
@@ -121,12 +121,12 @@
           "x": {
             "field": "date",
             "type": "temporal",
-            "label": "周"
+            "label": "Week"
           },
           "y": {
             "field": "value",
             "type": "quantitative",
-            "label": "指数"
+            "label": "Index"
           }
         },
         "valueFormat": "number",
@@ -135,8 +135,8 @@
       },
       {
         "id": "mhpi_trend",
-        "title": "美联物业价格指数（MHPI）",
-        "subtitle": "美联物业发布的香港整体周度指数。",
+        "title": "Midland MHPI",
+        "subtitle": "Weekly overall index from Midland Market Insight.",
         "type": "line",
         "intent": "trend",
         "dataset": "mhpi_history",
@@ -145,12 +145,12 @@
           "x": {
             "field": "date",
             "type": "temporal",
-            "label": "周"
+            "label": "Week"
           },
           "y": {
             "field": "value",
             "type": "quantitative",
-            "label": "指数"
+            "label": "Index"
           }
         },
         "valueFormat": "number",
@@ -159,8 +159,8 @@
       },
       {
         "id": "rvd_trend",
-        "title": "官方住宅价格与租金指数",
-        "subtitle": "差饷物业估价署全类别月度指数；保留已审阅数据中的 provisional 标记。",
+        "title": "Official residential price and rental indices",
+        "subtitle": "RVD All Classes monthly indices; provisional flags are retained in the reviewed rows.",
         "type": "line",
         "intent": "comparison",
         "dataset": "rvd_history",
@@ -169,17 +169,17 @@
           "x": {
             "field": "date",
             "type": "temporal",
-            "label": "月份"
+            "label": "Month"
           },
           "y": {
             "field": "price",
             "type": "quantitative",
-            "label": "价格指数"
+            "label": "Price index"
           },
           "tooltip": [
             {
               "field": "rent",
-              "label": "租金指数",
+              "label": "Rent index",
               "format": "number"
             }
           ]
@@ -194,8 +194,8 @@
       },
       {
         "id": "rvd_rent_trend",
-        "title": "RVD 租金指数（配套视图）",
-        "subtitle": "与价格图表使用相同的月度观测，以租金作为主序列。",
+        "title": "RVD rental index (companion view)",
+        "subtitle": "Same monthly observations as the price chart, with rent plotted as the primary series.",
         "type": "line",
         "intent": "trend",
         "dataset": "rvd_history",
@@ -204,17 +204,17 @@
           "x": {
             "field": "date",
             "type": "temporal",
-            "label": "月份"
+            "label": "Month"
           },
           "y": {
             "field": "rent",
             "type": "quantitative",
-            "label": "租金指数"
+            "label": "Rent index"
           },
           "tooltip": [
             {
               "field": "price",
-              "label": "价格指数",
+              "label": "Price index",
               "format": "number"
             }
           ]
@@ -225,8 +225,8 @@
       },
       {
         "id": "rebased_trend",
-        "title": "五年跨来源走势",
-        "subtitle": "各序列在窗口内首个可用月份重设为 100；不同来源的原始水平不可直接比较。",
+        "title": "Five-year cross-source movement",
+        "subtitle": "Each series is rebased to 100 at its first available month in the window; levels are not directly comparable outside this view.",
         "type": "line",
         "intent": "comparison",
         "dataset": "rebased_five_year",
@@ -235,17 +235,17 @@
           "x": {
             "field": "date",
             "type": "temporal",
-            "label": "月份"
+            "label": "Month"
           },
           "y": {
             "field": "value",
             "type": "quantitative",
-            "label": "重设基准指数"
+            "label": "Rebased index"
           },
           "color": {
             "field": "series",
             "type": "nominal",
-            "label": "序列"
+            "label": "Series"
           }
         },
         "valueFormat": "number",
@@ -253,13 +253,13 @@
         "maxRows": 400,
         "comparisonContext": {
           "grain": "month",
-          "normalization": "首个可用月份 = 100"
+          "normalization": "First available month = 100"
         }
       },
       {
         "id": "confidence_trend",
-        "title": "美联物业信心指数",
-        "subtitle": "辅助性的市场情绪指标，不是住宅价格指标。",
+        "title": "Midland confidence index",
+        "subtitle": "Supporting sentiment context; not a residential price measure.",
         "type": "area",
         "intent": "trend",
         "dataset": "confidence_history",
@@ -268,12 +268,12 @@
           "x": {
             "field": "date",
             "type": "temporal",
-            "label": "周"
+            "label": "Week"
           },
           "y": {
             "field": "value",
             "type": "quantitative",
-            "label": "信心指数"
+            "label": "Confidence index"
           }
         },
         "valueFormat": "number",
@@ -284,8 +284,8 @@
     "tables": [
       {
         "id": "source_health_table",
-        "title": "实时来源健康度",
-        "subtitle": "以上指标的构建时校验结果。",
+        "title": "Live source health",
+        "subtitle": "Build-time checks for the measures rendered above.",
         "dataset": "source_health",
         "sourceId": "source_registry",
         "defaultSort": {
@@ -297,40 +297,40 @@
         "columns": [
           {
             "field": "dataset",
-            "label": "数据集",
+            "label": "Dataset",
             "type": "text"
           },
           {
             "field": "status",
-            "label": "状态",
+            "label": "Status",
             "type": "text"
           },
           {
             "field": "latest_observation",
-            "label": "最新日期",
+            "label": "Latest",
             "type": "date"
           },
           {
             "field": "records",
-            "label": "记录数",
+            "label": "Rows",
             "format": "number"
           },
           {
             "field": "freshness",
-            "label": "新鲜度",
+            "label": "Freshness",
             "type": "text"
           },
           {
             "field": "notes",
-            "label": "备注",
+            "label": "Notes",
             "type": "text"
           }
         ]
       },
       {
         "id": "coverage_table",
-        "title": "覆盖范围与下一步采集目标",
-        "subtitle": "来源目录发现不会被当作市场指标。",
+        "title": "Coverage and next ingestion targets",
+        "subtitle": "Catalog discovery is not treated as a market measure.",
         "dataset": "source_coverage",
         "sourceId": "source_registry",
         "defaultSort": {
@@ -342,32 +342,32 @@
         "columns": [
           {
             "field": "source",
-            "label": "来源",
+            "label": "Source",
             "type": "text"
           },
           {
             "field": "dataset",
-            "label": "数据集",
+            "label": "Dataset",
             "type": "text"
           },
           {
             "field": "type",
-            "label": "类型",
+            "label": "Type",
             "type": "text"
           },
           {
             "field": "status",
-            "label": "状态",
+            "label": "Status",
             "type": "text"
           },
           {
             "field": "freshness",
-            "label": "新鲜度",
+            "label": "Freshness",
             "type": "text"
           },
           {
             "field": "notes",
-            "label": "范围 / 限制",
+            "label": "Scope / caveat",
             "type": "text"
           }
         ]
@@ -376,42 +376,42 @@
     "sources": [
       {
         "id": "centaline_ccl",
-        "label": "中原城市领先指数（CCL）",
+        "label": "Centaline City Leading Index (CCL)",
         "href": "https://hk.centanet.com/CCI/index",
         "path": "sources/centaline_ccl.sql"
       },
       {
         "id": "midland_mhpi",
-        "label": "美联物业市场资讯 — MHPI",
+        "label": "Midland Realty Market Insight — MHPI",
         "href": "https://www.midland.com.hk/zh-hk/market-insight",
         "path": "sources/midland_mhpi.sql"
       },
       {
         "id": "midland_confidence",
-        "label": "美联物业市场资讯 — 信心指数",
+        "label": "Midland Realty Market Insight — Confidence Index",
         "href": "https://www.midland.com.hk/zh-hk/market-insight",
         "path": "sources/midland_confidence.sql"
       },
       {
         "id": "rvd_price",
-        "label": "差饷物业估价署 — 私人住宅售价指数",
+        "label": "Rating and Valuation Department — Private Domestic Price Index",
         "href": "https://www.rvd.gov.hk/en/property_market_statistics/index.html",
         "path": "sources/rvd_price.sql"
       },
       {
         "id": "rvd_rent",
-        "label": "差饷物业估价署 — 私人住宅租金指数",
+        "label": "Rating and Valuation Department — Private Domestic Rental Index",
         "href": "https://www.rvd.gov.hk/en/property_market_statistics/index.html",
         "path": "sources/rvd_rent.sql"
       },
       {
         "id": "cross_source",
-        "label": "跨来源标准化比较",
+        "label": "Cross-source normalized comparison",
         "path": "sources/cross_source.sql"
       },
       {
         "id": "source_registry",
-        "label": "香港房地产 dashboard 来源登记表",
+        "label": "HK real-estate dashboard source registry",
         "path": "sources/source_registry.sql"
       }
     ],
@@ -419,7 +419,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**数据快照：** `3398dabc682d60e7` · 生成于 2026-07-25T13:17:29.321674Z。这是已发布快照，不是实时连接；RVD 标记为 provisional 的观测可能会修订。"
+        "body": "**Data snapshot:** `3398dabc682d60e7` · generated 2026-07-25T13:13:31.185548Z.  This is a published snapshot, not a live connection. RVD observations marked provisional may be revised."
       },
       {
         "id": "market_pulse",
@@ -471,13 +471,13 @@
       {
         "id": "methodology",
         "type": "markdown",
-        "body": "## 如何阅读本 dashboard\n\n不同发布方的指数基期不同。请在重设基准图中比较方向，不要直接比较原始数值水平。覆盖表区分实时指标、来源目录和计划中的采集工作。本 dashboard 不提供股票排名、预测或投资建议。"
+        "body": "## Reading the dashboard\n\nPublisher index levels use different bases. Compare their direction in the rebased chart, not their raw numeric levels. The coverage table distinguishes live measures from catalogs and planned ingestion work. No stock ranking, forecast, or investment recommendation is produced."
       }
     ]
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-25T13:17:29.321674Z",
+    "generatedAt": "2026-07-25T13:13:31.185548Z",
     "status": "ready",
     "datasets": {
       "kpi_ccl": [
@@ -492,7 +492,7 @@
       "kpi_mhpi": [
         {
           "latest": 148.7,
-          "period_change": 0,
+          "period_change": 0.0,
           "year_change": 0.16719,
           "observation_date": "2026-07-20",
           "is_provisional": false
@@ -971,7 +971,7 @@
         },
         {
           "date": "1996-03-03",
-          "value": 60
+          "value": 60.0
         },
         {
           "date": "1996-03-10",
@@ -1099,7 +1099,7 @@
         },
         {
           "date": "1996-10-13",
-          "value": 69
+          "value": 69.0
         },
         {
           "date": "1996-10-20",
@@ -1251,7 +1251,7 @@
         },
         {
           "date": "1997-07-06",
-          "value": 100
+          "value": 100.0
         },
         {
           "date": "1997-07-13",
@@ -1603,7 +1603,7 @@
         },
         {
           "date": "1999-03-14",
-          "value": 55
+          "value": 55.0
         },
         {
           "date": "1999-03-21",
@@ -1735,7 +1735,7 @@
         },
         {
           "date": "1999-10-31",
-          "value": 51
+          "value": 51.0
         },
         {
           "date": "1999-11-07",
@@ -3099,7 +3099,7 @@
         },
         {
           "date": "2006-05-14",
-          "value": 54
+          "value": 54.0
         },
         {
           "date": "2006-05-21",
@@ -3627,7 +3627,7 @@
         },
         {
           "date": "2008-11-23",
-          "value": 57
+          "value": 57.0
         },
         {
           "date": "2008-11-30",
@@ -3739,7 +3739,7 @@
         },
         {
           "date": "2009-06-07",
-          "value": 65
+          "value": 65.0
         },
         {
           "date": "2009-06-14",
@@ -4183,7 +4183,7 @@
         },
         {
           "date": "2011-07-24",
-          "value": 99
+          "value": 99.0
         },
         {
           "date": "2011-07-31",
@@ -4359,7 +4359,7 @@
         },
         {
           "date": "2012-05-27",
-          "value": 104
+          "value": 104.0
         },
         {
           "date": "2012-06-03",
@@ -4639,7 +4639,7 @@
         },
         {
           "date": "2013-09-29",
-          "value": 120
+          "value": 120.0
         },
         {
           "date": "2013-10-06",
@@ -4815,7 +4815,7 @@
         },
         {
           "date": "2014-08-03",
-          "value": 124
+          "value": 124.0
         },
         {
           "date": "2014-08-10",
@@ -5571,7 +5571,7 @@
         },
         {
           "date": "2018-03-18",
-          "value": 174
+          "value": 174.0
         },
         {
           "date": "2018-03-25",
@@ -5591,7 +5591,7 @@
         },
         {
           "date": "2018-04-22",
-          "value": 180
+          "value": 180.0
         },
         {
           "date": "2018-04-29",
@@ -6015,7 +6015,7 @@
         },
         {
           "date": "2020-05-03",
-          "value": 175
+          "value": 175.0
         },
         {
           "date": "2020-05-10",
@@ -6523,7 +6523,7 @@
         },
         {
           "date": "2022-10-09",
-          "value": 170
+          "value": 170.0
         },
         {
           "date": "2022-10-16",
@@ -6859,7 +6859,7 @@
         },
         {
           "date": "2024-05-19",
-          "value": 144
+          "value": 144.0
         },
         {
           "date": "2024-05-26",
@@ -7365,7 +7365,7 @@
         },
         {
           "date": "2016-06-06",
-          "value": 125
+          "value": 125.0
         },
         {
           "date": "2016-06-13",
@@ -7433,7 +7433,7 @@
         },
         {
           "date": "2016-10-03",
-          "value": 133
+          "value": 133.0
         },
         {
           "date": "2016-10-10",
@@ -7489,7 +7489,7 @@
         },
         {
           "date": "2017-01-09",
-          "value": 138
+          "value": 138.0
         },
         {
           "date": "2017-01-16",
@@ -7505,11 +7505,11 @@
         },
         {
           "date": "2017-02-06",
-          "value": 139
+          "value": 139.0
         },
         {
           "date": "2017-02-13",
-          "value": 139
+          "value": 139.0
         },
         {
           "date": "2017-02-20",
@@ -7537,7 +7537,7 @@
         },
         {
           "date": "2017-04-03",
-          "value": 143
+          "value": 143.0
         },
         {
           "date": "2017-04-10",
@@ -7597,7 +7597,7 @@
         },
         {
           "date": "2017-07-17",
-          "value": 150
+          "value": 150.0
         },
         {
           "date": "2017-07-24",
@@ -7605,7 +7605,7 @@
         },
         {
           "date": "2017-07-31",
-          "value": 151
+          "value": 151.0
         },
         {
           "date": "2017-08-07",
@@ -7633,7 +7633,7 @@
         },
         {
           "date": "2017-09-18",
-          "value": 151
+          "value": 151.0
         },
         {
           "date": "2017-09-25",
@@ -7649,7 +7649,7 @@
         },
         {
           "date": "2017-10-16",
-          "value": 152
+          "value": 152.0
         },
         {
           "date": "2017-10-23",
@@ -7669,7 +7669,7 @@
         },
         {
           "date": "2017-11-20",
-          "value": 155
+          "value": 155.0
         },
         {
           "date": "2017-11-27",
@@ -7677,7 +7677,7 @@
         },
         {
           "date": "2017-12-04",
-          "value": 155
+          "value": 155.0
         },
         {
           "date": "2017-12-11",
@@ -7697,7 +7697,7 @@
         },
         {
           "date": "2018-01-08",
-          "value": 157
+          "value": 157.0
         },
         {
           "date": "2018-01-15",
@@ -7713,7 +7713,7 @@
         },
         {
           "date": "2018-02-05",
-          "value": 160
+          "value": 160.0
         },
         {
           "date": "2018-02-12",
@@ -7757,7 +7757,7 @@
         },
         {
           "date": "2018-04-23",
-          "value": 167
+          "value": 167.0
         },
         {
           "date": "2018-04-30",
@@ -7785,7 +7785,7 @@
         },
         {
           "date": "2018-06-11",
-          "value": 171
+          "value": 171.0
         },
         {
           "date": "2018-06-18",
@@ -7833,7 +7833,7 @@
         },
         {
           "date": "2018-09-03",
-          "value": 176
+          "value": 176.0
         },
         {
           "date": "2018-09-10",
@@ -7857,7 +7857,7 @@
         },
         {
           "date": "2018-10-15",
-          "value": 173
+          "value": 173.0
         },
         {
           "date": "2018-10-22",
@@ -7865,7 +7865,7 @@
         },
         {
           "date": "2018-10-29",
-          "value": 171
+          "value": 171.0
         },
         {
           "date": "2018-11-05",
@@ -7905,7 +7905,7 @@
         },
         {
           "date": "2019-01-07",
-          "value": 161
+          "value": 161.0
         },
         {
           "date": "2019-01-14",
@@ -7925,11 +7925,11 @@
         },
         {
           "date": "2019-02-11",
-          "value": 159
+          "value": 159.0
         },
         {
           "date": "2019-02-18",
-          "value": 159
+          "value": 159.0
         },
         {
           "date": "2019-02-25",
@@ -8037,7 +8037,7 @@
         },
         {
           "date": "2019-08-26",
-          "value": 173
+          "value": 173.0
         },
         {
           "date": "2019-09-02",
@@ -8061,11 +8061,11 @@
         },
         {
           "date": "2019-10-07",
-          "value": 169
+          "value": 169.0
         },
         {
           "date": "2019-10-14",
-          "value": 168
+          "value": 168.0
         },
         {
           "date": "2019-10-21",
@@ -8113,7 +8113,7 @@
         },
         {
           "date": "2020-01-06",
-          "value": 165
+          "value": 165.0
         },
         {
           "date": "2020-01-13",
@@ -8185,7 +8185,7 @@
         },
         {
           "date": "2020-05-11",
-          "value": 161
+          "value": 161.0
         },
         {
           "date": "2020-05-18",
@@ -8245,7 +8245,7 @@
         },
         {
           "date": "2020-08-24",
-          "value": 165
+          "value": 165.0
         },
         {
           "date": "2020-08-31",
@@ -8269,7 +8269,7 @@
         },
         {
           "date": "2020-10-05",
-          "value": 164
+          "value": 164.0
         },
         {
           "date": "2020-10-12",
@@ -8353,7 +8353,7 @@
         },
         {
           "date": "2021-03-01",
-          "value": 164
+          "value": 164.0
         },
         {
           "date": "2021-03-08",
@@ -8393,7 +8393,7 @@
         },
         {
           "date": "2021-05-10",
-          "value": 170
+          "value": 170.0
         },
         {
           "date": "2021-05-17",
@@ -8413,7 +8413,7 @@
         },
         {
           "date": "2021-06-14",
-          "value": 173
+          "value": 173.0
         },
         {
           "date": "2021-06-21",
@@ -8489,7 +8489,7 @@
         },
         {
           "date": "2021-10-25",
-          "value": 174
+          "value": 174.0
         },
         {
           "date": "2021-11-01",
@@ -8497,7 +8497,7 @@
         },
         {
           "date": "2021-11-08",
-          "value": 174
+          "value": 174.0
         },
         {
           "date": "2021-11-15",
@@ -8561,11 +8561,11 @@
         },
         {
           "date": "2022-02-28",
-          "value": 169
+          "value": 169.0
         },
         {
           "date": "2022-03-07",
-          "value": 168
+          "value": 168.0
         },
         {
           "date": "2022-03-14",
@@ -8589,7 +8589,7 @@
         },
         {
           "date": "2022-04-18",
-          "value": 167
+          "value": 167.0
         },
         {
           "date": "2022-04-25",
@@ -8613,7 +8613,7 @@
         },
         {
           "date": "2022-05-30",
-          "value": 169
+          "value": 169.0
         },
         {
           "date": "2022-06-06",
@@ -8629,7 +8629,7 @@
         },
         {
           "date": "2022-06-27",
-          "value": 168
+          "value": 168.0
         },
         {
           "date": "2022-07-04",
@@ -8641,7 +8641,7 @@
         },
         {
           "date": "2022-07-18",
-          "value": 167
+          "value": 167.0
         },
         {
           "date": "2022-07-25",
@@ -8729,7 +8729,7 @@
         },
         {
           "date": "2022-12-19",
-          "value": 147
+          "value": 147.0
         },
         {
           "date": "2022-12-26",
@@ -8737,7 +8737,7 @@
         },
         {
           "date": "2023-01-02",
-          "value": 146
+          "value": 146.0
         },
         {
           "date": "2023-01-09",
@@ -8761,7 +8761,7 @@
         },
         {
           "date": "2023-02-13",
-          "value": 148
+          "value": 148.0
         },
         {
           "date": "2023-02-20",
@@ -8897,7 +8897,7 @@
         },
         {
           "date": "2023-10-09",
-          "value": 146
+          "value": 146.0
         },
         {
           "date": "2023-10-16",
@@ -8913,7 +8913,7 @@
         },
         {
           "date": "2023-11-06",
-          "value": 143
+          "value": 143.0
         },
         {
           "date": "2023-11-13",
@@ -8937,7 +8937,7 @@
         },
         {
           "date": "2023-12-18",
-          "value": 139
+          "value": 139.0
         },
         {
           "date": "2023-12-25",
@@ -9021,7 +9021,7 @@
         },
         {
           "date": "2024-05-13",
-          "value": 136
+          "value": 136.0
         },
         {
           "date": "2024-05-20",
@@ -9037,7 +9037,7 @@
         },
         {
           "date": "2024-06-10",
-          "value": 134
+          "value": 134.0
         },
         {
           "date": "2024-06-17",
@@ -9045,7 +9045,7 @@
         },
         {
           "date": "2024-06-24",
-          "value": 134
+          "value": 134.0
         },
         {
           "date": "2024-07-01",
@@ -9061,7 +9061,7 @@
         },
         {
           "date": "2024-07-22",
-          "value": 132
+          "value": 132.0
         },
         {
           "date": "2024-07-29",
@@ -9149,7 +9149,7 @@
         },
         {
           "date": "2024-12-23",
-          "value": 128
+          "value": 128.0
         },
         {
           "date": "2024-12-30",
@@ -9177,7 +9177,7 @@
         },
         {
           "date": "2025-02-10",
-          "value": 128
+          "value": 128.0
         },
         {
           "date": "2025-02-17",
@@ -9237,7 +9237,7 @@
         },
         {
           "date": "2025-05-26",
-          "value": 127
+          "value": 127.0
         },
         {
           "date": "2025-06-02",
@@ -9317,11 +9317,11 @@
         },
         {
           "date": "2025-10-13",
-          "value": 131
+          "value": 131.0
         },
         {
           "date": "2025-10-20",
-          "value": 132
+          "value": 132.0
         },
         {
           "date": "2025-10-27",
@@ -9381,7 +9381,7 @@
         },
         {
           "date": "2026-02-02",
-          "value": 137
+          "value": 137.0
         },
         {
           "date": "2026-02-09",
@@ -9429,7 +9429,7 @@
         },
         {
           "date": "2026-04-27",
-          "value": 144
+          "value": 144.0
         },
         {
           "date": "2026-05-04",
@@ -9437,7 +9437,7 @@
         },
         {
           "date": "2026-05-11",
-          "value": 145
+          "value": 145.0
         },
         {
           "date": "2026-05-18",
@@ -9465,7 +9465,7 @@
         },
         {
           "date": "2026-06-29",
-          "value": 148
+          "value": 148.0
         },
         {
           "date": "2026-07-06",
@@ -9499,7 +9499,7 @@
         },
         {
           "date": "2018-02-26",
-          "value": 81
+          "value": 81.0
         },
         {
           "date": "2018-03-05",
@@ -9507,11 +9507,11 @@
         },
         {
           "date": "2018-03-12",
-          "value": 80
+          "value": 80.0
         },
         {
           "date": "2018-03-19",
-          "value": 79
+          "value": 79.0
         },
         {
           "date": "2018-03-26",
@@ -9519,7 +9519,7 @@
         },
         {
           "date": "2018-04-02",
-          "value": 82
+          "value": 82.0
         },
         {
           "date": "2018-04-09",
@@ -9559,19 +9559,19 @@
         },
         {
           "date": "2018-06-11",
-          "value": 86
+          "value": 86.0
         },
         {
           "date": "2018-06-18",
-          "value": 85
+          "value": 85.0
         },
         {
           "date": "2018-06-25",
-          "value": 83
+          "value": 83.0
         },
         {
           "date": "2018-07-02",
-          "value": 82
+          "value": 82.0
         },
         {
           "date": "2018-07-09",
@@ -9583,7 +9583,7 @@
         },
         {
           "date": "2018-07-23",
-          "value": 83
+          "value": 83.0
         },
         {
           "date": "2018-07-30",
@@ -9595,7 +9595,7 @@
         },
         {
           "date": "2018-08-13",
-          "value": 81
+          "value": 81.0
         },
         {
           "date": "2018-08-20",
@@ -9619,7 +9619,7 @@
         },
         {
           "date": "2018-09-24",
-          "value": 64
+          "value": 64.0
         },
         {
           "date": "2018-10-01",
@@ -9631,7 +9631,7 @@
         },
         {
           "date": "2018-10-15",
-          "value": 65
+          "value": 65.0
         },
         {
           "date": "2018-10-22",
@@ -9647,7 +9647,7 @@
         },
         {
           "date": "2018-11-12",
-          "value": 37
+          "value": 37.0
         },
         {
           "date": "2018-11-19",
@@ -9659,7 +9659,7 @@
         },
         {
           "date": "2018-12-03",
-          "value": 37
+          "value": 37.0
         },
         {
           "date": "2018-12-10",
@@ -9667,7 +9667,7 @@
         },
         {
           "date": "2018-12-17",
-          "value": 36
+          "value": 36.0
         },
         {
           "date": "2018-12-24",
@@ -9691,7 +9691,7 @@
         },
         {
           "date": "2019-01-28",
-          "value": 38
+          "value": 38.0
         },
         {
           "date": "2019-02-04",
@@ -9723,11 +9723,11 @@
         },
         {
           "date": "2019-03-25",
-          "value": 53
+          "value": 53.0
         },
         {
           "date": "2019-04-01",
-          "value": 61
+          "value": 61.0
         },
         {
           "date": "2019-04-08",
@@ -9735,11 +9735,11 @@
         },
         {
           "date": "2019-04-15",
-          "value": 65
+          "value": 65.0
         },
         {
           "date": "2019-04-22",
-          "value": 70
+          "value": 70.0
         },
         {
           "date": "2019-04-29",
@@ -9751,11 +9751,11 @@
         },
         {
           "date": "2019-05-13",
-          "value": 77
+          "value": 77.0
         },
         {
           "date": "2019-05-20",
-          "value": 74
+          "value": 74.0
         },
         {
           "date": "2019-05-27",
@@ -9787,7 +9787,7 @@
         },
         {
           "date": "2019-07-15",
-          "value": 67
+          "value": 67.0
         },
         {
           "date": "2019-07-22",
@@ -9807,7 +9807,7 @@
         },
         {
           "date": "2019-08-19",
-          "value": 58
+          "value": 58.0
         },
         {
           "date": "2019-08-26",
@@ -9827,11 +9827,11 @@
         },
         {
           "date": "2019-09-23",
-          "value": 31
+          "value": 31.0
         },
         {
           "date": "2019-09-30",
-          "value": 37
+          "value": 37.0
         },
         {
           "date": "2019-10-07",
@@ -9839,7 +9839,7 @@
         },
         {
           "date": "2019-10-14",
-          "value": 41
+          "value": 41.0
         },
         {
           "date": "2019-10-21",
@@ -9847,11 +9847,11 @@
         },
         {
           "date": "2019-10-28",
-          "value": 42
+          "value": 42.0
         },
         {
           "date": "2019-11-04",
-          "value": 47
+          "value": 47.0
         },
         {
           "date": "2019-11-11",
@@ -9863,7 +9863,7 @@
         },
         {
           "date": "2019-11-25",
-          "value": 59
+          "value": 59.0
         },
         {
           "date": "2019-12-02",
@@ -9887,11 +9887,11 @@
         },
         {
           "date": "2020-01-06",
-          "value": 66
+          "value": 66.0
         },
         {
           "date": "2020-01-13",
-          "value": 68
+          "value": 68.0
         },
         {
           "date": "2020-01-20",
@@ -9903,7 +9903,7 @@
         },
         {
           "date": "2020-02-03",
-          "value": 66
+          "value": 66.0
         },
         {
           "date": "2020-02-10",
@@ -9915,7 +9915,7 @@
         },
         {
           "date": "2020-02-24",
-          "value": 52
+          "value": 52.0
         },
         {
           "date": "2020-03-02",
@@ -9931,7 +9931,7 @@
         },
         {
           "date": "2020-03-23",
-          "value": 59
+          "value": 59.0
         },
         {
           "date": "2020-03-30",
@@ -9947,7 +9947,7 @@
         },
         {
           "date": "2020-04-20",
-          "value": 47
+          "value": 47.0
         },
         {
           "date": "2020-04-27",
@@ -9967,7 +9967,7 @@
         },
         {
           "date": "2020-05-25",
-          "value": 69
+          "value": 69.0
         },
         {
           "date": "2020-06-01",
@@ -9979,15 +9979,15 @@
         },
         {
           "date": "2020-06-15",
-          "value": 72
+          "value": 72.0
         },
         {
           "date": "2020-06-22",
-          "value": 69
+          "value": 69.0
         },
         {
           "date": "2020-06-29",
-          "value": 68
+          "value": 68.0
         },
         {
           "date": "2020-07-06",
@@ -10003,7 +10003,7 @@
         },
         {
           "date": "2020-07-27",
-          "value": 65
+          "value": 65.0
         },
         {
           "date": "2020-08-03",
@@ -10015,11 +10015,11 @@
         },
         {
           "date": "2020-08-17",
-          "value": 56
+          "value": 56.0
         },
         {
           "date": "2020-08-24",
-          "value": 53
+          "value": 53.0
         },
         {
           "date": "2020-08-31",
@@ -10107,7 +10107,7 @@
         },
         {
           "date": "2021-01-25",
-          "value": 60
+          "value": 60.0
         },
         {
           "date": "2021-02-01",
@@ -10127,7 +10127,7 @@
         },
         {
           "date": "2021-03-01",
-          "value": 68
+          "value": 68.0
         },
         {
           "date": "2021-03-08",
@@ -10191,7 +10191,7 @@
         },
         {
           "date": "2021-06-21",
-          "value": 70
+          "value": 70.0
         },
         {
           "date": "2021-06-28",
@@ -10243,7 +10243,7 @@
         },
         {
           "date": "2021-09-20",
-          "value": 68
+          "value": 68.0
         },
         {
           "date": "2021-09-27",
@@ -10295,7 +10295,7 @@
         },
         {
           "date": "2021-12-20",
-          "value": 53
+          "value": 53.0
         },
         {
           "date": "2021-12-27",
@@ -10311,7 +10311,7 @@
         },
         {
           "date": "2022-01-17",
-          "value": 54
+          "value": 54.0
         },
         {
           "date": "2022-01-24",
@@ -10363,7 +10363,7 @@
         },
         {
           "date": "2022-04-18",
-          "value": 47
+          "value": 47.0
         },
         {
           "date": "2022-04-25",
@@ -10407,7 +10407,7 @@
         },
         {
           "date": "2022-07-04",
-          "value": 53
+          "value": 53.0
         },
         {
           "date": "2022-07-11",
@@ -10451,11 +10451,11 @@
         },
         {
           "date": "2022-09-19",
-          "value": 37
+          "value": 37.0
         },
         {
           "date": "2022-09-26",
-          "value": 36
+          "value": 36.0
         },
         {
           "date": "2022-10-03",
@@ -10495,7 +10495,7 @@
         },
         {
           "date": "2022-12-05",
-          "value": 34
+          "value": 34.0
         },
         {
           "date": "2022-12-12",
@@ -10519,7 +10519,7 @@
         },
         {
           "date": "2023-01-16",
-          "value": 65
+          "value": 65.0
         },
         {
           "date": "2023-01-23",
@@ -10527,7 +10527,7 @@
         },
         {
           "date": "2023-01-30",
-          "value": 69
+          "value": 69.0
         },
         {
           "date": "2023-02-06",
@@ -10567,7 +10567,7 @@
         },
         {
           "date": "2023-04-10",
-          "value": 65
+          "value": 65.0
         },
         {
           "date": "2023-04-17",
@@ -10579,7 +10579,7 @@
         },
         {
           "date": "2023-05-01",
-          "value": 61
+          "value": 61.0
         },
         {
           "date": "2023-05-08",
@@ -10591,7 +10591,7 @@
         },
         {
           "date": "2023-05-22",
-          "value": 60
+          "value": 60.0
         },
         {
           "date": "2023-05-29",
@@ -10615,7 +10615,7 @@
         },
         {
           "date": "2023-07-03",
-          "value": 59
+          "value": 59.0
         },
         {
           "date": "2023-07-10",
@@ -10643,7 +10643,7 @@
         },
         {
           "date": "2023-08-21",
-          "value": 56
+          "value": 56.0
         },
         {
           "date": "2023-08-28",
@@ -10679,7 +10679,7 @@
         },
         {
           "date": "2023-10-23",
-          "value": 53
+          "value": 53.0
         },
         {
           "date": "2023-10-30",
@@ -10699,7 +10699,7 @@
         },
         {
           "date": "2023-11-27",
-          "value": 51
+          "value": 51.0
         },
         {
           "date": "2023-12-04",
@@ -10711,7 +10711,7 @@
         },
         {
           "date": "2023-12-18",
-          "value": 55
+          "value": 55.0
         },
         {
           "date": "2023-12-25",
@@ -10763,7 +10763,7 @@
         },
         {
           "date": "2024-03-18",
-          "value": 58
+          "value": 58.0
         },
         {
           "date": "2024-03-25",
@@ -10783,7 +10783,7 @@
         },
         {
           "date": "2024-04-22",
-          "value": 65
+          "value": 65.0
         },
         {
           "date": "2024-04-29",
@@ -10811,7 +10811,7 @@
         },
         {
           "date": "2024-06-10",
-          "value": 60
+          "value": 60.0
         },
         {
           "date": "2024-06-17",
@@ -10883,7 +10883,7 @@
         },
         {
           "date": "2024-10-14",
-          "value": 59
+          "value": 59.0
         },
         {
           "date": "2024-10-21",
@@ -10927,7 +10927,7 @@
         },
         {
           "date": "2024-12-30",
-          "value": 62
+          "value": 62.0
         },
         {
           "date": "2025-01-06",
@@ -10935,7 +10935,7 @@
         },
         {
           "date": "2025-01-13",
-          "value": 63
+          "value": 63.0
         },
         {
           "date": "2025-01-20",
@@ -10979,7 +10979,7 @@
         },
         {
           "date": "2025-03-31",
-          "value": 61
+          "value": 61.0
         },
         {
           "date": "2025-04-07",
@@ -11031,7 +11031,7 @@
         },
         {
           "date": "2025-06-30",
-          "value": 68
+          "value": 68.0
         },
         {
           "date": "2025-07-07",
@@ -11071,7 +11071,7 @@
         },
         {
           "date": "2025-09-08",
-          "value": 76
+          "value": 76.0
         },
         {
           "date": "2025-09-15",
@@ -11175,11 +11175,11 @@
         },
         {
           "date": "2026-03-09",
-          "value": 85
+          "value": 85.0
         },
         {
           "date": "2026-03-16",
-          "value": 85
+          "value": 85.0
         },
         {
           "date": "2026-03-23",
@@ -11349,7 +11349,7 @@
         {
           "date": "1994-02-01",
           "price": 111.6,
-          "rent": 106,
+          "rent": 106.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -11369,7 +11369,7 @@
         },
         {
           "date": "1994-05-01",
-          "price": 116,
+          "price": 116.0,
           "rent": 119.4,
           "price_provisional": false,
           "rent_provisional": false
@@ -11425,7 +11425,7 @@
         },
         {
           "date": "1995-01-01",
-          "price": 110,
+          "price": 110.0,
           "rent": 122.7,
           "price_provisional": false,
           "rent_provisional": false
@@ -11454,7 +11454,7 @@
         {
           "date": "1995-05-01",
           "price": 110.1,
-          "rent": 123,
+          "rent": 123.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -11474,7 +11474,7 @@
         },
         {
           "date": "1995-08-01",
-          "price": 105,
+          "price": 105.0,
           "rent": 120.7,
           "price_provisional": false,
           "rent_provisional": false
@@ -11544,7 +11544,7 @@
         },
         {
           "date": "1996-06-01",
-          "price": 115,
+          "price": 115.0,
           "rent": 117.4,
           "price_provisional": false,
           "rent_provisional": false
@@ -11579,7 +11579,7 @@
         },
         {
           "date": "1996-11-01",
-          "price": 128,
+          "price": 128.0,
           "rent": 121.8,
           "price_provisional": false,
           "rent_provisional": false
@@ -11614,8 +11614,8 @@
         },
         {
           "date": "1997-04-01",
-          "price": 157,
-          "rent": 132,
+          "price": 157.0,
+          "rent": 132.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -11628,7 +11628,7 @@
         },
         {
           "date": "1997-06-01",
-          "price": 172,
+          "price": 172.0,
           "rent": 135.2,
           "price_provisional": false,
           "rent_provisional": false
@@ -11670,7 +11670,7 @@
         },
         {
           "date": "1997-12-01",
-          "price": 155,
+          "price": 155.0,
           "rent": 135.3,
           "price_provisional": false,
           "rent_provisional": false
@@ -11719,7 +11719,7 @@
         },
         {
           "date": "1998-07-01",
-          "price": 108,
+          "price": 108.0,
           "rent": 109.9,
           "price_provisional": false,
           "rent_provisional": false
@@ -11755,21 +11755,21 @@
         {
           "date": "1998-12-01",
           "price": 104.6,
-          "rent": 101,
+          "rent": 101.0,
           "price_provisional": false,
           "rent_provisional": false
         },
         {
           "date": "1999-01-01",
           "price": 103.8,
-          "rent": 102,
+          "rent": 102.0,
           "price_provisional": false,
           "rent_provisional": false
         },
         {
           "date": "1999-02-01",
-          "price": 102,
-          "rent": 101,
+          "price": 102.0,
+          "rent": 101.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -11782,7 +11782,7 @@
         },
         {
           "date": "1999-04-01",
-          "price": 102,
+          "price": 102.0,
           "rent": 100.6,
           "price_provisional": false,
           "rent_provisional": false
@@ -11846,7 +11846,7 @@
         {
           "date": "2000-01-01",
           "price": 97.5,
-          "rent": 98,
+          "rent": 98.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -11880,7 +11880,7 @@
         },
         {
           "date": "2000-06-01",
-          "price": 86,
+          "price": 86.0,
           "rent": 97.7,
           "price_provisional": false,
           "rent_provisional": false
@@ -11908,7 +11908,7 @@
         },
         {
           "date": "2000-10-01",
-          "price": 87,
+          "price": 87.0,
           "rent": 98.5,
           "price_provisional": false,
           "rent_provisional": false
@@ -11923,7 +11923,7 @@
         {
           "date": "2000-12-01",
           "price": 81.8,
-          "rent": 98,
+          "rent": 98.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -11958,7 +11958,7 @@
         {
           "date": "2001-05-01",
           "price": 80.5,
-          "rent": 97,
+          "rent": 97.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -12035,7 +12035,7 @@
         {
           "date": "2002-04-01",
           "price": 72.3,
-          "rent": 86,
+          "rent": 86.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -12077,7 +12077,7 @@
         {
           "date": "2002-10-01",
           "price": 65.4,
-          "rent": 80,
+          "rent": 80.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -12112,7 +12112,7 @@
         {
           "date": "2003-03-01",
           "price": 61.2,
-          "rent": 76,
+          "rent": 76.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -12196,14 +12196,14 @@
         {
           "date": "2004-03-01",
           "price": 78.1,
-          "rent": 76,
+          "rent": 76.0,
           "price_provisional": false,
           "rent_provisional": false
         },
         {
           "date": "2004-04-01",
           "price": 79.4,
-          "rent": 77,
+          "rent": 77.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -12217,7 +12217,7 @@
         {
           "date": "2004-06-01",
           "price": 74.7,
-          "rent": 78,
+          "rent": 78.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -12321,7 +12321,7 @@
         },
         {
           "date": "2005-09-01",
-          "price": 94,
+          "price": 94.0,
           "rent": 89.5,
           "price_provisional": false,
           "rent_provisional": false
@@ -12336,7 +12336,7 @@
         {
           "date": "2005-11-01",
           "price": 88.5,
-          "rent": 90,
+          "rent": 90.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -12377,8 +12377,8 @@
         },
         {
           "date": "2006-05-01",
-          "price": 94,
-          "rent": 91,
+          "price": 94.0,
+          "rent": 91.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -12398,7 +12398,7 @@
         },
         {
           "date": "2006-08-01",
-          "price": 93,
+          "price": 93.0,
           "rent": 91.9,
           "price_provisional": false,
           "rent_provisional": false
@@ -12406,7 +12406,7 @@
         {
           "date": "2006-09-01",
           "price": 93.3,
-          "rent": 93,
+          "rent": 93.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -12419,7 +12419,7 @@
         },
         {
           "date": "2006-11-01",
-          "price": 93,
+          "price": 93.0,
           "rent": 94.3,
           "price_provisional": false,
           "rent_provisional": false
@@ -12482,7 +12482,7 @@
         },
         {
           "date": "2007-08-01",
-          "price": 104,
+          "price": 104.0,
           "rent": 103.8,
           "price_provisional": false,
           "rent_provisional": false
@@ -12504,14 +12504,14 @@
         {
           "date": "2007-11-01",
           "price": 113.3,
-          "rent": 108,
+          "rent": 108.0,
           "price_provisional": false,
           "rent_provisional": false
         },
         {
           "date": "2007-12-01",
           "price": 117.9,
-          "rent": 110,
+          "rent": 110.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -12728,7 +12728,7 @@
         {
           "date": "2010-07-01",
           "price": 151.3,
-          "rent": 120,
+          "rent": 120.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -12749,7 +12749,7 @@
         {
           "date": "2010-10-01",
           "price": 160.2,
-          "rent": 126,
+          "rent": 126.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -12762,7 +12762,7 @@
         },
         {
           "date": "2010-12-01",
-          "price": 163,
+          "price": 163.0,
           "rent": 127.4,
           "price_provisional": false,
           "rent_provisional": false
@@ -12839,7 +12839,7 @@
         },
         {
           "date": "2011-11-01",
-          "price": 182,
+          "price": 182.0,
           "rent": 136.9,
           "price_provisional": false,
           "rent_provisional": false
@@ -12944,7 +12944,7 @@
         },
         {
           "date": "2013-02-01",
-          "price": 240,
+          "price": 240.0,
           "rent": 152.4,
           "price_provisional": false,
           "rent_provisional": false
@@ -12973,7 +12973,7 @@
         {
           "date": "2013-06-01",
           "price": 243.3,
-          "rent": 154,
+          "rent": 154.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -13001,13 +13001,13 @@
         {
           "date": "2013-10-01",
           "price": 245.4,
-          "rent": 157,
+          "rent": 157.0,
           "price_provisional": false,
           "rent_provisional": false
         },
         {
           "date": "2013-11-01",
-          "price": 245,
+          "price": 245.0,
           "rent": 157.2,
           "price_provisional": false,
           "rent_provisional": false
@@ -13029,7 +13029,7 @@
         {
           "date": "2014-02-01",
           "price": 244.3,
-          "rent": 155,
+          "rent": 155.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -13042,8 +13042,8 @@
         },
         {
           "date": "2014-04-01",
-          "price": 245,
-          "rent": 156,
+          "price": 245.0,
+          "rent": 156.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -13064,7 +13064,7 @@
         {
           "date": "2014-07-01",
           "price": 256.4,
-          "rent": 159,
+          "rent": 159.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -13155,7 +13155,7 @@
         {
           "date": "2015-08-01",
           "price": 305.3,
-          "rent": 177,
+          "rent": 177.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -13182,14 +13182,14 @@
         },
         {
           "date": "2015-12-01",
-          "price": 285,
+          "price": 285.0,
           "rent": 171.2,
           "price_provisional": false,
           "rent_provisional": false
         },
         {
           "date": "2016-01-01",
-          "price": 279,
+          "price": 279.0,
           "rent": 168.8,
           "price_provisional": false,
           "rent_provisional": false
@@ -13260,7 +13260,7 @@
         {
           "date": "2016-11-01",
           "price": 306.7,
-          "rent": 172,
+          "rent": 172.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -13280,7 +13280,7 @@
         },
         {
           "date": "2017-02-01",
-          "price": 314,
+          "price": 314.0,
           "rent": 176.6,
           "price_provisional": false,
           "rent_provisional": false
@@ -13294,7 +13294,7 @@
         },
         {
           "date": "2017-04-01",
-          "price": 330,
+          "price": 330.0,
           "rent": 179.7,
           "price_provisional": false,
           "rent_provisional": false
@@ -13330,7 +13330,7 @@
         {
           "date": "2017-09-01",
           "price": 340.8,
-          "rent": 186,
+          "rent": 186.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -13371,15 +13371,15 @@
         },
         {
           "date": "2018-03-01",
-          "price": 370,
+          "price": 370.0,
           "rent": 189.1,
           "price_provisional": false,
           "rent_provisional": false
         },
         {
           "date": "2018-04-01",
-          "price": 377,
-          "rent": 191,
+          "price": 377.0,
+          "rent": 191.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -13441,14 +13441,14 @@
         },
         {
           "date": "2019-01-01",
-          "price": 361,
+          "price": 361.0,
           "rent": 192.5,
           "price_provisional": false,
           "rent_provisional": false
         },
         {
           "date": "2019-02-01",
-          "price": 367,
+          "price": 367.0,
           "rent": 191.9,
           "price_provisional": false,
           "rent_provisional": false
@@ -13533,7 +13533,7 @@
         {
           "date": "2020-02-01",
           "price": 373.4,
-          "rent": 185,
+          "rent": 185.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -13574,7 +13574,7 @@
         },
         {
           "date": "2020-08-01",
-          "price": 382,
+          "price": 382.0,
           "rent": 181.2,
           "price_provisional": false,
           "rent_provisional": false
@@ -13630,7 +13630,7 @@
         },
         {
           "date": "2021-04-01",
-          "price": 391,
+          "price": 391.0,
           "rent": 177.5,
           "price_provisional": false,
           "rent_provisional": false
@@ -13644,14 +13644,14 @@
         },
         {
           "date": "2021-06-01",
-          "price": 394,
+          "price": 394.0,
           "rent": 179.3,
           "price_provisional": false,
           "rent_provisional": false
         },
         {
           "date": "2021-07-01",
-          "price": 398,
+          "price": 398.0,
           "rent": 180.3,
           "price_provisional": false,
           "rent_provisional": false
@@ -13672,7 +13672,7 @@
         },
         {
           "date": "2021-10-01",
-          "price": 396,
+          "price": 396.0,
           "rent": 184.3,
           "price_provisional": false,
           "rent_provisional": false
@@ -13714,7 +13714,7 @@
         },
         {
           "date": "2022-04-01",
-          "price": 385,
+          "price": 385.0,
           "rent": 177.3,
           "price_provisional": false,
           "rent_provisional": false
@@ -13729,7 +13729,7 @@
         {
           "date": "2022-06-01",
           "price": 381.8,
-          "rent": 178,
+          "rent": 178.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -13750,14 +13750,14 @@
         {
           "date": "2022-09-01",
           "price": 360.3,
-          "rent": 179,
+          "rent": 179.0,
           "price_provisional": false,
           "rent_provisional": false
         },
         {
           "date": "2022-10-01",
           "price": 350.2,
-          "rent": 178,
+          "rent": 178.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -13819,14 +13819,14 @@
         },
         {
           "date": "2023-07-01",
-          "price": 344,
-          "rent": 182,
+          "price": 344.0,
+          "rent": 182.0,
           "price_provisional": false,
           "rent_provisional": false
         },
         {
           "date": "2023-08-01",
-          "price": 337,
+          "price": 337.0,
           "rent": 184.9,
           "price_provisional": false,
           "rent_provisional": false
@@ -13840,7 +13840,7 @@
         },
         {
           "date": "2023-10-01",
-          "price": 322,
+          "price": 322.0,
           "rent": 185.4,
           "price_provisional": false,
           "rent_provisional": false
@@ -13855,7 +13855,7 @@
         {
           "date": "2023-12-01",
           "price": 311.3,
-          "rent": 186,
+          "rent": 186.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -13890,7 +13890,7 @@
         {
           "date": "2024-05-01",
           "price": 305.5,
-          "rent": 190,
+          "rent": 190.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -13910,7 +13910,7 @@
         },
         {
           "date": "2024-08-01",
-          "price": 292,
+          "price": 292.0,
           "rent": 195.1,
           "price_provisional": false,
           "rent_provisional": false
@@ -13924,7 +13924,7 @@
         },
         {
           "date": "2024-10-01",
-          "price": 291,
+          "price": 291.0,
           "rent": 192.7,
           "price_provisional": false,
           "rent_provisional": false
@@ -13953,7 +13953,7 @@
         {
           "date": "2025-02-01",
           "price": 285.6,
-          "rent": 193,
+          "rent": 193.0,
           "price_provisional": false,
           "rent_provisional": false
         },
@@ -14044,7 +14044,7 @@
         {
           "date": "2026-03-01",
           "price": 313.9,
-          "rent": 202,
+          "rent": 202.0,
           "price_provisional": true,
           "rent_provisional": true
         },
@@ -14067,12 +14067,12 @@
         {
           "date": "2021-07-31",
           "series": "MHPI",
-          "value": 100
+          "value": 100.0
         },
         {
           "date": "2021-08-31",
           "series": "CCL",
-          "value": 100
+          "value": 100.0
         },
         {
           "date": "2021-08-31",
@@ -14082,12 +14082,12 @@
         {
           "date": "2021-08-31",
           "series": "RVD Price",
-          "value": 100
+          "value": 100.0
         },
         {
           "date": "2021-08-31",
           "series": "RVD Rent",
-          "value": 100
+          "value": 100.0
         },
         {
           "date": "2021-09-30",
@@ -15254,51 +15254,51 @@
         {
           "source": "Centaline City Leading Index (CCL)",
           "dataset": "Centaline CCL",
-          "type": "指标",
-          "status": "健康",
+          "type": "Measure",
+          "status": "Healthy",
           "latest_observation": "2026-07-19",
           "records": 1699,
-          "freshness": "6 天前",
+          "freshness": "6d old",
           "notes": "Latest observation is published without a provisional flag."
         },
         {
           "source": "Midland Realty Market Insight — MHPI",
           "dataset": "Midland MHPI",
-          "type": "指标",
-          "status": "健康",
+          "type": "Measure",
+          "status": "Healthy",
           "latest_observation": "2026-07-20",
           "records": 541,
-          "freshness": "5 天前",
+          "freshness": "5d old",
           "notes": "Latest observation is published without a provisional flag."
         },
         {
           "source": "Midland Realty Market Insight — Confidence Index",
           "dataset": "Midland Confidence Index",
-          "type": "指标",
-          "status": "健康",
+          "type": "Measure",
+          "status": "Healthy",
           "latest_observation": "2026-07-20",
           "records": 443,
-          "freshness": "5 天前",
+          "freshness": "5d old",
           "notes": "Latest observation is published without a provisional flag."
         },
         {
           "source": "Rating and Valuation Department — Private Domestic Price Index",
           "dataset": "RVD Residential Price Index",
-          "type": "指标",
-          "status": "健康",
+          "type": "Measure",
+          "status": "Healthy",
           "latest_observation": "2026-05-01",
           "records": 401,
-          "freshness": "85 天前",
+          "freshness": "85d old",
           "notes": "Latest observation is provisional."
         },
         {
           "source": "Rating and Valuation Department — Private Domestic Rental Index",
           "dataset": "RVD Residential Rental Index",
-          "type": "指标",
-          "status": "健康",
+          "type": "Measure",
+          "status": "Healthy",
           "latest_observation": "2026-05-01",
           "records": 401,
-          "freshness": "85 天前",
+          "freshness": "85d old",
           "notes": "Latest observation is provisional."
         }
       ],
@@ -15306,101 +15306,101 @@
         {
           "source": "Centaline City Leading Index (CCL)",
           "dataset": "Centaline CCL",
-          "type": "指标",
-          "status": "健康",
+          "type": "Measure",
+          "status": "Healthy",
           "latest_observation": "2026-07-19",
           "records": 1699,
-          "freshness": "6 天前",
+          "freshness": "6d old",
           "notes": "Latest observation is published without a provisional flag."
         },
         {
           "source": "Midland Realty Market Insight — MHPI",
           "dataset": "Midland MHPI",
-          "type": "指标",
-          "status": "健康",
+          "type": "Measure",
+          "status": "Healthy",
           "latest_observation": "2026-07-20",
           "records": 541,
-          "freshness": "5 天前",
+          "freshness": "5d old",
           "notes": "Latest observation is published without a provisional flag."
         },
         {
           "source": "Midland Realty Market Insight — Confidence Index",
           "dataset": "Midland Confidence Index",
-          "type": "指标",
-          "status": "健康",
+          "type": "Measure",
+          "status": "Healthy",
           "latest_observation": "2026-07-20",
           "records": 443,
-          "freshness": "5 天前",
+          "freshness": "5d old",
           "notes": "Latest observation is published without a provisional flag."
         },
         {
           "source": "Rating and Valuation Department — Private Domestic Price Index",
           "dataset": "RVD Residential Price Index",
-          "type": "指标",
-          "status": "健康",
+          "type": "Measure",
+          "status": "Healthy",
           "latest_observation": "2026-05-01",
           "records": 401,
-          "freshness": "85 天前",
+          "freshness": "85d old",
           "notes": "Latest observation is provisional."
         },
         {
           "source": "Rating and Valuation Department — Private Domestic Rental Index",
           "dataset": "RVD Residential Rental Index",
-          "type": "指标",
-          "status": "健康",
+          "type": "Measure",
+          "status": "Healthy",
           "latest_observation": "2026-05-01",
           "records": 401,
-          "freshness": "85 天前",
+          "freshness": "85d old",
           "notes": "Latest observation is provisional."
         },
         {
           "source": "28Hse",
           "dataset": "EPI / ERI",
-          "type": "指标",
-          "status": "计划中",
+          "type": "Measure",
+          "status": "Planned",
           "latest_observation": "—",
           "records": 0,
-          "freshness": "尚未采集",
+          "freshness": "Not ingested",
           "notes": "High-value index source; endpoint and history contract still require validation."
         },
         {
           "source": "Agency transactions",
           "dataset": "Centaline / Midland / 28Hse transactions",
-          "type": "指标",
-          "status": "计划中",
+          "type": "Measure",
+          "status": "Planned",
           "latest_observation": "—",
           "records": 0,
-          "freshness": "尚未采集",
+          "freshness": "Not ingested",
           "notes": "Target is a deduplicated near-real-time transaction activity measure."
         },
         {
           "source": "SRPE",
           "dataset": "First-hand residential project documents",
-          "type": "目录",
-          "status": "仅目录",
+          "type": "Catalog",
+          "status": "Catalog only",
           "latest_observation": "—",
           "records": 0,
-          "freshness": "内容解析待完成",
+          "freshness": "Content parser pending",
           "notes": "Current discovery code does not yet extract sales, units, price lists, or absorption facts."
         },
         {
           "source": "Land Registry",
           "dataset": "Registered sale and purchase facts",
-          "type": "目录",
-          "status": "仅目录",
+          "type": "Catalog",
+          "status": "Catalog only",
           "latest_observation": "—",
           "records": 0,
-          "freshness": "内容解析待完成",
+          "freshness": "Content parser pending",
           "notes": "Current code discovers releases; fact extraction and point-in-time semantics remain pending."
         },
         {
           "source": "Buildings Department",
           "dataset": "Approvals, starts and occupation permits",
-          "type": "目录",
-          "status": "仅目录",
+          "type": "Catalog",
+          "status": "Catalog only",
           "latest_observation": "—",
           "records": 0,
-          "freshness": "内容解析待完成",
+          "freshness": "Content parser pending",
           "notes": "Monthly digest discovery exists; structured project facts are not yet extracted."
         }
       ]
@@ -15409,90 +15409,90 @@
   "sources": [
     {
       "id": "centaline_ccl",
-      "label": "中原城市领先指数（CCL）",
+      "label": "Centaline City Leading Index (CCL)",
       "href": "https://hk.centanet.com/CCI/index",
       "query": {
         "engine": "first-party HTTP JSON",
         "url": "https://hk.centanet.com/CCI/api/Index/CCL",
         "language": "HTTP",
-        "description": "构建时从公开来源读取并校验 中原城市领先指数（CCL）。",
+        "description": "Loads the explicit ccl.chartData date and index arrays from Centaline's application endpoint.",
         "metric_definitions": [
           "CCL latest is the most recent published weekly Centaline City Leading Index observation.",
           "Weekly and yearly movements are latest divided by the prior observation or latest observation on/before one year earlier, minus one."
         ],
-        "executed_at": "2026-07-25T13:17:29.321674Z"
+        "executed_at": "2026-07-25T13:13:31.185548Z"
       }
     },
     {
       "id": "midland_mhpi",
-      "label": "美联物业市场资讯 — MHPI",
+      "label": "Midland Realty Market Insight — MHPI",
       "href": "https://www.midland.com.hk/zh-hk/market-insight",
       "query": {
         "engine": "first-party page payload",
         "url": "https://www.midland.com.hk/zh-hk/market-insight",
         "language": "HTML/JSON",
-        "description": "构建时从公开来源读取并校验 美联物业市场资讯 — MHPI。",
+        "description": "Loads the mrIndexWeekly series from the page's first-party Next.js payload.",
         "metric_definitions": [
           "MHPI latest is the most recent published overall weekly Midland Hong Kong Property Price Index observation.",
           "Weekly and yearly movements are latest divided by the prior observation or latest observation on/before one year earlier, minus one."
         ],
-        "executed_at": "2026-07-25T13:17:29.321674Z"
+        "executed_at": "2026-07-25T13:13:31.185548Z"
       }
     },
     {
       "id": "midland_confidence",
-      "label": "美联物业市场资讯 — 信心指数",
+      "label": "Midland Realty Market Insight — Confidence Index",
       "href": "https://www.midland.com.hk/zh-hk/market-insight",
       "query": {
         "engine": "first-party page payload",
         "url": "https://www.midland.com.hk/zh-hk/market-insight",
         "language": "HTML/JSON",
-        "description": "构建时从公开来源读取并校验 美联物业市场资讯 — 信心指数。",
+        "description": "Loads the confidenceIndex series from the page's first-party Next.js payload.",
         "metric_definitions": [
           "The confidence series is a supporting market-sentiment measure published by Midland Realty."
         ],
-        "executed_at": "2026-07-25T13:17:29.321674Z"
+        "executed_at": "2026-07-25T13:13:31.185548Z"
       }
     },
     {
       "id": "rvd_price",
-      "label": "差饷物业估价署 — 私人住宅售价指数",
+      "label": "Rating and Valuation Department — Private Domestic Price Index",
       "href": "https://www.rvd.gov.hk/en/property_market_statistics/index.html",
       "query": {
         "engine": "official CSV",
         "url": "https://www.rvd.gov.hk/datagovhk/1.4M.csv",
         "language": "CSV",
-        "description": "构建时从公开来源读取并校验 差饷物业估价署 — 私人住宅售价指数。",
+        "description": "Loads the All Classes private domestic monthly price index and its remarks column.",
         "metric_definitions": [
           "RVD price latest is the All Classes monthly private domestic price index.",
           "Monthly and yearly movements are latest divided by the prior month or observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-07-25T13:17:29.321674Z"
+        "executed_at": "2026-07-25T13:13:31.185548Z"
       }
     },
     {
       "id": "rvd_rent",
-      "label": "差饷物业估价署 — 私人住宅租金指数",
+      "label": "Rating and Valuation Department — Private Domestic Rental Index",
       "href": "https://www.rvd.gov.hk/en/property_market_statistics/index.html",
       "query": {
         "engine": "official CSV",
         "url": "https://www.rvd.gov.hk/datagovhk/1.3M.csv",
         "language": "CSV",
-        "description": "构建时从公开来源读取并校验 差饷物业估价署 — 私人住宅租金指数。",
+        "description": "Loads the All Classes private domestic monthly rental index and its remarks column.",
         "metric_definitions": [
           "RVD rent latest is the All Classes monthly private domestic rental index.",
           "Monthly and yearly movements are latest divided by the prior month or observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-07-25T13:17:29.321674Z"
+        "executed_at": "2026-07-25T13:13:31.185548Z"
       }
     },
     {
       "id": "cross_source",
-      "label": "跨来源标准化比较",
+      "label": "Cross-source normalized comparison",
       "query": {
         "engine": "pandas",
         "language": "Python",
-        "description": "构建时从公开来源读取并校验 跨来源标准化比较。",
+        "description": "Resamples reviewed CCL, MHPI, RVD price, and RVD rent observations to month-end and rebases each series to 100 at its first non-null observation in the five-year window.",
         "metric_definitions": [
           "Rebased value equals observed index divided by the first available index in the displayed five-year window, multiplied by 100."
         ],
@@ -15502,21 +15502,21 @@
           "RVD 1.4M.csv",
           "RVD 1.3M.csv"
         ],
-        "executed_at": "2026-07-25T13:17:29.321674Z"
+        "executed_at": "2026-07-25T13:13:31.185548Z"
       }
     },
     {
       "id": "source_registry",
-      "label": "香港房地产 dashboard 来源登记表",
+      "label": "HK real-estate dashboard source registry",
       "query": {
         "engine": "dashboard exporter",
         "language": "Python",
-        "description": "构建时从公开来源读取并校验 香港房地产 dashboard 来源登记表。",
+        "description": "Build-time validation results and declared coverage state for each dashboard source.",
         "tables_used": [
           "Validated core measure frames",
           "Declared future-source registry"
         ],
-        "executed_at": "2026-07-25T13:17:29.321674Z"
+        "executed_at": "2026-07-25T13:13:31.185548Z"
       }
     }
   ],

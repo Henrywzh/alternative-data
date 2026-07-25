@@ -30,6 +30,8 @@ from src.hk_real_estate.pipeline import SKIP_MIDLAND_ENV_VAR
 from src.hk_real_estate.sources.centaline import fetch_centaline_ccl
 from src.hk_real_estate.sources.midland import run_midland_ingestion
 from src.hk_real_estate.sources.rvd import run_rvd_ingestion
+from src.hk_real_estate.sources.hkma import fetch_hkma_residential_mortgage_survey
+from src.common.cnsd_mdt import fetch_cnsd_table
 from src.hk_real_estate.storage import load_latest_normalized
 
 

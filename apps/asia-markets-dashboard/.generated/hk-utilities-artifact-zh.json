@@ -6,7 +6,7 @@
     "title": "香港公用事业与基础设施监测",
     "description": "中电控股（CLP）季度售电量拆解、中华煤气（Towngas）代理数据、香港天文台日均气温与电能实业（Power Assets）分部业绩快照。",
     "sector": "hk-utilities",
-    "generatedAt": "2026-07-25T12:39:38.554498Z",
+    "generatedAt": "2026-07-25T13:17:24.546323Z",
     "cards": [
       {
         "id": "clp_card",
@@ -282,7 +282,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-25T12:39:38.554498Z",
+    "generatedAt": "2026-07-25T13:17:24.546323Z",
     "status": "ready",
     "datasets": {
       "kpi_clp": [
