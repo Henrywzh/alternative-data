@@ -6,7 +6,7 @@
     "title": "香港房地产信托（REITs）基本面监测",
     "description": "领展（Link REIT）、冠君（Champion REIT）、置富（Fortune REIT）、繁荣（Prosperity REIT）、阳光（Sunlight REIT）及富豪（Regal REIT）的每单位资产净值（NAV）、每基金单位分派（DPU）、出租率、租金检讨调升率及酒店 KPI 快照。",
     "sector": "hk-reit",
-    "generatedAt": "2026-07-25T11:23:03.971061Z",
+    "generatedAt": "2026-07-25T12:39:38.624408Z",
     "dataAsOf": "2026-03-31",
     "liveSourcesCount": 6,
     "totalSourcesCount": 6,
@@ -190,7 +190,7 @@
         "sourceId": "linkreit_fundamentals",
         "encodings": {
           "x": {
-            "field": "date",
+            "field": "month",
             "type": "temporal",
             "label": "期间"
           },
@@ -217,7 +217,7 @@
         "sourceId": "linkreit_fundamentals",
         "encodings": {
           "x": {
-            "field": "date",
+            "field": "month",
             "type": "temporal",
             "label": "期间"
           },
@@ -244,7 +244,7 @@
         "sourceId": "linkreit_fundamentals",
         "encodings": {
           "x": {
-            "field": "date",
+            "field": "month",
             "type": "temporal",
             "label": "期间"
           },
@@ -271,7 +271,7 @@
         "sourceId": "linkreit_fundamentals",
         "encodings": {
           "x": {
-            "field": "date",
+            "field": "month",
             "type": "temporal",
             "label": "期间"
           },
@@ -390,7 +390,7 @@
           "engine": "official IR PDF + HTML",
           "url": "https://www.linkreit.com/en/investor-relations/",
           "language": "PDF/HTML",
-          "description": "NAV per unit, DPU, occupancy rate, and rental reversion rate for Link REIT."
+          "description": "构建时从公开来源读取并校验 领展房产基金（0823.HK）投资者关系披露。"
         }
       },
       {
@@ -402,7 +402,7 @@
           "engine": "official IR disclosures",
           "url": "https://www.championreit.com/en/investor-relations/",
           "language": "PDF/HTML",
-          "description": "Three Garden Road & Langham Place office/retail NAV/unit, DPU, occupancy, and reversion."
+          "description": "构建时从公开来源读取并校验 冠君产业信托（2778.HK）财务披露。"
         }
       },
       {
@@ -414,7 +414,7 @@
           "engine": "official IR disclosures",
           "url": "https://www.fortunereit.com/en/investor-relations/",
           "language": "PDF/HTML",
-          "description": "Suburban HK retail portfolio NAV/unit, DPU, occupancy, and rental reversion."
+          "description": "构建时从公开来源读取并校验 置富产业信托（0778.HK）财务披露。"
         }
       },
       {
@@ -426,7 +426,7 @@
           "engine": "official IR disclosures",
           "url": "https://www.prosperityreit.com/en/investor-relations/",
           "language": "PDF/HTML",
-          "description": "Decentralized office and industrial portfolio NAV/unit, DPU, occupancy, and reversion."
+          "description": "构建时从公开来源读取并校验 繁荣产业信托（0808.HK）财务披露。"
         }
       },
       {
@@ -438,7 +438,7 @@
           "engine": "official IR disclosures",
           "url": "https://www.sunlightreit.com/en/investor-relations/",
           "language": "PDF/HTML",
-          "description": "Office and retail portfolio NAV/unit, DPU, occupancy, and rental reversion."
+          "description": "构建时从公开来源读取并校验 阳光房地产基金（0435.HK）财务披露。"
         }
       },
       {
@@ -450,7 +450,7 @@
           "engine": "official Interim/Annual Report PDF",
           "url": "https://www.regalreit.com/annualrpt.html?if=yes",
           "language": "PDF",
-          "description": "Hotel portfolio KPIs: occupancy (%), average daily rate (ADR, HK$), RevPAR (HK$), DPU, and NAV/unit."
+          "description": "构建时从公开来源读取并校验 富豪产业信托（1881.HK）酒店业绩披露。"
         }
       }
     ],
@@ -458,7 +458,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**数据快照：** `d758ec34e2c85b92` · 生成于 2026-07-25T11:23:03.971061Z。"
+        "body": "**数据快照：** `de4cc44061bb5999` · 生成于 2026-07-25T12:39:38.624408Z。"
       },
       {
         "id": "kpi_grid",
@@ -513,7 +513,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-25T11:23:03.971061Z",
+    "generatedAt": "2026-07-25T12:39:38.624408Z",
     "status": "ready",
     "datasets": {
       "kpi_linkreit": [
@@ -586,131 +586,157 @@
       "nav_history": [
         {
           "date": "2021-06-30",
+          "month": "2021-06",
           "series": "0435",
           "value": 8.45
         },
         {
           "date": "2022-06-30",
+          "month": "2022-06",
           "series": "0435",
           "value": 8.36
         },
         {
           "date": "2023-06-30",
+          "month": "2023-06",
           "series": "0435",
           "value": 8.06
         },
         {
           "date": "2024-12-31",
+          "month": "2024-12",
           "series": "0435",
           "value": 7.53
         },
         {
           "date": "2025-12-31",
+          "month": "2025-12",
           "series": "0435",
           "value": 7.09
         },
         {
           "date": "2021-12-31",
+          "month": "2021-12",
           "series": "0778",
           "value": 14.79
         },
         {
           "date": "2022-12-31",
+          "month": "2022-12",
           "series": "0778",
           "value": 14.52
         },
         {
           "date": "2023-12-31",
+          "month": "2023-12",
           "series": "0778",
           "value": 13.94
         },
         {
           "date": "2024-12-31",
+          "month": "2024-12",
           "series": "0778",
           "value": 13.21
         },
         {
           "date": "2025-12-31",
+          "month": "2025-12",
           "series": "0778",
           "value": 12.22
         },
         {
           "date": "2021-12-31",
+          "month": "2021-12",
           "series": "0808",
           "value": 4.83
         },
         {
           "date": "2022-12-31",
+          "month": "2022-12",
           "series": "0808",
           "value": 4.71
         },
         {
           "date": "2023-12-31",
+          "month": "2023-12",
           "series": "0808",
           "value": 4.56
         },
         {
           "date": "2024-12-31",
+          "month": "2024-12",
           "series": "0808",
           "value": 4.31
         },
         {
           "date": "2025-12-31",
+          "month": "2025-12",
           "series": "0808",
           "value": 3.97
         },
         {
           "date": "2022-03-31",
+          "month": "2022-03",
           "series": "0823",
           "value": 77.1
         },
         {
           "date": "2023-03-31",
+          "month": "2023-03",
           "series": "0823",
           "value": 73.98
         },
         {
           "date": "2024-03-31",
+          "month": "2024-03",
           "series": "0823",
           "value": 70.02
         },
         {
           "date": "2025-03-31",
+          "month": "2025-03",
           "series": "0823",
           "value": 63.3
         },
         {
           "date": "2026-03-31",
+          "month": "2026-03",
           "series": "0823",
           "value": 57.75
         },
         {
           "date": "2025-12-31",
+          "month": "2025-12",
           "series": "1881",
           "value": 3.898
         },
         {
           "date": "2021-12-31",
+          "month": "2021-12",
           "series": "2778",
           "value": 8.25
         },
         {
           "date": "2022-12-31",
+          "month": "2022-12",
           "series": "2778",
           "value": 7.91
         },
         {
           "date": "2023-12-31",
+          "month": "2023-12",
           "series": "2778",
           "value": 7.72
         },
         {
           "date": "2024-12-31",
+          "month": "2024-12",
           "series": "2778",
           "value": 7.16
         },
         {
           "date": "2025-12-31",
+          "month": "2025-12",
           "series": "2778",
           "value": 6.45
         }
@@ -718,131 +744,157 @@
       "dpu_history": [
         {
           "date": "2021-06-30",
+          "month": "2021-06",
           "series": "0435",
           "value": 0.256
         },
         {
           "date": "2022-06-30",
+          "month": "2022-06",
           "series": "0435",
           "value": 0.25
         },
         {
           "date": "2023-06-30",
+          "month": "2023-06",
           "series": "0435",
           "value": 0.22
         },
         {
           "date": "2024-12-31",
+          "month": "2024-12",
           "series": "0435",
           "value": 0.274
         },
         {
           "date": "2025-12-31",
+          "month": "2025-12",
           "series": "0435",
           "value": 0.182
         },
         {
           "date": "2021-12-31",
+          "month": "2021-12",
           "series": "0778",
           "value": 0.4688
         },
         {
           "date": "2022-12-31",
+          "month": "2022-12",
           "series": "0778",
           "value": 0.4415
         },
         {
           "date": "2023-12-31",
+          "month": "2023-12",
           "series": "0778",
           "value": 0.4038
         },
         {
           "date": "2024-12-31",
+          "month": "2024-12",
           "series": "0778",
           "value": 0.3559
         },
         {
           "date": "2025-12-31",
+          "month": "2025-12",
           "series": "0778",
           "value": 0.3522
         },
         {
           "date": "2021-12-31",
+          "month": "2021-12",
           "series": "0808",
           "value": 0.1763
         },
         {
           "date": "2022-12-31",
+          "month": "2022-12",
           "series": "0808",
           "value": 0.1625
         },
         {
           "date": "2023-12-31",
+          "month": "2023-12",
           "series": "0808",
           "value": 0.1409
         },
         {
           "date": "2024-12-31",
+          "month": "2024-12",
           "series": "0808",
           "value": 0.1198
         },
         {
           "date": "2025-12-31",
+          "month": "2025-12",
           "series": "0808",
           "value": 0.1156
         },
         {
           "date": "2022-03-31",
+          "month": "2022-03",
           "series": "0823",
           "value": 3.0567
         },
         {
           "date": "2023-03-31",
+          "month": "2023-03",
           "series": "0823",
           "value": 2.7431
         },
         {
           "date": "2024-03-31",
+          "month": "2024-03",
           "series": "0823",
           "value": 2.6265
         },
         {
           "date": "2025-03-31",
+          "month": "2025-03",
           "series": "0823",
           "value": 2.7234
         },
         {
           "date": "2026-03-31",
+          "month": "2026-03",
           "series": "0823",
           "value": 2.5361
         },
         {
           "date": "2025-12-31",
+          "month": "2025-12",
           "series": "1881",
           "value": 0.0088
         },
         {
           "date": "2021-12-31",
+          "month": "2021-12",
           "series": "2778",
           "value": 0.2275
         },
         {
           "date": "2022-12-31",
+          "month": "2022-12",
           "series": "2778",
           "value": 0.1954
         },
         {
           "date": "2023-12-31",
+          "month": "2023-12",
           "series": "2778",
           "value": 0.1683
         },
         {
           "date": "2024-12-31",
+          "month": "2024-12",
           "series": "2778",
           "value": 0.1422
         },
         {
           "date": "2025-12-31",
+          "month": "2025-12",
           "series": "2778",
           "value": 0.1263
         }
@@ -850,106 +902,127 @@
       "occupancy_history": [
         {
           "date": "2025-12-31",
+          "month": "2025-12",
           "series": "0435",
           "value": 91.5
         },
         {
           "date": "2021-12-31",
+          "month": "2021-12",
           "series": "0778",
           "value": 94.3
         },
         {
           "date": "2022-12-31",
+          "month": "2022-12",
           "series": "0778",
           "value": 93.9
         },
         {
           "date": "2023-12-31",
+          "month": "2023-12",
           "series": "0778",
           "value": 94.4
         },
         {
           "date": "2024-12-31",
+          "month": "2024-12",
           "series": "0778",
           "value": 95
         },
         {
           "date": "2025-12-31",
+          "month": "2025-12",
           "series": "0778",
           "value": 95.8
         },
         {
           "date": "2021-12-31",
+          "month": "2021-12",
           "series": "0808",
           "value": 97.7
         },
         {
           "date": "2022-12-31",
+          "month": "2022-12",
           "series": "0808",
           "value": 96.3
         },
         {
           "date": "2023-12-31",
+          "month": "2023-12",
           "series": "0808",
           "value": 95.9
         },
         {
           "date": "2024-12-31",
+          "month": "2024-12",
           "series": "0808",
           "value": 94.2
         },
         {
           "date": "2025-12-31",
+          "month": "2025-12",
           "series": "0808",
           "value": 94.7
         },
         {
           "date": "2022-03-31",
+          "month": "2022-03",
           "series": "0823",
           "value": 97.7
         },
         {
           "date": "2023-03-31",
+          "month": "2023-03",
           "series": "0823",
           "value": 98
         },
         {
           "date": "2024-03-31",
+          "month": "2024-03",
           "series": "0823",
           "value": 98
         },
         {
           "date": "2025-03-31",
+          "month": "2025-03",
           "series": "0823",
           "value": 97.8
         },
         {
           "date": "2026-03-31",
+          "month": "2026-03",
           "series": "0823",
           "value": 97.8
         },
         {
           "date": "2021-12-31",
+          "month": "2021-12",
           "series": "2778",
           "value": 89
         },
         {
           "date": "2022-12-31",
+          "month": "2022-12",
           "series": "2778",
           "value": 82.7
         },
         {
           "date": "2023-12-31",
+          "month": "2023-12",
           "series": "2778",
           "value": 82.8
         },
         {
           "date": "2024-12-31",
+          "month": "2024-12",
           "series": "2778",
           "value": 82.6
         },
         {
           "date": "2025-12-31",
+          "month": "2025-12",
           "series": "2778",
           "value": 81.6
         }
@@ -957,56 +1030,67 @@
       "reversion_history": [
         {
           "date": "2025-12-31",
+          "month": "2025-12",
           "series": "0435",
           "value": -7.9
         },
         {
           "date": "2021-12-31",
+          "month": "2021-12",
           "series": "0808",
           "value": -7.7
         },
         {
           "date": "2022-12-31",
+          "month": "2022-12",
           "series": "0808",
           "value": -4.6
         },
         {
           "date": "2023-12-31",
+          "month": "2023-12",
           "series": "0808",
           "value": -1.8
         },
         {
           "date": "2024-12-31",
+          "month": "2024-12",
           "series": "0808",
           "value": -6.4
         },
         {
           "date": "2025-12-31",
+          "month": "2025-12",
           "series": "0808",
           "value": -9.3
         },
         {
           "date": "2022-03-31",
+          "month": "2022-03",
           "series": "0823",
           "value": 4.8
         },
         {
           "date": "2023-03-31",
+          "month": "2023-03",
           "series": "0823",
           "value": 7.1
         },
         {
           "date": "2024-03-31",
+          "month": "2024-03",
           "series": "0823",
           "value": 7.9
         },
         {
           "date": "2025-03-31",
+          "month": "2025-03",
           "series": "0823",
           "value": -2.2
         },
         {
           "date": "2026-03-31",
+          "month": "2026-03",
           "series": "0823",
           "value": -8.2
         }
@@ -1014,17 +1098,20 @@
       "regal_hotel_kpi_history": [
         {
           "date": "2025-12-31",
-          "series": "ADR (HK$)",
+          "month": "2025-12",
+          "series": "平均房价 ADR (港元)",
           "value": 926.44
         },
         {
           "date": "2025-12-31",
-          "series": "Occupancy (%)",
+          "month": "2025-12",
+          "series": "出租率 (%)",
           "value": 73
         },
         {
           "date": "2025-12-31",
-          "series": "RevPAR (HK$)",
+          "month": "2025-12",
+          "series": "RevPAR (港元)",
           "value": 675.96
         }
       ],
@@ -1032,7 +1119,7 @@
         {
           "reit_name": "Link REIT",
           "ticker": "0823.HK",
-          "business_type": "Office/Retail",
+          "business_type": "写字楼/零售",
           "nav_per_unit_hkd": 57.75,
           "dpu_hkd": 2.5361,
           "occupancy_pct": 97.8,
@@ -1044,7 +1131,7 @@
         {
           "reit_name": "Champion REIT",
           "ticker": "2778.HK",
-          "business_type": "Office/Retail",
+          "business_type": "写字楼/零售",
           "nav_per_unit_hkd": 6.45,
           "dpu_hkd": 0.1263,
           "occupancy_pct": 81.6,
@@ -1056,7 +1143,7 @@
         {
           "reit_name": "Fortune REIT",
           "ticker": "0778.HK",
-          "business_type": "Office/Retail",
+          "business_type": "写字楼/零售",
           "nav_per_unit_hkd": 12.22,
           "dpu_hkd": 0.3522,
           "occupancy_pct": 95.8,
@@ -1068,7 +1155,7 @@
         {
           "reit_name": "Prosperity REIT",
           "ticker": "0808.HK",
-          "business_type": "Office/Retail",
+          "business_type": "写字楼/零售",
           "nav_per_unit_hkd": 3.97,
           "dpu_hkd": 0.1156,
           "occupancy_pct": 94.7,
@@ -1080,7 +1167,7 @@
         {
           "reit_name": "Sunlight REIT",
           "ticker": "0435.HK",
-          "business_type": "Office/Retail",
+          "business_type": "写字楼/零售",
           "nav_per_unit_hkd": 7.09,
           "dpu_hkd": 0.182,
           "occupancy_pct": 91.5,
@@ -1092,7 +1179,7 @@
         {
           "reit_name": "Regal REIT",
           "ticker": "1881.HK",
-          "business_type": "Hotel",
+          "business_type": "酒店",
           "nav_per_unit_hkd": 3.898,
           "dpu_hkd": 0.0088,
           "occupancy_pct": 73,
@@ -1552,8 +1639,8 @@
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-reit/",
     "sector_id": "hk-reit",
     "sector_name": "Hong Kong REITs Sector Monitor",
-    "snapshotId": "d758ec34e2c85b92",
-    "generatedAt": "2026-07-25T11:23:03.971061Z",
+    "snapshotId": "de4cc44061bb5999",
+    "generatedAt": "2026-07-25T12:39:38.624408Z",
     "dataAsOf": "2026-03-31"
   }
 }

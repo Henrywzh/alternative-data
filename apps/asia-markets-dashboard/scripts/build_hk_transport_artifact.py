@@ -53,7 +53,15 @@ def _utc_now() -> datetime:
 
 
 def _series_history(df: pd.DataFrame, series_label: str, value_column: str) -> list[dict[str, Any]]:
-    """Long-format {date, series, value} rows for a multi-series line chart."""
+    """Long-format {date, month, series, value} rows for a multi-series line chart.
+
+    `month` is a "YYYY-MM" string (month-granularity) rather than a full
+    "YYYY-MM-DD" date. The portable-chart-rendering plugin's date-axis
+    formatter always includes the year for month-granularity values but
+    omits it by default for day-granularity ones, so charts encode their x
+    axis against `month` to keep multi-year series unambiguous (see
+    chart-transforms.ts:formatDateAxisLabel in the build-report plugin).
+    """
     if df.empty or value_column not in df.columns:
         return []
     rows = []
@@ -65,6 +73,7 @@ def _series_history(df: pd.DataFrame, series_label: str, value_column: str) -> l
         rows.append(
             {
                 "date": date.strftime("%Y-%m-%d"),
+                "month": date.strftime("%Y-%m"),
                 "series": series_label,
                 "value": round(float(value), 4),
             }
@@ -202,7 +211,7 @@ def build_artifact(
             "dataset": "mtr_history",
             "sourceId": "mtr_patronage",
             "encodings": {
-                "x": {"field": "date", "type": "temporal", "label": "Month"},
+                "x": {"field": "month", "type": "temporal", "label": "Month"},
                 "y": {"field": "total_mtr_patronage_thousands", "type": "quantitative", "label": "Thousands ('000s)"},
             },
             "valueFormat": "number",
@@ -216,7 +225,7 @@ def build_artifact(
             "dataset": "mtr_service_breakdown_history",
             "sourceId": "mtr_patronage",
             "encodings": {
-                "x": {"field": "date", "type": "temporal", "label": "Month"},
+                "x": {"field": "month", "type": "temporal", "label": "Month"},
                 "y": {"field": "value", "type": "quantitative", "label": "Thousands ('000s)"},
                 "color": {"field": "series", "type": "nominal", "label": "Service"},
             },
@@ -231,7 +240,7 @@ def build_artifact(
             "dataset": "cathay_history",
             "sourceId": "cathay_hkia_traffic",
             "encodings": {
-                "x": {"field": "date", "type": "temporal", "label": "Month"},
+                "x": {"field": "month", "type": "temporal", "label": "Month"},
                 "y": {"field": "cathay_passengers", "type": "quantitative", "label": "Passengers"},
             },
             "valueFormat": "number",
@@ -245,7 +254,7 @@ def build_artifact(
             "dataset": "cathay_history",
             "sourceId": "cathay_hkia_traffic",
             "encodings": {
-                "x": {"field": "date", "type": "temporal", "label": "Month"},
+                "x": {"field": "month", "type": "temporal", "label": "Month"},
                 "y": {"field": "cathay_passenger_load_factor_pct", "type": "quantitative", "label": "Load Factor (%)"},
             },
             "valueFormat": "number",
@@ -259,7 +268,7 @@ def build_artifact(
             "dataset": "cathay_capacity_demand_history",
             "sourceId": "cathay_hkia_traffic",
             "encodings": {
-                "x": {"field": "date", "type": "temporal", "label": "Month"},
+                "x": {"field": "month", "type": "temporal", "label": "Month"},
                 "y": {"field": "value", "type": "quantitative", "label": "Thousands ('000s)"},
                 "color": {"field": "series", "type": "nominal", "label": "Metric"},
             },
@@ -274,7 +283,7 @@ def build_artifact(
             "dataset": "cathay_history",
             "sourceId": "cathay_hkia_traffic",
             "encodings": {
-                "x": {"field": "date", "type": "temporal", "label": "Month"},
+                "x": {"field": "month", "type": "temporal", "label": "Month"},
                 "y": {"field": "hkia_passengers", "type": "quantitative", "label": "Passengers"},
             },
             "valueFormat": "number",

@@ -485,6 +485,13 @@ def build_artifact(
     median_pe_latest = float(pe_values.median()) if not pe_values.empty else None
 
     retail_total = retail[retail["category"] == "All retail outlet"].sort_values("date").reset_index(drop=True)
+    # "YYYY-MM" companion column: retail_history is a >20-year monthly
+    # series, and the portable-chart plugin's date-axis formatter always
+    # includes the year for month-granularity values but omits it by
+    # default for day-granularity ones (see mtr/transport builder for the
+    # same pattern). Encoding the chart's x axis against `month` instead of
+    # `date` keeps every tick year-unambiguous.
+    retail_total["month"] = retail_total["date"].dt.strftime("%Y-%m")
     retail_kpi = _comparison_row(retail_total, "sales_value_index", now)
     retail_latest_by_category = retail.sort_values("date").groupby("category", as_index=False).tail(1)
     retail_category_snapshot = retail_latest_by_category[
@@ -493,6 +500,10 @@ def build_artifact(
     retail_chart_rows = retail_category_snapshot[retail_category_snapshot["category"] != "All retail outlet"]
 
     restaurant_total = restaurant[restaurant["sub_sector"] == "All restaurants"].sort_values("date").reset_index(drop=True)
+    # Same month-granularity treatment as retail_total above -- restaurant
+    # receipts are quarterly over >20 years, so each quarter-end date lands
+    # on a distinct "YYYY-MM" with no collisions.
+    restaurant_total["month"] = restaurant_total["date"].dt.strftime("%Y-%m")
     restaurant_kpi = _comparison_row(restaurant_total, "total_receipts_hkd_m", now)
     restaurant_latest_by_type = restaurant.sort_values("date").groupby("sub_sector", as_index=False).tail(1)
     restaurant_snapshot = restaurant_latest_by_type.sort_values("total_receipts_hkd_m", ascending=False).reset_index(drop=True)
@@ -502,18 +513,37 @@ def build_artifact(
     northbound_kpi = _comparison_row(immigration, "land_hk_resident_departures_7d_ma", now)
     southbound_kpi = _comparison_row(immigration, "mainland_visitor_arrivals_7d_ma", now)
 
-    # HK Immigration's daily CSV goes back to 2021-01-01 (~5.5 years) --
-    # much deeper than the old 1-year window. The portable-artifact plugin
-    # caps any single dataset at 2000 rows; this chart emits 2 rows/day
-    # (northbound + southbound), so 1000 days is the largest window that
-    # fits under that cap while still showing real history, not a
-    # fabricated extension.
-    imm_chart_window = immigration.tail(1000).copy()
+    # HK Immigration's daily CSV goes back to 2021-01-01 (~5.5 years). Now
+    # that the chart is resampled to a monthly mean below (~68 months x 2
+    # flow types =~ 136 rows), the portable-artifact plugin's 2,000-row cap
+    # is no longer the binding constraint, so this uses the full real
+    # history rather than an arbitrary day-count window.
+    imm_chart_window = immigration.copy()
     imm_north = imm_chart_window[["date", "land_hk_resident_departures_7d_ma"]].rename(columns={"land_hk_resident_departures_7d_ma": "value"})
     imm_north["flow_type"] = "Northbound"
     imm_south = imm_chart_window[["date", "mainland_visitor_arrivals_7d_ma"]].rename(columns={"mainland_visitor_arrivals_7d_ma": "value"})
     imm_south["flow_type"] = "Southbound"
-    immigration_trend_rows = pd.concat([imm_north, imm_south], ignore_index=True).sort_values(["date", "flow_type"])
+    imm_daily = pd.concat([imm_north, imm_south], ignore_index=True)
+    # Resampled to a monthly mean (of the already-smoothed 7d moving
+    # average) for the chart specifically: this ~2.7-year window is
+    # genuinely daily-granularity data, and the portable-chart plugin's
+    # date-axis formatter has no schema-level way to force the year onto
+    # day-granularity tick labels (it's a hardcoded default in the
+    # renderer's formatDateAxisLabel, not something artifact JSON can
+    # override) -- every tick would otherwise show only "Mon DD" and, with
+    # ~2.7 years of daily points, the same day-of-month recurs across
+    # multiple different years with no way to tell them apart. Rolling up
+    # to a "YYYY-MM" `month` column keeps every point on a distinct,
+    # always-year-labeled tick at the cost of daily resolution, which this
+    # already-smoothed series does not need for a dashboard trend line.
+    imm_daily["month"] = imm_daily["date"].dt.strftime("%Y-%m")
+    immigration_trend_rows = (
+        imm_daily.groupby(["month", "flow_type"], as_index=False)["value"]
+        .mean()
+        .sort_values(["month", "flow_type"])
+        .reset_index(drop=True)
+    )
+    immigration_trend_rows["value"] = immigration_trend_rows["value"].round(1)
 
     # Severe weather & FX demand driver KPIs and charts
     weather_kpi = _comparison_row(weather, "total_disruption_hours", now)
@@ -612,8 +642,26 @@ def build_artifact(
     coverage_planned = PLANNED_COVERAGE
 
     # KPI comparisons use the full validated history; the chart itself is
-    # windowed to the portable artifact's 2,000-row-per-dataset cap.
-    gold_chart_window = gold.tail(1_800)
+    # windowed to the portable artifact's 2,000-row-per-dataset cap, then
+    # resampled to a monthly mean. This ~7-year window is genuinely
+    # daily-granularity data, and the portable-chart plugin's date-axis
+    # formatter has no schema-level way to force the year onto
+    # day-granularity tick labels (it always includes the year for
+    # month-granularity values but omits it by default for day-granularity
+    # ones, hardcoded in the renderer's formatDateAxisLabel) -- every tick
+    # would otherwise show only "Mon DD" and the same day-of-month recurs
+    # across many different years with no way to tell them apart. Rolling
+    # up to a "YYYY-MM" `month` column keeps every point on a distinct,
+    # always-year-labeled tick.
+    gold_chart_daily = gold.tail(1_800).rename(columns={"gold_benchmark_pm_rmb_gram": "value"})[["date", "value"]].copy()
+    gold_chart_daily["month"] = gold_chart_daily["date"].dt.strftime("%Y-%m")
+    gold_chart_window = (
+        gold_chart_daily.groupby("month", as_index=False)["value"]
+        .mean()
+        .sort_values("month")
+        .reset_index(drop=True)
+    )
+    gold_chart_window["value"] = gold_chart_window["value"].round(2)
 
     recent_weather_events = weather.attrs.get("recent_events", [])
 
@@ -626,12 +674,10 @@ def build_artifact(
         "severe_weather_log": recent_weather_events,
         "kpi_northbound": [northbound_kpi],
         "kpi_southbound": [southbound_kpi],
-        "immigration_trend_history": _records(immigration_trend_rows, ["date", "value", "flow_type"]),
+        "immigration_trend_history": _records(immigration_trend_rows, ["month", "value", "flow_type"]),
         "kpi_gold": [gold_kpi],
         "kpi_median_pe": [{"latest": round(median_pe_latest, 2)}] if median_pe_latest is not None else [],
-        "gold_history": _records(
-            gold_chart_window.rename(columns={"gold_benchmark_pm_rmb_gram": "value"}), ["date", "value"]
-        ),
+        "gold_history": _records(gold_chart_window, ["month", "value"]),
         "afcd_category_summary": _records(category_summary, ["category", "avg_price_hkd_per_kg", "commodities"]),
         "afcd_category_trend_history": _records(
             afcd_category_history.tail(2_000).assign(
@@ -648,7 +694,7 @@ def build_artifact(
         "valuation_pe_chart": _records(valuation_chart_rows, ["company_name", "pe_ttm"]),
         "kpi_retail": [retail_kpi],
         "retail_history": _records(
-            retail_total.rename(columns={"sales_value_index": "value"}), ["date", "value"]
+            retail_total.rename(columns={"sales_value_index": "value"}), ["date", "month", "value"]
         ),
         "retail_category_snapshot": _records(
             retail_category_snapshot, ["category", "sales_value_index", "sales_volume_index", "date"]
@@ -656,7 +702,7 @@ def build_artifact(
         "retail_category_chart": _records(retail_chart_rows, ["category", "sales_value_index"]),
         "kpi_restaurant": [restaurant_kpi],
         "restaurant_history": _records(
-            restaurant_total.rename(columns={"total_receipts_hkd_m": "value"}), ["date", "value"]
+            restaurant_total.rename(columns={"total_receipts_hkd_m": "value"}), ["date", "month", "value"]
         ),
         "restaurant_snapshot": _records(
             restaurant_snapshot,
@@ -796,14 +842,14 @@ def build_artifact(
         },
         {
             "id": "immigration_trend",
-            "title": "Cross-border passenger traffic (7-day MA)",
-            "subtitle": "Daily passenger flows: Northbound (HK resident departures via land control points only) vs Southbound (Mainland visitor arrivals, all control points).",
+            "title": "Cross-border passenger traffic (7-day MA, monthly average)",
+            "subtitle": "Monthly average of the daily 7-day MA: Northbound (HK resident departures via land control points only) vs Southbound (Mainland visitor arrivals, all control points).",
             "type": "line",
             "intent": "trend",
             "dataset": "immigration_trend_history",
             "sourceId": "immigration_flow",
             "encodings": {
-                "x": {"field": "date", "type": "temporal", "label": "Date"},
+                "x": {"field": "month", "type": "temporal", "label": "Month"},
                 "y": {"field": "value", "type": "quantitative", "label": "Passengers / day (7d MA)"},
                 "color": {"field": "flow_type", "type": "nominal", "label": "Flow direction"},
             },
@@ -854,16 +900,16 @@ def build_artifact(
             "id": "gold_trend",
             "title": "Shanghai Gold Exchange PM benchmark (margin-cost reference)",
             "subtitle": (
-                "Daily fixing in RMB per gram, last ~7 years; a secondary reference for HK gold-jewellery input "
-                "costs, shown alongside AFCD wholesale food costs for margin context -- see the cross-border "
-                "passenger traffic chart above for the featured consumer-demand signal."
+                "Monthly average of the daily PM fixing in RMB per gram, last ~7 years; a secondary reference for "
+                "HK gold-jewellery input costs, shown alongside AFCD wholesale food costs for margin context -- see "
+                "the cross-border passenger traffic chart above for the featured consumer-demand signal."
             ),
             "type": "line",
             "intent": "trend",
             "dataset": "gold_history",
             "sourceId": "sge_gold",
             "encodings": {
-                "x": {"field": "date", "type": "temporal", "label": "Date"},
+                "x": {"field": "month", "type": "temporal", "label": "Month"},
                 "y": {"field": "value", "type": "quantitative", "label": "RMB / gram"},
             },
             "valueFormat": "number",
@@ -894,7 +940,7 @@ def build_artifact(
             "dataset": "retail_history",
             "sourceId": "cnsd_retail",
             "encodings": {
-                "x": {"field": "date", "type": "temporal", "label": "Month"},
+                "x": {"field": "month", "type": "temporal", "label": "Month"},
                 "y": {"field": "value", "type": "quantitative", "label": "Value index"},
             },
             "valueFormat": "number",
@@ -925,7 +971,7 @@ def build_artifact(
             "dataset": "restaurant_history",
             "sourceId": "censtatd_restaurant",
             "encodings": {
-                "x": {"field": "date", "type": "temporal", "label": "Quarter"},
+                "x": {"field": "month", "type": "temporal", "label": "Quarter"},
                 "y": {"field": "value", "type": "quantitative", "label": "HKD million"},
             },
             "valueFormat": "number",

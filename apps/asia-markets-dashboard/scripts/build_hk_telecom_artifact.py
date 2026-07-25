@@ -102,6 +102,18 @@ def build_artifact(
     hutchison = raw_hutchison if raw_hutchison is not None else fetch_hutchison_telecom_operating_drivers()
     numbering_plan = raw_numbering_plan if raw_numbering_plan is not None else fetch_numbering_plan()
 
+    # Semi-annual reporting periods land on distinct months (e.g. Jun/Dec),
+    # so a "YYYY-MM" `month` column is a lossless companion to `date`. Chart
+    # x-axes are encoded against `month` rather than `date` because the
+    # portable-chart plugin's date-axis formatter always includes the year
+    # for month-granularity values but omits it by default for
+    # day-granularity ones -- without this, multi-year semi-annual/annual
+    # trends (e.g. three "Dec 31" points from three different years) render
+    # with identical, year-ambiguous tick labels.
+    for frame in (hkt, smartone, hutchison):
+        if "date" in frame.columns:
+            frame["month"] = frame["date"].dt.strftime("%Y-%m")
+
     generated_at = now.isoformat().replace("+00:00", "Z")
 
     hkt_latest = hkt.iloc[-1]
@@ -206,7 +218,7 @@ def build_artifact(
             "dataset": "hkt_history",
             "sourceId": "hkt_operating_drivers",
             "encodings": {
-                "x": {"field": "date", "type": "temporal", "label": "Period"},
+                "x": {"field": "month", "type": "temporal", "label": "Period"},
                 "y": {"field": "mobile_postpaid_arpu_hkd", "type": "quantitative", "label": "HK$"},
             },
             "valueFormat": "number",
@@ -220,7 +232,7 @@ def build_artifact(
             "dataset": "smartone_history",
             "sourceId": "smartone_operating_drivers",
             "encodings": {
-                "x": {"field": "date", "type": "temporal", "label": "Period"},
+                "x": {"field": "month", "type": "temporal", "label": "Period"},
                 "y": {"field": "postpaid_arpu_hkd", "type": "quantitative", "label": "HK$"},
             },
             "valueFormat": "number",
@@ -234,7 +246,7 @@ def build_artifact(
             "dataset": "hutchison_history",
             "sourceId": "hutchison_telecom_operating_drivers",
             "encodings": {
-                "x": {"field": "date", "type": "temporal", "label": "Period"},
+                "x": {"field": "month", "type": "temporal", "label": "Period"},
                 "y": {"field": "postpaid_gross_arpu_hkd", "type": "quantitative", "label": "HK$"},
             },
             "valueFormat": "number",

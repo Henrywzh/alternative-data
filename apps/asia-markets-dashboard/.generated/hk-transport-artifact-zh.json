@@ -6,7 +6,7 @@
     "title": "香港交通与航空监测",
     "description": "港铁月度客运量（本地/跨境/高铁）、国泰航空运营数据与香港国际机场流量的来源快照。",
     "sector": "hk-transport",
-    "generatedAt": "2026-07-25T10:32:42.314291Z",
+    "generatedAt": "2026-07-25T12:39:38.622368Z",
     "cards": [
       {
         "id": "mtr_card",
@@ -75,7 +75,7 @@
         "sourceId": "mtr_patronage",
         "encodings": {
           "x": {
-            "field": "date",
+            "field": "month",
             "type": "temporal",
             "label": "月份"
           },
@@ -97,7 +97,7 @@
         "sourceId": "mtr_patronage",
         "encodings": {
           "x": {
-            "field": "date",
+            "field": "month",
             "type": "temporal",
             "label": "月份"
           },
@@ -124,7 +124,7 @@
         "sourceId": "cathay_hkia_traffic",
         "encodings": {
           "x": {
-            "field": "date",
+            "field": "month",
             "type": "temporal",
             "label": "月份"
           },
@@ -146,7 +146,7 @@
         "sourceId": "cathay_hkia_traffic",
         "encodings": {
           "x": {
-            "field": "date",
+            "field": "month",
             "type": "temporal",
             "label": "月份"
           },
@@ -168,7 +168,7 @@
         "sourceId": "cathay_hkia_traffic",
         "encodings": {
           "x": {
-            "field": "date",
+            "field": "month",
             "type": "temporal",
             "label": "月份"
           },
@@ -195,7 +195,7 @@
         "sourceId": "cathay_hkia_traffic",
         "encodings": {
           "x": {
-            "field": "date",
+            "field": "month",
             "type": "temporal",
             "label": "月份"
           },
@@ -220,7 +220,7 @@
           "engine": "official IR web page",
           "url": "https://www.mtr.com.hk/en/corporate/investor/patronage.php",
           "language": "HTML",
-          "description": "Monthly patronage counts and daily averages by rail service: Domestic, Airport Express, Cross-boundary (Lo Wu & Lok Ma Chau), Light Rail & Bus, and High Speed Rail (HSR)."
+          "description": "构建时从公开来源读取并校验 港铁公司投资者关系月度客运量。"
         }
       },
       {
@@ -232,7 +232,7 @@
           "engine": "official CAD Excel workbook + Cathay Pacific IR monthly traffic-figures PDF",
           "url": "https://www.cad.gov.hk/english/pdf/Stat%20Webpage.xlsx ; https://www.cathaypacific.com/content/dam/cx/about-us/investor-relations/announcements/en/<YYYYMM>_cx_traffic_en.pdf",
           "language": "XLSX + PDF",
-          "description": "HKIA airport monthly aircraft movements, passenger volume, and freight tonnage alongside Cathay Pacific passengers, RPK, ASK, and Passenger Load Factor (%), fetched directly from Cathay's own investor-relations traffic-figures PDF (deterministic per-month URL)."
+          "description": "构建时从公开来源读取并校验 民航处香港国际机场月度流量 & 国泰航空数据。"
         }
       }
     ],
@@ -281,7 +281,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-25T10:32:42.314291Z",
+    "generatedAt": "2026-07-25T12:39:38.622368Z",
     "status": "ready",
     "datasets": {
       "kpi_mtr": [
@@ -6546,3883 +6546,4659 @@
       "mtr_service_breakdown_history": [
         {
           "date": "2018-01-01",
-          "series": "Airport Exp",
+          "month": "2018-01",
+          "series": "机场快线",
           "value": 1402
         },
         {
           "date": "2018-01-01",
-          "series": "Domestic",
+          "month": "2018-01",
+          "series": "本地",
           "value": 142553
         },
         {
           "date": "2018-01-01",
-          "series": "HSR",
+          "month": "2018-01",
+          "series": "高铁",
           "value": 0
         },
         {
           "date": "2018-01-01",
-          "series": "LR & Bus",
+          "month": "2018-01",
+          "series": "轻铁巴士",
           "value": 19851
         },
         {
           "date": "2018-01-01",
-          "series": "X-Boundary",
+          "month": "2018-01",
+          "series": "跨境",
           "value": 9842
         },
         {
           "date": "2018-02-01",
-          "series": "Airport Exp",
+          "month": "2018-02",
+          "series": "机场快线",
           "value": 1216
         },
         {
           "date": "2018-02-01",
-          "series": "Domestic",
+          "month": "2018-02",
+          "series": "本地",
           "value": 125706
         },
         {
           "date": "2018-02-01",
-          "series": "HSR",
+          "month": "2018-02",
+          "series": "高铁",
           "value": 0
         },
         {
           "date": "2018-02-01",
-          "series": "LR & Bus",
+          "month": "2018-02",
+          "series": "轻铁巴士",
           "value": 17053
         },
         {
           "date": "2018-02-01",
-          "series": "X-Boundary",
+          "month": "2018-02",
+          "series": "跨境",
           "value": 9143
         },
         {
           "date": "2018-03-01",
-          "series": "Airport Exp",
+          "month": "2018-03",
+          "series": "机场快线",
           "value": 1518
         },
         {
           "date": "2018-03-01",
-          "series": "Domestic",
+          "month": "2018-03",
+          "series": "本地",
           "value": 142521
         },
         {
           "date": "2018-03-01",
-          "series": "HSR",
+          "month": "2018-03",
+          "series": "高铁",
           "value": 0
         },
         {
           "date": "2018-03-01",
-          "series": "LR & Bus",
+          "month": "2018-03",
+          "series": "轻铁巴士",
           "value": 19742
         },
         {
           "date": "2018-03-01",
-          "series": "X-Boundary",
+          "month": "2018-03",
+          "series": "跨境",
           "value": 9885
         },
         {
           "date": "2018-04-01",
-          "series": "Airport Exp",
+          "month": "2018-04",
+          "series": "机场快线",
           "value": 1554
         },
         {
           "date": "2018-04-01",
-          "series": "Domestic",
+          "month": "2018-04",
+          "series": "本地",
           "value": 132659
         },
         {
           "date": "2018-04-01",
-          "series": "HSR",
+          "month": "2018-04",
+          "series": "高铁",
           "value": 0
         },
         {
           "date": "2018-04-01",
-          "series": "LR & Bus",
+          "month": "2018-04",
+          "series": "轻铁巴士",
           "value": 18850
         },
         {
           "date": "2018-04-01",
-          "series": "X-Boundary",
+          "month": "2018-04",
+          "series": "跨境",
           "value": 10251
         },
         {
           "date": "2018-05-01",
-          "series": "Airport Exp",
+          "month": "2018-05",
+          "series": "机场快线",
           "value": 1355
         },
         {
           "date": "2018-05-01",
-          "series": "Domestic",
+          "month": "2018-05",
+          "series": "本地",
           "value": 138914
         },
         {
           "date": "2018-05-01",
-          "series": "HSR",
+          "month": "2018-05",
+          "series": "高铁",
           "value": 0
         },
         {
           "date": "2018-05-01",
-          "series": "LR & Bus",
+          "month": "2018-05",
+          "series": "轻铁巴士",
           "value": 20242
         },
         {
           "date": "2018-05-01",
-          "series": "X-Boundary",
+          "month": "2018-05",
+          "series": "跨境",
           "value": 9571
         },
         {
           "date": "2018-06-01",
-          "series": "Airport Exp",
+          "month": "2018-06",
+          "series": "机场快线",
           "value": 1452
         },
         {
           "date": "2018-06-01",
-          "series": "Domestic",
+          "month": "2018-06",
+          "series": "本地",
           "value": 133724
         },
         {
           "date": "2018-06-01",
-          "series": "HSR",
+          "month": "2018-06",
+          "series": "高铁",
           "value": 0
         },
         {
           "date": "2018-06-01",
-          "series": "LR & Bus",
+          "month": "2018-06",
+          "series": "轻铁巴士",
           "value": 19467
         },
         {
           "date": "2018-06-01",
-          "series": "X-Boundary",
+          "month": "2018-06",
+          "series": "跨境",
           "value": 9373
         },
         {
           "date": "2018-07-01",
-          "series": "Airport Exp",
+          "month": "2018-07",
+          "series": "机场快线",
           "value": 1425
         },
         {
           "date": "2018-07-01",
-          "series": "Domestic",
+          "month": "2018-07",
+          "series": "本地",
           "value": 139117
         },
         {
           "date": "2018-07-01",
-          "series": "HSR",
+          "month": "2018-07",
+          "series": "高铁",
           "value": 0
         },
         {
           "date": "2018-07-01",
-          "series": "LR & Bus",
+          "month": "2018-07",
+          "series": "轻铁巴士",
           "value": 19777
         },
         {
           "date": "2018-07-01",
-          "series": "X-Boundary",
+          "month": "2018-07",
+          "series": "跨境",
           "value": 10324
         },
         {
           "date": "2018-08-01",
-          "series": "Airport Exp",
+          "month": "2018-08",
+          "series": "机场快线",
           "value": 1439
         },
         {
           "date": "2018-08-01",
-          "series": "Domestic",
+          "month": "2018-08",
+          "series": "本地",
           "value": 141531
         },
         {
           "date": "2018-08-01",
-          "series": "HSR",
+          "month": "2018-08",
+          "series": "高铁",
           "value": 0
         },
         {
           "date": "2018-08-01",
-          "series": "LR & Bus",
+          "month": "2018-08",
+          "series": "轻铁巴士",
           "value": 19271
         },
         {
           "date": "2018-08-01",
-          "series": "X-Boundary",
+          "month": "2018-08",
+          "series": "跨境",
           "value": 10585
         },
         {
           "date": "2018-09-01",
-          "series": "Airport Exp",
+          "month": "2018-09",
+          "series": "机场快线",
           "value": 1492
         },
         {
           "date": "2018-09-01",
-          "series": "Domestic",
+          "month": "2018-09",
+          "series": "本地",
           "value": 135896
         },
         {
           "date": "2018-09-01",
-          "series": "HSR",
+          "month": "2018-09",
+          "series": "高铁",
           "value": 369
         },
         {
           "date": "2018-09-01",
-          "series": "LR & Bus",
+          "month": "2018-09",
+          "series": "轻铁巴士",
           "value": 19419
         },
         {
           "date": "2018-09-01",
-          "series": "X-Boundary",
+          "month": "2018-09",
+          "series": "跨境",
           "value": 9236
         },
         {
           "date": "2018-10-01",
-          "series": "Airport Exp",
+          "month": "2018-10",
+          "series": "机场快线",
           "value": 1621
         },
         {
           "date": "2018-10-01",
-          "series": "Domestic",
+          "month": "2018-10",
+          "series": "本地",
           "value": 145708
         },
         {
           "date": "2018-10-01",
-          "series": "HSR",
+          "month": "2018-10",
+          "series": "高铁",
           "value": 1629
         },
         {
           "date": "2018-10-01",
-          "series": "LR & Bus",
+          "month": "2018-10",
+          "series": "轻铁巴士",
           "value": 20517
         },
         {
           "date": "2018-10-01",
-          "series": "X-Boundary",
+          "month": "2018-10",
+          "series": "跨境",
           "value": 9731
         },
         {
           "date": "2018-11-01",
-          "series": "Airport Exp",
+          "month": "2018-11",
+          "series": "机场快线",
           "value": 1600
         },
         {
           "date": "2018-11-01",
-          "series": "Domestic",
+          "month": "2018-11",
+          "series": "本地",
           "value": 145747
         },
         {
           "date": "2018-11-01",
-          "series": "HSR",
+          "month": "2018-11",
+          "series": "高铁",
           "value": 1477
         },
         {
           "date": "2018-11-01",
-          "series": "LR & Bus",
+          "month": "2018-11",
+          "series": "轻铁巴士",
           "value": 20029
         },
         {
           "date": "2018-11-01",
-          "series": "X-Boundary",
+          "month": "2018-11",
+          "series": "跨境",
           "value": 9224
         },
         {
           "date": "2018-12-01",
-          "series": "Airport Exp",
+          "month": "2018-12",
+          "series": "机场快线",
           "value": 1634
         },
         {
           "date": "2018-12-01",
-          "series": "Domestic",
+          "month": "2018-12",
+          "series": "本地",
           "value": 145896
         },
         {
           "date": "2018-12-01",
-          "series": "HSR",
+          "month": "2018-12",
+          "series": "高铁",
           "value": 1827
         },
         {
           "date": "2018-12-01",
-          "series": "LR & Bus",
+          "month": "2018-12",
+          "series": "轻铁巴士",
           "value": 19848
         },
         {
           "date": "2018-12-01",
-          "series": "X-Boundary",
+          "month": "2018-12",
+          "series": "跨境",
           "value": 10283
         },
         {
           "date": "2019-01-01",
-          "series": "Airport Exp",
+          "month": "2019-01",
+          "series": "机场快线",
           "value": 1511
         },
         {
           "date": "2019-01-01",
-          "series": "Domestic",
+          "month": "2019-01",
+          "series": "本地",
           "value": 148219
         },
         {
           "date": "2019-01-01",
-          "series": "HSR",
+          "month": "2019-01",
+          "series": "高铁",
           "value": 1713
         },
         {
           "date": "2019-01-01",
-          "series": "LR & Bus",
+          "month": "2019-01",
+          "series": "轻铁巴士",
           "value": 20356
         },
         {
           "date": "2019-01-01",
-          "series": "X-Boundary",
+          "month": "2019-01",
+          "series": "跨境",
           "value": 10409
         },
         {
           "date": "2019-02-01",
-          "series": "Airport Exp",
+          "month": "2019-02",
+          "series": "机场快线",
           "value": 1329
         },
         {
           "date": "2019-02-01",
-          "series": "Domestic",
+          "month": "2019-02",
+          "series": "本地",
           "value": 126288
         },
         {
           "date": "2019-02-01",
-          "series": "HSR",
+          "month": "2019-02",
+          "series": "高铁",
           "value": 1740
         },
         {
           "date": "2019-02-01",
-          "series": "LR & Bus",
+          "month": "2019-02",
+          "series": "轻铁巴士",
           "value": 17269
         },
         {
           "date": "2019-02-01",
-          "series": "X-Boundary",
+          "month": "2019-02",
+          "series": "跨境",
           "value": 8377
         },
         {
           "date": "2019-03-01",
-          "series": "Airport Exp",
+          "month": "2019-03",
+          "series": "机场快线",
           "value": 1645
         },
         {
           "date": "2019-03-01",
-          "series": "Domestic",
+          "month": "2019-03",
+          "series": "本地",
           "value": 144919
         },
         {
           "date": "2019-03-01",
-          "series": "HSR",
+          "month": "2019-03",
+          "series": "高铁",
           "value": 1557
         },
         {
           "date": "2019-03-01",
-          "series": "LR & Bus",
+          "month": "2019-03",
+          "series": "轻铁巴士",
           "value": 19963
         },
         {
           "date": "2019-03-01",
-          "series": "X-Boundary",
+          "month": "2019-03",
+          "series": "跨境",
           "value": 9682
         },
         {
           "date": "2019-04-01",
-          "series": "Airport Exp",
+          "month": "2019-04",
+          "series": "机场快线",
           "value": 1621
         },
         {
           "date": "2019-04-01",
-          "series": "Domestic",
+          "month": "2019-04",
+          "series": "本地",
           "value": 132315
         },
         {
           "date": "2019-04-01",
-          "series": "HSR",
+          "month": "2019-04",
+          "series": "高铁",
           "value": 1770
         },
         {
           "date": "2019-04-01",
-          "series": "LR & Bus",
+          "month": "2019-04",
+          "series": "轻铁巴士",
           "value": 18505
         },
         {
           "date": "2019-04-01",
-          "series": "X-Boundary",
+          "month": "2019-04",
+          "series": "跨境",
           "value": 9931
         },
         {
           "date": "2019-05-01",
-          "series": "Airport Exp",
+          "month": "2019-05",
+          "series": "机场快线",
           "value": 1443
         },
         {
           "date": "2019-05-01",
-          "series": "Domestic",
+          "month": "2019-05",
+          "series": "本地",
           "value": 142502
         },
         {
           "date": "2019-05-01",
-          "series": "HSR",
+          "month": "2019-05",
+          "series": "高铁",
           "value": 1677
         },
         {
           "date": "2019-05-01",
-          "series": "LR & Bus",
+          "month": "2019-05",
+          "series": "轻铁巴士",
           "value": 20105
         },
         {
           "date": "2019-05-01",
-          "series": "X-Boundary",
+          "month": "2019-05",
+          "series": "跨境",
           "value": 9889
         },
         {
           "date": "2019-06-01",
-          "series": "Airport Exp",
+          "month": "2019-06",
+          "series": "机场快线",
           "value": 1444
         },
         {
           "date": "2019-06-01",
-          "series": "Domestic",
+          "month": "2019-06",
+          "series": "本地",
           "value": 135990
         },
         {
           "date": "2019-06-01",
-          "series": "HSR",
+          "month": "2019-06",
+          "series": "高铁",
           "value": 1494
         },
         {
           "date": "2019-06-01",
-          "series": "LR & Bus",
+          "month": "2019-06",
+          "series": "轻铁巴士",
           "value": 19420
         },
         {
           "date": "2019-06-01",
-          "series": "X-Boundary",
+          "month": "2019-06",
+          "series": "跨境",
           "value": 9340
         },
         {
           "date": "2019-07-01",
-          "series": "Airport Exp",
+          "month": "2019-07",
+          "series": "机场快线",
           "value": 1458
         },
         {
           "date": "2019-07-01",
-          "series": "Domestic",
+          "month": "2019-07",
+          "series": "本地",
           "value": 138219
         },
         {
           "date": "2019-07-01",
-          "series": "HSR",
+          "month": "2019-07",
+          "series": "高铁",
           "value": 1626
         },
         {
           "date": "2019-07-01",
-          "series": "LR & Bus",
+          "month": "2019-07",
+          "series": "轻铁巴士",
           "value": 18988
         },
         {
           "date": "2019-07-01",
-          "series": "X-Boundary",
+          "month": "2019-07",
+          "series": "跨境",
           "value": 9166
         },
         {
           "date": "2019-08-01",
-          "series": "Airport Exp",
+          "month": "2019-08",
+          "series": "机场快线",
           "value": 1294
         },
         {
           "date": "2019-08-01",
-          "series": "Domestic",
+          "month": "2019-08",
+          "series": "本地",
           "value": 130922
         },
         {
           "date": "2019-08-01",
-          "series": "HSR",
+          "month": "2019-08",
+          "series": "高铁",
           "value": 1144
         },
         {
           "date": "2019-08-01",
-          "series": "LR & Bus",
+          "month": "2019-08",
+          "series": "轻铁巴士",
           "value": 18547
         },
         {
           "date": "2019-08-01",
-          "series": "X-Boundary",
+          "month": "2019-08",
+          "series": "跨境",
           "value": 7982
         },
         {
           "date": "2019-09-01",
-          "series": "Airport Exp",
+          "month": "2019-09",
+          "series": "机场快线",
           "value": 1035
         },
         {
           "date": "2019-09-01",
-          "series": "Domestic",
+          "month": "2019-09",
+          "series": "本地",
           "value": 126948
         },
         {
           "date": "2019-09-01",
-          "series": "HSR",
+          "month": "2019-09",
+          "series": "高铁",
           "value": 936
         },
         {
           "date": "2019-09-01",
-          "series": "LR & Bus",
+          "month": "2019-09",
+          "series": "轻铁巴士",
           "value": 18379
         },
         {
           "date": "2019-09-01",
-          "series": "X-Boundary",
+          "month": "2019-09",
+          "series": "跨境",
           "value": 8012
         },
         {
           "date": "2019-10-01",
-          "series": "Airport Exp",
+          "month": "2019-10",
+          "series": "机场快线",
           "value": 916
         },
         {
           "date": "2019-10-01",
-          "series": "Domestic",
+          "month": "2019-10",
+          "series": "本地",
           "value": 108456
         },
         {
           "date": "2019-10-01",
-          "series": "HSR",
+          "month": "2019-10",
+          "series": "高铁",
           "value": 1067
         },
         {
           "date": "2019-10-01",
-          "series": "LR & Bus",
+          "month": "2019-10",
+          "series": "轻铁巴士",
           "value": 12417
         },
         {
           "date": "2019-10-01",
-          "series": "X-Boundary",
+          "month": "2019-10",
+          "series": "跨境",
           "value": 7182
         },
         {
           "date": "2019-11-01",
-          "series": "Airport Exp",
+          "month": "2019-11",
+          "series": "机场快线",
           "value": 992
         },
         {
           "date": "2019-11-01",
-          "series": "Domestic",
+          "month": "2019-11",
+          "series": "本地",
           "value": 110311
         },
         {
           "date": "2019-11-01",
-          "series": "HSR",
+          "month": "2019-11",
+          "series": "高铁",
           "value": 1059
         },
         {
           "date": "2019-11-01",
-          "series": "LR & Bus",
+          "month": "2019-11",
+          "series": "轻铁巴士",
           "value": 11317
         },
         {
           "date": "2019-11-01",
-          "series": "X-Boundary",
+          "month": "2019-11",
+          "series": "跨境",
           "value": 5892
         },
         {
           "date": "2019-12-01",
-          "series": "Airport Exp",
+          "month": "2019-12",
+          "series": "机场快线",
           "value": 1075
         },
         {
           "date": "2019-12-01",
-          "series": "Domestic",
+          "month": "2019-12",
+          "series": "本地",
           "value": 123107
         },
         {
           "date": "2019-12-01",
-          "series": "HSR",
+          "month": "2019-12",
+          "series": "高铁",
           "value": 1141
         },
         {
           "date": "2019-12-01",
-          "series": "LR & Bus",
+          "month": "2019-12",
+          "series": "轻铁巴士",
           "value": 13983
         },
         {
           "date": "2019-12-01",
-          "series": "X-Boundary",
+          "month": "2019-12",
+          "series": "跨境",
           "value": 8318
         },
         {
           "date": "2020-01-01",
-          "series": "Airport Exp",
+          "month": "2020-01",
+          "series": "机场快线",
           "value": 972
         },
         {
           "date": "2020-01-01",
-          "series": "Domestic",
+          "month": "2020-01",
+          "series": "本地",
           "value": 116523
         },
         {
           "date": "2020-01-01",
-          "series": "HSR",
+          "month": "2020-01",
+          "series": "高铁",
           "value": 1033
         },
         {
           "date": "2020-01-01",
-          "series": "LR & Bus",
+          "month": "2020-01",
+          "series": "轻铁巴士",
           "value": 14653
         },
         {
           "date": "2020-01-01",
-          "series": "X-Boundary",
+          "month": "2020-01",
+          "series": "跨境",
           "value": 7053
         },
         {
           "date": "2020-02-01",
-          "series": "Airport Exp",
+          "month": "2020-02",
+          "series": "机场快线",
           "value": 374
         },
         {
           "date": "2020-02-01",
-          "series": "Domestic",
+          "month": "2020-02",
+          "series": "本地",
           "value": 71405
         },
         {
           "date": "2020-02-01",
-          "series": "HSR",
+          "month": "2020-02",
+          "series": "高铁",
           "value": 0
         },
         {
           "date": "2020-02-01",
-          "series": "LR & Bus",
+          "month": "2020-02",
+          "series": "轻铁巴士",
           "value": 9391
         },
         {
           "date": "2020-02-01",
-          "series": "X-Boundary",
+          "month": "2020-02",
+          "series": "跨境",
           "value": 189
         },
         {
           "date": "2020-03-01",
-          "series": "Airport Exp",
+          "month": "2020-03",
+          "series": "机场快线",
           "value": 259
         },
         {
           "date": "2020-03-01",
-          "series": "Domestic",
+          "month": "2020-03",
+          "series": "本地",
           "value": 84048
         },
         {
           "date": "2020-03-01",
-          "series": "HSR",
+          "month": "2020-03",
+          "series": "高铁",
           "value": 0
         },
         {
           "date": "2020-03-01",
-          "series": "LR & Bus",
+          "month": "2020-03",
+          "series": "轻铁巴士",
           "value": 11009
         },
         {
           "date": "2020-03-01",
-          "series": "X-Boundary",
+          "month": "2020-03",
+          "series": "跨境",
           "value": 36
         },
         {
           "date": "2020-04-01",
-          "series": "Airport Exp",
+          "month": "2020-04",
+          "series": "机场快线",
           "value": 134
         },
         {
           "date": "2020-04-01",
-          "series": "Domestic",
+          "month": "2020-04",
+          "series": "本地",
           "value": 74543
         },
         {
           "date": "2020-04-01",
-          "series": "HSR",
+          "month": "2020-04",
+          "series": "高铁",
           "value": 0
         },
         {
           "date": "2020-04-01",
-          "series": "LR & Bus",
+          "month": "2020-04",
+          "series": "轻铁巴士",
           "value": 10395
         },
         {
           "date": "2020-04-01",
-          "series": "X-Boundary",
+          "month": "2020-04",
+          "series": "跨境",
           "value": 37
         },
         {
           "date": "2020-05-01",
-          "series": "Airport Exp",
+          "month": "2020-05",
+          "series": "机场快线",
           "value": 156
         },
         {
           "date": "2020-05-01",
-          "series": "Domestic",
+          "month": "2020-05",
+          "series": "本地",
           "value": 97001
         },
         {
           "date": "2020-05-01",
-          "series": "HSR",
+          "month": "2020-05",
+          "series": "高铁",
           "value": 0
         },
         {
           "date": "2020-05-01",
-          "series": "LR & Bus",
+          "month": "2020-05",
+          "series": "轻铁巴士",
           "value": 12868
         },
         {
           "date": "2020-05-01",
-          "series": "X-Boundary",
+          "month": "2020-05",
+          "series": "跨境",
           "value": 35
         },
         {
           "date": "2020-06-01",
-          "series": "Airport Exp",
+          "month": "2020-06",
+          "series": "机场快线",
           "value": 177
         },
         {
           "date": "2020-06-01",
-          "series": "Domestic",
+          "month": "2020-06",
+          "series": "本地",
           "value": 110061
         },
         {
           "date": "2020-06-01",
-          "series": "HSR",
+          "month": "2020-06",
+          "series": "高铁",
           "value": 0
         },
         {
           "date": "2020-06-01",
-          "series": "LR & Bus",
+          "month": "2020-06",
+          "series": "轻铁巴士",
           "value": 14831
         },
         {
           "date": "2020-06-01",
-          "series": "X-Boundary",
+          "month": "2020-06",
+          "series": "跨境",
           "value": 44
         },
         {
           "date": "2020-07-01",
-          "series": "Airport Exp",
+          "month": "2020-07",
+          "series": "机场快线",
           "value": 167
         },
         {
           "date": "2020-07-01",
-          "series": "Domestic",
+          "month": "2020-07",
+          "series": "本地",
           "value": 91097
         },
         {
           "date": "2020-07-01",
-          "series": "HSR",
+          "month": "2020-07",
+          "series": "高铁",
           "value": 0
         },
         {
           "date": "2020-07-01",
-          "series": "LR & Bus",
+          "month": "2020-07",
+          "series": "轻铁巴士",
           "value": 12624
         },
         {
           "date": "2020-07-01",
-          "series": "X-Boundary",
+          "month": "2020-07",
+          "series": "跨境",
           "value": 43
         },
         {
           "date": "2020-08-01",
-          "series": "Airport Exp",
+          "month": "2020-08",
+          "series": "机场快线",
           "value": 148
         },
         {
           "date": "2020-08-01",
-          "series": "Domestic",
+          "month": "2020-08",
+          "series": "本地",
           "value": 78520
         },
         {
           "date": "2020-08-01",
-          "series": "HSR",
+          "month": "2020-08",
+          "series": "高铁",
           "value": 0
         },
         {
           "date": "2020-08-01",
-          "series": "LR & Bus",
+          "month": "2020-08",
+          "series": "轻铁巴士",
           "value": 10930
         },
         {
           "date": "2020-08-01",
-          "series": "X-Boundary",
+          "month": "2020-08",
+          "series": "跨境",
           "value": 33
         },
         {
           "date": "2020-09-01",
-          "series": "Airport Exp",
+          "month": "2020-09",
+          "series": "机场快线",
           "value": 179
         },
         {
           "date": "2020-09-01",
-          "series": "Domestic",
+          "month": "2020-09",
+          "series": "本地",
           "value": 100948
         },
         {
           "date": "2020-09-01",
-          "series": "HSR",
+          "month": "2020-09",
+          "series": "高铁",
           "value": 0
         },
         {
           "date": "2020-09-01",
-          "series": "LR & Bus",
+          "month": "2020-09",
+          "series": "轻铁巴士",
           "value": 13434
         },
         {
           "date": "2020-09-01",
-          "series": "X-Boundary",
+          "month": "2020-09",
+          "series": "跨境",
           "value": 41
         },
         {
           "date": "2020-10-01",
-          "series": "Airport Exp",
+          "month": "2020-10",
+          "series": "机场快线",
           "value": 174
         },
         {
           "date": "2020-10-01",
-          "series": "Domestic",
+          "month": "2020-10",
+          "series": "本地",
           "value": 113558
         },
         {
           "date": "2020-10-01",
-          "series": "HSR",
+          "month": "2020-10",
+          "series": "高铁",
           "value": 0
         },
         {
           "date": "2020-10-01",
-          "series": "LR & Bus",
+          "month": "2020-10",
+          "series": "轻铁巴士",
           "value": 15564
         },
         {
           "date": "2020-10-01",
-          "series": "X-Boundary",
+          "month": "2020-10",
+          "series": "跨境",
           "value": 50
         },
         {
           "date": "2020-11-01",
-          "series": "Airport Exp",
+          "month": "2020-11",
+          "series": "机场快线",
           "value": 171
         },
         {
           "date": "2020-11-01",
-          "series": "Domestic",
+          "month": "2020-11",
+          "series": "本地",
           "value": 114346
         },
         {
           "date": "2020-11-01",
-          "series": "HSR",
+          "month": "2020-11",
+          "series": "高铁",
           "value": 0
         },
         {
           "date": "2020-11-01",
-          "series": "LR & Bus",
+          "month": "2020-11",
+          "series": "轻铁巴士",
           "value": 15496
         },
         {
           "date": "2020-11-01",
-          "series": "X-Boundary",
+          "month": "2020-11",
+          "series": "跨境",
           "value": 50
         },
         {
           "date": "2020-12-01",
-          "series": "Airport Exp",
+          "month": "2020-12",
+          "series": "机场快线",
           "value": 159
         },
         {
           "date": "2020-12-01",
-          "series": "Domestic",
+          "month": "2020-12",
+          "series": "本地",
           "value": 92985
         },
         {
           "date": "2020-12-01",
-          "series": "HSR",
+          "month": "2020-12",
+          "series": "高铁",
           "value": 0
         },
         {
           "date": "2020-12-01",
-          "series": "LR & Bus",
+          "month": "2020-12",
+          "series": "轻铁巴士",
           "value": 12848
         },
         {
           "date": "2020-12-01",
-          "series": "X-Boundary",
+          "month": "2020-12",
+          "series": "跨境",
           "value": 37
         },
         {
           "date": "2021-01-01",
-          "series": "Airport Exp",
+          "month": "2021-01",
+          "series": "机场快线",
           "value": 156
         },
         {
           "date": "2021-01-01",
-          "series": "Domestic",
+          "month": "2021-01",
+          "series": "本地",
           "value": 93236
         },
         {
           "date": "2021-01-01",
-          "series": "HSR",
+          "month": "2021-01",
+          "series": "高铁",
           "value": 0
         },
         {
           "date": "2021-01-01",
-          "series": "LR & Bus",
+          "month": "2021-01",
+          "series": "轻铁巴士",
           "value": 12789
         },
         {
           "date": "2021-01-01",
-          "series": "X-Boundary",
+          "month": "2021-01",
+          "series": "跨境",
           "value": 33
         },
         {
           "date": "2021-02-01",
-          "series": "Airport Exp",
+          "month": "2021-02",
+          "series": "机场快线",
           "value": 144
         },
         {
           "date": "2021-02-01",
-          "series": "Domestic",
+          "month": "2021-02",
+          "series": "本地",
           "value": 91409
         },
         {
           "date": "2021-02-01",
-          "series": "HSR",
+          "month": "2021-02",
+          "series": "高铁",
           "value": 0
         },
         {
           "date": "2021-02-01",
-          "series": "LR & Bus",
+          "month": "2021-02",
+          "series": "轻铁巴士",
           "value": 12412
         },
         {
           "date": "2021-02-01",
-          "series": "X-Boundary",
+          "month": "2021-02",
+          "series": "跨境",
           "value": 34
         },
         {
           "date": "2021-03-01",
-          "series": "Airport Exp",
+          "month": "2021-03",
+          "series": "机场快线",
           "value": 178
         },
         {
           "date": "2021-03-01",
-          "series": "Domestic",
+          "month": "2021-03",
+          "series": "本地",
           "value": 114487
         },
         {
           "date": "2021-03-01",
-          "series": "HSR",
+          "month": "2021-03",
+          "series": "高铁",
           "value": 0
         },
         {
           "date": "2021-03-01",
-          "series": "LR & Bus",
+          "month": "2021-03",
+          "series": "轻铁巴士",
           "value": 15420
         },
         {
           "date": "2021-03-01",
-          "series": "X-Boundary",
+          "month": "2021-03",
+          "series": "跨境",
           "value": 42
         },
         {
           "date": "2021-04-01",
-          "series": "Airport Exp",
+          "month": "2021-04",
+          "series": "机场快线",
           "value": 156
         },
         {
           "date": "2021-04-01",
-          "series": "Domestic",
+          "month": "2021-04",
+          "series": "本地",
           "value": 111075
         },
         {
           "date": "2021-04-01",
-          "series": "HSR",
+          "month": "2021-04",
+          "series": "高铁",
           "value": 0
         },
         {
           "date": "2021-04-01",
-          "series": "LR & Bus",
+          "month": "2021-04",
+          "series": "轻铁巴士",
           "value": 15030
         },
         {
           "date": "2021-04-01",
-          "series": "X-Boundary",
+          "month": "2021-04",
+          "series": "跨境",
           "value": 52
         },
         {
           "date": "2021-05-01",
-          "series": "Airport Exp",
+          "month": "2021-05",
+          "series": "机场快线",
           "value": 164
         },
         {
           "date": "2021-05-01",
-          "series": "Domestic",
+          "month": "2021-05",
+          "series": "本地",
           "value": 117755
         },
         {
           "date": "2021-05-01",
-          "series": "HSR",
+          "month": "2021-05",
+          "series": "高铁",
           "value": 0
         },
         {
           "date": "2021-05-01",
-          "series": "LR & Bus",
+          "month": "2021-05",
+          "series": "轻铁巴士",
           "value": 16573
         },
         {
           "date": "2021-05-01",
-          "series": "X-Boundary",
+          "month": "2021-05",
+          "series": "跨境",
           "value": 41
         },
         {
           "date": "2021-06-01",
-          "series": "Airport Exp",
+          "month": "2021-06",
+          "series": "机场快线",
           "value": 172
         },
         {
           "date": "2021-06-01",
-          "series": "Domestic",
+          "month": "2021-06",
+          "series": "本地",
           "value": 118153
         },
         {
           "date": "2021-06-01",
-          "series": "HSR",
+          "month": "2021-06",
+          "series": "高铁",
           "value": 0
         },
         {
           "date": "2021-06-01",
-          "series": "LR & Bus",
+          "month": "2021-06",
+          "series": "轻铁巴士",
           "value": 16363
         },
         {
           "date": "2021-06-01",
-          "series": "X-Boundary",
+          "month": "2021-06",
+          "series": "跨境",
           "value": 40
         },
         {
           "date": "2021-07-01",
-          "series": "Airport Exp",
+          "month": "2021-07",
+          "series": "机场快线",
           "value": 183
         },
         {
           "date": "2021-07-01",
-          "series": "Domestic",
+          "month": "2021-07",
+          "series": "本地",
           "value": 125666
         },
         {
           "date": "2021-07-01",
-          "series": "HSR",
+          "month": "2021-07",
+          "series": "高铁",
           "value": 0
         },
         {
           "date": "2021-07-01",
-          "series": "LR & Bus",
+          "month": "2021-07",
+          "series": "轻铁巴士",
           "value": 16869
         },
         {
           "date": "2021-07-01",
-          "series": "X-Boundary",
+          "month": "2021-07",
+          "series": "跨境",
           "value": 40
         },
         {
           "date": "2021-08-01",
-          "series": "Airport Exp",
+          "month": "2021-08",
+          "series": "机场快线",
           "value": 209
         },
         {
           "date": "2021-08-01",
-          "series": "Domestic",
+          "month": "2021-08",
+          "series": "本地",
           "value": 127696
         },
         {
           "date": "2021-08-01",
-          "series": "HSR",
+          "month": "2021-08",
+          "series": "高铁",
           "value": 0
         },
         {
           "date": "2021-08-01",
-          "series": "LR & Bus",
+          "month": "2021-08",
+          "series": "轻铁巴士",
           "value": 16795
         },
         {
           "date": "2021-08-01",
-          "series": "X-Boundary",
+          "month": "2021-08",
+          "series": "跨境",
           "value": 41
         },
         {
           "date": "2021-09-01",
-          "series": "Airport Exp",
+          "month": "2021-09",
+          "series": "机场快线",
           "value": 197
         },
         {
           "date": "2021-09-01",
-          "series": "Domestic",
+          "month": "2021-09",
+          "series": "本地",
           "value": 129596
         },
         {
           "date": "2021-09-01",
-          "series": "HSR",
+          "month": "2021-09",
+          "series": "高铁",
           "value": 0
         },
         {
           "date": "2021-09-01",
-          "series": "LR & Bus",
+          "month": "2021-09",
+          "series": "轻铁巴士",
           "value": 17788
         },
         {
           "date": "2021-09-01",
-          "series": "X-Boundary",
+          "month": "2021-09",
+          "series": "跨境",
           "value": 40
         },
         {
           "date": "2021-10-01",
-          "series": "Airport Exp",
+          "month": "2021-10",
+          "series": "机场快线",
           "value": 186
         },
         {
           "date": "2021-10-01",
-          "series": "Domestic",
+          "month": "2021-10",
+          "series": "本地",
           "value": 124953
         },
         {
           "date": "2021-10-01",
-          "series": "HSR",
+          "month": "2021-10",
+          "series": "高铁",
           "value": 0
         },
         {
           "date": "2021-10-01",
-          "series": "LR & Bus",
+          "month": "2021-10",
+          "series": "轻铁巴士",
           "value": 16857
         },
         {
           "date": "2021-10-01",
-          "series": "X-Boundary",
+          "month": "2021-10",
+          "series": "跨境",
           "value": 42
         },
         {
           "date": "2021-11-01",
-          "series": "Airport Exp",
+          "month": "2021-11",
+          "series": "机场快线",
           "value": 178
         },
         {
           "date": "2021-11-01",
-          "series": "Domestic",
+          "month": "2021-11",
+          "series": "本地",
           "value": 131602
         },
         {
           "date": "2021-11-01",
-          "series": "HSR",
+          "month": "2021-11",
+          "series": "高铁",
           "value": 0
         },
         {
           "date": "2021-11-01",
-          "series": "LR & Bus",
+          "month": "2021-11",
+          "series": "轻铁巴士",
           "value": 17514
         },
         {
           "date": "2021-11-01",
-          "series": "X-Boundary",
+          "month": "2021-11",
+          "series": "跨境",
           "value": 39
         },
         {
           "date": "2021-12-01",
-          "series": "Airport Exp",
+          "month": "2021-12",
+          "series": "机场快线",
           "value": 228
         },
         {
           "date": "2021-12-01",
-          "series": "Domestic",
+          "month": "2021-12",
+          "series": "本地",
           "value": 136110
         },
         {
           "date": "2021-12-01",
-          "series": "HSR",
+          "month": "2021-12",
+          "series": "高铁",
           "value": 0
         },
         {
           "date": "2021-12-01",
-          "series": "LR & Bus",
+          "month": "2021-12",
+          "series": "轻铁巴士",
           "value": 17553
         },
         {
           "date": "2021-12-01",
-          "series": "X-Boundary",
+          "month": "2021-12",
+          "series": "跨境",
           "value": 41
         },
         {
           "date": "2022-01-01",
-          "series": "Airport Exp",
+          "month": "2022-01",
+          "series": "机场快线",
           "value": 175
         },
         {
           "date": "2022-01-01",
-          "series": "Domestic",
+          "month": "2022-01",
+          "series": "本地",
           "value": 110197
         },
         {
           "date": "2022-01-01",
-          "series": "HSR",
+          "month": "2022-01",
+          "series": "高铁",
           "value": 0
         },
         {
           "date": "2022-01-01",
-          "series": "LR & Bus",
+          "month": "2022-01",
+          "series": "轻铁巴士",
           "value": 14856
         },
         {
           "date": "2022-01-01",
-          "series": "X-Boundary",
+          "month": "2022-01",
+          "series": "跨境",
           "value": 41
         },
         {
           "date": "2022-02-01",
-          "series": "Airport Exp",
+          "month": "2022-02",
+          "series": "机场快线",
           "value": 120
         },
         {
           "date": "2022-02-01",
-          "series": "Domestic",
+          "month": "2022-02",
+          "series": "本地",
           "value": 62787
         },
         {
           "date": "2022-02-01",
-          "series": "HSR",
+          "month": "2022-02",
+          "series": "高铁",
           "value": 0
         },
         {
           "date": "2022-02-01",
-          "series": "LR & Bus",
+          "month": "2022-02",
+          "series": "轻铁巴士",
           "value": 8913
         },
         {
           "date": "2022-02-01",
-          "series": "X-Boundary",
+          "month": "2022-02",
+          "series": "跨境",
           "value": 30
         },
         {
           "date": "2022-03-01",
-          "series": "Airport Exp",
+          "month": "2022-03",
+          "series": "机场快线",
           "value": 136
         },
         {
           "date": "2022-03-01",
-          "series": "Domestic",
+          "month": "2022-03",
+          "series": "本地",
           "value": 65250
         },
         {
           "date": "2022-03-01",
-          "series": "HSR",
+          "month": "2022-03",
+          "series": "高铁",
           "value": 0
         },
         {
           "date": "2022-03-01",
-          "series": "LR & Bus",
+          "month": "2022-03",
+          "series": "轻铁巴士",
           "value": 9124
         },
         {
           "date": "2022-03-01",
-          "series": "X-Boundary",
+          "month": "2022-03",
+          "series": "跨境",
           "value": 29
         },
         {
           "date": "2022-04-01",
-          "series": "Airport Exp",
+          "month": "2022-04",
+          "series": "机场快线",
           "value": 155
         },
         {
           "date": "2022-04-01",
-          "series": "Domestic",
+          "month": "2022-04",
+          "series": "本地",
           "value": 91033
         },
         {
           "date": "2022-04-01",
-          "series": "HSR",
+          "month": "2022-04",
+          "series": "高铁",
           "value": 0
         },
         {
           "date": "2022-04-01",
-          "series": "LR & Bus",
+          "month": "2022-04",
+          "series": "轻铁巴士",
           "value": 12183
         },
         {
           "date": "2022-04-01",
-          "series": "X-Boundary",
+          "month": "2022-04",
+          "series": "跨境",
           "value": 39
         },
         {
           "date": "2022-05-01",
-          "series": "Airport Exp",
+          "month": "2022-05",
+          "series": "机场快线",
           "value": 182
         },
         {
           "date": "2022-05-01",
-          "series": "Domestic",
+          "month": "2022-05",
+          "series": "本地",
           "value": 119645
         },
         {
           "date": "2022-05-01",
-          "series": "HSR",
+          "month": "2022-05",
+          "series": "高铁",
           "value": 0
         },
         {
           "date": "2022-05-01",
-          "series": "LR & Bus",
+          "month": "2022-05",
+          "series": "轻铁巴士",
           "value": 16124
         },
         {
           "date": "2022-05-01",
-          "series": "X-Boundary",
+          "month": "2022-05",
+          "series": "跨境",
           "value": 37
         },
         {
           "date": "2022-06-01",
-          "series": "Airport Exp",
+          "month": "2022-06",
+          "series": "机场快线",
           "value": 195
         },
         {
           "date": "2022-06-01",
-          "series": "Domestic",
+          "month": "2022-06",
+          "series": "本地",
           "value": 121634
         },
         {
           "date": "2022-06-01",
-          "series": "HSR",
+          "month": "2022-06",
+          "series": "高铁",
           "value": 0
         },
         {
           "date": "2022-06-01",
-          "series": "LR & Bus",
+          "month": "2022-06",
+          "series": "轻铁巴士",
           "value": 16508
         },
         {
           "date": "2022-06-01",
-          "series": "X-Boundary",
+          "month": "2022-06",
+          "series": "跨境",
           "value": 35
         },
         {
           "date": "2022-07-01",
-          "series": "Airport Exp",
+          "month": "2022-07",
+          "series": "机场快线",
           "value": 213
         },
         {
           "date": "2022-07-01",
-          "series": "Domestic",
+          "month": "2022-07",
+          "series": "本地",
           "value": 122877
         },
         {
           "date": "2022-07-01",
-          "series": "HSR",
+          "month": "2022-07",
+          "series": "高铁",
           "value": 0
         },
         {
           "date": "2022-07-01",
-          "series": "LR & Bus",
+          "month": "2022-07",
+          "series": "轻铁巴士",
           "value": 16639
         },
         {
           "date": "2022-07-01",
-          "series": "X-Boundary",
+          "month": "2022-07",
+          "series": "跨境",
           "value": 35
         },
         {
           "date": "2022-08-01",
-          "series": "Airport Exp",
+          "month": "2022-08",
+          "series": "机场快线",
           "value": 278
         },
         {
           "date": "2022-08-01",
-          "series": "Domestic",
+          "month": "2022-08",
+          "series": "本地",
           "value": 126912
         },
         {
           "date": "2022-08-01",
-          "series": "HSR",
+          "month": "2022-08",
+          "series": "高铁",
           "value": 0
         },
         {
           "date": "2022-08-01",
-          "series": "LR & Bus",
+          "month": "2022-08",
+          "series": "轻铁巴士",
           "value": 16504
         },
         {
           "date": "2022-08-01",
-          "series": "X-Boundary",
+          "month": "2022-08",
+          "series": "跨境",
           "value": 35
         },
         {
           "date": "2022-09-01",
-          "series": "Airport Exp",
+          "month": "2022-09",
+          "series": "机场快线",
           "value": 294
         },
         {
           "date": "2022-09-01",
-          "series": "Domestic",
+          "month": "2022-09",
+          "series": "本地",
           "value": 126923
         },
         {
           "date": "2022-09-01",
-          "series": "HSR",
+          "month": "2022-09",
+          "series": "高铁",
           "value": 0
         },
         {
           "date": "2022-09-01",
-          "series": "LR & Bus",
+          "month": "2022-09",
+          "series": "轻铁巴士",
           "value": 17314
         },
         {
           "date": "2022-09-01",
-          "series": "X-Boundary",
+          "month": "2022-09",
+          "series": "跨境",
           "value": 34
         },
         {
           "date": "2022-10-01",
-          "series": "Airport Exp",
+          "month": "2022-10",
+          "series": "机场快线",
           "value": 361
         },
         {
           "date": "2022-10-01",
-          "series": "Domestic",
+          "month": "2022-10",
+          "series": "本地",
           "value": 131427
         },
         {
           "date": "2022-10-01",
-          "series": "HSR",
+          "month": "2022-10",
+          "series": "高铁",
           "value": 0
         },
         {
           "date": "2022-10-01",
-          "series": "LR & Bus",
+          "month": "2022-10",
+          "series": "轻铁巴士",
           "value": 17885
         },
         {
           "date": "2022-10-01",
-          "series": "X-Boundary",
+          "month": "2022-10",
+          "series": "跨境",
           "value": 40
         },
         {
           "date": "2022-11-01",
-          "series": "Airport Exp",
+          "month": "2022-11",
+          "series": "机场快线",
           "value": 451
         },
         {
           "date": "2022-11-01",
-          "series": "Domestic",
+          "month": "2022-11",
+          "series": "本地",
           "value": 126820
         },
         {
           "date": "2022-11-01",
-          "series": "HSR",
+          "month": "2022-11",
+          "series": "高铁",
           "value": 0
         },
         {
           "date": "2022-11-01",
-          "series": "LR & Bus",
+          "month": "2022-11",
+          "series": "轻铁巴士",
           "value": 16996
         },
         {
           "date": "2022-11-01",
-          "series": "X-Boundary",
+          "month": "2022-11",
+          "series": "跨境",
           "value": 36
         },
         {
           "date": "2022-12-01",
-          "series": "Airport Exp",
+          "month": "2022-12",
+          "series": "机场快线",
           "value": 542
         },
         {
           "date": "2022-12-01",
-          "series": "Domestic",
+          "month": "2022-12",
+          "series": "本地",
           "value": 129086
         },
         {
           "date": "2022-12-01",
-          "series": "HSR",
+          "month": "2022-12",
+          "series": "高铁",
           "value": 0
         },
         {
           "date": "2022-12-01",
-          "series": "LR & Bus",
+          "month": "2022-12",
+          "series": "轻铁巴士",
           "value": 16899
         },
         {
           "date": "2022-12-01",
-          "series": "X-Boundary",
+          "month": "2022-12",
+          "series": "跨境",
           "value": 37
         },
         {
           "date": "2023-01-01",
-          "series": "Airport Exp",
+          "month": "2023-01",
+          "series": "机场快线",
           "value": 614
         },
         {
           "date": "2023-01-01",
-          "series": "Domestic",
+          "month": "2023-01",
+          "series": "本地",
           "value": 125744
         },
         {
           "date": "2023-01-01",
-          "series": "HSR",
+          "month": "2023-01",
+          "series": "高铁",
           "value": 264
         },
         {
           "date": "2023-01-01",
-          "series": "LR & Bus",
+          "month": "2023-01",
+          "series": "轻铁巴士",
           "value": 16810
         },
         {
           "date": "2023-01-01",
-          "series": "X-Boundary",
+          "month": "2023-01",
+          "series": "跨境",
           "value": 771
         },
         {
           "date": "2023-02-01",
-          "series": "Airport Exp",
+          "month": "2023-02",
+          "series": "机场快线",
           "value": 589
         },
         {
           "date": "2023-02-01",
-          "series": "Domestic",
+          "month": "2023-02",
+          "series": "本地",
           "value": 125939
         },
         {
           "date": "2023-02-01",
-          "series": "HSR",
+          "month": "2023-02",
+          "series": "高铁",
           "value": 783
         },
         {
           "date": "2023-02-01",
-          "series": "LR & Bus",
+          "month": "2023-02",
+          "series": "轻铁巴士",
           "value": 16388
         },
         {
           "date": "2023-02-01",
-          "series": "X-Boundary",
+          "month": "2023-02",
+          "series": "跨境",
           "value": 3685
         },
         {
           "date": "2023-03-01",
-          "series": "Airport Exp",
+          "month": "2023-03",
+          "series": "机场快线",
           "value": 763
         },
         {
           "date": "2023-03-01",
-          "series": "Domestic",
+          "month": "2023-03",
+          "series": "本地",
           "value": 139522
         },
         {
           "date": "2023-03-01",
-          "series": "HSR",
+          "month": "2023-03",
+          "series": "高铁",
           "value": 1205
         },
         {
           "date": "2023-03-01",
-          "series": "LR & Bus",
+          "month": "2023-03",
+          "series": "轻铁巴士",
           "value": 18110
         },
         {
           "date": "2023-03-01",
-          "series": "X-Boundary",
+          "month": "2023-03",
+          "series": "跨境",
           "value": 5670
         },
         {
           "date": "2023-04-01",
-          "series": "Airport Exp",
+          "month": "2023-04",
+          "series": "机场快线",
           "value": 873
         },
         {
           "date": "2023-04-01",
-          "series": "Domestic",
+          "month": "2023-04",
+          "series": "本地",
           "value": 124399
         },
         {
           "date": "2023-04-01",
-          "series": "HSR",
+          "month": "2023-04",
+          "series": "高铁",
           "value": 1979
         },
         {
           "date": "2023-04-01",
-          "series": "LR & Bus",
+          "month": "2023-04",
+          "series": "轻铁巴士",
           "value": 16262
         },
         {
           "date": "2023-04-01",
-          "series": "X-Boundary",
+          "month": "2023-04",
+          "series": "跨境",
           "value": 6144
         },
         {
           "date": "2023-05-01",
-          "series": "Airport Exp",
+          "month": "2023-05",
+          "series": "机场快线",
           "value": 876
         },
         {
           "date": "2023-05-01",
-          "series": "Domestic",
+          "month": "2023-05",
+          "series": "本地",
           "value": 131843
         },
         {
           "date": "2023-05-01",
-          "series": "HSR",
+          "month": "2023-05",
+          "series": "高铁",
           "value": 1751
         },
         {
           "date": "2023-05-01",
-          "series": "LR & Bus",
+          "month": "2023-05",
+          "series": "轻铁巴士",
           "value": 17603
         },
         {
           "date": "2023-05-01",
-          "series": "X-Boundary",
+          "month": "2023-05",
+          "series": "跨境",
           "value": 5966
         },
         {
           "date": "2023-06-01",
-          "series": "Airport Exp",
+          "month": "2023-06",
+          "series": "机场快线",
           "value": 850
         },
         {
           "date": "2023-06-01",
-          "series": "Domestic",
+          "month": "2023-06",
+          "series": "本地",
           "value": 129761
         },
         {
           "date": "2023-06-01",
-          "series": "HSR",
+          "month": "2023-06",
+          "series": "高铁",
           "value": 1610
         },
         {
           "date": "2023-06-01",
-          "series": "LR & Bus",
+          "month": "2023-06",
+          "series": "轻铁巴士",
           "value": 17427
         },
         {
           "date": "2023-06-01",
-          "series": "X-Boundary",
+          "month": "2023-06",
+          "series": "跨境",
           "value": 5838
         },
         {
           "date": "2023-07-01",
-          "series": "Airport Exp",
+          "month": "2023-07",
+          "series": "机场快线",
           "value": 1000
         },
         {
           "date": "2023-07-01",
-          "series": "Domestic",
+          "month": "2023-07",
+          "series": "本地",
           "value": 133236
         },
         {
           "date": "2023-07-01",
-          "series": "HSR",
+          "month": "2023-07",
+          "series": "高铁",
           "value": 2192
         },
         {
           "date": "2023-07-01",
-          "series": "LR & Bus",
+          "month": "2023-07",
+          "series": "轻铁巴士",
           "value": 17357
         },
         {
           "date": "2023-07-01",
-          "series": "X-Boundary",
+          "month": "2023-07",
+          "series": "跨境",
           "value": 6852
         },
         {
           "date": "2023-08-01",
-          "series": "Airport Exp",
+          "month": "2023-08",
+          "series": "机场快线",
           "value": 1040
         },
         {
           "date": "2023-08-01",
-          "series": "Domestic",
+          "month": "2023-08",
+          "series": "本地",
           "value": 137520
         },
         {
           "date": "2023-08-01",
-          "series": "HSR",
+          "month": "2023-08",
+          "series": "高铁",
           "value": 2495
         },
         {
           "date": "2023-08-01",
-          "series": "LR & Bus",
+          "month": "2023-08",
+          "series": "轻铁巴士",
           "value": 17260
         },
         {
           "date": "2023-08-01",
-          "series": "X-Boundary",
+          "month": "2023-08",
+          "series": "跨境",
           "value": 7579
         },
         {
           "date": "2023-09-01",
-          "series": "Airport Exp",
+          "month": "2023-09",
+          "series": "机场快线",
           "value": 1005
         },
         {
           "date": "2023-09-01",
-          "series": "Domestic",
+          "month": "2023-09",
+          "series": "本地",
           "value": 126706
         },
         {
           "date": "2023-09-01",
-          "series": "HSR",
+          "month": "2023-09",
+          "series": "高铁",
           "value": 1583
         },
         {
           "date": "2023-09-01",
-          "series": "LR & Bus",
+          "month": "2023-09",
+          "series": "轻铁巴士",
           "value": 17114
         },
         {
           "date": "2023-09-01",
-          "series": "X-Boundary",
+          "month": "2023-09",
+          "series": "跨境",
           "value": 6138
         },
         {
           "date": "2023-10-01",
-          "series": "Airport Exp",
+          "month": "2023-10",
+          "series": "机场快线",
           "value": 1072
         },
         {
           "date": "2023-10-01",
-          "series": "Domestic",
+          "month": "2023-10",
+          "series": "本地",
           "value": 135451
         },
         {
           "date": "2023-10-01",
-          "series": "HSR",
+          "month": "2023-10",
+          "series": "高铁",
           "value": 2055
         },
         {
           "date": "2023-10-01",
-          "series": "LR & Bus",
+          "month": "2023-10",
+          "series": "轻铁巴士",
           "value": 17796
         },
         {
           "date": "2023-10-01",
-          "series": "X-Boundary",
+          "month": "2023-10",
+          "series": "跨境",
           "value": 7261
         },
         {
           "date": "2023-11-01",
-          "series": "Airport Exp",
+          "month": "2023-11",
+          "series": "机场快线",
           "value": 1005
         },
         {
           "date": "2023-11-01",
-          "series": "Domestic",
+          "month": "2023-11",
+          "series": "本地",
           "value": 138381
         },
         {
           "date": "2023-11-01",
-          "series": "HSR",
+          "month": "2023-11",
+          "series": "高铁",
           "value": 1815
         },
         {
           "date": "2023-11-01",
-          "series": "LR & Bus",
+          "month": "2023-11",
+          "series": "轻铁巴士",
           "value": 18054
         },
         {
           "date": "2023-11-01",
-          "series": "X-Boundary",
+          "month": "2023-11",
+          "series": "跨境",
           "value": 7339
         },
         {
           "date": "2023-12-01",
-          "series": "Airport Exp",
+          "month": "2023-12",
+          "series": "机场快线",
           "value": 1155
         },
         {
           "date": "2023-12-01",
-          "series": "Domestic",
+          "month": "2023-12",
+          "series": "本地",
           "value": 138144
         },
         {
           "date": "2023-12-01",
-          "series": "HSR",
+          "month": "2023-12",
+          "series": "高铁",
           "value": 2367
         },
         {
           "date": "2023-12-01",
-          "series": "LR & Bus",
+          "month": "2023-12",
+          "series": "轻铁巴士",
           "value": 17512
         },
         {
           "date": "2023-12-01",
-          "series": "X-Boundary",
+          "month": "2023-12",
+          "series": "跨境",
           "value": 8275
         },
         {
           "date": "2024-01-01",
-          "series": "Airport Exp",
+          "month": "2024-01",
+          "series": "机场快线",
           "value": 1158
         },
         {
           "date": "2024-01-01",
-          "series": "Domestic",
+          "month": "2024-01",
+          "series": "本地",
           "value": 140238
         },
         {
           "date": "2024-01-01",
-          "series": "HSR",
+          "month": "2024-01",
+          "series": "高铁",
           "value": 2120
         },
         {
           "date": "2024-01-01",
-          "series": "LR & Bus",
+          "month": "2024-01",
+          "series": "轻铁巴士",
           "value": 18164
         },
         {
           "date": "2024-01-01",
-          "series": "X-Boundary",
+          "month": "2024-01",
+          "series": "跨境",
           "value": 7835
         },
         {
           "date": "2024-02-01",
-          "series": "Airport Exp",
+          "month": "2024-02",
+          "series": "机场快线",
           "value": 973
         },
         {
           "date": "2024-02-01",
-          "series": "Domestic",
+          "month": "2024-02",
+          "series": "本地",
           "value": 126604
         },
         {
           "date": "2024-02-01",
-          "series": "HSR",
+          "month": "2024-02",
+          "series": "高铁",
           "value": 2357
         },
         {
           "date": "2024-02-01",
-          "series": "LR & Bus",
+          "month": "2024-02",
+          "series": "轻铁巴士",
           "value": 16033
         },
         {
           "date": "2024-02-01",
-          "series": "X-Boundary",
+          "month": "2024-02",
+          "series": "跨境",
           "value": 7314
         },
         {
           "date": "2024-03-01",
-          "series": "Airport Exp",
+          "month": "2024-03",
+          "series": "机场快线",
           "value": 1068
         },
         {
           "date": "2024-03-01",
-          "series": "Domestic",
+          "month": "2024-03",
+          "series": "本地",
           "value": 134170
         },
         {
           "date": "2024-03-01",
-          "series": "HSR",
+          "month": "2024-03",
+          "series": "高铁",
           "value": 2070
         },
         {
           "date": "2024-03-01",
-          "series": "LR & Bus",
+          "month": "2024-03",
+          "series": "轻铁巴士",
           "value": 17615
         },
         {
           "date": "2024-03-01",
-          "series": "X-Boundary",
+          "month": "2024-03",
+          "series": "跨境",
           "value": 8049
         },
         {
           "date": "2024-04-01",
-          "series": "Airport Exp",
+          "month": "2024-04",
+          "series": "机场快线",
           "value": 1006
         },
         {
           "date": "2024-04-01",
-          "series": "Domestic",
+          "month": "2024-04",
+          "series": "本地",
           "value": 126810
         },
         {
           "date": "2024-04-01",
-          "series": "HSR",
+          "month": "2024-04",
+          "series": "高铁",
           "value": 2118
         },
         {
           "date": "2024-04-01",
-          "series": "LR & Bus",
+          "month": "2024-04",
+          "series": "轻铁巴士",
           "value": 17031
         },
         {
           "date": "2024-04-01",
-          "series": "X-Boundary",
+          "month": "2024-04",
+          "series": "跨境",
           "value": 7567
         },
         {
           "date": "2024-05-01",
-          "series": "Airport Exp",
+          "month": "2024-05",
+          "series": "机场快线",
           "value": 997
         },
         {
           "date": "2024-05-01",
-          "series": "Domestic",
+          "month": "2024-05",
+          "series": "本地",
           "value": 132781
         },
         {
           "date": "2024-05-01",
-          "series": "HSR",
+          "month": "2024-05",
+          "series": "高铁",
           "value": 1967
         },
         {
           "date": "2024-05-01",
-          "series": "LR & Bus",
+          "month": "2024-05",
+          "series": "轻铁巴士",
           "value": 18144
         },
         {
           "date": "2024-05-01",
-          "series": "X-Boundary",
+          "month": "2024-05",
+          "series": "跨境",
           "value": 7841
         },
         {
           "date": "2024-06-01",
-          "series": "Airport Exp",
+          "month": "2024-06",
+          "series": "机场快线",
           "value": 1057
         },
         {
           "date": "2024-06-01",
-          "series": "Domestic",
+          "month": "2024-06",
+          "series": "本地",
           "value": 126873
         },
         {
           "date": "2024-06-01",
-          "series": "HSR",
+          "month": "2024-06",
+          "series": "高铁",
           "value": 2046
         },
         {
           "date": "2024-06-01",
-          "series": "LR & Bus",
+          "month": "2024-06",
+          "series": "轻铁巴士",
           "value": 17513
         },
         {
           "date": "2024-06-01",
-          "series": "X-Boundary",
+          "month": "2024-06",
+          "series": "跨境",
           "value": 7899
         },
         {
           "date": "2024-07-01",
-          "series": "Airport Exp",
+          "month": "2024-07",
+          "series": "机场快线",
           "value": 1114
         },
         {
           "date": "2024-07-01",
-          "series": "Domestic",
+          "month": "2024-07",
+          "series": "本地",
           "value": 134109
         },
         {
           "date": "2024-07-01",
-          "series": "HSR",
+          "month": "2024-07",
+          "series": "高铁",
           "value": 2337
         },
         {
           "date": "2024-07-01",
-          "series": "LR & Bus",
+          "month": "2024-07",
+          "series": "轻铁巴士",
           "value": 17969
         },
         {
           "date": "2024-07-01",
-          "series": "X-Boundary",
+          "month": "2024-07",
+          "series": "跨境",
           "value": 8270
         },
         {
           "date": "2024-08-01",
-          "series": "Airport Exp",
+          "month": "2024-08",
+          "series": "机场快线",
           "value": 1191
         },
         {
           "date": "2024-08-01",
-          "series": "Domestic",
+          "month": "2024-08",
+          "series": "本地",
           "value": 135015
         },
         {
           "date": "2024-08-01",
-          "series": "HSR",
+          "month": "2024-08",
+          "series": "高铁",
           "value": 2703
         },
         {
           "date": "2024-08-01",
-          "series": "LR & Bus",
+          "month": "2024-08",
+          "series": "轻铁巴士",
           "value": 17479
         },
         {
           "date": "2024-08-01",
-          "series": "X-Boundary",
+          "month": "2024-08",
+          "series": "跨境",
           "value": 9061
         },
         {
           "date": "2024-09-01",
-          "series": "Airport Exp",
+          "month": "2024-09",
+          "series": "机场快线",
           "value": 1059
         },
         {
           "date": "2024-09-01",
-          "series": "Domestic",
+          "month": "2024-09",
+          "series": "本地",
           "value": 131494
         },
         {
           "date": "2024-09-01",
-          "series": "HSR",
+          "month": "2024-09",
+          "series": "高铁",
           "value": 1871
         },
         {
           "date": "2024-09-01",
-          "series": "LR & Bus",
+          "month": "2024-09",
+          "series": "轻铁巴士",
           "value": 18245
         },
         {
           "date": "2024-09-01",
-          "series": "X-Boundary",
+          "month": "2024-09",
+          "series": "跨境",
           "value": 7905
         },
         {
           "date": "2024-10-01",
-          "series": "Airport Exp",
+          "month": "2024-10",
+          "series": "机场快线",
           "value": 1119
         },
         {
           "date": "2024-10-01",
-          "series": "Domestic",
+          "month": "2024-10",
+          "series": "本地",
           "value": 139567
         },
         {
           "date": "2024-10-01",
-          "series": "HSR",
+          "month": "2024-10",
+          "series": "高铁",
           "value": 2230
         },
         {
           "date": "2024-10-01",
-          "series": "LR & Bus",
+          "month": "2024-10",
+          "series": "轻铁巴士",
           "value": 19026
         },
         {
           "date": "2024-10-01",
-          "series": "X-Boundary",
+          "month": "2024-10",
+          "series": "跨境",
           "value": 8854
         },
         {
           "date": "2024-11-01",
-          "series": "Airport Exp",
+          "month": "2024-11",
+          "series": "机场快线",
           "value": 1149
         },
         {
           "date": "2024-11-01",
-          "series": "Domestic",
+          "month": "2024-11",
+          "series": "本地",
           "value": 136031
         },
         {
           "date": "2024-11-01",
-          "series": "HSR",
+          "month": "2024-11",
+          "series": "高铁",
           "value": 2037
         },
         {
           "date": "2024-11-01",
-          "series": "LR & Bus",
+          "month": "2024-11",
+          "series": "轻铁巴士",
           "value": 18245
         },
         {
           "date": "2024-11-01",
-          "series": "X-Boundary",
+          "month": "2024-11",
+          "series": "跨境",
           "value": 8444
         },
         {
           "date": "2024-12-01",
-          "series": "Airport Exp",
+          "month": "2024-12",
+          "series": "机场快线",
           "value": 1242
         },
         {
           "date": "2024-12-01",
-          "series": "Domestic",
+          "month": "2024-12",
+          "series": "本地",
           "value": 137998
         },
         {
           "date": "2024-12-01",
-          "series": "HSR",
+          "month": "2024-12",
+          "series": "高铁",
           "value": 2874
         },
         {
           "date": "2024-12-01",
-          "series": "LR & Bus",
+          "month": "2024-12",
+          "series": "轻铁巴士",
           "value": 18060
         },
         {
           "date": "2024-12-01",
-          "series": "X-Boundary",
+          "month": "2024-12",
+          "series": "跨境",
           "value": 9347
         },
         {
           "date": "2025-01-01",
-          "series": "Airport Exp",
+          "month": "2025-01",
+          "series": "机场快线",
           "value": 1116
         },
         {
           "date": "2025-01-01",
-          "series": "Domestic",
+          "month": "2025-01",
+          "series": "本地",
           "value": 136513
         },
         {
           "date": "2025-01-01",
-          "series": "HSR",
+          "month": "2025-01",
+          "series": "高铁",
           "value": 2749
         },
         {
           "date": "2025-01-01",
-          "series": "LR & Bus",
+          "month": "2025-01",
+          "series": "轻铁巴士",
           "value": 18144
         },
         {
           "date": "2025-01-01",
-          "series": "X-Boundary",
+          "month": "2025-01",
+          "series": "跨境",
           "value": 8795
         },
         {
           "date": "2025-02-01",
-          "series": "Airport Exp",
+          "month": "2025-02",
+          "series": "机场快线",
           "value": 962
         },
         {
           "date": "2025-02-01",
-          "series": "Domestic",
+          "month": "2025-02",
+          "series": "本地",
           "value": 124880
         },
         {
           "date": "2025-02-01",
-          "series": "HSR",
+          "month": "2025-02",
+          "series": "高铁",
           "value": 2187
         },
         {
           "date": "2025-02-01",
-          "series": "LR & Bus",
+          "month": "2025-02",
+          "series": "轻铁巴士",
           "value": 16132
         },
         {
           "date": "2025-02-01",
-          "series": "X-Boundary",
+          "month": "2025-02",
+          "series": "跨境",
           "value": 7612
         },
         {
           "date": "2025-03-01",
-          "series": "Airport Exp",
+          "month": "2025-03",
+          "series": "机场快线",
           "value": 1116
         },
         {
           "date": "2025-03-01",
-          "series": "Domestic",
+          "month": "2025-03",
+          "series": "本地",
           "value": 137890
         },
         {
           "date": "2025-03-01",
-          "series": "HSR",
+          "month": "2025-03",
+          "series": "高铁",
           "value": 2274
         },
         {
           "date": "2025-03-01",
-          "series": "LR & Bus",
+          "month": "2025-03",
+          "series": "轻铁巴士",
           "value": 18377
         },
         {
           "date": "2025-03-01",
-          "series": "X-Boundary",
+          "month": "2025-03",
+          "series": "跨境",
           "value": 8801
         },
         {
           "date": "2025-04-01",
-          "series": "Airport Exp",
+          "month": "2025-04",
+          "series": "机场快线",
           "value": 1148
         },
         {
           "date": "2025-04-01",
-          "series": "Domestic",
+          "month": "2025-04",
+          "series": "本地",
           "value": 124808
         },
         {
           "date": "2025-04-01",
-          "series": "HSR",
+          "month": "2025-04",
+          "series": "高铁",
           "value": 2777
         },
         {
           "date": "2025-04-01",
-          "series": "LR & Bus",
+          "month": "2025-04",
+          "series": "轻铁巴士",
           "value": 16674
         },
         {
           "date": "2025-04-01",
-          "series": "X-Boundary",
+          "month": "2025-04",
+          "series": "跨境",
           "value": 8861
         },
         {
           "date": "2025-05-01",
-          "series": "Airport Exp",
+          "month": "2025-05",
+          "series": "机场快线",
           "value": 1085
         },
         {
           "date": "2025-05-01",
-          "series": "Domestic",
+          "month": "2025-05",
+          "series": "本地",
           "value": 132820
         },
         {
           "date": "2025-05-01",
-          "series": "HSR",
+          "month": "2025-05",
+          "series": "高铁",
           "value": 2454
         },
         {
           "date": "2025-05-01",
-          "series": "LR & Bus",
+          "month": "2025-05",
+          "series": "轻铁巴士",
           "value": 18329
         },
         {
           "date": "2025-05-01",
-          "series": "X-Boundary",
+          "month": "2025-05",
+          "series": "跨境",
           "value": 8768
         },
         {
           "date": "2025-06-01",
-          "series": "Airport Exp",
+          "month": "2025-06",
+          "series": "机场快线",
           "value": 977
         },
         {
           "date": "2025-06-01",
-          "series": "Domestic",
+          "month": "2025-06",
+          "series": "本地",
           "value": 129071
         },
         {
           "date": "2025-06-01",
-          "series": "HSR",
+          "month": "2025-06",
+          "series": "高铁",
           "value": 2291
         },
         {
           "date": "2025-06-01",
-          "series": "LR & Bus",
+          "month": "2025-06",
+          "series": "轻铁巴士",
           "value": 17783
         },
         {
           "date": "2025-06-01",
-          "series": "X-Boundary",
+          "month": "2025-06",
+          "series": "跨境",
           "value": 8350
         },
         {
           "date": "2025-07-01",
-          "series": "Airport Exp",
+          "month": "2025-07",
+          "series": "机场快线",
           "value": 1120
         },
         {
           "date": "2025-07-01",
-          "series": "Domestic",
+          "month": "2025-07",
+          "series": "本地",
           "value": 132527
         },
         {
           "date": "2025-07-01",
-          "series": "HSR",
+          "month": "2025-07",
+          "series": "高铁",
           "value": 2762
         },
         {
           "date": "2025-07-01",
-          "series": "LR & Bus",
+          "month": "2025-07",
+          "series": "轻铁巴士",
           "value": 17534
         },
         {
           "date": "2025-07-01",
-          "series": "X-Boundary",
+          "month": "2025-07",
+          "series": "跨境",
           "value": 8848
         },
         {
           "date": "2025-08-01",
-          "series": "Airport Exp",
+          "month": "2025-08",
+          "series": "机场快线",
           "value": 1204
         },
         {
           "date": "2025-08-01",
-          "series": "Domestic",
+          "month": "2025-08",
+          "series": "本地",
           "value": 132777
         },
         {
           "date": "2025-08-01",
-          "series": "HSR",
+          "month": "2025-08",
+          "series": "高铁",
           "value": 3242
         },
         {
           "date": "2025-08-01",
-          "series": "LR & Bus",
+          "month": "2025-08",
+          "series": "轻铁巴士",
           "value": 17110
         },
         {
           "date": "2025-08-01",
-          "series": "X-Boundary",
+          "month": "2025-08",
+          "series": "跨境",
           "value": 9904
         },
         {
           "date": "2025-09-01",
-          "series": "Airport Exp",
+          "month": "2025-09",
+          "series": "机场快线",
           "value": 1042
         },
         {
           "date": "2025-09-01",
-          "series": "Domestic",
+          "month": "2025-09",
+          "series": "本地",
           "value": 128279
         },
         {
           "date": "2025-09-01",
-          "series": "HSR",
+          "month": "2025-09",
+          "series": "高铁",
           "value": 2112
         },
         {
           "date": "2025-09-01",
-          "series": "LR & Bus",
+          "month": "2025-09",
+          "series": "轻铁巴士",
           "value": 17535
         },
         {
           "date": "2025-09-01",
-          "series": "X-Boundary",
+          "month": "2025-09",
+          "series": "跨境",
           "value": 8117
         },
         {
           "date": "2025-10-01",
-          "series": "Airport Exp",
+          "month": "2025-10",
+          "series": "机场快线",
           "value": 1141
         },
         {
           "date": "2025-10-01",
-          "series": "Domestic",
+          "month": "2025-10",
+          "series": "本地",
           "value": 140030
         },
         {
           "date": "2025-10-01",
-          "series": "HSR",
+          "month": "2025-10",
+          "series": "高铁",
           "value": 2773
         },
         {
           "date": "2025-10-01",
-          "series": "LR & Bus",
+          "month": "2025-10",
+          "series": "轻铁巴士",
           "value": 19046
         },
         {
           "date": "2025-10-01",
-          "series": "X-Boundary",
+          "month": "2025-10",
+          "series": "跨境",
           "value": 9444
         },
         {
           "date": "2025-11-01",
-          "series": "Airport Exp",
+          "month": "2025-11",
+          "series": "机场快线",
           "value": 1145
         },
         {
           "date": "2025-11-01",
-          "series": "Domestic",
+          "month": "2025-11",
+          "series": "本地",
           "value": 137035
         },
         {
           "date": "2025-11-01",
-          "series": "HSR",
+          "month": "2025-11",
+          "series": "高铁",
           "value": 2526
         },
         {
           "date": "2025-11-01",
-          "series": "LR & Bus",
+          "month": "2025-11",
+          "series": "轻铁巴士",
           "value": 18292
         },
         {
           "date": "2025-11-01",
-          "series": "X-Boundary",
+          "month": "2025-11",
+          "series": "跨境",
           "value": 9368
         },
         {
           "date": "2025-12-01",
-          "series": "Airport Exp",
+          "month": "2025-12",
+          "series": "机场快线",
           "value": 1248
         },
         {
           "date": "2025-12-01",
-          "series": "Domestic",
+          "month": "2025-12",
+          "series": "本地",
           "value": 137779
         },
         {
           "date": "2025-12-01",
-          "series": "HSR",
+          "month": "2025-12",
+          "series": "高铁",
           "value": 2950
         },
         {
           "date": "2025-12-01",
-          "series": "LR & Bus",
+          "month": "2025-12",
+          "series": "轻铁巴士",
           "value": 18065
         },
         {
           "date": "2025-12-01",
-          "series": "X-Boundary",
+          "month": "2025-12",
+          "series": "跨境",
           "value": 9805
         },
         {
           "date": "2026-01-01",
-          "series": "Airport Exp",
+          "month": "2026-01",
+          "series": "机场快线",
           "value": 1125
         },
         {
           "date": "2026-01-01",
-          "series": "Domestic",
+          "month": "2026-01",
+          "series": "本地",
           "value": 140775
         },
         {
           "date": "2026-01-01",
-          "series": "HSR",
+          "month": "2026-01",
+          "series": "高铁",
           "value": 2698
         },
         {
           "date": "2026-01-01",
-          "series": "LR & Bus",
+          "month": "2026-01",
+          "series": "轻铁巴士",
           "value": 18668
         },
         {
           "date": "2026-01-01",
-          "series": "X-Boundary",
+          "month": "2026-01",
+          "series": "跨境",
           "value": 9751
         },
         {
           "date": "2026-02-01",
-          "series": "Airport Exp",
+          "month": "2026-02",
+          "series": "机场快线",
           "value": 952
         },
         {
           "date": "2026-02-01",
-          "series": "Domestic",
+          "month": "2026-02",
+          "series": "本地",
           "value": 123313
         },
         {
           "date": "2026-02-01",
-          "series": "HSR",
+          "month": "2026-02",
+          "series": "高铁",
           "value": 3079
         },
         {
           "date": "2026-02-01",
-          "series": "LR & Bus",
+          "month": "2026-02",
+          "series": "轻铁巴士",
           "value": 16101
         },
         {
           "date": "2026-02-01",
-          "series": "X-Boundary",
+          "month": "2026-02",
+          "series": "跨境",
           "value": 8736
         },
         {
           "date": "2026-03-01",
-          "series": "Airport Exp",
+          "month": "2026-03",
+          "series": "机场快线",
           "value": 1137
         },
         {
           "date": "2026-03-01",
-          "series": "Domestic",
+          "month": "2026-03",
+          "series": "本地",
           "value": 140136
         },
         {
           "date": "2026-03-01",
-          "series": "HSR",
+          "month": "2026-03",
+          "series": "高铁",
           "value": 2573
         },
         {
           "date": "2026-03-01",
-          "series": "LR & Bus",
+          "month": "2026-03",
+          "series": "轻铁巴士",
           "value": 18822
         },
         {
           "date": "2026-03-01",
-          "series": "X-Boundary",
+          "month": "2026-03",
+          "series": "跨境",
           "value": 9362
         },
         {
           "date": "2026-04-01",
-          "series": "Airport Exp",
+          "month": "2026-04",
+          "series": "机场快线",
           "value": 1082
         },
         {
           "date": "2026-04-01",
-          "series": "Domestic",
+          "month": "2026-04",
+          "series": "本地",
           "value": 125306
         },
         {
           "date": "2026-04-01",
-          "series": "HSR",
+          "month": "2026-04",
+          "series": "高铁",
           "value": 2961
         },
         {
           "date": "2026-04-01",
-          "series": "LR & Bus",
+          "month": "2026-04",
+          "series": "轻铁巴士",
           "value": 17255
         },
         {
           "date": "2026-04-01",
-          "series": "X-Boundary",
+          "month": "2026-04",
+          "series": "跨境",
           "value": 9411
         },
         {
           "date": "2026-05-01",
-          "series": "Airport Exp",
+          "month": "2026-05",
+          "series": "机场快线",
           "value": 1118
         },
         {
           "date": "2026-05-01",
-          "series": "Domestic",
+          "month": "2026-05",
+          "series": "本地",
           "value": 131864
         },
         {
           "date": "2026-05-01",
-          "series": "HSR",
+          "month": "2026-05",
+          "series": "高铁",
           "value": 2750
         },
         {
           "date": "2026-05-01",
-          "series": "LR & Bus",
+          "month": "2026-05",
+          "series": "轻铁巴士",
           "value": 18488
         },
         {
           "date": "2026-05-01",
-          "series": "X-Boundary",
+          "month": "2026-05",
+          "series": "跨境",
           "value": 9533
         },
         {
           "date": "2026-06-01",
-          "series": "Airport Exp",
+          "month": "2026-06",
+          "series": "机场快线",
           "value": 1030
         },
         {
           "date": "2026-06-01",
-          "series": "Domestic",
+          "month": "2026-06",
+          "series": "本地",
           "value": 128248
         },
         {
           "date": "2026-06-01",
-          "series": "HSR",
+          "month": "2026-06",
+          "series": "高铁",
           "value": 2477
         },
         {
           "date": "2026-06-01",
-          "series": "LR & Bus",
+          "month": "2026-06",
+          "series": "轻铁巴士",
           "value": 18047
         },
         {
           "date": "2026-06-01",
-          "series": "X-Boundary",
+          "month": "2026-06",
+          "series": "跨境",
           "value": 8591
         }
       ],
       "cathay_capacity_demand_history": [
         {
           "date": "2012-12-01",
+          "month": "2012-12",
           "series": "ASK ('000)",
           "value": 10808557
         },
         {
           "date": "2012-12-01",
+          "month": "2012-12",
           "series": "RPK ('000)",
           "value": 8725036
         },
         {
           "date": "2013-02-01",
+          "month": "2013-02",
           "series": "ASK ('000)",
           "value": 9725310
         },
         {
           "date": "2013-02-01",
+          "month": "2013-02",
           "series": "RPK ('000)",
           "value": 7862365
         },
         {
           "date": "2013-05-01",
+          "month": "2013-05",
           "series": "ASK ('000)",
           "value": 10602951
         },
         {
           "date": "2013-05-01",
+          "month": "2013-05",
           "series": "RPK ('000)",
           "value": 8379354
         },
         {
           "date": "2013-06-01",
+          "month": "2013-06",
           "series": "ASK ('000)",
           "value": 10353881
         },
         {
           "date": "2013-06-01",
+          "month": "2013-06",
           "series": "RPK ('000)",
           "value": 8787467
         },
         {
           "date": "2013-07-01",
+          "month": "2013-07",
           "series": "ASK ('000)",
           "value": 11025903
         },
         {
           "date": "2013-07-01",
+          "month": "2013-07",
           "series": "RPK ('000)",
           "value": 9374541
         },
         {
           "date": "2013-08-01",
+          "month": "2013-08",
           "series": "ASK ('000)",
           "value": 11046938
         },
         {
           "date": "2013-08-01",
+          "month": "2013-08",
           "series": "RPK ('000)",
           "value": 9576963
         },
         {
           "date": "2013-12-01",
+          "month": "2013-12",
           "series": "ASK ('000)",
           "value": 11158190
         },
         {
           "date": "2013-12-01",
+          "month": "2013-12",
           "series": "RPK ('000)",
           "value": 9188999
         },
         {
           "date": "2014-01-01",
+          "month": "2014-01",
           "series": "ASK ('000)",
           "value": 11070054
         },
         {
           "date": "2014-01-01",
+          "month": "2014-01",
           "series": "RPK ('000)",
           "value": 9232619
         },
         {
           "date": "2014-02-01",
+          "month": "2014-02",
           "series": "ASK ('000)",
           "value": 10021121
         },
         {
           "date": "2014-02-01",
+          "month": "2014-02",
           "series": "RPK ('000)",
           "value": 8211410
         },
         {
           "date": "2014-03-01",
+          "month": "2014-03",
           "series": "ASK ('000)",
           "value": 11046510
         },
         {
           "date": "2014-03-01",
+          "month": "2014-03",
           "series": "RPK ('000)",
           "value": 9087367
         },
         {
           "date": "2014-05-01",
+          "month": "2014-05",
           "series": "ASK ('000)",
           "value": 11218579
         },
         {
           "date": "2014-05-01",
+          "month": "2014-05",
           "series": "RPK ('000)",
           "value": 9315326
         },
         {
           "date": "2014-06-01",
+          "month": "2014-06",
           "series": "ASK ('000)",
           "value": 11072700
         },
         {
           "date": "2014-06-01",
+          "month": "2014-06",
           "series": "RPK ('000)",
           "value": 9507234
         },
         {
           "date": "2014-07-01",
+          "month": "2014-07",
           "series": "ASK ('000)",
           "value": 11680468
         },
         {
           "date": "2014-07-01",
+          "month": "2014-07",
           "series": "RPK ('000)",
           "value": 9997266
         },
         {
           "date": "2014-09-01",
+          "month": "2014-09",
           "series": "ASK ('000)",
           "value": 11210123
         },
         {
           "date": "2014-09-01",
+          "month": "2014-09",
           "series": "RPK ('000)",
           "value": 9082966
         },
         {
           "date": "2014-12-01",
+          "month": "2014-12",
           "series": "ASK ('000)",
           "value": 11820975
         },
         {
           "date": "2014-12-01",
+          "month": "2014-12",
           "series": "RPK ('000)",
           "value": 9874982
         },
         {
           "date": "2015-01-01",
+          "month": "2015-01",
           "series": "ASK ('000)",
           "value": 11876449
         },
         {
           "date": "2015-01-01",
+          "month": "2015-01",
           "series": "RPK ('000)",
           "value": 9816684
         },
         {
           "date": "2015-02-01",
+          "month": "2015-02",
           "series": "ASK ('000)",
           "value": 10801044
         },
         {
           "date": "2015-02-01",
+          "month": "2015-02",
           "series": "RPK ('000)",
           "value": 9169869
         },
         {
           "date": "2015-04-01",
+          "month": "2015-04",
           "series": "ASK ('000)",
           "value": 11522897
         },
         {
           "date": "2015-04-01",
+          "month": "2015-04",
           "series": "RPK ('000)",
           "value": 10050866
         },
         {
           "date": "2015-07-01",
+          "month": "2015-07",
           "series": "ASK ('000)",
           "value": 12399240
         },
         {
           "date": "2015-07-01",
+          "month": "2015-07",
           "series": "RPK ('000)",
           "value": 10789397
         },
         {
           "date": "2015-08-01",
+          "month": "2015-08",
           "series": "ASK ('000)",
           "value": 12558154
         },
         {
           "date": "2015-08-01",
+          "month": "2015-08",
           "series": "RPK ('000)",
           "value": 11130977
         },
         {
           "date": "2015-09-01",
+          "month": "2015-09",
           "series": "ASK ('000)",
           "value": 11594776
         },
         {
           "date": "2015-09-01",
+          "month": "2015-09",
           "series": "RPK ('000)",
           "value": 9729611
         },
         {
           "date": "2015-10-01",
+          "month": "2015-10",
           "series": "ASK ('000)",
           "value": 12307735
         },
         {
           "date": "2015-10-01",
+          "month": "2015-10",
           "series": "RPK ('000)",
           "value": 10352018
         },
         {
           "date": "2015-11-01",
+          "month": "2015-11",
           "series": "ASK ('000)",
           "value": 11599726
         },
         {
           "date": "2015-11-01",
+          "month": "2015-11",
           "series": "RPK ('000)",
           "value": 9844913
         },
         {
           "date": "2016-01-01",
+          "month": "2016-01",
           "series": "ASK ('000)",
           "value": 12574463
         },
         {
           "date": "2016-01-01",
+          "month": "2016-01",
           "series": "RPK ('000)",
           "value": 10811995
         },
         {
           "date": "2016-02-01",
+          "month": "2016-02",
           "series": "ASK ('000)",
           "value": 11728128
         },
         {
           "date": "2016-02-01",
+          "month": "2016-02",
           "series": "RPK ('000)",
           "value": 9660521
         },
         {
           "date": "2016-03-01",
+          "month": "2016-03",
           "series": "ASK ('000)",
           "value": 12291864
         },
         {
           "date": "2016-03-01",
+          "month": "2016-03",
           "series": "RPK ('000)",
           "value": 10318339
         },
         {
           "date": "2016-04-01",
+          "month": "2016-04",
           "series": "ASK ('000)",
           "value": 11796619
         },
         {
           "date": "2016-04-01",
+          "month": "2016-04",
           "series": "RPK ('000)",
           "value": 10017301
         },
         {
           "date": "2016-05-01",
+          "month": "2016-05",
           "series": "ASK ('000)",
           "value": 12118716
         },
         {
           "date": "2016-05-01",
+          "month": "2016-05",
           "series": "RPK ('000)",
           "value": 10177766
         },
         {
           "date": "2016-06-01",
+          "month": "2016-06",
           "series": "ASK ('000)",
           "value": 12136720
         },
         {
           "date": "2016-06-01",
+          "month": "2016-06",
           "series": "RPK ('000)",
           "value": 10381627
         },
         {
           "date": "2016-07-01",
+          "month": "2016-07",
           "series": "ASK ('000)",
           "value": 12723458
         },
         {
           "date": "2016-07-01",
+          "month": "2016-07",
           "series": "RPK ('000)",
           "value": 11067866
         },
         {
           "date": "2016-09-01",
+          "month": "2016-09",
           "series": "ASK ('000)",
           "value": 11900705
         },
         {
           "date": "2016-09-01",
+          "month": "2016-09",
           "series": "RPK ('000)",
           "value": 9915000
         },
         {
           "date": "2016-11-01",
+          "month": "2016-11",
           "series": "ASK ('000)",
           "value": 11328962
         },
         {
           "date": "2016-11-01",
+          "month": "2016-11",
           "series": "RPK ('000)",
           "value": 9459449
         },
         {
           "date": "2016-12-01",
+          "month": "2016-12",
           "series": "ASK ('000)",
           "value": 12693382
         },
         {
           "date": "2016-12-01",
+          "month": "2016-12",
           "series": "RPK ('000)",
           "value": 10793824
         },
         {
           "date": "2017-01-01",
+          "month": "2017-01",
           "series": "ASK ('000)",
           "value": 12741323
         },
         {
           "date": "2017-01-01",
+          "month": "2017-01",
           "series": "RPK ('000)",
           "value": 11018892
         },
         {
           "date": "2017-02-01",
+          "month": "2017-02",
           "series": "ASK ('000)",
           "value": 11374142
         },
         {
           "date": "2017-02-01",
+          "month": "2017-02",
           "series": "RPK ('000)",
           "value": 9481241
         },
         {
           "date": "2017-05-01",
+          "month": "2017-05",
           "series": "ASK ('000)",
           "value": 12302168
         },
         {
           "date": "2017-05-01",
+          "month": "2017-05",
           "series": "RPK ('000)",
           "value": 10356585
         },
         {
           "date": "2017-06-01",
+          "month": "2017-06",
           "series": "ASK ('000)",
           "value": 12327267
         },
         {
           "date": "2017-06-01",
+          "month": "2017-06",
           "series": "RPK ('000)",
           "value": 10487156
         },
         {
           "date": "2017-08-01",
+          "month": "2017-08",
           "series": "ASK ('000)",
           "value": 13056610
         },
         {
           "date": "2017-08-01",
+          "month": "2017-08",
           "series": "RPK ('000)",
           "value": 11264978
         },
         {
           "date": "2017-12-01",
+          "month": "2017-12",
           "series": "ASK ('000)",
           "value": 13209584
         },
         {
           "date": "2017-12-01",
+          "month": "2017-12",
           "series": "RPK ('000)",
           "value": 11176191
         },
         {
           "date": "2018-01-01",
+          "month": "2018-01",
           "series": "ASK ('000)",
           "value": 13070796
         },
         {
           "date": "2018-01-01",
+          "month": "2018-01",
           "series": "RPK ('000)",
           "value": 11007372
         },
         {
           "date": "2018-02-01",
+          "month": "2018-02",
           "series": "ASK ('000)",
           "value": 11926392
         },
         {
           "date": "2018-02-01",
+          "month": "2018-02",
           "series": "RPK ('000)",
           "value": 10026960
         },
         {
           "date": "2018-03-01",
+          "month": "2018-03",
           "series": "ASK ('000)",
           "value": 12832998
         },
         {
           "date": "2018-03-01",
+          "month": "2018-03",
           "series": "RPK ('000)",
           "value": 10932831
         },
         {
           "date": "2018-05-01",
+          "month": "2018-05",
           "series": "ASK ('000)",
           "value": 12662581
         },
         {
           "date": "2018-05-01",
+          "month": "2018-05",
           "series": "RPK ('000)",
           "value": 10380791
         },
         {
           "date": "2018-06-01",
+          "month": "2018-06",
           "series": "ASK ('000)",
           "value": 12794574
         },
         {
           "date": "2018-06-01",
+          "month": "2018-06",
           "series": "RPK ('000)",
           "value": 10908153
         },
         {
           "date": "2018-08-01",
+          "month": "2018-08",
           "series": "ASK ('000)",
           "value": 13690681
         },
         {
           "date": "2018-08-01",
+          "month": "2018-08",
           "series": "RPK ('000)",
           "value": 11924629
         },
         {
           "date": "2018-10-01",
+          "month": "2018-10",
           "series": "ASK ('000)",
           "value": 13390172
         },
         {
           "date": "2018-10-01",
+          "month": "2018-10",
           "series": "RPK ('000)",
           "value": 10923474
         },
         {
           "date": "2018-11-01",
+          "month": "2018-11",
           "series": "ASK ('000)",
           "value": 12593062
         },
         {
           "date": "2018-11-01",
+          "month": "2018-11",
           "series": "RPK ('000)",
           "value": 10485790
         },
         {
           "date": "2018-12-01",
+          "month": "2018-12",
           "series": "ASK ('000)",
           "value": 13978669
         },
         {
           "date": "2018-12-01",
+          "month": "2018-12",
           "series": "RPK ('000)",
           "value": 11720855
         },
         {
           "date": "2019-03-01",
+          "month": "2019-03",
           "series": "ASK ('000)",
           "value": 13461313
         },
         {
           "date": "2019-03-01",
+          "month": "2019-03",
           "series": "RPK ('000)",
           "value": 11295302
         },
         {
           "date": "2019-05-01",
+          "month": "2019-05",
           "series": "ASK ('000)",
           "value": 13495182
         },
         {
           "date": "2019-05-01",
+          "month": "2019-05",
           "series": "RPK ('000)",
           "value": 11190050
         },
         {
           "date": "2019-06-01",
+          "month": "2019-06",
           "series": "ASK ('000)",
           "value": 13731593
         },
         {
           "date": "2019-06-01",
+          "month": "2019-06",
           "series": "RPK ('000)",
           "value": 11900997
         },
         {
           "date": "2019-08-01",
+          "month": "2019-08",
           "series": "ASK ('000)",
           "value": 14392234
         },
         {
           "date": "2019-08-01",
+          "month": "2019-08",
           "series": "RPK ('000)",
           "value": 11501041
         },
         {
           "date": "2019-10-01",
+          "month": "2019-10",
           "series": "ASK ('000)",
           "value": 13709615
         },
         {
           "date": "2019-10-01",
+          "month": "2019-10",
           "series": "RPK ('000)",
           "value": 10633529
         },
         {
           "date": "2019-11-01",
+          "month": "2019-11",
           "series": "ASK ('000)",
           "value": 12409574
         },
         {
           "date": "2019-11-01",
+          "month": "2019-11",
           "series": "RPK ('000)",
           "value": 9934989
         },
         {
           "date": "2019-12-01",
+          "month": "2019-12",
           "series": "ASK ('000)",
           "value": 13795313
         },
         {
           "date": "2019-12-01",
+          "month": "2019-12",
           "series": "RPK ('000)",
           "value": 11721757
         },
         {
           "date": "2020-01-01",
+          "month": "2020-01",
           "series": "ASK ('000)",
           "value": 13962739
         },
         {
           "date": "2020-01-01",
+          "month": "2020-01",
           "series": "RPK ('000)",
           "value": 11830575
         },
         {
           "date": "2020-02-01",
+          "month": "2020-02",
           "series": "ASK ('000)",
           "value": 8924428
         },
         {
           "date": "2020-02-01",
+          "month": "2020-02",
           "series": "RPK ('000)",
           "value": 4735301
         },
         {
           "date": "2020-03-01",
+          "month": "2020-03",
           "series": "ASK ('000)",
           "value": 3605276
         },
         {
           "date": "2020-03-01",
+          "month": "2020-03",
           "series": "RPK ('000)",
           "value": 1776537
         },
         {
           "date": "2020-04-01",
+          "month": "2020-04",
           "series": "ASK ('000)",
           "value": 368344
         },
         {
           "date": "2020-04-01",
+          "month": "2020-04",
           "series": "RPK ('000)",
           "value": 79799
         },
         {
           "date": "2020-05-01",
+          "month": "2020-05",
           "series": "ASK ('000)",
           "value": 338027
         },
         {
           "date": "2020-05-01",
+          "month": "2020-05",
           "series": "RPK ('000)",
           "value": 100133
         },
         {
           "date": "2020-06-01",
+          "month": "2020-06",
           "series": "ASK ('000)",
           "value": 533147
         },
         {
           "date": "2020-06-01",
+          "month": "2020-06",
           "series": "RPK ('000)",
           "value": 145713
         },
         {
           "date": "2020-07-01",
+          "month": "2020-07",
           "series": "ASK ('000)",
           "value": 1036254
         },
         {
           "date": "2020-07-01",
+          "month": "2020-07",
           "series": "RPK ('000)",
           "value": 242927
         },
         {
           "date": "2020-08-01",
+          "month": "2020-08",
           "series": "ASK ('000)",
           "value": 1119756
         },
         {
           "date": "2020-08-01",
+          "month": "2020-08",
           "series": "RPK ('000)",
           "value": 222544
         },
         {
           "date": "2020-09-01",
+          "month": "2020-09",
           "series": "ASK ('000)",
           "value": 1213977
         },
         {
           "date": "2020-09-01",
+          "month": "2020-09",
           "series": "RPK ('000)",
           "value": 301698
         },
         {
           "date": "2020-10-01",
+          "month": "2020-10",
           "series": "ASK ('000)",
           "value": 1153938
         },
         {
           "date": "2020-10-01",
+          "month": "2020-10",
           "series": "RPK ('000)",
           "value": 210168
         },
         {
           "date": "2020-11-01",
+          "month": "2020-11",
           "series": "ASK ('000)",
           "value": 1133508
         },
         {
           "date": "2020-11-01",
+          "month": "2020-11",
           "series": "RPK ('000)",
           "value": 210103
         },
         {
           "date": "2020-12-01",
+          "month": "2020-12",
           "series": "ASK ('000)",
           "value": 1219512
         },
         {
           "date": "2020-12-01",
+          "month": "2020-12",
           "series": "RPK ('000)",
           "value": 223781
         },
         {
           "date": "2021-01-01",
+          "month": "2021-01",
           "series": "ASK ('000)",
           "value": 1144614
         },
         {
           "date": "2021-01-01",
+          "month": "2021-01",
           "series": "RPK ('000)",
           "value": 152055
         },
         {
           "date": "2021-02-01",
+          "month": "2021-02",
           "series": "ASK ('000)",
           "value": 679186
         },
         {
           "date": "2021-02-01",
+          "month": "2021-02",
           "series": "RPK ('000)",
           "value": 94156
         },
         {
           "date": "2021-03-01",
+          "month": "2021-03",
           "series": "ASK ('000)",
           "value": 362075
         },
         {
           "date": "2021-03-01",
+          "month": "2021-03",
           "series": "RPK ('000)",
           "value": 76921
         },
         {
           "date": "2021-04-01",
+          "month": "2021-04",
           "series": "ASK ('000)",
           "value": 437780
         },
         {
           "date": "2021-04-01",
+          "month": "2021-04",
           "series": "RPK ('000)",
           "value": 105830
         },
         {
           "date": "2021-05-01",
+          "month": "2021-05",
           "series": "ASK ('000)",
           "value": 466599
         },
         {
           "date": "2021-05-01",
+          "month": "2021-05",
           "series": "RPK ('000)",
           "value": 124644
         },
         {
           "date": "2021-06-01",
+          "month": "2021-06",
           "series": "ASK ('000)",
           "value": 1076876
         },
         {
           "date": "2021-06-01",
+          "month": "2021-06",
           "series": "RPK ('000)",
           "value": 233940
         },
         {
           "date": "2021-07-01",
+          "month": "2021-07",
           "series": "ASK ('000)",
           "value": 1043681
         },
         {
           "date": "2021-07-01",
+          "month": "2021-07",
           "series": "RPK ('000)",
           "value": 297879
         },
         {
           "date": "2021-08-01",
+          "month": "2021-08",
           "series": "ASK ('000)",
           "value": 1891764
         },
         {
           "date": "2021-08-01",
+          "month": "2021-08",
           "series": "RPK ('000)",
           "value": 877057
         },
         {
           "date": "2021-09-01",
+          "month": "2021-09",
           "series": "ASK ('000)",
           "value": 1704768
         },
         {
           "date": "2021-09-01",
+          "month": "2021-09",
           "series": "RPK ('000)",
           "value": 780461
         },
         {
           "date": "2021-10-01",
+          "month": "2021-10",
           "series": "ASK ('000)",
           "value": 1383448
         },
         {
           "date": "2021-10-01",
+          "month": "2021-10",
           "series": "RPK ('000)",
           "value": 409797
         },
         {
           "date": "2021-11-01",
+          "month": "2021-11",
           "series": "ASK ('000)",
           "value": 1467977
         },
         {
           "date": "2021-11-01",
+          "month": "2021-11",
           "series": "RPK ('000)",
           "value": 393162
         },
         {
           "date": "2021-12-01",
+          "month": "2021-12",
           "series": "ASK ('000)",
           "value": 1568841
         },
         {
           "date": "2021-12-01",
+          "month": "2021-12",
           "series": "RPK ('000)",
           "value": 574024
         },
         {
           "date": "2022-01-01",
+          "month": "2022-01",
           "series": "ASK ('000)",
           "value": 288521
         },
         {
           "date": "2022-01-01",
+          "month": "2022-01",
           "series": "RPK ('000)",
           "value": 116402
         },
         {
           "date": "2022-02-01",
+          "month": "2022-02",
           "series": "ASK ('000)",
           "value": 207886
         },
         {
           "date": "2022-02-01",
+          "month": "2022-02",
           "series": "RPK ('000)",
           "value": 99027
         },
         {
           "date": "2022-03-01",
+          "month": "2022-03",
           "series": "ASK ('000)",
           "value": 244527
         },
         {
           "date": "2022-03-01",
+          "month": "2022-03",
           "series": "RPK ('000)",
           "value": 111448
         },
         {
           "date": "2022-04-01",
+          "month": "2022-04",
           "series": "ASK ('000)",
           "value": 305651
         },
         {
           "date": "2022-04-01",
+          "month": "2022-04",
           "series": "RPK ('000)",
           "value": 170055
         },
         {
           "date": "2022-05-01",
+          "month": "2022-05",
           "series": "ASK ('000)",
           "value": 545197
         },
         {
           "date": "2022-05-01",
+          "month": "2022-05",
           "series": "RPK ('000)",
           "value": 329592
         },
         {
           "date": "2022-06-01",
+          "month": "2022-06",
           "series": "ASK ('000)",
           "value": 1467026
         },
         {
           "date": "2022-06-01",
+          "month": "2022-06",
           "series": "RPK ('000)",
           "value": 983120
         },
         {
           "date": "2022-07-01",
+          "month": "2022-07",
           "series": "ASK ('000)",
           "value": 1822655
         },
         {
           "date": "2022-07-01",
+          "month": "2022-07",
           "series": "RPK ('000)",
           "value": 1335702
         },
         {
           "date": "2022-08-01",
+          "month": "2022-08",
           "series": "ASK ('000)",
           "value": 2336844
         },
         {
           "date": "2022-08-01",
+          "month": "2022-08",
           "series": "RPK ('000)",
           "value": 1602511
         },
         {
           "date": "2022-09-01",
+          "month": "2022-09",
           "series": "ASK ('000)",
           "value": 2177939
         },
         {
           "date": "2022-09-01",
+          "month": "2022-09",
           "series": "RPK ('000)",
           "value": 1578413
         },
         {
           "date": "2022-10-01",
+          "month": "2022-10",
           "series": "ASK ('000)",
           "value": 2877154
         },
         {
           "date": "2022-10-01",
+          "month": "2022-10",
           "series": "RPK ('000)",
           "value": 2117193
         },
         {
           "date": "2022-11-01",
+          "month": "2022-11",
           "series": "ASK ('000)",
           "value": 3334866
         },
         {
           "date": "2022-11-01",
+          "month": "2022-11",
           "series": "RPK ('000)",
           "value": 2616499
         },
         {
           "date": "2022-12-01",
+          "month": "2022-12",
           "series": "ASK ('000)",
           "value": 4447991
         },
         {
           "date": "2022-12-01",
+          "month": "2022-12",
           "series": "RPK ('000)",
           "value": 3703782
         },
         {
           "date": "2023-01-01",
+          "month": "2023-01",
           "series": "ASK ('000)",
           "value": 5242810
         },
         {
           "date": "2023-01-01",
+          "month": "2023-01",
           "series": "RPK ('000)",
           "value": 4548192
         },
         {
           "date": "2023-02-01",
+          "month": "2023-02",
           "series": "ASK ('000)",
           "value": 5534303
         },
         {
           "date": "2023-02-01",
+          "month": "2023-02",
           "series": "RPK ('000)",
           "value": 4772931
         },
         {
           "date": "2023-03-01",
+          "month": "2023-03",
           "series": "ASK ('000)",
           "value": 6074084
         },
         {
           "date": "2023-03-01",
+          "month": "2023-03",
           "series": "RPK ('000)",
           "value": 5491910
         },
         {
           "date": "2023-04-01",
+          "month": "2023-04",
           "series": "ASK ('000)",
           "value": 6336928
         },
         {
           "date": "2023-04-01",
+          "month": "2023-04",
           "series": "RPK ('000)",
           "value": 5508383
         },
         {
           "date": "2023-05-01",
+          "month": "2023-05",
           "series": "ASK ('000)",
           "value": 6828143
         },
         {
           "date": "2023-05-01",
+          "month": "2023-05",
           "series": "RPK ('000)",
           "value": 5814059
         },
         {
           "date": "2023-06-01",
+          "month": "2023-06",
           "series": "ASK ('000)",
           "value": 7036299
         },
         {
           "date": "2023-06-01",
+          "month": "2023-06",
           "series": "RPK ('000)",
           "value": 6172901
         },
         {
           "date": "2023-07-01",
+          "month": "2023-07",
           "series": "ASK ('000)",
           "value": 7804109
         },
         {
           "date": "2023-07-01",
+          "month": "2023-07",
           "series": "RPK ('000)",
           "value": 6967424
         },
         {
           "date": "2023-08-01",
+          "month": "2023-08",
           "series": "ASK ('000)",
           "value": 8060721
         },
         {
           "date": "2023-08-01",
+          "month": "2023-08",
           "series": "RPK ('000)",
           "value": 7095215
         },
         {
           "date": "2023-09-01",
+          "month": "2023-09",
           "series": "ASK ('000)",
           "value": 7849457
         },
         {
           "date": "2023-09-01",
+          "month": "2023-09",
           "series": "RPK ('000)",
           "value": 6566972
         },
         {
           "date": "2023-10-01",
+          "month": "2023-10",
           "series": "ASK ('000)",
           "value": 8144479
         },
         {
           "date": "2023-10-01",
+          "month": "2023-10",
           "series": "RPK ('000)",
           "value": 6898356
         },
         {
           "date": "2023-11-01",
+          "month": "2023-11",
           "series": "ASK ('000)",
           "value": 8067197
         },
         {
           "date": "2023-11-01",
+          "month": "2023-11",
           "series": "RPK ('000)",
           "value": 6495074
         },
         {
           "date": "2023-12-01",
+          "month": "2023-12",
           "series": "ASK ('000)",
           "value": 8628913
         },
         {
           "date": "2023-12-01",
+          "month": "2023-12",
           "series": "RPK ('000)",
           "value": 7010296
         },
         {
           "date": "2024-01-01",
+          "month": "2024-01",
           "series": "ASK ('000)",
           "value": 8607535
         },
         {
           "date": "2024-01-01",
+          "month": "2024-01",
           "series": "RPK ('000)",
           "value": 7125438
         },
         {
           "date": "2024-02-01",
+          "month": "2024-02",
           "series": "ASK ('000)",
           "value": 8705854
         },
         {
           "date": "2024-02-01",
+          "month": "2024-02",
           "series": "RPK ('000)",
           "value": 7173058
         },
         {
           "date": "2024-03-01",
+          "month": "2024-03",
           "series": "ASK ('000)",
           "value": 9046659
         },
         {
           "date": "2024-03-01",
+          "month": "2024-03",
           "series": "RPK ('000)",
           "value": 7584543
         },
         {
           "date": "2024-04-01",
+          "month": "2024-04",
           "series": "ASK ('000)",
           "value": 8633006
         },
         {
           "date": "2024-04-01",
+          "month": "2024-04",
           "series": "RPK ('000)",
           "value": 7040793
         },
         {
           "date": "2024-05-01",
+          "month": "2024-05",
           "series": "ASK ('000)",
           "value": 8742234
         },
         {
           "date": "2024-05-01",
+          "month": "2024-05",
           "series": "RPK ('000)",
           "value": 7021256
         },
         {
           "date": "2024-06-01",
+          "month": "2024-06",
           "series": "ASK ('000)",
           "value": 9145704
         },
         {
           "date": "2024-06-01",
+          "month": "2024-06",
           "series": "RPK ('000)",
           "value": 7637869
         },
         {
           "date": "2024-07-01",
+          "month": "2024-07",
           "series": "ASK ('000)",
           "value": 9456264
         },
         {
           "date": "2024-07-01",
+          "month": "2024-07",
           "series": "RPK ('000)",
           "value": 8085955
         },
         {
           "date": "2024-08-01",
+          "month": "2024-08",
           "series": "ASK ('000)",
           "value": 9659790
         },
         {
           "date": "2024-08-01",
+          "month": "2024-08",
           "series": "RPK ('000)",
           "value": 8225400
         },
         {
           "date": "2024-09-01",
+          "month": "2024-09",
           "series": "ASK ('000)",
           "value": 9553131
         },
         {
           "date": "2024-09-01",
+          "month": "2024-09",
           "series": "RPK ('000)",
           "value": 7773554
         },
         {
           "date": "2024-10-01",
+          "month": "2024-10",
           "series": "ASK ('000)",
           "value": 9883198
         },
         {
           "date": "2024-10-01",
+          "month": "2024-10",
           "series": "RPK ('000)",
           "value": 8212887
         },
         {
           "date": "2024-11-01",
+          "month": "2024-11",
           "series": "ASK ('000)",
           "value": 9785399
         },
         {
           "date": "2024-11-01",
+          "month": "2024-11",
           "series": "RPK ('000)",
           "value": 8168734
         },
         {
           "date": "2024-12-01",
+          "month": "2024-12",
           "series": "ASK ('000)",
           "value": 10570519
         },
         {
           "date": "2024-12-01",
+          "month": "2024-12",
           "series": "RPK ('000)",
           "value": 8966020
         },
         {
           "date": "2025-01-01",
+          "month": "2025-01",
           "series": "ASK ('000)",
           "value": 11269213
         },
         {
           "date": "2025-01-01",
+          "month": "2025-01",
           "series": "RPK ('000)",
           "value": 9732981
         },
         {
           "date": "2025-02-01",
+          "month": "2025-02",
           "series": "ASK ('000)",
           "value": 10187240
         },
         {
           "date": "2025-02-01",
+          "month": "2025-02",
           "series": "RPK ('000)",
           "value": 8450299
         },
         {
           "date": "2025-03-01",
+          "month": "2025-03",
           "series": "ASK ('000)",
           "value": 11357120
         },
         {
           "date": "2025-03-01",
+          "month": "2025-03",
           "series": "RPK ('000)",
           "value": 9390917
         },
         {
           "date": "2025-04-01",
+          "month": "2025-04",
           "series": "ASK ('000)",
           "value": 10973629
         },
         {
           "date": "2025-04-01",
+          "month": "2025-04",
           "series": "RPK ('000)",
           "value": 9483200
         },
         {
           "date": "2025-05-01",
+          "month": "2025-05",
           "series": "ASK ('000)",
           "value": 11466188
         },
         {
           "date": "2025-05-01",
+          "month": "2025-05",
           "series": "RPK ('000)",
           "value": 9716956
         },
         {
           "date": "2025-06-01",
+          "month": "2025-06",
           "series": "ASK ('000)",
           "value": 11539073
         },
         {
           "date": "2025-06-01",
+          "month": "2025-06",
           "series": "RPK ('000)",
           "value": 9876538
         },
         {
           "date": "2025-07-01",
+          "month": "2025-07",
           "series": "ASK ('000)",
           "value": 12256459
         },
         {
           "date": "2025-07-01",
+          "month": "2025-07",
           "series": "RPK ('000)",
           "value": 10533262
         },
         {
           "date": "2025-08-01",
+          "month": "2025-08",
           "series": "ASK ('000)",
           "value": 12770243
         },
         {
           "date": "2025-08-01",
+          "month": "2025-08",
           "series": "RPK ('000)",
           "value": 11074075
         },
         {
           "date": "2025-09-01",
+          "month": "2025-09",
           "series": "ASK ('000)",
           "value": 11430859
         },
         {
           "date": "2025-09-01",
+          "month": "2025-09",
           "series": "RPK ('000)",
           "value": 9407276
         },
         {
           "date": "2025-10-01",
+          "month": "2025-10",
           "series": "ASK ('000)",
           "value": 12479345
         },
         {
           "date": "2025-10-01",
+          "month": "2025-10",
           "series": "RPK ('000)",
           "value": 10710849
         },
         {
           "date": "2025-11-01",
+          "month": "2025-11",
           "series": "ASK ('000)",
           "value": 11923112
         },
         {
           "date": "2025-11-01",
+          "month": "2025-11",
           "series": "RPK ('000)",
           "value": 10374948
         },
         {
           "date": "2025-12-01",
+          "month": "2025-12",
           "series": "ASK ('000)",
           "value": 13028694
         },
         {
           "date": "2025-12-01",
+          "month": "2025-12",
           "series": "RPK ('000)",
           "value": 11124121
         },
         {
           "date": "2026-01-01",
+          "month": "2026-01",
           "series": "ASK ('000)",
           "value": 12876965
         },
         {
           "date": "2026-01-01",
+          "month": "2026-01",
           "series": "RPK ('000)",
           "value": 10934223
         },
         {
           "date": "2026-02-01",
+          "month": "2026-02",
           "series": "ASK ('000)",
           "value": 11804261
         },
         {
           "date": "2026-02-01",
+          "month": "2026-02",
           "series": "RPK ('000)",
           "value": 10106181
         },
         {
           "date": "2026-03-01",
+          "month": "2026-03",
           "series": "ASK ('000)",
           "value": 12418605
         },
         {
           "date": "2026-03-01",
+          "month": "2026-03",
           "series": "RPK ('000)",
           "value": 11446209
         },
         {
           "date": "2026-04-01",
+          "month": "2026-04",
           "series": "ASK ('000)",
           "value": 12667713
         },
         {
           "date": "2026-04-01",
+          "month": "2026-04",
           "series": "RPK ('000)",
           "value": 11169641
         },
         {
           "date": "2026-05-01",
+          "month": "2026-05",
           "series": "ASK ('000)",
           "value": 12661433
         },
         {
           "date": "2026-05-01",
+          "month": "2026-05",
           "series": "RPK ('000)",
           "value": 10988053
         },
         {
           "date": "2026-06-01",
+          "month": "2026-06",
           "series": "ASK ('000)",
           "value": 12232841
         },
         {
           "date": "2026-06-01",
+          "month": "2026-06",
           "series": "RPK ('000)",
           "value": 10690055
         }
@@ -10457,7 +11233,7 @@
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-transport/",
-    "snapshotId": "9390db37ded6f6a6",
+    "snapshotId": "1053e61617a1a219",
     "dataAsOf": "2026-06-01"
   }
 }
