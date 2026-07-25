@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-24T23:55:52.763693Z",
+  "generated_at": "2026-07-25T10:21:32.662136Z",
   "snapshot_id": "4fa964633cdbe202",
   "data_as_of": "2026-06-01",
   "overall_status": "Healthy",
@@ -27,5 +27,5 @@
       "notes": "HKIA airport monthly aircraft movements, passenger volume, and freight tonnage alongside Cathay Pacific passengers, RPK, ASK, and Passenger Load Factor (%), fetched directly from Cathay's own investor-relations traffic-figures PDF (deterministic per-month URL)."
     }
   ],
-  "attachment_filename": "hk-transport-dashboard-2026-07-24.html"
+  "attachment_filename": "hk-transport-dashboard-2026-07-25.html"
 }

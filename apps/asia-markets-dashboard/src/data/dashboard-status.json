@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-07-24T21:47:58.352675Z",
-  "snapshot_id": "dc1bf03c646850f6",
+  "generated_at": "2026-07-25T10:21:40.575634Z",
+  "snapshot_id": "3398dabc682d60e7",
   "data_as_of": "2026-07-20",
   "overall_status": "Healthy",
   "live_sources": 5,
@@ -14,7 +14,7 @@
       "status": "Healthy",
       "latest_observation": "2026-07-19",
       "records": 1699,
-      "freshness": "5d old",
+      "freshness": "6d old",
       "notes": "Latest observation is published without a provisional flag."
     },
     {
@@ -24,7 +24,7 @@
       "status": "Healthy",
       "latest_observation": "2026-07-20",
       "records": 541,
-      "freshness": "4d old",
+      "freshness": "5d old",
       "notes": "Latest observation is published without a provisional flag."
     },
     {
@@ -34,7 +34,7 @@
       "status": "Healthy",
       "latest_observation": "2026-07-20",
       "records": 443,
-      "freshness": "4d old",
+      "freshness": "5d old",
       "notes": "Latest observation is published without a provisional flag."
     },
     {
@@ -44,7 +44,7 @@
       "status": "Healthy",
       "latest_observation": "2026-05-01",
       "records": 401,
-      "freshness": "84d old",
+      "freshness": "85d old",
       "notes": "Latest observation is provisional."
     },
     {
@@ -54,7 +54,7 @@
       "status": "Healthy",
       "latest_observation": "2026-05-01",
       "records": 401,
-      "freshness": "84d old",
+      "freshness": "85d old",
       "notes": "Latest observation is provisional."
     },
     {
@@ -108,5 +108,5 @@
       "notes": "Monthly digest discovery exists; structured project facts are not yet extracted."
     }
   ],
-  "attachment_filename": "hk-real-estate-dashboard-2026-07-24.html"
+  "attachment_filename": "hk-real-estate-dashboard-2026-07-25.html"
 }
