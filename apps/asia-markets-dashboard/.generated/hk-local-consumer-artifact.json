@@ -4,8 +4,8 @@
     "version": 1,
     "surface": "dashboard",
     "title": "Hong Kong Local Consumer Monitor",
-    "description": "A source-backed snapshot of cross-border passenger traffic, fresh-food wholesale prices, gold input costs, and watchlist valuations for HK local-consumer names.",
-    "generatedAt": "2026-07-25T13:18:55.077748Z",
+    "description": "A source-backed snapshot of cross-border passenger traffic, fresh-food wholesale prices, gold input costs, auto fuel pricing, and watchlist valuations for HK local-consumer names.",
+    "generatedAt": "2026-07-25T13:42:12.167168Z",
     "cards": [
       {
         "id": "northbound_card",
@@ -436,6 +436,28 @@
         },
         "valueFormat": "number",
         "layout": "half"
+      },
+      {
+        "id": "consumer_council_oilprice_chart",
+        "title": "Auto Fuel Walk-in Discount Comparison (HK$/L)",
+        "subtitle": "Walk-in discounts per liter across Caltex, PetroChina, Shell, Sinopec, and Esso.",
+        "type": "bar",
+        "dataset": "consumer_council_oilprice",
+        "sourceId": "consumer_council_oilprice",
+        "encodings": {
+          "x": {
+            "field": "company",
+            "type": "nominal",
+            "label": "Oil Major"
+          },
+          "y": {
+            "field": "walkin_discount_hkd",
+            "type": "quantitative",
+            "label": "Discount (HK$/L)"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "full"
       }
     ],
     "tables": [
@@ -763,9 +785,57 @@
             "type": "text"
           }
         ]
+      },
+      {
+        "id": "consumer_council_oilprice_table",
+        "title": "Consumer Council Auto Fuel Pump Prices & Discounts",
+        "subtitle": "Daily pump prices, walk-in discounts, and net prices per liter across Hong Kong oil majors.",
+        "dataset": "consumer_council_oilprice",
+        "sourceId": "consumer_council_oilprice",
+        "density": "dense",
+        "layout": "full",
+        "columns": [
+          {
+            "field": "company",
+            "label": "Oil Major",
+            "type": "text"
+          },
+          {
+            "field": "fuel_type",
+            "label": "Fuel Type",
+            "type": "text"
+          },
+          {
+            "field": "pump_price_hkd",
+            "label": "Pump Price (HK$/L)",
+            "format": "number"
+          },
+          {
+            "field": "walkin_discount_hkd",
+            "label": "Walk-in Discount (HK$/L)",
+            "format": "number"
+          },
+          {
+            "field": "net_price_hkd",
+            "label": "Net Price (HK$/L)",
+            "format": "number"
+          }
+        ]
       }
     ],
     "sources": [
+      {
+        "id": "consumer_council_oilprice",
+        "label": "Consumer Council Auto Fuel Calculator",
+        "href": "https://oil-price.consumer.org.hk/en",
+        "path": "sources/consumer_council_oilprice.sql"
+      },
+      {
+        "id": "consumer_council_complaints",
+        "label": "Consumer Council Complaints API",
+        "href": "https://www.consumer.org.hk/",
+        "path": "sources/consumer_council_complaints.sql"
+      },
       {
         "id": "afcd_wholesale",
         "label": "AFCD Fresh Food Wholesale Prices",
@@ -818,7 +888,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**Data snapshot:** `499639102202060d` · generated 2026-07-25T13:18:55.077748Z.  This is a published snapshot, not a live connection. Consumer Council price-watch coverage remains planned; it is not shown with placeholder values."
+        "body": "**Data snapshot:** `d6bca3c4222c8251` · generated 2026-07-25T13:42:12.167168Z.  This is a published snapshot, not a live connection. Includes official Consumer Council auto fuel calculator pricing."
       },
       {
         "id": "market_pulse_1",
@@ -872,6 +942,16 @@
         "type": "chart",
         "chartId": "valuation_pe_chart",
         "layout": "half"
+      },
+      {
+        "id": "oilprice_chart_block",
+        "type": "chart",
+        "chartId": "consumer_council_oilprice_chart"
+      },
+      {
+        "id": "oilprice_table_block",
+        "type": "table",
+        "tableId": "consumer_council_oilprice_table"
       },
       {
         "id": "afcd_table",
@@ -939,7 +1019,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-25T13:18:55.077748Z",
+    "generatedAt": "2026-07-25T13:42:12.167168Z",
     "status": "ready",
     "datasets": {
       "kpi_weather": [
@@ -4876,10 +4956,964 @@
           "freshness": "Endpoint returns no data",
           "notes": "Endpoint requires re-verification before going live."
         }
+      ],
+      "consumer_council_oilprice": [
+        {
+          "date": "2026-07-25",
+          "company": "Caltex",
+          "fuel_type": "Standard Petrol",
+          "discounted_price_hkd": 22.14,
+          "walkin_discount_hkd": 10.2,
+          "data_source": "live"
+        },
+        {
+          "date": "2026-07-25",
+          "company": "PetroChina",
+          "fuel_type": "Standard Petrol",
+          "discounted_price_hkd": 25.34,
+          "walkin_discount_hkd": 7.0,
+          "data_source": "live"
+        },
+        {
+          "date": "2026-07-25",
+          "company": "Shell",
+          "fuel_type": "Standard Petrol",
+          "discounted_price_hkd": 25.67,
+          "walkin_discount_hkd": 7.0,
+          "data_source": "live"
+        },
+        {
+          "date": "2026-07-25",
+          "company": "Sinopec",
+          "fuel_type": "Standard Petrol",
+          "discounted_price_hkd": 26.14,
+          "walkin_discount_hkd": 6.2,
+          "data_source": "live"
+        },
+        {
+          "date": "2026-07-25",
+          "company": "Esso",
+          "fuel_type": "Standard Petrol",
+          "discounted_price_hkd": 31.07,
+          "walkin_discount_hkd": 1.6,
+          "data_source": "live"
+        },
+        {
+          "date": "2026-07-25",
+          "company": "Caltex",
+          "fuel_type": "Premium Petrol",
+          "discounted_price_hkd": 22.14,
+          "walkin_discount_hkd": 12.0,
+          "data_source": "live"
+        },
+        {
+          "date": "2026-07-25",
+          "company": "PetroChina",
+          "fuel_type": "Premium Petrol",
+          "discounted_price_hkd": 20.54,
+          "walkin_discount_hkd": 11.8,
+          "data_source": "live"
+        },
+        {
+          "date": "2026-07-25",
+          "company": "Shell",
+          "fuel_type": "Premium Petrol",
+          "discounted_price_hkd": 27.47,
+          "walkin_discount_hkd": 7.0,
+          "data_source": "live"
+        },
+        {
+          "date": "2026-07-25",
+          "company": "Sinopec",
+          "fuel_type": "Premium Petrol",
+          "discounted_price_hkd": 22.67,
+          "walkin_discount_hkd": 11.47,
+          "data_source": "live"
+        },
+        {
+          "date": "2026-07-25",
+          "company": "Esso",
+          "fuel_type": "Premium Petrol",
+          "discounted_price_hkd": 32.87,
+          "walkin_discount_hkd": 1.6,
+          "data_source": "live"
+        }
+      ],
+      "consumer_council_complaints": [
+        {
+          "period": "2024 1-12",
+          "category": "Cars & Car Services",
+          "amount": 458,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Foods & Drinks",
+          "amount": 1289,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Fuel",
+          "amount": 45,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Furniture & Fixtures",
+          "amount": 779,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Jewellery & Watches",
+          "amount": 554,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Medicine & Health Foods",
+          "amount": 1373,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Optical Products/Services",
+          "amount": 136,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Pets & Pet Services",
+          "amount": 206,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Photographic Equipment",
+          "amount": 298,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Transportation Services",
+          "amount": 289,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Baby Products",
+          "amount": 613,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Public Utilities",
+          "amount": 61,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Publishing / Educational Materials",
+          "amount": 124,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Sporting Goods",
+          "amount": 496,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Travel Matters",
+          "amount": 2966,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Telecommunication Equipment",
+          "amount": 707,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Medical & Health Devices",
+          "amount": 212,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Online Services & eCommerce Platforms",
+          "amount": 407,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Shopping Mall, Chain Store and Reward Program",
+          "amount": 508,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Clothing & Apparel",
+          "amount": 1590,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Computer Products",
+          "amount": 797,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Bank and Financial Services",
+          "amount": 923,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Agency Services",
+          "amount": 221,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Insurance",
+          "amount": 323,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Lawyer & Legal Services",
+          "amount": 34,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Photo Taking/Finishing",
+          "amount": 59,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Telecommunication Services",
+          "amount": 3106,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Broadcasting Services",
+          "amount": 167,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Medical Services",
+          "amount": 537,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Personal Care Products",
+          "amount": 1443,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Education Matters",
+          "amount": 690,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Beauty Services",
+          "amount": 3028,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Elderly Care",
+          "amount": 33,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Food & Entertainment Services",
+          "amount": 5640,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Local Accommodation",
+          "amount": 840,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Storage, Postal & Courier Services",
+          "amount": 598,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Decoration/Renovation Services",
+          "amount": 400,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Recreation & Health Clubs",
+          "amount": 4936,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Funeral Services",
+          "amount": 14,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Household Products/Services",
+          "amount": 649,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Wedding Services",
+          "amount": 87,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Electrical Appliances",
+          "amount": 2467,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Properties",
+          "amount": 203,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Time Sharing",
+          "amount": 25,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Toys",
+          "amount": 138,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Miscellaneous Services",
+          "amount": 122,
+          "data_source": "live"
+        },
+        {
+          "period": "2024 1-12",
+          "category": "Miscellaneous Goods",
+          "amount": 248,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Cars & Car Services",
+          "amount": 541,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Foods & Drinks",
+          "amount": 1202,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Fuel",
+          "amount": 36,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Furniture & Fixtures",
+          "amount": 656,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Jewellery & Watches",
+          "amount": 631,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Medicine & Health Foods",
+          "amount": 1562,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Optical Products/Services",
+          "amount": 93,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Pets & Pet Services",
+          "amount": 197,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Photographic Equipment",
+          "amount": 272,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Transportation Services",
+          "amount": 358,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Baby Products",
+          "amount": 411,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Public Utilities",
+          "amount": 80,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Publishing / Educational Materials",
+          "amount": 98,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Sporting Goods",
+          "amount": 488,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Travel Matters",
+          "amount": 3262,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Telecommunication Equipment",
+          "amount": 816,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Medical & Health Devices",
+          "amount": 180,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Online Services & eCommerce Platforms",
+          "amount": 461,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Shopping Mall, Chain Store and Reward Program",
+          "amount": 657,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Clothing & Apparel",
+          "amount": 1448,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Computer Products",
+          "amount": 1040,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Bank and Financial Services",
+          "amount": 970,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Agency Services",
+          "amount": 262,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Insurance",
+          "amount": 312,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Lawyer & Legal Services",
+          "amount": 27,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Photo Taking/Finishing",
+          "amount": 52,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Telecommunication Services",
+          "amount": 2661,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Broadcasting Services",
+          "amount": 184,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Medical Services",
+          "amount": 1872,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Personal Care Products",
+          "amount": 1182,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Education Matters",
+          "amount": 710,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Beauty Services",
+          "amount": 1509,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Elderly Care",
+          "amount": 21,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Food & Entertainment Services",
+          "amount": 6689,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Local Accommodation",
+          "amount": 1101,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Storage, Postal & Courier Services",
+          "amount": 697,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Decoration/Renovation Services",
+          "amount": 347,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Recreation & Health Clubs",
+          "amount": 588,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Funeral Services",
+          "amount": 7,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Household Products/Services",
+          "amount": 612,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Wedding Services",
+          "amount": 170,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Electrical Appliances",
+          "amount": 2176,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Properties",
+          "amount": 329,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Time Sharing",
+          "amount": 19,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Toys",
+          "amount": 445,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Miscellaneous Services",
+          "amount": 310,
+          "data_source": "live"
+        },
+        {
+          "period": "2025 1-12",
+          "category": "Miscellaneous Goods",
+          "amount": 446,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Cars & Car Services",
+          "amount": 281,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Foods & Drinks",
+          "amount": 466,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Fuel",
+          "amount": 44,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Furniture & Fixtures",
+          "amount": 312,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Jewellery & Watches",
+          "amount": 224,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Medicine & Health Foods",
+          "amount": 904,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Optical Products/Services",
+          "amount": 45,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Pets & Pet Services",
+          "amount": 100,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Photographic Equipment",
+          "amount": 93,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Transportation Services",
+          "amount": 149,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Baby Products",
+          "amount": 192,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Public Utilities",
+          "amount": 25,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Publishing / Educational Materials",
+          "amount": 26,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Sporting Goods",
+          "amount": 146,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Travel Matters",
+          "amount": 1563,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Telecommunication Equipment",
+          "amount": 265,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Medical & Health Devices",
+          "amount": 73,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Online Services & eCommerce Platforms",
+          "amount": 319,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Shopping Mall, Chain Store and Reward Program",
+          "amount": 209,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Clothing & Apparel",
+          "amount": 639,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Computer Products",
+          "amount": 406,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Bank and Financial Services",
+          "amount": 429,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Agency Services",
+          "amount": 175,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Insurance",
+          "amount": 91,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Lawyer & Legal Services",
+          "amount": 8,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Photo Taking/Finishing",
+          "amount": 23,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Telecommunication Services",
+          "amount": 1026,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Broadcasting Services",
+          "amount": 88,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Medical Services",
+          "amount": 256,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Personal Care Products",
+          "amount": 469,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Education Matters",
+          "amount": 231,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Beauty Services",
+          "amount": 696,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Elderly Care",
+          "amount": 11,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Food & Entertainment Services",
+          "amount": 2175,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Local Accommodation",
+          "amount": 495,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Storage, Postal & Courier Services",
+          "amount": 172,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Decoration/Renovation Services",
+          "amount": 168,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Recreation & Health Clubs",
+          "amount": 242,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Funeral Services",
+          "amount": 7,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Household Products/Services",
+          "amount": 257,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Wedding Services",
+          "amount": 36,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Electrical Appliances",
+          "amount": 983,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Properties",
+          "amount": 99,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Time Sharing",
+          "amount": 9,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Toys",
+          "amount": 169,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Miscellaneous Services",
+          "amount": 100,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Miscellaneous Goods",
+          "amount": 269,
+          "data_source": "live"
+        }
       ]
     }
   },
   "sources": [
+    {
+      "id": "consumer_council_oilprice",
+      "label": "Consumer Council Auto Fuel Calculator",
+      "href": "https://oil-price.consumer.org.hk/en",
+      "query": {
+        "engine": "first-party HTML / inline JS",
+        "url": "https://oil-price.consumer.org.hk/en",
+        "language": "JSON",
+        "description": "Daily auto-fuel pump prices, walk-in discounts, and net prices across Caltex, PetroChina, Shell, Sinopec, and Esso.",
+        "executed_at": "2026-07-25T13:42:12.167168Z"
+      }
+    },
+    {
+      "id": "consumer_council_complaints",
+      "label": "Consumer Council Complaints API",
+      "href": "https://www.consumer.org.hk/",
+      "query": {
+        "engine": "official JSON API",
+        "url": "https://www.consumer.org.hk/node/32290/export-complaints/json?lang=en",
+        "language": "JSON",
+        "description": "Annual consumer complaints by category across Hong Kong consumer sectors.",
+        "executed_at": "2026-07-25T13:42:12.167168Z"
+      }
+    },
     {
       "id": "afcd_wholesale",
       "label": "AFCD Fresh Food Wholesale Prices",
@@ -4892,7 +5926,7 @@
         "metric_definitions": [
           "Each commodity's price is the mean of same-day readings across the wholesale markets/sources AFCD reports for it."
         ],
-        "executed_at": "2026-07-25T13:18:55.077748Z"
+        "executed_at": "2026-07-25T13:42:12.167168Z"
       }
     },
     {
@@ -4908,7 +5942,7 @@
           "Latest is the most recent published PM benchmark fixing.",
           "Day and year movements are latest divided by the prior trading day or the observation on/before one year earlier, minus one."
         ],
-        "executed_at": "2026-07-25T13:18:55.077748Z"
+        "executed_at": "2026-07-25T13:42:12.167168Z"
       }
     },
     {
@@ -4924,7 +5958,7 @@
           "PE (TTM), PB, and market cap (HKD bn) are each ticker's latest published daily value.",
           "No dividend-yield indicator exists on this endpoint; yield is not reported here."
         ],
-        "executed_at": "2026-07-25T13:18:55.077748Z"
+        "executed_at": "2026-07-25T13:42:12.167168Z"
       }
     },
     {
@@ -4940,7 +5974,7 @@
           "All retail outlet is the classification group's own published total across all outlet types.",
           "Month and year movements are latest divided by the prior month or the observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-07-25T13:18:55.077748Z"
+        "executed_at": "2026-07-25T13:42:12.167168Z"
       }
     },
     {
@@ -4956,7 +5990,7 @@
           "Purchases are only published sector-wide, not broken out by restaurant type.",
           "Quarter and year movements are latest divided by the prior quarter or the observation four quarters earlier, minus one."
         ],
-        "executed_at": "2026-07-25T13:18:55.077748Z"
+        "executed_at": "2026-07-25T13:42:12.167168Z"
       }
     },
     {
@@ -4973,7 +6007,7 @@
           "Southbound (南下) flow is daily Mainland visitor arrivals across all 17 control points, since Mainland visitors legitimately arrive by air, rail, and sea, not just by land.",
           "7-day moving averages (7d MA) smooth out day-of-week seasonality (weekend shopping spikes)."
         ],
-        "executed_at": "2026-07-25T13:18:55.077748Z"
+        "executed_at": "2026-07-25T13:42:12.167168Z"
       }
     },
     {
@@ -4990,7 +6024,7 @@
           "Red/Black Rainstorm hours measures total duration under Red or Black rainstorm warnings.",
           "RMB per 100 HKD is derived from FRED daily DEXCHUS and DEXHKUS rates."
         ],
-        "executed_at": "2026-07-25T13:18:55.077748Z"
+        "executed_at": "2026-07-25T13:42:12.167168Z"
       }
     },
     {
@@ -5004,13 +6038,13 @@
           "Validated live measure frames",
           "Declared future-source registry"
         ],
-        "executed_at": "2026-07-25T13:18:55.077748Z"
+        "executed_at": "2026-07-25T13:42:12.167168Z"
       }
     }
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-local-consumer/",
-    "snapshotId": "499639102202060d",
+    "snapshotId": "d6bca3c4222c8251",
     "dataAsOf": "2026-07-22"
   }
 }

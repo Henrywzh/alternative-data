@@ -35,6 +35,8 @@ from src.hk_local_consumer.sources.cnsd_retail import fetch_cnsd_retail_sales
 from src.hk_local_consumer.sources.censtatd_restaurant import fetch_censtatd_restaurant_survey
 from src.hk_local_consumer.sources.immigration_flow import fetch_immigration_flow
 from src.hk_local_consumer.sources.weather_demand_drivers import fetch_weather_demand_drivers
+from src.hk_local_consumer.sources.consumer_council_oilprice import fetch_consumer_council_oilprice
+from src.hk_local_consumer.sources.consumer_council_complaints import fetch_consumer_council_complaints
 from src.hk_local_consumer.config import NORMALIZED_DIR
 
 
@@ -54,6 +56,28 @@ AFCD_CATEGORY_HISTORY_PATH = NORMALIZED_DIR / "afcd_category_history.csv"
 
 
 PUBLIC_SOURCES = {
+    "consumer_council_oilprice": {
+        "id": "consumer_council_oilprice",
+        "label": "Consumer Council Auto Fuel Calculator",
+        "href": "https://oil-price.consumer.org.hk/en",
+        "query": {
+            "engine": "first-party HTML / inline JS",
+            "url": "https://oil-price.consumer.org.hk/en",
+            "language": "JSON",
+            "description": "Daily auto-fuel pump prices, walk-in discounts, and net prices across Caltex, PetroChina, Shell, Sinopec, and Esso.",
+        },
+    },
+    "consumer_council_complaints": {
+        "id": "consumer_council_complaints",
+        "label": "Consumer Council Complaints API",
+        "href": "https://www.consumer.org.hk/",
+        "query": {
+            "engine": "official JSON API",
+            "url": "https://www.consumer.org.hk/node/32290/export-complaints/json?lang=en",
+            "language": "JSON",
+            "description": "Annual consumer complaints by category across Hong Kong consumer sectors.",
+        },
+    },
     "afcd_wholesale": {
         "id": "afcd_wholesale",
         "label": "AFCD Fresh Food Wholesale Prices",
@@ -226,6 +250,17 @@ PLANNED_COVERAGE = [
         "notes": "Endpoint requires re-verification before going live.",
     },
 ]
+
+
+def _records_json_safe(frame: pd.DataFrame) -> list[dict[str, Any]]:
+    """Convert a DataFrame to JSON-safe records (NaN/NaT -> null, dates -> ISO strings)."""
+    if frame.empty:
+        return []
+    selected = frame.copy()
+    for column in selected.columns:
+        if pd.api.types.is_datetime64_any_dtype(selected[column]):
+            selected[column] = selected[column].dt.strftime("%Y-%m-%d")
+    return json.loads(selected.to_json(orient="records", date_format="iso"))
 
 
 def _utc_now() -> datetime:
@@ -1135,13 +1170,58 @@ def build_artifact(
         },
     ]
 
+    df_oil = fetch_consumer_council_oilprice()
+    df_complaints = fetch_consumer_council_complaints()
+
+    oil_rows = _records_json_safe(df_oil) if not df_oil.empty else []
+    complaint_rows = _records_json_safe(df_complaints) if not df_complaints.empty else []
+
+    if oil_rows:
+        tables.append(
+            {
+                "id": "consumer_council_oilprice_table",
+                "title": "Consumer Council Auto Fuel Pump Prices & Discounts",
+                "subtitle": "Daily pump prices, walk-in discounts, and net prices per liter across Hong Kong oil majors.",
+                "dataset": "consumer_council_oilprice",
+                "sourceId": "consumer_council_oilprice",
+                "density": "dense",
+                "layout": "full",
+                "columns": [
+                    {"field": "company", "label": "Oil Major", "type": "text"},
+                    {"field": "fuel_type", "label": "Fuel Type", "type": "text"},
+                    {"field": "pump_price_hkd", "label": "Pump Price (HK$/L)", "format": "number"},
+                    {"field": "walkin_discount_hkd", "label": "Walk-in Discount (HK$/L)", "format": "number"},
+                    {"field": "net_price_hkd", "label": "Net Price (HK$/L)", "format": "number"},
+                ],
+            }
+        )
+        charts.append(
+            {
+                "id": "consumer_council_oilprice_chart",
+                "title": "Auto Fuel Walk-in Discount Comparison (HK$/L)",
+                "subtitle": "Walk-in discounts per liter across Caltex, PetroChina, Shell, Sinopec, and Esso.",
+                "type": "bar",
+                "dataset": "consumer_council_oilprice",
+                "sourceId": "consumer_council_oilprice",
+                "encodings": {
+                    "x": {"field": "company", "type": "nominal", "label": "Oil Major"},
+                    "y": {"field": "walkin_discount_hkd", "type": "quantitative", "label": "Discount (HK$/L)"},
+                },
+                "valueFormat": "number",
+                "layout": "full",
+            }
+        )
+
+    datasets["consumer_council_oilprice"] = oil_rows
+    datasets["consumer_council_complaints"] = complaint_rows
+
     artifact = {
         "surface": "dashboard",
         "manifest": {
             "version": 1,
             "surface": "dashboard",
             "title": "Hong Kong Local Consumer Monitor",
-            "description": "A source-backed snapshot of cross-border passenger traffic, fresh-food wholesale prices, gold input costs, and watchlist valuations for HK local-consumer names.",
+            "description": "A source-backed snapshot of cross-border passenger traffic, fresh-food wholesale prices, gold input costs, auto fuel pricing, and watchlist valuations for HK local-consumer names.",
             "generatedAt": generated_at,
             "cards": cards,
             "charts": charts,
@@ -1153,8 +1233,7 @@ def build_artifact(
                     "type": "markdown",
                     "body": (
                         f"**Data snapshot:** `{snapshot_id}` · generated {generated_at}.  "
-                        "This is a published snapshot, not a live connection. Consumer Council price-watch coverage "
-                        "remains planned; it is not shown with placeholder values."
+                        "This is a published snapshot, not a live connection. Includes official Consumer Council auto fuel calculator pricing."
                     ),
                 },
                 {"id": "market_pulse_1", "type": "metric-strip", "cardIds": ["northbound_card", "southbound_card", "weather_card", "fx_card"]},
@@ -1165,6 +1244,8 @@ def build_artifact(
                 {"id": "afcd_trend_chart", "type": "chart", "chartId": "afcd_category_trend", "layout": "half"},
                 {"id": "gold_chart", "type": "chart", "chartId": "gold_trend", "layout": "half"},
                 {"id": "valuation_chart", "type": "chart", "chartId": "valuation_pe_chart", "layout": "half"},
+                {"id": "oilprice_chart_block", "type": "chart", "chartId": "consumer_council_oilprice_chart"},
+                {"id": "oilprice_table_block", "type": "table", "tableId": "consumer_council_oilprice_table"},
                 {"id": "afcd_table", "type": "table", "tableId": "afcd_commodity_table"},
                 {"id": "valuation_table_block", "type": "table", "tableId": "valuation_table"},
                 {"id": "retail_trend_chart", "type": "chart", "chartId": "retail_trend"},
