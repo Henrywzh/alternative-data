@@ -6,10 +6,10 @@
     "title": "Hong Kong REITs Sector Monitor",
     "description": "NAV/unit, DPU, occupancy, rental reversion, and hotel KPI disclosures for all six HK-listed REITs.",
     "sector": "hk-reit",
-    "generatedAt": "2026-07-25T12:39:38.624408Z",
+    "generatedAt": "2026-07-25T13:17:24.615213Z",
     "dataAsOf": "2026-03-31",
     "liveSourcesCount": 6,
-    "totalSourcesCount": 6,
+    "totalSourcesCount": 7,
     "cards": [
       {
         "id": "linkreit_card",
@@ -382,6 +382,18 @@
     ],
     "sources": [
       {
+        "id": "reit_price_akshare",
+        "label": "Hong Kong REITs Daily Spot Quotes & History (akshare)",
+        "href": "https://www.hkex.com.hk/",
+        "path": "sources/reit_price.py",
+        "query": {
+          "engine": "akshare.stock_hk_spot_em",
+          "url": "https://www.hkex.com.hk/",
+          "language": "API",
+          "description": "Daily spot price quotes, percentage change, and OHLC daily history for all 6 HK REITs."
+        }
+      },
+      {
         "id": "linkreit_fundamentals",
         "label": "Link REIT (0823.HK) Investor Relations Disclosures",
         "href": "https://www.linkreit.com/en/investor-relations/",
@@ -458,7 +470,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**Data snapshot:** `de4cc44061bb5999` \u00b7 generated 2026-07-25T12:39:38.624408Z.  Each REIT's figures come from that trust's own investor-relations disclosures (semi-annual or annual cadence), not a shared index provider."
+        "body": "**Data snapshot:** `22ea05f2d7f320b9` \u00b7 generated 2026-07-25T13:17:24.615213Z.  Each REIT's figures come from that trust's own investor-relations disclosures (semi-annual or annual cadence), not a shared index provider."
       },
       {
         "id": "kpi_grid",
@@ -513,7 +525,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-25T12:39:38.624408Z",
+    "generatedAt": "2026-07-25T13:17:24.615213Z",
     "status": "ready",
     "datasets": {
       "kpi_linkreit": [
@@ -1507,6 +1519,18 @@
   },
   "sources": [
     {
+      "id": "reit_price_akshare",
+      "label": "Hong Kong REITs Daily Spot Quotes & History (akshare)",
+      "href": "https://www.hkex.com.hk/",
+      "path": "sources/reit_price.py",
+      "query": {
+        "engine": "akshare.stock_hk_spot_em",
+        "url": "https://www.hkex.com.hk/",
+        "language": "API",
+        "description": "Daily spot price quotes, percentage change, and OHLC daily history for all 6 HK REITs."
+      }
+    },
+    {
       "id": "linkreit_fundamentals",
       "label": "Link REIT (0823.HK) Investor Relations Disclosures",
       "href": "https://www.linkreit.com/en/investor-relations/",
@@ -1639,8 +1663,8 @@
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-reit/",
     "sector_id": "hk-reit",
     "sector_name": "Hong Kong REITs Sector Monitor",
-    "snapshotId": "de4cc44061bb5999",
-    "generatedAt": "2026-07-25T12:39:38.624408Z",
+    "snapshotId": "22ea05f2d7f320b9",
+    "generatedAt": "2026-07-25T13:17:24.615213Z",
     "dataAsOf": "2026-03-31"
   }
 }

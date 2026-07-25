@@ -42,9 +42,22 @@ from src.hk_reit.sources.fortunereit_fundamentals import fetch_fortunereit_funda
 from src.hk_reit.sources.prosperityreit_fundamentals import fetch_prosperityreit_fundamentals
 from src.hk_reit.sources.sunlightreit_fundamentals import fetch_sunlightreit_fundamentals
 from src.hk_reit.sources.regalreit_fundamentals import fetch_regalreit_fundamentals
+from src.hk_reit.sources.reit_price import fetch_reit_spot_quotes, fetch_reit_price_history
 
 
 PUBLIC_SOURCES = {
+    "reit_price_akshare": {
+        "id": "reit_price_akshare",
+        "label": "Hong Kong REITs Daily Spot Quotes & History (akshare)",
+        "href": "https://www.hkex.com.hk/",
+        "path": "sources/reit_price.py",
+        "query": {
+            "engine": "akshare.stock_hk_spot_em",
+            "url": "https://www.hkex.com.hk/",
+            "language": "API",
+            "description": "Daily spot price quotes, percentage change, and OHLC daily history for all 6 HK REITs.",
+        },
+    },
     "linkreit_fundamentals": {
         "id": "linkreit_fundamentals",
         "label": "Link REIT (0823.HK) Investor Relations Disclosures",

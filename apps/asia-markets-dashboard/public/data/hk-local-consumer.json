@@ -3,29 +3,29 @@
   "manifest": {
     "version": 1,
     "surface": "dashboard",
-    "title": "香港本地消费监测",
-    "description": "极端天气干扰时长、港元/人民币汇率、跨境出入境人流（北上/南下）、黄金原料成本、零售销售、餐饮收益及消费股估值的来源快照。",
-    "generatedAt": "2026-07-25T13:18:55.077748Z",
+    "title": "Hong Kong Local Consumer Monitor",
+    "description": "A source-backed snapshot of cross-border passenger traffic, fresh-food wholesale prices, gold input costs, and watchlist valuations for HK local-consumer names.",
+    "generatedAt": "2026-07-25T13:15:11.197369Z",
     "cards": [
       {
         "id": "northbound_card",
-        "description": "每日经陆路口岸（不含机场及邮轮/渡轮码头）出境的香港居民人次（7日移动平均）；日环比与同比变动。",
+        "description": "Daily HK resident departures via land control points only (7-day MA); day-on-day and year-on-year movements.",
         "dataset": "kpi_northbound",
         "sourceId": "immigration_flow",
         "metrics": [
           {
-            "label": "北上7日均值（陆路口岸）",
+            "label": "Northbound 7d MA (land)",
             "field": "latest",
             "format": "number"
           },
           {
-            "label": "日环比",
+            "label": "DoD",
             "field": "period_change",
             "format": "percent",
             "signed": true
           },
           {
-            "label": "同比",
+            "label": "YoY",
             "field": "year_change",
             "format": "percent",
             "signed": true
@@ -34,23 +34,23 @@
       },
       {
         "id": "southbound_card",
-        "description": "每日内地访客入境人次（7日移动平均）；日环比与同比变动。",
+        "description": "Daily Mainland visitor arrivals (7-day MA); day-on-day and year-on-year movements.",
         "dataset": "kpi_southbound",
         "sourceId": "immigration_flow",
         "metrics": [
           {
-            "label": "南下7日均值",
+            "label": "Southbound 7d MA",
             "field": "latest",
             "format": "number"
           },
           {
-            "label": "日环比",
+            "label": "DoD",
             "field": "period_change",
             "format": "percent",
             "signed": true
           },
           {
-            "label": "同比",
+            "label": "YoY",
             "field": "year_change",
             "format": "percent",
             "signed": true
@@ -59,17 +59,17 @@
       },
       {
         "id": "weather_card",
-        "description": "月度八号及以上风球与红/黑色暴雨警告总持续时长；同比变动。",
+        "description": "Monthly severe weather disruption hours (Signal 8+ Typhoons & Red/Black Rainstorm Warnings).",
         "dataset": "kpi_weather",
         "sourceId": "weather_demand_drivers",
         "metrics": [
           {
-            "label": "极端天气干扰 (小时/月)",
+            "label": "Severe weather (hrs/mo)",
             "field": "latest",
             "format": "number"
           },
           {
-            "label": "同比",
+            "label": "YoY",
             "field": "year_change",
             "format": "percent",
             "signed": true
@@ -78,23 +78,23 @@
       },
       {
         "id": "fx_card",
-        "description": "基于 FRED 每日报价计算的月度平均港元/人民币交叉汇率；月环比与同比变动。",
+        "description": "Monthly average RMB per 100 HKD cross rate derived from FRED daily quotes.",
         "dataset": "kpi_fx",
         "sourceId": "weather_demand_drivers",
         "metrics": [
           {
-            "label": "人民币 / 100 港元",
+            "label": "RMB / 100 HKD",
             "field": "latest",
             "format": "number"
           },
           {
-            "label": "月环比",
+            "label": "MoM",
             "field": "period_change",
             "format": "percent",
             "signed": true
           },
           {
-            "label": "同比",
+            "label": "YoY",
             "field": "year_change",
             "format": "percent",
             "signed": true
@@ -103,23 +103,23 @@
       },
       {
         "id": "gold_card",
-        "description": "上海黄金交易所 PM 基准定盘价（人民币/克）；日环比与同比变动。",
+        "description": "Latest published SGE PM benchmark fixing; day and year-on-year movements.",
         "dataset": "kpi_gold",
         "sourceId": "sge_gold",
         "metrics": [
           {
-            "label": "黄金 PM 基准价 (人民币/克)",
+            "label": "Gold PM (RMB/g)",
             "field": "latest",
             "format": "number"
           },
           {
-            "label": "日环比",
+            "label": "DoD",
             "field": "period_change",
             "format": "percent",
             "signed": true
           },
           {
-            "label": "同比",
+            "label": "YoY",
             "field": "year_change",
             "format": "percent",
             "signed": true
@@ -128,12 +128,12 @@
       },
       {
         "id": "median_pe_card",
-        "description": "本地消费观察名单各公司历史市盈率的中位数。",
+        "description": "Median trailing PE across the 11-name HK local-consumer watchlist.",
         "dataset": "kpi_median_pe",
         "sourceId": "hk_valuation",
         "metrics": [
           {
-            "label": "市盈率中位数 (TTM)",
+            "label": "Median PE (TTM)",
             "field": "latest",
             "format": "number"
           }
@@ -141,23 +141,23 @@
       },
       {
         "id": "retail_card",
-        "description": "政府统计处零售销售价值指数（全部零售店铺）；月环比与同比变动。",
+        "description": "All retail outlet value index; month and year-on-year movements.",
         "dataset": "kpi_retail",
         "sourceId": "cnsd_retail",
         "metrics": [
           {
-            "label": "零售销售指数",
+            "label": "Retail sales index",
             "field": "latest",
             "format": "number"
           },
           {
-            "label": "月环比",
+            "label": "MoM",
             "field": "period_change",
             "format": "percent",
             "signed": true
           },
           {
-            "label": "同比",
+            "label": "YoY",
             "field": "year_change",
             "format": "percent",
             "signed": true
@@ -166,23 +166,23 @@
       },
       {
         "id": "restaurant_card",
-        "description": "全行业季度餐饮收益（百万港元）；季环比与同比变动。",
+        "description": "All-restaurants quarterly receipts; quarter and year-on-year movements.",
         "dataset": "kpi_restaurant",
         "sourceId": "censtatd_restaurant",
         "metrics": [
           {
-            "label": "餐饮收益 (百万港元)",
+            "label": "Receipts (HKD m)",
             "field": "latest",
             "format": "number"
           },
           {
-            "label": "季环比",
+            "label": "QoQ",
             "field": "period_change",
             "format": "percent",
             "signed": true
           },
           {
-            "label": "同比",
+            "label": "YoY",
             "field": "year_change",
             "format": "percent",
             "signed": true
@@ -193,8 +193,8 @@
     "charts": [
       {
         "id": "severe_weather_trend",
-        "title": "月度极端天气干扰时长 (小时)",
-        "subtitle": "按月汇总的八号及以上热带气旋警告与红/黑色暴雨警告持续时间。",
+        "title": "Monthly severe weather disruption hours",
+        "subtitle": "Total duration (hours per month) under Typhoon Signal 8+ and Red/Black Rainstorm warnings in Hong Kong.",
         "type": "bar",
         "intent": "trend",
         "dataset": "severe_weather_history",
@@ -203,12 +203,12 @@
           "x": {
             "field": "month",
             "type": "temporal",
-            "label": "月份"
+            "label": "Month"
           },
           "y": {
             "field": "total_disruption_hours",
             "type": "quantitative",
-            "label": "小时"
+            "label": "Disruption Hours"
           }
         },
         "valueFormat": "number",
@@ -217,8 +217,8 @@
       },
       {
         "id": "immigration_trend",
-        "title": "跨境旅客流量 (7日移动平均)",
-        "subtitle": "入境事务处发布的每日客流：北上为香港居民经陆路口岸出境，南下为内地访客经全部口岸入境。",
+        "title": "Cross-border passenger traffic (7-day MA, monthly average)",
+        "subtitle": "Monthly average of the daily 7-day MA: Northbound (HK resident departures via land control points only) vs Southbound (Mainland visitor arrivals, all control points).",
         "type": "line",
         "intent": "trend",
         "dataset": "immigration_trend_history",
@@ -227,17 +227,17 @@
           "x": {
             "field": "month",
             "type": "temporal",
-            "label": "日期"
+            "label": "Month"
           },
           "y": {
             "field": "value",
             "type": "quantitative",
-            "label": "人次/日 (7日均值)"
+            "label": "Passengers / day (7d MA)"
           },
           "color": {
             "field": "flow_type",
             "type": "nominal",
-            "label": "序列"
+            "label": "Flow direction"
           }
         },
         "valueFormat": "number",
@@ -246,8 +246,8 @@
       },
       {
         "id": "afcd_category_chart",
-        "title": "农渔护理署批发价按类别",
-        "subtitle": "今日各类别商品的平均批发价（每公斤）。",
+        "title": "AFCD wholesale prices by category",
+        "subtitle": "Today's average wholesale price per kg, averaged across commodities in each category.",
         "type": "bar",
         "intent": "comparison",
         "dataset": "afcd_category_summary",
@@ -256,12 +256,12 @@
           "x": {
             "field": "category",
             "type": "nominal",
-            "label": "类别"
+            "label": "Category"
           },
           "y": {
             "field": "avg_price_hkd_per_kg",
             "type": "quantitative",
-            "label": "港元 / 公斤"
+            "label": "HKD / kg"
           }
         },
         "valueFormat": "number",
@@ -269,8 +269,8 @@
       },
       {
         "id": "afcd_category_trend",
-        "title": "农渔护理署批发价按类别走势（逐日累积）",
-        "subtitle": "由每次流水线运行时抓取的真实同日快照逐日累积而成——农渔护理署的批发价数据源只公布当日读数（未发现历史存档），因此本序列不作回填，初期数据量很薄（可能仅有一天），并会随每次运行新增真实观测值而增长。图例为适配窄屏使用缩写：FW fish=淡水鱼，Meat/Poultry=家畜/家禽，Marine=海鱼，Veg=蔬菜（完整类别名称见上方快照图与表格）。",
+        "title": "AFCD wholesale prices by category, over time",
+        "subtitle": "Real daily snapshots accumulated one pipeline run at a time -- AFCD's wholesale-prices feed only ever publishes today's readings (no historical archive was found on afcd.gov.hk), so this series is not backfilled. It starts as thin as a single day and grows by one real observation per category each time this pipeline runs. Legend uses short labels to fit narrow screens: FW fish = Freshwater fish, Meat/Poultry = Livestock / Poultry, Marine = Marine fish, Veg = Vegetables (full names are in the snapshot chart and tables above).",
         "type": "line",
         "intent": "trend",
         "dataset": "afcd_category_trend_history",
@@ -279,17 +279,17 @@
           "x": {
             "field": "date",
             "type": "temporal",
-            "label": "日期"
+            "label": "Date"
           },
           "y": {
             "field": "avg_price_hkd_per_kg",
             "type": "quantitative",
-            "label": "港元 / 公斤"
+            "label": "HKD / kg"
           },
           "color": {
             "field": "category_short",
             "type": "nominal",
-            "label": "序列"
+            "label": "Category"
           }
         },
         "valueFormat": "number",
@@ -298,8 +298,8 @@
       },
       {
         "id": "gold_trend",
-        "title": "上海黄金交易所 PM 基准价（毛利成本参考）",
-        "subtitle": "近7年人民币/克每日定盘价；作为香港金饰原料成本的辅助参考，与农渔护理署批发食品成本并列展示以供毛利分析——本 dashboard 的主打消费需求图表为上方的跨境人流走势。",
+        "title": "Shanghai Gold Exchange PM benchmark (margin-cost reference)",
+        "subtitle": "Monthly average of the daily PM fixing in RMB per gram, last ~7 years; a secondary reference for HK gold-jewellery input costs, shown alongside AFCD wholesale food costs for margin context -- see the cross-border passenger traffic chart above for the featured consumer-demand signal.",
         "type": "line",
         "intent": "trend",
         "dataset": "gold_history",
@@ -308,12 +308,12 @@
           "x": {
             "field": "month",
             "type": "temporal",
-            "label": "日期"
+            "label": "Month"
           },
           "y": {
             "field": "value",
             "type": "quantitative",
-            "label": "人民币 / 克"
+            "label": "RMB / gram"
           }
         },
         "valueFormat": "number",
@@ -322,8 +322,8 @@
       },
       {
         "id": "valuation_pe_chart",
-        "title": "观察名单历史市盈率对比",
-        "subtitle": "各公司最新的正值历史市盈率；亏损公司不计入此视图。",
+        "title": "Watchlist trailing PE comparison",
+        "subtitle": "Latest positive trailing PE per company; loss-making names are excluded from this view.",
         "type": "horizontalBar",
         "intent": "comparison",
         "dataset": "valuation_pe_chart",
@@ -332,12 +332,12 @@
           "x": {
             "field": "company_name",
             "type": "nominal",
-            "label": "公司"
+            "label": "Company"
           },
           "y": {
             "field": "pe_ttm",
             "type": "quantitative",
-            "label": "市盈率 (TTM)"
+            "label": "PE (TTM)"
           }
         },
         "valueFormat": "number",
@@ -345,8 +345,8 @@
       },
       {
         "id": "retail_trend",
-        "title": "零售销售价值指数（全部店铺）",
-        "subtitle": "政府统计处月度价值指数，完整已发布历史。",
+        "title": "Retail sales value index (all outlets)",
+        "subtitle": "Monthly C&SD value index, full published history.",
         "type": "line",
         "intent": "trend",
         "dataset": "retail_history",
@@ -355,12 +355,12 @@
           "x": {
             "field": "month",
             "type": "temporal",
-            "label": "月份"
+            "label": "Month"
           },
           "y": {
             "field": "value",
             "type": "quantitative",
-            "label": "价值指数"
+            "label": "Value index"
           }
         },
         "valueFormat": "number",
@@ -369,8 +369,8 @@
       },
       {
         "id": "retail_category_chart",
-        "title": "零售销售价值指数按类别",
-        "subtitle": "最新发布月份，按零售店铺类型划分。",
+        "title": "Retail sales value index by category",
+        "subtitle": "Latest published month, by type of retail outlet.",
         "type": "horizontalBar",
         "intent": "comparison",
         "dataset": "retail_category_chart",
@@ -379,12 +379,12 @@
           "x": {
             "field": "category",
             "type": "nominal",
-            "label": "类别"
+            "label": "Category"
           },
           "y": {
             "field": "sales_value_index",
             "type": "quantitative",
-            "label": "价值指数"
+            "label": "Value index"
           }
         },
         "valueFormat": "number",
@@ -392,8 +392,8 @@
       },
       {
         "id": "restaurant_trend",
-        "title": "餐饮收益（全部食肆）",
-        "subtitle": "季度全行业收益，百万港元，完整已发布历史。",
+        "title": "Restaurant receipts (all restaurants)",
+        "subtitle": "Quarterly sector-wide receipts, HKD millions, full published history.",
         "type": "line",
         "intent": "trend",
         "dataset": "restaurant_history",
@@ -402,12 +402,12 @@
           "x": {
             "field": "month",
             "type": "temporal",
-            "label": "季度"
+            "label": "Quarter"
           },
           "y": {
             "field": "value",
             "type": "quantitative",
-            "label": "百万港元"
+            "label": "HKD million"
           }
         },
         "valueFormat": "number",
@@ -416,8 +416,8 @@
       },
       {
         "id": "restaurant_chart",
-        "title": "餐饮收益按类型",
-        "subtitle": "最新发布季度，百万港元。",
+        "title": "Restaurant receipts by type",
+        "subtitle": "Latest published quarter, HKD millions.",
         "type": "horizontalBar",
         "intent": "comparison",
         "dataset": "restaurant_chart",
@@ -426,12 +426,12 @@
           "x": {
             "field": "sub_sector",
             "type": "nominal",
-            "label": "食肆类型"
+            "label": "Restaurant type"
           },
           "y": {
             "field": "total_receipts_hkd_m",
             "type": "quantitative",
-            "label": "百万港元"
+            "label": "HKD million"
           }
         },
         "valueFormat": "number",
@@ -441,8 +441,8 @@
     "tables": [
       {
         "id": "severe_weather_log_table",
-        "title": "近期极端天气警告事件记录",
-        "subtitle": "近期红/黑色暴雨警告及八号或以上热带气旋警告的开始时间、结束时间及持续时长。",
+        "title": "Recent severe weather warning events log",
+        "subtitle": "Start time, end time, and duration for recent Red/Black Rainstorm and Typhoon Signal 8+ warnings.",
         "dataset": "severe_weather_log",
         "sourceId": "weather_demand_drivers",
         "defaultSort": {
@@ -454,30 +454,30 @@
         "columns": [
           {
             "field": "signal_name",
-            "label": "警告信号",
+            "label": "Warning Signal",
             "type": "text"
           },
           {
             "field": "start",
-            "label": "开始时间 (HKT)",
+            "label": "Start Time (HKT)",
             "type": "text"
           },
           {
             "field": "end",
-            "label": "结束时间 (HKT)",
+            "label": "End Time (HKT)",
             "type": "text"
           },
           {
             "field": "duration_hours",
-            "label": "持续时长 (小时)",
+            "label": "Duration (Hours)",
             "format": "number"
           }
         ]
       },
       {
         "id": "afcd_commodity_table",
-        "title": "农渔护理署批发价快照",
-        "subtitle": "同日各商品平均价格，港元/公斤（由官方公布的港元/斤换算）。",
+        "title": "AFCD wholesale price snapshot",
+        "subtitle": "Same-day average price per commodity, HKD/kg (converted from the published HKD/catty rate).",
         "dataset": "afcd_commodity_table",
         "sourceId": "afcd_wholesale",
         "defaultSort": {
@@ -489,30 +489,30 @@
         "columns": [
           {
             "field": "category",
-            "label": "类别",
+            "label": "Category",
             "type": "text"
           },
           {
             "field": "commodity_name",
-            "label": "商品",
+            "label": "Commodity",
             "type": "text"
           },
           {
             "field": "avg_price_hkd_per_kg",
-            "label": "港元 / 公斤",
+            "label": "HKD/kg",
             "format": "number"
           },
           {
             "field": "num_readings",
-            "label": "读数个数",
+            "label": "Readings",
             "format": "number"
           }
         ]
       },
       {
         "id": "valuation_table",
-        "title": "消费观察名单估值快照",
-        "subtitle": "各公司最新历史市盈率、市净率及市值。",
+        "title": "Consumer watchlist valuation snapshot",
+        "subtitle": "Latest trailing PE, PB, and market cap per company.",
         "dataset": "valuation_table",
         "sourceId": "hk_valuation",
         "defaultSort": {
@@ -524,40 +524,40 @@
         "columns": [
           {
             "field": "company_name",
-            "label": "公司",
+            "label": "Company",
             "type": "text"
           },
           {
             "field": "ticker",
-            "label": "股票代码",
+            "label": "Ticker",
             "type": "text"
           },
           {
             "field": "pe_ttm",
-            "label": "市盈率 (TTM)",
+            "label": "PE (TTM)",
             "format": "number"
           },
           {
             "field": "pb_ratio",
-            "label": "市净率",
+            "label": "PB",
             "format": "number"
           },
           {
             "field": "market_cap_hkd_b",
-            "label": "市值 (十亿港元)",
+            "label": "Market cap (HKD bn)",
             "format": "number"
           },
           {
             "field": "date",
-            "label": "截至日期",
+            "label": "As of",
             "type": "date"
           }
         ]
       },
       {
         "id": "retail_category_table",
-        "title": "零售销售按类别快照",
-        "subtitle": "最新发布月份；按零售店铺类型划分的价值与销量指数。",
+        "title": "Retail sales snapshot by category",
+        "subtitle": "Latest published month; value and volume index by type of retail outlet.",
         "dataset": "retail_category_snapshot",
         "sourceId": "cnsd_retail",
         "defaultSort": {
@@ -569,30 +569,30 @@
         "columns": [
           {
             "field": "category",
-            "label": "类别",
+            "label": "Category",
             "type": "text"
           },
           {
             "field": "sales_value_index",
-            "label": "价值指数",
+            "label": "Value index",
             "format": "number"
           },
           {
             "field": "sales_volume_index",
-            "label": "销量指数",
+            "label": "Volume index",
             "format": "number"
           },
           {
             "field": "date",
-            "label": "截至日期",
+            "label": "As of",
             "type": "date"
           }
         ]
       },
       {
         "id": "restaurant_snapshot_table",
-        "title": "餐饮收益按类型快照",
-        "subtitle": "最新发布季度；全行业采购额仅在「全部食肆」合计行显示。",
+        "title": "Restaurant receipts snapshot by type",
+        "subtitle": "Latest published quarter; sector-wide purchases shown only for the All restaurants total.",
         "dataset": "restaurant_snapshot",
         "sourceId": "censtatd_restaurant",
         "defaultSort": {
@@ -604,35 +604,35 @@
         "columns": [
           {
             "field": "sub_sector",
-            "label": "食肆类型",
+            "label": "Restaurant type",
             "type": "text"
           },
           {
             "field": "total_receipts_hkd_m",
-            "label": "收益 (百万港元)",
+            "label": "Receipts (HKD m)",
             "format": "number"
           },
           {
             "field": "total_purchases_hkd_m",
-            "label": "采购额 (百万港元)",
+            "label": "Purchases (HKD m)",
             "format": "number"
           },
           {
             "field": "receipts_value_index",
-            "label": "收益价值指数",
+            "label": "Receipts value index",
             "format": "number"
           },
           {
             "field": "date",
-            "label": "截至日期",
+            "label": "As of",
             "type": "date"
           }
         ]
       },
       {
         "id": "source_health_table",
-        "title": "实时来源健康度",
-        "subtitle": "以上指标的构建时校验结果。",
+        "title": "Live source health",
+        "subtitle": "Build-time checks for the measures rendered above.",
         "dataset": "source_health",
         "sourceId": "source_registry",
         "defaultSort": {
@@ -644,40 +644,40 @@
         "columns": [
           {
             "field": "dataset",
-            "label": "数据集",
+            "label": "Dataset",
             "type": "text"
           },
           {
             "field": "status",
-            "label": "状态",
+            "label": "Status",
             "type": "text"
           },
           {
             "field": "latest_observation",
-            "label": "最新日期",
+            "label": "Latest",
             "type": "date"
           },
           {
             "field": "records",
-            "label": "记录数",
+            "label": "Rows",
             "format": "number"
           },
           {
             "field": "freshness",
-            "label": "新鲜度",
+            "label": "Freshness",
             "type": "text"
           },
           {
             "field": "notes",
-            "label": "备注",
+            "label": "Notes",
             "type": "text"
           }
         ]
       },
       {
         "id": "active_signals_table",
-        "title": "已跟踪数据信号",
-        "subtitle": "已有实时、经校验数据支撑上方卡片/图表/表格的来源。",
+        "title": "Active data signals",
+        "subtitle": "Sources with a live, validated feed powering the cards, charts, and tables above.",
         "dataset": "source_coverage_active",
         "sourceId": "source_registry",
         "defaultSort": {
@@ -689,40 +689,40 @@
         "columns": [
           {
             "field": "source",
-            "label": "来源",
+            "label": "Source",
             "type": "text"
           },
           {
             "field": "dataset",
-            "label": "数据集",
+            "label": "Dataset",
             "type": "text"
           },
           {
             "field": "type",
-            "label": "类型",
+            "label": "Type",
             "type": "text"
           },
           {
             "field": "status",
-            "label": "状态",
+            "label": "Status",
             "type": "text"
           },
           {
             "field": "freshness",
-            "label": "新鲜度",
+            "label": "Freshness",
             "type": "text"
           },
           {
             "field": "notes",
-            "label": "范围 / 限制",
+            "label": "Scope / caveat",
             "type": "text"
           }
         ]
       },
       {
         "id": "coverage_table",
-        "title": "覆盖范围与下一步采集目标",
-        "subtitle": "端点存在问题或未经验证的来源在此追踪，而非以占位值展示。",
+        "title": "Coverage and next ingestion targets",
+        "subtitle": "Sources with a broken or unverified endpoint are tracked here rather than shown with placeholder values.",
         "dataset": "source_coverage_planned",
         "sourceId": "source_registry",
         "defaultSort": {
@@ -734,32 +734,32 @@
         "columns": [
           {
             "field": "source",
-            "label": "来源",
+            "label": "Source",
             "type": "text"
           },
           {
             "field": "dataset",
-            "label": "数据集",
+            "label": "Dataset",
             "type": "text"
           },
           {
             "field": "type",
-            "label": "类型",
+            "label": "Type",
             "type": "text"
           },
           {
             "field": "status",
-            "label": "状态",
+            "label": "Status",
             "type": "text"
           },
           {
             "field": "freshness",
-            "label": "新鲜度",
+            "label": "Freshness",
             "type": "text"
           },
           {
             "field": "notes",
-            "label": "范围 / 限制",
+            "label": "Scope / caveat",
             "type": "text"
           }
         ]
@@ -768,49 +768,49 @@
     "sources": [
       {
         "id": "afcd_wholesale",
-        "label": "农渔护理署新鲜食品批发价格",
+        "label": "AFCD Fresh Food Wholesale Prices",
         "href": "https://www.afcd.gov.hk/english/agriculture/agr_fresh/agr_fresh_pri/agr_fresh_pri.html",
         "path": "sources/afcd_wholesale.sql"
       },
       {
         "id": "sge_gold",
-        "label": "上海黄金交易所 AM/PM 基准价",
+        "label": "Shanghai Gold Exchange AM/PM Benchmark",
         "href": "https://www.sge.com.cn/",
         "path": "sources/sge_gold.sql"
       },
       {
         "id": "hk_valuation",
-        "label": "百度股市通香港股票估值",
+        "label": "Baidu Gushitong HK Equity Valuation",
         "href": "https://gushitong.baidu.com/",
         "path": "sources/hk_valuation.sql"
       },
       {
         "id": "cnsd_retail",
-        "label": "政府统计处零售销售价值/销量指数",
+        "label": "C&SD Retail Sales Value/Volume Index",
         "href": "https://www.censtatd.gov.hk/en/web_table.html?id=620-67002",
         "path": "sources/cnsd_retail.sql"
       },
       {
         "id": "censtatd_restaurant",
-        "label": "政府统计处季度餐饮收益及采购调查",
+        "label": "CenStatD Quarterly Restaurant Receipts & Purchases Survey",
         "href": "https://www.censtatd.gov.hk/en/web_table.html?id=625-68003",
         "path": "sources/censtatd_restaurant.sql"
       },
       {
         "id": "immigration_flow",
-        "label": "入境事务处每日出入境旅客流量统计",
+        "label": "HK Immigration Department Daily Passenger Traffic",
         "href": "https://www.immd.gov.hk/opendata/eng/transport/immigration_clearance/statistics_on_daily_passenger_traffic.csv",
         "path": "sources/immigration_flow.sql"
       },
       {
         "id": "weather_demand_drivers",
-        "label": "香港天文台警告数据库 & FRED 汇率",
+        "label": "HKO Severe Weather Warnings & FRED Exchange Rate",
         "href": "https://www.hko.gov.hk/en/wxinfo/climat/warndb/warndb3.shtml",
         "path": "sources/weather_demand_drivers.sql"
       },
       {
         "id": "source_registry",
-        "label": "香港本地消费 dashboard 来源登记表",
+        "label": "HK Local Consumer dashboard source registry",
         "path": "sources/source_registry.sql"
       }
     ],
@@ -818,7 +818,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**数据快照：** `499639102202060d` · 生成于 2026-07-25T13:18:55.077748Z。"
+        "body": "**Data snapshot:** `499639102202060d` · generated 2026-07-25T13:15:11.197369Z.  This is a published snapshot, not a live connection. Consumer Council price-watch coverage remains planned; it is not shown with placeholder values."
       },
       {
         "id": "market_pulse_1",
@@ -933,13 +933,13 @@
       {
         "id": "methodology",
         "type": "markdown",
-        "body": "## 如何阅读本 dashboard\n\n跨境人流（北上/南下）为本 dashboard 主打的消费需求信号。黄金为金饰原料成本的辅助参考，与农渔护理署批发食品成本并列展示以供毛利分析，而非独立的主打图表。农渔护理署批发价按类别走势图逐日累积真实观测值（该数据源无历史存档），因此初期数据量很薄，会随时间增长。本界面整合物理天气干扰、汇率环境、出入境流量、零售金价溢价、零售销售、餐饮收益与消费股估值等代理指标，以评估香港本地零售与餐饮业的宏观受压情况。「已跟踪数据信号」列出已有实时数据支撑的来源；「覆盖范围与下一步采集目标」追踪端点仍存在问题或未经验证的来源。"
+        "body": "## Reading the dashboard\n\nCross-border passenger traffic (northbound/southbound) is the featured consumer-demand signal. Gold is a secondary proxy for jewellery-sector input costs, not a stock-price forecast, and is shown alongside AFCD wholesale food costs for margin context rather than as a standalone headline chart. Wholesale food prices are a single-day snapshot, averaged across the markets AFCD samples that day; the AFCD category trend chart accumulates one real observation per pipeline run (no historical backfill exists for this feed), so it starts thin and grows over time. Retail sales and restaurant receipts are official monthly/quarterly government indices, not real-time. Active data signals lists sources already backing a live measure above; the coverage table tracks sources whose endpoints are still broken or unverified. No stock ranking, forecast, or investment recommendation is produced."
       }
     ]
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-25T13:18:55.077748Z",
+    "generatedAt": "2026-07-25T13:15:11.197369Z",
     "status": "ready",
     "datasets": {
       "kpi_weather": [
@@ -952,9 +952,9 @@
       ],
       "kpi_fx": [
         {
-          "latest": 92,
-          "period_change": 0,
-          "year_change": 0,
+          "latest": 92.0,
+          "period_change": 0.0,
+          "year_change": 0.0,
           "observation_date": "2026-07-01"
         }
       ],
@@ -962,9 +962,9 @@
         {
           "date": "2023-08-01",
           "month": "2023-08",
-          "signal_8_plus_hours": 0,
-          "red_black_rain_hours": 0,
-          "total_disruption_hours": 0
+          "signal_8_plus_hours": 0.0,
+          "red_black_rain_hours": 0.0,
+          "total_disruption_hours": 0.0
         },
         {
           "date": "2023-09-01",
@@ -976,79 +976,79 @@
         {
           "date": "2023-10-01",
           "month": "2023-10",
-          "signal_8_plus_hours": 23,
+          "signal_8_plus_hours": 23.0,
           "red_black_rain_hours": 12.6,
           "total_disruption_hours": 35.6
         },
         {
           "date": "2023-11-01",
           "month": "2023-11",
-          "signal_8_plus_hours": 0,
-          "red_black_rain_hours": 0,
-          "total_disruption_hours": 0
+          "signal_8_plus_hours": 0.0,
+          "red_black_rain_hours": 0.0,
+          "total_disruption_hours": 0.0
         },
         {
           "date": "2023-12-01",
           "month": "2023-12",
-          "signal_8_plus_hours": 0,
-          "red_black_rain_hours": 0,
-          "total_disruption_hours": 0
+          "signal_8_plus_hours": 0.0,
+          "red_black_rain_hours": 0.0,
+          "total_disruption_hours": 0.0
         },
         {
           "date": "2024-01-01",
           "month": "2024-01",
-          "signal_8_plus_hours": 0,
-          "red_black_rain_hours": 0,
-          "total_disruption_hours": 0
+          "signal_8_plus_hours": 0.0,
+          "red_black_rain_hours": 0.0,
+          "total_disruption_hours": 0.0
         },
         {
           "date": "2024-02-01",
           "month": "2024-02",
-          "signal_8_plus_hours": 0,
-          "red_black_rain_hours": 0,
-          "total_disruption_hours": 0
+          "signal_8_plus_hours": 0.0,
+          "red_black_rain_hours": 0.0,
+          "total_disruption_hours": 0.0
         },
         {
           "date": "2024-03-01",
           "month": "2024-03",
-          "signal_8_plus_hours": 0,
-          "red_black_rain_hours": 0,
-          "total_disruption_hours": 0
+          "signal_8_plus_hours": 0.0,
+          "red_black_rain_hours": 0.0,
+          "total_disruption_hours": 0.0
         },
         {
           "date": "2024-04-01",
           "month": "2024-04",
-          "signal_8_plus_hours": 0,
-          "red_black_rain_hours": 0,
-          "total_disruption_hours": 0
+          "signal_8_plus_hours": 0.0,
+          "red_black_rain_hours": 0.0,
+          "total_disruption_hours": 0.0
         },
         {
           "date": "2024-05-01",
           "month": "2024-05",
-          "signal_8_plus_hours": 0,
+          "signal_8_plus_hours": 0.0,
           "red_black_rain_hours": 8.1,
           "total_disruption_hours": 8.1
         },
         {
           "date": "2024-06-01",
           "month": "2024-06",
-          "signal_8_plus_hours": 0,
+          "signal_8_plus_hours": 0.0,
           "red_black_rain_hours": 1.5,
           "total_disruption_hours": 1.5
         },
         {
           "date": "2024-07-01",
           "month": "2024-07",
-          "signal_8_plus_hours": 0,
-          "red_black_rain_hours": 0,
-          "total_disruption_hours": 0
+          "signal_8_plus_hours": 0.0,
+          "red_black_rain_hours": 0.0,
+          "total_disruption_hours": 0.0
         },
         {
           "date": "2024-08-01",
           "month": "2024-08",
-          "signal_8_plus_hours": 0,
-          "red_black_rain_hours": 0,
-          "total_disruption_hours": 0
+          "signal_8_plus_hours": 0.0,
+          "red_black_rain_hours": 0.0,
+          "total_disruption_hours": 0.0
         },
         {
           "date": "2024-09-01",
@@ -1060,65 +1060,65 @@
         {
           "date": "2024-10-01",
           "month": "2024-10",
-          "signal_8_plus_hours": 0,
-          "red_black_rain_hours": 0,
-          "total_disruption_hours": 0
+          "signal_8_plus_hours": 0.0,
+          "red_black_rain_hours": 0.0,
+          "total_disruption_hours": 0.0
         },
         {
           "date": "2024-11-01",
           "month": "2024-11",
           "signal_8_plus_hours": 11.2,
-          "red_black_rain_hours": 0,
+          "red_black_rain_hours": 0.0,
           "total_disruption_hours": 11.2
         },
         {
           "date": "2024-12-01",
           "month": "2024-12",
-          "signal_8_plus_hours": 0,
-          "red_black_rain_hours": 0,
-          "total_disruption_hours": 0
+          "signal_8_plus_hours": 0.0,
+          "red_black_rain_hours": 0.0,
+          "total_disruption_hours": 0.0
         },
         {
           "date": "2025-01-01",
           "month": "2025-01",
-          "signal_8_plus_hours": 0,
-          "red_black_rain_hours": 0,
-          "total_disruption_hours": 0
+          "signal_8_plus_hours": 0.0,
+          "red_black_rain_hours": 0.0,
+          "total_disruption_hours": 0.0
         },
         {
           "date": "2025-02-01",
           "month": "2025-02",
-          "signal_8_plus_hours": 0,
-          "red_black_rain_hours": 0,
-          "total_disruption_hours": 0
+          "signal_8_plus_hours": 0.0,
+          "red_black_rain_hours": 0.0,
+          "total_disruption_hours": 0.0
         },
         {
           "date": "2025-03-01",
           "month": "2025-03",
-          "signal_8_plus_hours": 0,
-          "red_black_rain_hours": 0,
-          "total_disruption_hours": 0
+          "signal_8_plus_hours": 0.0,
+          "red_black_rain_hours": 0.0,
+          "total_disruption_hours": 0.0
         },
         {
           "date": "2025-04-01",
           "month": "2025-04",
-          "signal_8_plus_hours": 0,
-          "red_black_rain_hours": 0,
-          "total_disruption_hours": 0
+          "signal_8_plus_hours": 0.0,
+          "red_black_rain_hours": 0.0,
+          "total_disruption_hours": 0.0
         },
         {
           "date": "2025-05-01",
           "month": "2025-05",
-          "signal_8_plus_hours": 0,
-          "red_black_rain_hours": 0,
-          "total_disruption_hours": 0
+          "signal_8_plus_hours": 0.0,
+          "red_black_rain_hours": 0.0,
+          "total_disruption_hours": 0.0
         },
         {
           "date": "2025-06-01",
           "month": "2025-06",
-          "signal_8_plus_hours": 0,
-          "red_black_rain_hours": 0,
-          "total_disruption_hours": 0
+          "signal_8_plus_hours": 0.0,
+          "red_black_rain_hours": 0.0,
+          "total_disruption_hours": 0.0
         },
         {
           "date": "2025-07-01",
@@ -1130,265 +1130,265 @@
         {
           "date": "2025-08-01",
           "month": "2025-08",
-          "signal_8_plus_hours": 0,
-          "red_black_rain_hours": 31,
-          "total_disruption_hours": 31
+          "signal_8_plus_hours": 0.0,
+          "red_black_rain_hours": 31.0,
+          "total_disruption_hours": 31.0
         },
         {
           "date": "2025-09-01",
           "month": "2025-09",
           "signal_8_plus_hours": 45.8,
-          "red_black_rain_hours": 0,
+          "red_black_rain_hours": 0.0,
           "total_disruption_hours": 45.8
         },
         {
           "date": "2025-10-01",
           "month": "2025-10",
-          "signal_8_plus_hours": 0,
-          "red_black_rain_hours": 0,
-          "total_disruption_hours": 0
+          "signal_8_plus_hours": 0.0,
+          "red_black_rain_hours": 0.0,
+          "total_disruption_hours": 0.0
         },
         {
           "date": "2025-11-01",
           "month": "2025-11",
-          "signal_8_plus_hours": 0,
-          "red_black_rain_hours": 0,
-          "total_disruption_hours": 0
+          "signal_8_plus_hours": 0.0,
+          "red_black_rain_hours": 0.0,
+          "total_disruption_hours": 0.0
         },
         {
           "date": "2025-12-01",
           "month": "2025-12",
-          "signal_8_plus_hours": 0,
-          "red_black_rain_hours": 0,
-          "total_disruption_hours": 0
+          "signal_8_plus_hours": 0.0,
+          "red_black_rain_hours": 0.0,
+          "total_disruption_hours": 0.0
         },
         {
           "date": "2026-01-01",
           "month": "2026-01",
-          "signal_8_plus_hours": 0,
-          "red_black_rain_hours": 0,
-          "total_disruption_hours": 0
+          "signal_8_plus_hours": 0.0,
+          "red_black_rain_hours": 0.0,
+          "total_disruption_hours": 0.0
         },
         {
           "date": "2026-02-01",
           "month": "2026-02",
-          "signal_8_plus_hours": 0,
-          "red_black_rain_hours": 0,
-          "total_disruption_hours": 0
+          "signal_8_plus_hours": 0.0,
+          "red_black_rain_hours": 0.0,
+          "total_disruption_hours": 0.0
         },
         {
           "date": "2026-03-01",
           "month": "2026-03",
-          "signal_8_plus_hours": 0,
-          "red_black_rain_hours": 0,
-          "total_disruption_hours": 0
+          "signal_8_plus_hours": 0.0,
+          "red_black_rain_hours": 0.0,
+          "total_disruption_hours": 0.0
         },
         {
           "date": "2026-04-01",
           "month": "2026-04",
-          "signal_8_plus_hours": 0,
-          "red_black_rain_hours": 0,
-          "total_disruption_hours": 0
+          "signal_8_plus_hours": 0.0,
+          "red_black_rain_hours": 0.0,
+          "total_disruption_hours": 0.0
         },
         {
           "date": "2026-05-01",
           "month": "2026-05",
-          "signal_8_plus_hours": 0,
+          "signal_8_plus_hours": 0.0,
           "red_black_rain_hours": 2.6,
           "total_disruption_hours": 2.6
         },
         {
           "date": "2026-06-01",
           "month": "2026-06",
-          "signal_8_plus_hours": 0,
+          "signal_8_plus_hours": 0.0,
           "red_black_rain_hours": 13.3,
           "total_disruption_hours": 13.3
         },
         {
           "date": "2026-07-01",
           "month": "2026-07",
-          "signal_8_plus_hours": 0,
+          "signal_8_plus_hours": 0.0,
           "red_black_rain_hours": 4.2,
           "total_disruption_hours": 4.2
         }
       ],
       "severe_weather_log": [
         {
-          "signal_name": "红色暴雨警告信号",
+          "signal_name": "Red Rainstorm",
           "start": "2026-07-20 08:05",
           "end": "2026-07-20 09:30",
           "duration_hours": 1.42
         },
         {
-          "signal_name": "红色暴雨警告信号",
+          "signal_name": "Red Rainstorm",
           "start": "2026-07-16 07:40",
           "end": "2026-07-16 09:25",
           "duration_hours": 1.75
         },
         {
-          "signal_name": "红色暴雨警告信号",
+          "signal_name": "Red Rainstorm",
           "start": "2026-07-06 21:45",
           "end": "2026-07-06 22:45",
-          "duration_hours": 1
+          "duration_hours": 1.0
         },
         {
-          "signal_name": "红色暴雨警告信号",
+          "signal_name": "Red Rainstorm",
           "start": "2026-06-26 12:15",
           "end": "2026-06-26 13:20",
           "duration_hours": 1.08
         },
         {
-          "signal_name": "红色暴雨警告信号",
+          "signal_name": "Red Rainstorm",
           "start": "2026-06-18 20:30",
           "end": "2026-06-18 21:05",
           "duration_hours": 0.58
         },
         {
-          "signal_name": "黑色暴雨警告信号",
+          "signal_name": "Black Rainstorm",
           "start": "2026-06-18 18:35",
           "end": "2026-06-18 20:30",
           "duration_hours": 1.92
         },
         {
-          "signal_name": "红色暴雨警告信号",
+          "signal_name": "Red Rainstorm",
           "start": "2026-06-18 18:10",
           "end": "2026-06-18 18:35",
           "duration_hours": 0.42
         },
         {
-          "signal_name": "红色暴雨警告信号",
+          "signal_name": "Red Rainstorm",
           "start": "2026-06-18 15:05",
           "end": "2026-06-18 15:40",
           "duration_hours": 0.58
         },
         {
-          "signal_name": "黑色暴雨警告信号",
+          "signal_name": "Black Rainstorm",
           "start": "2026-06-18 12:55",
           "end": "2026-06-18 15:05",
           "duration_hours": 2.17
         },
         {
-          "signal_name": "红色暴雨警告信号",
+          "signal_name": "Red Rainstorm",
           "start": "2026-06-18 12:10",
           "end": "2026-06-18 12:55",
           "duration_hours": 0.75
         },
         {
-          "signal_name": "红色暴雨警告信号",
+          "signal_name": "Red Rainstorm",
           "start": "2026-06-08 21:35",
           "end": "2026-06-08 22:05",
           "duration_hours": 0.5
         },
         {
-          "signal_name": "黑色暴雨警告信号",
+          "signal_name": "Black Rainstorm",
           "start": "2026-06-08 20:35",
           "end": "2026-06-08 21:35",
-          "duration_hours": 1
+          "duration_hours": 1.0
         },
         {
-          "signal_name": "红色暴雨警告信号",
+          "signal_name": "Red Rainstorm",
           "start": "2026-06-08 19:50",
           "end": "2026-06-08 20:35",
           "duration_hours": 0.75
         },
         {
-          "signal_name": "红色暴雨警告信号",
+          "signal_name": "Red Rainstorm",
           "start": "2026-06-08 01:15",
           "end": "2026-06-08 03:50",
           "duration_hours": 2.58
         },
         {
-          "signal_name": "红色暴雨警告信号",
+          "signal_name": "Red Rainstorm",
           "start": "2026-06-06 19:55",
           "end": "2026-06-06 20:55",
-          "duration_hours": 1
+          "duration_hours": 1.0
         },
         {
-          "signal_name": "红色暴雨警告信号",
+          "signal_name": "Red Rainstorm",
           "start": "2026-05-21 02:40",
           "end": "2026-05-21 05:15",
           "duration_hours": 2.58
         },
         {
-          "signal_name": "八号烈风或暴风信号（RAGASA）",
+          "signal_name": "Typhoon Signal 8 (RAGASA)",
           "start": "2025-09-24 13:20",
           "end": "2025-09-24 20:20",
-          "duration_hours": 7
+          "duration_hours": 7.0
         },
         {
-          "signal_name": "十号飓风信号（RAGASA）",
+          "signal_name": "Typhoon Signal 10 (RAGASA)",
           "start": "2025-09-24 02:40",
           "end": "2025-09-24 13:20",
           "duration_hours": 10.67
         },
         {
-          "signal_name": "九号烈风或暴风风力增强信号（RAGASA）",
+          "signal_name": "Typhoon Signal 9 (RAGASA)",
           "start": "2025-09-24 01:40",
           "end": "2025-09-24 02:40",
-          "duration_hours": 1
+          "duration_hours": 1.0
         },
         {
-          "signal_name": "八号烈风或暴风信号（RAGASA）",
+          "signal_name": "Typhoon Signal 8 (RAGASA)",
           "start": "2025-09-23 14:20",
           "end": "2025-09-24 01:40",
           "duration_hours": 11.33
         },
         {
-          "signal_name": "八号烈风或暴风信号（TAPAH）",
+          "signal_name": "Typhoon Signal 8 (TAPAH)",
           "start": "2025-09-07 21:20",
           "end": "2025-09-08 13:10",
           "duration_hours": 15.83
         },
         {
-          "signal_name": "红色暴雨警告信号",
+          "signal_name": "Red Rainstorm",
           "start": "2025-08-18 01:15",
           "end": "2025-08-18 06:05",
           "duration_hours": 4.83
         },
         {
-          "signal_name": "红色暴雨警告信号",
+          "signal_name": "Red Rainstorm",
           "start": "2025-08-14 11:10",
           "end": "2025-08-14 12:10",
-          "duration_hours": 1
+          "duration_hours": 1.0
         },
         {
-          "signal_name": "黑色暴雨警告信号",
+          "signal_name": "Black Rainstorm",
           "start": "2025-08-14 07:50",
           "end": "2025-08-14 11:10",
           "duration_hours": 3.33
         },
         {
-          "signal_name": "红色暴雨警告信号",
+          "signal_name": "Red Rainstorm",
           "start": "2025-08-14 06:35",
           "end": "2025-08-14 07:50",
           "duration_hours": 1.25
         },
         {
-          "signal_name": "黑色暴雨警告信号",
+          "signal_name": "Black Rainstorm",
           "start": "2025-08-05 05:50",
           "end": "2025-08-05 17:05",
           "duration_hours": 11.25
         },
         {
-          "signal_name": "红色暴雨警告信号",
+          "signal_name": "Red Rainstorm",
           "start": "2025-08-05 05:20",
           "end": "2025-08-05 05:50",
           "duration_hours": 0.5
         },
         {
-          "signal_name": "红色暴雨警告信号",
+          "signal_name": "Red Rainstorm",
           "start": "2025-08-05 02:10",
           "end": "2025-08-05 03:00",
           "duration_hours": 0.83
         },
         {
-          "signal_name": "黑色暴雨警告信号",
+          "signal_name": "Black Rainstorm",
           "start": "2025-08-04 23:45",
           "end": "2025-08-05 02:10",
           "duration_hours": 2.42
         },
         {
-          "signal_name": "红色暴雨警告信号",
+          "signal_name": "Red Rainstorm",
           "start": "2025-08-04 22:35",
           "end": "2025-08-04 23:45",
           "duration_hours": 1.17
@@ -1414,672 +1414,672 @@
         {
           "month": "2021-01",
           "value": 1815.5,
-          "flow_type": "北上"
+          "flow_type": "Northbound"
         },
         {
           "month": "2021-01",
           "value": 82.1,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2021-02",
           "value": 636.2,
-          "flow_type": "北上"
+          "flow_type": "Northbound"
         },
         {
           "month": "2021-02",
           "value": 114.3,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2021-03",
           "value": 791.5,
-          "flow_type": "北上"
+          "flow_type": "Northbound"
         },
         {
           "month": "2021-03",
           "value": 152.3,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2021-04",
-          "value": 876,
-          "flow_type": "北上"
+          "value": 876.0,
+          "flow_type": "Northbound"
         },
         {
           "month": "2021-04",
           "value": 124.1,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2021-05",
           "value": 1006.7,
-          "flow_type": "北上"
+          "flow_type": "Northbound"
         },
         {
           "month": "2021-05",
-          "value": 114,
-          "flow_type": "南下"
+          "value": 114.0,
+          "flow_type": "Southbound"
         },
         {
           "month": "2021-06",
-          "value": 812,
-          "flow_type": "北上"
+          "value": 812.0,
+          "flow_type": "Northbound"
         },
         {
           "month": "2021-06",
           "value": 139.3,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2021-07",
           "value": 1484.7,
-          "flow_type": "北上"
+          "flow_type": "Northbound"
         },
         {
           "month": "2021-07",
           "value": 163.8,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2021-08",
           "value": 1126.2,
-          "flow_type": "北上"
+          "flow_type": "Northbound"
         },
         {
           "month": "2021-08",
           "value": 232.2,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2021-09",
-          "value": 906,
-          "flow_type": "北上"
+          "value": 906.0,
+          "flow_type": "Northbound"
         },
         {
           "month": "2021-09",
           "value": 223.9,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2021-10",
           "value": 878.1,
-          "flow_type": "北上"
+          "flow_type": "Northbound"
         },
         {
           "month": "2021-10",
           "value": 202.8,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2021-11",
           "value": 832.7,
-          "flow_type": "北上"
+          "flow_type": "Northbound"
         },
         {
           "month": "2021-11",
           "value": 191.6,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2021-12",
           "value": 1480.7,
-          "flow_type": "北上"
+          "flow_type": "Northbound"
         },
         {
           "month": "2021-12",
           "value": 190.6,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2022-01",
           "value": 1109.6,
-          "flow_type": "北上"
+          "flow_type": "Northbound"
         },
         {
           "month": "2022-01",
           "value": 178.9,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2022-02",
           "value": 1153.9,
-          "flow_type": "北上"
+          "flow_type": "Northbound"
         },
         {
           "month": "2022-02",
           "value": 62.1,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2022-03",
           "value": 620.5,
-          "flow_type": "北上"
+          "flow_type": "Northbound"
         },
         {
           "month": "2022-03",
           "value": 28.4,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2022-04",
           "value": 457.7,
-          "flow_type": "北上"
+          "flow_type": "Northbound"
         },
         {
           "month": "2022-04",
           "value": 78.2,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2022-05",
           "value": 657.8,
-          "flow_type": "北上"
+          "flow_type": "Northbound"
         },
         {
           "month": "2022-05",
           "value": 387.9,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2022-06",
           "value": 607.8,
-          "flow_type": "北上"
+          "flow_type": "Northbound"
         },
         {
           "month": "2022-06",
           "value": 1130.4,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2022-07",
           "value": 1326.6,
-          "flow_type": "北上"
+          "flow_type": "Northbound"
         },
         {
           "month": "2022-07",
           "value": 1271.4,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2022-08",
-          "value": 1902,
-          "flow_type": "北上"
+          "value": 1902.0,
+          "flow_type": "Northbound"
         },
         {
           "month": "2022-08",
           "value": 1479.4,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2022-09",
           "value": 1326.3,
-          "flow_type": "北上"
+          "flow_type": "Northbound"
         },
         {
           "month": "2022-09",
           "value": 1735.6,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2022-10",
           "value": 1123.4,
-          "flow_type": "北上"
+          "flow_type": "Northbound"
         },
         {
           "month": "2022-10",
           "value": 1528.8,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2022-11",
-          "value": 1091,
-          "flow_type": "北上"
+          "value": 1091.0,
+          "flow_type": "Northbound"
         },
         {
           "month": "2022-11",
-          "value": 1883,
-          "flow_type": "南下"
+          "value": 1883.0,
+          "flow_type": "Southbound"
         },
         {
           "month": "2022-12",
           "value": 1856.8,
-          "flow_type": "北上"
+          "flow_type": "Northbound"
         },
         {
           "month": "2022-12",
           "value": 2114.2,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2023-01",
-          "value": 28652,
-          "flow_type": "北上"
+          "value": 28652.0,
+          "flow_type": "Northbound"
         },
         {
           "month": "2023-01",
           "value": 7964.8,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2023-02",
           "value": 96278.7,
-          "flow_type": "北上"
+          "flow_type": "Northbound"
         },
         {
           "month": "2023-02",
           "value": 35062.9,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2023-03",
           "value": 143397.5,
-          "flow_type": "北上"
+          "flow_type": "Northbound"
         },
         {
           "month": "2023-03",
           "value": 63205.4,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2023-04",
           "value": 172457.2,
-          "flow_type": "北上"
+          "flow_type": "Northbound"
         },
         {
           "month": "2023-04",
           "value": 70221.2,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2023-05",
           "value": 159954.6,
-          "flow_type": "北上"
+          "flow_type": "Northbound"
         },
         {
           "month": "2023-05",
           "value": 79574.4,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2023-06",
           "value": 162363.5,
-          "flow_type": "北上"
+          "flow_type": "Northbound"
         },
         {
           "month": "2023-06",
           "value": 71114.2,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2023-07",
           "value": 180406.1,
-          "flow_type": "北上"
+          "flow_type": "Northbound"
         },
         {
           "month": "2023-07",
           "value": 92759.7,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2023-08",
-          "value": 194324,
-          "flow_type": "北上"
+          "value": 194324.0,
+          "flow_type": "Northbound"
         },
         {
           "month": "2023-08",
           "value": 113530.7,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2023-09",
           "value": 170603.9,
-          "flow_type": "北上"
+          "flow_type": "Northbound"
         },
         {
           "month": "2023-09",
           "value": 68452.6,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2023-10",
           "value": 198509.1,
-          "flow_type": "北上"
+          "flow_type": "Northbound"
         },
         {
           "month": "2023-10",
           "value": 90092.5,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2023-11",
           "value": 213953.6,
-          "flow_type": "北上"
+          "flow_type": "Northbound"
         },
         {
           "month": "2023-11",
           "value": 81400.5,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2023-12",
           "value": 236272.2,
-          "flow_type": "北上"
+          "flow_type": "Northbound"
         },
         {
           "month": "2023-12",
           "value": 89810.1,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2024-01",
           "value": 215556.7,
-          "flow_type": "北上"
+          "flow_type": "Northbound"
         },
         {
           "month": "2024-01",
           "value": 97086.9,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2024-02",
           "value": 224699.5,
-          "flow_type": "北上"
+          "flow_type": "Northbound"
         },
         {
           "month": "2024-02",
           "value": 117382.9,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2024-03",
-          "value": 239340,
-          "flow_type": "北上"
+          "value": 239340.0,
+          "flow_type": "Northbound"
         },
         {
           "month": "2024-03",
           "value": 78424.3,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2024-04",
-          "value": 245878,
-          "flow_type": "北上"
+          "value": 245878.0,
+          "flow_type": "Northbound"
         },
         {
           "month": "2024-04",
           "value": 81706.3,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2024-05",
           "value": 235210.9,
-          "flow_type": "北上"
+          "flow_type": "Northbound"
         },
         {
           "month": "2024-05",
           "value": 87132.8,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2024-06",
           "value": 245031.6,
-          "flow_type": "北上"
+          "flow_type": "Northbound"
         },
         {
           "month": "2024-06",
           "value": 75842.3,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2024-07",
           "value": 253119.6,
-          "flow_type": "北上"
+          "flow_type": "Northbound"
         },
         {
           "month": "2024-07",
           "value": 99690.1,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2024-08",
           "value": 255943.9,
-          "flow_type": "北上"
+          "flow_type": "Northbound"
         },
         {
           "month": "2024-08",
           "value": 118792.8,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2024-09",
           "value": 247480.6,
-          "flow_type": "北上"
+          "flow_type": "Northbound"
         },
         {
           "month": "2024-09",
           "value": 76620.4,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2024-10",
           "value": 263738.6,
-          "flow_type": "北上"
+          "flow_type": "Northbound"
         },
         {
           "month": "2024-10",
           "value": 102607.9,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2024-11",
           "value": 263544.4,
-          "flow_type": "北上"
+          "flow_type": "Northbound"
         },
         {
           "month": "2024-11",
           "value": 83311.3,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2024-12",
           "value": 290223.2,
-          "flow_type": "北上"
+          "flow_type": "Northbound"
         },
         {
           "month": "2024-12",
           "value": 99121.6,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2025-01",
           "value": 269746.4,
-          "flow_type": "北上"
+          "flow_type": "Northbound"
         },
         {
           "month": "2025-01",
           "value": 115851.8,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2025-02",
-          "value": 254955,
-          "flow_type": "北上"
+          "value": 254955.0,
+          "flow_type": "Northbound"
         },
         {
           "month": "2025-02",
           "value": 107021.2,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2025-03",
           "value": 275617.7,
-          "flow_type": "北上"
+          "flow_type": "Northbound"
         },
         {
           "month": "2025-03",
           "value": 87069.1,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2025-04",
-          "value": 305208,
-          "flow_type": "北上"
+          "value": 305208.0,
+          "flow_type": "Northbound"
         },
         {
           "month": "2025-04",
-          "value": 92325,
-          "flow_type": "南下"
+          "value": 92325.0,
+          "flow_type": "Southbound"
         },
         {
           "month": "2025-05",
           "value": 273688.2,
-          "flow_type": "北上"
+          "flow_type": "Northbound"
         },
         {
           "month": "2025-05",
           "value": 101830.1,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2025-06",
           "value": 275086.6,
-          "flow_type": "北上"
+          "flow_type": "Northbound"
         },
         {
           "month": "2025-06",
           "value": 85599.7,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2025-07",
           "value": 278543.4,
-          "flow_type": "北上"
+          "flow_type": "Northbound"
         },
         {
           "month": "2025-07",
           "value": 111772.6,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2025-08",
           "value": 285329.7,
-          "flow_type": "北上"
+          "flow_type": "Northbound"
         },
         {
           "month": "2025-08",
           "value": 136696.6,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2025-09",
           "value": 263228.4,
-          "flow_type": "北上"
+          "flow_type": "Northbound"
         },
         {
           "month": "2025-09",
           "value": 82210.4,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2025-10",
           "value": 291588.5,
-          "flow_type": "北上"
+          "flow_type": "Northbound"
         },
         {
           "month": "2025-10",
           "value": 113910.6,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2025-11",
           "value": 302782.6,
-          "flow_type": "北上"
+          "flow_type": "Northbound"
         },
         {
           "month": "2025-11",
           "value": 98449.2,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2025-12",
-          "value": 325396,
-          "flow_type": "北上"
+          "value": 325396.0,
+          "flow_type": "Northbound"
         },
         {
           "month": "2025-12",
           "value": 107929.1,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2026-01",
           "value": 293450.4,
-          "flow_type": "北上"
+          "flow_type": "Northbound"
         },
         {
           "month": "2026-01",
           "value": 116488.7,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2026-02",
           "value": 302345.7,
-          "flow_type": "北上"
+          "flow_type": "Northbound"
         },
         {
           "month": "2026-02",
           "value": 152468.3,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2026-03",
           "value": 298785.7,
-          "flow_type": "北上"
+          "flow_type": "Northbound"
         },
         {
           "month": "2026-03",
           "value": 104073.6,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2026-04",
           "value": 331828.9,
-          "flow_type": "北上"
+          "flow_type": "Northbound"
         },
         {
           "month": "2026-04",
           "value": 102745.8,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2026-05",
           "value": 306865.6,
-          "flow_type": "北上"
+          "flow_type": "Northbound"
         },
         {
           "month": "2026-05",
           "value": 113137.3,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2026-06",
           "value": 291932.1,
-          "flow_type": "北上"
+          "flow_type": "Northbound"
         },
         {
           "month": "2026-06",
           "value": 96584.7,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         },
         {
           "month": "2026-07",
           "value": 292805.6,
-          "flow_type": "北上"
+          "flow_type": "Northbound"
         },
         {
           "month": "2026-07",
           "value": 112792.6,
-          "flow_type": "南下"
+          "flow_type": "Southbound"
         }
       ],
       "kpi_gold": [
@@ -2182,7 +2182,7 @@
         },
         {
           "month": "2020-11",
-          "value": 392
+          "value": 392.0
         },
         {
           "month": "2020-12",
@@ -2459,27 +2459,27 @@
       ],
       "afcd_category_summary": [
         {
-          "category": "海鱼",
+          "category": "Marine fish",
           "avg_price_hkd_per_kg": 92.88,
           "commodities": 10
         },
         {
-          "category": "家畜/家禽",
+          "category": "Livestock / Poultry",
           "avg_price_hkd_per_kg": 47.32,
           "commodities": 3
         },
         {
-          "category": "淡水鱼",
+          "category": "Freshwater fish",
           "avg_price_hkd_per_kg": 34.11,
           "commodities": 3
         },
         {
-          "category": "蔬菜",
+          "category": "Vegetables",
           "avg_price_hkd_per_kg": 7.74,
           "commodities": 13
         },
         {
-          "category": "蛋类",
+          "category": "Eggs",
           "avg_price_hkd_per_kg": 1.62,
           "commodities": 2
         }
@@ -2488,222 +2488,222 @@
         {
           "date": "2026-07-25",
           "category": "Eggs",
-          "category_short": "蛋类",
+          "category_short": "Eggs",
           "avg_price_hkd_per_kg": 1.62,
           "commodities": 2
         },
         {
           "date": "2026-07-25",
           "category": "Freshwater fish",
-          "category_short": "淡水鱼",
+          "category_short": "FW fish",
           "avg_price_hkd_per_kg": 34.11,
           "commodities": 3
         },
         {
           "date": "2026-07-25",
           "category": "Livestock / Poultry",
-          "category_short": "畜禽",
+          "category_short": "Meat/Poultry",
           "avg_price_hkd_per_kg": 47.32,
           "commodities": 3
         },
         {
           "date": "2026-07-25",
           "category": "Marine fish",
-          "category_short": "海鱼",
+          "category_short": "Marine",
           "avg_price_hkd_per_kg": 92.88,
           "commodities": 10
         },
         {
           "date": "2026-07-25",
           "category": "Vegetables",
-          "category_short": "蔬菜",
+          "category_short": "Veg",
           "avg_price_hkd_per_kg": 7.74,
           "commodities": 13
         }
       ],
       "afcd_commodity_table": [
         {
-          "category": "蛋类",
+          "category": "Eggs",
           "commodity_name": "Brown-shelled egg (medium) USA",
           "avg_price_hkd_per_kg": 1.83,
           "num_readings": 14
         },
         {
-          "category": "蛋类",
+          "category": "Eggs",
           "commodity_name": "Brown-shelled egg (medium) Mainland",
           "avg_price_hkd_per_kg": 1.41,
           "num_readings": 14
         },
         {
-          "category": "淡水鱼",
+          "category": "Freshwater fish",
           "commodity_name": "Mud carp",
           "avg_price_hkd_per_kg": 38.03,
           "num_readings": 14
         },
         {
-          "category": "淡水鱼",
+          "category": "Freshwater fish",
           "commodity_name": "Big head",
           "avg_price_hkd_per_kg": 33.06,
           "num_readings": 14
         },
         {
-          "category": "淡水鱼",
+          "category": "Freshwater fish",
           "commodity_name": "Grass carp",
           "avg_price_hkd_per_kg": 31.25,
           "num_readings": 14
         },
         {
-          "category": "家畜/家禽",
+          "category": "Livestock / Poultry",
           "commodity_name": "Live cattle",
           "avg_price_hkd_per_kg": 81.89,
           "num_readings": 13
         },
         {
-          "category": "家畜/家禽",
+          "category": "Livestock / Poultry",
           "commodity_name": "Live chicken",
           "avg_price_hkd_per_kg": 42.22,
           "num_readings": 28
         },
         {
-          "category": "家畜/家禽",
+          "category": "Livestock / Poultry",
           "commodity_name": "Live pig",
           "avg_price_hkd_per_kg": 17.84,
           "num_readings": 14
         },
         {
-          "category": "海鱼",
+          "category": "Marine fish",
           "commodity_name": "Yellow croaker",
           "avg_price_hkd_per_kg": 146.21,
           "num_readings": 14
         },
         {
-          "category": "海鱼",
+          "category": "Marine fish",
           "commodity_name": "Big eyes",
           "avg_price_hkd_per_kg": 143.97,
           "num_readings": 14
         },
         {
-          "category": "海鱼",
+          "category": "Marine fish",
           "commodity_name": "Golden thread",
           "avg_price_hkd_per_kg": 139.72,
           "num_readings": 14
         },
         {
-          "category": "海鱼",
+          "category": "Marine fish",
           "commodity_name": "Mackerel",
           "avg_price_hkd_per_kg": 99.09,
           "num_readings": 14
         },
         {
-          "category": "海鱼",
+          "category": "Marine fish",
           "commodity_name": "Hairtail",
           "avg_price_hkd_per_kg": 90.94,
           "num_readings": 14
         },
         {
-          "category": "海鱼",
+          "category": "Marine fish",
           "commodity_name": "Breams",
           "avg_price_hkd_per_kg": 88.58,
           "num_readings": 14
         },
         {
-          "category": "海鱼",
+          "category": "Marine fish",
           "commodity_name": "Filefish",
           "avg_price_hkd_per_kg": 79.13,
           "num_readings": 14
         },
         {
-          "category": "海鱼",
+          "category": "Marine fish",
           "commodity_name": "Horse head",
           "avg_price_hkd_per_kg": 78.07,
           "num_readings": 14
         },
         {
-          "category": "海鱼",
+          "category": "Marine fish",
           "commodity_name": "Croakers",
           "avg_price_hkd_per_kg": 31.65,
           "num_readings": 14
         },
         {
-          "category": "海鱼",
+          "category": "Marine fish",
           "commodity_name": "Scads",
           "avg_price_hkd_per_kg": 31.42,
           "num_readings": 14
         },
         {
-          "category": "蔬菜",
+          "category": "Vegetables",
           "commodity_name": "Yard-long bean, white",
           "avg_price_hkd_per_kg": 11.95,
           "num_readings": 14
         },
         {
-          "category": "蔬菜",
+          "category": "Vegetables",
           "commodity_name": "Spinach",
           "avg_price_hkd_per_kg": 10.35,
           "num_readings": 14
         },
         {
-          "category": "蔬菜",
+          "category": "Vegetables",
           "commodity_name": "Chinese Spinach",
           "avg_price_hkd_per_kg": 10.25,
           "num_readings": 14
         },
         {
-          "category": "蔬菜",
+          "category": "Vegetables",
           "commodity_name": "Flowering Cabbage",
           "avg_price_hkd_per_kg": 9.64,
           "num_readings": 14
         },
         {
-          "category": "蔬菜",
+          "category": "Vegetables",
           "commodity_name": "European Celery",
           "avg_price_hkd_per_kg": 8.82,
           "num_readings": 14
         },
         {
-          "category": "蔬菜",
+          "category": "Vegetables",
           "commodity_name": "Broccoli",
           "avg_price_hkd_per_kg": 8.69,
           "num_readings": 14
         },
         {
-          "category": "蔬菜",
+          "category": "Vegetables",
           "commodity_name": "Chinese Kale",
-          "avg_price_hkd_per_kg": 8,
+          "avg_price_hkd_per_kg": 8.0,
           "num_readings": 14
         },
         {
-          "category": "蔬菜",
+          "category": "Vegetables",
           "commodity_name": "Tomato",
           "avg_price_hkd_per_kg": 7.06,
           "num_readings": 14
         },
         {
-          "category": "蔬菜",
+          "category": "Vegetables",
           "commodity_name": "Water Spinach",
           "avg_price_hkd_per_kg": 6.45,
           "num_readings": 14
         },
         {
-          "category": "蔬菜",
+          "category": "Vegetables",
           "commodity_name": "Potato",
           "avg_price_hkd_per_kg": 5.56,
           "num_readings": 14
         },
         {
-          "category": "蔬菜",
+          "category": "Vegetables",
           "commodity_name": "Chinese Lettuce",
           "avg_price_hkd_per_kg": 5.07,
           "num_readings": 14
         },
         {
-          "category": "蔬菜",
+          "category": "Vegetables",
           "commodity_name": "Green Cabbage",
           "avg_price_hkd_per_kg": 5.05,
           "num_readings": 14
         },
         {
-          "category": "蔬菜",
+          "category": "Vegetables",
           "commodity_name": "White Cabbage",
           "avg_price_hkd_per_kg": 3.79,
           "num_readings": 14
@@ -2847,7 +2847,7 @@
       ],
       "kpi_retail": [
         {
-          "latest": 121,
+          "latest": 121.0,
           "period_change": 0.076512,
           "year_change": 0.13936,
           "observation_date": "2026-05-01"
@@ -3117,7 +3117,7 @@
         {
           "date": "2009-02-01",
           "month": "2009-02",
-          "value": 71
+          "value": 71.0
         },
         {
           "date": "2009-03-01",
@@ -3162,7 +3162,7 @@
         {
           "date": "2009-11-01",
           "month": "2009-11",
-          "value": 82
+          "value": 82.0
         },
         {
           "date": "2009-12-01",
@@ -3172,7 +3172,7 @@
         {
           "date": "2010-01-01",
           "month": "2010-01",
-          "value": 105
+          "value": 105.0
         },
         {
           "date": "2010-02-01",
@@ -3212,7 +3212,7 @@
         {
           "date": "2010-09-01",
           "month": "2010-09",
-          "value": 90
+          "value": 90.0
         },
         {
           "date": "2010-10-01",
@@ -3262,7 +3262,7 @@
         {
           "date": "2011-07-01",
           "month": "2011-07",
-          "value": 126
+          "value": 126.0
         },
         {
           "date": "2011-08-01",
@@ -3297,12 +3297,12 @@
         {
           "date": "2012-02-01",
           "month": "2012-02",
-          "value": 121
+          "value": 121.0
         },
         {
           "date": "2012-03-01",
           "month": "2012-03",
-          "value": 131
+          "value": 131.0
         },
         {
           "date": "2012-04-01",
@@ -3427,7 +3427,7 @@
         {
           "date": "2014-04-01",
           "month": "2014-04",
-          "value": 139
+          "value": 139.0
         },
         {
           "date": "2014-05-01",
@@ -3437,7 +3437,7 @@
         {
           "date": "2014-06-01",
           "month": "2014-06",
-          "value": 133
+          "value": 133.0
         },
         {
           "date": "2014-07-01",
@@ -3512,7 +3512,7 @@
         {
           "date": "2015-09-01",
           "month": "2015-09",
-          "value": 126
+          "value": 126.0
         },
         {
           "date": "2015-10-01",
@@ -3572,7 +3572,7 @@
         {
           "date": "2016-09-01",
           "month": "2016-09",
-          "value": 121
+          "value": 121.0
         },
         {
           "date": "2016-10-01",
@@ -3622,7 +3622,7 @@
         {
           "date": "2017-07-01",
           "month": "2017-07",
-          "value": 129
+          "value": 129.0
         },
         {
           "date": "2017-08-01",
@@ -3657,7 +3657,7 @@
         {
           "date": "2018-02-01",
           "month": "2018-02",
-          "value": 162
+          "value": 162.0
         },
         {
           "date": "2018-03-01",
@@ -3692,7 +3692,7 @@
         {
           "date": "2018-09-01",
           "month": "2018-09",
-          "value": 131
+          "value": 131.0
         },
         {
           "date": "2018-10-01",
@@ -3732,7 +3732,7 @@
         {
           "date": "2019-05-01",
           "month": "2019-05",
-          "value": 143
+          "value": 143.0
         },
         {
           "date": "2019-06-01",
@@ -3797,7 +3797,7 @@
         {
           "date": "2020-06-01",
           "month": "2020-06",
-          "value": 95
+          "value": 95.0
         },
         {
           "date": "2020-07-01",
@@ -3907,7 +3907,7 @@
         {
           "date": "2022-04-01",
           "month": "2022-04",
-          "value": 108
+          "value": 108.0
         },
         {
           "date": "2022-05-01",
@@ -3962,7 +3962,7 @@
         {
           "date": "2023-03-01",
           "month": "2023-03",
-          "value": 120
+          "value": 120.0
         },
         {
           "date": "2023-04-01",
@@ -4037,7 +4037,7 @@
         {
           "date": "2024-06-01",
           "month": "2024-06",
-          "value": 107
+          "value": 107.0
         },
         {
           "date": "2024-07-01",
@@ -4117,7 +4117,7 @@
         {
           "date": "2025-10-01",
           "month": "2025-10",
-          "value": 126
+          "value": 126.0
         },
         {
           "date": "2025-11-01",
@@ -4152,42 +4152,42 @@
         {
           "date": "2026-05-01",
           "month": "2026-05",
-          "value": 121
+          "value": 121.0
         }
       ],
       "retail_category_snapshot": [
         {
-          "category": "其他消费品",
+          "category": "Other consumer goods",
           "sales_value_index": 165.7,
           "sales_volume_index": 153.2,
           "date": "2026-05-01"
         },
         {
-          "category": "所有零售店铺",
-          "sales_value_index": 121,
+          "category": "All retail outlet",
+          "sales_value_index": 121.0,
           "sales_volume_index": 107.4,
           "date": "2026-05-01"
         },
         {
-          "category": "百货公司",
+          "category": "Department stores",
           "sales_value_index": 106.8,
           "sales_volume_index": 97.3,
           "date": "2026-05-01"
         },
         {
-          "category": "耐用消费品",
+          "category": "Consumer durable goods",
           "sales_value_index": 94.2,
           "sales_volume_index": 98.1,
           "date": "2026-05-01"
         },
         {
-          "category": "超级市场",
+          "category": "Supermarkets",
           "sales_value_index": 88.8,
           "sales_volume_index": 74.9,
           "date": "2026-05-01"
         },
         {
-          "category": "燃料",
+          "category": "Fuels",
           "sales_value_index": 76.3,
           "sales_volume_index": 49.4,
           "date": "2026-05-01"
@@ -4195,29 +4195,29 @@
       ],
       "retail_category_chart": [
         {
-          "category": "其他消费品",
+          "category": "Other consumer goods",
           "sales_value_index": 165.7
         },
         {
-          "category": "百货公司",
+          "category": "Department stores",
           "sales_value_index": 106.8
         },
         {
-          "category": "耐用消费品",
+          "category": "Consumer durable goods",
           "sales_value_index": 94.2
         },
         {
-          "category": "超级市场",
+          "category": "Supermarkets",
           "sales_value_index": 88.8
         },
         {
-          "category": "燃料",
+          "category": "Fuels",
           "sales_value_index": 76.3
         }
       ],
       "kpi_restaurant": [
         {
-          "latest": 28358,
+          "latest": 28358.0,
           "period_change": 0.019082,
           "year_change": 0.046614,
           "observation_date": "2026-03-31"
@@ -4227,473 +4227,473 @@
         {
           "date": "2004-12-31",
           "month": "2004-12",
-          "value": 13864
+          "value": 13864.0
         },
         {
           "date": "2005-03-31",
           "month": "2005-03",
-          "value": 13874
+          "value": 13874.0
         },
         {
           "date": "2005-06-30",
           "month": "2005-06",
-          "value": 13471
+          "value": 13471.0
         },
         {
           "date": "2005-09-30",
           "month": "2005-09",
-          "value": 14322
+          "value": 14322.0
         },
         {
           "date": "2005-12-31",
           "month": "2005-12",
-          "value": 14840
+          "value": 14840.0
         },
         {
           "date": "2006-03-31",
           "month": "2006-03",
-          "value": 15115
+          "value": 15115.0
         },
         {
           "date": "2006-06-30",
           "month": "2006-06",
-          "value": 14977
+          "value": 14977.0
         },
         {
           "date": "2006-09-30",
           "month": "2006-09",
-          "value": 15354
+          "value": 15354.0
         },
         {
           "date": "2006-12-31",
           "month": "2006-12",
-          "value": 16461
+          "value": 16461.0
         },
         {
           "date": "2007-03-31",
           "month": "2007-03",
-          "value": 16908
+          "value": 16908.0
         },
         {
           "date": "2007-06-30",
           "month": "2007-06",
-          "value": 16707
+          "value": 16707.0
         },
         {
           "date": "2007-09-30",
           "month": "2007-09",
-          "value": 17705
+          "value": 17705.0
         },
         {
           "date": "2007-12-31",
           "month": "2007-12",
-          "value": 18882
+          "value": 18882.0
         },
         {
           "date": "2008-03-31",
           "month": "2008-03",
-          "value": 19593
+          "value": 19593.0
         },
         {
           "date": "2008-06-30",
           "month": "2008-06",
-          "value": 19328
+          "value": 19328.0
         },
         {
           "date": "2008-09-30",
           "month": "2008-09",
-          "value": 20042
+          "value": 20042.0
         },
         {
           "date": "2008-12-31",
           "month": "2008-12",
-          "value": 20427
+          "value": 20427.0
         },
         {
           "date": "2009-03-31",
           "month": "2009-03",
-          "value": 19870
+          "value": 19870.0
         },
         {
           "date": "2009-06-30",
           "month": "2009-06",
-          "value": 19194
+          "value": 19194.0
         },
         {
           "date": "2009-09-30",
           "month": "2009-09",
-          "value": 19984
+          "value": 19984.0
         },
         {
           "date": "2009-12-31",
           "month": "2009-12",
-          "value": 20832
+          "value": 20832.0
         },
         {
           "date": "2010-03-31",
           "month": "2010-03",
-          "value": 20883
+          "value": 20883.0
         },
         {
           "date": "2010-06-30",
           "month": "2010-06",
-          "value": 20047
+          "value": 20047.0
         },
         {
           "date": "2010-09-30",
           "month": "2010-09",
-          "value": 21018
+          "value": 21018.0
         },
         {
           "date": "2010-12-31",
           "month": "2010-12",
-          "value": 22009
+          "value": 22009.0
         },
         {
           "date": "2011-03-31",
           "month": "2011-03",
-          "value": 22121
+          "value": 22121.0
         },
         {
           "date": "2011-06-30",
           "month": "2011-06",
-          "value": 21241
+          "value": 21241.0
         },
         {
           "date": "2011-09-30",
           "month": "2011-09",
-          "value": 22312
+          "value": 22312.0
         },
         {
           "date": "2011-12-31",
           "month": "2011-12",
-          "value": 23626
+          "value": 23626.0
         },
         {
           "date": "2012-03-31",
           "month": "2012-03",
-          "value": 23473
+          "value": 23473.0
         },
         {
           "date": "2012-06-30",
           "month": "2012-06",
-          "value": 22143
+          "value": 22143.0
         },
         {
           "date": "2012-09-30",
           "month": "2012-09",
-          "value": 23291
+          "value": 23291.0
         },
         {
           "date": "2012-12-31",
           "month": "2012-12",
-          "value": 24844
+          "value": 24844.0
         },
         {
           "date": "2013-03-31",
           "month": "2013-03",
-          "value": 24335
+          "value": 24335.0
         },
         {
           "date": "2013-06-30",
           "month": "2013-06",
-          "value": 23151
+          "value": 23151.0
         },
         {
           "date": "2013-09-30",
           "month": "2013-09",
-          "value": 24186
+          "value": 24186.0
         },
         {
           "date": "2013-12-31",
           "month": "2013-12",
-          "value": 25348
+          "value": 25348.0
         },
         {
           "date": "2014-03-31",
           "month": "2014-03",
-          "value": 25211
+          "value": 25211.0
         },
         {
           "date": "2014-06-30",
           "month": "2014-06",
-          "value": 24030
+          "value": 24030.0
         },
         {
           "date": "2014-09-30",
           "month": "2014-09",
-          "value": 25377
+          "value": 25377.0
         },
         {
           "date": "2014-12-31",
           "month": "2014-12",
-          "value": 25798
+          "value": 25798.0
         },
         {
           "date": "2015-03-31",
           "month": "2015-03",
-          "value": 26132
+          "value": 26132.0
         },
         {
           "date": "2015-06-30",
           "month": "2015-06",
-          "value": 25212
+          "value": 25212.0
         },
         {
           "date": "2015-09-30",
           "month": "2015-09",
-          "value": 26259
+          "value": 26259.0
         },
         {
           "date": "2015-12-31",
           "month": "2015-12",
-          "value": 26729
+          "value": 26729.0
         },
         {
           "date": "2016-03-31",
           "month": "2016-03",
-          "value": 26638
+          "value": 26638.0
         },
         {
           "date": "2016-06-30",
           "month": "2016-06",
-          "value": 25958
+          "value": 25958.0
         },
         {
           "date": "2016-09-30",
           "month": "2016-09",
-          "value": 26943
+          "value": 26943.0
         },
         {
           "date": "2016-12-31",
           "month": "2016-12",
-          "value": 27836
+          "value": 27836.0
         },
         {
           "date": "2017-03-31",
           "month": "2017-03",
-          "value": 27763
+          "value": 27763.0
         },
         {
           "date": "2017-06-30",
           "month": "2017-06",
-          "value": 26990
+          "value": 26990.0
         },
         {
           "date": "2017-09-30",
           "month": "2017-09",
-          "value": 28291
+          "value": 28291.0
         },
         {
           "date": "2017-12-31",
           "month": "2017-12",
-          "value": 29694
+          "value": 29694.0
         },
         {
           "date": "2018-03-31",
           "month": "2018-03",
-          "value": 30543
+          "value": 30543.0
         },
         {
           "date": "2018-06-30",
           "month": "2018-06",
-          "value": 28797
+          "value": 28797.0
         },
         {
           "date": "2018-09-30",
           "month": "2018-09",
-          "value": 29847
+          "value": 29847.0
         },
         {
           "date": "2018-12-31",
           "month": "2018-12",
-          "value": 30368
+          "value": 30368.0
         },
         {
           "date": "2019-03-31",
           "month": "2019-03",
-          "value": 31485
+          "value": 31485.0
         },
         {
           "date": "2019-06-30",
           "month": "2019-06",
-          "value": 28642
+          "value": 28642.0
         },
         {
           "date": "2019-09-30",
           "month": "2019-09",
-          "value": 26319
+          "value": 26319.0
         },
         {
           "date": "2019-12-31",
           "month": "2019-12",
-          "value": 26001
+          "value": 26001.0
         },
         {
           "date": "2020-03-31",
           "month": "2020-03",
-          "value": 21625
+          "value": 21625.0
         },
         {
           "date": "2020-06-30",
           "month": "2020-06",
-          "value": 21192
+          "value": 21192.0
         },
         {
           "date": "2020-09-30",
           "month": "2020-09",
-          "value": 17066
+          "value": 17066.0
         },
         {
           "date": "2020-12-31",
           "month": "2020-12",
-          "value": 19453
+          "value": 19453.0
         },
         {
           "date": "2021-03-31",
           "month": "2021-03",
-          "value": 19729
+          "value": 19729.0
         },
         {
           "date": "2021-06-30",
           "month": "2021-06",
-          "value": 23314
+          "value": 23314.0
         },
         {
           "date": "2021-09-30",
           "month": "2021-09",
-          "value": 24555
+          "value": 24555.0
         },
         {
           "date": "2021-12-31",
           "month": "2021-12",
-          "value": 25091
+          "value": 25091.0
         },
         {
           "date": "2022-03-31",
           "month": "2022-03",
-          "value": 15166
+          "value": 15166.0
         },
         {
           "date": "2022-06-30",
           "month": "2022-06",
-          "value": 22064
+          "value": 22064.0
         },
         {
           "date": "2022-09-30",
           "month": "2022-09",
-          "value": 24084
+          "value": 24084.0
         },
         {
           "date": "2022-12-31",
           "month": "2022-12",
-          "value": 25519
+          "value": 25519.0
         },
         {
           "date": "2023-03-31",
           "month": "2023-03",
-          "value": 27567
+          "value": 27567.0
         },
         {
           "date": "2023-06-30",
           "month": "2023-06",
-          "value": 27430
+          "value": 27430.0
         },
         {
           "date": "2023-09-30",
           "month": "2023-09",
-          "value": 27096
+          "value": 27096.0
         },
         {
           "date": "2023-12-31",
           "month": "2023-12",
-          "value": 27445
+          "value": 27445.0
         },
         {
           "date": "2024-03-31",
           "month": "2024-03",
-          "value": 28208
+          "value": 28208.0
         },
         {
           "date": "2024-06-30",
           "month": "2024-06",
-          "value": 26871
+          "value": 26871.0
         },
         {
           "date": "2024-09-30",
           "month": "2024-09",
-          "value": 26748
+          "value": 26748.0
         },
         {
           "date": "2024-12-31",
           "month": "2024-12",
-          "value": 27566
+          "value": 27566.0
         },
         {
           "date": "2025-03-31",
           "month": "2025-03",
-          "value": 28036
+          "value": 28036.0
         },
         {
           "date": "2025-06-30",
           "month": "2025-06",
-          "value": 27095
+          "value": 27095.0
         },
         {
           "date": "2025-09-30",
           "month": "2025-09",
-          "value": 26675
+          "value": 26675.0
         },
         {
           "date": "2025-12-31",
           "month": "2025-12",
-          "value": 27827
+          "value": 27827.0
         },
         {
           "date": "2026-03-31",
           "month": "2026-03",
-          "value": 28358
+          "value": 28358.0
         }
       ],
       "restaurant_snapshot": [
         {
-          "sub_sector": "全部食肆",
-          "total_receipts_hkd_m": 28358,
-          "total_purchases_hkd_m": 9094,
+          "sub_sector": "All restaurants",
+          "total_receipts_hkd_m": 28358.0,
+          "total_purchases_hkd_m": 9094.0,
           "receipts_value_index": 132.1,
           "date": "2026-03-31"
         },
         {
-          "sub_sector": "非中式餐馆",
-          "total_receipts_hkd_m": 10131,
+          "sub_sector": "Non-Chinese restaurants",
+          "total_receipts_hkd_m": 10131.0,
           "total_purchases_hkd_m": null,
           "receipts_value_index": 155.5,
           "date": "2026-03-31"
         },
         {
-          "sub_sector": "中式餐馆",
-          "total_receipts_hkd_m": 9699,
+          "sub_sector": "Chinese restaurants",
+          "total_receipts_hkd_m": 9699.0,
           "total_purchases_hkd_m": null,
           "receipts_value_index": 118.2,
           "date": "2026-03-31"
         },
         {
-          "sub_sector": "快餐店",
-          "total_receipts_hkd_m": 6074,
+          "sub_sector": "Fast food shops",
+          "total_receipts_hkd_m": 6074.0,
           "total_purchases_hkd_m": null,
           "receipts_value_index": 126.3,
           "date": "2026-03-31"
         },
         {
-          "sub_sector": "其他饮食场所",
-          "total_receipts_hkd_m": 2175,
+          "sub_sector": "Miscellaneous eating and drinking places",
+          "total_receipts_hkd_m": 2175.0,
           "total_purchases_hkd_m": null,
           "receipts_value_index": 129.3,
           "date": "2026-03-31"
         },
         {
-          "sub_sector": "酒吧",
-          "total_receipts_hkd_m": 280,
+          "sub_sector": "Bars",
+          "total_receipts_hkd_m": 280.0,
           "total_purchases_hkd_m": null,
           "receipts_value_index": 109.2,
           "date": "2026-03-31"
@@ -4701,95 +4701,95 @@
       ],
       "restaurant_chart": [
         {
-          "sub_sector": "非中式餐馆",
-          "total_receipts_hkd_m": 10131
+          "sub_sector": "Non-Chinese restaurants",
+          "total_receipts_hkd_m": 10131.0
         },
         {
-          "sub_sector": "中式餐馆",
-          "total_receipts_hkd_m": 9699
+          "sub_sector": "Chinese restaurants",
+          "total_receipts_hkd_m": 9699.0
         },
         {
-          "sub_sector": "快餐店",
-          "total_receipts_hkd_m": 6074
+          "sub_sector": "Fast food shops",
+          "total_receipts_hkd_m": 6074.0
         },
         {
-          "sub_sector": "其他饮食场所",
-          "total_receipts_hkd_m": 2175
+          "sub_sector": "Miscellaneous eating and drinking places",
+          "total_receipts_hkd_m": 2175.0
         },
         {
-          "sub_sector": "酒吧",
-          "total_receipts_hkd_m": 280
+          "sub_sector": "Bars",
+          "total_receipts_hkd_m": 280.0
         }
       ],
       "source_health": [
         {
           "source": "HKO Severe Weather Warnings & FRED Exchange Rate",
           "dataset": "HKO Severe Weather & FRED FX",
-          "type": "指标",
-          "status": "健康",
+          "type": "Measure",
+          "status": "Healthy",
           "latest_observation": "2026-07-01",
           "records": 67,
-          "freshness": "24 天前",
+          "freshness": "24d old",
           "notes": "Monthly hours under Typhoon Signal 8+ & Red/Black Rainstorm warnings alongside HKD/RMB FX."
         },
         {
           "source": "HK Immigration Department Daily Passenger Traffic",
           "dataset": "Immigration Passenger Clearance",
-          "type": "指标",
-          "status": "健康",
+          "type": "Measure",
+          "status": "Healthy",
           "latest_observation": "2026-07-24",
           "records": 2031,
-          "freshness": "1 天前",
+          "freshness": "1d old",
           "notes": "Daily clearance across 17 control points for HK residents & Mainland visitors."
         },
         {
           "source": "Shanghai Gold Exchange AM/PM Benchmark",
           "dataset": "SGE Gold Benchmark",
-          "type": "指标",
-          "status": "健康",
+          "type": "Measure",
+          "status": "Healthy",
           "latest_observation": "2026-07-22",
           "records": 2494,
-          "freshness": "3 天前",
+          "freshness": "3d old",
           "notes": "Daily AM/PM benchmark fixing."
         },
         {
           "source": "AFCD Fresh Food Wholesale Prices",
           "dataset": "AFCD Wholesale Food Prices",
-          "type": "指标",
-          "status": "健康",
+          "type": "Measure",
+          "status": "Healthy",
           "latest_observation": "2026-07-25",
           "records": 31,
-          "freshness": "同日快照",
+          "freshness": "Same-day snapshot",
           "notes": "31 commodities across 5 categories; averaged across same-day market readings."
         },
         {
           "source": "Baidu Gushitong HK Equity Valuation",
           "dataset": "HK Consumer Ticker Valuations",
-          "type": "指标",
-          "status": "健康",
+          "type": "Measure",
+          "status": "Healthy",
           "latest_observation": "2026-07-25",
           "records": 11,
-          "freshness": "0 天前",
+          "freshness": "0d old",
           "notes": "PE (TTM), PB, and market cap only; no dividend-yield indicator is available from this endpoint."
         },
         {
           "source": "C&SD Retail Sales Value/Volume Index",
           "dataset": "Retail Sales Value/Volume Index",
-          "type": "指标",
-          "status": "健康",
+          "type": "Measure",
+          "status": "Healthy",
           "latest_observation": "2026-05-01",
           "records": 6500,
-          "freshness": "85 天前",
+          "freshness": "85d old",
           "notes": "25 outlet-type categories, monthly since 2004."
         },
         {
           "source": "CenStatD Quarterly Restaurant Receipts & Purchases Survey",
           "dataset": "Restaurant Receipts & Purchases Survey",
-          "type": "指标",
-          "status": "健康",
+          "type": "Measure",
+          "status": "Healthy",
           "latest_observation": "2026-03-31",
           "records": 516,
-          "freshness": "116 天前",
+          "freshness": "116d old",
           "notes": "Sector-wide purchases only; per-type purchases are not published."
         }
       ],
@@ -4797,71 +4797,71 @@
         {
           "source": "HKO Severe Weather Warnings & FRED Exchange Rate",
           "dataset": "HKO Severe Weather & FRED FX",
-          "type": "指标",
-          "status": "健康",
+          "type": "Measure",
+          "status": "Healthy",
           "latest_observation": "2026-07-01",
           "records": 67,
-          "freshness": "24 天前",
+          "freshness": "24d old",
           "notes": "Monthly hours under Typhoon Signal 8+ & Red/Black Rainstorm warnings alongside HKD/RMB FX."
         },
         {
           "source": "HK Immigration Department Daily Passenger Traffic",
           "dataset": "Immigration Passenger Clearance",
-          "type": "指标",
-          "status": "健康",
+          "type": "Measure",
+          "status": "Healthy",
           "latest_observation": "2026-07-24",
           "records": 2031,
-          "freshness": "1 天前",
+          "freshness": "1d old",
           "notes": "Daily clearance across 17 control points for HK residents & Mainland visitors."
         },
         {
           "source": "Shanghai Gold Exchange AM/PM Benchmark",
           "dataset": "SGE Gold Benchmark",
-          "type": "指标",
-          "status": "健康",
+          "type": "Measure",
+          "status": "Healthy",
           "latest_observation": "2026-07-22",
           "records": 2494,
-          "freshness": "3 天前",
+          "freshness": "3d old",
           "notes": "Daily AM/PM benchmark fixing."
         },
         {
           "source": "AFCD Fresh Food Wholesale Prices",
           "dataset": "AFCD Wholesale Food Prices",
-          "type": "指标",
-          "status": "健康",
+          "type": "Measure",
+          "status": "Healthy",
           "latest_observation": "2026-07-25",
           "records": 31,
-          "freshness": "同日快照",
+          "freshness": "Same-day snapshot",
           "notes": "31 commodities across 5 categories; averaged across same-day market readings."
         },
         {
           "source": "Baidu Gushitong HK Equity Valuation",
           "dataset": "HK Consumer Ticker Valuations",
-          "type": "指标",
-          "status": "健康",
+          "type": "Measure",
+          "status": "Healthy",
           "latest_observation": "2026-07-25",
           "records": 11,
-          "freshness": "0 天前",
+          "freshness": "0d old",
           "notes": "PE (TTM), PB, and market cap only; no dividend-yield indicator is available from this endpoint."
         },
         {
           "source": "C&SD Retail Sales Value/Volume Index",
           "dataset": "Retail Sales Value/Volume Index",
-          "type": "指标",
-          "status": "健康",
+          "type": "Measure",
+          "status": "Healthy",
           "latest_observation": "2026-05-01",
           "records": 6500,
-          "freshness": "85 天前",
+          "freshness": "85d old",
           "notes": "25 outlet-type categories, monthly since 2004."
         },
         {
           "source": "CenStatD Quarterly Restaurant Receipts & Purchases Survey",
           "dataset": "Restaurant Receipts & Purchases Survey",
-          "type": "指标",
-          "status": "健康",
+          "type": "Measure",
+          "status": "Healthy",
           "latest_observation": "2026-03-31",
           "records": 516,
-          "freshness": "116 天前",
+          "freshness": "116d old",
           "notes": "Sector-wide purchases only; per-type purchases are not published."
         }
       ],
@@ -4869,11 +4869,11 @@
         {
           "source": "HK Consumer Council",
           "dataset": "Online Price Watch",
-          "type": "指标",
-          "status": "计划中",
+          "type": "Measure",
+          "status": "Planned",
           "latest_observation": "—",
           "records": 0,
-          "freshness": "接口无数据返回",
+          "freshness": "Endpoint returns no data",
           "notes": "Endpoint requires re-verification before going live."
         }
       ]
@@ -4882,129 +4882,129 @@
   "sources": [
     {
       "id": "afcd_wholesale",
-      "label": "农渔护理署新鲜食品批发价格",
+      "label": "AFCD Fresh Food Wholesale Prices",
       "href": "https://www.afcd.gov.hk/english/agriculture/agr_fresh/agr_fresh_pri/agr_fresh_pri.html",
       "query": {
         "engine": "official CSV",
         "url": "https://www.afcd.gov.hk/english/agriculture/agr_fresh/files/Wholesale_Prices.csv",
         "language": "CSV",
-        "description": "构建时从公开来源读取并校验 农渔护理署新鲜食品批发价格。",
+        "description": "Loads that morning's average wholesale price per commodity across Hong Kong's fresh-food wholesale markets; prices are converted from the published HKD/catty unit to HKD/kg.",
         "metric_definitions": [
           "Each commodity's price is the mean of same-day readings across the wholesale markets/sources AFCD reports for it."
         ],
-        "executed_at": "2026-07-25T13:18:55.077748Z"
+        "executed_at": "2026-07-25T13:15:11.197369Z"
       }
     },
     {
       "id": "sge_gold",
-      "label": "上海黄金交易所 AM/PM 基准价",
+      "label": "Shanghai Gold Exchange AM/PM Benchmark",
       "href": "https://www.sge.com.cn/",
       "query": {
         "engine": "akshare",
         "url": "akshare.spot_golden_benchmark_sge",
         "language": "Python",
-        "description": "构建时从公开来源读取并校验 上海黄金交易所 AM/PM 基准价。",
+        "description": "Daily AM and PM gold benchmark fixings published by the Shanghai Gold Exchange, in RMB per gram.",
         "metric_definitions": [
           "Latest is the most recent published PM benchmark fixing.",
           "Day and year movements are latest divided by the prior trading day or the observation on/before one year earlier, minus one."
         ],
-        "executed_at": "2026-07-25T13:18:55.077748Z"
+        "executed_at": "2026-07-25T13:15:11.197369Z"
       }
     },
     {
       "id": "hk_valuation",
-      "label": "百度股市通香港股票估值",
+      "label": "Baidu Gushitong HK Equity Valuation",
       "href": "https://gushitong.baidu.com/",
       "query": {
         "engine": "akshare",
         "url": "akshare.stock_hk_valuation_baidu",
         "language": "Python",
-        "description": "构建时从公开来源读取并校验 百度股市通香港股票估值。",
+        "description": "Daily trailing PE, PB, and market cap for the 11-name HK local-consumer watchlist, fetched per ticker per indicator.",
         "metric_definitions": [
           "PE (TTM), PB, and market cap (HKD bn) are each ticker's latest published daily value.",
           "No dividend-yield indicator exists on this endpoint; yield is not reported here."
         ],
-        "executed_at": "2026-07-25T13:18:55.077748Z"
+        "executed_at": "2026-07-25T13:15:11.197369Z"
       }
     },
     {
       "id": "cnsd_retail",
-      "label": "政府统计处零售销售价值/销量指数",
+      "label": "C&SD Retail Sales Value/Volume Index",
       "href": "https://www.censtatd.gov.hk/en/web_table.html?id=620-67002",
       "query": {
         "engine": "official CSV",
         "url": "https://www.censtatd.gov.hk/data/MDT_75_620-67002_VAL_IDX_RS_Raw_1dp_idx_n.csv",
         "language": "CSV",
-        "description": "构建时从公开来源读取并校验 政府统计处零售销售价值/销量指数。",
+        "description": "Monthly retail sales value and volume index by type of retail outlet (tables 620-67002 / 620-67003).",
         "metric_definitions": [
           "All retail outlet is the classification group's own published total across all outlet types.",
           "Month and year movements are latest divided by the prior month or the observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-07-25T13:18:55.077748Z"
+        "executed_at": "2026-07-25T13:15:11.197369Z"
       }
     },
     {
       "id": "censtatd_restaurant",
-      "label": "政府统计处季度餐饮收益及采购调查",
+      "label": "CenStatD Quarterly Restaurant Receipts & Purchases Survey",
       "href": "https://www.censtatd.gov.hk/en/web_table.html?id=625-68003",
       "query": {
         "engine": "official CSV",
         "url": "https://www.censtatd.gov.hk/data/MDT_90_625-68003_VAL_RR_Raw_M_hkd_d.csv",
         "language": "CSV",
-        "description": "构建时从公开来源读取并校验 政府统计处季度餐饮收益及采购调查。",
+        "description": "Quarterly restaurant receipts and value/volume indices by restaurant type (table 625-68003); sector-wide purchases from table 625-68001.",
         "metric_definitions": [
           "Purchases are only published sector-wide, not broken out by restaurant type.",
           "Quarter and year movements are latest divided by the prior quarter or the observation four quarters earlier, minus one."
         ],
-        "executed_at": "2026-07-25T13:18:55.077748Z"
+        "executed_at": "2026-07-25T13:15:11.197369Z"
       }
     },
     {
       "id": "immigration_flow",
-      "label": "入境事务处每日出入境旅客流量统计",
+      "label": "HK Immigration Department Daily Passenger Traffic",
       "href": "https://www.immd.gov.hk/opendata/eng/transport/immigration_clearance/statistics_on_daily_passenger_traffic.csv",
       "query": {
         "engine": "official CSV",
         "url": "https://www.immd.gov.hk/opendata/eng/transport/immigration_clearance/statistics_on_daily_passenger_traffic.csv",
         "language": "CSV",
-        "description": "构建时从公开来源读取并校验 入境事务处每日出入境旅客流量统计。",
+        "description": "Daily passenger clearance counts across 17 control points for HK Residents, Mainland Visitors, and Other Visitors.",
         "metric_definitions": [
           "Northbound (北上) flow is daily HK resident departures through the 9 land control points only (Lo Wu, Lok Ma Chau, Lok Ma Chau Spur Line, Shenzhen Bay, Heung Yuen Wai, Man Kam To, Sha Tau Kok, HZMB, Express Rail Link West Kowloon) -- this excludes the Airport and other cruise/ferry terminals so it isolates cross-border day-trippers from residents flying abroad.",
           "Southbound (南下) flow is daily Mainland visitor arrivals across all 17 control points, since Mainland visitors legitimately arrive by air, rail, and sea, not just by land.",
           "7-day moving averages (7d MA) smooth out day-of-week seasonality (weekend shopping spikes)."
         ],
-        "executed_at": "2026-07-25T13:18:55.077748Z"
+        "executed_at": "2026-07-25T13:15:11.197369Z"
       }
     },
     {
       "id": "weather_demand_drivers",
-      "label": "香港天文台警告数据库 & FRED 汇率",
+      "label": "HKO Severe Weather Warnings & FRED Exchange Rate",
       "href": "https://www.hko.gov.hk/en/wxinfo/climat/warndb/warndb3.shtml",
       "query": {
         "engine": "official DAT & FRED CSV",
         "url": "https://www.hko.gov.hk/dps/wxinfo/climat/warndb/rstorm.dat",
         "language": "DAT",
-        "description": "构建时从公开来源读取并校验 香港天文台警告数据库 & FRED 汇率。",
+        "description": "Monthly severe weather disruption hours (Typhoon Signal 8+ and Red/Black Rainstorm warnings) alongside monthly HKD/RMB cross exchange rate.",
         "metric_definitions": [
           "Typhoon Signal 8+ hours measures total duration under Signal 8, 9, or 10.",
           "Red/Black Rainstorm hours measures total duration under Red or Black rainstorm warnings.",
           "RMB per 100 HKD is derived from FRED daily DEXCHUS and DEXHKUS rates."
         ],
-        "executed_at": "2026-07-25T13:18:55.077748Z"
+        "executed_at": "2026-07-25T13:15:11.197369Z"
       }
     },
     {
       "id": "source_registry",
-      "label": "香港本地消费 dashboard 来源登记表",
+      "label": "HK Local Consumer dashboard source registry",
       "query": {
         "engine": "dashboard exporter",
         "language": "Python",
-        "description": "构建时从公开来源读取并校验 香港本地消费 dashboard 来源登记表。",
+        "description": "Build-time validation results and declared coverage state for each dashboard source.",
         "tables_used": [
           "Validated live measure frames",
           "Declared future-source registry"
         ],
-        "executed_at": "2026-07-25T13:18:55.077748Z"
+        "executed_at": "2026-07-25T13:15:11.197369Z"
       }
     }
   ],
