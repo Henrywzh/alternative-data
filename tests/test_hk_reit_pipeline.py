@@ -100,6 +100,47 @@ def _regal_frame(n=4, nil_dpu_period=True):
     )
 
 
+def _spot_frame():
+    tickers = ["00823", "02778", "00778", "00808", "00435", "01881"]
+    names = ["Link REIT", "Champion REIT", "Fortune REIT", "Prosperity REIT", "Sunlight REIT", "Regal REIT"]
+    prices = [35.8, 1.62, 5.3, 1.35, 3.1, 2.4]
+    return pd.DataFrame(
+        {
+            "date": [pd.Timestamp("2026-06-30")] * 6,
+            "ticker": tickers,
+            "company_name": names,
+            "latest_price_hkd": prices,
+            "change_pct": [0.5, -0.3, 0.1, 0.0, -0.2, 0.4],
+            "volume": [1_000_000, 200_000, 150_000, 100_000, 80_000, 60_000],
+            "turnover_hkd": [p * 1_000_000 for p in prices],
+        }
+    )
+
+
+def _hist_frame():
+    tickers = ["00823", "02778", "00778", "00808", "00435", "01881"]
+    names = ["Link REIT", "Champion REIT", "Fortune REIT", "Prosperity REIT", "Sunlight REIT", "Regal REIT"]
+    base_prices = [35.8, 1.62, 5.3, 1.35, 3.1, 2.4]
+    dates = pd.date_range(end="2026-06-30", periods=3, freq="D")
+    frames = []
+    for ticker, name, base in zip(tickers, names, base_prices):
+        frames.append(
+            pd.DataFrame(
+                {
+                    "date": dates,
+                    "ticker": [ticker] * 3,
+                    "company_name": [name] * 3,
+                    "open_hkd": [base + i * 0.01 for i in range(3)],
+                    "high_hkd": [base + 0.05 + i * 0.01 for i in range(3)],
+                    "low_hkd": [base - 0.05 + i * 0.01 for i in range(3)],
+                    "close_hkd": [base + 0.02 + i * 0.01 for i in range(3)],
+                    "volume": [100_000] * 3,
+                }
+            )
+        )
+    return pd.concat(frames, ignore_index=True)
+
+
 def _frames():
     return dict(
         raw_link=_office_retail_frame("0823.HK", "Link REIT", 60, 1.2, 95, 5),
@@ -108,6 +149,8 @@ def _frames():
         raw_prosperity=_office_retail_frame("0808.HK", "Prosperity REIT", 1.8, 0.05, 88, 2),
         raw_sunlight=_office_retail_frame("0435.HK", "Sunlight REIT", 3, 0.08, 91, 3),
         raw_regal=_regal_frame(),
+        raw_spot=_spot_frame(),
+        raw_hist=_hist_frame(),
     )
 
 
@@ -115,10 +158,10 @@ def test_build_artifact_has_non_empty_cards_charts_tables_blocks():
     artifact, status = dashboard_export.build_artifact(**_frames(), now=NOW)
     manifest = artifact["manifest"]
     assert len(manifest["cards"]) == 6
-    assert len(manifest["charts"]) == 5
-    assert len(manifest["tables"]) == 1
+    assert len(manifest["charts"]) == 6
+    assert len(manifest["tables"]) == 2
     assert len(manifest["blocks"]) > 0
-    assert status["live_sources"] == 6
+    assert status["live_sources"] == 7
     assert status["overall_status"] == "Healthy"
 
 
@@ -170,7 +213,7 @@ def test_empty_source_frame_does_not_crash_and_yields_null_kpis():
     link_kpi = artifact["snapshot"]["datasets"]["kpi_linkreit"][0]
     assert link_kpi["nav_per_unit_hkd"] is None
     assert link_kpi["dpu_period_change"] is None
-    assert status["live_sources"] == 5
+    assert status["live_sources"] == 6
     assert status["overall_status"] == "Degraded"
     # Structure must still be intact even with one dead source.
     assert len(artifact["manifest"]["cards"]) == 6

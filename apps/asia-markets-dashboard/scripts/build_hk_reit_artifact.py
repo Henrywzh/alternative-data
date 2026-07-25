@@ -277,6 +277,8 @@ def build_artifact(
     raw_prosperity: pd.DataFrame | None = None,
     raw_sunlight: pd.DataFrame | None = None,
     raw_regal: pd.DataFrame | None = None,
+    raw_spot: pd.DataFrame | None = None,
+    raw_hist: pd.DataFrame | None = None,
     *,
     now: datetime | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
@@ -514,8 +516,10 @@ def build_artifact(
         }
     ]
 
-    df_spot = fetch_reit_spot_quotes()
-    df_hist = fetch_reit_price_history()
+    df_spot = raw_spot if raw_spot is not None else fetch_reit_spot_quotes()
+    df_hist = raw_hist if raw_hist is not None else fetch_reit_price_history()
+    if not df_spot.empty:
+        live_count += 1
 
     status_entries = []
     for key, ticker, name, source_id, is_hotel in REIT_META:
