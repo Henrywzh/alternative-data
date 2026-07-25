@@ -153,7 +153,7 @@ function buildHomeBody({ lang }) {
       detail: chinese
         ? `${sector.status.live_sources} 个实时指标 · 数据截至 ${sector.status.data_as_of}`
         : `${sector.status.live_sources} live measures · data through ${sector.status.data_as_of}`,
-      href: chinese ? `/${sector.route}/zh/` : `/${sector.route}/`,
+      href: chinese ? `/zh/${sector.route}/` : `/${sector.route}/`,
       action: chinese ? "打开监测" : "Open monitor",
       isLive: true,
     })),
