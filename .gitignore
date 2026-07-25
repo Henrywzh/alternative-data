@@ -93,6 +93,32 @@ data/processed/google_trends/*
 data/processed/action_stores/*
 !data/processed/action_stores/*.parquet
 
+# HK retail/F&B store-count scrapers: commit the per-company store-count time series
+!data/processed/ctf_stores/
+data/processed/ctf_stores/*
+!data/processed/ctf_stores/*.parquet
+!data/processed/chowsangsang_stores/
+data/processed/chowsangsang_stores/*
+!data/processed/chowsangsang_stores/*.parquet
+!data/processed/fairwood_stores/
+data/processed/fairwood_stores/*
+!data/processed/fairwood_stores/*.parquet
+!data/processed/sasa_stores/
+data/processed/sasa_stores/*
+!data/processed/sasa_stores/*.parquet
+!data/processed/lukfook_stores/
+data/processed/lukfook_stores/*
+!data/processed/lukfook_stores/*.parquet
+!data/processed/cafedecoral_stores/
+data/processed/cafedecoral_stores/*
+!data/processed/cafedecoral_stores/*.parquet
+!data/processed/giordano_stores/
+data/processed/giordano_stores/*
+!data/processed/giordano_stores/*.parquet
+!data/processed/bossini_stores/
+data/processed/bossini_stores/*
+!data/processed/bossini_stores/*.parquet
+
 # artificial_analysis: commit normalized CSVs/parquet + raw run manifests only
 !data/normalized/artificial_analysis/
 data/normalized/artificial_analysis/*
