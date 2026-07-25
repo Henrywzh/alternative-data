@@ -98,15 +98,23 @@ jobs:
           git add \
             apps/asia-markets-dashboard/.generated/hk-real-estate-artifact.json \
             apps/asia-markets-dashboard/.generated/hk-local-consumer-artifact.json \
+            apps/asia-markets-dashboard/.generated/hk-utilities-artifact.json \
+            apps/asia-markets-dashboard/.generated/hk-transport-artifact.json \
+            apps/asia-markets-dashboard/.generated/hk-telecom-artifact.json \
+            apps/asia-markets-dashboard/.generated/hk-reit-artifact.json \
             apps/asia-markets-dashboard/src/data/dashboard-status.json \
-            apps/asia-markets-dashboard/src/data/dashboard-status-hk-local-consumer.json
+            apps/asia-markets-dashboard/src/data/dashboard-status-hk-local-consumer.json \
+            apps/asia-markets-dashboard/src/data/dashboard-status-hk-utilities.json \
+            apps/asia-markets-dashboard/src/data/dashboard-status-hk-transport.json \
+            apps/asia-markets-dashboard/src/data/dashboard-status-hk-telecom.json \
+            apps/asia-markets-dashboard/src/data/dashboard-status-hk-reit.json
 
           if git diff --staged --quiet; then
             echo "No dashboard data changes to commit"
             exit 0
           fi
 
-          git commit -m "chore(dashboard): refresh HK real estate & local consumer data [$(date -u +%Y-%m-%d)]"
+          git commit -m "chore(dashboard): refresh all sector data [$(date -u +%Y-%m-%d)]"
 
           for attempt in 1 2 3; do
             if git pull --rebase origin "${{ github.event.repository.default_branch }}" && git push; then

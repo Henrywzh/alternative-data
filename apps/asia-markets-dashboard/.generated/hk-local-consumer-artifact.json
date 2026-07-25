@@ -5,7 +5,7 @@
     "surface": "dashboard",
     "title": "Hong Kong Local Consumer Monitor",
     "description": "A source-backed snapshot of gold input costs, fresh-food wholesale prices, and watchlist valuations for HK local-consumer names.",
-    "generatedAt": "2026-07-24T21:49:25.930489Z",
+    "generatedAt": "2026-07-25T10:23:13.673440Z",
     "cards": [
       {
         "id": "northbound_card",
@@ -744,7 +744,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**Data snapshot:** `9287fc3c0f53c7c8` · generated 2026-07-24T21:49:25.930489Z.  This is a published snapshot, not a live connection. Consumer Council price-watch coverage remains planned; it is not shown with placeholder values."
+        "body": "**Data snapshot:** `967a9b11ef2fcbfa` · generated 2026-07-25T10:23:13.673440Z.  This is a published snapshot, not a live connection. Consumer Council price-watch coverage remains planned; it is not shown with placeholder values."
       },
       {
         "id": "market_pulse_1",
@@ -853,7 +853,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-24T21:49:25.930489Z",
+    "generatedAt": "2026-07-25T10:23:13.673440Z",
     "status": "ready",
     "datasets": {
       "kpi_weather": [
@@ -1310,31 +1310,21 @@
       ],
       "kpi_northbound": [
         {
-          "latest": 300913.1,
-          "period_change": 0.010385,
-          "year_change": 0.253775,
-          "observation_date": "2026-07-23"
+          "latest": 302926.1,
+          "period_change": 0.00669,
+          "year_change": 0.255166,
+          "observation_date": "2026-07-24"
         }
       ],
       "kpi_southbound": [
         {
-          "latest": 128334.6,
-          "period_change": 0.025273,
-          "year_change": 0.245758,
-          "observation_date": "2026-07-23"
+          "latest": 131162.6,
+          "period_change": 0.022036,
+          "year_change": 0.239972,
+          "observation_date": "2026-07-24"
         }
       ],
       "immigration_trend_history": [
-        {
-          "date": "2025-07-24",
-          "value": 240005.7,
-          "flow_type": "Northbound"
-        },
-        {
-          "date": "2025-07-24",
-          "value": 103017.3,
-          "flow_type": "Southbound"
-        },
         {
           "date": "2025-07-25",
           "value": 241343.4,
@@ -4973,6 +4963,16 @@
         {
           "date": "2026-07-23",
           "value": 128334.6,
+          "flow_type": "Southbound"
+        },
+        {
+          "date": "2026-07-24",
+          "value": 302926.1,
+          "flow_type": "Northbound"
+        },
+        {
+          "date": "2026-07-24",
+          "value": 131162.6,
           "flow_type": "Southbound"
         }
       ],
@@ -12413,7 +12413,7 @@
           "pe_ttm": 13.39,
           "pb_ratio": 3.89,
           "market_cap_hkd_b": 120.567,
-          "date": "2026-07-24"
+          "date": "2026-07-25"
         },
         {
           "ticker": "01913.HK",
@@ -12421,7 +12421,7 @@
           "pe_ttm": 12.75,
           "pb_ratio": 2.34,
           "market_cap_hkd_b": 99.026,
-          "date": "2026-07-24"
+          "date": "2026-07-25"
         },
         {
           "ticker": "01910.HK",
@@ -12429,7 +12429,7 @@
           "pe_ttm": 8.73,
           "pb_ratio": 1.46,
           "market_cap_hkd_b": 18.67,
-          "date": "2026-07-24"
+          "date": "2026-07-25"
         },
         {
           "ticker": "00590.HK",
@@ -12437,7 +12437,7 @@
           "pe_ttm": 6.9,
           "pb_ratio": 0.94,
           "market_cap_hkd_b": 14.126,
-          "date": "2026-07-24"
+          "date": "2026-07-25"
         },
         {
           "ticker": "00116.HK",
@@ -12445,7 +12445,7 @@
           "pe_ttm": 4.54,
           "pb_ratio": 0.54,
           "market_cap_hkd_b": 7.805,
-          "date": "2026-07-24"
+          "date": "2026-07-25"
         },
         {
           "ticker": "00341.HK",
@@ -14080,7 +14080,7 @@
           "status": "Healthy",
           "latest_observation": "2026-07-01",
           "records": 67,
-          "freshness": "23d old",
+          "freshness": "24d old",
           "notes": "Monthly hours under Typhoon Signal 8+ & Red/Black Rainstorm warnings alongside HKD/RMB FX."
         },
         {
@@ -14088,8 +14088,8 @@
           "dataset": "Immigration Passenger Clearance",
           "type": "Measure",
           "status": "Healthy",
-          "latest_observation": "2026-07-23",
-          "records": 2030,
+          "latest_observation": "2026-07-24",
+          "records": 2031,
           "freshness": "1d old",
           "notes": "Daily clearance across 17 control points for HK residents & Mainland visitors."
         },
@@ -14100,7 +14100,7 @@
           "status": "Healthy",
           "latest_observation": "2026-07-22",
           "records": 2494,
-          "freshness": "2d old",
+          "freshness": "3d old",
           "notes": "Daily AM/PM benchmark fixing."
         },
         {
@@ -14108,7 +14108,7 @@
           "dataset": "AFCD Wholesale Food Prices",
           "type": "Measure",
           "status": "Healthy",
-          "latest_observation": "2026-07-24",
+          "latest_observation": "2026-07-25",
           "records": 31,
           "freshness": "Same-day snapshot",
           "notes": "31 commodities across 5 categories; averaged across same-day market readings."
@@ -14118,7 +14118,7 @@
           "dataset": "HK Consumer Ticker Valuations",
           "type": "Measure",
           "status": "Healthy",
-          "latest_observation": "2026-07-24",
+          "latest_observation": "2026-07-25",
           "records": 11,
           "freshness": "0d old",
           "notes": "PE (TTM), PB, and market cap only; no dividend-yield indicator is available from this endpoint."
@@ -14130,7 +14130,7 @@
           "status": "Healthy",
           "latest_observation": "2026-05-01",
           "records": 6500,
-          "freshness": "84d old",
+          "freshness": "85d old",
           "notes": "25 outlet-type categories, monthly since 2004."
         },
         {
@@ -14140,7 +14140,7 @@
           "status": "Healthy",
           "latest_observation": "2026-03-31",
           "records": 516,
-          "freshness": "115d old",
+          "freshness": "116d old",
           "notes": "Sector-wide purchases only; per-type purchases are not published."
         }
       ],
@@ -14152,7 +14152,7 @@
           "status": "Healthy",
           "latest_observation": "2026-07-01",
           "records": 67,
-          "freshness": "23d old",
+          "freshness": "24d old",
           "notes": "Monthly hours under Typhoon Signal 8+ & Red/Black Rainstorm warnings alongside HKD/RMB FX."
         },
         {
@@ -14160,8 +14160,8 @@
           "dataset": "Immigration Passenger Clearance",
           "type": "Measure",
           "status": "Healthy",
-          "latest_observation": "2026-07-23",
-          "records": 2030,
+          "latest_observation": "2026-07-24",
+          "records": 2031,
           "freshness": "1d old",
           "notes": "Daily clearance across 17 control points for HK residents & Mainland visitors."
         },
@@ -14172,7 +14172,7 @@
           "status": "Healthy",
           "latest_observation": "2026-07-22",
           "records": 2494,
-          "freshness": "2d old",
+          "freshness": "3d old",
           "notes": "Daily AM/PM benchmark fixing."
         },
         {
@@ -14180,7 +14180,7 @@
           "dataset": "AFCD Wholesale Food Prices",
           "type": "Measure",
           "status": "Healthy",
-          "latest_observation": "2026-07-24",
+          "latest_observation": "2026-07-25",
           "records": 31,
           "freshness": "Same-day snapshot",
           "notes": "31 commodities across 5 categories; averaged across same-day market readings."
@@ -14190,7 +14190,7 @@
           "dataset": "HK Consumer Ticker Valuations",
           "type": "Measure",
           "status": "Healthy",
-          "latest_observation": "2026-07-24",
+          "latest_observation": "2026-07-25",
           "records": 11,
           "freshness": "0d old",
           "notes": "PE (TTM), PB, and market cap only; no dividend-yield indicator is available from this endpoint."
@@ -14202,7 +14202,7 @@
           "status": "Healthy",
           "latest_observation": "2026-05-01",
           "records": 6500,
-          "freshness": "84d old",
+          "freshness": "85d old",
           "notes": "25 outlet-type categories, monthly since 2004."
         },
         {
@@ -14212,7 +14212,7 @@
           "status": "Healthy",
           "latest_observation": "2026-03-31",
           "records": 516,
-          "freshness": "115d old",
+          "freshness": "116d old",
           "notes": "Sector-wide purchases only; per-type purchases are not published."
         },
         {
@@ -14241,7 +14241,7 @@
         "metric_definitions": [
           "Each commodity's price is the mean of same-day readings across the wholesale markets/sources AFCD reports for it."
         ],
-        "executed_at": "2026-07-24T21:49:25.930489Z"
+        "executed_at": "2026-07-25T10:23:13.673440Z"
       }
     },
     {
@@ -14257,7 +14257,7 @@
           "Latest is the most recent published PM benchmark fixing.",
           "Day and year movements are latest divided by the prior trading day or the observation on/before one year earlier, minus one."
         ],
-        "executed_at": "2026-07-24T21:49:25.930489Z"
+        "executed_at": "2026-07-25T10:23:13.673440Z"
       }
     },
     {
@@ -14273,7 +14273,7 @@
           "PE (TTM), PB, and market cap (HKD bn) are each ticker's latest published daily value.",
           "No dividend-yield indicator exists on this endpoint; yield is not reported here."
         ],
-        "executed_at": "2026-07-24T21:49:25.930489Z"
+        "executed_at": "2026-07-25T10:23:13.673440Z"
       }
     },
     {
@@ -14289,7 +14289,7 @@
           "All retail outlet is the classification group's own published total across all outlet types.",
           "Month and year movements are latest divided by the prior month or the observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-07-24T21:49:25.930489Z"
+        "executed_at": "2026-07-25T10:23:13.673440Z"
       }
     },
     {
@@ -14305,7 +14305,7 @@
           "Purchases are only published sector-wide, not broken out by restaurant type.",
           "Quarter and year movements are latest divided by the prior quarter or the observation four quarters earlier, minus one."
         ],
-        "executed_at": "2026-07-24T21:49:25.930489Z"
+        "executed_at": "2026-07-25T10:23:13.673440Z"
       }
     },
     {
@@ -14322,7 +14322,7 @@
           "Southbound (南下) flow is daily Mainland visitor arrivals across all 17 control points, since Mainland visitors legitimately arrive by air, rail, and sea, not just by land.",
           "7-day moving averages (7d MA) smooth out day-of-week seasonality (weekend shopping spikes)."
         ],
-        "executed_at": "2026-07-24T21:49:25.930489Z"
+        "executed_at": "2026-07-25T10:23:13.673440Z"
       }
     },
     {
@@ -14339,7 +14339,7 @@
           "Red/Black Rainstorm hours measures total duration under Red or Black rainstorm warnings.",
           "RMB per 100 HKD is derived from FRED daily DEXCHUS and DEXHKUS rates."
         ],
-        "executed_at": "2026-07-24T21:49:25.930489Z"
+        "executed_at": "2026-07-25T10:23:13.673440Z"
       }
     },
     {
@@ -14353,13 +14353,13 @@
           "Validated live measure frames",
           "Declared future-source registry"
         ],
-        "executed_at": "2026-07-24T21:49:25.930489Z"
+        "executed_at": "2026-07-25T10:23:13.673440Z"
       }
     }
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-local-consumer/",
-    "snapshotId": "9287fc3c0f53c7c8",
+    "snapshotId": "967a9b11ef2fcbfa",
     "dataAsOf": "2026-07-22"
   }
 }

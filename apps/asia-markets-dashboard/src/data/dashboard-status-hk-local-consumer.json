@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-07-24T21:49:25.930489Z",
-  "snapshot_id": "9287fc3c0f53c7c8",
+  "generated_at": "2026-07-25T10:23:13.673440Z",
+  "snapshot_id": "967a9b11ef2fcbfa",
   "data_as_of": "2026-07-22",
   "overall_status": "Healthy",
   "live_sources": 7,
@@ -13,7 +13,7 @@
       "status": "Healthy",
       "latest_observation": "2026-07-01",
       "records": 67,
-      "freshness": "23d old",
+      "freshness": "24d old",
       "notes": "Monthly hours under Typhoon Signal 8+ & Red/Black Rainstorm warnings alongside HKD/RMB FX."
     },
     {
@@ -21,8 +21,8 @@
       "dataset": "Immigration Passenger Clearance",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-07-23",
-      "records": 2030,
+      "latest_observation": "2026-07-24",
+      "records": 2031,
       "freshness": "1d old",
       "notes": "Daily clearance across 17 control points for HK residents & Mainland visitors."
     },
@@ -33,7 +33,7 @@
       "status": "Healthy",
       "latest_observation": "2026-07-22",
       "records": 2494,
-      "freshness": "2d old",
+      "freshness": "3d old",
       "notes": "Daily AM/PM benchmark fixing."
     },
     {
@@ -41,7 +41,7 @@
       "dataset": "AFCD Wholesale Food Prices",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-07-24",
+      "latest_observation": "2026-07-25",
       "records": 31,
       "freshness": "Same-day snapshot",
       "notes": "31 commodities across 5 categories; averaged across same-day market readings."
@@ -51,7 +51,7 @@
       "dataset": "HK Consumer Ticker Valuations",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-07-24",
+      "latest_observation": "2026-07-25",
       "records": 11,
       "freshness": "0d old",
       "notes": "PE (TTM), PB, and market cap only; no dividend-yield indicator is available from this endpoint."
@@ -63,7 +63,7 @@
       "status": "Healthy",
       "latest_observation": "2026-05-01",
       "records": 6500,
-      "freshness": "84d old",
+      "freshness": "85d old",
       "notes": "25 outlet-type categories, monthly since 2004."
     },
     {
@@ -73,7 +73,7 @@
       "status": "Healthy",
       "latest_observation": "2026-03-31",
       "records": 516,
-      "freshness": "115d old",
+      "freshness": "116d old",
       "notes": "Sector-wide purchases only; per-type purchases are not published."
     },
     {
@@ -87,5 +87,5 @@
       "notes": "Endpoint requires re-verification before going live."
     }
   ],
-  "attachment_filename": "hk-local-consumer-dashboard-2026-07-24.html"
+  "attachment_filename": "hk-local-consumer-dashboard-2026-07-25.html"
 }

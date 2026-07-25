@@ -6,7 +6,7 @@
     "title": "Hong Kong REITs Sector Monitor",
     "description": "NAV/unit, DPU, occupancy, rental reversion, and hotel KPI disclosures for all six HK-listed REITs.",
     "sector": "hk-reit",
-    "generatedAt": "2026-07-24T23:44:03.738658Z",
+    "generatedAt": "2026-07-25T10:21:32.664360Z",
     "dataAsOf": "2026-03-31",
     "liveSourcesCount": 6,
     "totalSourcesCount": 6,
@@ -458,7 +458,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**Data snapshot:** `f36175aa1382806f` \u00b7 generated 2026-07-24T23:44:03.738658Z.  Each REIT's figures come from that trust's own investor-relations disclosures (semi-annual or annual cadence), not a shared index provider."
+        "body": "**Data snapshot:** `f36175aa1382806f` \u00b7 generated 2026-07-25T10:21:32.664360Z.  Each REIT's figures come from that trust's own investor-relations disclosures (semi-annual or annual cadence), not a shared index provider."
       },
       {
         "id": "kpi_grid",
@@ -513,7 +513,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-24T23:44:03.738658Z",
+    "generatedAt": "2026-07-25T10:21:32.664360Z",
     "status": "ready",
     "datasets": {
       "kpi_linkreit": [
@@ -1553,7 +1553,7 @@
     "sector_id": "hk-reit",
     "sector_name": "Hong Kong REITs Sector Monitor",
     "snapshotId": "f36175aa1382806f",
-    "generatedAt": "2026-07-24T23:44:03.738658Z",
+    "generatedAt": "2026-07-25T10:21:32.664360Z",
     "dataAsOf": "2026-03-31"
   }
 }
