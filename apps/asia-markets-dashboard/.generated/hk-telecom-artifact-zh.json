@@ -6,7 +6,7 @@
     "title": "香港电讯监测",
     "description": "香港电讯（HKT）、数码通（SmarTone）及和记电讯（3 HK）的半年度用户与 ARPU 披露数据，以及通讯办全运营商手机号码段配额快照。",
     "sector": "hk-telecom",
-    "generatedAt": "2026-07-25T14:20:41.120016Z",
+    "generatedAt": "2026-07-25T18:13:02.461963Z",
     "cards": [
       {
         "id": "hkt_card",
@@ -28,6 +28,39 @@
             "label": "半年环比",
             "field": "period_change",
             "format": "percent"
+          },
+          {
+            "label": "FTTH Share (%)",
+            "field": "ftth_share_pct",
+            "format": "number"
+          }
+        ]
+      },
+      {
+        "id": "hkt_footprint_card",
+        "description": "HKT broadband access lines, FTTH connections, and Pay TV installed base ('000s).",
+        "dataset": "kpi_hkt",
+        "sourceId": "hkt_operating_drivers",
+        "metrics": [
+          {
+            "label": "Broadband Lines ('000)",
+            "field": "consumer_broadband_lines_thousands",
+            "format": "number"
+          },
+          {
+            "label": "FTTH ('000)",
+            "field": "ftth_connections_thousands",
+            "format": "number"
+          },
+          {
+            "label": "Pay TV Base ('000)",
+            "field": "pay_tv_installed_base_thousands",
+            "format": "number"
+          },
+          {
+            "label": "FTTH Share (%)",
+            "field": "ftth_share_pct",
+            "format": "number"
           }
         ]
       },
@@ -144,6 +177,34 @@
         },
         "valueFormat": "number",
         "layout": "full"
+      },
+      {
+        "id": "hkt_footprint_chart",
+        "title": "HKT Broadband & Pay TV Footprint ('000s)",
+        "subtitle": "Semi-annual FTTH connections and Pay TV installed base.",
+        "type": "line",
+        "intent": "comparison",
+        "dataset": "hkt_footprint_history",
+        "sourceId": "hkt_operating_drivers",
+        "encodings": {
+          "x": {
+            "field": "month",
+            "type": "temporal",
+            "label": "Period"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "label": "'000s"
+          },
+          "color": {
+            "field": "series",
+            "type": "nominal",
+            "label": "Metric"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "half"
       }
     ],
     "tables": [
@@ -230,6 +291,7 @@
         "type": "metric-strip",
         "cardIds": [
           "hkt_card",
+          "hkt_footprint_card",
           "smartone_card",
           "hutchison_card"
         ]
@@ -258,13 +320,16 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-25T14:20:41.120016Z",
+    "generatedAt": "2026-07-25T18:13:02.461963Z",
     "status": "ready",
     "datasets": {
       "kpi_hkt": [
         {
           "latest_arpu": 195,
           "postpaid_subscribers_thousands": 3494,
+          "ftth_share_pct": 73,
+          "ftth_connections_thousands": 1086,
+          "pay_tv_installed_base_thousands": 1464,
           "consumer_broadband_lines_thousands": 1488,
           "period_change": 0.010363,
           "observation_date": "2025-12-31"
@@ -342,6 +407,44 @@
           "pay_tv_installed_base_thousands": 1464,
           "mobile_postpaid_arpu_hkd": 195,
           "month": "2025-12"
+        }
+      ],
+      "hkt_footprint_history": [
+        {
+          "date": "2025-06-30",
+          "month": "2025-06",
+          "series": "FTTH connections",
+          "value": 1055
+        },
+        {
+          "date": "2025-12-31",
+          "month": "2025-12",
+          "series": "FTTH connections",
+          "value": 1086
+        },
+        {
+          "date": "2024-06-30",
+          "month": "2024-06",
+          "series": "Pay TV base",
+          "value": 1430
+        },
+        {
+          "date": "2024-12-31",
+          "month": "2024-12",
+          "series": "Pay TV base",
+          "value": 1433
+        },
+        {
+          "date": "2025-06-30",
+          "month": "2025-06",
+          "series": "Pay TV base",
+          "value": 1448
+        },
+        {
+          "date": "2025-12-31",
+          "month": "2025-12",
+          "series": "Pay TV base",
+          "value": 1464
         }
       ],
       "smartone_history": [
@@ -505,7 +608,7 @@
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-telecom/",
-    "snapshotId": "bc956f505e1a4b38",
+    "snapshotId": "03d67351724eccac",
     "dataAsOf": "2025-12-31"
   }
 }

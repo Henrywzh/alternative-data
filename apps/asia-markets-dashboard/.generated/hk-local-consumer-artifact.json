@@ -5,7 +5,7 @@
     "surface": "dashboard",
     "title": "Hong Kong Local Consumer Monitor",
     "description": "A source-backed snapshot of cross-border passenger traffic, fresh-food wholesale prices, gold input costs, auto fuel pricing, and watchlist valuations for HK local-consumer names.",
-    "generatedAt": "2026-07-25T14:22:48.247113Z",
+    "generatedAt": "2026-07-25T18:14:27.342894Z",
     "cards": [
       {
         "id": "northbound_card",
@@ -457,7 +457,52 @@
           }
         },
         "valueFormat": "number",
-        "layout": "full"
+        "layout": "half"
+      },
+      {
+        "id": "consumer_council_oilprice_net_chart",
+        "title": "Auto Fuel Net Price Comparison (HK$/L)",
+        "subtitle": "Same-day net price-per-liter across Caltex, PetroChina, Shell, Sinopec, and Esso.",
+        "type": "bar",
+        "dataset": "consumer_council_oilprice",
+        "sourceId": "consumer_council_oilprice",
+        "encodings": {
+          "x": {
+            "field": "company",
+            "type": "nominal",
+            "label": "Oil Major"
+          },
+          "y": {
+            "field": "discounted_price_hkd",
+            "type": "quantitative",
+            "label": "Net Price (HK$/L)"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "half"
+      },
+      {
+        "id": "consumer_council_complaints_chart",
+        "title": "Consumer Council Top Complaint Categories",
+        "subtitle": "Top 10 categories during 2026, by number of complaints.",
+        "type": "horizontalBar",
+        "intent": "comparison",
+        "dataset": "consumer_council_complaints_chart",
+        "sourceId": "consumer_council_complaints",
+        "encodings": {
+          "x": {
+            "field": "category",
+            "type": "nominal",
+            "label": "Category"
+          },
+          "y": {
+            "field": "amount",
+            "type": "quantitative",
+            "label": "Complaints"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "half"
       }
     ],
     "tables": [
@@ -806,18 +851,88 @@
             "type": "text"
           },
           {
-            "field": "pump_price_hkd",
-            "label": "Pump Price (HK$/L)",
-            "format": "number"
-          },
-          {
             "field": "walkin_discount_hkd",
             "label": "Walk-in Discount (HK$/L)",
             "format": "number"
           },
           {
-            "field": "net_price_hkd",
+            "field": "discounted_price_hkd",
             "label": "Net Price (HK$/L)",
+            "format": "number"
+          }
+        ]
+      },
+      {
+        "id": "consumer_council_complaints_table",
+        "title": "Consumer Council Complaints by Category (Latest Period)",
+        "subtitle": "All complaint categories during 2026, sorted by number of complaints.",
+        "dataset": "consumer_council_complaints_table",
+        "sourceId": "consumer_council_complaints",
+        "defaultSort": {
+          "field": "amount",
+          "direction": "desc"
+        },
+        "density": "dense",
+        "layout": "full",
+        "columns": [
+          {
+            "field": "period",
+            "label": "Period",
+            "type": "text"
+          },
+          {
+            "field": "category",
+            "label": "Category",
+            "type": "text"
+          },
+          {
+            "field": "amount",
+            "label": "Complaints",
+            "format": "number"
+          }
+        ]
+      },
+      {
+        "id": "immigration_checkpoint_table",
+        "title": "Immigration Checkpoint Breakdown",
+        "subtitle": "Latest date: 2026-07-24. Passenger clearance by control point and direction.",
+        "dataset": "immigration_checkpoint_snapshot",
+        "sourceId": "immigration_flow",
+        "defaultSort": {
+          "field": "control_point",
+          "direction": "asc"
+        },
+        "density": "dense",
+        "layout": "full",
+        "columns": [
+          {
+            "field": "control_point",
+            "label": "Control Point",
+            "type": "text"
+          },
+          {
+            "field": "direction",
+            "label": "Direction",
+            "type": "text"
+          },
+          {
+            "field": "hk_residents",
+            "label": "HK Residents",
+            "format": "number"
+          },
+          {
+            "field": "mainland_visitors",
+            "label": "Mainland Visitors",
+            "format": "number"
+          },
+          {
+            "field": "other_visitors",
+            "label": "Other Visitors",
+            "format": "number"
+          },
+          {
+            "field": "total",
+            "label": "Total",
             "format": "number"
           }
         ]
@@ -888,7 +1003,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**Data snapshot:** `d6bca3c4222c8251` · generated 2026-07-25T14:22:48.247113Z.  This is a published snapshot, not a live connection. Includes official Consumer Council auto fuel calculator pricing."
+        "body": "**Data snapshot:** `823a41ec6385afd0` · generated 2026-07-25T18:14:27.342894Z.  This is a published snapshot, not a live connection. Includes official Consumer Council auto fuel calculator pricing."
       },
       {
         "id": "market_pulse_1",
@@ -946,12 +1061,35 @@
       {
         "id": "oilprice_chart_block",
         "type": "chart",
-        "chartId": "consumer_council_oilprice_chart"
+        "chartId": "consumer_council_oilprice_chart",
+        "layout": "half"
+      },
+      {
+        "id": "oilprice_net_chart_block",
+        "type": "chart",
+        "chartId": "consumer_council_oilprice_net_chart",
+        "layout": "half"
       },
       {
         "id": "oilprice_table_block",
         "type": "table",
         "tableId": "consumer_council_oilprice_table"
+      },
+      {
+        "id": "complaints_chart_block",
+        "type": "chart",
+        "chartId": "consumer_council_complaints_chart",
+        "layout": "half"
+      },
+      {
+        "id": "complaints_table_block",
+        "type": "table",
+        "tableId": "consumer_council_complaints_table"
+      },
+      {
+        "id": "immigration_checkpoint_table_block",
+        "type": "table",
+        "tableId": "immigration_checkpoint_table"
       },
       {
         "id": "afcd_table",
@@ -1019,14 +1157,14 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-25T14:22:48.247113Z",
+    "generatedAt": "2026-07-25T18:14:27.342894Z",
     "status": "ready",
     "datasets": {
       "kpi_weather": [
         {
-          "latest": 4.2,
-          "period_change": -0.684211,
-          "year_change": -0.857627,
+          "latest": 7.2,
+          "period_change": -0.458647,
+          "year_change": -0.755932,
           "observation_date": "2026-07-01"
         }
       ],
@@ -1287,12 +1425,18 @@
         {
           "date": "2026-07-01",
           "month": "2026-07",
-          "signal_8_plus_hours": 0.0,
+          "signal_8_plus_hours": 3.0,
           "red_black_rain_hours": 4.2,
-          "total_disruption_hours": 4.2
+          "total_disruption_hours": 7.2
         }
       ],
       "severe_weather_log": [
+        {
+          "signal_name": "Typhoon Signal 8 (NOUL)",
+          "start": "2026-07-25 22:10",
+          "end": "2026-07-26 01:10",
+          "duration_hours": 3.0
+        },
         {
           "signal_name": "Red Rainstorm",
           "start": "2026-07-20 08:05",
@@ -1466,12 +1610,6 @@
           "start": "2025-08-04 23:45",
           "end": "2025-08-05 02:10",
           "duration_hours": 2.42
-        },
-        {
-          "signal_name": "Red Rainstorm",
-          "start": "2025-08-04 22:35",
-          "end": "2025-08-04 23:45",
-          "duration_hours": 1.17
         }
       ],
       "kpi_northbound": [
@@ -4960,14 +5098,6 @@
       "consumer_council_oilprice": [
         {
           "date": "2026-07-25",
-          "company": "Caltex",
-          "fuel_type": "Standard Petrol",
-          "discounted_price_hkd": 22.14,
-          "walkin_discount_hkd": 10.2,
-          "data_source": "live"
-        },
-        {
-          "date": "2026-07-25",
           "company": "PetroChina",
           "fuel_type": "Standard Petrol",
           "discounted_price_hkd": 25.34,
@@ -5001,9 +5131,9 @@
         {
           "date": "2026-07-25",
           "company": "Caltex",
-          "fuel_type": "Premium Petrol",
-          "discounted_price_hkd": 22.14,
-          "walkin_discount_hkd": 12.0,
+          "fuel_type": "Standard Petrol",
+          "discounted_price_hkd": 31.44,
+          "walkin_discount_hkd": 0.9,
           "data_source": "live"
         },
         {
@@ -5036,6 +5166,14 @@
           "fuel_type": "Premium Petrol",
           "discounted_price_hkd": 32.87,
           "walkin_discount_hkd": 1.6,
+          "data_source": "live"
+        },
+        {
+          "date": "2026-07-25",
+          "company": "Caltex",
+          "fuel_type": "Premium Petrol",
+          "discounted_price_hkd": 33.24,
+          "walkin_discount_hkd": 0.9,
           "data_source": "live"
         }
       ],
@@ -5886,6 +6024,558 @@
           "amount": 269,
           "data_source": "live"
         }
+      ],
+      "consumer_council_complaints_table": [
+        {
+          "period": "2026",
+          "category": "Food & Entertainment Services",
+          "amount": 2175,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Travel Matters",
+          "amount": 1563,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Telecommunication Services",
+          "amount": 1026,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Electrical Appliances",
+          "amount": 983,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Medicine & Health Foods",
+          "amount": 904,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Beauty Services",
+          "amount": 696,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Clothing & Apparel",
+          "amount": 639,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Local Accommodation",
+          "amount": 495,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Personal Care Products",
+          "amount": 469,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Foods & Drinks",
+          "amount": 466,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Bank and Financial Services",
+          "amount": 429,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Computer Products",
+          "amount": 406,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Online Services & eCommerce Platforms",
+          "amount": 319,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Furniture & Fixtures",
+          "amount": 312,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Cars & Car Services",
+          "amount": 281,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Miscellaneous Goods",
+          "amount": 269,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Telecommunication Equipment",
+          "amount": 265,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Household Products/Services",
+          "amount": 257,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Medical Services",
+          "amount": 256,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Recreation & Health Clubs",
+          "amount": 242,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Education Matters",
+          "amount": 231,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Jewellery & Watches",
+          "amount": 224,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Shopping Mall, Chain Store and Reward Program",
+          "amount": 209,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Baby Products",
+          "amount": 192,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Agency Services",
+          "amount": 175,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Storage, Postal & Courier Services",
+          "amount": 172,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Toys",
+          "amount": 169,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Decoration/Renovation Services",
+          "amount": 168,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Transportation Services",
+          "amount": 149,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Sporting Goods",
+          "amount": 146,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Pets & Pet Services",
+          "amount": 100,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Miscellaneous Services",
+          "amount": 100,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Properties",
+          "amount": 99,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Photographic Equipment",
+          "amount": 93,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Insurance",
+          "amount": 91,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Broadcasting Services",
+          "amount": 88,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Medical & Health Devices",
+          "amount": 73,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Optical Products/Services",
+          "amount": 45,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Fuel",
+          "amount": 44,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Wedding Services",
+          "amount": 36,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Publishing / Educational Materials",
+          "amount": 26,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Public Utilities",
+          "amount": 25,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Photo Taking/Finishing",
+          "amount": 23,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Elderly Care",
+          "amount": 11,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Time Sharing",
+          "amount": 9,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Lawyer & Legal Services",
+          "amount": 8,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "Funeral Services",
+          "amount": 7,
+          "data_source": "live"
+        }
+      ],
+      "consumer_council_complaints_chart": [
+        {
+          "category": "Foods & Drinks",
+          "amount": 466
+        },
+        {
+          "category": "Personal Care Products",
+          "amount": 469
+        },
+        {
+          "category": "Local Accommodation",
+          "amount": 495
+        },
+        {
+          "category": "Clothing & Apparel",
+          "amount": 639
+        },
+        {
+          "category": "Beauty Services",
+          "amount": 696
+        },
+        {
+          "category": "Medicine & Health Foods",
+          "amount": 904
+        },
+        {
+          "category": "Electrical Appliances",
+          "amount": 983
+        },
+        {
+          "category": "Telecommunication Services",
+          "amount": 1026
+        },
+        {
+          "category": "Travel Matters",
+          "amount": 1563
+        },
+        {
+          "category": "Food & Entertainment Services",
+          "amount": 2175
+        }
+      ],
+      "immigration_checkpoint_snapshot": [
+        {
+          "control_point": "Airport",
+          "direction": "Arrival",
+          "hk_residents": 36915,
+          "mainland_visitors": 13776,
+          "other_visitors": 17878,
+          "total": 68569
+        },
+        {
+          "control_point": "Airport",
+          "direction": "Departure",
+          "hk_residents": 47616,
+          "mainland_visitors": 12485,
+          "other_visitors": 15343,
+          "total": 75444
+        },
+        {
+          "control_point": "China Ferry Terminal",
+          "direction": "Arrival",
+          "hk_residents": 313,
+          "mainland_visitors": 518,
+          "other_visitors": 53,
+          "total": 884
+        },
+        {
+          "control_point": "China Ferry Terminal",
+          "direction": "Departure",
+          "hk_residents": 565,
+          "mainland_visitors": 500,
+          "other_visitors": 28,
+          "total": 1093
+        },
+        {
+          "control_point": "Express Rail Link West Kowloon",
+          "direction": "Arrival",
+          "hk_residents": 19463,
+          "mainland_visitors": 29744,
+          "other_visitors": 2483,
+          "total": 51690
+        },
+        {
+          "control_point": "Express Rail Link West Kowloon",
+          "direction": "Departure",
+          "hk_residents": 27722,
+          "mainland_visitors": 22877,
+          "other_visitors": 1911,
+          "total": 52510
+        },
+        {
+          "control_point": "Harbour Control",
+          "direction": "Arrival",
+          "hk_residents": 0,
+          "mainland_visitors": 0,
+          "other_visitors": 59,
+          "total": 59
+        },
+        {
+          "control_point": "Harbour Control",
+          "direction": "Departure",
+          "hk_residents": 0,
+          "mainland_visitors": 0,
+          "other_visitors": 24,
+          "total": 24
+        },
+        {
+          "control_point": "Heung Yuen Wai",
+          "direction": "Arrival",
+          "hk_residents": 33007,
+          "mainland_visitors": 9937,
+          "other_visitors": 242,
+          "total": 43186
+        },
+        {
+          "control_point": "Heung Yuen Wai",
+          "direction": "Departure",
+          "hk_residents": 37402,
+          "mainland_visitors": 7417,
+          "other_visitors": 442,
+          "total": 45261
+        },
+        {
+          "control_point": "Hong Kong-Zhuhai-Macao Bridge",
+          "direction": "Arrival",
+          "hk_residents": 26155,
+          "mainland_visitors": 8824,
+          "other_visitors": 5161,
+          "total": 40140
+        },
+        {
+          "control_point": "Hong Kong-Zhuhai-Macao Bridge",
+          "direction": "Departure",
+          "hk_residents": 37123,
+          "mainland_visitors": 15293,
+          "other_visitors": 4644,
+          "total": 57060
+        },
+        {
+          "control_point": "Kai Tak Cruise Terminal",
+          "direction": "Arrival",
+          "hk_residents": 1335,
+          "mainland_visitors": 359,
+          "other_visitors": 137,
+          "total": 1831
+        },
+        {
+          "control_point": "Kai Tak Cruise Terminal",
+          "direction": "Departure",
+          "hk_residents": 1414,
+          "mainland_visitors": 153,
+          "other_visitors": 59,
+          "total": 1626
+        },
+        {
+          "control_point": "Lo Wu",
+          "direction": "Arrival",
+          "hk_residents": 74351,
+          "mainland_visitors": 19103,
+          "other_visitors": 872,
+          "total": 94326
+        },
+        {
+          "control_point": "Lo Wu",
+          "direction": "Departure",
+          "hk_residents": 88202,
+          "mainland_visitors": 26285,
+          "other_visitors": 978,
+          "total": 115465
+        },
+        {
+          "control_point": "Lok Ma Chau",
+          "direction": "Arrival",
+          "hk_residents": 14179,
+          "mainland_visitors": 4887,
+          "other_visitors": 698,
+          "total": 19764
+        },
+        {
+          "control_point": "Lok Ma Chau",
+          "direction": "Departure",
+          "hk_residents": 14942,
+          "mainland_visitors": 6138,
+          "other_visitors": 552,
+          "total": 21632
+        },
+        {
+          "control_point": "Lok Ma Chau Spur Line",
+          "direction": "Arrival",
+          "hk_residents": 54779,
+          "mainland_visitors": 26560,
+          "other_visitors": 574,
+          "total": 81913
+        },
+        {
+          "control_point": "Lok Ma Chau Spur Line",
+          "direction": "Departure",
+          "hk_residents": 68492,
+          "mainland_visitors": 26300,
+          "other_visitors": 595,
+          "total": 95387
+        },
+        {
+          "control_point": "Macao Ferry Terminal",
+          "direction": "Arrival",
+          "hk_residents": 4850,
+          "mainland_visitors": 1811,
+          "other_visitors": 1935,
+          "total": 8596
+        },
+        {
+          "control_point": "Macao Ferry Terminal",
+          "direction": "Departure",
+          "hk_residents": 5867,
+          "mainland_visitors": 2859,
+          "other_visitors": 1743,
+          "total": 10469
+        },
+        {
+          "control_point": "Man Kam To",
+          "direction": "Arrival",
+          "hk_residents": 2207,
+          "mainland_visitors": 884,
+          "other_visitors": 26,
+          "total": 3117
+        },
+        {
+          "control_point": "Man Kam To",
+          "direction": "Departure",
+          "hk_residents": 2463,
+          "mainland_visitors": 578,
+          "other_visitors": 20,
+          "total": 3061
+        },
+        {
+          "control_point": "Sha Tau Kok",
+          "direction": "Arrival",
+          "hk_residents": 0,
+          "mainland_visitors": 0,
+          "other_visitors": 0,
+          "total": 0
+        },
+        {
+          "control_point": "Sha Tau Kok",
+          "direction": "Departure",
+          "hk_residents": 0,
+          "mainland_visitors": 0,
+          "other_visitors": 0,
+          "total": 0
+        },
+        {
+          "control_point": "Shenzhen Bay",
+          "direction": "Arrival",
+          "hk_residents": 44447,
+          "mainland_visitors": 20340,
+          "other_visitors": 2113,
+          "total": 66900
+        },
+        {
+          "control_point": "Shenzhen Bay",
+          "direction": "Departure",
+          "hk_residents": 56798,
+          "mainland_visitors": 20020,
+          "other_visitors": 1623,
+          "total": 78441
+        }
       ]
     }
   },
@@ -5899,7 +6589,7 @@
         "url": "https://oil-price.consumer.org.hk/en",
         "language": "JSON",
         "description": "Daily auto-fuel pump prices, walk-in discounts, and net prices across Caltex, PetroChina, Shell, Sinopec, and Esso.",
-        "executed_at": "2026-07-25T14:22:48.247113Z"
+        "executed_at": "2026-07-25T18:14:27.342894Z"
       }
     },
     {
@@ -5911,7 +6601,7 @@
         "url": "https://www.consumer.org.hk/node/32290/export-complaints/json?lang=en",
         "language": "JSON",
         "description": "Annual consumer complaints by category across Hong Kong consumer sectors.",
-        "executed_at": "2026-07-25T14:22:48.247113Z"
+        "executed_at": "2026-07-25T18:14:27.342894Z"
       }
     },
     {
@@ -5926,7 +6616,7 @@
         "metric_definitions": [
           "Each commodity's price is the mean of same-day readings across the wholesale markets/sources AFCD reports for it."
         ],
-        "executed_at": "2026-07-25T14:22:48.247113Z"
+        "executed_at": "2026-07-25T18:14:27.342894Z"
       }
     },
     {
@@ -5942,7 +6632,7 @@
           "Latest is the most recent published PM benchmark fixing.",
           "Day and year movements are latest divided by the prior trading day or the observation on/before one year earlier, minus one."
         ],
-        "executed_at": "2026-07-25T14:22:48.247113Z"
+        "executed_at": "2026-07-25T18:14:27.342894Z"
       }
     },
     {
@@ -5958,7 +6648,7 @@
           "PE (TTM), PB, and market cap (HKD bn) are each ticker's latest published daily value.",
           "No dividend-yield indicator exists on this endpoint; yield is not reported here."
         ],
-        "executed_at": "2026-07-25T14:22:48.247113Z"
+        "executed_at": "2026-07-25T18:14:27.342894Z"
       }
     },
     {
@@ -5974,7 +6664,7 @@
           "All retail outlet is the classification group's own published total across all outlet types.",
           "Month and year movements are latest divided by the prior month or the observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-07-25T14:22:48.247113Z"
+        "executed_at": "2026-07-25T18:14:27.342894Z"
       }
     },
     {
@@ -5990,7 +6680,7 @@
           "Purchases are only published sector-wide, not broken out by restaurant type.",
           "Quarter and year movements are latest divided by the prior quarter or the observation four quarters earlier, minus one."
         ],
-        "executed_at": "2026-07-25T14:22:48.247113Z"
+        "executed_at": "2026-07-25T18:14:27.342894Z"
       }
     },
     {
@@ -6007,7 +6697,7 @@
           "Southbound (南下) flow is daily Mainland visitor arrivals across all 17 control points, since Mainland visitors legitimately arrive by air, rail, and sea, not just by land.",
           "7-day moving averages (7d MA) smooth out day-of-week seasonality (weekend shopping spikes)."
         ],
-        "executed_at": "2026-07-25T14:22:48.247113Z"
+        "executed_at": "2026-07-25T18:14:27.342894Z"
       }
     },
     {
@@ -6024,7 +6714,7 @@
           "Red/Black Rainstorm hours measures total duration under Red or Black rainstorm warnings.",
           "RMB per 100 HKD is derived from FRED daily DEXCHUS and DEXHKUS rates."
         ],
-        "executed_at": "2026-07-25T14:22:48.247113Z"
+        "executed_at": "2026-07-25T18:14:27.342894Z"
       }
     },
     {
@@ -6038,13 +6728,13 @@
           "Validated live measure frames",
           "Declared future-source registry"
         ],
-        "executed_at": "2026-07-25T14:22:48.247113Z"
+        "executed_at": "2026-07-25T18:14:27.342894Z"
       }
     }
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-local-consumer/",
-    "snapshotId": "d6bca3c4222c8251",
+    "snapshotId": "823a41ec6385afd0",
     "dataAsOf": "2026-07-22"
   }
 }

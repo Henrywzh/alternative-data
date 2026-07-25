@@ -307,6 +307,27 @@ def _records(frame: pd.DataFrame, columns: list[str]) -> list[dict[str, Any]]:
     return json.loads(selected.to_json(orient="records", date_format="iso"))
 
 
+def _series_history(df: pd.DataFrame, series_label: str, value_column: str) -> list[dict[str, Any]]:
+    """Long-format {date, series, value} rows for a multi-series line chart."""
+    if df.empty or value_column not in df.columns:
+        return []
+    rows = []
+    for _, row in df.iterrows():
+        value = row.get(value_column)
+        date = row.get("observation_date")
+        if pd.isna(value) or pd.isna(date):
+            continue
+        date_str = str(date)[:10]
+        rows.append(
+            {
+                "date": date_str,
+                "series": series_label,
+                "value": round(float(value), 4),
+            }
+        )
+    return rows
+
+
 def _series_records(frame: pd.DataFrame, value_column: str) -> list[dict[str, Any]]:
     renamed = frame[["date", value_column]].rename(columns={value_column: "value"})
     return _records(renamed, ["date", "value"])
@@ -372,7 +393,7 @@ def _stamp_sources(generated_at: str) -> list[dict[str, Any]]:
     return result
 
 
-def build_artifact(raw_frames: dict[str, pd.DataFrame], *, now: datetime | None = None) -> tuple[dict[str, Any], dict[str, Any]]:
+def build_artifact(raw_frames: dict[str, pd.DataFrame], raw_hkma: pd.DataFrame | None = None, raw_cnsd: pd.DataFrame | None = None, *, now: datetime | None = None) -> tuple[dict[str, Any], dict[str, Any]]:
     now = now or _utc_now()
     if now.tzinfo is None:
         now = now.replace(tzinfo=timezone.utc)
@@ -391,10 +412,13 @@ def build_artifact(raw_frames: dict[str, pd.DataFrame], *, now: datetime | None 
         raise ValueError("RVD price and rent observation dates do not align")
     generated_at = now.isoformat().replace("+00:00", "Z")
     health = _source_health(frames, now)
-    df_hkma = fetch_hkma_residential_mortgage_survey()
-    df_cnsd = fetch_cnsd_table("615-66001")
+    df_hkma = raw_hkma if raw_hkma is not None else fetch_hkma_residential_mortgage_survey()
+    df_cnsd = raw_cnsd if raw_cnsd is not None else fetch_cnsd_table("615-66001")
 
     hkma_rows = []
+    hkma_ltv_rows: list[dict[str, Any]] = []
+    hkma_credit_quality_rows: list[dict[str, Any]] = []
+    hkma_activity_rows: list[dict[str, Any]] = []
     if not df_hkma.empty and "observation_date" in df_hkma.columns:
         for _, r in df_hkma.iterrows():
             obs_d = str(r["observation_date"])[:10]
@@ -407,6 +431,29 @@ def build_artifact(raw_frames: dict[str, pd.DataFrame], *, now: datetime | None 
                 hkma_rows.append({"date": obs_d, "series": "Best Lending Rate (%)", "value": float(blr_pct)})
             if pd.notna(fixed_pct):
                 hkma_rows.append({"date": obs_d, "series": "Fixed-rate (%)", "value": float(fixed_pct)})
+            # LTV single series
+            ltv = r.get("average_ltv_ratio_pct")
+            if pd.notna(ltv):
+                hkma_ltv_rows.append({"date": obs_d, "series": "Average LTV (%)", "value": float(ltv)})
+            # Credit quality: delinquency + rescheduled
+            dq = r.get("delinquency_ratio_pct")
+            if pd.notna(dq):
+                hkma_credit_quality_rows.append({"date": obs_d, "series": "Delinquency Ratio (%)", "value": float(dq)})
+            rs = r.get("rescheduled_loan_ratio_pct")
+            if pd.notna(rs):
+                hkma_credit_quality_rows.append({"date": obs_d, "series": "Rescheduled Loan Ratio (%)", "value": float(rs)})
+            # Activity table row (latest period)
+            hkma_activity_rows.append({
+                "date": obs_d,
+                "new_applications_count": float(r["new_applications_count"]) if pd.notna(r.get("new_applications_count")) else None,
+                "approved_loans_amount_mhkd": float(r["approved_loans_amount_mhkd"]) if pd.notna(r.get("approved_loans_amount_mhkd")) else None,
+                "approved_primary_presales_amount_mhkd": float(r["approved_primary_presales_amount_mhkd"]) if pd.notna(r.get("approved_primary_presales_amount_mhkd")) else None,
+                "approved_secondary_amount_mhkd": float(r["approved_secondary_amount_mhkd"]) if pd.notna(r.get("approved_secondary_amount_mhkd")) else None,
+                "approved_refinancing_amount_mhkd": float(r["approved_refinancing_amount_mhkd"]) if pd.notna(r.get("approved_refinancing_amount_mhkd")) else None,
+                "drawn_down_amount_mhkd": float(r["drawn_down_amount_mhkd"]) if pd.notna(r.get("drawn_down_amount_mhkd")) else None,
+            })
+        hkma_credit_quality_rows.sort(key=lambda r: (r["series"], r["date"]))
+        hkma_ltv_rows.sort(key=lambda r: r["date"])
 
     cnsd_const_rows = []
     if not df_cnsd.empty and "period" in df_cnsd.columns and "value" in df_cnsd.columns:
@@ -440,6 +487,9 @@ def build_artifact(raw_frames: dict[str, pd.DataFrame], *, now: datetime | None 
         ],
         "rebased_five_year": _rebased_records(frames, now),
         "hkma_mortgage_rate_mix": hkma_rows,
+        "hkma_ltv_history": hkma_ltv_rows,
+        "hkma_credit_quality_history": hkma_credit_quality_rows,
+        "hkma_mortgage_activity": hkma_activity_rows,
         "cnsd_construction_value": cnsd_const_rows,
         "source_health": health,
         "source_coverage": coverage,
@@ -628,6 +678,45 @@ def build_artifact(raw_frames: dict[str, pd.DataFrame], *, now: datetime | None 
             }
         )
 
+    if hkma_ltv_rows:
+        charts.append(
+            {
+                "id": "hkma_ltv_chart",
+                "title": "HKMA Average LTV Ratio (%)",
+                "subtitle": "Average loan-to-value ratio for new mortgage approvals.",
+                "type": "line",
+                "intent": "trend",
+                "dataset": "hkma_ltv_history",
+                "sourceId": "hkma_mortgage",
+                "encodings": {
+                    "x": {"field": "date", "type": "temporal", "label": "Month"},
+                    "y": {"field": "value", "type": "quantitative", "label": "LTV (%)"},
+                },
+                "valueFormat": "number",
+                "layout": "half",
+            }
+        )
+
+    if hkma_credit_quality_rows:
+        charts.append(
+            {
+                "id": "hkma_credit_quality_chart",
+                "title": "HKMA Mortgage Credit Quality (%)",
+                "subtitle": "Delinquency and rescheduled loan ratios -- a genuine credit-cycle risk indicator.",
+                "type": "line",
+                "intent": "comparison",
+                "dataset": "hkma_credit_quality_history",
+                "sourceId": "hkma_mortgage",
+                "encodings": {
+                    "x": {"field": "date", "type": "temporal", "label": "Month"},
+                    "y": {"field": "value", "type": "quantitative", "label": "%"},
+                    "color": {"field": "series", "type": "nominal", "label": "Metric"},
+                },
+                "valueFormat": "number",
+                "layout": "half",
+            }
+        )
+
     tables = [
         {
             "id": "source_health_table",
@@ -667,6 +756,29 @@ def build_artifact(raw_frames: dict[str, pd.DataFrame], *, now: datetime | None 
         },
     ]
 
+    if hkma_activity_rows:
+        latest_activity = hkma_activity_rows[-1] if hkma_activity_rows else {}
+        tables.append(
+            {
+                "id": "hkma_mortgage_activity_table",
+                "title": "HKMA Mortgage Market Activity",
+                "subtitle": f"Monthly new applications, approved loans, and drawn-down amount ({latest_activity.get('date', '—')} shown latest).",
+                "dataset": "hkma_mortgage_activity",
+                "sourceId": "hkma_mortgage",
+                "density": "dense",
+                "layout": "full",
+                "columns": [
+                    {"field": "date", "label": "Month", "type": "date"},
+                    {"field": "new_applications_count", "label": "New Applications", "format": "number"},
+                    {"field": "approved_loans_amount_mhkd", "label": "Approved Loans (HK$m)", "format": "number"},
+                    {"field": "approved_primary_presales_amount_mhkd", "label": "Primary/Presales (HK$m)", "format": "number"},
+                    {"field": "approved_secondary_amount_mhkd", "label": "Secondary (HK$m)", "format": "number"},
+                    {"field": "approved_refinancing_amount_mhkd", "label": "Refinancing (HK$m)", "format": "number"},
+                    {"field": "drawn_down_amount_mhkd", "label": "Drawn Down (HK$m)", "format": "number"},
+                ],
+            }
+        )
+
     blocks = [
         {
             "id": "snapshot_context",
@@ -684,6 +796,13 @@ def build_artifact(raw_frames: dict[str, pd.DataFrame], *, now: datetime | None 
         blocks.append({"id": "hkma_mortgage_chart_block", "type": "chart", "chartId": "hkma_mortgage_rate_mix_chart"})
     if cnsd_const_rows:
         blocks.append({"id": "cnsd_construction_chart_block", "type": "chart", "chartId": "cnsd_construction_value_chart"})
+
+    if hkma_ltv_rows:
+        blocks.append({"id": "hkma_ltv_chart_block", "type": "chart", "chartId": "hkma_ltv_chart", "layout": "half"})
+    if hkma_credit_quality_rows:
+        blocks.append({"id": "hkma_credit_quality_chart_block", "type": "chart", "chartId": "hkma_credit_quality_chart", "layout": "half"})
+    if hkma_activity_rows:
+        blocks.append({"id": "hkma_mortgage_activity_table_block", "type": "table", "tableId": "hkma_mortgage_activity_table"})
 
     blocks.extend([
         {"id": "rvd_price_chart", "type": "chart", "chartId": "rvd_trend", "layout": "half"},

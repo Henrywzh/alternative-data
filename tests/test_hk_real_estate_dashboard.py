@@ -49,9 +49,41 @@ def _frames():
     }
 
 
+def _hkma_frame(n=6):
+    dates = pd.date_range(end="2026-06-01", periods=n, freq="MS")
+    return pd.DataFrame(
+        {
+            "observation_date": [d.strftime("%Y-%m-%d") for d in dates],
+            "new_applications_count": [10_000 + i * 50 for i in range(n)],
+            "approved_loans_amount_mhkd": [30_000 + i * 100 for i in range(n)],
+            "approved_primary_presales_amount_mhkd": [8_000 + i * 20 for i in range(n)],
+            "approved_secondary_amount_mhkd": [15_000 + i * 30 for i in range(n)],
+            "approved_refinancing_amount_mhkd": [5_000 + i * 10 for i in range(n)],
+            "drawn_down_amount_mhkd": [25_000 + i * 80 for i in range(n)],
+            "average_ltv_ratio_pct": [55.0 + i * 0.1 for i in range(n)],
+            "hibor_pricing_pct_share": [70.0 + i for i in range(n)],
+            "blr_pricing_pct_share": [10.0 - i * 0.1 for i in range(n)],
+            "fixed_pricing_pct_share": [20.0 - i * 0.9 for i in range(n)],
+            "delinquency_ratio_pct": [0.03 + i * 0.001 for i in range(n)],
+            "rescheduled_loan_ratio_pct": [0.0 for _ in range(n)],
+        }
+    )
+
+
+def _cnsd_frame(n=8):
+    dates = pd.date_range(end="2026-03-31", periods=n, freq="QE")
+    return pd.DataFrame(
+        {
+            "period": [f"{d.year}-Q{(d.month - 1) // 3 + 1}" for d in dates],
+            "value": [50_000 + i * 500 for i in range(n)],
+            "unit": ["HK$ million"] * n,
+        }
+    )
+
+
 def test_build_artifact_is_source_backed_and_deterministic():
-    first, first_status = dashboard_export.build_artifact(_frames(), now=NOW)
-    second, second_status = dashboard_export.build_artifact(_frames(), now=NOW)
+    first, first_status = dashboard_export.build_artifact(_frames(), raw_hkma=_hkma_frame(), raw_cnsd=_cnsd_frame(), now=NOW)
+    second, second_status = dashboard_export.build_artifact(_frames(), raw_hkma=_hkma_frame(), raw_cnsd=_cnsd_frame(), now=NOW)
 
     assert first_status["snapshot_id"] == second_status["snapshot_id"]
     assert first_status["data_as_of"] == "2026-07-20"
@@ -63,7 +95,7 @@ def test_build_artifact_is_source_backed_and_deterministic():
 
 
 def test_rebased_series_start_at_100():
-    artifact, _ = dashboard_export.build_artifact(_frames(), now=NOW)
+    artifact, _ = dashboard_export.build_artifact(_frames(), raw_hkma=_hkma_frame(), raw_cnsd=_cnsd_frame(), now=NOW)
     rows = artifact["snapshot"]["datasets"]["rebased_five_year"]
     first_by_series = {}
     for row in rows:
@@ -73,7 +105,7 @@ def test_rebased_series_start_at_100():
 
 
 def test_artifact_contains_no_machine_local_paths_or_secrets():
-    artifact, _ = dashboard_export.build_artifact(_frames(), now=NOW)
+    artifact, _ = dashboard_export.build_artifact(_frames(), raw_hkma=_hkma_frame(), raw_cnsd=_cnsd_frame(), now=NOW)
     serialized = json.dumps(artifact)
     assert "/Users/" not in serialized
     assert "api_key" not in serialized.lower()
@@ -85,11 +117,11 @@ def test_stale_or_duplicate_core_series_fails_closed():
     frames = _frames()
     frames["ccl"].loc[frames["ccl"].index[-1], "date"] = frames["ccl"].iloc[-2]["date"]
     with pytest.raises(ValueError, match="duplicate observation dates"):
-        dashboard_export.build_artifact(frames, now=NOW)
+        dashboard_export.build_artifact(frames, raw_hkma=_hkma_frame(), raw_cnsd=_cnsd_frame(), now=NOW)
 
 
 def test_rvd_price_and_rent_must_align():
     frames = _frames()
     frames["rvd_rent"].loc[frames["rvd_rent"].index[-1], "date"] = "2026-07-01"
     with pytest.raises(ValueError, match="RVD price and rent observation dates do not align"):
-        dashboard_export.build_artifact(frames, now=NOW)
+        dashboard_export.build_artifact(frames, raw_hkma=_hkma_frame(), raw_cnsd=_cnsd_frame(), now=NOW)
