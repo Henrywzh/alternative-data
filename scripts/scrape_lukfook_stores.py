@@ -14,13 +14,15 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
-import ssl
+import sys
 import time
 import urllib.parse
-import urllib.request
 from pathlib import Path
 
 import pandas as pd
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from store_scraper_common import append_snapshot, fetch_url  # noqa: E402
 
 MAINLAND_PROVINCES_URL = "https://www1.lukfook.com.hk/LF-AMap/home/getprovince"
 MAINLAND_SHOPS_URL = "https://www1.lukfook.com.hk/LF-AMap/home/getshop"
@@ -51,13 +53,12 @@ HEADERS = {
 }
 
 
-def _make_request(url: str) -> bytes:
-    """Make HTTP GET request bypassing SSL verification issues if needed."""
-    ctx = ssl._create_unverified_context()
-    opener = urllib.request.build_opener(urllib.request.HTTPSHandler(context=ctx))
-    req = urllib.request.Request(url, headers=HEADERS)
-    with opener.open(req, timeout=30) as resp:
-        return resp.read()
+def _make_request(url: str) -> bytes | None:
+    """Make an HTTP GET request with retries (GitHub Actions' network path to
+    this site has shown occasional per-request read timeouts across the ~43
+    sequential calls this scraper makes; a couple of retries recovers most
+    of them rather than losing that region's stores for the day)."""
+    return fetch_url(url, headers=HEADERS, timeout=30, attempts=3, backoff_seconds=2.0)
 
 
 def _fetch_all_stores() -> list[dict]:
@@ -133,22 +134,6 @@ def collect_counts(snapshot_date: str) -> pd.DataFrame:
     ]
     rows.append({"date": snapshot_date, "region": "TOTAL", "store_count": len(stores)})
     return pd.DataFrame(rows)
-
-
-def append_snapshot(df: pd.DataFrame, out_path: Path) -> pd.DataFrame:
-    """Append snapshot to existing parquet file, deduplicated on (date, region)."""
-    existing = pd.read_parquet(out_path) if out_path.exists() else None
-    if df.empty:
-        return existing if existing is not None else df
-    combined = df if existing is None else pd.concat([existing, df], ignore_index=True)
-    combined = (
-        combined.drop_duplicates(subset=["date", "region"], keep="last")
-        .sort_values(["date", "region"])
-        .reset_index(drop=True)
-    )
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    combined.to_parquet(out_path, index=False)
-    return combined
 
 
 def main() -> None:

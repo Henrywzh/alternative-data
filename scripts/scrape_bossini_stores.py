@@ -12,11 +12,13 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import re
-import ssl
-import urllib.request
+import sys
 from pathlib import Path
 
 import pandas as pd
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from store_scraper_common import append_snapshot, fetch_url  # noqa: E402
 
 SHOP_ADDRESS_URL = "https://www.bossini.com/pages/shop-address?locale=zh-hant"
 HEADERS = {
@@ -31,16 +33,10 @@ HEADERS = {
 
 def _fetch_stores() -> list[dict]:
     """Fetch and parse all Bossini stores from the shop-address page."""
-    ctx = ssl._create_unverified_context()
-    opener = urllib.request.build_opener(urllib.request.HTTPSHandler(context=ctx))
-    req = urllib.request.Request(SHOP_ADDRESS_URL, headers=HEADERS)
-
-    try:
-        with opener.open(req, timeout=30) as resp:
-            html = resp.read().decode("utf-8", errors="ignore")
-    except Exception as exc:
-        print(f"  Error fetching Bossini shop page: {exc}")
+    body = fetch_url(SHOP_ADDRESS_URL, headers=HEADERS, timeout=30)
+    if body is None:
         return []
+    html = body.decode("utf-8", errors="ignore")
 
     # Clean text conversion
     text = re.sub(r'<br\s*/?>', '\n', html, flags=re.I)
@@ -99,22 +95,6 @@ def collect_counts(snapshot_date: str) -> pd.DataFrame:
     ]
     rows.append({"date": snapshot_date, "region": "TOTAL", "store_count": len(stores)})
     return pd.DataFrame(rows)
-
-
-def append_snapshot(df: pd.DataFrame, out_path: Path) -> pd.DataFrame:
-    """Append snapshot to existing parquet file, deduplicated on (date, region)."""
-    existing = pd.read_parquet(out_path) if out_path.exists() else None
-    if df.empty:
-        return existing if existing is not None else df
-    combined = df if existing is None else pd.concat([existing, df], ignore_index=True)
-    combined = (
-        combined.drop_duplicates(subset=["date", "region"], keep="last")
-        .sort_values(["date", "region"])
-        .reset_index(drop=True)
-    )
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    combined.to_parquet(out_path, index=False)
-    return combined
 
 
 def main() -> None:

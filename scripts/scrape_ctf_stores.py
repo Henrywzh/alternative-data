@@ -21,11 +21,13 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
-import urllib.request
-import urllib.error
+import sys
 from pathlib import Path
 
 import pandas as pd
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from store_scraper_common import append_snapshot, fetch_url  # noqa: E402
 
 STORES_API_URL = (
     "https://www.chowtaifook.com/on/demandware.store/Sites-ctfeshop-hk-Site/en_HK/"
@@ -43,15 +45,18 @@ HEADERS = {
 
 def _fetch_stores() -> list[dict]:
     """Fetch all CTF stores from the Demandware API."""
-    req = urllib.request.Request(STORES_API_URL, headers=HEADERS)
-    with urllib.request.urlopen(req, timeout=30) as resp:
-        data = json.loads(resp.read().decode("utf-8"))
+    body = fetch_url(STORES_API_URL, headers=HEADERS, timeout=30)
+    if body is None:
+        return []
+    data = json.loads(body.decode("utf-8"))
     return data.get("stores", [])
 
 
 def collect_counts(snapshot_date: str) -> pd.DataFrame:
     """Scrape and return store counts grouped by region/state."""
     stores = _fetch_stores()
+    if not stores:
+        return pd.DataFrame()
     total = len(stores)
 
     # Count by region (stateCode = HK district / China province)
@@ -76,20 +81,6 @@ def collect_counts(snapshot_date: str) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def append_snapshot(df: pd.DataFrame, out_path: Path) -> pd.DataFrame:
-    """Append snapshot to existing parquet file, deduplicated on (date, region)."""
-    existing = pd.read_parquet(out_path) if out_path.exists() else None
-    combined = df if existing is None else pd.concat([existing, df], ignore_index=True)
-    combined = (
-        combined.drop_duplicates(subset=["date", "region"], keep="last")
-        .sort_values(["date", "region"])
-        .reset_index(drop=True)
-    )
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    combined.to_parquet(out_path, index=False)
-    return combined
-
-
 def main() -> None:
     parser = argparse.ArgumentParser(description="Scrape Chow Tai Fook store counts.")
     parser.add_argument("--data-dir", default="data")
@@ -102,16 +93,21 @@ def main() -> None:
     print("=" * 50)
 
     df = collect_counts(args.date)
-    total = int(df[df["region"] == "TOTAL"]["store_count"].iloc[0])
-    n_regions = len(df) - 1
-
-    print(f"Total stores: {total} across {n_regions} regions")
-    print(f"Top 5 regions:")
-    for _, row in df[df["region"] != "TOTAL"].head(5).iterrows():
-        print(f"  {row['region']}: {row['store_count']}")
+    if df.empty:
+        print("  Chow Tai Fook: could not extract store data from API.")
+    else:
+        total = int(df[df["region"] == "TOTAL"]["store_count"].iloc[0])
+        n_regions = len(df) - 1
+        print(f"Total stores: {total} across {n_regions} regions")
+        print("Top 5 regions:")
+        for _, row in df[df["region"] != "TOTAL"].head(5).iterrows():
+            print(f"  {row['region']}: {row['store_count']}")
 
     combined = append_snapshot(df, out_path)
-    print(f"Wrote {out_path} ({len(combined)} rows, {combined['date'].nunique()} snapshots)")
+    if combined is not None and not combined.empty:
+        print(f"Wrote {out_path} ({len(combined)} rows, {combined['date'].nunique()} snapshots)")
+    else:
+        print(f"No snapshot written to {out_path} (no prior history, no new data).")
 
 
 if __name__ == "__main__":

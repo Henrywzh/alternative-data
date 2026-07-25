@@ -17,10 +17,13 @@ import argparse
 import datetime as dt
 import json
 import re
-import urllib.request
+import sys
 from pathlib import Path
 
 import pandas as pd
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from store_scraper_common import append_snapshot, fetch_url  # noqa: E402
 
 STORES_URL = "https://www.fairwood.com.hk/en/stores"
 HEADERS = {
@@ -33,26 +36,27 @@ HEADERS = {
 
 def _fetch_stores() -> list[dict]:
     """Fetch all Fairwood stores from the Next.js __NEXT_DATA__ blob."""
-    req = urllib.request.Request(STORES_URL, headers=HEADERS)
-    with urllib.request.urlopen(req, timeout=30) as resp:
-        html = resp.read().decode("utf-8")
+    body = fetch_url(STORES_URL, headers=HEADERS, timeout=30)
+    if body is None:
+        return []
+    html = body.decode("utf-8")
 
     match = re.search(
         r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>', html, re.DOTALL
     )
     if not match:
-        raise RuntimeError("Could not find __NEXT_DATA__ in Fairwood stores page")
+        print("  Fairwood: could not find __NEXT_DATA__ in stores page.")
+        return []
 
     data = json.loads(match.group(1))
-    stores = data.get("props", {}).get("pageProps", {}).get("data", {}).get("stores", [])
-    if not stores:
-        raise RuntimeError("No stores found in Fairwood __NEXT_DATA__")
-    return stores
+    return data.get("props", {}).get("pageProps", {}).get("data", {}).get("stores", [])
 
 
 def collect_counts(snapshot_date: str) -> pd.DataFrame:
     """Group stores by category (HK island / Kowloon / New Territories) and count."""
     stores = _fetch_stores()
+    if not stores:
+        return pd.DataFrame()
 
     by_category: dict[str, int] = {}
     for s in stores:
@@ -71,19 +75,6 @@ def collect_counts(snapshot_date: str) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def append_snapshot(df: pd.DataFrame, out_path: Path) -> pd.DataFrame:
-    existing = pd.read_parquet(out_path) if out_path.exists() else None
-    combined = df if existing is None else pd.concat([existing, df], ignore_index=True)
-    combined = (
-        combined.drop_duplicates(subset=["date", "category"], keep="last")
-        .sort_values(["date", "category"])
-        .reset_index(drop=True)
-    )
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    combined.to_parquet(out_path, index=False)
-    return combined
-
-
 def main() -> None:
     parser = argparse.ArgumentParser(description="Scrape Fairwood store counts.")
     parser.add_argument("--data-dir", default="data")
@@ -96,14 +87,19 @@ def main() -> None:
     print("=" * 50)
 
     df = collect_counts(args.date)
-    total = int(df[df["category"] == "TOTAL"]["store_count"].iloc[0])
+    if df.empty:
+        print("  Fairwood: could not extract store data.")
+    else:
+        total = int(df[df["category"] == "TOTAL"]["store_count"].iloc[0])
+        print(f"Total stores: {total}")
+        for _, row in df[df["category"] != "TOTAL"].iterrows():
+            print(f"  {row['category']}: {row['store_count']}")
 
-    print(f"Total stores: {total}")
-    for _, row in df[df["category"] != "TOTAL"].iterrows():
-        print(f"  {row['category']}: {row['store_count']}")
-
-    combined = append_snapshot(df, out_path)
-    print(f"Wrote {out_path} ({len(combined)} rows, {combined['date'].nunique()} snapshots)")
+    combined = append_snapshot(df, out_path, key_column="category")
+    if combined is not None and not combined.empty:
+        print(f"Wrote {out_path} ({len(combined)} rows, {combined['date'].nunique()} snapshots)")
+    else:
+        print(f"No snapshot written to {out_path} (no prior history, no new data).")
 
 
 if __name__ == "__main__":
