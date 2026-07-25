@@ -230,3 +230,13 @@ scratch/
 
 # Secrets / API keys
 .config
+
+# hk_local_consumer: keep only the AFCD category-price accumulator. AFCD's
+# wholesale-prices feed publishes same-day data only (no upstream
+# archive), so this file is the sole real source of "over time" history
+# for it and must survive across CI checkouts; the rest of
+# data/normalized/hk_local_consumer/ is disposable per-run scratch output
+# (uuid-scoped parquet/csv dumps) and stays ignored.
+!data/normalized/hk_local_consumer/
+data/normalized/hk_local_consumer/*
+!data/normalized/hk_local_consumer/afcd_category_history.csv
