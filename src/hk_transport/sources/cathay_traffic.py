@@ -357,10 +357,13 @@ def _fetch_cathay_monthly() -> pd.DataFrame:
 
 def fetch_cathay_traffic() -> pd.DataFrame:
     """Fetch CAD HKIA monthly airport traffic workbook and join Cathay Group disclosures."""
-    resp = requests.get(CAD_HKIA_XLSX_URL, headers=DEFAULT_HEADERS, timeout=15)
-    resp.raise_for_status()
-
-    df_raw = pd.read_excel(io.BytesIO(resp.content), sheet_name="Eng")
+    try:
+        resp = requests.get(CAD_HKIA_XLSX_URL, headers=DEFAULT_HEADERS, timeout=15)
+        resp.raise_for_status()
+        df_raw = pd.read_excel(io.BytesIO(resp.content), sheet_name="Eng")
+    except Exception as exc:
+        logger.warning("Failed to fetch/parse CAD HKIA workbook: %s. Returning empty frame (no fabricated data).", exc)
+        return pd.DataFrame(columns=SCHEMA_COLUMNS)
 
     rows = []
     current_year = None

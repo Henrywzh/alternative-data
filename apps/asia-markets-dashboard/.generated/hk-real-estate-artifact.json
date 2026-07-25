@@ -5,7 +5,7 @@
     "surface": "dashboard",
     "title": "Hong Kong Real Estate Monitor",
     "description": "A source-backed snapshot of residential price, rent, and market confidence measures.",
-    "generatedAt": "2026-07-25T18:47:11.003518Z",
+    "generatedAt": "2026-07-25T19:19:12.470853Z",
     "cards": [
       {
         "id": "ccl_card",
@@ -579,7 +579,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**Data snapshot:** `b3a0150afdc47a70` · generated 2026-07-25T18:47:11.003518Z.  This is a published snapshot, not a live connection. RVD observations marked provisional may be revised."
+        "body": "**Data snapshot:** `b3a0150afdc47a70` · generated 2026-07-25T19:19:12.470853Z.  This is a published snapshot, not a live connection. RVD observations marked provisional may be revised."
       },
       {
         "id": "market_pulse",
@@ -666,7 +666,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-25T18:47:11.003518Z",
+    "generatedAt": "2026-07-25T19:19:12.470853Z",
     "status": "ready",
     "datasets": {
       "kpi_ccl": [
@@ -22681,7 +22681,7 @@
         "url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/banking/residential-mortgage-survey",
         "language": "JSON",
         "description": "Monthly mortgage loan approvals, LTV ratio, interest rate plan mix (HIBOR vs BLR), and delinquency rates.",
-        "executed_at": "2026-07-25T18:47:11.003518Z"
+        "executed_at": "2026-07-25T19:19:12.470853Z"
       }
     },
     {
@@ -22693,7 +22693,7 @@
         "url": "https://www.censtatd.gov.hk/api/get.php?id=615-66001&lang=en&full_series=1",
         "language": "JSON",
         "description": "Quarterly gross value of construction works performed by main contractors.",
-        "executed_at": "2026-07-25T18:47:11.003518Z"
+        "executed_at": "2026-07-25T19:19:12.470853Z"
       }
     },
     {
@@ -22709,7 +22709,7 @@
           "CCL latest is the most recent published weekly Centaline City Leading Index observation.",
           "Weekly and yearly movements are latest divided by the prior observation or latest observation on/before one year earlier, minus one."
         ],
-        "executed_at": "2026-07-25T18:47:11.003518Z"
+        "executed_at": "2026-07-25T19:19:12.470853Z"
       }
     },
     {
@@ -22725,7 +22725,7 @@
           "MHPI latest is the most recent published overall weekly Midland Hong Kong Property Price Index observation.",
           "Weekly and yearly movements are latest divided by the prior observation or latest observation on/before one year earlier, minus one."
         ],
-        "executed_at": "2026-07-25T18:47:11.003518Z"
+        "executed_at": "2026-07-25T19:19:12.470853Z"
       }
     },
     {
@@ -22740,7 +22740,7 @@
         "metric_definitions": [
           "The confidence series is a supporting market-sentiment measure published by Midland Realty."
         ],
-        "executed_at": "2026-07-25T18:47:11.003518Z"
+        "executed_at": "2026-07-25T19:19:12.470853Z"
       }
     },
     {
@@ -22756,7 +22756,7 @@
           "RVD price latest is the All Classes monthly private domestic price index.",
           "Monthly and yearly movements are latest divided by the prior month or observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-07-25T18:47:11.003518Z"
+        "executed_at": "2026-07-25T19:19:12.470853Z"
       }
     },
     {
@@ -22772,7 +22772,7 @@
           "RVD rent latest is the All Classes monthly private domestic rental index.",
           "Monthly and yearly movements are latest divided by the prior month or observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-07-25T18:47:11.003518Z"
+        "executed_at": "2026-07-25T19:19:12.470853Z"
       }
     },
     {
@@ -22791,7 +22791,7 @@
           "RVD 1.4M.csv",
           "RVD 1.3M.csv"
         ],
-        "executed_at": "2026-07-25T18:47:11.003518Z"
+        "executed_at": "2026-07-25T19:19:12.470853Z"
       }
     },
     {
@@ -22805,7 +22805,7 @@
           "Validated core measure frames",
           "Declared future-source registry"
         ],
-        "executed_at": "2026-07-25T18:47:11.003518Z"
+        "executed_at": "2026-07-25T19:19:12.470853Z"
       }
     }
   ],

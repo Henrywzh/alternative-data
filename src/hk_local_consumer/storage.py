@@ -99,10 +99,8 @@ def save_normalized_dataset(
     target_dir = NORMALIZED_DIR / dataset_name / run_id
     target_dir.mkdir(parents=True, exist_ok=False)
     parquet_path = target_dir / f"{dataset_name}.parquet"
-    csv_path = target_dir / f"{dataset_name}.csv"
 
     df.to_parquet(parquet_path, index=False)
-    df.to_csv(csv_path, index=False)
 
     if data_source is None and 'data_source' in df.columns and len(df):
         # Uniform per fetch in practice, but if a run genuinely mixed
@@ -130,7 +128,6 @@ def save_normalized_dataset(
 
     return {
         'parquet': str(parquet_path),
-        'csv': str(csv_path),
         'lineage': str(lineage_path),
         'run_id': run_id,
         'raw_snapshot': raw_snapshot,

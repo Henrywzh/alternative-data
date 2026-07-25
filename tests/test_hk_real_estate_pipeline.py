@@ -177,6 +177,6 @@ def test_raw_snapshots_are_unique_and_preserve_actual_extension(tmp_path):
 
 def test_save_normalized_dataset_is_run_scoped_and_has_lineage():
     result = save_normalized_dataset("test_dataset", pd.DataFrame([{"date": "2026-07-22", "val": 100.0}]), run_id="run-123", raw_snapshot="/tmp/raw.csv")
-    assert "/test_dataset/run-123/" in result["csv"]
+    assert "/test_dataset/run-123/" in result["parquet"]
     lineage = json.loads(Path(result["lineage"]).read_text())
     assert lineage["raw_snapshot"] == "/tmp/raw.csv"

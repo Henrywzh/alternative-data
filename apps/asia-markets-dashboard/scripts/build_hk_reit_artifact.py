@@ -270,6 +270,42 @@ def _series_history(df: pd.DataFrame, series_label: str, value_column: str) -> l
     return rows
 
 
+def _rebase_series(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Rebase each series in a long-format {date, month, series, value} list to 100
+    at its own first chronological observation, so series with very different
+    absolute levels (e.g. NAV/unit across REITs of different unit prices) become
+    comparable in relative-movement terms on a shared axis.
+
+    Skips leading zero/negative values when picking the base (a REIT can
+    legitimately report a nil DPU in some periods -- see
+    test_nil_dpu_period_change_does_not_raise_zero_division), since a zero or
+    negative base would make rebasing undefined. If a series has no valid
+    positive base at all, it is dropped from the rebased output entirely
+    rather than divided by zero or fabricated.
+    """
+    by_series: dict[str, list[dict[str, Any]]] = {}
+    for row in rows:
+        by_series.setdefault(row["series"], []).append(row)
+
+    out: list[dict[str, Any]] = []
+    for series, series_rows in by_series.items():
+        ordered = sorted(series_rows, key=lambda r: r["date"])
+        base = next((r["value"] for r in ordered if r["value"] > 0), None)
+        if base is None:
+            continue
+        for row in ordered:
+            out.append(
+                {
+                    "date": row["date"],
+                    "month": row.get("month", row["date"][:7]),
+                    "series": series,
+                    "value": round(row["value"] / base * 100, 4),
+                }
+            )
+    out.sort(key=lambda r: (r["series"], r["date"]))
+    return out
+
+
 def build_artifact(
     raw_link: pd.DataFrame | None = None,
     raw_champion: pd.DataFrame | None = None,
@@ -320,14 +356,14 @@ def build_artifact(
         dataset_key = f"kpi_{key}"
         if is_hotel:
             metrics = [
-                {"label": "NAV/Unit (HK$)", "field": "nav_per_unit_hkd", "format": "number"},
+                {"label": f"{name} — NAV/Unit (HK$)", "field": "nav_per_unit_hkd", "format": "number"},
                 {"label": "DPU (HK$)", "field": "dpu_hkd", "format": "number"},
                 {"label": "Hotel Occupancy (%)", "field": "hotel_occupancy_pct", "format": "number"},
                 {"label": "RevPAR (HK$)", "field": "revpar_hkd", "format": "number"},
             ]
         else:
             metrics = [
-                {"label": "NAV/Unit (HK$)", "field": "nav_per_unit_hkd", "format": "number"},
+                {"label": f"{name} — NAV/Unit (HK$)", "field": "nav_per_unit_hkd", "format": "number"},
                 {"label": "DPU (HK$)", "field": "dpu_hkd", "format": "number"},
                 {"label": "Occupancy (%)", "field": "occupancy_pct", "format": "number"},
                 {"label": "Rental Reversion (%)", "field": "rental_reversion_pct", "format": "number"},
@@ -379,6 +415,17 @@ def build_artifact(
     occupancy_history.sort(key=lambda row: (row["series"], row["date"]))
     reversion_history.sort(key=lambda row: (row["series"], row["date"]))
 
+    # NAV/unit and DPU are absolute HK$ values tied to each REIT's arbitrary
+    # unit denomination (Link's NAV/unit is ~57.75, Regal's is ~3.9) -- not
+    # comparable across REITs on a shared linear axis, since the trusts with
+    # naturally smaller unit prices flatten to near-zero next to Link. Rebase
+    # each series to 100 at its own first observation so the chart compares
+    # relative movement (the actual point of a cross-REIT trend chart) rather
+    # than absolute unit price. Absolute values remain available in the
+    # comparison table and per-REIT cards above.
+    nav_history_rebased = _rebase_series(nav_history)
+    dpu_history_rebased = _rebase_series(dpu_history)
+
     regal_hotel_kpi_history: list[dict[str, Any]] = []
     regal_hotel_kpi_history.extend(_series_history(df_regal, "Occupancy (%)", "hotel_occupancy_pct"))
     regal_hotel_kpi_history.extend(_series_history(df_regal, "ADR (HK$)", "average_daily_rate_hkd"))
@@ -388,14 +435,14 @@ def build_artifact(
     charts = [
         {
             "id": "nav_trend_chart",
-            "title": "NAV per Unit Across HK REITs (HK$)",
-            "subtitle": "Reported net asset value per unit, all six trusts (by ticker; see the comparison table below for full names), from each REIT's own IR disclosures.",
+            "title": "NAV per Unit Across HK REITs (Rebased to 100)",
+            "subtitle": "Relative movement in reported net asset value per unit, all six trusts (by ticker), each rebased to 100 at its own first observation -- absolute NAV/unit differs by REIT (see the comparison table and cards above) so raw HK$ values aren't comparable across trusts on one axis.",
             "type": "line",
-            "dataset": "nav_history",
+            "dataset": "nav_history_rebased",
             "sourceId": "linkreit_fundamentals",
             "encodings": {
                 "x": {"field": "month", "type": "temporal", "label": "Period"},
-                "y": {"field": "value", "type": "quantitative", "label": "HK$ / unit"},
+                "y": {"field": "value", "type": "quantitative", "label": "Rebased (start = 100)"},
                 "color": {"field": "series", "type": "nominal", "label": "Ticker"},
             },
             "valueFormat": "number",
@@ -403,14 +450,14 @@ def build_artifact(
         },
         {
             "id": "dpu_trend_chart",
-            "title": "Distribution per Unit Across HK REITs (HK$)",
-            "subtitle": "Reported DPU, all six trusts (by ticker). Some periods are legitimately nil (e.g. Regal REIT 1H2025) rather than missing data.",
+            "title": "Distribution per Unit Across HK REITs (Rebased to 100)",
+            "subtitle": "Relative movement in reported DPU, all six trusts (by ticker), each rebased to 100 at its own first positive observation. Some periods are legitimately nil (e.g. Regal REIT 1H2025) and rebase to 0 rather than being missing data; absolute HK$ DPU is in the comparison table above.",
             "type": "line",
-            "dataset": "dpu_history",
+            "dataset": "dpu_history_rebased",
             "sourceId": "linkreit_fundamentals",
             "encodings": {
                 "x": {"field": "month", "type": "temporal", "label": "Period"},
-                "y": {"field": "value", "type": "quantitative", "label": "HK$ / unit"},
+                "y": {"field": "value", "type": "quantitative", "label": "Rebased (start = 100)"},
                 "color": {"field": "series", "type": "nominal", "label": "Ticker"},
             },
             "valueFormat": "number",
@@ -611,6 +658,8 @@ def build_artifact(
         **{f"kpi_{key}": [kpis[key]] for key, *_ in REIT_META},
         "nav_history": nav_history,
         "dpu_history": dpu_history,
+        "nav_history_rebased": nav_history_rebased,
+        "dpu_history_rebased": dpu_history_rebased,
         "occupancy_history": occupancy_history,
         "reversion_history": reversion_history,
         "regal_hotel_kpi_history": regal_hotel_kpi_history,

@@ -6,7 +6,7 @@
     "title": "香港房地产信托（REITs）基本面监测",
     "description": "领展（Link REIT）、冠君（Champion REIT）、置富（Fortune REIT）、繁荣（Prosperity REIT）、阳光（Sunlight REIT）及富豪（Regal REIT）的每单位资产净值（NAV）、每基金单位分派（DPU）、出租率、租金检讨调升率及酒店 KPI 快照。",
     "sector": "hk-reit",
-    "generatedAt": "2026-07-25T18:47:06.453532Z",
+    "generatedAt": "2026-07-25T19:19:05.178651Z",
     "dataAsOf": "2026-03-31",
     "liveSourcesCount": 6,
     "totalSourcesCount": 7,
@@ -18,7 +18,7 @@
         "sourceId": "linkreit_fundamentals",
         "metrics": [
           {
-            "label": "每单位资产净值 (港元)",
+            "label": "领展房产基金 — 每单位资产净值 (港元)",
             "field": "nav_per_unit_hkd",
             "format": "number"
           },
@@ -46,7 +46,7 @@
         "sourceId": "championreit_fundamentals",
         "metrics": [
           {
-            "label": "每单位资产净值 (港元)",
+            "label": "冠君产业信托 — 每单位资产净值 (港元)",
             "field": "nav_per_unit_hkd",
             "format": "number"
           },
@@ -74,7 +74,7 @@
         "sourceId": "fortunereit_fundamentals",
         "metrics": [
           {
-            "label": "每单位资产净值 (港元)",
+            "label": "置富产业信托 — 每单位资产净值 (港元)",
             "field": "nav_per_unit_hkd",
             "format": "number"
           },
@@ -102,7 +102,7 @@
         "sourceId": "prosperityreit_fundamentals",
         "metrics": [
           {
-            "label": "每单位资产净值 (港元)",
+            "label": "繁荣产业信托 — 每单位资产净值 (港元)",
             "field": "nav_per_unit_hkd",
             "format": "number"
           },
@@ -130,7 +130,7 @@
         "sourceId": "sunlightreit_fundamentals",
         "metrics": [
           {
-            "label": "每单位资产净值 (港元)",
+            "label": "阳光房地产基金 — 每单位资产净值 (港元)",
             "field": "nav_per_unit_hkd",
             "format": "number"
           },
@@ -158,7 +158,7 @@
         "sourceId": "regalreit_fundamentals",
         "metrics": [
           {
-            "label": "每单位资产净值 (港元)",
+            "label": "富豪产业信托 — 每单位资产净值 (港元)",
             "field": "nav_per_unit_hkd",
             "format": "number"
           },
@@ -183,10 +183,10 @@
     "charts": [
       {
         "id": "nav_trend_chart",
-        "title": "各 REIT 每单位资产净值走势 (港元)",
-        "subtitle": "全部六家 REIT（按股票代码；全名见下方对比表）各自投资者关系披露的每单位资产净值历史。",
+        "title": "各 REIT 每单位资产净值相对走势（首期 = 100）",
+        "subtitle": "全部六家 REIT（按股票代码）各自每单位资产净值的相对变动，以各自首期观测值重新定为 100——各 REIT 每单位资产净值绝对水平不同（见上方卡片及下方对比表），不宜在同一坐标轴上直接比较原始港元数值。",
         "type": "line",
-        "dataset": "nav_history",
+        "dataset": "nav_history_rebased",
         "sourceId": "linkreit_fundamentals",
         "encodings": {
           "x": {
@@ -197,7 +197,7 @@
           "y": {
             "field": "value",
             "type": "quantitative",
-            "label": "港元 / 单位"
+            "label": "重新定基（首期 = 100）"
           },
           "color": {
             "field": "series",
@@ -210,10 +210,10 @@
       },
       {
         "id": "dpu_trend_chart",
-        "title": "各 REIT 每基金单位分派走势 (港元)",
-        "subtitle": "全部六家 REIT（按股票代码）的 DPU 历史；部分期间（如富豪产业信托 2025 上半年）分派为零属真实披露结果，并非数据缺失。",
+        "title": "各 REIT 每基金单位分派相对走势（首期 = 100）",
+        "subtitle": "全部六家 REIT（按股票代码）DPU 的相对变动，以各自首个正数观测值重新定为 100。部分期间（如富豪产业信托 2025 上半年）分派为零属真实披露结果，重新定基后显示为 0，并非数据缺失；绝对港元 DPU 数值见上方对比表。",
         "type": "line",
-        "dataset": "dpu_history",
+        "dataset": "dpu_history_rebased",
         "sourceId": "linkreit_fundamentals",
         "encodings": {
           "x": {
@@ -224,7 +224,7 @@
           "y": {
             "field": "value",
             "type": "quantitative",
-            "label": "港元 / 单位"
+            "label": "重新定基（首期 = 100）"
           },
           "color": {
             "field": "series",
@@ -470,7 +470,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**数据快照：** `bef3389cb2a69997` · 生成于 2026-07-25T18:47:06.453532Z。"
+        "body": "**数据快照：** `96fce73ce19eb3bb` · 生成于 2026-07-25T19:19:05.178651Z。"
       },
       {
         "id": "kpi_grid",
@@ -525,7 +525,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-25T18:47:06.453532Z",
+    "generatedAt": "2026-07-25T19:19:05.178651Z",
     "status": "ready",
     "datasets": {
       "kpi_linkreit": [
@@ -909,6 +909,322 @@
           "month": "2025-12",
           "series": "2778",
           "value": 0.1263
+        }
+      ],
+      "nav_history_rebased": [
+        {
+          "date": "2021-06-30",
+          "month": "2021-06",
+          "series": "0435",
+          "value": 100
+        },
+        {
+          "date": "2022-06-30",
+          "month": "2022-06",
+          "series": "0435",
+          "value": 98.9349
+        },
+        {
+          "date": "2023-06-30",
+          "month": "2023-06",
+          "series": "0435",
+          "value": 95.3846
+        },
+        {
+          "date": "2024-12-31",
+          "month": "2024-12",
+          "series": "0435",
+          "value": 89.1124
+        },
+        {
+          "date": "2025-12-31",
+          "month": "2025-12",
+          "series": "0435",
+          "value": 83.9053
+        },
+        {
+          "date": "2021-12-31",
+          "month": "2021-12",
+          "series": "0778",
+          "value": 100
+        },
+        {
+          "date": "2022-12-31",
+          "month": "2022-12",
+          "series": "0778",
+          "value": 98.1744
+        },
+        {
+          "date": "2023-12-31",
+          "month": "2023-12",
+          "series": "0778",
+          "value": 94.2529
+        },
+        {
+          "date": "2024-12-31",
+          "month": "2024-12",
+          "series": "0778",
+          "value": 89.3171
+        },
+        {
+          "date": "2025-12-31",
+          "month": "2025-12",
+          "series": "0778",
+          "value": 82.6234
+        },
+        {
+          "date": "2021-12-31",
+          "month": "2021-12",
+          "series": "0808",
+          "value": 100
+        },
+        {
+          "date": "2022-12-31",
+          "month": "2022-12",
+          "series": "0808",
+          "value": 97.5155
+        },
+        {
+          "date": "2023-12-31",
+          "month": "2023-12",
+          "series": "0808",
+          "value": 94.4099
+        },
+        {
+          "date": "2024-12-31",
+          "month": "2024-12",
+          "series": "0808",
+          "value": 89.234
+        },
+        {
+          "date": "2025-12-31",
+          "month": "2025-12",
+          "series": "0808",
+          "value": 82.1946
+        },
+        {
+          "date": "2022-03-31",
+          "month": "2022-03",
+          "series": "0823",
+          "value": 100
+        },
+        {
+          "date": "2023-03-31",
+          "month": "2023-03",
+          "series": "0823",
+          "value": 95.9533
+        },
+        {
+          "date": "2024-03-31",
+          "month": "2024-03",
+          "series": "0823",
+          "value": 90.8171
+        },
+        {
+          "date": "2025-03-31",
+          "month": "2025-03",
+          "series": "0823",
+          "value": 82.1012
+        },
+        {
+          "date": "2026-03-31",
+          "month": "2026-03",
+          "series": "0823",
+          "value": 74.9027
+        },
+        {
+          "date": "2025-12-31",
+          "month": "2025-12",
+          "series": "1881",
+          "value": 100
+        },
+        {
+          "date": "2021-12-31",
+          "month": "2021-12",
+          "series": "2778",
+          "value": 100
+        },
+        {
+          "date": "2022-12-31",
+          "month": "2022-12",
+          "series": "2778",
+          "value": 95.8788
+        },
+        {
+          "date": "2023-12-31",
+          "month": "2023-12",
+          "series": "2778",
+          "value": 93.5758
+        },
+        {
+          "date": "2024-12-31",
+          "month": "2024-12",
+          "series": "2778",
+          "value": 86.7879
+        },
+        {
+          "date": "2025-12-31",
+          "month": "2025-12",
+          "series": "2778",
+          "value": 78.1818
+        }
+      ],
+      "dpu_history_rebased": [
+        {
+          "date": "2021-06-30",
+          "month": "2021-06",
+          "series": "0435",
+          "value": 100
+        },
+        {
+          "date": "2022-06-30",
+          "month": "2022-06",
+          "series": "0435",
+          "value": 97.6562
+        },
+        {
+          "date": "2023-06-30",
+          "month": "2023-06",
+          "series": "0435",
+          "value": 85.9375
+        },
+        {
+          "date": "2024-12-31",
+          "month": "2024-12",
+          "series": "0435",
+          "value": 107.0312
+        },
+        {
+          "date": "2025-12-31",
+          "month": "2025-12",
+          "series": "0435",
+          "value": 71.0938
+        },
+        {
+          "date": "2021-12-31",
+          "month": "2021-12",
+          "series": "0778",
+          "value": 100
+        },
+        {
+          "date": "2022-12-31",
+          "month": "2022-12",
+          "series": "0778",
+          "value": 94.1766
+        },
+        {
+          "date": "2023-12-31",
+          "month": "2023-12",
+          "series": "0778",
+          "value": 86.1348
+        },
+        {
+          "date": "2024-12-31",
+          "month": "2024-12",
+          "series": "0778",
+          "value": 75.9172
+        },
+        {
+          "date": "2025-12-31",
+          "month": "2025-12",
+          "series": "0778",
+          "value": 75.128
+        },
+        {
+          "date": "2021-12-31",
+          "month": "2021-12",
+          "series": "0808",
+          "value": 100
+        },
+        {
+          "date": "2022-12-31",
+          "month": "2022-12",
+          "series": "0808",
+          "value": 92.1724
+        },
+        {
+          "date": "2023-12-31",
+          "month": "2023-12",
+          "series": "0808",
+          "value": 79.9206
+        },
+        {
+          "date": "2024-12-31",
+          "month": "2024-12",
+          "series": "0808",
+          "value": 67.9524
+        },
+        {
+          "date": "2025-12-31",
+          "month": "2025-12",
+          "series": "0808",
+          "value": 65.5701
+        },
+        {
+          "date": "2022-03-31",
+          "month": "2022-03",
+          "series": "0823",
+          "value": 100
+        },
+        {
+          "date": "2023-03-31",
+          "month": "2023-03",
+          "series": "0823",
+          "value": 89.7406
+        },
+        {
+          "date": "2024-03-31",
+          "month": "2024-03",
+          "series": "0823",
+          "value": 85.926
+        },
+        {
+          "date": "2025-03-31",
+          "month": "2025-03",
+          "series": "0823",
+          "value": 89.0961
+        },
+        {
+          "date": "2026-03-31",
+          "month": "2026-03",
+          "series": "0823",
+          "value": 82.9686
+        },
+        {
+          "date": "2025-12-31",
+          "month": "2025-12",
+          "series": "1881",
+          "value": 100
+        },
+        {
+          "date": "2021-12-31",
+          "month": "2021-12",
+          "series": "2778",
+          "value": 100
+        },
+        {
+          "date": "2022-12-31",
+          "month": "2022-12",
+          "series": "2778",
+          "value": 85.8901
+        },
+        {
+          "date": "2023-12-31",
+          "month": "2023-12",
+          "series": "2778",
+          "value": 73.978
+        },
+        {
+          "date": "2024-12-31",
+          "month": "2024-12",
+          "series": "2778",
+          "value": 62.5055
+        },
+        {
+          "date": "2025-12-31",
+          "month": "2025-12",
+          "series": "2778",
+          "value": 55.5165
         }
       ],
       "occupancy_history": [
@@ -1674,8 +1990,8 @@
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-reit/",
     "sector_id": "hk-reit",
     "sector_name": "Hong Kong REITs Sector Monitor",
-    "snapshotId": "bef3389cb2a69997",
-    "generatedAt": "2026-07-25T18:47:06.453532Z",
+    "snapshotId": "96fce73ce19eb3bb",
+    "generatedAt": "2026-07-25T19:19:05.178651Z",
     "dataAsOf": "2026-03-31"
   }
 }
