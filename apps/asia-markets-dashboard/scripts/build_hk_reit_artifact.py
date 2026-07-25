@@ -339,16 +339,25 @@ def build_artifact(
         if not is_hotel:
             occupancy_history.extend(_series_history(df, short_label, "occupancy_pct"))
             reversion_history.extend(_series_history(df, short_label, "rental_reversion_pct"))
-    nav_history.sort(key=lambda row: (row["date"], row["series"]))
-    dpu_history.sort(key=lambda row: (row["date"], row["series"]))
-    occupancy_history.sort(key=lambda row: (row["date"], row["series"]))
-    reversion_history.sort(key=lambda row: (row["date"], row["series"]))
+    # Sort by (series, date) -- NOT (date, series) -- so each series' points
+    # are contiguous in the array. The portable chart renderer draws each
+    # series as a single connected path by walking the data in array order;
+    # sorting by date first interleaves different REITs' points (they report
+    # on different dates), which produced a separate zero-length M...Z
+    # subpath per point instead of a connected line (verified: the live
+    # chart's SVG path data had no "L" commands at all, only isolated
+    # moveto+closepath pairs -- lines were invisible except on hover, which
+    # uses a different, unaffected interaction layer).
+    nav_history.sort(key=lambda row: (row["series"], row["date"]))
+    dpu_history.sort(key=lambda row: (row["series"], row["date"]))
+    occupancy_history.sort(key=lambda row: (row["series"], row["date"]))
+    reversion_history.sort(key=lambda row: (row["series"], row["date"]))
 
     regal_hotel_kpi_history: list[dict[str, Any]] = []
     regal_hotel_kpi_history.extend(_series_history(df_regal, "Occupancy (%)", "hotel_occupancy_pct"))
     regal_hotel_kpi_history.extend(_series_history(df_regal, "ADR (HK$)", "average_daily_rate_hkd"))
     regal_hotel_kpi_history.extend(_series_history(df_regal, "RevPAR (HK$)", "revpar_hkd"))
-    regal_hotel_kpi_history.sort(key=lambda row: (row["date"], row["series"]))
+    regal_hotel_kpi_history.sort(key=lambda row: (row["series"], row["date"]))
 
     charts = [
         {
