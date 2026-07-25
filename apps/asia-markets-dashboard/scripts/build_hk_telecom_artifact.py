@@ -358,6 +358,7 @@ def build_artifact(
             "blocks": [
                 {"id": "kpi_grid", "type": "metric-strip", "cardIds": [c["id"] for c in cards]},
                 {"id": "hkt_chart", "type": "chart", "chartId": "hkt_arpu_chart"},
+                {"id": "hkt_footprint_chart_block", "type": "chart", "chartId": "hkt_footprint_chart"},
                 {"id": "smartone_chart", "type": "chart", "chartId": "smartone_arpu_chart"},
                 {"id": "hutchison_chart", "type": "chart", "chartId": "hutchison_arpu_chart"},
                 {"id": "numbering_plan_table_block", "type": "table", "tableId": "numbering_plan_table"},
