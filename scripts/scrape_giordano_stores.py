@@ -16,12 +16,14 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
-import ssl
+import sys
 import time
-import urllib.request
 from pathlib import Path
 
 import pandas as pd
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from store_scraper_common import append_snapshot, fetch_url  # noqa: E402
 
 API_ENDPOINT = "https://giordanoappsite.giordano.com/SVC/AppsFunc.svc/rest/GetShopsMap"
 
@@ -50,17 +52,15 @@ HEADERS = {
 def _fetch_market_stores(market_code: str) -> list[dict]:
     """Fetch stores for a specific market code from the WCF REST API."""
     url = f"{API_ENDPOINT}?shopID=&style=&market={market_code}&langid=EN&longitude=0&latitude=0"
-    ctx = ssl._create_unverified_context()
-    opener = urllib.request.build_opener(urllib.request.HTTPSHandler(context=ctx))
-    req = urllib.request.Request(url, headers=HEADERS)
-
+    body = fetch_url(url, headers=HEADERS, timeout=15)
+    if body is None:
+        print(f"  Error fetching market '{market_code}': fetch failed after retries")
+        return []
     try:
-        with opener.open(req, timeout=15) as resp:
-            content = resp.read().decode("utf-8", errors="ignore")
-            data = json.loads(content)
-            return data.get("GetShopsMapResult", [])
+        data = json.loads(body.decode("utf-8", errors="ignore"))
+        return data.get("GetShopsMapResult", [])
     except Exception as exc:
-        print(f"  Error fetching market '{market_code}': {exc}")
+        print(f"  Error parsing market '{market_code}': {exc}")
         return []
 
 
@@ -100,22 +100,6 @@ def collect_counts(snapshot_date: str) -> pd.DataFrame:
     ]
     rows.append({"date": snapshot_date, "region": "TOTAL", "store_count": len(stores)})
     return pd.DataFrame(rows)
-
-
-def append_snapshot(df: pd.DataFrame, out_path: Path) -> pd.DataFrame:
-    """Append snapshot to existing parquet file, deduplicated on (date, region)."""
-    existing = pd.read_parquet(out_path) if out_path.exists() else None
-    if df.empty:
-        return existing if existing is not None else df
-    combined = df if existing is None else pd.concat([existing, df], ignore_index=True)
-    combined = (
-        combined.drop_duplicates(subset=["date", "region"], keep="last")
-        .sort_values(["date", "region"])
-        .reset_index(drop=True)
-    )
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    combined.to_parquet(out_path, index=False)
-    return combined
 
 
 def main() -> None:

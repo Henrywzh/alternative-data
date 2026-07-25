@@ -19,10 +19,13 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import re
-import urllib.request
+import sys
 from pathlib import Path
 
 import pandas as pd
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from store_scraper_common import append_snapshot, fetch_url  # noqa: E402
 
 BRANCH_URL = (
     "https://www.eatcdc.com/tch/main/terms.jsp"
@@ -37,9 +40,10 @@ HEADERS = {
 
 
 def _fetch_html() -> str:
-    req = urllib.request.Request(BRANCH_URL, headers=HEADERS)
-    with urllib.request.urlopen(req, timeout=30) as resp:
-        return resp.read().decode("utf-8", errors="ignore")
+    body = fetch_url(BRANCH_URL, headers=HEADERS, timeout=30)
+    if body is None:
+        return ""
+    return body.decode("utf-8", errors="ignore")
 
 
 def _extract_branches(html: str) -> list[dict]:
@@ -101,7 +105,9 @@ def _extract_branches(html: str) -> list[dict]:
 
 def collect_counts(snapshot_date: str) -> pd.DataFrame:
     html = _fetch_html()
-    branches = _extract_branches(html)
+    branches = _extract_branches(html) if html else []
+    if not branches:
+        return pd.DataFrame()
 
     # Count by area
     by_area: dict[str, int] = {}
@@ -119,21 +125,6 @@ def collect_counts(snapshot_date: str) -> pd.DataFrame:
     else:
         rows = [{"date": snapshot_date, "area": "TOTAL", "store_count": total}]
     return pd.DataFrame(rows)
-
-
-def append_snapshot(df: pd.DataFrame, out_path: Path) -> pd.DataFrame:
-    existing = pd.read_parquet(out_path) if out_path.exists() else None
-    if df.empty:
-        return existing if existing is not None else df
-    combined = df if existing is None else pd.concat([existing, df], ignore_index=True)
-    combined = (
-        combined.drop_duplicates(subset=["date", "area"], keep="last")
-        .sort_values(["date", "area"])
-        .reset_index(drop=True)
-    )
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    combined.to_parquet(out_path, index=False)
-    return combined
 
 
 def main() -> None:
@@ -154,10 +145,13 @@ def main() -> None:
         for _, row in df[df["area"] != "TOTAL"].iterrows():
             print(f"  {row['area']}: {row['store_count']}")
     else:
-        print("No branch data found.")
+        print("  Café de Coral: could not extract branch data.")
 
-    combined = append_snapshot(df, out_path)
-    print(f"Wrote {out_path} ({len(combined)} rows)")
+    combined = append_snapshot(df, out_path, key_column="area")
+    if combined is not None and not combined.empty:
+        print(f"Wrote {out_path} ({len(combined)} rows)")
+    else:
+        print(f"No snapshot written to {out_path} (no prior history, no new data).")
 
 
 if __name__ == "__main__":

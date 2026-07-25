@@ -18,10 +18,13 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
-import urllib.request
+import sys
 from pathlib import Path
 
 import pandas as pd
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from store_scraper_common import append_snapshot, fetch_url  # noqa: E402
 
 STORE_API_URL = (
     "https://webapi.91app.hk/webapi/LocationV2/GetLocationList"
@@ -37,14 +40,17 @@ HEADERS = {
 
 
 def _fetch_stores() -> list[dict]:
-    req = urllib.request.Request(STORE_API_URL, headers=HEADERS)
-    with urllib.request.urlopen(req, timeout=30) as resp:
-        data = json.loads(resp.read().decode("utf-8"))
+    body = fetch_url(STORE_API_URL, headers=HEADERS, timeout=30)
+    if body is None:
+        return []
+    data = json.loads(body.decode("utf-8"))
     return data.get("Data", {}).get("List", [])
 
 
 def collect_counts(snapshot_date: str) -> pd.DataFrame:
     stores = _fetch_stores()
+    if not stores:
+        return pd.DataFrame()
     total = len(stores)
 
     # Count by district (CityName)
@@ -66,21 +72,6 @@ def collect_counts(snapshot_date: str) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def append_snapshot(df: pd.DataFrame, out_path: Path) -> pd.DataFrame:
-    existing = pd.read_parquet(out_path) if out_path.exists() else None
-    if df.empty:
-        return existing if existing is not None else df
-    combined = df if existing is None else pd.concat([existing, df], ignore_index=True)
-    combined = (
-        combined.drop_duplicates(subset=["date", "district"], keep="last")
-        .sort_values(["date", "district"])
-        .reset_index(drop=True)
-    )
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    combined.to_parquet(out_path, index=False)
-    return combined
-
-
 def main() -> None:
     parser = argparse.ArgumentParser(description="Scrape Sa Sa store counts.")
     parser.add_argument("--data-dir", default="data")
@@ -93,15 +84,20 @@ def main() -> None:
     print("=" * 50)
 
     df = collect_counts(args.date)
-    total_row = df[df["district"] == "TOTAL"].iloc[0] if not df.empty else {}
-    total = int(total_row.get("store_count", 0))
+    if df.empty:
+        print("  Sa Sa: could not extract store data from API.")
+    else:
+        total_row = df[df["district"] == "TOTAL"].iloc[0]
+        total = int(total_row.get("store_count", 0))
+        print(f"Total stores: {total}")
+        for _, row in df[df["district"] != "TOTAL"].iterrows():
+            print(f"  {row['district']}: {row['store_count']}")
 
-    print(f"Total stores: {total}")
-    for _, row in df[df["district"] != "TOTAL"].iterrows():
-        print(f"  {row['district']}: {row['store_count']}")
-
-    combined = append_snapshot(df, out_path)
-    print(f"Wrote {out_path} ({len(combined)} rows, {combined['date'].nunique()} snapshots)")
+    combined = append_snapshot(df, out_path, key_column="district")
+    if combined is not None and not combined.empty:
+        print(f"Wrote {out_path} ({len(combined)} rows, {combined['date'].nunique()} snapshots)")
+    else:
+        print(f"No snapshot written to {out_path} (no prior history, no new data).")
 
 
 if __name__ == "__main__":
