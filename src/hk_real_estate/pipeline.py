@@ -121,11 +121,12 @@ def _skip_result(reason: str) -> Dict[str, Any]:
     return {"status": "skipped", "records": 0, "reason": reason}
 
 
-# Midland's WAF blocks GitHub Actions' datacenter IP range (confirmed 403,
-# reproducible from a residential IP) with no known bypass. Rather than
-# attempting the fetch and relying on --tolerate-errors to absorb the
-# failure, CI skips it outright and keeps the last committed snapshot;
-# run this pipeline locally (this env var unset) to refresh Midland data.
+# Midland is refreshed by a separate, independently-scheduled weekly
+# automation outside this repo's CI, so this pipeline's own CI runs skip it
+# outright rather than attempting a redundant fetch. This also happens to
+# route around a real WAF block on GitHub Actions' datacenter IP range
+# (confirmed 403, reproducible from a residential IP), but that's no longer
+# the primary reason to skip it.
 SKIP_MIDLAND_ENV_VAR = "HK_RE_SKIP_MIDLAND"
 
 

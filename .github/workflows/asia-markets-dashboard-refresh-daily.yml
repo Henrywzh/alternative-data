@@ -78,13 +78,14 @@ jobs:
         # failed sector and reports the failure in the job log; successful
         # sectors continue to produce fresh manifests and status files.
         #
-        # Midland's market-insight page is WAF-blocked from GitHub Actions'
-        # datacenter IP range specifically (confirmed 403, reproducible;
-        # the same fetch succeeds from a residential IP with no code
-        # change) — HK_RE_SKIP_MIDLAND skips that fetch outright here and
-        # falls back to the last real snapshot instead of retrying a call
-        # that's known to fail in this environment. Run `npm run refresh`
-        # locally (this var unset) to actually refresh Midland's data.
+        # Midland's data is refreshed by a separate, independently-scheduled
+        # weekly automation outside this repo's CI — this workflow does not
+        # need to (and deliberately does not) touch it. HK_RE_SKIP_MIDLAND
+        # skips that fetch outright here rather than attempting a redundant
+        # scrape. This also happens to route around a real WAF block on
+        # GitHub Actions' datacenter IP range (confirmed 403; the same
+        # fetch succeeds from a residential IP with no code change), but
+        # that is no longer the primary reason to skip it.
         env:
           HK_RE_SKIP_MIDLAND: "1"
         run: npm run refresh -- --tolerate-errors

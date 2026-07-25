@@ -6,7 +6,7 @@
     "title": "Hong Kong REITs Sector Monitor",
     "description": "NAV/unit, DPU, occupancy, rental reversion, and hotel KPI disclosures for all six HK-listed REITs.",
     "sector": "hk-reit",
-    "generatedAt": "2026-07-25T18:47:06.453532Z",
+    "generatedAt": "2026-07-25T19:19:05.178651Z",
     "dataAsOf": "2026-03-31",
     "liveSourcesCount": 6,
     "totalSourcesCount": 7,
@@ -18,7 +18,7 @@
         "sourceId": "linkreit_fundamentals",
         "metrics": [
           {
-            "label": "NAV/Unit (HK$)",
+            "label": "Link REIT \u2014 NAV/Unit (HK$)",
             "field": "nav_per_unit_hkd",
             "format": "number"
           },
@@ -46,7 +46,7 @@
         "sourceId": "championreit_fundamentals",
         "metrics": [
           {
-            "label": "NAV/Unit (HK$)",
+            "label": "Champion REIT \u2014 NAV/Unit (HK$)",
             "field": "nav_per_unit_hkd",
             "format": "number"
           },
@@ -74,7 +74,7 @@
         "sourceId": "fortunereit_fundamentals",
         "metrics": [
           {
-            "label": "NAV/Unit (HK$)",
+            "label": "Fortune REIT \u2014 NAV/Unit (HK$)",
             "field": "nav_per_unit_hkd",
             "format": "number"
           },
@@ -102,7 +102,7 @@
         "sourceId": "prosperityreit_fundamentals",
         "metrics": [
           {
-            "label": "NAV/Unit (HK$)",
+            "label": "Prosperity REIT \u2014 NAV/Unit (HK$)",
             "field": "nav_per_unit_hkd",
             "format": "number"
           },
@@ -130,7 +130,7 @@
         "sourceId": "sunlightreit_fundamentals",
         "metrics": [
           {
-            "label": "NAV/Unit (HK$)",
+            "label": "Sunlight REIT \u2014 NAV/Unit (HK$)",
             "field": "nav_per_unit_hkd",
             "format": "number"
           },
@@ -158,7 +158,7 @@
         "sourceId": "regalreit_fundamentals",
         "metrics": [
           {
-            "label": "NAV/Unit (HK$)",
+            "label": "Regal REIT \u2014 NAV/Unit (HK$)",
             "field": "nav_per_unit_hkd",
             "format": "number"
           },
@@ -183,10 +183,10 @@
     "charts": [
       {
         "id": "nav_trend_chart",
-        "title": "NAV per Unit Across HK REITs (HK$)",
-        "subtitle": "Reported net asset value per unit, all six trusts (by ticker; see the comparison table below for full names), from each REIT's own IR disclosures.",
+        "title": "NAV per Unit Across HK REITs (Rebased to 100)",
+        "subtitle": "Relative movement in reported net asset value per unit, all six trusts (by ticker), each rebased to 100 at its own first observation -- absolute NAV/unit differs by REIT (see the comparison table and cards above) so raw HK$ values aren't comparable across trusts on one axis.",
         "type": "line",
-        "dataset": "nav_history",
+        "dataset": "nav_history_rebased",
         "sourceId": "linkreit_fundamentals",
         "encodings": {
           "x": {
@@ -197,7 +197,7 @@
           "y": {
             "field": "value",
             "type": "quantitative",
-            "label": "HK$ / unit"
+            "label": "Rebased (start = 100)"
           },
           "color": {
             "field": "series",
@@ -210,10 +210,10 @@
       },
       {
         "id": "dpu_trend_chart",
-        "title": "Distribution per Unit Across HK REITs (HK$)",
-        "subtitle": "Reported DPU, all six trusts (by ticker). Some periods are legitimately nil (e.g. Regal REIT 1H2025) rather than missing data.",
+        "title": "Distribution per Unit Across HK REITs (Rebased to 100)",
+        "subtitle": "Relative movement in reported DPU, all six trusts (by ticker), each rebased to 100 at its own first positive observation. Some periods are legitimately nil (e.g. Regal REIT 1H2025) and rebase to 0 rather than being missing data; absolute HK$ DPU is in the comparison table above.",
         "type": "line",
-        "dataset": "dpu_history",
+        "dataset": "dpu_history_rebased",
         "sourceId": "linkreit_fundamentals",
         "encodings": {
           "x": {
@@ -224,7 +224,7 @@
           "y": {
             "field": "value",
             "type": "quantitative",
-            "label": "HK$ / unit"
+            "label": "Rebased (start = 100)"
           },
           "color": {
             "field": "series",
@@ -470,7 +470,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**Data snapshot:** `bef3389cb2a69997` \u00b7 generated 2026-07-25T18:47:06.453532Z.  Each REIT's figures come from that trust's own investor-relations disclosures (semi-annual or annual cadence), supplemented by market spot quotes."
+        "body": "**Data snapshot:** `96fce73ce19eb3bb` \u00b7 generated 2026-07-25T19:19:05.178651Z.  Each REIT's figures come from that trust's own investor-relations disclosures (semi-annual or annual cadence), supplemented by market spot quotes."
       },
       {
         "id": "kpi_grid",
@@ -525,7 +525,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-25T18:47:06.453532Z",
+    "generatedAt": "2026-07-25T19:19:05.178651Z",
     "status": "ready",
     "datasets": {
       "kpi_linkreit": [
@@ -909,6 +909,322 @@
           "month": "2025-12",
           "series": "2778",
           "value": 0.1263
+        }
+      ],
+      "nav_history_rebased": [
+        {
+          "date": "2021-06-30",
+          "month": "2021-06",
+          "series": "0435",
+          "value": 100.0
+        },
+        {
+          "date": "2022-06-30",
+          "month": "2022-06",
+          "series": "0435",
+          "value": 98.9349
+        },
+        {
+          "date": "2023-06-30",
+          "month": "2023-06",
+          "series": "0435",
+          "value": 95.3846
+        },
+        {
+          "date": "2024-12-31",
+          "month": "2024-12",
+          "series": "0435",
+          "value": 89.1124
+        },
+        {
+          "date": "2025-12-31",
+          "month": "2025-12",
+          "series": "0435",
+          "value": 83.9053
+        },
+        {
+          "date": "2021-12-31",
+          "month": "2021-12",
+          "series": "0778",
+          "value": 100.0
+        },
+        {
+          "date": "2022-12-31",
+          "month": "2022-12",
+          "series": "0778",
+          "value": 98.1744
+        },
+        {
+          "date": "2023-12-31",
+          "month": "2023-12",
+          "series": "0778",
+          "value": 94.2529
+        },
+        {
+          "date": "2024-12-31",
+          "month": "2024-12",
+          "series": "0778",
+          "value": 89.3171
+        },
+        {
+          "date": "2025-12-31",
+          "month": "2025-12",
+          "series": "0778",
+          "value": 82.6234
+        },
+        {
+          "date": "2021-12-31",
+          "month": "2021-12",
+          "series": "0808",
+          "value": 100.0
+        },
+        {
+          "date": "2022-12-31",
+          "month": "2022-12",
+          "series": "0808",
+          "value": 97.5155
+        },
+        {
+          "date": "2023-12-31",
+          "month": "2023-12",
+          "series": "0808",
+          "value": 94.4099
+        },
+        {
+          "date": "2024-12-31",
+          "month": "2024-12",
+          "series": "0808",
+          "value": 89.234
+        },
+        {
+          "date": "2025-12-31",
+          "month": "2025-12",
+          "series": "0808",
+          "value": 82.1946
+        },
+        {
+          "date": "2022-03-31",
+          "month": "2022-03",
+          "series": "0823",
+          "value": 100.0
+        },
+        {
+          "date": "2023-03-31",
+          "month": "2023-03",
+          "series": "0823",
+          "value": 95.9533
+        },
+        {
+          "date": "2024-03-31",
+          "month": "2024-03",
+          "series": "0823",
+          "value": 90.8171
+        },
+        {
+          "date": "2025-03-31",
+          "month": "2025-03",
+          "series": "0823",
+          "value": 82.1012
+        },
+        {
+          "date": "2026-03-31",
+          "month": "2026-03",
+          "series": "0823",
+          "value": 74.9027
+        },
+        {
+          "date": "2025-12-31",
+          "month": "2025-12",
+          "series": "1881",
+          "value": 100.0
+        },
+        {
+          "date": "2021-12-31",
+          "month": "2021-12",
+          "series": "2778",
+          "value": 100.0
+        },
+        {
+          "date": "2022-12-31",
+          "month": "2022-12",
+          "series": "2778",
+          "value": 95.8788
+        },
+        {
+          "date": "2023-12-31",
+          "month": "2023-12",
+          "series": "2778",
+          "value": 93.5758
+        },
+        {
+          "date": "2024-12-31",
+          "month": "2024-12",
+          "series": "2778",
+          "value": 86.7879
+        },
+        {
+          "date": "2025-12-31",
+          "month": "2025-12",
+          "series": "2778",
+          "value": 78.1818
+        }
+      ],
+      "dpu_history_rebased": [
+        {
+          "date": "2021-06-30",
+          "month": "2021-06",
+          "series": "0435",
+          "value": 100.0
+        },
+        {
+          "date": "2022-06-30",
+          "month": "2022-06",
+          "series": "0435",
+          "value": 97.6562
+        },
+        {
+          "date": "2023-06-30",
+          "month": "2023-06",
+          "series": "0435",
+          "value": 85.9375
+        },
+        {
+          "date": "2024-12-31",
+          "month": "2024-12",
+          "series": "0435",
+          "value": 107.0312
+        },
+        {
+          "date": "2025-12-31",
+          "month": "2025-12",
+          "series": "0435",
+          "value": 71.0938
+        },
+        {
+          "date": "2021-12-31",
+          "month": "2021-12",
+          "series": "0778",
+          "value": 100.0
+        },
+        {
+          "date": "2022-12-31",
+          "month": "2022-12",
+          "series": "0778",
+          "value": 94.1766
+        },
+        {
+          "date": "2023-12-31",
+          "month": "2023-12",
+          "series": "0778",
+          "value": 86.1348
+        },
+        {
+          "date": "2024-12-31",
+          "month": "2024-12",
+          "series": "0778",
+          "value": 75.9172
+        },
+        {
+          "date": "2025-12-31",
+          "month": "2025-12",
+          "series": "0778",
+          "value": 75.128
+        },
+        {
+          "date": "2021-12-31",
+          "month": "2021-12",
+          "series": "0808",
+          "value": 100.0
+        },
+        {
+          "date": "2022-12-31",
+          "month": "2022-12",
+          "series": "0808",
+          "value": 92.1724
+        },
+        {
+          "date": "2023-12-31",
+          "month": "2023-12",
+          "series": "0808",
+          "value": 79.9206
+        },
+        {
+          "date": "2024-12-31",
+          "month": "2024-12",
+          "series": "0808",
+          "value": 67.9524
+        },
+        {
+          "date": "2025-12-31",
+          "month": "2025-12",
+          "series": "0808",
+          "value": 65.5701
+        },
+        {
+          "date": "2022-03-31",
+          "month": "2022-03",
+          "series": "0823",
+          "value": 100.0
+        },
+        {
+          "date": "2023-03-31",
+          "month": "2023-03",
+          "series": "0823",
+          "value": 89.7406
+        },
+        {
+          "date": "2024-03-31",
+          "month": "2024-03",
+          "series": "0823",
+          "value": 85.926
+        },
+        {
+          "date": "2025-03-31",
+          "month": "2025-03",
+          "series": "0823",
+          "value": 89.0961
+        },
+        {
+          "date": "2026-03-31",
+          "month": "2026-03",
+          "series": "0823",
+          "value": 82.9686
+        },
+        {
+          "date": "2025-12-31",
+          "month": "2025-12",
+          "series": "1881",
+          "value": 100.0
+        },
+        {
+          "date": "2021-12-31",
+          "month": "2021-12",
+          "series": "2778",
+          "value": 100.0
+        },
+        {
+          "date": "2022-12-31",
+          "month": "2022-12",
+          "series": "2778",
+          "value": 85.8901
+        },
+        {
+          "date": "2023-12-31",
+          "month": "2023-12",
+          "series": "2778",
+          "value": 73.978
+        },
+        {
+          "date": "2024-12-31",
+          "month": "2024-12",
+          "series": "2778",
+          "value": 62.5055
+        },
+        {
+          "date": "2025-12-31",
+          "month": "2025-12",
+          "series": "2778",
+          "value": 55.5165
         }
       ],
       "occupancy_history": [
@@ -1674,8 +1990,8 @@
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-reit/",
     "sector_id": "hk-reit",
     "sector_name": "Hong Kong REITs Sector Monitor",
-    "snapshotId": "bef3389cb2a69997",
-    "generatedAt": "2026-07-25T18:47:06.453532Z",
+    "snapshotId": "96fce73ce19eb3bb",
+    "generatedAt": "2026-07-25T19:19:05.178651Z",
     "dataAsOf": "2026-03-31"
   }
 }

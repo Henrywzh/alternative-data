@@ -9,7 +9,7 @@
     "dev": "npm run refresh && node scripts/build-static-hub.mjs && python3 -m http.server 4321 --directory dist",
     "preview": "astro preview",
     "check": "astro check",
-    "deploy": "npm run build && wrangler pages deploy dist --project-name=asia-markets-dashboard"
+    "deploy": "npm run build && wrangler pages deploy dist --project-name=asia-markets-dashboard --branch=production --commit-dirty=true"
   },
   "dependencies": {
     "astro": "7.1.3"
