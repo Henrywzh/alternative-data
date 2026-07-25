@@ -119,6 +119,11 @@ data/processed/giordano_stores/*
 data/processed/bossini_stores/*
 !data/processed/bossini_stores/*.parquet
 
+# China major-airline monthly traffic scraper: commit the time series
+!data/processed/airline_traffic/
+data/processed/airline_traffic/*
+!data/processed/airline_traffic/*.parquet
+
 # artificial_analysis: commit normalized CSVs/parquet + raw run manifests only
 !data/normalized/artificial_analysis/
 data/normalized/artificial_analysis/*
