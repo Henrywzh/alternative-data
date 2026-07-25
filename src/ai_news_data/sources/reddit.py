@@ -3,6 +3,8 @@ from __future__ import annotations
 import re
 import xml.etree.ElementTree as ET
 
+import time
+
 from bs4 import BeautifulSoup
 
 from ai_news_data.models import GenericRecord, RunContext, Snapshot
@@ -28,6 +30,7 @@ class RedditSource(SourceExtractor):
         for sub in SUBREDDITS:
             url = f"https://www.reddit.com/r/{sub}/new.rss"
             snapshots.append(Snapshot(name=f"sub__{sub}", source_url=url, body=fetch_text(url)))
+            time.sleep(5)
         return snapshots
 
     def extract(self, snapshots: list[Snapshot], context: RunContext) -> dict[str, list[GenericRecord]]:
