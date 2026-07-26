@@ -6,7 +6,7 @@
     "title": "香港交通与航空监测",
     "description": "港铁月度客运量（本地/跨境/高铁）、国泰航空运营数据与香港国际机场流量的来源快照。",
     "sector": "hk-transport",
-    "generatedAt": "2026-07-26T12:30:59.800192Z",
+    "generatedAt": "2026-07-26T14:08:19.095941Z",
     "cards": [
       {
         "id": "mtr_card",
@@ -509,7 +509,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-26T12:30:59.800192Z",
+    "generatedAt": "2026-07-26T14:08:19.095941Z",
     "status": "ready",
     "datasets": {
       "kpi_mtr": [
@@ -14589,6 +14589,14 @@
         {
           "date": "2016-01-01",
           "month": "2016-01",
+          "series": "南方航空",
+          "airline": "China Southern",
+          "region": "Total",
+          "value": 20825.35
+        },
+        {
+          "date": "2016-01-01",
+          "month": "2016-01",
           "series": "春秋航空",
           "airline": "Spring Airlines",
           "region": "Total",
@@ -14609,6 +14617,14 @@
           "airline": "China Eastern",
           "region": "Total",
           "value": 16720.91
+        },
+        {
+          "date": "2016-02-01",
+          "month": "2016-02",
+          "series": "南方航空",
+          "airline": "China Southern",
+          "region": "Total",
+          "value": 20835.92
         },
         {
           "date": "2016-02-01",
@@ -14635,6 +14651,14 @@
           "value": 16373.75
         },
         {
+          "date": "2016-03-01",
+          "month": "2016-03",
+          "series": "南方航空",
+          "airline": "China Southern",
+          "region": "Total",
+          "value": 20592.45
+        },
+        {
           "date": "2016-04-01",
           "month": "2016-04",
           "series": "中国国航",
@@ -14649,6 +14673,14 @@
           "airline": "China Eastern",
           "region": "Total",
           "value": 16389.46
+        },
+        {
+          "date": "2016-04-01",
+          "month": "2016-04",
+          "series": "南方航空",
+          "airline": "China Southern",
+          "region": "Total",
+          "value": 20504.76
         },
         {
           "date": "2016-04-01",
@@ -14677,6 +14709,14 @@
         {
           "date": "2016-05-01",
           "month": "2016-05",
+          "series": "南方航空",
+          "airline": "China Southern",
+          "region": "Total",
+          "value": 20419.18
+        },
+        {
+          "date": "2016-05-01",
+          "month": "2016-05",
           "series": "春秋航空",
           "airline": "Spring Airlines",
           "region": "Total",
@@ -14697,6 +14737,14 @@
           "airline": "China Eastern",
           "region": "Total",
           "value": 16097.29
+        },
+        {
+          "date": "2016-06-01",
+          "month": "2016-06",
+          "series": "南方航空",
+          "airline": "China Southern",
+          "region": "Total",
+          "value": 19714.94
         },
         {
           "date": "2016-06-01",
@@ -14725,6 +14773,14 @@
         {
           "date": "2016-07-01",
           "month": "2016-07",
+          "series": "南方航空",
+          "airline": "China Southern",
+          "region": "Total",
+          "value": 22752.49
+        },
+        {
+          "date": "2016-07-01",
+          "month": "2016-07",
           "series": "春秋航空",
           "airline": "Spring Airlines",
           "region": "Total",
@@ -14745,6 +14801,14 @@
           "airline": "China Eastern",
           "region": "Total",
           "value": 18843.93
+        },
+        {
+          "date": "2016-08-01",
+          "month": "2016-08",
+          "series": "南方航空",
+          "airline": "China Southern",
+          "region": "Total",
+          "value": 23528.84
         },
         {
           "date": "2016-08-01",
@@ -14773,6 +14837,14 @@
         {
           "date": "2016-09-01",
           "month": "2016-09",
+          "series": "南方航空",
+          "airline": "China Southern",
+          "region": "Total",
+          "value": 21464.35
+        },
+        {
+          "date": "2016-09-01",
+          "month": "2016-09",
           "series": "春秋航空",
           "airline": "Spring Airlines",
           "region": "Total",
@@ -14793,6 +14865,14 @@
           "airline": "China Eastern",
           "region": "Total",
           "value": 17856.47
+        },
+        {
+          "date": "2016-10-01",
+          "month": "2016-10",
+          "series": "南方航空",
+          "airline": "China Southern",
+          "region": "Total",
+          "value": 22198.69
         },
         {
           "date": "2016-10-01",
@@ -14821,6 +14901,14 @@
         {
           "date": "2016-11-01",
           "month": "2016-11",
+          "series": "南方航空",
+          "airline": "China Southern",
+          "region": "Total",
+          "value": 21071.24
+        },
+        {
+          "date": "2016-11-01",
+          "month": "2016-11",
           "series": "春秋航空",
           "airline": "Spring Airlines",
           "region": "Total",
@@ -14833,6 +14921,14 @@
           "airline": "Air China",
           "region": "Total",
           "value": 19746.7
+        },
+        {
+          "date": "2016-12-01",
+          "month": "2016-12",
+          "series": "南方航空",
+          "airline": "China Southern",
+          "region": "Total",
+          "value": 22092.44
         },
         {
           "date": "2016-12-01",
@@ -14853,6 +14949,14 @@
         {
           "date": "2017-01-01",
           "month": "2017-01",
+          "series": "南方航空",
+          "airline": "China Southern",
+          "region": "Total",
+          "value": 23357.85
+        },
+        {
+          "date": "2017-01-01",
+          "month": "2017-01",
           "series": "春秋航空",
           "airline": "Spring Airlines",
           "region": "Total",
@@ -14865,6 +14969,14 @@
           "airline": "Air China",
           "region": "Total",
           "value": 18701
+        },
+        {
+          "date": "2017-02-01",
+          "month": "2017-02",
+          "series": "南方航空",
+          "airline": "China Southern",
+          "region": "Total",
+          "value": 21735.46
         },
         {
           "date": "2017-02-01",
@@ -14885,6 +14997,14 @@
         {
           "date": "2017-03-01",
           "month": "2017-03",
+          "series": "南方航空",
+          "airline": "China Southern",
+          "region": "Total",
+          "value": 22525.95
+        },
+        {
+          "date": "2017-03-01",
+          "month": "2017-03",
           "series": "春秋航空",
           "airline": "Spring Airlines",
           "region": "Total",
@@ -14897,6 +15017,14 @@
           "airline": "Air China",
           "region": "Total",
           "value": 19579.1
+        },
+        {
+          "date": "2017-04-01",
+          "month": "2017-04",
+          "series": "南方航空",
+          "airline": "China Southern",
+          "region": "Total",
+          "value": 22031
         },
         {
           "date": "2017-04-01",
@@ -14917,6 +15045,14 @@
         {
           "date": "2017-05-01",
           "month": "2017-05",
+          "series": "南方航空",
+          "airline": "China Southern",
+          "region": "Total",
+          "value": 22798.9
+        },
+        {
+          "date": "2017-05-01",
+          "month": "2017-05",
           "series": "春秋航空",
           "airline": "Spring Airlines",
           "region": "Total",
@@ -14929,6 +15065,14 @@
           "airline": "Air China",
           "region": "Total",
           "value": 19737.4
+        },
+        {
+          "date": "2017-06-01",
+          "month": "2017-06",
+          "series": "南方航空",
+          "airline": "China Southern",
+          "region": "Total",
+          "value": 22035.08
         },
         {
           "date": "2017-06-01",
@@ -14949,6 +15093,14 @@
         {
           "date": "2017-07-01",
           "month": "2017-07",
+          "series": "南方航空",
+          "airline": "China Southern",
+          "region": "Total",
+          "value": 24829.32
+        },
+        {
+          "date": "2017-07-01",
+          "month": "2017-07",
           "series": "春秋航空",
           "airline": "Spring Airlines",
           "region": "Total",
@@ -14961,6 +15113,14 @@
           "airline": "Air China",
           "region": "Total",
           "value": 21767.1
+        },
+        {
+          "date": "2017-08-01",
+          "month": "2017-08",
+          "series": "南方航空",
+          "airline": "China Southern",
+          "region": "Total",
+          "value": 25150.97
         },
         {
           "date": "2017-08-01",
@@ -14981,6 +15141,14 @@
         {
           "date": "2017-09-01",
           "month": "2017-09",
+          "series": "南方航空",
+          "airline": "China Southern",
+          "region": "Total",
+          "value": 23789.12
+        },
+        {
+          "date": "2017-09-01",
+          "month": "2017-09",
           "series": "春秋航空",
           "airline": "Spring Airlines",
           "region": "Total",
@@ -14993,6 +15161,14 @@
           "airline": "Air China",
           "region": "Total",
           "value": 21915.8
+        },
+        {
+          "date": "2017-10-01",
+          "month": "2017-10",
+          "series": "南方航空",
+          "airline": "China Southern",
+          "region": "Total",
+          "value": 24390.48
         },
         {
           "date": "2017-10-01",
@@ -15013,6 +15189,14 @@
         {
           "date": "2017-11-01",
           "month": "2017-11",
+          "series": "南方航空",
+          "airline": "China Southern",
+          "region": "Total",
+          "value": 23414.8
+        },
+        {
+          "date": "2017-11-01",
+          "month": "2017-11",
           "series": "春秋航空",
           "airline": "Spring Airlines",
           "region": "Total",
@@ -15025,6 +15209,14 @@
           "airline": "Air China",
           "region": "Total",
           "value": 21607.6
+        },
+        {
+          "date": "2017-12-01",
+          "month": "2017-12",
+          "series": "南方航空",
+          "airline": "China Southern",
+          "region": "Total",
+          "value": 24581.81
         },
         {
           "date": "2017-12-01",
@@ -15045,6 +15237,14 @@
         {
           "date": "2018-01-01",
           "month": "2018-01",
+          "series": "南方航空",
+          "airline": "China Southern",
+          "region": "Total",
+          "value": 24753.12
+        },
+        {
+          "date": "2018-01-01",
+          "month": "2018-01",
           "series": "春秋航空",
           "airline": "Spring Airlines",
           "region": "Total",
@@ -15057,6 +15257,14 @@
           "airline": "Air China",
           "region": "Total",
           "value": 20901.3
+        },
+        {
+          "date": "2018-02-01",
+          "month": "2018-02",
+          "series": "南方航空",
+          "airline": "China Southern",
+          "region": "Total",
+          "value": 24624.32
         },
         {
           "date": "2018-02-01",
@@ -15077,6 +15285,14 @@
         {
           "date": "2018-03-01",
           "month": "2018-03",
+          "series": "南方航空",
+          "airline": "China Southern",
+          "region": "Total",
+          "value": 25555.38
+        },
+        {
+          "date": "2018-03-01",
+          "month": "2018-03",
           "series": "春秋航空",
           "airline": "Spring Airlines",
           "region": "Total",
@@ -15091,12 +15307,28 @@
           "value": 22569.8
         },
         {
+          "date": "2018-04-01",
+          "month": "2018-04",
+          "series": "南方航空",
+          "airline": "China Southern",
+          "region": "Total",
+          "value": 25102.61
+        },
+        {
           "date": "2018-05-01",
           "month": "2018-05",
           "series": "中国国航",
           "airline": "Air China",
           "region": "Total",
           "value": 22949.1
+        },
+        {
+          "date": "2018-05-01",
+          "month": "2018-05",
+          "series": "南方航空",
+          "airline": "China Southern",
+          "region": "Total",
+          "value": 25698.05
         },
         {
           "date": "2018-05-01",
@@ -15117,6 +15349,14 @@
         {
           "date": "2018-06-01",
           "month": "2018-06",
+          "series": "南方航空",
+          "airline": "China Southern",
+          "region": "Total",
+          "value": 24869.34
+        },
+        {
+          "date": "2018-06-01",
+          "month": "2018-06",
           "series": "春秋航空",
           "airline": "Spring Airlines",
           "region": "Total",
@@ -15129,6 +15369,14 @@
           "airline": "Air China",
           "region": "Total",
           "value": 23825.7
+        },
+        {
+          "date": "2018-07-01",
+          "month": "2018-07",
+          "series": "南方航空",
+          "airline": "China Southern",
+          "region": "Total",
+          "value": 28132.38
         },
         {
           "date": "2018-07-01",
@@ -15149,6 +15397,14 @@
         {
           "date": "2018-08-01",
           "month": "2018-08",
+          "series": "南方航空",
+          "airline": "China Southern",
+          "region": "Total",
+          "value": 28612.92
+        },
+        {
+          "date": "2018-08-01",
+          "month": "2018-08",
           "series": "春秋航空",
           "airline": "Spring Airlines",
           "region": "Total",
@@ -15161,6 +15417,14 @@
           "airline": "Air China",
           "region": "Total",
           "value": 22591.8
+        },
+        {
+          "date": "2018-09-01",
+          "month": "2018-09",
+          "series": "南方航空",
+          "airline": "China Southern",
+          "region": "Total",
+          "value": 25995.09
         },
         {
           "date": "2018-09-01",
@@ -15181,6 +15445,14 @@
         {
           "date": "2018-10-01",
           "month": "2018-10",
+          "series": "南方航空",
+          "airline": "China Southern",
+          "region": "Total",
+          "value": 27414.57
+        },
+        {
+          "date": "2018-10-01",
+          "month": "2018-10",
           "series": "春秋航空",
           "airline": "Spring Airlines",
           "region": "Total",
@@ -15193,6 +15465,14 @@
           "airline": "Air China",
           "region": "Total",
           "value": 22559.7
+        },
+        {
+          "date": "2018-11-01",
+          "month": "2018-11",
+          "series": "南方航空",
+          "airline": "China Southern",
+          "region": "Total",
+          "value": 26274.11
         },
         {
           "date": "2018-11-01",
@@ -15213,6 +15493,14 @@
         {
           "date": "2018-12-01",
           "month": "2018-12",
+          "series": "南方航空",
+          "airline": "China Southern",
+          "region": "Total",
+          "value": 27262.79
+        },
+        {
+          "date": "2018-12-01",
+          "month": "2018-12",
           "series": "春秋航空",
           "airline": "Spring Airlines",
           "region": "Total",
@@ -15229,6 +15517,14 @@
         {
           "date": "2019-01-01",
           "month": "2019-01",
+          "series": "南方航空",
+          "airline": "China Southern",
+          "region": "Total",
+          "value": 28843.76
+        },
+        {
+          "date": "2019-01-01",
+          "month": "2019-01",
           "series": "春秋航空",
           "airline": "Spring Airlines",
           "region": "Total",
@@ -15241,6 +15537,14 @@
           "airline": "Air China",
           "region": "Total",
           "value": 22259.9
+        },
+        {
+          "date": "2019-02-01",
+          "month": "2019-02",
+          "series": "南方航空",
+          "airline": "China Southern",
+          "region": "Total",
+          "value": 27244.98
         },
         {
           "date": "2019-02-01",
@@ -22073,6 +22377,14 @@
         {
           "date": "2017-01-01",
           "month": "2017-01",
+          "series": "南方航空",
+          "airline": "China Southern",
+          "region": "Total",
+          "value": 82.2033
+        },
+        {
+          "date": "2017-01-01",
+          "month": "2017-01",
           "series": "春秋航空",
           "airline": "Spring Airlines",
           "region": "Total",
@@ -28591,7 +28903,7 @@
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-transport/",
-    "snapshotId": "cc13c84bf4943ed9",
+    "snapshotId": "e361115c1db84307",
     "dataAsOf": "2026-06-01"
   }
 }

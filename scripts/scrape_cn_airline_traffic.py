@@ -144,7 +144,11 @@ def download_pdf(url: str, cache_dir: Path) -> bytes | None:
 # label is worse than a gap. Keywords below were verified directly against
 # live PDFs from all 4 carriers (2026-07), checked pairwise for substring
 # collisions between the target list and every ignore-worthy header seen.
-_ASK_KEYWORDS = ("可用座位公里", "可利用座公里", "可用座公里")
+# "可利用客公里" is China Southern's own pre-2019-03 ASK header (座 seat ->
+# 客 passenger); it switched to "可利用座公里", matching every other carrier,
+# from March 2019 onward. Without it, every China Southern PDF before that
+# date silently drops its whole ASK breakdown.
+_ASK_KEYWORDS = ("可用座位公里", "可利用座公里", "可用座公里", "可利用客公里")
 _RPK_KEYWORDS = ("收入客公里", "客运人公里", "旅客周转量")
 _PASSENGERS_KEYWORDS = ("乘客人数", "载客人数", "载运旅客人次", "总载运人次")
 _LOAD_FACTOR_KEYWORDS = ("客座利用率", "客座率")
