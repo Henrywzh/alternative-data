@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
-# Run all HK retail/F&B store-count scrapers.
+# Master batch runner for all 11 verified HK & Mainland retail store scrapers.
+
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-DATA_DIR="${1:-data}"
-DATE="${2:-$(date +%Y-%m-%d)}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
-echo "Running HK retail store-count scrapers for $DATE"
+cd "$PROJECT_ROOT"
+
+echo "Running HK retail store-count scrapers for $(date +%Y-%m-%d)"
 echo "=========================================="
-echo ""
 
 for scraper in \
     "Chow Tai Fook (周大福)|scrape_ctf_stores.py" \
@@ -18,14 +19,19 @@ for scraper in \
     "Luk Fook (六福珠宝)|scrape_lukfook_stores.py" \
     "Café de Coral (大家乐)|scrape_cafedecoral_stores.py" \
     "Giordano (佐丹奴)|scrape_giordano_stores.py" \
-    "Bossini (堡狮龙)|scrape_bossini_stores.py"; do
-    
+    "Bossini (堡狮龙)|scrape_bossini_stores.py" \
+    "Lao Pu Gold (老铺黄金)|scrape_laopugold_stores.py" \
+    "POP MART (泡泡玛特)|scrape_popmart_stores.py" \
+    "Tai Hing Group (太兴集团)|scrape_taihing_stores.py"; do
+
     name="${scraper%%|*}"
     script="${scraper##*|}"
-    echo "$name"
-    python3 "$SCRIPT_DIR/$script" --data-dir "$DATA_DIR" --date "$DATE" 2>&1
+
     echo ""
+    echo "$name"
+    ~/.pyenv/shims/python3 "scripts/$script"
 done
 
+echo ""
 echo "=========================================="
-echo "All scrapers completed."
+echo "All 11 verified store scrapers completed successfully."

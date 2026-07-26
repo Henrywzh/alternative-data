@@ -1,10 +1,10 @@
 {
-  "generated_at": "2026-07-25T19:59:54.225692Z",
-  "snapshot_id": "b3a0150afdc47a70",
+  "generated_at": "2026-07-25T23:58:00.514225Z",
+  "snapshot_id": "ff8b5787e3745520",
   "data_as_of": "2026-07-20",
   "overall_status": "Healthy",
   "live_sources": 5,
-  "planned_sources": 5,
+  "planned_sources": 1,
   "provisional_series": 2,
   "sources": [
     {
@@ -61,21 +61,41 @@
       "source": "28Hse",
       "dataset": "EPI / ERI",
       "type": "Measure",
-      "status": "Planned",
+      "status": "Healthy",
       "latest_observation": "—",
-      "records": 0,
-      "freshness": "Not ingested",
-      "notes": "High-value index source; endpoint and history contract still require validation."
+      "records": 1096,
+      "freshness": "Live at build time",
+      "notes": "28Hse EPI / ERI Historical Index; see the chart/table above."
     },
     {
       "source": "Agency transactions",
       "dataset": "Centaline / Midland / 28Hse transactions",
       "type": "Measure",
-      "status": "Planned",
+      "status": "Healthy",
       "latest_observation": "—",
-      "records": 0,
-      "freshness": "Not ingested",
-      "notes": "Target is a deduplicated near-real-time transaction activity measure."
+      "records": 300,
+      "freshness": "Live at build time",
+      "notes": "Deduplicated agency transaction feeds; see the chart/table above."
+    },
+    {
+      "source": "Land Registry",
+      "dataset": "Monthly facts + ASP series",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "—",
+      "records": 27,
+      "freshness": "Live at build time",
+      "notes": "Land Registry Monthly Statistics (JSON); see the chart/table above."
+    },
+    {
+      "source": "Buildings Department",
+      "dataset": "Monthly digest + project lifecycle",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "—",
+      "records": 252,
+      "freshness": "Live at build time",
+      "notes": "Buildings Department Monthly Digest / Project Lifecycle; see the chart/table above."
     },
     {
       "source": "SRPE",
@@ -86,26 +106,6 @@
       "records": 0,
       "freshness": "Content parser pending",
       "notes": "Current discovery code does not yet extract sales, units, price lists, or absorption facts."
-    },
-    {
-      "source": "Land Registry",
-      "dataset": "Registered sale and purchase facts",
-      "type": "Catalog",
-      "status": "Catalog only",
-      "latest_observation": "—",
-      "records": 0,
-      "freshness": "Content parser pending",
-      "notes": "Current code discovers releases; fact extraction and point-in-time semantics remain pending."
-    },
-    {
-      "source": "Buildings Department",
-      "dataset": "Approvals, starts and occupation permits",
-      "type": "Catalog",
-      "status": "Catalog only",
-      "latest_observation": "—",
-      "records": 0,
-      "freshness": "Content parser pending",
-      "notes": "Monthly digest discovery exists; structured project facts are not yet extracted."
     }
   ],
   "attachment_filename": "hk-real-estate-dashboard-2026-07-25.html"
