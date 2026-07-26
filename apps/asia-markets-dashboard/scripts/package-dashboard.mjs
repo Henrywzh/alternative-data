@@ -7,7 +7,8 @@ import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+import { appRoot as projectRoot, attachmentNames, LIVE_SECTORS } from "./sectors.mjs";
+
 const generatedDir = join(projectRoot, ".generated");
 const distDir = join(projectRoot, "dist");
 
@@ -375,11 +376,31 @@ const HK_TRANSPORT_ZH = {
     cathay_load_factor_chart: ["国泰集团载客率走势 (%)", "月度载客率——相较于原始载客人数，更能反映国泰自身运力利用率与定价能力，因其已扣除国泰当时投放的运力规模。", "月份", "载客率 (%)"],
     cathay_capacity_demand_chart: ["国泰集团运力与需求对比 (ASK 对比 RPK，千单位)", "可用座位公里（投放运力）与收益乘客公里（实际填补需求）对比——两线差距与旁边载客率图表互为镜像。", "月份", "千单位"],
     hkia_passengers_chart: ["香港国际机场总客运量走势", "香港国际机场（民航处数据）全部航空公司合计的月度总客运量，较国泰专属图表更能反映航空需求的整体水平。", "月份", "乘客人数"],
+    china_airline_passengers_chart: ["中国上市航空公司客运量走势", "中国国航、南方航空、东方航空及春秋航空月度载客人次。", "月份", "乘客人数"],
+    china_airline_ask_chart: ["中国上市航空公司可用座位公里 (ASK)", "各航空公司月度可用座位公里（投放运力）。", "月份", "千单位"],
+    china_airline_rpk_chart: ["中国上市航空公司收入乘客公里 (RPK)", "各航空公司月度收入乘客公里（实际填补需求）。", "月份", "千单位"],
+    china_airline_load_factor_chart: ["中国上市航空公司载客率走势", "各航空公司月度载客率，按公司整体运营口径计算。", "月份", "%"],
+    china_airline_region_split_chart: ["中国上市航空公司客运量按地区拆分", "四家航空公司合计客运量，按国内、国际及地区航线拆分；各公司分项数值见下方最新运营数据表。", "月份", "乘客人数"],
   },
-  tables: {},
+  tables: {
+    china_airline_latest_snapshot_table: {
+      title: "中国上市航空公司最新运营数据",
+      subtitle: "最新可得月份数据，按航空公司及运营地区拆分。",
+      columns: {
+        airline: "航空公司",
+        region: "地区",
+        passengers: "乘客人数",
+        ask: "可用座位公里 (ASK)",
+        rpk: "收入乘客公里 (RPK)",
+        load_factor_pct: "载客率 (%)",
+        observation_date: "月份",
+      },
+    },
+  },
   sources: {
     mtr_patronage: "港铁公司投资者关系月度客运量",
     cathay_hkia_traffic: "民航处香港国际机场月度流量 & 国泰航空数据",
+    china_airline_traffic: "中国国航、南方航空、东方航空及春秋航空月度运营数据公告",
   },
   snapshotBody: (artifact) => `**数据快照：** \`${artifact.package_info.snapshotId}\` · 生成于 ${artifact.manifest.generatedAt}。`,
   methodologyBody: "## 如何阅读本 dashboard\n\n港铁客运量按服务类型拆解（本地重铁、跨境及高铁）；机场与国泰数据反映国际与区域航空客货运复苏进度。",
@@ -395,6 +416,25 @@ const HK_TRANSPORT_ZH = {
         "LR & Bus": "轻铁巴士",
         "X-Boundary": "跨境",
       },
+    },
+    china_airline_passengers_history: {
+      series: { CS: "南方航空", AC: "中国国航", CE: "东方航空", Spring: "春秋航空" },
+    },
+    china_airline_load_factor_history: {
+      series: { CS: "南方航空", AC: "中国国航", CE: "东方航空", Spring: "春秋航空" },
+    },
+    china_airline_ask_history: {
+      series: { CS: "南方航空", AC: "中国国航", CE: "东方航空", Spring: "春秋航空" },
+    },
+    china_airline_rpk_history: {
+      series: { CS: "南方航空", AC: "中国国航", CE: "东方航空", Spring: "春秋航空" },
+    },
+    china_airline_region_split_history: {
+      series: { Domestic: "国内", International: "国际", Regional: "地区" },
+    },
+    china_airline_latest_snapshot: {
+      airline: { "Air China": "中国国航", "China Eastern": "东方航空", "China Southern": "南方航空", "Spring Airlines": "春秋航空" },
+      region: { Domestic: "国内", International: "国际", Regional: "地区", Total: "合计" },
     },
   },
 };
@@ -621,14 +661,26 @@ async function deliverPortable({ deliveryScript, artifactFile, portableFile, loc
   throw new Error(`Portable dashboard delivery failed (${locale}) after ${maxAttempts} attempt(s).`);
 }
 
-const SECTORS = [
-  { id: "hk-real-estate", statusFile: "dashboard-status.json", zh: HK_REAL_ESTATE_ZH },
-  { id: "hk-local-consumer", statusFile: "dashboard-status-hk-local-consumer.json", zh: HK_LOCAL_CONSUMER_ZH },
-  { id: "hk-utilities", statusFile: "dashboard-status-hk-utilities.json", zh: HK_UTILITIES_ZH },
-  { id: "hk-transport", statusFile: "dashboard-status-hk-transport.json", zh: HK_TRANSPORT_ZH },
-  { id: "hk-telecom", statusFile: "dashboard-status-hk-telecom.json", zh: HK_TELECOM_ZH },
-  { id: "hk-reit", statusFile: "dashboard-status-hk-reit.json", zh: HK_REIT_ZH },
-];
+// Identity and status-file wiring come from ../sectors.json; only the
+// localization dictionaries are packaging-specific and stay here. A sector in
+// the roster without an entry below is a hard error rather than a silently
+// English-only ZH page.
+const ZH_DICTIONARIES = {
+  "hk-real-estate": HK_REAL_ESTATE_ZH,
+  "hk-local-consumer": HK_LOCAL_CONSUMER_ZH,
+  "hk-utilities": HK_UTILITIES_ZH,
+  "hk-transport": HK_TRANSPORT_ZH,
+  "hk-telecom": HK_TELECOM_ZH,
+  "hk-reit": HK_REIT_ZH,
+};
+
+const SECTORS = LIVE_SECTORS.map((sector) => {
+  const zh = ZH_DICTIONARIES[sector.id];
+  if (!zh) {
+    throw new Error(`No ZH dictionary for sector "${sector.id}" (add one in package-dashboard.mjs).`);
+  }
+  return { ...sector, zh };
+});
 
 if (!existsSync(distDir)) {
   throw new Error("Run the static hub build step before packaging dashboards.");
@@ -697,8 +749,11 @@ for (const sector of SECTORS) {
 
   const exportsDir = join(distDir, "exports");
   mkdirSync(exportsDir, { recursive: true });
-  const attachmentFilename = statusData.attachment_filename || `${sectorSlug}-monitor.html`;
-  cpSync(enPortableFile, join(exportsDir, attachmentFilename));
+  // Both locales: the hub renders a download link per locale, so shipping only
+  // the EN file left every ZH link pointing at a 404.
+  const attachments = attachmentNames(sector, statusData);
+  cpSync(enPortableFile, join(exportsDir, attachments.en));
+  cpSync(zhPortableFile, join(exportsDir, attachments.zh));
 
   process.stdout.write(`[package-dashboard] Completed ${sector.id}.\n`);
 }
