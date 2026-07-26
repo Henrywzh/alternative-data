@@ -37,7 +37,7 @@ jobs:
       - name: Run test suite
         env:
           DATA_SOURCE: local
-        run: pytest -q
+        run: pytest -q -n auto
 
       - name: Smoke-test Streamlit startup
         env:
