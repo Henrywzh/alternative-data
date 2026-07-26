@@ -3,7 +3,7 @@
 Companion to [asia-markets-hk-alt-data-sources.md](asia-markets-hk-alt-data-sources.md).
 `akshare` is already a dependency of this repo (`pyproject.toml`) and already
 used for HK/mainland spot quotes in
-[src/minerals_signal_data/market_data.py](../src/minerals_signal_data/market_data.py)
+[src/minerals_signal_data/market_data.py](../../src/minerals_signal_data/market_data.py)
 (`ak.stock_hk_spot_em()`, `ak.stock_zh_a_spot_em()`). This is a full audit of
 what else it offers for HK-specific research.
 
