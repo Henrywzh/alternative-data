@@ -1,0 +1,97 @@
+name: HK Transport Sector Data Refresh Monthly
+
+# Unlike hk-real-estate / hk-local-consumer (refreshed daily by
+# asia-markets-dashboard-refresh-daily.yml), HK Transport's underlying
+# sources are all monthly-cadence bulletins: MTR patronage, Cathay/HKIA
+# traffic figures, and the 4 China-listed-airline Cninfo operating-data
+# PDFs. There is nothing to gain from polling daily, so this runs monthly
+# instead -- mirroring hk-retail-stores-monthly.yml's reasoning.
+#
+# Two steps are required (not just the artifact builder) because the China
+# airline series is not fetched live by build_hk_transport_artifact.py --
+# it reads data/processed/airline_traffic/china_airlines_monthly.parquet,
+# which scripts/scrape_cn_airline_traffic.py owns. That scraper must run
+# first so the builder picks up any newly-published month.
+#
+# This workflow does NOT run scripts/build-static-hub.mjs or
+# scripts/package-dashboard.mjs, same limitation documented in
+# asia-markets-dashboard-refresh-daily.yml: the portable HTML/zh packaging
+# step depends on a local plugin bundle not available in CI. The
+# .generated/hk-transport-artifact(.json|-zh.json) data and status file
+# ARE kept fresh monthly; the rendered HTML dashboard requires a manual
+# `npm run build` afterwards.
+
+on:
+  schedule:
+    # 20th of the month, 06:15 UTC -- after MTR/Cathay monthly IR figures
+    # and the airlines' Cninfo operating-data bulletins for the prior
+    # month have typically posted.
+    - cron: "15 6 20 * *"
+  workflow_dispatch:
+
+concurrency:
+  group: hk-transport-monthly-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  refresh-hk-transport:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .[dev]
+
+      - name: Refresh China-listed-airline monthly traffic data
+        # Tolerate a failure here rather than aborting the whole job: the
+        # artifact builder below still works off whatever parquet rows are
+        # already committed, same "keep the last good data" philosophy as
+        # the daily refresh workflow's --tolerate-errors flag.
+        run: python3 scripts/scrape_cn_airline_traffic.py || echo "::warning::airline scraper failed, continuing with existing parquet"
+
+      - name: Build HK Transport artifact
+        working-directory: apps/asia-markets-dashboard
+        run: |
+          python3 scripts/build_hk_transport_artifact.py \
+            --output .generated/hk-transport-artifact.json \
+            --status-output src/data/dashboard-status-hk-transport.json
+
+      - name: Commit refreshed transport data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add \
+            data/processed/airline_traffic/china_airlines_monthly.parquet \
+            apps/asia-markets-dashboard/.generated/hk-transport-artifact.json \
+            apps/asia-markets-dashboard/src/data/dashboard-status-hk-transport.json
+
+          if git diff --staged --quiet; then
+            echo "No HK transport data changes to commit"
+            exit 0
+          fi
+
+          git commit -m "chore(hk-transport): refresh sector data [$(date -u +%Y-%m-%d)]"
+
+          for attempt in 1 2 3; do
+            if git pull --rebase origin "${{ github.event.repository.default_branch }}" && git push; then
+              exit 0
+            fi
+            sleep $((attempt * 5))
+          done
+          exit 1
