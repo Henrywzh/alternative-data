@@ -91,7 +91,10 @@ def test_build_artifact_is_source_backed_and_deterministic():
     assert first["snapshot"]["datasets"]["kpi_ccl"][0]["latest"] > 0
     assert first["snapshot"]["datasets"]["kpi_rvd_price"][0]["is_provisional"] is True
     assert len(first["snapshot"]["datasets"]["source_health"]) == 5
-    assert any(row["status"] == "Planned" for row in first["snapshot"]["datasets"]["source_coverage"])
+    # 6dd3693 wired up the two sources that used to carry "Planned" (28Hse,
+    # Land Registry) into live data; SRPE is the one remaining non-live
+    # source, and its status has always been "Catalog only", not "Planned".
+    assert any(row["status"] == "Catalog only" for row in first["snapshot"]["datasets"]["source_coverage"])
 
 
 def test_rebased_series_start_at_100():
