@@ -108,7 +108,8 @@ jobs:
             apps/asia-markets-dashboard/src/data/dashboard-status-hk-utilities.json \
             apps/asia-markets-dashboard/src/data/dashboard-status-hk-transport.json \
             apps/asia-markets-dashboard/src/data/dashboard-status-hk-telecom.json \
-            apps/asia-markets-dashboard/src/data/dashboard-status-hk-reit.json
+            apps/asia-markets-dashboard/src/data/dashboard-status-hk-reit.json \
+            data/normalized/hk_local_consumer/afcd_category_history.csv
 
           if git diff --staged --quiet; then
             echo "No dashboard data changes to commit"

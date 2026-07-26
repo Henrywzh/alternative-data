@@ -184,6 +184,25 @@ PUBLIC_SOURCES = {
             ],
         },
     },
+    "hk_store_footprint": {
+        "id": "hk_store_footprint",
+        "label": "HK Retail/F&B Store-Count Scrapers",
+        "href": "https://github.com/",
+        "query": {
+            "engine": "11 first-party scrapers (scripts/scrape_*_stores.py)",
+            "language": "Python",
+            "description": (
+                "Store/branch counts scraped directly from each company's own store-locator "
+                "page or API (Demandware, WCF REST, Next.js SSR, official mobile-app backends, "
+                "etc.) -- see scripts/STORE_SCRAPE_REPORT.md in the repo root for per-company "
+                "source detail and known coverage gaps."
+            ),
+            "metric_definitions": [
+                "Total stores is each company's own latest snapshot count (not a cross-company-comparable unit -- a POP MART Roboshop and a Chow Tai Fook boutique are both counted as one location).",
+                "This is a footprint snapshot, not a trend: most companies only have 1-2 dated snapshots so far, so month-over-month change is not yet meaningful.",
+            ],
+        },
+    },
     "source_registry": {
         "id": "source_registry",
         "label": "HK Local Consumer dashboard source registry",
@@ -398,6 +417,90 @@ def _validate_immigration(df: pd.DataFrame, now: datetime) -> pd.DataFrame:
     return result.sort_values("date").reset_index(drop=True)
 
 
+# The 11 store-count scrapers live in the repo root's scripts/ directory,
+# outside this app's own data flow -- their output is data/processed/*_stores/
+# store_counts.parquet in the repo root, not anything under this app's own
+# data/ directories. Each is real, already-hardened data (see
+# scripts/STORE_SCRAPE_REPORT.md); this just reads it directly rather than
+# needing a separate sync/copy step, since REPO_ROOT is already on sys.path.
+STORE_FOOTPRINT_COMPANIES: list[dict[str, str]] = [
+    {"company": "Chow Tai Fook", "stock_code": "01929.HK", "sector": "Jewellery", "dir": "ctf_stores"},
+    {"company": "Luk Fook", "stock_code": "00590.HK", "sector": "Jewellery", "dir": "lukfook_stores"},
+    {"company": "Chow Sang Sang", "stock_code": "00116.HK", "sector": "Jewellery", "dir": "chowsangsang_stores"},
+    {"company": "Lao Pu Gold", "stock_code": "06181.HK", "sector": "Jewellery", "dir": "laopugold_stores"},
+    {"company": "Giordano", "stock_code": "00709.HK", "sector": "Apparel", "dir": "giordano_stores"},
+    {"company": "Bossini", "stock_code": "00592.HK", "sector": "Apparel", "dir": "bossini_stores"},
+    {"company": "Tai Hing Group", "stock_code": "06811.HK", "sector": "F&B", "dir": "taihing_stores"},
+    {"company": "Fairwood", "stock_code": "00052.HK", "sector": "F&B", "dir": "fairwood_stores"},
+    {"company": "Café de Coral", "stock_code": "00341.HK", "sector": "F&B", "dir": "cafedecoral_stores"},
+    {"company": "Sa Sa", "stock_code": "00178.HK", "sector": "Cosmetics", "dir": "sasa_stores"},
+    {"company": "POP MART", "stock_code": "09992.HK", "sector": "Trendy Toys", "dir": "popmart_stores"},
+]
+
+
+def fetch_store_footprint_snapshot() -> pd.DataFrame:
+    """Read each company's latest store-count snapshot from the repo-root scrapers.
+
+    Two schema shapes exist across the 11 scrapers (see STORE_SCRAPE_REPORT.md):
+    - 10 of them: a (date, <group_key>, store_count) rollup with a "TOTAL"
+      row -- but the group-key column name is NOT consistently "region":
+      Fairwood uses "category", Sa Sa uses "district", Café de Coral uses
+      "area" (each scraper's own append_snapshot(key_column=...) choice).
+      Detected dynamically here rather than hardcoding "region", which
+      previously misdetected those three as the POP MART shape below and
+      silently undercounted them (e.g. Fairwood read as 5 stores, not 151).
+    - POP MART: a rich per-store record (one row per store/Roboshop, no
+      rollup, no "store_count"/"TOTAL" at all) -- its total is len() of the
+      latest date's rows instead.
+    """
+    rows: list[dict[str, Any]] = []
+    for entry in STORE_FOOTPRINT_COMPANIES:
+        path = REPO_ROOT / "data" / "processed" / entry["dir"] / "store_counts.parquet"
+        if not path.exists():
+            continue
+        try:
+            df = pd.read_parquet(path)
+        except Exception:  # noqa: BLE001 -- a corrupt/partial local file should not break the build
+            continue
+        if df.empty or "date" not in df.columns:
+            continue
+        latest_date = df["date"].max()
+        latest = df[df["date"] == latest_date]
+
+        group_key = next(
+            (
+                col
+                for col in latest.columns
+                if col not in ("date", "store_count") and (latest[col] == "TOTAL").any()
+            ),
+            None,
+        ) if "store_count" in latest.columns else None
+
+        if group_key is not None:
+            total_row = latest[latest[group_key] == "TOTAL"]
+            if total_row.empty:
+                continue
+            total_stores = float(total_row["store_count"].iloc[0])
+            regions_tracked = int((latest[group_key] != "TOTAL").sum())
+        else:
+            # POP MART's rich per-store schema: one row = one store/Roboshop.
+            total_stores = float(len(latest))
+            market_col = "market" if "market" in latest.columns else ("country" if "country" in latest.columns else None)
+            regions_tracked = int(latest[market_col].nunique()) if market_col else 0
+
+        rows.append(
+            {
+                "company": entry["company"],
+                "stock_code": entry["stock_code"],
+                "sector": entry["sector"],
+                "total_stores": total_stores,
+                "snapshot_date": str(latest_date)[:10],
+                "regions_tracked": regions_tracked,
+            }
+        )
+    return pd.DataFrame(rows)
+
+
 def _validate_weather(df: pd.DataFrame, now: datetime) -> pd.DataFrame:
     if df is None or df.empty:
         raise ValueError("Weather and demand drivers: no data returned")
@@ -492,6 +595,7 @@ def build_artifact(
     raw_restaurant: pd.DataFrame,
     raw_immigration: pd.DataFrame | None = None,
     raw_weather: pd.DataFrame | None = None,
+    raw_store_footprint: pd.DataFrame | None = None,
     *,
     now: datetime | None = None,
     afcd_history_path: Path = AFCD_CATEGORY_HISTORY_PATH,
@@ -504,6 +608,8 @@ def build_artifact(
         raw_immigration = fetch_immigration_flow()
     if raw_weather is None:
         raw_weather = fetch_weather_demand_drivers()
+    if raw_store_footprint is None:
+        raw_store_footprint = fetch_store_footprint_snapshot()
 
     gold = _validate_gold(raw_gold, now)
     afcd = _validate_afcd(raw_afcd)
@@ -669,6 +775,21 @@ def build_artifact(
             "notes": "Sector-wide purchases only; per-type purchases are not published.",
         },
     ]
+    store_footprint = raw_store_footprint if raw_store_footprint is not None else pd.DataFrame()
+    if not store_footprint.empty:
+        store_footprint = store_footprint.sort_values("total_stores", ascending=False).reset_index(drop=True)
+        health.append(
+            {
+                "source": PUBLIC_SOURCES["hk_store_footprint"]["label"],
+                "dataset": "HK Retail/F&B Store Counts",
+                "type": "Snapshot",
+                "status": "Healthy",
+                "latest_observation": store_footprint["snapshot_date"].max(),
+                "records": int(len(store_footprint)),
+                "freshness": "Footprint snapshot (most brands: 1-2 dated snapshots so far, not yet a trend)",
+                "notes": f"{int(store_footprint['total_stores'].sum()):,} total tracked locations across {len(store_footprint)} companies.",
+            }
+        )
     # Split, not merged: "active" is every source already backing a live
     # card/chart/table above; "planned" is next-target sources whose
     # endpoint is broken/unverified and therefore excluded from the live
@@ -744,6 +865,20 @@ def build_artifact(
             ["sub_sector", "total_receipts_hkd_m", "total_purchases_hkd_m", "receipts_value_index", "date"],
         ),
         "restaurant_chart": _records(restaurant_chart_rows, ["sub_sector", "total_receipts_hkd_m"]),
+        "kpi_store_footprint": (
+            [
+                {
+                    "latest": int(store_footprint["total_stores"].sum()),
+                    "observation_date": store_footprint["snapshot_date"].max(),
+                }
+            ]
+            if not store_footprint.empty
+            else []
+        ),
+        "store_footprint_snapshot": _records(
+            store_footprint, ["company", "stock_code", "sector", "total_stores", "regions_tracked", "snapshot_date"]
+        ),
+        "store_footprint_chart": _records(store_footprint, ["company", "total_stores"]),
         "source_health": health,
         "source_coverage_active": coverage_active,
         "source_coverage_planned": coverage_planned,
@@ -857,6 +992,16 @@ def build_artifact(
             ],
         }
     )
+    if not store_footprint.empty:
+        cards.append(
+            {
+                "id": "store_footprint_card",
+                "description": f"Total tracked store/branch count across {len(store_footprint)} HK-listed retail, jewellery, F&B, and consumer names.",
+                "dataset": "kpi_store_footprint",
+                "sourceId": "hk_store_footprint",
+                "metrics": [{"label": "Total tracked locations", "field": "latest", "format": "number"}],
+            }
+        )
 
     charts = [
         {
@@ -1029,6 +1174,24 @@ def build_artifact(
             "layout": "half",
         },
     ]
+    if not store_footprint.empty:
+        charts.append(
+            {
+                "id": "store_footprint_chart",
+                "title": "Tracked store/branch count by company",
+                "subtitle": "Latest footprint snapshot per company (not a directly comparable unit -- see notes).",
+                "type": "horizontalBar",
+                "intent": "comparison",
+                "dataset": "store_footprint_chart",
+                "sourceId": "hk_store_footprint",
+                "encodings": {
+                    "x": {"field": "company", "type": "nominal", "label": "Company"},
+                    "y": {"field": "total_stores", "type": "quantitative", "label": "Total stores"},
+                },
+                "valueFormat": "number",
+                "layout": "full",
+            }
+        )
 
     tables = [
         {
@@ -1313,6 +1476,28 @@ def build_artifact(
     except Exception:
         pass
 
+    if not store_footprint.empty:
+        tables.append(
+            {
+                "id": "store_footprint_table",
+                "title": "HK Retail/F&B Store-Count Snapshot",
+                "subtitle": "Latest tracked store/branch count per company -- a footprint snapshot, not yet a trend (most companies have 1-2 dated snapshots so far).",
+                "dataset": "store_footprint_snapshot",
+                "sourceId": "hk_store_footprint",
+                "defaultSort": {"field": "total_stores", "direction": "desc"},
+                "density": "dense",
+                "layout": "full",
+                "columns": [
+                    {"field": "company", "label": "Company", "type": "text"},
+                    {"field": "stock_code", "label": "Stock Code", "type": "text"},
+                    {"field": "sector", "label": "Sector", "type": "text"},
+                    {"field": "total_stores", "label": "Total Stores", "format": "number"},
+                    {"field": "regions_tracked", "label": "Regions/Markets Tracked", "format": "number"},
+                    {"field": "snapshot_date", "label": "Snapshot Date", "type": "date"},
+                ],
+            }
+        )
+
     datasets["consumer_council_oilprice"] = oil_rows
     datasets["consumer_council_complaints"] = complaint_rows
     datasets["consumer_council_complaints_table"] = complaint_table_rows
@@ -1341,7 +1526,11 @@ def build_artifact(
                     ),
                 },
                 {"id": "market_pulse_1", "type": "metric-strip", "cardIds": ["northbound_card", "southbound_card", "weather_card", "fx_card"]},
-                {"id": "market_pulse_2", "type": "metric-strip", "cardIds": ["gold_card", "retail_card", "restaurant_card"]},
+                {"id": "market_pulse_2", "type": "metric-strip", "cardIds": (
+                    ["gold_card", "retail_card", "restaurant_card", "store_footprint_card"]
+                    if not store_footprint.empty
+                    else ["gold_card", "retail_card", "restaurant_card"]
+                )},
                 {"id": "immigration_chart", "type": "chart", "chartId": "immigration_trend"},
                 {"id": "weather_chart", "type": "chart", "chartId": "severe_weather_trend"},
                 {"id": "afcd_chart", "type": "chart", "chartId": "afcd_category_chart", "layout": "half"},
@@ -1362,6 +1551,8 @@ def build_artifact(
                 {"id": "retail_category_table_block", "type": "table", "tableId": "retail_category_table"},
                 {"id": "restaurant_trend_chart", "type": "chart", "chartId": "restaurant_trend"},
                 {"id": "restaurant_snapshot_table_block", "type": "table", "tableId": "restaurant_snapshot_table"},
+                {"id": "store_footprint_chart_block", "type": "chart", "chartId": "store_footprint_chart"},
+                {"id": "store_footprint_table_block", "type": "table", "tableId": "store_footprint_table"},
                 {"id": "source_health", "type": "table", "tableId": "source_health_table"},
                 {"id": "active_signals", "type": "table", "tableId": "active_signals_table"},
                 {"id": "coverage", "type": "table", "tableId": "coverage_table"},
