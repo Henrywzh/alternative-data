@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-07-25T19:59:49.807336Z",
-  "snapshot_id": "1053e61617a1a219",
+  "generated_at": "2026-07-26T12:30:59.800192Z",
+  "snapshot_id": "cc13c84bf4943ed9",
   "data_as_of": "2026-06-01",
   "overall_status": "Healthy",
-  "live_sources": 2,
+  "live_sources": 3,
   "planned_sources": 0,
   "sources": [
     {
@@ -25,7 +25,17 @@
       "records": 100,
       "freshness": "Live",
       "notes": "HKIA airport monthly aircraft movements, passenger volume, and freight tonnage alongside Cathay Pacific passengers, RPK, ASK, and Passenger Load Factor (%), fetched directly from Cathay's own investor-relations traffic-figures PDF (deterministic per-month URL)."
+    },
+    {
+      "source": "China Listed Airlines Monthly Operating Data",
+      "dataset": "china_airline_traffic",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2026-06-01",
+      "records": 100,
+      "freshness": "Live",
+      "notes": "Monthly passengers, ASK, RPK and passenger load factor for Air China, China Southern, China Eastern and Spring Airlines, split by domestic, international and regional operations."
     }
   ],
-  "attachment_filename": "hk-transport-dashboard-2026-07-25.html"
+  "attachment_filename": "hk-transport-dashboard-2026-07-26.html"
 }

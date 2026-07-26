@@ -2,21 +2,17 @@
 // Runs the per-sector Python artifact builders concurrently.
 
 import { spawn } from "node:child_process";
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 
-const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+import { appRoot as projectRoot, LIVE_SECTORS } from "./sectors.mjs";
+
 const pythonBin = process.env.PYTHON_BIN || "python3";
 const tolerateErrors = process.argv.includes("--tolerate-errors");
 
-const BUILDERS = [
-  { script: "scripts/build_hk_real_estate_artifact.py", output: ".generated/hk-real-estate-artifact.json", statusOutput: "src/data/dashboard-status.json" },
-  { script: "scripts/build_hk_local_consumer_artifact.py", output: ".generated/hk-local-consumer-artifact.json", statusOutput: "src/data/dashboard-status-hk-local-consumer.json" },
-  { script: "scripts/build_hk_utilities_artifact.py", output: ".generated/hk-utilities-artifact.json", statusOutput: "src/data/dashboard-status-hk-utilities.json" },
-  { script: "scripts/build_hk_transport_artifact.py", output: ".generated/hk-transport-artifact.json", statusOutput: "src/data/dashboard-status-hk-transport.json" },
-  { script: "scripts/build_hk_telecom_artifact.py", output: ".generated/hk-telecom-artifact.json", statusOutput: "src/data/dashboard-status-hk-telecom.json" },
-  { script: "scripts/build_hk_reit_artifact.py", output: ".generated/hk-reit-artifact.json", statusOutput: "src/data/dashboard-status-hk-reit.json" },
-];
+const BUILDERS = LIVE_SECTORS.map((sector) => ({
+  script: sector.builder,
+  output: sector.artifact,
+  statusOutput: sector.statusOutput,
+}));
 
 function runBuilder({ script, output, statusOutput }) {
   return new Promise((resolvePromise) => {

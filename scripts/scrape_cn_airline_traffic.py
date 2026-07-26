@@ -169,6 +169,13 @@ _REGION_MAP = {
     "合计": "Total", "小计": "Total", "总计": "Total",
 }
 
+# Every carrier's region breakdown always lists rows in this fixed order
+# (confirmed across all 4 carriers' live PDFs). Used to positionally infer
+# the region of a row whose label cell pdfplumber failed to extract, so a
+# single lost label only drops that one row instead of cascading into the
+# rows after it (see the blank-first_cell handling in parse_airline_pdf).
+_REGION_ORDER = ("Domestic", "International", "Regional")
+
 
 def _classify_metric_header(first_cell: str) -> str | None:
     """Return the target metric name if `first_cell` is one of the 4 wanted
@@ -176,22 +183,81 @@ def _classify_metric_header(first_cell: str) -> str | None:
     ATK/AFTK/RTK/RFTK/cargo -- there is no "ignore" list to maintain because
     anything not explicitly a target keyword is treated the same way: not a
     reason to keep the current section active).
+
+    Also checks the cell with internal spaces stripped: China Eastern's PDF
+    wraps its passenger-count header across two lines exactly inside the
+    keyword ("载运旅客人" + newline + "次（千）"), and the newline-to-space
+    cleanup done before this function is called leaves a stray space mid
+    keyword ("载运旅客人 次（千）") that breaks a plain substring check.
     """
-    if any(kw in first_cell for kw in _ASK_KEYWORDS):
+    candidates = (first_cell, first_cell.replace(" ", ""))
+    if any(kw in cell for cell in candidates for kw in _ASK_KEYWORDS):
         return "ask"
-    if any(kw in first_cell for kw in _RPK_KEYWORDS):
+    if any(kw in cell for cell in candidates for kw in _RPK_KEYWORDS):
         return "rpk"
-    if any(kw in first_cell for kw in _PASSENGERS_KEYWORDS):
+    if any(kw in cell for cell in candidates for kw in _PASSENGERS_KEYWORDS):
         return "passengers"
-    if any(kw in first_cell for kw in _LOAD_FACTOR_KEYWORDS):
+    if any(kw in cell for cell in candidates for kw in _LOAD_FACTOR_KEYWORDS):
         return "passenger_load_factor_pct"
     return None
+
+
+def _ask_rpk_unit_scale(header_cell: str) -> float:
+    """Return the multiplier that converts an ASK/RPK value in
+    `header_cell`'s stated unit to a common "million" basis.
+
+    Air China, China Southern, and China Eastern all state ASK/RPK in
+    (百万) -- millions. Spring Airlines states its in (万人公里) /
+    (万座公里) -- ten-thousands, a unit 100x smaller -- confirmed by
+    diffing the raw PDF headers directly. Without this, Spring's ASK/RPK
+    get stored ~100x too large relative to the other 3 carriers.
+
+    Also checks the cell with internal spaces stripped: China Eastern's RPK
+    header sometimes wraps across three lines exactly inside the "百万"
+    unit annotation ("客运人公里\n（RPK）（百\n万）"), and the newline-to-
+    space cleanup done before this is called leaves a stray space splitting
+    "百万" into "百 万" -- which would otherwise fall through to the "万"
+    branch below and wrongly apply Spring's 100x-smaller scale to China
+    Eastern's data. Check the space-stripped "百万" first since "百万"
+    contains "万" as a substring.
+    """
+    candidates = (header_cell, header_cell.replace(" ", ""))
+    if any("百万" in cell for cell in candidates):
+        return 1.0
+    if any("万" in cell for cell in candidates):
+        return 0.01
+    return 1.0
 
 
 def parse_airline_pdf(pdf_bytes: bytes, airline_code: str, month_key: str) -> list[dict]:
     """Parse tables inside an airline monthly PDF."""
     records = []
+    seen: set[tuple[str, str]] = set()  # (metric, region) already recorded in this PDF
     current_section = None
+    current_scale = 1.0
+    region_idx = 0  # position within _REGION_ORDER for the active section
+
+    def record(region: str, value: float) -> None:
+        # A metric's region breakdown should only ever appear once per PDF.
+        # A repeat (metric, region) pair showing up again is a pdfplumber
+        # page-break artifact -- confirmed on a live Air China PDF where the
+        # RPK breakdown's own Domestic/International/Regional rows are
+        # correctly extracted on page 1, then a *second*, corrupted set of
+        # the same 3 labels reappears as the opening rows of page 2 (values
+        # ~100x too small, summing to nothing close to the metric's own
+        # printed total). Keep only the first (legitimate) occurrence.
+        key = (current_section, region)
+        if key in seen:
+            return
+        seen.add(key)
+        records.append({
+            "month": month_key,
+            "date": f"{month_key}-01",
+            "airline_code": airline_code,
+            "region": region,
+            "metric": current_section,
+            "value": value,
+        })
 
     try:
         with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
@@ -204,6 +270,28 @@ def parse_airline_pdf(pdf_bytes: bytes, airline_code: str, month_key: str) -> li
                         clean_row = [str(cell).replace("\n", " ").strip() if cell else "" for cell in row]
                         first_cell = clean_row[0]
 
+                        if not first_cell:
+                            # Page-break artifact: pdfplumber sometimes fails
+                            # to extract the leading region label for the row
+                            # that opens a new page, even though its value
+                            # cells parse fine (confirmed on live Air China
+                            # PDFs -- the "International" row lands as
+                            # [None, value, ...] right after a page break).
+                            # An empty cell is never a genuine header, so
+                            # don't let it reset current_section. Instead,
+                            # infer the region positionally from _REGION_ORDER
+                            # -- every carrier lists Domestic/International/
+                            # Regional in that fixed order -- so only this one
+                            # row's label is lost rather than it (wrongly)
+                            # ending the whole section.
+                            if current_section and region_idx < len(_REGION_ORDER) and len(clean_row) > 1:
+                                region = _REGION_ORDER[region_idx]
+                                region_idx += 1
+                                val = _clean_val(clean_row[1]) * current_scale
+                                if val > 0 or "load_factor" in current_section:
+                                    record(region, val)
+                            continue
+
                         if first_cell in _TABLE_HEADER_REPEAT_MARKERS:
                             continue
 
@@ -212,7 +300,8 @@ def parse_airline_pdf(pdf_bytes: bytes, airline_code: str, month_key: str) -> li
                             # A region/total data row: use whatever section is
                             # currently active (may be None, in which case
                             # this row is correctly skipped below).
-                            pass
+                            if region in _REGION_ORDER:
+                                region_idx = _REGION_ORDER.index(region) + 1
                         else:
                             metric = _classify_metric_header(first_cell)
                             # Any header row -- recognized target metric, or
@@ -224,20 +313,17 @@ def parse_airline_pdf(pdf_bytes: bytes, airline_code: str, month_key: str) -> li
                             # off, so an unrecognized header can only cause a
                             # gap, never a mislabeled value.
                             current_section = metric
+                            current_scale = (
+                                _ask_rpk_unit_scale(first_cell) if metric in ("ask", "rpk") else 1.0
+                            )
+                            region_idx = 0
                             continue
 
                         if region and current_section and len(clean_row) > 1:
                             val_str = clean_row[1]
-                            val = _clean_val(val_str)
+                            val = _clean_val(val_str) * current_scale
                             if val > 0 or "load_factor" in current_section:
-                                records.append({
-                                    "month": month_key,
-                                    "date": f"{month_key}-01",
-                                    "airline_code": airline_code,
-                                    "region": region,
-                                    "metric": current_section,
-                                    "value": val,
-                                })
+                                record(region, val)
     except Exception as exc:
         print(f"  Error parsing PDF for {airline_code} {month_key}: {exc}")
 
