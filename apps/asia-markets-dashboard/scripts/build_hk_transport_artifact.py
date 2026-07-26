@@ -210,6 +210,17 @@ def build_china_airline_views(frame: pd.DataFrame) -> dict[str, list[dict[str, A
     ask_rpk = combined.pivot_table(
         index=["date", "month", "airline_code", "airline"], columns="metric", values="value"
     ).reset_index()
+    # The completeness gate above can remove a metric entirely -- if no
+    # carrier-month has all 3 ASK regions and none reports an ASK total, the
+    # pivot comes back without an "ask" column at all and dropna(subset=...)
+    # raises KeyError instead of yielding the intended gap. Reinstating the
+    # columns as empty keeps the degenerate case on the same "leave a gap"
+    # path as a single missing month.
+    # float("nan"), not pd.NA: an all-NA object column would break the numeric
+    # dtype the ratio below and the downstream chart formatting both expect.
+    for column in ("ask", "rpk"):
+        if column not in ask_rpk.columns:
+            ask_rpk[column] = float("nan")
     derived_lf = ask_rpk.dropna(subset=["ask", "rpk"]).assign(
         metric="passenger_load_factor_pct",
         value=lambda d: (d["rpk"] / d["ask"] * 100).round(4),
