@@ -86,6 +86,11 @@ def test_hundred_million_is_not_read_as_ten_thousand() -> None:
     [
         ("可用座位公里（百万）", "ask"),
         ("可利用座公里", "ask"),
+        # China Southern's own pre-2019-03 ASK header (座 seat -> 客
+        # passenger); it switched to "可利用座公里" from March 2019 onward,
+        # matching every other carrier. Missing this dropped ASK for 38
+        # months across 2016-2019.
+        ("可利用客公里（ASK）（百万）", "ask"),
         ("收入客公里", "rpk"),
         ("旅客周转量", "rpk"),
         ("乘客人数（千）", "passengers"),
