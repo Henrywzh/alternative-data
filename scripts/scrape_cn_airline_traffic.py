@@ -325,6 +325,44 @@ def parse_airline_pdf(pdf_bytes: bytes, airline_code: str, month_key: str) -> li
                             # extraction back on; everything else turns it
                             # off, so an unrecognized header can only cause a
                             # gap, never a mislabeled value.
+                            #
+                            # One further corruption mode (confirmed on a
+                            # single China Southern PDF, 2019-06, across all
+                            # 8 of its metric blocks): a page-break can merge
+                            # the block's own reported Total value into the
+                            # header row's second cell (e.g. "(ASK)(百万)\n
+                            # 18,597.14"). When that happens, every region
+                            # row below is shifted one label off from its
+                            # true value -- confirmed by cross-checking
+                            # against the PDF's own prose summary and the
+                            # arithmetic identity that the 3 regions must sum
+                            # to the reported Total, neither of which holds
+                            # under the labels as extracted, but both hold
+                            # exactly under a one-position shift. Recovering
+                            # the true mapping generically (without a prose
+                            # paragraph to cross-check against) isn't
+                            # reliable, so treat the whole block as unusable
+                            # rather than silently mislabel three data
+                            # points -- current_section stays None, so every
+                            # row below is skipped until the next header.
+                            #
+                            # Distinguish this from a merely-line-wrapped
+                            # number in a header's own (always-discarded)
+                            # value cell -- confirmed on a China Eastern PDF
+                            # where "10,031.2\n3" is just "10,031.23" split
+                            # across lines, no unit-annotation text merged
+                            # in, and the region rows below it were correctly
+                            # unaffected. The bad case has actual text (the
+                            # unit annotation, e.g. "(ASK)(百万)") before the
+                            # newline; a pure number wrap has none.
+                            second_cell = str(row[1]) if len(row) > 1 and row[1] else ""
+                            before_newline = second_cell.split("\n", 1)[0]
+                            has_merged_annotation = bool(re.search(r"[^\d,.\-%\s]", before_newline))
+                            if metric and has_merged_annotation:
+                                current_section = None
+                                region_idx = 0
+                                continue
+
                             current_section = metric
                             current_scale = (
                                 _ask_rpk_unit_scale(first_cell) if metric in ("ask", "rpk") else 1.0
