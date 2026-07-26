@@ -133,6 +133,21 @@ def test_region_order_matches_the_positional_inference_assumption() -> None:
     assert _scraper()._REGION_ORDER == ("Domestic", "International", "Regional")
 
 
+def test_china_eastern_queries_both_title_variants() -> None:
+    """Cninfo's server-side searchkey filter is narrower than the client-side
+    title check (which already accepts both "运营数据" and "经营数据") --
+    querying only "运营数据" returned zero announcements for Dec 2016 - Mar
+    2019, the exact window China Eastern titled its bulletin "经营数据"
+    before reverting. Every carrier's searchkey must be a tuple so a rename
+    like this can be covered by adding a variant, not swapping a string.
+    """
+    airlines = {a["name"]: a for a in _scraper().AIRLINES}
+    for info in airlines.values():
+        assert isinstance(info["searchkey"], tuple)
+    assert "经营数据" in airlines["China Eastern"]["searchkey"]
+    assert "运营数据" in airlines["China Eastern"]["searchkey"]
+
+
 # --- invariants over the committed parquet ---
 
 
@@ -192,3 +207,19 @@ def test_ask_per_passenger_is_plausible_for_every_carrier(
         f"{CARRIERS[code]} Domestic ASK per passenger median is {median:.2f}, outside 1.0-5.0 "
         "-- the ASK unit basis is probably wrong for this carrier"
     )
+
+
+@pytest.mark.parametrize("code", sorted(CARRIERS))
+def test_no_month_gap_in_carrier_history(traffic: pd.DataFrame, code: str) -> None:
+    """No carrier should be missing a whole month's PDF within its own history.
+
+    This is a discovery-level gap (Cninfo returned nothing for that month),
+    distinct from a within-PDF extraction miss -- China Eastern hit this when
+    it renamed its bulletin title for a 28-month stretch and the scraper only
+    queried the old title.
+    """
+    months = sorted(traffic.loc[traffic["airline_code"] == code, "month"].unique())
+    assert months, f"no data at all for {CARRIERS[code]}"
+    expected = pd.period_range(months[0], months[-1], freq="M").astype(str)
+    missing = sorted(set(expected) - set(months))
+    assert not missing, f"{CARRIERS[code]} is missing whole months: {missing}"
