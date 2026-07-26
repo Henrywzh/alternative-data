@@ -1,8 +1,9 @@
 name: HK Retail Stores Monthly
 
-# Store counts for these 8 companies are slow-moving (mature, established
-# retail/F&B chains), so monthly is a comfortable cadence -- no value in
-# polling more often, and it keeps load on these third-party endpoints low.
+# Store counts for these 11 companies are slow-moving (mature, established
+# retail/F&B/jewellery chains), so monthly is a comfortable cadence -- no
+# value in polling more often, and it keeps load on these third-party
+# endpoints low.
 
 on:
   schedule:
@@ -40,6 +41,9 @@ jobs:
       - name: Install dependencies
         run: python -m pip install -e .[dev]
 
+      - name: Install Playwright browser (POP MART Taiwan check)
+        run: python -m playwright install --with-deps chromium
+
       - name: Run HK retail store-count scrapers
         run: |
           DATE_ARG="${{ github.event.inputs.date }}"
@@ -62,6 +66,9 @@ jobs:
             data/processed/cafedecoral_stores \
             data/processed/giordano_stores \
             data/processed/bossini_stores \
+            data/processed/laopugold_stores \
+            data/processed/taihing_stores \
+            data/processed/popmart_stores \
             || true
 
           if git diff --staged --quiet; then
@@ -86,4 +93,7 @@ jobs:
             data/processed/cafedecoral_stores/
             data/processed/giordano_stores/
             data/processed/bossini_stores/
+            data/processed/laopugold_stores/
+            data/processed/taihing_stores/
+            data/processed/popmart_stores/
           if-no-files-found: warn

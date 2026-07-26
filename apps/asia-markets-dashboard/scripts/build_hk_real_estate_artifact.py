@@ -33,6 +33,14 @@ from src.hk_real_estate.sources.rvd import run_rvd_ingestion
 from src.hk_real_estate.sources.hkma import fetch_hkma_residential_mortgage_survey
 from src.common.cnsd_mdt import fetch_cnsd_table
 from src.hk_real_estate.storage import load_latest_normalized
+from src.hk_real_estate.sources.epi import fetch_28hse_epi_eri
+from src.hk_real_estate.sources.hse28 import fetch_28hse_new_projects, fetch_28hse_transaction_pilot
+from src.hk_real_estate.sources.midland_transactions import fetch_midland_transaction_pilot
+from src.hk_real_estate.sources.centaline_transactions import fetch_centaline_transaction_pilot
+from src.hk_real_estate.sources.landreg import fetch_landreg_monthly_statistics
+from src.hk_real_estate.sources.buildings_dept import fetch_buildings_dept_monthly_stats
+from src.hk_real_estate.sources.bd_projects import fetch_bd_supply_leading_indicators
+from src.hk_real_estate.dedup.transaction_dedup import deduplicate_agency_transactions
 
 
 @dataclass(frozen=True)
@@ -171,6 +179,75 @@ PUBLIC_SOURCES = {
             ],
         },
     },
+    "hse28_epi_eri": {
+        "id": "hse28_epi_eri",
+        "label": "28Hse EPI / ERI Historical Index",
+        "href": "https://www.28hse.com/epi/historical_data",
+        "query": {
+            "engine": "first-party form endpoint",
+            "url": "https://www.28hse.com/epi/historical_data/doaction",
+            "language": "HTML (embedded in a JSON envelope)",
+            "description": "Weekly all-HK Estate Price Index (EPI) and Estate Rental Index (ERI) history, 2016-present.",
+        },
+    },
+    "hse28_new_projects": {
+        "id": "hse28_new_projects",
+        "label": "28Hse New Properties Listing",
+        "href": "https://www.28hse.com/new-properties",
+        "query": {
+            "engine": "first-party HTML",
+            "url": "https://www.28hse.com/new-properties",
+            "language": "HTML",
+            "description": "Catalogue of newly launched residential projects with district and estimated unit count.",
+        },
+    },
+    "agency_transactions": {
+        "id": "agency_transactions",
+        "label": "Deduplicated agency transaction feeds (28Hse / Midland / Centaline)",
+        "query": {
+            "engine": "pandas cross-source dedup",
+            "language": "Python",
+            "description": "Merges per-transaction records from 28Hse estate detail pages, Midland's building transaction API, and Centaline's transaction search API, then deduplicates on estate/floor/unit/date/price.",
+            "tables_used": [
+                "28Hse estate detail pages",
+                "Midland data.midland.com.hk/info/v1/transactions/buildings",
+                "Centaline hk.centanet.com/findproperty/api/Transaction/Search",
+            ],
+        },
+    },
+    "landreg_monthly": {
+        "id": "landreg_monthly",
+        "label": "Land Registry Monthly Statistics (JSON)",
+        "href": "https://www.landreg.gov.hk/en/monthly/monthly.htm",
+        "query": {
+            "engine": "official first-party JSON",
+            "url": "https://www.landreg.gov.hk/json/monthly_stat/monthly/t1.json",
+            "language": "JSON",
+            "description": "Monthly deeds-received-for-registration counts (Agreements for Sale & Purchase, Assignments, Mortgages) and the Agreements-for-Sale-and-Purchase (ASP) series.",
+        },
+    },
+    "bd_monthly_digest": {
+        "id": "bd_monthly_digest",
+        "label": "Buildings Department Monthly Digest (Section 1 tables)",
+        "href": "https://www.bd.gov.hk/en/whats-new/monthly-digests/index.html",
+        "query": {
+            "engine": "official XLS tables",
+            "url": "https://www.bd.gov.hk/doc/en/whats-new/monthly-digests/Md11.xls",
+            "language": "XLS",
+            "description": "Scratch extraction of Buildings Department's monthly digest section-1 statistical tables (Md11-Md17).",
+        },
+    },
+    "bd_supply": {
+        "id": "bd_supply",
+        "label": "Buildings Department Project Lifecycle (Plans/Consent/OP)",
+        "href": "https://www.bd.gov.hk/en/whats-new/monthly-digests/index.html",
+        "query": {
+            "engine": "official XLS tables",
+            "url": "https://www.bd.gov.hk/doc/en/whats-new/monthly-digests/Md53.xls",
+            "language": "XLS",
+            "description": "Project-level Plans Approved / Consent to Commence Works / Occupation Permits Issued tables, aggregated into a current-month supply-pipeline snapshot by stage, region, and property category.",
+        },
+    },
     "source_registry": {
         "id": "source_registry",
         "label": "HK real-estate dashboard source registry",
@@ -186,26 +263,6 @@ PUBLIC_SOURCES = {
 
 PLANNED_COVERAGE = [
     {
-        "source": "28Hse",
-        "dataset": "EPI / ERI",
-        "type": "Measure",
-        "status": "Planned",
-        "latest_observation": "—",
-        "records": 0,
-        "freshness": "Not ingested",
-        "notes": "High-value index source; endpoint and history contract still require validation.",
-    },
-    {
-        "source": "Agency transactions",
-        "dataset": "Centaline / Midland / 28Hse transactions",
-        "type": "Measure",
-        "status": "Planned",
-        "latest_observation": "—",
-        "records": 0,
-        "freshness": "Not ingested",
-        "notes": "Target is a deduplicated near-real-time transaction activity measure.",
-    },
-    {
         "source": "SRPE",
         "dataset": "First-hand residential project documents",
         "type": "Catalog",
@@ -214,26 +271,6 @@ PLANNED_COVERAGE = [
         "records": 0,
         "freshness": "Content parser pending",
         "notes": "Current discovery code does not yet extract sales, units, price lists, or absorption facts.",
-    },
-    {
-        "source": "Land Registry",
-        "dataset": "Registered sale and purchase facts",
-        "type": "Catalog",
-        "status": "Catalog only",
-        "latest_observation": "—",
-        "records": 0,
-        "freshness": "Content parser pending",
-        "notes": "Current code discovers releases; fact extraction and point-in-time semantics remain pending.",
-    },
-    {
-        "source": "Buildings Department",
-        "dataset": "Approvals, starts and occupation permits",
-        "type": "Catalog",
-        "status": "Catalog only",
-        "latest_observation": "—",
-        "records": 0,
-        "freshness": "Content parser pending",
-        "notes": "Monthly digest discovery exists; structured project facts are not yet extracted.",
     },
 ]
 
@@ -333,6 +370,21 @@ def _series_records(frame: pd.DataFrame, value_column: str) -> list[dict[str, An
     return _records(renamed, ["date", "value"])
 
 
+def _safe_fetch(label: str, fetch_fn, *args, **kwargs) -> pd.DataFrame:
+    """Call a live fetch function, returning an empty frame (not a crash) on failure.
+
+    Unlike CCL/RVD/HKMA/CNSD (stable official APIs with strict validation via
+    SERIES_RULES), these newer sources are first-party HTML/XLS scrapers that
+    can legitimately break on a site change. A transient failure here should
+    drop that one chart/table, not take down the whole real-estate artifact.
+    """
+    try:
+        return fetch_fn(*args, **kwargs)
+    except Exception as exc:  # noqa: BLE001
+        print(f"  [hk_real_estate] {label} fetch failed, continuing without it: {exc}", file=sys.stderr)
+        return pd.DataFrame()
+
+
 def _rebased_records(frames: dict[str, pd.DataFrame], now: datetime) -> list[dict[str, Any]]:
     start = pd.Timestamp(now.replace(tzinfo=None)) - pd.DateOffset(years=5)
     labels = {
@@ -393,7 +445,19 @@ def _stamp_sources(generated_at: str) -> list[dict[str, Any]]:
     return result
 
 
-def build_artifact(raw_frames: dict[str, pd.DataFrame], raw_hkma: pd.DataFrame | None = None, raw_cnsd: pd.DataFrame | None = None, *, now: datetime | None = None) -> tuple[dict[str, Any], dict[str, Any]]:
+def build_artifact(
+    raw_frames: dict[str, pd.DataFrame],
+    raw_hkma: pd.DataFrame | None = None,
+    raw_cnsd: pd.DataFrame | None = None,
+    raw_epi_eri: pd.DataFrame | None = None,
+    raw_new_projects: pd.DataFrame | None = None,
+    raw_landreg: tuple[pd.DataFrame, pd.DataFrame] | None = None,
+    raw_bd_monthly_stats: pd.DataFrame | None = None,
+    raw_bd_supply: pd.DataFrame | None = None,
+    raw_unified_tx: pd.DataFrame | None = None,
+    *,
+    now: datetime | None = None,
+) -> tuple[dict[str, Any], dict[str, Any]]:
     now = now or _utc_now()
     if now.tzinfo is None:
         now = now.replace(tzinfo=timezone.utc)
@@ -465,7 +529,203 @@ def build_artifact(raw_frames: dict[str, pd.DataFrame], raw_hkma: pd.DataFrame |
                     "unit": str(r.get("unit", "HK$ million")),
                 })
 
-    coverage = health + PLANNED_COVERAGE
+    # 28Hse EPI/ERI weekly index history -> two-series line chart.
+    df_epi_eri = raw_epi_eri if raw_epi_eri is not None else _safe_fetch("28Hse EPI/ERI", fetch_28hse_epi_eri)
+    epi_eri_rows: list[dict[str, Any]] = []
+    if not df_epi_eri.empty and {"date", "index_type", "index_value"}.issubset(df_epi_eri.columns):
+        for _, r in df_epi_eri.iterrows():
+            if pd.notna(r.get("index_value")) and pd.notna(r.get("date")):
+                epi_eri_rows.append(
+                    {"date": str(r["date"])[:10], "series": str(r["index_type"]), "value": float(r["index_value"])}
+                )
+        epi_eri_rows.sort(key=lambda r: (r["series"], r["date"]))
+
+    # 28Hse new-project catalogue -> small supporting table.
+    df_new_projects = (
+        raw_new_projects if raw_new_projects is not None else _safe_fetch("28Hse new projects", fetch_28hse_new_projects)
+    )
+    new_project_rows: list[dict[str, Any]] = []
+    if not df_new_projects.empty and "project_name" in df_new_projects.columns:
+        for _, r in df_new_projects.iterrows():
+            new_project_rows.append(
+                {
+                    "project_name": r.get("project_name"),
+                    "location_district": r.get("location_district"),
+                    "estimated_total_units": float(r["estimated_total_units"]) if pd.notna(r.get("estimated_total_units")) else None,
+                }
+            )
+
+    # Land Registry monthly facts + ASP series -> volume trend + ASP trend.
+    if raw_landreg is not None:
+        df_landreg_facts, df_landreg_asp = raw_landreg
+    else:
+        try:
+            df_landreg_facts, df_landreg_asp = fetch_landreg_monthly_statistics()
+        except Exception as exc:  # noqa: BLE001
+            print(f"  [hk_real_estate] Land Registry fetch failed, continuing without it: {exc}", file=sys.stderr)
+            df_landreg_facts, df_landreg_asp = pd.DataFrame(), pd.DataFrame()
+
+    landreg_volume_rows: list[dict[str, Any]] = []
+    _LANDREG_VOLUME_STATISTIC = "Total Number of Urban & New Territories deeds received for registration (ASP Building Units)"
+    _LANDREG_VOLUME_TABLE_ID = "t1"
+    if not df_landreg_facts.empty and {"date", "table_id", "statistic_name", "units"}.issubset(df_landreg_facts.columns):
+        # This exact description string is not a unique key -- Land Registry's
+        # own JSON (see landreg.py's docstring: "does not pretend to have a
+        # stable semantic taxonomy") repeats it verbatim in table t2 attached
+        # to unrelated Assignment-of-Building-Units figures. Scoping to t1
+        # (confirmed to be where this total genuinely lives, one row/month)
+        # avoids picking up those unrelated same-labelled values.
+        volume_slice = df_landreg_facts[
+            (df_landreg_facts["statistic_name"] == _LANDREG_VOLUME_STATISTIC)
+            & (df_landreg_facts["table_id"] == _LANDREG_VOLUME_TABLE_ID)
+        ]
+        for _, r in volume_slice.iterrows():
+            if pd.notna(r.get("units")):
+                landreg_volume_rows.append({"date": str(r["date"])[:10], "value": float(r["units"])})
+        landreg_volume_rows.sort(key=lambda r: r["date"])
+
+    landreg_asp_rows: list[dict[str, Any]] = []
+    if not df_landreg_asp.empty and "date" in df_landreg_asp.columns:
+        for _, r in df_landreg_asp.iterrows():
+            date_s = str(r["date"])[:10]
+            if pd.notna(r.get("all_building_units_asp")):
+                landreg_asp_rows.append({"date": date_s, "series": "All Building Units ASP", "value": float(r["all_building_units_asp"])})
+            if pd.notna(r.get("residential_units_asp")):
+                landreg_asp_rows.append({"date": date_s, "series": "Residential Units ASP", "value": float(r["residential_units_asp"])})
+        landreg_asp_rows.sort(key=lambda r: (r["series"], r["date"]))
+
+    # Buildings Department: raw monthly digest scratch table (dense table only --
+    # numeric_values are an unlabelled per-row array, not a stable chartable
+    # series) + project-lifecycle supply indicators (a genuine supply-pipeline
+    # snapshot, clean enough for a comparison chart).
+    df_bd_monthly_stats = (
+        raw_bd_monthly_stats
+        if raw_bd_monthly_stats is not None
+        else _safe_fetch("Buildings Dept monthly stats", fetch_buildings_dept_monthly_stats)
+    )
+    bd_monthly_stats_rows: list[dict[str, Any]] = []
+    if not df_bd_monthly_stats.empty and {"date", "table_id", "row_label", "numeric_values"}.issubset(df_bd_monthly_stats.columns):
+        for _, r in df_bd_monthly_stats.iterrows():
+            try:
+                values = json.loads(r["numeric_values"]) if r.get("numeric_values") else []
+            except (TypeError, json.JSONDecodeError):
+                values = []
+            bd_monthly_stats_rows.append(
+                {
+                    "date": str(r["date"])[:10],
+                    "table_id": r.get("table_id"),
+                    "row_label": r.get("row_label"),
+                    "values": ", ".join(f"{v:,.0f}" for v in values) if values else None,
+                }
+            )
+
+    df_bd_supply = (
+        raw_bd_supply if raw_bd_supply is not None else _safe_fetch("BD supply leading indicators", fetch_bd_supply_leading_indicators)
+    )
+    bd_supply_rows: list[dict[str, Any]] = []
+    bd_supply_table_rows: list[dict[str, Any]] = []
+    if not df_bd_supply.empty and {"permit_stage", "region", "property_category", "total_domestic_units"}.issubset(df_bd_supply.columns):
+        # Non-domestic rows always carry total_domestic_units == 0 by
+        # definition, which would otherwise draw a second, always-zero bar
+        # alongside the real Domestic figure for the same permit_stage/region.
+        # Restrict the chart to Domestic (the actual housing-supply signal);
+        # Non-domestic stays visible in the detail table below.
+        domestic_only = df_bd_supply[df_bd_supply["property_category"] == "Domestic"]
+        for _, r in domestic_only.iterrows():
+            if pd.notna(r.get("total_domestic_units")):
+                bd_supply_rows.append(
+                    {
+                        "permit_stage": r.get("permit_stage"),
+                        "region": r.get("region"),
+                        "value": float(r["total_domestic_units"]),
+                    }
+                )
+        for _, r in df_bd_supply.iterrows():
+            bd_supply_table_rows.append(
+                {
+                    "permit_stage": r.get("permit_stage"),
+                    "region": r.get("region"),
+                    "property_category": r.get("property_category"),
+                    "total_projects_count": int(r["total_projects_count"]) if pd.notna(r.get("total_projects_count")) else None,
+                    "total_domestic_units": float(r["total_domestic_units"]) if pd.notna(r.get("total_domestic_units")) else None,
+                    "total_usable_floor_area_sqm": float(r["total_usable_floor_area_sqm"]) if pd.notna(r.get("total_usable_floor_area_sqm")) else None,
+                }
+            )
+
+    # Deduplicated cross-agency transaction pulse (28Hse + Midland + Centaline).
+    if raw_unified_tx is not None:
+        df_unified_tx = raw_unified_tx
+    else:
+        agency_frames = []
+        for label, fetch_fn in (
+            ("28Hse transactions", fetch_28hse_transaction_pilot),
+            ("Midland transactions", fetch_midland_transaction_pilot),
+            ("Centaline transactions", fetch_centaline_transaction_pilot),
+        ):
+            frame = _safe_fetch(label, fetch_fn)
+            if not frame.empty:
+                agency_frames.append(frame)
+        df_unified_tx = deduplicate_agency_transactions(agency_frames) if agency_frames else pd.DataFrame()
+
+    _TRANSACTION_PULSE_MAX_ROWS = 300
+    transaction_pulse_rows: list[dict[str, Any]] = []
+    if not df_unified_tx.empty and "transaction_date" in df_unified_tx.columns:
+        # "Pulse" means recent activity, not a full history dump -- the combined
+        # feed can run into the thousands once all three agencies are merged,
+        # so cap to the most recent window rather than shipping it unbounded.
+        pulse_slice = df_unified_tx.sort_values("transaction_date", ascending=False).head(_TRANSACTION_PULSE_MAX_ROWS)
+        for _, r in pulse_slice.iterrows():
+            transaction_pulse_rows.append(
+                {
+                    "transaction_date": str(r.get("transaction_date"))[:10] if pd.notna(r.get("transaction_date")) else None,
+                    "estate_name": r.get("estate_name"),
+                    "saleable_area_sqft": float(r["saleable_area_sqft"]) if pd.notna(r.get("saleable_area_sqft")) else None,
+                    "price_hkd": float(r["price_hkd"]) if pd.notna(r.get("price_hkd")) else None,
+                    "unit_price_hkd_sqft": float(r["unit_price_hkd_sqft"]) if pd.notna(r.get("unit_price_hkd_sqft")) else None,
+                    "primary_source_agency": r.get("primary_source_agency"),
+                    "matched_agency_count": int(r["matched_agency_count"]) if pd.notna(r.get("matched_agency_count")) else None,
+                }
+            )
+
+    # Midland top-estates by transaction volume -- a byproduct of the same
+    # run_midland_ingestion() call already made for MHPI/confidence above, so
+    # it's passed through raw_frames rather than fetched again separately.
+    df_midland_estates = raw_frames.get("midland_estates", pd.DataFrame())
+    midland_estate_rows: list[dict[str, Any]] = []
+    if isinstance(df_midland_estates, pd.DataFrame) and not df_midland_estates.empty and "estate_name" in df_midland_estates.columns:
+        sorted_estates = df_midland_estates.sort_values("transaction_count", ascending=False, na_position="last")
+        for _, r in sorted_estates.iterrows():
+            midland_estate_rows.append(
+                {
+                    "estate_name": r.get("estate_name"),
+                    "region_name": r.get("region_name"),
+                    "district_name": r.get("district_name"),
+                    "transaction_count": float(r["transaction_count"]) if pd.notna(r.get("transaction_count")) else None,
+                }
+            )
+
+    additional_coverage = []
+    for label, dataset_label, rows_or_frame, source_label in (
+        ("28Hse", "EPI / ERI", epi_eri_rows, "28Hse EPI / ERI Historical Index"),
+        ("Agency transactions", "Centaline / Midland / 28Hse transactions", transaction_pulse_rows, "Deduplicated agency transaction feeds"),
+        ("Land Registry", "Monthly facts + ASP series", landreg_volume_rows + landreg_asp_rows, "Land Registry Monthly Statistics (JSON)"),
+        ("Buildings Department", "Monthly digest + project lifecycle", bd_monthly_stats_rows + bd_supply_table_rows, "Buildings Department Monthly Digest / Project Lifecycle"),
+    ):
+        record_count = len(rows_or_frame)
+        additional_coverage.append(
+            {
+                "source": label,
+                "dataset": dataset_label,
+                "type": "Measure",
+                "status": "Healthy" if record_count else "No data this run",
+                "latest_observation": "—",
+                "records": record_count,
+                "freshness": "Live at build time" if record_count else "Fetch returned no rows",
+                "notes": f"{source_label}; see the chart/table above." if record_count else f"{source_label}; live fetch returned no usable rows this run.",
+            }
+        )
+
+    coverage = health + additional_coverage + PLANNED_COVERAGE
 
     datasets = {
         "kpi_ccl": [kpis["ccl"]],
@@ -491,6 +751,15 @@ def build_artifact(raw_frames: dict[str, pd.DataFrame], raw_hkma: pd.DataFrame |
         "hkma_credit_quality_history": hkma_credit_quality_rows,
         "hkma_mortgage_activity": hkma_activity_rows,
         "cnsd_construction_value": cnsd_const_rows,
+        "epi_eri_history": epi_eri_rows,
+        "hse28_new_projects": new_project_rows,
+        "landreg_volume_history": landreg_volume_rows,
+        "landreg_asp_history": landreg_asp_rows,
+        "bd_monthly_stats": bd_monthly_stats_rows,
+        "bd_supply_pipeline": bd_supply_rows,
+        "bd_supply_detail": bd_supply_table_rows,
+        "agency_transactions_pulse": transaction_pulse_rows,
+        "midland_top_estates": midland_estate_rows,
         "source_health": health,
         "source_coverage": coverage,
     }
@@ -717,6 +986,85 @@ def build_artifact(raw_frames: dict[str, pd.DataFrame], raw_hkma: pd.DataFrame |
             }
         )
 
+    if epi_eri_rows:
+        charts.append(
+            {
+                "id": "epi_eri_chart",
+                "title": "28Hse Estate Price & Rental Index (EPI / ERI)",
+                "subtitle": "Weekly all-HK estate price and rental indices, 2016-present.",
+                "type": "line",
+                "intent": "comparison",
+                "dataset": "epi_eri_history",
+                "sourceId": "hse28_epi_eri",
+                "encodings": {
+                    "x": {"field": "date", "type": "temporal", "label": "Week"},
+                    "y": {"field": "value", "type": "quantitative", "label": "Index"},
+                    "color": {"field": "series", "type": "nominal", "label": "Index"},
+                },
+                "valueFormat": "number",
+                "layout": "full",
+            }
+        )
+
+    if landreg_volume_rows:
+        charts.append(
+            {
+                "id": "landreg_volume_chart",
+                "title": "Land Registry — Registered Agreements for Sale & Purchase",
+                "subtitle": "Total monthly deeds received for registration, Urban & New Territories combined.",
+                "type": "line",
+                "intent": "trend",
+                "dataset": "landreg_volume_history",
+                "sourceId": "landreg_monthly",
+                "encodings": {
+                    "x": {"field": "date", "type": "temporal", "label": "Month"},
+                    "y": {"field": "value", "type": "quantitative", "label": "Deeds registered"},
+                },
+                "valueFormat": "number",
+                "layout": "half",
+            }
+        )
+
+    if landreg_asp_rows:
+        charts.append(
+            {
+                "id": "landreg_asp_chart",
+                "title": "Land Registry — Agreements for Sale & Purchase (ASP)",
+                "subtitle": "Monthly ASP counts, all building units vs residential units only.",
+                "type": "line",
+                "intent": "comparison",
+                "dataset": "landreg_asp_history",
+                "sourceId": "landreg_monthly",
+                "encodings": {
+                    "x": {"field": "date", "type": "temporal", "label": "Month"},
+                    "y": {"field": "value", "type": "quantitative", "label": "ASP count"},
+                    "color": {"field": "series", "type": "nominal", "label": "Series"},
+                },
+                "valueFormat": "number",
+                "layout": "half",
+            }
+        )
+
+    if bd_supply_rows:
+        charts.append(
+            {
+                "id": "bd_supply_pipeline_chart",
+                "title": "Buildings Department — Housing Supply Pipeline (current month)",
+                "subtitle": "Domestic units by permit stage and region -- a leading indicator for future housing supply.",
+                "type": "bar",
+                "intent": "comparison",
+                "dataset": "bd_supply_pipeline",
+                "sourceId": "bd_supply",
+                "encodings": {
+                    "x": {"field": "permit_stage", "type": "nominal", "label": "Permit stage"},
+                    "y": {"field": "value", "type": "quantitative", "label": "Domestic units"},
+                    "color": {"field": "region", "type": "nominal", "label": "Region"},
+                },
+                "valueFormat": "number",
+                "layout": "full",
+            }
+        )
+
     tables = [
         {
             "id": "source_health_table",
@@ -779,6 +1127,113 @@ def build_artifact(raw_frames: dict[str, pd.DataFrame], raw_hkma: pd.DataFrame |
             }
         )
 
+    if transaction_pulse_rows:
+        tables.append(
+            {
+                "id": "agency_transactions_pulse_table",
+                "title": "Agency Transaction Pulse",
+                "subtitle": "Deduplicated recent transactions across 28Hse, Midland, and Centaline listings.",
+                "dataset": "agency_transactions_pulse",
+                "sourceId": "agency_transactions",
+                "defaultSort": {"field": "transaction_date", "direction": "desc"},
+                "density": "dense",
+                "layout": "full",
+                "columns": [
+                    {"field": "transaction_date", "label": "Date", "type": "date"},
+                    {"field": "estate_name", "label": "Estate", "type": "text"},
+                    {"field": "saleable_area_sqft", "label": "Area (sq ft)", "format": "number"},
+                    {"field": "price_hkd", "label": "Price (HK$)", "format": "number"},
+                    {"field": "unit_price_hkd_sqft", "label": "HK$ / sq ft", "format": "number"},
+                    {"field": "primary_source_agency", "label": "Primary Agency", "type": "text"},
+                    {"field": "matched_agency_count", "label": "Agencies Matched", "format": "number"},
+                ],
+            }
+        )
+
+    if new_project_rows:
+        # District / estimated-unit-count extraction from 28Hse's current markup
+        # consistently returns null (site structure drifted from what the
+        # source parser expects) -- only show columns with real values rather
+        # than a table that looks broken with two permanently empty columns.
+        _new_project_columns = [{"field": "project_name", "label": "Project", "type": "text"}]
+        if any(row.get("location_district") for row in new_project_rows):
+            _new_project_columns.append({"field": "location_district", "label": "District", "type": "text"})
+        if any(row.get("estimated_total_units") is not None for row in new_project_rows):
+            _new_project_columns.append({"field": "estimated_total_units", "label": "Est. Units", "format": "number"})
+        tables.append(
+            {
+                "id": "hse28_new_projects_table",
+                "title": "Newly Launched Residential Projects",
+                "subtitle": "28Hse new-properties catalogue.",
+                "dataset": "hse28_new_projects",
+                "sourceId": "hse28_new_projects",
+                "density": "dense",
+                "layout": "half",
+                "columns": _new_project_columns,
+            }
+        )
+
+    if midland_estate_rows:
+        tables.append(
+            {
+                "id": "midland_top_estates_table",
+                "title": "Top Estates by Transaction Volume (Midland)",
+                "subtitle": "Estates with the most recent transaction activity per Midland Realty.",
+                "dataset": "midland_top_estates",
+                "sourceId": "midland_mhpi",
+                "defaultSort": {"field": "transaction_count", "direction": "desc"},
+                "density": "dense",
+                "layout": "half",
+                "columns": [
+                    {"field": "estate_name", "label": "Estate", "type": "text"},
+                    {"field": "region_name", "label": "Region", "type": "text"},
+                    {"field": "district_name", "label": "District", "type": "text"},
+                    {"field": "transaction_count", "label": "Transactions", "format": "number"},
+                ],
+            }
+        )
+
+    if bd_supply_table_rows:
+        tables.append(
+            {
+                "id": "bd_supply_detail_table",
+                "title": "Housing Supply Pipeline — Detail",
+                "subtitle": "Current-month project counts and floor area by permit stage, region, and property category.",
+                "dataset": "bd_supply_detail",
+                "sourceId": "bd_supply",
+                "density": "dense",
+                "layout": "full",
+                "columns": [
+                    {"field": "permit_stage", "label": "Permit Stage", "type": "text"},
+                    {"field": "region", "label": "Region", "type": "text"},
+                    {"field": "property_category", "label": "Category", "type": "text"},
+                    {"field": "total_projects_count", "label": "Projects", "format": "number"},
+                    {"field": "total_domestic_units", "label": "Domestic Units", "format": "number"},
+                    {"field": "total_usable_floor_area_sqm", "label": "Usable Floor Area (sqm)", "format": "number"},
+                ],
+            }
+        )
+
+    if bd_monthly_stats_rows:
+        tables.append(
+            {
+                "id": "bd_monthly_stats_table",
+                "title": "Buildings Department Monthly Digest (raw statistics)",
+                "subtitle": "Scratch extraction of the digest's section-1 tables; row labels and figures are kept verbatim.",
+                "dataset": "bd_monthly_stats",
+                "sourceId": "bd_monthly_digest",
+                "defaultSort": {"field": "date", "direction": "desc"},
+                "density": "dense",
+                "layout": "full",
+                "columns": [
+                    {"field": "date", "label": "Month", "type": "date"},
+                    {"field": "table_id", "label": "Table", "type": "text"},
+                    {"field": "row_label", "label": "Row", "type": "text"},
+                    {"field": "values", "label": "Values", "type": "text"},
+                ],
+            }
+        )
+
     blocks = [
         {
             "id": "snapshot_context",
@@ -809,6 +1264,28 @@ def build_artifact(raw_frames: dict[str, pd.DataFrame], raw_hkma: pd.DataFrame |
         {"id": "rvd_rent_chart", "type": "chart", "chartId": "rvd_rent_trend", "layout": "half"},
         {"id": "rebased_chart", "type": "chart", "chartId": "rebased_trend"},
         {"id": "confidence_chart", "type": "chart", "chartId": "confidence_trend"},
+    ])
+
+    if epi_eri_rows:
+        blocks.append({"id": "epi_eri_chart_block", "type": "chart", "chartId": "epi_eri_chart"})
+    if transaction_pulse_rows:
+        blocks.append({"id": "agency_transactions_pulse_block", "type": "table", "tableId": "agency_transactions_pulse_table"})
+    if landreg_volume_rows:
+        blocks.append({"id": "landreg_volume_chart_block", "type": "chart", "chartId": "landreg_volume_chart", "layout": "half"})
+    if landreg_asp_rows:
+        blocks.append({"id": "landreg_asp_chart_block", "type": "chart", "chartId": "landreg_asp_chart", "layout": "half"})
+    if bd_supply_rows:
+        blocks.append({"id": "bd_supply_pipeline_chart_block", "type": "chart", "chartId": "bd_supply_pipeline_chart"})
+    if bd_supply_table_rows:
+        blocks.append({"id": "bd_supply_detail_block", "type": "table", "tableId": "bd_supply_detail_table"})
+    if new_project_rows:
+        blocks.append({"id": "hse28_new_projects_block", "type": "table", "tableId": "hse28_new_projects_table", "layout": "half"})
+    if midland_estate_rows:
+        blocks.append({"id": "midland_top_estates_block", "type": "table", "tableId": "midland_top_estates_table", "layout": "half"})
+    if bd_monthly_stats_rows:
+        blocks.append({"id": "bd_monthly_stats_block", "type": "table", "tableId": "bd_monthly_stats_table"})
+
+    blocks.extend([
         {"id": "source_health_table", "type": "table", "tableId": "source_health_table"},
         {"id": "coverage_table", "type": "table", "tableId": "coverage_table"},
     ])
@@ -896,8 +1373,11 @@ def fetch_live_frames() -> dict[str, pd.DataFrame]:
         confidence = load_latest_normalized("midland_confidence_weekly")
         if confidence.empty:
             confidence = _load_midland_fallback_from_committed_artifact("confidence_history", "confidence_index")
+        # No live Midland fetch happens on this path, so there's no fresh
+        # top-estates snapshot to offer -- an honest empty frame, not a guess.
+        estates = pd.DataFrame()
     else:
-        mhpi, confidence, _estates = run_midland_ingestion()
+        mhpi, confidence, estates = run_midland_ingestion()
     rvd_price, rvd_rent = run_rvd_ingestion()
     return {
         "ccl": fetch_centaline_ccl(),
@@ -905,6 +1385,7 @@ def fetch_live_frames() -> dict[str, pd.DataFrame]:
         "confidence": confidence,
         "rvd_price": rvd_price,
         "rvd_rent": rvd_rent,
+        "midland_estates": estates,
     }
 
 

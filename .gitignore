@@ -118,6 +118,15 @@ data/processed/giordano_stores/*
 !data/processed/bossini_stores/
 data/processed/bossini_stores/*
 !data/processed/bossini_stores/*.parquet
+!data/processed/laopugold_stores/
+data/processed/laopugold_stores/*
+!data/processed/laopugold_stores/*.parquet
+!data/processed/taihing_stores/
+data/processed/taihing_stores/*
+!data/processed/taihing_stores/*.parquet
+!data/processed/popmart_stores/
+data/processed/popmart_stores/*
+!data/processed/popmart_stores/*.parquet
 
 # China major-airline monthly traffic scraper: commit the time series
 !data/processed/airline_traffic/
