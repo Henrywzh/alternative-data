@@ -36,11 +36,20 @@ HEADERS = {
     "X-Requested-With": "XMLHttpRequest",
 }
 
+# "searchkey" is a tuple: Cninfo's search API filters server-side on this
+# value, more narrowly than a plain title substring check -- it does not
+# treat "运营数据" and "经营数据" as interchangeable even though both are
+# accepted by the client-side title filter below. China Eastern renamed its
+# monthly bulletin from "运营数据" to "经营数据" for Dec 2016 - Mar 2019
+# (reverting afterward), and a single-searchkey query silently returned zero
+# announcements for that whole window -- confirmed by querying Cninfo
+# directly with each keyword and diffing the results. Querying every known
+# title variant and merging by month closes that gap.
 AIRLINES = [
-    {"name": "Air China", "name_cn": "中国国航", "code": "601111", "org_id": "9900000441", "searchkey": "主要运营数据"},
-    {"name": "China Southern", "name_cn": "中国南方航空", "code": "600029", "org_id": "gssh0600029", "searchkey": "主要运营数据"},
-    {"name": "China Eastern", "name_cn": "中国东方航空", "code": "600115", "org_id": "gssh0600115", "searchkey": "运营数据"},
-    {"name": "Spring Airlines", "name_cn": "春秋航空", "code": "601021", "org_id": "9900023129", "searchkey": "主要运营数据"},
+    {"name": "Air China", "name_cn": "中国国航", "code": "601111", "org_id": "9900000441", "searchkey": ("主要运营数据",)},
+    {"name": "China Southern", "name_cn": "中国南方航空", "code": "600029", "org_id": "gssh0600029", "searchkey": ("主要运营数据",)},
+    {"name": "China Eastern", "name_cn": "中国东方航空", "code": "600115", "org_id": "gssh0600115", "searchkey": ("运营数据", "经营数据")},
+    {"name": "Spring Airlines", "name_cn": "春秋航空", "code": "601021", "org_id": "9900023129", "searchkey": ("主要运营数据",)},
 ]
 
 
@@ -342,10 +351,18 @@ def collect_airline_data(cache_dir: Path, start_year: str = "2015-01-01") -> pd.
         name = info["name"]
         code = info["code"]
         org_id = info["org_id"]
-        searchkey = info["searchkey"]
 
         print(f"\nProcessing {name} ({code})...")
-        announcements = fetch_announcements(code, org_id, searchkey, start_year=start_year)
+        # Query every known title-keyword variant and merge by month (first
+        # keyword's hit wins) -- Cninfo's server-side search treats each
+        # variant as a distinct filter, so a carrier that renamed its
+        # bulletin mid-history needs all of its historical variants queried,
+        # not just its current one.
+        by_month: dict[str, dict] = {}
+        for searchkey in info["searchkey"]:
+            for ann in fetch_announcements(code, org_id, searchkey, start_year=start_year):
+                by_month.setdefault(ann["month"], ann)
+        announcements = sorted(by_month.values(), key=lambda a: a["month"])
         print(f"  Discovered {len(announcements)} monthly announcements back to {start_year[:4]}")
 
         for i, ann in enumerate(announcements, 1):
