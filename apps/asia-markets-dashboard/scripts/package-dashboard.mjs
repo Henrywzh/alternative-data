@@ -8,6 +8,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { appRoot as projectRoot, attachmentNames, LIVE_SECTORS } from "./sectors.mjs";
+import { STATUS_ZH } from "./status-zh.mjs";
 
 const generatedDir = join(projectRoot, ".generated");
 const distDir = join(projectRoot, "dist");
@@ -58,28 +59,18 @@ function sha256(path) {
 // alone (see per-sector comments for why).
 
 // Shared across every sector: the "real-time source health" and "coverage"
-// tables use the same status/type/freshness vocabulary everywhere they
-// appear (currently hk-real-estate and hk-local-consumer).
-const STATUS_VALUE_ZH = {
-  Healthy: "健康",
-  Degraded: "异常",
-  Planned: "计划中",
-  "Catalog only": "仅目录",
-};
-const TYPE_VALUE_ZH = {
-  Measure: "指标",
-  Catalog: "目录",
-  Context: "参考资料",
-};
-const FRESHNESS_VALUE_ZH = {
-  "Not ingested": "尚未采集",
-  "Content parser pending": "内容解析待完成",
-  "Endpoint returns no data": "接口无数据返回",
-  "Same-day snapshot": "同日快照",
-};
+// tables use the same status/type/freshness/dataset/source/notes vocabulary
+// everywhere they appear (currently hk-real-estate and hk-local-consumer).
+// Reuses STATUS_ZH -- the same dictionary build-static-hub.mjs applies to
+// the site-wide /data-status page -- instead of a second, sector-page-local
+// copy: an earlier local copy here (STATUS_VALUE_ZH/TYPE_VALUE_ZH/
+// FRESHNESS_VALUE_ZH) had already drifted out of sync with it (missing
+// "stale/unreachable", "Live", "Live at build time", ...) and never
+// translated `dataset`/`source`/`notes` at all, leaving every row's own
+// label and explanatory text in English regardless of locale.
 function translateFreshnessValue(value) {
   if (typeof value !== "string") return value;
-  if (FRESHNESS_VALUE_ZH[value]) return FRESHNESS_VALUE_ZH[value];
+  if (STATUS_ZH.freshness[value]) return STATUS_ZH.freshness[value];
   const dayMatch = /^(\d+)d old$/.exec(value);
   return dayMatch ? `${dayMatch[1]} 天前` : value;
 }
@@ -95,8 +86,12 @@ function localizeHealthCoverageDatasets(artifact) {
     if (!Array.isArray(rows)) return;
     rows.forEach((row) => {
       if (!row || typeof row !== "object") return;
-      if (STATUS_VALUE_ZH[row.status]) row.status = STATUS_VALUE_ZH[row.status];
-      if (TYPE_VALUE_ZH[row.type]) row.type = TYPE_VALUE_ZH[row.type];
+      const translated = STATUS_ZH.rows[row.dataset] ?? {};
+      if (translated.dataset) row.dataset = translated.dataset;
+      if (translated.source) row.source = translated.source;
+      if (translated.notes) row.notes = translated.notes;
+      if (STATUS_ZH.status[row.status]) row.status = STATUS_ZH.status[row.status];
+      if (STATUS_ZH.type[row.type]) row.type = STATUS_ZH.type[row.type];
       if (row.freshness) row.freshness = translateFreshnessValue(row.freshness);
     });
   });
@@ -191,6 +186,109 @@ const RESTAURANT_SUBSECTOR_ZH = {
   "Non-Chinese restaurants": "非中式餐馆",
 };
 
+// hk-real-estate: Buildings Department region / permit-stage / property-
+// category vocabulary, shared between bd_supply_pipeline_chart and
+// bd_supply_detail_table (two different dataset ids, same vocabulary).
+const BD_REGION_ZH = {
+  "Hong Kong Island": "香港島",
+  Kowloon: "九龍",
+  "New Territories": "新界",
+};
+const BD_PERMIT_STAGE_ZH = {
+  "Consent to Commence": "同意开工书",
+  "Occupation Permits (OP) Issued": "入伙纸 (OP) 已发出",
+  "Plans Approved": "图则已批准",
+};
+const BD_PROPERTY_CATEGORY_ZH = {
+  Domestic: "住宅",
+  "Non-domestic": "非住宅",
+};
+// hk-real-estate: agency_transactions_pulse_table's primary_source_agency.
+const AGENCY_NAME_ZH = {
+  "Centaline Property Agency": "中原地产",
+  "Midland Realty": "美联物业",
+  "28Hse": "28Hse",
+};
+
+// hk-local-consumer: immigration_checkpoint_table's control-point names
+// (official HK Immigration Department Chinese names) and arrival/departure.
+const CONTROL_POINT_ZH = {
+  Airport: "机场",
+  "China Ferry Terminal": "中国客运码头",
+  "Express Rail Link West Kowloon": "西九龙站（高铁）",
+  "Harbour Control": "港口管制（维港）",
+  "Heung Yuen Wai": "香园围",
+  "Hong Kong-Zhuhai-Macao Bridge": "港珠澳大桥",
+  "Kai Tak Cruise Terminal": "启德邮轮码头",
+  "Lo Wu": "罗湖",
+  "Lok Ma Chau": "落马洲",
+  "Lok Ma Chau Spur Line": "落马洲支线",
+  "Macao Ferry Terminal": "澳门客运码头",
+  "Man Kam To": "文锦渡",
+  "Sha Tau Kok": "沙头角",
+  "Shenzhen Bay": "深圳湾",
+};
+const DIRECTION_ZH = { Arrival: "入境", Departure: "出境" };
+// hk-local-consumer: fuel grade for consumer_council_oilprice (company
+// names -- Esso, PetroChina, Caltex, Sinopec, Shell -- are brand names,
+// left untranslated to match the rest of this file's company-name policy).
+const FUEL_TYPE_ZH = {
+  "Standard Petrol": "普通汽油",
+  "Premium Petrol": "高级汽油",
+};
+// hk-local-consumer: Consumer Council complaint categories, shared between
+// consumer_council_complaints_table and consumer_council_complaints_chart
+// (two different dataset ids for the same 47-category vocabulary).
+const CONSUMER_COMPLAINT_CATEGORY_ZH = {
+  "Agency Services": "代理服务",
+  "Baby Products": "婴儿用品",
+  "Bank and Financial Services": "银行及金融服务",
+  "Beauty Services": "美容服务",
+  "Broadcasting Services": "广播服务",
+  "Cars & Car Services": "汽车及汽车服务",
+  "Clothing & Apparel": "服装",
+  "Computer Products": "电脑产品",
+  "Decoration/Renovation Services": "装修服务",
+  "Education Matters": "教育事务",
+  "Elderly Care": "长者护理",
+  "Electrical Appliances": "电器",
+  "Food & Entertainment Services": "饮食及娱乐服务",
+  "Foods & Drinks": "食品及饮料",
+  Fuel: "燃油",
+  "Funeral Services": "殡仪服务",
+  "Furniture & Fixtures": "家具及装置",
+  "Household Products/Services": "家居用品／服务",
+  Insurance: "保险",
+  "Jewellery & Watches": "珠宝及钟表",
+  "Lawyer & Legal Services": "律师及法律服务",
+  "Local Accommodation": "本地住宿",
+  "Medical & Health Devices": "医疗及保健仪器",
+  "Medical Services": "医疗服务",
+  "Medicine & Health Foods": "药物及保健食品",
+  "Miscellaneous Goods": "其他货品",
+  "Miscellaneous Services": "其他服务",
+  "Online Services & eCommerce Platforms": "网上服务及电子商贸平台",
+  "Optical Products/Services": "眼镜产品／服务",
+  "Personal Care Products": "个人护理产品",
+  "Pets & Pet Services": "宠物及宠物服务",
+  "Photo Taking/Finishing": "摄影及晒相服务",
+  "Photographic Equipment": "摄影器材",
+  Properties: "物业",
+  "Public Utilities": "公用事业",
+  "Publishing / Educational Materials": "出版／教育材料",
+  "Recreation & Health Clubs": "康乐及健身会所",
+  "Shopping Mall, Chain Store and Reward Program": "商场、连锁店及奖赏计划",
+  "Sporting Goods": "体育用品",
+  "Storage, Postal & Courier Services": "仓储、邮政及速递服务",
+  "Telecommunication Equipment": "电讯器材",
+  "Telecommunication Services": "电讯服务",
+  "Time Sharing": "分时使用（度假村）",
+  Toys: "玩具",
+  "Transportation Services": "交通服务",
+  "Travel Matters": "旅游事务",
+  "Wedding Services": "婚嫁服务",
+};
+
 // --- Per-sector Chinese localization -----------------------------------
 
 const HK_REAL_ESTATE_ZH = {
@@ -209,6 +307,14 @@ const HK_REAL_ESTATE_ZH = {
     rvd_rent_trend: ["RVD 租金指数（配套视图）", "与价格图表使用相同的月度观测，以租金作为主序列。", "月份", "租金指数", "价格指数"],
     rebased_trend: ["五年跨来源走势", "各序列在窗口内首个可用月份重设为 100；不同来源的原始水平不可直接比较。", "月份", "重设基准指数"],
     confidence_trend: ["美联物业信心指数", "辅助性的市场情绪指标，不是住宅价格指标。", "周", "信心指数"],
+    hkma_mortgage_rate_mix_chart: ["香港金管局住宅按揭利率计划组合 (%)", "新批按揭中，按 HIBOR 定价与最优惠利率（P按）定价的占比。", "月份", "占比 (%)", "利率计划"],
+    cnsd_construction_value_chart: ["政府统计处建筑工程总值 (百万港元)", "主要承建商季度建筑工程总值——供应端管道指标。", "季度", "百万港元"],
+    hkma_ltv_chart: ["香港金管局平均按揭成数 (%)", "新批按揭的平均贷款成数（LTV）。", "月份", "按揭成数 (%)"],
+    hkma_credit_quality_chart: ["香港金管局按揭信贷质素 (%)", "拖欠比率及重订还款安排贷款比率——真实的信贷周期风险指标。", "月份", "%", "指标"],
+    epi_eri_chart: ["28Hse 屋苑价格及租金指数 (EPI / ERI)", "2016年至今全港屋苑周度价格及租金指数。", "周", "指数", "指数"],
+    landreg_volume_chart: ["土地注册处 — 已登记买卖合约", "市区及新界合计的每月登记契约总数。", "月份", "已登记契约数"],
+    landreg_asp_chart: ["土地注册处 — 买卖合约 (ASP)", "每月 ASP 宗数，全部楼宇单位与住宅单位对比。", "月份", "ASP 宗数", "系列"],
+    bd_supply_pipeline_chart: ["屋宇署 — 房屋供应管道（当月）", "按审批阶段及地区划分的住宅单位数——未来房屋供应的领先指标。", "审批阶段", "住宅单位数", "地区"],
   },
   tables: {
     source_health_table: {
@@ -221,6 +327,59 @@ const HK_REAL_ESTATE_ZH = {
       subtitle: "来源目录发现不会被当作市场指标。",
       columns: { source: "来源", dataset: "数据集", type: "类型", status: "状态", freshness: "新鲜度", notes: "范围 / 限制" },
     },
+    hkma_mortgage_activity_table: {
+      title: "香港金管局按揭市场活动",
+      subtitle: "月度新申请宗数、批出贷款及提取贷款金额（显示最新一期）。",
+      columns: {
+        date: "月份",
+        new_applications_count: "新申请宗数",
+        approved_loans_amount_mhkd: "批出贷款 (百万港元)",
+        approved_primary_presales_amount_mhkd: "一手楼花 (百万港元)",
+        approved_secondary_amount_mhkd: "二手 (百万港元)",
+        approved_refinancing_amount_mhkd: "转按 (百万港元)",
+        drawn_down_amount_mhkd: "已提取贷款 (百万港元)",
+      },
+    },
+    agency_transactions_pulse_table: {
+      title: "代理行成交脉动",
+      subtitle: "28Hse、美联及中原放盘去重后的近期成交记录。",
+      columns: {
+        transaction_date: "日期",
+        estate_name: "屋苑",
+        saleable_area_sqft: "面积 (平方呎)",
+        price_hkd: "成交价 (港元)",
+        unit_price_hkd_sqft: "港元 / 平方呎",
+        primary_source_agency: "主要来源代理行",
+        matched_agency_count: "匹配代理行数",
+      },
+    },
+    hse28_new_projects_table: {
+      title: "新推出住宅项目",
+      subtitle: "28Hse 新盘目录。",
+      columns: { project_name: "项目名称", location_district: "地区", estimated_total_units: "预计单位数" },
+    },
+    midland_top_estates_table: {
+      title: "成交量最活跃屋苑（美联）",
+      subtitle: "根据美联物业数据，近期成交最活跃的屋苑。",
+      columns: { estate_name: "屋苑", region_name: "地区", district_name: "分区", transaction_count: "成交宗数" },
+    },
+    bd_supply_detail_table: {
+      title: "房屋供应管道 — 明细",
+      subtitle: "当月各审批阶段、地区及物业类别的项目数与楼面面积。",
+      columns: {
+        permit_stage: "审批阶段",
+        region: "地区",
+        property_category: "类别",
+        total_projects_count: "项目数",
+        total_domestic_units: "住宅单位数",
+        total_usable_floor_area_sqm: "实用楼面面积 (平方米)",
+      },
+    },
+    bd_monthly_stats_table: {
+      title: "屋宇署月报摘要（原始统计）",
+      subtitle: "月报第一节表格的原始摘录；行标签及数值保持原文。",
+      columns: { date: "月份", table_id: "表格", row_label: "行", values: "数值" },
+    },
   },
   sources: {
     centaline_ccl: "中原城市领先指数（CCL）",
@@ -230,11 +389,59 @@ const HK_REAL_ESTATE_ZH = {
     rvd_rent: "差饷物业估价署 — 私人住宅租金指数",
     cross_source: "跨来源标准化比较",
     source_registry: "香港房地产 dashboard 来源登记表",
+    hkma_mortgage: "香港金管局住宅按揭统计调查",
+    cnsd_construction: "政府统计处建筑工程总值统计",
+    hse28_epi_eri: "28Hse 屋苑价格及租金指数",
+    landreg_monthly: "土地注册处月度统计",
+    bd_supply: "屋宇署房屋供应管道",
+    agency_transactions: "代理行成交（28Hse／美联／中原）",
+    hse28_new_projects: "28Hse 新盘目录",
+    bd_monthly_digest: "屋宇署月报摘要",
   },
   snapshotBody: (artifact) =>
     `**数据快照：** \`${artifact.package_info.snapshotId}\` · 生成于 ${artifact.manifest.generatedAt}。这是已发布快照，不是实时连接；RVD 标记为 provisional 的观测可能会修订。`,
   methodologyBody:
     "## 如何阅读本 dashboard\n\n不同发布方的指数基期不同。请在重设基准图中比较方向，不要直接比较原始数值水平。覆盖表区分实时指标、来源目录和计划中的采集工作。本 dashboard 不提供股票排名、预测或投资建议。",
+  dataLabels: {
+    hkma_mortgage_rate_mix: {
+      series: {
+        "HIBOR-based (%)": "H按 (HIBOR)",
+        "Best Lending Rate (%)": "P按 (最优惠利率)",
+        "Fixed-rate (%)": "定息按揭",
+      },
+    },
+    hkma_credit_quality_history: {
+      series: {
+        "Delinquency Ratio (%)": "拖欠比率 (%)",
+        "Rescheduled Loan Ratio (%)": "重订还款安排比率 (%)",
+      },
+    },
+    landreg_asp_history: {
+      series: {
+        "All Building Units ASP": "全部楼宇单位 ASP",
+        "Residential Units ASP": "住宅单位 ASP",
+      },
+    },
+    bd_supply_pipeline: {
+      region: BD_REGION_ZH,
+      permit_stage: BD_PERMIT_STAGE_ZH,
+    },
+    bd_supply_detail: {
+      region: BD_REGION_ZH,
+      permit_stage: BD_PERMIT_STAGE_ZH,
+      property_category: BD_PROPERTY_CATEGORY_ZH,
+    },
+    agency_transactions_pulse: {
+      primary_source_agency: AGENCY_NAME_ZH,
+    },
+    rebased_five_year: {
+      // CCL/MHPI are kept as their own index brand acronyms (matching
+      // ccl_card/mhpi_card above, which don't translate them either); RVD's
+      // two series are translated to match the RVD 价格/RVD 租金 wording
+      // already used by rvd_price_card/rvd_rent_card on this same page.
+      series: { "RVD Price": "RVD 价格", "RVD Rent": "RVD 租金" },
+    },
+  },
 };
 
 const HK_LOCAL_CONSUMER_ZH = {
@@ -263,6 +470,9 @@ const HK_LOCAL_CONSUMER_ZH = {
     restaurant_trend: ["餐饮收益（全部食肆）", "季度全行业收益，百万港元，完整已发布历史。", "季度", "百万港元"],
     restaurant_chart: ["餐饮收益按类型", "最新发布季度，百万港元。", "食肆类型", "百万港元"],
     store_footprint_chart: ["各公司追踪门店/网点数量", "各公司最新的门店足迹快照（各公司单位不直接可比，详见备注）。", "公司", "门店总数"],
+    consumer_council_oilprice_chart: ["各大油公司现金折扣对比 (港元/升)", "美孚、中石油、壳牌、中石化及埃索的每升现金折扣。", "油公司", "折扣 (港元/升)"],
+    consumer_council_oilprice_net_chart: ["各大油公司实际油价对比 (港元/升)", "同日美孚、中石油、壳牌、中石化及埃索的每升实际油价。", "油公司", "实际油价 (港元/升)"],
+    consumer_council_complaints_chart: ["消费者委员会投诉类别排行", "最新一期十大投诉类别（按投诉宗数）。", "类别", "投诉宗数"],
   },
   tables: {
     severe_weather_log_table: {
@@ -317,6 +527,33 @@ const HK_LOCAL_CONSUMER_ZH = {
         snapshot_date: "快照日期",
       },
     },
+    consumer_council_oilprice_table: {
+      title: "消委会油价计算机 — 油价及折扣",
+      subtitle: "香港各大油公司每日油价、现金折扣及实际油价（每升）。",
+      columns: {
+        company: "油公司",
+        fuel_type: "油品",
+        walkin_discount_hkd: "现金折扣 (港元/升)",
+        discounted_price_hkd: "实际油价 (港元/升)",
+      },
+    },
+    consumer_council_complaints_table: {
+      title: "消费者委员会投诉类别（最新一期）",
+      subtitle: "最新一期全部投诉类别，按投诉宗数排序。",
+      columns: { period: "期间", category: "类别", amount: "投诉宗数" },
+    },
+    immigration_checkpoint_table: {
+      title: "出入境管制站明细",
+      subtitle: "最新日期的旅客通关量，按管制站及方向划分。",
+      columns: {
+        control_point: "管制站",
+        direction: "方向",
+        hk_residents: "香港居民",
+        mainland_visitors: "内地访客",
+        other_visitors: "其他访客",
+        total: "总计",
+      },
+    },
   },
   sources: {
     afcd_wholesale: "农渔护理署新鲜食品批发价格",
@@ -328,6 +565,8 @@ const HK_LOCAL_CONSUMER_ZH = {
     weather_demand_drivers: "香港天文台警告数据库 & FRED 汇率",
     source_registry: "香港本地消费 dashboard 来源登记表",
     hk_store_footprint: "香港零售/餐饮店铺数量抓取器",
+    consumer_council_oilprice: "消费者委员会油价计算机",
+    consumer_council_complaints: "消费者委员会投诉数据接口",
   },
   snapshotBody: (artifact) =>
     `**数据快照：** \`${artifact.package_info.snapshotId}\` · 生成于 ${artifact.manifest.generatedAt}。`,
@@ -343,6 +582,10 @@ const HK_LOCAL_CONSUMER_ZH = {
     restaurant_snapshot: { sub_sector: RESTAURANT_SUBSECTOR_ZH },
     restaurant_chart: { sub_sector: RESTAURANT_SUBSECTOR_ZH },
     severe_weather_log: { signal_name: translateHkoSignalName },
+    consumer_council_oilprice: { fuel_type: FUEL_TYPE_ZH },
+    consumer_council_complaints_table: { category: CONSUMER_COMPLAINT_CATEGORY_ZH },
+    consumer_council_complaints_chart: { category: CONSUMER_COMPLAINT_CATEGORY_ZH },
+    immigration_checkpoint_snapshot: { control_point: CONTROL_POINT_ZH, direction: DIRECTION_ZH },
   },
 };
 
@@ -375,6 +618,27 @@ const HK_UTILITIES_ZH = {
   },
   snapshotBody: (artifact) => `**数据快照：** \`${artifact.package_info.snapshotId}\` · 生成于 ${artifact.manifest.generatedAt}。`,
   methodologyBody: "## 如何阅读本 dashboard\n\n售电量与燃气消费量反映香港公用事业核心业务运营水平；日均气温为夏日用电负荷的物理驱动因素。",
+  dataLabels: {
+    power_assets_geography: {
+      geography: {
+        "Investment in HKEI": "港灯投资",
+        "United Kingdom": "英国",
+        Australia: "澳洲",
+        Others: "其他地区",
+      },
+    },
+    clp_sector_history: {
+      series: {
+        Residential: "住宅",
+        Commercial: "商业",
+        "Infra & Public": "基础设施及公共服务",
+        Manufacturing: "制造业",
+      },
+    },
+    towngas_type_history: {
+      series: { Domestic: "住宅", Commercial: "商业", Industrial: "工业" },
+    },
+  },
 };
 
 const HK_TRANSPORT_ZH = {
@@ -458,12 +722,14 @@ const HK_TELECOM_ZH = {
   title: "香港电讯监测",
   description: "香港电讯（HKT）、数码通（SmarTone）及和记电讯（3 HK）的半年度用户与 ARPU 披露数据，以及通讯办全运营商手机号码段配额快照。",
   cards: {
-    hkt_card: { description: "半年度后付费退出 ARPU 及后付费用户数（千户）；半年环比变动。", metricLabels: ["后付费 ARPU (港元)", "后付费用户数 (千户)", "半年环比"] },
+    hkt_card: { description: "半年度后付费退出 ARPU 及后付费用户数（千户）；半年环比变动及 FTTH 渗透率。", metricLabels: ["后付费 ARPU (港元)", "后付费用户数 (千户)", "半年环比", "FTTH 渗透率 (%)"] },
+    hkt_footprint_card: { description: "香港电讯宽带接入线路数、FTTH 连接数及收费电视用户数（千户）。", metricLabels: ["宽带线路数 (千户)", "FTTH 连接数 (千户)", "收费电视用户数 (千户)", "FTTH 渗透率 (%)"] },
     smartone_card: { description: "半年度后付费 ARPU 及后付费用户数（千户）；同比变动。", metricLabels: ["后付费 ARPU (港元)", "后付费用户数 (千户)", "同比"] },
     hutchison_card: { description: "半年度后付费毛 ARPU 与净 ARPU；半年环比变动。", metricLabels: ["后付费毛 ARPU (港元)", "后付费净 ARPU (港元)", "半年环比"] },
   },
   charts: {
     hkt_arpu_chart: ["香港电讯后付费退出 ARPU 走势 (港元)", "半年度后付费退出 ARPU，取自香港电讯自身业绩公告的叙述文本。", "期间", "港元"],
+    hkt_footprint_chart: ["香港电讯宽带及收费电视用户足迹 (千户)", "半年度 FTTH 连接数及收费电视用户数。", "期间", "千户", "指标"],
     smartone_arpu_chart: ["数码通后付费 ARPU 与用户数走势", "半年度后付费 ARPU（港元）及后付费用户基础（千户）。", "期间", "港元"],
     hutchison_arpu_chart: ["和记电讯（3 HK）后付费毛/净 ARPU 对比", "半年度后付费毛 ARPU 与净 ARPU（港元）——三家运营商中披露最细的单用户经济数据。", "期间", "港元"],
   },
@@ -483,6 +749,9 @@ const HK_TELECOM_ZH = {
   snapshotBody: (artifact) => `**数据快照：** \`${artifact.package_info.snapshotId}\` · 生成于 ${artifact.manifest.generatedAt}。`,
   methodologyBody:
     "## 如何阅读本 dashboard\n\n三家运营商的后付费 ARPU 与用户数均取自其各自的 HKEX 业绩公告或投资者简报叙述文本，半年度更新。",
+  dataLabels: {
+    hkt_footprint_history: { series: { "FTTH connections": "FTTH 连接数", "Pay TV base": "收费电视用户数" } },
+  },
 };
 
 const HK_REIT_ZH = {
@@ -528,6 +797,7 @@ const HK_REIT_ZH = {
     prosperityreit_fundamentals: "繁荣产业信托（0808.HK）财务披露",
     sunlightreit_fundamentals: "阳光房地产基金（0435.HK）财务披露",
     regalreit_fundamentals: "富豪产业信托（1881.HK）酒店业绩披露",
+    reit_price_akshare: "香港REITs每日现货报价及历史（akshare）",
   },
   snapshotBody: (artifact) => `**数据快照：** \`${artifact.package_info.snapshotId}\` · 生成于 ${artifact.manifest.generatedAt}。`,
   methodologyBody: "## 如何阅读本 dashboard\n\n五家 REIT（领展、冠君、置富、繁荣、阳光）为写字楼/零售业主，披露出租率与租金检讨调升率；富豪产业信托为酒店类 REIT，披露出租率、平均房价（ADR）及 RevPAR，其酒店指标从不与其余五家的写字楼/零售指标合并显示于同一图表。DPU 在个别期间可能为零（真实披露结果，非数据缺失），此时环比变动留空而非除以零。本 dashboard 不提供股票排名、预测或投资建议。",
