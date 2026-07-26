@@ -96,19 +96,17 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
+          # Globs, not a per-sector list: an enumerated list silently drops a
+          # new sector's outputs from the daily commit (this happened once
+          # already -- see "fix CI git-add gap" in 922673a). The roster now
+          # lives in apps/asia-markets-dashboard/sectors.json and adding a
+          # sector must not require editing this workflow. The -zh.json
+          # artifacts are matched too but stay unchanged here, since this job
+          # deliberately does not run package-dashboard.mjs (see header).
           git add \
-            apps/asia-markets-dashboard/.generated/hk-real-estate-artifact.json \
-            apps/asia-markets-dashboard/.generated/hk-local-consumer-artifact.json \
-            apps/asia-markets-dashboard/.generated/hk-utilities-artifact.json \
-            apps/asia-markets-dashboard/.generated/hk-transport-artifact.json \
-            apps/asia-markets-dashboard/.generated/hk-telecom-artifact.json \
-            apps/asia-markets-dashboard/.generated/hk-reit-artifact.json \
-            apps/asia-markets-dashboard/src/data/dashboard-status.json \
-            apps/asia-markets-dashboard/src/data/dashboard-status-hk-local-consumer.json \
-            apps/asia-markets-dashboard/src/data/dashboard-status-hk-utilities.json \
-            apps/asia-markets-dashboard/src/data/dashboard-status-hk-transport.json \
-            apps/asia-markets-dashboard/src/data/dashboard-status-hk-telecom.json \
-            apps/asia-markets-dashboard/src/data/dashboard-status-hk-reit.json \
+            'apps/asia-markets-dashboard/.generated/*-artifact.json' \
+            'apps/asia-markets-dashboard/.generated/*-artifact-zh.json' \
+            'apps/asia-markets-dashboard/src/data/dashboard-status*.json' \
             data/normalized/hk_local_consumer/afcd_category_history.csv
 
           if git diff --staged --quiet; then
