@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-07-25T20:01:21.789565Z",
-  "snapshot_id": "823a41ec6385afd0",
+  "generated_at": "2026-07-26T00:40:51.139490Z",
+  "snapshot_id": "0dc513f8f39542e6",
   "data_as_of": "2026-07-22",
   "overall_status": "Healthy",
-  "live_sources": 7,
+  "live_sources": 8,
   "planned_sources": 1,
   "sources": [
     {
@@ -13,7 +13,7 @@
       "status": "Healthy",
       "latest_observation": "2026-07-01",
       "records": 67,
-      "freshness": "24d old",
+      "freshness": "25d old",
       "notes": "Monthly hours under Typhoon Signal 8+ & Red/Black Rainstorm warnings alongside HKD/RMB FX."
     },
     {
@@ -23,7 +23,7 @@
       "status": "Healthy",
       "latest_observation": "2026-07-24",
       "records": 2031,
-      "freshness": "1d old",
+      "freshness": "2d old",
       "notes": "Daily clearance across 17 control points for HK residents & Mainland visitors."
     },
     {
@@ -33,7 +33,7 @@
       "status": "Healthy",
       "latest_observation": "2026-07-22",
       "records": 2494,
-      "freshness": "3d old",
+      "freshness": "4d old",
       "notes": "Daily AM/PM benchmark fixing."
     },
     {
@@ -41,7 +41,7 @@
       "dataset": "AFCD Wholesale Food Prices",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-07-25",
+      "latest_observation": "2026-07-26",
       "records": 31,
       "freshness": "Same-day snapshot",
       "notes": "31 commodities across 5 categories; averaged across same-day market readings."
@@ -53,7 +53,7 @@
       "status": "Healthy",
       "latest_observation": "2026-07-25",
       "records": 11,
-      "freshness": "0d old",
+      "freshness": "1d old",
       "notes": "PE (TTM), PB, and market cap only; no dividend-yield indicator is available from this endpoint."
     },
     {
@@ -63,7 +63,7 @@
       "status": "Healthy",
       "latest_observation": "2026-05-01",
       "records": 6500,
-      "freshness": "85d old",
+      "freshness": "86d old",
       "notes": "25 outlet-type categories, monthly since 2004."
     },
     {
@@ -73,8 +73,18 @@
       "status": "Healthy",
       "latest_observation": "2026-03-31",
       "records": 516,
-      "freshness": "116d old",
+      "freshness": "117d old",
       "notes": "Sector-wide purchases only; per-type purchases are not published."
+    },
+    {
+      "source": "HK Retail/F&B Store-Count Scrapers",
+      "dataset": "HK Retail/F&B Store Counts",
+      "type": "Snapshot",
+      "status": "Healthy",
+      "latest_observation": "2026-07-26",
+      "records": 11,
+      "freshness": "Footprint snapshot (most brands: 1-2 dated snapshots so far, not yet a trend)",
+      "notes": "10,788 total tracked locations across 11 companies."
     },
     {
       "source": "HK Consumer Council",
@@ -87,5 +97,5 @@
       "notes": "Endpoint requires re-verification before going live."
     }
   ],
-  "attachment_filename": "hk-local-consumer-dashboard-2026-07-25.html"
+  "attachment_filename": "hk-local-consumer-dashboard-2026-07-26.html"
 }
