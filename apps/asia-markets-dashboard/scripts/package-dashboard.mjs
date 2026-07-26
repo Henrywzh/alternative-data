@@ -249,6 +249,7 @@ const HK_LOCAL_CONSUMER_ZH = {
     median_pe_card: { description: "本地消费观察名单各公司历史市盈率的中位数。", metricLabels: ["市盈率中位数 (TTM)"] },
     retail_card: { description: "政府统计处零售销售价值指数（全部零售店铺）；月环比与同比变动。", metricLabels: ["零售销售指数", "月环比", "同比"] },
     restaurant_card: { description: "全行业季度餐饮收益（百万港元）；季环比与同比变动。", metricLabels: ["餐饮收益 (百万港元)", "季环比", "同比"] },
+    store_footprint_card: { description: "11家香港上市零售、珠宝、餐饮及消费品公司的门店/网点数量追踪总数。", metricLabels: ["已追踪网点总数"] },
   },
   charts: {
     severe_weather_trend: ["月度极端天气干扰时长 (小时)", "按月汇总的八号及以上热带气旋警告与红/黑色暴雨警告持续时间。", "月份", "小时"],
@@ -261,6 +262,7 @@ const HK_LOCAL_CONSUMER_ZH = {
     retail_category_chart: ["零售销售价值指数按类别", "最新发布月份，按零售店铺类型划分。", "类别", "价值指数"],
     restaurant_trend: ["餐饮收益（全部食肆）", "季度全行业收益，百万港元，完整已发布历史。", "季度", "百万港元"],
     restaurant_chart: ["餐饮收益按类型", "最新发布季度，百万港元。", "食肆类型", "百万港元"],
+    store_footprint_chart: ["各公司追踪门店/网点数量", "各公司最新的门店足迹快照（各公司单位不直接可比，详见备注）。", "公司", "门店总数"],
   },
   tables: {
     severe_weather_log_table: {
@@ -303,6 +305,18 @@ const HK_LOCAL_CONSUMER_ZH = {
       subtitle: "端点存在问题或未经验证的来源在此追踪，而非以占位值展示。",
       columns: { source: "来源", dataset: "数据集", type: "类型", status: "状态", freshness: "新鲜度", notes: "范围 / 限制" },
     },
+    store_footprint_table: {
+      title: "香港零售/餐饮门店数量快照",
+      subtitle: "各公司最新追踪的门店/网点数量——门店足迹快照，尚未构成趋势（大部分公司目前仅有1-2个存有日期的快照）。",
+      columns: {
+        company: "公司",
+        stock_code: "股票代码",
+        sector: "行业",
+        total_stores: "门店总数",
+        regions_tracked: "追踪地区/市场数",
+        snapshot_date: "快照日期",
+      },
+    },
   },
   sources: {
     afcd_wholesale: "农渔护理署新鲜食品批发价格",
@@ -313,6 +327,7 @@ const HK_LOCAL_CONSUMER_ZH = {
     immigration_flow: "入境事务处每日出入境旅客流量统计",
     weather_demand_drivers: "香港天文台警告数据库 & FRED 汇率",
     source_registry: "香港本地消费 dashboard 来源登记表",
+    hk_store_footprint: "香港零售/餐饮店铺数量抓取器",
   },
   snapshotBody: (artifact) =>
     `**数据快照：** \`${artifact.package_info.snapshotId}\` · 生成于 ${artifact.manifest.generatedAt}。`,
