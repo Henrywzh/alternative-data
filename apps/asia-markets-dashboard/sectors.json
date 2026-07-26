@@ -1,0 +1,107 @@
+{
+  "$comment": [
+    "Single source of truth for the Asia Markets sector roster.",
+    "Consumed by scripts/sectors.mjs (which all three build scripts import) and",
+    "by tests/test_asia_markets_wiring.py. Adding a sector should require editing",
+    "this file and nothing else in the build pipeline.",
+    "",
+    "live[]     - sectors with a published dashboard page.",
+    "  code       display number on the hub sector index (not the array order).",
+    "  id         slug; also fixes .generated/<id>-artifact.json and the route.",
+    "  package    src/<package>/ pipeline that produces this sector's data.",
+    "  builder    artifact builder, relative to this app root.",
+    "  statusFile status JSON under src/data/, written by the builder.",
+    "planned[]  - research-only placeholders rendered as non-clickable rows.",
+    "  evidence   research doc backing the claimed state; the wiring test asserts",
+    "             it still exists, so deleting the doc fails CI instead of leaving",
+    "             the hub claiming research that is no longer in the repo."
+  ],
+  "live": [
+    {
+      "code": "01",
+      "id": "hk-real-estate",
+      "package": "hk_real_estate",
+      "nameEn": "Hong Kong Real Estate",
+      "nameZh": "香港房地产",
+      "builder": "scripts/build_hk_real_estate_artifact.py",
+      "statusFile": "dashboard-status.json"
+    },
+    {
+      "code": "02",
+      "id": "hk-local-consumer",
+      "package": "hk_local_consumer",
+      "nameEn": "Hong Kong Local Consumer",
+      "nameZh": "香港本地消费",
+      "builder": "scripts/build_hk_local_consumer_artifact.py",
+      "statusFile": "dashboard-status-hk-local-consumer.json"
+    },
+    {
+      "code": "03",
+      "id": "hk-utilities",
+      "package": "hk_utilities",
+      "nameEn": "Hong Kong Utilities & Infrastructure",
+      "nameZh": "香港公用事业与基础设施",
+      "builder": "scripts/build_hk_utilities_artifact.py",
+      "statusFile": "dashboard-status-hk-utilities.json"
+    },
+    {
+      "code": "04",
+      "id": "hk-transport",
+      "package": "hk_transport",
+      "nameEn": "Hong Kong Transport & Aviation",
+      "nameZh": "香港交通与航空",
+      "builder": "scripts/build_hk_transport_artifact.py",
+      "statusFile": "dashboard-status-hk-transport.json"
+    },
+    {
+      "code": "09",
+      "id": "hk-telecom",
+      "package": "hk_telecom",
+      "nameEn": "Hong Kong Telecom",
+      "nameZh": "香港电讯",
+      "builder": "scripts/build_hk_telecom_artifact.py",
+      "statusFile": "dashboard-status-hk-telecom.json"
+    },
+    {
+      "code": "05",
+      "id": "hk-reit",
+      "package": "hk_reit",
+      "nameEn": "Hong Kong REITs",
+      "nameZh": "香港房地产信托（REITs）",
+      "builder": "scripts/build_hk_reit_artifact.py",
+      "statusFile": "dashboard-status-hk-reit.json"
+    }
+  ],
+  "planned": [
+    {
+      "code": "06",
+      "nameEn": "Stablecoin & Crypto",
+      "nameZh": "稳定币与加密资产",
+      "stateEn": "Research ready",
+      "stateZh": "研究就绪",
+      "detailEn": "Source map and company coverage complete; dashboard not yet published.",
+      "detailZh": "来源图谱及公司覆盖已完成；dashboard 尚未发布。",
+      "evidence": "docs/asia-markets/asia-markets-hk-stablecoin-crypto.md"
+    },
+    {
+      "code": "07",
+      "nameEn": "Commercial Aerospace",
+      "nameZh": "商业航天",
+      "stateEn": "Research ready",
+      "stateZh": "研究就绪",
+      "detailEn": "Company and signal framework complete; dashboard not yet published.",
+      "detailZh": "公司及信号框架已完成；dashboard 尚未发布。",
+      "evidence": "docs/asia-markets/asia-markets-hk-commercial-aerospace.md"
+    },
+    {
+      "code": "08",
+      "nameEn": "Consumer Trends",
+      "nameZh": "消费趋势",
+      "stateEn": "Research",
+      "stateZh": "研究中",
+      "detailEn": "Company list established; source access remains uneven.",
+      "detailZh": "公司列表已建立；来源访问仍不均衡。",
+      "evidence": "docs/asia-markets/asia-markets-hk-consumer-trend-stocks.md"
+    }
+  ]
+}
