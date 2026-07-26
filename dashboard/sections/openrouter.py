@@ -1513,7 +1513,13 @@ def _weekly_company_model_pivot(frame: pd.DataFrame, company_slug: str) -> pd.Da
     prepared = prepared.loc[prepared["company_slug"].eq(company_slug)].dropna(subset=["usage_week", "metric_value"])
     if prepared.empty:
         return pd.DataFrame()
-    leaders = prepared.groupby("model_id")["metric_value"].sum().nlargest(8).index
+    # Keep the historical chart, but choose the displayed model lines from
+    # the latest trailing window. Ranking over the entire history can hide a
+    # newly popular model behind a model that was dominant months ago.
+    latest_date = prepared["usage_week"].max()
+    recent = prepared[prepared["usage_week"] >= latest_date - pd.Timedelta(days=29)]
+    ranking_frame = recent if not recent.empty else prepared
+    leaders = ranking_frame.groupby("model_id")["metric_value"].sum().nlargest(8).index
     prepared["display_model"] = prepared["model_id"].where(prepared["model_id"].isin(leaders), "Other models")
     result = (
         prepared.pivot_table(index="usage_week", columns="display_model", values="metric_value", aggfunc="sum")
@@ -1620,7 +1626,14 @@ def company_explorer_state(views: dict[str, object], provider_slug: str) -> dict
     model_pivot = pd.DataFrame()
     if not company_activity.empty:
         daily_total = company_activity.groupby("usage_date_dt")["total_tokens"].sum().to_frame("Tokens").sort_index()
-        leaders = company_activity.groupby("model_id")["total_tokens"].sum().nlargest(8).index
+        # Select the model stack using trailing 30-day volume, while retaining
+        # all available dates in the chart for historical context.
+        latest_date = company_activity["usage_date_dt"].max()
+        recent_activity = company_activity[
+            company_activity["usage_date_dt"] >= latest_date - pd.Timedelta(days=29)
+        ]
+        ranking_frame = recent_activity if not recent_activity.empty else company_activity
+        leaders = ranking_frame.groupby("model_id")["total_tokens"].sum().nlargest(8).index
         chart_rows = company_activity.copy()
         chart_rows["display_model"] = chart_rows["model_id"].where(chart_rows["model_id"].isin(leaders), "Other models")
         model_pivot = (
@@ -4164,6 +4177,7 @@ def _render_company_explorer(views: dict[str, object]) -> None:
         st.caption(f"Blended company realized price from estimated revenue ÷ priced tokens. {coverage_text}; {historical_text}; {fill_text}. Unpriced tokens are excluded from the denominator.")
 
     st.markdown("#### Models by trailing 30-day token volume")
+    st.caption("The stacked model chart selects its named model lines by trailing 30-day token volume, then preserves the full available history so recent leaders are visible without discarding context.")
     if models.empty:
         st.info("No current catalog models are available for this company.")
         return

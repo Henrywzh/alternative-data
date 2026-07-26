@@ -185,6 +185,47 @@ def test_company_and_model_explorer_states_join_catalog_activity_and_apps() -> N
     assert model["apps"].iloc[0]["App"] == "Example App"
 
 
+def test_company_model_chart_selects_recent_leaders_but_keeps_history() -> None:
+    catalog = _catalog()
+    recent_model = catalog.iloc[[0]].copy()
+    recent_model["model_id"] = "openai/recent-model"
+    recent_model["canonical_slug"] = "openai/recent-model"
+    recent_model["model_name"] = "OpenAI: Recent Model"
+    recent_model["provider_slug"] = "openai"
+    recent_model["company"] = "OpenAI"
+    extra_models = []
+    for index in range(8):
+        row = recent_model.copy()
+        row["model_id"] = f"openai/old-model-{index}"
+        row["canonical_slug"] = f"openai/old-model-{index}"
+        row["model_name"] = f"OpenAI: Old Model {index}"
+        extra_models.append(row)
+    catalog = pd.concat([catalog, recent_model, *extra_models], ignore_index=True)
+    catalog["tokens_30d"] = 0.0
+    catalog.loc[catalog["model_id"].eq("openai/recent-model"), "tokens_30d"] = 100.0
+    aliases = _catalog_alias_map(catalog)
+    activity_rows = [
+        {"usage_date": "2026-04-13", "model_permaslug": "openai/gpt-test", "entity_id": "openai", "total_tokens": 10_000},
+        {"usage_date": "2026-07-25", "model_permaslug": "openai/gpt-test", "entity_id": "openai", "total_tokens": 10},
+        {"usage_date": "2026-07-25", "model_permaslug": "openai/recent-model", "entity_id": "openai", "total_tokens": 100},
+    ]
+    activity_rows.extend(
+        {"usage_date": "2026-07-25", "model_permaslug": f"openai/old-model-{index}", "entity_id": "openai", "total_tokens": 20}
+        for index in range(8)
+    )
+    activity = _normalize_explorer_activity(pd.DataFrame(activity_rows), aliases)
+    state = company_explorer_state(
+        {"catalog": catalog, "combined_activity": activity, "provider_activity": activity, "model_activity": pd.DataFrame()},
+        "openai",
+    )
+
+    assert pd.Timestamp("2026-04-13") in state["model_pivot"].index
+    assert "openai/recent-model" in state["model_pivot"].columns
+    assert "openai/gpt-test" not in state["model_pivot"].columns
+    assert "Other models" in state["model_pivot"].columns
+    assert "openai/recent-model" in state["weekly_model_pivot"].columns
+
+
 def test_company_explorer_builds_source_aware_metric_views() -> None:
     catalog = _catalog()
     aliases = _catalog_alias_map(catalog)

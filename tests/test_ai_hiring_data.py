@@ -6,6 +6,7 @@ from pathlib import Path
 import pandas as pd
 
 from ai_hiring_data.extract import extract_board, extract_indeed
+from ai_hiring_data.classify import classify_seniority
 from ai_hiring_data.models import Snapshot, SourceSpec
 from ai_hiring_data.pipeline import AIHiringPipeline
 from ai_hiring_data.quality import count_collapsed, validate_board, validate_indeed
@@ -86,6 +87,13 @@ def test_extracts_compact_ashby_jobs_without_descriptions() -> None:
     assert rows[0]["is_ai_role"] is True
     assert rows[1]["role_family"] == "Sales / GTM"
     assert "description" not in rows[0]
+
+
+def test_seniority_taxonomy_separates_ic_from_unspecified() -> None:
+    assert classify_seniority("Machine Learning Engineer") == "Individual contributor"
+    assert classify_seniority("Senior Research Scientist") == "Senior / Staff / Principal"
+    assert classify_seniority("Director, Applied AI") == "Manager / Director / Executive"
+    assert classify_seniority("Account Executive") == "Unspecified"
 
 
 def test_extracts_greenhouse_requisition_identity() -> None:

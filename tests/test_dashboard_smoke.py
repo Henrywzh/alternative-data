@@ -109,5 +109,7 @@ def test_ai_hiring_section_renders_macro_company_and_job_views(monkeypatch) -> N
     app.run()
 
     assert not app.exception
-    assert len(app.get("plotly_chart")) == 3
+    # Macro signal, intensity, cohort, role/seniority heatmap, and concentration
+    # chart should all render when the fixture is populated.
+    assert len(app.get("plotly_chart")) >= 5
     assert len(app.dataframe) == 3

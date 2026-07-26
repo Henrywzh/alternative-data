@@ -3,7 +3,15 @@ from __future__ import annotations
 import re
 
 
-CLASSIFIER_VERSION = "title-taxonomy-v1"
+CLASSIFIER_VERSION = "title-taxonomy-v2"
+
+SENIORITY_LEVELS: tuple[str, ...] = (
+    "Early career",
+    "Individual contributor",
+    "Senior / Staff / Principal",
+    "Manager / Director / Executive",
+    "Unspecified",
+)
 
 ROLE_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("Safety / Policy", re.compile(r"\b(safety|alignment|responsible ai|policy|governance|trust|red team|preparedness)\b", re.I)),
@@ -36,11 +44,25 @@ def classify_role(title: str, department: str | None = None, team: str | None = 
 
 
 def classify_seniority(title: str) -> str:
-    value = str(title or "")
+    value = str(title or "").strip()
     if re.search(r"\b(intern|internship|new grad|graduate|apprentice|entry.level|junior)\b", value, re.I):
         return "Early career"
-    if re.search(r"\b(chief|vp|vice president|head of|director)\b", value, re.I):
-        return "Executive / Director"
-    if re.search(r"\b(manager|lead|principal|staff|senior|sr\.?|architect)\b", value, re.I):
-        return "Senior / Lead"
-    return "Individual contributor / unspecified"
+    if re.search(
+        r"\b(chief executive|chief technology|chief product|chief data|chief research|chief\s+\w+|c-suite|vp|vice president|head of|director|general manager|senior manager|people manager|manager|(?<!account )executive)\b",
+        value,
+        re.I,
+    ):
+        return "Manager / Director / Executive"
+    if re.search(
+        r"\b(lead|principal|staff|senior|sr\.?|architect|distinguished)\b",
+        value,
+        re.I,
+    ):
+        return "Senior / Staff / Principal"
+    if re.search(
+        r"\b(engineer|developer|scientist|researcher|designer|analyst|economist|technician|specialist|consultant)\b",
+        value,
+        re.I,
+    ):
+        return "Individual contributor"
+    return "Unspecified"

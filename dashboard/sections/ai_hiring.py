@@ -7,6 +7,15 @@ import streamlit as st
 from dashboard.components import dataframe_for_display, format_metric, kpi_card_html, kpi_grid_html
 from dashboard.data import DatasetLoadResult
 from dashboard.theme import CARD, GRID, MODEL_COLORS, MUTED, TEXT
+from ai_hiring_data.classify import CLASSIFIER_VERSION, classify_seniority
+from ai_hiring_data.analytics import (
+    SENIORITY_LEVELS,
+    build_company_intensity,
+    build_early_cohort_trend,
+    build_role_seniority_matrix,
+    build_seniority_totals,
+)
+from ai_hiring_data.segments import PARENT_SEGMENTS, PARENT_SEGMENT_BY_COMPANY
 
 
 INDEED_ID = "indeed_ai_posting_share_daily"
@@ -59,6 +68,14 @@ def _prepare(datasets: dict[str, DatasetLoadResult]) -> dict[str, pd.DataFrame]:
         jobs["published_at"] = pd.to_datetime(jobs["published_at"], errors="coerce", utc=True)
         jobs["is_ai_role"] = jobs["is_ai_role"].fillna(False).astype(bool)
         jobs["status"] = jobs["status"].fillna("unknown").astype(str)
+        # Migrate older normalized snapshots at read time so a deployed
+        # dashboard cannot silently render zeroes for the new seniority
+        # columns while the next pipeline backfill is pending.
+        if "title" in jobs.columns:
+            versions = jobs.get("classifier_version", pd.Series(index=jobs.index, dtype="string")).astype("string")
+            if not versions.eq(CLASSIFIER_VERSION).all():
+                jobs["seniority"] = jobs["title"].map(classify_seniority)
+                jobs["classifier_version"] = CLASSIFIER_VERSION
     if not health.empty:
         health["row_count"] = pd.to_numeric(health["row_count"], errors="coerce")
         health["response_ms"] = pd.to_numeric(health["response_ms"], errors="coerce")
@@ -100,7 +117,7 @@ def _render_kpis(indeed: pd.DataFrame, demand: pd.DataFrame, health: pd.DataFram
             kpi_card_html(
                 "Active Requisitions",
                 format_metric(active_requisitions),
-                delta=f"{format_metric(active_postings)} public postings · fixed 10-company cohort",
+                delta=f"{format_metric(active_postings)} public postings · 70-company fixed cohort",
             ),
             kpi_card_html(
                 "AI / ML-Titled Roles",
@@ -120,7 +137,7 @@ def _render_kpis(indeed: pd.DataFrame, demand: pd.DataFrame, health: pd.DataFram
 def _render_indeed(indeed: pd.DataFrame) -> None:
     st.markdown('<div class="section-title">Economy-Wide AI Hiring Signal</div>', unsafe_allow_html=True)
     st.markdown(
-        '<div class="section-subtitle">Share of public Indeed job postings that mention AI. Daily observations, refreshed monthly by Indeed Hiring Lab; this is posting demand, not hires or employment.</div>',
+        '<div class="section-subtitle">Indeed Hiring Lab macro series — share of public Indeed job postings that mention AI. Daily observations, refreshed monthly; this is posting demand, not hires or employment.</div>',
         unsafe_allow_html=True,
     )
     if indeed.empty:
@@ -192,7 +209,7 @@ def _render_indeed(indeed: pd.DataFrame) -> None:
     st.plotly_chart(figure, width="stretch", config={"displayModeBar": False})
     latest_source_date = scoped["date"].max()
     st.caption(
-        f"Latest source observation: {latest_source_date:%Y-%m-%d}. The 28-day view is a display-only rolling average; daily source rows remain available via the selector. Source license: CC BY 4.0."
+        f"Source: Indeed Hiring Lab public AI tracker CSV · latest observation {latest_source_date:%Y-%m-%d} · refreshed monthly · CC BY 4.0. The 28-day view is display-only; daily source rows remain available via the selector. This series is separate from the company ATS tracker below."
     )
 
 
@@ -207,154 +224,175 @@ def _company_snapshot(demand: pd.DataFrame) -> tuple[pd.DataFrame, pd.Timestamp 
     return latest.sort_values("active_requisitions", ascending=False), latest_date
 
 
-def _render_company_history(demand: pd.DataFrame) -> None:
-    totals = demand[demand["role_family"].astype(str) == "All roles"].copy()
-    if totals["snapshot_date"].nunique() < 2:
-        coverage_start = totals["snapshot_date"].min()
-        label = coverage_start.strftime("%Y-%m-%d") if pd.notna(coverage_start) else "the first successful run"
-        st.info(
-            f"Company lifecycle history begins {label}. The initial board snapshot is seeded as a baseline, so it is not counted as new hiring demand; daily opening and closure trends will build from subsequent runs."
-        )
-        return
+def _render_company_footprint(demand: pd.DataFrame) -> None:
+    """Show current company scale with an explicit display-only parent grouping."""
 
-    use_same_store = st.toggle(
-        "Use 28-day same-store cohort",
-        value=True,
-        help="Includes only company boards with a healthy source and at least 28 days of uninterrupted coverage.",
-        key="ai_hiring_same_store",
-    )
-    scoped = totals[totals["same_store_28d"]] if use_same_store else totals
-    if scoped.empty:
-        st.info("The 28-day same-store cohort is not mature yet. Turn off the same-store filter to inspect available history.")
-        return
-
-    figure = go.Figure()
-    for index, company in enumerate(sorted(scoped["company_name"].dropna().astype(str).unique())):
-        company_rows = scoped[scoped["company_name"].astype(str) == company].sort_values("snapshot_date")
-        figure.add_trace(
-            go.Scatter(
-                x=company_rows["snapshot_date"],
-                y=company_rows["active_requisitions"],
-                name=company,
-                mode="lines",
-                line=dict(color=MODEL_COLORS[index % len(MODEL_COLORS)], width=2),
-                hovertemplate="%{x|%b %d, %Y}<br><b>%{y:,.0f} requisitions</b><extra>%{fullData.name}</extra>",
-            )
-        )
-    figure.update_layout(
-        template="plotly_white",
-        height=400,
-        margin=dict(l=0, r=0, t=12, b=80),
-        paper_bgcolor=CARD,
-        plot_bgcolor=CARD,
-        font=dict(color=TEXT, size=12),
-        legend=dict(orientation="h", y=-0.22),
-        xaxis=dict(showgrid=False),
-        yaxis=dict(gridcolor=GRID, title="Active requisitions"),
-        hovermode="x unified",
-    )
-    st.plotly_chart(figure, width="stretch", config={"displayModeBar": False})
-
-
-def _render_company_snapshot(demand: pd.DataFrame) -> None:
     latest, latest_date = _company_snapshot(demand)
     if latest.empty:
         st.info("No company demand snapshot is available yet.")
         return
-    st.caption(f"Current public job-board snapshot · {latest_date:%Y-%m-%d} · all 10 companies shown")
-    chart_col, role_col = st.columns([1, 1.45])
-    with chart_col:
-        ordered = latest.sort_values("active_requisitions", ascending=True)
-        figure = go.Figure(
-            go.Bar(
-                x=ordered["active_requisitions"],
-                y=ordered["company_name"],
-                orientation="h",
-                marker_color=MODEL_COLORS[0],
-                customdata=ordered[["active_postings", "source_status"]],
-                hovertemplate=(
-                    "%{y}<br><b>%{x:,.0f} requisitions</b>"
-                    "<br>%{customdata[0]:,.0f} public postings"
-                    "<br>source: %{customdata[1]}<extra></extra>"
-                ),
-            )
+    latest = latest.copy()
+    latest["Parent segment"] = latest["company_id"].map(PARENT_SEGMENT_BY_COMPANY).fillna("Unmapped")
+    latest["AI / ML share"] = latest["ai_role_share_pct"].fillna(0)
+    metric_options = {
+        "Active requisitions": "active_requisitions",
+        "Public postings": "active_postings",
+        "AI / ML-titled roles": "ai_role_postings",
+    }
+    controls = st.columns([1.2, 2.2], vertical_alignment="bottom")
+    with controls[0]:
+        metric_label = st.selectbox("Footprint metric", tuple(metric_options), key="ai_hiring_footprint_metric")
+    with controls[1]:
+        selected_segments = st.multiselect(
+            "Parent segment",
+            list(PARENT_SEGMENTS),
+            default=list(PARENT_SEGMENTS),
+            key="ai_hiring_parent_segments",
         )
-        figure.update_layout(
-            template="plotly_white",
-            height=430,
-            margin=dict(l=0, r=10, t=12, b=45),
-            paper_bgcolor=CARD,
-            plot_bgcolor=CARD,
-            font=dict(color=TEXT, size=12),
-            xaxis=dict(gridcolor=GRID, title="Active requisitions"),
-            yaxis=dict(showgrid=False),
-        )
-        st.plotly_chart(figure, width="stretch", config={"displayModeBar": False})
-
-    with role_col:
-        role_rows = demand[
-            (demand["snapshot_date"] == latest_date) & (demand["role_family"].astype(str) != "All roles")
-        ].copy()
-        pivot = role_rows.pivot_table(
-            index="company_name", columns="role_family", values="active_postings", aggfunc="sum", fill_value=0
-        ).reindex(latest["company_name"])
-        figure = go.Figure()
-        for index, role in enumerate(pivot.columns):
-            figure.add_trace(
-                go.Bar(
-                    x=pivot.index,
-                    y=pivot[role],
-                    name=str(role),
-                    marker_color=MODEL_COLORS[index % len(MODEL_COLORS)],
-                    hovertemplate="%{x}<br><b>%{y:,.0f} postings</b><extra>" + str(role) + "</extra>",
-                )
-            )
-        figure.update_layout(
-            template="plotly_white",
-            barmode="stack",
-            height=430,
-            margin=dict(l=0, r=0, t=12, b=105),
-            paper_bgcolor=CARD,
-            plot_bgcolor=CARD,
-            font=dict(color=TEXT, size=12),
-            legend=dict(orientation="h", y=-0.32),
-            xaxis=dict(showgrid=False, tickangle=-30),
-            yaxis=dict(gridcolor=GRID, title="Active public postings"),
-        )
-        st.plotly_chart(figure, width="stretch", config={"displayModeBar": False})
-
-    summary = latest.rename(
-        columns={
-            "company_name": "Company",
-            "company_segment": "Segment",
-            "active_requisitions": "Active requisitions",
-            "active_postings": "Public postings",
-            "ai_role_postings": "AI / ML-titled",
-            "ai_role_share_pct": "AI / ML-titled share",
-            "source_status": "Source health",
+    scoped = latest[latest["Parent segment"].isin(selected_segments)].copy()
+    if scoped.empty:
+        st.info("Select at least one parent segment.")
+        return
+    metric = metric_options[metric_label]
+    company_rows = scoped.sort_values(metric, ascending=True)
+    display = pd.DataFrame(
+        {
+            "Company": company_rows["company_name"].astype(str),
+            "Parent segment": company_rows["Parent segment"].astype(str),
+            "Source segment": company_rows["company_segment"].astype(str),
+            "Selected metric": company_rows[metric],
+            "Active requisitions": company_rows["active_requisitions"],
+            "Public postings": company_rows["active_postings"],
+            "AI / ML-titled": company_rows["ai_role_postings"],
+            "AI / ML share": company_rows["AI / ML share"],
         }
     )
-    mature = latest["same_store_28d"].fillna(False).astype(bool)
-    summary["New · 28d"] = latest["new_postings_28d"].where(mature)
-    summary["Closed · 28d"] = latest["closed_postings_28d"].where(mature)
+    # Keep this defensive guard because older cached Streamlit sessions can
+    # otherwise retain a pre-refactor duplicate metric column.
+    display = display.loc[:, ~display.columns.duplicated()]
     st.dataframe(
-        dataframe_for_display(
-            summary[
-                [
-                    "Company", "Segment", "Active requisitions", "Public postings", "AI / ML-titled",
-                    "AI / ML-titled share", "New · 28d", "Closed · 28d", "Source health",
-                ]
-            ]
-        ),
-        width="stretch",
-        hide_index=True,
+        dataframe_for_display(display),
+        width="stretch", height=410, hide_index=True,
         column_config={
-            "AI / ML-titled share": st.column_config.NumberColumn("AI / ML-titled share", format="%.1f%%"),
-            "New · 28d": st.column_config.NumberColumn("New · 28d", format="%d"),
-            "Closed · 28d": st.column_config.NumberColumn("Closed · 28d", format="%d"),
+            "Selected metric": st.column_config.NumberColumn(f"Selected · {metric_label}", format="%d"),
+            "AI / ML share": st.column_config.NumberColumn("AI / ML share", format="%.1f%%"),
         },
     )
-    st.caption("28-day flows remain blank until a company has 28 days of healthy same-store coverage.")
+    st.caption(f"Latest public ATS snapshot · {latest_date:%Y-%m-%d}. Ranked by {metric_label.lower()}; parent segments are display-only rollups and the source segment remains available.")
+
+
+def _render_hiring_intensity(demand: pd.DataFrame) -> None:
+    """Compare company scale with AI-role concentration using observed latest rows."""
+
+    intensity = build_company_intensity(demand, PARENT_SEGMENT_BY_COMPANY)
+    st.markdown('<div class="section-title">Hiring intensity</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-subtitle">Company scale versus AI-role concentration. Bubble area represents active public postings; positions are the latest observed board snapshot.</div>',
+        unsafe_allow_html=True,
+    )
+    if intensity.empty:
+        st.info("No latest company snapshot is available for the intensity view.")
+        return
+    colors = {segment: MODEL_COLORS[index % len(MODEL_COLORS)] for index, segment in enumerate(PARENT_SEGMENTS)}
+    figure = go.Figure()
+    for segment in (*PARENT_SEGMENTS, "Unmapped"):
+        rows = intensity[intensity["parent_segment"].eq(segment)]
+        if rows.empty:
+            continue
+        sizes = (rows["active_postings"].clip(lower=1).pow(0.5) * 3.2).clip(lower=7, upper=42)
+        figure.add_trace(
+            go.Scatter(
+                x=rows["active_requisitions"], y=rows["ai_role_share_pct"], mode="markers+text",
+                name=segment, marker=dict(size=sizes, color=colors.get(segment, MUTED), opacity=0.78, line=dict(color=CARD, width=1)),
+                text=rows["company_name"], textposition="top center", textfont=dict(size=9, color=TEXT), cliponaxis=False,
+                customdata=rows[["active_postings", "ai_role_postings"]],
+                hovertemplate=("<b>%{text}</b><br>%{x:,.0f} active requisitions<br>"
+                               "%{y:.1f}% AI / ML-titled<br>%{customdata[0]:,.0f} public postings<extra>%{fullData.name}</extra>"),
+            )
+        )
+    figure.update_layout(
+        template="plotly_white", height=470, margin=dict(l=0, r=0, t=12, b=55),
+        paper_bgcolor=CARD, plot_bgcolor=CARD, font=dict(color=TEXT, size=12),
+        xaxis=dict(gridcolor=GRID, title="Active requisitions", zeroline=False),
+        yaxis=dict(gridcolor=GRID, title="AI / ML-titled share", ticksuffix="%", zeroline=False),
+        legend=dict(orientation="h", y=-0.18), hovermode="closest",
+    )
+    st.plotly_chart(figure, width="stretch", config={"displayModeBar": False})
+    st.caption("This is a cross-sectional comparison, not a hiring-growth forecast. A high AI-role share can reflect a smaller company with a specialized board.")
+
+
+def _render_early_cohort_trend(demand: pd.DataFrame) -> None:
+    trend = build_early_cohort_trend(demand, min_observations=2)
+    st.markdown('<div class="section-title">Early-cohort trend</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-subtitle">Observed history for the original companies with repeated successful snapshots. Newer boards are deliberately excluded until their time series matures.</div>',
+        unsafe_allow_html=True,
+    )
+    if trend.empty or trend["company_count"].max() < 2:
+        st.info("The repeated-observation cohort is not mature enough for a trend yet.")
+        return
+    figure = go.Figure()
+    figure.add_trace(go.Scatter(
+        x=trend["snapshot_date"], y=trend["active_requisitions"], mode="lines+markers",
+        name="Active requisitions", line=dict(color=MODEL_COLORS[0], width=2.5),
+        hovertemplate="%{x|%b %d, %Y}<br><b>%{y:,.0f}</b> active requisitions<extra></extra>",
+    ))
+    figure.add_trace(go.Scatter(
+        x=trend["snapshot_date"], y=trend["active_postings"], mode="lines+markers",
+        name="Public postings", line=dict(color=MODEL_COLORS[2], width=2),
+        hovertemplate="%{x|%b %d, %Y}<br><b>%{y:,.0f}</b> public postings<extra></extra>",
+    ))
+    figure.update_layout(
+        template="plotly_white", height=330, margin=dict(l=0, r=0, t=12, b=58),
+        paper_bgcolor=CARD, plot_bgcolor=CARD, font=dict(color=TEXT, size=12),
+        xaxis=dict(showgrid=False, title="Snapshot date"), yaxis=dict(gridcolor=GRID, title="Observed roles"),
+        legend=dict(orientation="h", y=-0.2), hovermode="x unified",
+    )
+    st.plotly_chart(figure, width="stretch", config={"displayModeBar": False})
+    st.caption(f"{int(trend['company_count'].min())}–{int(trend['company_count'].max())} companies contribute to each observed date. The 28-day same-store trend will remain unavailable until the cohort has 28 days of healthy coverage.")
+
+
+def _render_role_seniority(jobs: pd.DataFrame) -> None:
+    st.markdown('<div class="section-title">Where the demand concentrates</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-subtitle">Current active requisitions by role family and production seniority taxonomy. This uses the live job rows, not a synthetic allocation.</div>',
+        unsafe_allow_html=True,
+    )
+    mode = st.radio("Heatmap display", ("Raw count", "% within role family"), horizontal=True, key="ai_hiring_heatmap_mode")
+    matrix = build_role_seniority_matrix(jobs, mode="share" if mode.startswith("%") else "count")
+    raw_matrix = build_role_seniority_matrix(jobs, mode="count")
+    if matrix.empty or float(raw_matrix.to_numpy().sum()) == 0:
+        st.info("No active job rows are available for the role/seniority mix yet.")
+        return
+    heat_col, total_col = st.columns([1.75, 1], gap="large")
+    with heat_col:
+        text = matrix.round(1).astype(str).map(lambda value: value.rstrip("0").rstrip(".") if "." in value else value)
+        figure = go.Figure(go.Heatmap(
+            z=matrix.to_numpy(), x=list(matrix.columns), y=list(matrix.index),
+            colorscale="Blues", colorbar=dict(title="%" if mode.startswith("%") else "Roles"),
+            text=text.to_numpy(), texttemplate="%{text}", hovertemplate="%{y}<br>%{x}: <b>%{z:.1f}</b><extra></extra>",
+        ))
+        figure.update_layout(
+            template="plotly_white", height=490, margin=dict(l=0, r=0, t=12, b=75),
+            paper_bgcolor=CARD, plot_bgcolor=CARD, font=dict(color=TEXT, size=11),
+            xaxis=dict(side="bottom", tickangle=-18), yaxis=dict(autorange="reversed"),
+        )
+        st.plotly_chart(figure, width="stretch", config={"displayModeBar": False})
+    with total_col:
+        totals = build_seniority_totals(raw_matrix)
+        figure = go.Figure(go.Bar(
+            x=totals["active_postings"], y=totals["seniority"], orientation="h",
+            marker_color=MODEL_COLORS[3],
+            text=totals["active_postings"], texttemplate="%{text:,.0f}", textposition="outside", cliponaxis=False,
+            hovertemplate="%{y}<br><b>%{x:,.0f}</b> active postings<extra></extra>",
+        ))
+        figure.update_layout(
+            template="plotly_white", height=490, margin=dict(l=0, r=0, t=12, b=45),
+            paper_bgcolor=CARD, plot_bgcolor=CARD, font=dict(color=TEXT, size=11),
+            xaxis=dict(gridcolor=GRID, title="Active postings"), yaxis=dict(showgrid=False),
+        )
+        st.plotly_chart(figure, width="stretch", config={"displayModeBar": False})
+        st.caption("Seniority is inferred from job titles: explicit IC roles are separated from titles with no seniority signal, while senior/staff/principal and manager/director/executive markers are grouped. Exact titles remain available in the explorer below.")
 
 
 def _render_job_explorer(jobs: pd.DataFrame) -> None:
@@ -451,7 +489,7 @@ def render(domain_states, datasets: dict[str, DatasetLoadResult]) -> None:
     _ = domain_states
     st.markdown('<div class="section-title" style="margin-top:0.25rem;">AI Hiring Demand</div>', unsafe_allow_html=True)
     st.markdown(
-        '<div class="section-subtitle">Economy-wide AI posting share plus daily public job-board demand from a fixed cohort of 10 AI companies. These are demand signals—not hires, headcount, or vacancies filled.</div>',
+        '<div class="section-subtitle">Economy-wide AI posting share plus daily public job-board demand from a fixed cohort of 70 tech & AI companies. These are demand signals—not hires, headcount, or vacancies filled.</div>',
         unsafe_allow_html=True,
     )
     frames = _prepare(datasets)
@@ -468,13 +506,18 @@ def render(domain_states, datasets: dict[str, DatasetLoadResult]) -> None:
     _render_indeed(indeed)
     st.markdown('<div class="section-title">AI Company Hiring Demand</div>', unsafe_allow_html=True)
     st.markdown(
-        '<div class="section-subtitle">Daily public openings at AI-native companies. Company totals include every public role; the role mix and AI / ML-title fields are analytical classifications shown separately.</div>',
+        '<div class="section-subtitle">Daily public openings at a fixed cohort of 70 companies. Company totals include every public role; parent segments are display-only rollups and the source segment remains visible below.</div>',
         unsafe_allow_html=True,
     )
     if demand.empty:
         st.info("No company demand snapshots are available yet.")
     else:
-        _render_company_history(demand)
-        _render_company_snapshot(demand)
+        _render_company_footprint(demand)
+        _render_hiring_intensity(demand)
+        _render_early_cohort_trend(demand)
+        _render_role_seniority(jobs)
+        st.info(
+            "Data sources: the economy-wide signal above is Indeed Hiring Lab's public GitHub CSV; company demand is collected from official public Ashby and Greenhouse boards. Company means the hiring company, not a model-serving provider. Latest board snapshots may be partial while a run is in progress."
+        )
     _render_job_explorer(jobs)
     _render_coverage(health)

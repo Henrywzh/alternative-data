@@ -50,7 +50,77 @@ BOARD_SPECS: tuple[SourceSpec, ...] = (
     _ashby("fireworks_ai", "Fireworks AI", "fireworksai", "Model infrastructure"),
     _greenhouse("scale_ai", "Scale AI", "scaleai", "AI data platform"),
     _ashby("elevenlabs", "ElevenLabs", "elevenlabs", "Generative media"),
+
+    # Tech expansion (2026-07) — Greenhouse
+    _greenhouse("databricks", "Databricks", "databricks", "AI/data platform"),
+    _greenhouse("stripe", "Stripe", "stripe", "Fintech"),
+    _greenhouse("mongodb", "MongoDB", "mongodb", "Infrastructure"),
+    _greenhouse("cloudflare", "Cloudflare", "cloudflare", "Network infrastructure"),
+    _greenhouse("elastic", "Elastic", "elastic", "Search/data infrastructure"),
+    _greenhouse("pinterest", "Pinterest", "pinterest", "Social"),
+    _greenhouse("reddit", "Reddit", "reddit", "Social"),
+    _greenhouse("twilio", "Twilio", "twilio", "Communication API"),
+    _greenhouse("coinbase", "Coinbase", "coinbase", "Crypto/fintech"),
+    _greenhouse("instacart", "Instacart", "instacart", "E-commerce"),
+    _greenhouse("roblox", "Roblox", "roblox", "Gaming"),
+    _greenhouse("airbnb", "Airbnb", "airbnb", "Travel"),
+    _greenhouse("dropbox", "Dropbox", "dropbox", "Cloud storage"),
+    _greenhouse("gitlab", "GitLab", "gitlab", "DevOps"),
+
+    # Tech expansion (2026-07) — Ashby
+    _ashby("notion", "Notion", "notion", "Productivity"),
+    _ashby("supabase", "Supabase", "supabase", "Infrastructure"),
+    _ashby("posthog", "PostHog", "posthog", "Analytics"),
+
+    # Tech expansion wave 2 (2026-07) — Greenhouse
+    _greenhouse("lyft", "Lyft", "lyft", "Ride sharing"),
+    _greenhouse("datadog", "Datadog", "datadog", "Monitoring/observability"),
+    _greenhouse("newrelic", "New Relic", "newrelic", "APM/monitoring"),
+    _greenhouse("fastly", "Fastly", "fastly", "CDN/edge computing"),
+    _greenhouse("okta", "Okta", "okta", "Identity/security"),
+    _greenhouse("epicgames", "Epic Games", "epicgames", "Gaming/Unreal Engine"),
+    _greenhouse("asana", "Asana", "asana", "Project management"),
+    _greenhouse("discord", "Discord", "discord", "Social/communication"),
+    _greenhouse("vercel", "Vercel", "vercel", "Frontend deployment"),
+    _greenhouse("clickhouse", "ClickHouse", "clickhouse", "Real-time analytics DB"),
+    _greenhouse("planetscale", "PlanetScale", "planetscale", "Serverless MySQL"),
+    _greenhouse("cockroachlabs", "Cockroach Labs", "cockroachlabs", "Distributed SQL"),
+    _greenhouse("algolia", "Algolia", "algolia", "Search API"),
+    _greenhouse("graphcore", "Graphcore", "graphcore", "AI chip"),
+    _greenhouse("lightmatter", "Lightmatter", "lightmatter", "AI photonic chip"),
+    _greenhouse("netlify", "Netlify", "netlify", "Web deployment"),
+    _greenhouse("circleci", "CircleCI", "circleci", "CI/CD"),
+    _greenhouse("buildkite", "Buildkite", "buildkite", "CI/CD"),
+    _greenhouse("launchdarkly", "LaunchDarkly", "launchdarkly", "Feature management"),
+    _greenhouse("mixpanel", "Mixpanel", "mixpanel", "Product analytics"),
+    _greenhouse("brex", "Brex", "brex", "Fintech/corporate cards"),
+    _greenhouse("chime", "Chime", "chime", "Neobank"),
+    _greenhouse("monzo", "Monzo", "monzo", "Neobank"),
+    _greenhouse("figma", "Figma", "figma", "Design collaboration"),
+    _greenhouse("otter", "Otter", "otter", "AI transcription"),
+    _greenhouse("fivetran", "Fivetran", "fivetran", "Data pipeline"),
+
+    # Tech expansion wave 2 (2026-07) — Ashby
+    _ashby("snowflake", "Snowflake", "snowflake", "Cloud data warehouse"),
+    _ashby("confluent", "Confluent", "confluent", "Kafka/data streaming"),
+    _ashby("linear", "Linear", "linear", "Project management"),
+    _ashby("sentry", "Sentry", "sentry", "Error monitoring"),
+    _ashby("neon", "Neon", "neon", "Serverless Postgres"),
+    _ashby("cerebras", "Cerebras", "cerebras", "AI chip"),
+    _ashby("replit", "Replit", "replit", "Cloud IDE"),
+    _ashby("render", "Render", "render", "Cloud hosting"),
+    _ashby("railway", "Railway", "railway", "Cloud hosting"),
+    _ashby("plaid", "Plaid", "plaid", "Fintech API"),
+    _ashby("nubank", "Nubank", "nubank", "Neobank"),
+    _ashby("miro", "Miro", "miro", "Collaboration whiteboard"),
+    _ashby("airbyte", "Airbyte", "airbyte", "Data integration"),
+    _ashby("motherduck", "MotherDuck", "motherduck", "DuckDB cloud"),
+    _ashby("pinecone", "Pinecone", "pinecone", "Vector database"),
+    _ashby("weaviate", "Weaviate", "weaviate", "Vector database"),
+    _ashby("modal", "Modal", "modal", "Cloud GPU/serverless"),
+
 )
+
 
 SOURCE_SPECS: tuple[SourceSpec, ...] = (INDEED_SOURCE, *BOARD_SPECS)
 ROLE_FAMILIES: tuple[str, ...] = (
