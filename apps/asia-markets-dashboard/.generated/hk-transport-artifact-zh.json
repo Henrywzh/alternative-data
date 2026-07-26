@@ -6,7 +6,7 @@
     "title": "香港交通与航空监测",
     "description": "港铁月度客运量（本地/跨境/高铁）、国泰航空运营数据与香港国际机场流量的来源快照。",
     "sector": "hk-transport",
-    "generatedAt": "2026-07-26T16:11:59.844326Z",
+    "generatedAt": "2026-07-26T17:17:09.759853Z",
     "cards": [
       {
         "id": "mtr_card",
@@ -509,7 +509,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-26T16:11:59.844326Z",
+    "generatedAt": "2026-07-26T17:17:09.759853Z",
     "status": "ready",
     "datasets": {
       "kpi_mtr": [
@@ -12435,14 +12435,6 @@
         {
           "date": "2019-06-01",
           "month": "2019-06",
-          "series": "南方航空",
-          "airline": "China Southern",
-          "region": "Total",
-          "value": 14004.52
-        },
-        {
-          "date": "2019-06-01",
-          "month": "2019-06",
           "series": "春秋航空",
           "airline": "Spring Airlines",
           "region": "Total",
@@ -20047,14 +20039,6 @@
         {
           "date": "2019-06-01",
           "month": "2019-06",
-          "series": "南方航空",
-          "airline": "China Southern",
-          "region": "Total",
-          "value": 30072.96
-        },
-        {
-          "date": "2019-06-01",
-          "month": "2019-06",
           "series": "春秋航空",
           "airline": "Spring Airlines",
           "region": "Total",
@@ -23985,14 +23969,6 @@
         {
           "date": "2019-06-01",
           "month": "2019-06",
-          "series": "南方航空",
-          "airline": "China Southern",
-          "region": "Total",
-          "value": 0
-        },
-        {
-          "date": "2019-06-01",
-          "month": "2019-06",
           "series": "春秋航空",
           "airline": "Spring Airlines",
           "region": "Total",
@@ -27590,7 +27566,7 @@
           "series": "国内",
           "airline": "All carriers",
           "region": "Domestic",
-          "value": 17808.85
+          "value": 17582.5
         },
         {
           "date": "2019-06-01",
@@ -27598,7 +27574,7 @@
           "series": "国际",
           "airline": "All carriers",
           "region": "International",
-          "value": 15404.74
+          "value": 3264.28
         },
         {
           "date": "2019-06-01",
@@ -27606,7 +27582,7 @@
           "series": "地区",
           "airline": "All carriers",
           "region": "Regional",
-          "value": 2061.39
+          "value": 423.68
         },
         {
           "date": "2019-07-01",
@@ -29799,7 +29775,7 @@
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-transport/",
-    "snapshotId": "155abe812d6eed05",
+    "snapshotId": "47014b5b9a7ad99c",
     "dataAsOf": "2026-06-01"
   }
 }

@@ -209,17 +209,69 @@ def test_ask_per_passenger_is_plausible_for_every_carrier(
     )
 
 
+def test_merged_header_annotation_detection(traffic: pd.DataFrame) -> None:
+    """The merged-header-annotation corruption check must not over-trigger.
+
+    A China Eastern PDF (2023-06) line-wraps a passengers value mid-number
+    inside its own header row's cell ("10,031.2\\n3" = "10,031.23"). That
+    value is always discarded regardless (header rows never contribute their
+    own row's figure), so it must not poison the correctly-labeled region
+    rows below it -- unlike China Southern's 2019-06 case, where the merged
+    cell holds actual unit-annotation text ("(ASK)(百万)") before the value,
+    the real signal that the rows below are unsafe.
+    """
+    ce_passengers = traffic[
+        (traffic["airline_code"] == "600115")
+        & (traffic["month"] == "2023-06")
+        & (traffic["metric"] == "passengers")
+    ]
+    assert set(ce_passengers["region"]) == {"Domestic", "International", "Regional"}, (
+        "China Eastern 2023-06 passengers should have all 3 regions -- a "
+        "regression here means the merged-annotation check is over-triggering "
+        "on a benign mid-number line wrap"
+    )
+
+
+# (carrier_code, month) pairs deliberately left as a full gap: the source
+# PDF exists and downloads fine, but every one of its metric blocks is
+# corrupted in a way that isn't safely recoverable (see
+# _classify_metric_header's caller in parse_airline_pdf for the exact
+# signature). Format: month -> reason, so a new entry always says why.
+KNOWN_UNRECOVERABLE_MONTHS: dict[str, dict[str, str]] = {
+    "600029": {
+        "2019-06": (
+            "A page-break merged this PDF's own reported Total value into "
+            "the header row's second cell for all 8 of its metric blocks, "
+            "which shifts every region row below one label off from its "
+            "true value (confirmed via the PDF's own prose summary and the "
+            "region-sum-equals-Total arithmetic identity, neither of which "
+            "held under the extracted labels but both held exactly under a "
+            "one-position shift). Recovering the true mapping generically "
+            "isn't reliable, so the whole month is dropped rather than "
+            "risk silently mislabeling three data points."
+        ),
+    },
+}
+
+
 @pytest.mark.parametrize("code", sorted(CARRIERS))
 def test_no_month_gap_in_carrier_history(traffic: pd.DataFrame, code: str) -> None:
-    """No carrier should be missing a whole month's PDF within its own history.
+    """No carrier should be missing a whole month's PDF within its own history,
+    except the documented, deliberate exceptions in KNOWN_UNRECOVERABLE_MONTHS.
 
-    This is a discovery-level gap (Cninfo returned nothing for that month),
-    distinct from a within-PDF extraction miss -- China Eastern hit this when
-    it renamed its bulletin title for a 28-month stretch and the scraper only
-    queried the old title.
+    An undocumented gap here is a discovery-level miss (Cninfo returned
+    nothing for that month), distinct from a within-PDF extraction miss --
+    China Eastern hit this when it renamed its bulletin title for a
+    28-month stretch and the scraper only queried the old title.
     """
     months = sorted(traffic.loc[traffic["airline_code"] == code, "month"].unique())
     assert months, f"no data at all for {CARRIERS[code]}"
     expected = pd.period_range(months[0], months[-1], freq="M").astype(str)
     missing = sorted(set(expected) - set(months))
-    assert not missing, f"{CARRIERS[code]} is missing whole months: {missing}"
+    known = set(KNOWN_UNRECOVERABLE_MONTHS.get(code, {}))
+    unexpected = sorted(set(missing) - known)
+    assert not unexpected, f"{CARRIERS[code]} is missing whole months: {unexpected}"
+    assert known <= set(missing), (
+        f"{CARRIERS[code]}: KNOWN_UNRECOVERABLE_MONTHS lists a month that isn't "
+        "actually missing -- remove the stale entry"
+    )
