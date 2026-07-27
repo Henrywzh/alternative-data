@@ -8,11 +8,6 @@ IMPORTANT REGULATORY DISTINCTION:
     Victory Securities — these do NOT appear on the VATP list; it's a different,
     lesser regulatory status. Do not conflate them.
 
-Other notable statuses:
-  - Bybit (via Spark Fintech Limited) and Crypto.com (via Foris DAX HK Limited): still pending.
-  - OKX Hong Kong FinTech Company Limited: formally withdrew May 2024.
-  - Huobi HK: formally withdrew.
-
 Access: The SFC page returns HTTP 403 to bare urllib / pandas.read_html() without
 a User-Agent header. We fetch with requests first, then pass the HTML to read_html.
 """
@@ -33,6 +28,18 @@ logger = logging.getLogger(__name__)
 
 STATUS_TABLE_ORDER = ["licensed", "pending", "withdrawn", "forced_closure"]
 SCHEMA_COLUMNS = ["platform_name", "status", "licensed_date", "fetched_at"]
+
+# Junk/header artifact strings in HTML tables
+INVALID_PLATFORM_NAMES = {
+    "nan",
+    "english",
+    "chinese",
+    "- -",
+    "-",
+    "",
+    "company_name_of_virtual_asset_trading_platform_operator",
+    "ce_reference",
+}
 
 
 def fetch_vatp_register() -> pd.DataFrame:
@@ -77,7 +84,7 @@ def fetch_vatp_register() -> pd.DataFrame:
 
         # Find the platform name column (longest name-like column)
         platform_col = next(
-            (c for c in df.columns if any(kw in c for kw in ["platform", "operator", "name", "company"])),
+            (c for c in df.columns if any(kw in c for kw in ["platform", "operator", "company"])),
             df.columns[0] if len(df.columns) > 0 else None,
         )
         if platform_col is None:
@@ -95,15 +102,23 @@ def fetch_vatp_register() -> pd.DataFrame:
         df["status"] = status
         df["fetched_at"] = now_str
 
+        # Clean platform_name string and filter out header/placeholder artifacts
+        names_str = df["platform_name"].astype(str).str.strip()
+        names_lower = names_str.str.lower()
+
+        valid_mask = (
+            ~names_lower.isin(INVALID_PLATFORM_NAMES)
+            & ~names_lower.str.startswith("company name")
+            & ~names_lower.str.startswith("ce reference")
+        )
+        df = df[valid_mask].copy()
+
         for col in SCHEMA_COLUMNS:
             if col not in df.columns:
                 df[col] = None
 
-        # Drop rows where platform_name is NaN (artifact rows from merged headers)
-        df = df.dropna(subset=["platform_name"])
-        df = df[df["platform_name"].astype(str).str.strip() != ""]
-
-        dfs.append(df[SCHEMA_COLUMNS])
+        if not df.empty:
+            dfs.append(df[SCHEMA_COLUMNS])
 
     if not dfs:
         return pd.DataFrame(columns=SCHEMA_COLUMNS)
