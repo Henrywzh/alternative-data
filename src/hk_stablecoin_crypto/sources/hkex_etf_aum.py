@@ -38,22 +38,22 @@ def fetch_etf_aum(fund_id: str, pages: int = 24) -> pd.DataFrame:
     data = resp.json()
     
     rows = []
-    records = data.get("data", {}).get("list", []) if isinstance(data.get("data"), dict) else data.get("data", [])
+    records = data.get("data", []) if isinstance(data.get("data"), list) else (data.get("data", {}).get("list", []) if isinstance(data.get("data"), dict) else [])
     if not records and isinstance(data, list):
         records = data
         
     for rec in records:
-        date_val = rec.get("date") or rec.get("dateStr") or rec.get("month")
-        aum_val = rec.get("fundSize") or rec.get("aum") or rec.get("totalAum")
+        date_val = rec.get("fundSizeDate") or rec.get("fundSizeMonth") or rec.get("reportDate") or rec.get("date")
+        aum_val = rec.get("fundSize") or rec.get("fundSizeUsd") or rec.get("aum")
         if isinstance(aum_val, str):
             try:
-                aum_val = float(aum_val.replace(',', ''))
+                aum_val = float(aum_val.replace(",", ""))
             except ValueError:
                 pass
                 
         rows.append({
             "month": str(date_val)[:7] if date_val else None,
-            "aum_usd": aum_val,
+            "aum_usd": aum_val,  # Value is directly in Millions USD ($M USD)
             "fund_id": fund_id,
             "fetched_at": now_str,
         })

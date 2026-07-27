@@ -70,29 +70,27 @@
       "nameZh": "香港房地产信托（REITs）",
       "builder": "scripts/build_hk_reit_artifact.py",
       "statusFile": "dashboard-status-hk-reit.json"
-    }
-  ],
-  "planned": [
-    {
-      "code": "06",
-      "nameEn": "Stablecoin & Crypto",
-      "nameZh": "稳定币与加密资产",
-      "stateEn": "Research ready",
-      "stateZh": "研究就绪",
-      "detailEn": "Source map and company coverage complete; dashboard not yet published.",
-      "detailZh": "来源图谱及公司覆盖已完成；dashboard 尚未发布。",
-      "evidence": "docs/asia-markets/asia-markets-hk-stablecoin-crypto.md"
     },
     {
       "code": "07",
-      "nameEn": "Commercial Aerospace",
-      "nameZh": "商业航天",
-      "stateEn": "Research ready",
-      "stateZh": "研究就绪",
-      "detailEn": "Company and signal framework complete; dashboard not yet published.",
-      "detailZh": "公司及信号框架已完成；dashboard 尚未发布。",
-      "evidence": "docs/asia-markets/asia-markets-hk-commercial-aerospace.md"
+      "id": "hk-commercial-aerospace",
+      "package": "hk_commercial_aerospace",
+      "nameEn": "Hong Kong Commercial Aerospace",
+      "nameZh": "香港商业航天",
+      "builder": "scripts/build_hk_commercial_aerospace_artifact.py",
+      "statusFile": "dashboard-status-hk-commercial-aerospace.json"
     },
+    {
+      "code": "06",
+      "id": "hk-stablecoin-crypto",
+      "package": "hk_stablecoin_crypto",
+      "nameEn": "Hong Kong Stablecoin & Crypto",
+      "nameZh": "香港稳定币与加密资产",
+      "builder": "scripts/build_hk_stablecoin_crypto_artifact.py",
+      "statusFile": "dashboard-status-hk-stablecoin-crypto.json"
+    }
+  ],
+  "planned": [
     {
       "code": "08",
       "nameEn": "Consumer Trends",

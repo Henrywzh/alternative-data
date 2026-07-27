@@ -946,6 +946,97 @@ async function deliverPortable({ deliveryScript, artifactFile, portableFile, loc
   throw new Error(`Portable dashboard delivery failed (${locale}) after ${maxAttempts} attempt(s).`);
 }
 
+const HK_COMMERCIAL_AEROSPACE_ZH = {
+  title: "香港商业航天监测",
+  description: "上交所科创板 IPO 审核状态、Launch Library 2 发射频次、Celestrak 低轨卫星星座数量及商业航天企业专利申请统计。",
+  cards: {
+    ipo_race_card: { description: "头部商业火箭企业上交所科创板 IPO 审核状态。", metricLabels: ["蓝箭航天状态", "蓝箭审核号", "中科宇航状态", "中科宇航审核号"] },
+    constellations_card: { description: "Celestrak 低轨卫星星座在轨卫星追踪数量。", metricLabels: ["千帆星座 (在轨数)", "吉林一号 (在轨数)", "商业发射总次数"] },
+  },
+  charts: {
+    satellite_count_chart: ["中国商业卫星星座在轨数量", "Celestrak 追踪的千帆 (G60) 及吉林一号星座在轨活跃卫星数。", "星座", "卫星数"],
+    patent_count_chart: ["商业火箭企业专利申请估算", "各火箭制造企业专利申请数量估算。", "企业", "专利数"],
+    launch_cadence_chart: ["各商业航天企业发射次数统计", "Launch Library 2 追踪的历史商业发射次数。", "发射企业", "发射次数"],
+  },
+  tables: {
+    ipo_race_table: {
+      title: "上交所科创板商业航天 IPO 审核进展",
+      subtitle: "头部商业火箭企业审核状态、审核编号及更新日期。",
+      columns: { company_en: "英文名称", company_zh: "中文名称", status: "审核状态", audit_num: "审核编号", update_date: "更新日期", exchange: "交易所" },
+    },
+    aerospace_watchlist_table: {
+      title: "香港上市商业航天及国防观察名单",
+      subtitle: "香港上市航天、卫星及国防供应链公司股票观察名单。",
+      columns: { ticker: "股票代码", company_name: "公司名称", category: "类别", notes: "备注" },
+    },
+    policy_milestones_table: {
+      title: "中国商业航天政策推进里程碑",
+      subtitle: "中央经济工作会议及政府工作报告政策定位。",
+      columns: { date: "日期", event: "政策里程碑" },
+    },
+  },
+  sources: {
+    sse_star_market_ipo: "上交所科创板 IPO 审核状态",
+    launch_library_2: "Launch Library 2 商业发射数据库",
+    celestrak: "Celestrak NORAD 卫星轨道数据",
+    google_patents: "Google Patents 专利搜索",
+  },
+  snapshotBody: (artifact) =>
+    `**数据快照：** \`${artifact.package_info.snapshotId}\` · 生成于 ${artifact.manifest.generatedAt}。`,
+  methodologyBody:
+    "## 如何阅读本 dashboard\n\n中国商业航天板块受两大核心催化剂驱动：上交所科创板 IPO 审核进展（蓝箭航天 #2174、中科宇航 #2180）与低轨卫星星座组网（千帆 G60、吉林一号）。国网 (SatNet) Celestrak 标识未定，列为已知数据缝隙。本 dashboard 不提供股票排名、预测或投资建议。",
+};
+
+const HK_STABLECOIN_CRYPTO_ZH = {
+  title: "香港稳定币与加密资产基础设施监测",
+  description: "金管局持牌稳定币发行人沙盒名单、证监会持牌 VATP 虚拟资产交易平台、港交所加密 ETF 规模、稳定币市值及市场领先指标。",
+  cards: {
+    regulatory_licensing_card: { description: "金管局稳定币沙盒持牌发行人及证监会持牌交易平台。", metricLabels: ["金管局稳定币发行人", "SFC 持牌 VATP", "SFC 申请中 VATP"] },
+    crypto_signals_card: { description: "比特币现货价格、Coinbase 溢价价差及市场情绪指数。", metricLabels: ["比特币价格 (美元)", "Coinbase 溢价 (bps)", "恐慌与贪婪指数"] },
+    etf_aum_card: { description: "港交所加密现货 ETF 资产规模及全球稳定币总市值。", metricLabels: ["港交所 ETF AUM (百万美元)", "全球稳定币市值 (十亿美元)"] },
+  },
+  charts: {
+    etf_aum_history_chart: ["港交所加密现货 ETF 月度 AUM (百万美元)", "香港上市比特币及以太币现货 ETF 基金规模历史。", "月份", "AUM (百万美元)", "代码"],
+    stablecoin_supply_chart: ["全球前十大稳定币流通供应量 (十亿美元)", "DefiLlama 按锚定市值统计的流通供应量。", "稳定币", "供应量 (十亿美元)"],
+    polymarket_catalysts_chart: ["全球加密监管催化剂预测概率 (%)", "预测市场对关键监管里程碑的实时概率预测。", "催化事件", "概率 (%)"],
+  },
+  tables: {
+    hkma_issuers_table: {
+      title: "香港金管局持牌稳定币沙盒发行人",
+      subtitle: "金管局稳定币发行人沙盒官方登记册。",
+      columns: { issuer: "发行人名称", licence_number: "牌照编号", effective_date: "生效日期", status: "监管状态" },
+    },
+    sfc_vatp_table: {
+      title: "香港证监会虚拟资产交易平台 (VATP) 登记册",
+      subtitle: "涵盖持牌、申请中及已撤回的交易所平台。",
+      columns: { platform_name: "平台 / 运营商名称", status: "状态", licensed_date: "牌照 / 申请日期" },
+    },
+    hkex_etf_table: {
+      title: "港交所加密现货 ETF 基金规模摘要",
+      subtitle: "各基金最新月度 AUM（嘉实以太币 3179.HK 待查找 fundId）。",
+      columns: { ticker: "股票代码", name: "ETF 名称", fund_id: "港交所 Fund ID", latest_month: "最新月份", aum_usd_m: "AUM (百万美元)" },
+    },
+    crypto_watchlist_table: {
+      title: "香港上市加密与稳定币观察名单 (Tiers 1–4)",
+      subtitle: "Tier 1 持牌基础设施、Tier 2 大型机构、Tier 3 概念转型、Tier 4 储备配置。",
+      columns: { tier: "分层", ticker: "股票代码", company_en: "英文名称", company_zh: "中文名称", regulatory_note: "监管状态 / 备注" },
+    },
+  },
+  sources: {
+    hkma_register: "香港金管局持牌稳定币发行人登记册",
+    sfc_vatp: "香港证监会虚拟资产交易平台登记册",
+    defillama: "DefiLlama 稳定币 API",
+    hkex_etf: "港交所综合基金平台 ETF AUM API",
+    coinbase_binance: "Coinbase & Binance 公开行情",
+    fear_greed: "加密货币恐慌与贪婪指数",
+    polymarket: "Polymarket Gamma 预测市场 API",
+  },
+  snapshotBody: (artifact) =>
+    `**数据快照：** \`${artifact.package_info.snapshotId}\` · 生成于 ${artifact.manifest.generatedAt}。`,
+  methodologyBody:
+    "## 如何阅读本 dashboard\n\n香港加密生态由官方监管登记册锚定：金管局稳定币发行人沙盒（Anchorpoint FRS01、汇丰 FRS02）及证监会持牌 VATP 交易平台（OSL、HashKey）。券商（如国泰君安国际 01788.HK）仅具备虚拟资产交易服务许可，非 VATP 交易所运营商；Anchorpoint（Anchorpoint Financial，港元锚定 HKDAP）与 AnchorX（金涌投资 01328.HK，AxCNH）为不同主体。本 dashboard 跟踪监管登记册、港交所 ETF AUM 及 Coinbase 溢价信号。本界面不提供投资建议。",
+};
+
 // Identity and status-file wiring come from ../sectors.json; only the
 // localization dictionaries are packaging-specific and stay here. A sector in
 // the roster without an entry below is a hard error rather than a silently
@@ -957,6 +1048,8 @@ const ZH_DICTIONARIES = {
   "hk-transport": HK_TRANSPORT_ZH,
   "hk-telecom": HK_TELECOM_ZH,
   "hk-reit": HK_REIT_ZH,
+  "hk-commercial-aerospace": HK_COMMERCIAL_AEROSPACE_ZH,
+  "hk-stablecoin-crypto": HK_STABLECOIN_CRYPTO_ZH,
 };
 
 const SECTORS = LIVE_SECTORS.map((sector) => {

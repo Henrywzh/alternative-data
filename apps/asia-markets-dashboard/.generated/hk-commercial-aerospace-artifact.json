@@ -1,0 +1,643 @@
+{
+  "surface": "dashboard",
+  "manifest": {
+    "version": 1,
+    "surface": "dashboard",
+    "title": "Hong Kong Commercial Aerospace Sector Monitor",
+    "description": "SSE STAR Market IPO filing status, Launch Library 2 launch cadence, Celestrak satellite counts, and patent filing counts for Chinese commercial space companies.",
+    "sector": "hk-commercial-aerospace",
+    "generatedAt": "2026-07-27T22:51:14.610344Z",
+    "dataAsOf": "2026-07-27",
+    "liveSourcesCount": 3,
+    "totalSourcesCount": 4,
+    "cards": [
+      {
+        "id": "ipo_race_card",
+        "description": "SSE STAR Market IPO filing status for top commercial rocket makers.",
+        "dataset": "kpi_summary",
+        "sourceId": "sse_star_market_ipo",
+        "metrics": [
+          {
+            "label": "LandSpace Status",
+            "field": "landspace_status",
+            "format": "text"
+          },
+          {
+            "label": "LandSpace Audit #",
+            "field": "landspace_audit",
+            "format": "text"
+          },
+          {
+            "label": "CAS Space Status",
+            "field": "cas_space_status",
+            "format": "text"
+          },
+          {
+            "label": "CAS Space Audit #",
+            "field": "cas_space_audit",
+            "format": "text"
+          }
+        ]
+      },
+      {
+        "id": "constellations_card",
+        "description": "LEO satellite constellation counts from Celestrak tracking data.",
+        "dataset": "kpi_summary",
+        "sourceId": "celestrak",
+        "metrics": [
+          {
+            "label": "Qianfan Constellation (Count)",
+            "field": "qianfan_count",
+            "format": "number"
+          },
+          {
+            "label": "Jilin-1 Constellation (Count)",
+            "field": "jilin1_count",
+            "format": "number"
+          },
+          {
+            "label": "Total Commercial Launches",
+            "field": "total_launches",
+            "format": "number"
+          }
+        ]
+      }
+    ],
+    "charts": [
+      {
+        "id": "satellite_count_chart",
+        "title": "Chinese Commercial Satellite Constellations",
+        "subtitle": "Tracked active satellites for Qianfan (G60) and Jilin-1 constellations via Celestrak.",
+        "type": "bar",
+        "dataset": "satellite_counts",
+        "sourceId": "celestrak",
+        "encodings": {
+          "x": {
+            "field": "constellation",
+            "type": "nominal",
+            "label": "Constellation"
+          },
+          "y": {
+            "field": "count",
+            "type": "quantitative",
+            "label": "Satellites"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "half"
+      },
+      {
+        "id": "patent_count_chart",
+        "title": "Patent Filings by Commercial Launch Provider",
+        "subtitle": "Estimated patent filings across rocket manufacturers.",
+        "type": "bar",
+        "dataset": "patent_counts",
+        "sourceId": "google_patents",
+        "encodings": {
+          "x": {
+            "field": "assignee",
+            "type": "nominal",
+            "label": "Company"
+          },
+          "y": {
+            "field": "estimated_count",
+            "type": "quantitative",
+            "label": "Patents"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "half"
+      },
+      {
+        "id": "launch_cadence_chart",
+        "title": "Commercial Launch Count by Provider",
+        "subtitle": "Historical commercial launches tracked per rocket agency.",
+        "type": "bar",
+        "dataset": "launch_cadence_summary",
+        "sourceId": "launch_library_2",
+        "encodings": {
+          "x": {
+            "field": "provider",
+            "type": "nominal",
+            "label": "Provider"
+          },
+          "y": {
+            "field": "launch_count",
+            "type": "quantitative",
+            "label": "Launches"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "full"
+      }
+    ],
+    "tables": [
+      {
+        "id": "ipo_race_table",
+        "title": "SSE STAR Market Commercial Space IPO Race",
+        "subtitle": "Review status, audit numbers, and filing updates for top commercial rocket makers.",
+        "dataset": "ipo_race",
+        "sourceId": "sse_star_market_ipo",
+        "density": "dense",
+        "layout": "full",
+        "columns": [
+          {
+            "field": "company_en",
+            "label": "Company (EN)",
+            "type": "text"
+          },
+          {
+            "field": "company_zh",
+            "label": "Company (ZH)",
+            "type": "text"
+          },
+          {
+            "field": "status",
+            "label": "Status",
+            "type": "text"
+          },
+          {
+            "field": "audit_num",
+            "label": "Audit #",
+            "format": "text"
+          },
+          {
+            "field": "update_date",
+            "label": "Update Date",
+            "type": "text"
+          },
+          {
+            "field": "exchange",
+            "label": "Exchange",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "id": "aerospace_watchlist_table",
+        "title": "HK-Listed Commercial Aerospace & Defense Watchlist",
+        "subtitle": "Stock watchlist of Hong Kong listed aerospace, satellite, and defense supply-chain companies.",
+        "dataset": "aerospace_watchlist",
+        "sourceId": "sse_star_market_ipo",
+        "density": "dense",
+        "layout": "full",
+        "columns": [
+          {
+            "field": "ticker",
+            "label": "Ticker",
+            "type": "text"
+          },
+          {
+            "field": "company_name",
+            "label": "Company Name",
+            "type": "text"
+          },
+          {
+            "field": "category",
+            "label": "Category",
+            "type": "text"
+          },
+          {
+            "field": "notes",
+            "label": "Notes",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "id": "policy_milestones_table",
+        "title": "China Commercial Space Policy Progression",
+        "subtitle": "Central Government Work Report designations and CNSA action plans.",
+        "dataset": "policy_milestones",
+        "sourceId": "sse_star_market_ipo",
+        "density": "dense",
+        "layout": "full",
+        "columns": [
+          {
+            "field": "date",
+            "label": "Date",
+            "type": "text"
+          },
+          {
+            "field": "event",
+            "label": "Policy Milestone",
+            "type": "text"
+          }
+        ]
+      }
+    ],
+    "sources": [
+      {
+        "id": "sse_star_market_ipo",
+        "label": "SSE STAR Market IPO Filing Status (JSONP)",
+        "href": "https://www.sse.com.cn/",
+        "path": "sources/sse_star_market_ipo.sql",
+        "query": {
+          "engine": "SSE commonSoaQuery SH_XM_LB",
+          "url": "https://query.sse.com.cn/commonSoaQuery.do",
+          "language": "JSONP",
+          "sql": "SELECT company_en, company_zh, status, audit_num, update_date FROM sse_star_market_ipo;",
+          "description": "Filing status, numeric audit numbers (stockAuditNum), and update dates for Chinese commercial launch companies."
+        }
+      },
+      {
+        "id": "launch_library_2",
+        "label": "Launch Library 2 (The Space Devs)",
+        "href": "https://ll.thespacedevs.com/",
+        "path": "sources/launch_library_2.sql",
+        "query": {
+          "engine": "The Space Devs REST API v2.2.0",
+          "url": "https://ll.thespacedevs.com/2.2.0/launch/previous/",
+          "language": "REST",
+          "sql": "SELECT provider, launch_id, name, net_time, status_abbrev FROM launch_library_2;",
+          "description": "Launch history for Chinese commercial launch providers (LandSpace, CAS Space, Galactic Energy, Space Pioneer, etc.)."
+        }
+      },
+      {
+        "id": "celestrak",
+        "label": "Celestrak NORAD TLE / GP Orbit Data",
+        "href": "https://celestrak.org/",
+        "path": "sources/celestrak_satellites.sql",
+        "query": {
+          "engine": "Celestrak GP API",
+          "url": "https://celestrak.org/NORAD/elements/gp.php",
+          "language": "JSON",
+          "sql": "SELECT constellation, operator, satellite_count FROM celestrak_satellites;",
+          "description": "Active satellite counts for Qianfan (G60) and Jilin-1 constellations."
+        }
+      },
+      {
+        "id": "google_patents",
+        "label": "Google Patents Search",
+        "href": "https://patents.google.com/",
+        "path": "sources/google_patents.sql",
+        "query": {
+          "engine": "Google Patents XHR Query",
+          "url": "https://patents.google.com/xhr/query",
+          "language": "JSON",
+          "sql": "SELECT assignee, estimated_count FROM google_patents;",
+          "description": "Estimated patent filing counts for Chinese commercial space companies."
+        }
+      }
+    ],
+    "blocks": [
+      {
+        "id": "snapshot_context",
+        "type": "markdown",
+        "body": "**Data snapshot:** `9f649b6993e5fdc7` \u00b7 generated 2026-07-27T22:51:14.610344Z.  Official disclosures and public tracking data."
+      },
+      {
+        "id": "kpi_grid",
+        "type": "metric-strip",
+        "cardIds": [
+          "ipo_race_card",
+          "constellations_card"
+        ]
+      },
+      {
+        "id": "ipo_table_block",
+        "type": "table",
+        "tableId": "ipo_race_table"
+      },
+      {
+        "id": "satellite_chart_block",
+        "type": "chart",
+        "chartId": "satellite_count_chart",
+        "layout": "half"
+      },
+      {
+        "id": "patent_chart_block",
+        "type": "chart",
+        "chartId": "patent_count_chart",
+        "layout": "half"
+      },
+      {
+        "id": "launch_chart_block",
+        "type": "chart",
+        "chartId": "launch_cadence_chart"
+      },
+      {
+        "id": "watchlist_table_block",
+        "type": "table",
+        "tableId": "aerospace_watchlist_table"
+      },
+      {
+        "id": "policy_table_block",
+        "type": "table",
+        "tableId": "policy_milestones_table"
+      },
+      {
+        "id": "methodology",
+        "type": "markdown",
+        "body": "## Reading the Commercial Aerospace Monitor\n\nChina's commercial aerospace sector is driven by twin catalysts: SSE STAR Market IPO filings (LandSpace #2174, CAS Space #2180) and satellite constellation deployment (Qianfan G60, Jilin-1). Guowang (SatNet) Celestrak identifiers remain unresolved and are tracked as a documented data gap. This monitor tracks regulatory filings, launch cadence, constellation counts, and HK-listed supply-chain tickers. No stock recommendation is produced."
+      }
+    ]
+  },
+  "snapshot": {
+    "version": 1,
+    "generatedAt": "2026-07-27T22:51:14.610344Z",
+    "status": "ready",
+    "datasets": {
+      "ipo_race": [
+        {
+          "company_en": "LandSpace",
+          "company_zh": "\u84dd\u7bad\u822a\u5929",
+          "status": "\u5df2\u95ee\u8be2",
+          "audit_num": 2174.0,
+          "update_date": "2026-06-29",
+          "exchange": "SSE STAR Market"
+        },
+        {
+          "company_en": "CAS Space",
+          "company_zh": "\u4e2d\u79d1\u5b87\u822a",
+          "status": "\u5df2\u95ee\u8be2",
+          "audit_num": 2180.0,
+          "update_date": "2026-06-29",
+          "exchange": "SSE STAR Market"
+        },
+        {
+          "company_en": "Galactic Energy",
+          "company_zh": "\u661f\u6cb3\u52a8\u529b",
+          "status": "no_shanghai_filing",
+          "audit_num": null,
+          "update_date": null,
+          "exchange": "N/A"
+        },
+        {
+          "company_en": "Space Pioneer",
+          "company_zh": "\u5929\u5175\u79d1\u6280",
+          "status": "no_shanghai_filing",
+          "audit_num": null,
+          "update_date": null,
+          "exchange": "N/A"
+        },
+        {
+          "company_en": "i-Space",
+          "company_zh": "\u661f\u9645\u8363\u8000",
+          "status": "no_shanghai_filing",
+          "audit_num": null,
+          "update_date": null,
+          "exchange": "N/A"
+        }
+      ],
+      "launch_cadence": [],
+      "launch_cadence_summary": [
+        {
+          "provider": "LandSpace",
+          "launch_count": 0
+        },
+        {
+          "provider": "Galactic Energy",
+          "launch_count": 0
+        },
+        {
+          "provider": "CAS Space",
+          "launch_count": 0
+        },
+        {
+          "provider": "Orienspace",
+          "launch_count": 0
+        },
+        {
+          "provider": "Deep Blue Aerospace",
+          "launch_count": 0
+        },
+        {
+          "provider": "i-Space",
+          "launch_count": 0
+        },
+        {
+          "provider": "Space Pioneer",
+          "launch_count": 0
+        }
+      ],
+      "satellite_counts": [
+        {
+          "constellation": "Qianfan",
+          "operator": "Shanghai Spacecom Satellite Technology",
+          "count": 238,
+          "as_of": "2026-07-27"
+        },
+        {
+          "constellation": "Jilin1",
+          "operator": "Chang Guang Satellite Technology",
+          "count": 50,
+          "as_of": "2026-07-27"
+        },
+        {
+          "constellation": "Guowang",
+          "operator": "China Satellite Network Group",
+          "count": null,
+          "as_of": "2026-07-27"
+        }
+      ],
+      "patent_counts": [
+        {
+          "assignee": "LandSpace \u84dd\u7bad\u822a\u5929",
+          "estimated_count": 185
+        },
+        {
+          "assignee": "CAS Space \u4e2d\u79d1\u5b87\u822a",
+          "estimated_count": 140
+        },
+        {
+          "assignee": "Galactic Energy \u661f\u6cb3\u52a8\u529b",
+          "estimated_count": 110
+        },
+        {
+          "assignee": "Space Pioneer \u5929\u5175\u79d1\u6280",
+          "estimated_count": 95
+        },
+        {
+          "assignee": "i-Space \u661f\u9645\u8363\u8000",
+          "estimated_count": 85
+        }
+      ],
+      "aerospace_watchlist": [
+        {
+          "ticker": "00031.HK",
+          "company_name": "China Aerospace International Holdings (\u822a\u5929\u63a7\u80a1)",
+          "category": "Core Aerospace",
+          "notes": "Core Aerospace / Defense"
+        },
+        {
+          "ticker": "00232.HK",
+          "company_name": "Continental Aerospace Technologies (\u5927\u9646\u822a\u7a7a\u79d1\u6280\u63a7\u80a1)",
+          "category": "Core Aerospace",
+          "notes": "Core Aerospace / Defense"
+        },
+        {
+          "ticker": "01045.HK",
+          "company_name": "APT Satellite (\u4e9a\u592a\u536b\u661f)",
+          "category": "Core Aerospace",
+          "notes": "Core Aerospace / Defense"
+        },
+        {
+          "ticker": "02357.HK",
+          "company_name": "AVIC Aviation Industry (\u4e2d\u822a\u79d1\u5de5)",
+          "category": "Core Aerospace",
+          "notes": "Core Aerospace / Defense"
+        },
+        {
+          "ticker": "02507.HK",
+          "company_name": "Cirrus Aircraft (\u897f\u9510)",
+          "category": "Core Aerospace",
+          "notes": "Core Aerospace / Defense"
+        },
+        {
+          "ticker": "06613.HK",
+          "company_name": "Lens Technology (\u84dd\u601d\u79d1\u6280)",
+          "category": "Core Aerospace",
+          "notes": "Core Aerospace / Defense"
+        },
+        {
+          "ticker": "02208.HK",
+          "company_name": "Goldwind (\u91d1\u98ce\u79d1\u6280)",
+          "category": "Adjacent / Non-Core",
+          "notes": "sector tag says environmental engineering, not aerospace \u2014 verify before treating as core"
+        },
+        {
+          "ticker": "07688.HK",
+          "company_name": "Topu CNC (\u62d3\u749e\u6570\u63a7)",
+          "category": "Core Aerospace",
+          "notes": "Core Aerospace / Defense"
+        },
+        {
+          "ticker": "02865.HK",
+          "company_name": "Junda Co. (\u94a7\u8fbe\u80a1\u4efd)",
+          "category": "Adjacent / Non-Core",
+          "notes": "sector tag says new energy materials, not aerospace \u2014 verify before treating as core"
+        }
+      ],
+      "policy_milestones": [
+        {
+          "date": "2023-12",
+          "event": "Central Economic Work Conference designates commercial space a strategic emerging industry"
+        },
+        {
+          "date": "2024-03",
+          "event": "2024 Government Work Report names commercial space a 'new engine of economic growth' (first appearance)"
+        },
+        {
+          "date": "2025-03",
+          "event": "2025 Government Work Report continues commercial space mention (two-year progression)"
+        },
+        {
+          "date": "2025-01",
+          "event": "CNSA publishes Action Plan for Promoting High-Quality and Safe Development of Commercial Space (2025\u20132027)"
+        }
+      ],
+      "kpi_summary": [
+        {
+          "landspace_status": "\u5df2\u95ee\u8be2",
+          "landspace_audit": 2174.0,
+          "cas_space_status": "\u5df2\u95ee\u8be2",
+          "cas_space_audit": 2180.0,
+          "qianfan_count": 238,
+          "jilin1_count": 50,
+          "total_launches": 0
+        }
+      ]
+    }
+  },
+  "sources": [
+    {
+      "id": "sse_star_market_ipo",
+      "label": "SSE STAR Market IPO Filing Status (JSONP)",
+      "href": "https://www.sse.com.cn/",
+      "path": "sources/sse_star_market_ipo.sql",
+      "query": {
+        "engine": "SSE commonSoaQuery SH_XM_LB",
+        "url": "https://query.sse.com.cn/commonSoaQuery.do",
+        "language": "JSONP",
+        "sql": "SELECT company_en, company_zh, status, audit_num, update_date FROM sse_star_market_ipo;",
+        "description": "Filing status, numeric audit numbers (stockAuditNum), and update dates for Chinese commercial launch companies."
+      }
+    },
+    {
+      "id": "launch_library_2",
+      "label": "Launch Library 2 (The Space Devs)",
+      "href": "https://ll.thespacedevs.com/",
+      "path": "sources/launch_library_2.sql",
+      "query": {
+        "engine": "The Space Devs REST API v2.2.0",
+        "url": "https://ll.thespacedevs.com/2.2.0/launch/previous/",
+        "language": "REST",
+        "sql": "SELECT provider, launch_id, name, net_time, status_abbrev FROM launch_library_2;",
+        "description": "Launch history for Chinese commercial launch providers (LandSpace, CAS Space, Galactic Energy, Space Pioneer, etc.)."
+      }
+    },
+    {
+      "id": "celestrak",
+      "label": "Celestrak NORAD TLE / GP Orbit Data",
+      "href": "https://celestrak.org/",
+      "path": "sources/celestrak_satellites.sql",
+      "query": {
+        "engine": "Celestrak GP API",
+        "url": "https://celestrak.org/NORAD/elements/gp.php",
+        "language": "JSON",
+        "sql": "SELECT constellation, operator, satellite_count FROM celestrak_satellites;",
+        "description": "Active satellite counts for Qianfan (G60) and Jilin-1 constellations."
+      }
+    },
+    {
+      "id": "google_patents",
+      "label": "Google Patents Search",
+      "href": "https://patents.google.com/",
+      "path": "sources/google_patents.sql",
+      "query": {
+        "engine": "Google Patents XHR Query",
+        "url": "https://patents.google.com/xhr/query",
+        "language": "JSON",
+        "sql": "SELECT assignee, estimated_count FROM google_patents;",
+        "description": "Estimated patent filing counts for Chinese commercial space companies."
+      }
+    }
+  ],
+  "source_health": [
+    {
+      "source_id": "sse_star_market_ipo",
+      "label": "SSE STAR Market IPO Filing Status (JSONP)",
+      "status": "success",
+      "records": 10,
+      "latest_observation": "2026-07-27",
+      "freshness": "live",
+      "notes": "Filing status, numeric audit numbers (stockAuditNum), and update dates for Chinese commercial launch companies."
+    },
+    {
+      "source_id": "launch_library_2",
+      "label": "Launch Library 2 (The Space Devs)",
+      "status": "success",
+      "records": 10,
+      "latest_observation": "2026-07-27",
+      "freshness": "live",
+      "notes": "Launch history for Chinese commercial launch providers (LandSpace, CAS Space, Galactic Energy, Space Pioneer, etc.)."
+    },
+    {
+      "source_id": "celestrak",
+      "label": "Celestrak NORAD TLE / GP Orbit Data",
+      "status": "success",
+      "records": 10,
+      "latest_observation": "2026-07-27",
+      "freshness": "live",
+      "notes": "Active satellite counts for Qianfan (G60) and Jilin-1 constellations."
+    },
+    {
+      "source_id": "google_patents",
+      "label": "Google Patents Search",
+      "status": "success",
+      "records": 10,
+      "latest_observation": "2026-07-27",
+      "freshness": "live",
+      "notes": "Estimated patent filing counts for Chinese commercial space companies."
+    }
+  ],
+  "package_info": {
+    "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-commercial-aerospace/",
+    "sector_id": "hk-commercial-aerospace",
+    "sector_name": "Hong Kong Commercial Aerospace Sector Monitor",
+    "snapshotId": "9f649b6993e5fdc7",
+    "generatedAt": "2026-07-27T22:51:14.610344Z",
+    "dataAsOf": "2026-07-27"
+  }
+}
