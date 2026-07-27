@@ -6,9 +6,9 @@
     "title": "香港商业航天监测",
     "description": "上交所科创板 IPO 审核状态、Launch Library 2 发射频次、Celestrak 低轨卫星星座数量及商业航天企业专利申请统计。",
     "sector": "hk-commercial-aerospace",
-    "generatedAt": "2026-07-27T23:17:54.014926Z",
+    "generatedAt": "2026-07-27T23:21:40.552206Z",
     "dataAsOf": "2026-07-27",
-    "liveSourcesCount": 2,
+    "liveSourcesCount": 3,
     "totalSourcesCount": 4,
     "cards": [
       {
@@ -325,7 +325,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**数据快照：** `b0f0bf069d2c794d` · 生成于 2026-07-27T23:17:54.014926Z。"
+        "body": "**数据快照：** `b6f4e55d419f361a` · 生成于 2026-07-27T23:21:40.552206Z。"
       },
       {
         "id": "kpi_grid",
@@ -339,6 +339,11 @@
         "id": "ipo_table_block",
         "type": "table",
         "tableId": "ipo_race_table"
+      },
+      {
+        "id": "upcoming_table_block",
+        "type": "table",
+        "tableId": "upcoming_launches_table"
       },
       {
         "id": "satellite_chart_block",
@@ -370,7 +375,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-27T23:17:54.014926Z",
+    "generatedAt": "2026-07-27T23:21:40.552206Z",
     "status": "ready",
     "datasets": {
       "ipo_race": [
@@ -415,12 +420,168 @@
           "exchange": "N/A"
         }
       ],
-      "upcoming_launches": [],
-      "launch_cadence": [],
+      "upcoming_launches": [
+        {
+          "net_date": "2026-07-29",
+          "provider": "China Aerospace Science and Technology Corporation",
+          "mission": "Long March 7A | Unknown Payload",
+          "pad_name": "201",
+          "orbit": "N/A",
+          "status": "Go for Launch"
+        },
+        {
+          "net_date": "2026-07-30",
+          "provider": "China Aerospace Science and Technology Corporation",
+          "mission": "Long March 6A | Unknown Payload",
+          "pad_name": "Launch Complex 9A",
+          "orbit": "N/A",
+          "status": "Go for Launch"
+        },
+        {
+          "net_date": "2026-08-04",
+          "provider": "China Aerospace Science and Technology Corporation",
+          "mission": "Long March 8A | Unknown Payload",
+          "pad_name": "Commercial LC-1",
+          "orbit": "N/A",
+          "status": "Go for Launch"
+        },
+        {
+          "net_date": "2026-08-09",
+          "provider": "China Aerospace Science and Technology Corporation",
+          "mission": "Long March 7A | Unknown Payload",
+          "pad_name": "201",
+          "orbit": "N/A",
+          "status": "To Be Confirmed"
+        },
+        {
+          "net_date": "2026-08-17",
+          "provider": "China Aerospace Science and Technology Corporation",
+          "mission": "Long March 12 | Unknown Payload",
+          "pad_name": "Commercial LC-2",
+          "orbit": "N/A",
+          "status": "To Be Confirmed"
+        },
+        {
+          "net_date": "2026-08-24",
+          "provider": "China Aerospace Science and Technology Corporation",
+          "mission": "Long March 5 | Chang'e 7",
+          "pad_name": "101",
+          "orbit": "N/A",
+          "status": "To Be Confirmed"
+        },
+        {
+          "net_date": "2026-08-31",
+          "provider": "LandSpace",
+          "mission": "Zhuque-3 | Flight 2",
+          "pad_name": "Launch Area 96B",
+          "orbit": "N/A",
+          "status": "To Be Determined"
+        },
+        {
+          "net_date": "2026-12-31",
+          "provider": "China Aerospace Science and Technology Corporation",
+          "mission": "Long March 2F/G | Shenzhou 24",
+          "pad_name": "Launch Area 91 (SLS-1 / 921)",
+          "orbit": "N/A",
+          "status": "To Be Determined"
+        }
+      ],
+      "launch_cadence": [
+        {
+          "provider": "LandSpace",
+          "launch_id": "",
+          "name": "Zhuque-2E Block 2 | 2 x SatNet DTC test satellites",
+          "date": "2026-06-09",
+          "month": "2026-06",
+          "year": "2026",
+          "status": "Success"
+        },
+        {
+          "provider": "LandSpace",
+          "launch_id": "",
+          "name": "Zhuque-2E Block 2 | Mass Simulator",
+          "date": "2026-05-14",
+          "month": "2026-05",
+          "year": "2026",
+          "status": "Success"
+        },
+        {
+          "provider": "LandSpace",
+          "launch_id": "",
+          "name": "Zhuque-3 | Demo Flight",
+          "date": "2025-12-03",
+          "month": "2025-12",
+          "year": "2025",
+          "status": "Success"
+        },
+        {
+          "provider": "LandSpace",
+          "launch_id": "",
+          "name": "Zhuque-2E | 4 x SatNet test satellites",
+          "date": "2025-08-15",
+          "month": "2025-08",
+          "year": "2025",
+          "status": "Failure"
+        },
+        {
+          "provider": "LandSpace",
+          "launch_id": "",
+          "name": "Zhuque-2E | 6 satellites",
+          "date": "2025-05-17",
+          "month": "2025-05",
+          "year": "2025",
+          "status": "Success"
+        },
+        {
+          "provider": "LandSpace",
+          "launch_id": "",
+          "name": "Zhuque-2E | Guangchuan-01 & 02",
+          "date": "2024-11-27",
+          "month": "2024-11",
+          "year": "2024",
+          "status": "Success"
+        },
+        {
+          "provider": "LandSpace",
+          "launch_id": "",
+          "name": "Zhuque-2 | Flight 3",
+          "date": "2023-12-08",
+          "month": "2023-12",
+          "year": "2023",
+          "status": "Success"
+        },
+        {
+          "provider": "LandSpace",
+          "launch_id": "",
+          "name": "Zhuque-2 | Flight 2",
+          "date": "2023-07-12",
+          "month": "2023-07",
+          "year": "2023",
+          "status": "Success"
+        },
+        {
+          "provider": "LandSpace",
+          "launch_id": "",
+          "name": "Zhuque-2 | Maiden Flight",
+          "date": "2022-12-14",
+          "month": "2022-12",
+          "year": "2022",
+          "status": "Failure"
+        },
+        {
+          "provider": "LandSpace",
+          "launch_id": "",
+          "name": "Zhuque-1 | Weilai-1 (Future-1)",
+          "date": "2018-10-27",
+          "month": "2018-10",
+          "year": "2018",
+          "status": "Failure"
+        }
+      ],
       "launch_cadence_summary": [
         {
           "provider": "LandSpace",
-          "launch_count": 0
+          "launch_count": 10
         },
         {
           "provider": "Galactic Energy",
@@ -550,7 +711,7 @@
           "cas_space_audit": 2180,
           "qianfan_count": 0,
           "jilin1_count": 0,
-          "total_launches": 0
+          "total_launches": 10
         }
       ]
     }
@@ -622,10 +783,10 @@
     {
       "source_id": "launch_library_2",
       "label": "Launch Library 2 (The Space Devs)",
-      "status": "degraded",
-      "records": 0,
+      "status": "success",
+      "records": 18,
       "latest_observation": "2026-07-27",
-      "freshness": "unavailable",
+      "freshness": "live",
       "notes": "Launch history for Chinese commercial launch providers (LandSpace, CAS Space, Galactic Energy, Space Pioneer, etc.)."
     },
     {
@@ -651,8 +812,8 @@
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-commercial-aerospace/",
     "sector_id": "hk-commercial-aerospace",
     "sector_name": "Hong Kong Commercial Aerospace Sector Monitor",
-    "snapshotId": "b0f0bf069d2c794d",
-    "generatedAt": "2026-07-27T23:17:54.014926Z",
+    "snapshotId": "b6f4e55d419f361a",
+    "generatedAt": "2026-07-27T23:21:40.552206Z",
     "dataAsOf": "2026-07-27"
   }
 }

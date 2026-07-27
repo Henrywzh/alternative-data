@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-07-27T23:17:54.014926Z",
-  "snapshot_id": "b0f0bf069d2c794d",
+  "generated_at": "2026-07-27T23:21:40.552206Z",
+  "snapshot_id": "b6f4e55d419f361a",
   "data_as_of": "2026-07-27",
   "overall_status": "Healthy",
   "live_sources": 4,
@@ -20,10 +20,10 @@
       "source": "Launch Library 2 (The Space Devs)",
       "dataset": "launch_library_2",
       "type": "Measure",
-      "status": "Degraded",
+      "status": "Healthy",
       "latest_observation": "2026-07-27",
-      "records": 0,
-      "freshness": "Unavailable",
+      "records": 18,
+      "freshness": "Live",
       "notes": "Launch history for Chinese commercial launch providers (LandSpace, CAS Space, Galactic Energy, Space Pioneer, etc.)."
     },
     {
