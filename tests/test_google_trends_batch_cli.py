@@ -61,6 +61,18 @@ def test_batch_cli_refresh_enabled_dispatches_runner(monkeypatch, capsys) -> Non
     ]
 
 
+def test_batch_cli_refresh_enabled_passes_frequency_filter(monkeypatch, capsys) -> None:
+    monkeypatch.setattr(batch_cli, "GoogleTrendsWatchlistRunner", _FakeRunner)
+
+    exit_code = batch_cli.main(["refresh-enabled", "--frequency", "monthly"])
+
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert "keyword_pairs=2" in captured.out
+    assert _FakeRunner.last_instance is not None
+    assert _FakeRunner.last_instance.calls[0][1]["frequency"] == "monthly"
+
+
 def test_batch_cli_refresh_ticker_dispatches_runner(monkeypatch, capsys) -> None:
     monkeypatch.setattr(batch_cli, "GoogleTrendsWatchlistRunner", _FakeRunner)
 

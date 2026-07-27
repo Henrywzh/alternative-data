@@ -11,10 +11,19 @@ from .signal import combine
 from .storage import GoogleTrendsStorage
 
 
-def load_watchlist(path: str | Path, *, enabled_only: bool = True) -> list[dict[str, Any]]:
+def load_watchlist(
+    path: str | Path,
+    *,
+    enabled_only: bool = True,
+    frequency: str | None = None,
+) -> list[dict[str, Any]]:
     watchlist = json.loads(Path(path).read_text(encoding="utf-8"))
     if enabled_only:
-        return [item for item in watchlist if item.get("enabled")]
+        watchlist = [item for item in watchlist if item.get("enabled")]
+    if frequency is not None:
+        if frequency not in {"weekly", "monthly"}:
+            raise ValueError(f"Unsupported watchlist frequency: {frequency}")
+        watchlist = [item for item in watchlist if item.get("refresh_frequency", "weekly") == frequency]
     return watchlist
 
 
@@ -44,8 +53,9 @@ class GoogleTrendsWatchlistRunner:
         hl: str = "en-US",
         headless: bool = True,
         download_dir: str | Path | None = None,
+        frequency: str | None = None,
     ) -> dict[str, int]:
-        entries = load_watchlist(self.watchlist_path, enabled_only=True)
+        entries = load_watchlist(self.watchlist_path, enabled_only=True, frequency=frequency)
         return self._refresh_entries(
             entries,
             timeframe=timeframe,
@@ -60,8 +70,9 @@ class GoogleTrendsWatchlistRunner:
         *,
         timeframe: str = "today 5-y",
         stock_period: str = "5y",
+        frequency: str | None = None,
     ) -> dict[str, int]:
-        entries = load_watchlist(self.watchlist_path, enabled_only=True)
+        entries = load_watchlist(self.watchlist_path, enabled_only=True, frequency=frequency)
         return self._refresh_entries_with_fetcher(
             entries,
             timeframe=timeframe,
@@ -97,8 +108,9 @@ class GoogleTrendsWatchlistRunner:
         hl: str = "en-US",
         headless: bool = True,
         download_dir: str | Path | None = None,
+        frequency: str | None = None,
     ) -> dict[str, Any]:
-        entries = load_watchlist(self.watchlist_path, enabled_only=True)
+        entries = load_watchlist(self.watchlist_path, enabled_only=True, frequency=frequency)
         if not entries:
             raise ValueError("Watchlist has no enabled entries to validate")
 

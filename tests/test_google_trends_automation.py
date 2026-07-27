@@ -8,7 +8,9 @@ import pytest
 
 from google_trends_data.automation import GoogleTrendsWatchlistRunner, load_watchlist
 from google_trends_data.csv_importer import parse_interest_over_time_csv
+from google_trends_data.exporter import FallbackGoogleTrendsExporter
 from google_trends_data.exporter import GoogleTrendsCsvExporter
+from google_trends_data.exporter import SerpApiCsvExporter
 from google_trends_data.models import StockDataPoint, TrendsDataPoint
 
 
@@ -189,6 +191,23 @@ def test_load_watchlist_returns_enabled_entries_only(tmp_path: Path) -> None:
     enabled_only = load_watchlist(watchlist_path)
 
     assert [item["ticker"] for item in enabled_only] == ["TSLA"]
+
+
+def test_load_watchlist_filters_enabled_entries_by_refresh_frequency(tmp_path: Path) -> None:
+    watchlist_path = tmp_path / "watchlist.json"
+    watchlist_path.write_text(
+        json.dumps(
+            [
+                {"ticker": "WEEKLY", "enabled": True, "refresh_frequency": "weekly", "keywords": []},
+                {"ticker": "MONTHLY", "enabled": True, "refresh_frequency": "monthly", "keywords": []},
+                {"ticker": "DISABLED", "enabled": False, "refresh_frequency": "monthly", "keywords": []},
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    assert [item["ticker"] for item in load_watchlist(watchlist_path, frequency="weekly")] == ["WEEKLY"]
+    assert [item["ticker"] for item in load_watchlist(watchlist_path, frequency="monthly")] == ["MONTHLY"]
 
 
 def test_watchlist_runner_refresh_ticker_writes_expected_outputs(tmp_path: Path) -> None:
@@ -463,6 +482,84 @@ def test_csv_exporter_detects_timeseries_csv_shape() -> None:
     assert not exporter._download_contains_timeseries_header(
         FIXTURES / "google_trends_interest_over_time_title_only.csv"
     )
+
+
+def test_serpapi_exporter_writes_importer_compatible_csv(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    class _FakeResponse:
+        def raise_for_status(self) -> None:
+            return None
+
+        def json(self) -> dict:
+            return {
+                "search_metadata": {"status": "Success"},
+                "interest_over_time": {
+                    "timeline_data": [
+                        {
+                            "timestamp": "1704067200",
+                            "values": [{"query": "Pop Mart", "extracted_value": 42}],
+                        },
+                        {
+                            "timestamp": "1704672000",
+                            "partial_data": True,
+                            "values": [{"query": "Pop Mart", "extracted_value": 55}],
+                        },
+                    ]
+                },
+            }
+
+    calls: list[dict] = []
+
+    def fake_get(_url, *, params, timeout):
+        calls.append({"params": params, "timeout": timeout})
+        return _FakeResponse()
+
+    monkeypatch.setattr("google_trends_data.exporter.requests.get", fake_get)
+    exporter = SerpApiCsvExporter(api_key="test-key")
+    path = exporter.export_interest_over_time(
+        keyword="Pop Mart",
+        geo="HK",
+        timeframe="today 5-y",
+        hl="en-US",
+        output_dir=tmp_path,
+        headless=True,
+    )
+
+    records = parse_interest_over_time_csv(path, keyword="Pop Mart", geo="HK")
+    assert [record.trend_value for record in records] == [42, 55]
+    assert [record.is_partial for record in records] == [False, True]
+    assert calls[0]["params"] == {
+        "engine": "google_trends",
+        "q": "Pop Mart",
+        "date": "today 5-y",
+        "hl": "en",
+        "data_type": "TIMESERIES",
+        "api_key": "test-key",
+        "geo": "HK",
+    }
+
+
+def test_fallback_exporter_uses_serpapi_after_one_primary_failure(tmp_path: Path) -> None:
+    class _Exporter:
+        def __init__(self, *, fail: bool) -> None:
+            self.fail = fail
+            self.calls = 0
+
+        def export_interest_over_time(self, **_kwargs) -> Path:
+            self.calls += 1
+            if self.fail:
+                raise ValueError("CSV widget request was rate-limited")
+            return tmp_path / "fallback.csv"
+
+    primary = _Exporter(fail=True)
+    fallback = _Exporter(fail=False)
+    exporter = FallbackGoogleTrendsExporter(primary=primary, fallback=fallback, delay_seconds=0)
+
+    result = exporter.export_interest_over_time(keyword="Pop Mart")
+
+    assert result == tmp_path / "fallback.csv"
+    assert primary.calls == 1
+    assert fallback.calls == 1
+    assert exporter.source_summary() == "serpapi"
 
 
 class _FakePage:

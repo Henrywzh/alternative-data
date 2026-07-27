@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 import csv
+from datetime import datetime
+from datetime import timezone
 from pathlib import Path
 from time import monotonic
 from time import sleep
 from urllib.parse import urlencode
+
+import requests
 
 
 class GoogleTrendsCsvExporter:
@@ -220,3 +224,116 @@ class GoogleTrendsCsvExporter:
     def _download_preview(csv_path: str | Path, *, max_lines: int = 3) -> str:
         path = Path(csv_path)
         return " | ".join(path.read_text(encoding="utf-8").splitlines()[:max_lines])
+
+
+class SerpApiCsvExporter:
+    """Fetch Google Trends timeseries through SerpApi and emit importer-compatible CSV."""
+
+    endpoint = "https://serpapi.com/search.json"
+
+    def __init__(self, *, api_key: str, timeout_ms: int = 30000) -> None:
+        self.api_key = api_key
+        self.timeout_ms = timeout_ms
+
+    def export_interest_over_time(
+        self,
+        *,
+        keyword: str,
+        geo: str,
+        timeframe: str,
+        hl: str,
+        output_dir: str | Path,
+        headless: bool,
+    ) -> Path:
+        if not self.api_key:
+            raise ValueError("SERP_API_KEY is required for the SerpApi fallback")
+
+        target_dir = Path(output_dir)
+        target_dir.mkdir(parents=True, exist_ok=True)
+        target_path = target_dir / f"{self._slug(keyword)}_{geo.lower() if geo else 'worldwide'}_interest_over_time.csv"
+        params = {
+            "engine": "google_trends",
+            "q": keyword,
+            "date": timeframe,
+            "hl": hl.split("-", 1)[0],
+            "data_type": "TIMESERIES",
+            "api_key": self.api_key,
+        }
+        if geo:
+            params["geo"] = geo
+
+        response = requests.get(self.endpoint, params=params, timeout=self.timeout_ms / 1000)
+        response.raise_for_status()
+        payload = response.json()
+        metadata = payload.get("search_metadata", {})
+        if metadata.get("status") != "Success":
+            raise ValueError(f"SerpApi Google Trends request failed: {payload.get('error', metadata)}")
+
+        timeline = payload.get("interest_over_time", {}).get("timeline_data", [])
+        if not timeline:
+            raise ValueError("SerpApi returned no Google Trends timeseries data")
+
+        rows: list[tuple[str, int, bool]] = []
+        for point in timeline:
+            values = [value for value in point.get("values", []) if value.get("query") == keyword]
+            if not values:
+                raise ValueError(f"SerpApi response omitted query {keyword!r} from a timeseries point")
+            extracted_value = values[0].get("extracted_value")
+            if extracted_value is None:
+                raise ValueError(f"SerpApi response omitted a value for {keyword!r}")
+            date = datetime.fromtimestamp(int(point["timestamp"]), tz=timezone.utc).date().isoformat()
+            rows.append((date, int(extracted_value), bool(point.get("partial_data", False))))
+
+        with target_path.open("w", encoding="utf-8", newline="") as handle:
+            writer = csv.writer(handle)
+            writer.writerow(["Week", keyword, "isPartial"])
+            writer.writerows(rows)
+        return target_path
+
+    @staticmethod
+    def _slug(value: str) -> str:
+        return value.lower().replace(" ", "_").replace(".", "_").replace("/", "_")
+
+
+class FallbackGoogleTrendsExporter:
+    """Try one CSV export, then use SerpApi, spacing every outbound search."""
+
+    def __init__(self, *, primary, fallback, delay_seconds: float = 2.0) -> None:
+        self.primary = primary
+        self.fallback = fallback
+        self.delay_seconds = max(0.0, delay_seconds)
+        self._last_request_at: float | None = None
+        self.sources: list[str] = []
+
+    def export_interest_over_time(self, **kwargs) -> Path:
+        try:
+            result = self._call(self.primary, **kwargs)
+            self.sources.append("csv")
+            return result
+        except Exception as primary_error:
+            try:
+                result = self._call(self.fallback, **kwargs)
+                self.sources.append("serpapi")
+                return result
+            except Exception as fallback_error:
+                raise RuntimeError(
+                    "Google Trends CSV export failed once and SerpApi fallback also failed. "
+                    f"CSV error: {primary_error}; SerpApi error: {fallback_error}"
+                ) from fallback_error
+
+    def _call(self, exporter, **kwargs) -> Path:
+        self._wait_between_requests()
+        try:
+            return exporter.export_interest_over_time(**kwargs)
+        finally:
+            self._last_request_at = monotonic()
+
+    def _wait_between_requests(self) -> None:
+        if self._last_request_at is None:
+            return
+        remaining = self.delay_seconds - (monotonic() - self._last_request_at)
+        if remaining > 0:
+                sleep(remaining)
+
+    def source_summary(self) -> str:
+        return ",".join(dict.fromkeys(self.sources))
