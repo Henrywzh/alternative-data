@@ -78,6 +78,7 @@ def fetch_hkma_residential_mortgage_survey() -> pd.DataFrame:
                 'hibor_pricing_pct_share': scale_pct(r.get('ir_new_loans_approved_hibor')),  # Scaled to 0-100% (e.g. 73.8)
                 'blr_pricing_pct_share': scale_pct(r.get('ir_new_loans_approved_blr')),      # Scaled to 0-100% (e.g. 1.2)
                 'fixed_pricing_pct_share': scale_pct(r.get('ir_new_loans_approved_fixed')),  # Scaled to 0-100% (e.g. 20.7)
+                'other_pricing_pct_share': scale_pct(r.get('ir_new_loans_approved_other')),  # Scaled to 0-100%; 4th rate-mix category, previously dropped (the 3 tracked shares alone summed to only ~93-99%)
                 'delinquency_ratio_pct': safe_float(r.get('delinquency_ratio')),             # Retained as % (e.g. 0.11)
                 'rescheduled_loan_ratio_pct': safe_float(r.get('resch_loan_ratio')),
                 'source_agency': 'Hong Kong Monetary Authority (HKMA)'
