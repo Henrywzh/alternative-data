@@ -55,11 +55,26 @@ def deduplicate_agency_transactions(transaction_dfs: List[pd.DataFrame]) -> pd.D
 
     dedup_ids = []
     for _, row in combined.iterrows():
+        # NOTE: after pd.concat(), every column exists on every row (filled
+        # with NaN for sources that don't natively produce it), so a plain
+        # ``row.get(key, fallback)`` never falls through -- the key is
+        # always "present" (as NaN), so pandas.Series.get returns the NaN,
+        # not the fallback. Confirmed directly:
+        # ``pd.Series({'floor_level': np.nan, 'room_type': '2Room'}).get('floor_level', 'fallback')``
+        # returns ``nan``, not ``'fallback'``. hse28.py never populates
+        # floor_level/unit_flat (only room_type), so without an explicit
+        # notna check every 28Hse row silently hashed with floor="" and
+        # could never cross-match a genuinely identical Centaline/Midland
+        # transaction. Same defect shape applied to transaction_date/date.
+        floor_level = row.get('floor_level')
+        floor = floor_level if pd.notna(floor_level) else row.get('room_type', '')
+        transaction_date = row.get('transaction_date')
+        transaction_date = transaction_date if pd.notna(transaction_date) else row.get('date', '')
         d_id = generate_dedup_hash(
             estate_name=row.get('estate_name', ''),
-            floor=row.get('floor_level', row.get('room_type', '')),
+            floor=floor,
             unit=row.get('unit_flat', ''),
-            transaction_date=row.get('transaction_date', row.get('date', '')),
+            transaction_date=transaction_date,
             price_hkd=row.get('price_hkd', '')
         )
         dedup_ids.append(d_id)

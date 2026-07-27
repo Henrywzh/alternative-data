@@ -54,12 +54,19 @@ def _cell_text(value: object) -> str:
     return str(value).strip()
 
 
-def _period_from_row(values: list[str], current_year: str | None, current_period: str | None) -> tuple[str | None, str | None, str | None]:
+def _period_from_row(
+    values: list[str], current_year: str | None, current_period: str | None
+) -> tuple[str | None, str | None, str | None, bool]:
     # Date labels are in the first columns.  Searching every numeric cell can
     # mistake a building-cost value such as 2009 for the row's year.
     text = " ".join(value for value in values[:3] if value)
     year_match = re.search(r"\b(20\d{2})\b", text)
     month_match = re.search(r"\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b", text, re.I)
+    # A row that states a year but no month is the table's own annual-total
+    # row (e.g. a bare "2024" row above that year's Jan-Dec breakdown) --
+    # distinct from a monthly row, which always carries a month even on the
+    # row that also happens to restate the year (e.g. "2025: " | "Jan").
+    is_annual_row = bool(year_match) and not month_match
     if year_match:
         current_year = year_match.group(1)
     if month_match and current_year:
@@ -70,8 +77,12 @@ def _period_from_row(values: list[str], current_year: str | None, current_period
         }[month_match.group(1).title()]
         current_period = f"{current_year}-{month_number}-01"
     elif year_match:
-        current_period = f"{current_year}-01-01"
-    return current_year, current_period, text
+        # Stamp the annual-total row on Dec 31 rather than Jan 1 so it can
+        # never collide with that same year's real January row (both used
+        # to resolve to "YYYY-01-01", producing duplicate dates within the
+        # same table -- confirmed on tables 1.1, 1.3, 1.4, and 1.7).
+        current_period = f"{current_year}-12-31"
+    return current_year, current_period, text, is_annual_row
 
 
 def _read_xls(content: bytes) -> pd.DataFrame:
@@ -119,11 +130,19 @@ def fetch_buildings_dept_monthly_stats() -> pd.DataFrame:
             nonempty = [value for value in values if value]
             if not nonempty:
                 continue
-            current_year, current_period, _ = _period_from_row(values, current_year, current_period)
+            current_year, current_period, _, is_annual_row = _period_from_row(values, current_year, current_period)
             if not current_period:
                 continue
             numeric = []
-            for value in values:
+            for i, value in enumerate(values):
+                # The annual-total row's own year-detection cell (index 0,
+                # e.g. a bare "2024") reads as a plain number and would
+                # otherwise leak into numeric_values as a spurious leading
+                # element that ordinary monthly rows don't have, making the
+                # array shape inconsistent between annual and monthly rows
+                # in the same table (confirmed on tables 1.1, 1.3, 1.4, 1.7).
+                if is_annual_row and i == 0:
+                    continue
                 candidate = value.replace(",", "")
                 if candidate and re.fullmatch(r"-?\d+(?:\.\d+)?", candidate):
                     numeric.append(float(candidate))
@@ -135,6 +154,7 @@ def fetch_buildings_dept_monthly_stats() -> pd.DataFrame:
                 "table_id": table_id,
                 "row_label": label,
                 "numeric_values": json.dumps(numeric),
+                "period_type": "annual" if is_annual_row else "monthly",
                 "source_agency": "Hong Kong Buildings Department",
                 "source_file": filename,
             })
