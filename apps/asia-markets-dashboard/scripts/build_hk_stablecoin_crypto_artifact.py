@@ -460,14 +460,53 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
 
     manifest_sources = list(PUBLIC_SOURCES.values())
 
+    # Build dynamic source_health entries based on actual fetch results
+    source_stats = {
+        "hkma_register": {
+            "status": "success" if len(hkma_rows) > 0 else "degraded",
+            "records": len(hkma_rows),
+            "freshness": "live" if len(hkma_rows) > 0 else "unavailable",
+        },
+        "sfc_vatp": {
+            "status": "success" if len(sfc_rows) > 0 else "degraded",
+            "records": len(sfc_rows),
+            "freshness": "live" if len(sfc_rows) > 0 else "unavailable",
+        },
+        "defillama": {
+            "status": "success" if len(stablecoin_rows) > 0 else "degraded",
+            "records": len(stablecoin_rows),
+            "freshness": "live" if len(stablecoin_rows) > 0 else "unavailable",
+        },
+        "hkex_etf": {
+            "status": "success" if len(etf_summary_rows) > 0 else "degraded",
+            "records": len(etf_summary_rows),
+            "freshness": "live" if len(etf_summary_rows) > 0 else "unavailable",
+        },
+        "coinbase_binance": {
+            "status": "success" if btc_price is not None else "degraded",
+            "records": 1 if btc_price is not None else 0,
+            "freshness": "live" if btc_price is not None else "unavailable",
+        },
+        "fear_greed": {
+            "status": "success" if fng_val is not None else "degraded",
+            "records": 1 if fng_val is not None else 0,
+            "freshness": "live" if fng_val is not None else "unavailable",
+        },
+        "polymarket": {
+            "status": "success" if len(poly_rows) > 0 else "degraded",
+            "records": len(poly_rows),
+            "freshness": "live" if len(poly_rows) > 0 else "unavailable",
+        },
+    }
+
     status_entries = [
         {
             "source_id": key,
             "label": s["label"],
-            "status": "success",
-            "records": 10,
+            "status": source_stats[key]["status"],
+            "records": source_stats[key]["records"],
             "latest_observation": data_as_of,
-            "freshness": "live",
+            "freshness": source_stats[key]["freshness"],
             "notes": s["query"]["description"],
         }
         for key, s in PUBLIC_SOURCES.items()
@@ -556,10 +595,10 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
                 "source": s["label"],
                 "dataset": key,
                 "type": "Monitor",
-                "status": "Healthy",
+                "status": "Healthy" if source_stats[key]["status"] == "success" else "Degraded",
                 "latest_observation": data_as_of,
-                "records": 10,
-                "freshness": "Live",
+                "records": source_stats[key]["records"],
+                "freshness": "Live" if source_stats[key]["freshness"] == "live" else "Unavailable",
                 "notes": s["query"]["description"],
             }
             for key, s in PUBLIC_SOURCES.items()

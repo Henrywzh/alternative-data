@@ -381,14 +381,38 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
 
     manifest_sources = list(PUBLIC_SOURCES.values())
 
+    # Build dynamic source_health entries based on actual fetch results
+    source_stats = {
+        "sse_star_market_ipo": {
+            "status": "success" if (not ipo_df.empty) else "degraded",
+            "records": len(ipo_df) if (not ipo_df.empty) else 0,
+            "freshness": "live" if (not ipo_df.empty) else "unavailable",
+        },
+        "launch_library_2": {
+            "status": "success" if total_launches > 0 else "degraded",
+            "records": total_launches,
+            "freshness": "live" if total_launches > 0 else "unavailable",
+        },
+        "celestrak": {
+            "status": "success" if (not sat_df.empty) else "degraded",
+            "records": len(sat_df) if (not sat_df.empty) else 0,
+            "freshness": "live" if (not sat_df.empty) else "unavailable",
+        },
+        "google_patents": {
+            "status": "success" if (not pat_df.empty and pat_df["estimated_count"].notna().any()) else "failed",
+            "records": int(pat_df["estimated_count"].notna().sum()) if not pat_df.empty else 0,
+            "freshness": "live" if (not pat_df.empty and pat_df["estimated_count"].notna().any()) else "unavailable",
+        },
+    }
+
     status_entries = [
         {
             "source_id": key,
             "label": s["label"],
-            "status": "success",
-            "records": 10,
+            "status": source_stats[key]["status"],
+            "records": source_stats[key]["records"],
             "latest_observation": data_as_of,
-            "freshness": "live",
+            "freshness": source_stats[key]["freshness"],
             "notes": s["query"]["description"],
         }
         for key, s in PUBLIC_SOURCES.items()
@@ -475,10 +499,10 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
                 "source": s["label"],
                 "dataset": key,
                 "type": "Measure",
-                "status": "Healthy",
+                "status": "Healthy" if source_stats[key]["status"] == "success" else "Degraded",
                 "latest_observation": data_as_of,
-                "records": 10,
-                "freshness": "Live",
+                "records": source_stats[key]["records"],
+                "freshness": "Live" if source_stats[key]["freshness"] == "live" else "Unavailable",
                 "notes": s["query"]["description"],
             }
             for key, s in PUBLIC_SOURCES.items()

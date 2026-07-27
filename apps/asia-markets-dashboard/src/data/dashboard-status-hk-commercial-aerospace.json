@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-07-27T22:51:14.610344Z",
-  "snapshot_id": "9f649b6993e5fdc7",
+  "generated_at": "2026-07-27T23:05:53.933041Z",
+  "snapshot_id": "e7deb5df1a02a135",
   "data_as_of": "2026-07-27",
   "overall_status": "Healthy",
   "live_sources": 4,
@@ -12,7 +12,7 @@
       "type": "Measure",
       "status": "Healthy",
       "latest_observation": "2026-07-27",
-      "records": 10,
+      "records": 5,
       "freshness": "Live",
       "notes": "Filing status, numeric audit numbers (stockAuditNum), and update dates for Chinese commercial launch companies."
     },
@@ -20,10 +20,10 @@
       "source": "Launch Library 2 (The Space Devs)",
       "dataset": "launch_library_2",
       "type": "Measure",
-      "status": "Healthy",
+      "status": "Degraded",
       "latest_observation": "2026-07-27",
-      "records": 10,
-      "freshness": "Live",
+      "records": 0,
+      "freshness": "Unavailable",
       "notes": "Launch history for Chinese commercial launch providers (LandSpace, CAS Space, Galactic Energy, Space Pioneer, etc.)."
     },
     {
@@ -32,7 +32,7 @@
       "type": "Measure",
       "status": "Healthy",
       "latest_observation": "2026-07-27",
-      "records": 10,
+      "records": 2,
       "freshness": "Live",
       "notes": "Active satellite counts for Qianfan (G60) and Jilin-1 constellations."
     },
@@ -40,10 +40,10 @@
       "source": "Google Patents Search",
       "dataset": "google_patents",
       "type": "Measure",
-      "status": "Healthy",
+      "status": "Degraded",
       "latest_observation": "2026-07-27",
-      "records": 10,
-      "freshness": "Live",
+      "records": 0,
+      "freshness": "Unavailable",
       "notes": "Estimated patent filing counts for Chinese commercial space companies."
     }
   ],

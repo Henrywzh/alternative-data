@@ -6,7 +6,7 @@
     "title": "香港商业航天监测",
     "description": "上交所科创板 IPO 审核状态、Launch Library 2 发射频次、Celestrak 低轨卫星星座数量及商业航天企业专利申请统计。",
     "sector": "hk-commercial-aerospace",
-    "generatedAt": "2026-07-27T22:51:14.610344Z",
+    "generatedAt": "2026-07-27T23:05:53.933041Z",
     "dataAsOf": "2026-07-27",
     "liveSourcesCount": 3,
     "totalSourcesCount": 4,
@@ -284,7 +284,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**数据快照：** `9f649b6993e5fdc7` · 生成于 2026-07-27T22:51:14.610344Z。"
+        "body": "**数据快照：** `e7deb5df1a02a135` · 生成于 2026-07-27T23:05:53.933041Z。"
       },
       {
         "id": "kpi_grid",
@@ -335,7 +335,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-27T22:51:14.610344Z",
+    "generatedAt": "2026-07-27T23:05:53.933041Z",
     "status": "ready",
     "datasets": {
       "ipo_race": [
@@ -434,23 +434,23 @@
       "patent_counts": [
         {
           "assignee": "LandSpace 蓝箭航天",
-          "estimated_count": 185
+          "estimated_count": 0
         },
         {
           "assignee": "CAS Space 中科宇航",
-          "estimated_count": 140
+          "estimated_count": 0
         },
         {
           "assignee": "Galactic Energy 星河动力",
-          "estimated_count": 110
+          "estimated_count": 0
         },
         {
           "assignee": "Space Pioneer 天兵科技",
-          "estimated_count": 95
+          "estimated_count": 0
         },
         {
           "assignee": "i-Space 星际荣耀",
-          "estimated_count": 85
+          "estimated_count": 0
         }
       ],
       "aerospace_watchlist": [
@@ -599,7 +599,7 @@
       "source_id": "sse_star_market_ipo",
       "label": "SSE STAR Market IPO Filing Status (JSONP)",
       "status": "success",
-      "records": 10,
+      "records": 5,
       "latest_observation": "2026-07-27",
       "freshness": "live",
       "notes": "Filing status, numeric audit numbers (stockAuditNum), and update dates for Chinese commercial launch companies."
@@ -607,17 +607,17 @@
     {
       "source_id": "launch_library_2",
       "label": "Launch Library 2 (The Space Devs)",
-      "status": "success",
-      "records": 10,
+      "status": "degraded",
+      "records": 0,
       "latest_observation": "2026-07-27",
-      "freshness": "live",
+      "freshness": "unavailable",
       "notes": "Launch history for Chinese commercial launch providers (LandSpace, CAS Space, Galactic Energy, Space Pioneer, etc.)."
     },
     {
       "source_id": "celestrak",
       "label": "Celestrak NORAD TLE / GP Orbit Data",
       "status": "success",
-      "records": 10,
+      "records": 2,
       "latest_observation": "2026-07-27",
       "freshness": "live",
       "notes": "Active satellite counts for Qianfan (G60) and Jilin-1 constellations."
@@ -625,10 +625,10 @@
     {
       "source_id": "google_patents",
       "label": "Google Patents Search",
-      "status": "success",
-      "records": 10,
+      "status": "failed",
+      "records": 0,
       "latest_observation": "2026-07-27",
-      "freshness": "live",
+      "freshness": "unavailable",
       "notes": "Estimated patent filing counts for Chinese commercial space companies."
     }
   ],
@@ -636,8 +636,8 @@
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-commercial-aerospace/",
     "sector_id": "hk-commercial-aerospace",
     "sector_name": "Hong Kong Commercial Aerospace Sector Monitor",
-    "snapshotId": "9f649b6993e5fdc7",
-    "generatedAt": "2026-07-27T22:51:14.610344Z",
+    "snapshotId": "e7deb5df1a02a135",
+    "generatedAt": "2026-07-27T23:05:53.933041Z",
     "dataAsOf": "2026-07-27"
   }
 }
