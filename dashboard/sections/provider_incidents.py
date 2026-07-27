@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 
 import pandas as pd
 import plotly.graph_objects as go
@@ -74,6 +75,19 @@ def _render_kpis(frame: pd.DataFrame) -> None:
     )
 
 
+def _nice_integer_dtick(max_value: float, *, target_ticks: int = 8) -> int:
+    """Pick an integer axis step that keeps count ticks readable at any scale."""
+    if max_value <= target_ticks:
+        return 1
+    raw_step = max_value / target_ticks
+    magnitude = 10 ** math.floor(math.log10(raw_step))
+    for step in (1, 2, 5, 10):
+        candidate = step * magnitude
+        if candidate >= raw_step:
+            return max(1, int(candidate))
+    return max(1, int(10 * magnitude))
+
+
 def _render_weekly_chart(frame: pd.DataFrame) -> None:
     weekly = (
         frame.assign(week=frame["activity_at"].dt.tz_convert(None).dt.to_period("W").dt.start_time)
@@ -105,7 +119,11 @@ def _render_weekly_chart(frame: pd.DataFrame) -> None:
         font=dict(color=TEXT, size=12),
         legend=dict(orientation="h", y=-0.18),
         xaxis=dict(showgrid=False),
-        yaxis=dict(gridcolor=GRID, dtick=1, title="Provider-reported incidents"),
+        yaxis=dict(
+            gridcolor=GRID,
+            dtick=_nice_integer_dtick(float(weekly.sum(axis=1).max())),
+            title="Provider-reported incidents",
+        ),
         hovermode="x unified",
     )
     st.plotly_chart(figure, width="stretch", config={"displayModeBar": False})
@@ -129,7 +147,11 @@ def _render_provider_chart(frame: pd.DataFrame) -> None:
         paper_bgcolor=CARD,
         plot_bgcolor=CARD,
         font=dict(color=TEXT, size=12),
-        xaxis=dict(gridcolor=GRID, dtick=1, title="Incidents in selected period"),
+        xaxis=dict(
+            gridcolor=GRID,
+            dtick=_nice_integer_dtick(float(counts.max())),
+            title="Incidents in selected period",
+        ),
         yaxis=dict(showgrid=False),
     )
     st.plotly_chart(figure, width="stretch", config={"displayModeBar": False})
