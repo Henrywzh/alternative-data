@@ -17,6 +17,7 @@ from ..config import (
     LAUNCH_LIBRARY_BASE,
     CHINESE_LAUNCH_AGENCIES,
     LL2_MAX_REQUESTS_PER_HOUR,
+    RAW_DIR,
 )
 from ..storage import save_raw_snapshot
 
@@ -53,19 +54,38 @@ def _parse_launch_results(results: list[dict], fetched_at: str) -> list[dict]:
 
 
 def fetch_upcoming_launches(limit: int = 100) -> pd.DataFrame:
-    """Fetch upcoming launches from Launch Library 2."""
+    """Fetch upcoming launches from Launch Library 2 with fallback to local raw snapshot."""
     url = f"{LAUNCH_LIBRARY_BASE}/launch/upcoming/?format=json&limit={limit}"
     fetched_at = datetime.now(timezone.utc).isoformat()
+    data = None
     try:
         resp = requests.get(url, headers=DEFAULT_HEADERS, timeout=DEFAULT_TIMEOUT)
-        resp.raise_for_status()
-        data = resp.json()
-        results = data.get("results", [])
+        if resp.status_code == 200:
+            data = resp.json()
+            save_raw_snapshot("ll2_upcoming_launches", data, source_url=url)
     except Exception as e:
         logger.warning(f"Failed to fetch upcoming launches: {e}")
+
+    if not data:
+        snaps = sorted(RAW_DIR.glob("ll2_upcoming_launches_*.json"))
+        if snaps:
+            for s_path in reversed(snaps):
+                try:
+                    import json
+                    with open(s_path, "r", encoding="utf-8") as f:
+                        snap_content = json.load(f)
+                        candidate = snap_content.get("data") or snap_content.get("payload")
+                        if candidate and isinstance(candidate, dict) and candidate.get("results"):
+                            data = candidate
+                            logger.info(f"Loaded upcoming launches from snapshot fallback: {s_path.name}")
+                            break
+                except Exception as e:
+                    logger.warning(f"Failed to load snapshot fallback {s_path.name}: {e}")
+
+    if not data or not isinstance(data, dict):
         return pd.DataFrame(columns=SCHEMA_COLUMNS)
 
-    save_raw_snapshot("ll2_upcoming_launches", data, source_url=url)
+    results = data.get("results", [])
     parsed = _parse_launch_results(results, fetched_at)
     if not parsed:
         return pd.DataFrame(columns=SCHEMA_COLUMNS)
