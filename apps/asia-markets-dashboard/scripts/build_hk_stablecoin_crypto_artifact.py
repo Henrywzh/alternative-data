@@ -532,10 +532,20 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
         {"id": "kpi_grid", "type": "metric-strip", "cardIds": [c["id"] for c in cards]},
         {"id": "hkma_table_block", "type": "table", "tableId": "hkma_issuers_table"},
         {"id": "sfc_table_block", "type": "table", "tableId": "sfc_vatp_table"},
-        {"id": "etf_chart_block", "type": "chart", "chartId": "etf_aum_history_chart"},
-        {"id": "etf_table_block", "type": "table", "tableId": "hkex_etf_table"},
-        {"id": "stablecoin_chart_block", "type": "chart", "chartId": "stablecoin_supply_chart", "layout": "half"},
-        {"id": "polymarket_chart_block", "type": "chart", "chartId": "polymarket_catalysts_chart", "layout": "half"},
+    ]
+    if etf_aum_history:
+        blocks.append({"id": "etf_chart_block", "type": "chart", "chartId": "etf_aum_history_chart"})
+    blocks.append({"id": "etf_table_block", "type": "table", "tableId": "hkex_etf_table"})
+    
+    if stablecoin_rows and poly_rows:
+        blocks.append({"id": "stablecoin_chart_block", "type": "chart", "chartId": "stablecoin_supply_chart", "layout": "half"})
+        blocks.append({"id": "polymarket_chart_block", "type": "chart", "chartId": "polymarket_catalysts_chart", "layout": "half"})
+    elif stablecoin_rows:
+        blocks.append({"id": "stablecoin_chart_block", "type": "chart", "chartId": "stablecoin_supply_chart", "layout": "full"})
+    elif poly_rows:
+        blocks.append({"id": "polymarket_chart_block", "type": "chart", "chartId": "polymarket_catalysts_chart", "layout": "full"})
+
+    blocks.extend([
         {"id": "watchlist_table_block", "type": "table", "tableId": "crypto_watchlist_table"},
         {
             "id": "methodology",
@@ -550,7 +560,7 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
                 "leading indicators. No investment recommendation is produced."
             ),
         },
-    ]
+    ])
 
     artifact = {
         "surface": "dashboard",

@@ -208,13 +208,15 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
     patent_rows = []
     try:
         pat_df = fetch_all_patent_counts()
-        if not pat_df.empty:
+        if not pat_df.empty and pat_df["estimated_count"].notna().any():
             live_count += 1
             for _, row in pat_df.iterrows():
-                patent_rows.append({
-                    "assignee": row["assignee_query"],
-                    "estimated_count": row["estimated_count"] if row["estimated_count"] is not None else 0,
-                })
+                cnt = row["estimated_count"]
+                if pd.notna(cnt):
+                    patent_rows.append({
+                        "assignee": str(row["assignee_query"]),
+                        "estimated_count": int(cnt),
+                    })
     except Exception as e:
         print(f"Warning: Patent fetch failed - {e}")
 
@@ -437,8 +439,11 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
         },
         {"id": "kpi_grid", "type": "metric-strip", "cardIds": [c["id"] for c in cards]},
         {"id": "ipo_table_block", "type": "table", "tableId": "ipo_race_table"},
-        {"id": "satellite_chart_block", "type": "chart", "chartId": "satellite_count_chart", "layout": "half"},
-        {"id": "patent_chart_block", "type": "chart", "chartId": "patent_count_chart", "layout": "half"},
+        {"id": "satellite_chart_block", "type": "chart", "chartId": "satellite_count_chart", "layout": "half" if patent_rows else "full"},
+    ]
+    if patent_rows:
+        blocks.append({"id": "patent_chart_block", "type": "chart", "chartId": "patent_count_chart", "layout": "half"})
+    blocks.extend([
         {"id": "launch_chart_block", "type": "chart", "chartId": "launch_cadence_chart"},
         {"id": "watchlist_table_block", "type": "table", "tableId": "aerospace_watchlist_table"},
         {"id": "policy_table_block", "type": "table", "tableId": "policy_milestones_table"},
@@ -454,7 +459,7 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
                 "supply-chain tickers. No stock recommendation is produced."
             ),
         },
-    ]
+    ])
 
     artifact = {
         "surface": "dashboard",

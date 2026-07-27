@@ -6,9 +6,9 @@
     "title": "Hong Kong Commercial Aerospace Sector Monitor",
     "description": "SSE STAR Market IPO filing status, Launch Library 2 launch cadence, Celestrak satellite counts, and patent filing counts for Chinese commercial space companies.",
     "sector": "hk-commercial-aerospace",
-    "generatedAt": "2026-07-27T23:05:53.933041Z",
+    "generatedAt": "2026-07-27T23:13:06.105899Z",
     "dataAsOf": "2026-07-27",
-    "liveSourcesCount": 3,
+    "liveSourcesCount": 2,
     "totalSourcesCount": 4,
     "cards": [
       {
@@ -284,7 +284,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**Data snapshot:** `e7deb5df1a02a135` \u00b7 generated 2026-07-27T23:05:53.933041Z.  Official disclosures and public tracking data."
+        "body": "**Data snapshot:** `180bd1fadcf3553c` \u00b7 generated 2026-07-27T23:13:06.105899Z.  Official disclosures and public tracking data."
       },
       {
         "id": "kpi_grid",
@@ -303,13 +303,7 @@
         "id": "satellite_chart_block",
         "type": "chart",
         "chartId": "satellite_count_chart",
-        "layout": "half"
-      },
-      {
-        "id": "patent_chart_block",
-        "type": "chart",
-        "chartId": "patent_count_chart",
-        "layout": "half"
+        "layout": "full"
       },
       {
         "id": "launch_chart_block",
@@ -335,7 +329,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-27T23:05:53.933041Z",
+    "generatedAt": "2026-07-27T23:13:06.105899Z",
     "status": "ready",
     "datasets": {
       "ipo_race": [
@@ -431,28 +425,7 @@
           "as_of": "2026-07-27"
         }
       ],
-      "patent_counts": [
-        {
-          "assignee": "LandSpace \u84dd\u7bad\u822a\u5929",
-          "estimated_count": 0
-        },
-        {
-          "assignee": "CAS Space \u4e2d\u79d1\u5b87\u822a",
-          "estimated_count": 0
-        },
-        {
-          "assignee": "Galactic Energy \u661f\u6cb3\u52a8\u529b",
-          "estimated_count": 0
-        },
-        {
-          "assignee": "Space Pioneer \u5929\u5175\u79d1\u6280",
-          "estimated_count": 0
-        },
-        {
-          "assignee": "i-Space \u661f\u9645\u8363\u8000",
-          "estimated_count": 0
-        }
-      ],
+      "patent_counts": [],
       "aerospace_watchlist": [
         {
           "ticker": "00031.HK",
@@ -636,8 +609,8 @@
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-commercial-aerospace/",
     "sector_id": "hk-commercial-aerospace",
     "sector_name": "Hong Kong Commercial Aerospace Sector Monitor",
-    "snapshotId": "e7deb5df1a02a135",
-    "generatedAt": "2026-07-27T23:05:53.933041Z",
+    "snapshotId": "180bd1fadcf3553c",
+    "generatedAt": "2026-07-27T23:13:06.105899Z",
     "dataAsOf": "2026-07-27"
   }
 }
