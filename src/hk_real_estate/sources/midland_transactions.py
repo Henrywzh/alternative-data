@@ -94,11 +94,33 @@ def _parse_building_payload(payload: Dict[str, Any], estate_name: str) -> pd.Dat
                 price_hkd = float(price) if price is not None else None
             except (TypeError, ValueError):
                 price_hkd = None
-            area = tx.get("area")
+            # Verified live (see data/raw/hk_real_estate/midland_transaction_buildings/
+            # 2026-07-27/..._d858d13b.json): Midland's own displayed
+            # ``net_ft_price`` (stored below as ``unit_price_hkd_sqft``) is
+            # computed against ``net_area``, not ``area`` -- e.g. a real
+            # HK$5,100,000 sale has area=564/net_area=467, and
+            # 5,100,000/467 = 10,921 = the reported net_ft_price, not the
+            # 9,043 implied by area=564. For estate 日出康城 (LOHAS Park,
+            # 83.6% of a live pilot run's rows) Midland reports "area": "0"
+            # for every single transaction, with the real saleable area only
+            # present under "net_area". Across all 3,809 real transactions in
+            # that same live snapshot, net_area was never 0/blank while area
+            # was populated -- so net_area is the reliable field and area is
+            # only used as a last-resort fallback when net_area itself is
+            # missing or zero.
+            net_area = tx.get("net_area")
             try:
-                area_sqft = float(area) if area not in (None, "") else None
+                net_area_sqft = float(net_area) if net_area not in (None, "") else None
             except (TypeError, ValueError):
-                area_sqft = None
+                net_area_sqft = None
+            if net_area_sqft:
+                area_sqft = net_area_sqft
+            else:
+                area = tx.get("area")
+                try:
+                    area_sqft = float(area) if area not in (None, "") else None
+                except (TypeError, ValueError):
+                    area_sqft = None
             records.append(
                 {
                     "source_record_id": tx.get("id"),

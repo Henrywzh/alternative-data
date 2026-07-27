@@ -6,6 +6,31 @@ from ..config import REGISTRY_DIR
 
 REGISTRY_CSV_PATH = REGISTRY_DIR / "hk_developer_project_registry.csv"
 
+# Registry aliases that are bare street/district names rather than specific
+# development names. A street or district name alone is not a reliable
+# development identifier -- plenty of addresses on "Murray Road" or in
+# "Quarry Bay" have nothing to do with the specific development the alias
+# was recorded for. Confirmed false positives via plausible unrelated
+# addresses (e.g. "15 Murray Road, Central, Hong Kong" incorrectly matching
+# Henderson/The Henderson, "88 Canton Road, Tsim Sha Tsui, Kowloon"
+# incorrectly matching Wharf REIC/Harbour City) when these were left
+# eligible for the FUZZY tier's plain substring-containment check.
+#
+# These stay in the registry CSV -- an EXACT or ALIAS-tier match still fires
+# correctly if a query is precisely "Murray Road" and nothing else -- but
+# they are excluded from FUZZY's substring-containment scan, since that is
+# where an unrelated longer address contains them as a coincidental
+# substring. Add a new entry here (lower-cased) whenever a future alias is
+# found to be similarly generic; keep this list in sync with the registry
+# CSV via test_generic_aliases_excluded_from_fuzzy_tier.
+GENERIC_FUZZY_EXCLUDED_ALIASES: frozenset[str] = frozenset({
+    "murray road",
+    "canton road",
+    "salisbury road",
+    "queensway",
+    "quarry bay",
+})
+
 class DeveloperRegistry:
     """
     Registry matcher linking project names, site addresses, and aliases to HKEX listed developers and REITs.
@@ -58,7 +83,7 @@ class DeveloperRegistry:
             all_names = [name_en, name_zh] + aliases
             
             for target in all_names:
-                if target and len(target) >= 3:
+                if target and len(target) >= 3 and target not in GENERIC_FUZZY_EXCLUDED_ALIASES:
                     if target in q_clean or q_clean in target:
                         return row.to_dict(), "FUZZY"
                 
