@@ -249,6 +249,15 @@
         {"model_id": "openai/gpt-5.6-sol-20260709", "effective_from": "2026-07-17"},
         {"model_id": "openai/gpt-5.6-sol-pro-20260709", "effective_from": "2026-07-17"}
       ]
+    },
+    {
+      "aa_model_id": "b8fc61f7-5e9a-49e6-8547-6ac56db24627",
+      "family_id": "anthropic/claude-opus-5",
+      "effective_from": "2026-07-24",
+      "openrouter_routes": [
+        {"model_id": "anthropic/claude-opus-5-20260723", "effective_from": "2026-07-24"},
+        {"model_id": "anthropic/claude-opus-5-fast-20260723", "effective_from": "2026-07-26"}
+      ]
     }
   ]
 }
