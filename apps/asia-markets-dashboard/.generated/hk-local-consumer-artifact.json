@@ -5,7 +5,7 @@
     "surface": "dashboard",
     "title": "Hong Kong Local Consumer Monitor",
     "description": "A source-backed snapshot of cross-border passenger traffic, fresh-food wholesale prices, gold input costs, auto fuel pricing, and watchlist valuations for HK local-consumer names.",
-    "generatedAt": "2026-07-26T18:34:36.550381Z",
+    "generatedAt": "2026-07-27T22:51:06.283316Z",
     "cards": [
       {
         "id": "northbound_card",
@@ -931,7 +931,7 @@
       {
         "id": "immigration_checkpoint_table",
         "title": "Immigration Checkpoint Breakdown",
-        "subtitle": "Latest date: 2026-07-25. Passenger clearance by control point and direction.",
+        "subtitle": "Latest date: 2026-07-26. Passenger clearance by control point and direction.",
         "dataset": "immigration_checkpoint_snapshot",
         "sourceId": "immigration_flow",
         "defaultSort": {
@@ -1090,7 +1090,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**Data snapshot:** `d0cc6d7d25b7f730` · generated 2026-07-26T18:34:36.550381Z.  This is a published snapshot, not a live connection. Includes official Consumer Council auto fuel calculator pricing."
+        "body": "**Data snapshot:** `e9dbc057a1ae444c` · generated 2026-07-27T22:51:06.283316Z.  This is a published snapshot, not a live connection. Includes official Consumer Council auto fuel calculator pricing."
       },
       {
         "id": "market_pulse_1",
@@ -1255,14 +1255,14 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-26T18:34:36.550381Z",
+    "generatedAt": "2026-07-27T22:51:06.283316Z",
     "status": "ready",
     "datasets": {
       "kpi_weather": [
         {
-          "latest": 18.7,
-          "period_change": 0.406015,
-          "year_change": -0.366102,
+          "latest": 20.5,
+          "period_change": 0.541353,
+          "year_change": -0.305085,
           "observation_date": "2026-07-01"
         }
       ],
@@ -1524,11 +1524,17 @@
           "date": "2026-07-01",
           "month": "2026-07",
           "signal_8_plus_hours": 14.5,
-          "red_black_rain_hours": 4.2,
-          "total_disruption_hours": 18.7
+          "red_black_rain_hours": 6.0,
+          "total_disruption_hours": 20.5
         }
       ],
       "severe_weather_log": [
+        {
+          "signal_name": "Red Rainstorm",
+          "start": "2026-07-27 05:55",
+          "end": "2026-07-27 07:45",
+          "duration_hours": 1.83
+        },
         {
           "signal_name": "Typhoon Signal 8 (NOUL)",
           "start": "2026-07-26 07:10",
@@ -1702,28 +1708,22 @@
           "start": "2025-08-05 05:50",
           "end": "2025-08-05 17:05",
           "duration_hours": 11.25
-        },
-        {
-          "signal_name": "Red Rainstorm",
-          "start": "2025-08-05 05:20",
-          "end": "2025-08-05 05:50",
-          "duration_hours": 0.5
         }
       ],
       "kpi_northbound": [
         {
-          "latest": 290659.7,
-          "period_change": -0.040493,
-          "year_change": 0.147655,
-          "observation_date": "2026-07-25"
+          "latest": 260498.7,
+          "period_change": -0.103767,
+          "year_change": -0.118986,
+          "observation_date": "2026-07-26"
         }
       ],
       "kpi_southbound": [
         {
-          "latest": 129830.4,
-          "period_change": -0.010157,
-          "year_change": 0.165555,
-          "observation_date": "2026-07-25"
+          "latest": 115952.9,
+          "period_change": -0.106889,
+          "year_change": -0.107444,
+          "observation_date": "2026-07-26"
         }
       ],
       "immigration_trend_history": [
@@ -2389,32 +2389,32 @@
         },
         {
           "month": "2026-07",
-          "value": 292719.8,
+          "value": 291480.5,
           "flow_type": "Northbound"
         },
         {
           "month": "2026-07",
-          "value": 113474.1,
+          "value": 113569.4,
           "flow_type": "Southbound"
         }
       ],
       "kpi_gold": [
         {
-          "latest": 896.63,
-          "period_change": -0.001259,
-          "year_change": 0.159545,
-          "observation_date": "2026-07-22"
+          "latest": 881.09,
+          "period_change": -0.017332,
+          "year_change": 0.142448,
+          "observation_date": "2026-07-23"
         }
       ],
       "kpi_median_pe": [
         {
-          "latest": 12.75
+          "latest": 12.81
         }
       ],
       "gold_history": [
         {
           "month": "2019-02",
-          "value": 287.01
+          "value": 286.62
         },
         {
           "month": "2019-03",
@@ -2770,7 +2770,7 @@
         },
         {
           "month": "2026-07",
-          "value": 890.85
+          "value": 890.27
         }
       ],
       "afcd_category_summary": [
@@ -2866,6 +2866,41 @@
         },
         {
           "date": "2026-07-26",
+          "category": "Vegetables",
+          "category_short": "Veg",
+          "avg_price_hkd_per_kg": 7.74,
+          "commodities": 13
+        },
+        {
+          "date": "2026-07-27",
+          "category": "Eggs",
+          "category_short": "Eggs",
+          "avg_price_hkd_per_kg": 1.62,
+          "commodities": 2
+        },
+        {
+          "date": "2026-07-27",
+          "category": "Freshwater fish",
+          "category_short": "FW fish",
+          "avg_price_hkd_per_kg": 34.11,
+          "commodities": 3
+        },
+        {
+          "date": "2026-07-27",
+          "category": "Livestock / Poultry",
+          "category_short": "Meat/Poultry",
+          "avg_price_hkd_per_kg": 47.32,
+          "commodities": 3
+        },
+        {
+          "date": "2026-07-27",
+          "category": "Marine fish",
+          "category_short": "Marine",
+          "avg_price_hkd_per_kg": 92.88,
+          "commodities": 10
+        },
+        {
+          "date": "2026-07-27",
           "category": "Vegetables",
           "category_short": "Veg",
           "avg_price_hkd_per_kg": 7.74,
@@ -3064,136 +3099,136 @@
         {
           "ticker": "01929.HK",
           "company_name": "Chow Tai Fook Jewellery",
-          "pe_ttm": 13.39,
-          "pb_ratio": 3.89,
-          "market_cap_hkd_b": 120.567,
-          "date": "2026-07-26"
+          "pe_ttm": 13.8,
+          "pb_ratio": 4.01,
+          "market_cap_hkd_b": 124.217,
+          "date": "2026-07-27"
         },
         {
           "ticker": "01913.HK",
           "company_name": "Prada",
-          "pe_ttm": 12.75,
-          "pb_ratio": 2.34,
-          "market_cap_hkd_b": 99.026,
-          "date": "2026-07-26"
+          "pe_ttm": 12.81,
+          "pb_ratio": 2.35,
+          "market_cap_hkd_b": 99.538,
+          "date": "2026-07-27"
         },
         {
           "ticker": "01910.HK",
           "company_name": "Samsonite",
-          "pe_ttm": 8.73,
-          "pb_ratio": 1.46,
-          "market_cap_hkd_b": 18.67,
-          "date": "2026-07-26"
+          "pe_ttm": 8.94,
+          "pb_ratio": 1.5,
+          "market_cap_hkd_b": 19.134,
+          "date": "2026-07-27"
         },
         {
           "ticker": "00590.HK",
           "company_name": "Luk Fook Holdings",
-          "pe_ttm": 6.9,
-          "pb_ratio": 0.94,
-          "market_cap_hkd_b": 14.126,
-          "date": "2026-07-26"
+          "pe_ttm": 7.09,
+          "pb_ratio": 0.97,
+          "market_cap_hkd_b": 14.513,
+          "date": "2026-07-27"
         },
         {
           "ticker": "00116.HK",
           "company_name": "Chow Sang Sang Holdings",
-          "pe_ttm": 4.54,
-          "pb_ratio": 0.54,
-          "market_cap_hkd_b": 7.805,
-          "date": "2026-07-26"
+          "pe_ttm": 4.64,
+          "pb_ratio": 0.55,
+          "market_cap_hkd_b": 7.967,
+          "date": "2026-07-27"
         },
         {
           "ticker": "00341.HK",
           "company_name": "Café de Coral Holdings",
-          "pe_ttm": 18.7,
-          "pb_ratio": 1.13,
-          "market_cap_hkd_b": 3.068,
-          "date": "2026-07-26"
+          "pe_ttm": 19.2,
+          "pb_ratio": 1.16,
+          "market_cap_hkd_b": 3.149,
+          "date": "2026-07-27"
         },
         {
           "ticker": "00178.HK",
           "company_name": "Sa Sa International",
-          "pe_ttm": 13.78,
-          "pb_ratio": 2.15,
-          "market_cap_hkd_b": 2.762,
-          "date": "2026-07-26"
+          "pe_ttm": 14.24,
+          "pb_ratio": 2.23,
+          "market_cap_hkd_b": 2.855,
+          "date": "2026-07-27"
         },
         {
           "ticker": "00709.HK",
           "company_name": "Giordano International",
-          "pe_ttm": 10.43,
-          "pb_ratio": 1.12,
-          "market_cap_hkd_b": 2.263,
-          "date": "2026-07-26"
+          "pe_ttm": 10.28,
+          "pb_ratio": 1.1,
+          "market_cap_hkd_b": 2.231,
+          "date": "2026-07-27"
         },
         {
           "ticker": "06811.HK",
           "company_name": "Tai Hing Group",
-          "pe_ttm": 10.6,
-          "pb_ratio": 1.28,
-          "market_cap_hkd_b": 1.146,
-          "date": "2026-07-26"
-        },
-        {
-          "ticker": "00052.HK",
-          "company_name": "Fairwood Holdings",
-          "pe_ttm": 13.9,
-          "pb_ratio": 0.86,
-          "market_cap_hkd_b": 0.578,
-          "date": "2026-07-26"
+          "pe_ttm": 10.69,
+          "pb_ratio": 1.29,
+          "market_cap_hkd_b": 1.156,
+          "date": "2026-07-27"
         },
         {
           "ticker": "01255.HK",
           "company_name": "TATA Health",
-          "pe_ttm": 39.11,
-          "pb_ratio": -9.59,
-          "market_cap_hkd_b": 0.522,
-          "date": "2026-07-26"
+          "pe_ttm": 46.39,
+          "pb_ratio": -11.37,
+          "market_cap_hkd_b": 0.619,
+          "date": "2026-07-27"
+        },
+        {
+          "ticker": "00052.HK",
+          "company_name": "Fairwood Holdings",
+          "pe_ttm": 14.06,
+          "pb_ratio": 0.87,
+          "market_cap_hkd_b": 0.584,
+          "date": "2026-07-27"
         }
       ],
       "valuation_pe_chart": [
         {
           "company_name": "Chow Tai Fook Jewellery",
-          "pe_ttm": 13.39
+          "pe_ttm": 13.8
         },
         {
           "company_name": "Prada",
-          "pe_ttm": 12.75
+          "pe_ttm": 12.81
         },
         {
           "company_name": "Samsonite",
-          "pe_ttm": 8.73
+          "pe_ttm": 8.94
         },
         {
           "company_name": "Luk Fook Holdings",
-          "pe_ttm": 6.9
+          "pe_ttm": 7.09
         },
         {
           "company_name": "Chow Sang Sang Holdings",
-          "pe_ttm": 4.54
+          "pe_ttm": 4.64
         },
         {
           "company_name": "Café de Coral Holdings",
-          "pe_ttm": 18.7
+          "pe_ttm": 19.2
         },
         {
           "company_name": "Sa Sa International",
-          "pe_ttm": 13.78
+          "pe_ttm": 14.24
         },
         {
           "company_name": "Giordano International",
-          "pe_ttm": 10.43
+          "pe_ttm": 10.28
         },
         {
           "company_name": "Tai Hing Group",
-          "pe_ttm": 10.6
-        },
-        {
-          "company_name": "Fairwood Holdings",
-          "pe_ttm": 13.9
+          "pe_ttm": 10.69
         },
         {
           "company_name": "TATA Health",
-          "pe_ttm": 39.11
+          "pe_ttm": 46.39
+        },
+        {
+          "company_name": "Fairwood Holdings",
+          "pe_ttm": 14.06
         }
       ],
       "kpi_retail": [
@@ -5222,7 +5257,7 @@
           "status": "Healthy",
           "latest_observation": "2026-07-01",
           "records": 67,
-          "freshness": "25d old",
+          "freshness": "26d old",
           "notes": "Monthly hours under Typhoon Signal 8+ & Red/Black Rainstorm warnings alongside HKD/RMB FX."
         },
         {
@@ -5230,8 +5265,8 @@
           "dataset": "Immigration Passenger Clearance",
           "type": "Measure",
           "status": "Healthy",
-          "latest_observation": "2026-07-25",
-          "records": 2032,
+          "latest_observation": "2026-07-26",
+          "records": 2033,
           "freshness": "1d old",
           "notes": "Daily clearance across 17 control points for HK residents & Mainland visitors."
         },
@@ -5240,8 +5275,8 @@
           "dataset": "SGE Gold Benchmark",
           "type": "Measure",
           "status": "Healthy",
-          "latest_observation": "2026-07-22",
-          "records": 2494,
+          "latest_observation": "2026-07-23",
+          "records": 2495,
           "freshness": "4d old",
           "notes": "Daily AM/PM benchmark fixing."
         },
@@ -5250,7 +5285,7 @@
           "dataset": "AFCD Wholesale Food Prices",
           "type": "Measure",
           "status": "Healthy",
-          "latest_observation": "2026-07-26",
+          "latest_observation": "2026-07-27",
           "records": 31,
           "freshness": "Same-day snapshot",
           "notes": "31 commodities across 5 categories; averaged across same-day market readings."
@@ -5260,7 +5295,7 @@
           "dataset": "HK Consumer Ticker Valuations",
           "type": "Measure",
           "status": "Healthy",
-          "latest_observation": "2026-07-26",
+          "latest_observation": "2026-07-27",
           "records": 11,
           "freshness": "0d old",
           "notes": "PE (TTM), PB, and market cap only; no dividend-yield indicator is available from this endpoint."
@@ -5272,7 +5307,7 @@
           "status": "Healthy",
           "latest_observation": "2026-05-01",
           "records": 6500,
-          "freshness": "86d old",
+          "freshness": "87d old",
           "notes": "25 outlet-type categories, monthly since 2004."
         },
         {
@@ -5282,7 +5317,7 @@
           "status": "Healthy",
           "latest_observation": "2026-03-31",
           "records": 516,
-          "freshness": "117d old",
+          "freshness": "118d old",
           "notes": "Sector-wide purchases only; per-type purchases are not published."
         },
         {
@@ -5304,7 +5339,7 @@
           "status": "Healthy",
           "latest_observation": "2026-07-01",
           "records": 67,
-          "freshness": "25d old",
+          "freshness": "26d old",
           "notes": "Monthly hours under Typhoon Signal 8+ & Red/Black Rainstorm warnings alongside HKD/RMB FX."
         },
         {
@@ -5312,8 +5347,8 @@
           "dataset": "Immigration Passenger Clearance",
           "type": "Measure",
           "status": "Healthy",
-          "latest_observation": "2026-07-25",
-          "records": 2032,
+          "latest_observation": "2026-07-26",
+          "records": 2033,
           "freshness": "1d old",
           "notes": "Daily clearance across 17 control points for HK residents & Mainland visitors."
         },
@@ -5322,8 +5357,8 @@
           "dataset": "SGE Gold Benchmark",
           "type": "Measure",
           "status": "Healthy",
-          "latest_observation": "2026-07-22",
-          "records": 2494,
+          "latest_observation": "2026-07-23",
+          "records": 2495,
           "freshness": "4d old",
           "notes": "Daily AM/PM benchmark fixing."
         },
@@ -5332,7 +5367,7 @@
           "dataset": "AFCD Wholesale Food Prices",
           "type": "Measure",
           "status": "Healthy",
-          "latest_observation": "2026-07-26",
+          "latest_observation": "2026-07-27",
           "records": 31,
           "freshness": "Same-day snapshot",
           "notes": "31 commodities across 5 categories; averaged across same-day market readings."
@@ -5342,7 +5377,7 @@
           "dataset": "HK Consumer Ticker Valuations",
           "type": "Measure",
           "status": "Healthy",
-          "latest_observation": "2026-07-26",
+          "latest_observation": "2026-07-27",
           "records": 11,
           "freshness": "0d old",
           "notes": "PE (TTM), PB, and market cap only; no dividend-yield indicator is available from this endpoint."
@@ -5354,7 +5389,7 @@
           "status": "Healthy",
           "latest_observation": "2026-05-01",
           "records": 6500,
-          "freshness": "86d old",
+          "freshness": "87d old",
           "notes": "25 outlet-type categories, monthly since 2004."
         },
         {
@@ -5364,7 +5399,7 @@
           "status": "Healthy",
           "latest_observation": "2026-03-31",
           "records": 516,
-          "freshness": "117d old",
+          "freshness": "118d old",
           "notes": "Sector-wide purchases only; per-type purchases are not published."
         },
         {
@@ -5392,7 +5427,15 @@
       ],
       "consumer_council_oilprice": [
         {
-          "date": "2026-07-26",
+          "date": "2026-07-27",
+          "company": "Esso",
+          "fuel_type": "Standard Petrol",
+          "discounted_price_hkd": 22.67,
+          "walkin_discount_hkd": 10.0,
+          "data_source": "live"
+        },
+        {
+          "date": "2026-07-27",
           "company": "PetroChina",
           "fuel_type": "Standard Petrol",
           "discounted_price_hkd": 25.34,
@@ -5400,7 +5443,15 @@
           "data_source": "live"
         },
         {
-          "date": "2026-07-26",
+          "date": "2026-07-27",
+          "company": "Shell",
+          "fuel_type": "Standard Petrol",
+          "discounted_price_hkd": 25.67,
+          "walkin_discount_hkd": 7.0,
+          "data_source": "live"
+        },
+        {
+          "date": "2026-07-27",
           "company": "Sinopec",
           "fuel_type": "Standard Petrol",
           "discounted_price_hkd": 26.34,
@@ -5408,31 +5459,23 @@
           "data_source": "live"
         },
         {
-          "date": "2026-07-26",
-          "company": "Shell",
-          "fuel_type": "Standard Petrol",
-          "discounted_price_hkd": 27.67,
-          "walkin_discount_hkd": 5.0,
-          "data_source": "live"
-        },
-        {
-          "date": "2026-07-26",
-          "company": "Esso",
-          "fuel_type": "Standard Petrol",
-          "discounted_price_hkd": 31.07,
-          "walkin_discount_hkd": 1.6,
-          "data_source": "live"
-        },
-        {
-          "date": "2026-07-26",
+          "date": "2026-07-27",
           "company": "Caltex",
           "fuel_type": "Standard Petrol",
-          "discounted_price_hkd": 31.44,
+          "discounted_price_hkd": 31.77,
           "walkin_discount_hkd": 0.9,
           "data_source": "live"
         },
         {
-          "date": "2026-07-26",
+          "date": "2026-07-27",
+          "company": "Esso",
+          "fuel_type": "Premium Petrol",
+          "discounted_price_hkd": 23.47,
+          "walkin_discount_hkd": 11.0,
+          "data_source": "live"
+        },
+        {
+          "date": "2026-07-27",
           "company": "PetroChina",
           "fuel_type": "Premium Petrol",
           "discounted_price_hkd": 27.14,
@@ -5440,34 +5483,26 @@
           "data_source": "live"
         },
         {
-          "date": "2026-07-26",
-          "company": "Sinopec",
-          "fuel_type": "Premium Petrol",
-          "discounted_price_hkd": 26.34,
-          "walkin_discount_hkd": 7.8,
-          "data_source": "live"
-        },
-        {
-          "date": "2026-07-26",
+          "date": "2026-07-27",
           "company": "Shell",
           "fuel_type": "Premium Petrol",
-          "discounted_price_hkd": 29.47,
-          "walkin_discount_hkd": 5.0,
+          "discounted_price_hkd": 27.47,
+          "walkin_discount_hkd": 7.0,
           "data_source": "live"
         },
         {
-          "date": "2026-07-26",
-          "company": "Esso",
+          "date": "2026-07-27",
+          "company": "Sinopec",
           "fuel_type": "Premium Petrol",
-          "discounted_price_hkd": 32.87,
-          "walkin_discount_hkd": 1.6,
+          "discounted_price_hkd": 23.28,
+          "walkin_discount_hkd": 10.86,
           "data_source": "live"
         },
         {
-          "date": "2026-07-26",
+          "date": "2026-07-27",
           "company": "Caltex",
           "fuel_type": "Premium Petrol",
-          "discounted_price_hkd": 33.24,
+          "discounted_price_hkd": 33.57,
           "walkin_discount_hkd": 0.9,
           "data_source": "live"
         }
@@ -6650,18 +6685,18 @@
         {
           "control_point": "Airport",
           "direction": "Arrival",
-          "hk_residents": 35639,
-          "mainland_visitors": 14472,
-          "other_visitors": 18251,
-          "total": 68362
+          "hk_residents": 27605,
+          "mainland_visitors": 8397,
+          "other_visitors": 9535,
+          "total": 45537
         },
         {
           "control_point": "Airport",
           "direction": "Departure",
-          "hk_residents": 44100,
-          "mainland_visitors": 13216,
-          "other_visitors": 14423,
-          "total": 71739
+          "hk_residents": 26789,
+          "mainland_visitors": 11684,
+          "other_visitors": 15370,
+          "total": 53843
         },
         {
           "control_point": "China Ferry Terminal",
@@ -6682,162 +6717,162 @@
         {
           "control_point": "Express Rail Link West Kowloon",
           "direction": "Arrival",
-          "hk_residents": 17467,
-          "mainland_visitors": 32928,
-          "other_visitors": 2253,
-          "total": 52648
+          "hk_residents": 7761,
+          "mainland_visitors": 2409,
+          "other_visitors": 432,
+          "total": 10602
         },
         {
           "control_point": "Express Rail Link West Kowloon",
           "direction": "Departure",
-          "hk_residents": 21913,
-          "mainland_visitors": 29926,
-          "other_visitors": 2124,
-          "total": 53963
+          "hk_residents": 2186,
+          "mainland_visitors": 6911,
+          "other_visitors": 554,
+          "total": 9651
         },
         {
           "control_point": "Harbour Control",
           "direction": "Arrival",
-          "hk_residents": 0,
-          "mainland_visitors": 1,
-          "other_visitors": 9,
-          "total": 10
-        },
-        {
-          "control_point": "Harbour Control",
-          "direction": "Departure",
-          "hk_residents": 47,
+          "hk_residents": 2,
           "mainland_visitors": 0,
-          "other_visitors": 30,
-          "total": 77
-        },
-        {
-          "control_point": "Heung Yuen Wai",
-          "direction": "Arrival",
-          "hk_residents": 32618,
-          "mainland_visitors": 11625,
-          "other_visitors": 363,
-          "total": 44606
-        },
-        {
-          "control_point": "Heung Yuen Wai",
-          "direction": "Departure",
-          "hk_residents": 37543,
-          "mainland_visitors": 9944,
-          "other_visitors": 294,
-          "total": 47781
-        },
-        {
-          "control_point": "Hong Kong-Zhuhai-Macao Bridge",
-          "direction": "Arrival",
-          "hk_residents": 30207,
-          "mainland_visitors": 8833,
-          "other_visitors": 6204,
-          "total": 45244
-        },
-        {
-          "control_point": "Hong Kong-Zhuhai-Macao Bridge",
-          "direction": "Departure",
-          "hk_residents": 38451,
-          "mainland_visitors": 13840,
-          "other_visitors": 5414,
-          "total": 57705
-        },
-        {
-          "control_point": "Kai Tak Cruise Terminal",
-          "direction": "Arrival",
-          "hk_residents": 0,
-          "mainland_visitors": 0,
-          "other_visitors": 0,
-          "total": 0
-        },
-        {
-          "control_point": "Kai Tak Cruise Terminal",
-          "direction": "Departure",
-          "hk_residents": 0,
-          "mainland_visitors": 0,
-          "other_visitors": 0,
-          "total": 0
-        },
-        {
-          "control_point": "Lo Wu",
-          "direction": "Arrival",
-          "hk_residents": 77668,
-          "mainland_visitors": 20426,
-          "other_visitors": 1074,
-          "total": 99168
-        },
-        {
-          "control_point": "Lo Wu",
-          "direction": "Departure",
-          "hk_residents": 96430,
-          "mainland_visitors": 26612,
-          "other_visitors": 1127,
-          "total": 124169
-        },
-        {
-          "control_point": "Lok Ma Chau",
-          "direction": "Arrival",
-          "hk_residents": 16071,
-          "mainland_visitors": 4778,
-          "other_visitors": 684,
-          "total": 21533
-        },
-        {
-          "control_point": "Lok Ma Chau",
-          "direction": "Departure",
-          "hk_residents": 15728,
-          "mainland_visitors": 5948,
-          "other_visitors": 631,
-          "total": 22307
-        },
-        {
-          "control_point": "Lok Ma Chau Spur Line",
-          "direction": "Arrival",
-          "hk_residents": 62291,
-          "mainland_visitors": 31756,
-          "other_visitors": 653,
-          "total": 94700
-        },
-        {
-          "control_point": "Lok Ma Chau Spur Line",
-          "direction": "Departure",
-          "hk_residents": 76449,
-          "mainland_visitors": 32183,
-          "other_visitors": 698,
-          "total": 109330
-        },
-        {
-          "control_point": "Macao Ferry Terminal",
-          "direction": "Arrival",
-          "hk_residents": 3507,
-          "mainland_visitors": 953,
-          "other_visitors": 1625,
-          "total": 6085
-        },
-        {
-          "control_point": "Macao Ferry Terminal",
-          "direction": "Departure",
-          "hk_residents": 4539,
-          "mainland_visitors": 2069,
-          "other_visitors": 1606,
-          "total": 8214
-        },
-        {
-          "control_point": "Man Kam To",
-          "direction": "Arrival",
-          "hk_residents": 1919,
-          "mainland_visitors": 931,
           "other_visitors": 20,
-          "total": 2870
+          "total": 22
+        },
+        {
+          "control_point": "Harbour Control",
+          "direction": "Departure",
+          "hk_residents": 0,
+          "mainland_visitors": 0,
+          "other_visitors": 9,
+          "total": 9
+        },
+        {
+          "control_point": "Heung Yuen Wai",
+          "direction": "Arrival",
+          "hk_residents": 20345,
+          "mainland_visitors": 4707,
+          "other_visitors": 224,
+          "total": 25276
+        },
+        {
+          "control_point": "Heung Yuen Wai",
+          "direction": "Departure",
+          "hk_residents": 14175,
+          "mainland_visitors": 2869,
+          "other_visitors": 156,
+          "total": 17200
+        },
+        {
+          "control_point": "Hong Kong-Zhuhai-Macao Bridge",
+          "direction": "Arrival",
+          "hk_residents": 29691,
+          "mainland_visitors": 4010,
+          "other_visitors": 2876,
+          "total": 36577
+        },
+        {
+          "control_point": "Hong Kong-Zhuhai-Macao Bridge",
+          "direction": "Departure",
+          "hk_residents": 13686,
+          "mainland_visitors": 6892,
+          "other_visitors": 3112,
+          "total": 23690
+        },
+        {
+          "control_point": "Kai Tak Cruise Terminal",
+          "direction": "Arrival",
+          "hk_residents": 1413,
+          "mainland_visitors": 153,
+          "other_visitors": 43,
+          "total": 1609
+        },
+        {
+          "control_point": "Kai Tak Cruise Terminal",
+          "direction": "Departure",
+          "hk_residents": 1743,
+          "mainland_visitors": 349,
+          "other_visitors": 101,
+          "total": 2193
+        },
+        {
+          "control_point": "Lo Wu",
+          "direction": "Arrival",
+          "hk_residents": 52232,
+          "mainland_visitors": 5662,
+          "other_visitors": 662,
+          "total": 58556
+        },
+        {
+          "control_point": "Lo Wu",
+          "direction": "Departure",
+          "hk_residents": 28062,
+          "mainland_visitors": 8828,
+          "other_visitors": 536,
+          "total": 37426
+        },
+        {
+          "control_point": "Lok Ma Chau",
+          "direction": "Arrival",
+          "hk_residents": 11654,
+          "mainland_visitors": 4891,
+          "other_visitors": 760,
+          "total": 17305
+        },
+        {
+          "control_point": "Lok Ma Chau",
+          "direction": "Departure",
+          "hk_residents": 7169,
+          "mainland_visitors": 4470,
+          "other_visitors": 557,
+          "total": 12196
+        },
+        {
+          "control_point": "Lok Ma Chau Spur Line",
+          "direction": "Arrival",
+          "hk_residents": 38792,
+          "mainland_visitors": 9233,
+          "other_visitors": 519,
+          "total": 48544
+        },
+        {
+          "control_point": "Lok Ma Chau Spur Line",
+          "direction": "Departure",
+          "hk_residents": 24058,
+          "mainland_visitors": 8364,
+          "other_visitors": 384,
+          "total": 32806
+        },
+        {
+          "control_point": "Macao Ferry Terminal",
+          "direction": "Arrival",
+          "hk_residents": 2580,
+          "mainland_visitors": 469,
+          "other_visitors": 449,
+          "total": 3498
+        },
+        {
+          "control_point": "Macao Ferry Terminal",
+          "direction": "Departure",
+          "hk_residents": 1703,
+          "mainland_visitors": 1347,
+          "other_visitors": 627,
+          "total": 3677
+        },
+        {
+          "control_point": "Man Kam To",
+          "direction": "Arrival",
+          "hk_residents": 1037,
+          "mainland_visitors": 216,
+          "other_visitors": 12,
+          "total": 1265
         },
         {
           "control_point": "Man Kam To",
           "direction": "Departure",
-          "hk_residents": 2397,
-          "mainland_visitors": 585,
-          "other_visitors": 6,
-          "total": 2988
+          "hk_residents": 719,
+          "mainland_visitors": 155,
+          "other_visitors": 11,
+          "total": 885
         },
         {
           "control_point": "Sha Tau Kok",
@@ -6858,18 +6893,18 @@
         {
           "control_point": "Shenzhen Bay",
           "direction": "Arrival",
-          "hk_residents": 47832,
-          "mainland_visitors": 24755,
-          "other_visitors": 2350,
-          "total": 74937
+          "hk_residents": 43215,
+          "mainland_visitors": 7409,
+          "other_visitors": 1491,
+          "total": 52115
         },
         {
           "control_point": "Shenzhen Bay",
           "direction": "Departure",
-          "hk_residents": 62328,
-          "mainland_visitors": 24474,
-          "other_visitors": 1863,
-          "total": 88665
+          "hk_residents": 17125,
+          "mainland_visitors": 10831,
+          "other_visitors": 1070,
+          "total": 29026
         }
       ]
     }
@@ -6884,7 +6919,7 @@
         "url": "https://oil-price.consumer.org.hk/en",
         "language": "JSON",
         "description": "Daily auto-fuel pump prices, walk-in discounts, and net prices across Caltex, PetroChina, Shell, Sinopec, and Esso.",
-        "executed_at": "2026-07-26T18:34:36.550381Z"
+        "executed_at": "2026-07-27T22:51:06.283316Z"
       }
     },
     {
@@ -6896,7 +6931,7 @@
         "url": "https://www.consumer.org.hk/node/32290/export-complaints/json?lang=en",
         "language": "JSON",
         "description": "Annual consumer complaints by category across Hong Kong consumer sectors.",
-        "executed_at": "2026-07-26T18:34:36.550381Z"
+        "executed_at": "2026-07-27T22:51:06.283316Z"
       }
     },
     {
@@ -6911,7 +6946,7 @@
         "metric_definitions": [
           "Each commodity's price is the mean of same-day readings across the wholesale markets/sources AFCD reports for it."
         ],
-        "executed_at": "2026-07-26T18:34:36.550381Z"
+        "executed_at": "2026-07-27T22:51:06.283316Z"
       }
     },
     {
@@ -6927,7 +6962,7 @@
           "Latest is the most recent published PM benchmark fixing.",
           "Day and year movements are latest divided by the prior trading day or the observation on/before one year earlier, minus one."
         ],
-        "executed_at": "2026-07-26T18:34:36.550381Z"
+        "executed_at": "2026-07-27T22:51:06.283316Z"
       }
     },
     {
@@ -6943,7 +6978,7 @@
           "PE (TTM), PB, and market cap (HKD bn) are each ticker's latest published daily value.",
           "No dividend-yield indicator exists on this endpoint; yield is not reported here."
         ],
-        "executed_at": "2026-07-26T18:34:36.550381Z"
+        "executed_at": "2026-07-27T22:51:06.283316Z"
       }
     },
     {
@@ -6959,7 +6994,7 @@
           "All retail outlet is the classification group's own published total across all outlet types.",
           "Month and year movements are latest divided by the prior month or the observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-07-26T18:34:36.550381Z"
+        "executed_at": "2026-07-27T22:51:06.283316Z"
       }
     },
     {
@@ -6975,7 +7010,7 @@
           "Purchases are only published sector-wide, not broken out by restaurant type.",
           "Quarter and year movements are latest divided by the prior quarter or the observation four quarters earlier, minus one."
         ],
-        "executed_at": "2026-07-26T18:34:36.550381Z"
+        "executed_at": "2026-07-27T22:51:06.283316Z"
       }
     },
     {
@@ -6992,7 +7027,7 @@
           "Southbound (南下) flow is daily Mainland visitor arrivals across all 17 control points, since Mainland visitors legitimately arrive by air, rail, and sea, not just by land.",
           "7-day moving averages (7d MA) smooth out day-of-week seasonality (weekend shopping spikes)."
         ],
-        "executed_at": "2026-07-26T18:34:36.550381Z"
+        "executed_at": "2026-07-27T22:51:06.283316Z"
       }
     },
     {
@@ -7009,7 +7044,7 @@
           "Red/Black Rainstorm hours measures total duration under Red or Black rainstorm warnings.",
           "RMB per 100 HKD is derived from FRED daily DEXCHUS and DEXHKUS rates."
         ],
-        "executed_at": "2026-07-26T18:34:36.550381Z"
+        "executed_at": "2026-07-27T22:51:06.283316Z"
       }
     },
     {
@@ -7024,7 +7059,7 @@
           "Total stores is each company's own latest snapshot count (not a cross-company-comparable unit -- a POP MART Roboshop and a Chow Tai Fook boutique are both counted as one location).",
           "This is a footprint snapshot, not a trend: most companies only have 1-2 dated snapshots so far, so month-over-month change is not yet meaningful."
         ],
-        "executed_at": "2026-07-26T18:34:36.550381Z"
+        "executed_at": "2026-07-27T22:51:06.283316Z"
       }
     },
     {
@@ -7038,13 +7073,13 @@
           "Validated live measure frames",
           "Declared future-source registry"
         ],
-        "executed_at": "2026-07-26T18:34:36.550381Z"
+        "executed_at": "2026-07-27T22:51:06.283316Z"
       }
     }
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-local-consumer/",
-    "snapshotId": "d0cc6d7d25b7f730",
-    "dataAsOf": "2026-07-22"
+    "snapshotId": "e9dbc057a1ae444c",
+    "dataAsOf": "2026-07-23"
   }
 }

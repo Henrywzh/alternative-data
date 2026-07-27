@@ -6,6 +6,7 @@ Use for global/US regulatory catalyst angle only.
 
 from __future__ import annotations
 
+import json
 import logging
 from datetime import datetime, timezone
 
@@ -30,18 +31,28 @@ def fetch_relevant_markets(query: str) -> pd.DataFrame:
         resp.raise_for_status()
         
         data = resp.json()
-        markets = data if isinstance(data, list) else data.get("markets", [])
+        events = data.get("events", []) if isinstance(data, dict) else (data if isinstance(data, list) else [])
         
         rows = []
-        for m in markets:
-            probs = m.get("outcomePrices", [])
-            prob = float(probs[0]) if probs else None
+        for ev in events:
+            mkts = ev.get("markets", []) if isinstance(ev, dict) else []
+            m = mkts[0] if mkts else (ev if isinstance(ev, dict) else {})
+            title = ev.get("title") or m.get("question") or m.get("title", "")
+            
+            raw_p = m.get("outcomePrices", [])
+            if isinstance(raw_p, str):
+                try:
+                    raw_p = json.loads(raw_p)
+                except (ValueError, TypeError):
+                    raw_p = []
+            
+            prob = float(raw_p[0]) if (raw_p and isinstance(raw_p, list)) else None
             
             rows.append({
-                "title": m.get("question", m.get("title", "")),
+                "title": title,
                 "probability": prob,
-                "end_date": m.get("endDate", m.get("resolutionDate", "")),
-                "market_id": m.get("id", m.get("conditionId", "")),
+                "end_date": str(m.get("endDate") or m.get("resolutionDate") or "")[:10],
+                "market_id": str(m.get("id") or m.get("conditionId") or ""),
                 "fetched_at": now_str,
             })
             

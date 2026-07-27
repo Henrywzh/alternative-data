@@ -1,0 +1,1591 @@
+{
+  "surface": "dashboard",
+  "manifest": {
+    "version": 1,
+    "surface": "dashboard",
+    "title": "香港稳定币与加密资产基础设施监测",
+    "description": "金管局持牌稳定币发行人沙盒名单、证监会持牌 VATP 虚拟资产交易平台、港交所加密 ETF 规模、稳定币市值及市场领先指标。",
+    "sector": "hk-stablecoin-crypto",
+    "generatedAt": "2026-07-27T22:51:14.613482Z",
+    "dataAsOf": "2026-07-27",
+    "liveSourcesCount": 6,
+    "totalSourcesCount": 7,
+    "cards": [
+      {
+        "id": "regulatory_licensing_card",
+        "description": "金管局稳定币沙盒持牌发行人及证监会持牌交易平台。",
+        "dataset": "market_kpi_summary",
+        "sourceId": "hkma_register",
+        "metrics": [
+          {
+            "label": "金管局稳定币发行人",
+            "field": "hkma_count",
+            "format": "number"
+          },
+          {
+            "label": "SFC 持牌 VATP",
+            "field": "sfc_licensed_count",
+            "format": "number"
+          },
+          {
+            "label": "SFC 申请中 VATP",
+            "field": "sfc_pending_count",
+            "format": "number"
+          }
+        ]
+      },
+      {
+        "id": "crypto_signals_card",
+        "description": "比特币现货价格、Coinbase 溢价价差及市场情绪指数。",
+        "dataset": "market_kpi_summary",
+        "sourceId": "coinbase_binance",
+        "metrics": [
+          {
+            "label": "比特币价格 (美元)",
+            "field": "btc_price",
+            "format": "number"
+          },
+          {
+            "label": "Coinbase 溢价 (bps)",
+            "field": "cb_premium_bps",
+            "format": "number"
+          },
+          {
+            "label": "恐慌与贪婪指数",
+            "field": "fear_greed_val",
+            "format": "number"
+          }
+        ]
+      },
+      {
+        "id": "etf_aum_card",
+        "description": "港交所加密现货 ETF 资产规模及全球稳定币总市值。",
+        "dataset": "market_kpi_summary",
+        "sourceId": "hkex_etf",
+        "metrics": [
+          {
+            "label": "港交所 ETF AUM (百万美元)",
+            "field": "total_etf_aum_m",
+            "format": "number"
+          },
+          {
+            "label": "全球稳定币市值 (十亿美元)",
+            "field": "total_supply_bn",
+            "format": "number"
+          }
+        ]
+      }
+    ],
+    "charts": [
+      {
+        "id": "etf_aum_history_chart",
+        "title": "港交所加密现货 ETF 月度 AUM (百万美元)",
+        "subtitle": "香港上市比特币及以太币现货 ETF 基金规模历史。",
+        "type": "line",
+        "dataset": "hkex_etf_aum_history",
+        "sourceId": "hkex_etf",
+        "encodings": {
+          "x": {
+            "field": "month",
+            "type": "temporal",
+            "label": "月份"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "label": "AUM (百万美元)"
+          },
+          "color": {
+            "field": "series",
+            "type": "nominal",
+            "label": "序列"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "full"
+      },
+      {
+        "id": "stablecoin_supply_chart",
+        "title": "全球前十大稳定币流通供应量 (十亿美元)",
+        "subtitle": "DefiLlama 按锚定市值统计的流通供应量。",
+        "type": "bar",
+        "dataset": "stablecoin_supplies",
+        "sourceId": "defillama",
+        "encodings": {
+          "x": {
+            "field": "symbol",
+            "type": "nominal",
+            "label": "稳定币"
+          },
+          "y": {
+            "field": "circulating_usd_bn",
+            "type": "quantitative",
+            "label": "供应量 (十亿美元)"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "half"
+      },
+      {
+        "id": "polymarket_catalysts_chart",
+        "title": "全球加密监管催化剂预测概率 (%)",
+        "subtitle": "预测市场对关键监管里程碑的实时概率预测。",
+        "type": "bar",
+        "dataset": "polymarket_catalysts",
+        "sourceId": "polymarket",
+        "encodings": {
+          "x": {
+            "field": "title",
+            "type": "nominal",
+            "label": "催化事件"
+          },
+          "y": {
+            "field": "probability_pct",
+            "type": "quantitative",
+            "label": "概率 (%)"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "half"
+      }
+    ],
+    "tables": [
+      {
+        "id": "hkma_issuers_table",
+        "title": "香港金管局持牌稳定币沙盒发行人",
+        "subtitle": "金管局稳定币发行人沙盒官方登记册。",
+        "dataset": "hkma_issuers",
+        "sourceId": "hkma_register",
+        "density": "dense",
+        "layout": "full",
+        "columns": [
+          {
+            "field": "issuer",
+            "label": "发行人名称",
+            "type": "text"
+          },
+          {
+            "field": "licence_number",
+            "label": "牌照编号",
+            "type": "text"
+          },
+          {
+            "field": "effective_date",
+            "label": "生效日期",
+            "type": "text"
+          },
+          {
+            "field": "status",
+            "label": "监管状态",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "id": "sfc_vatp_table",
+        "title": "香港证监会虚拟资产交易平台 (VATP) 登记册",
+        "subtitle": "涵盖持牌、申请中及已撤回的交易所平台。",
+        "dataset": "sfc_vatps",
+        "sourceId": "sfc_vatp",
+        "density": "dense",
+        "layout": "full",
+        "columns": [
+          {
+            "field": "platform_name",
+            "label": "平台 / 运营商名称",
+            "type": "text"
+          },
+          {
+            "field": "status",
+            "label": "状态",
+            "type": "text"
+          },
+          {
+            "field": "licensed_date",
+            "label": "牌照 / 申请日期",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "id": "hkex_etf_table",
+        "title": "港交所加密现货 ETF 基金规模摘要",
+        "subtitle": "各基金最新月度 AUM（嘉实以太币 3179.HK 待查找 fundId）。",
+        "dataset": "hkex_etf_summary",
+        "sourceId": "hkex_etf",
+        "density": "dense",
+        "layout": "full",
+        "columns": [
+          {
+            "field": "ticker",
+            "label": "股票代码",
+            "type": "text"
+          },
+          {
+            "field": "name",
+            "label": "ETF 名称",
+            "type": "text"
+          },
+          {
+            "field": "fund_id",
+            "label": "港交所 Fund ID",
+            "type": "text"
+          },
+          {
+            "field": "latest_month",
+            "label": "最新月份",
+            "type": "text"
+          },
+          {
+            "field": "aum_usd_m",
+            "label": "AUM (百万美元)",
+            "format": "number"
+          }
+        ]
+      },
+      {
+        "id": "crypto_watchlist_table",
+        "title": "香港上市加密与稳定币观察名单 (Tiers 1–4)",
+        "subtitle": "Tier 1 持牌基础设施、Tier 2 大型机构、Tier 3 概念转型、Tier 4 储备配置。",
+        "dataset": "crypto_watchlist",
+        "sourceId": "hkma_register",
+        "density": "dense",
+        "layout": "full",
+        "columns": [
+          {
+            "field": "tier",
+            "label": "分层",
+            "type": "text"
+          },
+          {
+            "field": "ticker",
+            "label": "股票代码",
+            "type": "text"
+          },
+          {
+            "field": "company_en",
+            "label": "英文名称",
+            "type": "text"
+          },
+          {
+            "field": "company_zh",
+            "label": "中文名称",
+            "type": "text"
+          },
+          {
+            "field": "regulatory_note",
+            "label": "监管状态 / 备注",
+            "type": "text"
+          }
+        ]
+      }
+    ],
+    "sources": [
+      {
+        "id": "hkma_register",
+        "label": "香港金管局持牌稳定币发行人登记册",
+        "href": "https://www.hkma.gov.hk/eng/regulatory-resources/registers/register-of-licensed-stablecoin-issuers/",
+        "path": "sources/hkma_register.sql",
+        "query": {
+          "engine": "pandas.read_html via requests+UserAgent",
+          "url": "https://www.hkma.gov.hk/eng/regulatory-resources/registers/register-of-licensed-stablecoin-issuers/",
+          "language": "HTML",
+          "sql": "SELECT issuer, licence_number, effective_date FROM hkma_register;",
+          "description": "构建时从公开来源读取并校验 香港金管局持牌稳定币发行人登记册。"
+        }
+      },
+      {
+        "id": "sfc_vatp",
+        "label": "香港证监会虚拟资产交易平台登记册",
+        "href": "https://www.sfc.hk/en/Welcome-to-the-Fintech-Contact-Point/Virtual-assets/Virtual-asset-trading-platforms-operators/Lists-of-virtual-asset-trading-platforms",
+        "path": "sources/sfc_vatp.sql",
+        "query": {
+          "engine": "pandas.read_html via requests+UserAgent",
+          "url": "https://www.sfc.hk/en/Welcome-to-the-Fintech-Contact-Point/Virtual-assets/Virtual-asset-trading-platforms-operators/Lists-of-virtual-asset-trading-platforms",
+          "language": "HTML",
+          "sql": "SELECT platform_name, status, licensed_date FROM sfc_vatp_register;",
+          "description": "构建时从公开来源读取并校验 香港证监会虚拟资产交易平台登记册。"
+        }
+      },
+      {
+        "id": "defillama",
+        "label": "DefiLlama 稳定币 API",
+        "href": "https://stablecoins.llama.fi/",
+        "path": "sources/defillama.sql",
+        "query": {
+          "engine": "DefiLlama REST API",
+          "url": "https://stablecoins.llama.fi/stablecoins?includePrices=true",
+          "language": "JSON",
+          "sql": "SELECT name, symbol, circulating_usd FROM defillama_stablecoins;",
+          "description": "构建时从公开来源读取并校验 DefiLlama 稳定币 API。"
+        }
+      },
+      {
+        "id": "hkex_etf",
+        "label": "港交所综合基金平台 ETF AUM API",
+        "href": "https://ifp.hkex.com.hk/",
+        "path": "sources/hkex_etf.sql",
+        "query": {
+          "engine": "HKEX IFP getFundSizeList API",
+          "url": "https://ifp.hkex.com.hk/ifp/api/v1/fund/getFundSizeList",
+          "language": "JSON",
+          "sql": "SELECT month, aum_usd, fund_id, ticker, name FROM hkex_etf_aum;",
+          "description": "构建时从公开来源读取并校验 港交所综合基金平台 ETF AUM API。"
+        }
+      },
+      {
+        "id": "coinbase_binance",
+        "label": "Coinbase & Binance 公开行情",
+        "href": "https://api.exchange.coinbase.com/",
+        "path": "sources/coinbase_binance.sql",
+        "query": {
+          "engine": "Coinbase & Binance Spot Tickers",
+          "url": "https://api.exchange.coinbase.com/products/BTC-USD/ticker",
+          "language": "JSON",
+          "sql": "SELECT price_usd, volume_24h, premium_bps FROM crypto_tickers;",
+          "description": "构建时从公开来源读取并校验 Coinbase & Binance 公开行情。"
+        }
+      },
+      {
+        "id": "fear_greed",
+        "label": "加密货币恐慌与贪婪指数",
+        "href": "https://alternative.me/crypto/fear-and-greed-index/",
+        "path": "sources/fear_greed.sql",
+        "query": {
+          "engine": "Alternative.me API",
+          "url": "https://api.alternative.me/fng/",
+          "language": "JSON",
+          "sql": "SELECT value, classification FROM fear_greed_index;",
+          "description": "构建时从公开来源读取并校验 加密货币恐慌与贪婪指数。"
+        }
+      },
+      {
+        "id": "polymarket",
+        "label": "Polymarket Gamma 预测市场 API",
+        "href": "https://polymarket.com/",
+        "path": "sources/polymarket.sql",
+        "query": {
+          "engine": "Polymarket public-search API",
+          "url": "https://gamma-api.polymarket.com/public-search",
+          "language": "JSON",
+          "sql": "SELECT title, probability, end_date FROM polymarket_catalysts;",
+          "description": "构建时从公开来源读取并校验 Polymarket Gamma 预测市场 API。"
+        }
+      }
+    ],
+    "blocks": [
+      {
+        "id": "snapshot_context",
+        "type": "markdown",
+        "body": "**数据快照：** `b6c3eec0bf0b07c8` · 生成于 2026-07-27T22:51:14.613482Z。"
+      },
+      {
+        "id": "kpi_grid",
+        "type": "metric-strip",
+        "cardIds": [
+          "regulatory_licensing_card",
+          "crypto_signals_card",
+          "etf_aum_card"
+        ]
+      },
+      {
+        "id": "hkma_table_block",
+        "type": "table",
+        "tableId": "hkma_issuers_table"
+      },
+      {
+        "id": "sfc_table_block",
+        "type": "table",
+        "tableId": "sfc_vatp_table"
+      },
+      {
+        "id": "etf_chart_block",
+        "type": "chart",
+        "chartId": "etf_aum_history_chart"
+      },
+      {
+        "id": "etf_table_block",
+        "type": "table",
+        "tableId": "hkex_etf_table"
+      },
+      {
+        "id": "stablecoin_chart_block",
+        "type": "chart",
+        "chartId": "stablecoin_supply_chart",
+        "layout": "half"
+      },
+      {
+        "id": "polymarket_chart_block",
+        "type": "chart",
+        "chartId": "polymarket_catalysts_chart",
+        "layout": "half"
+      },
+      {
+        "id": "watchlist_table_block",
+        "type": "table",
+        "tableId": "crypto_watchlist_table"
+      },
+      {
+        "id": "methodology",
+        "type": "markdown",
+        "body": "## 如何阅读本 dashboard\n\n香港加密生态由官方监管登记册锚定：金管局稳定币发行人沙盒（Anchorpoint FRS01、汇丰 FRS02）及证监会持牌 VATP 交易平台（OSL、HashKey）。券商（如国泰君安国际 01788.HK）仅具备虚拟资产交易服务许可，非 VATP 交易所运营商；Anchorpoint（Anchorpoint Financial，港元锚定 HKDAP）与 AnchorX（金涌投资 01328.HK，AxCNH）为不同主体。本 dashboard 跟踪监管登记册、港交所 ETF AUM 及 Coinbase 溢价信号。本界面不提供投资建议。"
+      }
+    ]
+  },
+  "snapshot": {
+    "version": 1,
+    "generatedAt": "2026-07-27T22:51:14.613482Z",
+    "status": "ready",
+    "datasets": {
+      "hkma_issuers": [
+        {
+          "issuer": "Anchorpoint Financial Limited",
+          "licence_number": "FRS01",
+          "effective_date": "10/04/2026",
+          "status": "Licensed Sandbox Issuer"
+        },
+        {
+          "issuer": "The Hongkong and Shanghai Banking Corporation Limited",
+          "licence_number": "FRS02",
+          "effective_date": "10/04/2026",
+          "status": "Licensed Sandbox Issuer"
+        }
+      ],
+      "sfc_vatps": [
+        {
+          "platform_name": "OSL Digital Securities Limited",
+          "status": "licensed",
+          "licensed_date": "15/12/2020"
+        },
+        {
+          "platform_name": "Hash Blockchain Limited",
+          "status": "licensed",
+          "licensed_date": "09/11/2022"
+        },
+        {
+          "platform_name": "Hong Kong Virtual Asset Exchange Limited",
+          "status": "licensed",
+          "licensed_date": "03/10/2024"
+        },
+        {
+          "platform_name": "Hong Kong Digital Asset EX Limited",
+          "status": "licensed",
+          "licensed_date": "18/12/2024"
+        },
+        {
+          "platform_name": "Accumulus GBA Technology (Hongkong) Co., Limited",
+          "status": "licensed",
+          "licensed_date": "18/12/2024"
+        },
+        {
+          "platform_name": "DFX Labs Company Limited",
+          "status": "licensed",
+          "licensed_date": "18/12/2024"
+        },
+        {
+          "platform_name": "EXIO Limited",
+          "status": "licensed",
+          "licensed_date": "18/12/2024"
+        },
+        {
+          "platform_name": "Panthertrade (Hong Kong) Limited",
+          "status": "licensed",
+          "licensed_date": "27/01/2025"
+        },
+        {
+          "platform_name": "YAX (Hong Kong) Limited",
+          "status": "licensed",
+          "licensed_date": "27/01/2025"
+        },
+        {
+          "platform_name": "Bullish HK Markets Limited",
+          "status": "licensed",
+          "licensed_date": "18/02/2025"
+        },
+        {
+          "platform_name": "Hong Kong BGE Limited",
+          "status": "licensed",
+          "licensed_date": "17/06/2025"
+        },
+        {
+          "platform_name": "Victory Fintech Company Limited",
+          "status": "licensed",
+          "licensed_date": "13/02/2026"
+        },
+        {
+          "platform_name": "NewBX Limited",
+          "status": "licensed",
+          "licensed_date": "18/05/2026"
+        },
+        {
+          "platform_name": "HighBlock Limited",
+          "status": "pending",
+          "licensed_date": "06/02/2024"
+        },
+        {
+          "platform_name": "Foris DAX HK Limited^",
+          "status": "pending",
+          "licensed_date": "09/02/2024"
+        },
+        {
+          "platform_name": "Whalefin Markets Limited^",
+          "status": "pending",
+          "licensed_date": "21/02/2024"
+        },
+        {
+          "platform_name": "Flying Hippo Technologies Limited^#",
+          "status": "pending",
+          "licensed_date": "26/02/2024"
+        },
+        {
+          "platform_name": "Nebulas Hong Kong Limited",
+          "status": "pending",
+          "licensed_date": "25/10/2024"
+        },
+        {
+          "platform_name": "Spark Fintech Limited",
+          "status": "pending",
+          "licensed_date": "06/06/2025"
+        },
+        {
+          "platform_name": "AMMBR (HK) LIMITED",
+          "status": "withdrawn",
+          "licensed_date": "29/09/2023"
+        },
+        {
+          "platform_name": "BitHarbour (Hong Kong) Limited",
+          "status": "withdrawn",
+          "licensed_date": "11/01/2024"
+        },
+        {
+          "platform_name": "Meex Digital Securities Limited",
+          "status": "withdrawn",
+          "licensed_date": "12/10/2023"
+        },
+        {
+          "platform_name": "HBGL Hong Kong Limited",
+          "status": "withdrawn",
+          "licensed_date": "20/02/2024"
+        },
+        {
+          "platform_name": "BX SERVICES LIMITED",
+          "status": "withdrawn",
+          "licensed_date": "04/01/2024"
+        },
+        {
+          "platform_name": "Willows Asia Technology Company Limited",
+          "status": "withdrawn",
+          "licensed_date": "22/02/2024"
+        },
+        {
+          "platform_name": "QuanX Lab Limited",
+          "status": "withdrawn",
+          "licensed_date": "29/02/2024"
+        },
+        {
+          "platform_name": "HBGL Hong Kong Limited",
+          "status": "withdrawn",
+          "licensed_date": "26/02/2024"
+        },
+        {
+          "platform_name": "Gate Digital Limited",
+          "status": "withdrawn",
+          "licensed_date": "28/02/2024"
+        },
+        {
+          "platform_name": "OKX Hong Kong FinTech Company Limited",
+          "status": "withdrawn",
+          "licensed_date": "16/11/2023"
+        },
+        {
+          "platform_name": "Hong Kong VAEXC Limited",
+          "status": "withdrawn",
+          "licensed_date": "25/11/2023"
+        },
+        {
+          "platform_name": "Spark Fintech Limited",
+          "status": "withdrawn",
+          "licensed_date": "31/01/2024"
+        },
+        {
+          "platform_name": "hi5 (Hong Kong) Limited",
+          "status": "withdrawn",
+          "licensed_date": "29/02/2024"
+        },
+        {
+          "platform_name": "Hong Kong Digital Asset Xchange Limited",
+          "status": "withdrawn",
+          "licensed_date": "27/08/2024"
+        },
+        {
+          "platform_name": "Bitcoin World Technology Limited",
+          "status": "withdrawn",
+          "licensed_date": "17/05/2024"
+        },
+        {
+          "platform_name": "Bitcoin World Technology Limited",
+          "status": "withdrawn",
+          "licensed_date": "10/06/2025"
+        },
+        {
+          "platform_name": "Spread Technologies Hong Kong Limited",
+          "status": "withdrawn",
+          "licensed_date": "27/06/2025"
+        }
+      ],
+      "stablecoin_supplies": [
+        {
+          "name": "Tether",
+          "symbol": "USDT",
+          "circulating_usd_bn": 183.92,
+          "market_share_pct": 59.52
+        },
+        {
+          "name": "USD Coin",
+          "symbol": "USDC",
+          "circulating_usd_bn": 73.47,
+          "market_share_pct": 23.77
+        },
+        {
+          "name": "Sky Dollar",
+          "symbol": "USDS",
+          "circulating_usd_bn": 6.54,
+          "market_share_pct": 2.12
+        },
+        {
+          "name": "Dai",
+          "symbol": "DAI",
+          "circulating_usd_bn": 4.8,
+          "market_share_pct": 1.55
+        },
+        {
+          "name": "World Liberty Financial USD",
+          "symbol": "USD1",
+          "circulating_usd_bn": 4.12,
+          "market_share_pct": 1.33
+        },
+        {
+          "name": "Ethena USDe",
+          "symbol": "USDe",
+          "circulating_usd_bn": 3.94,
+          "market_share_pct": 1.28
+        },
+        {
+          "name": "Global Dollar",
+          "symbol": "USDG",
+          "circulating_usd_bn": 3.26,
+          "market_share_pct": 1.05
+        },
+        {
+          "name": "Circle USYC",
+          "symbol": "USYC",
+          "circulating_usd_bn": 3.01,
+          "market_share_pct": 0.97
+        },
+        {
+          "name": "PayPal USD",
+          "symbol": "PYUSD",
+          "circulating_usd_bn": 2.66,
+          "market_share_pct": 0.86
+        },
+        {
+          "name": "BlackRock USD",
+          "symbol": "BUIDL",
+          "circulating_usd_bn": 2.64,
+          "market_share_pct": 0.85
+        }
+      ],
+      "hkex_etf_summary": [
+        {
+          "ticker": "3008.HK",
+          "name": "Bosera HashKey Bitcoin ETF",
+          "fund_id": "BUU104",
+          "latest_month": "2026-05",
+          "aum_usd_m": 80.06
+        },
+        {
+          "ticker": "3009.HK",
+          "name": "Bosera HashKey Ether ETF",
+          "fund_id": "BUU105",
+          "latest_month": "2026-05",
+          "aum_usd_m": 18.94
+        },
+        {
+          "ticker": "3042.HK",
+          "name": "ChinaAMC Bitcoin ETF",
+          "fund_id": "BUU163",
+          "latest_month": "2026-05",
+          "aum_usd_m": 186.76
+        },
+        {
+          "ticker": "3046.HK",
+          "name": "ChinaAMC Ether ETF",
+          "fund_id": "BUU164",
+          "latest_month": "2026-05",
+          "aum_usd_m": 36.91
+        },
+        {
+          "ticker": "3439.HK",
+          "name": "Harvest Bitcoin Spot ETF",
+          "fund_id": "BUT244",
+          "latest_month": "2026-05",
+          "aum_usd_m": 15.51
+        }
+      ],
+      "hkex_etf_aum_history": [
+        {
+          "month": "2024-09",
+          "series": "3008",
+          "value": 106.31
+        },
+        {
+          "month": "2024-09",
+          "series": "3009",
+          "value": 15.49
+        },
+        {
+          "month": "2024-09",
+          "series": "3042",
+          "value": 142.03
+        },
+        {
+          "month": "2024-09",
+          "series": "3046",
+          "value": 15.68
+        },
+        {
+          "month": "2024-09",
+          "series": "3439",
+          "value": 32.17
+        },
+        {
+          "month": "2024-12",
+          "series": "3008",
+          "value": 148.17
+        },
+        {
+          "month": "2024-12",
+          "series": "3009",
+          "value": 19.61
+        },
+        {
+          "month": "2024-12",
+          "series": "3042",
+          "value": 215.7
+        },
+        {
+          "month": "2024-12",
+          "series": "3046",
+          "value": 34.34
+        },
+        {
+          "month": "2024-12",
+          "series": "3439",
+          "value": 33.95
+        },
+        {
+          "month": "2025-01",
+          "series": "3008",
+          "value": 167.85
+        },
+        {
+          "month": "2025-01",
+          "series": "3009",
+          "value": 21.63
+        },
+        {
+          "month": "2025-01",
+          "series": "3042",
+          "value": 245.32
+        },
+        {
+          "month": "2025-01",
+          "series": "3046",
+          "value": 32.09
+        },
+        {
+          "month": "2025-01",
+          "series": "3439",
+          "value": 37.66
+        },
+        {
+          "month": "2025-02",
+          "series": "3008",
+          "value": 127.39
+        },
+        {
+          "month": "2025-02",
+          "series": "3009",
+          "value": 13.99
+        },
+        {
+          "month": "2025-02",
+          "series": "3042",
+          "value": 181.49
+        },
+        {
+          "month": "2025-02",
+          "series": "3046",
+          "value": 21.44
+        },
+        {
+          "month": "2025-02",
+          "series": "3439",
+          "value": 28.37
+        },
+        {
+          "month": "2025-03",
+          "series": "3008",
+          "value": 135.1
+        },
+        {
+          "month": "2025-03",
+          "series": "3009",
+          "value": 12.25
+        },
+        {
+          "month": "2025-03",
+          "series": "3042",
+          "value": 183.34
+        },
+        {
+          "month": "2025-03",
+          "series": "3046",
+          "value": 18.23
+        },
+        {
+          "month": "2025-03",
+          "series": "3439",
+          "value": 29.26
+        },
+        {
+          "month": "2025-04",
+          "series": "3008",
+          "value": 155.56
+        },
+        {
+          "month": "2025-04",
+          "series": "3009",
+          "value": 12.43
+        },
+        {
+          "month": "2025-04",
+          "series": "3042",
+          "value": 206.27
+        },
+        {
+          "month": "2025-04",
+          "series": "3046",
+          "value": 18.51
+        },
+        {
+          "month": "2025-04",
+          "series": "3439",
+          "value": 28.64
+        },
+        {
+          "month": "2025-05",
+          "series": "3008",
+          "value": 170.85
+        },
+        {
+          "month": "2025-05",
+          "series": "3009",
+          "value": 18.1
+        },
+        {
+          "month": "2025-05",
+          "series": "3042",
+          "value": 306.71
+        },
+        {
+          "month": "2025-05",
+          "series": "3046",
+          "value": 32.84
+        },
+        {
+          "month": "2025-05",
+          "series": "3439",
+          "value": 31.81
+        },
+        {
+          "month": "2025-06",
+          "series": "3008",
+          "value": 176.51
+        },
+        {
+          "month": "2025-06",
+          "series": "3009",
+          "value": 17.28
+        },
+        {
+          "month": "2025-06",
+          "series": "3042",
+          "value": 240.08
+        },
+        {
+          "month": "2025-06",
+          "series": "3046",
+          "value": 29.39
+        },
+        {
+          "month": "2025-06",
+          "series": "3439",
+          "value": 32.45
+        },
+        {
+          "month": "2025-07",
+          "series": "3008",
+          "value": 196.21
+        },
+        {
+          "month": "2025-07",
+          "series": "3009",
+          "value": 27.72
+        },
+        {
+          "month": "2025-07",
+          "series": "3042",
+          "value": 274.45
+        },
+        {
+          "month": "2025-07",
+          "series": "3046",
+          "value": 50.23
+        },
+        {
+          "month": "2025-07",
+          "series": "3439",
+          "value": 34.79
+        },
+        {
+          "month": "2025-08",
+          "series": "3008",
+          "value": 184.45
+        },
+        {
+          "month": "2025-08",
+          "series": "3009",
+          "value": 34.07
+        },
+        {
+          "month": "2025-08",
+          "series": "3042",
+          "value": 264.97
+        },
+        {
+          "month": "2025-08",
+          "series": "3046",
+          "value": 80.16
+        },
+        {
+          "month": "2025-08",
+          "series": "3439",
+          "value": 32.3
+        },
+        {
+          "month": "2025-09",
+          "series": "3008",
+          "value": 196.33
+        },
+        {
+          "month": "2025-09",
+          "series": "3009",
+          "value": 33.27
+        },
+        {
+          "month": "2025-09",
+          "series": "3042",
+          "value": 265.87
+        },
+        {
+          "month": "2025-09",
+          "series": "3046",
+          "value": 85.4
+        },
+        {
+          "month": "2025-09",
+          "series": "3439",
+          "value": 33.28
+        },
+        {
+          "month": "2025-10",
+          "series": "3008",
+          "value": 155.68
+        },
+        {
+          "month": "2025-10",
+          "series": "3009",
+          "value": 32.63
+        },
+        {
+          "month": "2025-10",
+          "series": "3042",
+          "value": 257.37
+        },
+        {
+          "month": "2025-10",
+          "series": "3046",
+          "value": 80.35
+        },
+        {
+          "month": "2025-10",
+          "series": "3439",
+          "value": 31.97
+        },
+        {
+          "month": "2025-11",
+          "series": "3008",
+          "value": 102.14
+        },
+        {
+          "month": "2025-11",
+          "series": "3009",
+          "value": 25.63
+        },
+        {
+          "month": "2025-11",
+          "series": "3042",
+          "value": 212.42
+        },
+        {
+          "month": "2025-11",
+          "series": "3046",
+          "value": 61.82
+        },
+        {
+          "month": "2025-11",
+          "series": "3439",
+          "value": 26.61
+        },
+        {
+          "month": "2025-12",
+          "series": "3008",
+          "value": 99.76
+        },
+        {
+          "month": "2025-12",
+          "series": "3009",
+          "value": 26.13
+        },
+        {
+          "month": "2025-12",
+          "series": "3042",
+          "value": 213.3
+        },
+        {
+          "month": "2025-12",
+          "series": "3046",
+          "value": 60.18
+        },
+        {
+          "month": "2025-12",
+          "series": "3439",
+          "value": 25.74
+        },
+        {
+          "month": "2026-01",
+          "series": "3008",
+          "value": 93.11
+        },
+        {
+          "month": "2026-01",
+          "series": "3009",
+          "value": 24
+        },
+        {
+          "month": "2026-01",
+          "series": "3042",
+          "value": 199.06
+        },
+        {
+          "month": "2026-01",
+          "series": "3046",
+          "value": 55.12
+        },
+        {
+          "month": "2026-01",
+          "series": "3439",
+          "value": 24.01
+        },
+        {
+          "month": "2026-02",
+          "series": "3008",
+          "value": 77.81
+        },
+        {
+          "month": "2026-02",
+          "series": "3009",
+          "value": 19.61
+        },
+        {
+          "month": "2026-02",
+          "series": "3042",
+          "value": 171.26
+        },
+        {
+          "month": "2026-02",
+          "series": "3046",
+          "value": 40.76
+        },
+        {
+          "month": "2026-02",
+          "series": "3439",
+          "value": 14.85
+        },
+        {
+          "month": "2026-03",
+          "series": "3008",
+          "value": 79.33
+        },
+        {
+          "month": "2026-03",
+          "series": "3009",
+          "value": 19.38
+        },
+        {
+          "month": "2026-03",
+          "series": "3042",
+          "value": 174.78
+        },
+        {
+          "month": "2026-03",
+          "series": "3046",
+          "value": 39.26
+        },
+        {
+          "month": "2026-03",
+          "series": "3439",
+          "value": 14.23
+        },
+        {
+          "month": "2026-04",
+          "series": "3008",
+          "value": 92.79
+        },
+        {
+          "month": "2026-04",
+          "series": "3009",
+          "value": 21.26
+        },
+        {
+          "month": "2026-04",
+          "series": "3042",
+          "value": 198.24
+        },
+        {
+          "month": "2026-04",
+          "series": "3046",
+          "value": 42.48
+        },
+        {
+          "month": "2026-04",
+          "series": "3439",
+          "value": 16.02
+        },
+        {
+          "month": "2026-05",
+          "series": "3008",
+          "value": 80.06
+        },
+        {
+          "month": "2026-05",
+          "series": "3009",
+          "value": 18.94
+        },
+        {
+          "month": "2026-05",
+          "series": "3042",
+          "value": 186.76
+        },
+        {
+          "month": "2026-05",
+          "series": "3046",
+          "value": 36.91
+        },
+        {
+          "month": "2026-05",
+          "series": "3439",
+          "value": 15.51
+        }
+      ],
+      "polymarket_catalysts": [
+        {
+          "title": "What will Trump say during Wisconsin events?",
+          "probability_pct": 100,
+          "end_date": "2026-06-06"
+        },
+        {
+          "title": "What will Trump say during No Tax on Tips Roundtable? ",
+          "probability_pct": 100,
+          "end_date": "2026-04-16"
+        },
+        {
+          "title": "Counter-Strike: Just Players vs Inner Circle Academy (BO3...",
+          "probability_pct": 100,
+          "end_date": "2026-07-27"
+        },
+        {
+          "title": "U.S. enacts stablecoin bill in 2025?",
+          "probability_pct": 100,
+          "end_date": "2025-12-31"
+        },
+        {
+          "title": "Bitcoin ETF Flows on March 12?",
+          "probability_pct": 100,
+          "end_date": "2026-03-12"
+        },
+        {
+          "title": "Bitcoin ETF approved by Jan 15?",
+          "probability_pct": 100,
+          "end_date": "2024-01-15"
+        },
+        {
+          "title": "Bitcoin ETF Flows on October 23?",
+          "probability_pct": 100,
+          "end_date": "2025-10-23"
+        },
+        {
+          "title": "What will Coinbase say during their next earnings call?",
+          "probability_pct": 100,
+          "end_date": "2025-10-29"
+        }
+      ],
+      "crypto_watchlist": [
+        {
+          "tier": "Tier 1: Licensed Infrastructure",
+          "ticker": "00863.HK",
+          "company_en": "OSL Group",
+          "company_zh": "OSL集团",
+          "regulatory_note": "SFC VATP-licensed exchange operator since 15/12/2020"
+        },
+        {
+          "tier": "Tier 1: Licensed Infrastructure",
+          "ticker": "03887.HK",
+          "company_en": "HashKey Holdings",
+          "company_zh": "HashKey",
+          "regulatory_note": "SFC VATP-licensed exchange operator since 09/11/2022"
+        },
+        {
+          "tier": "Tier 1: Licensed Infrastructure",
+          "ticker": "01788.HK",
+          "company_en": "Guotai Junan International",
+          "company_zh": "国泰君安国际",
+          "regulatory_note": "Licensed to deal in virtual assets — NOT a VATP exchange operator (different, lesser regulatory status)"
+        },
+        {
+          "tier": "Tier 1: Licensed Infrastructure",
+          "ticker": "08540.HK",
+          "company_en": "Victory Securities",
+          "company_zh": "胜利证券",
+          "regulatory_note": "Licensed to deal in virtual assets — NOT a VATP exchange operator (different, lesser regulatory status)"
+        },
+        {
+          "tier": "Tier 1: Licensed Infrastructure",
+          "ticker": "01499.HK",
+          "company_en": "OKG Technology",
+          "company_zh": "欧科云链",
+          "regulatory_note": "Infrastructure/data; linked to OKX, but OKX withdrew its HK VATP application in May 2024"
+        },
+        {
+          "tier": "Tier 1: Licensed Infrastructure",
+          "ticker": "01611.HK",
+          "company_en": "Sinohope",
+          "company_zh": "新火集团",
+          "regulatory_note": "Asset management and tech solutions (SFO Type 1/4/9 licensed)"
+        },
+        {
+          "tier": "Tier 2: Big-Name / Adjacent",
+          "ticker": "00005.HK",
+          "company_en": "HSBC Holdings",
+          "company_zh": "汇丰控股",
+          "regulatory_note": "HKMA stablecoin issuer licence FRS02 effective 10/04/2026"
+        },
+        {
+          "tier": "Tier 2: Big-Name / Adjacent",
+          "ticker": "02888.HK",
+          "company_en": "Standard Chartered",
+          "company_zh": "渣打集团",
+          "regulatory_note": "HKMA stablecoin issuer licence FRS01 effective 10/04/2026 via Anchorpoint Financial JV"
+        },
+        {
+          "tier": "Tier 2: Big-Name / Adjacent",
+          "ticker": "06823.HK",
+          "company_en": "HKT",
+          "company_zh": "香港电讯",
+          "regulatory_note": "Partner in Anchorpoint Financial JV (FRS01)"
+        },
+        {
+          "tier": "Tier 2: Big-Name / Adjacent",
+          "ticker": "02388.HK",
+          "company_en": "BOC Hong Kong",
+          "company_zh": "中银香港",
+          "regulatory_note": "Linked to HKMA stablecoin issuer sandbox"
+        },
+        {
+          "tier": "Tier 2: Big-Name / Adjacent",
+          "ticker": "09988.HK",
+          "company_en": "Alibaba",
+          "company_zh": "阿里巴巴",
+          "regulatory_note": "Ant International reportedly pursuing stablecoin initiatives"
+        },
+        {
+          "tier": "Tier 2: Big-Name / Adjacent",
+          "ticker": "09618.HK",
+          "company_en": "JD.com",
+          "company_zh": "京东集团",
+          "regulatory_note": "Pursuing stablecoin initiatives"
+        },
+        {
+          "tier": "Tier 3: Concept Pivots",
+          "ticker": "01328.HK",
+          "company_en": "Jinyong Investment",
+          "company_zh": "金涌投资",
+          "regulatory_note": "Partnered with AnchorX for AxCNH stablecoin (DO NOT CONFLATE WITH ANCHORPOINT)"
+        },
+        {
+          "tier": "Tier 3: Concept Pivots",
+          "ticker": "08087.HK",
+          "company_en": "China 33 Group",
+          "company_zh": "中国三三传媒",
+          "regulatory_note": "Announced plans to apply for a HK stablecoin license"
+        },
+        {
+          "tier": "Tier 3: Concept Pivots",
+          "ticker": "02477.HK",
+          "company_en": "Jingwei Tiandi",
+          "company_zh": "经纬天地",
+          "regulatory_note": "Launched Fopay stablecoin payment app"
+        },
+        {
+          "tier": "Tier 3: Concept Pivots",
+          "ticker": "00290.HK",
+          "company_en": "Guofu Quantum",
+          "company_zh": "国富创新",
+          "regulatory_note": "Investing in RWA tokenization platforms"
+        },
+        {
+          "tier": "Tier 3: Concept Pivots",
+          "ticker": "00399.HK",
+          "company_en": "Starcoin Group",
+          "company_zh": "星太链集团",
+          "regulatory_note": "Gold RWA-tokenization framework agreement, token airdrop MOU"
+        },
+        {
+          "tier": "Tier 3: Concept Pivots",
+          "ticker": "01647.HK",
+          "company_en": "Xiongan Technology",
+          "company_zh": "雄岸科技",
+          "regulatory_note": "Partnership with Lion Group for crypto trading platform"
+        },
+        {
+          "tier": "Tier 3: Concept Pivots",
+          "ticker": "00736.HK",
+          "company_en": "China Properties Investment",
+          "company_zh": "中国置业投资",
+          "regulatory_note": "TokenMarket tie-up, purchasing digital assets"
+        },
+        {
+          "tier": "Tier 4: Treasury Plays",
+          "ticker": "00434.HK",
+          "company_en": "Boyaa Interactive",
+          "company_zh": "博雅互动",
+          "regulatory_note": "BTC/ETH treasury play"
+        },
+        {
+          "tier": "Tier 4: Treasury Plays",
+          "ticker": "08267.HK",
+          "company_en": "Lion Rock",
+          "company_zh": "蓝港互动",
+          "regulatory_note": "BTC/ETH/SOL treasury play and staking"
+        },
+        {
+          "tier": "Tier 4: Treasury Plays",
+          "ticker": "02440.HK",
+          "company_en": "MemeStrategy",
+          "company_zh": "迷策略",
+          "regulatory_note": "Solana treasury play, Moonit trading system"
+        }
+      ],
+      "market_kpi_summary": [
+        {
+          "hkma_count": 2,
+          "sfc_licensed_count": 13,
+          "sfc_pending_count": 6,
+          "total_supply_bn": 309.01,
+          "total_etf_aum_m": 338.18,
+          "btc_price": 63980.5,
+          "cb_premium_bps": -9.6,
+          "fear_greed_val": 30,
+          "fear_greed_class": "Fear"
+        }
+      ]
+    }
+  },
+  "sources": [
+    {
+      "id": "hkma_register",
+      "label": "香港金管局持牌稳定币发行人登记册",
+      "href": "https://www.hkma.gov.hk/eng/regulatory-resources/registers/register-of-licensed-stablecoin-issuers/",
+      "path": "sources/hkma_register.sql",
+      "query": {
+        "engine": "pandas.read_html via requests+UserAgent",
+        "url": "https://www.hkma.gov.hk/eng/regulatory-resources/registers/register-of-licensed-stablecoin-issuers/",
+        "language": "HTML",
+        "sql": "SELECT issuer, licence_number, effective_date FROM hkma_register;",
+        "description": "构建时从公开来源读取并校验 香港金管局持牌稳定币发行人登记册。"
+      }
+    },
+    {
+      "id": "sfc_vatp",
+      "label": "香港证监会虚拟资产交易平台登记册",
+      "href": "https://www.sfc.hk/en/Welcome-to-the-Fintech-Contact-Point/Virtual-assets/Virtual-asset-trading-platforms-operators/Lists-of-virtual-asset-trading-platforms",
+      "path": "sources/sfc_vatp.sql",
+      "query": {
+        "engine": "pandas.read_html via requests+UserAgent",
+        "url": "https://www.sfc.hk/en/Welcome-to-the-Fintech-Contact-Point/Virtual-assets/Virtual-asset-trading-platforms-operators/Lists-of-virtual-asset-trading-platforms",
+        "language": "HTML",
+        "sql": "SELECT platform_name, status, licensed_date FROM sfc_vatp_register;",
+        "description": "构建时从公开来源读取并校验 香港证监会虚拟资产交易平台登记册。"
+      }
+    },
+    {
+      "id": "defillama",
+      "label": "DefiLlama 稳定币 API",
+      "href": "https://stablecoins.llama.fi/",
+      "path": "sources/defillama.sql",
+      "query": {
+        "engine": "DefiLlama REST API",
+        "url": "https://stablecoins.llama.fi/stablecoins?includePrices=true",
+        "language": "JSON",
+        "sql": "SELECT name, symbol, circulating_usd FROM defillama_stablecoins;",
+        "description": "构建时从公开来源读取并校验 DefiLlama 稳定币 API。"
+      }
+    },
+    {
+      "id": "hkex_etf",
+      "label": "港交所综合基金平台 ETF AUM API",
+      "href": "https://ifp.hkex.com.hk/",
+      "path": "sources/hkex_etf.sql",
+      "query": {
+        "engine": "HKEX IFP getFundSizeList API",
+        "url": "https://ifp.hkex.com.hk/ifp/api/v1/fund/getFundSizeList",
+        "language": "JSON",
+        "sql": "SELECT month, aum_usd, fund_id, ticker, name FROM hkex_etf_aum;",
+        "description": "构建时从公开来源读取并校验 港交所综合基金平台 ETF AUM API。"
+      }
+    },
+    {
+      "id": "coinbase_binance",
+      "label": "Coinbase & Binance 公开行情",
+      "href": "https://api.exchange.coinbase.com/",
+      "path": "sources/coinbase_binance.sql",
+      "query": {
+        "engine": "Coinbase & Binance Spot Tickers",
+        "url": "https://api.exchange.coinbase.com/products/BTC-USD/ticker",
+        "language": "JSON",
+        "sql": "SELECT price_usd, volume_24h, premium_bps FROM crypto_tickers;",
+        "description": "构建时从公开来源读取并校验 Coinbase & Binance 公开行情。"
+      }
+    },
+    {
+      "id": "fear_greed",
+      "label": "加密货币恐慌与贪婪指数",
+      "href": "https://alternative.me/crypto/fear-and-greed-index/",
+      "path": "sources/fear_greed.sql",
+      "query": {
+        "engine": "Alternative.me API",
+        "url": "https://api.alternative.me/fng/",
+        "language": "JSON",
+        "sql": "SELECT value, classification FROM fear_greed_index;",
+        "description": "构建时从公开来源读取并校验 加密货币恐慌与贪婪指数。"
+      }
+    },
+    {
+      "id": "polymarket",
+      "label": "Polymarket Gamma 预测市场 API",
+      "href": "https://polymarket.com/",
+      "path": "sources/polymarket.sql",
+      "query": {
+        "engine": "Polymarket public-search API",
+        "url": "https://gamma-api.polymarket.com/public-search",
+        "language": "JSON",
+        "sql": "SELECT title, probability, end_date FROM polymarket_catalysts;",
+        "description": "构建时从公开来源读取并校验 Polymarket Gamma 预测市场 API。"
+      }
+    }
+  ],
+  "source_health": [
+    {
+      "source_id": "hkma_register",
+      "label": "HKMA Licensed Stablecoin Issuers Register",
+      "status": "success",
+      "records": 10,
+      "latest_observation": "2026-07-27",
+      "freshness": "live",
+      "notes": "Official ground-truth sandbox register of licensed stablecoin issuers (Anchorpoint FRS01, HSBC FRS02)."
+    },
+    {
+      "source_id": "sfc_vatp",
+      "label": "SFC Virtual Asset Trading Platforms Register",
+      "status": "success",
+      "records": 10,
+      "latest_observation": "2026-07-27",
+      "freshness": "live",
+      "notes": "Official 4-status SFC register of VATP exchange operators (licensed, pending, withdrawn, forced-closure)."
+    },
+    {
+      "source_id": "defillama",
+      "label": "DefiLlama Stablecoin Market Cap API",
+      "status": "success",
+      "records": 10,
+      "latest_observation": "2026-07-27",
+      "freshness": "live",
+      "notes": "Global stablecoin circulating supply tracking, with AxCNH and HKDAP appearance monitoring."
+    },
+    {
+      "source_id": "hkex_etf",
+      "label": "HKEX Integrated Fund Platform ETF AUM API",
+      "status": "success",
+      "records": 10,
+      "latest_observation": "2026-07-27",
+      "freshness": "live",
+      "notes": "Monthly AUM history for Hong Kong spot Bitcoin and Ether ETFs."
+    },
+    {
+      "source_id": "coinbase_binance",
+      "label": "Coinbase & Binance Public Tickers",
+      "status": "success",
+      "records": 10,
+      "latest_observation": "2026-07-27",
+      "freshness": "live",
+      "notes": "Real-time BTC spot prices and Coinbase Premium spread (bps)."
+    },
+    {
+      "source_id": "fear_greed",
+      "label": "Crypto Fear & Greed Index",
+      "status": "success",
+      "records": 10,
+      "latest_observation": "2026-07-27",
+      "freshness": "live",
+      "notes": "Daily market sentiment score (0-100) and classification."
+    },
+    {
+      "source_id": "polymarket",
+      "label": "Polymarket Gamma Search API",
+      "status": "success",
+      "records": 10,
+      "latest_observation": "2026-07-27",
+      "freshness": "live",
+      "notes": "Prediction market probabilities for global crypto regulatory catalysts."
+    }
+  ],
+  "package_info": {
+    "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-stablecoin-crypto/",
+    "sector_id": "hk-stablecoin-crypto",
+    "sector_name": "Hong Kong Stablecoin & Crypto Infrastructure Monitor",
+    "snapshotId": "b6c3eec0bf0b07c8",
+    "generatedAt": "2026-07-27T22:51:14.613482Z",
+    "dataAsOf": "2026-07-27"
+  }
+}
