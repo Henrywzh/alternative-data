@@ -68,6 +68,22 @@ def _month_date(item: dict) -> str | None:
         return None
 
 
+def _clean_t6_region(description: str) -> str | None:
+    """Clean a t6 region description into a plain district name.
+
+    Real t6 `Description` values look like "Number of Hong Kong transactions"
+    or, for the grand-total row, "Total Number of transactions" -- the naive
+    ``.replace(" transactions", "")`` alone left "Number of " on every row
+    (e.g. "Number of Hong Kong") and turned the grand total into a
+    district-looking "Total Number of". Strip both prefixes; map the total
+    row to an explicit, non-district sentinel instead.
+    """
+    cleaned = description.replace(" transactions", "").replace("Number of ", "").strip()
+    if cleaned == "Total" or description.strip().lower().startswith("total number of"):
+        return "All regions"
+    return cleaned or None
+
+
 def fetch_landreg_monthly_statistics() -> tuple[pd.DataFrame, pd.DataFrame]:
     """Fetch the public monthly JSON tables behind Land Registry's page.
 
@@ -111,7 +127,7 @@ def fetch_landreg_monthly_statistics() -> tuple[pd.DataFrame, pd.DataFrame]:
                     "statistic_name": str(description),
                     "units": _number(item.get("Units")),
                     "consideration_million": _number(item.get("Consideration (nearest $ million)")),
-                    "region": str(description).replace(" transactions", "") if table_name == "t6" else None,
+                    "region": _clean_t6_region(str(description)) if table_name == "t6" else None,
                     "source_agency": "Hong Kong Land Registry",
                     "basis": "registration_receipt_month",
                 }

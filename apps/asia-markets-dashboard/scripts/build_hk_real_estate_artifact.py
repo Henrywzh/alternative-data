@@ -489,12 +489,15 @@ def build_artifact(
             hibor_pct = r.get("hibor_pricing_pct_share")
             blr_pct = r.get("blr_pricing_pct_share")
             fixed_pct = r.get("fixed_pricing_pct_share")
+            other_pct = r.get("other_pricing_pct_share")
             if pd.notna(hibor_pct):
                 hkma_rows.append({"date": obs_d, "series": "HIBOR-based (%)", "value": float(hibor_pct)})
             if pd.notna(blr_pct):
                 hkma_rows.append({"date": obs_d, "series": "Best Lending Rate (%)", "value": float(blr_pct)})
             if pd.notna(fixed_pct):
                 hkma_rows.append({"date": obs_d, "series": "Fixed-rate (%)", "value": float(fixed_pct)})
+            if pd.notna(other_pct):
+                hkma_rows.append({"date": obs_d, "series": "Other (%)", "value": float(other_pct)})
             # LTV single series
             ltv = r.get("average_ltv_ratio_pct")
             if pd.notna(ltv):
@@ -620,10 +623,15 @@ def build_artifact(
                 landreg_asp_rows.append({"date": date_s, "series": "Residential Units ASP", "value": float(r["residential_units_asp"])})
         landreg_asp_rows.sort(key=lambda r: (r["series"], r["date"]))
 
-    # Buildings Department: raw monthly digest scratch table (dense table only --
-    # numeric_values are an unlabelled per-row array, not a stable chartable
-    # series) + project-lifecycle supply indicators (a genuine supply-pipeline
-    # snapshot, clean enough for a comparison chart).
+    # Buildings Department: raw monthly digest scratch table (dense table --
+    # numeric_values are still an unlabelled per-row array since per-column
+    # names aren't parsed out yet, but the underlying table structure itself
+    # IS stable: tables 1.1-1.7 have had an identical annual-summary-row +
+    # Jan-Dec-breakdown layout back to 2021, confirmed against the live
+    # files. See buildings_dept.py's _period_from_row/period_type for the
+    # annual-vs-monthly row distinction.) + project-lifecycle supply
+    # indicators (a genuine supply-pipeline snapshot, clean enough for a
+    # comparison chart).
     df_bd_monthly_stats = (
         raw_bd_monthly_stats
         if raw_bd_monthly_stats is not None
