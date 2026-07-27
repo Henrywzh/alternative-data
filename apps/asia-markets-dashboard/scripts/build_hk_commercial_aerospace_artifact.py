@@ -16,7 +16,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from src.hk_commercial_aerospace.sources.sse_ipo_status import fetch_all_ipo_statuses
-from src.hk_commercial_aerospace.sources.launch_library import fetch_chinese_commercial_launches
+from src.hk_commercial_aerospace.sources.launch_library import fetch_chinese_commercial_launches, fetch_upcoming_launches
 from src.hk_commercial_aerospace.sources.celestrak_satellites import fetch_all_constellations, KNOWN_GAPS
 from src.hk_commercial_aerospace.sources.google_patents import fetch_all_patent_counts
 from src.hk_commercial_aerospace.config import (
@@ -164,6 +164,31 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
     except Exception as e:
         print(f"Warning: Launch fetch failed - {e}")
 
+    # 2b. Fetch Upcoming Launch Calendar
+    upcoming_rows = []
+    try:
+        up_df = fetch_upcoming_launches(100)
+        if not up_df.empty:
+            cn_keywords = ['China', 'CASC', 'LandSpace', 'Space Pioneer', 'Galactic Energy', 'CAS Space', 'Orienspace', 'i-Space', 'ExPace', 'Shanghai Spacecom']
+            pattern = '|'.join(cn_keywords)
+            cn_up = up_df[
+                up_df['provider_name'].str.contains(pattern, case=False, na=False) |
+                up_df['name'].str.contains(pattern, case=False, na=False)
+            ]
+            for _, r in cn_up.head(10).iterrows():
+                net_raw = str(r.get("net_time", ""))
+                net_date = net_raw[:10] if len(net_raw) >= 10 else net_raw
+                upcoming_rows.append({
+                    "net_date": net_date,
+                    "provider": str(r.get("provider_name", "Unknown")),
+                    "mission": str(r.get("name", "Unknown Mission")),
+                    "pad_name": str(r.get("pad_name", "N/A")),
+                    "orbit": str(r.get("orbit_abbrev")) if r.get("orbit_abbrev") else "N/A",
+                    "status": str(r.get("status_name", "Scheduled")),
+                })
+    except Exception as e:
+        print(f"Warning: Upcoming launch fetch failed - {e}")
+
     # Aggregated launch cadence by provider (total launches per company)
     launch_cadence_summary = []
     provider_counts: dict[str, int] = {}
@@ -242,6 +267,7 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
     # Datasets dictionary for snapshot
     datasets = {
         "ipo_race": ipo_rows,
+        "upcoming_launches": upcoming_rows,
         "launch_cadence": launch_rows,
         "launch_cadence_summary": launch_cadence_summary,
         "satellite_counts": sat_rows,
@@ -352,6 +378,23 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
             ],
         },
         {
+            "id": "upcoming_launches_table",
+            "title": "Upcoming Chinese Rocket & Satellite Launch Schedule",
+            "subtitle": "Target launch dates (NET), providers, mission names, launch sites, and operational status from Launch Library 2.",
+            "dataset": "upcoming_launches",
+            "sourceId": "launch_library_2",
+            "density": "dense",
+            "layout": "full",
+            "columns": [
+                {"field": "net_date", "label": "Target Date (NET)", "type": "text"},
+                {"field": "provider", "label": "Provider / Agency", "type": "text"},
+                {"field": "mission", "label": "Mission / Rocket", "type": "text"},
+                {"field": "pad_name", "label": "Launch Site", "type": "text"},
+                {"field": "orbit", "label": "Orbit", "type": "text"},
+                {"field": "status", "label": "Status", "type": "text"},
+            ],
+        },
+        {
             "id": "aerospace_watchlist_table",
             "title": "HK-Listed Commercial Aerospace & Defense Watchlist",
             "subtitle": "Stock watchlist of Hong Kong listed aerospace, satellite, and defense supply-chain companies.",
@@ -391,9 +434,9 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
             "freshness": "live" if (not ipo_df.empty) else "unavailable",
         },
         "launch_library_2": {
-            "status": "success" if total_launches > 0 else "degraded",
-            "records": total_launches,
-            "freshness": "live" if total_launches > 0 else "unavailable",
+            "status": "success" if (total_launches > 0 or len(upcoming_rows) > 0) else "degraded",
+            "records": total_launches + len(upcoming_rows),
+            "freshness": "live" if (total_launches > 0 or len(upcoming_rows) > 0) else "unavailable",
         },
         "celestrak": {
             "status": "success" if (not sat_df.empty) else "degraded",
@@ -439,8 +482,10 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
         },
         {"id": "kpi_grid", "type": "metric-strip", "cardIds": [c["id"] for c in cards]},
         {"id": "ipo_table_block", "type": "table", "tableId": "ipo_race_table"},
-        {"id": "satellite_chart_block", "type": "chart", "chartId": "satellite_count_chart", "layout": "half" if patent_rows else "full"},
     ]
+    if upcoming_rows:
+        blocks.append({"id": "upcoming_table_block", "type": "table", "tableId": "upcoming_launches_table"})
+    blocks.append({"id": "satellite_chart_block", "type": "chart", "chartId": "satellite_count_chart", "layout": "half" if patent_rows else "full"})
     if patent_rows:
         blocks.append({"id": "patent_chart_block", "type": "chart", "chartId": "patent_count_chart", "layout": "half"})
     blocks.extend([

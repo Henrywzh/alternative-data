@@ -6,7 +6,7 @@
     "title": "Hong Kong Commercial Aerospace Sector Monitor",
     "description": "SSE STAR Market IPO filing status, Launch Library 2 launch cadence, Celestrak satellite counts, and patent filing counts for Chinese commercial space companies.",
     "sector": "hk-commercial-aerospace",
-    "generatedAt": "2026-07-27T23:13:06.105899Z",
+    "generatedAt": "2026-07-27T23:17:54.014926Z",
     "dataAsOf": "2026-07-27",
     "liveSourcesCount": 2,
     "totalSourcesCount": 4,
@@ -174,6 +174,47 @@
         ]
       },
       {
+        "id": "upcoming_launches_table",
+        "title": "Upcoming Chinese Rocket & Satellite Launch Schedule",
+        "subtitle": "Target launch dates (NET), providers, mission names, launch sites, and operational status from Launch Library 2.",
+        "dataset": "upcoming_launches",
+        "sourceId": "launch_library_2",
+        "density": "dense",
+        "layout": "full",
+        "columns": [
+          {
+            "field": "net_date",
+            "label": "Target Date (NET)",
+            "type": "text"
+          },
+          {
+            "field": "provider",
+            "label": "Provider / Agency",
+            "type": "text"
+          },
+          {
+            "field": "mission",
+            "label": "Mission / Rocket",
+            "type": "text"
+          },
+          {
+            "field": "pad_name",
+            "label": "Launch Site",
+            "type": "text"
+          },
+          {
+            "field": "orbit",
+            "label": "Orbit",
+            "type": "text"
+          },
+          {
+            "field": "status",
+            "label": "Status",
+            "type": "text"
+          }
+        ]
+      },
+      {
         "id": "aerospace_watchlist_table",
         "title": "HK-Listed Commercial Aerospace & Defense Watchlist",
         "subtitle": "Stock watchlist of Hong Kong listed aerospace, satellite, and defense supply-chain companies.",
@@ -284,7 +325,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**Data snapshot:** `180bd1fadcf3553c` \u00b7 generated 2026-07-27T23:13:06.105899Z.  Official disclosures and public tracking data."
+        "body": "**Data snapshot:** `b0f0bf069d2c794d` \u00b7 generated 2026-07-27T23:17:54.014926Z.  Official disclosures and public tracking data."
       },
       {
         "id": "kpi_grid",
@@ -329,7 +370,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-27T23:13:06.105899Z",
+    "generatedAt": "2026-07-27T23:17:54.014926Z",
     "status": "ready",
     "datasets": {
       "ipo_race": [
@@ -374,6 +415,7 @@
           "exchange": "N/A"
         }
       ],
+      "upcoming_launches": [],
       "launch_cadence": [],
       "launch_cadence_summary": [
         {
@@ -409,13 +451,13 @@
         {
           "constellation": "Qianfan",
           "operator": "Shanghai Spacecom Satellite Technology",
-          "count": 238,
+          "count": 0,
           "as_of": "2026-07-27"
         },
         {
           "constellation": "Jilin1",
           "operator": "Chang Guang Satellite Technology",
-          "count": 50,
+          "count": 0,
           "as_of": "2026-07-27"
         },
         {
@@ -506,8 +548,8 @@
           "landspace_audit": 2174.0,
           "cas_space_status": "\u5df2\u95ee\u8be2",
           "cas_space_audit": 2180.0,
-          "qianfan_count": 238,
-          "jilin1_count": 50,
+          "qianfan_count": 0,
+          "jilin1_count": 0,
           "total_launches": 0
         }
       ]
@@ -609,8 +651,8 @@
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-commercial-aerospace/",
     "sector_id": "hk-commercial-aerospace",
     "sector_name": "Hong Kong Commercial Aerospace Sector Monitor",
-    "snapshotId": "180bd1fadcf3553c",
-    "generatedAt": "2026-07-27T23:13:06.105899Z",
+    "snapshotId": "b0f0bf069d2c794d",
+    "generatedAt": "2026-07-27T23:17:54.014926Z",
     "dataAsOf": "2026-07-27"
   }
 }
