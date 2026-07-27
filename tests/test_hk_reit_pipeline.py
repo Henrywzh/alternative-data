@@ -247,3 +247,122 @@ def test_artifact_contains_no_machine_local_paths_or_secrets():
     assert "/Users/" not in serialized
     assert "api_key" not in serialized.lower()
     assert ".config" not in serialized
+
+
+def _office_retail_frame_with_dates(ticker, name, nav0, dpu0, occ0, rev0, dates):
+    n = len(dates)
+    return pd.DataFrame(
+        {
+            "date": pd.to_datetime(dates),
+            "period": [f"P{i}" for i in range(n)],
+            "ticker": [ticker] * n,
+            "reit_name": [name] * n,
+            "nav_per_unit_hkd": [nav0 + i * 0.01 for i in range(n)],
+            "dpu_hkd": [dpu0 + i * 0.001 for i in range(n)],
+            "occupancy_pct": [occ0 + i * 0.1 for i in range(n)],
+            "rental_reversion_pct": [rev0 + i * 0.1 for i in range(n)],
+            "source_agency": ["test"] * n,
+        }
+    )
+
+
+def _staggered_cadence_frames():
+    # Mirrors the real-world fiscal-period staggering that exposed the
+    # x-axis ordering bug: Sunlight (0435) reports on a June cadence while
+    # Champion/Fortune/Prosperity report on a December cadence and Link
+    # (0823) reports on a March cadence. Under the old (series, date) sort,
+    # this staggering meant the emitted row array walked all of one REIT's
+    # dates before moving to the next -- exactly reproducing the live bug
+    # ("Jun 2021, Jun 2023, Dec 2025, Dec 2022, Mar 2022, ..."). The
+    # previous fixtures in this file all shared identical dates across
+    # every REIT, which can't exercise this at all (every series' first
+    # date is already the global first date, so encounter order happens
+    # to be chronological regardless of sort key) -- this fixture exists
+    # specifically to close that gap.
+    frames = _frames()
+    frames["raw_sunlight"] = _office_retail_frame_with_dates(
+        "0435.HK", "Sunlight REIT", 3, 0.08, 91, 3,
+        ["2021-06-30", "2022-06-30", "2023-06-30"],
+    )
+    frames["raw_champion"] = _office_retail_frame_with_dates(
+        "2778.HK", "Champion REIT", 4, 0.1, 90, 3,
+        ["2021-12-31", "2022-12-31", "2023-12-31"],
+    )
+    frames["raw_fortune"] = _office_retail_frame_with_dates(
+        "0778.HK", "Fortune REIT", 9, 0.2, 92, 4,
+        ["2021-12-31", "2022-12-31", "2023-12-31"],
+    )
+    frames["raw_prosperity"] = _office_retail_frame_with_dates(
+        "0808.HK", "Prosperity REIT", 1.8, 0.05, 88, 2,
+        ["2021-12-31", "2022-12-31", "2023-12-31"],
+    )
+    frames["raw_link"] = _office_retail_frame_with_dates(
+        "0823.HK", "Link REIT", 60, 1.2, 95, 5,
+        ["2022-03-31", "2023-03-31", "2024-03-31"],
+    )
+    return frames
+
+
+def _pivoted_x_axis_category_order(rows, x_field="month"):
+    """Reproduce the portable-artifact-builder plugin's category-domain
+    construction (chart-app-helpers.tsx's rechartsChartFromEncodedSpec,
+    and equivalently ChartRenderer.tsx's categoryXAxisLabels): the x-axis
+    category order is the order in which distinct x values are first
+    encountered while walking the row array top to bottom, deduplicated.
+    """
+    seen: set[str] = set()
+    order: list[str] = []
+    for row in rows:
+        key = row[x_field]
+        if key not in seen:
+            seen.add(key)
+            order.append(key)
+    return order
+
+
+def test_rebased_chart_datasets_have_chronological_x_axis_category_order():
+    # Bug A: the x-axis category domain the portable renderer builds is
+    # derived from row-encounter order, not from sorting dates itself (see
+    # the sort-order comments in build_hk_reit_artifact.py). This asserts
+    # the fix directly: walking nav_history_rebased/dpu_history_rebased in
+    # emitted order and deduplicating by month must already yield a
+    # strictly increasing chronological sequence -- no client-side re-sort
+    # rescues this if the emitted order is wrong.
+    artifact, _ = dashboard_export.build_artifact(**_staggered_cadence_frames(), now=NOW)
+    datasets = artifact["snapshot"]["datasets"]
+    for dataset_name in ("nav_history_rebased", "dpu_history_rebased"):
+        rows = datasets[dataset_name]
+        assert len(rows) > 5, dataset_name
+        category_order = _pivoted_x_axis_category_order(rows)
+        assert category_order == sorted(category_order), (
+            f"{dataset_name} x-axis category order is not chronological: {category_order}"
+        )
+
+
+def test_raw_history_datasets_have_chronological_x_axis_category_order():
+    # Same bug, same fix, for the non-rebased history datasets that feed
+    # the occupancy/reversion charts (occupancy_history and
+    # reversion_history use the same (series, date) -> (date, series)
+    # sort-order fix as nav_history/dpu_history).
+    artifact, _ = dashboard_export.build_artifact(**_staggered_cadence_frames(), now=NOW)
+    datasets = artifact["snapshot"]["datasets"]
+    for dataset_name in ("nav_history", "dpu_history", "occupancy_history", "reversion_history"):
+        rows = datasets[dataset_name]
+        assert rows, dataset_name
+        category_order = _pivoted_x_axis_category_order(rows)
+        assert category_order == sorted(category_order), (
+            f"{dataset_name} x-axis category order is not chronological: {category_order}"
+        )
+
+
+def test_rebased_series_still_complete_after_date_first_sort():
+    # Guard against trading one bug for another: (date, series) sort order
+    # must not drop or truncate any series' points relative to (series,
+    # date). Each of the 6 REITs should keep its full point count in the
+    # rebased NAV dataset.
+    artifact, _ = dashboard_export.build_artifact(**_staggered_cadence_frames(), now=NOW)
+    rows = artifact["snapshot"]["datasets"]["nav_history_rebased"]
+    counts: dict[str, int] = {}
+    for row in rows:
+        counts[row["series"]] = counts.get(row["series"], 0) + 1
+    assert counts == {"0435": 3, "2778": 3, "0778": 3, "0808": 3, "0823": 3, "1881": 4}

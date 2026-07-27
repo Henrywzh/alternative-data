@@ -302,7 +302,21 @@ def _rebase_series(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
                     "value": round(row["value"] / base * 100, 4),
                 }
             )
-    out.sort(key=lambda r: (r["series"], r["date"]))
+    # Sort (date, series) -- NOT (series, date) -- so the array's globally
+    # chronological order is genuinely ascending. See the matching comment
+    # above the nav_history/dpu_history/occupancy_history/reversion_history
+    # sort calls in build_artifact() for why this ordering matters and why
+    # it's safe: the portable dashboard renderer (chart-app-helpers.tsx's
+    # rechartsChartFromEncodedSpec) pivots these long-format rows into one
+    # row per x-value via a Map keyed by first-encounter order of the x
+    # field, then uses that same encounter order as the line chart's
+    # category-axis tick order. Each pivoted bucket's per-series value is
+    # populated correctly regardless of row order (verified independently),
+    # so the ONLY thing row order controls is whether that Map -- and thus
+    # the rendered x-axis -- ends up chronological or not. (date, series)
+    # gives a chronological Map order for free; (series, date) does not,
+    # since it inserts one REIT's whole date run before moving to the next.
+    out.sort(key=lambda r: (r["date"], r["series"]))
     return out
 
 
@@ -401,19 +415,38 @@ def build_artifact(
         if not is_hotel:
             occupancy_history.extend(_series_history(df, short_label, "occupancy_pct"))
             reversion_history.extend(_series_history(df, short_label, "rental_reversion_pct"))
-    # Sort by (series, date) -- NOT (date, series) -- so each series' points
-    # are contiguous in the array. The portable chart renderer draws each
-    # series as a single connected path by walking the data in array order;
-    # sorting by date first interleaves different REITs' points (they report
-    # on different dates), which produced a separate zero-length M...Z
-    # subpath per point instead of a connected line (verified: the live
-    # chart's SVG path data had no "L" commands at all, only isolated
-    # moveto+closepath pairs -- lines were invisible except on hover, which
-    # uses a different, unaffected interaction layer).
-    nav_history.sort(key=lambda row: (row["series"], row["date"]))
-    dpu_history.sort(key=lambda row: (row["series"], row["date"]))
-    occupancy_history.sort(key=lambda row: (row["series"], row["date"]))
-    reversion_history.sort(key=lambda row: (row["series"], row["date"]))
+    # Sort by (date, series) -- NOT (series, date).
+    #
+    # An earlier version of this file sorted (series, date) specifically to
+    # keep each series' points contiguous, based on an observation that the
+    # portable chart renderer drew a disconnected line when points were
+    # interleaved across REITs. Re-verified against the currently pinned
+    # portable-artifact-builder plugin
+    # (~/.codex/plugins/cache/openai-curated-remote/data-analytics):
+    # chart-app-helpers.tsx's rechartsChartFromEncodedSpec() does NOT draw
+    # a path by walking this array directly -- it first pivots these
+    # long-format {date/month, series, value} rows into one row per
+    # x-value via `rowsByX = new Map(); for (row of rows) { ... }`, and
+    # only *that* pivoted, one-row-per-period array is what actually gets
+    # handed to the line chart. Each pivoted bucket's per-series value is
+    # populated correctly no matter what order the source rows arrive in
+    # (confirmed by simulating both sort orders against that pivot logic --
+    # every series kept its full point count either way). The only thing
+    # row order affects is which x-value each Map bucket is created for
+    # first, and both ChartRenderer.tsx's categoryXAxisLabels() and the
+    # pivot's own Map insertion order use that same "first encounter in the
+    # row array" order as the rendered x-axis category domain. (series,
+    # date) therefore made the x-axis walk one REIT's entire date range
+    # before moving to the next -- exactly the out-of-order axis
+    # ("Jun 2021, Jun 2023, Dec 2025, Dec 2022, Mar 2022, ...") seen on the
+    # live nav_trend_chart/dpu_trend_chart. (date, series) makes the first
+    # encounter of each period chronological, which fixes the x-axis while
+    # leaving every series' own values fully intact (verified: no dropped
+    # points for any of the 6 tickers under either sort order).
+    nav_history.sort(key=lambda row: (row["date"], row["series"]))
+    dpu_history.sort(key=lambda row: (row["date"], row["series"]))
+    occupancy_history.sort(key=lambda row: (row["date"], row["series"]))
+    reversion_history.sort(key=lambda row: (row["date"], row["series"]))
 
     # NAV/unit and DPU are absolute HK$ values tied to each REIT's arbitrary
     # unit denomination (Link's NAV/unit is ~57.75, Regal's is ~3.9) -- not
@@ -430,7 +463,12 @@ def build_artifact(
     regal_hotel_kpi_history.extend(_series_history(df_regal, "Occupancy (%)", "hotel_occupancy_pct"))
     regal_hotel_kpi_history.extend(_series_history(df_regal, "ADR (HK$)", "average_daily_rate_hkd"))
     regal_hotel_kpi_history.extend(_series_history(df_regal, "RevPAR (HK$)", "revpar_hkd"))
-    regal_hotel_kpi_history.sort(key=lambda row: (row["series"], row["date"]))
+    # Same (date, series) ordering as nav/dpu/occupancy/reversion above, for
+    # the same x-axis-category-domain reason -- currently a no-op in
+    # practice since Regal REIT only has one disclosed period on record
+    # (see Bug C discussion), but keeps this chart correct once more
+    # periods accumulate.
+    regal_hotel_kpi_history.sort(key=lambda row: (row["date"], row["series"]))
 
     charts = [
         {
