@@ -88,13 +88,23 @@ def test_harvest_ether_fund_id_documented_as_unknown():
 
 def test_coinbase_premium_computation():
     res = compute_coinbase_premium()
-    assert "coinbase_price_usd" in res
-    assert "binance_price_usd" in res
     assert "premium_bps" in res
-    if res["coinbase_price_usd"] is not None:
+    assert "fetched_at" in res
+    # Binance returns HTTP 451 ("unavailable for legal reasons") from
+    # US-hosted infrastructure such as GitHub Actions runners -- a real,
+    # permanent geo-restriction, not a transient flake. compute_coinbase_premium()
+    # correctly degrades to {"premium_bps": None, "error": ...} in that case
+    # (see crypto_tickers.py); assert on that shape instead of hard-requiring
+    # both legs to succeed, matching the "gap over wrong number" pattern used
+    # elsewhere in this repo rather than treating a legitimate fetch failure
+    # as a test failure.
+    if res.get("premium_bps") is not None:
+        assert "coinbase_price_usd" in res
+        assert "binance_price_usd" in res
         assert res["coinbase_price_usd"] > 0
-    if res["binance_price_usd"] is not None:
         assert res["binance_price_usd"] > 0
+    else:
+        assert "error" in res
 
 
 def test_fear_greed_index():
