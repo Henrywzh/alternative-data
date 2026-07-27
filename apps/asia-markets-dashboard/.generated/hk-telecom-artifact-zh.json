@@ -6,11 +6,11 @@
     "title": "香港电讯监测",
     "description": "香港电讯（HKT）、数码通（SmarTone）及和记电讯（3 HK）的半年度用户与 ARPU 披露数据，以及通讯办全运营商手机号码段配额快照。",
     "sector": "hk-telecom",
-    "generatedAt": "2026-07-25T19:59:49.737314Z",
+    "generatedAt": "2026-07-26T18:33:02.864074Z",
     "cards": [
       {
         "id": "hkt_card",
-        "description": "半年度后付费退出 ARPU 及后付费用户数（千户）；半年环比变动。",
+        "description": "半年度后付费退出 ARPU 及后付费用户数（千户）；半年环比变动及 FTTH 渗透率。",
         "dataset": "kpi_hkt",
         "sourceId": "hkt_operating_drivers",
         "metrics": [
@@ -30,7 +30,7 @@
             "format": "percent"
           },
           {
-            "label": "FTTH Share (%)",
+            "label": "FTTH 渗透率 (%)",
             "field": "ftth_share_pct",
             "format": "number"
           }
@@ -38,27 +38,27 @@
       },
       {
         "id": "hkt_footprint_card",
-        "description": "HKT broadband access lines, FTTH connections, and Pay TV installed base ('000s).",
+        "description": "香港电讯宽带接入线路数、FTTH 连接数及收费电视用户数（千户）。",
         "dataset": "kpi_hkt",
         "sourceId": "hkt_operating_drivers",
         "metrics": [
           {
-            "label": "Broadband Lines ('000)",
+            "label": "宽带线路数 (千户)",
             "field": "consumer_broadband_lines_thousands",
             "format": "number"
           },
           {
-            "label": "FTTH ('000)",
+            "label": "FTTH 连接数 (千户)",
             "field": "ftth_connections_thousands",
             "format": "number"
           },
           {
-            "label": "Pay TV Base ('000)",
+            "label": "收费电视用户数 (千户)",
             "field": "pay_tv_installed_base_thousands",
             "format": "number"
           },
           {
-            "label": "FTTH Share (%)",
+            "label": "FTTH 渗透率 (%)",
             "field": "ftth_share_pct",
             "format": "number"
           }
@@ -180,8 +180,8 @@
       },
       {
         "id": "hkt_footprint_chart",
-        "title": "HKT Broadband & Pay TV Footprint ('000s)",
-        "subtitle": "Semi-annual FTTH connections and Pay TV installed base.",
+        "title": "香港电讯宽带及收费电视用户足迹 (千户)",
+        "subtitle": "半年度 FTTH 连接数及收费电视用户数。",
         "type": "line",
         "intent": "comparison",
         "dataset": "hkt_footprint_history",
@@ -190,17 +190,17 @@
           "x": {
             "field": "month",
             "type": "temporal",
-            "label": "Period"
+            "label": "期间"
           },
           "y": {
             "field": "value",
             "type": "quantitative",
-            "label": "'000s"
+            "label": "千户"
           },
           "color": {
             "field": "series",
             "type": "nominal",
-            "label": "Metric"
+            "label": "序列"
           }
         },
         "valueFormat": "number",
@@ -325,7 +325,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-25T19:59:49.737314Z",
+    "generatedAt": "2026-07-26T18:33:02.864074Z",
     "status": "ready",
     "datasets": {
       "kpi_hkt": [
@@ -418,37 +418,37 @@
         {
           "date": "2025-06-30",
           "month": "2025-06",
-          "series": "FTTH connections",
+          "series": "FTTH 连接数",
           "value": 1055
         },
         {
           "date": "2025-12-31",
           "month": "2025-12",
-          "series": "FTTH connections",
+          "series": "FTTH 连接数",
           "value": 1086
         },
         {
           "date": "2024-06-30",
           "month": "2024-06",
-          "series": "Pay TV base",
+          "series": "收费电视用户数",
           "value": 1430
         },
         {
           "date": "2024-12-31",
           "month": "2024-12",
-          "series": "Pay TV base",
+          "series": "收费电视用户数",
           "value": 1433
         },
         {
           "date": "2025-06-30",
           "month": "2025-06",
-          "series": "Pay TV base",
+          "series": "收费电视用户数",
           "value": 1448
         },
         {
           "date": "2025-12-31",
           "month": "2025-12",
-          "series": "Pay TV base",
+          "series": "收费电视用户数",
           "value": 1464
         }
       ],

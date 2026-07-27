@@ -521,13 +521,39 @@ def build_artifact(
 
     cnsd_const_rows = []
     if not df_cnsd.empty and "period" in df_cnsd.columns and "value" in df_cnsd.columns:
-        for _, r in df_cnsd.iterrows():
-            if pd.notna(r.get("value")) and pd.notna(r.get("period")):
-                cnsd_const_rows.append({
-                    "date": str(r["period"]),
-                    "value": float(r["value"]),
-                    "unit": str(r.get("unit", "HK$ million")),
-                })
+        # C&SD's table mixes multiple series in one flat frame: freq="Y" rows
+        # use a bare 4-digit year period ("2000", the annual total) alongside
+        # freq="Q" rows with a 6-digit YYYYMM period ("200003", quarter-end
+        # month); and within freq="Q" there are two more axes -- variable
+        # (GVCW_NOM nominal vs GVCW_REAL real/deflated) and unit (HK$ million
+        # level vs "Year-on-year % change") -- four series total sharing the
+        # same period values. Previously all of this was dumped into "date"
+        # unfiltered and unparsed: the annual total sat at the same tick as
+        # Q1 (a sawtooth/"duplicated time" artifact), 4 different-scale
+        # values (a level in HK$m and a %-change figure) landed on the same
+        # quarter, and since neither "2000" nor "200003" parses as a real
+        # date, the axis fell back to formatting them as plain numbers ("2K",
+        # "200K", ...). Filter to the single nominal-value-in-HK$-million
+        # series the chart's title actually promises, and parse each YYYYMM
+        # period into its real quarter-end date.
+        quarterly = df_cnsd[
+            (df_cnsd.get("freq") == "Q")
+            & (df_cnsd.get("variable") == "GVCW_NOM")
+            & (df_cnsd.get("unit") == "HK$ million")
+        ] if {"freq", "variable", "unit"}.issubset(df_cnsd.columns) else df_cnsd.iloc[0:0]
+        for _, r in quarterly.iterrows():
+            period = str(r.get("period", ""))
+            value = r.get("value")
+            if pd.isna(value) or len(period) != 6 or not period.isdigit():
+                continue
+            year, month = int(period[:4]), int(period[4:6])
+            quarter_end = pd.Timestamp(year=year, month=month, day=1) + pd.offsets.MonthEnd(0)
+            cnsd_const_rows.append({
+                "date": quarter_end.strftime("%Y-%m-%d"),
+                "value": float(value),
+                "unit": str(r.get("unit", "HK$ million")),
+            })
+        cnsd_const_rows.sort(key=lambda row: row["date"])
 
     # 28Hse EPI/ERI weekly index history -> two-series line chart.
     df_epi_eri = raw_epi_eri if raw_epi_eri is not None else _safe_fetch("28Hse EPI/ERI", fetch_28hse_epi_eri)

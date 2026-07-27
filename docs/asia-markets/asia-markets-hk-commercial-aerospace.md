@@ -53,15 +53,25 @@ genuinely easy, free, high-frequency data.
 **Launch-cadence tracking (verified free trackers):**
 | Source | Coverage | Access |
 |---|---|---|
+| `ll.thespacedevs.com` (Launch Library 2) | **New primary recommendation (verified 2026-07-26).** Free structured JSON API, not HTML scraping — `/2.2.0/launch/upcoming/` and `/launch/previous/` for schedules, `/agencies/?search=<name>` for company lookup. Confirmed every major Chinese commercial launch company resolves to a distinct, correctly-typed agency record: LandSpace, Galactic Energy, CAS Space, Orienspace Technology, Deep Blue Aerospace, i-Space (must search `"i-Space"` with the hyphen — bare `"iSpace"` matches unrelated foreign entities). Free tier is rate-limited to **15 requests/hour** (confirmed against the official docs at thespacedevs.com/llapi and their GitHub FAQ, not just observed empirically); a paid Patreon tier raises the limit, and `lldev.thespacedevs.com` is an unlimited-but-stale-data dev endpoint alternative. Fine for a scheduled daily/weekly pull, not for interactive ad hoc querying. | Free (rate-limited) |
 | `spacelaunchschedule.com` | Dedicated China launch category (real-time schedule, timezone-converted, mission/payload details) | Free |
-| `nextspaceflight.com` | Global launch schedule incl. US (SpaceX/ULA/etc.) and China | Free |
+| `nextspaceflight.com` | Global launch schedule incl. US (SpaceX/ULA/etc.) and China. **Confirmed real and server-rendered** (China launch data — Long March, Kinetica-1, Ceres — is baked into the raw HTML), but no JSON API was found on the domain, and a Cloudflare challenge script is present that may add friction to a scheduled scraper. Demoted to an HTML-scrape fallback/cross-check now that Launch Library 2 is available. | Free |
 | `rocketlaunch.live` | Global, filterable by country including China | Free |
 
-Launch **cadence itself** (launches per month, by provider) is a genuine
-activity proxy for this sector — more launches from a specific Chinese
-commercial provider (e.g. names tied to 中航科工/Topu CNC's supply chain) is
-a real leading indicator, not just noise. Launch failures are the obvious
-negative catalyst and are immediately public.
+Launch Library 2 should be the **primary** launch-tracking source going
+forward — structured fields (status, NET time + precision, pad, orbit,
+launch_service_provider) instead of parsed HTML, plus built-in
+per-company/per-agency filtering. Launch **cadence itself** (launches per
+month, by provider) is a genuine activity proxy for this sector — more
+launches from a specific Chinese commercial provider (e.g. names tied to
+中航科工/Topu CNC's supply chain) is a real leading indicator, not just
+noise. Launch failures are the obvious negative catalyst and are
+immediately public.
+
+**Correction:** 天兵科技's registered English/international name in Launch
+Library 2's agency database is **"Space Pioneer,"** not "Space Epoch" — if
+any external list or note refers to it as "Space Epoch," that's wrong;
+fix it wherever it's cross-referenced.
 
 **Policy catalyst tracking (verified):**
 - China's commercial space sector was named a **"new engine of economic
@@ -80,6 +90,86 @@ negative catalyst and are immediately public.
   launch contract awards, FAA launch-license approvals — same "easy,
   public" category, just not individually verified yet.
 
+## Listed-exposure catalyst: SSE STAR Market (科创板) IPO filing status — highest-value finding this pass
+
+The watchlist above is entirely diffuse supplier/theme exposure: **none of
+the actual rocket companies are listed today.** An IPO filing status
+change is the actual trigger for direct listed exposure to this theme to
+exist, which makes tracking filing status the single highest-value
+catalyst feed found so far — more direct than launch cadence or policy
+language, because it's the thing that turns theme exposure into a real
+security.
+
+**Confirmed live and fully automatable (2026-07-26):** the real API is
+`https://query.sse.com.cn/commonSoaQuery.do` (JSONP). It requires a
+`Referer: https://www.sse.com.cn/...` header — a bare `curl` without it
+gets rejected with an `ExceptionInterceptor` error; adding the header
+works with no other auth/session/cookie needed. This endpoint was only
+discoverable via a real browser's network/resource-timing log — the page
+itself is a JS single-page-app, and curling it directly just returns a
+generic shell with no useful data in the static HTML.
+
+**Search endpoint** (the actual unlock — no need to already know a
+numeric ID): `sqlId=SH_XM_LB&keyword=<company name>` searches by company
+name directly, e.g. `keyword=中科宇航`.
+
+**Confirmed results for the 5-company IPO-race set:**
+| Company | Result |
+|---|---|
+| LandSpace (蓝箭航天) | **Active, accepted filing** (auditNum 2174), status **已问询 (under inquiry)** as of update date 2026-06-29 |
+| CAS Space (中科宇航) | **Active, accepted filing** (auditNum 2180), status **已问询 (under inquiry)** as of the same update date 2026-06-29 |
+| Galactic Energy (星河动力) | Zero results by keyword — no accepted Shanghai filing yet |
+| Space Pioneer (天兵, corrected name — see above) | Zero results by keyword — no accepted Shanghai filing yet |
+| i-Space (星际荣耀) | Zero results by keyword — no accepted Shanghai filing yet |
+
+The zero-result three are consistent with other reporting describing
+i-Space as still in pre-acceptance "tutoring" status since 2020. Caveat:
+this endpoint only covers Shanghai's STAR Market, not Shenzhen's ChiNext —
+it's possible one or more of these three is instead pursuing a Shenzhen
+listing, which has not been checked.
+
+**Detail endpoint** (`sqlId=SH_XM_LB&stockAuditNum=<id>&isPagination=true`)
+goes further: financing amount, sponsor bank, named bankers/lawyers/
+accountants, and the company's legal representative — all real, specific,
+verified data (e.g. LandSpace's listed legal representative matches its
+actual known founder/CEO, not placeholder data).
+
+**Verdict:** go — a free, no-auth-beyond-a-header, `curl`-able API giving
+exact IPO-review status for the actual rocket companies. This should be
+polled periodically (see "What to do next" below) as the leading
+indicator for when this theme gets its first direct listed pure-play.
+
+## Satellite constellation deployment tracking — new capability
+
+Celestrak (`celestrak.org/NORAD/elements/gp.php`) is free, no-auth, live
+orbital element (TLE) data — a source not previously in this doc or the
+watchlist. It's a genuinely new, quantifiable proxy: pulling the
+satellite count per constellation/operator on a schedule gives a real
+"how many satellites has this operator actually deployed"
+execution/capability time series, distinct from and complementary to
+launch-cadence tracking above (cadence tells you how often a provider
+launches; this tells you how much hardware is actually in orbit and
+operating).
+
+**Confirmed live** 2026-07-26, both with today's epoch timestamp
+(confirming real-time currency, not stale/cached data):
+- `GROUP=qianfan` returns hundreds of real 千帆/G60 megaconstellation
+  satellites (Shanghai-backed Starlink rival).
+- `NAME=JILIN` returns 50 live 长光卫星/Jilin-1 satellites (Chang Guang
+  Satellite Technology's constellation).
+
+**Open gap:** Guowang/国网 (SatNet), the other major Chinese
+megaconstellation, has no working Celestrak `GROUP` or `NAME` string yet —
+`guowang`, `SATNET`, `SATNET GROUP`, and `GW-` were all tried and all
+failed. Current working hypothesis: Guowang's satellites are cataloged
+under generic unnamed international designators (e.g. launch batches like
+`2026-168A` through `2026-168J`, sized consistent with a typical Guowang
+launch) rather than a friendly constellation name, unlike Qianfan/Jilin-1
+which get proper names quickly. Confirming this hypothesis requires
+cross-referencing those designators against Launch Library 2's mission
+data to match designator to launch — not yet done, since Launch Library 2
+was rate-limited at the time this was checked.
+
 ## How to use this
 
 Best used as a **theme-timing overlay** (is commercial-aerospace narrative
@@ -93,3 +183,12 @@ names; the rest is more diffuse theme exposure.
 - Confirm whether Goldwind/Junda genuinely belong in this watchlist.
 - Verify US-side policy catalysts (NASA contracts, FAA licensing) —
   flagged as "almost certainly free" but not individually checked.
+- Confirm Guowang's Celestrak designator by cross-referencing candidate
+  international designators (e.g. `2026-168A`–`2026-168J`) against Launch
+  Library 2's mission data once its rate limit resets.
+- Periodically re-run the SSE STAR Market keyword search for Galactic
+  Energy, Space Pioneer, and i-Space to catch when/if any of them gets an
+  accepted filing.
+- Check whether any of the 5 IPO-race companies has instead filed with
+  Shenzhen's ChiNext rather than Shanghai's STAR Market — not checked
+  this pass, since the confirmed API only covers Shanghai.

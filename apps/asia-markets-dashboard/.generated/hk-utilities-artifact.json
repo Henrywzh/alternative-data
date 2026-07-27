@@ -6,7 +6,7 @@
     "title": "HK Utilities & Infrastructure Sector Monitor",
     "description": "CLP quarterly electricity sales by customer sector, CenStatD town gas consumption, HKO temperature, and Power Assets geographic segment reporting.",
     "sector": "hk-utilities",
-    "generatedAt": "2026-07-27T10:09:30.712019Z",
+    "generatedAt": "2026-07-26T18:33:02.865334Z",
     "cards": [
       {
         "id": "clp_card",
@@ -294,7 +294,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-27T10:09:30.712019Z",
+    "generatedAt": "2026-07-26T18:33:02.865334Z",
     "status": "ready",
     "datasets": {
       "kpi_clp": [

@@ -15,7 +15,7 @@ NORMALIZED_DIR.mkdir(parents=True, exist_ok=True)
 REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
 
 # HK Local Consumer Target Tickers
-# Full 11-name watchlist per docs/asia-markets-hk-local-consumer.md ("## Watchlist").
+# Full watchlist per docs/asia-markets/asia-markets-hk-local-consumer.md ("## Watchlist").
 # NOTE: "0529" for Fairwood was a transposed-digit bug -- Fairwood Holdings'
 # real HKEX code is 0052 (verified against the research doc and akshare).
 HK_CONSUMER_TICKERS = {
@@ -100,7 +100,7 @@ CENSTATD_RETAIL_SALES_VOLUME_TABLE_ID = "620-67003"
 # variable, code 3) in table 625-68003, "Restaurant receipts by type of
 # restaurant" -- verified directly against CenStatD's own published Q1 2026
 # figures (value -0.6% YoY / volume -1.5% YoY for REST_GRP=3), which match
-# docs/asia-markets-hk-local-consumer.md's independently-sourced numbers.
+# docs/asia-markets/asia-markets-hk-local-consumer.md's independently-sourced numbers.
 CENSTATD_RESTAURANT_TABLE_ID = "625-68003"
 # Total restaurant purchases are only published sector-wide (not broken
 # out by restaurant type) in table 625-68001.
