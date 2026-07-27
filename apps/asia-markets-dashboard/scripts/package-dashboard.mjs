@@ -964,6 +964,11 @@ const HK_COMMERCIAL_AEROSPACE_ZH = {
       subtitle: "头部商业火箭企业审核状态、审核编号及更新日期。",
       columns: { company_en: "英文名称", company_zh: "中文名称", status: "审核状态", audit_num: "审核编号", update_date: "更新日期", exchange: "交易所" },
     },
+    upcoming_launches_table: {
+      title: "中国商业火箭及卫星发射日程表",
+      subtitle: "Launch Library 2 追踪的最新发射窗口（不早于 NET 日期）、发射企业、火箭型号、发射场及状态。",
+      columns: { net_date: "目标发射日期 (NET)", provider: "发射企业 / 机构", mission: "任务 / 火箭型号", pad_name: "发射场", orbit: "轨道", status: "状态" },
+    },
     aerospace_watchlist_table: {
       title: "香港上市商业航天及国防观察名单",
       subtitle: "香港上市航天、卫星及国防供应链公司股票观察名单。",

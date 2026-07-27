@@ -6,7 +6,7 @@
     "title": "香港稳定币与加密资产基础设施监测",
     "description": "金管局持牌稳定币发行人沙盒名单、证监会持牌 VATP 虚拟资产交易平台、港交所加密 ETF 规模、稳定币市值及市场领先指标。",
     "sector": "hk-stablecoin-crypto",
-    "generatedAt": "2026-07-27T23:13:17.517402Z",
+    "generatedAt": "2026-07-27T23:18:05.053485Z",
     "dataAsOf": "2026-07-27",
     "liveSourcesCount": 6,
     "totalSourcesCount": 7,
@@ -377,7 +377,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**数据快照：** `61077934336bd7f5` · 生成于 2026-07-27T23:13:17.517402Z。"
+        "body": "**数据快照：** `1fd99643cce2a6e5` · 生成于 2026-07-27T23:18:05.053485Z。"
       },
       {
         "id": "kpi_grid",
@@ -434,7 +434,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-27T23:13:17.517402Z",
+    "generatedAt": "2026-07-27T23:18:05.053485Z",
     "status": "ready",
     "datasets": {
       "hkma_issuers": [
@@ -1414,8 +1414,8 @@
           "sfc_pending_count": 6,
           "total_supply_bn": 309.01,
           "total_etf_aum_m": 338.18,
-          "btc_price": 63783.98,
-          "cb_premium_bps": -9.01,
+          "btc_price": 63766.16,
+          "cb_premium_bps": -8.44,
           "fear_greed_val": 30,
           "fear_greed_class": "Fear"
         }
@@ -1584,8 +1584,8 @@
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-stablecoin-crypto/",
     "sector_id": "hk-stablecoin-crypto",
     "sector_name": "Hong Kong Stablecoin & Crypto Infrastructure Monitor",
-    "snapshotId": "61077934336bd7f5",
-    "generatedAt": "2026-07-27T23:13:17.517402Z",
+    "snapshotId": "1fd99643cce2a6e5",
+    "generatedAt": "2026-07-27T23:18:05.053485Z",
     "dataAsOf": "2026-07-27"
   }
 }

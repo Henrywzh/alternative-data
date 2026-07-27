@@ -6,7 +6,7 @@
     "title": "Hong Kong Stablecoin & Crypto Infrastructure Monitor",
     "description": "HKMA licensed stablecoin issuers, SFC licensed VATP exchanges, HKEX crypto ETF AUM, stablecoin market cap tracking, and leading market indicators.",
     "sector": "hk-stablecoin-crypto",
-    "generatedAt": "2026-07-27T23:13:17.517402Z",
+    "generatedAt": "2026-07-27T23:18:05.053485Z",
     "dataAsOf": "2026-07-27",
     "liveSourcesCount": 6,
     "totalSourcesCount": 7,
@@ -377,7 +377,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**Data snapshot:** `61077934336bd7f5` \u00b7 generated 2026-07-27T23:13:17.517402Z.  Official HKMA & SFC regulatory registers and market tracking data."
+        "body": "**Data snapshot:** `1fd99643cce2a6e5` \u00b7 generated 2026-07-27T23:18:05.053485Z.  Official HKMA & SFC regulatory registers and market tracking data."
       },
       {
         "id": "kpi_grid",
@@ -434,7 +434,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-27T23:13:17.517402Z",
+    "generatedAt": "2026-07-27T23:18:05.053485Z",
     "status": "ready",
     "datasets": {
       "hkma_issuers": [
@@ -1414,8 +1414,8 @@
           "sfc_pending_count": 6,
           "total_supply_bn": 309.01,
           "total_etf_aum_m": 338.18,
-          "btc_price": 63783.98,
-          "cb_premium_bps": -9.01,
+          "btc_price": 63766.16,
+          "cb_premium_bps": -8.44,
           "fear_greed_val": 30,
           "fear_greed_class": "Fear"
         }
@@ -1584,8 +1584,8 @@
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-stablecoin-crypto/",
     "sector_id": "hk-stablecoin-crypto",
     "sector_name": "Hong Kong Stablecoin & Crypto Infrastructure Monitor",
-    "snapshotId": "61077934336bd7f5",
-    "generatedAt": "2026-07-27T23:13:17.517402Z",
+    "snapshotId": "1fd99643cce2a6e5",
+    "generatedAt": "2026-07-27T23:18:05.053485Z",
     "dataAsOf": "2026-07-27"
   }
 }
