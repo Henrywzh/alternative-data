@@ -215,6 +215,50 @@ statistically. Good next step before treating the macro-vs-idiosyncratic
 split as settled: check 1-2 more of this doc's own Tier 3 catalyst dates
 (China 33 Group, Starcoin Group) against COIN/CRCL.
 
+### HKEX-listed spot Bitcoin/Ether ETFs as a HK-specific institutional-adoption gauge
+
+Distinct from COIN/CRCL (US sentiment) and DefiLlama (global stablecoin
+share): this is the one signal in this doc that measures actual
+**Hong Kong-domiciled capital**, not global/US flow.
+
+The 6 HKEX-listed crypto ETFs (Asia's first spot BTC/ETH ETFs, launched
+2024-04-30):
+| ETF | Ticker | HKEX fundId |
+|---|---|---|
+| Bosera HashKey Bitcoin ETF | 3008.HK | `BUU104` |
+| Bosera HashKey Ether ETF | 3009.HK | `BUU105` |
+| ChinaAMC Bitcoin ETF | 3042.HK | `BUU163` |
+| ChinaAMC Ether ETF | 3046.HK | `BUU164` |
+| Harvest Bitcoin Spot ETF | 3439.HK | `BUT244` |
+| Harvest Ether Spot ETF | 3179.HK | not yet found (a `BUT245` guess 404'd; trivial to look up via the fund's own `ifp.hkex.com.hk` page) |
+
+**The real, working, free API** (found via a real browser's network log — the
+fund page itself is a React SPA, `curl` alone only gets a blank shell):
+`https://ifp.hkex.com.hk/ifp/api/v1/fund/getFundSizeList?fundId=<ID>&page=1&size=<N>&startDate=&endDate=&lang=en`
+on HKEX's own "Integrated Fund Platform." Works with a plain `curl`, **no
+auth, no special headers needed** (unlike SSE's API above, which needs a
+Referer header).
+
+**Verified live 2026-07-27**, real monthly AUM history (USD) back to each
+ETF's Sept 2024 inception:
+| ETF | May 2026 AUM | Range since inception |
+|---|---|---|
+| Bosera Bitcoin | $80.06M | $77.81M–$196.33M |
+| ChinaAMC Bitcoin | $186.76M | $142.03M–$306.71M |
+| Harvest Bitcoin | $15.51M | $14.23M–$37.66M |
+| Bosera Ether | $18.94M | — |
+| ChinaAMC Ether | $36.91M | — |
+
+**Caveats**: this is **monthly** AUM, not daily — fine for a scheduled
+monthly/weekly pipeline, not a real-time flow signal. It's point-in-time
+AUM, not creation/redemption unit flow directly — net flows would need to
+be approximated by differencing consecutive months' AUM net of the
+underlying crypto's price move over that period. No working "list all
+virtual-asset funds" discovery endpoint was found (`keyword=` and a guessed
+`fundTypeIds=` filter both returned unfiltered generic fund lists) —
+fundIds were found via web search instead, and are static/one-time-lookup
+once known.
+
 **C. Stablecoin-specific: market share & major issuers**
 | Source | What it gives you | Access |
 |---|---|---|
