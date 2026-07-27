@@ -24,14 +24,6 @@ PATENT_ASSIGNEES = [
     "i-Space 星际荣耀",
 ]
 
-FALLBACK_PATENT_COUNTS = {
-    "LandSpace 蓝箭航天": 185,
-    "CAS Space 中科宇航": 140,
-    "Galactic Energy 星河动力": 110,
-    "Space Pioneer 天兵科技": 95,
-    "i-Space 星际荣耀": 85,
-}
-
 SCHEMA_COLUMNS = [
     "assignee_query",
     "estimated_count",
@@ -40,7 +32,7 @@ SCHEMA_COLUMNS = [
 
 
 def fetch_patent_count(company_name: str) -> dict:
-    """Fetch estimated patent count from Google Patents with robust fallback."""
+    """Fetch estimated patent count from Google Patents."""
     fetched_at = datetime.now(timezone.utc).isoformat()
     params = {
         "q": company_name,
@@ -72,9 +64,6 @@ def fetch_patent_count(company_name: str) -> dict:
     except Exception as e:
         logger.warning(f"Failed to fetch patents for {company_name}: {e}")
 
-    if count is None or count == 0:
-        count = FALLBACK_PATENT_COUNTS.get(company_name, 50)
-        
     return {
         "assignee_query": company_name,
         "estimated_count": count,

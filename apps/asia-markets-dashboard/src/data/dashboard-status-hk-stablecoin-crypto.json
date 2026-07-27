@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-07-27T22:51:14.613482Z",
-  "snapshot_id": "b6c3eec0bf0b07c8",
+  "generated_at": "2026-07-27T23:06:14.631010Z",
+  "snapshot_id": "c0bc84bd6d70e7f6",
   "data_as_of": "2026-07-27",
   "overall_status": "Healthy",
   "live_sources": 7,
@@ -12,7 +12,7 @@
       "type": "Monitor",
       "status": "Healthy",
       "latest_observation": "2026-07-27",
-      "records": 10,
+      "records": 2,
       "freshness": "Live",
       "notes": "Official ground-truth sandbox register of licensed stablecoin issuers (Anchorpoint FRS01, HSBC FRS02)."
     },
@@ -22,7 +22,7 @@
       "type": "Monitor",
       "status": "Healthy",
       "latest_observation": "2026-07-27",
-      "records": 10,
+      "records": 36,
       "freshness": "Live",
       "notes": "Official 4-status SFC register of VATP exchange operators (licensed, pending, withdrawn, forced-closure)."
     },
@@ -42,7 +42,7 @@
       "type": "Monitor",
       "status": "Healthy",
       "latest_observation": "2026-07-27",
-      "records": 10,
+      "records": 5,
       "freshness": "Live",
       "notes": "Monthly AUM history for Hong Kong spot Bitcoin and Ether ETFs."
     },
@@ -52,7 +52,7 @@
       "type": "Monitor",
       "status": "Healthy",
       "latest_observation": "2026-07-27",
-      "records": 10,
+      "records": 1,
       "freshness": "Live",
       "notes": "Real-time BTC spot prices and Coinbase Premium spread (bps)."
     },
@@ -62,7 +62,7 @@
       "type": "Monitor",
       "status": "Healthy",
       "latest_observation": "2026-07-27",
-      "records": 10,
+      "records": 1,
       "freshness": "Live",
       "notes": "Daily market sentiment score (0-100) and classification."
     },
@@ -72,7 +72,7 @@
       "type": "Monitor",
       "status": "Healthy",
       "latest_observation": "2026-07-27",
-      "records": 10,
+      "records": 8,
       "freshness": "Live",
       "notes": "Prediction market probabilities for global crypto regulatory catalysts."
     }
