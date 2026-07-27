@@ -9,15 +9,14 @@ NAMING COLLISION: "Anchorpoint" (this licensee) ≠ "AnchorX" (Jinyong Investmen
 01328.HK, targeting AxCNH pegged to offshore RMB). They are completely different
 companies. Do not conflate.
 
-Access: pandas.read_html() works on this page. However, the page must be fetched
-via requests with a User-Agent header first — bare urllib gets a different response
-shape that may fail. We fetch with requests then pass the HTML to read_html.
+Access: pandas.read_html() works on this page when fetched via requests with a User-Agent.
 """
 
 from __future__ import annotations
 
 import io
 import logging
+import re
 from datetime import datetime, timezone
 
 import pandas as pd
@@ -30,17 +29,14 @@ logger = logging.getLogger(__name__)
 
 SCHEMA_COLUMNS = ["issuer", "licence_number", "effective_date", "fetched_at"]
 
-# Substring patterns to detect each logical column from the actual (long) table headers.
-# HKMA's table uses verbose merged header cells that render as long strings after read_html.
-_ISSUER_HINTS = ["licensee", "name", "company"]
-_LICENCE_HINTS = ["licence", "license", "number", "frs"]
-_DATE_HINTS = ["effective", "date"]
 
-
-def _pick_col(columns: list[str], hints: list[str]) -> str | None:
-    """Return the first column name that contains any of the hint substrings."""
-    cols_lower = [c.lower() for c in columns]
-    for col, col_lower in zip(columns, cols_lower):
+def _pick_col(columns: list[str], hints: list[str], exclude: list[str] | None = None) -> str | None:
+    """Return the first column name that contains any hint substring and no excluded substring."""
+    exclude = exclude or []
+    for col in columns:
+        col_lower = col.lower()
+        if any(ex in col_lower for ex in exclude):
+            continue
         if any(h in col_lower for h in hints):
             return col
     return None
@@ -50,8 +46,7 @@ def fetch_licensed_issuers() -> pd.DataFrame:
     """Fetch HKMA register of licensed stablecoin issuers.
 
     Fetches the page with requests (to send a proper User-Agent), then passes
-    the HTML to pandas.read_html() for table extraction. Column names use fuzzy
-    matching because HKMA's table headers are long descriptive strings.
+    the HTML to pandas.read_html() for table extraction.
     """
     now_str = datetime.now(timezone.utc).isoformat()
 
@@ -75,9 +70,26 @@ def fetch_licensed_issuers() -> pd.DataFrame:
 
         cols = list(df.columns)
 
-        issuer_col = _pick_col(cols, _ISSUER_HINTS)
-        licence_col = _pick_col(cols, _LICENCE_HINTS)
-        date_col = _pick_col(cols, _DATE_HINTS)
+        # Match columns precisely without picking 'licensee' for licence_number
+        issuer_col = _pick_col(
+            cols,
+            ["name of licensee", "licensee", "issuer"],
+            exclude=["licence number", "license number", "licence_number"],
+        )
+        licence_col = _pick_col(
+            cols,
+            ["licence number", "license number", "frs"],
+            exclude=["address", "principal place", "name of licensee"],
+        )
+        date_col = _pick_col(cols, ["effective date", "effective"])
+
+        # Fallbacks by column index if fuzzy match failed
+        if not issuer_col and len(cols) > 0:
+            issuer_col = cols[0]
+        if not licence_col and len(cols) > 3:
+            licence_col = cols[3]
+        if not date_col and len(cols) > 4:
+            date_col = cols[4]
 
         if not issuer_col or not licence_col or not date_col:
             logger.warning(
@@ -87,20 +99,24 @@ def fetch_licensed_issuers() -> pd.DataFrame:
             )
             return pd.DataFrame(columns=SCHEMA_COLUMNS)
 
+        # Clean issuer column: strip out inline address string (e.g., 'Anchorpoint ... Address: 6/F ...')
+        raw_issuers = df[issuer_col].astype(str)
+        clean_issuers = raw_issuers.str.split(r"\s*Address:", regex=True).str[0].str.strip()
+
         result = pd.DataFrame({
-            "issuer": df[issuer_col],
-            "licence_number": df[licence_col],
-            "effective_date": df[date_col],
+            "issuer": clean_issuers,
+            "licence_number": df[licence_col].astype(str).str.strip(),
+            "effective_date": df[date_col].astype(str).str.strip(),
             "fetched_at": now_str,
         })
 
-        # Drop any all-NaN rows (can appear from merged header rows)
+        # Drop any all-NaN/empty rows
         result = result.dropna(subset=["issuer"]).reset_index(drop=True)
+        result = result[result["issuer"] != ""]
 
         if len(result) != 2:
             logger.info(
-                "HKMA register now has %d issuers — was 2 as of 2026-07-26. "
-                "Update expected_count if this is a real new licensee.",
+                "HKMA register now has %d issuers — was 2 as of 2026-07-26.",
                 len(result),
             )
 

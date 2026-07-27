@@ -33,6 +33,17 @@ SCHEMA_COLUMNS = [
     "fetched_at",
 ]
 
+# SSE currStatus numeric code mapping
+SSE_STATUS_MAP = {
+    1: "已受理",
+    2: "已问询",
+    3: "上市委会议通过",
+    4: "提交注册",
+    5: "注册生效",
+    6: "中止",
+    7: "终止",
+}
+
 
 def fetch_ipo_status(company_name_zh: str) -> dict:
     """Fetch IPO filing status from SSE STAR Market."""
@@ -83,12 +94,31 @@ def fetch_ipo_status(company_name_zh: str) -> dict:
         # SSE JSONP response uses stockAuditNum for the numeric review ID
         # (e.g. 2174 for LandSpace, 2180 for CAS Space — confirmed 2026-07-26)
         raw_audit = first.get("stockAuditNum") or first.get("auditNum") or first.get("auditId")
+
+        # Map numeric currStatus code (e.g. 2 -> "已问询")
+        curr_code = first.get("currStatus")
+        if curr_code is not None:
+            try:
+                code_int = int(curr_code)
+                status_str = SSE_STATUS_MAP.get(code_int, first.get("auditStatus", "Unknown"))
+            except (ValueError, TypeError):
+                status_str = str(curr_code)
+        else:
+            status_str = first.get("auditStatus", "Unknown")
+
+        # Format updateDate from YYYYMMDDHHMMSS to YYYY-MM-DD
+        raw_date = str(first.get("updateDate", ""))
+        if len(raw_date) >= 8 and raw_date.isdigit():
+            update_date = f"{raw_date[:4]}-{raw_date[4:6]}-{raw_date[6:8]}"
+        else:
+            update_date = raw_date or None
+
         return {
             "company_zh": company_name_zh,
             "found": True,
             "audit_num": int(raw_audit) if raw_audit is not None else None,
-            "status": first.get("auditStatus", "Unknown"),
-            "update_date": first.get("updateDate"),
+            "status": status_str,
+            "update_date": update_date,
             "financing_amount": str(first.get("planIssueCapital", "")),
         }
     except Exception as e:
@@ -113,9 +143,6 @@ def fetch_all_ipo_statuses() -> pd.DataFrame:
         name_zh = comp["name_zh"]
         status_data = fetch_ipo_status(name_zh)
         
-        # We need audit_num specifically, so we'll try to extract it from the payload if it's there.
-        # But if we rely on auditId we should make sure we grab it right. 
-        # The prompt says `audit_num: int|None`. I'll cast it if found.
         audit_num = status_data.get("audit_num")
         if audit_num is not None:
             try:
@@ -123,8 +150,6 @@ def fetch_all_ipo_statuses() -> pd.DataFrame:
             except (ValueError, TypeError):
                 audit_num = None
                 
-        # Some fields in the sample response might be named differently, but we map to SCHEMA_COLUMNS.
-        # Ensure we don't accidentally override the expected status if the fetch fails completely
         status = status_data["status"]
 
         rows.append({

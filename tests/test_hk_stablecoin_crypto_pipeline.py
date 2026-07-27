@@ -23,11 +23,16 @@ def test_fetch_hkma_register():
     assert "issuer" in df.columns
     assert "licence_number" in df.columns
     assert "effective_date" in df.columns
-    assert len(df) >= 2
+    assert len(df) == 2
     
-    issuers = df["issuer"].str.lower().tolist()
-    assert any("anchorpoint" in str(i) for i in issuers)
-    assert any("hsbc" in str(i) or "hongkong and shanghai" in str(i) for i in issuers)
+    # Verify exact licence numbers and clean issuer names
+    licences = df["licence_number"].tolist()
+    assert licences == ["FRS01", "FRS02"]
+    
+    issuers = df["issuer"].tolist()
+    assert issuers[0] == "Anchorpoint Financial Limited"
+    assert "The Hongkong and Shanghai Banking Corporation" in issuers[1]
+    assert not any("Address:" in str(i) for i in issuers)
 
 
 def test_anchorpoint_is_not_anchorx():
@@ -40,11 +45,16 @@ def test_fetch_sfc_vatp_register():
     df = fetch_vatp_register()
     assert not df.empty
     assert "status" in df.columns
-    assert len(df["status"].unique()) > 1
+    assert len(df["status"].unique()) >= 3
     
     licensed = df[df["status"] == "licensed"]["platform_name"].str.lower().tolist()
     assert any("osl" in str(p) for p in licensed)
     assert not any("guotai junan" in str(p) for p in licensed)
+    assert len(licensed) >= 13
+
+    # Forced closure count should be exactly 0 (no header/artifact rows)
+    forced_closures = df[df["status"] == "forced_closure"]
+    assert len(forced_closures) == 0
 
 
 def test_fetch_stablecoin_supply():
