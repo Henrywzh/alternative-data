@@ -1,8 +1,6 @@
 name: AI News Daily
 
 on:
-  schedule:
-    - cron: "0 9 * * *" # Runs daily at 09:00 UTC
   workflow_dispatch:
 
 permissions:
