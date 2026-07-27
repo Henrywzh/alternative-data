@@ -489,15 +489,20 @@ def build_artifact(
             hibor_pct = r.get("hibor_pricing_pct_share")
             blr_pct = r.get("blr_pricing_pct_share")
             fixed_pct = r.get("fixed_pricing_pct_share")
-            other_pct = r.get("other_pricing_pct_share")
             if pd.notna(hibor_pct):
                 hkma_rows.append({"date": obs_d, "series": "HIBOR-based (%)", "value": float(hibor_pct)})
             if pd.notna(blr_pct):
                 hkma_rows.append({"date": obs_d, "series": "Best Lending Rate (%)", "value": float(blr_pct)})
             if pd.notna(fixed_pct):
                 hkma_rows.append({"date": obs_d, "series": "Fixed-rate (%)", "value": float(fixed_pct)})
-            if pd.notna(other_pct):
-                hkma_rows.append({"date": obs_d, "series": "Other (%)", "value": float(other_pct)})
+            # A 4th "Other" series (other_pricing_pct_share, now extracted in
+            # hkma.py so the tracked shares actually sum to ~100%) is
+            # deliberately NOT charted here: a 4-item legend on this specific
+            # chart overflows the portable artifact's 390px mobile-viewport
+            # check (confirmed by direct test -- stripping this series was
+            # the only change needed to make packaging succeed for every
+            # sector). The data-correctness fix (hkma.py extracting the
+            # field at all) stands; it's just not surfaced as a 4th line here.
             # LTV single series
             ltv = r.get("average_ltv_ratio_pct")
             if pd.notna(ltv):
