@@ -6,7 +6,7 @@
     "title": "香港房地产信托（REITs）基本面监测",
     "description": "领展（Link REIT）、冠君（Champion REIT）、置富（Fortune REIT）、繁荣（Prosperity REIT）、阳光（Sunlight REIT）及富豪（Regal REIT）的每单位资产净值（NAV）、每基金单位分派（DPU）、出租率、租金检讨调升率及酒店 KPI 快照。",
     "sector": "hk-reit",
-    "generatedAt": "2026-07-25T19:59:49.808467Z",
+    "generatedAt": "2026-07-26T18:33:02.934103Z",
     "dataAsOf": "2026-03-31",
     "liveSourcesCount": 6,
     "totalSourcesCount": 7,
@@ -383,14 +383,14 @@
     "sources": [
       {
         "id": "reit_price_akshare",
-        "label": "Hong Kong REITs Daily Spot Quotes & History (akshare)",
+        "label": "香港REITs每日现货报价及历史（akshare）",
         "href": "https://www.hkex.com.hk/",
         "path": "sources/reit_price.py",
         "query": {
           "engine": "akshare.stock_hk_spot_em",
           "url": "https://www.hkex.com.hk/",
           "language": "API",
-          "description": "构建时从公开来源读取并校验 Hong Kong REITs Daily Spot Quotes & History (akshare)。"
+          "description": "构建时从公开来源读取并校验 香港REITs每日现货报价及历史（akshare）。"
         }
       },
       {
@@ -470,7 +470,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**数据快照：** `96fce73ce19eb3bb` · 生成于 2026-07-25T19:59:49.808467Z。"
+        "body": "**数据快照：** `96fce73ce19eb3bb` · 生成于 2026-07-26T18:33:02.934103Z。"
       },
       {
         "id": "kpi_grid",
@@ -525,7 +525,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-25T19:59:49.808467Z",
+    "generatedAt": "2026-07-26T18:33:02.934103Z",
     "status": "ready",
     "datasets": {
       "kpi_linkreit": [
@@ -1838,14 +1838,14 @@
   "sources": [
     {
       "id": "reit_price_akshare",
-      "label": "Hong Kong REITs Daily Spot Quotes & History (akshare)",
+      "label": "香港REITs每日现货报价及历史（akshare）",
       "href": "https://www.hkex.com.hk/",
       "path": "sources/reit_price.py",
       "query": {
         "engine": "akshare.stock_hk_spot_em",
         "url": "https://www.hkex.com.hk/",
         "language": "API",
-        "description": "构建时从公开来源读取并校验 Hong Kong REITs Daily Spot Quotes & History (akshare)。"
+        "description": "构建时从公开来源读取并校验 香港REITs每日现货报价及历史（akshare）。"
       }
     },
     {
@@ -1991,7 +1991,7 @@
     "sector_id": "hk-reit",
     "sector_name": "Hong Kong REITs Sector Monitor",
     "snapshotId": "96fce73ce19eb3bb",
-    "generatedAt": "2026-07-25T19:59:49.808467Z",
+    "generatedAt": "2026-07-26T18:33:02.934103Z",
     "dataAsOf": "2026-03-31"
   }
 }

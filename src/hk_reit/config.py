@@ -10,7 +10,7 @@ sources those functions scrape). Only price/quote data
 (`stock_hk_spot_em`, `stock_hk_hist`) is confirmed to work for REIT
 tickers, so this pipeline is scoped to that alone. Distribution/yield,
 occupancy, and rental-reversion data are a documented gap (see
-docs/asia-markets-hk-real-estate.md) requiring a different source
+docs/asia-markets/asia-markets-hk-real-estate.md) requiring a different source
 (HKEXnews interim/annual filings) — not attempted here.
 """
 
@@ -24,7 +24,7 @@ NORMALIZED_DIR = DATA_DIR / "normalized" / "hk_reit"
 RAW_DIR.mkdir(parents=True, exist_ok=True)
 NORMALIZED_DIR.mkdir(parents=True, exist_ok=True)
 
-# HK REIT universe, per docs/asia-markets-hk-real-estate.md section 1
+# HK REIT universe, per docs/asia-markets/asia-markets-hk-real-estate.md section 1
 # ("HK REITs" table). Ticker codes are bare (no .HK suffix), matching
 # akshare's convention.
 HK_REIT_TICKERS = {

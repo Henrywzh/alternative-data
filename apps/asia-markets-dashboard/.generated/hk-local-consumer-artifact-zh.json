@@ -5,7 +5,7 @@
     "surface": "dashboard",
     "title": "香港本地消费监测",
     "description": "极端天气干扰时长、港元/人民币汇率、跨境出入境人流（北上/南下）、黄金原料成本、零售销售、餐饮收益及消费股估值的来源快照。",
-    "generatedAt": "2026-07-26T00:40:51.139490Z",
+    "generatedAt": "2026-07-26T18:34:36.550381Z",
     "cards": [
       {
         "id": "northbound_card",
@@ -191,12 +191,12 @@
       },
       {
         "id": "store_footprint_card",
-        "description": "Total tracked store/branch count across 11 HK-listed retail, jewellery, F&B, and consumer names.",
+        "description": "11家香港上市零售、珠宝、餐饮及消费品公司的门店/网点数量追踪总数。",
         "dataset": "kpi_store_footprint",
         "sourceId": "hk_store_footprint",
         "metrics": [
           {
-            "label": "Total tracked locations",
+            "label": "已追踪网点总数",
             "field": "latest",
             "format": "number"
           }
@@ -452,8 +452,8 @@
       },
       {
         "id": "store_footprint_chart",
-        "title": "Tracked store/branch count by company",
-        "subtitle": "Latest footprint snapshot per company (not a directly comparable unit -- see notes).",
+        "title": "各公司追踪门店/网点数量",
+        "subtitle": "各公司最新的门店足迹快照（各公司单位不直接可比，详见备注）。",
         "type": "horizontalBar",
         "intent": "comparison",
         "dataset": "store_footprint_chart",
@@ -462,12 +462,12 @@
           "x": {
             "field": "company",
             "type": "nominal",
-            "label": "Company"
+            "label": "公司"
           },
           "y": {
             "field": "total_stores",
             "type": "quantitative",
-            "label": "Total stores"
+            "label": "门店总数"
           }
         },
         "valueFormat": "number",
@@ -475,8 +475,8 @@
       },
       {
         "id": "consumer_council_oilprice_chart",
-        "title": "Auto Fuel Walk-in Discount Comparison (HK$/L)",
-        "subtitle": "Walk-in discounts per liter across Caltex, PetroChina, Shell, Sinopec, and Esso.",
+        "title": "各大油公司现金折扣对比 (港元/升)",
+        "subtitle": "美孚、中石油、壳牌、中石化及埃索的每升现金折扣。",
         "type": "bar",
         "dataset": "consumer_council_oilprice",
         "sourceId": "consumer_council_oilprice",
@@ -484,12 +484,12 @@
           "x": {
             "field": "company",
             "type": "nominal",
-            "label": "Oil Major"
+            "label": "油公司"
           },
           "y": {
             "field": "walkin_discount_hkd",
             "type": "quantitative",
-            "label": "Discount (HK$/L)"
+            "label": "折扣 (港元/升)"
           }
         },
         "valueFormat": "number",
@@ -497,8 +497,8 @@
       },
       {
         "id": "consumer_council_oilprice_net_chart",
-        "title": "Auto Fuel Net Price Comparison (HK$/L)",
-        "subtitle": "Same-day net price-per-liter across Caltex, PetroChina, Shell, Sinopec, and Esso.",
+        "title": "各大油公司实际油价对比 (港元/升)",
+        "subtitle": "同日美孚、中石油、壳牌、中石化及埃索的每升实际油价。",
         "type": "bar",
         "dataset": "consumer_council_oilprice",
         "sourceId": "consumer_council_oilprice",
@@ -506,12 +506,12 @@
           "x": {
             "field": "company",
             "type": "nominal",
-            "label": "Oil Major"
+            "label": "油公司"
           },
           "y": {
             "field": "discounted_price_hkd",
             "type": "quantitative",
-            "label": "Net Price (HK$/L)"
+            "label": "实际油价 (港元/升)"
           }
         },
         "valueFormat": "number",
@@ -519,8 +519,8 @@
       },
       {
         "id": "consumer_council_complaints_chart",
-        "title": "Consumer Council Top Complaint Categories",
-        "subtitle": "Top 10 categories during 2026, by number of complaints.",
+        "title": "消费者委员会投诉类别排行",
+        "subtitle": "最新一期十大投诉类别（按投诉宗数）。",
         "type": "horizontalBar",
         "intent": "comparison",
         "dataset": "consumer_council_complaints_chart",
@@ -529,12 +529,12 @@
           "x": {
             "field": "category",
             "type": "nominal",
-            "label": "Category"
+            "label": "类别"
           },
           "y": {
             "field": "amount",
             "type": "quantitative",
-            "label": "Complaints"
+            "label": "投诉宗数"
           }
         },
         "valueFormat": "number",
@@ -869,8 +869,8 @@
       },
       {
         "id": "consumer_council_oilprice_table",
-        "title": "Consumer Council Auto Fuel Pump Prices & Discounts",
-        "subtitle": "Daily pump prices, walk-in discounts, and net prices per liter across Hong Kong oil majors.",
+        "title": "消委会油价计算机 — 油价及折扣",
+        "subtitle": "香港各大油公司每日油价、现金折扣及实际油价（每升）。",
         "dataset": "consumer_council_oilprice",
         "sourceId": "consumer_council_oilprice",
         "density": "dense",
@@ -878,30 +878,30 @@
         "columns": [
           {
             "field": "company",
-            "label": "Oil Major",
+            "label": "油公司",
             "type": "text"
           },
           {
             "field": "fuel_type",
-            "label": "Fuel Type",
+            "label": "油品",
             "type": "text"
           },
           {
             "field": "walkin_discount_hkd",
-            "label": "Walk-in Discount (HK$/L)",
+            "label": "现金折扣 (港元/升)",
             "format": "number"
           },
           {
             "field": "discounted_price_hkd",
-            "label": "Net Price (HK$/L)",
+            "label": "实际油价 (港元/升)",
             "format": "number"
           }
         ]
       },
       {
         "id": "consumer_council_complaints_table",
-        "title": "Consumer Council Complaints by Category (Latest Period)",
-        "subtitle": "All complaint categories during 2026, sorted by number of complaints.",
+        "title": "消费者委员会投诉类别（最新一期）",
+        "subtitle": "最新一期全部投诉类别，按投诉宗数排序。",
         "dataset": "consumer_council_complaints_table",
         "sourceId": "consumer_council_complaints",
         "defaultSort": {
@@ -913,25 +913,25 @@
         "columns": [
           {
             "field": "period",
-            "label": "Period",
+            "label": "期间",
             "type": "text"
           },
           {
             "field": "category",
-            "label": "Category",
+            "label": "类别",
             "type": "text"
           },
           {
             "field": "amount",
-            "label": "Complaints",
+            "label": "投诉宗数",
             "format": "number"
           }
         ]
       },
       {
         "id": "immigration_checkpoint_table",
-        "title": "Immigration Checkpoint Breakdown",
-        "subtitle": "Latest date: 2026-07-24. Passenger clearance by control point and direction.",
+        "title": "出入境管制站明细",
+        "subtitle": "最新日期的旅客通关量，按管制站及方向划分。",
         "dataset": "immigration_checkpoint_snapshot",
         "sourceId": "immigration_flow",
         "defaultSort": {
@@ -943,40 +943,40 @@
         "columns": [
           {
             "field": "control_point",
-            "label": "Control Point",
+            "label": "管制站",
             "type": "text"
           },
           {
             "field": "direction",
-            "label": "Direction",
+            "label": "方向",
             "type": "text"
           },
           {
             "field": "hk_residents",
-            "label": "HK Residents",
+            "label": "香港居民",
             "format": "number"
           },
           {
             "field": "mainland_visitors",
-            "label": "Mainland Visitors",
+            "label": "内地访客",
             "format": "number"
           },
           {
             "field": "other_visitors",
-            "label": "Other Visitors",
+            "label": "其他访客",
             "format": "number"
           },
           {
             "field": "total",
-            "label": "Total",
+            "label": "总计",
             "format": "number"
           }
         ]
       },
       {
         "id": "store_footprint_table",
-        "title": "HK Retail/F&B Store-Count Snapshot",
-        "subtitle": "Latest tracked store/branch count per company -- a footprint snapshot, not yet a trend (most companies have 1-2 dated snapshots so far).",
+        "title": "香港零售/餐饮门店数量快照",
+        "subtitle": "各公司最新追踪的门店/网点数量——门店足迹快照，尚未构成趋势（大部分公司目前仅有1-2个存有日期的快照）。",
         "dataset": "store_footprint_snapshot",
         "sourceId": "hk_store_footprint",
         "defaultSort": {
@@ -988,32 +988,32 @@
         "columns": [
           {
             "field": "company",
-            "label": "Company",
+            "label": "公司",
             "type": "text"
           },
           {
             "field": "stock_code",
-            "label": "Stock Code",
+            "label": "股票代码",
             "type": "text"
           },
           {
             "field": "sector",
-            "label": "Sector",
+            "label": "行业",
             "type": "text"
           },
           {
             "field": "total_stores",
-            "label": "Total Stores",
+            "label": "门店总数",
             "format": "number"
           },
           {
             "field": "regions_tracked",
-            "label": "Regions/Markets Tracked",
+            "label": "追踪地区/市场数",
             "format": "number"
           },
           {
             "field": "snapshot_date",
-            "label": "Snapshot Date",
+            "label": "快照日期",
             "type": "date"
           }
         ]
@@ -1022,13 +1022,13 @@
     "sources": [
       {
         "id": "consumer_council_oilprice",
-        "label": "Consumer Council Auto Fuel Calculator",
+        "label": "消费者委员会油价计算机",
         "href": "https://oil-price.consumer.org.hk/en",
         "path": "sources/consumer_council_oilprice.sql"
       },
       {
         "id": "consumer_council_complaints",
-        "label": "Consumer Council Complaints API",
+        "label": "消费者委员会投诉数据接口",
         "href": "https://www.consumer.org.hk/",
         "path": "sources/consumer_council_complaints.sql"
       },
@@ -1076,7 +1076,7 @@
       },
       {
         "id": "hk_store_footprint",
-        "label": "HK Retail/F&B Store-Count Scrapers",
+        "label": "香港零售/餐饮店铺数量抓取器",
         "href": "https://github.com/",
         "path": "sources/hk_store_footprint.sql"
       },
@@ -1090,7 +1090,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**数据快照：** `0dc513f8f39542e6` · 生成于 2026-07-26T00:40:51.139490Z。"
+        "body": "**数据快照：** `d0cc6d7d25b7f730` · 生成于 2026-07-26T18:34:36.550381Z。"
       },
       {
         "id": "market_pulse_1",
@@ -1255,14 +1255,14 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-26T00:40:51.139490Z",
+    "generatedAt": "2026-07-26T18:34:36.550381Z",
     "status": "ready",
     "datasets": {
       "kpi_weather": [
         {
-          "latest": 13.2,
-          "period_change": -0.007519,
-          "year_change": -0.552542,
+          "latest": 18.7,
+          "period_change": 0.406015,
+          "year_change": -0.366102,
           "observation_date": "2026-07-01"
         }
       ],
@@ -1523,12 +1523,18 @@
         {
           "date": "2026-07-01",
           "month": "2026-07",
-          "signal_8_plus_hours": 9,
+          "signal_8_plus_hours": 14.5,
           "red_black_rain_hours": 4.2,
-          "total_disruption_hours": 13.2
+          "total_disruption_hours": 18.7
         }
       ],
       "severe_weather_log": [
+        {
+          "signal_name": "八号烈风或暴风信号（NOUL）",
+          "start": "2026-07-26 07:10",
+          "end": "2026-07-26 12:40",
+          "duration_hours": 5.5
+        },
         {
           "signal_name": "九号烈风或暴风风力增强信号（NOUL）",
           "start": "2026-07-26 01:10",
@@ -1702,28 +1708,22 @@
           "start": "2025-08-05 05:20",
           "end": "2025-08-05 05:50",
           "duration_hours": 0.5
-        },
-        {
-          "signal_name": "红色暴雨警告信号",
-          "start": "2025-08-05 02:10",
-          "end": "2025-08-05 03:00",
-          "duration_hours": 0.83
         }
       ],
       "kpi_northbound": [
         {
-          "latest": 302926.1,
-          "period_change": 0.00669,
-          "year_change": 0.196088,
-          "observation_date": "2026-07-24"
+          "latest": 290659.7,
+          "period_change": -0.040493,
+          "year_change": 0.147655,
+          "observation_date": "2026-07-25"
         }
       ],
       "kpi_southbound": [
         {
-          "latest": 131162.6,
-          "period_change": 0.022036,
-          "year_change": 0.177515,
-          "observation_date": "2026-07-24"
+          "latest": 129830.4,
+          "period_change": -0.010157,
+          "year_change": 0.165555,
+          "observation_date": "2026-07-25"
         }
       ],
       "immigration_trend_history": [
@@ -2389,12 +2389,12 @@
         },
         {
           "month": "2026-07",
-          "value": 292805.6,
+          "value": 292719.8,
           "flow_type": "北上"
         },
         {
           "month": "2026-07",
-          "value": 112792.6,
+          "value": 113474.1,
           "flow_type": "南下"
         }
       ],
@@ -3067,7 +3067,7 @@
           "pe_ttm": 13.39,
           "pb_ratio": 3.89,
           "market_cap_hkd_b": 120.567,
-          "date": "2026-07-25"
+          "date": "2026-07-26"
         },
         {
           "ticker": "01913.HK",
@@ -3075,7 +3075,7 @@
           "pe_ttm": 12.75,
           "pb_ratio": 2.34,
           "market_cap_hkd_b": 99.026,
-          "date": "2026-07-25"
+          "date": "2026-07-26"
         },
         {
           "ticker": "01910.HK",
@@ -3083,7 +3083,7 @@
           "pe_ttm": 8.73,
           "pb_ratio": 1.46,
           "market_cap_hkd_b": 18.67,
-          "date": "2026-07-25"
+          "date": "2026-07-26"
         },
         {
           "ticker": "00590.HK",
@@ -3091,7 +3091,7 @@
           "pe_ttm": 6.9,
           "pb_ratio": 0.94,
           "market_cap_hkd_b": 14.126,
-          "date": "2026-07-25"
+          "date": "2026-07-26"
         },
         {
           "ticker": "00116.HK",
@@ -3099,7 +3099,7 @@
           "pe_ttm": 4.54,
           "pb_ratio": 0.54,
           "market_cap_hkd_b": 7.805,
-          "date": "2026-07-25"
+          "date": "2026-07-26"
         },
         {
           "ticker": "00341.HK",
@@ -3107,7 +3107,7 @@
           "pe_ttm": 18.7,
           "pb_ratio": 1.13,
           "market_cap_hkd_b": 3.068,
-          "date": "2026-07-25"
+          "date": "2026-07-26"
         },
         {
           "ticker": "00178.HK",
@@ -3115,7 +3115,7 @@
           "pe_ttm": 13.78,
           "pb_ratio": 2.15,
           "market_cap_hkd_b": 2.762,
-          "date": "2026-07-25"
+          "date": "2026-07-26"
         },
         {
           "ticker": "00709.HK",
@@ -3123,7 +3123,7 @@
           "pe_ttm": 10.43,
           "pb_ratio": 1.12,
           "market_cap_hkd_b": 2.263,
-          "date": "2026-07-25"
+          "date": "2026-07-26"
         },
         {
           "ticker": "06811.HK",
@@ -3131,7 +3131,7 @@
           "pe_ttm": 10.6,
           "pb_ratio": 1.28,
           "market_cap_hkd_b": 1.146,
-          "date": "2026-07-25"
+          "date": "2026-07-26"
         },
         {
           "ticker": "00052.HK",
@@ -3139,7 +3139,7 @@
           "pe_ttm": 13.9,
           "pb_ratio": 0.86,
           "market_cap_hkd_b": 0.578,
-          "date": "2026-07-25"
+          "date": "2026-07-26"
         },
         {
           "ticker": "01255.HK",
@@ -3147,7 +3147,7 @@
           "pe_ttm": 39.11,
           "pb_ratio": -9.59,
           "market_cap_hkd_b": 0.522,
-          "date": "2026-07-25"
+          "date": "2026-07-26"
         }
       ],
       "valuation_pe_chart": [
@@ -5216,209 +5216,209 @@
       ],
       "source_health": [
         {
-          "source": "HKO Severe Weather Warnings & FRED Exchange Rate",
-          "dataset": "HKO Severe Weather & FRED FX",
+          "source": "香港天文台恶劣天气警告与FRED汇率",
+          "dataset": "香港天文台恶劣天气与FRED汇率",
           "type": "指标",
           "status": "健康",
           "latest_observation": "2026-07-01",
           "records": 67,
           "freshness": "25 天前",
-          "notes": "Monthly hours under Typhoon Signal 8+ & Red/Black Rainstorm warnings alongside HKD/RMB FX."
+          "notes": "每月八号或以上风球及红色/黑色暴雨警告时长，并列港元/人民币汇率。"
         },
         {
-          "source": "HK Immigration Department Daily Passenger Traffic",
-          "dataset": "Immigration Passenger Clearance",
+          "source": "香港入境事务处每日旅客流量",
+          "dataset": "出入境旅客通关",
           "type": "指标",
           "status": "健康",
-          "latest_observation": "2026-07-24",
-          "records": 2031,
-          "freshness": "2 天前",
-          "notes": "Daily clearance across 17 control points for HK residents & Mainland visitors."
+          "latest_observation": "2026-07-25",
+          "records": 2032,
+          "freshness": "1 天前",
+          "notes": "覆盖17个管制站的香港居民及内地访客每日通关量。"
         },
         {
-          "source": "Shanghai Gold Exchange AM/PM Benchmark",
-          "dataset": "SGE Gold Benchmark",
+          "source": "上海黄金交易所上午/下午基准价",
+          "dataset": "上海黄金交易所黄金基准价",
           "type": "指标",
           "status": "健康",
           "latest_observation": "2026-07-22",
           "records": 2494,
           "freshness": "4 天前",
-          "notes": "Daily AM/PM benchmark fixing."
+          "notes": "每日上午/下午基准价。"
         },
         {
-          "source": "AFCD Fresh Food Wholesale Prices",
-          "dataset": "AFCD Wholesale Food Prices",
+          "source": "农渔护理署鲜活食品批发价格",
+          "dataset": "农渔护理署食品批发价格",
           "type": "指标",
           "status": "健康",
           "latest_observation": "2026-07-26",
           "records": 31,
-          "freshness": "同日快照",
-          "notes": "31 commodities across 5 categories; averaged across same-day market readings."
+          "freshness": "当日快照",
+          "notes": "5类31种商品；按同日市场读数取平均。"
         },
         {
-          "source": "Baidu Gushitong HK Equity Valuation",
-          "dataset": "HK Consumer Ticker Valuations",
+          "source": "百度股市通港股估值",
+          "dataset": "香港消费股估值",
           "type": "指标",
           "status": "健康",
-          "latest_observation": "2026-07-25",
+          "latest_observation": "2026-07-26",
           "records": 11,
-          "freshness": "1 天前",
-          "notes": "PE (TTM), PB, and market cap only; no dividend-yield indicator is available from this endpoint."
+          "freshness": "0 天前",
+          "notes": "仅提供市盈率（TTM）、市净率和市值；该接口没有股息率指标。"
         },
         {
-          "source": "C&SD Retail Sales Value/Volume Index",
-          "dataset": "Retail Sales Value/Volume Index",
+          "source": "政府统计处零售业销货价值/数量指数",
+          "dataset": "零售业销货价值/数量指数",
           "type": "指标",
           "status": "健康",
           "latest_observation": "2026-05-01",
           "records": 6500,
           "freshness": "86 天前",
-          "notes": "25 outlet-type categories, monthly since 2004."
+          "notes": "25个零售类别，自2004年起按月统计。"
         },
         {
-          "source": "CenStatD Quarterly Restaurant Receipts & Purchases Survey",
-          "dataset": "Restaurant Receipts & Purchases Survey",
+          "source": "政府统计处季度餐饮业收益及购货额调查",
+          "dataset": "餐饮业收益及购货额调查",
           "type": "指标",
           "status": "健康",
           "latest_observation": "2026-03-31",
           "records": 516,
           "freshness": "117 天前",
-          "notes": "Sector-wide purchases only; per-type purchases are not published."
+          "notes": "仅提供全行业购货额；未公布分类型购货额。"
         },
         {
-          "source": "HK Retail/F&B Store-Count Scrapers",
-          "dataset": "HK Retail/F&B Store Counts",
-          "type": "Snapshot",
+          "source": "香港零售/餐饮店铺数量抓取器",
+          "dataset": "香港零售/餐饮店铺数量",
+          "type": "快照",
           "status": "健康",
           "latest_observation": "2026-07-26",
           "records": 11,
-          "freshness": "Footprint snapshot (most brands: 1-2 dated snapshots so far, not yet a trend)",
-          "notes": "10,788 total tracked locations across 11 companies."
+          "freshness": "足迹快照（大部分品牌目前仅有1-2个存有日期的快照，尚未构成趋势）",
+          "notes": "11家公司共计10,788个跟踪地点。"
         }
       ],
       "source_coverage_active": [
         {
-          "source": "HKO Severe Weather Warnings & FRED Exchange Rate",
-          "dataset": "HKO Severe Weather & FRED FX",
+          "source": "香港天文台恶劣天气警告与FRED汇率",
+          "dataset": "香港天文台恶劣天气与FRED汇率",
           "type": "指标",
           "status": "健康",
           "latest_observation": "2026-07-01",
           "records": 67,
           "freshness": "25 天前",
-          "notes": "Monthly hours under Typhoon Signal 8+ & Red/Black Rainstorm warnings alongside HKD/RMB FX."
+          "notes": "每月八号或以上风球及红色/黑色暴雨警告时长，并列港元/人民币汇率。"
         },
         {
-          "source": "HK Immigration Department Daily Passenger Traffic",
-          "dataset": "Immigration Passenger Clearance",
+          "source": "香港入境事务处每日旅客流量",
+          "dataset": "出入境旅客通关",
           "type": "指标",
           "status": "健康",
-          "latest_observation": "2026-07-24",
-          "records": 2031,
-          "freshness": "2 天前",
-          "notes": "Daily clearance across 17 control points for HK residents & Mainland visitors."
+          "latest_observation": "2026-07-25",
+          "records": 2032,
+          "freshness": "1 天前",
+          "notes": "覆盖17个管制站的香港居民及内地访客每日通关量。"
         },
         {
-          "source": "Shanghai Gold Exchange AM/PM Benchmark",
-          "dataset": "SGE Gold Benchmark",
+          "source": "上海黄金交易所上午/下午基准价",
+          "dataset": "上海黄金交易所黄金基准价",
           "type": "指标",
           "status": "健康",
           "latest_observation": "2026-07-22",
           "records": 2494,
           "freshness": "4 天前",
-          "notes": "Daily AM/PM benchmark fixing."
+          "notes": "每日上午/下午基准价。"
         },
         {
-          "source": "AFCD Fresh Food Wholesale Prices",
-          "dataset": "AFCD Wholesale Food Prices",
+          "source": "农渔护理署鲜活食品批发价格",
+          "dataset": "农渔护理署食品批发价格",
           "type": "指标",
           "status": "健康",
           "latest_observation": "2026-07-26",
           "records": 31,
-          "freshness": "同日快照",
-          "notes": "31 commodities across 5 categories; averaged across same-day market readings."
+          "freshness": "当日快照",
+          "notes": "5类31种商品；按同日市场读数取平均。"
         },
         {
-          "source": "Baidu Gushitong HK Equity Valuation",
-          "dataset": "HK Consumer Ticker Valuations",
+          "source": "百度股市通港股估值",
+          "dataset": "香港消费股估值",
           "type": "指标",
           "status": "健康",
-          "latest_observation": "2026-07-25",
+          "latest_observation": "2026-07-26",
           "records": 11,
-          "freshness": "1 天前",
-          "notes": "PE (TTM), PB, and market cap only; no dividend-yield indicator is available from this endpoint."
+          "freshness": "0 天前",
+          "notes": "仅提供市盈率（TTM）、市净率和市值；该接口没有股息率指标。"
         },
         {
-          "source": "C&SD Retail Sales Value/Volume Index",
-          "dataset": "Retail Sales Value/Volume Index",
+          "source": "政府统计处零售业销货价值/数量指数",
+          "dataset": "零售业销货价值/数量指数",
           "type": "指标",
           "status": "健康",
           "latest_observation": "2026-05-01",
           "records": 6500,
           "freshness": "86 天前",
-          "notes": "25 outlet-type categories, monthly since 2004."
+          "notes": "25个零售类别，自2004年起按月统计。"
         },
         {
-          "source": "CenStatD Quarterly Restaurant Receipts & Purchases Survey",
-          "dataset": "Restaurant Receipts & Purchases Survey",
+          "source": "政府统计处季度餐饮业收益及购货额调查",
+          "dataset": "餐饮业收益及购货额调查",
           "type": "指标",
           "status": "健康",
           "latest_observation": "2026-03-31",
           "records": 516,
           "freshness": "117 天前",
-          "notes": "Sector-wide purchases only; per-type purchases are not published."
+          "notes": "仅提供全行业购货额；未公布分类型购货额。"
         },
         {
-          "source": "HK Retail/F&B Store-Count Scrapers",
-          "dataset": "HK Retail/F&B Store Counts",
-          "type": "Snapshot",
+          "source": "香港零售/餐饮店铺数量抓取器",
+          "dataset": "香港零售/餐饮店铺数量",
+          "type": "快照",
           "status": "健康",
           "latest_observation": "2026-07-26",
           "records": 11,
-          "freshness": "Footprint snapshot (most brands: 1-2 dated snapshots so far, not yet a trend)",
-          "notes": "10,788 total tracked locations across 11 companies."
+          "freshness": "足迹快照（大部分品牌目前仅有1-2个存有日期的快照，尚未构成趋势）",
+          "notes": "11家公司共计10,788个跟踪地点。"
         }
       ],
       "source_coverage_planned": [
         {
-          "source": "HK Consumer Council",
-          "dataset": "Online Price Watch",
+          "source": "香港消费者委员会",
+          "dataset": "网上价格监测",
           "type": "指标",
           "status": "计划中",
           "latest_observation": "—",
           "records": 0,
-          "freshness": "接口无数据返回",
-          "notes": "Endpoint requires re-verification before going live."
+          "freshness": "接口未返回数据",
+          "notes": "接口需要重新核验后才能上线。"
         }
       ],
       "consumer_council_oilprice": [
         {
           "date": "2026-07-26",
           "company": "PetroChina",
-          "fuel_type": "Standard Petrol",
+          "fuel_type": "普通汽油",
           "discounted_price_hkd": 25.34,
           "walkin_discount_hkd": 7,
           "data_source": "live"
         },
         {
           "date": "2026-07-26",
-          "company": "Shell",
-          "fuel_type": "Standard Petrol",
-          "discounted_price_hkd": 25.67,
-          "walkin_discount_hkd": 7,
+          "company": "Sinopec",
+          "fuel_type": "普通汽油",
+          "discounted_price_hkd": 26.34,
+          "walkin_discount_hkd": 6,
           "data_source": "live"
         },
         {
           "date": "2026-07-26",
-          "company": "Sinopec",
-          "fuel_type": "Standard Petrol",
-          "discounted_price_hkd": 26.14,
-          "walkin_discount_hkd": 6.2,
+          "company": "Shell",
+          "fuel_type": "普通汽油",
+          "discounted_price_hkd": 27.67,
+          "walkin_discount_hkd": 5,
           "data_source": "live"
         },
         {
           "date": "2026-07-26",
           "company": "Esso",
-          "fuel_type": "Standard Petrol",
+          "fuel_type": "普通汽油",
           "discounted_price_hkd": 31.07,
           "walkin_discount_hkd": 1.6,
           "data_source": "live"
@@ -5426,7 +5426,7 @@
         {
           "date": "2026-07-26",
           "company": "Caltex",
-          "fuel_type": "Standard Petrol",
+          "fuel_type": "普通汽油",
           "discounted_price_hkd": 31.44,
           "walkin_discount_hkd": 0.9,
           "data_source": "live"
@@ -5434,31 +5434,31 @@
         {
           "date": "2026-07-26",
           "company": "PetroChina",
-          "fuel_type": "Premium Petrol",
-          "discounted_price_hkd": 20.54,
-          "walkin_discount_hkd": 11.8,
-          "data_source": "live"
-        },
-        {
-          "date": "2026-07-26",
-          "company": "Shell",
-          "fuel_type": "Premium Petrol",
-          "discounted_price_hkd": 27.47,
+          "fuel_type": "高级汽油",
+          "discounted_price_hkd": 27.14,
           "walkin_discount_hkd": 7,
           "data_source": "live"
         },
         {
           "date": "2026-07-26",
           "company": "Sinopec",
-          "fuel_type": "Premium Petrol",
-          "discounted_price_hkd": 22.67,
-          "walkin_discount_hkd": 11.47,
+          "fuel_type": "高级汽油",
+          "discounted_price_hkd": 26.34,
+          "walkin_discount_hkd": 7.8,
+          "data_source": "live"
+        },
+        {
+          "date": "2026-07-26",
+          "company": "Shell",
+          "fuel_type": "高级汽油",
+          "discounted_price_hkd": 29.47,
+          "walkin_discount_hkd": 5,
           "data_source": "live"
         },
         {
           "date": "2026-07-26",
           "company": "Esso",
-          "fuel_type": "Premium Petrol",
+          "fuel_type": "高级汽油",
           "discounted_price_hkd": 32.87,
           "walkin_discount_hkd": 1.6,
           "data_source": "live"
@@ -5466,7 +5466,7 @@
         {
           "date": "2026-07-26",
           "company": "Caltex",
-          "fuel_type": "Premium Petrol",
+          "fuel_type": "高级汽油",
           "discounted_price_hkd": 33.24,
           "walkin_discount_hkd": 0.9,
           "data_source": "live"
@@ -6323,553 +6323,553 @@
       "consumer_council_complaints_table": [
         {
           "period": "2026",
-          "category": "Food & Entertainment Services",
+          "category": "饮食及娱乐服务",
           "amount": 2175,
           "data_source": "live"
         },
         {
           "period": "2026",
-          "category": "Travel Matters",
+          "category": "旅游事务",
           "amount": 1563,
           "data_source": "live"
         },
         {
           "period": "2026",
-          "category": "Telecommunication Services",
+          "category": "电讯服务",
           "amount": 1026,
           "data_source": "live"
         },
         {
           "period": "2026",
-          "category": "Electrical Appliances",
+          "category": "电器",
           "amount": 983,
           "data_source": "live"
         },
         {
           "period": "2026",
-          "category": "Medicine & Health Foods",
+          "category": "药物及保健食品",
           "amount": 904,
           "data_source": "live"
         },
         {
           "period": "2026",
-          "category": "Beauty Services",
+          "category": "美容服务",
           "amount": 696,
           "data_source": "live"
         },
         {
           "period": "2026",
-          "category": "Clothing & Apparel",
+          "category": "服装",
           "amount": 639,
           "data_source": "live"
         },
         {
           "period": "2026",
-          "category": "Local Accommodation",
+          "category": "本地住宿",
           "amount": 495,
           "data_source": "live"
         },
         {
           "period": "2026",
-          "category": "Personal Care Products",
+          "category": "个人护理产品",
           "amount": 469,
           "data_source": "live"
         },
         {
           "period": "2026",
-          "category": "Foods & Drinks",
+          "category": "食品及饮料",
           "amount": 466,
           "data_source": "live"
         },
         {
           "period": "2026",
-          "category": "Bank and Financial Services",
+          "category": "银行及金融服务",
           "amount": 429,
           "data_source": "live"
         },
         {
           "period": "2026",
-          "category": "Computer Products",
+          "category": "电脑产品",
           "amount": 406,
           "data_source": "live"
         },
         {
           "period": "2026",
-          "category": "Online Services & eCommerce Platforms",
+          "category": "网上服务及电子商贸平台",
           "amount": 319,
           "data_source": "live"
         },
         {
           "period": "2026",
-          "category": "Furniture & Fixtures",
+          "category": "家具及装置",
           "amount": 312,
           "data_source": "live"
         },
         {
           "period": "2026",
-          "category": "Cars & Car Services",
+          "category": "汽车及汽车服务",
           "amount": 281,
           "data_source": "live"
         },
         {
           "period": "2026",
-          "category": "Miscellaneous Goods",
+          "category": "其他货品",
           "amount": 269,
           "data_source": "live"
         },
         {
           "period": "2026",
-          "category": "Telecommunication Equipment",
+          "category": "电讯器材",
           "amount": 265,
           "data_source": "live"
         },
         {
           "period": "2026",
-          "category": "Household Products/Services",
+          "category": "家居用品／服务",
           "amount": 257,
           "data_source": "live"
         },
         {
           "period": "2026",
-          "category": "Medical Services",
+          "category": "医疗服务",
           "amount": 256,
           "data_source": "live"
         },
         {
           "period": "2026",
-          "category": "Recreation & Health Clubs",
+          "category": "康乐及健身会所",
           "amount": 242,
           "data_source": "live"
         },
         {
           "period": "2026",
-          "category": "Education Matters",
+          "category": "教育事务",
           "amount": 231,
           "data_source": "live"
         },
         {
           "period": "2026",
-          "category": "Jewellery & Watches",
+          "category": "珠宝及钟表",
           "amount": 224,
           "data_source": "live"
         },
         {
           "period": "2026",
-          "category": "Shopping Mall, Chain Store and Reward Program",
+          "category": "商场、连锁店及奖赏计划",
           "amount": 209,
           "data_source": "live"
         },
         {
           "period": "2026",
-          "category": "Baby Products",
+          "category": "婴儿用品",
           "amount": 192,
           "data_source": "live"
         },
         {
           "period": "2026",
-          "category": "Agency Services",
+          "category": "代理服务",
           "amount": 175,
           "data_source": "live"
         },
         {
           "period": "2026",
-          "category": "Storage, Postal & Courier Services",
+          "category": "仓储、邮政及速递服务",
           "amount": 172,
           "data_source": "live"
         },
         {
           "period": "2026",
-          "category": "Toys",
+          "category": "玩具",
           "amount": 169,
           "data_source": "live"
         },
         {
           "period": "2026",
-          "category": "Decoration/Renovation Services",
+          "category": "装修服务",
           "amount": 168,
           "data_source": "live"
         },
         {
           "period": "2026",
-          "category": "Transportation Services",
+          "category": "交通服务",
           "amount": 149,
           "data_source": "live"
         },
         {
           "period": "2026",
-          "category": "Sporting Goods",
+          "category": "体育用品",
           "amount": 146,
           "data_source": "live"
         },
         {
           "period": "2026",
-          "category": "Pets & Pet Services",
+          "category": "宠物及宠物服务",
           "amount": 100,
           "data_source": "live"
         },
         {
           "period": "2026",
-          "category": "Miscellaneous Services",
+          "category": "其他服务",
           "amount": 100,
           "data_source": "live"
         },
         {
           "period": "2026",
-          "category": "Properties",
+          "category": "物业",
           "amount": 99,
           "data_source": "live"
         },
         {
           "period": "2026",
-          "category": "Photographic Equipment",
+          "category": "摄影器材",
           "amount": 93,
           "data_source": "live"
         },
         {
           "period": "2026",
-          "category": "Insurance",
+          "category": "保险",
           "amount": 91,
           "data_source": "live"
         },
         {
           "period": "2026",
-          "category": "Broadcasting Services",
+          "category": "广播服务",
           "amount": 88,
           "data_source": "live"
         },
         {
           "period": "2026",
-          "category": "Medical & Health Devices",
+          "category": "医疗及保健仪器",
           "amount": 73,
           "data_source": "live"
         },
         {
           "period": "2026",
-          "category": "Optical Products/Services",
+          "category": "眼镜产品／服务",
           "amount": 45,
           "data_source": "live"
         },
         {
           "period": "2026",
-          "category": "Fuel",
+          "category": "燃油",
           "amount": 44,
           "data_source": "live"
         },
         {
           "period": "2026",
-          "category": "Wedding Services",
+          "category": "婚嫁服务",
           "amount": 36,
           "data_source": "live"
         },
         {
           "period": "2026",
-          "category": "Publishing / Educational Materials",
+          "category": "出版／教育材料",
           "amount": 26,
           "data_source": "live"
         },
         {
           "period": "2026",
-          "category": "Public Utilities",
+          "category": "公用事业",
           "amount": 25,
           "data_source": "live"
         },
         {
           "period": "2026",
-          "category": "Photo Taking/Finishing",
+          "category": "摄影及晒相服务",
           "amount": 23,
           "data_source": "live"
         },
         {
           "period": "2026",
-          "category": "Elderly Care",
+          "category": "长者护理",
           "amount": 11,
           "data_source": "live"
         },
         {
           "period": "2026",
-          "category": "Time Sharing",
+          "category": "分时使用（度假村）",
           "amount": 9,
           "data_source": "live"
         },
         {
           "period": "2026",
-          "category": "Lawyer & Legal Services",
+          "category": "律师及法律服务",
           "amount": 8,
           "data_source": "live"
         },
         {
           "period": "2026",
-          "category": "Funeral Services",
+          "category": "殡仪服务",
           "amount": 7,
           "data_source": "live"
         }
       ],
       "consumer_council_complaints_chart": [
         {
-          "category": "Foods & Drinks",
+          "category": "食品及饮料",
           "amount": 466
         },
         {
-          "category": "Personal Care Products",
+          "category": "个人护理产品",
           "amount": 469
         },
         {
-          "category": "Local Accommodation",
+          "category": "本地住宿",
           "amount": 495
         },
         {
-          "category": "Clothing & Apparel",
+          "category": "服装",
           "amount": 639
         },
         {
-          "category": "Beauty Services",
+          "category": "美容服务",
           "amount": 696
         },
         {
-          "category": "Medicine & Health Foods",
+          "category": "药物及保健食品",
           "amount": 904
         },
         {
-          "category": "Electrical Appliances",
+          "category": "电器",
           "amount": 983
         },
         {
-          "category": "Telecommunication Services",
+          "category": "电讯服务",
           "amount": 1026
         },
         {
-          "category": "Travel Matters",
+          "category": "旅游事务",
           "amount": 1563
         },
         {
-          "category": "Food & Entertainment Services",
+          "category": "饮食及娱乐服务",
           "amount": 2175
         }
       ],
       "immigration_checkpoint_snapshot": [
         {
-          "control_point": "Airport",
-          "direction": "Arrival",
-          "hk_residents": 36915,
-          "mainland_visitors": 13776,
-          "other_visitors": 17878,
-          "total": 68569
+          "control_point": "机场",
+          "direction": "入境",
+          "hk_residents": 35639,
+          "mainland_visitors": 14472,
+          "other_visitors": 18251,
+          "total": 68362
         },
         {
-          "control_point": "Airport",
-          "direction": "Departure",
-          "hk_residents": 47616,
-          "mainland_visitors": 12485,
-          "other_visitors": 15343,
-          "total": 75444
+          "control_point": "机场",
+          "direction": "出境",
+          "hk_residents": 44100,
+          "mainland_visitors": 13216,
+          "other_visitors": 14423,
+          "total": 71739
         },
         {
-          "control_point": "China Ferry Terminal",
-          "direction": "Arrival",
-          "hk_residents": 313,
-          "mainland_visitors": 518,
-          "other_visitors": 53,
-          "total": 884
-        },
-        {
-          "control_point": "China Ferry Terminal",
-          "direction": "Departure",
-          "hk_residents": 565,
-          "mainland_visitors": 500,
-          "other_visitors": 28,
-          "total": 1093
-        },
-        {
-          "control_point": "Express Rail Link West Kowloon",
-          "direction": "Arrival",
-          "hk_residents": 19463,
-          "mainland_visitors": 29744,
-          "other_visitors": 2483,
-          "total": 51690
-        },
-        {
-          "control_point": "Express Rail Link West Kowloon",
-          "direction": "Departure",
-          "hk_residents": 27722,
-          "mainland_visitors": 22877,
-          "other_visitors": 1911,
-          "total": 52510
-        },
-        {
-          "control_point": "Harbour Control",
-          "direction": "Arrival",
+          "control_point": "中国客运码头",
+          "direction": "入境",
           "hk_residents": 0,
           "mainland_visitors": 0,
-          "other_visitors": 59,
-          "total": 59
+          "other_visitors": 0,
+          "total": 0
         },
         {
-          "control_point": "Harbour Control",
-          "direction": "Departure",
+          "control_point": "中国客运码头",
+          "direction": "出境",
           "hk_residents": 0,
           "mainland_visitors": 0,
-          "other_visitors": 24,
-          "total": 24
+          "other_visitors": 0,
+          "total": 0
         },
         {
-          "control_point": "Heung Yuen Wai",
-          "direction": "Arrival",
-          "hk_residents": 33007,
-          "mainland_visitors": 9937,
-          "other_visitors": 242,
-          "total": 43186
+          "control_point": "西九龙站（高铁）",
+          "direction": "入境",
+          "hk_residents": 17467,
+          "mainland_visitors": 32928,
+          "other_visitors": 2253,
+          "total": 52648
         },
         {
-          "control_point": "Heung Yuen Wai",
-          "direction": "Departure",
-          "hk_residents": 37402,
-          "mainland_visitors": 7417,
-          "other_visitors": 442,
-          "total": 45261
+          "control_point": "西九龙站（高铁）",
+          "direction": "出境",
+          "hk_residents": 21913,
+          "mainland_visitors": 29926,
+          "other_visitors": 2124,
+          "total": 53963
         },
         {
-          "control_point": "Hong Kong-Zhuhai-Macao Bridge",
-          "direction": "Arrival",
-          "hk_residents": 26155,
-          "mainland_visitors": 8824,
-          "other_visitors": 5161,
-          "total": 40140
+          "control_point": "港口管制（维港）",
+          "direction": "入境",
+          "hk_residents": 0,
+          "mainland_visitors": 1,
+          "other_visitors": 9,
+          "total": 10
         },
         {
-          "control_point": "Hong Kong-Zhuhai-Macao Bridge",
-          "direction": "Departure",
-          "hk_residents": 37123,
-          "mainland_visitors": 15293,
-          "other_visitors": 4644,
-          "total": 57060
+          "control_point": "港口管制（维港）",
+          "direction": "出境",
+          "hk_residents": 47,
+          "mainland_visitors": 0,
+          "other_visitors": 30,
+          "total": 77
         },
         {
-          "control_point": "Kai Tak Cruise Terminal",
-          "direction": "Arrival",
-          "hk_residents": 1335,
-          "mainland_visitors": 359,
-          "other_visitors": 137,
-          "total": 1831
+          "control_point": "香园围",
+          "direction": "入境",
+          "hk_residents": 32618,
+          "mainland_visitors": 11625,
+          "other_visitors": 363,
+          "total": 44606
         },
         {
-          "control_point": "Kai Tak Cruise Terminal",
-          "direction": "Departure",
-          "hk_residents": 1414,
-          "mainland_visitors": 153,
-          "other_visitors": 59,
-          "total": 1626
+          "control_point": "香园围",
+          "direction": "出境",
+          "hk_residents": 37543,
+          "mainland_visitors": 9944,
+          "other_visitors": 294,
+          "total": 47781
         },
         {
-          "control_point": "Lo Wu",
-          "direction": "Arrival",
-          "hk_residents": 74351,
-          "mainland_visitors": 19103,
-          "other_visitors": 872,
-          "total": 94326
+          "control_point": "港珠澳大桥",
+          "direction": "入境",
+          "hk_residents": 30207,
+          "mainland_visitors": 8833,
+          "other_visitors": 6204,
+          "total": 45244
         },
         {
-          "control_point": "Lo Wu",
-          "direction": "Departure",
-          "hk_residents": 88202,
-          "mainland_visitors": 26285,
-          "other_visitors": 978,
-          "total": 115465
+          "control_point": "港珠澳大桥",
+          "direction": "出境",
+          "hk_residents": 38451,
+          "mainland_visitors": 13840,
+          "other_visitors": 5414,
+          "total": 57705
         },
         {
-          "control_point": "Lok Ma Chau",
-          "direction": "Arrival",
-          "hk_residents": 14179,
-          "mainland_visitors": 4887,
+          "control_point": "启德邮轮码头",
+          "direction": "入境",
+          "hk_residents": 0,
+          "mainland_visitors": 0,
+          "other_visitors": 0,
+          "total": 0
+        },
+        {
+          "control_point": "启德邮轮码头",
+          "direction": "出境",
+          "hk_residents": 0,
+          "mainland_visitors": 0,
+          "other_visitors": 0,
+          "total": 0
+        },
+        {
+          "control_point": "罗湖",
+          "direction": "入境",
+          "hk_residents": 77668,
+          "mainland_visitors": 20426,
+          "other_visitors": 1074,
+          "total": 99168
+        },
+        {
+          "control_point": "罗湖",
+          "direction": "出境",
+          "hk_residents": 96430,
+          "mainland_visitors": 26612,
+          "other_visitors": 1127,
+          "total": 124169
+        },
+        {
+          "control_point": "落马洲",
+          "direction": "入境",
+          "hk_residents": 16071,
+          "mainland_visitors": 4778,
+          "other_visitors": 684,
+          "total": 21533
+        },
+        {
+          "control_point": "落马洲",
+          "direction": "出境",
+          "hk_residents": 15728,
+          "mainland_visitors": 5948,
+          "other_visitors": 631,
+          "total": 22307
+        },
+        {
+          "control_point": "落马洲支线",
+          "direction": "入境",
+          "hk_residents": 62291,
+          "mainland_visitors": 31756,
+          "other_visitors": 653,
+          "total": 94700
+        },
+        {
+          "control_point": "落马洲支线",
+          "direction": "出境",
+          "hk_residents": 76449,
+          "mainland_visitors": 32183,
           "other_visitors": 698,
-          "total": 19764
+          "total": 109330
         },
         {
-          "control_point": "Lok Ma Chau",
-          "direction": "Departure",
-          "hk_residents": 14942,
-          "mainland_visitors": 6138,
-          "other_visitors": 552,
-          "total": 21632
+          "control_point": "澳门客运码头",
+          "direction": "入境",
+          "hk_residents": 3507,
+          "mainland_visitors": 953,
+          "other_visitors": 1625,
+          "total": 6085
         },
         {
-          "control_point": "Lok Ma Chau Spur Line",
-          "direction": "Arrival",
-          "hk_residents": 54779,
-          "mainland_visitors": 26560,
-          "other_visitors": 574,
-          "total": 81913
+          "control_point": "澳门客运码头",
+          "direction": "出境",
+          "hk_residents": 4539,
+          "mainland_visitors": 2069,
+          "other_visitors": 1606,
+          "total": 8214
         },
         {
-          "control_point": "Lok Ma Chau Spur Line",
-          "direction": "Departure",
-          "hk_residents": 68492,
-          "mainland_visitors": 26300,
-          "other_visitors": 595,
-          "total": 95387
-        },
-        {
-          "control_point": "Macao Ferry Terminal",
-          "direction": "Arrival",
-          "hk_residents": 4850,
-          "mainland_visitors": 1811,
-          "other_visitors": 1935,
-          "total": 8596
-        },
-        {
-          "control_point": "Macao Ferry Terminal",
-          "direction": "Departure",
-          "hk_residents": 5867,
-          "mainland_visitors": 2859,
-          "other_visitors": 1743,
-          "total": 10469
-        },
-        {
-          "control_point": "Man Kam To",
-          "direction": "Arrival",
-          "hk_residents": 2207,
-          "mainland_visitors": 884,
-          "other_visitors": 26,
-          "total": 3117
-        },
-        {
-          "control_point": "Man Kam To",
-          "direction": "Departure",
-          "hk_residents": 2463,
-          "mainland_visitors": 578,
+          "control_point": "文锦渡",
+          "direction": "入境",
+          "hk_residents": 1919,
+          "mainland_visitors": 931,
           "other_visitors": 20,
-          "total": 3061
+          "total": 2870
         },
         {
-          "control_point": "Sha Tau Kok",
-          "direction": "Arrival",
+          "control_point": "文锦渡",
+          "direction": "出境",
+          "hk_residents": 2397,
+          "mainland_visitors": 585,
+          "other_visitors": 6,
+          "total": 2988
+        },
+        {
+          "control_point": "沙头角",
+          "direction": "入境",
           "hk_residents": 0,
           "mainland_visitors": 0,
           "other_visitors": 0,
           "total": 0
         },
         {
-          "control_point": "Sha Tau Kok",
-          "direction": "Departure",
+          "control_point": "沙头角",
+          "direction": "出境",
           "hk_residents": 0,
           "mainland_visitors": 0,
           "other_visitors": 0,
           "total": 0
         },
         {
-          "control_point": "Shenzhen Bay",
-          "direction": "Arrival",
-          "hk_residents": 44447,
-          "mainland_visitors": 20340,
-          "other_visitors": 2113,
-          "total": 66900
+          "control_point": "深圳湾",
+          "direction": "入境",
+          "hk_residents": 47832,
+          "mainland_visitors": 24755,
+          "other_visitors": 2350,
+          "total": 74937
         },
         {
-          "control_point": "Shenzhen Bay",
-          "direction": "Departure",
-          "hk_residents": 56798,
-          "mainland_visitors": 20020,
-          "other_visitors": 1623,
-          "total": 78441
+          "control_point": "深圳湾",
+          "direction": "出境",
+          "hk_residents": 62328,
+          "mainland_visitors": 24474,
+          "other_visitors": 1863,
+          "total": 88665
         }
       ]
     }
@@ -6877,26 +6877,26 @@
   "sources": [
     {
       "id": "consumer_council_oilprice",
-      "label": "Consumer Council Auto Fuel Calculator",
+      "label": "消费者委员会油价计算机",
       "href": "https://oil-price.consumer.org.hk/en",
       "query": {
         "engine": "first-party HTML / inline JS",
         "url": "https://oil-price.consumer.org.hk/en",
         "language": "JSON",
-        "description": "构建时从公开来源读取并校验 Consumer Council Auto Fuel Calculator。",
-        "executed_at": "2026-07-26T00:40:51.139490Z"
+        "description": "构建时从公开来源读取并校验 消费者委员会油价计算机。",
+        "executed_at": "2026-07-26T18:34:36.550381Z"
       }
     },
     {
       "id": "consumer_council_complaints",
-      "label": "Consumer Council Complaints API",
+      "label": "消费者委员会投诉数据接口",
       "href": "https://www.consumer.org.hk/",
       "query": {
         "engine": "official JSON API",
         "url": "https://www.consumer.org.hk/node/32290/export-complaints/json?lang=en",
         "language": "JSON",
-        "description": "构建时从公开来源读取并校验 Consumer Council Complaints API。",
-        "executed_at": "2026-07-26T00:40:51.139490Z"
+        "description": "构建时从公开来源读取并校验 消费者委员会投诉数据接口。",
+        "executed_at": "2026-07-26T18:34:36.550381Z"
       }
     },
     {
@@ -6911,7 +6911,7 @@
         "metric_definitions": [
           "Each commodity's price is the mean of same-day readings across the wholesale markets/sources AFCD reports for it."
         ],
-        "executed_at": "2026-07-26T00:40:51.139490Z"
+        "executed_at": "2026-07-26T18:34:36.550381Z"
       }
     },
     {
@@ -6927,7 +6927,7 @@
           "Latest is the most recent published PM benchmark fixing.",
           "Day and year movements are latest divided by the prior trading day or the observation on/before one year earlier, minus one."
         ],
-        "executed_at": "2026-07-26T00:40:51.139490Z"
+        "executed_at": "2026-07-26T18:34:36.550381Z"
       }
     },
     {
@@ -6943,7 +6943,7 @@
           "PE (TTM), PB, and market cap (HKD bn) are each ticker's latest published daily value.",
           "No dividend-yield indicator exists on this endpoint; yield is not reported here."
         ],
-        "executed_at": "2026-07-26T00:40:51.139490Z"
+        "executed_at": "2026-07-26T18:34:36.550381Z"
       }
     },
     {
@@ -6959,7 +6959,7 @@
           "All retail outlet is the classification group's own published total across all outlet types.",
           "Month and year movements are latest divided by the prior month or the observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-07-26T00:40:51.139490Z"
+        "executed_at": "2026-07-26T18:34:36.550381Z"
       }
     },
     {
@@ -6975,7 +6975,7 @@
           "Purchases are only published sector-wide, not broken out by restaurant type.",
           "Quarter and year movements are latest divided by the prior quarter or the observation four quarters earlier, minus one."
         ],
-        "executed_at": "2026-07-26T00:40:51.139490Z"
+        "executed_at": "2026-07-26T18:34:36.550381Z"
       }
     },
     {
@@ -6992,7 +6992,7 @@
           "Southbound (南下) flow is daily Mainland visitor arrivals across all 17 control points, since Mainland visitors legitimately arrive by air, rail, and sea, not just by land.",
           "7-day moving averages (7d MA) smooth out day-of-week seasonality (weekend shopping spikes)."
         ],
-        "executed_at": "2026-07-26T00:40:51.139490Z"
+        "executed_at": "2026-07-26T18:34:36.550381Z"
       }
     },
     {
@@ -7009,22 +7009,22 @@
           "Red/Black Rainstorm hours measures total duration under Red or Black rainstorm warnings.",
           "RMB per 100 HKD is derived from FRED daily DEXCHUS and DEXHKUS rates."
         ],
-        "executed_at": "2026-07-26T00:40:51.139490Z"
+        "executed_at": "2026-07-26T18:34:36.550381Z"
       }
     },
     {
       "id": "hk_store_footprint",
-      "label": "HK Retail/F&B Store-Count Scrapers",
+      "label": "香港零售/餐饮店铺数量抓取器",
       "href": "https://github.com/",
       "query": {
         "engine": "11 first-party scrapers (scripts/scrape_*_stores.py)",
         "language": "Python",
-        "description": "构建时从公开来源读取并校验 HK Retail/F&B Store-Count Scrapers。",
+        "description": "构建时从公开来源读取并校验 香港零售/餐饮店铺数量抓取器。",
         "metric_definitions": [
           "Total stores is each company's own latest snapshot count (not a cross-company-comparable unit -- a POP MART Roboshop and a Chow Tai Fook boutique are both counted as one location).",
           "This is a footprint snapshot, not a trend: most companies only have 1-2 dated snapshots so far, so month-over-month change is not yet meaningful."
         ],
-        "executed_at": "2026-07-26T00:40:51.139490Z"
+        "executed_at": "2026-07-26T18:34:36.550381Z"
       }
     },
     {
@@ -7038,13 +7038,13 @@
           "Validated live measure frames",
           "Declared future-source registry"
         ],
-        "executed_at": "2026-07-26T00:40:51.139490Z"
+        "executed_at": "2026-07-26T18:34:36.550381Z"
       }
     }
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-local-consumer/",
-    "snapshotId": "0dc513f8f39542e6",
+    "snapshotId": "d0cc6d7d25b7f730",
     "dataAsOf": "2026-07-22"
   }
 }

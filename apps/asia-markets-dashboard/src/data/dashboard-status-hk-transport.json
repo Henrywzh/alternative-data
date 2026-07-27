@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-07-27T10:09:30.866641Z",
-  "snapshot_id": "8411c8d0a44712a7",
+  "generated_at": "2026-07-26T18:33:02.932172Z",
+  "snapshot_id": "47014b5b9a7ad99c",
   "data_as_of": "2026-06-01",
   "overall_status": "Healthy",
   "live_sources": 3,
@@ -37,5 +37,5 @@
       "notes": "Monthly passengers, ASK, RPK and passenger load factor for Air China, China Southern, China Eastern and Spring Airlines, split by domestic, international and regional operations."
     }
   ],
-  "attachment_filename": "hk-transport-dashboard-2026-07-27.html"
+  "attachment_filename": "hk-transport-dashboard-2026-07-26.html"
 }
