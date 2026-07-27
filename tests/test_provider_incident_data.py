@@ -106,6 +106,50 @@ def test_statuspage_extracts_incident_updates_and_components() -> None:
     assert extracted["provider_incident_components"][0]["component_name"] == "API"
 
 
+def test_statuspage_started_at_uses_update_display_time_for_backdated_filings() -> None:
+    # OpenAI's status page can file an incident record (created_at) after the
+    # displayed resolution time when the report is written up retroactively.
+    # started_at must fall back to the earliest update's display_at so it
+    # never lands after resolved_at.
+    body = json.dumps(
+        {
+            "incidents": [
+                {
+                    "id": "inc-backdated",
+                    "name": "Elevated latency",
+                    "status": "resolved",
+                    "impact": "minor",
+                    "created_at": "2026-07-27T18:06:39Z",
+                    "resolved_at": "2026-07-27T17:30:00Z",
+                    "incident_updates": [
+                        {
+                            "id": "up-2",
+                            "status": "resolved",
+                            "body": "All impacted services have now fully recovered.",
+                            "created_at": "2026-07-27T20:52:18Z",
+                            "display_at": "2026-07-27T17:30:00Z",
+                        },
+                        {
+                            "id": "up-1",
+                            "status": "investigating",
+                            "body": "We are investigating the issue for the listed services.",
+                            "created_at": "2026-07-27T18:06:39Z",
+                            "display_at": "2026-07-27T15:30:00Z",
+                        },
+                    ],
+                }
+            ]
+        }
+    )
+    extracted = extract_snapshot(_snapshot("openai", "statuspage", body), run_id="run", scraped_at="2026-07-27T21:00:00Z")
+
+    incident = extracted["provider_incidents"][0]
+    assert incident["started_at"] == "2026-07-27T15:30:00Z"
+    assert incident["resolved_at"] == "2026-07-27T17:30:00Z"
+    assert incident["duration_minutes"] == 120.0
+    validate_incidents(pd.DataFrame(extracted["provider_incidents"]))
+
+
 def test_google_extracts_only_vertex_and_gemini_incidents() -> None:
     body = json.dumps(
         [

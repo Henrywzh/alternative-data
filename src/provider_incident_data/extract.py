@@ -123,13 +123,37 @@ def _statuspage(snapshot: Snapshot, run_id: str, scraped_at: str) -> dict[str, l
             continue
         incident_id = str(incident["id"])
         title = str(incident.get("name") or "Untitled incident")
-        started_at = _iso(incident.get("created_at"))
         resolved_at = _iso(incident.get("resolved_at"))
         raw_status = str(incident.get("status") or "unknown")
         normalized = _normalized_status(raw_status, resolved_at=resolved_at)
         raw_severity, severity_level = _severity(incident.get("impact"), title)
         updates = [row for row in incident.get("incident_updates", []) if isinstance(row, dict)]
         updates.sort(key=lambda row: str(row.get("created_at") or row.get("updated_at") or ""))
+        # ``created_at`` is when the incident record was administratively filed
+        # and can postdate the reader-facing ``display_at`` timeline for
+        # retroactively backfilled incidents (a late report describing an
+        # earlier outage). ``resolved_at`` tracks that display timeline, so
+        # derive ``started_at`` the same way to avoid resolved-before-started
+        # rows: take the earliest of the record creation time and every
+        # update's display time.
+        started_candidates = [
+            candidate
+            for candidate in (
+                pd.to_datetime(incident.get("created_at"), errors="coerce", utc=True),
+                *(
+                    pd.to_datetime(
+                        update.get("display_at") or update.get("created_at") or update.get("updated_at"),
+                        errors="coerce",
+                        utc=True,
+                    )
+                    for update in updates
+                ),
+            )
+            if pd.notna(candidate)
+        ]
+        started_at = (
+            min(started_candidates).isoformat().replace("+00:00", "Z") if started_candidates else None
+        )
         latest_message = str(updates[-1].get("body") or "") if updates else ""
         components = [row for row in incident.get("components", []) if isinstance(row, dict)]
         component_names = sorted({str(row.get("name")) for row in components if row.get("name")})

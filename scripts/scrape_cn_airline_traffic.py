@@ -272,10 +272,60 @@ def parse_airline_pdf(pdf_bytes: bytes, airline_code: str, month_key: str) -> li
             "value": value,
         })
 
+    # A region-breakdown row (Domestic/International/Regional) that happens to
+    # fall as the very first line of text on a new page is sometimes dropped
+    # by pdfplumber's extract_tables() entirely -- not merged, not blanked,
+    # just absent from the table structure, unlike the blank-first-cell
+    # artifact handled below. Confirmed on multiple live Air China PDFs (e.g.
+    # 2016-01: the page-2-opening "国际航线 1100.9 ..." passengers row is
+    # missing from extract_tables()'s page-2 table entirely, even though the
+    # very next row, "地区航线 384.7 ...", is extracted correctly; 2016-03:
+    # the page-2-opening "地区航线 363.7 ..." passengers row is dropped the
+    # same way). page.extract_text() always contains the row even when the
+    # table structure drops it, so recover it from there: if the page's very
+    # first text line is a "<region label> <number>..." row -- or, in PDFs
+    # that line-wrap the label and its numbers onto separate lines (confirmed
+    # on 2016-09/2016-10: page 2 opens with a lone "地区航线" line, numbers
+    # only appearing on the line after), a bare region label followed by a
+    # numeric-only next line -- and a target metric section is still active
+    # from the previous page, treat it as the missing row for that region.
+    # Restricting to the page's first 1-2 lines only (not a general scan)
+    # avoids picking up one of this same label's many other occurrences later
+    # on the page for a different metric.
+    _ORPHAN_ROW_RE = re.compile(r"^(国内航线|国际航线|地区航线)\s+([\d,.\-]+)")
+    _ORPHAN_LABEL_ONLY_RE = re.compile(r"^(国内航线|国际航线|地区航线)$")
+    _LEADING_NUMBER_RE = re.compile(r"^([\d,.\-]+)")
+
     try:
         with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
             for page in pdf.pages:
                 tables = page.extract_tables()
+
+                if current_section:
+                    page_text = page.extract_text() or ""
+                    page_lines = page_text.split("\n") if page_text else []
+                    first_line = page_lines[0].strip() if page_lines else ""
+                    orphan_match = _ORPHAN_ROW_RE.match(first_line)
+                    orphan_region_label = None
+                    orphan_value_str = None
+                    if orphan_match:
+                        orphan_region_label = orphan_match.group(1)
+                        orphan_value_str = orphan_match.group(2)
+                    elif _ORPHAN_LABEL_ONLY_RE.match(first_line) and len(page_lines) > 1:
+                        second_line = page_lines[1].strip()
+                        number_match = _LEADING_NUMBER_RE.match(second_line)
+                        if number_match:
+                            orphan_region_label = first_line
+                            orphan_value_str = number_match.group(1)
+
+                    if orphan_region_label is not None:
+                        region = _REGION_MAP.get(orphan_region_label)
+                        if region in _REGION_ORDER:
+                            val = _clean_val(orphan_value_str) * current_scale
+                            if val > 0 or "load_factor" in current_section:
+                                record(region, val)
+                                region_idx = _REGION_ORDER.index(region) + 1
+
                 for table in tables:
                     for row in table:
                         if not row or not any(row):
