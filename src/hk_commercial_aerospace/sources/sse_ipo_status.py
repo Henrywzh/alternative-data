@@ -45,6 +45,21 @@ SSE_STATUS_MAP = {
 }
 
 
+def _configured_fallback(company_name_zh: str) -> dict | None:
+    """Return the last reviewed IPO status when SSE is unavailable."""
+    for company in IPO_RACE_COMPANIES:
+        if company["name_zh"] == company_name_zh:
+            return {
+                "company_zh": company_name_zh,
+                "found": company["audit_num"] is not None,
+                "audit_num": company["audit_num"],
+                "status": company["known_status"],
+                "update_date": company["update_date"],
+                "financing_amount": None,
+            }
+    return None
+
+
 def fetch_ipo_status(company_name_zh: str) -> dict:
     """Fetch IPO filing status from SSE STAR Market."""
     headers = DEFAULT_HEADERS.copy()
@@ -122,6 +137,15 @@ def fetch_ipo_status(company_name_zh: str) -> dict:
             "financing_amount": str(first.get("planIssueCapital", "")),
         }
     except Exception as e:
+        fallback = _configured_fallback(company_name_zh)
+        if fallback is not None:
+            logger.warning(
+                "Failed to fetch IPO status for %s: %s; using configured fallback last reviewed %s",
+                company_name_zh,
+                e,
+                fallback["update_date"] or "status",
+            )
+            return fallback
         logger.warning(f"Failed to fetch IPO status for {company_name_zh}: {e}")
         return {
             "company_zh": company_name_zh,
