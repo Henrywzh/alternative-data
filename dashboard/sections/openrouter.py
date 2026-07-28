@@ -1349,6 +1349,7 @@ def _combine_explorer_activity(provider_activity: pd.DataFrame, model_activity: 
     for workload detail but are not complete daily model totals. They must not
     suppress the fuller provider-page total for the same model/day.
     """
+    model_activity = _drop_identical_route_alias_rows(model_activity)
     detail = model_activity[
         model_activity["category_slug"].astype("string").str.casefold().eq("all")
     ].copy() if not model_activity.empty else pd.DataFrame()
@@ -1374,6 +1375,56 @@ def _combine_explorer_activity(provider_activity: pd.DataFrame, model_activity: 
     fallback = fallback[fallback["_has_model_activity"].isna()].drop(columns="_has_model_activity")
     fallback["activity_source"] = "Provider fallback"
     return pd.concat([detail, fallback], ignore_index=True, sort=False)
+
+
+def _drop_identical_route_alias_rows(frame: pd.DataFrame) -> pd.DataFrame:
+    """Remove exact paid/`:free` duplicates from model-activity API rows.
+
+    OpenRouter can return the canonical paid model payload for a `:free`
+    request.  We keep a genuine `:free` row when its values differ, but drop
+    only an exact per-day/category duplicate so provider-page free traffic can
+    fill that route without being double-counted.
+    """
+
+    if frame.empty or "model_permaslug" not in frame.columns:
+        return frame
+    result = frame.copy()
+    model = result["model_permaslug"].astype("string")
+    result["_is_free_route"] = model.str.endswith(":free", na=False)
+    result["_base_model"] = model.str.replace(r":free$", "", regex=True)
+    compare_columns = [
+        column for column in ("total_tokens", "request_count", "prompt_tokens", "completion_tokens")
+        if column in result.columns
+    ]
+    if not compare_columns:
+        return frame
+    grouping = [column for column in ("usage_date_dt", "category_slug", "_base_model") if column in result.columns]
+    drop_indices: set[object] = set()
+    for _, group in result.groupby(grouping, dropna=False, sort=False):
+        free_rows = group[group["_is_free_route"]]
+        paid_rows = group[~group["_is_free_route"]]
+        if free_rows.empty or paid_rows.empty:
+            continue
+        for free_index, free_row in free_rows.iterrows():
+            duplicate = False
+            for _, paid_row in paid_rows.iterrows():
+                values_match = True
+                for column in compare_columns:
+                    left = pd.to_numeric(pd.Series([free_row.get(column)]), errors="coerce").iloc[0]
+                    right = pd.to_numeric(pd.Series([paid_row.get(column)]), errors="coerce").iloc[0]
+                    if pd.isna(left) and pd.isna(right):
+                        continue
+                    if pd.isna(left) or pd.isna(right) or not np.isclose(float(left), float(right), rtol=1e-9, atol=1e-6):
+                        values_match = False
+                        break
+                if values_match:
+                    duplicate = True
+                    break
+            if duplicate:
+                drop_indices.add(free_index)
+    if not drop_indices:
+        return frame
+    return result.drop(index=list(drop_indices)).drop(columns=["_is_free_route", "_base_model"])
 
 
 def build_openrouter_explorer_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, object]:
@@ -4152,6 +4203,10 @@ def _render_company_explorer(views: dict[str, object]) -> None:
         st.caption(
             "Daily request-derived measures are displayed from Apr 16, 2026. Complete model-total rows begin Jun 17, 2026; earlier observations are sparse category-level proxy data and missing dates remain gaps. "
             f"Weekly tokens use {state['weekly_token_source'].casefold()}; weekly requests use {state['weekly_request_source'].casefold()}."
+        )
+    elif chart_metric == "Tokens":
+        st.caption(
+            "Token totals prefer complete model-activity rows and use provider daily activity to fill missing route/model days. Exact paid/:free API duplicates are removed; distinct provider-page free traffic is retained."
         )
     elif chart_metric == "Realized Price":
         coverage = state["price_coverage_weekly"] if chart_window == "Weekly" else state["price_coverage_daily"]
