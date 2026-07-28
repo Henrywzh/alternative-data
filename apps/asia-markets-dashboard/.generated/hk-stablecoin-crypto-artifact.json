@@ -6,7 +6,7 @@
     "title": "Hong Kong Stablecoin & Crypto Infrastructure Monitor",
     "description": "HKMA licensed stablecoin issuers, SFC licensed VATP exchanges, HKEX crypto ETF AUM, stablecoin market cap & chain tracking, DEX volume, and market sentiment indicators.",
     "sector": "hk-stablecoin-crypto",
-    "generatedAt": "2026-07-28T20:15:01Z",
+    "generatedAt": "2026-07-28T20:31:31Z",
     "dataAsOf": "2026-07-28",
     "liveSourcesCount": 6,
     "totalSourcesCount": 7,
@@ -500,7 +500,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**Data snapshot:** `6793dbfbdbb87ebe` · generated 2026-07-28T20:15:01Z.  Official HKMA & SFC regulatory registers and market tracking data."
+        "body": "**Data snapshot:** `55c22e2888665225` · generated 2026-07-28T20:31:31Z.  Official HKMA & SFC regulatory registers and market tracking data."
       },
       {
         "id": "kpi_grid",
@@ -584,7 +584,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-28T20:15:01Z",
+    "generatedAt": "2026-07-28T20:31:31Z",
     "status": "ready",
     "datasets": {
       "hkma_issuers": [
@@ -787,7 +787,7 @@
         {
           "name": "Tether",
           "symbol": "USDT",
-          "circulating_usd_bn": 183.9,
+          "circulating_usd_bn": 183.88,
           "market_share_pct": 59.63
         },
         {
@@ -799,13 +799,13 @@
         {
           "name": "Sky Dollar",
           "symbol": "USDS",
-          "circulating_usd_bn": 6.57,
+          "circulating_usd_bn": 6.56,
           "market_share_pct": 2.13
         },
         {
           "name": "Dai",
           "symbol": "DAI",
-          "circulating_usd_bn": 4.8,
+          "circulating_usd_bn": 4.81,
           "market_share_pct": 1.56
         },
         {
@@ -817,7 +817,7 @@
         {
           "name": "Ethena USDe",
           "symbol": "USDe",
-          "circulating_usd_bn": 3.87,
+          "circulating_usd_bn": 3.86,
           "market_share_pct": 1.25
         },
         {
@@ -2310,11 +2310,11 @@
       "stablecoin_chains": [
         {
           "chain": "Ethereum",
-          "circulating_usd_bn": 149.33
+          "circulating_usd_bn": 149.36
         },
         {
           "chain": "Tron",
-          "circulating_usd_bn": 91.1
+          "circulating_usd_bn": 91.09
         },
         {
           "chain": "BSC",
@@ -2322,7 +2322,7 @@
         },
         {
           "chain": "Solana",
-          "circulating_usd_bn": 16.22
+          "circulating_usd_bn": 16.21
         },
         {
           "chain": "Hyperliquid L1",
@@ -7246,7 +7246,7 @@
         },
         {
           "date": "2026-07-28",
-          "btc_price_usd": 63984.59
+          "btc_price_usd": 63907.99
         }
       ],
       "polymarket_catalysts": [
@@ -7267,7 +7267,7 @@
         },
         {
           "title": "Fed rate hike in 2026?",
-          "probability_pct": 75.5,
+          "probability_pct": 76.5,
           "end_date": "2026-12-09"
         },
         {
@@ -7462,10 +7462,10 @@
           "hkma_count": 2,
           "sfc_licensed_count": 13,
           "sfc_pending_count": 6,
-          "total_supply_bn": 308.43,
+          "total_supply_bn": 308.4,
           "total_etf_aum_m": 338.18,
-          "btc_price": 63906.0,
-          "cb_premium_bps": -12.68,
+          "btc_price": 63824.08,
+          "cb_premium_bps": -13.13,
           "fear_greed_val": 29,
           "fear_greed_class": "Fear"
         }
@@ -7627,8 +7627,8 @@
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-stablecoin-crypto/",
     "sector_id": "hk-stablecoin-crypto",
     "sector_name": "Hong Kong Stablecoin & Crypto Infrastructure Monitor",
-    "snapshotId": "6793dbfbdbb87ebe",
-    "generatedAt": "2026-07-28T20:15:01Z",
+    "snapshotId": "55c22e2888665225",
+    "generatedAt": "2026-07-28T20:31:31Z",
     "dataAsOf": "2026-07-28"
   }
 }
