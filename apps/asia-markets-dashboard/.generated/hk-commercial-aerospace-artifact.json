@@ -6,7 +6,7 @@
     "title": "Hong Kong Commercial Aerospace Sector Monitor",
     "description": "SSE STAR Market IPO filing status, Launch Library 2 launch cadence, Celestrak satellite counts, and patent filing counts for Chinese commercial space companies.",
     "sector": "hk-commercial-aerospace",
-    "generatedAt": "2026-07-28T17:54:06.471972Z",
+    "generatedAt": "2026-07-28T20:31:31.059000Z",
     "dataAsOf": "2026-07-28",
     "liveSourcesCount": 2,
     "totalSourcesCount": 4,
@@ -325,7 +325,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**Data snapshot:** `e7cc929b9ea57e77` \u00b7 generated 2026-07-28T17:54:06.471972Z.  Official disclosures and public tracking data."
+        "body": "**Data snapshot:** `e7cc929b9ea57e77` \u00b7 generated 2026-07-28T20:31:31.059000Z.  Official disclosures and public tracking data."
       },
       {
         "id": "kpi_grid",
@@ -375,7 +375,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-28T17:54:06.471972Z",
+    "generatedAt": "2026-07-28T20:31:31.059000Z",
     "status": "ready",
     "datasets": {
       "ipo_race": [
@@ -722,7 +722,7 @@
     "sector_id": "hk-commercial-aerospace",
     "sector_name": "Hong Kong Commercial Aerospace Sector Monitor",
     "snapshotId": "e7cc929b9ea57e77",
-    "generatedAt": "2026-07-28T17:54:06.471972Z",
+    "generatedAt": "2026-07-28T20:31:31.059000Z",
     "dataAsOf": "2026-07-28"
   }
 }
