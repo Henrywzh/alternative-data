@@ -54,10 +54,20 @@ jobs:
           pytest tests/test_minerals_tungsten_scraper.py tests/test_ctia_scraper.py tests/test_minerals_market_data.py tests/test_minerals_daily_report.py -q
 
       - name: Run bounded CTIA daily scraper
+        id: ctia_scrape
+        continue-on-error: true
         run: |
           # One API page per category; the scraper waits 15 seconds between
-          # requests and fails immediately on a CTIA refusal.
+          # requests and fails immediately on a CTIA refusal. A transient
+          # network failure here (e.g. CTIA connectivity timeout) must not
+          # block today's report from sending off the data already on disk,
+          # so the step is allowed to fail without failing the job.
           minerals-signal-data scrape-tungsten --base-dir . --source ctia --max-pages 1 --since-days 31
+
+      - name: Warn on CTIA scrape failure
+        if: steps.ctia_scrape.outcome == 'failure'
+        run: |
+          echo "::warning::CTIA scrape failed (likely a transient network issue); continuing with existing data. See the 'Run bounded CTIA daily scraper' step for details."
 
       - name: Validate recent molybdenum coverage
         run: |
