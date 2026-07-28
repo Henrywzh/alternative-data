@@ -115,8 +115,14 @@
     "sector": "Consumer Discretionary",
     "subsector": "Jewelry Retail",
     "keywords": [
-      {"term": "周大福", "geo": "HK"},
-      {"term": "Chow Tai Fook", "geo": "HK"}
+      {
+        "term": "周大福",
+        "geo": "HK"
+      },
+      {
+        "term": "Chow Tai Fook",
+        "geo": "HK"
+      }
     ],
     "signal_quality": "High",
     "signal_notes": "HK jewelry search demand; cross-check against store footprint data.",
@@ -124,13 +130,19 @@
     "refresh_frequency": "monthly"
   },
   {
-    "ticker": "116.HK",
+    "ticker": "0116.HK",
     "name": "Chow Sang Sang",
     "sector": "Consumer Discretionary",
     "subsector": "Jewelry Retail",
     "keywords": [
-      {"term": "周生生", "geo": "HK"},
-      {"term": "Chow Sang Sang", "geo": "HK"}
+      {
+        "term": "周生生",
+        "geo": "HK"
+      },
+      {
+        "term": "Chow Sang Sang",
+        "geo": "HK"
+      }
     ],
     "signal_quality": "High",
     "signal_notes": "HK/TW jewelry search demand; cross-check against store footprint data.",
@@ -138,13 +150,19 @@
     "refresh_frequency": "monthly"
   },
   {
-    "ticker": "590.HK",
+    "ticker": "0590.HK",
     "name": "Luk Fook",
     "sector": "Consumer Discretionary",
     "subsector": "Jewelry Retail",
     "keywords": [
-      {"term": "六福珠寶", "geo": "HK"},
-      {"term": "Luk Fook", "geo": "HK"}
+      {
+        "term": "六福珠寶",
+        "geo": "HK"
+      },
+      {
+        "term": "Luk Fook",
+        "geo": "HK"
+      }
     ],
     "signal_quality": "High",
     "signal_notes": "HK jewelry search demand; Trends is the primary external signal in this program.",
@@ -157,8 +175,14 @@
     "sector": "Consumer Discretionary",
     "subsector": "Jewelry Retail",
     "keywords": [
-      {"term": "老鋪黃金", "geo": "HK"},
-      {"term": "Laopu Gold", "geo": "HK"}
+      {
+        "term": "老鋪黃金",
+        "geo": "HK"
+      },
+      {
+        "term": "Laopu Gold",
+        "geo": "HK"
+      }
     ],
     "signal_quality": "High",
     "signal_notes": "HK jewelry search demand; Trends is the primary external signal in this program.",
@@ -166,13 +190,19 @@
     "refresh_frequency": "monthly"
   },
   {
-    "ticker": "52.HK",
+    "ticker": "0052.HK",
     "name": "Fairwood",
     "sector": "Consumer Discretionary",
     "subsector": "Quick-Service Restaurants",
     "keywords": [
-      {"term": "大快活", "geo": "HK"},
-      {"term": "Fairwood", "geo": "HK"}
+      {
+        "term": "大快活",
+        "geo": "HK"
+      },
+      {
+        "term": "Fairwood",
+        "geo": "HK"
+      }
     ],
     "signal_quality": "High",
     "signal_notes": "HK restaurant search demand; cross-check against store footprint data.",
@@ -180,13 +210,19 @@
     "refresh_frequency": "monthly"
   },
   {
-    "ticker": "341.HK",
+    "ticker": "0341.HK",
     "name": "Cafe de Coral",
     "sector": "Consumer Discretionary",
     "subsector": "Quick-Service Restaurants",
     "keywords": [
-      {"term": "大家樂", "geo": "HK"},
-      {"term": "Cafe de Coral", "geo": "HK"}
+      {
+        "term": "大家樂",
+        "geo": "HK"
+      },
+      {
+        "term": "Cafe de Coral",
+        "geo": "HK"
+      }
     ],
     "signal_quality": "High",
     "signal_notes": "HK restaurant search demand; Traditional Chinese term is intentional.",
@@ -194,13 +230,19 @@
     "refresh_frequency": "monthly"
   },
   {
-    "ticker": "178.HK",
+    "ticker": "0178.HK",
     "name": "Sa Sa",
     "sector": "Consumer Discretionary",
     "subsector": "Beauty Retail",
     "keywords": [
-      {"term": "莎莎", "geo": "HK"},
-      {"term": "Sa Sa", "geo": "HK"}
+      {
+        "term": "莎莎",
+        "geo": "HK"
+      },
+      {
+        "term": "Sa Sa",
+        "geo": "HK"
+      }
     ],
     "signal_quality": "High",
     "signal_notes": "HK beauty retail search demand; cross-check against store footprint data.",

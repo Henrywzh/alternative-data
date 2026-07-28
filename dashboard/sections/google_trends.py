@@ -97,19 +97,21 @@ def _correlation_table(df: pd.DataFrame) -> pd.DataFrame:
 
 def render_google_trends_section() -> None:
     st.markdown("## 📈 Google Trends Signal")
-    st.caption(
-        "Weekly Google Search interest matched to stock weekly returns. "
-        "Automated watchlist refreshes use Google Trends CSV export/import on a self-hosted runner; "
-        "single-keyword local experiments can still use trendspyg plus yfinance. "
-        "Current active Google Trends program is intentionally narrowed to Pop Mart, Action, and Booking; "
-        "the rest remain visible here as stock-only names."
-    )
-
     watchlist = _load_watchlist()
     if not watchlist:
         st.warning("Google Trends watchlist is not available in this deployment.")
         st.caption("Expected `src/google_trends_data/watchlist.json` or packaged `google_trends_data/watchlist.json`.")
         return
+
+    active_watchlist = [entry for entry in watchlist if entry.get("enabled")]
+    active_names = ", ".join(entry["name"] for entry in active_watchlist)
+    st.caption(
+        "Weekly Google Search interest matched to stock weekly returns. "
+        "Automated watchlist refreshes use Google Trends CSV export/import on a self-hosted runner; "
+        "single-keyword local experiments can still use trendspyg plus yfinance. "
+        f"Active program: {len(active_watchlist)} companies ({active_names}). "
+        "Other watchlist names remain visible as stock-only entries."
+    )
 
     tab_explorer, tab_watchlist, tab_leaderboard = st.tabs(["📊 Signal Explorer", "📋 Watchlist", "🏆 Signal Leaderboard"])
 
