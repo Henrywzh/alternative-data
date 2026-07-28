@@ -995,17 +995,19 @@ const HK_COMMERCIAL_AEROSPACE_ZH = {
 
 const HK_STABLECOIN_CRYPTO_ZH = {
   title: "香港稳定币与加密资产基础设施监测",
-  description: "金管局持牌稳定币发行人沙盒名单、证监会持牌 VATP 虚拟资产交易平台、港交所加密 ETF 规模时间序列、全球稳定币市值趋势及 90 天市场走势。",
+  description: "金管局持牌稳定币发行人沙盒名单、证监会持牌 VATP 虚拟资产交易平台、港交所加密 ETF 规模时间序列、全球稳定币市值与公链分布、DEX 交易量、1 年加密情绪指数与 1 年 BTC 价格走势。",
   cards: {
     regulatory_licensing_card: { description: "金管局稳定币沙盒持牌发行人及证监会持牌交易平台。", metricLabels: ["金管局稳定币发行人", "SFC 持牌 VATP", "SFC 申请中 VATP"] },
-    crypto_signals_card: { description: "比特币现货价格、Coinbase 溢价价差及市场情绪指数。", metricLabels: ["比特币价格 (美元)", "Coinbase 溢价 (bps)", "恐慌与贪婪指数"] },
+    crypto_signals_card: { description: "比特币现货价格、Coinbase 溢价价差及情绪指数。", metricLabels: ["比特币价格 (美元)", "Coinbase 溢价 (bps)", "加密情绪指数"] },
     etf_aum_card: { description: "港交所加密现货 ETF 资产规模及全球稳定币总市值。", metricLabels: ["港交所 ETF AUM (百万美元)", "全球稳定币市值 (十亿美元)"] },
   },
   charts: {
     etf_aum_history_chart: ["港交所加密现货 ETF 月度 AUM (百万美元)", "香港上市比特币及以太币现货 ETF 基金规模历史。", "月份", "AUM (百万美元)", "代码"],
-    stablecoin_history_chart: ["全球稳定币总流通供应量趋势 (十亿美元)", "DefiLlama 统计的全球锚定资产流通市值扩张/收缩历史时间序列。", "日期", "总供应量 (十亿美元)"],
-    fear_greed_history_chart: ["90 天加密情绪指数走势 (0–100)", "Alternative.me 每日恐慌与贪婪指数时间序列 (0=极度恐慌, 100=极度贪婪)。", "日期", "情绪得分"],
-    btc_price_history_chart: ["90 天比特币现货价格走势 (美元)", "Binance 每日比特币收盘价时间序列。", "日期", "BTC 价格 (美元)"],
+    stablecoin_history_chart: ["1 年全球稳定币总流通供应量走势 (十亿美元)", "DefiLlama 统计的全球锚定资产流通市值 365 天扩张/收缩历史时间序列。", "日期", "总供应量 (十亿美元)"],
+    stablecoin_chain_chart: ["主要区块链公链稳定币供应量分布 (十亿美元)", "DefiLlama 按底层区块链网络（Ethereum、Tron、BSC、Solana 等）统计的稳定币流通市值分布。", "区块链公链", "供应量 (十亿美元)"],
+    dex_volume_history_chart: ["1 年全球 DEX 每日交易量走势 (十亿美元/日)", "DefiLlama 统计的全球去中心化交易所每日交易量历史时间序列。", "日期", "DEX 交易量 (十亿美元/日)"],
+    fear_greed_history_chart: ["1 年加密情绪指数走势 (Alternative.me)", "Alternative.me 每日加密货币恐慌与贪婪指数 365 天时间序列 (0=极度恐慌, 100=极度贪婪)。", "日期", "情绪得分"],
+    btc_price_history_chart: ["1 年比特币现货价格走势 (美元)", "Binance 每日比特币收盘价 365 天时间序列。", "日期", "BTC 价格 (美元)"],
   },
   tables: {
     hkma_issuers_table: {
@@ -1029,8 +1031,8 @@ const HK_STABLECOIN_CRYPTO_ZH = {
       columns: { ticker: "股票代码", name: "ETF 名称", fund_id: "港交所 Fund ID", latest_month: "最新月份", aum_usd_m: "AUM (百万美元)" },
     },
     polymarket_table: {
-      title: "全球加密监管催化剂预测概率",
-      subtitle: "Polymarket 预测市场对关键监管里程碑的实时概率预测。",
+      title: "标签筛选的 Polymarket 加密与宏观监管催化剂预测概率",
+      subtitle: "通过 Polymarket 按标签筛选（crypto、fed-rates、etf、finance）的实时预测市场概率。",
       columns: { title: "催化事件", probability_pct: "概率 (%)", end_date: "目标日期" },
     },
     crypto_watchlist_table: {
@@ -1042,16 +1044,16 @@ const HK_STABLECOIN_CRYPTO_ZH = {
   sources: {
     hkma_register: "香港金管局持牌稳定币发行人登记册",
     sfc_vatp: "香港证监会虚拟资产交易平台登记册",
-    defillama: "DefiLlama 稳定币 API",
+    defillama: "DefiLlama 稳定币与 DEX 分析 API",
     hkex_etf: "港交所综合基金平台 ETF AUM API",
     coinbase_binance: "Coinbase & Binance 公开行情",
-    fear_greed: "加密货币恐慌与贪婪指数",
-    polymarket: "Polymarket Gamma 预测市场 API",
+    fear_greed: "加密货币恐慌与贪婪指数 (Alternative.me)",
+    polymarket: "Polymarket 预测市场 API (Gamma API)",
   },
   snapshotBody: (artifact) =>
     `**数据快照：** \`${artifact.package_info.snapshotId}\` · 生成于 ${artifact.manifest.generatedAt}。`,
   methodologyBody:
-    "## 如何阅读本 dashboard\n\n香港加密生态由官方监管登记册锚定：金管局稳定币发行人沙盒（Anchorpoint FRS01、汇丰 FRS02）及证监会持牌 VATP 交易平台（OSL、HashKey）。券商（如国泰君安国际 01788.HK）仅具备虚拟资产交易服务许可，非 VATP 交易所运营商；Anchorpoint（Anchorpoint Financial，港元锚定 HKDAP）与 AnchorX（金涌投资 01328.HK，AxCNH）为不同主体。本 dashboard 跟踪监管登记册、港交所 ETF AUM 时间序列、全球稳定币供应走势、90 天情绪及价格走势与 Coinbase 溢价信号。本界面不提供投资建议。",
+    "## 如何阅读本 dashboard\n\n香港加密生态由官方监管登记册锚定：金管局稳定币发行人沙盒（Anchorpoint FRS01、汇丰 FRS02）及证监会持牌 VATP 交易平台（OSL、HashKey）。券商（如国泰君安国际 01788.HK）仅具备虚拟资产交易服务许可，非 VATP 交易所运营商；Anchorpoint（Anchorpoint Financial，港元锚定 HKDAP）与 AnchorX（金涌投资 01328.HK，AxCNH）为不同主体。本 dashboard 跟踪监管登记册、港交所 ETF AUM 时间序列、全球稳定币供应走势、主要公链分布、DEX 交易量、1 年加密情绪指数 (Alternative.me)、1 年 BTC 价格走势及标签筛选的 Polymarket 催化剂。本界面不提供投资建议。",
 };
 
 // Identity and status-file wiring come from ../sectors.json; only the

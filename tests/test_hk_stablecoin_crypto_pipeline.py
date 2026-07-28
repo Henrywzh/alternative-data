@@ -117,12 +117,8 @@ def test_fear_greed_index():
         assert len(res["classification"]) > 0
 
 
-def test_polymarket_no_tag_param(monkeypatch):
-    """Verify fetch_relevant_markets never sends a 'tag' query parameter.
-
-    The tag= filter was confirmed unreliable in testing — only public-search
-    with a keyword query should be used.
-    """
+def test_polymarket_tag_slug_param(monkeypatch):
+    """Verify fetch_markets_by_tag sends the tag_slug parameter to events endpoint."""
     import unittest.mock as mock
     import src.hk_stablecoin_crypto.sources.polymarket_events as pm
 
@@ -136,12 +132,10 @@ def test_polymarket_no_tag_param(monkeypatch):
         return mock_resp
 
     monkeypatch.setattr("requests.get", fake_get)
-    pm.fetch_relevant_markets("stablecoin")
+    pm.fetch_markets_by_tag("crypto")
 
     assert "params" in captured_kwargs, "requests.get must be called with params kwarg"
-    assert "tag" not in captured_kwargs["params"], (
-        "tag= parameter must NEVER be passed to Polymarket (confirmed unreliable in testing)"
-    )
+    assert captured_kwargs["params"].get("tag_slug") == "crypto"
 
 
 def test_pipeline_stage_1_execution():

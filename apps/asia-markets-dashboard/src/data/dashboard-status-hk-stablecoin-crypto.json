@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-07-28T18:27:58.774989Z",
-  "snapshot_id": "5f8f56ec39426194",
+  "generated_at": "2026-07-28T20:15:01Z",
+  "snapshot_id": "6793dbfbdbb87ebe",
   "data_as_of": "2026-07-28",
   "overall_status": "Healthy",
   "live_sources": 7,
@@ -27,14 +27,14 @@
       "notes": "Official 4-status SFC register of VATP exchange operators (licensed, pending, withdrawn, forced-closure)."
     },
     {
-      "source": "DefiLlama Stablecoin Market Cap API",
+      "source": "DefiLlama Stablecoin & DEX Analytics API",
       "dataset": "defillama",
       "type": "Monitor",
       "status": "Healthy",
       "latest_observation": "2026-07-28",
       "records": 10,
       "freshness": "Live",
-      "notes": "Global stablecoin circulating supply tracking and historical market cap time series."
+      "notes": "Global stablecoin supply, blockchain chain distribution, and daily DEX volume history."
     },
     {
       "source": "HKEX Integrated Fund Platform ETF AUM API",
@@ -54,27 +54,27 @@
       "latest_observation": "2026-07-28",
       "records": 1,
       "freshness": "Live",
-      "notes": "Real-time BTC spot prices, 90-day daily price time series, and Coinbase Premium spread (bps)."
+      "notes": "Real-time BTC spot price, 1-year price history, and Coinbase Premium spread."
     },
     {
-      "source": "Crypto Fear & Greed Index",
+      "source": "Crypto Fear & Greed Index (Alternative.me)",
       "dataset": "fear_greed",
       "type": "Monitor",
       "status": "Healthy",
       "latest_observation": "2026-07-28",
       "records": 1,
       "freshness": "Live",
-      "notes": "Daily market sentiment score (0-100) and 90-day historical time series."
+      "notes": "Crypto-specific market sentiment index (0=Extreme Fear, 100=Extreme Greed) sourced from Alternative.me."
     },
     {
-      "source": "Polymarket Gamma Search API",
+      "source": "Polymarket Prediction Market API (Gamma API)",
       "dataset": "polymarket",
       "type": "Monitor",
       "status": "Healthy",
       "latest_observation": "2026-07-28",
-      "records": 8,
+      "records": 10,
       "freshness": "Live",
-      "notes": "Prediction market probabilities for global crypto regulatory catalysts."
+      "notes": "Tag-filtered real-time prediction market probability for crypto and monetary policy regulatory catalysts."
     }
   ],
   "attachment_filename": "hk-stablecoin-crypto-dashboard-2026-07-28.html"
