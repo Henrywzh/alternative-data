@@ -128,3 +128,69 @@ def test_rvd_price_and_rent_must_align():
     frames["rvd_rent"].loc[frames["rvd_rent"].index[-1], "date"] = "2026-07-01"
     with pytest.raises(ValueError, match="RVD price and rent observation dates do not align"):
         dashboard_export.build_artifact(frames, raw_hkma=_hkma_frame(), raw_cnsd=_cnsd_frame(), now=NOW)
+
+
+def test_hkma_rate_mix_surfaces_other_pricing_bucket():
+    hkma = _hkma_frame()
+    hkma["other_pricing_pct_share"] = [0.5 + i * 0.01 for i in range(len(hkma))]
+    artifact, _ = dashboard_export.build_artifact(_frames(), raw_hkma=hkma, raw_cnsd=_cnsd_frame(), now=NOW)
+    rows = artifact["snapshot"]["datasets"]["hkma_mortgage_rate_mix"]
+    assert {row["series"] for row in rows} == {
+        "HIBOR",
+        "BLR (Prime)",
+        "Fixed",
+        "Other",
+    }
+
+
+def test_landreg_volume_chart_uses_historical_asp_series_when_available():
+    facts = pd.DataFrame(
+        {
+            "date": ["2026-06-01"],
+            "table_id": ["t1"],
+            "statistic_name": [
+                "Total Number of Urban & New Territories deeds received for registration (ASP Building Units)"
+            ],
+            "units": [9434],
+            "comparison_type": ["level"],
+        }
+    )
+    asp = pd.DataFrame(
+        {
+            "date": ["2026-06-01"],
+            "all_building_units_asp": [1234],
+            "residential_units_asp": [1111],
+        }
+    )
+    artifact, _ = dashboard_export.build_artifact(
+        _frames(), raw_hkma=_hkma_frame(), raw_cnsd=_cnsd_frame(), raw_landreg=(facts, asp), now=NOW
+    )
+    rows = artifact["snapshot"]["datasets"]["landreg_volume_history"]
+    # The archive-backed ASP series is the only source with a long history;
+    # current t1 facts are retained as a fallback but must not replace it.
+    assert rows == [{"date": "2026-06-01", "value": 1234.0}]
+
+
+def test_transaction_pulse_flags_single_agency_coverage():
+    tx = pd.DataFrame(
+        {
+            "transaction_date": ["2026-07-20"],
+            "estate_name": ["Example Estate"],
+            "saleable_area_sqft": [500],
+            "price_hkd": [5_000_000],
+            "unit_price_hkd_sqft": [10_000],
+            "primary_source_agency": ["28Hse"],
+            "matched_agency_count": [1],
+            "source_agencies": ["28Hse"],
+        }
+    )
+    artifact, _ = dashboard_export.build_artifact(
+        _frames(), raw_hkma=_hkma_frame(), raw_cnsd=_cnsd_frame(), raw_unified_tx=tx, now=NOW
+    )
+    coverage = next(
+        row for row in artifact["snapshot"]["datasets"]["source_coverage"] if row["source"] == "Agency transactions"
+    )
+    assert coverage["status"] == "Partial"
+    assert "single agency" in coverage["notes"]
+    table = next(table for table in artifact["manifest"]["tables"] if table["id"] == "agency_transactions_pulse_table")
+    assert "only 28Hse" in table["subtitle"]

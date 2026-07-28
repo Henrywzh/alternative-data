@@ -1,4 +1,5 @@
 import io
+import json
 import re
 import requests
 import pandas as pd
@@ -17,6 +18,27 @@ PERMIT_REGEX = re.compile(r'([A-Z]{1,3}\s*\d+/\d+/[A-Z]+|BD\s*\d+/\d+/\d+|\d+/\d
 # their own, so they should never be appended into `site_address`.
 PERMIT_CLASS_REF_REGEX = re.compile(r'^\d+(?:\.\d+)+/\(\d+\)')
 
+_PROJECT_NUMERIC_COLUMNS = (
+    "num_blocks",
+    "num_storeys",
+    "domestic_units_count",
+    "usable_floor_area_sqm",
+    "site_area_sqm",
+    "matched_ownership_pct",
+)
+
+
+def _normalize_bd_project_frame(frame: pd.DataFrame) -> pd.DataFrame:
+    """Align nullable dtypes before concatenating stage-specific XLS frames."""
+    normalized = frame.copy()
+    for column in _PROJECT_NUMERIC_COLUMNS:
+        if column in normalized.columns:
+            normalized[column] = pd.to_numeric(normalized[column], errors="coerce").astype("Float64")
+    for column in normalized.columns:
+        if column not in _PROJECT_NUMERIC_COLUMNS:
+            normalized[column] = normalized[column].astype("string")
+    return normalized
+
 def safe_int(val: Any) -> Optional[int]:
     if pd.isna(val): return None
     try:
@@ -34,6 +56,25 @@ def safe_float(val: Any) -> Optional[float]:
         return float(v_str)
     except (ValueError, TypeError):
         return None
+
+
+def _infer_region_from_address(address: str, fallback: str | None = None) -> str | None:
+    """Prefer explicit region tokens in a parsed address over section state.
+
+    The monthly XLS uses section headers as parser state, but wrapped address
+    blocks and occasional layout changes can leave that state one section
+    behind.  Address-level labels are more specific and are safe to apply in
+    priority order (New Territories before Kowloon before Hong Kong Island).
+    """
+    text = str(address or "")
+    normalized = re.sub(r"[^a-z]", "", text.lower())
+    if "newterritories" in normalized:
+        return "New Territories"
+    if "kowloon" in normalized or "nkil" in normalized:
+        return "Kowloon"
+    if "hongkong" in normalized or "hongkongisland" in normalized:
+        return "Hong Kong Island"
+    return fallback
 
 # Per-stage column layouts. Md53 (Plans Approved) and Md54 (Consent to
 # Commence) have no permit-number column at all -- only Md56 (Occupation
@@ -220,6 +261,7 @@ def parse_bd_xls_projects(excel_bytes: bytes, permit_stage: str) -> pd.DataFrame
     for p in projects:
         addr_clean = " ".join([line for line in p.pop('address_lines') if line]).strip()
         p['site_address'] = addr_clean
+        p['region'] = _infer_region_from_address(addr_clean, p.get('region'))
         records.append(p)
 
     df = pd.DataFrame(records)
@@ -238,6 +280,8 @@ def fetch_bd_project_lifecycle_events() -> pd.DataFrame:
     - Table 5.6: Occupation Permits (OP) Issued (Md56.xls)
     """
     all_dfs = []
+    raw_paths: list[str] = []
+    source_urls: list[str] = []
     tables = [
         ("Md53.xls", "Plans Approved"),
         ("Md54.xls", "Consent to Commence"),
@@ -249,7 +293,14 @@ def fetch_bd_project_lifecycle_events() -> pd.DataFrame:
         try:
             r = requests.get(url, headers=DEFAULT_HEADERS, timeout=15)
             if r.status_code == 200:
-                save_raw_snapshot(f"bd_{filename.replace('.xls', '')}", r.content, file_ext="xls")
+                raw_path = save_raw_snapshot(
+                    f"bd_{filename.replace('.xls', '')}",
+                    r.content,
+                    file_ext="xls",
+                    source_url=url,
+                )
+                raw_paths.append(str(raw_path))
+                source_urls.append(url)
                 df_stage = parse_bd_xls_projects(r.content, stage_name)
                 if not df_stage.empty:
                     all_dfs.append(df_stage)
@@ -257,9 +308,16 @@ def fetch_bd_project_lifecycle_events() -> pd.DataFrame:
             print(f"Error downloading/parsing BD project table {filename}: {e}")
             
     if all_dfs:
-        res_df = pd.concat(all_dfs, ignore_index=True)
-        return res_df
-    return pd.DataFrame()
+        res_df = pd.concat([_normalize_bd_project_frame(frame) for frame in all_dfs], ignore_index=True)
+    else:
+        res_df = pd.DataFrame()
+    # A lifecycle dataset is assembled from three first-party XLS files; keep
+    # all raw pointers instead of silently losing provenance at concat time.
+    res_df.attrs.update(
+        raw_snapshot=json.dumps(raw_paths),
+        source_url=json.dumps(source_urls),
+    )
+    return res_df
 
 def fetch_bd_supply_leading_indicators() -> pd.DataFrame:
     """
@@ -292,4 +350,5 @@ def fetch_bd_supply_leading_indicators() -> pd.DataFrame:
     res_df = pd.DataFrame(indicators)
     if not res_df.empty:
         res_df = res_df.sort_values(['permit_stage', 'region']).reset_index(drop=True)
+    res_df.attrs.update(df_projects.attrs)
     return res_df

@@ -46,6 +46,16 @@ from src.hk_reit.sources.reit_price import fetch_reit_spot_quotes, fetch_reit_pr
 
 
 PUBLIC_SOURCES = {
+    "cross_source": {
+        "id": "cross_source",
+        "label": "Cross-source HK REIT official IR comparison",
+        "path": "sources/cross_source.sql",
+        "query": {
+            "engine": "pandas",
+            "language": "Python",
+            "description": "Comparison assembled from the six trusts' own investor-relations disclosures; each underlying series retains its individual source ID.",
+        },
+    },
     "reit_price_akshare": {
         "id": "reit_price_akshare",
         "label": "Hong Kong REITs Daily Spot Quotes & History (akshare)",
@@ -141,6 +151,12 @@ REIT_META: list[tuple[str, str, str, str, bool]] = [
     ("sunlightreit", "0435.HK", "Sunlight REIT", "sunlightreit_fundamentals", False),
     ("regalreit", "1881.HK", "Regal REIT", "regalreit_fundamentals", True),
 ]
+
+# `cross_source` is a derived provenance label for multi-REIT widgets, not an
+# additional upstream feed. Keep it out of live/total source counts.
+UPSTREAM_SOURCE_IDS = tuple(
+    source_id for _key, _ticker, _name, source_id, _is_hotel in REIT_META
+) + ("reit_price_akshare",)
 
 # Chart-legend-only shorthand for the two longest full names (see
 # reit_spot_price_history_chart construction below for why this exists).
@@ -484,7 +500,8 @@ def build_artifact(
             "subtitle": "Relative movement in reported net asset value per unit, all six trusts (by ticker), each rebased to 100 at its own first observation -- absolute NAV/unit differs by REIT (see the comparison table and cards above) so raw HK$ values aren't comparable across trusts on one axis.",
             "type": "line",
             "dataset": "nav_history_rebased",
-            "sourceId": "linkreit_fundamentals",
+            "sourceId": "cross_source",
+            "sourceIds": [source_id for _key, _ticker, _name, source_id, _is_hotel in REIT_META],
             "encodings": {
                 "x": {"field": "month", "type": "temporal", "label": "Period"},
                 "y": {"field": "value", "type": "quantitative", "label": "Rebased (start = 100)"},
@@ -499,7 +516,8 @@ def build_artifact(
             "subtitle": "Relative movement in reported DPU, all six trusts (by ticker), each rebased to 100 at its own first positive observation. Some periods are legitimately nil (e.g. Regal REIT 1H2025) and rebase to 0 rather than being missing data; absolute HK$ DPU is in the comparison table above.",
             "type": "line",
             "dataset": "dpu_history_rebased",
-            "sourceId": "linkreit_fundamentals",
+            "sourceId": "cross_source",
+            "sourceIds": [source_id for _key, _ticker, _name, source_id, _is_hotel in REIT_META],
             "encodings": {
                 "x": {"field": "month", "type": "temporal", "label": "Period"},
                 "y": {"field": "value", "type": "quantitative", "label": "Rebased (start = 100)"},
@@ -514,7 +532,8 @@ def build_artifact(
             "subtitle": "Link (0823), Champion (2778), Fortune (0778), Prosperity (0808), and Sunlight (0435) -- excludes Regal REIT, whose portfolio is hotels, not office/retail.",
             "type": "line",
             "dataset": "occupancy_history",
-            "sourceId": "linkreit_fundamentals",
+            "sourceId": "cross_source",
+            "sourceIds": [source_id for _key, _ticker, _name, source_id, is_hotel in REIT_META if not is_hotel],
             "encodings": {
                 "x": {"field": "month", "type": "temporal", "label": "Period"},
                 "y": {"field": "value", "type": "quantitative", "label": "Occupancy (%)"},
@@ -529,7 +548,8 @@ def build_artifact(
             "subtitle": "Rate achieved on renewed/new leases vs. the prior passing rent, the five office/retail trusts only (by ticker).",
             "type": "line",
             "dataset": "reversion_history",
-            "sourceId": "linkreit_fundamentals",
+            "sourceId": "cross_source",
+            "sourceIds": [source_id for _key, _ticker, _name, source_id, is_hotel in REIT_META if not is_hotel],
             "encodings": {
                 "x": {"field": "month", "type": "temporal", "label": "Period"},
                 "y": {"field": "value", "type": "quantitative", "label": "Rental reversion (%)"},
@@ -590,7 +610,8 @@ def build_artifact(
                 "to that REIT's business type."
             ),
             "dataset": "reit_comparison",
-            "sourceId": "linkreit_fundamentals",
+            "sourceId": "cross_source",
+            "sourceIds": [source_id for _key, _ticker, _name, source_id, _is_hotel in REIT_META],
             "density": "dense",
             "layout": "full",
             "columns": [
@@ -606,8 +627,6 @@ def build_artifact(
 
     df_spot = raw_spot if raw_spot is not None else fetch_reit_spot_quotes()
     df_hist = raw_hist if raw_hist is not None else fetch_reit_price_history()
-    if not df_spot.empty:
-        live_count += 1
 
     status_entries = []
     for key, ticker, name, source_id, is_hotel in REIT_META:
@@ -627,10 +646,30 @@ def build_artifact(
             }
         )
 
-    # Add status for reit_price_akshare
+    # Add status for reit_price_akshare. Spot quotes and price history are
+    # separate calls; a working quote call must not conceal a failed history
+    # call because the dashboard's historical price chart then has no data.
     spot_spec = PUBLIC_SOURCES["reit_price_akshare"]
-    spot_status = "success" if not df_spot.empty else "stale/unreachable"
+    spot_available = not df_spot.empty
+    history_available = not df_hist.empty
+    # Spot quotes and history are one market-feed source in the headline
+    # count; only count it as fully live when both calls succeeded.
+    if spot_available and history_available:
+        live_count += 1
+    if spot_available and history_available:
+        spot_status = "success"
+        spot_freshness = "live"
+    elif spot_available:
+        spot_status = "partial"
+        spot_freshness = "partial: history unavailable"
+    elif history_available:
+        spot_status = "partial"
+        spot_freshness = "partial: spot quotes unavailable"
+    else:
+        spot_status = "stale/unreachable"
+        spot_freshness = "stale/unreachable"
     spot_max_date = df_spot["date"].max().strftime("%Y-%m-%d") if not df_spot.empty and "date" in df_spot.columns else None
+    history_max_date = df_hist["date"].max().strftime("%Y-%m-%d") if not df_hist.empty and "date" in df_hist.columns else None
     status_entries.append(
         {
             "source_id": "reit_price_akshare",
@@ -638,7 +677,11 @@ def build_artifact(
             "status": spot_status,
             "records": len(df_spot),
             "latest_observation": spot_max_date,
-            "freshness": "live" if spot_status == "success" else "stale/unreachable",
+            "freshness": spot_freshness,
+            "history_status": "success" if history_available else "empty",
+            "history_records": len(df_hist),
+            "history_latest_observation": history_max_date,
+            "history_freshness": "live" if history_available else "unavailable",
             "notes": spot_spec["query"]["description"],
         }
     )
@@ -787,7 +830,7 @@ def build_artifact(
             "generatedAt": generated_at,
             "dataAsOf": data_as_of,
             "liveSourcesCount": live_count,
-            "totalSourcesCount": len(PUBLIC_SOURCES),
+            "totalSourcesCount": len(UPSTREAM_SOURCE_IDS),
             "cards": cards,
             "charts": charts,
             "tables": tables,
@@ -811,7 +854,7 @@ def build_artifact(
         "generated_at": generated_at,
         "snapshot_id": snapshot_id,
         "data_as_of": data_as_of,
-        "overall_status": "Healthy" if live_count == len(PUBLIC_SOURCES) else "Degraded",
+        "overall_status": "Healthy" if live_count == len(UPSTREAM_SOURCE_IDS) and history_available else "Degraded",
         "live_sources": live_count,
         "planned_sources": 0,
         "sources": [

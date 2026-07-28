@@ -104,6 +104,12 @@ def save_normalized_dataset(
 ) -> Dict[str, str]:
     """Save normalized output as an immutable run-scoped dataset with lineage."""
     run_id = run_id or str(uuid.uuid4())
+    # Fetchers attach immutable raw-snapshot paths and source URLs to the
+    # frame. Retain those values when callers do not supply explicit lineage.
+    if raw_snapshot is None:
+        raw_snapshot = df.attrs.get("raw_snapshot")
+    if source_url is None:
+        source_url = df.attrs.get("source_url")
     target_dir = NORMALIZED_DIR / dataset_name / run_id
     target_dir.mkdir(parents=True, exist_ok=False)
     parquet_path = target_dir / f"{dataset_name}.parquet"

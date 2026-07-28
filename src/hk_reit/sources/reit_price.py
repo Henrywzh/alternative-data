@@ -49,7 +49,7 @@ def fetch_reit_spot_quotes(*, run_id: Optional[str] = None) -> pd.DataFrame:
         logger.warning("None of the configured REIT tickers were found in stock_hk_spot_em().")
         return pd.DataFrame()
 
-    save_raw_snapshot(
+    raw_path = save_raw_snapshot(
         SOURCE_NAME + "_spot",
         subset.to_json(orient="records", force_ascii=False),
         file_ext="json",
@@ -68,6 +68,7 @@ def fetch_reit_spot_quotes(*, run_id: Optional[str] = None) -> pd.DataFrame:
             "turnover_hkd": pd.to_numeric(subset.get("成交额"), errors="coerce"),
         }
     )
+    out.attrs.update(raw_snapshot=str(raw_path), source_url=SOURCE_URL)
     return out.reset_index(drop=True)
 
 
@@ -115,11 +116,12 @@ def fetch_reit_price_history(
         return pd.DataFrame()
 
     combined = pd.concat(frames, ignore_index=True)
-    save_raw_snapshot(
+    raw_path = save_raw_snapshot(
         SOURCE_NAME + "_history",
         combined.to_json(orient="records", force_ascii=False, date_format="iso"),
         file_ext="json",
         source_url=SOURCE_URL,
         run_id=run_id,
     )
+    combined.attrs.update(raw_snapshot=str(raw_path), source_url=SOURCE_URL)
     return combined

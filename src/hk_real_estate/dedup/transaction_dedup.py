@@ -15,7 +15,15 @@ def generate_dedup_hash(estate_name: Any, floor: Any, unit: Any, transaction_dat
     c_floor = normalize_text_token(floor)
     c_unit = normalize_text_token(unit)
     c_date = str(transaction_date).strip() if pd.notna(transaction_date) else ""
-    c_price = f"{float(price_hkd):.0f}" if pd.notna(price_hkd) and str(price_hkd).replace('.','').isdigit() else ""
+    c_price = ""
+    if pd.notna(price_hkd):
+        try:
+            # Agency payloads alternate between numeric values and display
+            # strings such as "$12,500,000".  Rejecting punctuation before
+            # parsing silently erased the price from the identity hash.
+            c_price = f"{float(str(price_hkd).replace(',', '').replace('$', '').strip()):.0f}"
+        except (TypeError, ValueError):
+            c_price = ""
     
     key_str = f"{c_estate}|{c_floor}|{c_unit}|{c_date}|{c_price}"
     return hashlib.md5(key_str.encode('utf-8')).hexdigest()

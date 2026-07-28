@@ -6,7 +6,7 @@
     "title": "Hong Kong REITs Sector Monitor",
     "description": "NAV/unit, DPU, occupancy, rental reversion, and hotel KPI disclosures for all six HK-listed REITs.",
     "sector": "hk-reit",
-    "generatedAt": "2026-07-28T20:31:31.186056Z",
+    "generatedAt": "2026-07-28T21:59:05.592306Z",
     "dataAsOf": "2026-03-31",
     "liveSourcesCount": 7,
     "totalSourcesCount": 7,
@@ -187,7 +187,15 @@
         "subtitle": "Relative movement in reported net asset value per unit, all six trusts (by ticker), each rebased to 100 at its own first observation -- absolute NAV/unit differs by REIT (see the comparison table and cards above) so raw HK$ values aren't comparable across trusts on one axis.",
         "type": "line",
         "dataset": "nav_history_rebased",
-        "sourceId": "linkreit_fundamentals",
+        "sourceId": "cross_source",
+        "sourceIds": [
+          "linkreit_fundamentals",
+          "championreit_fundamentals",
+          "fortunereit_fundamentals",
+          "prosperityreit_fundamentals",
+          "sunlightreit_fundamentals",
+          "regalreit_fundamentals"
+        ],
         "encodings": {
           "x": {
             "field": "month",
@@ -214,7 +222,15 @@
         "subtitle": "Relative movement in reported DPU, all six trusts (by ticker), each rebased to 100 at its own first positive observation. Some periods are legitimately nil (e.g. Regal REIT 1H2025) and rebase to 0 rather than being missing data; absolute HK$ DPU is in the comparison table above.",
         "type": "line",
         "dataset": "dpu_history_rebased",
-        "sourceId": "linkreit_fundamentals",
+        "sourceId": "cross_source",
+        "sourceIds": [
+          "linkreit_fundamentals",
+          "championreit_fundamentals",
+          "fortunereit_fundamentals",
+          "prosperityreit_fundamentals",
+          "sunlightreit_fundamentals",
+          "regalreit_fundamentals"
+        ],
         "encodings": {
           "x": {
             "field": "month",
@@ -241,7 +257,14 @@
         "subtitle": "Link (0823), Champion (2778), Fortune (0778), Prosperity (0808), and Sunlight (0435) -- excludes Regal REIT, whose portfolio is hotels, not office/retail.",
         "type": "line",
         "dataset": "occupancy_history",
-        "sourceId": "linkreit_fundamentals",
+        "sourceId": "cross_source",
+        "sourceIds": [
+          "linkreit_fundamentals",
+          "championreit_fundamentals",
+          "fortunereit_fundamentals",
+          "prosperityreit_fundamentals",
+          "sunlightreit_fundamentals"
+        ],
         "encodings": {
           "x": {
             "field": "month",
@@ -268,7 +291,14 @@
         "subtitle": "Rate achieved on renewed/new leases vs. the prior passing rent, the five office/retail trusts only (by ticker).",
         "type": "line",
         "dataset": "reversion_history",
-        "sourceId": "linkreit_fundamentals",
+        "sourceId": "cross_source",
+        "sourceIds": [
+          "linkreit_fundamentals",
+          "championreit_fundamentals",
+          "fortunereit_fundamentals",
+          "prosperityreit_fundamentals",
+          "sunlightreit_fundamentals"
+        ],
         "encodings": {
           "x": {
             "field": "month",
@@ -350,7 +380,15 @@
         "title": "HK REIT Fundamentals Comparison",
         "subtitle": "Latest NAV/unit and DPU for all six trusts. Occupancy is unified across business types (hotel occupancy for Regal REIT); rental reversion and hotel rate columns are null where not applicable to that REIT's business type.",
         "dataset": "reit_comparison",
-        "sourceId": "linkreit_fundamentals",
+        "sourceId": "cross_source",
+        "sourceIds": [
+          "linkreit_fundamentals",
+          "championreit_fundamentals",
+          "fortunereit_fundamentals",
+          "prosperityreit_fundamentals",
+          "sunlightreit_fundamentals",
+          "regalreit_fundamentals"
+        ],
         "density": "dense",
         "layout": "full",
         "columns": [
@@ -424,6 +462,16 @@
       }
     ],
     "sources": [
+      {
+        "id": "cross_source",
+        "label": "Cross-source HK REIT official IR comparison",
+        "path": "sources/cross_source.sql",
+        "query": {
+          "engine": "pandas",
+          "language": "Python",
+          "description": "Comparison assembled from the six trusts' own investor-relations disclosures; each underlying series retains its individual source ID."
+        }
+      },
       {
         "id": "reit_price_akshare",
         "label": "Hong Kong REITs Daily Spot Quotes & History (akshare)",
@@ -513,7 +561,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**Data snapshot:** `dcd5fa94b5169176` \u00b7 generated 2026-07-28T20:31:31.186056Z.  Each REIT's figures come from that trust's own investor-relations disclosures (semi-annual or annual cadence), supplemented by market spot quotes."
+        "body": "**Data snapshot:** `e5046773048d7d07` \u00b7 generated 2026-07-28T21:59:05.592306Z.  Each REIT's figures come from that trust's own investor-relations disclosures (semi-annual or annual cadence), supplemented by market spot quotes."
       },
       {
         "id": "kpi_grid",
@@ -578,7 +626,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-28T20:31:31.186056Z",
+    "generatedAt": "2026-07-28T21:59:05.592306Z",
     "status": "ready",
     "datasets": {
       "kpi_linkreit": [
@@ -627,11 +675,11 @@
       ],
       "kpi_sunlightreit": [
         {
-          "nav_per_unit_hkd": 7.09,
-          "dpu_hkd": 0.182,
-          "dpu_period_change": -0.335766,
-          "observation_date": "2025-12-31",
-          "period": "31 December 2025",
+          "nav_per_unit_hkd": null,
+          "dpu_hkd": null,
+          "dpu_period_change": null,
+          "observation_date": "2026-03-31",
+          "period": "Quarter ended 31 MARCH 2026",
           "occupancy_pct": 91.5,
           "rental_reversion_pct": -7.9
         }
@@ -1380,12 +1428,6 @@
         {
           "date": "2025-12-31",
           "month": "2025-12",
-          "series": "0435",
-          "value": 91.5
-        },
-        {
-          "date": "2025-12-31",
-          "month": "2025-12",
           "series": "0778",
           "value": 95.8
         },
@@ -1400,6 +1442,12 @@
           "month": "2025-12",
           "series": "2778",
           "value": 81.6
+        },
+        {
+          "date": "2026-03-31",
+          "month": "2026-03",
+          "series": "0435",
+          "value": 91.5
         },
         {
           "date": "2026-03-31",
@@ -1460,14 +1508,14 @@
         {
           "date": "2025-12-31",
           "month": "2025-12",
-          "series": "0435",
-          "value": -7.9
-        },
-        {
-          "date": "2025-12-31",
-          "month": "2025-12",
           "series": "0808",
           "value": -9.3
+        },
+        {
+          "date": "2026-03-31",
+          "month": "2026-03",
+          "series": "0435",
+          "value": -7.9
         },
         {
           "date": "2026-03-31",
@@ -1549,13 +1597,13 @@
           "reit_name": "Sunlight REIT",
           "ticker": "0435.HK",
           "business_type": "Office/Retail",
-          "nav_per_unit_hkd": 7.09,
-          "dpu_hkd": 0.182,
+          "nav_per_unit_hkd": null,
+          "dpu_hkd": null,
           "occupancy_pct": 91.5,
           "rental_reversion_pct": -7.9,
           "average_daily_rate_hkd": null,
           "revpar_hkd": null,
-          "as_of_date": "2025-12-31"
+          "as_of_date": "2026-03-31"
         },
         {
           "reit_name": "Regal REIT",
@@ -4809,6 +4857,17 @@
           "reit_name": "Sunlight REIT",
           "nav_per_unit_hkd": 7.09,
           "dpu_hkd": 0.182,
+          "occupancy_pct": null,
+          "rental_reversion_pct": null,
+          "source_agency": "Sunlight REIT Investor Relations"
+        },
+        {
+          "date": "2026-03-31",
+          "period": "Quarter ended 31 MARCH 2026",
+          "ticker": "0435.HK",
+          "reit_name": "Sunlight REIT",
+          "nav_per_unit_hkd": null,
+          "dpu_hkd": null,
           "occupancy_pct": 91.5,
           "rental_reversion_pct": -7.9,
           "source_agency": "Sunlight REIT Investor Relations"
@@ -4831,6 +4890,16 @@
     }
   },
   "sources": [
+    {
+      "id": "cross_source",
+      "label": "Cross-source HK REIT official IR comparison",
+      "path": "sources/cross_source.sql",
+      "query": {
+        "engine": "pandas",
+        "language": "Python",
+        "description": "Comparison assembled from the six trusts' own investor-relations disclosures; each underlying series retains its individual source ID."
+      }
+    },
     {
       "id": "reit_price_akshare",
       "label": "Hong Kong REITs Daily Spot Quotes & History (akshare)",
@@ -4957,8 +5026,8 @@
       "source_id": "sunlightreit_fundamentals",
       "label": "Sunlight REIT (0435.HK) Financial Disclosures",
       "status": "success",
-      "records": 5,
-      "latest_observation": "2025-12-31",
+      "records": 6,
+      "latest_observation": "2026-03-31",
       "freshness": "live",
       "notes": "Office and retail portfolio NAV/unit, DPU, occupancy, and rental reversion."
     },
@@ -4978,6 +5047,10 @@
       "records": 6,
       "latest_observation": "2026-07-28",
       "freshness": "live",
+      "history_status": "success",
+      "history_records": 480,
+      "history_latest_observation": "2026-07-28",
+      "history_freshness": "live",
       "notes": "Daily spot price quotes, percentage change, and OHLC daily history for all 6 HK REITs."
     }
   ],
@@ -4985,8 +5058,8 @@
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-reit/",
     "sector_id": "hk-reit",
     "sector_name": "Hong Kong REITs Sector Monitor",
-    "snapshotId": "dcd5fa94b5169176",
-    "generatedAt": "2026-07-28T20:31:31.186056Z",
+    "snapshotId": "e5046773048d7d07",
+    "generatedAt": "2026-07-28T21:59:05.592306Z",
     "dataAsOf": "2026-03-31"
   }
 }

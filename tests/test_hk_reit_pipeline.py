@@ -1,5 +1,6 @@
 import importlib
 import importlib.util
+import json
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -22,6 +23,101 @@ def test_import_smoke():
         "src.hk_reit.cli",
     ):
         assert importlib.import_module(module)
+
+
+def test_run_all_raises_when_every_dataset_is_empty_or_errors(monkeypatch: pytest.MonkeyPatch):
+    from src.hk_reit import pipeline
+
+    monkeypatch.setattr(
+        pipeline,
+        "DATASETS",
+        {
+            "empty": {"fetch": lambda: pd.DataFrame(), "required_columns": ["ticker"]},
+            "broken": {
+                "fetch": lambda: (_ for _ in ()).throw(RuntimeError("upstream unavailable")),
+                "required_columns": ["ticker"],
+            },
+        },
+    )
+    monkeypatch.setattr(pipeline, "_write_run_manifest", lambda *_args: Path("manifest.json"))
+
+    with pytest.raises(pipeline.PipelineRunError, match="no usable datasets"):
+        pipeline.run_all_reit_pipelines(run_id="all-failed")
+
+
+def test_pipeline_does_not_retry_internal_type_error_as_a_signature_mismatch(monkeypatch: pytest.MonkeyPatch):
+    from src.hk_reit import pipeline
+
+    calls = []
+
+    def broken_fetch(*, run_id: str) -> pd.DataFrame:
+        calls.append(run_id)
+        raise TypeError("bug inside fetcher")
+
+    monkeypatch.setattr(
+        pipeline,
+        "DATASETS",
+        {"broken": {"fetch": broken_fetch, "accepts_run_id": True, "required_columns": ["ticker"]}},
+    )
+    monkeypatch.setattr(pipeline, "_write_run_manifest", lambda *_args: Path("manifest.json"))
+
+    results = pipeline.run_reit_pipeline(run_id="one-call")
+
+    assert calls == ["one-call"]
+    assert results["broken"]["status"] == "error"
+
+
+def test_pipeline_passes_frame_lineage_attrs_to_normalized_writer(monkeypatch: pytest.MonkeyPatch):
+    from src.hk_reit import pipeline
+
+    frame = pd.DataFrame({"ticker": ["0823.HK"], "latest_price_hkd": [42.0]})
+    frame.attrs.update(raw_snapshot="/raw/snapshot.json", source_url="https://example.test/source")
+    saved = {}
+
+    monkeypatch.setattr(
+        pipeline,
+        "DATASETS",
+        {"lineage": {"fetch": lambda: frame, "required_columns": ["ticker", "latest_price_hkd"]}},
+    )
+    monkeypatch.setattr(pipeline, "_write_run_manifest", lambda *_args: Path("manifest.json"))
+    monkeypatch.setattr(
+        pipeline,
+        "save_normalized_dataset",
+        lambda dataset_name, df, **kwargs: saved.update(dataset_name=dataset_name, df=df, **kwargs)
+        or {"run_id": kwargs["run_id"]},
+    )
+
+    pipeline.run_reit_pipeline(run_id="lineage-run")
+
+    assert saved["raw_snapshot"] == "/raw/snapshot.json"
+    assert saved["source_url"] == "https://example.test/source"
+
+
+def test_normalized_storage_uses_frame_lineage_attrs(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    from src.hk_reit import storage
+
+    frame = pd.DataFrame({"ticker": ["0823.HK"]})
+    frame.attrs.update(raw_snapshot="/raw/snapshot.json", source_url="https://example.test/source")
+    monkeypatch.setattr(storage, "NORMALIZED_DIR", tmp_path / "normalized")
+
+    saved = storage.save_normalized_dataset("lineage", frame, run_id="lineage-run")
+
+    lineage = json.loads(Path(saved["lineage"]).read_text(encoding="utf-8"))
+    assert lineage["raw_snapshot"] == "/raw/snapshot.json"
+    assert lineage["source_url"] == "https://example.test/source"
+
+
+def test_run_strict_returns_nonzero_when_pipeline_reports_no_usable_datasets(monkeypatch: pytest.MonkeyPatch, capsys):
+    from src.hk_reit import cli, pipeline
+
+    monkeypatch.setattr(
+        cli,
+        "run_all_reit_pipelines",
+        lambda: (_ for _ in ()).throw(pipeline.PipelineRunError("no usable datasets")),
+    )
+
+    assert cli.main(["run-strict"]) == 1
+    assert "no usable datasets" in capsys.readouterr().err
 
 def test_linkreit_dynamic_fetch():
     from src.hk_reit.sources.linkreit_fundamentals import fetch_linkreit_fundamentals
@@ -47,6 +143,51 @@ def test_regalreit_hotel_kpis_columns():
         assert col in df.columns
     if not df.empty:
         assert (df["ticker"] == "1881.HK").all()
+
+
+def test_sunlight_period_parser_handles_new_reporting_periods():
+    from src.hk_reit.sources import sunlightreit_fundamentals as sunlight
+
+    assert sunlight._period_end_date("18 months ended 31 December 2024") == "2024-12-31"
+    assert sunlight._period_end_date("Year ended 30 June 2026") == "2026-06-30"
+    assert sunlight._period_end_date("Quarter ended 30 Jun 2026") == "2026-06-30"
+    # Legacy bare years on Sunlight's historical highlights were June year ends.
+    assert sunlight._period_end_date("2023") == "2023-06-30"
+
+
+def test_sunlight_quarterly_kpis_are_recorded_at_their_actual_period(monkeypatch: pytest.MonkeyPatch):
+    from src.hk_reit.sources import sunlightreit_fundamentals as sunlight
+
+    monkeypatch.setattr(
+        sunlight,
+        "_fetch_highlights",
+        lambda _headers: {
+            "periods": ["31 December 2025", "18 months ended 31 December 2024"],
+            "nav": {"31 December 2025": 3.2, "18 months ended 31 December 2024": 3.1},
+            "dpu": {"31 December 2025": 12.5, "18 months ended 31 December 2024": 18.0},
+        },
+    )
+    monkeypatch.setattr(sunlight, "_discover_latest_operational_statistics_pdf", lambda _headers: "https://example.test/ops.pdf")
+    monkeypatch.setattr(sunlight, "_extract_operational_stats", lambda _content: {
+        "as_of_text": "30 June 2026",
+        "occupancy_pct": 94.2,
+        "rental_reversion_pct": -3.1,
+    })
+    monkeypatch.setattr(sunlight, "save_raw_snapshot", lambda *_args, **_kwargs: Path("/raw/ops.pdf"))
+
+    class Response:
+        status_code = 200
+        content = b"pdf"
+
+    monkeypatch.setattr(sunlight.requests, "get", lambda *_args, **_kwargs: Response())
+
+    df = sunlight.fetch_sunlightreit_fundamentals()
+    latest = df.loc[df["date"] == "2026-06-30"].iloc[0]
+
+    assert latest["period"] == "Quarter ended 30 June 2026"
+    assert latest["occupancy_pct"] == 94.2
+    assert latest["rental_reversion_pct"] == -3.1
+    assert pd.isna(latest["nav_per_unit_hkd"])
 
 
 # --- Dashboard artifact shape (synthetic data, no network) -----------------
@@ -217,6 +358,37 @@ def test_empty_source_frame_does_not_crash_and_yields_null_kpis():
     assert status["overall_status"] == "Degraded"
     # Structure must still be intact even with one dead source.
     assert len(artifact["manifest"]["cards"]) == 6
+
+
+def test_multi_reit_outputs_do_not_claim_link_as_their_only_source():
+    artifact, _ = dashboard_export.build_artifact(**_frames(), now=NOW)
+    charts = {chart["id"]: chart for chart in artifact["manifest"]["charts"]}
+    all_fundamental_sources = [source_id for *_prefix, source_id, _is_hotel in dashboard_export.REIT_META]
+    office_retail_sources = all_fundamental_sources[:-1]
+
+    for chart_id in ("nav_trend_chart", "dpu_trend_chart"):
+        assert charts[chart_id]["sourceId"] == "cross_source"
+        assert charts[chart_id]["sourceIds"] == all_fundamental_sources
+    for chart_id in ("occupancy_trend_chart", "reversion_trend_chart"):
+        assert charts[chart_id]["sourceId"] == "cross_source"
+        assert charts[chart_id]["sourceIds"] == office_retail_sources
+
+    comparison = next(table for table in artifact["manifest"]["tables"] if table["id"] == "reit_comparison_table")
+    assert comparison["sourceId"] == "cross_source"
+    assert comparison["sourceIds"] == all_fundamental_sources
+
+
+def test_price_history_failure_is_not_reported_as_a_fully_live_market_source():
+    frames = _frames()
+    frames["raw_hist"] = pd.DataFrame()
+
+    artifact, status = dashboard_export.build_artifact(**frames, now=NOW)
+    market_health = next(entry for entry in artifact["source_health"] if entry["source_id"] == "reit_price_akshare")
+
+    assert market_health["status"] == "partial"
+    assert market_health["freshness"] == "partial: history unavailable"
+    assert market_health["history_status"] == "empty"
+    assert status["overall_status"] == "Degraded"
 
 
 def test_reit_comparison_table_row_per_reit_with_business_type_split():

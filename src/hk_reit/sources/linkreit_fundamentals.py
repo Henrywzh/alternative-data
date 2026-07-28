@@ -168,13 +168,16 @@ def fetch_linkreit_fundamentals() -> pd.DataFrame:
     metrics: dict = {}
     dpu_by_year: dict[str, float] = {}
     raw_source_url = None
+    raw_snapshot = None
 
     try:
         pdf_url = _discover_five_year_pdf_url(headers)
         if pdf_url:
             pdf_resp = requests.get(pdf_url, headers=headers, timeout=30)
             if pdf_resp.status_code == 200:
-                save_raw_snapshot("linkreit_fundamentals_pdf", pdf_resp.content, file_ext="pdf", source_url=pdf_url)
+                raw_snapshot = save_raw_snapshot(
+                    "linkreit_fundamentals_pdf", pdf_resp.content, file_ext="pdf", source_url=pdf_url
+                )
                 metrics = _extract_five_year_metrics(pdf_resp.content)
                 raw_source_url = pdf_url
             else:
@@ -210,5 +213,8 @@ def fetch_linkreit_fundamentals() -> pd.DataFrame:
     df = pd.DataFrame(records)
     if df.empty or df[["nav_per_unit_hkd", "dpu_hkd", "occupancy_pct", "rental_reversion_pct"]].isna().all(axis=None):
         return _empty_df()
-    df.attrs.update(raw_snapshot=raw_source_url or "", source_url=raw_source_url or LINK_REIT_DISTRIBUTION_URL)
+    df.attrs.update(
+        raw_snapshot=str(raw_snapshot) if raw_snapshot else "",
+        source_url=raw_source_url or LINK_REIT_DISTRIBUTION_URL,
+    )
     return df

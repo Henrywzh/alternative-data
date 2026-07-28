@@ -8,6 +8,8 @@ from typing import Dict, Any
 from ..config import LANDREG_MONTHLY_JSON_BASE, LANDREG_MONTHLY_URL, LANDREG_PRESS_RELEASES_URL, DEFAULT_HEADERS
 from ..storage import save_raw_snapshot
 
+LANDREG_AGT_BASE = "https://www.landreg.gov.hk/json/monthly_agt"
+
 def fetch_landreg_monthly_sp() -> pd.DataFrame:
     """
     Fetch Land Registry monthly Sale and Purchase Agreement statistics.
@@ -68,16 +70,15 @@ def _month_date(item: dict) -> str | None:
         return None
 
 
-def _clean_t6_region(description: str) -> str | None:
-    """Clean a t6 region description into a plain district name.
+def _is_comparison_change(value: object) -> bool:
+    """Normalize the Land Registry's mixed boolean comparison flag."""
+    if isinstance(value, bool):
+        return value
+    return str(value).strip().lower() in {"true", "1", "yes", "y"}
 
-    Real t6 `Description` values look like "Number of Hong Kong transactions"
-    or, for the grand-total row, "Total Number of transactions" -- the naive
-    ``.replace(" transactions", "")`` alone left "Number of " on every row
-    (e.g. "Number of Hong Kong") and turned the grand total into a
-    district-looking "Total Number of". Strip both prefixes; map the total
-    row to an explicit, non-district sentinel instead.
-    """
+
+def _clean_t6_region(description: str) -> str | None:
+    """Clean a t6 region description into a plain district name."""
     cleaned = description.replace(" transactions", "").replace("Number of ", "").strip()
     if cleaned == "Total" or description.strip().lower().startswith("total number of"):
         return "All regions"
@@ -87,9 +88,9 @@ def _clean_t6_region(description: str) -> str | None:
 def fetch_landreg_monthly_statistics() -> tuple[pd.DataFrame, pd.DataFrame]:
     """Fetch the public monthly JSON tables behind Land Registry's page.
 
-    The site publishes the tables as first-party JSON under ``/json``.  This
-    is deliberately a light long-form parse: descriptions are kept verbatim so
-    the schema does not pretend to have a stable semantic taxonomy yet.
+    Fetches current monthly statistics (t1, t2, t3, t6) as well as the
+    official 30-year multi-year archive endpoints (monthly_agt/agt-1 through agt-5),
+    stitching a 350+ month historical time series (1996 to present).
     """
     page = requests.get(LANDREG_MONTHLY_URL, headers=DEFAULT_HEADERS, timeout=30)
     page.raise_for_status()
@@ -109,6 +110,8 @@ def fetch_landreg_monthly_statistics() -> tuple[pd.DataFrame, pd.DataFrame]:
         file_ext="json",
         source_url=LANDREG_MONTHLY_URL,
     )
+    raw_paths = [str(raw_path)]
+    source_urls = [LANDREG_MONTHLY_URL]
 
     facts: list[dict] = []
     for table_name in ("t1", "t2", "t6"):
@@ -119,6 +122,9 @@ def fetch_landreg_monthly_statistics() -> tuple[pd.DataFrame, pd.DataFrame]:
             description = item.get("Description")
             if not period or not description:
                 continue
+            is_comparison_change = _is_comparison_change(
+                item.get("Increase (+) or Decrease (-) as compared with")
+            )
             facts.append(
                 {
                     "source_record_id": f"{table_name}-{item_index}",
@@ -129,30 +135,78 @@ def fetch_landreg_monthly_statistics() -> tuple[pd.DataFrame, pd.DataFrame]:
                     "consideration_million": _number(item.get("Consideration (nearest $ million)")),
                     "region": _clean_t6_region(str(description)) if table_name == "t6" else None,
                     "source_agency": "Hong Kong Land Registry",
-                    "basis": "registration_receipt_month",
+                    "is_comparison_change": is_comparison_change,
+                    "comparison_type": "year_over_year_change" if is_comparison_change else "level",
+                    "basis": "year_over_year_change" if is_comparison_change else "registration_receipt_month",
                 }
             )
 
-    series: list[dict] = []
+    series_map: dict[str, dict] = {}
+
+    # 1. First ingest historical 30-year archives from /json/monthly_agt/ (1996-present)
+    for archive_dir in ("agt-1", "agt-2", "agt-3", "agt-4", "agt-5", "agt"):
+        try:
+            res = requests.get(f"{LANDREG_AGT_BASE}/{archive_dir}/t1.json", headers=DEFAULT_HEADERS, timeout=10)
+            if res.status_code == 200:
+                archive_data = res.json()
+                archive_url = f"{LANDREG_AGT_BASE}/{archive_dir}/t1.json"
+                archive_path = save_raw_snapshot(
+                    f"landreg_monthly_{archive_dir}",
+                    json.dumps(archive_data, ensure_ascii=False),
+                    file_ext="json",
+                    source_url=archive_url,
+                )
+                raw_paths.append(str(archive_path))
+                source_urls.append(archive_url)
+                if isinstance(archive_data, list):
+                    for item in archive_data:
+                        if not isinstance(item, dict):
+                            continue
+                        period = _month_date(item)
+                        if not period:
+                            continue
+                        all_asp = _number(item.get("Number of ASP for All Building Units"))
+                        res_asp = _number(item.get("Number of ASP for Residential Building Units"))
+                        series_map[period] = {
+                            "date": period,
+                            "all_building_units_asp": all_asp,
+                            "residential_units_asp": res_asp,
+                            "all_asp_12m_moving_average": None,
+                            "source_agency": "Hong Kong Land Registry",
+                            "basis": "registration_receipt_month",
+                        }
+        except Exception:
+            pass
+
+    # 2. Ingest current monthly t3.json (which contains recent 12-month moving average)
     for item in tables.get("t3", []):
         if not isinstance(item, dict):
             continue
         period = _month_date(item)
         if not period:
             continue
-        series.append(
-            {
+        all_asp = _number(item.get("Total Number of Urban & New Territories deeds received for registration (ASP Building Units)"))
+        res_asp = _number(item.get("Number of ASP for Residential Building Units"))
+        m_avg = _number(item.get("12-month moving average for all ASP"))
+
+        if period in series_map:
+            if all_asp is not None: series_map[period]["all_building_units_asp"] = all_asp
+            if res_asp is not None: series_map[period]["residential_units_asp"] = res_asp
+            if m_avg is not None: series_map[period]["all_asp_12m_moving_average"] = m_avg
+        else:
+            series_map[period] = {
                 "date": period,
-                "all_building_units_asp": _number(item.get("Total Number of Urban & New Territories deeds received for registration (ASP Building Units)")),
-                "residential_units_asp": _number(item.get("Number of ASP for Residential Building Units")),
-                "all_asp_12m_moving_average": _number(item.get("12-month moving average for all ASP")),
+                "all_building_units_asp": all_asp,
+                "residential_units_asp": res_asp,
+                "all_asp_12m_moving_average": m_avg,
                 "source_agency": "Hong Kong Land Registry",
                 "basis": "registration_receipt_month",
             }
-        )
+
+    series = sorted(series_map.values(), key=lambda r: r["date"])
 
     facts_df = pd.DataFrame(facts)
     series_df = pd.DataFrame(series)
     for frame in (facts_df, series_df):
-        frame.attrs.update(raw_snapshot=str(raw_path), source_url=LANDREG_MONTHLY_URL)
+        frame.attrs.update(raw_snapshot=json.dumps(raw_paths), source_url=json.dumps(source_urls))
     return facts_df, series_df
