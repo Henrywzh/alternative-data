@@ -5,7 +5,7 @@
     "surface": "dashboard",
     "title": "Hong Kong Local Consumer Monitor",
     "description": "A source-backed snapshot of cross-border passenger traffic, fresh-food wholesale prices, gold input costs, auto fuel pricing, and watchlist valuations for HK local-consumer names.",
-    "generatedAt": "2026-07-28T08:53:46.964346Z",
+    "generatedAt": "2026-07-28T17:55:41.246326Z",
     "cards": [
       {
         "id": "northbound_card",
@@ -1090,7 +1090,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**Data snapshot:** `448f31400bb13a74` · generated 2026-07-28T08:53:46.964346Z.  This is a published snapshot, not a live connection. Includes official Consumer Council auto fuel calculator pricing."
+        "body": "**Data snapshot:** `e57e40257c09c38c` · generated 2026-07-28T17:55:41.246326Z.  This is a published snapshot, not a live connection. Includes official Consumer Council auto fuel calculator pricing."
       },
       {
         "id": "market_pulse_1",
@@ -1255,7 +1255,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-28T08:53:46.964346Z",
+    "generatedAt": "2026-07-28T17:55:41.246326Z",
     "status": "ready",
     "datasets": {
       "kpi_weather": [
@@ -2866,6 +2866,41 @@
         },
         {
           "date": "2026-07-26",
+          "category": "Vegetables",
+          "category_short": "Veg",
+          "avg_price_hkd_per_kg": 7.74,
+          "commodities": 13
+        },
+        {
+          "date": "2026-07-27",
+          "category": "Eggs",
+          "category_short": "Eggs",
+          "avg_price_hkd_per_kg": 1.62,
+          "commodities": 2
+        },
+        {
+          "date": "2026-07-27",
+          "category": "Freshwater fish",
+          "category_short": "FW fish",
+          "avg_price_hkd_per_kg": 34.11,
+          "commodities": 3
+        },
+        {
+          "date": "2026-07-27",
+          "category": "Livestock / Poultry",
+          "category_short": "Meat/Poultry",
+          "avg_price_hkd_per_kg": 47.32,
+          "commodities": 3
+        },
+        {
+          "date": "2026-07-27",
+          "category": "Marine fish",
+          "category_short": "Marine",
+          "avg_price_hkd_per_kg": 92.88,
+          "commodities": 10
+        },
+        {
+          "date": "2026-07-27",
           "category": "Vegetables",
           "category_short": "Veg",
           "avg_price_hkd_per_kg": 7.74,
@@ -5428,10 +5463,10 @@
       "consumer_council_oilprice": [
         {
           "date": "2026-07-28",
-          "company": "Esso",
+          "company": "Caltex",
           "fuel_type": "Standard Petrol",
-          "discounted_price_hkd": 22.67,
-          "walkin_discount_hkd": 10.0,
+          "discounted_price_hkd": 22.47,
+          "walkin_discount_hkd": 10.2,
           "data_source": "live"
         },
         {
@@ -5460,18 +5495,18 @@
         },
         {
           "date": "2026-07-28",
-          "company": "Caltex",
+          "company": "Esso",
           "fuel_type": "Standard Petrol",
-          "discounted_price_hkd": 31.77,
-          "walkin_discount_hkd": 0.9,
+          "discounted_price_hkd": 31.07,
+          "walkin_discount_hkd": 1.6,
           "data_source": "live"
         },
         {
           "date": "2026-07-28",
-          "company": "Esso",
+          "company": "Caltex",
           "fuel_type": "Premium Petrol",
-          "discounted_price_hkd": 23.47,
-          "walkin_discount_hkd": 11.0,
+          "discounted_price_hkd": 22.47,
+          "walkin_discount_hkd": 12.0,
           "data_source": "live"
         },
         {
@@ -5486,7 +5521,7 @@
           "date": "2026-07-28",
           "company": "Shell",
           "fuel_type": "Premium Petrol",
-          "discounted_price_hkd": 27.47,
+          "discounted_price_hkd": 25.67,
           "walkin_discount_hkd": 7.0,
           "data_source": "live"
         },
@@ -5494,16 +5529,16 @@
           "date": "2026-07-28",
           "company": "Sinopec",
           "fuel_type": "Premium Petrol",
-          "discounted_price_hkd": 23.61,
-          "walkin_discount_hkd": 10.86,
+          "discounted_price_hkd": 24.07,
+          "walkin_discount_hkd": 10.4,
           "data_source": "live"
         },
         {
           "date": "2026-07-28",
-          "company": "Caltex",
+          "company": "Esso",
           "fuel_type": "Premium Petrol",
-          "discounted_price_hkd": 33.57,
-          "walkin_discount_hkd": 0.9,
+          "discounted_price_hkd": 32.87,
+          "walkin_discount_hkd": 1.6,
           "data_source": "live"
         }
       ],
@@ -6919,7 +6954,7 @@
         "url": "https://oil-price.consumer.org.hk/en",
         "language": "JSON",
         "description": "Daily auto-fuel pump prices, walk-in discounts, and net prices across Caltex, PetroChina, Shell, Sinopec, and Esso.",
-        "executed_at": "2026-07-28T08:53:46.964346Z"
+        "executed_at": "2026-07-28T17:55:41.246326Z"
       }
     },
     {
@@ -6931,7 +6966,7 @@
         "url": "https://www.consumer.org.hk/node/32290/export-complaints/json?lang=en",
         "language": "JSON",
         "description": "Annual consumer complaints by category across Hong Kong consumer sectors.",
-        "executed_at": "2026-07-28T08:53:46.964346Z"
+        "executed_at": "2026-07-28T17:55:41.246326Z"
       }
     },
     {
@@ -6946,7 +6981,7 @@
         "metric_definitions": [
           "Each commodity's price is the mean of same-day readings across the wholesale markets/sources AFCD reports for it."
         ],
-        "executed_at": "2026-07-28T08:53:46.964346Z"
+        "executed_at": "2026-07-28T17:55:41.246326Z"
       }
     },
     {
@@ -6962,7 +6997,7 @@
           "Latest is the most recent published PM benchmark fixing.",
           "Day and year movements are latest divided by the prior trading day or the observation on/before one year earlier, minus one."
         ],
-        "executed_at": "2026-07-28T08:53:46.964346Z"
+        "executed_at": "2026-07-28T17:55:41.246326Z"
       }
     },
     {
@@ -6978,7 +7013,7 @@
           "PE (TTM), PB, and market cap (HKD bn) are each ticker's latest published daily value.",
           "No dividend-yield indicator exists on this endpoint; yield is not reported here."
         ],
-        "executed_at": "2026-07-28T08:53:46.964346Z"
+        "executed_at": "2026-07-28T17:55:41.246326Z"
       }
     },
     {
@@ -6994,7 +7029,7 @@
           "All retail outlet is the classification group's own published total across all outlet types.",
           "Month and year movements are latest divided by the prior month or the observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-07-28T08:53:46.964346Z"
+        "executed_at": "2026-07-28T17:55:41.246326Z"
       }
     },
     {
@@ -7010,7 +7045,7 @@
           "Purchases are only published sector-wide, not broken out by restaurant type.",
           "Quarter and year movements are latest divided by the prior quarter or the observation four quarters earlier, minus one."
         ],
-        "executed_at": "2026-07-28T08:53:46.964346Z"
+        "executed_at": "2026-07-28T17:55:41.246326Z"
       }
     },
     {
@@ -7027,7 +7062,7 @@
           "Southbound (南下) flow is daily Mainland visitor arrivals across all 17 control points, since Mainland visitors legitimately arrive by air, rail, and sea, not just by land.",
           "7-day moving averages (7d MA) smooth out day-of-week seasonality (weekend shopping spikes)."
         ],
-        "executed_at": "2026-07-28T08:53:46.964346Z"
+        "executed_at": "2026-07-28T17:55:41.246326Z"
       }
     },
     {
@@ -7044,7 +7079,7 @@
           "Red/Black Rainstorm hours measures total duration under Red or Black rainstorm warnings.",
           "RMB per 100 HKD is derived from FRED daily DEXCHUS and DEXHKUS rates."
         ],
-        "executed_at": "2026-07-28T08:53:46.964346Z"
+        "executed_at": "2026-07-28T17:55:41.246326Z"
       }
     },
     {
@@ -7059,7 +7094,7 @@
           "Total stores is each company's own latest snapshot count (not a cross-company-comparable unit -- a POP MART Roboshop and a Chow Tai Fook boutique are both counted as one location).",
           "This is a footprint snapshot, not a trend: most companies only have 1-2 dated snapshots so far, so month-over-month change is not yet meaningful."
         ],
-        "executed_at": "2026-07-28T08:53:46.964346Z"
+        "executed_at": "2026-07-28T17:55:41.246326Z"
       }
     },
     {
@@ -7073,13 +7108,13 @@
           "Validated live measure frames",
           "Declared future-source registry"
         ],
-        "executed_at": "2026-07-28T08:53:46.964346Z"
+        "executed_at": "2026-07-28T17:55:41.246326Z"
       }
     }
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-local-consumer/",
-    "snapshotId": "448f31400bb13a74",
+    "snapshotId": "e57e40257c09c38c",
     "dataAsOf": "2026-07-26"
   }
 }

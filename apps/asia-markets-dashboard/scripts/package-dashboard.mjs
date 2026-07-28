@@ -758,12 +758,12 @@ const HK_REIT_ZH = {
   title: "香港房地产信托（REITs）基本面监测",
   description: "领展（Link REIT）、冠君（Champion REIT）、置富（Fortune REIT）、繁荣（Prosperity REIT）、阳光（Sunlight REIT）及富豪（Regal REIT）的每单位资产净值（NAV）、每基金单位分派（DPU）、出租率、租金检讨调升率及酒店 KPI 快照。",
   cards: {
-    linkreit_card: { description: "领展房产基金（0823.HK）最新每单位资产净值、DPU 及出租率/租金检讨调升率披露。", metricLabels: ["领展房产基金 — 每单位资产净值 (港元)", "每基金单位分派 (港元)", "出租率 (%)", "租金检讨调升率 (%)"] },
-    championreit_card: { description: "冠君产业信托（2778.HK）最新每单位资产净值、DPU 及出租率/租金检讨调升率披露。", metricLabels: ["冠君产业信托 — 每单位资产净值 (港元)", "每基金单位分派 (港元)", "出租率 (%)", "租金检讨调升率 (%)"] },
-    fortunereit_card: { description: "置富产业信托（0778.HK）最新每单位资产净值、DPU 及出租率/租金检讨调升率披露。", metricLabels: ["置富产业信托 — 每单位资产净值 (港元)", "每基金单位分派 (港元)", "出租率 (%)", "租金检讨调升率 (%)"] },
-    prosperityreit_card: { description: "繁荣产业信托（0808.HK）最新每单位资产净值、DPU 及出租率/租金检讨调升率披露。", metricLabels: ["繁荣产业信托 — 每单位资产净值 (港元)", "每基金单位分派 (港元)", "出租率 (%)", "租金检讨调升率 (%)"] },
-    sunlightreit_card: { description: "阳光房地产基金（0435.HK）最新每单位资产净值、DPU 及出租率/租金检讨调升率披露。", metricLabels: ["阳光房地产基金 — 每单位资产净值 (港元)", "每基金单位分派 (港元)", "出租率 (%)", "租金检讨调升率 (%)"] },
-    regalreit_card: { description: "富豪产业信托（1881.HK）最新每单位资产净值、DPU 及酒店 KPI 披露。", metricLabels: ["富豪产业信托 — 每单位资产净值 (港元)", "每基金单位分派 (港元)", "酒店出租率 (%)", "RevPAR (港元)"] },
+    linkreit_card: { description: "领展房产基金（0823.HK）最新每单位资产净值、DPU 及出租率/租金检讨调升率披露。", metricLabels: ["领展 NAV (港元)", "每基金单位分派 (港元)", "出租率 (%)", "租金检讨调升率 (%)"] },
+    championreit_card: { description: "冠君产业信托（2778.HK）最新每单位资产净值、DPU 及出租率/租金检讨调升率披露。", metricLabels: ["冠君 NAV (港元)", "每基金单位分派 (港元)", "出租率 (%)", "租金检讨调升率 (%)"] },
+    fortunereit_card: { description: "置富产业信托（0778.HK）最新每单位资产净值、DPU 及出租率/租金检讨调升率披露。", metricLabels: ["置富 NAV (港元)", "每基金单位分派 (港元)", "出租率 (%)", "租金检讨调升率 (%)"] },
+    prosperityreit_card: { description: "繁荣产业信托（0808.HK）最新每单位资产净值、DPU 及出租率/租金检讨调升率披露。", metricLabels: ["繁荣 NAV (港元)", "每基金单位分派 (港元)", "出租率 (%)", "租金检讨调升率 (%)"] },
+    sunlightreit_card: { description: "阳光房地产基金（0435.HK）最新每单位资产净值、DPU 及出租率/租金检讨调升率披露。", metricLabels: ["阳光 NAV (港元)", "每基金单位分派 (港元)", "出租率 (%)", "租金检讨调升率 (%)"] },
+    regalreit_card: { description: "富豪产业信托（1881.HK）最新每单位资产净值、DPU 及酒店 KPI 披露。", metricLabels: ["富豪 NAV (港元)", "每基金单位分派 (港元)", "酒店出租率 (%)", "RevPAR (港元)"] },
   },
   charts: {
     nav_trend_chart: ["各 REIT 每单位资产净值相对走势（首期 = 100）", "全部六家 REIT（按股票代码）各自每单位资产净值的相对变动，以各自首期观测值重新定为 100——各 REIT 每单位资产净值绝对水平不同（见上方卡片及下方对比表），不宜在同一坐标轴上直接比较原始港元数值。", "期间", "重新定基（首期 = 100）", "股票代码"],
@@ -775,19 +775,20 @@ const HK_REIT_ZH = {
   tables: {
     reit_comparison_table: {
       title: "香港 REIT 基本面对比",
-      subtitle: "全部六家 REIT 最新每单位资产净值及 DPU；出租率跨业务类型统一列示（富豪产业信托为酒店出租率）；租金检讨调升率及酒店房价指标在不适用的 REIT 上为空。",
+      subtitle: "全部六家 REIT 最新每单位资产净值及 DPU；出租率跨业务类型统一列示（富豪产业信托为酒店出租率）。",
       columns: {
         reit_name: "REIT 名称",
         ticker: "股票代码",
-        business_type: "业务类型",
         nav_per_unit_hkd: "每单位资产净值 (港元)",
         dpu_hkd: "每基金单位分派 (港元)",
         occupancy_pct: "出租率 (%)",
-        rental_reversion_pct: "租金检讨调升率 (%)",
-        average_daily_rate_hkd: "平均房价 ADR (港元)",
-        revpar_hkd: "RevPAR (港元)",
         as_of_date: "截至日期",
       },
+    },
+    reit_spot_summary_table: {
+      title: "香港 REITs 市场现货报价",
+      subtitle: "每日现货报价、涨跌幅 % 及成交额 (百万港元)。",
+      columns: { company_name: "REIT 名称", ticker: "股票代码", latest_price_hkd: "现价 (港元)", change_pct: "涨跌幅 (%)", turnover_hkd_m: "成交额 (百万)" },
     },
   },
   sources: {
@@ -994,7 +995,7 @@ const HK_COMMERCIAL_AEROSPACE_ZH = {
 
 const HK_STABLECOIN_CRYPTO_ZH = {
   title: "香港稳定币与加密资产基础设施监测",
-  description: "金管局持牌稳定币发行人沙盒名单、证监会持牌 VATP 虚拟资产交易平台、港交所加密 ETF 规模、稳定币市值及市场领先指标。",
+  description: "金管局持牌稳定币发行人沙盒名单、证监会持牌 VATP 虚拟资产交易平台、港交所加密 ETF 规模时间序列、全球稳定币市值趋势及 90 天市场走势。",
   cards: {
     regulatory_licensing_card: { description: "金管局稳定币沙盒持牌发行人及证监会持牌交易平台。", metricLabels: ["金管局稳定币发行人", "SFC 持牌 VATP", "SFC 申请中 VATP"] },
     crypto_signals_card: { description: "比特币现货价格、Coinbase 溢价价差及市场情绪指数。", metricLabels: ["比特币价格 (美元)", "Coinbase 溢价 (bps)", "恐慌与贪婪指数"] },
@@ -1002,8 +1003,9 @@ const HK_STABLECOIN_CRYPTO_ZH = {
   },
   charts: {
     etf_aum_history_chart: ["港交所加密现货 ETF 月度 AUM (百万美元)", "香港上市比特币及以太币现货 ETF 基金规模历史。", "月份", "AUM (百万美元)", "代码"],
-    stablecoin_supply_chart: ["全球前十大稳定币流通供应量 (十亿美元)", "DefiLlama 按锚定市值统计的流通供应量。", "稳定币", "供应量 (十亿美元)"],
-    polymarket_catalysts_chart: ["全球加密监管催化剂预测概率 (%)", "预测市场对关键监管里程碑的实时概率预测。", "催化事件", "概率 (%)"],
+    stablecoin_history_chart: ["全球稳定币总流通供应量趋势 (十亿美元)", "DefiLlama 统计的全球锚定资产流通市值扩张/收缩历史时间序列。", "日期", "总供应量 (十亿美元)"],
+    fear_greed_history_chart: ["90 天加密情绪指数走势 (0–100)", "Alternative.me 每日恐慌与贪婪指数时间序列 (0=极度恐慌, 100=极度贪婪)。", "日期", "情绪得分"],
+    btc_price_history_chart: ["90 天比特币现货价格走势 (美元)", "Binance 每日比特币收盘价时间序列。", "日期", "BTC 价格 (美元)"],
   },
   tables: {
     hkma_issuers_table: {
@@ -1016,10 +1018,20 @@ const HK_STABLECOIN_CRYPTO_ZH = {
       subtitle: "涵盖持牌、申请中及已撤回的交易所平台。",
       columns: { platform_name: "平台 / 运营商名称", status: "状态", licensed_date: "牌照 / 申请日期" },
     },
+    top_stablecoins_table: {
+      title: "全球前十大稳定币流通供应量明细",
+      subtitle: "DefiLlama 按锚定市值及全球份额统计的前十大稳定币。",
+      columns: { name: "稳定币名称", symbol: "代码", circulating_usd_bn: "供应量 (十亿美元)", market_share_pct: "全球份额 (%)" },
+    },
     hkex_etf_table: {
       title: "港交所加密现货 ETF 基金规模摘要",
       subtitle: "各基金最新月度 AUM（嘉实以太币 3179.HK 待查找 fundId）。",
       columns: { ticker: "股票代码", name: "ETF 名称", fund_id: "港交所 Fund ID", latest_month: "最新月份", aum_usd_m: "AUM (百万美元)" },
+    },
+    polymarket_table: {
+      title: "全球加密监管催化剂预测概率",
+      subtitle: "Polymarket 预测市场对关键监管里程碑的实时概率预测。",
+      columns: { title: "催化事件", probability_pct: "概率 (%)", end_date: "目标日期" },
     },
     crypto_watchlist_table: {
       title: "香港上市加密与稳定币观察名单 (Tiers 1–4)",
@@ -1039,7 +1051,7 @@ const HK_STABLECOIN_CRYPTO_ZH = {
   snapshotBody: (artifact) =>
     `**数据快照：** \`${artifact.package_info.snapshotId}\` · 生成于 ${artifact.manifest.generatedAt}。`,
   methodologyBody:
-    "## 如何阅读本 dashboard\n\n香港加密生态由官方监管登记册锚定：金管局稳定币发行人沙盒（Anchorpoint FRS01、汇丰 FRS02）及证监会持牌 VATP 交易平台（OSL、HashKey）。券商（如国泰君安国际 01788.HK）仅具备虚拟资产交易服务许可，非 VATP 交易所运营商；Anchorpoint（Anchorpoint Financial，港元锚定 HKDAP）与 AnchorX（金涌投资 01328.HK，AxCNH）为不同主体。本 dashboard 跟踪监管登记册、港交所 ETF AUM 及 Coinbase 溢价信号。本界面不提供投资建议。",
+    "## 如何阅读本 dashboard\n\n香港加密生态由官方监管登记册锚定：金管局稳定币发行人沙盒（Anchorpoint FRS01、汇丰 FRS02）及证监会持牌 VATP 交易平台（OSL、HashKey）。券商（如国泰君安国际 01788.HK）仅具备虚拟资产交易服务许可，非 VATP 交易所运营商；Anchorpoint（Anchorpoint Financial，港元锚定 HKDAP）与 AnchorX（金涌投资 01328.HK，AxCNH）为不同主体。本 dashboard 跟踪监管登记册、港交所 ETF AUM 时间序列、全球稳定币供应走势、90 天情绪及价格走势与 Coinbase 溢价信号。本界面不提供投资建议。",
 };
 
 // Identity and status-file wiring come from ../sectors.json; only the

@@ -4,10 +4,10 @@
     "version": 1,
     "surface": "dashboard",
     "title": "香港稳定币与加密资产基础设施监测",
-    "description": "金管局持牌稳定币发行人沙盒名单、证监会持牌 VATP 虚拟资产交易平台、港交所加密 ETF 规模、稳定币市值及市场领先指标。",
+    "description": "金管局持牌稳定币发行人沙盒名单、证监会持牌 VATP 虚拟资产交易平台、港交所加密 ETF 规模时间序列、全球稳定币市值趋势及 90 天市场走势。",
     "sector": "hk-stablecoin-crypto",
-    "generatedAt": "2026-07-27T23:18:05.053485Z",
-    "dataAsOf": "2026-07-27",
+    "generatedAt": "2026-07-28T17:54:06.472037Z",
+    "dataAsOf": "2026-07-28",
     "liveSourcesCount": 6,
     "totalSourcesCount": 7,
     "cards": [
@@ -106,8 +106,8 @@
       },
       {
         "id": "stablecoin_supply_chart",
-        "title": "全球前十大稳定币流通供应量 (十亿美元)",
-        "subtitle": "DefiLlama 按锚定市值统计的流通供应量。",
+        "title": "Top Global Stablecoins Circulating Supply ($B USD)",
+        "subtitle": "Circulating supply by pegged market cap (USDT, USDC, etc.) via DefiLlama.",
         "type": "bar",
         "dataset": "stablecoin_supplies",
         "sourceId": "defillama",
@@ -115,12 +115,12 @@
           "x": {
             "field": "symbol",
             "type": "nominal",
-            "label": "稳定币"
+            "label": "Stablecoin"
           },
           "y": {
             "field": "circulating_usd_bn",
             "type": "quantitative",
-            "label": "供应量 (十亿美元)"
+            "label": "Supply ($B USD)"
           }
         },
         "valueFormat": "number",
@@ -128,8 +128,8 @@
       },
       {
         "id": "polymarket_catalysts_chart",
-        "title": "全球加密监管催化剂预测概率 (%)",
-        "subtitle": "预测市场对关键监管里程碑的实时概率预测。",
+        "title": "Global Crypto Regulatory Catalyst Probabilities (%)",
+        "subtitle": "Real-time prediction market probability for key regulatory milestones.",
         "type": "bar",
         "dataset": "polymarket_catalysts",
         "sourceId": "polymarket",
@@ -137,12 +137,12 @@
           "x": {
             "field": "title",
             "type": "nominal",
-            "label": "催化事件"
+            "label": "Catalyst Event"
           },
           "y": {
             "field": "probability_pct",
             "type": "quantitative",
-            "label": "概率 (%)"
+            "label": "Probability (%)"
           }
         },
         "valueFormat": "number",
@@ -377,7 +377,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**数据快照：** `1fd99643cce2a6e5` · 生成于 2026-07-27T23:18:05.053485Z。"
+        "body": "**数据快照：** `d813c385cdd4dc6a` · 生成于 2026-07-28T17:54:06.472037Z。"
       },
       {
         "id": "kpi_grid",
@@ -428,13 +428,13 @@
       {
         "id": "methodology",
         "type": "markdown",
-        "body": "## 如何阅读本 dashboard\n\n香港加密生态由官方监管登记册锚定：金管局稳定币发行人沙盒（Anchorpoint FRS01、汇丰 FRS02）及证监会持牌 VATP 交易平台（OSL、HashKey）。券商（如国泰君安国际 01788.HK）仅具备虚拟资产交易服务许可，非 VATP 交易所运营商；Anchorpoint（Anchorpoint Financial，港元锚定 HKDAP）与 AnchorX（金涌投资 01328.HK，AxCNH）为不同主体。本 dashboard 跟踪监管登记册、港交所 ETF AUM 及 Coinbase 溢价信号。本界面不提供投资建议。"
+        "body": "## 如何阅读本 dashboard\n\n香港加密生态由官方监管登记册锚定：金管局稳定币发行人沙盒（Anchorpoint FRS01、汇丰 FRS02）及证监会持牌 VATP 交易平台（OSL、HashKey）。券商（如国泰君安国际 01788.HK）仅具备虚拟资产交易服务许可，非 VATP 交易所运营商；Anchorpoint（Anchorpoint Financial，港元锚定 HKDAP）与 AnchorX（金涌投资 01328.HK，AxCNH）为不同主体。本 dashboard 跟踪监管登记册、港交所 ETF AUM 时间序列、全球稳定币供应走势、90 天情绪及价格走势与 Coinbase 溢价信号。本界面不提供投资建议。"
       }
     ]
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-27T23:18:05.053485Z",
+    "generatedAt": "2026-07-28T17:54:06.472037Z",
     "status": "ready",
     "datasets": {
       "hkma_issuers": [
@@ -637,14 +637,14 @@
         {
           "name": "Tether",
           "symbol": "USDT",
-          "circulating_usd_bn": 183.92,
-          "market_share_pct": 59.52
+          "circulating_usd_bn": 183.84,
+          "market_share_pct": 59.6
         },
         {
           "name": "USD Coin",
           "symbol": "USDC",
-          "circulating_usd_bn": 73.47,
-          "market_share_pct": 23.77
+          "circulating_usd_bn": 72.56,
+          "market_share_pct": 23.53
         },
         {
           "name": "Sky Dollar",
@@ -656,25 +656,25 @@
           "name": "Dai",
           "symbol": "DAI",
           "circulating_usd_bn": 4.8,
-          "market_share_pct": 1.55
+          "market_share_pct": 1.56
         },
         {
           "name": "World Liberty Financial USD",
           "symbol": "USD1",
-          "circulating_usd_bn": 4.12,
+          "circulating_usd_bn": 4.1,
           "market_share_pct": 1.33
         },
         {
           "name": "Ethena USDe",
           "symbol": "USDe",
-          "circulating_usd_bn": 3.94,
-          "market_share_pct": 1.28
+          "circulating_usd_bn": 3.88,
+          "market_share_pct": 1.26
         },
         {
           "name": "Global Dollar",
           "symbol": "USDG",
-          "circulating_usd_bn": 3.26,
-          "market_share_pct": 1.05
+          "circulating_usd_bn": 3.27,
+          "market_share_pct": 1.06
         },
         {
           "name": "Circle USYC",
@@ -685,8 +685,8 @@
         {
           "name": "PayPal USD",
           "symbol": "PYUSD",
-          "circulating_usd_bn": 2.66,
-          "market_share_pct": 0.86
+          "circulating_usd_bn": 2.69,
+          "market_share_pct": 0.87
         },
         {
           "name": "BlackRock USD",
@@ -1216,9 +1216,9 @@
           "end_date": "2026-06-06"
         },
         {
-          "title": "What will Trump say during No Tax on Tips Roundtable? ",
+          "title": "Bitcoin ETF approved by Jan 15?",
           "probability_pct": 100,
-          "end_date": "2026-04-16"
+          "end_date": "2024-01-15"
         },
         {
           "title": "Counter-Strike: Just Players vs Inner Circle Academy (BO3...",
@@ -1226,19 +1226,14 @@
           "end_date": "2026-07-27"
         },
         {
-          "title": "U.S. enacts stablecoin bill in 2025?",
+          "title": "What will Coinbase say during their next earnings call?",
           "probability_pct": 100,
-          "end_date": "2025-12-31"
+          "end_date": "2025-10-29"
         },
         {
-          "title": "Bitcoin ETF Flows on March 12?",
+          "title": "What will Trump say during No Tax on Tips Roundtable? ",
           "probability_pct": 100,
-          "end_date": "2026-03-12"
-        },
-        {
-          "title": "Bitcoin ETF approved by Jan 15?",
-          "probability_pct": 100,
-          "end_date": "2024-01-15"
+          "end_date": "2026-04-16"
         },
         {
           "title": "Bitcoin ETF Flows on October 23?",
@@ -1246,9 +1241,14 @@
           "end_date": "2025-10-23"
         },
         {
-          "title": "What will Coinbase say during their next earnings call?",
+          "title": "Counter-Strike: Legacy vs Inner Circle Esports (BO3) - PG...",
           "probability_pct": 100,
-          "end_date": "2025-10-29"
+          "end_date": "2026-04-05"
+        },
+        {
+          "title": "Bitcoin ETF Flows on March 12?",
+          "probability_pct": 100,
+          "end_date": "2026-03-12"
         }
       ],
       "crypto_watchlist": [
@@ -1412,11 +1412,11 @@
           "hkma_count": 2,
           "sfc_licensed_count": 13,
           "sfc_pending_count": 6,
-          "total_supply_bn": 309.01,
+          "total_supply_bn": 308.44,
           "total_etf_aum_m": 338.18,
-          "btc_price": 63766.16,
-          "cb_premium_bps": -8.44,
-          "fear_greed_val": 30,
+          "btc_price": 63576.01,
+          "cb_premium_bps": -11,
+          "fear_greed_val": 29,
           "fear_greed_class": "Fear"
         }
       ]
@@ -1521,7 +1521,7 @@
       "label": "HKMA Licensed Stablecoin Issuers Register",
       "status": "success",
       "records": 2,
-      "latest_observation": "2026-07-27",
+      "latest_observation": "2026-07-28",
       "freshness": "live",
       "notes": "Official ground-truth sandbox register of licensed stablecoin issuers (Anchorpoint FRS01, HSBC FRS02)."
     },
@@ -1530,7 +1530,7 @@
       "label": "SFC Virtual Asset Trading Platforms Register",
       "status": "success",
       "records": 36,
-      "latest_observation": "2026-07-27",
+      "latest_observation": "2026-07-28",
       "freshness": "live",
       "notes": "Official 4-status SFC register of VATP exchange operators (licensed, pending, withdrawn, forced-closure)."
     },
@@ -1539,7 +1539,7 @@
       "label": "DefiLlama Stablecoin Market Cap API",
       "status": "success",
       "records": 10,
-      "latest_observation": "2026-07-27",
+      "latest_observation": "2026-07-28",
       "freshness": "live",
       "notes": "Global stablecoin circulating supply tracking, with AxCNH and HKDAP appearance monitoring."
     },
@@ -1548,7 +1548,7 @@
       "label": "HKEX Integrated Fund Platform ETF AUM API",
       "status": "success",
       "records": 5,
-      "latest_observation": "2026-07-27",
+      "latest_observation": "2026-07-28",
       "freshness": "live",
       "notes": "Monthly AUM history for Hong Kong spot Bitcoin and Ether ETFs."
     },
@@ -1557,7 +1557,7 @@
       "label": "Coinbase & Binance Public Tickers",
       "status": "success",
       "records": 1,
-      "latest_observation": "2026-07-27",
+      "latest_observation": "2026-07-28",
       "freshness": "live",
       "notes": "Real-time BTC spot prices and Coinbase Premium spread (bps)."
     },
@@ -1566,7 +1566,7 @@
       "label": "Crypto Fear & Greed Index",
       "status": "success",
       "records": 1,
-      "latest_observation": "2026-07-27",
+      "latest_observation": "2026-07-28",
       "freshness": "live",
       "notes": "Daily market sentiment score (0-100) and classification."
     },
@@ -1575,7 +1575,7 @@
       "label": "Polymarket Gamma Search API",
       "status": "success",
       "records": 8,
-      "latest_observation": "2026-07-27",
+      "latest_observation": "2026-07-28",
       "freshness": "live",
       "notes": "Prediction market probabilities for global crypto regulatory catalysts."
     }
@@ -1584,8 +1584,8 @@
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-stablecoin-crypto/",
     "sector_id": "hk-stablecoin-crypto",
     "sector_name": "Hong Kong Stablecoin & Crypto Infrastructure Monitor",
-    "snapshotId": "1fd99643cce2a6e5",
-    "generatedAt": "2026-07-27T23:18:05.053485Z",
-    "dataAsOf": "2026-07-27"
+    "snapshotId": "d813c385cdd4dc6a",
+    "generatedAt": "2026-07-28T17:54:06.472037Z",
+    "dataAsOf": "2026-07-28"
   }
 }

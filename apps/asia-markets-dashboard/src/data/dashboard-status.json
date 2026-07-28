@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-07-27T22:51:19.544488Z",
-  "snapshot_id": "0b2eae92a292ae22",
+  "generated_at": "2026-07-28T17:54:13.107542Z",
+  "snapshot_id": "d33cdfa826fc6345",
   "data_as_of": "2026-07-27",
   "overall_status": "Healthy",
   "live_sources": 5,
@@ -14,7 +14,7 @@
       "status": "Healthy",
       "latest_observation": "2026-07-19",
       "records": 1699,
-      "freshness": "8d old",
+      "freshness": "9d old",
       "notes": "Latest observation is published without a provisional flag."
     },
     {
@@ -24,7 +24,7 @@
       "status": "Healthy",
       "latest_observation": "2026-07-27",
       "records": 542,
-      "freshness": "0d old",
+      "freshness": "1d old",
       "notes": "Latest observation is published without a provisional flag."
     },
     {
@@ -34,7 +34,7 @@
       "status": "Healthy",
       "latest_observation": "2026-07-27",
       "records": 444,
-      "freshness": "0d old",
+      "freshness": "1d old",
       "notes": "Latest observation is published without a provisional flag."
     },
     {
@@ -44,7 +44,7 @@
       "status": "Healthy",
       "latest_observation": "2026-05-01",
       "records": 401,
-      "freshness": "87d old",
+      "freshness": "88d old",
       "notes": "Latest observation is provisional."
     },
     {
@@ -54,7 +54,7 @@
       "status": "Healthy",
       "latest_observation": "2026-05-01",
       "records": 401,
-      "freshness": "87d old",
+      "freshness": "88d old",
       "notes": "Latest observation is provisional."
     },
     {
@@ -108,5 +108,5 @@
       "notes": "Current discovery code does not yet extract sales, units, price lists, or absorption facts."
     }
   ],
-  "attachment_filename": "hk-real-estate-dashboard-2026-07-27.html"
+  "attachment_filename": "hk-real-estate-dashboard-2026-07-28.html"
 }

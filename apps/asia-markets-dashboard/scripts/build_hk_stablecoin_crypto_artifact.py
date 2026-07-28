@@ -21,8 +21,15 @@ from src.hk_stablecoin_crypto.config import (
     WATCHLIST,
     HKEX_ETF_FUNDS,
 )
-from src.hk_stablecoin_crypto.sources.crypto_tickers import fetch_all_crypto_signals
-from src.hk_stablecoin_crypto.sources.defillama_stablecoins import fetch_stablecoin_supply
+from src.hk_stablecoin_crypto.sources.crypto_tickers import (
+    fetch_all_crypto_signals,
+    fetch_btc_price_history,
+    fetch_fear_greed_history,
+)
+from src.hk_stablecoin_crypto.sources.defillama_stablecoins import (
+    fetch_stablecoin_history,
+    fetch_stablecoin_supply,
+)
 from src.hk_stablecoin_crypto.sources.hkex_etf_aum import fetch_all_etf_aum
 from src.hk_stablecoin_crypto.sources.hkma_register import fetch_licensed_issuers
 from src.hk_stablecoin_crypto.sources.polymarket_events import fetch_all_polymarket_catalysts
@@ -65,7 +72,7 @@ PUBLIC_SOURCES = {
             "url": "https://stablecoins.llama.fi/stablecoins?includePrices=true",
             "language": "JSON",
             "sql": "SELECT name, symbol, circulating_usd FROM defillama_stablecoins;",
-            "description": "Global stablecoin circulating supply tracking, with AxCNH and HKDAP appearance monitoring.",
+            "description": "Global stablecoin circulating supply tracking and historical market cap time series.",
         },
     },
     "hkex_etf": {
@@ -91,7 +98,7 @@ PUBLIC_SOURCES = {
             "url": "https://api.exchange.coinbase.com/products/BTC-USD/ticker",
             "language": "JSON",
             "sql": "SELECT price_usd, volume_24h, premium_bps FROM crypto_tickers;",
-            "description": "Real-time BTC spot prices and Coinbase Premium spread (bps).",
+            "description": "Real-time BTC spot prices, 90-day daily price time series, and Coinbase Premium spread (bps).",
         },
     },
     "fear_greed": {
@@ -104,7 +111,7 @@ PUBLIC_SOURCES = {
             "url": "https://api.alternative.me/fng/",
             "language": "JSON",
             "sql": "SELECT value, classification FROM fear_greed_index;",
-            "description": "Daily market sentiment score (0-100) and classification.",
+            "description": "Daily market sentiment score (0-100) and 90-day historical time series.",
         },
     },
     "polymarket": {
@@ -171,8 +178,9 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
     except Exception as e:
         print(f"Warning: SFC fetch failed - {e}")
 
-    # 3. DefiLlama Stablecoin Supplies
+    # 3. DefiLlama Stablecoin Supplies & History
     stablecoin_rows = []
+    stablecoin_history_rows = []
     total_supply_bn = 0.0
     try:
         supply_df = fetch_stablecoin_supply()
@@ -191,6 +199,14 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
                     "symbol": row["symbol"],
                     "circulating_usd_bn": circ_bn,
                     "market_share_pct": share_pct,
+                })
+                
+        hist_df = fetch_stablecoin_history()
+        if not hist_df.empty:
+            for _, row in hist_df.iterrows():
+                stablecoin_history_rows.append({
+                    "date": row["date"],
+                    "circulating_usd_bn": float(row["circulating_usd_bn"]),
                 })
     except Exception as e:
         print(f"Warning: DefiLlama fetch failed - {e}")
@@ -233,11 +249,13 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
     except Exception as e:
         print(f"Warning: HKEX ETF fetch failed - {e}")
 
-    # 5. Crypto Signals & Coinbase Premium
+    # 5. Crypto Signals & Time Series
     btc_price = None
     cb_premium_bps = None
     fng_val = None
     fng_class = None
+    fng_history_rows = []
+    btc_history_rows = []
     try:
         signals = fetch_all_crypto_signals()
         if signals:
@@ -248,6 +266,22 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
             fng_data = signals.get("fear_greed", {})
             fng_val = fng_data.get("value")
             fng_class = fng_data.get("classification")
+            
+        fng_df = fetch_fear_greed_history(90)
+        if not fng_df.empty:
+            for _, r in fng_df.iterrows():
+                fng_history_rows.append({
+                    "date": r["date"],
+                    "score": int(r["score"]),
+                })
+                
+        btc_df = fetch_btc_price_history(90)
+        if not btc_df.empty:
+            for _, r in btc_df.iterrows():
+                btc_history_rows.append({
+                    "date": r["date"],
+                    "btc_price_usd": float(r["btc_price_usd"]),
+                })
     except Exception as e:
         print(f"Warning: Crypto signals fetch failed - {e}")
 
@@ -293,8 +327,11 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
         "hkma_issuers": hkma_rows,
         "sfc_vatps": sfc_rows,
         "stablecoin_supplies": stablecoin_rows,
+        "stablecoin_history": stablecoin_history_rows,
         "hkex_etf_summary": etf_summary_rows,
         "hkex_etf_aum_history": etf_aum_history,
+        "fear_greed_history": fng_history_rows,
+        "btc_price_history": btc_history_rows,
         "polymarket_catalysts": poly_rows,
         "crypto_watchlist": watchlist_rows,
         "market_kpi_summary": [{
@@ -346,12 +383,12 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
         },
     ]
 
-    # Charts
+    # Charts - ALL Time Series Line Charts
     charts = [
         {
             "id": "etf_aum_history_chart",
             "title": "HKEX Crypto Spot ETF Monthly AUM ($M USD)",
-            "subtitle": "Monthly fund size for HK-listed Bitcoin and Ether spot ETFs (Bosera, ChinaAMC, Harvest).",
+            "subtitle": "Monthly fund size time series for HK-listed Bitcoin and Ether spot ETFs (Bosera, ChinaAMC, Harvest).",
             "type": "line",
             "dataset": "hkex_etf_aum_history",
             "sourceId": "hkex_etf",
@@ -364,29 +401,43 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
             "layout": "full",
         },
         {
-            "id": "stablecoin_supply_chart",
-            "title": "Top Global Stablecoins Circulating Supply ($B USD)",
-            "subtitle": "Circulating supply by pegged market cap (USDT, USDC, etc.) via DefiLlama.",
-            "type": "bar",
-            "dataset": "stablecoin_supplies",
+            "id": "stablecoin_history_chart",
+            "title": "Global Total Stablecoin Circulating Supply ($B USD)",
+            "subtitle": "Historical global pegged asset circulating market cap expansion/contraction time series via DefiLlama.",
+            "type": "line",
+            "dataset": "stablecoin_history",
             "sourceId": "defillama",
             "encodings": {
-                "x": {"field": "symbol", "type": "nominal", "label": "Stablecoin"},
-                "y": {"field": "circulating_usd_bn", "type": "quantitative", "label": "Supply ($B USD)"},
+                "x": {"field": "date", "type": "temporal", "label": "Date"},
+                "y": {"field": "circulating_usd_bn", "type": "quantitative", "label": "Total Supply ($B USD)"},
+            },
+            "valueFormat": "number",
+            "layout": "full",
+        },
+        {
+            "id": "fear_greed_history_chart",
+            "title": "90-Day Crypto Market Sentiment Score (0–100)",
+            "subtitle": "Daily Fear & Greed Index score time series (0=Extreme Fear, 100=Extreme Greed) via Alternative.me.",
+            "type": "line",
+            "dataset": "fear_greed_history",
+            "sourceId": "fear_greed",
+            "encodings": {
+                "x": {"field": "date", "type": "temporal", "label": "Date"},
+                "y": {"field": "score", "type": "quantitative", "label": "Sentiment Score"},
             },
             "valueFormat": "number",
             "layout": "half",
         },
         {
-            "id": "polymarket_catalysts_chart",
-            "title": "Global Crypto Regulatory Catalyst Probabilities (%)",
-            "subtitle": "Real-time prediction market probability for key regulatory milestones.",
-            "type": "bar",
-            "dataset": "polymarket_catalysts",
-            "sourceId": "polymarket",
+            "id": "btc_price_history_chart",
+            "title": "90-Day BTC Spot Price Trend ($ USD)",
+            "subtitle": "Daily Bitcoin close price time series via Binance.",
+            "type": "line",
+            "dataset": "btc_price_history",
+            "sourceId": "coinbase_binance",
             "encodings": {
-                "x": {"field": "title", "type": "nominal", "label": "Catalyst Event"},
-                "y": {"field": "probability_pct", "type": "quantitative", "label": "Probability (%)"},
+                "x": {"field": "date", "type": "temporal", "label": "Date"},
+                "y": {"field": "btc_price_usd", "type": "quantitative", "label": "BTC Price (USD)"},
             },
             "valueFormat": "number",
             "layout": "half",
@@ -425,6 +476,21 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
             ],
         },
         {
+            "id": "top_stablecoins_table",
+            "title": "Top Global Stablecoins Circulating Supply Breakdown",
+            "subtitle": "Top 10 pegged assets by circulating market cap and global market share via DefiLlama.",
+            "dataset": "stablecoin_supplies",
+            "sourceId": "defillama",
+            "density": "dense",
+            "layout": "full",
+            "columns": [
+                {"field": "name", "label": "Stablecoin Name", "type": "text"},
+                {"field": "symbol", "label": "Symbol", "type": "text"},
+                {"field": "circulating_usd_bn", "label": "Supply ($B USD)", "format": "number"},
+                {"field": "market_share_pct", "label": "Market Share (%)", "format": "number"},
+            ],
+        },
+        {
             "id": "hkex_etf_table",
             "title": "HKEX Crypto Spot ETF Fund Size Summary",
             "subtitle": "Latest monthly AUM per fund (Harvest Ether 3179.HK pending HKEX fundId lookup).",
@@ -438,6 +504,20 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
                 {"field": "fund_id", "label": "HKEX Fund ID", "type": "text"},
                 {"field": "latest_month", "label": "Latest Month", "type": "text"},
                 {"field": "aum_usd_m", "label": "AUM ($M USD)", "format": "number"},
+            ],
+        },
+        {
+            "id": "polymarket_table",
+            "title": "Global Crypto Regulatory Catalyst Probabilities",
+            "subtitle": "Real-time prediction market probability for key regulatory milestones via Polymarket.",
+            "dataset": "polymarket_catalysts",
+            "sourceId": "polymarket",
+            "density": "dense",
+            "layout": "full",
+            "columns": [
+                {"field": "title", "label": "Catalyst Event", "type": "text"},
+                {"field": "probability_pct", "label": "Probability (%)", "format": "number"},
+                {"field": "end_date", "label": "Target Date", "type": "text"},
             ],
         },
         {
@@ -537,13 +617,21 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
         blocks.append({"id": "etf_chart_block", "type": "chart", "chartId": "etf_aum_history_chart"})
     blocks.append({"id": "etf_table_block", "type": "table", "tableId": "hkex_etf_table"})
     
-    if stablecoin_rows and poly_rows:
-        blocks.append({"id": "stablecoin_chart_block", "type": "chart", "chartId": "stablecoin_supply_chart", "layout": "half"})
-        blocks.append({"id": "polymarket_chart_block", "type": "chart", "chartId": "polymarket_catalysts_chart", "layout": "half"})
-    elif stablecoin_rows:
-        blocks.append({"id": "stablecoin_chart_block", "type": "chart", "chartId": "stablecoin_supply_chart", "layout": "full"})
-    elif poly_rows:
-        blocks.append({"id": "polymarket_chart_block", "type": "chart", "chartId": "polymarket_catalysts_chart", "layout": "full"})
+    if stablecoin_history_rows:
+        blocks.append({"id": "stablecoin_history_chart_block", "type": "chart", "chartId": "stablecoin_history_chart"})
+    if stablecoin_rows:
+        blocks.append({"id": "top_stablecoins_table_block", "type": "table", "tableId": "top_stablecoins_table"})
+        
+    if fng_history_rows and btc_history_rows:
+        blocks.append({"id": "fear_greed_chart_block", "type": "chart", "chartId": "fear_greed_history_chart", "layout": "half"})
+        blocks.append({"id": "btc_price_chart_block", "type": "chart", "chartId": "btc_price_history_chart", "layout": "half"})
+    elif fng_history_rows:
+        blocks.append({"id": "fear_greed_chart_block", "type": "chart", "chartId": "fear_greed_history_chart", "layout": "full"})
+    elif btc_history_rows:
+        blocks.append({"id": "btc_price_chart_block", "type": "chart", "chartId": "btc_price_history_chart", "layout": "full"})
+        
+    if poly_rows:
+        blocks.append({"id": "polymarket_table_block", "type": "table", "tableId": "polymarket_table"})
 
     blocks.extend([
         {"id": "watchlist_table_block", "type": "table", "tableId": "crypto_watchlist_table"},
@@ -556,8 +644,8 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
                 "sandbox licensees (Anchorpoint FRS01, HSBC FRS02) and SFC licensed VATP exchange operators (OSL, HashKey). "
                 "Brokers (e.g. Guotai Junan International 01788.HK) hold dealing permissions but are NOT VATP exchange "
                 "operators; Anchorpoint (HKD-pegged HKDAP) is distinct from AnchorX (Jinyong Investment 01328.HK, AxCNH). "
-                "This monitor tracks regulatory registers, HKEX ETF AUM, global stablecoin market cap, and Coinbase Premium "
-                "leading indicators. No investment recommendation is produced."
+                "This monitor tracks regulatory registers, HKEX ETF AUM time series, global stablecoin circulating supply trends, "
+                "90-day sentiment score trends, 90-day BTC price trends, and Coinbase Premium leading indicators. No investment recommendation is produced."
             ),
         },
     ])
