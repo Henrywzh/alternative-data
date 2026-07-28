@@ -6,8 +6,8 @@
     "title": "Hong Kong Stablecoin & Crypto Infrastructure Monitor",
     "description": "HKMA licensed stablecoin issuers, SFC licensed VATP exchanges, HKEX crypto ETF AUM, stablecoin market cap tracking, and leading market indicators.",
     "sector": "hk-stablecoin-crypto",
-    "generatedAt": "2026-07-27T23:18:05.053485Z",
-    "dataAsOf": "2026-07-27",
+    "generatedAt": "2026-07-28T08:52:14.050929Z",
+    "dataAsOf": "2026-07-28",
     "liveSourcesCount": 6,
     "totalSourcesCount": 7,
     "cards": [
@@ -377,7 +377,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**Data snapshot:** `1fd99643cce2a6e5` \u00b7 generated 2026-07-27T23:18:05.053485Z.  Official HKMA & SFC regulatory registers and market tracking data."
+        "body": "**Data snapshot:** `f4a19b445258a10e` \u00b7 generated 2026-07-28T08:52:14.050929Z.  Official HKMA & SFC regulatory registers and market tracking data."
       },
       {
         "id": "kpi_grid",
@@ -434,7 +434,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-27T23:18:05.053485Z",
+    "generatedAt": "2026-07-28T08:52:14.050929Z",
     "status": "ready",
     "datasets": {
       "hkma_issuers": [
@@ -637,14 +637,14 @@
         {
           "name": "Tether",
           "symbol": "USDT",
-          "circulating_usd_bn": 183.92,
-          "market_share_pct": 59.52
+          "circulating_usd_bn": 183.85,
+          "market_share_pct": 59.69
         },
         {
           "name": "USD Coin",
           "symbol": "USDC",
-          "circulating_usd_bn": 73.47,
-          "market_share_pct": 23.77
+          "circulating_usd_bn": 72.46,
+          "market_share_pct": 23.53
         },
         {
           "name": "Sky Dollar",
@@ -655,44 +655,44 @@
         {
           "name": "Dai",
           "symbol": "DAI",
-          "circulating_usd_bn": 4.8,
-          "market_share_pct": 1.55
+          "circulating_usd_bn": 4.81,
+          "market_share_pct": 1.56
         },
         {
           "name": "World Liberty Financial USD",
           "symbol": "USD1",
           "circulating_usd_bn": 4.12,
-          "market_share_pct": 1.33
+          "market_share_pct": 1.34
         },
         {
           "name": "Ethena USDe",
           "symbol": "USDe",
-          "circulating_usd_bn": 3.94,
+          "circulating_usd_bn": 3.93,
           "market_share_pct": 1.28
         },
         {
           "name": "Global Dollar",
           "symbol": "USDG",
           "circulating_usd_bn": 3.26,
-          "market_share_pct": 1.05
+          "market_share_pct": 1.06
         },
         {
           "name": "Circle USYC",
           "symbol": "USYC",
           "circulating_usd_bn": 3.01,
-          "market_share_pct": 0.97
+          "market_share_pct": 0.98
         },
         {
           "name": "PayPal USD",
           "symbol": "PYUSD",
-          "circulating_usd_bn": 2.66,
-          "market_share_pct": 0.86
+          "circulating_usd_bn": 2.69,
+          "market_share_pct": 0.87
         },
         {
           "name": "BlackRock USD",
           "symbol": "BUIDL",
           "circulating_usd_bn": 2.64,
-          "market_share_pct": 0.85
+          "market_share_pct": 0.86
         }
       ],
       "hkex_etf_summary": [
@@ -1211,21 +1211,6 @@
       ],
       "polymarket_catalysts": [
         {
-          "title": "What will Trump say during Wisconsin events?",
-          "probability_pct": 100.0,
-          "end_date": "2026-06-06"
-        },
-        {
-          "title": "What will Trump say during No Tax on Tips Roundtable? ",
-          "probability_pct": 100.0,
-          "end_date": "2026-04-16"
-        },
-        {
-          "title": "Counter-Strike: Just Players vs Inner Circle Academy (BO3...",
-          "probability_pct": 100.0,
-          "end_date": "2026-07-27"
-        },
-        {
           "title": "U.S. enacts stablecoin bill in 2025?",
           "probability_pct": 100.0,
           "end_date": "2025-12-31"
@@ -1236,9 +1221,19 @@
           "end_date": "2026-03-12"
         },
         {
-          "title": "Bitcoin ETF approved by Jan 15?",
+          "title": "What will Coinbase say during their next earnings call?",
           "probability_pct": 100.0,
-          "end_date": "2024-01-15"
+          "end_date": "2025-10-29"
+        },
+        {
+          "title": "What will Trump say during Wisconsin events?",
+          "probability_pct": 100.0,
+          "end_date": "2026-06-06"
+        },
+        {
+          "title": "What will Trump say during No Tax on Tips Roundtable? ",
+          "probability_pct": 100.0,
+          "end_date": "2026-04-16"
         },
         {
           "title": "Bitcoin ETF Flows on October 23?",
@@ -1246,9 +1241,14 @@
           "end_date": "2025-10-23"
         },
         {
-          "title": "What will Coinbase say during their next earnings call?",
+          "title": "Bitcoin ETF approved by Jan 15?",
           "probability_pct": 100.0,
-          "end_date": "2025-10-29"
+          "end_date": "2024-01-15"
+        },
+        {
+          "title": "Counter-Strike: Just Players vs Inner Circle Academy (BO3...",
+          "probability_pct": 100.0,
+          "end_date": "2026-07-27"
         }
       ],
       "crypto_watchlist": [
@@ -1412,11 +1412,11 @@
           "hkma_count": 2,
           "sfc_licensed_count": 13,
           "sfc_pending_count": 6,
-          "total_supply_bn": 309.01,
+          "total_supply_bn": 307.99,
           "total_etf_aum_m": 338.18,
-          "btc_price": 63766.16,
-          "cb_premium_bps": -8.44,
-          "fear_greed_val": 30,
+          "btc_price": null,
+          "cb_premium_bps": null,
+          "fear_greed_val": 29,
           "fear_greed_class": "Fear"
         }
       ]
@@ -1521,7 +1521,7 @@
       "label": "HKMA Licensed Stablecoin Issuers Register",
       "status": "success",
       "records": 2,
-      "latest_observation": "2026-07-27",
+      "latest_observation": "2026-07-28",
       "freshness": "live",
       "notes": "Official ground-truth sandbox register of licensed stablecoin issuers (Anchorpoint FRS01, HSBC FRS02)."
     },
@@ -1530,7 +1530,7 @@
       "label": "SFC Virtual Asset Trading Platforms Register",
       "status": "success",
       "records": 36,
-      "latest_observation": "2026-07-27",
+      "latest_observation": "2026-07-28",
       "freshness": "live",
       "notes": "Official 4-status SFC register of VATP exchange operators (licensed, pending, withdrawn, forced-closure)."
     },
@@ -1539,7 +1539,7 @@
       "label": "DefiLlama Stablecoin Market Cap API",
       "status": "success",
       "records": 10,
-      "latest_observation": "2026-07-27",
+      "latest_observation": "2026-07-28",
       "freshness": "live",
       "notes": "Global stablecoin circulating supply tracking, with AxCNH and HKDAP appearance monitoring."
     },
@@ -1548,17 +1548,17 @@
       "label": "HKEX Integrated Fund Platform ETF AUM API",
       "status": "success",
       "records": 5,
-      "latest_observation": "2026-07-27",
+      "latest_observation": "2026-07-28",
       "freshness": "live",
       "notes": "Monthly AUM history for Hong Kong spot Bitcoin and Ether ETFs."
     },
     {
       "source_id": "coinbase_binance",
       "label": "Coinbase & Binance Public Tickers",
-      "status": "success",
-      "records": 1,
-      "latest_observation": "2026-07-27",
-      "freshness": "live",
+      "status": "degraded",
+      "records": 0,
+      "latest_observation": "2026-07-28",
+      "freshness": "unavailable",
       "notes": "Real-time BTC spot prices and Coinbase Premium spread (bps)."
     },
     {
@@ -1566,7 +1566,7 @@
       "label": "Crypto Fear & Greed Index",
       "status": "success",
       "records": 1,
-      "latest_observation": "2026-07-27",
+      "latest_observation": "2026-07-28",
       "freshness": "live",
       "notes": "Daily market sentiment score (0-100) and classification."
     },
@@ -1575,7 +1575,7 @@
       "label": "Polymarket Gamma Search API",
       "status": "success",
       "records": 8,
-      "latest_observation": "2026-07-27",
+      "latest_observation": "2026-07-28",
       "freshness": "live",
       "notes": "Prediction market probabilities for global crypto regulatory catalysts."
     }
@@ -1584,8 +1584,8 @@
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-stablecoin-crypto/",
     "sector_id": "hk-stablecoin-crypto",
     "sector_name": "Hong Kong Stablecoin & Crypto Infrastructure Monitor",
-    "snapshotId": "1fd99643cce2a6e5",
-    "generatedAt": "2026-07-27T23:18:05.053485Z",
-    "dataAsOf": "2026-07-27"
+    "snapshotId": "f4a19b445258a10e",
+    "generatedAt": "2026-07-28T08:52:14.050929Z",
+    "dataAsOf": "2026-07-28"
   }
 }
