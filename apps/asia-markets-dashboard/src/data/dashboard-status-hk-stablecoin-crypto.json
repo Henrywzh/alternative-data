@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-07-27T23:18:05.053485Z",
-  "snapshot_id": "1fd99643cce2a6e5",
-  "data_as_of": "2026-07-27",
+  "generated_at": "2026-07-28T08:52:14.050929Z",
+  "snapshot_id": "f4a19b445258a10e",
+  "data_as_of": "2026-07-28",
   "overall_status": "Healthy",
   "live_sources": 7,
   "planned_sources": 0,
@@ -11,7 +11,7 @@
       "dataset": "hkma_register",
       "type": "Monitor",
       "status": "Healthy",
-      "latest_observation": "2026-07-27",
+      "latest_observation": "2026-07-28",
       "records": 2,
       "freshness": "Live",
       "notes": "Official ground-truth sandbox register of licensed stablecoin issuers (Anchorpoint FRS01, HSBC FRS02)."
@@ -21,7 +21,7 @@
       "dataset": "sfc_vatp",
       "type": "Monitor",
       "status": "Healthy",
-      "latest_observation": "2026-07-27",
+      "latest_observation": "2026-07-28",
       "records": 36,
       "freshness": "Live",
       "notes": "Official 4-status SFC register of VATP exchange operators (licensed, pending, withdrawn, forced-closure)."
@@ -31,7 +31,7 @@
       "dataset": "defillama",
       "type": "Monitor",
       "status": "Healthy",
-      "latest_observation": "2026-07-27",
+      "latest_observation": "2026-07-28",
       "records": 10,
       "freshness": "Live",
       "notes": "Global stablecoin circulating supply tracking, with AxCNH and HKDAP appearance monitoring."
@@ -41,7 +41,7 @@
       "dataset": "hkex_etf",
       "type": "Monitor",
       "status": "Healthy",
-      "latest_observation": "2026-07-27",
+      "latest_observation": "2026-07-28",
       "records": 5,
       "freshness": "Live",
       "notes": "Monthly AUM history for Hong Kong spot Bitcoin and Ether ETFs."
@@ -50,10 +50,10 @@
       "source": "Coinbase & Binance Public Tickers",
       "dataset": "coinbase_binance",
       "type": "Monitor",
-      "status": "Healthy",
-      "latest_observation": "2026-07-27",
-      "records": 1,
-      "freshness": "Live",
+      "status": "Degraded",
+      "latest_observation": "2026-07-28",
+      "records": 0,
+      "freshness": "Unavailable",
       "notes": "Real-time BTC spot prices and Coinbase Premium spread (bps)."
     },
     {
@@ -61,7 +61,7 @@
       "dataset": "fear_greed",
       "type": "Monitor",
       "status": "Healthy",
-      "latest_observation": "2026-07-27",
+      "latest_observation": "2026-07-28",
       "records": 1,
       "freshness": "Live",
       "notes": "Daily market sentiment score (0-100) and classification."
@@ -71,11 +71,11 @@
       "dataset": "polymarket",
       "type": "Monitor",
       "status": "Healthy",
-      "latest_observation": "2026-07-27",
+      "latest_observation": "2026-07-28",
       "records": 8,
       "freshness": "Live",
       "notes": "Prediction market probabilities for global crypto regulatory catalysts."
     }
   ],
-  "attachment_filename": "hk-stablecoin-crypto-dashboard-2026-07-27.html"
+  "attachment_filename": "hk-stablecoin-crypto-dashboard-2026-07-28.html"
 }
