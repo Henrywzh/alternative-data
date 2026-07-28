@@ -6,9 +6,9 @@
     "title": "香港房地产信托（REITs）基本面监测",
     "description": "领展（Link REIT）、冠君（Champion REIT）、置富（Fortune REIT）、繁荣（Prosperity REIT）、阳光（Sunlight REIT）及富豪（Regal REIT）的每单位资产净值（NAV）、每基金单位分派（DPU）、出租率、租金检讨调升率及酒店 KPI 快照。",
     "sector": "hk-reit",
-    "generatedAt": "2026-07-27T22:51:14.740800Z",
+    "generatedAt": "2026-07-28T18:15:27.255915Z",
     "dataAsOf": "2026-03-31",
-    "liveSourcesCount": 6,
+    "liveSourcesCount": 7,
     "totalSourcesCount": 7,
     "cards": [
       {
@@ -18,7 +18,7 @@
         "sourceId": "linkreit_fundamentals",
         "metrics": [
           {
-            "label": "领展房产基金 — 每单位资产净值 (港元)",
+            "label": "领展 NAV (港元)",
             "field": "nav_per_unit_hkd",
             "format": "number"
           },
@@ -46,7 +46,7 @@
         "sourceId": "championreit_fundamentals",
         "metrics": [
           {
-            "label": "冠君产业信托 — 每单位资产净值 (港元)",
+            "label": "冠君 NAV (港元)",
             "field": "nav_per_unit_hkd",
             "format": "number"
           },
@@ -74,7 +74,7 @@
         "sourceId": "fortunereit_fundamentals",
         "metrics": [
           {
-            "label": "置富产业信托 — 每单位资产净值 (港元)",
+            "label": "置富 NAV (港元)",
             "field": "nav_per_unit_hkd",
             "format": "number"
           },
@@ -102,7 +102,7 @@
         "sourceId": "prosperityreit_fundamentals",
         "metrics": [
           {
-            "label": "繁荣产业信托 — 每单位资产净值 (港元)",
+            "label": "繁荣 NAV (港元)",
             "field": "nav_per_unit_hkd",
             "format": "number"
           },
@@ -130,7 +130,7 @@
         "sourceId": "sunlightreit_fundamentals",
         "metrics": [
           {
-            "label": "阳光房地产基金 — 每单位资产净值 (港元)",
+            "label": "阳光 NAV (港元)",
             "field": "nav_per_unit_hkd",
             "format": "number"
           },
@@ -158,7 +158,7 @@
         "sourceId": "regalreit_fundamentals",
         "metrics": [
           {
-            "label": "富豪产业信托 — 每单位资产净值 (港元)",
+            "label": "富豪 NAV (港元)",
             "field": "nav_per_unit_hkd",
             "format": "number"
           },
@@ -315,13 +315,40 @@
         },
         "valueFormat": "number",
         "layout": "full"
+      },
+      {
+        "id": "reit_spot_price_history_chart",
+        "title": "HK REITs Daily Closing Price History (HK$)",
+        "subtitle": "Daily unit close prices for Hong Kong listed REITs.",
+        "type": "line",
+        "dataset": "reit_price_history",
+        "sourceId": "reit_price_akshare",
+        "encodings": {
+          "x": {
+            "field": "date",
+            "type": "temporal",
+            "label": "Date"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "label": "Close (HK$)"
+          },
+          "color": {
+            "field": "series",
+            "type": "nominal",
+            "label": "REIT"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "full"
       }
     ],
     "tables": [
       {
         "id": "reit_comparison_table",
         "title": "香港 REIT 基本面对比",
-        "subtitle": "全部六家 REIT 最新每单位资产净值及 DPU；出租率跨业务类型统一列示（富豪产业信托为酒店出租率）；租金检讨调升率及酒店房价指标在不适用的 REIT 上为空。",
+        "subtitle": "全部六家 REIT 最新每单位资产净值及 DPU；出租率跨业务类型统一列示（富豪产业信托为酒店出租率）。",
         "dataset": "reit_comparison",
         "sourceId": "linkreit_fundamentals",
         "density": "dense",
@@ -335,11 +362,6 @@
           {
             "field": "ticker",
             "label": "股票代码",
-            "type": "text"
-          },
-          {
-            "field": "business_type",
-            "label": "业务类型",
             "type": "text"
           },
           {
@@ -358,24 +380,45 @@
             "format": "number"
           },
           {
-            "field": "rental_reversion_pct",
-            "label": "租金检讨调升率 (%)",
-            "format": "number"
-          },
-          {
-            "field": "average_daily_rate_hkd",
-            "label": "平均房价 ADR (港元)",
-            "format": "number"
-          },
-          {
-            "field": "revpar_hkd",
-            "label": "RevPAR (港元)",
-            "format": "number"
-          },
-          {
             "field": "as_of_date",
             "label": "截至日期",
             "type": "text"
+          }
+        ]
+      },
+      {
+        "id": "reit_spot_summary_table",
+        "title": "香港 REITs 市场现货报价",
+        "subtitle": "每日现货报价、涨跌幅 % 及成交额 (百万港元)。",
+        "dataset": "reit_spot_quotes",
+        "sourceId": "reit_price_akshare",
+        "density": "dense",
+        "layout": "full",
+        "columns": [
+          {
+            "field": "company_name",
+            "label": "REIT 名称",
+            "type": "text"
+          },
+          {
+            "field": "ticker",
+            "label": "股票代码",
+            "type": "text"
+          },
+          {
+            "field": "latest_price_hkd",
+            "label": "现价 (港元)",
+            "format": "number"
+          },
+          {
+            "field": "change_pct",
+            "label": "涨跌幅 (%)",
+            "format": "number"
+          },
+          {
+            "field": "turnover_hkd_m",
+            "label": "成交额 (百万)",
+            "format": "number"
           }
         ]
       }
@@ -385,7 +428,7 @@
         "id": "reit_price_akshare",
         "label": "香港REITs每日现货报价及历史（akshare）",
         "href": "https://www.hkex.com.hk/",
-        "path": "sources/reit_price.py",
+        "path": "sources/reit_price.sql",
         "query": {
           "engine": "akshare.stock_hk_spot_em",
           "url": "https://www.hkex.com.hk/",
@@ -470,7 +513,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**数据快照：** `fb7d554e3f9c63ac` · 生成于 2026-07-27T22:51:14.740800Z。"
+        "body": "**数据快照：** `dcd5fa94b5169176` · 生成于 2026-07-28T18:15:27.255915Z。"
       },
       {
         "id": "kpi_grid",
@@ -483,6 +526,16 @@
           "sunlightreit_card",
           "regalreit_card"
         ]
+      },
+      {
+        "id": "reit_spot_table_block",
+        "type": "table",
+        "tableId": "reit_spot_summary_table"
+      },
+      {
+        "id": "reit_price_chart_block",
+        "type": "chart",
+        "chartId": "reit_spot_price_history_chart"
       },
       {
         "id": "nav_chart",
@@ -525,7 +578,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-27T22:51:14.740800Z",
+    "generatedAt": "2026-07-28T18:15:27.255915Z",
     "status": "ready",
     "datasets": {
       "kpi_linkreit": [
@@ -1517,8 +1570,2950 @@
           "as_of_date": "2025-12-31"
         }
       ],
-      "reit_spot_quotes": [],
-      "reit_price_history": [],
+      "reit_spot_quotes": [
+        {
+          "date": "2026-07-28",
+          "ticker": "01881",
+          "company_name": "Regal REIT",
+          "latest_price_hkd": 0.39,
+          "change_pct": 1.3,
+          "volume": 3277000,
+          "turnover_hkd": 1269090,
+          "turnover_hkd_m": 1.27
+        },
+        {
+          "date": "2026-07-28",
+          "ticker": "02778",
+          "company_name": "Champion REIT",
+          "latest_price_hkd": 2.28,
+          "change_pct": 0.44,
+          "volume": 2214754,
+          "turnover_hkd": 4987381,
+          "turnover_hkd_m": 4.99
+        },
+        {
+          "date": "2026-07-28",
+          "ticker": "00778",
+          "company_name": "Fortune REIT",
+          "latest_price_hkd": 4.8,
+          "change_pct": 0.42,
+          "volume": 2364473,
+          "turnover_hkd": 11348240,
+          "turnover_hkd_m": 11.35
+        },
+        {
+          "date": "2026-07-28",
+          "ticker": "00823",
+          "company_name": "Link REIT",
+          "latest_price_hkd": 39.26,
+          "change_pct": 0.41,
+          "volume": 7058317,
+          "turnover_hkd": 276201904,
+          "turnover_hkd_m": 276.2
+        },
+        {
+          "date": "2026-07-28",
+          "ticker": "00808",
+          "company_name": "Prosperity REIT",
+          "latest_price_hkd": 1.5,
+          "change_pct": 0,
+          "volume": 580000,
+          "turnover_hkd": 869590,
+          "turnover_hkd_m": 0.87
+        },
+        {
+          "date": "2026-07-28",
+          "ticker": "00435",
+          "company_name": "Sunlight REIT",
+          "latest_price_hkd": 2.32,
+          "change_pct": -0.43,
+          "volume": 1424000,
+          "turnover_hkd": 3304500,
+          "turnover_hkd_m": 3.3
+        }
+      ],
+      "reit_price_history": [
+        {
+          "date": "2026-03-30",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 35.84
+        },
+        {
+          "date": "2026-03-31",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 36.02
+        },
+        {
+          "date": "2026-04-01",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 36.7
+        },
+        {
+          "date": "2026-04-02",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 36.68
+        },
+        {
+          "date": "2026-04-08",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 37.7
+        },
+        {
+          "date": "2026-04-09",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 37.88
+        },
+        {
+          "date": "2026-04-10",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 38.58
+        },
+        {
+          "date": "2026-04-13",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 38.12
+        },
+        {
+          "date": "2026-04-14",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 38.5
+        },
+        {
+          "date": "2026-04-15",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 38.54
+        },
+        {
+          "date": "2026-04-16",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 38.5
+        },
+        {
+          "date": "2026-04-17",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 38.46
+        },
+        {
+          "date": "2026-04-20",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 38.42
+        },
+        {
+          "date": "2026-04-21",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 38.64
+        },
+        {
+          "date": "2026-04-22",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 39.04
+        },
+        {
+          "date": "2026-04-23",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 38.84
+        },
+        {
+          "date": "2026-04-24",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 38.82
+        },
+        {
+          "date": "2026-04-27",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 38.88
+        },
+        {
+          "date": "2026-04-28",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 38.96
+        },
+        {
+          "date": "2026-04-29",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 39.36
+        },
+        {
+          "date": "2026-04-30",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 39.2
+        },
+        {
+          "date": "2026-05-04",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 39.62
+        },
+        {
+          "date": "2026-05-05",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 39.98
+        },
+        {
+          "date": "2026-05-06",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 40.38
+        },
+        {
+          "date": "2026-05-07",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 41
+        },
+        {
+          "date": "2026-05-08",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 41.04
+        },
+        {
+          "date": "2026-05-11",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 41.18
+        },
+        {
+          "date": "2026-05-12",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 41.62
+        },
+        {
+          "date": "2026-05-13",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 41.42
+        },
+        {
+          "date": "2026-05-14",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 41.96
+        },
+        {
+          "date": "2026-05-15",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 41.66
+        },
+        {
+          "date": "2026-05-18",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 40.98
+        },
+        {
+          "date": "2026-05-19",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 41.34
+        },
+        {
+          "date": "2026-05-20",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 40.9
+        },
+        {
+          "date": "2026-05-21",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 41.14
+        },
+        {
+          "date": "2026-05-22",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 41.26
+        },
+        {
+          "date": "2026-05-26",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 40.44
+        },
+        {
+          "date": "2026-05-27",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 39.98
+        },
+        {
+          "date": "2026-05-28",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 40.3
+        },
+        {
+          "date": "2026-05-29",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 40.38
+        },
+        {
+          "date": "2026-06-01",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 39.66
+        },
+        {
+          "date": "2026-06-02",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 39.22
+        },
+        {
+          "date": "2026-06-03",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 38.96
+        },
+        {
+          "date": "2026-06-04",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 38.88
+        },
+        {
+          "date": "2026-06-05",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 38.2
+        },
+        {
+          "date": "2026-06-08",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 37.94
+        },
+        {
+          "date": "2026-06-09",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 37.94
+        },
+        {
+          "date": "2026-06-10",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 37.54
+        },
+        {
+          "date": "2026-06-11",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 36.44
+        },
+        {
+          "date": "2026-06-12",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 36.7
+        },
+        {
+          "date": "2026-06-15",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 36.98
+        },
+        {
+          "date": "2026-06-16",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 36.8
+        },
+        {
+          "date": "2026-06-17",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 36.32
+        },
+        {
+          "date": "2026-06-18",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 35.74
+        },
+        {
+          "date": "2026-06-22",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 35.54
+        },
+        {
+          "date": "2026-06-23",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 35.42
+        },
+        {
+          "date": "2026-06-24",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 35.5
+        },
+        {
+          "date": "2026-06-25",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 36.18
+        },
+        {
+          "date": "2026-06-26",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 36.34
+        },
+        {
+          "date": "2026-06-29",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 36.8
+        },
+        {
+          "date": "2026-06-30",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 36.5
+        },
+        {
+          "date": "2026-07-02",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 36.86
+        },
+        {
+          "date": "2026-07-03",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 37.92
+        },
+        {
+          "date": "2026-07-06",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 37.28
+        },
+        {
+          "date": "2026-07-07",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 37.34
+        },
+        {
+          "date": "2026-07-08",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 37.48
+        },
+        {
+          "date": "2026-07-09",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 37.82
+        },
+        {
+          "date": "2026-07-10",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 37.44
+        },
+        {
+          "date": "2026-07-13",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 37.52
+        },
+        {
+          "date": "2026-07-14",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 37.98
+        },
+        {
+          "date": "2026-07-15",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 38.5
+        },
+        {
+          "date": "2026-07-16",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 38.78
+        },
+        {
+          "date": "2026-07-17",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 39.22
+        },
+        {
+          "date": "2026-07-20",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 39.2
+        },
+        {
+          "date": "2026-07-21",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 39.8
+        },
+        {
+          "date": "2026-07-22",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 39.66
+        },
+        {
+          "date": "2026-07-23",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 39.58
+        },
+        {
+          "date": "2026-07-24",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 38.8
+        },
+        {
+          "date": "2026-07-27",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 39.1
+        },
+        {
+          "date": "2026-07-28",
+          "ticker": "00823",
+          "series": "Link",
+          "value": 39.26
+        },
+        {
+          "date": "2026-03-30",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.28
+        },
+        {
+          "date": "2026-03-31",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.26
+        },
+        {
+          "date": "2026-04-01",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.3
+        },
+        {
+          "date": "2026-04-02",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.3
+        },
+        {
+          "date": "2026-04-08",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.37
+        },
+        {
+          "date": "2026-04-09",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.41
+        },
+        {
+          "date": "2026-04-10",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.55
+        },
+        {
+          "date": "2026-04-13",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.55
+        },
+        {
+          "date": "2026-04-14",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.46
+        },
+        {
+          "date": "2026-04-15",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.44
+        },
+        {
+          "date": "2026-04-16",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.38
+        },
+        {
+          "date": "2026-04-17",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.37
+        },
+        {
+          "date": "2026-04-20",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.37
+        },
+        {
+          "date": "2026-04-21",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.39
+        },
+        {
+          "date": "2026-04-22",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.4
+        },
+        {
+          "date": "2026-04-23",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.4
+        },
+        {
+          "date": "2026-04-24",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.36
+        },
+        {
+          "date": "2026-04-27",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.33
+        },
+        {
+          "date": "2026-04-28",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.37
+        },
+        {
+          "date": "2026-04-29",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.38
+        },
+        {
+          "date": "2026-04-30",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.33
+        },
+        {
+          "date": "2026-05-04",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.4
+        },
+        {
+          "date": "2026-05-05",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.44
+        },
+        {
+          "date": "2026-05-06",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.48
+        },
+        {
+          "date": "2026-05-07",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.47
+        },
+        {
+          "date": "2026-05-08",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.43
+        },
+        {
+          "date": "2026-05-11",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.44
+        },
+        {
+          "date": "2026-05-12",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.46
+        },
+        {
+          "date": "2026-05-13",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.44
+        },
+        {
+          "date": "2026-05-14",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.46
+        },
+        {
+          "date": "2026-05-15",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.45
+        },
+        {
+          "date": "2026-05-18",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.47
+        },
+        {
+          "date": "2026-05-19",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.46
+        },
+        {
+          "date": "2026-05-20",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.44
+        },
+        {
+          "date": "2026-05-21",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.46
+        },
+        {
+          "date": "2026-05-22",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.43
+        },
+        {
+          "date": "2026-05-26",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.36
+        },
+        {
+          "date": "2026-05-27",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.37
+        },
+        {
+          "date": "2026-05-28",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.39
+        },
+        {
+          "date": "2026-05-29",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.43
+        },
+        {
+          "date": "2026-06-01",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.41
+        },
+        {
+          "date": "2026-06-02",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.43
+        },
+        {
+          "date": "2026-06-03",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.42
+        },
+        {
+          "date": "2026-06-04",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.4
+        },
+        {
+          "date": "2026-06-05",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.37
+        },
+        {
+          "date": "2026-06-08",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.37
+        },
+        {
+          "date": "2026-06-09",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.36
+        },
+        {
+          "date": "2026-06-10",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.33
+        },
+        {
+          "date": "2026-06-11",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.25
+        },
+        {
+          "date": "2026-06-12",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.26
+        },
+        {
+          "date": "2026-06-15",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.38
+        },
+        {
+          "date": "2026-06-16",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.29
+        },
+        {
+          "date": "2026-06-17",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.21
+        },
+        {
+          "date": "2026-06-18",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.23
+        },
+        {
+          "date": "2026-06-22",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.14
+        },
+        {
+          "date": "2026-06-23",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.1
+        },
+        {
+          "date": "2026-06-24",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.11
+        },
+        {
+          "date": "2026-06-25",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.12
+        },
+        {
+          "date": "2026-06-26",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.07
+        },
+        {
+          "date": "2026-06-29",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.1
+        },
+        {
+          "date": "2026-06-30",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.06
+        },
+        {
+          "date": "2026-07-02",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.08
+        },
+        {
+          "date": "2026-07-03",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.15
+        },
+        {
+          "date": "2026-07-06",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.13
+        },
+        {
+          "date": "2026-07-07",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.14
+        },
+        {
+          "date": "2026-07-08",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.2
+        },
+        {
+          "date": "2026-07-09",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.11
+        },
+        {
+          "date": "2026-07-10",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.12
+        },
+        {
+          "date": "2026-07-13",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.15
+        },
+        {
+          "date": "2026-07-14",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.14
+        },
+        {
+          "date": "2026-07-15",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.18
+        },
+        {
+          "date": "2026-07-16",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.22
+        },
+        {
+          "date": "2026-07-17",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.22
+        },
+        {
+          "date": "2026-07-20",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.25
+        },
+        {
+          "date": "2026-07-21",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.24
+        },
+        {
+          "date": "2026-07-22",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.26
+        },
+        {
+          "date": "2026-07-23",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.28
+        },
+        {
+          "date": "2026-07-24",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.25
+        },
+        {
+          "date": "2026-07-27",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.27
+        },
+        {
+          "date": "2026-07-28",
+          "ticker": "02778",
+          "series": "Champ",
+          "value": 2.28
+        },
+        {
+          "date": "2026-03-30",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.67
+        },
+        {
+          "date": "2026-03-31",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.67
+        },
+        {
+          "date": "2026-04-01",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.7
+        },
+        {
+          "date": "2026-04-02",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.7
+        },
+        {
+          "date": "2026-04-08",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.87
+        },
+        {
+          "date": "2026-04-09",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.82
+        },
+        {
+          "date": "2026-04-10",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.88
+        },
+        {
+          "date": "2026-04-13",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.86
+        },
+        {
+          "date": "2026-04-14",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.83
+        },
+        {
+          "date": "2026-04-15",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.81
+        },
+        {
+          "date": "2026-04-16",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.8
+        },
+        {
+          "date": "2026-04-17",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.81
+        },
+        {
+          "date": "2026-04-20",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.82
+        },
+        {
+          "date": "2026-04-21",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.83
+        },
+        {
+          "date": "2026-04-22",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.85
+        },
+        {
+          "date": "2026-04-23",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.81
+        },
+        {
+          "date": "2026-04-24",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.82
+        },
+        {
+          "date": "2026-04-27",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.81
+        },
+        {
+          "date": "2026-04-28",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.82
+        },
+        {
+          "date": "2026-04-29",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.89
+        },
+        {
+          "date": "2026-04-30",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.86
+        },
+        {
+          "date": "2026-05-04",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.9
+        },
+        {
+          "date": "2026-05-05",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.99
+        },
+        {
+          "date": "2026-05-06",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 5
+        },
+        {
+          "date": "2026-05-07",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 5.07
+        },
+        {
+          "date": "2026-05-08",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 5.04
+        },
+        {
+          "date": "2026-05-11",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 5.04
+        },
+        {
+          "date": "2026-05-12",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.99
+        },
+        {
+          "date": "2026-05-13",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.98
+        },
+        {
+          "date": "2026-05-14",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.98
+        },
+        {
+          "date": "2026-05-15",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.99
+        },
+        {
+          "date": "2026-05-18",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.91
+        },
+        {
+          "date": "2026-05-19",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.88
+        },
+        {
+          "date": "2026-05-20",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.9
+        },
+        {
+          "date": "2026-05-21",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.88
+        },
+        {
+          "date": "2026-05-22",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.85
+        },
+        {
+          "date": "2026-05-26",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.78
+        },
+        {
+          "date": "2026-05-27",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.79
+        },
+        {
+          "date": "2026-05-28",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.77
+        },
+        {
+          "date": "2026-05-29",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.83
+        },
+        {
+          "date": "2026-06-01",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.83
+        },
+        {
+          "date": "2026-06-02",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.82
+        },
+        {
+          "date": "2026-06-03",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.8
+        },
+        {
+          "date": "2026-06-04",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.76
+        },
+        {
+          "date": "2026-06-05",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.75
+        },
+        {
+          "date": "2026-06-08",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.71
+        },
+        {
+          "date": "2026-06-09",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.71
+        },
+        {
+          "date": "2026-06-10",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.72
+        },
+        {
+          "date": "2026-06-11",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.67
+        },
+        {
+          "date": "2026-06-12",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.74
+        },
+        {
+          "date": "2026-06-15",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.79
+        },
+        {
+          "date": "2026-06-16",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.76
+        },
+        {
+          "date": "2026-06-17",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.69
+        },
+        {
+          "date": "2026-06-18",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.62
+        },
+        {
+          "date": "2026-06-22",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.54
+        },
+        {
+          "date": "2026-06-23",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.53
+        },
+        {
+          "date": "2026-06-24",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.5
+        },
+        {
+          "date": "2026-06-25",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.52
+        },
+        {
+          "date": "2026-06-26",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.43
+        },
+        {
+          "date": "2026-06-29",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.49
+        },
+        {
+          "date": "2026-06-30",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.4
+        },
+        {
+          "date": "2026-07-02",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.42
+        },
+        {
+          "date": "2026-07-03",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.52
+        },
+        {
+          "date": "2026-07-06",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.49
+        },
+        {
+          "date": "2026-07-07",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.49
+        },
+        {
+          "date": "2026-07-08",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.56
+        },
+        {
+          "date": "2026-07-09",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.53
+        },
+        {
+          "date": "2026-07-10",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.54
+        },
+        {
+          "date": "2026-07-13",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.52
+        },
+        {
+          "date": "2026-07-14",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.59
+        },
+        {
+          "date": "2026-07-15",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.62
+        },
+        {
+          "date": "2026-07-16",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.63
+        },
+        {
+          "date": "2026-07-17",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.66
+        },
+        {
+          "date": "2026-07-20",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.66
+        },
+        {
+          "date": "2026-07-21",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.72
+        },
+        {
+          "date": "2026-07-22",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.72
+        },
+        {
+          "date": "2026-07-23",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.79
+        },
+        {
+          "date": "2026-07-24",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.74
+        },
+        {
+          "date": "2026-07-27",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.78
+        },
+        {
+          "date": "2026-07-28",
+          "ticker": "00778",
+          "series": "Fortune",
+          "value": 4.8
+        },
+        {
+          "date": "2026-03-30",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.42
+        },
+        {
+          "date": "2026-03-31",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.42
+        },
+        {
+          "date": "2026-04-01",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.45
+        },
+        {
+          "date": "2026-04-02",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.46
+        },
+        {
+          "date": "2026-04-08",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.48
+        },
+        {
+          "date": "2026-04-09",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.44
+        },
+        {
+          "date": "2026-04-10",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.44
+        },
+        {
+          "date": "2026-04-13",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.44
+        },
+        {
+          "date": "2026-04-14",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.44
+        },
+        {
+          "date": "2026-04-15",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.42
+        },
+        {
+          "date": "2026-04-16",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.43
+        },
+        {
+          "date": "2026-04-17",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.43
+        },
+        {
+          "date": "2026-04-20",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.42
+        },
+        {
+          "date": "2026-04-21",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.44
+        },
+        {
+          "date": "2026-04-22",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.42
+        },
+        {
+          "date": "2026-04-23",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.43
+        },
+        {
+          "date": "2026-04-24",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.43
+        },
+        {
+          "date": "2026-04-27",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.42
+        },
+        {
+          "date": "2026-04-28",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.42
+        },
+        {
+          "date": "2026-04-29",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.43
+        },
+        {
+          "date": "2026-04-30",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.44
+        },
+        {
+          "date": "2026-05-04",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.45
+        },
+        {
+          "date": "2026-05-05",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.47
+        },
+        {
+          "date": "2026-05-06",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.47
+        },
+        {
+          "date": "2026-05-07",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.48
+        },
+        {
+          "date": "2026-05-08",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.5
+        },
+        {
+          "date": "2026-05-11",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.51
+        },
+        {
+          "date": "2026-05-12",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.5
+        },
+        {
+          "date": "2026-05-13",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.48
+        },
+        {
+          "date": "2026-05-14",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.47
+        },
+        {
+          "date": "2026-05-15",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.49
+        },
+        {
+          "date": "2026-05-18",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.47
+        },
+        {
+          "date": "2026-05-19",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.47
+        },
+        {
+          "date": "2026-05-20",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.46
+        },
+        {
+          "date": "2026-05-21",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.46
+        },
+        {
+          "date": "2026-05-22",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.45
+        },
+        {
+          "date": "2026-05-26",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.44
+        },
+        {
+          "date": "2026-05-27",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.45
+        },
+        {
+          "date": "2026-05-28",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.43
+        },
+        {
+          "date": "2026-05-29",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.45
+        },
+        {
+          "date": "2026-06-01",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.45
+        },
+        {
+          "date": "2026-06-02",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.44
+        },
+        {
+          "date": "2026-06-03",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.43
+        },
+        {
+          "date": "2026-06-04",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.44
+        },
+        {
+          "date": "2026-06-05",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.42
+        },
+        {
+          "date": "2026-06-08",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.42
+        },
+        {
+          "date": "2026-06-09",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.41
+        },
+        {
+          "date": "2026-06-10",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.42
+        },
+        {
+          "date": "2026-06-11",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.4
+        },
+        {
+          "date": "2026-06-12",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.42
+        },
+        {
+          "date": "2026-06-15",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.41
+        },
+        {
+          "date": "2026-06-16",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.41
+        },
+        {
+          "date": "2026-06-17",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.4
+        },
+        {
+          "date": "2026-06-18",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.41
+        },
+        {
+          "date": "2026-06-22",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.38
+        },
+        {
+          "date": "2026-06-23",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.37
+        },
+        {
+          "date": "2026-06-24",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.39
+        },
+        {
+          "date": "2026-06-25",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.37
+        },
+        {
+          "date": "2026-06-26",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.41
+        },
+        {
+          "date": "2026-06-29",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.44
+        },
+        {
+          "date": "2026-06-30",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.44
+        },
+        {
+          "date": "2026-07-02",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.43
+        },
+        {
+          "date": "2026-07-03",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.43
+        },
+        {
+          "date": "2026-07-06",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.43
+        },
+        {
+          "date": "2026-07-07",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.43
+        },
+        {
+          "date": "2026-07-08",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.44
+        },
+        {
+          "date": "2026-07-09",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.46
+        },
+        {
+          "date": "2026-07-10",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.48
+        },
+        {
+          "date": "2026-07-13",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.48
+        },
+        {
+          "date": "2026-07-14",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.46
+        },
+        {
+          "date": "2026-07-15",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.48
+        },
+        {
+          "date": "2026-07-16",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.49
+        },
+        {
+          "date": "2026-07-17",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.51
+        },
+        {
+          "date": "2026-07-20",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.52
+        },
+        {
+          "date": "2026-07-21",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.52
+        },
+        {
+          "date": "2026-07-22",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.49
+        },
+        {
+          "date": "2026-07-23",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.51
+        },
+        {
+          "date": "2026-07-24",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.49
+        },
+        {
+          "date": "2026-07-27",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.5
+        },
+        {
+          "date": "2026-07-28",
+          "ticker": "00808",
+          "series": "Prosper",
+          "value": 1.5
+        },
+        {
+          "date": "2026-03-30",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.27
+        },
+        {
+          "date": "2026-03-31",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.26
+        },
+        {
+          "date": "2026-04-01",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.28
+        },
+        {
+          "date": "2026-04-02",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.24
+        },
+        {
+          "date": "2026-04-08",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.3
+        },
+        {
+          "date": "2026-04-09",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.32
+        },
+        {
+          "date": "2026-04-10",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.38
+        },
+        {
+          "date": "2026-04-13",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.35
+        },
+        {
+          "date": "2026-04-14",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.34
+        },
+        {
+          "date": "2026-04-15",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.3
+        },
+        {
+          "date": "2026-04-16",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.27
+        },
+        {
+          "date": "2026-04-17",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.27
+        },
+        {
+          "date": "2026-04-20",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.28
+        },
+        {
+          "date": "2026-04-21",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.29
+        },
+        {
+          "date": "2026-04-22",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.27
+        },
+        {
+          "date": "2026-04-23",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.3
+        },
+        {
+          "date": "2026-04-24",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.3
+        },
+        {
+          "date": "2026-04-27",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.3
+        },
+        {
+          "date": "2026-04-28",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.29
+        },
+        {
+          "date": "2026-04-29",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.34
+        },
+        {
+          "date": "2026-04-30",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.33
+        },
+        {
+          "date": "2026-05-04",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.34
+        },
+        {
+          "date": "2026-05-05",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.34
+        },
+        {
+          "date": "2026-05-06",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.34
+        },
+        {
+          "date": "2026-05-07",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.38
+        },
+        {
+          "date": "2026-05-08",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.36
+        },
+        {
+          "date": "2026-05-11",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.36
+        },
+        {
+          "date": "2026-05-12",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.37
+        },
+        {
+          "date": "2026-05-13",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.34
+        },
+        {
+          "date": "2026-05-14",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.33
+        },
+        {
+          "date": "2026-05-15",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.33
+        },
+        {
+          "date": "2026-05-18",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.32
+        },
+        {
+          "date": "2026-05-19",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.31
+        },
+        {
+          "date": "2026-05-20",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.29
+        },
+        {
+          "date": "2026-05-21",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.3
+        },
+        {
+          "date": "2026-05-22",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.3
+        },
+        {
+          "date": "2026-05-26",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.28
+        },
+        {
+          "date": "2026-05-27",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.28
+        },
+        {
+          "date": "2026-05-28",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.26
+        },
+        {
+          "date": "2026-05-29",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.3
+        },
+        {
+          "date": "2026-06-01",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.28
+        },
+        {
+          "date": "2026-06-02",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.29
+        },
+        {
+          "date": "2026-06-03",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.28
+        },
+        {
+          "date": "2026-06-04",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.27
+        },
+        {
+          "date": "2026-06-05",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.25
+        },
+        {
+          "date": "2026-06-08",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.23
+        },
+        {
+          "date": "2026-06-09",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.21
+        },
+        {
+          "date": "2026-06-10",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.24
+        },
+        {
+          "date": "2026-06-11",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.24
+        },
+        {
+          "date": "2026-06-12",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.25
+        },
+        {
+          "date": "2026-06-15",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.28
+        },
+        {
+          "date": "2026-06-16",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.24
+        },
+        {
+          "date": "2026-06-17",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.22
+        },
+        {
+          "date": "2026-06-18",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.19
+        },
+        {
+          "date": "2026-06-22",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.18
+        },
+        {
+          "date": "2026-06-23",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.15
+        },
+        {
+          "date": "2026-06-24",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.18
+        },
+        {
+          "date": "2026-06-25",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.18
+        },
+        {
+          "date": "2026-06-26",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.17
+        },
+        {
+          "date": "2026-06-29",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.15
+        },
+        {
+          "date": "2026-06-30",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.16
+        },
+        {
+          "date": "2026-07-02",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.2
+        },
+        {
+          "date": "2026-07-03",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.23
+        },
+        {
+          "date": "2026-07-06",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.22
+        },
+        {
+          "date": "2026-07-07",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.21
+        },
+        {
+          "date": "2026-07-08",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.2
+        },
+        {
+          "date": "2026-07-09",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.21
+        },
+        {
+          "date": "2026-07-10",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.23
+        },
+        {
+          "date": "2026-07-13",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.21
+        },
+        {
+          "date": "2026-07-14",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.22
+        },
+        {
+          "date": "2026-07-15",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.25
+        },
+        {
+          "date": "2026-07-16",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.26
+        },
+        {
+          "date": "2026-07-17",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.28
+        },
+        {
+          "date": "2026-07-20",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.29
+        },
+        {
+          "date": "2026-07-21",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.28
+        },
+        {
+          "date": "2026-07-22",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.27
+        },
+        {
+          "date": "2026-07-23",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.3
+        },
+        {
+          "date": "2026-07-24",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.28
+        },
+        {
+          "date": "2026-07-27",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.33
+        },
+        {
+          "date": "2026-07-28",
+          "ticker": "00435",
+          "series": "Sunlight",
+          "value": 2.32
+        },
+        {
+          "date": "2026-03-30",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.355
+        },
+        {
+          "date": "2026-03-31",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.35
+        },
+        {
+          "date": "2026-04-01",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.35
+        },
+        {
+          "date": "2026-04-02",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.35
+        },
+        {
+          "date": "2026-04-08",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.36
+        },
+        {
+          "date": "2026-04-09",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.36
+        },
+        {
+          "date": "2026-04-10",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.365
+        },
+        {
+          "date": "2026-04-13",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.365
+        },
+        {
+          "date": "2026-04-14",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.37
+        },
+        {
+          "date": "2026-04-15",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.37
+        },
+        {
+          "date": "2026-04-16",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.375
+        },
+        {
+          "date": "2026-04-17",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.37
+        },
+        {
+          "date": "2026-04-20",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.37
+        },
+        {
+          "date": "2026-04-21",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.37
+        },
+        {
+          "date": "2026-04-22",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.37
+        },
+        {
+          "date": "2026-04-23",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.38
+        },
+        {
+          "date": "2026-04-24",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.375
+        },
+        {
+          "date": "2026-04-27",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.375
+        },
+        {
+          "date": "2026-04-28",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.375
+        },
+        {
+          "date": "2026-04-29",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.38
+        },
+        {
+          "date": "2026-04-30",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.38
+        },
+        {
+          "date": "2026-05-04",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.39
+        },
+        {
+          "date": "2026-05-05",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.385
+        },
+        {
+          "date": "2026-05-06",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.395
+        },
+        {
+          "date": "2026-05-07",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.415
+        },
+        {
+          "date": "2026-05-08",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.415
+        },
+        {
+          "date": "2026-05-11",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.42
+        },
+        {
+          "date": "2026-05-12",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.41
+        },
+        {
+          "date": "2026-05-13",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.405
+        },
+        {
+          "date": "2026-05-14",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.395
+        },
+        {
+          "date": "2026-05-15",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.39
+        },
+        {
+          "date": "2026-05-18",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.385
+        },
+        {
+          "date": "2026-05-19",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.38
+        },
+        {
+          "date": "2026-05-20",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.38
+        },
+        {
+          "date": "2026-05-21",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.38
+        },
+        {
+          "date": "2026-05-22",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.38
+        },
+        {
+          "date": "2026-05-26",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.38
+        },
+        {
+          "date": "2026-05-27",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.38
+        },
+        {
+          "date": "2026-05-28",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.375
+        },
+        {
+          "date": "2026-05-29",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.385
+        },
+        {
+          "date": "2026-06-01",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.385
+        },
+        {
+          "date": "2026-06-02",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.39
+        },
+        {
+          "date": "2026-06-03",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.375
+        },
+        {
+          "date": "2026-06-04",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.375
+        },
+        {
+          "date": "2026-06-05",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.375
+        },
+        {
+          "date": "2026-06-08",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.365
+        },
+        {
+          "date": "2026-06-09",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.365
+        },
+        {
+          "date": "2026-06-10",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.365
+        },
+        {
+          "date": "2026-06-11",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.36
+        },
+        {
+          "date": "2026-06-12",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.36
+        },
+        {
+          "date": "2026-06-15",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.36
+        },
+        {
+          "date": "2026-06-16",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.36
+        },
+        {
+          "date": "2026-06-17",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.35
+        },
+        {
+          "date": "2026-06-18",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.335
+        },
+        {
+          "date": "2026-06-22",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.34
+        },
+        {
+          "date": "2026-06-23",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.335
+        },
+        {
+          "date": "2026-06-24",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.33
+        },
+        {
+          "date": "2026-06-25",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.325
+        },
+        {
+          "date": "2026-06-26",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.325
+        },
+        {
+          "date": "2026-06-29",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.32
+        },
+        {
+          "date": "2026-06-30",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.315
+        },
+        {
+          "date": "2026-07-02",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.31
+        },
+        {
+          "date": "2026-07-03",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.315
+        },
+        {
+          "date": "2026-07-06",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.32
+        },
+        {
+          "date": "2026-07-07",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.315
+        },
+        {
+          "date": "2026-07-08",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.32
+        },
+        {
+          "date": "2026-07-09",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.315
+        },
+        {
+          "date": "2026-07-10",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.315
+        },
+        {
+          "date": "2026-07-13",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.315
+        },
+        {
+          "date": "2026-07-14",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.315
+        },
+        {
+          "date": "2026-07-15",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.315
+        },
+        {
+          "date": "2026-07-16",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.315
+        },
+        {
+          "date": "2026-07-17",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.32
+        },
+        {
+          "date": "2026-07-20",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.32
+        },
+        {
+          "date": "2026-07-21",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.32
+        },
+        {
+          "date": "2026-07-22",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.335
+        },
+        {
+          "date": "2026-07-23",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.345
+        },
+        {
+          "date": "2026-07-24",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.36
+        },
+        {
+          "date": "2026-07-27",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.385
+        },
+        {
+          "date": "2026-07-28",
+          "ticker": "01881",
+          "series": "Regal",
+          "value": 0.39
+        }
+      ],
       "linkreit": [
         {
           "date": "2022-03-31",
@@ -1840,7 +4835,7 @@
       "id": "reit_price_akshare",
       "label": "香港REITs每日现货报价及历史（akshare）",
       "href": "https://www.hkex.com.hk/",
-      "path": "sources/reit_price.py",
+      "path": "sources/reit_price.sql",
       "query": {
         "engine": "akshare.stock_hk_spot_em",
         "url": "https://www.hkex.com.hk/",
@@ -1979,10 +4974,10 @@
     {
       "source_id": "reit_price_akshare",
       "label": "Hong Kong REITs Daily Spot Quotes & History (akshare)",
-      "status": "stale/unreachable",
-      "records": 0,
-      "latest_observation": null,
-      "freshness": "stale/unreachable",
+      "status": "success",
+      "records": 6,
+      "latest_observation": "2026-07-28",
+      "freshness": "live",
       "notes": "Daily spot price quotes, percentage change, and OHLC daily history for all 6 HK REITs."
     }
   ],
@@ -1990,8 +4985,8 @@
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-reit/",
     "sector_id": "hk-reit",
     "sector_name": "Hong Kong REITs Sector Monitor",
-    "snapshotId": "fb7d554e3f9c63ac",
-    "generatedAt": "2026-07-27T22:51:14.740800Z",
+    "snapshotId": "dcd5fa94b5169176",
+    "generatedAt": "2026-07-28T18:15:27.255915Z",
     "dataAsOf": "2026-03-31"
   }
 }

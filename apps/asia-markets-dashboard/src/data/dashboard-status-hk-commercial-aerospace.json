@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-07-28T08:52:14.029945Z",
-  "snapshot_id": "37739e9f1a3c6f6f",
+  "generated_at": "2026-07-28T17:54:06.471972Z",
+  "snapshot_id": "e7cc929b9ea57e77",
   "data_as_of": "2026-07-28",
   "overall_status": "Healthy",
   "live_sources": 4,
@@ -22,8 +22,8 @@
       "type": "Measure",
       "status": "Healthy",
       "latest_observation": "2026-07-28",
-      "records": 116,
-      "freshness": "Live",
+      "records": 8,
+      "freshness": "Stale",
       "notes": "Launch history for Chinese commercial launch providers (LandSpace, CAS Space, Galactic Energy, Space Pioneer, etc.)."
     },
     {

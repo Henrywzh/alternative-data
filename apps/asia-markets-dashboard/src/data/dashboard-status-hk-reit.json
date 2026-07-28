@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-07-28T08:52:14.270449Z",
-  "snapshot_id": "fb7d554e3f9c63ac",
+  "generated_at": "2026-07-28T18:15:27.255915Z",
+  "snapshot_id": "dcd5fa94b5169176",
   "data_as_of": "2026-03-31",
-  "overall_status": "Degraded",
-  "live_sources": 6,
+  "overall_status": "Healthy",
+  "live_sources": 7,
   "planned_sources": 0,
   "sources": [
     {
@@ -70,10 +70,10 @@
       "source": "Hong Kong REITs Daily Spot Quotes & History (akshare)",
       "dataset": "reit_price_akshare",
       "type": "Measure",
-      "status": "Degraded",
-      "latest_observation": "\u2014",
-      "records": 0,
-      "freshness": "stale/unreachable",
+      "status": "Healthy",
+      "latest_observation": "2026-07-28",
+      "records": 6,
+      "freshness": "live",
       "notes": "Daily spot price quotes, percentage change, and OHLC daily history for all 6 HK REITs."
     }
   ],
