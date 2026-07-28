@@ -6,7 +6,7 @@
     "title": "Hong Kong REITs Sector Monitor",
     "description": "NAV/unit, DPU, occupancy, rental reversion, and hotel KPI disclosures for all six HK-listed REITs.",
     "sector": "hk-reit",
-    "generatedAt": "2026-07-28T18:15:27.255915Z",
+    "generatedAt": "2026-07-28T18:28:08.709681Z",
     "dataAsOf": "2026-03-31",
     "liveSourcesCount": 7,
     "totalSourcesCount": 7,
@@ -18,7 +18,7 @@
         "sourceId": "linkreit_fundamentals",
         "metrics": [
           {
-            "label": "Link REIT \u2014 NAV/Unit (HK$)",
+            "label": "Link REIT NAV (HK$)",
             "field": "nav_per_unit_hkd",
             "format": "number"
           },
@@ -46,7 +46,7 @@
         "sourceId": "championreit_fundamentals",
         "metrics": [
           {
-            "label": "Champion REIT \u2014 NAV/Unit (HK$)",
+            "label": "Champion REIT NAV (HK$)",
             "field": "nav_per_unit_hkd",
             "format": "number"
           },
@@ -74,7 +74,7 @@
         "sourceId": "fortunereit_fundamentals",
         "metrics": [
           {
-            "label": "Fortune REIT \u2014 NAV/Unit (HK$)",
+            "label": "Fortune REIT NAV (HK$)",
             "field": "nav_per_unit_hkd",
             "format": "number"
           },
@@ -102,7 +102,7 @@
         "sourceId": "prosperityreit_fundamentals",
         "metrics": [
           {
-            "label": "Prosperity REIT \u2014 NAV/Unit (HK$)",
+            "label": "Prosperity REIT NAV (HK$)",
             "field": "nav_per_unit_hkd",
             "format": "number"
           },
@@ -130,7 +130,7 @@
         "sourceId": "sunlightreit_fundamentals",
         "metrics": [
           {
-            "label": "Sunlight REIT \u2014 NAV/Unit (HK$)",
+            "label": "Sunlight REIT NAV (HK$)",
             "field": "nav_per_unit_hkd",
             "format": "number"
           },
@@ -158,7 +158,7 @@
         "sourceId": "regalreit_fundamentals",
         "metrics": [
           {
-            "label": "Regal REIT \u2014 NAV/Unit (HK$)",
+            "label": "Regal REIT NAV (HK$)",
             "field": "nav_per_unit_hkd",
             "format": "number"
           },
@@ -513,7 +513,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**Data snapshot:** `dcd5fa94b5169176` \u00b7 generated 2026-07-28T18:15:27.255915Z.  Each REIT's figures come from that trust's own investor-relations disclosures (semi-annual or annual cadence), supplemented by market spot quotes."
+        "body": "**Data snapshot:** `dcd5fa94b5169176` \u00b7 generated 2026-07-28T18:28:08.709681Z.  Each REIT's figures come from that trust's own investor-relations disclosures (semi-annual or annual cadence), supplemented by market spot quotes."
       },
       {
         "id": "kpi_grid",
@@ -578,7 +578,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-28T18:15:27.255915Z",
+    "generatedAt": "2026-07-28T18:28:08.709681Z",
     "status": "ready",
     "datasets": {
       "kpi_linkreit": [
@@ -4986,7 +4986,7 @@
     "sector_id": "hk-reit",
     "sector_name": "Hong Kong REITs Sector Monitor",
     "snapshotId": "dcd5fa94b5169176",
-    "generatedAt": "2026-07-28T18:15:27.255915Z",
+    "generatedAt": "2026-07-28T18:28:08.709681Z",
     "dataAsOf": "2026-03-31"
   }
 }

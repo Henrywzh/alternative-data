@@ -6,7 +6,7 @@
     "title": "Hong Kong Stablecoin & Crypto Infrastructure Monitor",
     "description": "HKMA licensed stablecoin issuers, SFC licensed VATP exchanges, HKEX crypto ETF AUM, stablecoin market cap tracking, and leading market indicators.",
     "sector": "hk-stablecoin-crypto",
-    "generatedAt": "2026-07-28T17:54:06.472037Z",
+    "generatedAt": "2026-07-28T18:27:58.774989Z",
     "dataAsOf": "2026-07-28",
     "liveSourcesCount": 6,
     "totalSourcesCount": 7,
@@ -80,7 +80,7 @@
       {
         "id": "etf_aum_history_chart",
         "title": "HKEX Crypto Spot ETF Monthly AUM ($M USD)",
-        "subtitle": "Monthly fund size for HK-listed Bitcoin and Ether spot ETFs (Bosera, ChinaAMC, Harvest).",
+        "subtitle": "Monthly fund size time series for HK-listed Bitcoin and Ether spot ETFs (Bosera, ChinaAMC, Harvest).",
         "type": "line",
         "dataset": "hkex_etf_aum_history",
         "sourceId": "hkex_etf",
@@ -105,44 +105,66 @@
         "layout": "full"
       },
       {
-        "id": "stablecoin_supply_chart",
-        "title": "Top Global Stablecoins Circulating Supply ($B USD)",
-        "subtitle": "Circulating supply by pegged market cap (USDT, USDC, etc.) via DefiLlama.",
-        "type": "bar",
-        "dataset": "stablecoin_supplies",
+        "id": "stablecoin_history_chart",
+        "title": "Global Total Stablecoin Circulating Supply ($B USD)",
+        "subtitle": "Historical global pegged asset circulating market cap expansion/contraction time series via DefiLlama.",
+        "type": "line",
+        "dataset": "stablecoin_history",
         "sourceId": "defillama",
         "encodings": {
           "x": {
-            "field": "symbol",
-            "type": "nominal",
-            "label": "Stablecoin"
+            "field": "date",
+            "type": "temporal",
+            "label": "Date"
           },
           "y": {
             "field": "circulating_usd_bn",
             "type": "quantitative",
-            "label": "Supply ($B USD)"
+            "label": "Total Supply ($B USD)"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "full"
+      },
+      {
+        "id": "fear_greed_history_chart",
+        "title": "90-Day Crypto Market Sentiment Score (0\u2013100)",
+        "subtitle": "Daily Fear & Greed Index score time series (0=Extreme Fear, 100=Extreme Greed) via Alternative.me.",
+        "type": "line",
+        "dataset": "fear_greed_history",
+        "sourceId": "fear_greed",
+        "encodings": {
+          "x": {
+            "field": "date",
+            "type": "temporal",
+            "label": "Date"
+          },
+          "y": {
+            "field": "score",
+            "type": "quantitative",
+            "label": "Sentiment Score"
           }
         },
         "valueFormat": "number",
         "layout": "half"
       },
       {
-        "id": "polymarket_catalysts_chart",
-        "title": "Global Crypto Regulatory Catalyst Probabilities (%)",
-        "subtitle": "Real-time prediction market probability for key regulatory milestones.",
-        "type": "bar",
-        "dataset": "polymarket_catalysts",
-        "sourceId": "polymarket",
+        "id": "btc_price_history_chart",
+        "title": "90-Day BTC Spot Price Trend ($ USD)",
+        "subtitle": "Daily Bitcoin close price time series via Binance.",
+        "type": "line",
+        "dataset": "btc_price_history",
+        "sourceId": "coinbase_binance",
         "encodings": {
           "x": {
-            "field": "title",
-            "type": "nominal",
-            "label": "Catalyst Event"
+            "field": "date",
+            "type": "temporal",
+            "label": "Date"
           },
           "y": {
-            "field": "probability_pct",
+            "field": "btc_price_usd",
             "type": "quantitative",
-            "label": "Probability (%)"
+            "label": "BTC Price (USD)"
           }
         },
         "valueFormat": "number",
@@ -208,6 +230,37 @@
         ]
       },
       {
+        "id": "top_stablecoins_table",
+        "title": "Top Global Stablecoins Circulating Supply Breakdown",
+        "subtitle": "Top 10 pegged assets by circulating market cap and global market share via DefiLlama.",
+        "dataset": "stablecoin_supplies",
+        "sourceId": "defillama",
+        "density": "dense",
+        "layout": "full",
+        "columns": [
+          {
+            "field": "name",
+            "label": "Stablecoin Name",
+            "type": "text"
+          },
+          {
+            "field": "symbol",
+            "label": "Symbol",
+            "type": "text"
+          },
+          {
+            "field": "circulating_usd_bn",
+            "label": "Supply ($B USD)",
+            "format": "number"
+          },
+          {
+            "field": "market_share_pct",
+            "label": "Market Share (%)",
+            "format": "number"
+          }
+        ]
+      },
+      {
         "id": "hkex_etf_table",
         "title": "HKEX Crypto Spot ETF Fund Size Summary",
         "subtitle": "Latest monthly AUM per fund (Harvest Ether 3179.HK pending HKEX fundId lookup).",
@@ -240,6 +293,32 @@
             "field": "aum_usd_m",
             "label": "AUM ($M USD)",
             "format": "number"
+          }
+        ]
+      },
+      {
+        "id": "polymarket_table",
+        "title": "Global Crypto Regulatory Catalyst Probabilities",
+        "subtitle": "Real-time prediction market probability for key regulatory milestones via Polymarket.",
+        "dataset": "polymarket_catalysts",
+        "sourceId": "polymarket",
+        "density": "dense",
+        "layout": "full",
+        "columns": [
+          {
+            "field": "title",
+            "label": "Catalyst Event",
+            "type": "text"
+          },
+          {
+            "field": "probability_pct",
+            "label": "Probability (%)",
+            "format": "number"
+          },
+          {
+            "field": "end_date",
+            "label": "Target Date",
+            "type": "text"
           }
         ]
       },
@@ -317,7 +396,7 @@
           "url": "https://stablecoins.llama.fi/stablecoins?includePrices=true",
           "language": "JSON",
           "sql": "SELECT name, symbol, circulating_usd FROM defillama_stablecoins;",
-          "description": "Global stablecoin circulating supply tracking, with AxCNH and HKDAP appearance monitoring."
+          "description": "Global stablecoin circulating supply tracking and historical market cap time series."
         }
       },
       {
@@ -343,7 +422,7 @@
           "url": "https://api.exchange.coinbase.com/products/BTC-USD/ticker",
           "language": "JSON",
           "sql": "SELECT price_usd, volume_24h, premium_bps FROM crypto_tickers;",
-          "description": "Real-time BTC spot prices and Coinbase Premium spread (bps)."
+          "description": "Real-time BTC spot prices, 90-day daily price time series, and Coinbase Premium spread (bps)."
         }
       },
       {
@@ -356,7 +435,7 @@
           "url": "https://api.alternative.me/fng/",
           "language": "JSON",
           "sql": "SELECT value, classification FROM fear_greed_index;",
-          "description": "Daily market sentiment score (0-100) and classification."
+          "description": "Daily market sentiment score (0-100) and 90-day historical time series."
         }
       },
       {
@@ -377,7 +456,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**Data snapshot:** `d813c385cdd4dc6a` \u00b7 generated 2026-07-28T17:54:06.472037Z.  Official HKMA & SFC regulatory registers and market tracking data."
+        "body": "**Data snapshot:** `5f8f56ec39426194` \u00b7 generated 2026-07-28T18:27:58.774989Z.  Official HKMA & SFC regulatory registers and market tracking data."
       },
       {
         "id": "kpi_grid",
@@ -409,16 +488,31 @@
         "tableId": "hkex_etf_table"
       },
       {
-        "id": "stablecoin_chart_block",
+        "id": "stablecoin_history_chart_block",
         "type": "chart",
-        "chartId": "stablecoin_supply_chart",
+        "chartId": "stablecoin_history_chart"
+      },
+      {
+        "id": "top_stablecoins_table_block",
+        "type": "table",
+        "tableId": "top_stablecoins_table"
+      },
+      {
+        "id": "fear_greed_chart_block",
+        "type": "chart",
+        "chartId": "fear_greed_history_chart",
         "layout": "half"
       },
       {
-        "id": "polymarket_chart_block",
+        "id": "btc_price_chart_block",
         "type": "chart",
-        "chartId": "polymarket_catalysts_chart",
+        "chartId": "btc_price_history_chart",
         "layout": "half"
+      },
+      {
+        "id": "polymarket_table_block",
+        "type": "table",
+        "tableId": "polymarket_table"
       },
       {
         "id": "watchlist_table_block",
@@ -428,13 +522,13 @@
       {
         "id": "methodology",
         "type": "markdown",
-        "body": "## Reading the Stablecoin & Crypto Infrastructure Monitor\n\nHong Kong's crypto ecosystem is anchored by official regulatory registers: HKMA stablecoin issuer sandbox licensees (Anchorpoint FRS01, HSBC FRS02) and SFC licensed VATP exchange operators (OSL, HashKey). Brokers (e.g. Guotai Junan International 01788.HK) hold dealing permissions but are NOT VATP exchange operators; Anchorpoint (HKD-pegged HKDAP) is distinct from AnchorX (Jinyong Investment 01328.HK, AxCNH). This monitor tracks regulatory registers, HKEX ETF AUM, global stablecoin market cap, and Coinbase Premium leading indicators. No investment recommendation is produced."
+        "body": "## Reading the Stablecoin & Crypto Infrastructure Monitor\n\nHong Kong's crypto ecosystem is anchored by official regulatory registers: HKMA stablecoin issuer sandbox licensees (Anchorpoint FRS01, HSBC FRS02) and SFC licensed VATP exchange operators (OSL, HashKey). Brokers (e.g. Guotai Junan International 01788.HK) hold dealing permissions but are NOT VATP exchange operators; Anchorpoint (HKD-pegged HKDAP) is distinct from AnchorX (Jinyong Investment 01328.HK, AxCNH). This monitor tracks regulatory registers, HKEX ETF AUM time series, global stablecoin circulating supply trends, 90-day sentiment score trends, 90-day BTC price trends, and Coinbase Premium leading indicators. No investment recommendation is produced."
       }
     ]
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-28T17:54:06.472037Z",
+    "generatedAt": "2026-07-28T18:27:58.774989Z",
     "status": "ready",
     "datasets": {
       "hkma_issuers": [
@@ -638,24 +732,24 @@
           "name": "Tether",
           "symbol": "USDT",
           "circulating_usd_bn": 183.84,
-          "market_share_pct": 59.6
+          "market_share_pct": 59.59
         },
         {
           "name": "USD Coin",
           "symbol": "USDC",
-          "circulating_usd_bn": 72.56,
-          "market_share_pct": 23.53
+          "circulating_usd_bn": 72.64,
+          "market_share_pct": 23.55
         },
         {
           "name": "Sky Dollar",
           "symbol": "USDS",
-          "circulating_usd_bn": 6.54,
+          "circulating_usd_bn": 6.55,
           "market_share_pct": 2.12
         },
         {
           "name": "Dai",
           "symbol": "DAI",
-          "circulating_usd_bn": 4.8,
+          "circulating_usd_bn": 4.82,
           "market_share_pct": 1.56
         },
         {
@@ -667,8 +761,8 @@
         {
           "name": "Ethena USDe",
           "symbol": "USDe",
-          "circulating_usd_bn": 3.88,
-          "market_share_pct": 1.26
+          "circulating_usd_bn": 3.87,
+          "market_share_pct": 1.25
         },
         {
           "name": "Global Dollar",
@@ -693,6 +787,548 @@
           "symbol": "BUIDL",
           "circulating_usd_bn": 2.64,
           "market_share_pct": 0.85
+        }
+      ],
+      "stablecoin_history": [
+        {
+          "date": "2024-01-01",
+          "circulating_usd_bn": 130.18
+        },
+        {
+          "date": "2024-01-08",
+          "circulating_usd_bn": 132.75
+        },
+        {
+          "date": "2024-01-15",
+          "circulating_usd_bn": 133.7
+        },
+        {
+          "date": "2024-01-22",
+          "circulating_usd_bn": 133.7
+        },
+        {
+          "date": "2024-01-29",
+          "circulating_usd_bn": 134.99
+        },
+        {
+          "date": "2024-02-05",
+          "circulating_usd_bn": 135.51
+        },
+        {
+          "date": "2024-02-12",
+          "circulating_usd_bn": 136.79
+        },
+        {
+          "date": "2024-02-19",
+          "circulating_usd_bn": 137.95
+        },
+        {
+          "date": "2024-02-26",
+          "circulating_usd_bn": 138.93
+        },
+        {
+          "date": "2024-03-04",
+          "circulating_usd_bn": 141.73
+        },
+        {
+          "date": "2024-03-11",
+          "circulating_usd_bn": 144.99
+        },
+        {
+          "date": "2024-03-18",
+          "circulating_usd_bn": 146.77
+        },
+        {
+          "date": "2024-03-25",
+          "circulating_usd_bn": 148.14
+        },
+        {
+          "date": "2024-04-01",
+          "circulating_usd_bn": 150.02
+        },
+        {
+          "date": "2024-04-08",
+          "circulating_usd_bn": 154.57
+        },
+        {
+          "date": "2024-04-15",
+          "circulating_usd_bn": 155.45
+        },
+        {
+          "date": "2024-04-22",
+          "circulating_usd_bn": 158.95
+        },
+        {
+          "date": "2024-04-29",
+          "circulating_usd_bn": 159.99
+        },
+        {
+          "date": "2024-05-06",
+          "circulating_usd_bn": 160.48
+        },
+        {
+          "date": "2024-05-13",
+          "circulating_usd_bn": 160.33
+        },
+        {
+          "date": "2024-05-20",
+          "circulating_usd_bn": 161.43
+        },
+        {
+          "date": "2024-05-27",
+          "circulating_usd_bn": 161.14
+        },
+        {
+          "date": "2024-06-03",
+          "circulating_usd_bn": 160.85
+        },
+        {
+          "date": "2024-06-10",
+          "circulating_usd_bn": 162.04
+        },
+        {
+          "date": "2024-06-17",
+          "circulating_usd_bn": 161.94
+        },
+        {
+          "date": "2024-06-24",
+          "circulating_usd_bn": 162.29
+        },
+        {
+          "date": "2024-07-01",
+          "circulating_usd_bn": 161.63
+        },
+        {
+          "date": "2024-07-08",
+          "circulating_usd_bn": 162.58
+        },
+        {
+          "date": "2024-07-15",
+          "circulating_usd_bn": 163.3
+        },
+        {
+          "date": "2024-07-22",
+          "circulating_usd_bn": 164.98
+        },
+        {
+          "date": "2024-07-29",
+          "circulating_usd_bn": 165.23
+        },
+        {
+          "date": "2024-08-05",
+          "circulating_usd_bn": 164.58
+        },
+        {
+          "date": "2024-08-12",
+          "circulating_usd_bn": 166.59
+        },
+        {
+          "date": "2024-08-19",
+          "circulating_usd_bn": 168.79
+        },
+        {
+          "date": "2024-08-26",
+          "circulating_usd_bn": 170.57
+        },
+        {
+          "date": "2024-09-02",
+          "circulating_usd_bn": 170.81
+        },
+        {
+          "date": "2024-09-09",
+          "circulating_usd_bn": 170.7
+        },
+        {
+          "date": "2024-09-16",
+          "circulating_usd_bn": 171.98
+        },
+        {
+          "date": "2024-09-23",
+          "circulating_usd_bn": 172.95
+        },
+        {
+          "date": "2024-09-30",
+          "circulating_usd_bn": 173.79
+        },
+        {
+          "date": "2024-10-07",
+          "circulating_usd_bn": 173.5
+        },
+        {
+          "date": "2024-10-14",
+          "circulating_usd_bn": 173.65
+        },
+        {
+          "date": "2024-10-21",
+          "circulating_usd_bn": 173.78
+        },
+        {
+          "date": "2024-10-28",
+          "circulating_usd_bn": 173.33
+        },
+        {
+          "date": "2024-11-04",
+          "circulating_usd_bn": 174.08
+        },
+        {
+          "date": "2024-11-11",
+          "circulating_usd_bn": 179.53
+        },
+        {
+          "date": "2024-11-18",
+          "circulating_usd_bn": 185.7
+        },
+        {
+          "date": "2024-11-25",
+          "circulating_usd_bn": 192.93
+        },
+        {
+          "date": "2024-12-02",
+          "circulating_usd_bn": 194.06
+        },
+        {
+          "date": "2024-12-09",
+          "circulating_usd_bn": 199.95
+        },
+        {
+          "date": "2024-12-16",
+          "circulating_usd_bn": 204.33
+        },
+        {
+          "date": "2024-12-23",
+          "circulating_usd_bn": 206.06
+        },
+        {
+          "date": "2024-12-30",
+          "circulating_usd_bn": 207.29
+        },
+        {
+          "date": "2025-01-06",
+          "circulating_usd_bn": 208.56
+        },
+        {
+          "date": "2025-01-13",
+          "circulating_usd_bn": 208.56
+        },
+        {
+          "date": "2025-01-20",
+          "circulating_usd_bn": 212.05
+        },
+        {
+          "date": "2025-01-27",
+          "circulating_usd_bn": 217.29
+        },
+        {
+          "date": "2025-02-03",
+          "circulating_usd_bn": 219.01
+        },
+        {
+          "date": "2025-02-10",
+          "circulating_usd_bn": 225.53
+        },
+        {
+          "date": "2025-02-17",
+          "circulating_usd_bn": 226.86
+        },
+        {
+          "date": "2025-02-24",
+          "circulating_usd_bn": 228.07
+        },
+        {
+          "date": "2025-03-03",
+          "circulating_usd_bn": 225.97
+        },
+        {
+          "date": "2025-03-10",
+          "circulating_usd_bn": 228.69
+        },
+        {
+          "date": "2025-03-17",
+          "circulating_usd_bn": 230.28
+        },
+        {
+          "date": "2025-03-24",
+          "circulating_usd_bn": 233.34
+        },
+        {
+          "date": "2025-03-31",
+          "circulating_usd_bn": 234.79
+        },
+        {
+          "date": "2025-04-07",
+          "circulating_usd_bn": 234.5
+        },
+        {
+          "date": "2025-04-14",
+          "circulating_usd_bn": 233.49
+        },
+        {
+          "date": "2025-04-21",
+          "circulating_usd_bn": 234.3
+        },
+        {
+          "date": "2025-04-28",
+          "circulating_usd_bn": 239.4
+        },
+        {
+          "date": "2025-05-05",
+          "circulating_usd_bn": 242.73
+        },
+        {
+          "date": "2025-05-12",
+          "circulating_usd_bn": 242.69
+        },
+        {
+          "date": "2025-05-19",
+          "circulating_usd_bn": 243.74
+        },
+        {
+          "date": "2025-05-26",
+          "circulating_usd_bn": 246.01
+        },
+        {
+          "date": "2025-06-02",
+          "circulating_usd_bn": 246.71
+        },
+        {
+          "date": "2025-06-09",
+          "circulating_usd_bn": 249.26
+        },
+        {
+          "date": "2025-06-16",
+          "circulating_usd_bn": 250.54
+        },
+        {
+          "date": "2025-06-23",
+          "circulating_usd_bn": 250.51
+        },
+        {
+          "date": "2025-06-30",
+          "circulating_usd_bn": 252.35
+        },
+        {
+          "date": "2025-07-07",
+          "circulating_usd_bn": 254.0
+        },
+        {
+          "date": "2025-07-14",
+          "circulating_usd_bn": 257.31
+        },
+        {
+          "date": "2025-07-21",
+          "circulating_usd_bn": 260.61
+        },
+        {
+          "date": "2025-07-28",
+          "circulating_usd_bn": 264.3
+        },
+        {
+          "date": "2025-08-04",
+          "circulating_usd_bn": 266.48
+        },
+        {
+          "date": "2025-08-11",
+          "circulating_usd_bn": 268.7
+        },
+        {
+          "date": "2025-08-18",
+          "circulating_usd_bn": 276.05
+        },
+        {
+          "date": "2025-08-25",
+          "circulating_usd_bn": 276.58
+        },
+        {
+          "date": "2025-09-01",
+          "circulating_usd_bn": 282.94
+        },
+        {
+          "date": "2025-09-08",
+          "circulating_usd_bn": 284.84
+        },
+        {
+          "date": "2025-09-15",
+          "circulating_usd_bn": 288.52
+        },
+        {
+          "date": "2025-09-22",
+          "circulating_usd_bn": 291.77
+        },
+        {
+          "date": "2025-09-29",
+          "circulating_usd_bn": 295.78
+        },
+        {
+          "date": "2025-10-06",
+          "circulating_usd_bn": 301.64
+        },
+        {
+          "date": "2025-10-13",
+          "circulating_usd_bn": 303.12
+        },
+        {
+          "date": "2025-10-20",
+          "circulating_usd_bn": 306.62
+        },
+        {
+          "date": "2025-10-27",
+          "circulating_usd_bn": 307.51
+        },
+        {
+          "date": "2025-11-03",
+          "circulating_usd_bn": 306.42
+        },
+        {
+          "date": "2025-11-10",
+          "circulating_usd_bn": 304.91
+        },
+        {
+          "date": "2025-11-17",
+          "circulating_usd_bn": 303.38
+        },
+        {
+          "date": "2025-11-24",
+          "circulating_usd_bn": 302.06
+        },
+        {
+          "date": "2025-12-01",
+          "circulating_usd_bn": 305.52
+        },
+        {
+          "date": "2025-12-08",
+          "circulating_usd_bn": 307.68
+        },
+        {
+          "date": "2025-12-15",
+          "circulating_usd_bn": 309.16
+        },
+        {
+          "date": "2025-12-22",
+          "circulating_usd_bn": 308.55
+        },
+        {
+          "date": "2025-12-29",
+          "circulating_usd_bn": 307.81
+        },
+        {
+          "date": "2026-01-05",
+          "circulating_usd_bn": 307.27
+        },
+        {
+          "date": "2026-01-12",
+          "circulating_usd_bn": 307.36
+        },
+        {
+          "date": "2026-01-19",
+          "circulating_usd_bn": 310.75
+        },
+        {
+          "date": "2026-01-26",
+          "circulating_usd_bn": 308.41
+        },
+        {
+          "date": "2026-02-02",
+          "circulating_usd_bn": 304.74
+        },
+        {
+          "date": "2026-02-09",
+          "circulating_usd_bn": 306.31
+        },
+        {
+          "date": "2026-02-16",
+          "circulating_usd_bn": 306.34
+        },
+        {
+          "date": "2026-02-23",
+          "circulating_usd_bn": 307.08
+        },
+        {
+          "date": "2026-03-02",
+          "circulating_usd_bn": 307.57
+        },
+        {
+          "date": "2026-03-09",
+          "circulating_usd_bn": 311.02
+        },
+        {
+          "date": "2026-03-16",
+          "circulating_usd_bn": 313.65
+        },
+        {
+          "date": "2026-03-23",
+          "circulating_usd_bn": 314.01
+        },
+        {
+          "date": "2026-03-30",
+          "circulating_usd_bn": 313.37
+        },
+        {
+          "date": "2026-04-06",
+          "circulating_usd_bn": 314.84
+        },
+        {
+          "date": "2026-04-13",
+          "circulating_usd_bn": 316.29
+        },
+        {
+          "date": "2026-04-20",
+          "circulating_usd_bn": 318.22
+        },
+        {
+          "date": "2026-04-27",
+          "circulating_usd_bn": 318.12
+        },
+        {
+          "date": "2026-05-04",
+          "circulating_usd_bn": 318.81
+        },
+        {
+          "date": "2026-05-11",
+          "circulating_usd_bn": 320.2
+        },
+        {
+          "date": "2026-05-18",
+          "circulating_usd_bn": 320.82
+        },
+        {
+          "date": "2026-05-25",
+          "circulating_usd_bn": 320.37
+        },
+        {
+          "date": "2026-06-01",
+          "circulating_usd_bn": 317.62
+        },
+        {
+          "date": "2026-06-08",
+          "circulating_usd_bn": 313.86
+        },
+        {
+          "date": "2026-06-15",
+          "circulating_usd_bn": 312.7
+        },
+        {
+          "date": "2026-06-22",
+          "circulating_usd_bn": 312.74
+        },
+        {
+          "date": "2026-06-29",
+          "circulating_usd_bn": 310.39
+        },
+        {
+          "date": "2026-07-06",
+          "circulating_usd_bn": 309.23
+        },
+        {
+          "date": "2026-07-13",
+          "circulating_usd_bn": 307.87
+        },
+        {
+          "date": "2026-07-20",
+          "circulating_usd_bn": 306.45
+        },
+        {
+          "date": "2026-07-27",
+          "circulating_usd_bn": 306.17
         }
       ],
       "hkex_etf_summary": [
@@ -1209,6 +1845,730 @@
           "value": 15.51
         }
       ],
+      "fear_greed_history": [
+        {
+          "date": "2026-04-30",
+          "score": 29
+        },
+        {
+          "date": "2026-05-01",
+          "score": 26
+        },
+        {
+          "date": "2026-05-02",
+          "score": 39
+        },
+        {
+          "date": "2026-05-03",
+          "score": 47
+        },
+        {
+          "date": "2026-05-04",
+          "score": 40
+        },
+        {
+          "date": "2026-05-05",
+          "score": 50
+        },
+        {
+          "date": "2026-05-06",
+          "score": 46
+        },
+        {
+          "date": "2026-05-07",
+          "score": 47
+        },
+        {
+          "date": "2026-05-08",
+          "score": 38
+        },
+        {
+          "date": "2026-05-09",
+          "score": 38
+        },
+        {
+          "date": "2026-05-10",
+          "score": 47
+        },
+        {
+          "date": "2026-05-11",
+          "score": 48
+        },
+        {
+          "date": "2026-05-12",
+          "score": 49
+        },
+        {
+          "date": "2026-05-13",
+          "score": 42
+        },
+        {
+          "date": "2026-05-14",
+          "score": 34
+        },
+        {
+          "date": "2026-05-15",
+          "score": 43
+        },
+        {
+          "date": "2026-05-16",
+          "score": 31
+        },
+        {
+          "date": "2026-05-17",
+          "score": 27
+        },
+        {
+          "date": "2026-05-18",
+          "score": 28
+        },
+        {
+          "date": "2026-05-19",
+          "score": 25
+        },
+        {
+          "date": "2026-05-20",
+          "score": 27
+        },
+        {
+          "date": "2026-05-21",
+          "score": 29
+        },
+        {
+          "date": "2026-05-22",
+          "score": 28
+        },
+        {
+          "date": "2026-05-23",
+          "score": 28
+        },
+        {
+          "date": "2026-05-24",
+          "score": 25
+        },
+        {
+          "date": "2026-05-25",
+          "score": 30
+        },
+        {
+          "date": "2026-05-26",
+          "score": 34
+        },
+        {
+          "date": "2026-05-27",
+          "score": 25
+        },
+        {
+          "date": "2026-05-28",
+          "score": 22
+        },
+        {
+          "date": "2026-05-29",
+          "score": 23
+        },
+        {
+          "date": "2026-05-30",
+          "score": 23
+        },
+        {
+          "date": "2026-05-31",
+          "score": 28
+        },
+        {
+          "date": "2026-06-01",
+          "score": 29
+        },
+        {
+          "date": "2026-06-02",
+          "score": 23
+        },
+        {
+          "date": "2026-06-03",
+          "score": 11
+        },
+        {
+          "date": "2026-06-04",
+          "score": 12
+        },
+        {
+          "date": "2026-06-05",
+          "score": 12
+        },
+        {
+          "date": "2026-06-06",
+          "score": 12
+        },
+        {
+          "date": "2026-06-07",
+          "score": 12
+        },
+        {
+          "date": "2026-06-08",
+          "score": 8
+        },
+        {
+          "date": "2026-06-09",
+          "score": 10
+        },
+        {
+          "date": "2026-06-10",
+          "score": 9
+        },
+        {
+          "date": "2026-06-11",
+          "score": 12
+        },
+        {
+          "date": "2026-06-12",
+          "score": 12
+        },
+        {
+          "date": "2026-06-13",
+          "score": 13
+        },
+        {
+          "date": "2026-06-14",
+          "score": 18
+        },
+        {
+          "date": "2026-06-15",
+          "score": 20
+        },
+        {
+          "date": "2026-06-16",
+          "score": 23
+        },
+        {
+          "date": "2026-06-17",
+          "score": 22
+        },
+        {
+          "date": "2026-06-18",
+          "score": 15
+        },
+        {
+          "date": "2026-06-19",
+          "score": 14
+        },
+        {
+          "date": "2026-06-20",
+          "score": 23
+        },
+        {
+          "date": "2026-06-21",
+          "score": 23
+        },
+        {
+          "date": "2026-06-22",
+          "score": 20
+        },
+        {
+          "date": "2026-06-23",
+          "score": 23
+        },
+        {
+          "date": "2026-06-24",
+          "score": 17
+        },
+        {
+          "date": "2026-06-25",
+          "score": 12
+        },
+        {
+          "date": "2026-06-26",
+          "score": 13
+        },
+        {
+          "date": "2026-06-27",
+          "score": 15
+        },
+        {
+          "date": "2026-06-28",
+          "score": 18
+        },
+        {
+          "date": "2026-06-29",
+          "score": 12
+        },
+        {
+          "date": "2026-06-30",
+          "score": 15
+        },
+        {
+          "date": "2026-07-01",
+          "score": 11
+        },
+        {
+          "date": "2026-07-02",
+          "score": 19
+        },
+        {
+          "date": "2026-07-03",
+          "score": 21
+        },
+        {
+          "date": "2026-07-04",
+          "score": 22
+        },
+        {
+          "date": "2026-07-05",
+          "score": 23
+        },
+        {
+          "date": "2026-07-06",
+          "score": 24
+        },
+        {
+          "date": "2026-07-07",
+          "score": 27
+        },
+        {
+          "date": "2026-07-08",
+          "score": 20
+        },
+        {
+          "date": "2026-07-09",
+          "score": 22
+        },
+        {
+          "date": "2026-07-10",
+          "score": 23
+        },
+        {
+          "date": "2026-07-11",
+          "score": 26
+        },
+        {
+          "date": "2026-07-12",
+          "score": 26
+        },
+        {
+          "date": "2026-07-13",
+          "score": 28
+        },
+        {
+          "date": "2026-07-14",
+          "score": 22
+        },
+        {
+          "date": "2026-07-15",
+          "score": 25
+        },
+        {
+          "date": "2026-07-16",
+          "score": 25
+        },
+        {
+          "date": "2026-07-17",
+          "score": 27
+        },
+        {
+          "date": "2026-07-18",
+          "score": 25
+        },
+        {
+          "date": "2026-07-19",
+          "score": 28
+        },
+        {
+          "date": "2026-07-20",
+          "score": 29
+        },
+        {
+          "date": "2026-07-21",
+          "score": 25
+        },
+        {
+          "date": "2026-07-22",
+          "score": 33
+        },
+        {
+          "date": "2026-07-23",
+          "score": 31
+        },
+        {
+          "date": "2026-07-24",
+          "score": 28
+        },
+        {
+          "date": "2026-07-25",
+          "score": 27
+        },
+        {
+          "date": "2026-07-26",
+          "score": 26
+        },
+        {
+          "date": "2026-07-27",
+          "score": 30
+        },
+        {
+          "date": "2026-07-28",
+          "score": 29
+        }
+      ],
+      "btc_price_history": [
+        {
+          "date": "2026-04-30",
+          "btc_price_usd": 76346.57
+        },
+        {
+          "date": "2026-05-01",
+          "btc_price_usd": 78231.13
+        },
+        {
+          "date": "2026-05-02",
+          "btc_price_usd": 78686.85
+        },
+        {
+          "date": "2026-05-03",
+          "btc_price_usd": 78568.57
+        },
+        {
+          "date": "2026-05-04",
+          "btc_price_usd": 79861.01
+        },
+        {
+          "date": "2026-05-05",
+          "btc_price_usd": 80905.52
+        },
+        {
+          "date": "2026-05-06",
+          "btc_price_usd": 81447.01
+        },
+        {
+          "date": "2026-05-07",
+          "btc_price_usd": 80006.0
+        },
+        {
+          "date": "2026-05-08",
+          "btc_price_usd": 80193.17
+        },
+        {
+          "date": "2026-05-09",
+          "btc_price_usd": 80678.4
+        },
+        {
+          "date": "2026-05-10",
+          "btc_price_usd": 82210.07
+        },
+        {
+          "date": "2026-05-11",
+          "btc_price_usd": 81745.65
+        },
+        {
+          "date": "2026-05-12",
+          "btc_price_usd": 80504.47
+        },
+        {
+          "date": "2026-05-13",
+          "btc_price_usd": 79313.61
+        },
+        {
+          "date": "2026-05-14",
+          "btc_price_usd": 81089.99
+        },
+        {
+          "date": "2026-05-15",
+          "btc_price_usd": 79113.21
+        },
+        {
+          "date": "2026-05-16",
+          "btc_price_usd": 78148.05
+        },
+        {
+          "date": "2026-05-17",
+          "btc_price_usd": 77457.67
+        },
+        {
+          "date": "2026-05-18",
+          "btc_price_usd": 77001.87
+        },
+        {
+          "date": "2026-05-19",
+          "btc_price_usd": 76834.36
+        },
+        {
+          "date": "2026-05-20",
+          "btc_price_usd": 77552.23
+        },
+        {
+          "date": "2026-05-21",
+          "btc_price_usd": 77615.52
+        },
+        {
+          "date": "2026-05-22",
+          "btc_price_usd": 75539.5
+        },
+        {
+          "date": "2026-05-23",
+          "btc_price_usd": 76752.01
+        },
+        {
+          "date": "2026-05-24",
+          "btc_price_usd": 77064.96
+        },
+        {
+          "date": "2026-05-25",
+          "btc_price_usd": 77322.01
+        },
+        {
+          "date": "2026-05-26",
+          "btc_price_usd": 75930.01
+        },
+        {
+          "date": "2026-05-27",
+          "btc_price_usd": 74449.3
+        },
+        {
+          "date": "2026-05-28",
+          "btc_price_usd": 73617.51
+        },
+        {
+          "date": "2026-05-29",
+          "btc_price_usd": 73460.78
+        },
+        {
+          "date": "2026-05-30",
+          "btc_price_usd": 73884.38
+        },
+        {
+          "date": "2026-05-31",
+          "btc_price_usd": 73674.39
+        },
+        {
+          "date": "2026-06-01",
+          "btc_price_usd": 71408.9
+        },
+        {
+          "date": "2026-06-02",
+          "btc_price_usd": 66760.83
+        },
+        {
+          "date": "2026-06-03",
+          "btc_price_usd": 64142.75
+        },
+        {
+          "date": "2026-06-04",
+          "btc_price_usd": 63885.99
+        },
+        {
+          "date": "2026-06-05",
+          "btc_price_usd": 61056.47
+        },
+        {
+          "date": "2026-06-06",
+          "btc_price_usd": 60884.62
+        },
+        {
+          "date": "2026-06-07",
+          "btc_price_usd": 63332.01
+        },
+        {
+          "date": "2026-06-08",
+          "btc_price_usd": 63085.99
+        },
+        {
+          "date": "2026-06-09",
+          "btc_price_usd": 61730.0
+        },
+        {
+          "date": "2026-06-10",
+          "btc_price_usd": 61510.99
+        },
+        {
+          "date": "2026-06-11",
+          "btc_price_usd": 63625.99
+        },
+        {
+          "date": "2026-06-12",
+          "btc_price_usd": 63580.01
+        },
+        {
+          "date": "2026-06-13",
+          "btc_price_usd": 64458.01
+        },
+        {
+          "date": "2026-06-14",
+          "btc_price_usd": 65746.45
+        },
+        {
+          "date": "2026-06-15",
+          "btc_price_usd": 66328.74
+        },
+        {
+          "date": "2026-06-16",
+          "btc_price_usd": 65675.01
+        },
+        {
+          "date": "2026-06-17",
+          "btc_price_usd": 64509.4
+        },
+        {
+          "date": "2026-06-18",
+          "btc_price_usd": 62958.01
+        },
+        {
+          "date": "2026-06-19",
+          "btc_price_usd": 63543.91
+        },
+        {
+          "date": "2026-06-20",
+          "btc_price_usd": 64298.01
+        },
+        {
+          "date": "2026-06-21",
+          "btc_price_usd": 63311.99
+        },
+        {
+          "date": "2026-06-22",
+          "btc_price_usd": 64020.01
+        },
+        {
+          "date": "2026-06-23",
+          "btc_price_usd": 62734.57
+        },
+        {
+          "date": "2026-06-24",
+          "btc_price_usd": 61077.99
+        },
+        {
+          "date": "2026-06-25",
+          "btc_price_usd": 59794.0
+        },
+        {
+          "date": "2026-06-26",
+          "btc_price_usd": 60097.27
+        },
+        {
+          "date": "2026-06-27",
+          "btc_price_usd": 60029.0
+        },
+        {
+          "date": "2026-06-28",
+          "btc_price_usd": 59577.01
+        },
+        {
+          "date": "2026-06-29",
+          "btc_price_usd": 60260.21
+        },
+        {
+          "date": "2026-06-30",
+          "btc_price_usd": 58624.71
+        },
+        {
+          "date": "2026-07-01",
+          "btc_price_usd": 60024.0
+        },
+        {
+          "date": "2026-07-02",
+          "btc_price_usd": 61560.0
+        },
+        {
+          "date": "2026-07-03",
+          "btc_price_usd": 62583.26
+        },
+        {
+          "date": "2026-07-04",
+          "btc_price_usd": 63144.01
+        },
+        {
+          "date": "2026-07-05",
+          "btc_price_usd": 63650.0
+        },
+        {
+          "date": "2026-07-06",
+          "btc_price_usd": 64042.02
+        },
+        {
+          "date": "2026-07-07",
+          "btc_price_usd": 63363.99
+        },
+        {
+          "date": "2026-07-08",
+          "btc_price_usd": 62290.0
+        },
+        {
+          "date": "2026-07-09",
+          "btc_price_usd": 63230.0
+        },
+        {
+          "date": "2026-07-10",
+          "btc_price_usd": 64161.72
+        },
+        {
+          "date": "2026-07-11",
+          "btc_price_usd": 63819.0
+        },
+        {
+          "date": "2026-07-12",
+          "btc_price_usd": 63780.0
+        },
+        {
+          "date": "2026-07-13",
+          "btc_price_usd": 62334.52
+        },
+        {
+          "date": "2026-07-14",
+          "btc_price_usd": 65043.98
+        },
+        {
+          "date": "2026-07-15",
+          "btc_price_usd": 64756.28
+        },
+        {
+          "date": "2026-07-16",
+          "btc_price_usd": 63830.2
+        },
+        {
+          "date": "2026-07-17",
+          "btc_price_usd": 63931.67
+        },
+        {
+          "date": "2026-07-18",
+          "btc_price_usd": 64834.22
+        },
+        {
+          "date": "2026-07-19",
+          "btc_price_usd": 64722.54
+        },
+        {
+          "date": "2026-07-20",
+          "btc_price_usd": 65255.51
+        },
+        {
+          "date": "2026-07-21",
+          "btc_price_usd": 66556.16
+        },
+        {
+          "date": "2026-07-22",
+          "btc_price_usd": 66114.49
+        },
+        {
+          "date": "2026-07-23",
+          "btc_price_usd": 65098.97
+        },
+        {
+          "date": "2026-07-24",
+          "btc_price_usd": 64139.99
+        },
+        {
+          "date": "2026-07-25",
+          "btc_price_usd": 64375.0
+        },
+        {
+          "date": "2026-07-26",
+          "btc_price_usd": 65399.99
+        },
+        {
+          "date": "2026-07-27",
+          "btc_price_usd": 63755.86
+        },
+        {
+          "date": "2026-07-28",
+          "btc_price_usd": 63710.65
+        }
+      ],
       "polymarket_catalysts": [
         {
           "title": "What will Trump say during Wisconsin events?",
@@ -1219,6 +2579,11 @@
           "title": "Bitcoin ETF approved by Jan 15?",
           "probability_pct": 100.0,
           "end_date": "2024-01-15"
+        },
+        {
+          "title": "Counter-Strike: Legacy vs Inner Circle Esports (BO3) - PG...",
+          "probability_pct": 100.0,
+          "end_date": "2026-04-05"
         },
         {
           "title": "Counter-Strike: Just Players vs Inner Circle Academy (BO3...",
@@ -1241,14 +2606,9 @@
           "end_date": "2025-10-23"
         },
         {
-          "title": "Counter-Strike: Legacy vs Inner Circle Esports (BO3) - PG...",
+          "title": "Counter-Strike: B8 vs Inner Circle Esports (BO3) - PGL Bu...",
           "probability_pct": 100.0,
-          "end_date": "2026-04-05"
-        },
-        {
-          "title": "Bitcoin ETF Flows on March 12?",
-          "probability_pct": 100.0,
-          "end_date": "2026-03-12"
+          "end_date": "2026-04-07"
         }
       ],
       "crypto_watchlist": [
@@ -1412,10 +2772,10 @@
           "hkma_count": 2,
           "sfc_licensed_count": 13,
           "sfc_pending_count": 6,
-          "total_supply_bn": 308.44,
+          "total_supply_bn": 308.51,
           "total_etf_aum_m": 338.18,
-          "btc_price": 63576.01,
-          "cb_premium_bps": -11.0,
+          "btc_price": 63634.23,
+          "cb_premium_bps": -12.0,
           "fear_greed_val": 29,
           "fear_greed_class": "Fear"
         }
@@ -1459,7 +2819,7 @@
         "url": "https://stablecoins.llama.fi/stablecoins?includePrices=true",
         "language": "JSON",
         "sql": "SELECT name, symbol, circulating_usd FROM defillama_stablecoins;",
-        "description": "Global stablecoin circulating supply tracking, with AxCNH and HKDAP appearance monitoring."
+        "description": "Global stablecoin circulating supply tracking and historical market cap time series."
       }
     },
     {
@@ -1485,7 +2845,7 @@
         "url": "https://api.exchange.coinbase.com/products/BTC-USD/ticker",
         "language": "JSON",
         "sql": "SELECT price_usd, volume_24h, premium_bps FROM crypto_tickers;",
-        "description": "Real-time BTC spot prices and Coinbase Premium spread (bps)."
+        "description": "Real-time BTC spot prices, 90-day daily price time series, and Coinbase Premium spread (bps)."
       }
     },
     {
@@ -1498,7 +2858,7 @@
         "url": "https://api.alternative.me/fng/",
         "language": "JSON",
         "sql": "SELECT value, classification FROM fear_greed_index;",
-        "description": "Daily market sentiment score (0-100) and classification."
+        "description": "Daily market sentiment score (0-100) and 90-day historical time series."
       }
     },
     {
@@ -1541,7 +2901,7 @@
       "records": 10,
       "latest_observation": "2026-07-28",
       "freshness": "live",
-      "notes": "Global stablecoin circulating supply tracking, with AxCNH and HKDAP appearance monitoring."
+      "notes": "Global stablecoin circulating supply tracking and historical market cap time series."
     },
     {
       "source_id": "hkex_etf",
@@ -1559,7 +2919,7 @@
       "records": 1,
       "latest_observation": "2026-07-28",
       "freshness": "live",
-      "notes": "Real-time BTC spot prices and Coinbase Premium spread (bps)."
+      "notes": "Real-time BTC spot prices, 90-day daily price time series, and Coinbase Premium spread (bps)."
     },
     {
       "source_id": "fear_greed",
@@ -1568,7 +2928,7 @@
       "records": 1,
       "latest_observation": "2026-07-28",
       "freshness": "live",
-      "notes": "Daily market sentiment score (0-100) and classification."
+      "notes": "Daily market sentiment score (0-100) and 90-day historical time series."
     },
     {
       "source_id": "polymarket",
@@ -1584,8 +2944,8 @@
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-stablecoin-crypto/",
     "sector_id": "hk-stablecoin-crypto",
     "sector_name": "Hong Kong Stablecoin & Crypto Infrastructure Monitor",
-    "snapshotId": "d813c385cdd4dc6a",
-    "generatedAt": "2026-07-28T17:54:06.472037Z",
+    "snapshotId": "5f8f56ec39426194",
+    "generatedAt": "2026-07-28T18:27:58.774989Z",
     "dataAsOf": "2026-07-28"
   }
 }
