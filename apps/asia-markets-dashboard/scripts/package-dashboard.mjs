@@ -962,11 +962,19 @@ function addYearAwareStaticChartTicks(html, artifact) {
   });
 }
 
-function addCopyTitleControls(html, { locale }) {
+function addCopyTitleControls(html, artifact, { locale }) {
   const copyLabel = locale === "zh" ? "复制标题" : "Copy title";
   const copiedLabel = locale === "zh" ? "已复制" : "Copied";
+  const idToDataset = {};
+  for (const item of [
+    ...(artifact.manifest?.charts || []),
+    ...(artifact.manifest?.tables || []),
+    ...(artifact.manifest?.cards || []),
+  ]) {
+    if (item?.id && item?.dataset) idToDataset[item.id] = item.dataset;
+  }
   const css = `<style data-dashboard-copy-title="true">.portable-visual-header{display:flex!important;align-items:flex-start;gap:8px}.portable-visual-header>strong,.portable-visual-header>h1,.portable-visual-header>h2,.portable-visual-header>h3{flex:1}.editable-cell-header{position:relative!important}.editable-cell-header h1,.editable-cell-header h2,.editable-cell-header h3{padding-right:96px}.editable-cell-header .portable-copy-title{position:absolute;top:2px;right:0}.portable-copy-title{flex:0 0 auto;margin:0;padding:3px 8px;border:1px solid var(--portable-border);border-radius:999px;background:transparent;color:var(--portable-muted);font:500 11px/18px ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;cursor:pointer}.portable-copy-title:hover{color:var(--portable-ink);background:var(--portable-surface-subtle)}.portable-copy-title:focus-visible{outline:2px solid var(--portable-accent);outline-offset:2px}</style>`;
-  const script = `<script data-dashboard-copy-title-runtime="true">(()=>{const copyLabel=${JSON.stringify(copyLabel)},copiedLabel=${JSON.stringify(copiedLabel)},enhance=()=>{document.querySelectorAll(".portable-visual-header,.editable-cell-header").forEach((header)=>{if(header.querySelector(".portable-copy-title"))return;const box=header.getBoundingClientRect();if(!box.width||!box.height||getComputedStyle(header).visibility==="hidden")return;const title=header.querySelector("strong,h1,h2,h3");if(!title)return;const button=document.createElement("button");button.type="button";button.className="portable-copy-title";button.textContent=copyLabel;button.setAttribute("aria-label",copyLabel);button.addEventListener("click",async()=>{const text=title.textContent.trim();if(!text)return;let copied=false;try{await navigator.clipboard.writeText(text);copied=true}catch{const area=document.createElement("textarea");area.value=text;area.setAttribute("readonly","");area.style.position="fixed";area.style.opacity="0";document.body.appendChild(area);area.select();try{copied=document.execCommand("copy")}finally{area.remove()}}button.textContent=copied?copiedLabel:copyLabel;window.setTimeout(()=>{button.textContent=copyLabel},1400)});header.appendChild(button)})};enhance();new MutationObserver(enhance).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["class","style"]})})();</script>`;
+  const script = `<script data-dashboard-copy-title-runtime="true">(()=>{const copyLabel=${JSON.stringify(copyLabel)},copiedLabel=${JSON.stringify(copiedLabel)},idToDataset=${JSON.stringify(idToDataset)},enhance=()=>{document.querySelectorAll(".portable-visual-header,.editable-cell-header").forEach((header)=>{if(header.querySelector(".portable-copy-title"))return;const box=header.getBoundingClientRect();if(!box.width||!box.height||getComputedStyle(header).visibility==="hidden")return;const title=header.querySelector("strong,h1,h2,h3");if(!title)return;const artifactEl=header.closest("[data-chart-id],[data-table-id],[data-card-id]");const artifactId=artifactEl?.dataset?.chartId||artifactEl?.dataset?.tableId||artifactEl?.dataset?.cardId||null;const button=document.createElement("button");button.type="button";button.className="portable-copy-title";button.textContent=copyLabel;button.setAttribute("aria-label",copyLabel);button.addEventListener("click",async()=>{const titleText=title.textContent.trim();if(!titleText)return;const dataset=artifactId?idToDataset[artifactId]:null;const text=dataset?(titleText+", "+dataset):titleText;let copied=false;try{await navigator.clipboard.writeText(text);copied=true}catch{const area=document.createElement("textarea");area.value=text;area.setAttribute("readonly","");area.style.position="fixed";area.style.opacity="0";document.body.appendChild(area);area.select();try{copied=document.execCommand("copy")}finally{area.remove()}}button.textContent=copied?copiedLabel:copyLabel;window.setTimeout(()=>{button.textContent=copyLabel},1400)});header.appendChild(button)})};enhance();new MutationObserver(enhance).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["class","style"]})})();</script>`;
   return html.replace("</head>", `${css}</head>`).replace("</body>", `${script}</body>`);
 }
 
@@ -1208,8 +1216,8 @@ for (const sector of SECTORS) {
   const homeEn = "/";
   const homeZh = "/zh/";
 
-  const enHtml = addCopyTitleControls(addYearAwareStaticChartTicks(readFileSync(enPortableFile, "utf8"), rawArtifact), { locale: "en" });
-  const zhHtml = addCopyTitleControls(addYearAwareStaticChartTicks(readFileSync(zhPortableFile, "utf8"), zhArtifact), { locale: "zh" });
+  const enHtml = addCopyTitleControls(addYearAwareStaticChartTicks(readFileSync(enPortableFile, "utf8"), rawArtifact), rawArtifact, { locale: "en" });
+  const zhHtml = addCopyTitleControls(addYearAwareStaticChartTicks(readFileSync(zhPortableFile, "utf8"), zhArtifact), zhArtifact, { locale: "zh" });
   writeFileSync(
     enPortableFile,
     addNavigation(enHtml, { locale: "en", homeEn, homeZh, routeEn, routeZh })
