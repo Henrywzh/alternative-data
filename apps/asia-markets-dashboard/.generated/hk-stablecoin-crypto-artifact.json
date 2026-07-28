@@ -6,7 +6,7 @@
     "title": "Hong Kong Stablecoin & Crypto Infrastructure Monitor",
     "description": "HKMA licensed stablecoin issuers, SFC licensed VATP exchanges, HKEX crypto ETF AUM, stablecoin market cap tracking, and leading market indicators.",
     "sector": "hk-stablecoin-crypto",
-    "generatedAt": "2026-07-28T08:52:14.050929Z",
+    "generatedAt": "2026-07-28T17:54:06.472037Z",
     "dataAsOf": "2026-07-28",
     "liveSourcesCount": 6,
     "totalSourcesCount": 7,
@@ -377,7 +377,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**Data snapshot:** `f4a19b445258a10e` \u00b7 generated 2026-07-28T08:52:14.050929Z.  Official HKMA & SFC regulatory registers and market tracking data."
+        "body": "**Data snapshot:** `d813c385cdd4dc6a` \u00b7 generated 2026-07-28T17:54:06.472037Z.  Official HKMA & SFC regulatory registers and market tracking data."
       },
       {
         "id": "kpi_grid",
@@ -434,7 +434,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-28T08:52:14.050929Z",
+    "generatedAt": "2026-07-28T17:54:06.472037Z",
     "status": "ready",
     "datasets": {
       "hkma_issuers": [
@@ -637,13 +637,13 @@
         {
           "name": "Tether",
           "symbol": "USDT",
-          "circulating_usd_bn": 183.85,
-          "market_share_pct": 59.69
+          "circulating_usd_bn": 183.84,
+          "market_share_pct": 59.6
         },
         {
           "name": "USD Coin",
           "symbol": "USDC",
-          "circulating_usd_bn": 72.46,
+          "circulating_usd_bn": 72.56,
           "market_share_pct": 23.53
         },
         {
@@ -655,32 +655,32 @@
         {
           "name": "Dai",
           "symbol": "DAI",
-          "circulating_usd_bn": 4.81,
+          "circulating_usd_bn": 4.8,
           "market_share_pct": 1.56
         },
         {
           "name": "World Liberty Financial USD",
           "symbol": "USD1",
-          "circulating_usd_bn": 4.12,
-          "market_share_pct": 1.34
+          "circulating_usd_bn": 4.1,
+          "market_share_pct": 1.33
         },
         {
           "name": "Ethena USDe",
           "symbol": "USDe",
-          "circulating_usd_bn": 3.93,
-          "market_share_pct": 1.28
+          "circulating_usd_bn": 3.88,
+          "market_share_pct": 1.26
         },
         {
           "name": "Global Dollar",
           "symbol": "USDG",
-          "circulating_usd_bn": 3.26,
+          "circulating_usd_bn": 3.27,
           "market_share_pct": 1.06
         },
         {
           "name": "Circle USYC",
           "symbol": "USYC",
           "circulating_usd_bn": 3.01,
-          "market_share_pct": 0.98
+          "market_share_pct": 0.97
         },
         {
           "name": "PayPal USD",
@@ -692,7 +692,7 @@
           "name": "BlackRock USD",
           "symbol": "BUIDL",
           "circulating_usd_bn": 2.64,
-          "market_share_pct": 0.86
+          "market_share_pct": 0.85
         }
       ],
       "hkex_etf_summary": [
@@ -1211,24 +1211,24 @@
       ],
       "polymarket_catalysts": [
         {
-          "title": "U.S. enacts stablecoin bill in 2025?",
+          "title": "What will Trump say during Wisconsin events?",
           "probability_pct": 100.0,
-          "end_date": "2025-12-31"
+          "end_date": "2026-06-06"
         },
         {
-          "title": "Bitcoin ETF Flows on March 12?",
+          "title": "Bitcoin ETF approved by Jan 15?",
           "probability_pct": 100.0,
-          "end_date": "2026-03-12"
+          "end_date": "2024-01-15"
+        },
+        {
+          "title": "Counter-Strike: Just Players vs Inner Circle Academy (BO3...",
+          "probability_pct": 100.0,
+          "end_date": "2026-07-27"
         },
         {
           "title": "What will Coinbase say during their next earnings call?",
           "probability_pct": 100.0,
           "end_date": "2025-10-29"
-        },
-        {
-          "title": "What will Trump say during Wisconsin events?",
-          "probability_pct": 100.0,
-          "end_date": "2026-06-06"
         },
         {
           "title": "What will Trump say during No Tax on Tips Roundtable? ",
@@ -1241,14 +1241,14 @@
           "end_date": "2025-10-23"
         },
         {
-          "title": "Bitcoin ETF approved by Jan 15?",
+          "title": "Counter-Strike: Legacy vs Inner Circle Esports (BO3) - PG...",
           "probability_pct": 100.0,
-          "end_date": "2024-01-15"
+          "end_date": "2026-04-05"
         },
         {
-          "title": "Counter-Strike: Just Players vs Inner Circle Academy (BO3...",
+          "title": "Bitcoin ETF Flows on March 12?",
           "probability_pct": 100.0,
-          "end_date": "2026-07-27"
+          "end_date": "2026-03-12"
         }
       ],
       "crypto_watchlist": [
@@ -1412,10 +1412,10 @@
           "hkma_count": 2,
           "sfc_licensed_count": 13,
           "sfc_pending_count": 6,
-          "total_supply_bn": 307.99,
+          "total_supply_bn": 308.44,
           "total_etf_aum_m": 338.18,
-          "btc_price": null,
-          "cb_premium_bps": null,
+          "btc_price": 63576.01,
+          "cb_premium_bps": -11.0,
           "fear_greed_val": 29,
           "fear_greed_class": "Fear"
         }
@@ -1555,10 +1555,10 @@
     {
       "source_id": "coinbase_binance",
       "label": "Coinbase & Binance Public Tickers",
-      "status": "degraded",
-      "records": 0,
+      "status": "success",
+      "records": 1,
       "latest_observation": "2026-07-28",
-      "freshness": "unavailable",
+      "freshness": "live",
       "notes": "Real-time BTC spot prices and Coinbase Premium spread (bps)."
     },
     {
@@ -1584,8 +1584,8 @@
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-stablecoin-crypto/",
     "sector_id": "hk-stablecoin-crypto",
     "sector_name": "Hong Kong Stablecoin & Crypto Infrastructure Monitor",
-    "snapshotId": "f4a19b445258a10e",
-    "generatedAt": "2026-07-28T08:52:14.050929Z",
+    "snapshotId": "d813c385cdd4dc6a",
+    "generatedAt": "2026-07-28T17:54:06.472037Z",
     "dataAsOf": "2026-07-28"
   }
 }
