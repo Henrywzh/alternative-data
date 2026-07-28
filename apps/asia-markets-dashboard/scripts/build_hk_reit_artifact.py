@@ -50,7 +50,7 @@ PUBLIC_SOURCES = {
         "id": "reit_price_akshare",
         "label": "Hong Kong REITs Daily Spot Quotes & History (akshare)",
         "href": "https://www.hkex.com.hk/",
-        "path": "sources/reit_price.py",
+        "path": "sources/reit_price.sql",
         "query": {
             "engine": "akshare.stock_hk_spot_em",
             "url": "https://www.hkex.com.hk/",
@@ -141,6 +141,13 @@ REIT_META: list[tuple[str, str, str, str, bool]] = [
     ("sunlightreit", "0435.HK", "Sunlight REIT", "sunlightreit_fundamentals", False),
     ("regalreit", "1881.HK", "Regal REIT", "regalreit_fundamentals", True),
 ]
+
+# Chart-legend-only shorthand for the two longest full names (see
+# reit_spot_price_history_chart construction below for why this exists).
+_REIT_LEGEND_SHORT_NAMES = {
+    "Champion REIT": "Champ",
+    "Prosperity REIT": "Prosper",
+}
 
 
 def _utc_now() -> datetime:
@@ -370,14 +377,14 @@ def build_artifact(
         dataset_key = f"kpi_{key}"
         if is_hotel:
             metrics = [
-                {"label": f"{name} — NAV/Unit (HK$)", "field": "nav_per_unit_hkd", "format": "number"},
+                {"label": f"{name} NAV (HK$)", "field": "nav_per_unit_hkd", "format": "number"},
                 {"label": "DPU (HK$)", "field": "dpu_hkd", "format": "number"},
                 {"label": "Hotel Occupancy (%)", "field": "hotel_occupancy_pct", "format": "number"},
                 {"label": "RevPAR (HK$)", "field": "revpar_hkd", "format": "number"},
             ]
         else:
             metrics = [
-                {"label": f"{name} — NAV/Unit (HK$)", "field": "nav_per_unit_hkd", "format": "number"},
+                {"label": f"{name} NAV (HK$)", "field": "nav_per_unit_hkd", "format": "number"},
                 {"label": "DPU (HK$)", "field": "dpu_hkd", "format": "number"},
                 {"label": "Occupancy (%)", "field": "occupancy_pct", "format": "number"},
                 {"label": "Rental Reversion (%)", "field": "rental_reversion_pct", "format": "number"},
@@ -587,15 +594,11 @@ def build_artifact(
             "density": "dense",
             "layout": "full",
             "columns": [
-                {"field": "reit_name", "label": "REIT", "type": "text"},
+                {"field": "reit_name", "label": "REIT Name", "type": "text"},
                 {"field": "ticker", "label": "Ticker", "type": "text"},
-                {"field": "business_type", "label": "Business Type", "type": "text"},
                 {"field": "nav_per_unit_hkd", "label": "NAV/Unit (HK$)", "format": "number"},
                 {"field": "dpu_hkd", "label": "DPU (HK$)", "format": "number"},
                 {"field": "occupancy_pct", "label": "Occupancy (%)", "format": "number"},
-                {"field": "rental_reversion_pct", "label": "Rental Reversion (%)", "format": "number"},
-                {"field": "average_daily_rate_hkd", "label": "ADR (HK$)", "format": "number"},
-                {"field": "revpar_hkd", "label": "RevPAR (HK$)", "format": "number"},
                 {"field": "as_of_date", "label": "As Of", "type": "text"},
             ],
         }
@@ -640,15 +643,32 @@ def build_artifact(
         }
     )
 
+    if not df_spot.empty:
+        df_spot = df_spot.copy()
+        if "turnover_hkd" in df_spot.columns:
+            df_spot["turnover_hkd_m"] = df_spot["turnover_hkd"].apply(lambda v: round(float(v) / 1e6, 2) if pd.notna(v) else None)
     spot_rows = _records_json_safe(df_spot) if not df_spot.empty else []
     hist_rows = []
     if not df_hist.empty and "date" in df_hist.columns and "close_hkd" in df_hist.columns:
         for _, r in df_hist.iterrows():
             if pd.notna(r.get("close_hkd")) and pd.notna(r.get("date")):
+                # Chart legend only: shorten names so all 6 series fit the
+                # legend at a 390px mobile viewport without wrapping (the
+                # external renderer sizes this legend to its content rather
+                # than the container, so it never actually wraps -- confirmed
+                # by directly measuring the rendered legend at 390px).
+                # Kept as non-numeric strings (not ticker) to avoid the
+                # external renderer's Number()-based compact-notation
+                # mangling of ticker codes >=1000. Chart title already
+                # establishes "REIT" context.
+                series_name = str(r.get("company_name", r.get("ticker", "")))
+                series_name = _REIT_LEGEND_SHORT_NAMES.get(series_name, series_name)
+                if series_name.endswith(" REIT"):
+                    series_name = series_name[: -len(" REIT")]
                 hist_rows.append({
                     "date": pd.to_datetime(r["date"]).strftime("%Y-%m-%d"),
                     "ticker": str(r.get("ticker", "")),
-                    "series": str(r.get("company_name", r.get("ticker", ""))),
+                    "series": series_name,
                     "value": float(r["close_hkd"]),
                 })
 
@@ -657,7 +677,7 @@ def build_artifact(
             {
                 "id": "reit_spot_summary_table",
                 "title": "Hong Kong REITs Market Spot Quotes",
-                "subtitle": "Daily spot price quotes, price change %, and daily volume via market feed.",
+                "subtitle": "Daily spot price quotes, price change %, and turnover ($M HKD) via market feed.",
                 "dataset": "reit_spot_quotes",
                 "sourceId": "reit_price_akshare",
                 "density": "dense",
@@ -667,8 +687,7 @@ def build_artifact(
                     {"field": "ticker", "label": "Ticker", "type": "text"},
                     {"field": "latest_price_hkd", "label": "Price (HK$)", "format": "number"},
                     {"field": "change_pct", "label": "Change (%)", "format": "number"},
-                    {"field": "volume", "label": "Volume", "format": "number"},
-                    {"field": "turnover_hkd", "label": "Turnover (HK$)", "format": "number"},
+                    {"field": "turnover_hkd_m", "label": "Turnover ($M)", "format": "number"},
                 ],
             }
         )

@@ -166,8 +166,10 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
 
     # 2b. Fetch Upcoming Launch Calendar
     upcoming_rows = []
+    upcoming_source = "live"
     try:
         up_df = fetch_upcoming_launches(100)
+        upcoming_source = up_df.attrs.get("source", "live")
         if not up_df.empty:
             cn_keywords = ['China', 'CASC', 'LandSpace', 'Space Pioneer', 'Galactic Energy', 'CAS Space', 'Orienspace', 'i-Space', 'ExPace', 'Shanghai Spacecom']
             pattern = '|'.join(cn_keywords)
@@ -436,7 +438,11 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
         "launch_library_2": {
             "status": "success" if (total_launches > 0 or len(upcoming_rows) > 0) else "degraded",
             "records": total_launches + len(upcoming_rows),
-            "freshness": "live" if (total_launches > 0 or len(upcoming_rows) > 0) else "unavailable",
+            "freshness": (
+                "live" if (total_launches > 0 or upcoming_source == "live")
+                else "stale" if len(upcoming_rows) > 0
+                else "unavailable"
+            ),
         },
         "celestrak": {
             "status": "success" if (not sat_df.empty) else "degraded",
@@ -552,7 +558,7 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
                 "status": "Healthy" if source_stats[key]["status"] == "success" else "Degraded",
                 "latest_observation": data_as_of,
                 "records": source_stats[key]["records"],
-                "freshness": "Live" if source_stats[key]["freshness"] == "live" else "Unavailable",
+                "freshness": {"live": "Live", "stale": "Stale"}.get(source_stats[key]["freshness"], "Unavailable"),
                 "notes": s["query"]["description"],
             }
             for key, s in PUBLIC_SOURCES.items()

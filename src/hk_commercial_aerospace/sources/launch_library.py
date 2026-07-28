@@ -54,10 +54,16 @@ def _parse_launch_results(results: list[dict], fetched_at: str) -> list[dict]:
 
 
 def fetch_upcoming_launches(limit: int = 100) -> pd.DataFrame:
-    """Fetch upcoming launches from Launch Library 2 with fallback to local raw snapshot."""
+    """Fetch upcoming launches from Launch Library 2 with fallback to local raw snapshot.
+
+    The returned DataFrame carries `df.attrs["source"]` set to `"live"` or
+    `"cache"` so callers can report freshness honestly instead of assuming
+    "live" whenever rows are non-empty.
+    """
     url = f"{LAUNCH_LIBRARY_BASE}/launch/upcoming/?format=json&limit={limit}"
     fetched_at = datetime.now(timezone.utc).isoformat()
     data = None
+    data_source = "live"
     try:
         resp = requests.get(url, headers=DEFAULT_HEADERS, timeout=DEFAULT_TIMEOUT)
         if resp.status_code == 200:
@@ -67,6 +73,7 @@ def fetch_upcoming_launches(limit: int = 100) -> pd.DataFrame:
         logger.warning(f"Failed to fetch upcoming launches: {e}")
 
     if not data:
+        data_source = "cache"
         snaps = sorted(RAW_DIR.glob("ll2_upcoming_launches_*.json"))
         if snaps:
             for s_path in reversed(snaps):
@@ -83,13 +90,19 @@ def fetch_upcoming_launches(limit: int = 100) -> pd.DataFrame:
                     logger.warning(f"Failed to load snapshot fallback {s_path.name}: {e}")
 
     if not data or not isinstance(data, dict):
-        return pd.DataFrame(columns=SCHEMA_COLUMNS)
+        empty = pd.DataFrame(columns=SCHEMA_COLUMNS)
+        empty.attrs["source"] = data_source
+        return empty
 
     results = data.get("results", [])
     parsed = _parse_launch_results(results, fetched_at)
     if not parsed:
-        return pd.DataFrame(columns=SCHEMA_COLUMNS)
-    return pd.DataFrame(parsed)[SCHEMA_COLUMNS]
+        empty = pd.DataFrame(columns=SCHEMA_COLUMNS)
+        empty.attrs["source"] = data_source
+        return empty
+    df = pd.DataFrame(parsed)[SCHEMA_COLUMNS]
+    df.attrs["source"] = data_source
+    return df
 
 
 def fetch_agency_launches(agency_name: str, limit: int = 50) -> pd.DataFrame:

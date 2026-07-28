@@ -6,9 +6,9 @@
     "title": "香港商业航天监测",
     "description": "上交所科创板 IPO 审核状态、Launch Library 2 发射频次、Celestrak 低轨卫星星座数量及商业航天企业专利申请统计。",
     "sector": "hk-commercial-aerospace",
-    "generatedAt": "2026-07-27T23:21:40.552206Z",
-    "dataAsOf": "2026-07-27",
-    "liveSourcesCount": 3,
+    "generatedAt": "2026-07-28T17:54:06.471972Z",
+    "dataAsOf": "2026-07-28",
+    "liveSourcesCount": 2,
     "totalSourcesCount": 4,
     "cards": [
       {
@@ -325,7 +325,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**数据快照：** `b6f4e55d419f361a` · 生成于 2026-07-27T23:21:40.552206Z。"
+        "body": "**数据快照：** `e7cc929b9ea57e77` · 生成于 2026-07-28T17:54:06.471972Z。"
       },
       {
         "id": "kpi_grid",
@@ -375,7 +375,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-27T23:21:40.552206Z",
+    "generatedAt": "2026-07-28T17:54:06.471972Z",
     "status": "ready",
     "datasets": {
       "ipo_race": [
@@ -486,102 +486,11 @@
           "status": "To Be Determined"
         }
       ],
-      "launch_cadence": [
-        {
-          "provider": "LandSpace",
-          "launch_id": "",
-          "name": "Zhuque-2E Block 2 | 2 x SatNet DTC test satellites",
-          "date": "2026-06-09",
-          "month": "2026-06",
-          "year": "2026",
-          "status": "Success"
-        },
-        {
-          "provider": "LandSpace",
-          "launch_id": "",
-          "name": "Zhuque-2E Block 2 | Mass Simulator",
-          "date": "2026-05-14",
-          "month": "2026-05",
-          "year": "2026",
-          "status": "Success"
-        },
-        {
-          "provider": "LandSpace",
-          "launch_id": "",
-          "name": "Zhuque-3 | Demo Flight",
-          "date": "2025-12-03",
-          "month": "2025-12",
-          "year": "2025",
-          "status": "Success"
-        },
-        {
-          "provider": "LandSpace",
-          "launch_id": "",
-          "name": "Zhuque-2E | 4 x SatNet test satellites",
-          "date": "2025-08-15",
-          "month": "2025-08",
-          "year": "2025",
-          "status": "Failure"
-        },
-        {
-          "provider": "LandSpace",
-          "launch_id": "",
-          "name": "Zhuque-2E | 6 satellites",
-          "date": "2025-05-17",
-          "month": "2025-05",
-          "year": "2025",
-          "status": "Success"
-        },
-        {
-          "provider": "LandSpace",
-          "launch_id": "",
-          "name": "Zhuque-2E | Guangchuan-01 & 02",
-          "date": "2024-11-27",
-          "month": "2024-11",
-          "year": "2024",
-          "status": "Success"
-        },
-        {
-          "provider": "LandSpace",
-          "launch_id": "",
-          "name": "Zhuque-2 | Flight 3",
-          "date": "2023-12-08",
-          "month": "2023-12",
-          "year": "2023",
-          "status": "Success"
-        },
-        {
-          "provider": "LandSpace",
-          "launch_id": "",
-          "name": "Zhuque-2 | Flight 2",
-          "date": "2023-07-12",
-          "month": "2023-07",
-          "year": "2023",
-          "status": "Success"
-        },
-        {
-          "provider": "LandSpace",
-          "launch_id": "",
-          "name": "Zhuque-2 | Maiden Flight",
-          "date": "2022-12-14",
-          "month": "2022-12",
-          "year": "2022",
-          "status": "Failure"
-        },
-        {
-          "provider": "LandSpace",
-          "launch_id": "",
-          "name": "Zhuque-1 | Weilai-1 (Future-1)",
-          "date": "2018-10-27",
-          "month": "2018-10",
-          "year": "2018",
-          "status": "Failure"
-        }
-      ],
+      "launch_cadence": [],
       "launch_cadence_summary": [
         {
           "provider": "LandSpace",
-          "launch_count": 10
+          "launch_count": 0
         },
         {
           "provider": "Galactic Energy",
@@ -612,20 +521,20 @@
         {
           "constellation": "Qianfan",
           "operator": "Shanghai Spacecom Satellite Technology",
-          "count": 0,
-          "as_of": "2026-07-27"
+          "count": 238,
+          "as_of": "2026-07-28"
         },
         {
           "constellation": "Jilin1",
           "operator": "Chang Guang Satellite Technology",
-          "count": 0,
-          "as_of": "2026-07-27"
+          "count": 50,
+          "as_of": "2026-07-28"
         },
         {
           "constellation": "Guowang",
           "operator": "China Satellite Network Group",
           "count": null,
-          "as_of": "2026-07-27"
+          "as_of": "2026-07-28"
         }
       ],
       "patent_counts": [],
@@ -709,9 +618,9 @@
           "landspace_audit": 2174,
           "cas_space_status": "已问询",
           "cas_space_audit": 2180,
-          "qianfan_count": 0,
-          "jilin1_count": 0,
-          "total_launches": 10
+          "qianfan_count": 238,
+          "jilin1_count": 50,
+          "total_launches": 0
         }
       ]
     }
@@ -776,7 +685,7 @@
       "label": "SSE STAR Market IPO Filing Status (JSONP)",
       "status": "success",
       "records": 5,
-      "latest_observation": "2026-07-27",
+      "latest_observation": "2026-07-28",
       "freshness": "live",
       "notes": "Filing status, numeric audit numbers (stockAuditNum), and update dates for Chinese commercial launch companies."
     },
@@ -784,9 +693,9 @@
       "source_id": "launch_library_2",
       "label": "Launch Library 2 (The Space Devs)",
       "status": "success",
-      "records": 18,
-      "latest_observation": "2026-07-27",
-      "freshness": "live",
+      "records": 8,
+      "latest_observation": "2026-07-28",
+      "freshness": "stale",
       "notes": "Launch history for Chinese commercial launch providers (LandSpace, CAS Space, Galactic Energy, Space Pioneer, etc.)."
     },
     {
@@ -794,7 +703,7 @@
       "label": "Celestrak NORAD TLE / GP Orbit Data",
       "status": "success",
       "records": 2,
-      "latest_observation": "2026-07-27",
+      "latest_observation": "2026-07-28",
       "freshness": "live",
       "notes": "Active satellite counts for Qianfan (G60) and Jilin-1 constellations."
     },
@@ -803,7 +712,7 @@
       "label": "Google Patents Search",
       "status": "failed",
       "records": 0,
-      "latest_observation": "2026-07-27",
+      "latest_observation": "2026-07-28",
       "freshness": "unavailable",
       "notes": "Estimated patent filing counts for Chinese commercial space companies."
     }
@@ -812,8 +721,8 @@
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-commercial-aerospace/",
     "sector_id": "hk-commercial-aerospace",
     "sector_name": "Hong Kong Commercial Aerospace Sector Monitor",
-    "snapshotId": "b6f4e55d419f361a",
-    "generatedAt": "2026-07-27T23:21:40.552206Z",
-    "dataAsOf": "2026-07-27"
+    "snapshotId": "e7cc929b9ea57e77",
+    "generatedAt": "2026-07-28T17:54:06.471972Z",
+    "dataAsOf": "2026-07-28"
   }
 }
