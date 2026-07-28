@@ -692,19 +692,11 @@ def build_artifact(
             )
 
     # Deduplicated cross-agency transaction pulse (28Hse + Midland + Centaline).
-    if raw_unified_tx is not None:
-        df_unified_tx = raw_unified_tx
-    else:
-        agency_frames = []
-        for label, fetch_fn in (
-            ("28Hse transactions", fetch_28hse_transaction_pilot),
-            ("Midland transactions", fetch_midland_transaction_pilot),
-            ("Centaline transactions", fetch_centaline_transaction_pilot),
-        ):
-            frame = _safe_fetch(label, fetch_fn)
-            if not frame.empty:
-                agency_frames.append(frame)
-        df_unified_tx = deduplicate_agency_transactions(agency_frames) if agency_frames else pd.DataFrame()
+    # Keep the artifact builder pure: live acquisition belongs in
+    # fetch_live_frames(), and callers must pass the resulting frame explicitly.
+    # This keeps snapshot fingerprints deterministic when an upstream source is
+    # blocked or returns a transiently different fallback response.
+    df_unified_tx = raw_unified_tx if raw_unified_tx is not None else pd.DataFrame()
 
     _TRANSACTION_PULSE_MAX_ROWS = 300
     transaction_pulse_rows: list[dict[str, Any]] = []
@@ -1418,6 +1410,16 @@ def fetch_live_frames() -> dict[str, pd.DataFrame]:
     else:
         mhpi, confidence, estates = run_midland_ingestion()
     rvd_price, rvd_rent = run_rvd_ingestion()
+    agency_frames = []
+    for label, fetch_fn in (
+        ("28Hse transactions", fetch_28hse_transaction_pilot),
+        ("Midland transactions", fetch_midland_transaction_pilot),
+        ("Centaline transactions", fetch_centaline_transaction_pilot),
+    ):
+        frame = _safe_fetch(label, fetch_fn)
+        if not frame.empty:
+            agency_frames.append(frame)
+    unified_tx = deduplicate_agency_transactions(agency_frames) if agency_frames else pd.DataFrame()
     return {
         "ccl": fetch_centaline_ccl(),
         "mhpi": mhpi,
@@ -1425,6 +1427,7 @@ def fetch_live_frames() -> dict[str, pd.DataFrame]:
         "rvd_price": rvd_price,
         "rvd_rent": rvd_rent,
         "midland_estates": estates,
+        "unified_tx": unified_tx,
     }
 
 
@@ -1434,7 +1437,9 @@ def main() -> int:
     parser.add_argument("--status-output", type=Path, required=True, help="Compact Astro status JSON output path")
     args = parser.parse_args()
 
-    artifact, status = build_artifact(fetch_live_frames())
+    live_frames = fetch_live_frames()
+    unified_tx = live_frames.pop("unified_tx", pd.DataFrame())
+    artifact, status = build_artifact(live_frames, raw_unified_tx=unified_tx)
     _atomic_json(args.output, artifact)
     _atomic_json(args.status_output, status)
     print(

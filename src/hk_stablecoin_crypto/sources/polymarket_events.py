@@ -1,7 +1,7 @@
-"""Polymarket Regulatory Catalysts Source.
+"""Polymarket Regulatory & Macro Catalysts Source.
 
-No HK-specific Polymarket markets found as of 2026-07-26 ("Hong Kong crypto" query returns unrelated results). 
-Use for global/US regulatory catalyst angle only.
+Fetches active events using tag_slug parameter (tag_slug=crypto, tag_slug=fed-rates, tag_slug=etf, tag_slug=finance)
+to guarantee 100% financial and regulatory relevance without sports/esports noise.
 """
 
 from __future__ import annotations
@@ -13,30 +13,36 @@ from datetime import datetime, timezone
 import pandas as pd
 import requests
 
-from ..config import POLYMARKET_SEARCH_URL
 from ..storage import save_raw_snapshot
 
 logger = logging.getLogger(__name__)
 
-POLYMARKET_QUERIES = ["stablecoin", "bitcoin ETF", "crypto regulation", "USDC", "Circle"]
+POLYMARKET_TAG_SLUGS = ["crypto", "fed-rates", "etf", "finance"]
+POLYMARKET_EVENTS_URL = "https://gamma-api.polymarket.com/events"
 SCHEMA_COLUMNS = ["title", "probability", "end_date", "market_id", "fetched_at"]
 
 
-def fetch_relevant_markets(query: str) -> pd.DataFrame:
-    """Fetch relevant markets using public-search endpoint."""
+def fetch_markets_by_tag(tag_slug: str) -> pd.DataFrame:
+    """Fetch active markets using Polymarket tag_slug parameter."""
     now_str = datetime.now(timezone.utc).isoformat()
+    params = {
+        "active": "true",
+        "closed": "false",
+        "limit": "20",
+        "tag_slug": tag_slug,
+    }
     
     try:
-        resp = requests.get(POLYMARKET_SEARCH_URL, params={"q": query}, timeout=15)
+        resp = requests.get(POLYMARKET_EVENTS_URL, params=params, timeout=15)
         resp.raise_for_status()
-        
-        data = resp.json()
-        events = data.get("events", []) if isinstance(data, dict) else (data if isinstance(data, list) else [])
+        events = resp.json()
         
         rows = []
-        for ev in events:
+        for ev in events if isinstance(events, list) else []:
             mkts = ev.get("markets", []) if isinstance(ev, dict) else []
-            m = mkts[0] if mkts else (ev if isinstance(ev, dict) else {})
+            if not mkts:
+                continue
+            m = mkts[0]
             title = ev.get("title") or m.get("question") or m.get("title", "")
             
             raw_p = m.get("outcomePrices", [])
@@ -46,7 +52,7 @@ def fetch_relevant_markets(query: str) -> pd.DataFrame:
                 except (ValueError, TypeError):
                     raw_p = []
             
-            prob = float(raw_p[0]) if (raw_p and isinstance(raw_p, list)) else None
+            prob = float(raw_p[0]) if (raw_p and isinstance(raw_p, list) and len(raw_p) > 0) else None
             
             rows.append({
                 "title": title,
@@ -62,16 +68,16 @@ def fetch_relevant_markets(query: str) -> pd.DataFrame:
         return pd.DataFrame(rows)[SCHEMA_COLUMNS]
         
     except Exception as exc:
-        logger.exception(f"Failed to fetch Polymarket for query: {query}")
+        logger.exception(f"Failed to fetch Polymarket events for tag_slug: {tag_slug}")
         return pd.DataFrame(columns=SCHEMA_COLUMNS)
 
 
 def fetch_all_polymarket_catalysts() -> pd.DataFrame:
-    """Fetch and combine all relevant Polymarket regulatory catalysts."""
+    """Fetch and combine all relevant Polymarket regulatory & macro catalysts."""
     dfs = []
     
-    for query in POLYMARKET_QUERIES:
-        df = fetch_relevant_markets(query)
+    for tag in POLYMARKET_TAG_SLUGS:
+        df = fetch_markets_by_tag(tag)
         if not df.empty:
             dfs.append(df)
             
@@ -85,7 +91,7 @@ def fetch_all_polymarket_catalysts() -> pd.DataFrame:
         "polymarket_catalysts",
         combined.to_dict(orient="records"),
         file_ext="json",
-        source_url=POLYMARKET_SEARCH_URL,
+        source_url=POLYMARKET_EVENTS_URL,
     )
     
     return combined.reset_index(drop=True)

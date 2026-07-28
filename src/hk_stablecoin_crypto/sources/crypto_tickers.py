@@ -93,8 +93,8 @@ def fetch_fear_greed_index() -> dict:
         return {"value": None, "classification": None, "fetched_at": now_str, "error": str(exc)}
 
 
-def fetch_fear_greed_history(limit: int = 90) -> pd.DataFrame:
-    """Fetch Fear & Greed Index historical time series."""
+def fetch_fear_greed_history(limit: int = 0) -> pd.DataFrame:
+    """Fetch Crypto Fear & Greed Index historical time series (limit=0 for full 2018-present history)."""
     now_str = datetime.now(timezone.utc).isoformat()
     url = f"https://api.alternative.me/fng/?limit={limit}"
     try:
@@ -126,8 +126,8 @@ def fetch_fear_greed_history(limit: int = 90) -> pd.DataFrame:
         return pd.DataFrame(columns=["date", "score", "classification", "fetched_at"])
 
 
-def fetch_btc_price_history(limit: int = 90) -> pd.DataFrame:
-    """Fetch BTC daily spot price time series from Binance."""
+def fetch_btc_price_history(limit: int = 365) -> pd.DataFrame:
+    """Fetch BTC daily spot price time series from Binance (default 365 days)."""
     now_str = datetime.now(timezone.utc).isoformat()
     url = f"https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1d&limit={limit}"
     try:

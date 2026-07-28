@@ -1,4 +1,4 @@
-"""DefiLlama Stablecoins API Source.
+"""DefiLlama Stablecoins & DEX Analytics Source.
 
 As of 2026-07-26, 413 tracked stablecoins, USDT ~$184.3B, USDC ~$73.5B. 
 AxCNH and HKDAP are NOT listed yet (their appearance would be a signal). 
@@ -72,8 +72,8 @@ HISTORY_URL = "https://stablecoins.llama.fi/stablecoincharts/all"
 HISTORY_SCHEMA_COLUMNS = ["date", "circulating_usd_bn", "fetched_at"]
 
 
-def fetch_stablecoin_history() -> pd.DataFrame:
-    """Fetch global stablecoin total circulating supply time series from DefiLlama."""
+def fetch_stablecoin_history(days: int = 365) -> pd.DataFrame:
+    """Fetch global stablecoin total circulating supply time series from DefiLlama (default 365 days)."""
     now_str = datetime.now(timezone.utc).isoformat()
     try:
         resp = requests.get(HISTORY_URL, headers=DEFAULT_HEADERS, timeout=30)
@@ -98,15 +98,90 @@ def fetch_stablecoin_history() -> pd.DataFrame:
             return pd.DataFrame(columns=HISTORY_SCHEMA_COLUMNS)
             
         df = pd.DataFrame(rows)
-        # Keep monthly points or recent 24 months to ensure crisp rendering
-        df["dt_obj"] = pd.to_datetime(df["date"])
-        df = df[df["dt_obj"] >= "2024-01-01"].copy()
-        # Sample weekly (every 7th row) to avoid overcrowding
-        df = df.iloc[::7].drop(columns=["dt_obj"])
-        
         save_raw_snapshot("defillama_stablecoin_history", data, file_ext="json", source_url=HISTORY_URL)
-        return df[HISTORY_SCHEMA_COLUMNS]
+        
+        # Filter for the recent N days for dashboard chart display
+        if days > 0 and len(df) > days:
+            df = df.tail(days)
+            
+        return df[HISTORY_SCHEMA_COLUMNS].reset_index(drop=True)
     except Exception as exc:
         logger.exception("Failed to fetch DefiLlama stablecoin history")
         return pd.DataFrame(columns=HISTORY_SCHEMA_COLUMNS)
 
+
+def fetch_stablecoin_chain_distribution() -> pd.DataFrame:
+    """Fetch top 10 blockchain chains by total stablecoin circulating supply ($B USD)."""
+    now_str = datetime.now(timezone.utc).isoformat()
+    try:
+        resp = requests.get(DEFILLAMA_URL, headers=DEFAULT_HEADERS, timeout=30)
+        resp.raise_for_status()
+        data = resp.json()
+        
+        pegged = data.get("peggedAssets", [])
+        chain_totals: dict[str, float] = {}
+        
+        for asset in pegged:
+            cc = asset.get("chainCirculating", {})
+            for chain, info in cc.items():
+                circ = info.get("current", {}).get("peggedUSD", 0) or 0
+                if circ > 0:
+                    chain_totals[chain] = chain_totals.get(chain, 0.0) + float(circ)
+                    
+        sorted_chains = sorted(chain_totals.items(), key=lambda x: x[1], reverse=True)
+        rows = [
+            {
+                "chain": chain,
+                "circulating_usd_bn": round(val / 1e9, 2),
+                "fetched_at": now_str,
+            }
+            for chain, val in sorted_chains[:10]
+        ]
+        
+        if not rows:
+            return pd.DataFrame(columns=["chain", "circulating_usd_bn", "fetched_at"])
+            
+        return pd.DataFrame(rows)
+    except Exception as exc:
+        logger.exception("Failed to fetch DefiLlama stablecoin chain distribution")
+        return pd.DataFrame(columns=["chain", "circulating_usd_bn", "fetched_at"])
+
+
+DEX_VOLUME_URL = "https://api.llama.fi/overview/dexs"
+
+
+def fetch_dex_volume_history(days: int = 365) -> pd.DataFrame:
+    """Fetch global daily DEX trading volume history ($B USD/day) from DefiLlama."""
+    now_str = datetime.now(timezone.utc).isoformat()
+    try:
+        resp = requests.get(DEX_VOLUME_URL, headers=DEFAULT_HEADERS, timeout=30)
+        resp.raise_for_status()
+        data = resp.json()
+        
+        chart = data.get("totalDataChart", [])
+        rows = []
+        for pt in chart:
+            if not isinstance(pt, list) or len(pt) < 2:
+                continue
+            ts = int(pt[0])
+            dt = datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m-%d")
+            vol_usd = float(pt[1] or 0.0)
+            rows.append({
+                "date": dt,
+                "dex_volume_usd_bn": round(vol_usd / 1e9, 2),
+                "fetched_at": now_str,
+            })
+            
+        if not rows:
+            return pd.DataFrame(columns=["date", "dex_volume_usd_bn", "fetched_at"])
+            
+        df = pd.DataFrame(rows)
+        save_raw_snapshot("defillama_dex_volume_history", data, file_ext="json", source_url=DEX_VOLUME_URL)
+        
+        if days > 0 and len(df) > days:
+            df = df.tail(days)
+            
+        return df.reset_index(drop=True)
+    except Exception as exc:
+        logger.exception("Failed to fetch DefiLlama DEX volume history")
+        return pd.DataFrame(columns=["date", "dex_volume_usd_bn", "fetched_at"])
