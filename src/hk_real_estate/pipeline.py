@@ -54,7 +54,7 @@ QUALITY_SPECS: Dict[str, Dict[str, Any]] = {
     "hse28_epi_eri_weekly": {"kind": "measure", "required": ["date", "period_start", "period_end", "index_type", "index_value"], "max_age_days": 400},
     "hse28_transaction_pilot": {"kind": "measure", "required": ["date", "transaction_date", "source_record_id", "price_hkd"], "max_age_days": 400},
     "unified_agency_transactions_deduped": {"kind": "measure", "required": ["transaction_date", "dedup_transaction_id"], "max_age_days": 400},
-    "landreg_monthly_facts": {"kind": "measure", "required": ["date", "statistic_name", "units"], "max_age_days": 400},
+    "landreg_monthly_facts": {"kind": "measure", "required": ["date", "statistic_name", "units", "comparison_type"], "max_age_days": 400},
     "landreg_asp_series": {"kind": "measure", "required": ["date", "all_building_units_asp", "residential_units_asp"], "max_age_days": 400},
     "buildings_dept_monthly_stats": {"kind": "catalog", "required": ["date", "table_id", "numeric_values"]},
     "bd_supply_leading_indicators": {"kind": "measure", "required": ["date", "permit_stage", "region"], "max_age_days": 400},
@@ -80,7 +80,7 @@ def _quality_errors(dataset_name: str, df: pd.DataFrame) -> list[str]:
         if dates.isna().any():
             return [f"{date_col} contains invalid values"]
         duplicate_key = [date_col]
-        for candidate in ("index_type", "statistic_name", "table_id", "source_record_id", "dedup_transaction_id", "permit_stage", "region", "property_category"):
+        for candidate in ("index_type", "statistic_name", "table_id", "source_record_id", "dedup_transaction_id", "permit_stage", "region", "property_category", "comparison_type"):
             if candidate in df.columns:
                 duplicate_key.append(candidate)
         if df.duplicated(subset=duplicate_key).any():

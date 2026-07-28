@@ -48,10 +48,12 @@ def _quality_status(df: pd.DataFrame, required_columns: list[str]) -> str:
 DATASETS: dict[str, dict[str, Any]] = {
     "hk_reit_spot_quotes_daily": {
         "fetch": fetch_reit_spot_quotes,
+        "accepts_run_id": True,
         "required_columns": ["ticker", "latest_price_hkd"],
     },
     "hk_reit_price_history_daily": {
         "fetch": fetch_reit_price_history,
+        "accepts_run_id": True,
         "required_columns": ["ticker", "close_hkd"],
     },
     "linkreit_fundamentals": {
@@ -87,10 +89,12 @@ def run_reit_pipeline(run_id: str | None = None) -> Dict[str, Any]:
 
     for dataset_name, spec in DATASETS.items():
         try:
-            # Handle functions expecting run_id vs no args
-            try:
+            # The dataset spec, rather than a broad TypeError retry, describes
+            # whether a fetcher accepts run_id. A TypeError raised *inside* a
+            # fetcher is a real source failure and must not be masked.
+            if spec.get("accepts_run_id", False):
                 df = spec["fetch"](run_id=run_id)
-            except TypeError:
+            else:
                 df = spec["fetch"]()
         except Exception:
             logger.exception("Fetch failed for %s.", dataset_name)
@@ -103,7 +107,13 @@ def run_reit_pipeline(run_id: str | None = None) -> Dict[str, Any]:
             results[dataset_name] = {"status": status, "records": 0 if df is None else len(df)}
             continue
 
-        write_result = save_normalized_dataset(dataset_name, df, run_id=run_id)
+        write_result = save_normalized_dataset(
+            dataset_name,
+            df,
+            run_id=run_id,
+            raw_snapshot=df.attrs.get("raw_snapshot"),
+            source_url=df.attrs.get("source_url"),
+        )
         results[dataset_name] = {
             "status": "success",
             "records": len(df),
@@ -128,7 +138,10 @@ def _write_run_manifest(run_id: str, results: Dict[str, Any]) -> Path:
 
 
 def run_all_reit_pipelines(run_id: str | None = None) -> Dict[str, Any]:
+    run_id = run_id or str(uuid.uuid4())
     results = run_reit_pipeline(run_id=run_id)
     if all(r["status"] != "success" for r in results.values()):
-        logger.info("All REIT datasets were empty or unaccessible in run %s (honest report).", run_id)
+        message = f"REIT pipeline run {run_id} produced no usable datasets."
+        logger.error(message)
+        raise PipelineRunError(message)
     return results

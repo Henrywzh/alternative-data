@@ -6,7 +6,7 @@
     "title": "香港房地产信托（REITs）基本面监测",
     "description": "领展（Link REIT）、冠君（Champion REIT）、置富（Fortune REIT）、繁荣（Prosperity REIT）、阳光（Sunlight REIT）及富豪（Regal REIT）的每单位资产净值（NAV）、每基金单位分派（DPU）、出租率、租金检讨调升率及酒店 KPI 快照。",
     "sector": "hk-reit",
-    "generatedAt": "2026-07-28T20:31:31.186056Z",
+    "generatedAt": "2026-07-28T21:59:05.592306Z",
     "dataAsOf": "2026-03-31",
     "liveSourcesCount": 7,
     "totalSourcesCount": 7,
@@ -187,7 +187,15 @@
         "subtitle": "全部六家 REIT（按股票代码）各自每单位资产净值的相对变动，以各自首期观测值重新定为 100——各 REIT 每单位资产净值绝对水平不同（见上方卡片及下方对比表），不宜在同一坐标轴上直接比较原始港元数值。",
         "type": "line",
         "dataset": "nav_history_rebased",
-        "sourceId": "linkreit_fundamentals",
+        "sourceId": "cross_source",
+        "sourceIds": [
+          "linkreit_fundamentals",
+          "championreit_fundamentals",
+          "fortunereit_fundamentals",
+          "prosperityreit_fundamentals",
+          "sunlightreit_fundamentals",
+          "regalreit_fundamentals"
+        ],
         "encodings": {
           "x": {
             "field": "month",
@@ -214,7 +222,15 @@
         "subtitle": "全部六家 REIT（按股票代码）DPU 的相对变动，以各自首个正数观测值重新定为 100。部分期间（如富豪产业信托 2025 上半年）分派为零属真实披露结果，重新定基后显示为 0，并非数据缺失；绝对港元 DPU 数值见上方对比表。",
         "type": "line",
         "dataset": "dpu_history_rebased",
-        "sourceId": "linkreit_fundamentals",
+        "sourceId": "cross_source",
+        "sourceIds": [
+          "linkreit_fundamentals",
+          "championreit_fundamentals",
+          "fortunereit_fundamentals",
+          "prosperityreit_fundamentals",
+          "sunlightreit_fundamentals",
+          "regalreit_fundamentals"
+        ],
         "encodings": {
           "x": {
             "field": "month",
@@ -241,7 +257,14 @@
         "subtitle": "领展 (0823)、冠君 (2778)、置富 (0778)、繁荣 (0808) 及阳光 (0435)——不含富豪产业信托（其组合为酒店而非写字楼/零售）。",
         "type": "line",
         "dataset": "occupancy_history",
-        "sourceId": "linkreit_fundamentals",
+        "sourceId": "cross_source",
+        "sourceIds": [
+          "linkreit_fundamentals",
+          "championreit_fundamentals",
+          "fortunereit_fundamentals",
+          "prosperityreit_fundamentals",
+          "sunlightreit_fundamentals"
+        ],
         "encodings": {
           "x": {
             "field": "month",
@@ -268,7 +291,14 @@
         "subtitle": "续租/新租相对原有租金的调升率，仅限五家写字楼/零售 REIT（按股票代码）。",
         "type": "line",
         "dataset": "reversion_history",
-        "sourceId": "linkreit_fundamentals",
+        "sourceId": "cross_source",
+        "sourceIds": [
+          "linkreit_fundamentals",
+          "championreit_fundamentals",
+          "fortunereit_fundamentals",
+          "prosperityreit_fundamentals",
+          "sunlightreit_fundamentals"
+        ],
         "encodings": {
           "x": {
             "field": "month",
@@ -350,7 +380,15 @@
         "title": "香港 REIT 基本面对比",
         "subtitle": "全部六家 REIT 最新每单位资产净值及 DPU；出租率跨业务类型统一列示（富豪产业信托为酒店出租率）。",
         "dataset": "reit_comparison",
-        "sourceId": "linkreit_fundamentals",
+        "sourceId": "cross_source",
+        "sourceIds": [
+          "linkreit_fundamentals",
+          "championreit_fundamentals",
+          "fortunereit_fundamentals",
+          "prosperityreit_fundamentals",
+          "sunlightreit_fundamentals",
+          "regalreit_fundamentals"
+        ],
         "density": "dense",
         "layout": "full",
         "columns": [
@@ -424,6 +462,16 @@
       }
     ],
     "sources": [
+      {
+        "id": "cross_source",
+        "label": "跨来源香港 REIT 官方投资者关系比较",
+        "path": "sources/cross_source.sql",
+        "query": {
+          "engine": "pandas",
+          "language": "Python",
+          "description": "构建时从公开来源读取并校验 跨来源香港 REIT 官方投资者关系比较。"
+        }
+      },
       {
         "id": "reit_price_akshare",
         "label": "香港REITs每日现货报价及历史（akshare）",
@@ -513,7 +561,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**数据快照：** `dcd5fa94b5169176` · 生成于 2026-07-28T20:31:31.186056Z。"
+        "body": "**数据快照：** `e5046773048d7d07` · 生成于 2026-07-28T21:59:05.592306Z。"
       },
       {
         "id": "kpi_grid",
@@ -578,7 +626,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-28T20:31:31.186056Z",
+    "generatedAt": "2026-07-28T21:59:05.592306Z",
     "status": "ready",
     "datasets": {
       "kpi_linkreit": [
@@ -627,11 +675,11 @@
       ],
       "kpi_sunlightreit": [
         {
-          "nav_per_unit_hkd": 7.09,
-          "dpu_hkd": 0.182,
-          "dpu_period_change": -0.335766,
-          "observation_date": "2025-12-31",
-          "period": "31 December 2025",
+          "nav_per_unit_hkd": null,
+          "dpu_hkd": null,
+          "dpu_period_change": null,
+          "observation_date": "2026-03-31",
+          "period": "Quarter ended 31 MARCH 2026",
           "occupancy_pct": 91.5,
           "rental_reversion_pct": -7.9
         }
@@ -1380,12 +1428,6 @@
         {
           "date": "2025-12-31",
           "month": "2025-12",
-          "series": "0435",
-          "value": 91.5
-        },
-        {
-          "date": "2025-12-31",
-          "month": "2025-12",
           "series": "0778",
           "value": 95.8
         },
@@ -1400,6 +1442,12 @@
           "month": "2025-12",
           "series": "2778",
           "value": 81.6
+        },
+        {
+          "date": "2026-03-31",
+          "month": "2026-03",
+          "series": "0435",
+          "value": 91.5
         },
         {
           "date": "2026-03-31",
@@ -1460,14 +1508,14 @@
         {
           "date": "2025-12-31",
           "month": "2025-12",
-          "series": "0435",
-          "value": -7.9
-        },
-        {
-          "date": "2025-12-31",
-          "month": "2025-12",
           "series": "0808",
           "value": -9.3
+        },
+        {
+          "date": "2026-03-31",
+          "month": "2026-03",
+          "series": "0435",
+          "value": -7.9
         },
         {
           "date": "2026-03-31",
@@ -1549,13 +1597,13 @@
           "reit_name": "Sunlight REIT",
           "ticker": "0435.HK",
           "business_type": "写字楼/零售",
-          "nav_per_unit_hkd": 7.09,
-          "dpu_hkd": 0.182,
+          "nav_per_unit_hkd": null,
+          "dpu_hkd": null,
           "occupancy_pct": 91.5,
           "rental_reversion_pct": -7.9,
           "average_daily_rate_hkd": null,
           "revpar_hkd": null,
-          "as_of_date": "2025-12-31"
+          "as_of_date": "2026-03-31"
         },
         {
           "reit_name": "Regal REIT",
@@ -4809,6 +4857,17 @@
           "reit_name": "Sunlight REIT",
           "nav_per_unit_hkd": 7.09,
           "dpu_hkd": 0.182,
+          "occupancy_pct": null,
+          "rental_reversion_pct": null,
+          "source_agency": "Sunlight REIT Investor Relations"
+        },
+        {
+          "date": "2026-03-31",
+          "period": "Quarter ended 31 MARCH 2026",
+          "ticker": "0435.HK",
+          "reit_name": "Sunlight REIT",
+          "nav_per_unit_hkd": null,
+          "dpu_hkd": null,
           "occupancy_pct": 91.5,
           "rental_reversion_pct": -7.9,
           "source_agency": "Sunlight REIT Investor Relations"
@@ -4831,6 +4890,16 @@
     }
   },
   "sources": [
+    {
+      "id": "cross_source",
+      "label": "跨来源香港 REIT 官方投资者关系比较",
+      "path": "sources/cross_source.sql",
+      "query": {
+        "engine": "pandas",
+        "language": "Python",
+        "description": "构建时从公开来源读取并校验 跨来源香港 REIT 官方投资者关系比较。"
+      }
+    },
     {
       "id": "reit_price_akshare",
       "label": "香港REITs每日现货报价及历史（akshare）",
@@ -4957,8 +5026,8 @@
       "source_id": "sunlightreit_fundamentals",
       "label": "Sunlight REIT (0435.HK) Financial Disclosures",
       "status": "success",
-      "records": 5,
-      "latest_observation": "2025-12-31",
+      "records": 6,
+      "latest_observation": "2026-03-31",
       "freshness": "live",
       "notes": "Office and retail portfolio NAV/unit, DPU, occupancy, and rental reversion."
     },
@@ -4978,6 +5047,10 @@
       "records": 6,
       "latest_observation": "2026-07-28",
       "freshness": "live",
+      "history_status": "success",
+      "history_records": 480,
+      "history_latest_observation": "2026-07-28",
+      "history_freshness": "live",
       "notes": "Daily spot price quotes, percentage change, and OHLC daily history for all 6 HK REITs."
     }
   ],
@@ -4985,8 +5058,8 @@
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-reit/",
     "sector_id": "hk-reit",
     "sector_name": "Hong Kong REITs Sector Monitor",
-    "snapshotId": "dcd5fa94b5169176",
-    "generatedAt": "2026-07-28T20:31:31.186056Z",
+    "snapshotId": "e5046773048d7d07",
+    "generatedAt": "2026-07-28T21:59:05.592306Z",
     "dataAsOf": "2026-03-31"
   }
 }

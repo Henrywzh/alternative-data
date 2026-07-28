@@ -408,6 +408,11 @@ const HK_REAL_ESTATE_ZH = {
         "HIBOR-based (%)": "H按 (HIBOR)",
         "Best Lending Rate (%)": "P按 (最优惠利率)",
         "Fixed-rate (%)": "定息按揭",
+        "Other (%)": "其他",
+        "HIBOR": "H按 (HIBOR)",
+        "BLR (Prime)": "P按 (最优惠利率)",
+        "Fixed": "定息按揭",
+        "Other": "其他",
       },
     },
     hkma_credit_quality_history: {
@@ -792,6 +797,7 @@ const HK_REIT_ZH = {
     },
   },
   sources: {
+    cross_source: "跨来源香港 REIT 官方投资者关系比较",
     linkreit_fundamentals: "领展房产基金（0823.HK）投资者关系披露",
     championreit_fundamentals: "冠君产业信托（2778.HK）财务披露",
     fortunereit_fundamentals: "置富产业信托（0778.HK）财务披露",
@@ -895,6 +901,73 @@ function localizeArtifact(input, zh) {
   const methodology = artifact.manifest.blocks?.find((block) => block.id === "methodology");
   if (methodology) methodology.body = zh.methodologyBody;
   return artifact;
+}
+
+function addYearAwareStaticChartTicks(html, artifact) {
+  const charts = new Map((artifact.manifest?.charts || []).map((chart) => [chart.id, chart]));
+  const monthNames = [
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+  ];
+  const parseDate = (value) => {
+    const match = /^(\d{4})[-/](\d{1,2})(?:[-/](\d{1,2}))?/.exec(String(value ?? ""));
+    if (!match) return null;
+    const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3] || 1)));
+    return Number.isFinite(date.getTime()) ? date : null;
+  };
+  const formatMonthYear = (date) => `${monthNames[date.getUTCMonth()]} ${date.getUTCFullYear()}`;
+  const figurePattern = /(<figure\b[^>]*data-chart-id="([^"]+)"[\s\S]*?<\/figure>)/g;
+  return html.replace(figurePattern, (figure, _ignored, chartId) => {
+    const chart = charts.get(chartId);
+    const x = chart?.encodings?.x;
+    if (!x || x.type !== "temporal") return figure;
+    const rows = artifact.snapshot?.datasets?.[chart.dataset];
+    const dates = Array.isArray(rows) ? rows.map((row) => parseDate(row?.[x.field])).filter(Boolean) : [];
+    if (dates.length < 2) return figure;
+    const minTime = Math.min(...dates.map((date) => date.getTime()));
+    const maxTime = Math.max(...dates.map((date) => date.getTime()));
+    if (!(maxTime > minTime)) return figure;
+
+    return figure.replace(/(<svg\b[^>]*class="portable-static-chart-svg"[^>]*>[\s\S]*?<\/svg>)/g, (svg) => {
+      const heightMatch = /\bheight="([\d.]+)"/.exec(svg);
+      const height = Number(heightMatch?.[1]);
+      if (!Number.isFinite(height)) return svg;
+      const ticks = [];
+      const textPattern = /<text\b([^>]*)>([\s\S]*?)<\/text>/g;
+      let match;
+      while ((match = textPattern.exec(svg))) {
+        const attrs = match[1];
+        const xMatch = /\bx="([\d.]+)"/.exec(attrs);
+        const yMatch = /\by="([\d.]+)"/.exec(attrs);
+        const text = match[2].replace(/<[^>]+>/g, "").trim();
+        if (!xMatch || !yMatch || Number(yMatch[1]) < height - 50 || Number(yMatch[1]) > height - 18) continue;
+        if (!/^(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b/.test(text)) continue;
+        if (/\b(?:19|20)\d{2}\b/.test(text)) continue;
+        ticks.push({ start: match.index, end: textPattern.lastIndex, x: Number(xMatch[1]), text });
+      }
+      if (ticks.length < 2) return svg;
+      const left = Math.min(...ticks.map((tick) => tick.x));
+      const right = Math.max(...ticks.map((tick) => tick.x));
+      if (!(right > left)) return svg;
+      let output = svg;
+      for (const tick of ticks.reverse()) {
+        const ratio = (tick.x - left) / (right - left);
+        const date = new Date(minTime + ratio * (maxTime - minTime));
+        const replacement = formatMonthYear(date);
+        const original = output.slice(tick.start, tick.end);
+        output = output.slice(0, tick.start) + original.replace(tick.text, replacement) + output.slice(tick.end);
+      }
+      return output;
+    });
+  });
+}
+
+function addCopyTitleControls(html, { locale }) {
+  const copyLabel = locale === "zh" ? "复制标题" : "Copy title";
+  const copiedLabel = locale === "zh" ? "已复制" : "Copied";
+  const css = `<style data-dashboard-copy-title="true">.portable-visual-header{display:flex!important;align-items:flex-start;gap:8px}.portable-visual-header>strong,.portable-visual-header>h1,.portable-visual-header>h2,.portable-visual-header>h3{flex:1}.editable-cell-header{position:relative!important}.editable-cell-header h1,.editable-cell-header h2,.editable-cell-header h3{padding-right:96px}.editable-cell-header .portable-copy-title{position:absolute;top:2px;right:0}.portable-copy-title{flex:0 0 auto;margin:0;padding:3px 8px;border:1px solid var(--portable-border);border-radius:999px;background:transparent;color:var(--portable-muted);font:500 11px/18px ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;cursor:pointer}.portable-copy-title:hover{color:var(--portable-ink);background:var(--portable-surface-subtle)}.portable-copy-title:focus-visible{outline:2px solid var(--portable-accent);outline-offset:2px}</style>`;
+  const script = `<script data-dashboard-copy-title-runtime="true">(()=>{const copyLabel=${JSON.stringify(copyLabel)},copiedLabel=${JSON.stringify(copiedLabel)},enhance=()=>{document.querySelectorAll(".portable-visual-header,.editable-cell-header").forEach((header)=>{if(header.querySelector(".portable-copy-title"))return;const box=header.getBoundingClientRect();if(!box.width||!box.height||getComputedStyle(header).visibility==="hidden")return;const title=header.querySelector("strong,h1,h2,h3");if(!title)return;const button=document.createElement("button");button.type="button";button.className="portable-copy-title";button.textContent=copyLabel;button.setAttribute("aria-label",copyLabel);button.addEventListener("click",async()=>{const text=title.textContent.trim();if(!text)return;let copied=false;try{await navigator.clipboard.writeText(text);copied=true}catch{const area=document.createElement("textarea");area.value=text;area.setAttribute("readonly","");area.style.position="fixed";area.style.opacity="0";document.body.appendChild(area);area.select();try{copied=document.execCommand("copy")}finally{area.remove()}}button.textContent=copied?copiedLabel:copyLabel;window.setTimeout(()=>{button.textContent=copyLabel},1400)});header.appendChild(button)})};enhance();new MutationObserver(enhance).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["class","style"]})})();</script>`;
+  return html.replace("</head>", `${css}</head>`).replace("</body>", `${script}</body>`);
 }
 
 function addNavigation(html, { locale, homeEn, homeZh, routeEn, routeZh }) {
@@ -1135,13 +1208,15 @@ for (const sector of SECTORS) {
   const homeEn = "/";
   const homeZh = "/zh/";
 
+  const enHtml = addCopyTitleControls(addYearAwareStaticChartTicks(readFileSync(enPortableFile, "utf8"), rawArtifact), { locale: "en" });
+  const zhHtml = addCopyTitleControls(addYearAwareStaticChartTicks(readFileSync(zhPortableFile, "utf8"), zhArtifact), { locale: "zh" });
   writeFileSync(
     enPortableFile,
-    addNavigation(readFileSync(enPortableFile, "utf8"), { locale: "en", homeEn, homeZh, routeEn, routeZh })
+    addNavigation(enHtml, { locale: "en", homeEn, homeZh, routeEn, routeZh })
   );
   writeFileSync(
     zhPortableFile,
-    addNavigation(readFileSync(zhPortableFile, "utf8"), { locale: "zh", homeEn, homeZh, routeEn, routeZh })
+    addNavigation(zhHtml, { locale: "zh", homeEn, homeZh, routeEn, routeZh })
   );
 
   const exportsDir = join(distDir, "exports");

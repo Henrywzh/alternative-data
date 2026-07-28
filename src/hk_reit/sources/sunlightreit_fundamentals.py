@@ -68,13 +68,28 @@ def _parse_number(value: str) -> Optional[float]:
         return None
 
 
-_PERIOD_TO_DATE = {
-    "31 December 2025": "2025-12-31",
-    "31 December 2024": "2024-12-31",  # 18 months ended (FY-end transition stub period)
-    "2023": "2023-06-30",
-    "2022": "2022-06-30",
-    "2021": "2021-06-30",
-}
+_MONTH_NAME_DATE_RE = re.compile(r"(\d{1,2}\s+[A-Za-z]+\s+\d{4})")
+
+
+def _period_end_date(period: str) -> Optional[str]:
+    """Return the end date encoded in a Sunlight reporting-period label.
+
+    Sunlight's highlights have used annual, 18-month transition, and
+    semi-annual labels. Extracting the explicit date keeps new disclosure
+    periods usable without extending a hand-maintained mapping. Bare legacy
+    years predate the December year-end transition and therefore remain June
+    year ends.
+    """
+    if not period:
+        return None
+    match = _MONTH_NAME_DATE_RE.search(period)
+    if match:
+        parsed = pd.to_datetime(match.group(1), errors="coerce")
+        if pd.notna(parsed):
+            return parsed.strftime("%Y-%m-%d")
+    if re.fullmatch(r"\d{4}", period.strip()):
+        return f"{period.strip()}-06-30"
+    return None
 
 
 def _fetch_highlights(headers: dict) -> dict:
@@ -82,7 +97,7 @@ def _fetch_highlights(headers: dict) -> dict:
     if resp.status_code != 200:
         logger.warning("Sunlight REIT financial-highlights returned HTTP %s", resp.status_code)
         return {}
-    save_raw_snapshot(
+    raw_snapshot = save_raw_snapshot(
         "sunlightreit_fundamentals_highlights", resp.text, file_ext="html",
         source_url=SUNLIGHT_REIT_HIGHLIGHTS_URL,
     )
@@ -102,7 +117,7 @@ def _fetch_highlights(headers: dict) -> dict:
 
     dpu = {p: _parse_number(v) for p, v in zip(periods, (dpu_row[1:] if dpu_row else []))}
     nav = {p: _parse_number(v) for p, v in zip(periods, (nav_row[1:] if nav_row else []))}
-    return {"periods": periods, "dpu": dpu, "nav": nav}
+    return {"periods": periods, "dpu": dpu, "nav": nav, "raw_snapshot": str(raw_snapshot)}
 
 
 def _discover_latest_operational_statistics_pdf(headers: dict) -> Optional[str]:
@@ -165,12 +180,13 @@ def fetch_sunlightreit_fundamentals() -> pd.DataFrame:
 
     ops_stats: dict = {}
     ops_pdf_url = None
+    ops_raw_snapshot = None
     try:
         ops_pdf_url = _discover_latest_operational_statistics_pdf(headers)
         if ops_pdf_url:
             pdf_resp = requests.get(ops_pdf_url, headers=headers, timeout=30)
             if pdf_resp.status_code == 200:
-                save_raw_snapshot(
+                ops_raw_snapshot = save_raw_snapshot(
                     "sunlightreit_fundamentals_ops_pdf", pdf_resp.content, file_ext="pdf",
                     source_url=ops_pdf_url,
                 )
@@ -187,11 +203,11 @@ def fetch_sunlightreit_fundamentals() -> pd.DataFrame:
         return _empty_df()
 
     records = []
-    for i, period in enumerate(periods):
-        date_val = _PERIOD_TO_DATE.get(period)
+    for period in periods:
+        date_val = _period_end_date(period)
         if not date_val:
+            logger.warning("Sunlight REIT: could not parse reporting period %r", period)
             continue
-        is_latest = i == 0
         records.append({
             "date": date_val,
             "period": period,
@@ -200,13 +216,35 @@ def fetch_sunlightreit_fundamentals() -> pd.DataFrame:
             "nav_per_unit_hkd": highlights.get("nav", {}).get(period),
             "dpu_hkd": (highlights.get("dpu", {}).get(period) / 100.0)
             if highlights.get("dpu", {}).get(period) is not None else None,  # HK cents -> HK$
-            "occupancy_pct": ops_stats.get("occupancy_pct") if is_latest else None,
-            "rental_reversion_pct": ops_stats.get("rental_reversion_pct") if is_latest else None,
+            "occupancy_pct": None,
+            "rental_reversion_pct": None,
             "source_agency": "Sunlight REIT Investor Relations",
         })
+
+    ops_date = _period_end_date(ops_stats.get("as_of_text", ""))
+    if ops_date:
+        ops_record = next((record for record in records if record["date"] == ops_date), None)
+        if ops_record is None:
+            ops_record = {
+                "date": ops_date,
+                "period": f"Quarter ended {ops_stats['as_of_text']}",
+                "ticker": "0435.HK",
+                "reit_name": "Sunlight REIT",
+                "nav_per_unit_hkd": None,
+                "dpu_hkd": None,
+                "occupancy_pct": None,
+                "rental_reversion_pct": None,
+                "source_agency": "Sunlight REIT Investor Relations",
+            }
+            records.append(ops_record)
+        ops_record["occupancy_pct"] = ops_stats.get("occupancy_pct")
+        ops_record["rental_reversion_pct"] = ops_stats.get("rental_reversion_pct")
 
     df = pd.DataFrame(records)
     if df.empty:
         return _empty_df()
-    df.attrs.update(raw_snapshot=ops_pdf_url or "", source_url=SUNLIGHT_REIT_HIGHLIGHTS_URL)
+    df.attrs.update(
+        raw_snapshot=str(ops_raw_snapshot or highlights.get("raw_snapshot", "")),
+        source_url=ops_pdf_url or SUNLIGHT_REIT_HIGHLIGHTS_URL,
+    )
     return df

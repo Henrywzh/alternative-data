@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-07-28T20:32:15.339638Z",
-  "snapshot_id": "d9a36b21cee6c349",
+  "generated_at": "2026-07-28T21:59:52.353511Z",
+  "snapshot_id": "7fa48038d4fa42bf",
   "data_as_of": "2026-07-27",
   "overall_status": "Healthy",
   "live_sources": 5,
@@ -83,7 +83,7 @@
       "type": "Measure",
       "status": "Healthy",
       "latest_observation": "—",
-      "records": 27,
+      "records": 1062,
       "freshness": "Live at build time",
       "notes": "Land Registry Monthly Statistics (JSON); see the chart/table above."
     },
@@ -93,7 +93,7 @@
       "type": "Measure",
       "status": "Healthy",
       "latest_observation": "—",
-      "records": 248,
+      "records": 252,
       "freshness": "Live at build time",
       "notes": "Buildings Department Monthly Digest / Project Lifecycle; see the chart/table above."
     },

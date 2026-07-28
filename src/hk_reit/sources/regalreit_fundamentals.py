@@ -190,7 +190,9 @@ def fetch_regalreit_fundamentals() -> pd.DataFrame:
             logger.warning("Regal REIT report PDF returned HTTP %s (%s)", pdf_resp.status_code, pdf_url)
             return _empty_df()
 
-        save_raw_snapshot("regalreit_fundamentals", pdf_resp.content, file_ext="pdf", source_url=pdf_url)
+        raw_snapshot = save_raw_snapshot(
+            "regalreit_fundamentals", pdf_resp.content, file_ext="pdf", source_url=pdf_url
+        )
 
         with pdfplumber.open(BytesIO(pdf_resp.content)) as pdf:
             # NAV/DPU/hotel-KPI narrative typically appears within the first ~80 pages
@@ -222,7 +224,7 @@ def fetch_regalreit_fundamentals() -> pd.DataFrame:
             "source_agency": "Regal REIT Investor Relations",
         }
         df = pd.DataFrame([record])
-        df.attrs.update(raw_snapshot=pdf_url, source_url=pdf_url)
+        df.attrs.update(raw_snapshot=str(raw_snapshot), source_url=pdf_url)
         return df
     except Exception as exc:
         logger.warning("Regal REIT report discovery/fetch/parse failed: %s", exc)

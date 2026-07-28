@@ -1,6 +1,7 @@
 import importlib
 import json
 import sys
+import warnings
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -11,16 +12,22 @@ from src.hk_real_estate.sources.midland import parse_midland_mhpi, parse_midland
 from src.hk_real_estate.sources.centaline import fetch_centaline_ccl, parse_centaline_ccl_payload
 from src.hk_real_estate.sources.hse28 import fetch_28hse_new_projects
 from src.hk_real_estate.sources.rvd import _parse_rvd_monthly_csv
-from src.hk_real_estate.sources.landreg import fetch_landreg_monthly_sp, _clean_t6_region
+from src.hk_real_estate.sources.landreg import fetch_landreg_monthly_sp, fetch_landreg_monthly_statistics, _clean_t6_region
 from src.hk_real_estate.storage import save_normalized_dataset, save_raw_snapshot
 from src.hk_real_estate.mapping.developer_registry import DeveloperRegistry
 from src.hk_real_estate.sources.hkma import fetch_hkma_residential_mortgage_survey
-from src.hk_real_estate.sources.bd_projects import parse_bd_xls_projects, fetch_bd_supply_leading_indicators
+from src.hk_real_estate.sources.bd_projects import (
+    parse_bd_xls_projects,
+    fetch_bd_project_lifecycle_events,
+    fetch_bd_supply_leading_indicators,
+    _infer_region_from_address,
+)
 from src.hk_real_estate.sources.buildings_dept import _period_from_row, fetch_buildings_dept_monthly_stats
 from src.hk_real_estate.mapping.developer_registry import GENERIC_FUZZY_EXCLUDED_ALIASES
 from src.hk_real_estate.dedup.transaction_dedup import deduplicate_agency_transactions, generate_dedup_hash
 from src.hk_real_estate.sources.srpe import fetch_srpe_firsthand_sales_digest
 from src.hk_real_estate.sources.midland_transactions import _parse_building_payload
+from src.hk_real_estate.pipeline import _quality_errors
 
 
 @pytest.fixture(autouse=True)
@@ -85,6 +92,18 @@ def test_transaction_deduplication():
     assert deduped.iloc[0]["matched_agency_count"] == 2
     assert "28Hse" in deduped.iloc[0]["source_agencies"]
     assert "Midland" in deduped.iloc[0]["source_agencies"]
+
+
+def test_dedup_hash_normalizes_comma_formatted_prices():
+    """Price formatting must not disappear from the cross-agency identity.
+
+    Some agency feeds expose display-formatted prices such as ``12,500,000``.
+    The old digit check rejected the comma string and hashed it as an empty
+    price, causing distinct units to collide when the other fields matched.
+    """
+    first = generate_dedup_hash("Estate", "10", "A", "2026-07-20", "12,500,000")
+    second = generate_dedup_hash("Estate", "10", "A", "2026-07-20", "13,500,000")
+    assert first != second
 
 
 def test_midland_parse_uses_net_area_not_area():
@@ -358,6 +377,124 @@ def test_landreg_t6_grand_total_row_does_not_produce_fake_district():
     assert total_region not in real_districts
 
 
+def test_landreg_t2_comparison_rows_keep_change_semantics():
+    """Land Registry t2 mixes level rows with year-on-year change rows.
+
+    The comparison flag is part of the official JSON contract.  A change row
+    must not be labelled as a registration-month level observation, otherwise
+    signed deltas get plotted and aggregated as transaction counts.
+    """
+    from src.hk_real_estate.sources import landreg as landreg_source
+
+    responses = {
+        "t1": [{
+            "Year": 2026,
+            "Month": 6,
+            "Description": "Total Number of Urban & New Territories deeds received for registration (ASP Building Units)",
+            "Units": "9,434",
+            "Consideration (nearest $ million)": "82,845",
+        }],
+        "t2": [
+            {
+                "Year": 2026,
+                "Month": 6,
+                "Increase (+) or Decrease (-) as compared with": "False",
+                "Description": "Total Number of Urban & New Territories deeds received for registration Assignment of Building Units",
+                "Units": "13,305",
+                "Consideration (nearest $ million)": "79,240",
+            },
+            {
+                "Year": 2025,
+                "Month": 6,
+                "Increase (+) or Decrease (-) as compared with": "True",
+                "Description": "Total Number of Urban & New Territories deeds received for registration Assignment of Building Units",
+                "Units": "-2",
+                "Consideration (nearest $ million)": "-2,810",
+            },
+        ],
+        "t3": [],
+        "t6": [],
+    }
+
+    def fake_get(url, **kwargs):
+        response = MagicMock()
+        response.raise_for_status.return_value = None
+        if url.endswith("monthly.htm"):
+            response.text = "<html></html>"
+        else:
+            table = url.rsplit("/", 1)[-1].split(".", 1)[0]
+            response.json.return_value = responses[table]
+        return response
+
+    with patch.object(landreg_source.requests, "get", side_effect=fake_get), patch.object(
+        landreg_source, "save_raw_snapshot", return_value="/tmp/landreg.json"
+    ):
+        facts, _ = fetch_landreg_monthly_statistics()
+
+    t2 = facts[facts["table_id"] == "t2"].sort_values("date")
+    assert list(t2["comparison_type"]) == ["year_over_year_change", "level"]
+    assert list(t2["is_comparison_change"]) == [True, False]
+    assert t2.iloc[0]["basis"] == "year_over_year_change"
+    assert t2.iloc[1]["basis"] == "registration_receipt_month"
+
+
+def test_landreg_quality_key_keeps_levels_and_changes_at_distinct_grain():
+    facts = pd.DataFrame(
+        [
+            {
+                "date": "2026-06-01",
+                "statistic_name": "same metric",
+                "table_id": "t2",
+                "units": 100,
+                "comparison_type": "level",
+            },
+            {
+                "date": "2026-06-01",
+                "statistic_name": "same metric",
+                "table_id": "t2",
+                "units": -2,
+                "comparison_type": "year_over_year_change",
+            },
+        ]
+    )
+    assert _quality_errors("landreg_monthly_facts", facts) == []
+
+
+def test_landreg_archive_series_keeps_archive_lineage():
+    from src.hk_real_estate.sources import landreg as landreg_source
+
+    def fake_get(url, **kwargs):
+        response = MagicMock(status_code=200)
+        response.raise_for_status.return_value = None
+        if url.endswith("monthly.htm"):
+            response.text = "<html></html>"
+        elif "monthly_agt" in url:
+            response.json.return_value = [{
+                "Date": "1996-01-01",
+                "Year": 1996,
+                "Month": 1,
+                "Number of ASP for Residential Building Units": 100,
+                "Number of ASP for All Building Units": 120,
+            }]
+        else:
+            table = url.rsplit("/", 1)[-1].split(".", 1)[0]
+            response.json.return_value = []
+        return response
+
+    def fake_snapshot(name, content, file_ext="json", **kwargs):
+        return f"/tmp/{name}.{file_ext}"
+
+    with patch.object(landreg_source.requests, "get", side_effect=fake_get), patch.object(
+        landreg_source, "save_raw_snapshot", side_effect=fake_snapshot
+    ):
+        _, series = fetch_landreg_monthly_statistics()
+
+    raw_paths = json.loads(series.attrs["raw_snapshot"])
+    source_urls = json.loads(series.attrs["source_url"])
+    assert any("agt-1" in path for path in raw_paths)
+    assert any("monthly_agt/agt-1/t1.json" in url for url in source_urls)
+
+
 def test_parse_midland_mhpi():
     df = parse_midland_mhpi({"mrIndexWeekly": [{"date": "2026-03-14T00:00:00.000Z", "mr_index": 124.7, "mr_index_hk": 140.5, "mr_index_kln": 121.2, "mr_index_nt": 116.5, "weekly_perc": -0.5}]})
     assert len(df) == 1
@@ -445,12 +582,68 @@ def test_bd_projects_merges_multi_tier_project_continuation_rows():
     assert "8 Hoi Ying Road" in row["site_address"]
     assert "Tai Po" in row["site_address"]
     assert "New Territories" in row["site_address"]
+    assert row["region"] == "New Territories"
     # The bare planning-reference continuation line must not pollute the address.
     assert "7.4.1/(6)" not in row["site_address"]
     assert row["domestic_units_count"] == 86 + 91 + 365 + 172 + 13
     # GFA/UFA are the project's published total (from the header row), not re-summed across tiers.
     assert row["usable_floor_area_sqm"] == 19525.8
     assert row["site_area_sqm"] == 157343.4
+
+
+def test_bd_project_region_uses_address_when_section_state_is_wrong():
+    """A wrapped address can contain the authoritative region label.
+
+    Section-header state is easy to misalign when an XLS has continuation
+    rows or a new file layout.  Prefer an explicit address region over the
+    last section seen, while retaining the parser's fallback for addresses
+    that do not name a region.
+    """
+    assert _infer_region_from_address("8 Hoi Ying Road, Tai Po, New Territories", "Hong Kong Island") == "New Territories"
+    assert _infer_region_from_address("Kai Tak Area 2A Site 2, Kowloon N.K.I.L. 6590", "Hong Kong Island") == "Kowloon"
+    assert _infer_region_from_address("12 Mount Cameron Road, Mid-Levels, Hong Kong", "Kowloon") == "Hong Kong Island"
+    assert _infer_region_from_address("Yellow Area", "Kowloon") == "Kowloon"
+
+
+def test_bd_project_fetch_preserves_lineage_for_each_xls_source():
+    from src.hk_real_estate.sources import bd_projects as bd_source
+
+    response = MagicMock(status_code=200, content=b"xls")
+    parsed = pd.DataFrame([{"site_address": "Example Road", "permit_stage": "Plans Approved"}])
+    raw_paths = ["/tmp/Md53.xls", "/tmp/Md54.xls", "/tmp/Md56.xls"]
+
+    with patch.object(bd_source.requests, "get", return_value=response), patch.object(
+        bd_source, "parse_bd_xls_projects", return_value=parsed.copy()
+    ), patch.object(bd_source, "save_raw_snapshot", side_effect=raw_paths):
+        result = fetch_bd_project_lifecycle_events()
+
+    assert json.loads(result.attrs["raw_snapshot"]) == raw_paths
+    assert json.loads(result.attrs["source_url"]) == [
+        f"{bd_source.BD_MONTHLY_DIGEST_XLS_BASE}/Md53.xls",
+        f"{bd_source.BD_MONTHLY_DIGEST_XLS_BASE}/Md54.xls",
+        f"{bd_source.BD_MONTHLY_DIGEST_XLS_BASE}/Md56.xls",
+    ]
+
+
+def test_bd_project_concat_has_stable_nullable_numeric_types():
+    from src.hk_real_estate.sources import bd_projects as bd_source
+
+    response = MagicMock(status_code=200, content=b"xls")
+    frames = [
+        pd.DataFrame([{"permit_stage": "Plans Approved", "site_area_sqm": None, "domestic_units_count": None}]),
+        pd.DataFrame([{"permit_stage": "Consent to Commence", "site_area_sqm": 12.5, "domestic_units_count": 2}]),
+        pd.DataFrame([{"permit_stage": "Occupation Permits (OP) Issued", "site_area_sqm": 15.0, "domestic_units_count": 3}]),
+    ]
+
+    with patch.object(bd_source.requests, "get", return_value=response), patch.object(
+        bd_source, "parse_bd_xls_projects", side_effect=frames
+    ), patch.object(bd_source, "save_raw_snapshot", return_value="/tmp/bd.xls"):
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            result = fetch_bd_project_lifecycle_events()
+
+    assert not any(issubclass(item.category, FutureWarning) for item in caught)
+    assert pd.api.types.is_numeric_dtype(result["site_area_sqm"])
 
 
 def test_bd_projects_multi_house_project_does_not_split_into_blank_address_rows():

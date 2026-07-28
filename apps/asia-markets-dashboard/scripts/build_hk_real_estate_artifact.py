@@ -490,19 +490,14 @@ def build_artifact(
             blr_pct = r.get("blr_pricing_pct_share")
             fixed_pct = r.get("fixed_pricing_pct_share")
             if pd.notna(hibor_pct):
-                hkma_rows.append({"date": obs_d, "series": "HIBOR-based (%)", "value": float(hibor_pct)})
+                hkma_rows.append({"date": obs_d, "series": "HIBOR", "value": float(hibor_pct)})
             if pd.notna(blr_pct):
-                hkma_rows.append({"date": obs_d, "series": "Best Lending Rate (%)", "value": float(blr_pct)})
+                hkma_rows.append({"date": obs_d, "series": "BLR (Prime)", "value": float(blr_pct)})
             if pd.notna(fixed_pct):
-                hkma_rows.append({"date": obs_d, "series": "Fixed-rate (%)", "value": float(fixed_pct)})
-            # A 4th "Other" series (other_pricing_pct_share, now extracted in
-            # hkma.py so the tracked shares actually sum to ~100%) is
-            # deliberately NOT charted here: a 4-item legend on this specific
-            # chart overflows the portable artifact's 390px mobile-viewport
-            # check (confirmed by direct test -- stripping this series was
-            # the only change needed to make packaging succeed for every
-            # sector). The data-correctness fix (hkma.py extracting the
-            # field at all) stands; it's just not surfaced as a 4th line here.
+                hkma_rows.append({"date": obs_d, "series": "Fixed", "value": float(fixed_pct)})
+            other_pct = r.get("other_pricing_pct_share")
+            if pd.notna(other_pct):
+                hkma_rows.append({"date": obs_d, "series": "Other", "value": float(other_pct)})
             # LTV single series
             ltv = r.get("average_ltv_ratio_pct")
             if pd.notna(ltv):
@@ -600,23 +595,25 @@ def build_artifact(
             df_landreg_facts, df_landreg_asp = pd.DataFrame(), pd.DataFrame()
 
     landreg_volume_rows: list[dict[str, Any]] = []
-    _LANDREG_VOLUME_STATISTIC = "Total Number of Urban & New Territories deeds received for registration (ASP Building Units)"
-    _LANDREG_VOLUME_TABLE_ID = "t1"
-    if not df_landreg_facts.empty and {"date", "table_id", "statistic_name", "units"}.issubset(df_landreg_facts.columns):
-        # This exact description string is not a unique key -- Land Registry's
-        # own JSON (see landreg.py's docstring: "does not pretend to have a
-        # stable semantic taxonomy") repeats it verbatim in table t2 attached
-        # to unrelated Assignment-of-Building-Units figures. Scoping to t1
-        # (confirmed to be where this total genuinely lives, one row/month)
-        # avoids picking up those unrelated same-labelled values.
+    # The archive-backed ASP series is the canonical long-history measure. The
+    # current t1 fact remains a fallback for older snapshots that predate the
+    # archive endpoints, and is explicitly scoped to t1/level rows so t2
+    # year-on-year deltas cannot leak into the volume chart.
+    if not df_landreg_asp.empty and {"date", "all_building_units_asp"}.issubset(df_landreg_asp.columns):
+        for _, r in df_landreg_asp.iterrows():
+            if pd.notna(r.get("all_building_units_asp")):
+                landreg_volume_rows.append({"date": str(r["date"])[:10], "value": float(r["all_building_units_asp"])})
+    elif not df_landreg_facts.empty and {"date", "table_id", "statistic_name", "units"}.issubset(df_landreg_facts.columns):
+        _LANDREG_VOLUME_STATISTIC = "Total Number of Urban & New Territories deeds received for registration (ASP Building Units)"
         volume_slice = df_landreg_facts[
             (df_landreg_facts["statistic_name"] == _LANDREG_VOLUME_STATISTIC)
-            & (df_landreg_facts["table_id"] == _LANDREG_VOLUME_TABLE_ID)
+            & (df_landreg_facts["table_id"] == "t1")
+            & (df_landreg_facts.get("comparison_type", "level") == "level")
         ]
         for _, r in volume_slice.iterrows():
             if pd.notna(r.get("units")):
                 landreg_volume_rows.append({"date": str(r["date"])[:10], "value": float(r["units"])})
-        landreg_volume_rows.sort(key=lambda r: r["date"])
+    landreg_volume_rows.sort(key=lambda r: r["date"])
 
     landreg_asp_rows: list[dict[str, Any]] = []
     if not df_landreg_asp.empty and "date" in df_landreg_asp.columns:
@@ -718,6 +715,31 @@ def build_artifact(
                 }
             )
 
+    observed_agencies: set[str] = set()
+    if not df_unified_tx.empty:
+        for _, row in df_unified_tx.iterrows():
+            raw_agencies = row.get("source_agencies")
+            if pd.notna(raw_agencies):
+                observed_agencies.update(
+                    agency.strip() for agency in str(raw_agencies).split("|") if agency.strip()
+                )
+            elif pd.notna(row.get("primary_source_agency")):
+                observed_agencies.add(str(row["primary_source_agency"]).strip())
+    if len(observed_agencies) > 1:
+        agency_pulse_subtitle = (
+            "Deduplicated recent transactions across "
+            + ", ".join(sorted(observed_agencies))
+            + "."
+        )
+    elif len(observed_agencies) == 1:
+        agency_pulse_subtitle = (
+            "Recent transactions from only "
+            + next(iter(observed_agencies))
+            + "; no cross-agency overlap observed in this run."
+        )
+    else:
+        agency_pulse_subtitle = "No agency transaction source returned usable rows in this run."
+
     # Midland top-estates by transaction volume -- a byproduct of the same
     # run_midland_ingestion() call already made for MHPI/confidence above, so
     # it's passed through raw_frames rather than fetched again separately.
@@ -743,16 +765,28 @@ def build_artifact(
         ("Buildings Department", "Monthly digest + project lifecycle", bd_monthly_stats_rows + bd_supply_table_rows, "Buildings Department Monthly Digest / Project Lifecycle"),
     ):
         record_count = len(rows_or_frame)
+        if not record_count:
+            coverage_status = "No data this run"
+            coverage_notes = f"{source_label}; live fetch returned no usable rows this run."
+        elif label == "Agency transactions" and len(observed_agencies) < 2:
+            coverage_status = "Partial"
+            coverage_notes = (
+                f"{source_label}; only {next(iter(observed_agencies), 'one agency')} (single agency) was observed, "
+                "so cross-agency deduplication was not exercised in this run."
+            )
+        else:
+            coverage_status = "Healthy"
+            coverage_notes = f"{source_label}; see the chart/table above."
         additional_coverage.append(
             {
                 "source": label,
                 "dataset": dataset_label,
                 "type": "Measure",
-                "status": "Healthy" if record_count else "No data this run",
+                "status": coverage_status,
                 "latest_observation": "—",
                 "records": record_count,
                 "freshness": "Live at build time" if record_count else "Fetch returned no rows",
-                "notes": f"{source_label}; see the chart/table above." if record_count else f"{source_label}; live fetch returned no usable rows this run.",
+                "notes": coverage_notes,
             }
         )
 
@@ -943,8 +977,8 @@ def build_artifact(
         charts.append(
             {
                 "id": "hkma_mortgage_rate_mix_chart",
-                "title": "HKMA Residential Mortgage Interest Rate Plan Mix (%)",
-                "subtitle": "Percentage share of new mortgage approvals priced on HIBOR vs Best Lending Rate (Prime).",
+                "title": "HKMA Mortgage Rate Plan Mix (%)",
+                "subtitle": "Percentage share of new mortgage approvals by HIBOR, Best Lending Rate, fixed-rate, and other pricing plans.",
                 "type": "line",
                 "intent": "trend",
                 "dataset": "hkma_mortgage_rate_mix",
@@ -1163,7 +1197,7 @@ def build_artifact(
             {
                 "id": "agency_transactions_pulse_table",
                 "title": "Agency Transaction Pulse",
-                "subtitle": "Deduplicated recent transactions across 28Hse, Midland, and Centaline listings.",
+                "subtitle": agency_pulse_subtitle,
                 "dataset": "agency_transactions_pulse",
                 "sourceId": "agency_transactions",
                 "defaultSort": {"field": "transaction_date", "direction": "desc"},

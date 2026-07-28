@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-07-28T20:31:31.186056Z",
-  "snapshot_id": "dcd5fa94b5169176",
+  "generated_at": "2026-07-28T21:59:05.592306Z",
+  "snapshot_id": "e5046773048d7d07",
   "data_as_of": "2026-03-31",
   "overall_status": "Healthy",
   "live_sources": 7,
@@ -51,8 +51,8 @@
       "dataset": "sunlightreit_fundamentals",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2025-12-31",
-      "records": 5,
+      "latest_observation": "2026-03-31",
+      "records": 6,
       "freshness": "live",
       "notes": "Office and retail portfolio NAV/unit, DPU, occupancy, and rental reversion."
     },
