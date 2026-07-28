@@ -9,6 +9,7 @@ from dashboard.sections.openrouter import (
     _catalog_alias_map,
     _clean_provider_request_frame,
     _combine_explorer_activity,
+    _drop_identical_route_alias_rows,
     _format_price_per_m,
     build_openrouter_explorer_views,
     _normalize_explorer_activity,
@@ -224,6 +225,36 @@ def test_company_model_chart_selects_recent_leaders_but_keeps_history() -> None:
     assert "openai/gpt-test" not in state["model_pivot"].columns
     assert "Other models" in state["model_pivot"].columns
     assert "openai/recent-model" in state["weekly_model_pivot"].columns
+
+
+def test_explorer_drops_identical_free_alias_rows_and_keeps_distinct_rows() -> None:
+    frame = pd.DataFrame([
+        {"usage_date_dt": pd.Timestamp("2026-07-20"), "category_slug": "all", "model_permaslug": "tencent/hy3-20260706", "total_tokens": 100.0, "request_count": 10},
+        {"usage_date_dt": pd.Timestamp("2026-07-20"), "category_slug": "all", "model_permaslug": "tencent/hy3-20260706:free", "total_tokens": 100.0, "request_count": 10},
+        {"usage_date_dt": pd.Timestamp("2026-07-21"), "category_slug": "all", "model_permaslug": "tencent/hy3-20260706", "total_tokens": 100.0, "request_count": 10},
+        {"usage_date_dt": pd.Timestamp("2026-07-21"), "category_slug": "all", "model_permaslug": "tencent/hy3-20260706:free", "total_tokens": 250.0, "request_count": 25},
+    ])
+    cleaned = _drop_identical_route_alias_rows(frame)
+    assert len(cleaned) == 3
+    assert cleaned["model_permaslug"].tolist() == [
+        "tencent/hy3-20260706",
+        "tencent/hy3-20260706",
+        "tencent/hy3-20260706:free",
+    ]
+
+
+def test_combined_activity_uses_provider_free_route_after_api_alias_deduplication() -> None:
+    provider = pd.DataFrame([
+        {"usage_date_dt": pd.Timestamp("2026-07-20"), "model_permaslug": "tencent/hy3-20260706", "total_tokens": 10.0},
+        {"usage_date_dt": pd.Timestamp("2026-07-20"), "model_permaslug": "tencent/hy3-20260706:free", "total_tokens": 1_000.0},
+    ])
+    model = pd.DataFrame([
+        {"usage_date_dt": pd.Timestamp("2026-07-20"), "category_slug": "all", "model_permaslug": "tencent/hy3-20260706", "total_tokens": 10.0, "request_count": 1},
+        {"usage_date_dt": pd.Timestamp("2026-07-20"), "category_slug": "all", "model_permaslug": "tencent/hy3-20260706:free", "total_tokens": 10.0, "request_count": 1},
+    ])
+    combined = _combine_explorer_activity(provider, model)
+    assert combined["total_tokens"].sum() == 1_010.0
+    assert set(combined["model_permaslug"]) == {"tencent/hy3-20260706", "tencent/hy3-20260706:free"}
 
 
 def test_company_explorer_builds_source_aware_metric_views() -> None:

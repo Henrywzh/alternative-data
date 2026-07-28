@@ -126,6 +126,33 @@ def test_activity_source_preserves_requested_route_variant() -> None:
     }
 
 
+def test_activity_source_drops_identical_paid_free_payloads_only() -> None:
+    records = [
+        DatasetRecord(
+            dataset_id="openrouter_model_activity", source_url="fixture://paid", source_run_id="run",
+            scraped_at="2026-07-21T00:00:00Z", usage_date="2026-07-20",
+            model_permaslug="tencent/hy3-20260706", category_slug="all",
+            total_tokens=100.0, request_count=10, prompt_tokens=80.0, completion_tokens=20.0,
+        ),
+        DatasetRecord(
+            dataset_id="openrouter_model_activity", source_url="fixture://free", source_run_id="run",
+            scraped_at="2026-07-21T00:00:00Z", usage_date="2026-07-20",
+            model_permaslug="tencent/hy3-20260706:free", category_slug="all",
+            total_tokens=100.0, request_count=10, prompt_tokens=80.0, completion_tokens=20.0,
+        ),
+        DatasetRecord(
+            dataset_id="openrouter_model_activity", source_url="fixture://free", source_run_id="run",
+            scraped_at="2026-07-22T00:00:00Z", usage_date="2026-07-21",
+            model_permaslug="tencent/hy3-20260706:free", category_slug="all",
+            total_tokens=250.0, request_count=25, prompt_tokens=200.0, completion_tokens=50.0,
+        ),
+    ]
+    cleaned = ActivitySource.drop_identical_route_alias_records(records)
+    assert [record.model_permaslug for record in cleaned] == [
+        "tencent/hy3-20260706", "tencent/hy3-20260706:free"
+    ]
+
+
 def test_activity_source_leaves_reasoning_tokens_null_when_missing() -> None:
     html = _build_activity_html(
         [

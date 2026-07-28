@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 import re
 from datetime import datetime, timedelta, timezone
 from typing import Any
@@ -230,6 +231,52 @@ class ActivitySource(SourceExtractor):
                 )
 
         return {dataset_id: records}
+
+    @staticmethod
+    def drop_identical_route_alias_records(records: list[DatasetRecord]) -> list[DatasetRecord]:
+        """Drop API duplicate ``:free`` rows when they equal the paid route.
+
+        The model-activity endpoint currently returns the canonical paid HY3
+        payload even when queried with ``:free``.  The extractor preserves the
+        requested suffix for lineage, so an exact paid/free pair would
+        otherwise become two activity rows.  Provider-page activity remains
+        responsible for real route-specific free traffic when available.
+        """
+
+        if not records:
+            return records
+        frame = pd.DataFrame([record.to_dict() for record in records])
+        if "model_permaslug" not in frame.columns:
+            return records
+        model = frame["model_permaslug"].astype("string")
+        frame["_is_free_route"] = model.str.endswith(":free", na=False)
+        frame["_base_model"] = model.str.replace(r":free$", "", regex=True)
+        compare_columns = ("total_tokens", "request_count", "prompt_tokens", "completion_tokens")
+
+        def same_value(left: object, right: object) -> bool:
+            left_num = pd.to_numeric(pd.Series([left]), errors="coerce").iloc[0]
+            right_num = pd.to_numeric(pd.Series([right]), errors="coerce").iloc[0]
+            if pd.isna(left_num) and pd.isna(right_num):
+                return True
+            if pd.isna(left_num) or pd.isna(right_num):
+                return False
+            return math.isclose(float(left_num), float(right_num), rel_tol=1e-9, abs_tol=1e-6)
+
+        drop_indices: set[int] = set()
+        grouping = [column for column in ("usage_date", "category_slug", "_base_model") if column in frame.columns]
+        for _, group in frame.groupby(grouping, dropna=False, sort=False):
+            free_rows = group[group["_is_free_route"]]
+            paid_rows = group[~group["_is_free_route"]]
+            if free_rows.empty or paid_rows.empty:
+                continue
+            for free_index, free_row in free_rows.iterrows():
+                duplicate = any(
+                    all(same_value(free_row.get(column), paid_row.get(column)) for column in compare_columns)
+                    for _, paid_row in paid_rows.iterrows()
+                )
+                if duplicate:
+                    drop_indices.add(int(free_index))
+        return [record for index, record in enumerate(records) if index not in drop_indices]
 
     @staticmethod
     def validate_records(

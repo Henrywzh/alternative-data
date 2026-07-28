@@ -444,7 +444,10 @@ class ActivityPipeline(BasePipeline):
     ) -> dict[str, list[DatasetRecord]]:
         if mode != "activity-daily-update":
             raise ValueError(f"Unsupported mode: {mode}")
-        records = extracted.get("openrouter_model_activity", [])
+        records = ActivitySource.drop_identical_route_alias_records(
+            extracted.get("openrouter_model_activity", [])
+        )
+        extracted["openrouter_model_activity"] = records
         scraped_at = datetime.now(timezone.utc)
         for record in records:
             if record.scraped_at:
