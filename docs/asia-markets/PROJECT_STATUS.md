@@ -36,15 +36,18 @@ replacement for the operating manual or generated source-status JSON.
   (`1776.HK`), CSC (`6066.HK`), Guotai Haitong (`2611.HK`) and East Money
   (`300059.SZ`) require a market-aware financial-data expansion before being
   wired into the dashboard.
-- Buildings Department Md52–Md56 charts/tables are current-month snapshots,
-  not historical MoM/YoY series. `Md52` demolition consents supply project
-  counts only, not units or floor area. `bd_monthly_stats` is a different
-  Md11–Md17 dataset and currently retains unlabelled numeric arrays.
+- Buildings Department Md52–Md56 current XLS charts/tables remain project
+  snapshots. A separate archive-backed `bd_supply_pipeline_history` now covers
+  2005-01 to 2026-05 as month/stage aggregates parsed from the official PDF
+  summary tables. `Md52` demolition consents supply counts only; the history
+  is not project-level stage linkage. `bd_monthly_stats` remains a distinct
+  Md11–Md17 scratch dataset with unlabelled numeric arrays.
 - The current monthly-digest fetch archives 20 Mdxx XLS files. Most of those
   are raw-only archival coverage, not normalized analytical datasets.
-- Buildings Department coverage should eventually be split into distinct
-  source-coverage rows for raw Mdxx archival files, historical Md11–Md17
-  monthly statistics and current Md52–Md56 project-lifecycle snapshots.
+- Buildings Department coverage is split between raw Mdxx archival files,
+  historical Section-1 stage aggregates and current Md52–Md56 project
+  lifecycle snapshots. The next BD expansion is project-level historical
+  extraction/entity resolution, which requires separate validation.
 - Source coverage for newer feeds currently uses `Live at build time` when a
   build fetched rows, but often leaves `latest_observation` as `—`. This should
   be improved to expose actual as-of dates and age where possible.
@@ -52,6 +55,13 @@ replacement for the operating manual or generated source-status JSON.
   do not solve this by aggregating the data to monthly grain.
 - Most store-footprint companies have only one or two dated snapshots; present
   them as footprint snapshots rather than trends.
+- Consumer Council Online Price Watch historical Parquet is gated by a local
+  manifest: all advertised archive dates must have source-version provenance,
+  a successful parse and a materialised partition before it is Healthy. The
+  dashboard shows archive coverage plus a product-code-matched, chain-linked
+  index for the six longest supermarket-code series. It does not adjust for
+  promotions or pack-size changes, and source-code renames are deliberately
+  not inferred as continuity. The archive remains local rather than Git-tracked.
 
 ## Agent handoff checklist
 
