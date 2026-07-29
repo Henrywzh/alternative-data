@@ -258,6 +258,33 @@
         {"model_id": "anthropic/claude-opus-5-20260723", "effective_from": "2026-07-24"},
         {"model_id": "anthropic/claude-opus-5-fast-20260723", "effective_from": "2026-07-26"}
       ]
+    },
+    {
+      "aa_model_id": "1305c921-7aaa-4d6d-99b5-99b3acf15e19",
+      "family_id": "anthropic/claude-opus-5",
+      "effective_from": "2026-07-24",
+      "openrouter_routes": [
+        {"model_id": "anthropic/claude-opus-5-20260723", "effective_from": "2026-07-24"},
+        {"model_id": "anthropic/claude-opus-5-fast-20260723", "effective_from": "2026-07-26"}
+      ]
+    },
+    {
+      "aa_model_id": "712be54a-77ae-41b2-9a58-21181479d6ee",
+      "family_id": "anthropic/claude-opus-5",
+      "effective_from": "2026-07-24",
+      "openrouter_routes": [
+        {"model_id": "anthropic/claude-opus-5-20260723", "effective_from": "2026-07-24"},
+        {"model_id": "anthropic/claude-opus-5-fast-20260723", "effective_from": "2026-07-26"}
+      ]
+    },
+    {
+      "aa_model_id": "ff51be8f-e362-4a7e-9043-687ba15de207",
+      "family_id": "anthropic/claude-opus-5",
+      "effective_from": "2026-07-24",
+      "openrouter_routes": [
+        {"model_id": "anthropic/claude-opus-5-20260723", "effective_from": "2026-07-24"},
+        {"model_id": "anthropic/claude-opus-5-fast-20260723", "effective_from": "2026-07-26"}
+      ]
     }
   ]
 }
