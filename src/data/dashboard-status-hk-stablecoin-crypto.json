@@ -1,0 +1,81 @@
+{
+  "generated_at": "2026-07-28T18:27:21.091646Z",
+  "snapshot_id": "3e9386e8abae475f",
+  "data_as_of": "2026-07-28",
+  "overall_status": "Healthy",
+  "live_sources": 7,
+  "planned_sources": 0,
+  "sources": [
+    {
+      "source": "HKMA Licensed Stablecoin Issuers Register",
+      "dataset": "hkma_register",
+      "type": "Monitor",
+      "status": "Healthy",
+      "latest_observation": "2026-07-28",
+      "records": 2,
+      "freshness": "Live",
+      "notes": "Official ground-truth sandbox register of licensed stablecoin issuers (Anchorpoint FRS01, HSBC FRS02)."
+    },
+    {
+      "source": "SFC Virtual Asset Trading Platforms Register",
+      "dataset": "sfc_vatp",
+      "type": "Monitor",
+      "status": "Healthy",
+      "latest_observation": "2026-07-28",
+      "records": 36,
+      "freshness": "Live",
+      "notes": "Official 4-status SFC register of VATP exchange operators (licensed, pending, withdrawn, forced-closure)."
+    },
+    {
+      "source": "DefiLlama Stablecoin Market Cap API",
+      "dataset": "defillama",
+      "type": "Monitor",
+      "status": "Healthy",
+      "latest_observation": "2026-07-28",
+      "records": 10,
+      "freshness": "Live",
+      "notes": "Global stablecoin circulating supply tracking and historical market cap time series."
+    },
+    {
+      "source": "HKEX Integrated Fund Platform ETF AUM API",
+      "dataset": "hkex_etf",
+      "type": "Monitor",
+      "status": "Healthy",
+      "latest_observation": "2026-07-28",
+      "records": 5,
+      "freshness": "Live",
+      "notes": "Monthly AUM history for Hong Kong spot Bitcoin and Ether ETFs."
+    },
+    {
+      "source": "Coinbase & Binance Public Tickers",
+      "dataset": "coinbase_binance",
+      "type": "Monitor",
+      "status": "Healthy",
+      "latest_observation": "2026-07-28",
+      "records": 1,
+      "freshness": "Live",
+      "notes": "Real-time BTC spot prices, 90-day daily price time series, and Coinbase Premium spread (bps)."
+    },
+    {
+      "source": "Crypto Fear & Greed Index",
+      "dataset": "fear_greed",
+      "type": "Monitor",
+      "status": "Healthy",
+      "latest_observation": "2026-07-28",
+      "records": 1,
+      "freshness": "Live",
+      "notes": "Daily market sentiment score (0-100) and 90-day historical time series."
+    },
+    {
+      "source": "Polymarket Gamma Search API",
+      "dataset": "polymarket",
+      "type": "Monitor",
+      "status": "Healthy",
+      "latest_observation": "2026-07-28",
+      "records": 8,
+      "freshness": "Live",
+      "notes": "Prediction market probabilities for global crypto regulatory catalysts."
+    }
+  ],
+  "attachment_filename": "hk-stablecoin-crypto-dashboard-2026-07-28.html"
+}

@@ -11,6 +11,7 @@ from ..storage import save_raw_snapshot
 from ..mapping.developer_registry import DeveloperRegistry
 
 PERMIT_REGEX = re.compile(r'([A-Z]{1,3}\s*\d+/\d+/[A-Z]+|BD\s*\d+/\d+/\d+|\d+/\d+/\d+)', re.IGNORECASE)
+FOOTNOTE_UNITS_REGEX = re.compile(r"^\s*([#*])\s*([\d,\s]+)\s+units\b", re.IGNORECASE)
 
 # Matches a bare "Class of Site" planning-area reference line, e.g.
 # "1.8.4/(3)" or "9.5.1/(5) & 9.5.1/(6)" -- these are continuation lines
@@ -85,12 +86,22 @@ def _infer_region_from_address(address: str, fallback: str | None = None) -> str
 # column, which is populated only on a project's first row and blank on
 # every continuation line.
 _STAGE_COLUMNS: dict[str, dict[str, int | None]] = {
+    "Demolition Consents": {
+        "permit_col": None, "blocks_col": None, "storeys_col": None, "building_type_col": 1,
+        "units_col": None, "domestic_gfa_col": None, "non_domestic_gfa_col": None,
+        "domestic_ufa_col": None, "non_domestic_ufa_col": None,
+    },
     "Plans Approved": {
         "permit_col": None, "blocks_col": 1, "storeys_col": 2, "building_type_col": 3,
         "units_col": None, "domestic_gfa_col": 4, "non_domestic_gfa_col": 5,
         "domestic_ufa_col": None, "non_domestic_ufa_col": None,
     },
     "Consent to Commence": {
+        "permit_col": None, "blocks_col": 1, "storeys_col": 2, "building_type_col": 3,
+        "units_col": 4, "domestic_gfa_col": 6, "non_domestic_gfa_col": 7,
+        "domestic_ufa_col": 8, "non_domestic_ufa_col": 9,
+    },
+    "Notice of Commencement Received": {
         "permit_col": None, "blocks_col": 1, "storeys_col": 2, "building_type_col": 3,
         "units_col": 4, "domestic_gfa_col": 6, "non_domestic_gfa_col": 7,
         "domestic_ufa_col": 8, "non_domestic_ufa_col": 9,
@@ -102,11 +113,59 @@ _STAGE_COLUMNS: dict[str, dict[str, int | None]] = {
     },
 }
 
+_MULTI_STRUCTURE_STAGES = frozenset({
+    "Consent to Commence",
+    "Notice of Commencement Received",
+})
+_UNCLASSIFIED_PROPERTY_STAGES = frozenset({"Demolition Consents"})
+_ADDRESS_CONTINUATION_LINES = frozenset({
+    "hong kong",
+    "kowloon",
+    "new territories",
+    "tsuen wan",
+    "tai po",
+    "sheung shui",
+})
+
 
 def _col(row: pd.Series, index: int | None):
     if index is None or index >= len(row):
         return None
     return row.iloc[index]
+
+
+def _is_repeated_site_continuation(
+    permit_stage: str, current_block: dict | None, address_cell: str
+) -> bool:
+    """Identify address continuations in Md54/Md55 multi-structure sites.
+
+    These files repeat the blocks/storeys/building-type cells on a row that
+    only completes an address (for example ``Hong Kong`` or ``Tsuen Wan``).
+    Such a row is not a new project header even though it resembles one.
+    """
+    if permit_stage not in _MULTI_STRUCTURE_STAGES or current_block is None:
+        return False
+    normalized = address_cell.strip().rstrip(",").lower()
+    return not normalized or normalized in _ADDRESS_CONTINUATION_LINES
+
+
+def _sum_or_none(values: pd.Series) -> float | None:
+    """Return a total only where the source actually publishes a value."""
+    numeric = pd.to_numeric(values, errors="coerce")
+    return float(numeric.sum()) if numeric.notna().any() else None
+
+
+def _footnoted_unit_counts(frame: pd.DataFrame) -> dict[str, int]:
+    """Read unit counts that the official table publishes in marker notes."""
+    counts: dict[str, int] = {}
+    for row in frame.itertuples(index=False, name=None):
+        text = " ".join(str(value) for value in row if pd.notna(value)).strip()
+        match = FOOTNOTE_UNITS_REGEX.match(text)
+        if match:
+            count = safe_int(match.group(2).replace(" ", ""))
+            if count is not None:
+                counts[match.group(1)] = count
+    return counts
 
 
 def parse_bd_xls_projects(excel_bytes: bytes, permit_stage: str) -> pd.DataFrame:
@@ -145,11 +204,12 @@ def parse_bd_xls_projects(excel_bytes: bytes, permit_stage: str) -> pd.DataFrame
     """
     df_raw = pd.read_excel(io.BytesIO(excel_bytes))
     cols = _STAGE_COLUMNS.get(permit_stage, _STAGE_COLUMNS["Occupation Permits (OP) Issued"])
+    footnote_unit_counts = _footnoted_unit_counts(df_raw)
 
     projects = []
     current_block = None
     current_region = "Hong Kong Island"
-    current_cat = "Domestic"
+    current_cat = "Unknown" if permit_stage in _UNCLASSIFIED_PROPERTY_STAGES else "Domestic"
 
     for idx in range(7, len(df_raw)):
         row = df_raw.iloc[idx]
@@ -193,7 +253,14 @@ def parse_bd_xls_projects(excel_bytes: bytes, permit_stage: str) -> pd.DataFrame
         num_blocks = safe_int(blocks_value)
         building_type_raw = _col(row, cols["building_type_col"])
         building_type = str(building_type_raw).strip() if pd.notna(building_type_raw) and str(building_type_raw).strip() else None
-        is_new_project_header = num_blocks is not None and building_type is not None
+        if cols["blocks_col"] is not None:
+            is_new_project_header = (
+                num_blocks is not None
+                and building_type is not None
+                and not _is_repeated_site_continuation(permit_stage, current_block, c0)
+            )
+        else:
+            is_new_project_header = bool(c0 and building_type and not c0.startswith("TABLE") and not c0.startswith("DETAILED"))
 
         if current_block is None and not is_new_project_header:
             # Stray row (footnote, leftover header text) with no active
@@ -206,7 +273,10 @@ def parse_bd_xls_projects(excel_bytes: bytes, permit_stage: str) -> pd.DataFrame
 
             permit_match = PERMIT_REGEX.search(str(_col(row, cols["permit_col"]) or "")) if cols["permit_col"] is not None else None
             num_storeys = safe_int(_col(row, cols["storeys_col"]))
-            units_count = safe_int(_col(row, cols["units_col"]))
+            units_raw = _col(row, cols["units_col"])
+            units_count = safe_int(units_raw)
+            if units_count is None and units_raw is not None:
+                units_count = footnote_unit_counts.get(str(units_raw).strip())
             domestic_gfa = safe_float(_col(row, cols["domestic_gfa_col"]))
             non_domestic_gfa = safe_float(_col(row, cols["non_domestic_gfa_col"]))
             domestic_ufa = safe_float(_col(row, cols["domestic_ufa_col"]))
@@ -275,17 +345,21 @@ def parse_bd_xls_projects(excel_bytes: bytes, permit_stage: str) -> pd.DataFrame
 def fetch_bd_project_lifecycle_events() -> pd.DataFrame:
     """
     Fetch Buildings Department project-level tables:
+    - Table 5.2: Demolition Consents Issued (Md52.xls)
     - Table 5.3: Plans Approved (Md53.xls)
     - Table 5.4: Consent to Commence Works (Md54.xls)
+    - Table 5.5: Notice of Commencement Received (Md55.xls)
     - Table 5.6: Occupation Permits (OP) Issued (Md56.xls)
     """
     all_dfs = []
     raw_paths: list[str] = []
     source_urls: list[str] = []
     tables = [
+        ("Md52.xls", "Demolition Consents"),
         ("Md53.xls", "Plans Approved"),
         ("Md54.xls", "Consent to Commence"),
-        ("Md56.xls", "Occupation Permits (OP) Issued")
+        ("Md55.xls", "Notice of Commencement Received"),
+        ("Md56.xls", "Occupation Permits (OP) Issued"),
     ]
     
     for filename, stage_name in tables:
@@ -341,9 +415,9 @@ def fetch_bd_supply_leading_indicators() -> pd.DataFrame:
             'region': region,
             'property_category': cat,
             'total_projects_count': len(grp),
-            'total_domestic_units': float(grp['domestic_units_count'].sum(skipna=True)),
-            'total_usable_floor_area_sqm': float(grp['usable_floor_area_sqm'].sum(skipna=True)),
-            'total_site_area_sqm': float(grp['site_area_sqm'].sum(skipna=True)),
+            'total_domestic_units': _sum_or_none(grp['domestic_units_count']),
+            'total_usable_floor_area_sqm': _sum_or_none(grp['usable_floor_area_sqm']),
+            'total_site_area_sqm': _sum_or_none(grp['site_area_sqm']),
             'source_agency': 'Hong Kong Buildings Department'
         })
         

@@ -1,0 +1,112 @@
+{
+  "generated_at": "2026-07-28T21:37:57.798547Z",
+  "snapshot_id": "dc24d855c90087ad",
+  "data_as_of": "2026-07-27",
+  "overall_status": "Healthy",
+  "live_sources": 5,
+  "planned_sources": 1,
+  "provisional_series": 2,
+  "sources": [
+    {
+      "source": "Centaline City Leading Index (CCL)",
+      "dataset": "Centaline CCL",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2026-07-19",
+      "records": 1699,
+      "freshness": "9d old",
+      "notes": "Latest observation is published without a provisional flag."
+    },
+    {
+      "source": "Midland Realty Market Insight — MHPI",
+      "dataset": "Midland MHPI",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2026-07-27",
+      "records": 542,
+      "freshness": "1d old",
+      "notes": "Latest observation is published without a provisional flag."
+    },
+    {
+      "source": "Midland Realty Market Insight — Confidence Index",
+      "dataset": "Midland Confidence Index",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2026-07-27",
+      "records": 444,
+      "freshness": "1d old",
+      "notes": "Latest observation is published without a provisional flag."
+    },
+    {
+      "source": "Rating and Valuation Department — Private Domestic Price Index",
+      "dataset": "RVD Residential Price Index",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2026-05-01",
+      "records": 401,
+      "freshness": "88d old",
+      "notes": "Latest observation is provisional."
+    },
+    {
+      "source": "Rating and Valuation Department — Private Domestic Rental Index",
+      "dataset": "RVD Residential Rental Index",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2026-05-01",
+      "records": 401,
+      "freshness": "88d old",
+      "notes": "Latest observation is provisional."
+    },
+    {
+      "source": "28Hse",
+      "dataset": "EPI / ERI",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "—",
+      "records": 1096,
+      "freshness": "Live at build time",
+      "notes": "28Hse EPI / ERI Historical Index; see the chart/table above."
+    },
+    {
+      "source": "Agency transactions",
+      "dataset": "Centaline / Midland / 28Hse transactions",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "—",
+      "records": 300,
+      "freshness": "Live at build time",
+      "notes": "Deduplicated agency transaction feeds; see the chart/table above."
+    },
+    {
+      "source": "Land Registry",
+      "dataset": "Monthly facts + ASP series",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "—",
+      "records": 1062,
+      "freshness": "Live at build time",
+      "notes": "Land Registry Monthly Statistics (JSON); see the chart/table above."
+    },
+    {
+      "source": "Buildings Department",
+      "dataset": "Monthly digest + project lifecycle",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "—",
+      "records": 252,
+      "freshness": "Live at build time",
+      "notes": "Buildings Department Monthly Digest / Project Lifecycle; see the chart/table above."
+    },
+    {
+      "source": "SRPE",
+      "dataset": "First-hand residential project documents",
+      "type": "Catalog",
+      "status": "Catalog only",
+      "latest_observation": "—",
+      "records": 0,
+      "freshness": "Content parser pending",
+      "notes": "Current discovery code does not yet extract sales, units, price lists, or absorption facts."
+    }
+  ],
+  "attachment_filename": "hk-real-estate-dashboard-2026-07-28.html"
+}

@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-07-29T18:38:45.845164Z",
-  "snapshot_id": "6291972cec646fef",
+  "generated_at": "2026-07-29T21:18:23.609442Z",
+  "snapshot_id": "6d39542238734e09",
   "data_as_of": "2026-07-27",
   "overall_status": "Healthy",
   "live_sources": 5,
@@ -93,7 +93,7 @@
       "type": "Measure",
       "status": "Healthy",
       "latest_observation": "—",
-      "records": 252,
+      "records": 257,
       "freshness": "Live at build time",
       "notes": "Buildings Department Monthly Digest / Project Lifecycle; see the chart/table above."
     },

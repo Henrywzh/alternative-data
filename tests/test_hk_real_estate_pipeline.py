@@ -23,6 +23,11 @@ from src.hk_real_estate.sources.bd_projects import (
     _infer_region_from_address,
 )
 from src.hk_real_estate.sources.buildings_dept import _period_from_row, fetch_buildings_dept_monthly_stats
+from src.hk_real_estate.sources.bd_history import (
+    discover_bd_digest_archives,
+    list_archive_pdf_members,
+    parse_bd_history_text,
+)
 from src.hk_real_estate.mapping.developer_registry import GENERIC_FUZZY_EXCLUDED_ALIASES
 from src.hk_real_estate.dedup.transaction_dedup import deduplicate_agency_transactions, generate_dedup_hash
 from src.hk_real_estate.sources.srpe import fetch_srpe_firsthand_sales_digest
@@ -53,11 +58,71 @@ def test_import_smoke():
         "src.hk_real_estate.sources.hse28",
         "src.hk_real_estate.sources.hkma",
         "src.hk_real_estate.sources.bd_projects",
+        "src.hk_real_estate.sources.bd_history",
         "src.hk_real_estate.mapping.developer_registry",
         "src.hk_real_estate.dedup.transaction_dedup",
         "src.hk_real_estate.pipeline",
     ):
         assert importlib.import_module(module)
+
+
+def test_bd_history_parses_stage_aggregates_without_inventing_md52_metrics():
+    text = """
+TABLE 1.2 CONSENT TO COMMENCE WORKS ISSUED BY THE BUILDING AUTHORITY
+2024: Jan 2 3 4 5 14
+      Feb 3 4 5 6 18
+TABLE 1.3 OCCUPATION PERMITS ISSUED BY THE BUILDING AUTHORITY
+2024: Jan 1 2 3 6 700
+      Feb 2 3 4 9 800
+TABLE 1.4 APPROVALS OF NEW AND MAJOR REVISION BUILDING PLANS
+2024: Jan 10 2 12 7 1 8
+      Feb 11 3 14 8 2 10
+TABLE 1.5 CONSENT TO COMMENCE GENERAL BUILDING AND SUPERSTRUCTURE WORKS
+2024: Jan First Submission 100.0 20.0 120.0 50.0 10.0 60.0 200
+          Major Revision 10.0 2.0 12.0 5.0 1.0 6.0 20
+      Feb First Submission 110.0 30.0 140.0 55.0 15.0 70.0 300
+          Major Revision 11.0 3.0 14.0 6.0 2.0 8.0 30
+TABLE 1.6 NOTIFICATION OF COMMENCEMENT OF GENERAL BUILDING
+2024: Jan 120.0 30.0 150.0 60.0 15.0 75.0 250
+      Feb 130.0 40.0 170.0 65.0 20.0 85.0 350
+TABLE 1.7 COMPLETION OF NEW BUILDINGS
+2024: Jan 200.0 50.0 250.0 100.0 25.0 125.0 700
+      Feb 220.0 60.0 280.0 110.0 30.0 140.0 800
+"""
+
+    result = parse_bd_history_text(text, 2024, "https://bd.example/Md202412e.pdf", 2024)
+
+    assert len(result) == 10
+    jan = result[result["observation_month"].eq("2024-01-01")].set_index("permit_stage")
+    demolition = jan.loc["Demolition Consents"]
+    assert demolition["total_projects_count"] == 2.0
+    assert pd.isna(demolition["total_domestic_units"])
+    assert pd.isna(demolition["total_domestic_gfa_sqm"])
+    commence = jan.loc["Consent to Commence"]
+    assert commence["total_projects_count"] == 5.0
+    assert commence["total_domestic_units"] == 220.0
+    assert commence["total_domestic_gfa_sqm"] == 110.0
+    occupation = jan.loc["Occupation Permits (OP) Issued"]
+    assert occupation["total_projects_count"] == 6.0
+    assert occupation["total_domestic_units"] == 700.0
+    assert occupation["total_domestic_ufa_sqm"] == 100.0
+
+
+def test_bd_history_archive_discovery_and_member_contract():
+    import io
+    import zipfile
+
+    html = '<a href="/doc/en/whats-new/monthly-digests/Md2024e.zip">2024</a>'
+    assert discover_bd_digest_archives(html) == {
+        2024: "https://www.bd.gov.hk/doc/en/whats-new/monthly-digests/Md2024e.zip"
+    }
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as archive:
+        for month in range(1, 13):
+            archive.writestr(f"Md2024{month:02d}e.pdf", b"%PDF-1.4")
+    assert list_archive_pdf_members(buffer.getvalue(), 2024) == [
+        f"Md2024{month:02d}e.pdf" for month in range(1, 13)
+    ]
 
 
 def test_transaction_deduplication():
@@ -610,7 +675,7 @@ def test_bd_project_fetch_preserves_lineage_for_each_xls_source():
 
     response = MagicMock(status_code=200, content=b"xls")
     parsed = pd.DataFrame([{"site_address": "Example Road", "permit_stage": "Plans Approved"}])
-    raw_paths = ["/tmp/Md53.xls", "/tmp/Md54.xls", "/tmp/Md56.xls"]
+    raw_paths = ["/tmp/Md52.xls", "/tmp/Md53.xls", "/tmp/Md54.xls", "/tmp/Md55.xls", "/tmp/Md56.xls"]
 
     with patch.object(bd_source.requests, "get", return_value=response), patch.object(
         bd_source, "parse_bd_xls_projects", return_value=parsed.copy()
@@ -619,8 +684,10 @@ def test_bd_project_fetch_preserves_lineage_for_each_xls_source():
 
     assert json.loads(result.attrs["raw_snapshot"]) == raw_paths
     assert json.loads(result.attrs["source_url"]) == [
+        f"{bd_source.BD_MONTHLY_DIGEST_XLS_BASE}/Md52.xls",
         f"{bd_source.BD_MONTHLY_DIGEST_XLS_BASE}/Md53.xls",
         f"{bd_source.BD_MONTHLY_DIGEST_XLS_BASE}/Md54.xls",
+        f"{bd_source.BD_MONTHLY_DIGEST_XLS_BASE}/Md55.xls",
         f"{bd_source.BD_MONTHLY_DIGEST_XLS_BASE}/Md56.xls",
     ]
 
@@ -630,8 +697,10 @@ def test_bd_project_concat_has_stable_nullable_numeric_types():
 
     response = MagicMock(status_code=200, content=b"xls")
     frames = [
+        pd.DataFrame([{"permit_stage": "Demolition Consents", "site_area_sqm": None, "domestic_units_count": None}]),
         pd.DataFrame([{"permit_stage": "Plans Approved", "site_area_sqm": None, "domestic_units_count": None}]),
         pd.DataFrame([{"permit_stage": "Consent to Commence", "site_area_sqm": 12.5, "domestic_units_count": 2}]),
+        pd.DataFrame([{"permit_stage": "Notice of Commencement Received", "site_area_sqm": 13.0, "domestic_units_count": 2}]),
         pd.DataFrame([{"permit_stage": "Occupation Permits (OP) Issued", "site_area_sqm": 15.0, "domestic_units_count": 3}]),
     ]
 
@@ -679,6 +748,91 @@ def test_bd_projects_multi_house_project_does_not_split_into_blank_address_rows(
     assert df.iloc[0]["site_address"].strip() != ""
 
 
+def test_bd_md55_repeated_header_continuation_stays_with_its_site():
+    """Md55 repeats blocks/type on an address continuation for the same site.
+
+    The live July 2026 file has ``145-149 Third Street,`` followed by a
+    ``Hong Kong`` row carrying a second building type.  The second row is a
+    component of the same site, not a project literally located at "Hong
+    Kong".
+    """
+    header_row = [None] * 13
+    filler_rows = [[None] * 13 for _ in range(7)]
+    project_rows = [
+        ["145-149 Third Street,", 1, 1, "Residence", 1, 9.5, 21.5, "-", 9.5, "-", "AP", "RSE", "Applicant"],
+        ["Hong Kong", 1, 1, "Plant room", None, None, None, None, None, None, None, None, None],
+        ["1.1.2/(33)", None, None, None, None, None, None, None, None, None, None, None, None],
+    ]
+
+    df = parse_bd_xls_projects(
+        _rows_to_xls_bytes([header_row] + filler_rows + project_rows),
+        "Notice of Commencement Received",
+    )
+
+    assert len(df) == 1
+    assert df.iloc[0]["site_address"] == "145-149 Third Street, Hong Kong"
+    assert df.iloc[0]["domestic_units_count"] == 1
+
+
+def test_bd_supply_keeps_metrics_null_when_stage_does_not_publish_them():
+    """Demolition-consent rows are project counts, not zero-unit projects."""
+    projects = pd.DataFrame(
+        [
+            {
+                "permit_stage": "Demolition Consents",
+                "region": "Hong Kong Island",
+                "property_category": "Unknown",
+                "domestic_units_count": None,
+                "usable_floor_area_sqm": None,
+                "site_area_sqm": None,
+            }
+        ]
+    )
+    with patch("src.hk_real_estate.sources.bd_projects.fetch_bd_project_lifecycle_events", return_value=projects):
+        indicators = fetch_bd_supply_leading_indicators()
+
+    assert len(indicators) == 1
+    assert pd.isna(indicators.iloc[0]["total_domestic_units"])
+    assert pd.isna(indicators.iloc[0]["total_usable_floor_area_sqm"])
+
+
+def test_bd_demolition_projects_are_not_classified_as_domestic_supply():
+    header_row = [None] * 4
+    filler_rows = [[None] * 4 for _ in range(7)]
+    project_rows = [
+        ["66 Deep Water Bay Road,", "Single family house", "AP", "Applicant"],
+        ["Hong Kong", None, None, None],
+    ]
+
+    df = parse_bd_xls_projects(
+        _rows_to_xls_bytes([header_row] + filler_rows + project_rows),
+        "Demolition Consents",
+    )
+
+    assert len(df) == 1
+    assert df.iloc[0]["property_category"] == "Unknown"
+
+
+def test_bd_md55_resolves_footnoted_domestic_unit_count():
+    """Md55 uses # in the unit cell and publishes the actual count in a note."""
+    header_row = [None] * 13
+    filler_rows = [[None] * 13 for _ in range(7)]
+    project_rows = [
+        ["3A Kung Ngam Road,", 1, 33, "Public rental housing", "#", "-", 72289.9, 8387.9, 32387.2, 5366.9, "AP", "RSE", "Applicant"],
+        ["Hong Kong", None, None, None, None, None, None, None, None, None, None, None, None],
+        [None] * 13,
+        ["# 1 595 units for public rental housing.", None, None, None, None, None, None, None, None, None, None, None, None],
+    ]
+
+    df = parse_bd_xls_projects(
+        _rows_to_xls_bytes([header_row] + filler_rows + project_rows),
+        "Notice of Commencement Received",
+    )
+
+    assert len(df) == 1
+    assert df.iloc[0]["domestic_units_count"] == 1595
+
+
 def test_buildings_dept_annual_row_and_monthly_row_have_matching_shape_and_distinct_dates():
     """Regression test for Bug 2: the annual-summary row's own year cell
     (e.g. a bare "2024") was included in the generic numeric-value scan,
@@ -696,6 +850,7 @@ def test_buildings_dept_annual_row_and_monthly_row_have_matching_shape_and_disti
 
     def fake_get(url, headers=None, timeout=None):
         resp = MagicMock()
+        resp.status_code = 200
         resp.raise_for_status = lambda: None
         if url.endswith("index.html"):
             resp.text = index_html

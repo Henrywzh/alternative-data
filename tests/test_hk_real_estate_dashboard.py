@@ -198,3 +198,92 @@ def test_transaction_pulse_flags_single_agency_coverage():
     assert "single agency" in coverage["notes"]
     table = next(table for table in artifact["manifest"]["tables"] if table["id"] == "agency_transactions_pulse_table")
     assert "only 28Hse" in table["subtitle"]
+
+
+def test_bd_demolition_consents_are_not_rendered_as_zero_unit_supply():
+    supply = pd.DataFrame(
+        [
+            {
+                "permit_stage": "Demolition Consents",
+                "region": "Hong Kong Island",
+                "property_category": "Unknown",
+                "total_projects_count": 2,
+                "total_domestic_units": None,
+                "total_usable_floor_area_sqm": None,
+            },
+            {
+                "permit_stage": "Plans Approved",
+                "region": "Hong Kong Island",
+                "property_category": "Domestic",
+                "total_projects_count": 1,
+                "total_domestic_units": 100,
+                "total_usable_floor_area_sqm": 1_000,
+            },
+        ]
+    )
+    artifact, _ = dashboard_export.build_artifact(
+        _frames(),
+        raw_hkma=_hkma_frame(),
+        raw_cnsd=_cnsd_frame(),
+        raw_bd_monthly_stats=pd.DataFrame(),
+        raw_bd_supply=supply,
+        now=NOW,
+    )
+    pipeline_rows = artifact["snapshot"]["datasets"]["bd_supply_pipeline"]
+    assert pipeline_rows == [{"permit_stage": "Plans Approved", "region": "Hong Kong Island", "value": 100.0}]
+    detail_rows = artifact["snapshot"]["datasets"]["bd_supply_detail"]
+    demolition = next(row for row in detail_rows if row["permit_stage"] == "Demolition Consents")
+    assert demolition["total_projects_count"] == 2
+    assert demolition["total_domestic_units"] is None
+
+
+def test_bd_history_is_a_dated_aggregate_trend_separate_from_current_snapshot():
+    history = pd.DataFrame(
+        [
+            {
+                "observation_month": "2024-12-01",
+                "permit_stage": "Demolition Consents",
+                "total_projects_count": 2,
+                "total_domestic_units": None,
+                "total_domestic_ufa_sqm": None,
+                "revision_status": "as_published",
+                "parser_confidence": "HIGH",
+            },
+            {
+                "observation_month": "2024-12-01",
+                "permit_stage": "Consent to Commence",
+                "total_projects_count": 13,
+                "total_domestic_units": 1_495,
+                "total_domestic_ufa_sqm": 30_056.5,
+                "revision_status": "as_published",
+                "parser_confidence": "HIGH",
+            },
+            {
+                "observation_month": "2024-12-01",
+                "permit_stage": "Plans Approved",
+                "total_projects_count": 14,
+                "total_domestic_units": None,
+                "total_domestic_ufa_sqm": None,
+                "revision_status": "as_published",
+                "parser_confidence": "LOW",
+            },
+        ]
+    )
+    artifact, _ = dashboard_export.build_artifact(
+        _frames(),
+        raw_hkma=_hkma_frame(),
+        raw_cnsd=_cnsd_frame(),
+        raw_bd_supply_history=history,
+        now=NOW,
+    )
+
+    rows = artifact["snapshot"]["datasets"]["bd_supply_pipeline_history"]
+    assert {tuple(row.items()) for row in rows} == {
+        (("date", "2024-12"), ("permit_stage", "Consent to Commence"), ("metric", "Domestic units"), ("value", 1495.0)),
+        (("date", "2024-12"), ("permit_stage", "Consent to Commence"), ("metric", "Domestic usable floor area (sqm)"), ("value", 30056.5)),
+        (("date", "2024-12"), ("permit_stage", "Consent to Commence"), ("metric", "Project / consent count"), ("value", 13.0)),
+        (("date", "2024-12"), ("permit_stage", "Demolition Consents"), ("metric", "Project / consent count"), ("value", 2.0)),
+    }
+    chart = next(chart for chart in artifact["manifest"]["charts"] if chart["id"] == "bd_supply_history_chart")
+    assert chart["dataset"] == "bd_supply_pipeline_history"
+    assert chart["sourceId"] == "bd_supply_history"

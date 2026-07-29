@@ -6,7 +6,7 @@
     "title": "香港商业航天监测",
     "description": "上交所科创板 IPO 审核状态、Launch Library 2 发射频次、Celestrak 低轨卫星星座数量及商业航天企业专利申请统计。",
     "sector": "hk-commercial-aerospace",
-    "generatedAt": "2026-07-29T18:37:59.583265Z",
+    "generatedAt": "2026-07-29T21:17:38.888720Z",
     "dataAsOf": "2026-07-29",
     "liveSourcesCount": 2,
     "totalSourcesCount": 4,
@@ -325,7 +325,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**数据快照：** `d9142558ddd22285` · 生成于 2026-07-29T18:37:59.583265Z。"
+        "body": "**数据快照：** `d9142558ddd22285` · 生成于 2026-07-29T21:17:38.888720Z。"
       },
       {
         "id": "kpi_grid",
@@ -375,7 +375,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-29T18:37:59.583265Z",
+    "generatedAt": "2026-07-29T21:17:38.888720Z",
     "status": "ready",
     "datasets": {
       "ipo_race": [
@@ -730,7 +730,7 @@
     "sector_id": "hk-commercial-aerospace",
     "sector_name": "Hong Kong Commercial Aerospace Sector Monitor",
     "snapshotId": "d9142558ddd22285",
-    "generatedAt": "2026-07-29T18:37:59.583265Z",
+    "generatedAt": "2026-07-29T21:17:38.888720Z",
     "dataAsOf": "2026-07-29"
   }
 }

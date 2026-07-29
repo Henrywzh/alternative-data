@@ -47,6 +47,8 @@ LANDREG_MONTHLY_JSON_BASE = "https://www.landreg.gov.hk/json/monthly_stat/monthl
 SRPE_OPIP_URL = "https://www.srpe.gov.hk/opip/"
 BD_MONTHLY_DIGESTS_URL = "https://www.bd.gov.hk/en/whats-new/monthly-digests/index.html"
 BD_MONTHLY_DIGEST_XLS_BASE = "https://www.bd.gov.hk/doc/en/whats-new/monthly-digests"
+BD_MONTHLY_DIGEST_ARCHIVE_BASE = BD_MONTHLY_DIGEST_XLS_BASE
+BD_HISTORY_FIRST_YEAR = 2005
 
 # Stage 2 Credit & HKEX Endpoints
 HKMA_RMS_API_URL = "https://vapi.hkma.gov.hk/v1/market-data-and-statistics/monthly-statistical-bulletin/banking/residential-mortgage-survey"
@@ -58,4 +60,3 @@ DEFAULT_HEADERS = {
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
     'Accept-Language': 'en-US,en;q=0.9,zh-TW;q=0.8,zh;q=0.7',
 }
-
