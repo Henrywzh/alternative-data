@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import io
 import json
+import logging
 import re
 import zipfile
 from collections import defaultdict
@@ -30,8 +31,11 @@ from ..config import (
 from ..storage import save_raw_snapshot
 
 
+logger = logging.getLogger(__name__)
+
 _MONTHS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
 _MONTH_NUMBER = {month: index for index, month in enumerate(_MONTHS, start=1)}
+_MONTH_PATTERN = r"J\s*a\s*n(?:uary)?|F\s*e\s*b(?:ruary)?|M\s*a\s*r(?:ch)?|A\s*p\s*r(?:il)?|M\s*a\s*y|J\s*u\s*n(?:e)?|J\s*u\s*l(?:y)?|A\s*u\s*g(?:ust)?|S\s*e\s*p(?:tember)?|O\s*c\s*t(?:ober)?|N\s*o\s*v(?:ember)?|D\s*e\s*c(?:ember)?"
 _STAGE_NAMES = {
     "1.2": "Demolition Consents",
     "1.4": "Plans Approved",
@@ -98,16 +102,32 @@ def discover_bd_digest_pdf_urls(index_html: str) -> dict[int, str]:
 
 
 def list_archive_pdf_members(zip_bytes: bytes, archive_year: int) -> list[str]:
-    """Validate an annual archive and return its expected monthly PDFs."""
+    """Return one official PDF per archive month, accepting revised members.
+
+    Some official archives replace the original PDF with a member such as
+    ``Md201404e_revised.pdf``.  That is a BD revision, not a corrupted
+    archive, so choose it for that month while continuing to reject a missing
+    month altogether.
+    """
     expected = [f"Md{archive_year}{month:02d}e.pdf" for month in range(1, 13)]
     with zipfile.ZipFile(io.BytesIO(zip_bytes)) as archive:
-        pdf_members = sorted(name for name in archive.namelist() if name.lower().endswith(".pdf"))
-    if pdf_members != expected:
+        pdf_members = archive.namelist()
+    selected: list[str] = []
+    missing: list[str] = []
+    for canonical in expected:
+        revised = canonical.removesuffix(".pdf") + "_revised.pdf"
+        if canonical in pdf_members:
+            selected.append(canonical)
+        elif revised in pdf_members:
+            selected.append(revised)
+        else:
+            missing.append(canonical)
+    if missing:
         raise ValueError(
-            f"BD {archive_year} archive members differ from monthly-digest contract; "
-            f"expected={expected!r}, found={pdf_members!r}"
+            f"BD {archive_year} archive is missing monthly digest PDFs; "
+            f"missing={missing!r}, found={[name for name in pdf_members if name.lower().endswith('.pdf')]!r}"
         )
-    return expected
+    return selected
 
 
 def _number_values(text: str) -> list[float]:
@@ -133,8 +153,8 @@ def _month_rows(table_text: str, year: int) -> dict[str, list[list[float]]]:
         line = raw_line.strip()
         if not line:
             continue
-        first = re.match(rf"^{year}\s*:\s*\*?\s*({'|'.join(_MONTHS)})\s+(.*)$", line)
-        continuation = re.match(rf"^\*?\s*({'|'.join(_MONTHS)})\s+(.*)$", line)
+        first = re.match(rf"^{year}\s*:?\s*\*?\s*({_MONTH_PATTERN})\s+(.*)$", line, flags=re.IGNORECASE)
+        continuation = re.match(rf"^\*?\s*({_MONTH_PATTERN})\s+(.*)$", line, flags=re.IGNORECASE)
         if first:
             current_year = True
             month, rest = first.groups()
@@ -148,6 +168,7 @@ def _month_rows(table_text: str, year: int) -> dict[str, list[list[float]]]:
             continue
         values = _number_values(rest)
         if values:
+            month = re.sub(r"\s+", "", month)[:3].title()
             rows[month].append(values)
             current_month = month
     return rows
@@ -161,6 +182,25 @@ def _sum_at(rows: list[list[float]], index: int) -> float | None:
     values = [_value(row, index) for row in rows]
     available = [value for value in values if value is not None]
     return float(sum(available)) if available else None
+
+
+def _approval_total(row: list[float]) -> float | None:
+    """Read Table 1.4's final approval-total column defensively.
+
+    A small number of archived PDFs collapse the two preceding approval
+    columns (for example ``4 4`` becomes ``44`` in extracted text).  The
+    published total remains the final numeric value, but accept that compact
+    form only when the merged digits add back to the stated total.
+    """
+    if len(row) >= 6:
+        return _value(row, 5)
+    if len(row) != 5 or not all(value.is_integer() for value in row[3:]):
+        return None
+    merged = str(int(row[3]))
+    total = int(row[4])
+    if len(merged) >= 2 and any(int(merged[:split]) + int(merged[split:]) == total for split in range(1, len(merged))):
+        return float(total)
+    return None
 
 
 def _record(month: str, year: int, stage: str, source_url: str, archive_year: int, **metrics: Any) -> dict[str, Any]:
@@ -208,8 +248,9 @@ def parse_bd_history_text(text: str, year: int, source_url: str, archive_year: i
 
         if consent_rows and _value(consent_rows[0], 0) is not None:
             records.append(_record(month, year, _STAGE_NAMES["1.2"], source_url, archive_year, total_projects_count=_value(consent_rows[0], 0)))
-        if approval_rows and _value(approval_rows[0], 5) is not None:
-            records.append(_record(month, year, _STAGE_NAMES["1.4"], source_url, archive_year, total_projects_count=_value(approval_rows[0], 5)))
+        approval_total = _approval_total(approval_rows[0]) if approval_rows else None
+        if approval_total is not None:
+            records.append(_record(month, year, _STAGE_NAMES["1.4"], source_url, archive_year, total_projects_count=approval_total))
         if commence_rows:
             records.append(
                 _record(
@@ -273,8 +314,7 @@ def parse_bd_history_digest(pdf_bytes: bytes, year: int, source_url: str, archiv
 
 
 def _archive_december_pdf(archive_bytes: bytes, year: int) -> tuple[str, bytes]:
-    member = f"Md{year}12e.pdf"
-    list_archive_pdf_members(archive_bytes, year)
+    member = next(name for name in list_archive_pdf_members(archive_bytes, year) if name.startswith(f"Md{year}12e"))
     with zipfile.ZipFile(io.BytesIO(archive_bytes)) as archive:
         return member, archive.read(member)
 
@@ -303,6 +343,7 @@ def fetch_bd_supply_pipeline_history(
     errors: list[str] = []
     for year in range(start_year, end_year + 1):
         try:
+            logger.info("Backfilling Buildings Department monthly digest for %s", year)
             if year in archives:
                 archive_url = archives[year]
                 archive_response = requests.get(archive_url, headers=DEFAULT_HEADERS, timeout=60)

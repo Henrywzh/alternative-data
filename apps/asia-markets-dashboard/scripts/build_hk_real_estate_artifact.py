@@ -63,6 +63,14 @@ SERIES_RULES = {
     "rvd_rent": SeriesRule("RVD Residential Rental Index", "overall", "Monthly", 350, 120, "rvd_rent"),
 }
 
+BD_HISTORY_SERIES_LABELS = {
+    "Demolition Consents": "Md52 Demolition",
+    "Plans Approved": "Md53 Plans",
+    "Consent to Commence": "Md54 Consent",
+    "Notice of Commencement Received": "Md55 Start",
+    "Occupation Permits (OP) Issued": "Md56 Occupation",
+}
+
 
 PUBLIC_SOURCES = {
     "hkma_mortgage": {
@@ -773,11 +781,14 @@ def build_artifact(
                         {
                             "date": date,
                             "permit_stage": r.get("permit_stage"),
+                            "series": BD_HISTORY_SERIES_LABELS.get(r.get("permit_stage"), r.get("permit_stage")),
                             "metric": metric,
                             "value": float(r[column]),
                         }
                     )
     bd_supply_history_rows.sort(key=lambda row: (row["metric"], row["permit_stage"], row["date"]))
+    bd_supply_history_unit_rows = [row for row in bd_supply_history_rows if row["metric"] == "Domestic units"]
+    bd_supply_history_count_rows = [row for row in bd_supply_history_rows if row["metric"] == "Project / consent count"]
 
     # Deduplicated cross-agency transaction pulse (28Hse + Midland + Centaline).
     # Keep the artifact builder pure: live acquisition belongs in
@@ -918,7 +929,8 @@ def build_artifact(
         "bd_supply_pipeline": bd_supply_rows,
         "bd_supply_detail": bd_supply_table_rows,
         "bd_supply_floor_area": bd_supply_floor_area_rows,
-        "bd_supply_pipeline_history": bd_supply_history_rows,
+        "bd_supply_pipeline_history_units": bd_supply_history_unit_rows,
+        "bd_supply_pipeline_history_counts": bd_supply_history_count_rows,
         "agency_transactions_pulse": transaction_pulse_rows,
         "midland_top_estates": midland_estate_rows,
         "source_health": health,
@@ -1266,21 +1278,40 @@ def build_artifact(
             }
         )
 
-    if bd_supply_history_rows:
+    if bd_supply_history_unit_rows:
         charts.append(
             {
-                "id": "bd_supply_history_chart",
-                "title": "Buildings Department — Historical Supply Pipeline",
-                "subtitle": "Official monthly stage aggregates from the PDF archive; use the metric selector to avoid comparing units, counts, and floor area directly.",
+                "id": "bd_supply_history_units_chart",
+                "title": "Buildings Department — Historical Housing Supply Pipeline",
+                "subtitle": "Monthly domestic units at consent-to-commence, commencement notice and occupation-permit stages, from the official PDF archive.",
                 "type": "line",
                 "intent": "trend",
-                "dataset": "bd_supply_pipeline_history",
+                "dataset": "bd_supply_pipeline_history_units",
                 "sourceId": "bd_supply_history",
                 "encodings": {
                     "x": {"field": "date", "type": "temporal", "label": "Month"},
-                    "y": {"field": "value", "type": "quantitative", "label": "Value"},
-                    "color": {"field": "permit_stage", "type": "nominal", "label": "Permit stage"},
-                    "facet": {"field": "metric", "type": "nominal", "label": "Metric"},
+                    "y": {"field": "value", "type": "quantitative", "label": "Domestic units"},
+                    "color": {"field": "series", "type": "nominal", "label": "Permit stage"},
+                },
+                "valueFormat": "number",
+                "layout": "full",
+            }
+        )
+
+    if bd_supply_history_count_rows:
+        charts.append(
+            {
+                "id": "bd_supply_history_counts_chart",
+                "title": "Buildings Department — Historical Permit / Consent Counts",
+                "subtitle": "Monthly project or consent counts where the official summary table publishes them; Md55 has no corresponding count field.",
+                "type": "line",
+                "intent": "trend",
+                "dataset": "bd_supply_pipeline_history_counts",
+                "sourceId": "bd_supply_history",
+                "encodings": {
+                    "x": {"field": "date", "type": "temporal", "label": "Month"},
+                    "y": {"field": "value", "type": "quantitative", "label": "Project / consent count"},
+                    "color": {"field": "series", "type": "nominal", "label": "Permit stage"},
                 },
                 "valueFormat": "number",
                 "layout": "full",
@@ -1503,8 +1534,10 @@ def build_artifact(
         blocks.append({"id": "bd_supply_pipeline_chart_block", "type": "chart", "chartId": "bd_supply_pipeline_chart"})
     if bd_supply_floor_area_rows:
         blocks.append({"id": "bd_supply_floor_area_chart_block", "type": "chart", "chartId": "bd_supply_floor_area_chart"})
-    if bd_supply_history_rows:
-        blocks.append({"id": "bd_supply_history_chart_block", "type": "chart", "chartId": "bd_supply_history_chart"})
+    if bd_supply_history_unit_rows:
+        blocks.append({"id": "bd_supply_history_units_chart_block", "type": "chart", "chartId": "bd_supply_history_units_chart"})
+    if bd_supply_history_count_rows:
+        blocks.append({"id": "bd_supply_history_counts_chart_block", "type": "chart", "chartId": "bd_supply_history_counts_chart"})
     if bd_supply_table_rows:
         blocks.append({"id": "bd_supply_detail_block", "type": "table", "tableId": "bd_supply_detail_table"})
     if new_project_rows:

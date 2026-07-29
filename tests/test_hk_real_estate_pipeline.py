@@ -108,6 +108,30 @@ TABLE 1.7 COMPLETION OF NEW BUILDINGS
     assert occupation["total_domestic_ufa_sqm"] == 100.0
 
 
+def test_bd_history_accepts_month_names_with_pdf_character_spacing_or_no_colon():
+    text = """
+TABLE 1.2 CONSENT TO COMMENCE WORKS ISSUED BY THE BUILDING AUTHORITY
+2018 Jan 2 3 4 5 14
+TABLE 1.3 OCCUPATION PERMITS ISSUED BY THE BUILDING AUTHORITY
+2018: J a n 1 2 3 6 700
+"""
+    result = parse_bd_history_text(text, 2018, "https://bd.example/Md201812e.pdf", 2018)
+    assert result[["permit_stage", "observation_month"]].to_dict("records") == [
+        {"permit_stage": "Demolition Consents", "observation_month": "2018-01-01"},
+        {"permit_stage": "Occupation Permits (OP) Issued", "observation_month": "2018-01-01"},
+    ]
+
+
+def test_bd_history_recovers_table_14_total_when_pdf_merges_preceding_columns():
+    text = """
+TABLE 1.4 APPROVALS OF NEW AND MAJOR REVISION BUILDING PLANS
+2013: Feb 15 5 20 44 8
+"""
+    result = parse_bd_history_text(text, 2013, "https://bd.example/Md201312e.pdf", 2013)
+    assert result.iloc[0]["permit_stage"] == "Plans Approved"
+    assert result.iloc[0]["total_projects_count"] == 8.0
+
+
 def test_bd_history_archive_discovery_and_member_contract():
     import io
     import zipfile
@@ -123,6 +147,20 @@ def test_bd_history_archive_discovery_and_member_contract():
     assert list_archive_pdf_members(buffer.getvalue(), 2024) == [
         f"Md2024{month:02d}e.pdf" for month in range(1, 13)
     ]
+
+
+def test_bd_history_accepts_official_revised_archive_member():
+    import io
+    import zipfile
+
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as archive:
+        for month in range(1, 13):
+            name = f"Md2012{month:02d}e.pdf"
+            if month == 4:
+                name = "Md201204e_revised.pdf"
+            archive.writestr(name, b"%PDF-1.4")
+    assert "Md201204e_revised.pdf" in list_archive_pdf_members(buffer.getvalue(), 2012)
 
 
 def test_transaction_deduplication():
