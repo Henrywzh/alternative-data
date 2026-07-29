@@ -53,6 +53,17 @@ META_COLUMNS = ["dataset_id", "source_url", "source_run_id", "scraped_at"]
 # should not linger forever). History datasets (leaderboards) accumulate instead.
 REPLACE_DATASETS = {"vercel_models"}
 
+# The leaderboard export is historical, but each successful modality fetch is a
+# complete snapshot for every date/metric in that slice.  Refresh those
+# partitions on every fetch so models that disappear from an upstream
+# historical row do not linger and inflate the displayed share above 100%.
+# Partitions not present in an incoming fetch are retained, which keeps a
+# temporary route failure from deleting previously stored history.
+REPLACE_PARTITION_KEYS: dict[str, list[str]] = {
+    "vercel_model_leaderboard": ["date", "metric", "modality"],
+    "vercel_lab_leaderboard": ["date", "metric", "modality"],
+}
+
 
 class StorageManager:
     def __init__(self, base_dir: Path) -> None:
@@ -152,6 +163,24 @@ class StorageManager:
             keep_existing = unchanged
         else:
             existing_only = ex.index.difference(inc.index)
+            if dataset_id in REPLACE_PARTITION_KEYS and len(existing_only):
+                # Incoming leaderboard rows represent complete historical
+                # partitions.  Keep rows outside those partitions, but prune
+                # stale natural keys inside them.  Rows in ``unchanged`` still
+                # retain their original provenance below.
+                partition_cols = REPLACE_PARTITION_KEYS[dataset_id]
+                incoming_partitions = set(
+                    incoming[partition_cols]
+                    .astype("string")
+                    .fillna("")
+                    .agg("\x1f".join, axis=1)
+                )
+                existing_only_frame = existing_only.to_frame(index=False)
+                existing_only_partitions = existing_only_frame[partition_cols].astype("string").fillna("").agg(
+                    "\x1f".join,
+                    axis=1,
+                )
+                existing_only = existing_only[~existing_only_partitions.isin(incoming_partitions)]
             keep_existing = unchanged.union(existing_only)
         take_incoming = inc.index.difference(unchanged)
 
