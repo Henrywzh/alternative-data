@@ -49,23 +49,21 @@ def _component_text(value: object) -> str:
     return ", ".join(str(item) for item in parsed) if isinstance(parsed, list) and parsed else "—"
 
 
-def _render_kpis(frame: pd.DataFrame) -> None:
-    now = pd.Timestamp.now(tz="UTC")
-    recent = frame[frame["activity_at"] >= now - pd.Timedelta(days=30)]
+def _render_kpis(frame: pd.DataFrame, range_label: str) -> None:
     active = frame[frame["is_active_normalized"]]
-    resolved_minutes = recent["duration_minutes"].dropna()
+    resolved_minutes = frame["duration_minutes"].dropna()
     median_minutes = resolved_minutes.median() if not resolved_minutes.empty else None
-    duration_coverage = (len(resolved_minutes) / len(recent) * 100.0) if len(recent) else 0.0
+    duration_coverage = (len(resolved_minutes) / len(frame) * 100.0) if len(frame) else 0.0
     st.markdown(
         kpi_grid_html(
             kpi_card_html("Active Reports", f"{len(active):,}", delta="provider-reported, not independently verified"),
             kpi_card_html("Affected Providers", f"{active['provider_id'].nunique():,}", delta="currently reporting an active issue"),
-            kpi_card_html("Incidents · 30d", f"{len(recent):,}", delta="scheduled maintenance excluded by default"),
+            kpi_card_html(f"Incidents · {range_label}", f"{len(frame):,}", delta="matching selected filters"),
             kpi_card_html(
-                "Known Duration · 30d",
+                f"Known Duration · {range_label}",
                 format_metric(float(resolved_minutes.sum())) + " min" if not resolved_minutes.empty else "—",
                 delta=(
-                    f"{duration_coverage:.0f}% duration coverage · median {median_minutes:,.0f} min"
+                    f"{duration_coverage:.0f}% duration coverage · median {median_minutes:,.0f} min MTTR"
                     if median_minutes is not None
                     else "duration unavailable"
                 ),
@@ -157,6 +155,88 @@ def _render_provider_chart(frame: pd.DataFrame) -> None:
     st.plotly_chart(figure, width="stretch", config={"displayModeBar": False})
 
 
+def _render_duration_chart(frame: pd.DataFrame) -> None:
+    valid_duration = frame[frame["duration_minutes"].notna()].copy()
+    if valid_duration.empty:
+        st.info("No duration metadata is available for the selected providers or period.")
+        return
+
+    figure = go.Figure()
+    for label in SEVERITY_LABELS.values():
+        subset = valid_duration[valid_duration["severity_label"] == label]
+        if subset.empty:
+            continue
+        figure.add_trace(
+            go.Scatter(
+                x=subset["activity_at"],
+                y=subset["duration_minutes"],
+                mode="markers",
+                name=label,
+                marker=dict(size=9, color=SEVERITY_COLORS[label], opacity=0.85),
+                text=subset["title"],
+                customdata=subset[["provider_name", "normalized_status"]].values,
+                hovertemplate=(
+                    "<b>%{customdata[0]}</b> - %{text}<br>"
+                    "Date: %{x|%b %d, %Y %H:%M}<br>"
+                    "Duration: <b>%{y:,.1f} mins</b> (%{customdata[1]})<extra>" + label + "</extra>"
+                ),
+            )
+        )
+    figure.update_layout(
+        template="plotly_white",
+        height=350,
+        margin=dict(l=0, r=15, t=12, b=50),
+        paper_bgcolor=CARD,
+        plot_bgcolor=CARD,
+        font=dict(color=TEXT, size=12),
+        legend=dict(orientation="h", y=-0.2),
+        xaxis=dict(showgrid=False, title="Incident Start Date"),
+        yaxis=dict(
+            gridcolor=GRID,
+            title="Outage Duration (Minutes, Log Scale)",
+            type="log",
+        ),
+        hovermode="closest",
+    )
+    st.plotly_chart(figure, width="stretch", config={"displayModeBar": False})
+
+
+def _render_downtime_by_provider(frame: pd.DataFrame) -> None:
+    duration_stats = (
+        frame.groupby("provider_name")["duration_minutes"]
+        .agg(total_downtime="sum", median_mttr="median", count="count")
+        .sort_values("total_downtime", ascending=True)
+    )
+    if duration_stats.empty or duration_stats["total_downtime"].sum() == 0:
+        st.info("No known-duration incidents are available for the selected providers or period.")
+        return
+
+    figure = go.Figure(
+        go.Bar(
+            x=duration_stats["total_downtime"].values,
+            y=duration_stats.index,
+            orientation="h",
+            marker_color=MODEL_COLORS[1],
+            customdata=duration_stats["median_mttr"].values,
+            hovertemplate="%{y}<br>Total Downtime: <b>%{x:,.0f} mins</b><br>Median MTTR: <b>%{customdata:,.0f} mins</b><extra></extra>",
+        )
+    )
+    figure.update_layout(
+        template="plotly_white",
+        height=max(300, 34 * len(duration_stats) + 90),
+        margin=dict(l=0, r=15, t=12, b=45),
+        paper_bgcolor=CARD,
+        plot_bgcolor=CARD,
+        font=dict(color=TEXT, size=12),
+        xaxis=dict(
+            gridcolor=GRID,
+            title="Total Known Downtime (Minutes)",
+        ),
+        yaxis=dict(showgrid=False),
+    )
+    st.plotly_chart(figure, width="stretch", config={"displayModeBar": False})
+
+
 def _render_table(frame: pd.DataFrame) -> None:
     table = pd.DataFrame(
         {
@@ -231,8 +311,6 @@ def render(domain_states, datasets: dict[str, DatasetLoadResult]) -> None:
         _render_coverage(datasets.get(HEALTH_ID))
         return
 
-    _render_kpis(incidents[incidents["incident_type"] != "maintenance"])
-
     provider_options = sorted(incidents["provider_name"].dropna().astype(str).unique())
     filter_col, range_col, maintenance_col = st.columns([2, 1, 1], vertical_alignment="bottom")
     with filter_col:
@@ -248,6 +326,9 @@ def render(domain_states, datasets: dict[str, DatasetLoadResult]) -> None:
         scoped = scoped[scoped["activity_at"] >= pd.Timestamp.now(tz="UTC") - pd.Timedelta(days=days)]
     if not include_maintenance:
         scoped = scoped[scoped["incident_type"] != "maintenance"]
+
+    _render_kpis(scoped, range_label)
+
     if scoped.empty:
         st.info("No provider-reported incidents match these filters.")
     else:
@@ -258,6 +339,15 @@ def render(domain_states, datasets: dict[str, DatasetLoadResult]) -> None:
             _render_weekly_chart(scoped)
         with provider_col:
             _render_provider_chart(scoped)
+
+        st.markdown('<div class="section-title">Incident Duration & MTTR Analysis</div>', unsafe_allow_html=True)
+        st.caption("Logarithmic duration scatter plot per incident alongside total known downtime per provider.")
+        dur_col, downtime_col = st.columns([2, 1])
+        with dur_col:
+            _render_duration_chart(scoped)
+        with downtime_col:
+            _render_downtime_by_provider(scoped)
+
         st.markdown('<div class="section-title">Incident Timeline</div>', unsafe_allow_html=True)
         _render_table(scoped)
 
