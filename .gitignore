@@ -271,12 +271,37 @@ scratch/
 # Secrets / API keys
 .config
 
-# hk_local_consumer: keep only the AFCD category-price accumulator. AFCD's
-# wholesale-prices feed publishes same-day data only (no upstream
-# archive), so this file is the sole real source of "over time" history
-# for it and must survive across CI checkouts; the rest of
-# data/normalized/hk_local_consumer/ is disposable per-run scratch output
-# (uuid-scoped parquet/csv dumps) and stays ignored.
+# hk_local_consumer: keep only the durable cross-run history accumulators.
+# The rest of data/normalized/hk_local_consumer/ is disposable per-run
+# scratch output (uuid-scoped parquet/csv dumps) and stays ignored.
+# - afcd_category_history.csv: AFCD's wholesale-prices feed publishes
+#   same-day data only (no upstream archive), so this file is the sole
+#   real source of "over time" history for it.
+# - consumer_council_oilprice_history.csv: Oil Price Watch's trend CSV
+#   goes back to 2009, but nothing in CI refreshes it -- it is filled by
+#   scripts/backfill_consumer_council_oilprice.py, run manually. The
+#   local-consumer artifact builder reads this file unconditionally, with
+#   no missing-cache caveat (unlike the Price Watch archive's
+#   archive_validation check), so an unignored-but-uncommitted copy of
+#   this file previously meant the oil-price chart silently disappeared
+#   from any build that did not happen to run on a machine that had
+#   manually backfilled it.
 !data/normalized/hk_local_consumer/
 data/normalized/hk_local_consumer/*
 !data/normalized/hk_local_consumer/afcd_category_history.csv
+!data/normalized/hk_local_consumer/consumer_council_oilprice_history.csv
+
+# Local dashboard-verification by-products. Canonical dashboard artifacts
+# (hk-*-artifact*.json) live in both these .generated directories and are
+# still tracked; these patterns only match the packaging tool's own
+# temporary screenshots and test/debug exports, which must never be staged.
+# (131 of these were committed by accident in 8c393d4 and removed in the
+# commit that added this rule -- this rule exists so it doesn't recur.)
+/.generated/*.verification-failure*.png
+/.generated/*.tmp-*.png
+/.generated/debug_*.html
+/.generated/test_*.html
+/.generated/test_*.json
+/.generated/test_*.png
+apps/asia-markets-dashboard/.generated/*.verification-failure*.png
+apps/asia-markets-dashboard/.generated/portable-verification-failure-*.png
