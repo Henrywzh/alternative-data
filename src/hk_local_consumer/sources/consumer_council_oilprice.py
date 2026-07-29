@@ -1,3 +1,4 @@
+import io
 import json
 import logging
 import re
@@ -9,12 +10,16 @@ from src.hk_local_consumer.config import (
     DATA_SOURCE_FALLBACK,
     DATA_SOURCE_LIVE,
     DataSourceLabel,
+    NORMALIZED_DIR,
     RAW_DIR,
 )
 
 logger = logging.getLogger(__name__)
 
 CONSUMER_COUNCIL_OILPRICE_URL = "https://oil-price.consumer.org.hk/en"
+CONSUMER_COUNCIL_OILPRICE_TREND_URL = "https://oil-price.consumer.org.hk/en/chart/download-csv"
+OILPRICE_HISTORY_START = "2009-01-01"
+_OIL_COMPANIES = [":company:11:", ":company:12:", ":company:14:", ":company:9765:", ":company:13:"]
 
 OILPRICE_COLUMNS = [
     "date",
@@ -24,6 +29,15 @@ OILPRICE_COLUMNS = [
     "walkin_discount_hkd",
     "data_source",
 ]
+
+OILPRICE_HISTORY_COLUMNS = [
+    "date",
+    "company",
+    "fuel_type",
+    "net_price_ex_duty_hkd",
+    "data_source",
+]
+OILPRICE_HISTORY_CACHE_PATH = NORMALIZED_DIR / "consumer_council_oilprice_history.csv"
 
 
 def save_raw_snapshot(name: str, payload: list[dict]) -> str:
@@ -111,3 +125,77 @@ def fetch_consumer_council_oilprice() -> pd.DataFrame:
 
     result.attrs["data_source"] = source_label
     return result
+
+
+def fetch_consumer_council_oilprice_history(
+    start_date: str = OILPRICE_HISTORY_START, end_date: str | None = None
+) -> pd.DataFrame:
+    """Fetch the complete available daily net-price trend from Oil Price Watch.
+
+    The trend CSV is the authoritative historical series.  Its values are
+    explicitly *after walk-in discounts and excluding fuel duty*, which differs
+    from the homepage calculator's duty-inclusive current-price comparison.
+    """
+    today_str = end_date or datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    records: list[pd.DataFrame] = []
+    for fuel_type in ("regular-unleaded-gasoline", "premium-unleaded-gasoline"):
+        params: list[tuple[str, str]] = [
+            ("shortcut", "custom"),
+            ("from", start_date),
+            ("to", today_str),
+            ("auto_fuel_type", fuel_type),
+        ]
+        params.extend(("company[]", company) for company in _OIL_COMPANIES)
+        try:
+            response = requests.get(
+                CONSUMER_COUNCIL_OILPRICE_TREND_URL,
+                params=params,
+                headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)"},
+                timeout=60,
+            )
+            response.raise_for_status()
+            raw = pd.read_csv(io.StringIO(response.content.decode("utf-8-sig")))
+        except Exception as exc:
+            logger.warning("Failed to fetch Consumer Council oil-price trend for %s: %s", fuel_type, exc)
+            continue
+        if raw.empty or "Date" not in raw.columns:
+            continue
+        long = raw.melt(id_vars="Date", var_name="company", value_name="net_price_ex_duty_hkd")
+        long["date"] = pd.to_datetime(long["Date"], errors="coerce")
+        long["net_price_ex_duty_hkd"] = pd.to_numeric(long["net_price_ex_duty_hkd"], errors="coerce")
+        long["fuel_type"] = fuel_type
+        long["data_source"] = DATA_SOURCE_LIVE
+        records.append(long[["date", "company", "fuel_type", "net_price_ex_duty_hkd", "data_source"]])
+
+    if not records:
+        return pd.DataFrame(columns=OILPRICE_HISTORY_COLUMNS)
+    result = pd.concat(records, ignore_index=True).dropna(subset=["date", "net_price_ex_duty_hkd"])
+    result["date"] = result["date"].dt.strftime("%Y-%m-%d")
+    result = result.drop_duplicates(["date", "company", "fuel_type"], keep="last")
+    result = result.sort_values(["fuel_type", "company", "date"]).reset_index(drop=True)
+    try:
+        save_raw_snapshot("consumer_council_oilprice_history", result.to_dict(orient="records"))
+    except Exception as exc:
+        logger.warning("Failed to save oil-price history snapshot: %s", exc)
+    result.attrs["data_source"] = DATA_SOURCE_LIVE
+    result.attrs["definition"] = "Net price after walk-in discounts, excluding fuel duty."
+    return result.reindex(columns=OILPRICE_HISTORY_COLUMNS)
+
+
+def load_consumer_council_oilprice_history() -> pd.DataFrame:
+    """Read the durable backfill cache without making a network request."""
+    if not OILPRICE_HISTORY_CACHE_PATH.exists():
+        return pd.DataFrame(columns=OILPRICE_HISTORY_COLUMNS)
+    result = pd.read_csv(OILPRICE_HISTORY_CACHE_PATH)
+    return result.reindex(columns=OILPRICE_HISTORY_COLUMNS)
+
+
+def merge_consumer_council_oilprice_history(frame: pd.DataFrame) -> pd.DataFrame:
+    """Upsert fetched history into the durable cache and return all rows."""
+    existing = load_consumer_council_oilprice_history()
+    combined = pd.concat([existing, frame], ignore_index=True)
+    combined = combined.dropna(subset=["date", "company", "fuel_type", "net_price_ex_duty_hkd"])
+    combined = combined.drop_duplicates(["date", "company", "fuel_type"], keep="last")
+    combined = combined.sort_values(["fuel_type", "company", "date"]).reset_index(drop=True)
+    combined.to_csv(OILPRICE_HISTORY_CACHE_PATH, index=False)
+    return combined

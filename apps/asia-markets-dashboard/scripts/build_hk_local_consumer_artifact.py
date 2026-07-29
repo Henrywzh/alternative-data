@@ -35,9 +35,15 @@ from src.hk_local_consumer.sources.cnsd_retail import fetch_cnsd_retail_sales
 from src.hk_local_consumer.sources.censtatd_restaurant import fetch_censtatd_restaurant_survey
 from src.hk_local_consumer.sources.immigration_flow import fetch_immigration_flow
 from src.hk_local_consumer.sources.weather_demand_drivers import fetch_weather_demand_drivers
-from src.hk_local_consumer.sources.consumer_council_oilprice import fetch_consumer_council_oilprice
+from src.hk_local_consumer.sources.consumer_council_oilprice import (
+    fetch_consumer_council_oilprice,
+    load_consumer_council_oilprice_history,
+)
 from src.hk_local_consumer.sources.consumer_council_complaints import fetch_consumer_council_complaints
-from src.hk_local_consumer.sources.consumer_council_pricewatch import load_historical_pricewatch_summary
+from src.hk_local_consumer.sources.consumer_council_pricewatch import (
+    load_historical_pricewatch_matched_index,
+    load_historical_pricewatch_summary,
+)
 from src.hk_local_consumer.config import NORMALIZED_DIR
 
 
@@ -54,6 +60,14 @@ from src.hk_local_consumer.config import NORMALIZED_DIR
 # is disposable per-run scratch output) so the history survives across CI
 # runs instead of resetting on every fresh checkout.
 AFCD_CATEGORY_HISTORY_PATH = NORMALIZED_DIR / "afcd_category_history.csv"
+
+
+def _load_latest_normalized(dataset: str) -> pd.DataFrame:
+    """Load the latest successfully materialised source run; never fetch here."""
+    candidates = sorted((NORMALIZED_DIR / dataset).glob(f"*/{dataset}.parquet"), key=lambda path: path.stat().st_mtime)
+    if not candidates:
+        raise FileNotFoundError(f"No local normalized cache exists for {dataset}; run HK Local Consumer ingestion first.")
+    return pd.read_parquet(candidates[-1])
 
 
 PUBLIC_SOURCES = {
@@ -77,6 +91,21 @@ PUBLIC_SOURCES = {
             "url": "https://www.consumer.org.hk/node/32290/export-complaints/json?lang=en",
             "language": "JSON",
             "description": "Annual consumer complaints by category across Hong Kong consumer sectors.",
+        },
+    },
+    "consumer_council_pricewatch": {
+        "id": "consumer_council_pricewatch",
+        "label": "Consumer Council Online Price Watch",
+        "href": "https://online-price-watch.consumer.org.hk/opw/",
+        "query": {
+            "engine": "official Open Data CSV & local historical archive",
+            "url": "https://online-price-watch.consumer.org.hk/opw/opendata/pricewatch_en.csv",
+            "language": "CSV / Parquet",
+            "description": (
+                "Supermarket item prices and promotion offers. The dashboard currently "
+                "reports only validated local archive coverage; it does not present an "
+                "assortment-sensitive arithmetic mean as a price index."
+            ),
         },
     },
     "afcd_wholesale": {
@@ -233,17 +262,6 @@ AFCD_CATEGORY_SHORT_LABELS = {
     "Livestock / Poultry": "Meat/Poultry",
     "Marine fish": "Marine",
     "Vegetables": "Veg",
-    "consumer_council_pricewatch": {
-        "id": "consumer_council_pricewatch",
-        "label": "Consumer Council Online Price Watch",
-        "href": "https://online-price-watch.consumer.org.hk/opw/",
-        "query": {
-            "engine": "official Open Data CSV & Historical Archive",
-            "url": "https://online-price-watch.consumer.org.hk/opw/opendata/pricewatch_en.csv",
-            "language": "CSV",
-            "description": "Daily supermarket item prices and promotion offers across HK major retail chains (2020-2026).",
-        },
-    },
 }
 
 
@@ -277,6 +295,71 @@ def _records_json_safe(frame: pd.DataFrame) -> list[dict[str, Any]]:
         if pd.api.types.is_datetime64_any_dtype(selected[column]):
             selected[column] = selected[column].dt.strftime("%Y-%m-%d")
     return json.loads(selected.to_json(orient="records", date_format="iso"))
+
+
+def _pricewatch_archive_coverage(summary: pd.DataFrame | None) -> list[dict[str, Any]]:
+    """Return one honest archive-availability row, or no row when it is unusable.
+
+    ``avg_price`` is deliberately not exposed here: a simple average of listed
+    products moves when the retailer assortment changes, so it is not a
+    comparable consumer-price index. A later matched-item methodology may use
+    the archive to build a separately documented series.
+    """
+    required = {"year_month", "category_1", "supermarket_code", "avg_price", "item_count"}
+    validation = summary.attrs.get("archive_validation", {}) if summary is not None else {}
+    if not validation.get("complete"):
+        return []
+    if summary is None or summary.empty or not required.issubset(summary.columns):
+        return []
+
+    result = summary.loc[:, sorted(required)].copy()
+    result["year_month"] = result["year_month"].astype(str)
+    result["avg_price"] = pd.to_numeric(result["avg_price"], errors="coerce")
+    result["item_count"] = pd.to_numeric(result["item_count"], errors="coerce")
+    result = result[
+        result["year_month"].str.fullmatch(r"\d{4}-\d{2}", na=False)
+        & result["category_1"].notna()
+        & result["supermarket_code"].notna()
+        & result["avg_price"].notna()
+        & result["item_count"].gt(0)
+    ]
+    if result.empty:
+        return []
+
+    return [
+        {
+            "first_observation": result["year_month"].min(),
+            "latest_observation": result["year_month"].max(),
+            "months": int(result["year_month"].nunique()),
+            "category_supermarket_aggregates": int(len(result)),
+            "categories": int(result["category_1"].nunique()),
+            "supermarkets": int(result["supermarket_code"].nunique()),
+            "notes": (
+                "Local archive coverage only. A simple monthly mean of listed products is not "
+                "a price index because product assortment, pack size, and offers can change."
+            ),
+        }
+    ]
+
+
+def _pricewatch_matched_index_rows(index: pd.DataFrame | None) -> list[dict[str, Any]]:
+    required = {"year_month", "supermarket_code", "matched_item_index", "matched_products", "match_rate"}
+    validation = index.attrs.get("archive_validation", {}) if index is not None else {}
+    if index is None or index.empty or not validation.get("complete") or not required.issubset(index.columns):
+        return []
+    result = index.loc[:, sorted(required)].copy()
+    result["matched_item_index"] = pd.to_numeric(result["matched_item_index"], errors="coerce")
+    result["matched_products"] = pd.to_numeric(result["matched_products"], errors="coerce")
+    result["match_rate"] = pd.to_numeric(result["match_rate"], errors="coerce")
+    result = result.dropna(subset=["year_month", "supermarket_code", "matched_item_index", "matched_products"])
+    # Several short-lived/renamed source codes exist in the archive. Showing
+    # every one would turn a monitoring chart into an unreadable legend and
+    # imply continuity that the raw code does not establish. Retain the six
+    # longest source-code series with at least one year of linked observations.
+    coverage = result.groupby("supermarket_code")["year_month"].nunique()
+    eligible = coverage[coverage >= 12].sort_values(ascending=False).head(6).index
+    result = result[result["supermarket_code"].isin(eligible)]
+    return _records(result.sort_values(["year_month", "supermarket_code"]), list(sorted(required)))
 
 
 def _utc_now() -> datetime:
@@ -355,7 +438,14 @@ def _validate_valuation(df: pd.DataFrame, now: datetime) -> pd.DataFrame:
     age_days = (now.replace(tzinfo=None) - latest["date"].max()).days
     if age_days > 20:
         raise ValueError(f"HK consumer valuations: latest observation is stale by {age_days} days")
-    return latest.sort_values("market_cap_hkd_b", ascending=False).reset_index(drop=True)
+    return result.sort_values(["ticker", "date"]).reset_index(drop=True)
+
+
+def _latest_growth(frame: pd.DataFrame, key: str, value: str, periods: int, change_name: str) -> pd.DataFrame:
+    """Return each series' latest row with a same-grain percent change."""
+    result = frame.sort_values([key, "date"]).copy()
+    result[change_name] = result.groupby(key)[value].pct_change(periods=periods)
+    return result.groupby(key, as_index=False).tail(1).reset_index(drop=True)
 
 
 def _validate_retail_sales(df: pd.DataFrame, now: datetime) -> pd.DataFrame:
@@ -538,6 +628,29 @@ def _records(frame: pd.DataFrame, columns: list[str]) -> list[dict[str, Any]]:
     return json.loads(selected.to_json(orient="records", date_format="iso"))
 
 
+def _daily_weather_hours(events: list[dict[str, Any]], start_date: pd.Timestamp) -> pd.DataFrame:
+    """Split warning intervals at midnight before aggregating daily hours."""
+    rows: list[dict[str, Any]] = []
+    for event in events:
+        start = pd.to_datetime(event.get("start"), errors="coerce")
+        end = pd.to_datetime(event.get("end"), errors="coerce")
+        if pd.isna(start) or pd.isna(end) or end <= start:
+            continue
+        current = max(start, start_date)
+        while current < end:
+            next_midnight = current.normalize() + pd.Timedelta(days=1)
+            segment_end = min(end, next_midnight)
+            rows.append({
+                "date": current.normalize(),
+                "warning_type": "Red/Black rain" if "Rainstorm" in str(event.get("signal_name")) else "Typhoon Signal 8+",
+                "hours": round((segment_end - current).total_seconds() / 3600.0, 2),
+            })
+            current = segment_end
+    if not rows:
+        return pd.DataFrame(columns=["date", "warning_type", "hours"])
+    return pd.DataFrame(rows).groupby(["date", "warning_type"], as_index=False)["hours"].sum()
+
+
 def _stamp_sources(generated_at: str) -> list[dict[str, Any]]:
     result = []
     for source in PUBLIC_SOURCES.values():
@@ -593,6 +706,8 @@ def build_artifact(
     raw_immigration: pd.DataFrame | None = None,
     raw_weather: pd.DataFrame | None = None,
     raw_store_footprint: pd.DataFrame | None = None,
+    raw_pricewatch_summary: pd.DataFrame | None = None,
+    raw_pricewatch_index: pd.DataFrame | None = None,
     *,
     now: datetime | None = None,
     afcd_history_path: Path = AFCD_CATEGORY_HISTORY_PATH,
@@ -615,11 +730,19 @@ def build_artifact(
     restaurant = _validate_restaurant_survey(raw_restaurant, now)
     immigration = _validate_immigration(raw_immigration, now)
     weather = _validate_weather(raw_weather, now)
+    pricewatch_archive = _pricewatch_archive_coverage(raw_pricewatch_summary)
+    pricewatch_index_rows = _pricewatch_matched_index_rows(raw_pricewatch_index)
+    pricewatch_validation = (
+        raw_pricewatch_summary.attrs.get("archive_validation", {})
+        if raw_pricewatch_summary is not None
+        else {"reason": "historical archive was not loaded"}
+    )
 
     generated_at = now.isoformat().replace("+00:00", "Z")
     gold_kpi = _comparison_row(gold, "gold_benchmark_pm_rmb_gram", now)
 
-    pe_values = valuation["pe_ttm"].dropna()
+    valuation_latest = valuation.sort_values("date").groupby("ticker", as_index=False).tail(1)
+    pe_values = valuation_latest["pe_ttm"].dropna()
     median_pe_latest = float(pe_values.median()) if not pe_values.empty else None
 
     retail_total = retail[retail["category"] == "All retail outlet"].sort_values("date").reset_index(drop=True)
@@ -635,7 +758,17 @@ def build_artifact(
     retail_category_snapshot = retail_latest_by_category[
         retail_latest_by_category["category"].isin(TOP_LEVEL_RETAIL_CATEGORIES + ["All retail outlet"])
     ].sort_values("sales_value_index", ascending=False).reset_index(drop=True)
-    retail_chart_rows = retail_category_snapshot[retail_category_snapshot["category"] != "All retail outlet"]
+    retail_yoy = _latest_growth(
+        retail[retail["category"].isin(TOP_LEVEL_RETAIL_CATEGORIES)], "category", "sales_value_index", 12, "yoy_change"
+    )
+    retail_mom = _latest_growth(
+        retail[retail["category"].isin(TOP_LEVEL_RETAIL_CATEGORIES)], "category", "sales_value_index", 1, "mom_change"
+    )
+    retail_growth = retail_yoy.merge(retail_mom[["category", "mom_change"]], on="category", how="left")
+    retail_category_snapshot = retail_category_snapshot.merge(
+        retail_growth[["category", "yoy_change", "mom_change"]], on="category", how="left"
+    )
+    retail_chart_rows = retail_growth.sort_values("yoy_change").reset_index(drop=True)
 
     restaurant_total = restaurant[restaurant["sub_sector"] == "All restaurants"].sort_values("date").reset_index(drop=True)
     # Same month-granularity treatment as retail_total above -- restaurant
@@ -645,7 +778,17 @@ def build_artifact(
     restaurant_kpi = _comparison_row(restaurant_total, "total_receipts_hkd_m", now)
     restaurant_latest_by_type = restaurant.sort_values("date").groupby("sub_sector", as_index=False).tail(1)
     restaurant_snapshot = restaurant_latest_by_type.sort_values("total_receipts_hkd_m", ascending=False).reset_index(drop=True)
-    restaurant_chart_rows = restaurant_snapshot[restaurant_snapshot["sub_sector"] != "All restaurants"]
+    restaurant_yoy = _latest_growth(
+        restaurant[restaurant["sub_sector"] != "All restaurants"], "sub_sector", "total_receipts_hkd_m", 4, "yoy_change"
+    )
+    restaurant_qoq = _latest_growth(
+        restaurant[restaurant["sub_sector"] != "All restaurants"], "sub_sector", "total_receipts_hkd_m", 1, "qoq_change"
+    )
+    restaurant_growth = restaurant_yoy.merge(restaurant_qoq[["sub_sector", "qoq_change"]], on="sub_sector", how="left")
+    restaurant_snapshot = restaurant_snapshot.merge(
+        restaurant_growth[["sub_sector", "yoy_change", "qoq_change"]], on="sub_sector", how="left"
+    )
+    restaurant_chart_rows = restaurant_growth.sort_values("yoy_change").reset_index(drop=True)
 
     # Cross-border immigration KPIs and trend charts
     northbound_kpi = _comparison_row(immigration, "land_hk_resident_departures_7d_ma", now)
@@ -682,11 +825,44 @@ def build_artifact(
         .reset_index(drop=True)
     )
     immigration_trend_rows["value"] = immigration_trend_rows["value"].round(1)
+    # Built from the same fetch already performed above (raw_immigration),
+    # not re-read from the local normalized cache: that cache only exists
+    # after `hk-local-consumer run-dashboard-history` has been run locally
+    # and is gitignored (data/normalized/hk_local_consumer/*), so a fresh CI
+    # checkout has no such directory and would otherwise crash this build.
+    checkpoint_history = raw_immigration.attrs.get("checkpoint_history", pd.DataFrame())
+    checkpoint_trend = pd.DataFrame(columns=["date", "series", "value"])
+    if isinstance(checkpoint_history, pd.DataFrame) and not checkpoint_history.empty:
+        checkpoint_history = checkpoint_history.rename(columns={
+            "Date": "date", "Control Point": "control_point", "Arrival / Departure": "direction",
+            "Hong Kong Residents": "hk_residents", "Mainland Visitors": "mainland_visitors",
+            "Other Visitors": "other_visitors", "Total": "total",
+        })
+        checkpoint_history["date"] = pd.to_datetime(checkpoint_history["date"], errors="coerce")
+        checkpoint_history["value"] = pd.to_numeric(checkpoint_history["total"], errors="coerce")
+        checkpoint_history = checkpoint_history.dropna(subset=["date", "value"])
+        checkpoint_history["series"] = checkpoint_history["control_point"].astype(str) + " — " + checkpoint_history["direction"].astype(str)
+        latest_window = checkpoint_history[checkpoint_history["date"] >= checkpoint_history["date"].max() - pd.Timedelta(days=6)]
+        top_series = latest_window.groupby("series")["value"].mean().nlargest(5).index
+        checkpoint_trend = checkpoint_history[checkpoint_history["series"].isin(top_series)].copy()
+        checkpoint_trend["value"] = checkpoint_trend.sort_values("date").groupby("series")["value"].transform(lambda values: values.rolling(7, min_periods=1).mean()).round(1)
+        checkpoint_trend = checkpoint_trend[checkpoint_trend["date"] >= checkpoint_trend["date"].max() - pd.Timedelta(days=89)]
 
     # Severe weather & FX demand driver KPIs and charts
     weather_kpi = _comparison_row(weather, "total_disruption_hours", now)
     fx_kpi = _comparison_row(weather, "rmb_per_100_hkd", now)
     weather_chart_rows = weather.tail(36).copy()
+    # Same reasoning as checkpoint_history above: use the events already
+    # attached to raw_weather's fetch rather than the gitignored, locally-only
+    # normalized cache, so this chart also works on a fresh CI checkout.
+    weather_daily = _daily_weather_hours(
+        raw_weather.attrs.get("events", []),
+        pd.Timestamp(now.replace(tzinfo=None)).normalize() - pd.DateOffset(months=36),
+    )
+    if not weather_daily.empty:
+        weather_daily["month"] = weather_daily["date"].dt.strftime("%Y-%m")
+    else:
+        weather_daily = pd.DataFrame(columns=["date", "month", "warning_type", "hours"])
 
     category_summary = (
         afcd.groupby("category", as_index=False)
@@ -697,7 +873,7 @@ def build_artifact(
 
     afcd_category_history = _update_afcd_category_history(category_summary, now, afcd_history_path)
 
-    valuation_chart_rows = valuation.dropna(subset=["pe_ttm"])
+    valuation_chart_rows = valuation_latest.dropna(subset=["pe_ttm"])
     valuation_chart_rows = valuation_chart_rows[valuation_chart_rows["pe_ttm"] > 0]
 
     health = [
@@ -787,12 +963,40 @@ def build_artifact(
                 "notes": f"{int(store_footprint['total_stores'].sum()):,} total tracked locations across {len(store_footprint)} companies.",
             }
         )
+    if pricewatch_archive:
+        archive = pricewatch_archive[0]
+        health.append(
+            {
+                "source": PUBLIC_SOURCES["consumer_council_pricewatch"]["label"],
+                "dataset": "Online Price Watch historical archive",
+                "type": "Catalog",
+                "status": "Healthy",
+                "latest_observation": archive["latest_observation"],
+                "records": archive["category_supermarket_aggregates"],
+                "freshness": f"Archive through {archive['latest_observation']}",
+                "notes": (
+                    f"{archive['months']} months across {archive['categories']} categories and "
+                    f"{archive['supermarkets']} supermarket codes. Coverage only; no price index is rendered."
+                ),
+            }
+        )
     # Split, not merged: "active" is every source already backing a live
     # card/chart/table above; "planned" is next-target sources whose
     # endpoint is broken/unverified and therefore excluded from the live
     # dashboard rather than shown with placeholder values.
     coverage_active = health
-    coverage_planned = PLANNED_COVERAGE
+    coverage_planned = list(PLANNED_COVERAGE)
+    if not pricewatch_archive:
+        coverage_planned.append(
+            {
+                "source": PUBLIC_SOURCES["consumer_council_pricewatch"]["label"],
+                "dataset": "Online Price Watch historical archive",
+                "type": "Catalog",
+                "status": "Unavailable locally",
+                "freshness": "—",
+                "notes": f"Not marked Healthy: {pricewatch_validation.get('reason', 'archive validation did not pass')}.",
+            }
+        )
 
     # KPI comparisons use the full validated history; the chart itself is
     # windowed to the portable artifact's 2,000-row-per-dataset cap, then
@@ -824,16 +1028,18 @@ def build_artifact(
         "severe_weather_history": _records(
             weather_chart_rows, ["date", "month", "signal_8_plus_hours", "red_black_rain_hours", "total_disruption_hours"]
         ),
+        "severe_weather_daily": _records(weather_daily, ["date", "month", "warning_type", "hours"]),
         "severe_weather_log": recent_weather_events,
         "kpi_northbound": [northbound_kpi],
         "kpi_southbound": [southbound_kpi],
         "immigration_trend_history": _records(immigration_trend_rows, ["month", "value", "flow_type"]),
+        "immigration_checkpoint_history": _records(checkpoint_trend, ["date", "series", "value"]),
         "kpi_gold": [gold_kpi],
         "kpi_median_pe": [{"latest": round(median_pe_latest, 2)}] if median_pe_latest is not None else [],
         "gold_history": _records(gold_chart_window, ["month", "value"]),
         "afcd_category_summary": _records(category_summary, ["category", "avg_price_hkd_per_kg", "commodities"]),
         "afcd_category_trend_history": _records(
-            afcd_category_history.tail(2_000).assign(
+            afcd_category_history.tail(450).assign(
                 category_short=lambda frame: frame["category"].map(_afcd_category_short_label)
             ),
             ["date", "category", "category_short", "avg_price_hkd_per_kg", "commodities"],
@@ -842,26 +1048,30 @@ def build_artifact(
             afcd, ["category", "commodity_name", "avg_price_hkd_per_kg", "num_readings"]
         ),
         "valuation_table": _records(
-            valuation, ["ticker", "company_name", "pe_ttm", "pb_ratio", "market_cap_hkd_b", "date"]
+            valuation_latest, ["ticker", "company_name", "pe_ttm", "pb_ratio", "market_cap_hkd_b", "date"]
         ),
         "valuation_pe_chart": _records(valuation_chart_rows, ["company_name", "pe_ttm"]),
+        "valuation_history": _records(
+            valuation[valuation["date"] >= valuation["date"].max() - pd.Timedelta(days=30)],
+            ["date", "ticker", "company_name", "pe_ttm", "pb_ratio", "market_cap_hkd_b"],
+        ),
         "kpi_retail": [retail_kpi],
         "retail_history": _records(
-            retail_total.rename(columns={"sales_value_index": "value"}), ["date", "month", "value"]
+            retail_total.tail(120).rename(columns={"sales_value_index": "value"}), ["date", "month", "value"]
         ),
         "retail_category_snapshot": _records(
-            retail_category_snapshot, ["category", "sales_value_index", "sales_volume_index", "date"]
+            retail_category_snapshot, ["category", "sales_value_index", "sales_volume_index", "yoy_change", "mom_change", "date"]
         ),
-        "retail_category_chart": _records(retail_chart_rows, ["category", "sales_value_index"]),
+        "retail_category_chart": _records(retail_chart_rows, ["category", "yoy_change"]),
         "kpi_restaurant": [restaurant_kpi],
         "restaurant_history": _records(
-            restaurant_total.rename(columns={"total_receipts_hkd_m": "value"}), ["date", "month", "value"]
+            restaurant_total.tail(80).rename(columns={"total_receipts_hkd_m": "value"}), ["date", "month", "value"]
         ),
         "restaurant_snapshot": _records(
             restaurant_snapshot,
-            ["sub_sector", "total_receipts_hkd_m", "total_purchases_hkd_m", "receipts_value_index", "date"],
+            ["sub_sector", "total_receipts_hkd_m", "total_purchases_hkd_m", "receipts_value_index", "yoy_change", "qoq_change", "date"],
         ),
-        "restaurant_chart": _records(restaurant_chart_rows, ["sub_sector", "total_receipts_hkd_m"]),
+        "restaurant_chart": _records(restaurant_chart_rows, ["sub_sector", "yoy_change"]),
         "kpi_store_footprint": (
             [
                 {
@@ -876,6 +1086,8 @@ def build_artifact(
             store_footprint, ["company", "stock_code", "sector", "total_stores", "regions_tracked", "snapshot_date"]
         ),
         "store_footprint_chart": _records(store_footprint, ["company", "total_stores"]),
+        "consumer_council_pricewatch_archive": pricewatch_archive,
+        "consumer_council_pricewatch_matched_index": pricewatch_index_rows,
         "source_health": health,
         "source_coverage_active": coverage_active,
         "source_coverage_planned": coverage_planned,
@@ -1018,6 +1230,23 @@ def build_artifact(
             "maxRows": 60,
         },
         {
+            "id": "severe_weather_daily_trend",
+            "title": "Daily severe-weather disruption hours",
+            "subtitle": "Latest 36 months; warning intervals are split across midnight before daily aggregation.",
+            "type": "bar",
+            "intent": "trend",
+            "dataset": "severe_weather_daily",
+            "sourceId": "weather_demand_drivers",
+            "encodings": {
+                "x": {"field": "month", "type": "temporal", "label": "Month"},
+                "y": {"field": "hours", "type": "quantitative", "label": "Hours"},
+                "color": {"field": "warning_type", "type": "nominal", "label": "Warning type"},
+            },
+            "valueFormat": "number",
+            "layout": "full",
+            "maxRows": 720,
+        },
+        {
             "id": "immigration_trend",
             "title": "Cross-border passenger traffic (7-day MA, monthly average)",
             "subtitle": "Monthly average of the daily 7-day MA: Northbound (HK resident departures via land control points only) vs Southbound (Mainland visitor arrivals, all control points).",
@@ -1033,6 +1262,23 @@ def build_artifact(
             "valueFormat": "number",
             "layout": "full",
             "maxRows": 180,
+        },
+        {
+            "id": "immigration_checkpoint_trend",
+            "title": "Busiest immigration checkpoints — daily traffic",
+            "subtitle": "Top five arrival/departure checkpoint series by latest seven-day average; latest 90 days.",
+            "type": "line",
+            "intent": "trend",
+            "dataset": "immigration_checkpoint_history",
+            "sourceId": "immigration_flow",
+            "encodings": {
+                "x": {"field": "date", "type": "temporal", "label": "Date"},
+                "y": {"field": "value", "type": "quantitative", "label": "Passengers (7d MA)"},
+                "color": {"field": "series", "type": "nominal", "label": "Checkpoint / direction"},
+            },
+            "valueFormat": "number",
+            "layout": "full",
+            "maxRows": 500,
         },
         {
             "id": "afcd_category_chart",
@@ -1109,6 +1355,23 @@ def build_artifact(
             "layout": "half",
         },
         {
+            "id": "valuation_market_cap_trend",
+            "title": "Consumer watchlist market-cap trend",
+            "subtitle": "Latest 30 calendar days of source-provided daily observations; market capitalisation in HKD billions.",
+            "type": "line",
+            "intent": "trend",
+            "dataset": "valuation_history",
+            "sourceId": "hk_valuation",
+            "encodings": {
+                "x": {"field": "date", "type": "temporal", "label": "Date"},
+                "y": {"field": "market_cap_hkd_b", "type": "quantitative", "label": "Market cap (HKD bn)"},
+                "color": {"field": "company_name", "type": "nominal", "label": "Company"},
+            },
+            "valueFormat": "number",
+            "layout": "full",
+            "maxRows": 400,
+        },
+        {
             "id": "retail_trend",
             "title": "Retail sales value index (all outlets)",
             "subtitle": "Monthly C&SD value index, full published history.",
@@ -1126,17 +1389,17 @@ def build_artifact(
         },
         {
             "id": "retail_category_chart",
-            "title": "Retail sales value index by category",
-            "subtitle": "Latest published month, by type of retail outlet.",
+            "title": "Retail sales value index by category — YoY",
+            "subtitle": "Latest published month; year-on-year change by mutually exclusive top-level outlet category.",
             "type": "horizontalBar",
             "intent": "comparison",
             "dataset": "retail_category_chart",
             "sourceId": "cnsd_retail",
             "encodings": {
                 "x": {"field": "category", "type": "nominal", "label": "Category"},
-                "y": {"field": "sales_value_index", "type": "quantitative", "label": "Value index"},
+                "y": {"field": "yoy_change", "type": "quantitative", "label": "YoY change"},
             },
-            "valueFormat": "number",
+            "valueFormat": "percent",
             "layout": "half",
         },
         {
@@ -1157,17 +1420,17 @@ def build_artifact(
         },
         {
             "id": "restaurant_chart",
-            "title": "Restaurant receipts by type",
-            "subtitle": "Latest published quarter, HKD millions.",
+            "title": "Restaurant receipts by type — YoY",
+            "subtitle": "Latest published quarter; year-on-year change in nominal receipts by restaurant type.",
             "type": "horizontalBar",
             "intent": "comparison",
             "dataset": "restaurant_chart",
             "sourceId": "censtatd_restaurant",
             "encodings": {
                 "x": {"field": "sub_sector", "type": "nominal", "label": "Restaurant type"},
-                "y": {"field": "total_receipts_hkd_m", "type": "quantitative", "label": "HKD million"},
+                "y": {"field": "yoy_change", "type": "quantitative", "label": "YoY change"},
             },
-            "valueFormat": "number",
+            "valueFormat": "percent",
             "layout": "half",
         },
     ]
@@ -1244,7 +1507,7 @@ def build_artifact(
         {
             "id": "retail_category_table",
             "title": "Retail sales snapshot by category",
-            "subtitle": "Latest published month; value and volume index by type of retail outlet.",
+            "subtitle": "Latest published month; YoY is the primary comparison and MoM is shown as secondary context.",
             "dataset": "retail_category_snapshot",
             "sourceId": "cnsd_retail",
             "defaultSort": {"field": "sales_value_index", "direction": "desc"},
@@ -1254,13 +1517,15 @@ def build_artifact(
                 {"field": "category", "label": "Category", "type": "text"},
                 {"field": "sales_value_index", "label": "Value index", "format": "number"},
                 {"field": "sales_volume_index", "label": "Volume index", "format": "number"},
+                {"field": "yoy_change", "label": "YoY", "format": "percent", "signed": True},
+                {"field": "mom_change", "label": "MoM", "format": "percent", "signed": True},
                 {"field": "date", "label": "As of", "type": "date"},
             ],
         },
         {
             "id": "restaurant_snapshot_table",
             "title": "Restaurant receipts snapshot by type",
-            "subtitle": "Latest published quarter; sector-wide purchases shown only for the All restaurants total.",
+            "subtitle": "Latest published quarter; YoY is primary and QoQ is secondary. Purchases are sector-wide only.",
             "dataset": "restaurant_snapshot",
             "sourceId": "censtatd_restaurant",
             "defaultSort": {"field": "total_receipts_hkd_m", "direction": "desc"},
@@ -1271,6 +1536,8 @@ def build_artifact(
                 {"field": "total_receipts_hkd_m", "label": "Receipts (HKD m)", "format": "number"},
                 {"field": "total_purchases_hkd_m", "label": "Purchases (HKD m)", "format": "number"},
                 {"field": "receipts_value_index", "label": "Receipts value index", "format": "number"},
+                {"field": "yoy_change", "label": "YoY", "format": "percent", "signed": True},
+                {"field": "qoq_change", "label": "QoQ", "format": "percent", "signed": True},
                 {"field": "date", "label": "As of", "type": "date"},
             ],
         },
@@ -1330,10 +1597,70 @@ def build_artifact(
         },
     ]
 
-    df_oil = fetch_consumer_council_oilprice()
-    df_complaints = fetch_consumer_council_complaints()
+    if pricewatch_archive:
+        tables.append(
+            {
+                "id": "consumer_council_pricewatch_archive_table",
+                "title": "Online Price Watch historical archive coverage",
+                "subtitle": "Availability check only; no average-price trend is presented as an index.",
+                "dataset": "consumer_council_pricewatch_archive",
+                "sourceId": "consumer_council_pricewatch",
+                "density": "dense",
+                "layout": "full",
+                "columns": [
+                    {"field": "first_observation", "label": "First month", "type": "text"},
+                    {"field": "latest_observation", "label": "Latest month", "type": "text"},
+                    {"field": "months", "label": "Months", "format": "number"},
+                    {"field": "category_supermarket_aggregates", "label": "Monthly category-store aggregates", "format": "number"},
+                    {"field": "categories", "label": "Categories", "format": "number"},
+                    {"field": "supermarkets", "label": "Supermarket codes", "format": "number"},
+                    {"field": "notes", "label": "Methodology caveat", "type": "text"},
+                ],
+            }
+        )
+    if pricewatch_index_rows:
+        charts.append(
+            {
+                "id": "consumer_council_pricewatch_matched_index_chart",
+                "title": "Online Price Watch matched-item supermarket price index",
+                "subtitle": (
+                    "The six longest source-code series (at least 12 linked months). Each supermarket starts at 100 in its "
+                    "first available month; each link uses the equal-weight geometric mean of product-code price relatives "
+                    "matched to the prior month. Promotions and pack-size changes are not adjusted."
+                ),
+                "type": "line",
+                "intent": "trend",
+                "dataset": "consumer_council_pricewatch_matched_index",
+                "sourceId": "consumer_council_pricewatch",
+                "encodings": {
+                    "x": {"field": "year_month", "type": "temporal", "label": "Month"},
+                    "y": {"field": "matched_item_index", "type": "quantitative", "label": "Index (first month = 100)"},
+                    "color": {"field": "supermarket_code", "type": "nominal", "label": "Supermarket"},
+                },
+                "valueFormat": "number",
+                "layout": "full",
+                "maxRows": 1200,
+            }
+        )
+
+    df_oil = _load_latest_normalized("consumer_council_oilprice_daily")
+    df_oil_history = load_consumer_council_oilprice_history()
+    df_complaints = _load_latest_normalized("consumer_council_complaints_by_sector")
 
     oil_rows = _records_json_safe(df_oil) if not df_oil.empty else []
+    oil_history_rows: dict[str, list[dict[str, Any]]] = {}
+    oil_wow_rows: list[dict[str, Any]] = []
+    if not df_oil_history.empty:
+        df_oil_history["date"] = pd.to_datetime(df_oil_history["date"], errors="coerce")
+        for fuel_type, history in df_oil_history.groupby("fuel_type"):
+            compact = history[history["date"] >= history["date"].max() - pd.Timedelta(days=365)].copy()
+            compact["month"] = compact["date"].dt.strftime("%Y-%m")
+            oil_history_rows[fuel_type] = _records(compact, ["date", "month", "company", "net_price_ex_duty_hkd"])
+        ordered = df_oil_history.sort_values(["fuel_type", "company", "date"]).copy()
+        ordered["prior_7d"] = ordered.groupby(["fuel_type", "company"])["net_price_ex_duty_hkd"].shift(7)
+        latest = ordered.groupby(["fuel_type", "company"], as_index=False).tail(1).copy()
+        latest["wow_change"] = latest["net_price_ex_duty_hkd"] / latest["prior_7d"] - 1
+        oil_wow_rows = _records(latest, ["date", "company", "fuel_type", "net_price_ex_duty_hkd", "wow_change"])
     complaint_rows = _records_json_safe(df_complaints) if not df_complaints.empty else []
 
     if oil_rows:
@@ -1370,6 +1697,46 @@ def build_artifact(
                 "layout": "half",
             }
         )
+
+    if oil_history_rows.get("regular-unleaded-gasoline"):
+        charts.append(
+            {
+                "id": "consumer_council_oilprice_history_chart",
+                "title": "Standard petrol net price trend",
+                "subtitle": "Latest 12 months; daily net price after walk-in discount, excluding fuel duty.",
+                "type": "line",
+                "intent": "trend",
+                "dataset": "consumer_council_oilprice_history_regular",
+                "sourceId": "consumer_council_oilprice",
+                "encodings": {
+                    "x": {"field": "month", "type": "temporal", "label": "Month"},
+                    "y": {"field": "net_price_ex_duty_hkd", "type": "quantitative", "label": "HKD / L (ex-duty)"},
+                    "color": {"field": "company", "type": "nominal", "label": "Oil Major"},
+                },
+                "valueFormat": "number",
+                "layout": "full",
+                "maxRows": 1830,
+            }
+        )
+        tables.append(
+            {
+                "id": "consumer_council_oilprice_wow_table",
+                "title": "Auto fuel net price — latest 7-day movement",
+                "subtitle": "Daily net price after walk-in discount, excluding fuel duty; compared with seven calendar days earlier.",
+                "dataset": "consumer_council_oilprice_wow",
+                "sourceId": "consumer_council_oilprice",
+                "defaultSort": {"field": "wow_change", "direction": "desc"},
+                "density": "dense",
+                "layout": "full",
+                "columns": [
+                    {"field": "company", "label": "Oil Major", "type": "text"},
+                    {"field": "fuel_type", "label": "Fuel Type", "type": "text"},
+                    {"field": "net_price_ex_duty_hkd", "label": "Net price (HK$/L, ex-duty)", "format": "number"},
+                    {"field": "wow_change", "label": "7-day change", "format": "percent", "signed": True},
+                    {"field": "date", "label": "As of", "type": "date"},
+                ],
+            }
+        )
         charts.append(
             {
                 "id": "consumer_council_oilprice_net_chart",
@@ -1390,6 +1757,7 @@ def build_artifact(
     # Build complaints table and chart data
     complaint_table_rows: list[dict[str, Any]] = []
     complaint_chart_rows: list[dict[str, Any]] = []
+    complaint_history_chart_rows: list[dict[str, Any]] = []
     if complaint_rows:
         latest_periods = sorted(set(r["period"] for r in complaint_rows), reverse=True)
         latest_period = latest_periods[0] if latest_periods else ""
@@ -1404,6 +1772,12 @@ def build_artifact(
                 "category": r["category"],
                 "amount": r["amount"],
             })
+        latest_top_categories = {row["category"] for row in top10}
+        complaint_history_chart_rows = [
+            {"period": row["period"], "category": row["category"], "amount": row["amount"]}
+            for row in complaint_rows
+            if row["category"] in latest_top_categories
+        ]
         # Add table
         tables.append({
             "id": "consumer_council_complaints_table",
@@ -1435,6 +1809,38 @@ def build_artifact(
             },
             "valueFormat": "number",
             "layout": "half",
+        })
+        charts.append({
+            "id": "consumer_council_complaints_history_chart",
+            "title": "Consumer Council complaint categories — available history",
+            "subtitle": "Latest-period top 10 categories across every published source period. 2026 has no source month range, so no YoY percentage is inferred.",
+            "type": "line",
+            "intent": "trend",
+            "dataset": "consumer_council_complaints_history_chart",
+            "sourceId": "consumer_council_complaints",
+            "encodings": {
+                "x": {"field": "period", "type": "nominal", "label": "Published period"},
+                "y": {"field": "amount", "type": "quantitative", "label": "Complaints"},
+                "color": {"field": "category", "type": "nominal", "label": "Category"},
+            },
+            "valueFormat": "number",
+            "layout": "full",
+        })
+        tables.append({
+            "id": "consumer_council_complaints_history_table",
+            "title": "Consumer Council complaints by category — all available periods",
+            "subtitle": "Every category and period supplied by the official API; 2026 is not assumed to be a full-year total.",
+            "dataset": "consumer_council_complaints",
+            "sourceId": "consumer_council_complaints",
+            "defaultSort": {"field": "amount", "direction": "desc"},
+            "density": "dense",
+            "layout": "full",
+            "maxRows": 160,
+            "columns": [
+                {"field": "period", "label": "Published period", "type": "text"},
+                {"field": "category", "label": "Category", "type": "text"},
+                {"field": "amount", "label": "Complaints", "format": "number"},
+            ],
         })
 
     # Build checkpoint breakdown table from immigration attrs
@@ -1496,9 +1902,13 @@ def build_artifact(
         )
 
     datasets["consumer_council_oilprice"] = oil_rows
+    datasets["consumer_council_oilprice_history_regular"] = oil_history_rows.get("regular-unleaded-gasoline", [])
+    datasets["consumer_council_oilprice_history_premium"] = oil_history_rows.get("premium-unleaded-gasoline", [])
+    datasets["consumer_council_oilprice_wow"] = oil_wow_rows
     datasets["consumer_council_complaints"] = complaint_rows
     datasets["consumer_council_complaints_table"] = complaint_table_rows
     datasets["consumer_council_complaints_chart"] = complaint_chart_rows
+    datasets["consumer_council_complaints_history_chart"] = complaint_history_chart_rows
     datasets["immigration_checkpoint_snapshot"] = checkpoint_rows
 
     artifact = {
@@ -1529,16 +1939,22 @@ def build_artifact(
                     else ["gold_card", "retail_card", "restaurant_card"]
                 )},
                 {"id": "immigration_chart", "type": "chart", "chartId": "immigration_trend"},
+                {"id": "immigration_checkpoint_trend_chart", "type": "chart", "chartId": "immigration_checkpoint_trend"},
                 {"id": "weather_chart", "type": "chart", "chartId": "severe_weather_trend"},
-                {"id": "afcd_chart", "type": "chart", "chartId": "afcd_category_chart", "layout": "half"},
+                {"id": "weather_daily_chart", "type": "chart", "chartId": "severe_weather_daily_trend"},
                 {"id": "afcd_trend_chart", "type": "chart", "chartId": "afcd_category_trend", "layout": "half"},
                 {"id": "gold_chart", "type": "chart", "chartId": "gold_trend", "layout": "half"},
                 {"id": "valuation_chart", "type": "chart", "chartId": "valuation_pe_chart", "layout": "half"},
+                {"id": "valuation_market_cap_chart", "type": "chart", "chartId": "valuation_market_cap_trend"},
                 {"id": "oilprice_chart_block", "type": "chart", "chartId": "consumer_council_oilprice_chart", "layout": "half"},
                 {"id": "oilprice_net_chart_block", "type": "chart", "chartId": "consumer_council_oilprice_net_chart", "layout": "half"},
+                {"id": "oilprice_history_chart_block", "type": "chart", "chartId": "consumer_council_oilprice_history_chart"},
                 {"id": "oilprice_table_block", "type": "table", "tableId": "consumer_council_oilprice_table"},
+                {"id": "oilprice_wow_table_block", "type": "table", "tableId": "consumer_council_oilprice_wow_table"},
                 {"id": "complaints_chart_block", "type": "chart", "chartId": "consumer_council_complaints_chart", "layout": "half"},
+                {"id": "complaints_history_chart_block", "type": "chart", "chartId": "consumer_council_complaints_history_chart"},
                 {"id": "complaints_table_block", "type": "table", "tableId": "consumer_council_complaints_table"},
+                {"id": "complaints_history_table_block", "type": "table", "tableId": "consumer_council_complaints_history_table"},
                 {"id": "immigration_checkpoint_table_block", "type": "table", "tableId": "immigration_checkpoint_table"},
                 {"id": "afcd_table", "type": "table", "tableId": "afcd_commodity_table"},
                 {"id": "valuation_table_block", "type": "table", "tableId": "valuation_table"},
@@ -1550,6 +1966,28 @@ def build_artifact(
                 {"id": "restaurant_snapshot_table_block", "type": "table", "tableId": "restaurant_snapshot_table"},
                 {"id": "store_footprint_chart_block", "type": "chart", "chartId": "store_footprint_chart"},
                 {"id": "store_footprint_table_block", "type": "table", "tableId": "store_footprint_table"},
+                *(
+                    [
+                        {
+                            "id": "consumer_council_pricewatch_matched_index_block",
+                            "type": "chart",
+                            "chartId": "consumer_council_pricewatch_matched_index_chart",
+                        }
+                    ]
+                    if pricewatch_index_rows
+                    else []
+                ),
+                *(
+                    [
+                        {
+                            "id": "consumer_council_pricewatch_archive_block",
+                            "type": "table",
+                            "tableId": "consumer_council_pricewatch_archive_table",
+                        }
+                    ]
+                    if pricewatch_archive
+                    else []
+                ),
                 {"id": "source_health", "type": "table", "tableId": "source_health_table"},
                 {"id": "active_signals", "type": "table", "tableId": "active_signals_table"},
                 {"id": "coverage", "type": "table", "tableId": "coverage_table"},
@@ -1565,6 +2003,8 @@ def build_artifact(
                         "the AFCD category trend chart accumulates one real observation per pipeline run (no historical "
                         "backfill exists for this feed), so it starts thin and grows over time. "
                         "Retail sales and restaurant receipts are official monthly/quarterly government indices, not real-time. "
+                        "Online Price Watch uses a product-code matched, chain-linked supermarket indicator rather than "
+                        "an assortment-sensitive average listed price; promotions and pack-size changes are not adjusted. "
                         "Active data signals lists sources already backing a live measure above; the coverage table tracks "
                         "sources whose endpoints are still broken or unverified. "
                         "No stock ranking, forecast, or investment recommendation is produced."
@@ -1591,7 +2031,7 @@ def build_artifact(
         "data_as_of": artifact["package_info"]["dataAsOf"],
         "overall_status": "Healthy",
         "live_sources": len(health),
-        "planned_sources": len(PLANNED_COVERAGE),
+        "planned_sources": len(coverage_planned),
         "sources": coverage_active + coverage_planned,
         "attachment_filename": f"hk-local-consumer-dashboard-{now.date().isoformat()}.html",
     }
@@ -1600,13 +2040,13 @@ def build_artifact(
 
 def fetch_live_frames() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     return (
-        fetch_sge_gold_benchmark(),
-        fetch_afcd_food_prices(),
-        fetch_hk_consumer_valuations(),
-        fetch_cnsd_retail_sales(),
-        fetch_censtatd_restaurant_survey(),
-        fetch_immigration_flow(),
-        fetch_weather_demand_drivers(),
+        _load_latest_normalized("sge_gold_benchmark_daily"),
+        _load_latest_normalized("afcd_wholesale_food_prices_daily"),
+        _load_latest_normalized("hk_consumer_ticker_valuations_daily"),
+        _load_latest_normalized("cnsd_retail_sales_monthly"),
+        _load_latest_normalized("censtatd_fast_food_survey_quarterly"),
+        _load_latest_normalized("immigration_passenger_traffic_daily"),
+        _load_latest_normalized("weather_demand_drivers_monthly"),
     )
 
 
@@ -1617,7 +2057,19 @@ def main() -> int:
     args = parser.parse_args()
 
     gold, afcd, valuation, retail, restaurant, immigration, weather = fetch_live_frames()
-    artifact, status = build_artifact(gold, afcd, valuation, retail, restaurant, immigration, weather)
+    pricewatch_summary = load_historical_pricewatch_summary()
+    pricewatch_index = load_historical_pricewatch_matched_index()
+    artifact, status = build_artifact(
+        gold,
+        afcd,
+        valuation,
+        retail,
+        restaurant,
+        immigration,
+        weather,
+        raw_pricewatch_summary=pricewatch_summary,
+        raw_pricewatch_index=pricewatch_index,
+    )
     _atomic_json(args.output, artifact)
     _atomic_json(args.status_output, status)
     print(

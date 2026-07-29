@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-07-29T21:19:21.407172Z",
-  "snapshot_id": "bf1391ef5adc1dde",
+  "generated_at": "2026-07-29T22:30:33.740230Z",
+  "snapshot_id": "72ea30583c6a52de",
   "data_as_of": "2026-07-27",
   "overall_status": "Healthy",
-  "live_sources": 8,
+  "live_sources": 9,
   "planned_sources": 0,
   "sources": [
     {
@@ -12,7 +12,7 @@
       "type": "Measure",
       "status": "Healthy",
       "latest_observation": "2026-07-01",
-      "records": 67,
+      "records": 961,
       "freshness": "28d old",
       "notes": "Monthly hours under Typhoon Signal 8+ & Red/Black Rainstorm warnings alongside HKD/RMB FX."
     },
@@ -52,7 +52,7 @@
       "type": "Measure",
       "status": "Healthy",
       "latest_observation": "2026-07-29",
-      "records": 11,
+      "records": 330,
       "freshness": "0d old",
       "notes": "PE (TTM), PB, and market cap only; no dividend-yield indicator is available from this endpoint."
     },
@@ -85,6 +85,16 @@
       "records": 11,
       "freshness": "Footprint snapshot (most brands: 1-2 dated snapshots so far, not yet a trend)",
       "notes": "10,788 total tracked locations across 11 companies."
+    },
+    {
+      "source": "Consumer Council Online Price Watch",
+      "dataset": "Online Price Watch historical archive",
+      "type": "Catalog",
+      "status": "Healthy",
+      "latest_observation": "2026-07",
+      "records": 4268,
+      "freshness": "Archive through 2026-07",
+      "notes": "75 months across 11 categories and 12 supermarket codes. Coverage only; no price index is rendered."
     }
   ],
   "attachment_filename": "hk-local-consumer-dashboard-2026-07-29.html"
