@@ -198,8 +198,11 @@ def fetch_weather_demand_drivers() -> pd.DataFrame:
     if not t_df.empty:
         t_agg = t_df.groupby("month")["duration_hours"].sum().rename("signal_8_plus_hours").reset_index()
 
-    # Combine all months from 2021 to current
-    all_months = pd.date_range("2021-01-01", pd.Timestamp.now(), freq="MS").strftime("%Y-%m")
+    # Preserve the full warning-database history. The published dashboard can
+    # choose a short window, but the source layer must not discard older events.
+    event_starts = [frame["start"].min() for frame in (r_df, t_df) if not frame.empty]
+    history_start = min(event_starts).to_period("M").to_timestamp() if event_starts else pd.Timestamp("2021-01-01")
+    all_months = pd.date_range(history_start, pd.Timestamp.now(), freq="MS").strftime("%Y-%m")
     base_df = pd.DataFrame({"month": all_months})
     base_df["date"] = base_df["month"] + "-01"
 
@@ -258,9 +261,11 @@ def fetch_weather_demand_drivers() -> pd.DataFrame:
 
     events_df = pd.DataFrame(events)
     if not events_df.empty:
-        events_df = events_df.sort_values("start", ascending=False).head(30)
-        result.attrs["recent_events"] = events_df.to_dict(orient="records")
+        events_df = events_df.sort_values("start", ascending=False).reset_index(drop=True)
+        result.attrs["events"] = events_df.to_dict(orient="records")
+        result.attrs["recent_events"] = events_df.head(30).to_dict(orient="records")
     else:
+        result.attrs["events"] = []
         result.attrs["recent_events"] = []
 
     return result

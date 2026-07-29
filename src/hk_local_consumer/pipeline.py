@@ -40,6 +40,12 @@ QUALITY_SPECS: Dict[str, Dict[str, Any]] = {
         "kind": "measure",
         "required": ["date", "category", "commodity_name", "price_hkd_per_kg"],
         "max_age_days": 400,
+        "min_unique": {"category": 3, "commodity_name": 15},
+        "strictly_positive": ["price_hkd_per_kg"],
+        # The official daily sheet can report multiple market readings for
+        # the same category/commodity. The dashboard aggregates those rows;
+        # treating them as duplicate observations would discard valid data.
+        "allow_duplicate_observations": True,
     },
     "consumer_council_price_watch_daily": {
         "kind": "catalog",
@@ -83,10 +89,19 @@ QUALITY_SPECS: Dict[str, Dict[str, Any]] = {
         "required": ["date", "hk_resident_departures", "mainland_visitor_arrivals"],
         "max_age_days": 400,
     },
+    "immigration_checkpoint_daily": {
+        "kind": "measure",
+        "required": ["date", "control_point", "direction", "total"],
+        "max_age_days": 400,
+    },
     "weather_demand_drivers_monthly": {
         "kind": "measure",
         "required": ["date", "month", "signal_8_plus_hours", "red_black_rain_hours"],
         "max_age_days": 400,
+    },
+    "weather_warning_events": {
+        "kind": "catalog",
+        "required": ["signal_name", "start", "end", "duration_hours"],
     },
 }
 
@@ -102,16 +117,26 @@ def _quality_errors(dataset_name: str, df: pd.DataFrame) -> list[str]:
     if null_columns:
         return [f"required columns contain null values: {', '.join(null_columns)}"]
 
+    for column, minimum in spec.get("min_unique", {}).items():
+        unique_values = int(df[column].nunique(dropna=True))
+        if unique_values < minimum:
+            return [f"{column} has only {unique_values} unique values; expected at least {minimum}"]
+
+    for column in spec.get("strictly_positive", []):
+        numeric = pd.to_numeric(df[column], errors="coerce")
+        if numeric.isna().any() or (numeric <= 0).any():
+            return [f"{column} must contain only positive numeric values"]
+
     if spec["kind"] == "measure":
         date_col = "observation_date" if "observation_date" in df.columns else "date"
         dates = pd.to_datetime(df[date_col], errors="coerce", utc=True)
         if dates.isna().any():
             return [f"{date_col} contains invalid values"]
         duplicate_key = [date_col]
-        for candidate in ("commodity_name", "product_id", "ticker", "category", "sub_sector"):
+        for candidate in ("commodity_name", "product_id", "ticker", "category", "sub_sector", "company", "fuel_type", "control_point", "direction"):
             if candidate in df.columns:
                 duplicate_key.append(candidate)
-        if df.duplicated(subset=duplicate_key).any():
+        if not spec.get("allow_duplicate_observations", False) and df.duplicated(subset=duplicate_key).any():
             return [f"{date_col} contains duplicate observations"]
         latest = dates.max()
         now = pd.Timestamp.now(tz="UTC")
@@ -150,9 +175,14 @@ def _store_dataset(run_id: str, dataset_name: str, df: pd.DataFrame) -> Dict[str
     if errors:
         status = "empty" if df.empty else "invalid"
         return {"status": status, "records": len(df), "errors": errors}
+    # DataFrame attrs are runtime-only source context (for example an
+    # immigration checkpoint detail frame). They are not a stable Parquet
+    # contract and may contain Timestamps/DataFrames that Arrow cannot encode.
+    persisted = df.copy()
+    persisted.attrs = {}
     stored = save_normalized_dataset(
         dataset_name,
-        df,
+        persisted,
         run_id=run_id,
         raw_snapshot=df.attrs.get("raw_snapshot"),
         source_url=df.attrs.get("source_url"),
@@ -247,14 +277,31 @@ def run_stage_1_pipeline(run_id: str | None = None, *, _raise_on_failure: bool =
 
     try:
         logger.info("Ingesting HK Immigration Department daily passenger traffic...")
-        _record_many(run_id, results, {"immigration_passenger_traffic_daily": fetch_immigration_flow()})
+        immigration = fetch_immigration_flow()
+        checkpoints = immigration.attrs.get("checkpoint_history", pd.DataFrame()).copy()
+        if not checkpoints.empty:
+            checkpoints = checkpoints.rename(columns={
+                "Date": "date", "Control Point": "control_point", "Arrival / Departure": "direction",
+                "Hong Kong Residents": "hk_residents", "Mainland Visitors": "mainland_visitors",
+                "Other Visitors": "other_visitors", "Total": "total",
+            })
+            checkpoints["date"] = pd.to_datetime(checkpoints["date"], errors="coerce").dt.strftime("%Y-%m-%d")
+        _record_many(run_id, results, {
+            "immigration_passenger_traffic_daily": immigration,
+            "immigration_checkpoint_daily": checkpoints,
+        })
     except Exception as exc:
         logger.exception("Immigration Department daily passenger traffic ingestion failed")
         results["immigration_passenger_traffic_daily"] = _error_result(exc)
 
     try:
         logger.info("Ingesting HKO weather warnings & FRED FX demand drivers...")
-        _record_many(run_id, results, {"weather_demand_drivers_monthly": fetch_weather_demand_drivers()})
+        weather = fetch_weather_demand_drivers()
+        events = pd.DataFrame(weather.attrs.get("events", []))
+        _record_many(run_id, results, {
+            "weather_demand_drivers_monthly": weather,
+            "weather_warning_events": events,
+        })
     except Exception as exc:
         logger.exception("Weather and demand drivers ingestion failed")
         results["weather_demand_drivers_monthly"] = _error_result(exc)
@@ -271,6 +318,29 @@ def run_all_pipelines() -> Dict[str, Any]:
     if failures:
         raise PipelineRunError(f"Full ingestion failed; manifest: {manifest_path}", merged, manifest_path)
     return merged
+
+
+def run_dashboard_history_sources(run_id: str | None = None) -> Dict[str, Any]:
+    """Materialise only the event/detail sources required by local-consumer charts."""
+    run_id = run_id or str(uuid.uuid4())
+    results: Dict[str, Any] = {}
+    immigration = fetch_immigration_flow()
+    checkpoints = immigration.attrs.get("checkpoint_history", pd.DataFrame()).copy().rename(columns={
+        "Date": "date", "Control Point": "control_point", "Arrival / Departure": "direction",
+        "Hong Kong Residents": "hk_residents", "Mainland Visitors": "mainland_visitors",
+        "Other Visitors": "other_visitors", "Total": "total",
+    })
+    if not checkpoints.empty:
+        checkpoints["date"] = pd.to_datetime(checkpoints["date"], errors="coerce").dt.strftime("%Y-%m-%d")
+    weather = fetch_weather_demand_drivers()
+    events = pd.DataFrame(weather.attrs.get("events", []))
+    _record_many(run_id, results, {
+        "immigration_passenger_traffic_daily": immigration,
+        "immigration_checkpoint_daily": checkpoints,
+        "weather_demand_drivers_monthly": weather,
+        "weather_warning_events": events,
+    })
+    return _finalize_group(run_id, "dashboard_history", results, False)
 
 
 if __name__ == "__main__":

@@ -5,6 +5,7 @@ import sys
 from .pipeline import (
     run_stage_1_pipeline,
     run_all_pipelines,
+    run_dashboard_history_sources,
 )
 from .sources.afcd_food import fetch_afcd_food_prices
 from .sources.consumer_council import fetch_consumer_council_prices
@@ -30,6 +31,7 @@ def main():
     subparsers.add_parser("run-censtatd", help="Run CenStatD restaurant survey ingestion")
     subparsers.add_parser("run-immigration", help="Run HK Immigration Department daily traffic ingestion")
     subparsers.add_parser("run-weather", help="Run HKO weather & FX demand drivers ingestion")
+    subparsers.add_parser("run-dashboard-history", help="Materialise immigration checkpoints and HKO warning events")
 
     args = parser.parse_args()
 
@@ -37,6 +39,8 @@ def main():
         if args.command in ("run-stage-1", "run-all"):
             results = run_stage_1_pipeline()
             print("\nStage 1 Ingestion completed:\n" + json.dumps(results, indent=2))
+        elif args.command == "run-dashboard-history":
+            print(json.dumps(run_dashboard_history_sources(), indent=2))
         elif args.command == "run-afcd":
             df = fetch_afcd_food_prices()
             print(f"Fetched AFCD food prices: {len(df)} records\n", df.head())

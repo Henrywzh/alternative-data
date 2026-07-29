@@ -117,7 +117,7 @@ def fetch_immigration_flow() -> pd.DataFrame:
     source_url = IMMIGRATION_PASSENGER_TRAFFIC_URL
     raw_path = save_raw_snapshot(
         "immigration_passenger_traffic",
-        result.to_dict(orient="records"),
+        df.to_dict(orient="records"),
         file_ext="json",
         source_url=source_url,
     )
@@ -130,5 +130,8 @@ def fetch_immigration_flow() -> pd.DataFrame:
     checkpoint_snapshot = recent_df.to_dict(orient="records")
     result.attrs["latest_checkpoint_snapshot"] = checkpoint_snapshot
     result.attrs["latest_date"] = recent_date.strftime("%Y-%m-%d")
+    result.attrs["checkpoint_history"] = df[[
+        "Date", "Control Point", "Arrival / Departure", "Hong Kong Residents", "Mainland Visitors", "Other Visitors", "Total"
+    ]].copy()
 
     return result

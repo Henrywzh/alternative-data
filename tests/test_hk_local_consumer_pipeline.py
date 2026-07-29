@@ -13,7 +13,7 @@ from src.hk_local_consumer.sources.sge_gold import fetch_sge_gold_benchmark
 from src.hk_local_consumer.sources.hk_valuation import fetch_hk_consumer_valuations
 from src.hk_local_consumer.sources.cnsd_retail import fetch_cnsd_retail_sales
 from src.hk_local_consumer.sources.censtatd_restaurant import fetch_censtatd_restaurant_survey
-from src.hk_local_consumer.pipeline import run_stage_1_pipeline, QUALITY_SPECS
+from src.hk_local_consumer.pipeline import _quality_errors, run_stage_1_pipeline, QUALITY_SPECS
 from src.hk_local_consumer.storage import save_normalized_dataset, save_raw_snapshot
 
 
@@ -70,6 +70,22 @@ def test_parse_afcd_csv_missing_columns_returns_empty():
     df = parse_afcd_csv("Some,Other,Header\n1,2,3\n")
     assert df.empty
     assert list(df.columns) == ["date", "category", "commodity_name", "price_hkd_per_kg", "unit", "remarks"]
+
+
+def test_afcd_quality_contract_rejects_placeholder_rows():
+    placeholder = pd.DataFrame(
+        [
+            {
+                "date": "2026-07-29",
+                "category": "Fresh Food",
+                "commodity_name": f"Item_{index}",
+                "price_hkd_per_kg": 0.0,
+            }
+            for index in range(20)
+        ]
+    )
+    errors = _quality_errors("afcd_wholesale_food_prices_daily", placeholder)
+    assert errors == ["category has only 1 unique values; expected at least 3"]
 
 
 def test_parse_consumer_council_payload():
@@ -185,6 +201,58 @@ def _load_comparison_row():
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module._comparison_row
+
+
+def _load_local_consumer_artifact_builder():
+    scripts_dir = Path(__file__).resolve().parents[1] / "apps" / "asia-markets-dashboard" / "scripts"
+    spec = importlib.util.spec_from_file_location(
+        "build_hk_local_consumer_artifact", scripts_dir / "build_hk_local_consumer_artifact.py"
+    )
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_pricewatch_archive_coverage_requires_valid_loaded_history():
+    builder = _load_local_consumer_artifact_builder()
+    valid = pd.DataFrame(
+        [
+            {
+                "year_month": "2024-01",
+                "category_1": "Food",
+                "supermarket_code": "A",
+                "avg_price": 10.0,
+                "item_count": 4,
+            },
+            {
+                "year_month": "2024-02",
+                "category_1": "Food",
+                "supermarket_code": "B",
+                "avg_price": 12.0,
+                "item_count": 5,
+            },
+        ]
+    )
+    valid.attrs["archive_validation"] = {"complete": True}
+
+    assert builder._pricewatch_archive_coverage(pd.DataFrame()) == []
+    invalid_counts = valid.assign(item_count=0)
+    invalid_counts.attrs["archive_validation"] = {"complete": True}
+    assert builder._pricewatch_archive_coverage(invalid_counts) == []
+
+    coverage = builder._pricewatch_archive_coverage(valid)
+    assert coverage == [
+        {
+            "first_observation": "2024-01",
+            "latest_observation": "2024-02",
+            "months": 2,
+            "category_supermarket_aggregates": 2,
+            "categories": 1,
+            "supermarkets": 2,
+            "notes": coverage[0]["notes"],
+        }
+    ]
+    assert "not a price index" in coverage[0]["notes"]
 
 
 def test_comparison_row_zero_prior_value_does_not_raise():
