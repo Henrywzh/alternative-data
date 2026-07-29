@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-07-28T21:59:52.353511Z",
-  "snapshot_id": "7fa48038d4fa42bf",
+  "generated_at": "2026-07-29T18:03:08.129291Z",
+  "snapshot_id": "7b0e661edfd423e0",
   "data_as_of": "2026-07-27",
   "overall_status": "Healthy",
   "live_sources": 5,
@@ -14,7 +14,7 @@
       "status": "Healthy",
       "latest_observation": "2026-07-19",
       "records": 1699,
-      "freshness": "9d old",
+      "freshness": "10d old",
       "notes": "Latest observation is published without a provisional flag."
     },
     {
@@ -24,7 +24,7 @@
       "status": "Healthy",
       "latest_observation": "2026-07-27",
       "records": 542,
-      "freshness": "1d old",
+      "freshness": "2d old",
       "notes": "Latest observation is published without a provisional flag."
     },
     {
@@ -34,7 +34,7 @@
       "status": "Healthy",
       "latest_observation": "2026-07-27",
       "records": 444,
-      "freshness": "1d old",
+      "freshness": "2d old",
       "notes": "Latest observation is published without a provisional flag."
     },
     {
@@ -42,9 +42,9 @@
       "dataset": "RVD Residential Price Index",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-05-01",
-      "records": 401,
-      "freshness": "88d old",
+      "latest_observation": "2026-06-01",
+      "records": 402,
+      "freshness": "58d old",
       "notes": "Latest observation is provisional."
     },
     {
@@ -52,9 +52,9 @@
       "dataset": "RVD Residential Rental Index",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-05-01",
-      "records": 401,
-      "freshness": "88d old",
+      "latest_observation": "2026-06-01",
+      "records": 402,
+      "freshness": "58d old",
       "notes": "Latest observation is provisional."
     },
     {
@@ -108,5 +108,5 @@
       "notes": "Current discovery code does not yet extract sales, units, price lists, or absorption facts."
     }
   ],
-  "attachment_filename": "hk-real-estate-dashboard-2026-07-28.html"
+  "attachment_filename": "hk-real-estate-dashboard-2026-07-29.html"
 }
