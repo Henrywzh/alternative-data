@@ -59,7 +59,11 @@ QUALITY_SPECS: Dict[str, Dict[str, Any]] = {
     "landreg_asp_series": {"kind": "measure", "required": ["date", "all_building_units_asp", "residential_units_asp"], "max_age_days": 400},
     "buildings_dept_monthly_stats": {"kind": "catalog", "required": ["date", "table_id", "numeric_values"]},
     "bd_supply_leading_indicators": {"kind": "measure", "required": ["date", "permit_stage", "region"], "max_age_days": 400},
-    "bd_supply_pipeline_history": {"kind": "measure", "required": ["date", "permit_stage", "property_category", "revision_status", "parser_confidence"], "max_age_days": 400},
+    # A historical backfill may intentionally be stored in bounded year
+    # chunks.  It still has a dated observation contract, but a partial
+    # archival batch must not be rejected merely because its final month is
+    # older than the current date.
+    "bd_supply_pipeline_history": {"kind": "catalog", "required": ["date", "permit_stage", "property_category", "revision_status", "parser_confidence"]},
     "hkma_residential_mortgage_survey": {"kind": "measure", "required": ["observation_date", "approved_loans_amount_mhkd"], "max_age_days": 400},
     "bd_project_lifecycle_events": {"kind": "catalog", "required": ["permit_stage", "site_address"]},
 }

@@ -277,13 +277,18 @@ def test_bd_history_is_a_dated_aggregate_trend_separate_from_current_snapshot():
         now=NOW,
     )
 
-    rows = artifact["snapshot"]["datasets"]["bd_supply_pipeline_history"]
+    rows = (
+        artifact["snapshot"]["datasets"]["bd_supply_pipeline_history_units"]
+        + artifact["snapshot"]["datasets"]["bd_supply_pipeline_history_counts"]
+    )
     assert {tuple(row.items()) for row in rows} == {
-        (("date", "2024-12"), ("permit_stage", "Consent to Commence"), ("metric", "Domestic units"), ("value", 1495.0)),
-        (("date", "2024-12"), ("permit_stage", "Consent to Commence"), ("metric", "Domestic usable floor area (sqm)"), ("value", 30056.5)),
-        (("date", "2024-12"), ("permit_stage", "Consent to Commence"), ("metric", "Project / consent count"), ("value", 13.0)),
-        (("date", "2024-12"), ("permit_stage", "Demolition Consents"), ("metric", "Project / consent count"), ("value", 2.0)),
+        (("date", "2024-12"), ("permit_stage", "Consent to Commence"), ("series", "Md54 Consent"), ("metric", "Domestic units"), ("value", 1495.0)),
+        (("date", "2024-12"), ("permit_stage", "Consent to Commence"), ("series", "Md54 Consent"), ("metric", "Project / consent count"), ("value", 13.0)),
+        (("date", "2024-12"), ("permit_stage", "Demolition Consents"), ("series", "Md52 Demolition"), ("metric", "Project / consent count"), ("value", 2.0)),
     }
-    chart = next(chart for chart in artifact["manifest"]["charts"] if chart["id"] == "bd_supply_history_chart")
-    assert chart["dataset"] == "bd_supply_pipeline_history"
-    assert chart["sourceId"] == "bd_supply_history"
+    assert "bd_supply_pipeline_history" not in artifact["snapshot"]["datasets"]
+    unit_chart = next(chart for chart in artifact["manifest"]["charts"] if chart["id"] == "bd_supply_history_units_chart")
+    count_chart = next(chart for chart in artifact["manifest"]["charts"] if chart["id"] == "bd_supply_history_counts_chart")
+    assert unit_chart["dataset"] == "bd_supply_pipeline_history_units"
+    assert count_chart["dataset"] == "bd_supply_pipeline_history_counts"
+    assert unit_chart["sourceId"] == count_chart["sourceId"] == "bd_supply_history"

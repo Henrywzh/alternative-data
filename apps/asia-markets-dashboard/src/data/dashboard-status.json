@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-07-29T21:18:23.609442Z",
-  "snapshot_id": "6d39542238734e09",
+  "generated_at": "2026-07-29T22:31:02.427050Z",
+  "snapshot_id": "e2d0d85dddc2f4f0",
   "data_as_of": "2026-07-27",
   "overall_status": "Healthy",
   "live_sources": 5,
@@ -96,6 +96,16 @@
       "records": 257,
       "freshness": "Live at build time",
       "notes": "Buildings Department Monthly Digest / Project Lifecycle; see the chart/table above."
+    },
+    {
+      "source": "Buildings Department history",
+      "dataset": "Md52-Md56 stage aggregates",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "—",
+      "records": 2557,
+      "freshness": "Live at build time",
+      "notes": "Buildings Department Monthly Digest PDF archive (Section 1 aggregate tables); see the chart/table above."
     },
     {
       "source": "SRPE",
