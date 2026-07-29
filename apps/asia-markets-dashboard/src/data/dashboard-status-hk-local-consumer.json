@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-07-28T22:00:43.946090Z",
-  "snapshot_id": "e57e40257c09c38c",
-  "data_as_of": "2026-07-26",
+  "generated_at": "2026-07-29T09:10:38.440709Z",
+  "snapshot_id": "24c9eac1a1a1409b",
+  "data_as_of": "2026-07-27",
   "overall_status": "Healthy",
   "live_sources": 8,
   "planned_sources": 1,
@@ -13,7 +13,7 @@
       "status": "Healthy",
       "latest_observation": "2026-07-01",
       "records": 67,
-      "freshness": "27d old",
+      "freshness": "28d old",
       "notes": "Monthly hours under Typhoon Signal 8+ & Red/Black Rainstorm warnings alongside HKD/RMB FX."
     },
     {
@@ -21,8 +21,8 @@
       "dataset": "Immigration Passenger Clearance",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-07-27",
-      "records": 2034,
+      "latest_observation": "2026-07-28",
+      "records": 2035,
       "freshness": "1d old",
       "notes": "Daily clearance across 17 control points for HK residents & Mainland visitors."
     },
@@ -31,8 +31,8 @@
       "dataset": "SGE Gold Benchmark",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-07-26",
-      "records": 2496,
+      "latest_observation": "2026-07-27",
+      "records": 2497,
       "freshness": "2d old",
       "notes": "Daily AM/PM benchmark fixing."
     },
@@ -41,7 +41,7 @@
       "dataset": "AFCD Wholesale Food Prices",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-07-28",
+      "latest_observation": "2026-07-29",
       "records": 31,
       "freshness": "Same-day snapshot",
       "notes": "31 commodities across 5 categories; averaged across same-day market readings."
@@ -51,7 +51,7 @@
       "dataset": "HK Consumer Ticker Valuations",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-07-28",
+      "latest_observation": "2026-07-29",
       "records": 11,
       "freshness": "0d old",
       "notes": "PE (TTM), PB, and market cap only; no dividend-yield indicator is available from this endpoint."
@@ -63,7 +63,7 @@
       "status": "Healthy",
       "latest_observation": "2026-05-01",
       "records": 6500,
-      "freshness": "88d old",
+      "freshness": "89d old",
       "notes": "25 outlet-type categories, monthly since 2004."
     },
     {
@@ -73,7 +73,7 @@
       "status": "Healthy",
       "latest_observation": "2026-03-31",
       "records": 516,
-      "freshness": "119d old",
+      "freshness": "120d old",
       "notes": "Sector-wide purchases only; per-type purchases are not published."
     },
     {
@@ -97,5 +97,5 @@
       "notes": "Endpoint requires re-verification before going live."
     }
   ],
-  "attachment_filename": "hk-local-consumer-dashboard-2026-07-28.html"
+  "attachment_filename": "hk-local-consumer-dashboard-2026-07-29.html"
 }

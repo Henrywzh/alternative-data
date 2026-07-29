@@ -6,7 +6,7 @@
     "title": "Hong Kong Telecom Sector Monitor",
     "description": "HKT, SmarTone, and Hutchison Telecom (3 HK) semi-annual postpaid subscriber and ARPU disclosures, plus an OFCA all-operator mobile-number-block capacity snapshot.",
     "sector": "hk-telecom",
-    "generatedAt": "2026-07-28T21:59:05.522299Z",
+    "generatedAt": "2026-07-29T09:09:11.734416Z",
     "cards": [
       {
         "id": "hkt_card",
@@ -325,19 +325,19 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-28T21:59:05.522299Z",
+    "generatedAt": "2026-07-29T09:09:11.734416Z",
     "status": "ready",
     "datasets": {
       "kpi_hkt": [
         {
-          "latest_arpu": 195.0,
-          "postpaid_subscribers_thousands": 3494.0,
-          "ftth_share_pct": 73.0,
-          "ftth_connections_thousands": 1086.0,
-          "pay_tv_installed_base_thousands": 1464.0,
-          "consumer_broadband_lines_thousands": 1488.0,
-          "period_change": 0.010363,
-          "observation_date": "2025-12-31"
+          "latest_arpu": null,
+          "postpaid_subscribers_thousands": 3522.0,
+          "ftth_share_pct": null,
+          "ftth_connections_thousands": 1101.0,
+          "pay_tv_installed_base_thousands": 1490.0,
+          "consumer_broadband_lines_thousands": 1497.0,
+          "period_change": null,
+          "observation_date": "2026-06-30"
         }
       ],
       "kpi_smartone": [
@@ -362,42 +362,16 @@
       ],
       "hkt_history": [
         {
-          "period": "2024-06-30",
-          "date": "2024-06-30",
-          "mobile_postpaid_subscribers_thousands": 3433.0,
-          "mobile_prepaid_subscribers_thousands": 1451.0,
-          "total_mobile_subscribers_thousands": 4884.0,
-          "consumer_broadband_lines_thousands": 1472.0,
-          "ftth_connections_thousands": null,
-          "ftth_share_pct": null,
-          "pay_tv_installed_base_thousands": 1430.0,
-          "mobile_postpaid_arpu_hkd": 192.0,
-          "month": "2024-06"
-        },
-        {
-          "period": "2024-12-31",
-          "date": "2024-12-31",
-          "mobile_postpaid_subscribers_thousands": 3459.0,
-          "mobile_prepaid_subscribers_thousands": 1346.0,
-          "total_mobile_subscribers_thousands": 4805.0,
-          "consumer_broadband_lines_thousands": 1474.0,
-          "ftth_connections_thousands": null,
-          "ftth_share_pct": null,
-          "pay_tv_installed_base_thousands": 1433.0,
-          "mobile_postpaid_arpu_hkd": 193.0,
-          "month": "2024-12"
-        },
-        {
           "period": "2025-06-30",
           "date": "2025-06-30",
           "mobile_postpaid_subscribers_thousands": 3478.0,
           "mobile_prepaid_subscribers_thousands": 1397.0,
           "total_mobile_subscribers_thousands": 4875.0,
           "consumer_broadband_lines_thousands": 1482.0,
-          "ftth_connections_thousands": 1055.0,
-          "ftth_share_pct": 71.0,
+          "ftth_connections_thousands": null,
+          "ftth_share_pct": null,
           "pay_tv_installed_base_thousands": 1448.0,
-          "mobile_postpaid_arpu_hkd": 193.0,
+          "mobile_postpaid_arpu_hkd": null,
           "month": "2025-06"
         },
         {
@@ -407,37 +381,32 @@
           "mobile_prepaid_subscribers_thousands": 1323.0,
           "total_mobile_subscribers_thousands": 4817.0,
           "consumer_broadband_lines_thousands": 1488.0,
-          "ftth_connections_thousands": 1086.0,
-          "ftth_share_pct": 73.0,
+          "ftth_connections_thousands": null,
+          "ftth_share_pct": null,
           "pay_tv_installed_base_thousands": 1464.0,
-          "mobile_postpaid_arpu_hkd": 195.0,
+          "mobile_postpaid_arpu_hkd": null,
           "month": "2025-12"
+        },
+        {
+          "period": "2026-06-30",
+          "date": "2026-06-30",
+          "mobile_postpaid_subscribers_thousands": 3522.0,
+          "mobile_prepaid_subscribers_thousands": 1401.0,
+          "total_mobile_subscribers_thousands": 4923.0,
+          "consumer_broadband_lines_thousands": 1497.0,
+          "ftth_connections_thousands": 1101.0,
+          "ftth_share_pct": null,
+          "pay_tv_installed_base_thousands": 1490.0,
+          "mobile_postpaid_arpu_hkd": null,
+          "month": "2026-06"
         }
       ],
       "hkt_footprint_history": [
         {
-          "date": "2025-06-30",
-          "month": "2025-06",
+          "date": "2026-06-30",
+          "month": "2026-06",
           "series": "FTTH connections",
-          "value": 1055.0
-        },
-        {
-          "date": "2025-12-31",
-          "month": "2025-12",
-          "series": "FTTH connections",
-          "value": 1086.0
-        },
-        {
-          "date": "2024-06-30",
-          "month": "2024-06",
-          "series": "Pay TV base",
-          "value": 1430.0
-        },
-        {
-          "date": "2024-12-31",
-          "month": "2024-12",
-          "series": "Pay TV base",
-          "value": 1433.0
+          "value": 1101.0
         },
         {
           "date": "2025-06-30",
@@ -450,6 +419,12 @@
           "month": "2025-12",
           "series": "Pay TV base",
           "value": 1464.0
+        },
+        {
+          "date": "2026-06-30",
+          "month": "2026-06",
+          "series": "Pay TV base",
+          "value": 1490.0
         }
       ],
       "smartone_history": [
@@ -613,7 +588,7 @@
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-telecom/",
-    "snapshotId": "03d67351724eccac",
-    "dataAsOf": "2025-12-31"
+    "snapshotId": "e38fd0af2168054e",
+    "dataAsOf": "2026-06-30"
   }
 }
