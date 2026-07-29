@@ -195,13 +195,16 @@ const BD_REGION_ZH = {
   "New Territories": "新界",
 };
 const BD_PERMIT_STAGE_ZH = {
-  "Consent to Commence": "同意开工书",
-  "Occupation Permits (OP) Issued": "入伙纸 (OP) 已发出",
-  "Plans Approved": "图则已批准",
+  "Demolition Consents": "拆卸同意书 (Md52)",
+  "Plans Approved": "图则已批准 (Md53)",
+  "Consent to Commence": "同意开工书 (Md54)",
+  "Notice of Commencement Received": "开工通知 (Md55)",
+  "Occupation Permits (OP) Issued": "入伙纸 (Md56)",
 };
 const BD_PROPERTY_CATEGORY_ZH = {
   Domestic: "住宅",
   "Non-domestic": "非住宅",
+  Unknown: "未分类（来源未提供用途）",
 };
 // hk-real-estate: agency_transactions_pulse_table's primary_source_agency.
 const AGENCY_NAME_ZH = {
@@ -315,6 +318,7 @@ const HK_REAL_ESTATE_ZH = {
     landreg_asp_chart: ["土地注册处 — 买卖合约 (ASP)", "每月 ASP 宗数，全部楼宇单位与住宅单位对比。", "月份", "ASP 宗数", "系列"],
     bd_supply_pipeline_chart: ["屋宇署 — 房屋供应管道（当月）", "按审批阶段及地区划分的住宅单位数——未来房屋供应的领先指标。", "审批阶段", "住宅单位数", "地区"],
     bd_supply_floor_area_chart: ["屋宇署 — 各审批阶段实用楼面面积（当月）", "住宅与非住宅实用楼面面积对比，全港各区合计。", "审批阶段", "实用楼面面积 (平方米)", "物业类别"],
+    bd_supply_history_chart: ["屋宇署 — 历史住房供应管道", "来自官方月报 PDF 档案的月度阶段汇总；单位数、项目／同意书宗数和面积不可直接互相比较。", "月份", "数值", "审批阶段"],
     hkma_applications_chart: ["香港金管局新批按揭申请宗数", "每月新批住宅按揭贷款申请宗数。", "月份", "申请宗数"],
     hkma_loan_amount_chart: ["香港金管局按揭贷款金额 (百万港元)", "已批出贷款总额、二手市场占比及提取贷款金额，按月。一手/预售楼花及转按明细见下方表格。", "月份", "百万港元", "类别"],
   },

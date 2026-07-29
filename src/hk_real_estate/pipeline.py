@@ -22,6 +22,7 @@ from .sources.srpe import fetch_srpe_project_documents, fetch_srpe_firsthand_sal
 from .sources.buildings_dept import fetch_buildings_dept_digests, fetch_buildings_dept_monthly_stats
 from .sources.hkma import fetch_hkma_residential_mortgage_survey
 from .sources.bd_projects import fetch_bd_project_lifecycle_events, fetch_bd_supply_leading_indicators
+from .sources.bd_history import fetch_bd_supply_pipeline_history
 from .dedup.transaction_dedup import deduplicate_agency_transactions
 from .storage import save_normalized_dataset, NORMALIZED_DIR
 
@@ -58,6 +59,7 @@ QUALITY_SPECS: Dict[str, Dict[str, Any]] = {
     "landreg_asp_series": {"kind": "measure", "required": ["date", "all_building_units_asp", "residential_units_asp"], "max_age_days": 400},
     "buildings_dept_monthly_stats": {"kind": "catalog", "required": ["date", "table_id", "numeric_values"]},
     "bd_supply_leading_indicators": {"kind": "measure", "required": ["date", "permit_stage", "region"], "max_age_days": 400},
+    "bd_supply_pipeline_history": {"kind": "measure", "required": ["date", "permit_stage", "property_category", "revision_status", "parser_confidence"], "max_age_days": 400},
     "hkma_residential_mortgage_survey": {"kind": "measure", "required": ["observation_date", "approved_loans_amount_mhkd"], "max_age_days": 400},
     "bd_project_lifecycle_events": {"kind": "catalog", "required": ["permit_stage", "site_address"]},
 }
@@ -80,7 +82,7 @@ def _quality_errors(dataset_name: str, df: pd.DataFrame) -> list[str]:
         if dates.isna().any():
             return [f"{date_col} contains invalid values"]
         duplicate_key = [date_col]
-        for candidate in ("index_type", "statistic_name", "table_id", "source_record_id", "dedup_transaction_id", "permit_stage", "region", "property_category", "comparison_type"):
+        for candidate in ("index_type", "statistic_name", "table_id", "source_record_id", "dedup_transaction_id", "permit_stage", "region", "property_category", "comparison_type", "revision_status", "source_url"):
             if candidate in df.columns:
                 duplicate_key.append(candidate)
         if df.duplicated(subset=duplicate_key).any():
@@ -252,6 +254,33 @@ def run_stage_2_pipeline(run_id: str | None = None, *, _raise_on_failure: bool =
         logger.exception("BD project-level ingestion failed")
         results["bd_project_lifecycle_events"] = _error_result(exc)
     return _finalize_group(run_id, "stage_2", results, _raise_on_failure)
+
+
+def run_bd_history_backfill(
+    run_id: str | None = None,
+    *,
+    start_year: int = 2005,
+    end_year: int | None = None,
+    _raise_on_failure: bool = True,
+) -> Dict[str, Any]:
+    """Run the explicit, archive-backed Md52--Md56 history backfill.
+
+    This runner is deliberately separate from routine ingestion because the
+    official PDF archive is large and historical parsing is not a daily feed.
+    """
+    run_id = run_id or str(uuid.uuid4())
+    results: Dict[str, Any] = {}
+    try:
+        logger.info("Backfilling Buildings Department Md52--Md56 history (%s-%s)...", start_year, end_year or "latest")
+        _record_many(
+            run_id,
+            results,
+            {"bd_supply_pipeline_history": fetch_bd_supply_pipeline_history(start_year=start_year, end_year=end_year)},
+        )
+    except Exception as exc:
+        logger.exception("Buildings Department historical backfill failed")
+        results["bd_supply_pipeline_history"] = _error_result(exc)
+    return _finalize_group(run_id, "bd_history_backfill", results, _raise_on_failure)
 
 
 def run_all_incomplete_pipelines(run_id: str | None = None, *, _raise_on_failure: bool = False) -> Dict[str, Any]:

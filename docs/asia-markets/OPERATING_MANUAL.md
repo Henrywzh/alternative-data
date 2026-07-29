@@ -1,0 +1,281 @@
+# Asia Markets Operating Manual
+
+This is the canonical operating manual for the Asia Markets research and
+dashboard project. Read it before changing files under `apps/asia-markets-dashboard/`
+or the related `src/hk_*` pipelines.
+
+## 1. Project purpose
+
+Asia Markets is a source-backed Hong Kong-first market-monitoring project. It
+combines research notes, normalized data pipelines, published artifacts and a
+non-Streamlit static/interactive dashboard hosted on Cloudflare Pages.
+
+The dashboard is not an investment-advice product. Do not add rankings,
+forecasts or recommendations unless the user explicitly asks for a separate
+research analysis.
+
+The current production dashboard is:
+
+- English: <https://asia-markets-dashboard.pages.dev/>
+- Chinese: <https://asia-markets-dashboard.pages.dev/zh/>
+- Data status: <https://asia-markets-dashboard.pages.dev/data-status/>
+- Chinese data status: <https://asia-markets-dashboard.pages.dev/zh/data-status/>
+
+This project is separate from any Streamlit app. The Cloudflare dashboard is
+the primary published surface unless the user explicitly says otherwise.
+
+## 2. Read first
+
+At the beginning of a task:
+
+1. Read this manual.
+2. Read `PROJECT_STATUS.md` and `DATA_CATALOG.md`.
+3. Inspect `apps/asia-markets-dashboard/sectors.json` before changing the
+   sector roster.
+4. Run `git status --short` and preserve existing user work. Do not reset,
+   discard or overwrite unrelated changes.
+
+The repository root `AGENTS.md` and `CLAUDE.md` point here for Codex,
+Antigravity and Claude-style agents. This manual is the source of truth;
+those files are only entry points and safety notes.
+
+## 2A. Sibling financial-data repository
+
+The canonical financial-data repository is the sibling directory:
+
+```text
+/Users/henrywzh/Desktop/Quant/financial-data
+```
+
+It owns the point-in-time financial database, currently the 174-security HKEX
+universe. Read `REPO_BRIDGE.md` here and
+`/Users/henrywzh/Desktop/Quant/financial-data/docs/ASIA_MARKETS_BRIDGE.md`
+before changing financial-data joins, ticker universes or dashboard financial
+coverage. The current database can be attached directly in SQL; do not create
+an untracked duplicate copy.
+
+The planned Asia finance universe includes Futu (`FUTU`), Tiger Brokers
+(`TIGR`), CITIC Securities (`6030.HK`), China Merchants Securities
+(`6099.HK`), CICC (`3908.HK`), GF Securities (`1776.HK`), CSC Financial
+(`6066.HK`), Guotai Haitong (`2611.HK`) and East Money (`300059.SZ`). These
+are planning entries, not yet dashboard data. Keep online brokers,
+traditional brokers, HKEX infrastructure and wealth/data platforms as separate
+categories.
+
+## 3. Dashboard architecture
+
+The production flow is:
+
+```text
+source/API/scraper
+  -> src/<sector>/ pipeline or existing processed data
+  -> apps/asia-markets-dashboard/scripts/build_hk_*_artifact.py
+  -> apps/asia-markets-dashboard/.generated/*-artifact.json
+  -> scripts/build-static-hub.mjs
+  -> scripts/package-dashboard.mjs
+  -> apps/asia-markets-dashboard/dist/
+  -> Cloudflare Pages
+```
+
+Important files:
+
+- `apps/asia-markets-dashboard/sectors.json`: single source of truth for live
+  and planned sectors.
+- `apps/asia-markets-dashboard/scripts/sectors.mjs`: derives artifact, route
+  and status paths from the roster.
+- `apps/asia-markets-dashboard/scripts/run-artifact-builders.mjs`: runs the
+  Python artifact builders.
+- `apps/asia-markets-dashboard/scripts/build-static-hub.mjs`: builds the hub
+  and data-status pages.
+- `apps/asia-markets-dashboard/scripts/package-dashboard.mjs`: packages the
+  English and Chinese sector artifacts into portable HTML.
+- `apps/asia-markets-dashboard/.generated/`: generated artifacts; inspect them
+  for values, row counts, freshness and chart wiring.
+- `apps/asia-markets-dashboard/dist/`: generated deploy output; do not hand-edit
+  source logic there.
+
+## 4. Current live sectors
+
+The live roster is defined in `sectors.json` and currently includes:
+
+- Hong Kong real estate
+- Hong Kong local consumer
+- Hong Kong utilities and infrastructure
+- Hong Kong transport and aviation
+- Hong Kong telecom
+- Hong Kong REITs
+- Hong Kong commercial aerospace
+- Hong Kong stablecoin and crypto
+
+Planned sectors are intentionally non-clickable research placeholders. Do not
+turn a planned theme into a live dashboard merely because a document exists.
+Require a real, validated dataset and a working artifact builder.
+
+## 5. Data rules
+
+Every dashboard measure must have:
+
+- a named source and source URL where available;
+- an explicit observation date or period when the source provides one;
+- a documented cadence: daily, weekly, monthly, quarterly, irregular or
+  snapshot;
+- a clear unit and definition;
+- a caveat when the data is partial, estimated, capped, provisional or only
+  available at build time.
+
+Do not infer a trend from a snapshot. A current-month cross-section is not a
+monthly time series and cannot support MoM or YoY without historical snapshots.
+
+Do not silently aggregate data to a month if doing so collapses distinct daily
+or weekly observations. Preserve the source grain, then format the axis
+separately.
+
+The current source-coverage table is generated at build time. `Live at build
+time` / `构建时实时` means the fetch returned usable rows during the build; it
+does not mean the published page has a live connection. If a source has an
+observation date, prefer exposing that date and a calculated age instead.
+
+## 6. Known data distinctions
+
+### Buildings Department
+
+Do not merge these concepts:
+
+- `Md52`–`Md56`: project-level lifecycle files for demolition consents, Plans
+  Approved, Consent to Commence, commencement notices and Occupation Permits.
+  Current dashboard aggregation is a latest-snapshot supply pipeline. `Md52`
+  records do not publish domestic units or usable floor area, so they must be
+  treated as project/consent counts rather than zero-unit projects.
+- `bd_monthly_stats`: `Md11`–`Md17` section-1 summary tables. The current parser
+  retains historical rows but stores numeric cells as an unlabelled array, so
+  the column meaning is not safe for arbitrary MoM/YoY analysis.
+
+The source fetch also archives the current `Md21`–`Md25`, `Md31`, `Md41` and
+`Md51`–`Md56` XLS files as raw snapshots. Archival coverage is not equivalent
+to a normalized data contract; only `Md11`–`Md17` summaries and `Md52`–`Md56`
+project-lifecycle records are currently structured for analysis.
+
+Proper historical MoM/YoY for the permit-stage supply charts requires a
+historical backfill and semantic parsing of Md52–Md56 by month.
+
+### Transactions
+
+The agency transaction pulse is intentionally capped for display. A display
+cap is not the same as source-history availability. Always distinguish:
+
+- total rows fetched;
+- rows retained in the artifact;
+- rows displayed in the table/chart.
+
+### Store footprints
+
+Store-footprint data is a snapshot unless enough dated observations exist for a
+trend. Most brands currently have only one or two snapshots. Do not label it a
+trend prematurely.
+
+### Planned or documentation-only themes
+
+Stablecoin/crypto and commercial aerospace may have live monitoring artifacts,
+but documentation-only claims must not be presented as validated live measures.
+Consumer Council price-watch, stablecoin/crypto gaps or aerospace gaps remain
+planned when the source is unavailable or the dataset is not real.
+
+## 7. Chart and UI rules
+
+- Use a real interactive chart/runtime when the portable renderer supports it;
+  do not replace a time series with a screenshot or an unexplained static image.
+- Every temporal chart must show month and year in visible ticks. Monthly
+  labels should look like `Jan 2024`; daily/weekly charts must retain distinct
+  observations while still exposing the year.
+- A chart title should be ordinary selectable text and have a visible `Copy
+  title` / `复制标题` control when the portable runtime is used.
+- Keep source attribution accessible but do not make users go through a chart
+  menu just to identify a title or table.
+- English and Chinese pages must both be updated. Chinese translation should
+  cover dashboard titles, descriptions, table headings, statuses, caveats and
+  controlled category labels; proper names and technical acronyms may remain
+  untranslated where that improves accuracy.
+- Do not hide a caveat that changes how a chart should be interpreted.
+
+## 8. Standard development workflow
+
+For a data or dashboard change:
+
+1. Inspect the source, builder, artifact and status output involved.
+2. Make the smallest source-owned change with `apply_patch`.
+3. Run focused tests first.
+4. Rebuild artifacts with the repository Python runtime when needed:
+
+   ```bash
+   cd apps/asia-markets-dashboard
+   PYTHON_BIN=/Users/henrywzh/.pyenv/shims/python3 npm run refresh
+   ```
+
+5. Build the hub and package the sector pages:
+
+   ```bash
+   node scripts/build-static-hub.mjs
+   node scripts/package-dashboard.mjs
+   ```
+
+6. Spot-check real values and chart/table counts in `.generated/*.json` and
+   `dist/`.
+7. Run the relevant tests. For dashboard wiring, start with:
+
+   ```bash
+   cd /Users/henrywzh/Desktop/Quant/alternative-data
+   pytest -q tests/test_asia_dashboard_artifacts.py tests/test_asia_markets_wiring.py
+   ```
+
+8. Use a real browser to check at least one English page, one Chinese page,
+   representative long and short charts, mobile layout, visible dates,
+   copy-title controls and console errors.
+9. Only deploy when the user requests publishing or the task clearly includes
+   deployment.
+
+The one-command build is:
+
+```bash
+cd apps/asia-markets-dashboard
+PYTHON_BIN=/Users/henrywzh/.pyenv/shims/python3 npm run build
+```
+
+It may perform network fetches and update generated data. Do not run it merely
+to inspect a source file when a focused artifact or test is enough.
+
+## 9. Deployment rules
+
+Before a Cloudflare Pages deploy, verify authentication:
+
+```bash
+npx wrangler whoami
+```
+
+The production command is:
+
+```bash
+npx wrangler pages deploy dist \
+  --project-name=asia-markets-dashboard \
+  --branch=production \
+  --commit-dirty=true
+```
+
+After deployment, verify the canonical Pages URL, not only the unique
+deployment URL. Check representative English and Chinese routes, chart labels,
+copy controls, source tables and browser console logs.
+
+Do not commit or push unless explicitly requested. Never delete `.config`.
+
+## 10. Updating this manual
+
+Update this manual when any of the following changes:
+
+- a sector becomes live or planned;
+- a builder, artifact path or deployment command changes;
+- a source changes grain, cadence, freshness semantics or coverage;
+- a known limitation is fixed or discovered;
+- the chart renderer or browser verification rules change.
+
+Update `DATA_CATALOG.md` for source and dataset facts. Update
+`PROJECT_STATUS.md` for current work and open decisions. Avoid duplicating
+volatile status details throughout the manual.

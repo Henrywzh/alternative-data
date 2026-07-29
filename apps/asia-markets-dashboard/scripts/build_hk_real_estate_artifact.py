@@ -239,13 +239,26 @@ PUBLIC_SOURCES = {
     },
     "bd_supply": {
         "id": "bd_supply",
-        "label": "Buildings Department Project Lifecycle (Plans/Consent/OP)",
+        "label": "Buildings Department Project Lifecycle (Demolition to Occupation)",
         "href": "https://www.bd.gov.hk/en/whats-new/monthly-digests/index.html",
         "query": {
             "engine": "official XLS tables",
-            "url": "https://www.bd.gov.hk/doc/en/whats-new/monthly-digests/Md53.xls",
+            "url": "https://www.bd.gov.hk/en/whats-new/monthly-digests/index.html",
             "language": "XLS",
-            "description": "Project-level Plans Approved / Consent to Commence Works / Occupation Permits Issued tables, aggregated into a current-month supply-pipeline snapshot by stage, region, and property category.",
+            "description": "Project-level Md52-Md56 files: demolition consents, plans approved, consent to commence, commencement notices, and occupation permits. Aggregated as a current-month snapshot by stage, region, and property category; Md52 publishes project counts but not units or floor area.",
+            "tables_used": ["Md52.xls", "Md53.xls", "Md54.xls", "Md55.xls", "Md56.xls"],
+        },
+    },
+    "bd_supply_history": {
+        "id": "bd_supply_history",
+        "label": "Buildings Department Historical Supply Pipeline",
+        "href": "https://www.bd.gov.hk/en/whats-new/monthly-digests/index.html",
+        "query": {
+            "engine": "official monthly-digest PDF archive",
+            "url": "https://www.bd.gov.hk/en/whats-new/monthly-digests/index.html",
+            "language": "PDF",
+            "description": "Historical monthly stage aggregates derived from Section 1 tables in the official BD Monthly Digest PDF archive. This is not project-level lifecycle linkage.",
+            "tables_used": ["Table 1.2", "Table 1.3", "Table 1.4", "Table 1.5", "Table 1.6", "Table 1.7"],
         },
     },
     "source_registry": {
@@ -454,6 +467,7 @@ def build_artifact(
     raw_landreg: tuple[pd.DataFrame, pd.DataFrame] | None = None,
     raw_bd_monthly_stats: pd.DataFrame | None = None,
     raw_bd_supply: pd.DataFrame | None = None,
+    raw_bd_supply_history: pd.DataFrame | None = None,
     raw_unified_tx: pd.DataFrame | None = None,
     *,
     now: datetime | None = None,
@@ -694,11 +708,9 @@ def build_artifact(
     bd_supply_rows: list[dict[str, Any]] = []
     bd_supply_table_rows: list[dict[str, Any]] = []
     if not df_bd_supply.empty and {"permit_stage", "region", "property_category", "total_domestic_units"}.issubset(df_bd_supply.columns):
-        # Non-domestic rows always carry total_domestic_units == 0 by
-        # definition, which would otherwise draw a second, always-zero bar
-        # alongside the real Domestic figure for the same permit_stage/region.
-        # Restrict the chart to Domestic (the actual housing-supply signal);
-        # Non-domestic stays visible in the detail table below.
+        # Restrict this units chart to Domestic records. Stages/records that
+        # do not publish unit counts (notably Md52 demolition consents) carry
+        # null rather than zero and are therefore not shown as false zero bars.
         domestic_only = df_bd_supply[df_bd_supply["property_category"] == "Domestic"]
         for _, r in domestic_only.iterrows():
             if pd.notna(r.get("total_domestic_units")):
@@ -736,6 +748,36 @@ def build_artifact(
                         "value": float(r["total_usable_floor_area_sqm"]),
                     }
                 )
+
+    # Archive-backed monthly stage aggregates.  These are deliberately a
+    # separate time series from the current XLS project snapshot above: they
+    # preserve the official Section-1 aggregate grain and make no claim that
+    # a project was linked across Md52--Md56 stages.
+    df_bd_supply_history = raw_bd_supply_history if raw_bd_supply_history is not None else pd.DataFrame()
+    bd_supply_history_rows: list[dict[str, Any]] = []
+    if not df_bd_supply_history.empty and {"observation_month", "permit_stage"}.issubset(df_bd_supply_history.columns):
+        visible_history = df_bd_supply_history.copy()
+        if "parser_confidence" in visible_history.columns:
+            visible_history = visible_history[visible_history["parser_confidence"] == "HIGH"]
+        if "revision_status" in visible_history.columns:
+            visible_history = visible_history[visible_history["revision_status"] == "as_published"]
+        for _, r in visible_history.iterrows():
+            date = str(r["observation_month"])[:7]
+            for column, metric in (
+                ("total_domestic_units", "Domestic units"),
+                ("total_projects_count", "Project / consent count"),
+                ("total_domestic_ufa_sqm", "Domestic usable floor area (sqm)"),
+            ):
+                if column in visible_history.columns and pd.notna(r.get(column)):
+                    bd_supply_history_rows.append(
+                        {
+                            "date": date,
+                            "permit_stage": r.get("permit_stage"),
+                            "metric": metric,
+                            "value": float(r[column]),
+                        }
+                    )
+    bd_supply_history_rows.sort(key=lambda row: (row["metric"], row["permit_stage"], row["date"]))
 
     # Deduplicated cross-agency transaction pulse (28Hse + Midland + Centaline).
     # Keep the artifact builder pure: live acquisition belongs in
@@ -812,6 +854,7 @@ def build_artifact(
         ("Agency transactions", "Centaline / Midland / 28Hse transactions", transaction_pulse_rows, "Deduplicated agency transaction feeds"),
         ("Land Registry", "Monthly facts + ASP series", landreg_asp_rows, "Land Registry Monthly Statistics (JSON)"),
         ("Buildings Department", "Monthly digest + project lifecycle", bd_monthly_stats_rows + bd_supply_table_rows, "Buildings Department Monthly Digest / Project Lifecycle"),
+        ("Buildings Department history", "Md52-Md56 stage aggregates", bd_supply_history_rows, "Buildings Department Monthly Digest PDF archive (Section 1 aggregate tables)"),
     ):
         record_count = len(rows_or_frame)
         if not record_count:
@@ -875,6 +918,7 @@ def build_artifact(
         "bd_supply_pipeline": bd_supply_rows,
         "bd_supply_detail": bd_supply_table_rows,
         "bd_supply_floor_area": bd_supply_floor_area_rows,
+        "bd_supply_pipeline_history": bd_supply_history_rows,
         "agency_transactions_pulse": transaction_pulse_rows,
         "midland_top_estates": midland_estate_rows,
         "source_health": health,
@@ -1222,6 +1266,27 @@ def build_artifact(
             }
         )
 
+    if bd_supply_history_rows:
+        charts.append(
+            {
+                "id": "bd_supply_history_chart",
+                "title": "Buildings Department — Historical Supply Pipeline",
+                "subtitle": "Official monthly stage aggregates from the PDF archive; use the metric selector to avoid comparing units, counts, and floor area directly.",
+                "type": "line",
+                "intent": "trend",
+                "dataset": "bd_supply_pipeline_history",
+                "sourceId": "bd_supply_history",
+                "encodings": {
+                    "x": {"field": "date", "type": "temporal", "label": "Month"},
+                    "y": {"field": "value", "type": "quantitative", "label": "Value"},
+                    "color": {"field": "permit_stage", "type": "nominal", "label": "Permit stage"},
+                    "facet": {"field": "metric", "type": "nominal", "label": "Metric"},
+                },
+                "valueFormat": "number",
+                "layout": "full",
+            }
+        )
+
     tables = [
         {
             "id": "source_health_table",
@@ -1438,6 +1503,8 @@ def build_artifact(
         blocks.append({"id": "bd_supply_pipeline_chart_block", "type": "chart", "chartId": "bd_supply_pipeline_chart"})
     if bd_supply_floor_area_rows:
         blocks.append({"id": "bd_supply_floor_area_chart_block", "type": "chart", "chartId": "bd_supply_floor_area_chart"})
+    if bd_supply_history_rows:
+        blocks.append({"id": "bd_supply_history_chart_block", "type": "chart", "chartId": "bd_supply_history_chart"})
     if bd_supply_table_rows:
         blocks.append({"id": "bd_supply_detail_block", "type": "table", "tableId": "bd_supply_detail_table"})
     if new_project_rows:
@@ -1559,6 +1626,7 @@ def fetch_live_frames() -> dict[str, pd.DataFrame]:
         "rvd_rent": rvd_rent,
         "midland_estates": estates,
         "unified_tx": unified_tx,
+        "bd_supply_history": load_latest_normalized("bd_supply_pipeline_history"),
     }
 
 
@@ -1570,7 +1638,8 @@ def main() -> int:
 
     live_frames = fetch_live_frames()
     unified_tx = live_frames.pop("unified_tx", pd.DataFrame())
-    artifact, status = build_artifact(live_frames, raw_unified_tx=unified_tx)
+    bd_supply_history = live_frames.pop("bd_supply_history", pd.DataFrame())
+    artifact, status = build_artifact(live_frames, raw_unified_tx=unified_tx, raw_bd_supply_history=bd_supply_history)
     _atomic_json(args.output, artifact)
     _atomic_json(args.status_output, status)
     print(

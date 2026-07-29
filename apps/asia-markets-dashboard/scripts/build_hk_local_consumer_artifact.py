@@ -37,6 +37,7 @@ from src.hk_local_consumer.sources.immigration_flow import fetch_immigration_flo
 from src.hk_local_consumer.sources.weather_demand_drivers import fetch_weather_demand_drivers
 from src.hk_local_consumer.sources.consumer_council_oilprice import fetch_consumer_council_oilprice
 from src.hk_local_consumer.sources.consumer_council_complaints import fetch_consumer_council_complaints
+from src.hk_local_consumer.sources.consumer_council_pricewatch import load_historical_pricewatch_summary
 from src.hk_local_consumer.config import NORMALIZED_DIR
 
 
@@ -232,6 +233,17 @@ AFCD_CATEGORY_SHORT_LABELS = {
     "Livestock / Poultry": "Meat/Poultry",
     "Marine fish": "Marine",
     "Vegetables": "Veg",
+    "consumer_council_pricewatch": {
+        "id": "consumer_council_pricewatch",
+        "label": "Consumer Council Online Price Watch",
+        "href": "https://online-price-watch.consumer.org.hk/opw/",
+        "query": {
+            "engine": "official Open Data CSV & Historical Archive",
+            "url": "https://online-price-watch.consumer.org.hk/opw/opendata/pricewatch_en.csv",
+            "language": "CSV",
+            "description": "Daily supermarket item prices and promotion offers across HK major retail chains (2020-2026).",
+        },
+    },
 }
 
 
@@ -239,10 +251,6 @@ def _afcd_category_short_label(category: str) -> str:
     return AFCD_CATEGORY_SHORT_LABELS.get(category, category[:10])
 
 
-# Consumer Council's configured endpoint was later found to be
-# guessed/incorrect (see src/hk_local_consumer/config.py comments) -- it
-# returns empty, not fake data, and is surfaced here as Planned rather than
-# fabricated.
 # The classification variable's top-level breakdown (ccg "1" in CenStatD's
 # table_620-67002_lang.json); the finer ~14-row "1.1" breakdown is fetched
 # but not charted, to keep the comparison view readable.
@@ -257,18 +265,7 @@ TOP_LEVEL_RETAIL_CATEGORIES = [
     "Other consumer goods",
 ]
 
-PLANNED_COVERAGE = [
-    {
-        "source": "HK Consumer Council",
-        "dataset": "Online Price Watch",
-        "type": "Measure",
-        "status": "Planned",
-        "latest_observation": "—",
-        "records": 0,
-        "freshness": "Endpoint returns no data",
-        "notes": "Endpoint requires re-verification before going live.",
-    },
-]
+PLANNED_COVERAGE = []
 
 
 def _records_json_safe(frame: pd.DataFrame) -> list[dict[str, Any]]:
