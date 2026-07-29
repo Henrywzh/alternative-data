@@ -788,7 +788,19 @@ def build_artifact(
                     )
     bd_supply_history_rows.sort(key=lambda row: (row["metric"], row["permit_stage"], row["date"]))
     bd_supply_history_unit_rows = [row for row in bd_supply_history_rows if row["metric"] == "Domestic units"]
-    bd_supply_history_count_rows = [row for row in bd_supply_history_rows if row["metric"] == "Project / consent count"]
+    # Capped at 3 series, not the 4 official count-bearing stages: the
+    # portable-chart plugin's mobile-viewport verification fails on this
+    # exact chart with 4 line series (empirically bisected, matching the
+    # same 3-pass/4-fail threshold found for hkma_loan_amount_chart) and
+    # passes again once it is 3. Occupation-permit counts are the stage
+    # already covered (in units) by bd_supply_history_units_chart, so they
+    # are the one dropped here rather than demolition/plans/consent, which
+    # have no other chart representation.
+    bd_supply_history_count_rows = [
+        row
+        for row in bd_supply_history_rows
+        if row["metric"] == "Project / consent count" and row["permit_stage"] != "Occupation Permits (OP) Issued"
+    ]
 
     # Deduplicated cross-agency transaction pulse (28Hse + Midland + Centaline).
     # Keep the artifact builder pure: live acquisition belongs in
@@ -1303,7 +1315,7 @@ def build_artifact(
             {
                 "id": "bd_supply_history_counts_chart",
                 "title": "Buildings Department — Historical Permit / Consent Counts",
-                "subtitle": "Monthly project or consent counts where the official summary table publishes them; Md55 has no corresponding count field.",
+                "subtitle": "Monthly demolition, plans-approved and consent-to-commence counts; Md55 has no corresponding count field and occupation-permit counts are covered by the units chart above.",
                 "type": "line",
                 "intent": "trend",
                 "dataset": "bd_supply_pipeline_history_counts",
