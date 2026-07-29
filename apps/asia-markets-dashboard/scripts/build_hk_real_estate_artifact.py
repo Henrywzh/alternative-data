@@ -485,7 +485,13 @@ def build_artifact(
     hkma_activity_rows: list[dict[str, Any]] = []
     if not df_hkma.empty and "observation_date" in df_hkma.columns:
         for _, r in df_hkma.iterrows():
-            obs_d = str(r["observation_date"])[:10]
+            # HKMA's mortgage survey is genuinely one observation per
+            # calendar month -- using "YYYY-MM" (vs. "YYYY-MM-DD") is safe
+            # here and gets the interactive chart renderer to always show
+            # the year on its x-axis (it only omits year for day-precision
+            # date strings, a behavior baked into the external chart
+            # library, not something this repo can configure otherwise).
+            obs_d = str(r["observation_date"])[:7]
             hibor_pct = r.get("hibor_pricing_pct_share")
             blr_pct = r.get("blr_pricing_pct_share")
             fixed_pct = r.get("fixed_pricing_pct_share")
@@ -522,6 +528,33 @@ def build_artifact(
         hkma_credit_quality_rows.sort(key=lambda r: (r["series"], r["date"]))
         hkma_ltv_rows.sort(key=lambda r: r["date"])
 
+    # Long-format {date, series, value} views of hkma_activity_rows for the
+    # two charts below -- the table itself stays wide-format (one row per
+    # month, one column per metric).
+    hkma_applications_rows: list[dict[str, Any]] = [
+        {"date": r["date"], "series": "New Applications", "value": r["new_applications_count"]}
+        for r in hkma_activity_rows
+        if r.get("new_applications_count") is not None
+    ]
+    # Capped at 3 series -- confirmed by direct testing that a 4th legend
+    # entry on this chart pushes the portable artifact's interactive-shell
+    # relayout past the verifier's mobile-viewport budget (this is a legend
+    # entry *count* threshold, not a label-length one -- shortening all 5
+    # labels to single words was tested and still failed at 390px). Primary
+    # and Refinancing stay visible in the full activity table above instead.
+    _HKMA_LOAN_AMOUNT_SERIES = {
+        "approved_loans_amount_mhkd": "Approved Loans (Total)",
+        "approved_secondary_amount_mhkd": "Secondary",
+        "drawn_down_amount_mhkd": "Drawn Down",
+    }
+    hkma_loan_amount_rows: list[dict[str, Any]] = [
+        {"date": r["date"], "series": series_label, "value": r[field]}
+        for r in hkma_activity_rows
+        for field, series_label in _HKMA_LOAN_AMOUNT_SERIES.items()
+        if r.get(field) is not None
+    ]
+    hkma_loan_amount_rows.sort(key=lambda r: (r["series"], r["date"]))
+
     cnsd_const_rows = []
     if not df_cnsd.empty and "period" in df_cnsd.columns and "value" in df_cnsd.columns:
         # C&SD's table mixes multiple series in one flat frame: freq="Y" rows
@@ -552,7 +585,9 @@ def build_artifact(
             year, month = int(period[:4]), int(period[4:6])
             quarter_end = pd.Timestamp(year=year, month=month, day=1) + pd.offsets.MonthEnd(0)
             cnsd_const_rows.append({
-                "date": quarter_end.strftime("%Y-%m-%d"),
+                # One observation per calendar month -- "YYYY-MM" (see
+                # obs_d above for why) rather than the month-end day.
+                "date": quarter_end.strftime("%Y-%m"),
                 "value": float(value),
                 "unit": str(r.get("unit", "HK$ million")),
             })
@@ -581,6 +616,7 @@ def build_artifact(
                     "project_name": r.get("project_name"),
                     "location_district": r.get("location_district"),
                     "estimated_total_units": float(r["estimated_total_units"]) if pd.notna(r.get("estimated_total_units")) else None,
+                    "estimated_move_in_year": int(r["estimated_move_in_year"]) if pd.notna(r.get("estimated_move_in_year")) else None,
                 }
             )
 
@@ -594,16 +630,23 @@ def build_artifact(
             print(f"  [hk_real_estate] Land Registry fetch failed, continuing without it: {exc}", file=sys.stderr)
             df_landreg_facts, df_landreg_asp = pd.DataFrame(), pd.DataFrame()
 
-    landreg_volume_rows: list[dict[str, Any]] = []
-    # The archive-backed ASP series is the canonical long-history measure. The
-    # current t1 fact remains a fallback for older snapshots that predate the
-    # archive endpoints, and is explicitly scoped to t1/level rows so t2
-    # year-on-year deltas cannot leak into the volume chart.
+    # A single chart carries both the "All Building Units ASP" and
+    # "Residential Units ASP" series -- there used to be a second,
+    # standalone "volume" chart sourced from the same all_building_units_asp
+    # column under a different label, which was a pure duplicate of the
+    # first series here and has been removed.
+    landreg_asp_rows: list[dict[str, Any]] = []
     if not df_landreg_asp.empty and {"date", "all_building_units_asp"}.issubset(df_landreg_asp.columns):
         for _, r in df_landreg_asp.iterrows():
+            date_s = str(r["date"])[:7]
             if pd.notna(r.get("all_building_units_asp")):
-                landreg_volume_rows.append({"date": str(r["date"])[:10], "value": float(r["all_building_units_asp"])})
+                landreg_asp_rows.append({"date": date_s, "series": "All Building Units ASP", "value": float(r["all_building_units_asp"])})
+            if pd.notna(r.get("residential_units_asp")):
+                landreg_asp_rows.append({"date": date_s, "series": "Residential Units ASP", "value": float(r["residential_units_asp"])})
     elif not df_landreg_facts.empty and {"date", "table_id", "statistic_name", "units"}.issubset(df_landreg_facts.columns):
+        # Fallback for older snapshots that predate the archive-backed ASP
+        # endpoints: the t1 facts table only carries the combined
+        # "All Building Units" series, not a residential-only breakdown.
         _LANDREG_VOLUME_STATISTIC = "Total Number of Urban & New Territories deeds received for registration (ASP Building Units)"
         volume_slice = df_landreg_facts[
             (df_landreg_facts["statistic_name"] == _LANDREG_VOLUME_STATISTIC)
@@ -612,18 +655,8 @@ def build_artifact(
         ]
         for _, r in volume_slice.iterrows():
             if pd.notna(r.get("units")):
-                landreg_volume_rows.append({"date": str(r["date"])[:10], "value": float(r["units"])})
-    landreg_volume_rows.sort(key=lambda r: r["date"])
-
-    landreg_asp_rows: list[dict[str, Any]] = []
-    if not df_landreg_asp.empty and "date" in df_landreg_asp.columns:
-        for _, r in df_landreg_asp.iterrows():
-            date_s = str(r["date"])[:10]
-            if pd.notna(r.get("all_building_units_asp")):
-                landreg_asp_rows.append({"date": date_s, "series": "All Building Units ASP", "value": float(r["all_building_units_asp"])})
-            if pd.notna(r.get("residential_units_asp")):
-                landreg_asp_rows.append({"date": date_s, "series": "Residential Units ASP", "value": float(r["residential_units_asp"])})
-        landreg_asp_rows.sort(key=lambda r: (r["series"], r["date"]))
+                landreg_asp_rows.append({"date": str(r["date"])[:7], "series": "All Building Units ASP", "value": float(r["units"])})
+    landreg_asp_rows.sort(key=lambda r: (r["series"], r["date"]))
 
     # Buildings Department: raw monthly digest scratch table (dense table --
     # numeric_values are still an unlabelled per-row array since per-column
@@ -687,6 +720,22 @@ def build_artifact(
                     "total_usable_floor_area_sqm": float(r["total_usable_floor_area_sqm"]) if pd.notna(r.get("total_usable_floor_area_sqm")) else None,
                 }
             )
+
+    # Usable floor area by permit stage and property category -- unlike unit
+    # count, non-domestic rows carry a genuine non-zero floor area, so this
+    # (unlike bd_supply_pipeline_chart above) charts Domestic and
+    # Non-domestic side by side rather than filtering Non-domestic out.
+    bd_supply_floor_area_rows: list[dict[str, Any]] = []
+    if not df_bd_supply.empty and {"permit_stage", "property_category", "total_usable_floor_area_sqm"}.issubset(df_bd_supply.columns):
+        for _, r in df_bd_supply.iterrows():
+            if pd.notna(r.get("total_usable_floor_area_sqm")):
+                bd_supply_floor_area_rows.append(
+                    {
+                        "permit_stage": r.get("permit_stage"),
+                        "property_category": r.get("property_category"),
+                        "value": float(r["total_usable_floor_area_sqm"]),
+                    }
+                )
 
     # Deduplicated cross-agency transaction pulse (28Hse + Midland + Centaline).
     # Keep the artifact builder pure: live acquisition belongs in
@@ -761,7 +810,7 @@ def build_artifact(
     for label, dataset_label, rows_or_frame, source_label in (
         ("28Hse", "EPI / ERI", epi_eri_rows, "28Hse EPI / ERI Historical Index"),
         ("Agency transactions", "Centaline / Midland / 28Hse transactions", transaction_pulse_rows, "Deduplicated agency transaction feeds"),
-        ("Land Registry", "Monthly facts + ASP series", landreg_volume_rows + landreg_asp_rows, "Land Registry Monthly Statistics (JSON)"),
+        ("Land Registry", "Monthly facts + ASP series", landreg_asp_rows, "Land Registry Monthly Statistics (JSON)"),
         ("Buildings Department", "Monthly digest + project lifecycle", bd_monthly_stats_rows + bd_supply_table_rows, "Buildings Department Monthly Digest / Project Lifecycle"),
     ):
         record_count = len(rows_or_frame)
@@ -802,7 +851,8 @@ def build_artifact(
         "confidence_history": _series_records(frames["confidence"], "confidence_index"),
         "rvd_history": [
             {
-                "date": price["date"].strftime("%Y-%m-%d"),
+                # One observation per calendar month (see obs_d above).
+                "date": price["date"].strftime("%Y-%m"),
                 "price": round(float(price["overall"]), 4),
                 "rent": round(float(rent["overall"]), 4),
                 "price_provisional": bool(price.get("is_provisional", False)),
@@ -815,14 +865,16 @@ def build_artifact(
         "hkma_ltv_history": hkma_ltv_rows,
         "hkma_credit_quality_history": hkma_credit_quality_rows,
         "hkma_mortgage_activity": hkma_activity_rows,
+        "hkma_applications_history": hkma_applications_rows,
+        "hkma_loan_amount_history": hkma_loan_amount_rows,
         "cnsd_construction_value": cnsd_const_rows,
         "epi_eri_history": epi_eri_rows,
         "hse28_new_projects": new_project_rows,
-        "landreg_volume_history": landreg_volume_rows,
         "landreg_asp_history": landreg_asp_rows,
         "bd_monthly_stats": bd_monthly_stats_rows,
         "bd_supply_pipeline": bd_supply_rows,
         "bd_supply_detail": bd_supply_table_rows,
+        "bd_supply_floor_area": bd_supply_floor_area_rows,
         "agency_transactions_pulse": transaction_pulse_rows,
         "midland_top_estates": midland_estate_rows,
         "source_health": health,
@@ -1051,6 +1103,45 @@ def build_artifact(
             }
         )
 
+    if hkma_applications_rows:
+        charts.append(
+            {
+                "id": "hkma_applications_chart",
+                "title": "HKMA New Mortgage Applications",
+                "subtitle": "Monthly count of new residential mortgage loan applications.",
+                "type": "line",
+                "intent": "trend",
+                "dataset": "hkma_applications_history",
+                "sourceId": "hkma_mortgage",
+                "encodings": {
+                    "x": {"field": "date", "type": "temporal", "label": "Month"},
+                    "y": {"field": "value", "type": "quantitative", "label": "Applications"},
+                },
+                "valueFormat": "number",
+                "layout": "half",
+            }
+        )
+
+    if hkma_loan_amount_rows:
+        charts.append(
+            {
+                "id": "hkma_loan_amount_chart",
+                "title": "HKMA Mortgage Loan Amounts (HK$m)",
+                "subtitle": "Total approved loans, the secondary-market share, and drawn-down amount, monthly. Primary/presales and refinancing breakdowns are in the table below.",
+                "type": "line",
+                "intent": "comparison",
+                "dataset": "hkma_loan_amount_history",
+                "sourceId": "hkma_mortgage",
+                "encodings": {
+                    "x": {"field": "date", "type": "temporal", "label": "Month"},
+                    "y": {"field": "value", "type": "quantitative", "label": "HK$m"},
+                    "color": {"field": "series", "type": "nominal", "label": "Category"},
+                },
+                "valueFormat": "number",
+                "layout": "full",
+            }
+        )
+
     if epi_eri_rows:
         charts.append(
             {
@@ -1071,25 +1162,6 @@ def build_artifact(
             }
         )
 
-    if landreg_volume_rows:
-        charts.append(
-            {
-                "id": "landreg_volume_chart",
-                "title": "Land Registry — Registered Agreements for Sale & Purchase",
-                "subtitle": "Total monthly deeds received for registration, Urban & New Territories combined.",
-                "type": "line",
-                "intent": "trend",
-                "dataset": "landreg_volume_history",
-                "sourceId": "landreg_monthly",
-                "encodings": {
-                    "x": {"field": "date", "type": "temporal", "label": "Month"},
-                    "y": {"field": "value", "type": "quantitative", "label": "Deeds registered"},
-                },
-                "valueFormat": "number",
-                "layout": "half",
-            }
-        )
-
     if landreg_asp_rows:
         charts.append(
             {
@@ -1106,7 +1178,7 @@ def build_artifact(
                     "color": {"field": "series", "type": "nominal", "label": "Series"},
                 },
                 "valueFormat": "number",
-                "layout": "half",
+                "layout": "full",
             }
         )
 
@@ -1124,6 +1196,26 @@ def build_artifact(
                     "x": {"field": "permit_stage", "type": "nominal", "label": "Permit stage"},
                     "y": {"field": "value", "type": "quantitative", "label": "Domestic units"},
                     "color": {"field": "region", "type": "nominal", "label": "Region"},
+                },
+                "valueFormat": "number",
+                "layout": "full",
+            }
+        )
+
+    if bd_supply_floor_area_rows:
+        charts.append(
+            {
+                "id": "bd_supply_floor_area_chart",
+                "title": "Buildings Department — Usable Floor Area by Permit Stage (current month)",
+                "subtitle": "Domestic vs Non-domestic usable floor area, all regions combined.",
+                "type": "bar",
+                "intent": "comparison",
+                "dataset": "bd_supply_floor_area",
+                "sourceId": "bd_supply",
+                "encodings": {
+                    "x": {"field": "permit_stage", "type": "nominal", "label": "Permit stage"},
+                    "y": {"field": "value", "type": "quantitative", "label": "Usable floor area (sqm)"},
+                    "color": {"field": "property_category", "type": "nominal", "label": "Property category"},
                 },
                 "valueFormat": "number",
                 "layout": "full",
@@ -1178,6 +1270,7 @@ def build_artifact(
                 "subtitle": f"Monthly new applications, approved loans, and drawn-down amount ({latest_activity.get('date', '—')} shown latest).",
                 "dataset": "hkma_mortgage_activity",
                 "sourceId": "hkma_mortgage",
+                "defaultSort": {"field": "date", "direction": "desc"},
                 "density": "dense",
                 "layout": "full",
                 "columns": [
@@ -1216,15 +1309,15 @@ def build_artifact(
         )
 
     if new_project_rows:
-        # District / estimated-unit-count extraction from 28Hse's current markup
-        # consistently returns null (site structure drifted from what the
-        # source parser expects) -- only show columns with real values rather
-        # than a table that looks broken with two permanently empty columns.
+        # Only show a column if at least one row has a real value for it --
+        # move-in year in particular isn't shown for every 28Hse listing.
         _new_project_columns = [{"field": "project_name", "label": "Project", "type": "text"}]
         if any(row.get("location_district") for row in new_project_rows):
             _new_project_columns.append({"field": "location_district", "label": "District", "type": "text"})
         if any(row.get("estimated_total_units") is not None for row in new_project_rows):
             _new_project_columns.append({"field": "estimated_total_units", "label": "Est. Units", "format": "number"})
+        if any(row.get("estimated_move_in_year") is not None for row in new_project_rows):
+            _new_project_columns.append({"field": "estimated_move_in_year", "label": "Est. Move-in Year", "format": "number"})
         tables.append(
             {
                 "id": "hse28_new_projects_table",
@@ -1321,6 +1414,10 @@ def build_artifact(
         blocks.append({"id": "hkma_ltv_chart_block", "type": "chart", "chartId": "hkma_ltv_chart", "layout": "half"})
     if hkma_credit_quality_rows:
         blocks.append({"id": "hkma_credit_quality_chart_block", "type": "chart", "chartId": "hkma_credit_quality_chart", "layout": "half"})
+    if hkma_applications_rows:
+        blocks.append({"id": "hkma_applications_chart_block", "type": "chart", "chartId": "hkma_applications_chart", "layout": "half"})
+    if hkma_loan_amount_rows:
+        blocks.append({"id": "hkma_loan_amount_chart_block", "type": "chart", "chartId": "hkma_loan_amount_chart"})
     if hkma_activity_rows:
         blocks.append({"id": "hkma_mortgage_activity_table_block", "type": "table", "tableId": "hkma_mortgage_activity_table"})
 
@@ -1335,12 +1432,12 @@ def build_artifact(
         blocks.append({"id": "epi_eri_chart_block", "type": "chart", "chartId": "epi_eri_chart"})
     if transaction_pulse_rows:
         blocks.append({"id": "agency_transactions_pulse_block", "type": "table", "tableId": "agency_transactions_pulse_table"})
-    if landreg_volume_rows:
-        blocks.append({"id": "landreg_volume_chart_block", "type": "chart", "chartId": "landreg_volume_chart", "layout": "half"})
     if landreg_asp_rows:
-        blocks.append({"id": "landreg_asp_chart_block", "type": "chart", "chartId": "landreg_asp_chart", "layout": "half"})
+        blocks.append({"id": "landreg_asp_chart_block", "type": "chart", "chartId": "landreg_asp_chart", "layout": "full"})
     if bd_supply_rows:
         blocks.append({"id": "bd_supply_pipeline_chart_block", "type": "chart", "chartId": "bd_supply_pipeline_chart"})
+    if bd_supply_floor_area_rows:
+        blocks.append({"id": "bd_supply_floor_area_chart_block", "type": "chart", "chartId": "bd_supply_floor_area_chart"})
     if bd_supply_table_rows:
         blocks.append({"id": "bd_supply_detail_block", "type": "table", "tableId": "bd_supply_detail_table"})
     if new_project_rows:

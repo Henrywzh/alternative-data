@@ -6,8 +6,8 @@
     "title": "香港商业航天监测",
     "description": "上交所科创板 IPO 审核状态、Launch Library 2 发射频次、Celestrak 低轨卫星星座数量及商业航天企业专利申请统计。",
     "sector": "hk-commercial-aerospace",
-    "generatedAt": "2026-07-28T21:59:05.463156Z",
-    "dataAsOf": "2026-07-28",
+    "generatedAt": "2026-07-29T18:37:59.583265Z",
+    "dataAsOf": "2026-07-29",
     "liveSourcesCount": 2,
     "totalSourcesCount": 4,
     "cards": [
@@ -325,7 +325,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**数据快照：** `e7cc929b9ea57e77` · 生成于 2026-07-28T21:59:05.463156Z。"
+        "body": "**数据快照：** `d9142558ddd22285` · 生成于 2026-07-29T18:37:59.583265Z。"
       },
       {
         "id": "kpi_grid",
@@ -375,7 +375,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-28T21:59:05.463156Z",
+    "generatedAt": "2026-07-29T18:37:59.583265Z",
     "status": "ready",
     "datasets": {
       "ipo_race": [
@@ -424,10 +424,10 @@
         {
           "net_date": "2026-07-29",
           "provider": "China Aerospace Science and Technology Corporation",
-          "mission": "Long March 7A | Unknown Payload",
+          "mission": "Long March 7A | Tianlian 3-01",
           "pad_name": "201",
           "orbit": "N/A",
-          "status": "Go for Launch"
+          "status": "Launch Successful"
         },
         {
           "net_date": "2026-07-30",
@@ -436,6 +436,14 @@
           "pad_name": "Launch Complex 9A",
           "orbit": "N/A",
           "status": "Go for Launch"
+        },
+        {
+          "net_date": "2026-08-04",
+          "provider": "China Rocket Co. Ltd.",
+          "mission": "Smart Dragon 3 | Unknown Payload",
+          "pad_name": "Haiyang offshore launch location",
+          "orbit": "N/A",
+          "status": "To Be Confirmed"
         },
         {
           "net_date": "2026-08-04",
@@ -522,19 +530,19 @@
           "constellation": "Qianfan",
           "operator": "Shanghai Spacecom Satellite Technology",
           "count": 238,
-          "as_of": "2026-07-28"
+          "as_of": "2026-07-29"
         },
         {
           "constellation": "Jilin1",
           "operator": "Chang Guang Satellite Technology",
           "count": 50,
-          "as_of": "2026-07-28"
+          "as_of": "2026-07-29"
         },
         {
           "constellation": "Guowang",
           "operator": "China Satellite Network Group",
           "count": null,
-          "as_of": "2026-07-28"
+          "as_of": "2026-07-29"
         }
       ],
       "patent_counts": [],
@@ -685,7 +693,7 @@
       "label": "SSE STAR Market IPO Filing Status (JSONP)",
       "status": "success",
       "records": 5,
-      "latest_observation": "2026-07-28",
+      "latest_observation": "2026-07-29",
       "freshness": "live",
       "notes": "Filing status, numeric audit numbers (stockAuditNum), and update dates for Chinese commercial launch companies."
     },
@@ -693,8 +701,8 @@
       "source_id": "launch_library_2",
       "label": "Launch Library 2 (The Space Devs)",
       "status": "success",
-      "records": 8,
-      "latest_observation": "2026-07-28",
+      "records": 9,
+      "latest_observation": "2026-07-29",
       "freshness": "stale",
       "notes": "Launch history for Chinese commercial launch providers (LandSpace, CAS Space, Galactic Energy, Space Pioneer, etc.)."
     },
@@ -703,7 +711,7 @@
       "label": "Celestrak NORAD TLE / GP Orbit Data",
       "status": "success",
       "records": 2,
-      "latest_observation": "2026-07-28",
+      "latest_observation": "2026-07-29",
       "freshness": "live",
       "notes": "Active satellite counts for Qianfan (G60) and Jilin-1 constellations."
     },
@@ -712,7 +720,7 @@
       "label": "Google Patents Search",
       "status": "failed",
       "records": 0,
-      "latest_observation": "2026-07-28",
+      "latest_observation": "2026-07-29",
       "freshness": "unavailable",
       "notes": "Estimated patent filing counts for Chinese commercial space companies."
     }
@@ -721,8 +729,8 @@
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-commercial-aerospace/",
     "sector_id": "hk-commercial-aerospace",
     "sector_name": "Hong Kong Commercial Aerospace Sector Monitor",
-    "snapshotId": "e7cc929b9ea57e77",
-    "generatedAt": "2026-07-28T21:59:05.463156Z",
-    "dataAsOf": "2026-07-28"
+    "snapshotId": "d9142558ddd22285",
+    "generatedAt": "2026-07-29T18:37:59.583265Z",
+    "dataAsOf": "2026-07-29"
   }
 }

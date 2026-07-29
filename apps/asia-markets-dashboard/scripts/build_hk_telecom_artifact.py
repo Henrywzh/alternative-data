@@ -253,21 +253,25 @@ def build_artifact(
         },
     ]
 
-    charts = [
-        {
-            "id": "hkt_arpu_chart",
-            "title": "HKT Postpaid Exit ARPU Trend (HK$)",
-            "subtitle": "Semi-annual postpaid exit ARPU, extracted from HKT's own results announcement narrative text.",
-            "type": "line",
-            "dataset": "hkt_history",
-            "sourceId": "hkt_operating_drivers",
-            "encodings": {
-                "x": {"field": "month", "type": "temporal", "label": "Period"},
-                "y": {"field": "mobile_postpaid_arpu_hkd", "type": "quantitative", "label": "HK$"},
-            },
-            "valueFormat": "number",
-            "layout": "full",
-        },
+    charts = []
+    if hkt["mobile_postpaid_arpu_hkd"].notna().any():
+        charts.append(
+            {
+                "id": "hkt_arpu_chart",
+                "title": "HKT Postpaid Exit ARPU Trend (HK$)",
+                "subtitle": "Semi-annual postpaid exit ARPU, extracted from HKT's own results announcement narrative text.",
+                "type": "line",
+                "dataset": "hkt_history",
+                "sourceId": "hkt_operating_drivers",
+                "encodings": {
+                    "x": {"field": "month", "type": "temporal", "label": "Period"},
+                    "y": {"field": "mobile_postpaid_arpu_hkd", "type": "quantitative", "label": "HK$"},
+                },
+                "valueFormat": "number",
+                "layout": "full",
+            }
+        )
+    charts.extend([
         {
             "id": "smartone_arpu_chart",
             "title": "SmarTone Postpaid ARPU & Subscriber Trend",
@@ -312,7 +316,7 @@ def build_artifact(
             "valueFormat": "number",
             "layout": "half",
         },
-    ]
+    ])
 
     tables: list[dict[str, Any]] = [
         {
@@ -342,6 +346,16 @@ def build_artifact(
         json.dumps(datasets, sort_keys=True, default=str).encode("utf-8")
     ).hexdigest()[:16]
 
+    blocks = [{"id": "kpi_grid", "type": "metric-strip", "cardIds": [c["id"] for c in cards]}]
+    if hkt["mobile_postpaid_arpu_hkd"].notna().any():
+        blocks.append({"id": "hkt_chart", "type": "chart", "chartId": "hkt_arpu_chart"})
+    blocks.extend([
+        {"id": "hkt_footprint_chart_block", "type": "chart", "chartId": "hkt_footprint_chart"},
+        {"id": "smartone_chart", "type": "chart", "chartId": "smartone_arpu_chart"},
+        {"id": "hutchison_chart", "type": "chart", "chartId": "hutchison_arpu_chart"},
+        {"id": "numbering_plan_table_block", "type": "table", "tableId": "numbering_plan_table"},
+    ])
+
     artifact = {
         "surface": "dashboard",
         "manifest": {
@@ -355,14 +369,7 @@ def build_artifact(
             "charts": charts,
             "tables": tables,
             "sources": sources,
-            "blocks": [
-                {"id": "kpi_grid", "type": "metric-strip", "cardIds": [c["id"] for c in cards]},
-                {"id": "hkt_chart", "type": "chart", "chartId": "hkt_arpu_chart"},
-                {"id": "hkt_footprint_chart_block", "type": "chart", "chartId": "hkt_footprint_chart"},
-                {"id": "smartone_chart", "type": "chart", "chartId": "smartone_arpu_chart"},
-                {"id": "hutchison_chart", "type": "chart", "chartId": "hutchison_arpu_chart"},
-                {"id": "numbering_plan_table_block", "type": "table", "tableId": "numbering_plan_table"},
-            ],
+            "blocks": blocks,
         },
         "snapshot": {"version": 1, "generatedAt": generated_at, "status": "ready", "datasets": datasets},
         "sources": sources,

@@ -143,7 +143,7 @@ def test_hkma_rate_mix_surfaces_other_pricing_bucket():
     }
 
 
-def test_landreg_volume_chart_uses_historical_asp_series_when_available():
+def test_landreg_asp_chart_uses_historical_series_when_available():
     facts = pd.DataFrame(
         {
             "date": ["2026-06-01"],
@@ -165,10 +165,14 @@ def test_landreg_volume_chart_uses_historical_asp_series_when_available():
     artifact, _ = dashboard_export.build_artifact(
         _frames(), raw_hkma=_hkma_frame(), raw_cnsd=_cnsd_frame(), raw_landreg=(facts, asp), now=NOW
     )
-    rows = artifact["snapshot"]["datasets"]["landreg_volume_history"]
+    rows = artifact["snapshot"]["datasets"]["landreg_asp_history"]
     # The archive-backed ASP series is the only source with a long history;
     # current t1 facts are retained as a fallback but must not replace it.
-    assert rows == [{"date": "2026-06-01", "value": 1234.0}]
+    # (There used to be a separate landreg_volume_history dataset/chart
+    # sourced from this same all_building_units_asp column under a
+    # different label -- a pure duplicate of this series, now removed.)
+    assert {"date": "2026-06", "series": "All Building Units ASP", "value": 1234.0} in rows
+    assert {"date": "2026-06", "series": "Residential Units ASP", "value": 1111.0} in rows
 
 
 def test_transaction_pulse_flags_single_agency_coverage():

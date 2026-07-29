@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-07-29T18:03:08.129291Z",
-  "snapshot_id": "7b0e661edfd423e0",
+  "generated_at": "2026-07-29T18:38:45.845164Z",
+  "snapshot_id": "6291972cec646fef",
   "data_as_of": "2026-07-27",
   "overall_status": "Healthy",
   "live_sources": 5,
@@ -83,7 +83,7 @@
       "type": "Measure",
       "status": "Healthy",
       "latest_observation": "—",
-      "records": 1062,
+      "records": 708,
       "freshness": "Live at build time",
       "notes": "Land Registry Monthly Statistics (JSON); see the chart/table above."
     },

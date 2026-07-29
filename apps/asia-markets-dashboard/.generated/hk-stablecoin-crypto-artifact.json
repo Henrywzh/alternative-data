@@ -6,7 +6,7 @@
     "title": "Hong Kong Stablecoin & Crypto Infrastructure Monitor",
     "description": "HKMA licensed stablecoin issuers, SFC licensed VATP exchanges, HKEX crypto ETF AUM, stablecoin market cap & chain tracking, DEX volume, and market sentiment indicators.",
     "sector": "hk-stablecoin-crypto",
-    "generatedAt": "2026-07-29T09:09:11Z",
+    "generatedAt": "2026-07-29T18:37:59Z",
     "dataAsOf": "2026-07-29",
     "liveSourcesCount": 6,
     "totalSourcesCount": 7,
@@ -500,7 +500,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**Data snapshot:** `2d3321387a84f142` · generated 2026-07-29T09:09:11Z.  Official HKMA & SFC regulatory registers and market tracking data."
+        "body": "**Data snapshot:** `6599b497092e5abd` · generated 2026-07-29T18:37:59Z.  Official HKMA & SFC regulatory registers and market tracking data."
       },
       {
         "id": "kpi_grid",
@@ -557,7 +557,13 @@
         "id": "fear_greed_chart_block",
         "type": "chart",
         "chartId": "fear_greed_history_chart",
-        "layout": "full"
+        "layout": "half"
+      },
+      {
+        "id": "btc_price_chart_block",
+        "type": "chart",
+        "chartId": "btc_price_history_chart",
+        "layout": "half"
       },
       {
         "id": "polymarket_table_block",
@@ -578,7 +584,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-29T09:09:11Z",
+    "generatedAt": "2026-07-29T18:37:59Z",
     "status": "ready",
     "datasets": {
       "hkma_issuers": [
@@ -781,37 +787,37 @@
         {
           "name": "Tether",
           "symbol": "USDT",
-          "circulating_usd_bn": 183.77,
+          "circulating_usd_bn": 183.81,
           "market_share_pct": 59.74
         },
         {
           "name": "USD Coin",
           "symbol": "USDC",
-          "circulating_usd_bn": 72.33,
-          "market_share_pct": 23.51
+          "circulating_usd_bn": 72.37,
+          "market_share_pct": 23.52
         },
         {
           "name": "Sky Dollar",
           "symbol": "USDS",
-          "circulating_usd_bn": 6.54,
+          "circulating_usd_bn": 6.56,
           "market_share_pct": 2.13
         },
         {
           "name": "Dai",
           "symbol": "DAI",
-          "circulating_usd_bn": 4.8,
+          "circulating_usd_bn": 4.81,
           "market_share_pct": 1.56
         },
         {
           "name": "World Liberty Financial USD",
           "symbol": "USD1",
-          "circulating_usd_bn": 4.07,
+          "circulating_usd_bn": 4.05,
           "market_share_pct": 1.32
         },
         {
           "name": "Ethena USDe",
           "symbol": "USDe",
-          "circulating_usd_bn": 3.85,
+          "circulating_usd_bn": 3.84,
           "market_share_pct": 1.25
         },
         {
@@ -829,7 +835,7 @@
         {
           "name": "PayPal USD",
           "symbol": "PYUSD",
-          "circulating_usd_bn": 2.68,
+          "circulating_usd_bn": 2.67,
           "market_share_pct": 0.87
         },
         {
@@ -2304,15 +2310,15 @@
       "stablecoin_chains": [
         {
           "chain": "Ethereum",
-          "circulating_usd_bn": 149.1
+          "circulating_usd_bn": 149.22
         },
         {
           "chain": "Tron",
-          "circulating_usd_bn": 91.01
+          "circulating_usd_bn": 91.0
         },
         {
           "chain": "BSC",
-          "circulating_usd_bn": 18.02
+          "circulating_usd_bn": 18.0
         },
         {
           "chain": "Solana",
@@ -2320,7 +2326,7 @@
         },
         {
           "chain": "Hyperliquid L1",
-          "circulating_usd_bn": 6.32
+          "circulating_usd_bn": 6.3
         },
         {
           "chain": "Base",
@@ -2332,11 +2338,11 @@
         },
         {
           "chain": "Polygon",
-          "circulating_usd_bn": 3.64
+          "circulating_usd_bn": 3.63
         },
         {
           "chain": "X Layer",
-          "circulating_usd_bn": 2.0
+          "circulating_usd_bn": 1.99
         },
         {
           "chain": "Avalanche",
@@ -3710,7 +3716,7 @@
         },
         {
           "date": "2026-07-06",
-          "dex_volume_usd_bn": 7.04
+          "dex_volume_usd_bn": 7.06
         },
         {
           "date": "2026-07-07",
@@ -3794,15 +3800,15 @@
         },
         {
           "date": "2026-07-27",
-          "dex_volume_usd_bn": 7.4
+          "dex_volume_usd_bn": 7.43
         },
         {
           "date": "2026-07-28",
-          "dex_volume_usd_bn": 7.0
+          "dex_volume_usd_bn": 7.26
         },
         {
           "date": "2026-07-29",
-          "dex_volume_usd_bn": 7.16
+          "dex_volume_usd_bn": 7.57
         }
       ],
       "hkex_etf_summary": [
@@ -5781,52 +5787,1513 @@
           "score": 29
         }
       ],
-      "btc_price_history": [],
-      "polymarket_catalysts": [
+      "btc_price_history": [
         {
-          "title": "How high will 10-year Treasury yield go before 2027?",
-          "probability_pct": 100.0,
-          "end_date": "2026-12-31"
+          "date": "2025-07-30",
+          "btc_price_usd": 117840.3
         },
+        {
+          "date": "2025-07-31",
+          "btc_price_usd": 115764.08
+        },
+        {
+          "date": "2025-08-01",
+          "btc_price_usd": 113297.93
+        },
+        {
+          "date": "2025-08-02",
+          "btc_price_usd": 112546.35
+        },
+        {
+          "date": "2025-08-03",
+          "btc_price_usd": 114208.8
+        },
+        {
+          "date": "2025-08-04",
+          "btc_price_usd": 115055.03
+        },
+        {
+          "date": "2025-08-05",
+          "btc_price_usd": 114129.75
+        },
+        {
+          "date": "2025-08-06",
+          "btc_price_usd": 114992.27
+        },
+        {
+          "date": "2025-08-07",
+          "btc_price_usd": 117472.01
+        },
+        {
+          "date": "2025-08-08",
+          "btc_price_usd": 116674.74
+        },
+        {
+          "date": "2025-08-09",
+          "btc_price_usd": 116462.25
+        },
+        {
+          "date": "2025-08-10",
+          "btc_price_usd": 119294.01
+        },
+        {
+          "date": "2025-08-11",
+          "btc_price_usd": 118686.0
+        },
+        {
+          "date": "2025-08-12",
+          "btc_price_usd": 120134.08
+        },
+        {
+          "date": "2025-08-13",
+          "btc_price_usd": 123306.43
+        },
+        {
+          "date": "2025-08-14",
+          "btc_price_usd": 118295.09
+        },
+        {
+          "date": "2025-08-15",
+          "btc_price_usd": 117342.05
+        },
+        {
+          "date": "2025-08-16",
+          "btc_price_usd": 117380.66
+        },
+        {
+          "date": "2025-08-17",
+          "btc_price_usd": 117405.01
+        },
+        {
+          "date": "2025-08-18",
+          "btc_price_usd": 116227.05
+        },
+        {
+          "date": "2025-08-19",
+          "btc_price_usd": 112872.94
+        },
+        {
+          "date": "2025-08-20",
+          "btc_price_usd": 114271.24
+        },
+        {
+          "date": "2025-08-21",
+          "btc_price_usd": 112500.0
+        },
+        {
+          "date": "2025-08-22",
+          "btc_price_usd": 116935.99
+        },
+        {
+          "date": "2025-08-23",
+          "btc_price_usd": 115438.05
+        },
+        {
+          "date": "2025-08-24",
+          "btc_price_usd": 113493.59
+        },
+        {
+          "date": "2025-08-25",
+          "btc_price_usd": 110111.98
+        },
+        {
+          "date": "2025-08-26",
+          "btc_price_usd": 111763.22
+        },
+        {
+          "date": "2025-08-27",
+          "btc_price_usd": 111262.01
+        },
+        {
+          "date": "2025-08-28",
+          "btc_price_usd": 112566.9
+        },
+        {
+          "date": "2025-08-29",
+          "btc_price_usd": 108377.4
+        },
+        {
+          "date": "2025-08-30",
+          "btc_price_usd": 108816.33
+        },
+        {
+          "date": "2025-08-31",
+          "btc_price_usd": 108246.35
+        },
+        {
+          "date": "2025-09-01",
+          "btc_price_usd": 109237.42
+        },
+        {
+          "date": "2025-09-02",
+          "btc_price_usd": 111240.01
+        },
+        {
+          "date": "2025-09-03",
+          "btc_price_usd": 111705.71
+        },
+        {
+          "date": "2025-09-04",
+          "btc_price_usd": 110730.87
+        },
+        {
+          "date": "2025-09-05",
+          "btc_price_usd": 110659.99
+        },
+        {
+          "date": "2025-09-06",
+          "btc_price_usd": 110187.97
+        },
+        {
+          "date": "2025-09-07",
+          "btc_price_usd": 111137.34
+        },
+        {
+          "date": "2025-09-08",
+          "btc_price_usd": 112065.23
+        },
+        {
+          "date": "2025-09-09",
+          "btc_price_usd": 111546.39
+        },
+        {
+          "date": "2025-09-10",
+          "btc_price_usd": 113960.0
+        },
+        {
+          "date": "2025-09-11",
+          "btc_price_usd": 115482.69
+        },
+        {
+          "date": "2025-09-12",
+          "btc_price_usd": 116029.42
+        },
+        {
+          "date": "2025-09-13",
+          "btc_price_usd": 115918.29
+        },
+        {
+          "date": "2025-09-14",
+          "btc_price_usd": 115268.01
+        },
+        {
+          "date": "2025-09-15",
+          "btc_price_usd": 115349.71
+        },
+        {
+          "date": "2025-09-16",
+          "btc_price_usd": 116788.96
+        },
+        {
+          "date": "2025-09-17",
+          "btc_price_usd": 116447.59
+        },
+        {
+          "date": "2025-09-18",
+          "btc_price_usd": 117073.53
+        },
+        {
+          "date": "2025-09-19",
+          "btc_price_usd": 115632.38
+        },
+        {
+          "date": "2025-09-20",
+          "btc_price_usd": 115685.63
+        },
+        {
+          "date": "2025-09-21",
+          "btc_price_usd": 115232.29
+        },
+        {
+          "date": "2025-09-22",
+          "btc_price_usd": 112650.99
+        },
+        {
+          "date": "2025-09-23",
+          "btc_price_usd": 111998.8
+        },
+        {
+          "date": "2025-09-24",
+          "btc_price_usd": 113307.0
+        },
+        {
+          "date": "2025-09-25",
+          "btc_price_usd": 108994.49
+        },
+        {
+          "date": "2025-09-26",
+          "btc_price_usd": 109643.46
+        },
+        {
+          "date": "2025-09-27",
+          "btc_price_usd": 109635.85
+        },
+        {
+          "date": "2025-09-28",
+          "btc_price_usd": 112163.95
+        },
+        {
+          "date": "2025-09-29",
+          "btc_price_usd": 114311.96
+        },
+        {
+          "date": "2025-09-30",
+          "btc_price_usd": 114048.93
+        },
+        {
+          "date": "2025-10-01",
+          "btc_price_usd": 118594.99
+        },
+        {
+          "date": "2025-10-02",
+          "btc_price_usd": 120529.35
+        },
+        {
+          "date": "2025-10-03",
+          "btc_price_usd": 122232.0
+        },
+        {
+          "date": "2025-10-04",
+          "btc_price_usd": 122391.0
+        },
+        {
+          "date": "2025-10-05",
+          "btc_price_usd": 123482.31
+        },
+        {
+          "date": "2025-10-06",
+          "btc_price_usd": 124658.54
+        },
+        {
+          "date": "2025-10-07",
+          "btc_price_usd": 121332.95
+        },
+        {
+          "date": "2025-10-08",
+          "btc_price_usd": 123306.0
+        },
+        {
+          "date": "2025-10-09",
+          "btc_price_usd": 121662.4
+        },
+        {
+          "date": "2025-10-10",
+          "btc_price_usd": 112774.5
+        },
+        {
+          "date": "2025-10-11",
+          "btc_price_usd": 110644.4
+        },
+        {
+          "date": "2025-10-12",
+          "btc_price_usd": 114958.8
+        },
+        {
+          "date": "2025-10-13",
+          "btc_price_usd": 115166.0
+        },
+        {
+          "date": "2025-10-14",
+          "btc_price_usd": 113028.14
+        },
+        {
+          "date": "2025-10-15",
+          "btc_price_usd": 110763.28
+        },
+        {
+          "date": "2025-10-16",
+          "btc_price_usd": 108194.28
+        },
+        {
+          "date": "2025-10-17",
+          "btc_price_usd": 106431.68
+        },
+        {
+          "date": "2025-10-18",
+          "btc_price_usd": 107185.01
+        },
+        {
+          "date": "2025-10-19",
+          "btc_price_usd": 108642.78
+        },
+        {
+          "date": "2025-10-20",
+          "btc_price_usd": 110532.09
+        },
+        {
+          "date": "2025-10-21",
+          "btc_price_usd": 108297.67
+        },
+        {
+          "date": "2025-10-22",
+          "btc_price_usd": 107567.44
+        },
+        {
+          "date": "2025-10-23",
+          "btc_price_usd": 110078.18
+        },
+        {
+          "date": "2025-10-24",
+          "btc_price_usd": 111004.89
+        },
+        {
+          "date": "2025-10-25",
+          "btc_price_usd": 111646.27
+        },
+        {
+          "date": "2025-10-26",
+          "btc_price_usd": 114559.4
+        },
+        {
+          "date": "2025-10-27",
+          "btc_price_usd": 114107.65
+        },
+        {
+          "date": "2025-10-28",
+          "btc_price_usd": 112898.45
+        },
+        {
+          "date": "2025-10-29",
+          "btc_price_usd": 110021.29
+        },
+        {
+          "date": "2025-10-30",
+          "btc_price_usd": 108322.88
+        },
+        {
+          "date": "2025-10-31",
+          "btc_price_usd": 109608.01
+        },
+        {
+          "date": "2025-11-01",
+          "btc_price_usd": 110098.1
+        },
+        {
+          "date": "2025-11-02",
+          "btc_price_usd": 110540.68
+        },
+        {
+          "date": "2025-11-03",
+          "btc_price_usd": 106583.04
+        },
+        {
+          "date": "2025-11-04",
+          "btc_price_usd": 101497.22
+        },
+        {
+          "date": "2025-11-05",
+          "btc_price_usd": 103885.16
+        },
+        {
+          "date": "2025-11-06",
+          "btc_price_usd": 101346.04
+        },
+        {
+          "date": "2025-11-07",
+          "btc_price_usd": 103339.08
+        },
+        {
+          "date": "2025-11-08",
+          "btc_price_usd": 102312.94
+        },
+        {
+          "date": "2025-11-09",
+          "btc_price_usd": 104722.96
+        },
+        {
+          "date": "2025-11-10",
+          "btc_price_usd": 106011.13
+        },
+        {
+          "date": "2025-11-11",
+          "btc_price_usd": 103058.99
+        },
+        {
+          "date": "2025-11-12",
+          "btc_price_usd": 101654.37
+        },
+        {
+          "date": "2025-11-13",
+          "btc_price_usd": 99692.02
+        },
+        {
+          "date": "2025-11-14",
+          "btc_price_usd": 94594.0
+        },
+        {
+          "date": "2025-11-15",
+          "btc_price_usd": 95596.24
+        },
+        {
+          "date": "2025-11-16",
+          "btc_price_usd": 94261.44
+        },
+        {
+          "date": "2025-11-17",
+          "btc_price_usd": 92215.14
+        },
+        {
+          "date": "2025-11-18",
+          "btc_price_usd": 92960.83
+        },
+        {
+          "date": "2025-11-19",
+          "btc_price_usd": 91554.96
+        },
+        {
+          "date": "2025-11-20",
+          "btc_price_usd": 86637.23
+        },
+        {
+          "date": "2025-11-21",
+          "btc_price_usd": 85129.43
+        },
+        {
+          "date": "2025-11-22",
+          "btc_price_usd": 84739.74
+        },
+        {
+          "date": "2025-11-23",
+          "btc_price_usd": 86830.0
+        },
+        {
+          "date": "2025-11-24",
+          "btc_price_usd": 88300.01
+        },
+        {
+          "date": "2025-11-25",
+          "btc_price_usd": 87369.96
+        },
+        {
+          "date": "2025-11-26",
+          "btc_price_usd": 90484.02
+        },
+        {
+          "date": "2025-11-27",
+          "btc_price_usd": 91333.95
+        },
+        {
+          "date": "2025-11-28",
+          "btc_price_usd": 90890.7
+        },
+        {
+          "date": "2025-11-29",
+          "btc_price_usd": 90802.44
+        },
+        {
+          "date": "2025-11-30",
+          "btc_price_usd": 90360.0
+        },
+        {
+          "date": "2025-12-01",
+          "btc_price_usd": 86286.01
+        },
+        {
+          "date": "2025-12-02",
+          "btc_price_usd": 91277.88
+        },
+        {
+          "date": "2025-12-03",
+          "btc_price_usd": 93429.95
+        },
+        {
+          "date": "2025-12-04",
+          "btc_price_usd": 92078.06
+        },
+        {
+          "date": "2025-12-05",
+          "btc_price_usd": 89330.04
+        },
+        {
+          "date": "2025-12-06",
+          "btc_price_usd": 89236.79
+        },
+        {
+          "date": "2025-12-07",
+          "btc_price_usd": 90395.31
+        },
+        {
+          "date": "2025-12-08",
+          "btc_price_usd": 90634.34
+        },
+        {
+          "date": "2025-12-09",
+          "btc_price_usd": 92678.8
+        },
+        {
+          "date": "2025-12-10",
+          "btc_price_usd": 92015.37
+        },
+        {
+          "date": "2025-12-11",
+          "btc_price_usd": 92513.38
+        },
+        {
+          "date": "2025-12-12",
+          "btc_price_usd": 90268.42
+        },
+        {
+          "date": "2025-12-13",
+          "btc_price_usd": 90240.01
+        },
+        {
+          "date": "2025-12-14",
+          "btc_price_usd": 88172.17
+        },
+        {
+          "date": "2025-12-15",
+          "btc_price_usd": 86432.08
+        },
+        {
+          "date": "2025-12-16",
+          "btc_price_usd": 87863.42
+        },
+        {
+          "date": "2025-12-17",
+          "btc_price_usd": 86243.22
+        },
+        {
+          "date": "2025-12-18",
+          "btc_price_usd": 85516.41
+        },
+        {
+          "date": "2025-12-19",
+          "btc_price_usd": 88136.94
+        },
+        {
+          "date": "2025-12-20",
+          "btc_price_usd": 88360.9
+        },
+        {
+          "date": "2025-12-21",
+          "btc_price_usd": 88658.86
+        },
+        {
+          "date": "2025-12-22",
+          "btc_price_usd": 88620.79
+        },
+        {
+          "date": "2025-12-23",
+          "btc_price_usd": 87486.0
+        },
+        {
+          "date": "2025-12-24",
+          "btc_price_usd": 87669.45
+        },
+        {
+          "date": "2025-12-25",
+          "btc_price_usd": 87225.27
+        },
+        {
+          "date": "2025-12-26",
+          "btc_price_usd": 87369.56
+        },
+        {
+          "date": "2025-12-27",
+          "btc_price_usd": 87877.01
+        },
+        {
+          "date": "2025-12-28",
+          "btc_price_usd": 87952.71
+        },
+        {
+          "date": "2025-12-29",
+          "btc_price_usd": 87237.13
+        },
+        {
+          "date": "2025-12-30",
+          "btc_price_usd": 88485.49
+        },
+        {
+          "date": "2025-12-31",
+          "btc_price_usd": 87648.22
+        },
+        {
+          "date": "2026-01-01",
+          "btc_price_usd": 88839.04
+        },
+        {
+          "date": "2026-01-02",
+          "btc_price_usd": 89995.13
+        },
+        {
+          "date": "2026-01-03",
+          "btc_price_usd": 90628.01
+        },
+        {
+          "date": "2026-01-04",
+          "btc_price_usd": 91529.73
+        },
+        {
+          "date": "2026-01-05",
+          "btc_price_usd": 93859.71
+        },
+        {
+          "date": "2026-01-06",
+          "btc_price_usd": 93747.97
+        },
+        {
+          "date": "2026-01-07",
+          "btc_price_usd": 91364.16
+        },
+        {
+          "date": "2026-01-08",
+          "btc_price_usd": 91099.99
+        },
+        {
+          "date": "2026-01-09",
+          "btc_price_usd": 90641.28
+        },
+        {
+          "date": "2026-01-10",
+          "btc_price_usd": 90504.7
+        },
+        {
+          "date": "2026-01-11",
+          "btc_price_usd": 91013.65
+        },
+        {
+          "date": "2026-01-12",
+          "btc_price_usd": 91296.2
+        },
+        {
+          "date": "2026-01-13",
+          "btc_price_usd": 95414.0
+        },
+        {
+          "date": "2026-01-14",
+          "btc_price_usd": 96951.78
+        },
+        {
+          "date": "2026-01-15",
+          "btc_price_usd": 95604.8
+        },
+        {
+          "date": "2026-01-16",
+          "btc_price_usd": 95550.94
+        },
+        {
+          "date": "2026-01-17",
+          "btc_price_usd": 95147.77
+        },
+        {
+          "date": "2026-01-18",
+          "btc_price_usd": 93673.14
+        },
+        {
+          "date": "2026-01-19",
+          "btc_price_usd": 92631.0
+        },
+        {
+          "date": "2026-01-20",
+          "btc_price_usd": 88427.66
+        },
+        {
+          "date": "2026-01-21",
+          "btc_price_usd": 89454.73
+        },
+        {
+          "date": "2026-01-22",
+          "btc_price_usd": 89559.67
+        },
+        {
+          "date": "2026-01-23",
+          "btc_price_usd": 89600.26
+        },
+        {
+          "date": "2026-01-24",
+          "btc_price_usd": 89225.34
+        },
+        {
+          "date": "2026-01-25",
+          "btc_price_usd": 86670.36
+        },
+        {
+          "date": "2026-01-26",
+          "btc_price_usd": 88347.08
+        },
+        {
+          "date": "2026-01-27",
+          "btc_price_usd": 89250.0
+        },
+        {
+          "date": "2026-01-28",
+          "btc_price_usd": 89299.99
+        },
+        {
+          "date": "2026-01-29",
+          "btc_price_usd": 84650.16
+        },
+        {
+          "date": "2026-01-30",
+          "btc_price_usd": 84260.49
+        },
+        {
+          "date": "2026-01-31",
+          "btc_price_usd": 78741.09
+        },
+        {
+          "date": "2026-02-01",
+          "btc_price_usd": 76968.21
+        },
+        {
+          "date": "2026-02-02",
+          "btc_price_usd": 78738.61
+        },
+        {
+          "date": "2026-02-03",
+          "btc_price_usd": 75770.21
+        },
+        {
+          "date": "2026-02-04",
+          "btc_price_usd": 73165.83
+        },
+        {
+          "date": "2026-02-05",
+          "btc_price_usd": 62909.86
+        },
+        {
+          "date": "2026-02-06",
+          "btc_price_usd": 70580.26
+        },
+        {
+          "date": "2026-02-07",
+          "btc_price_usd": 69289.38
+        },
+        {
+          "date": "2026-02-08",
+          "btc_price_usd": 70330.38
+        },
+        {
+          "date": "2026-02-09",
+          "btc_price_usd": 70138.0
+        },
+        {
+          "date": "2026-02-10",
+          "btc_price_usd": 68841.29
+        },
+        {
+          "date": "2026-02-11",
+          "btc_price_usd": 67082.52
+        },
+        {
+          "date": "2026-02-12",
+          "btc_price_usd": 66272.17
+        },
+        {
+          "date": "2026-02-13",
+          "btc_price_usd": 68853.96
+        },
+        {
+          "date": "2026-02-14",
+          "btc_price_usd": 69822.95
+        },
+        {
+          "date": "2026-02-15",
+          "btc_price_usd": 68832.58
+        },
+        {
+          "date": "2026-02-16",
+          "btc_price_usd": 68892.43
+        },
+        {
+          "date": "2026-02-17",
+          "btc_price_usd": 67503.52
+        },
+        {
+          "date": "2026-02-18",
+          "btc_price_usd": 66461.0
+        },
+        {
+          "date": "2026-02-19",
+          "btc_price_usd": 67003.73
+        },
+        {
+          "date": "2026-02-20",
+          "btc_price_usd": 68020.01
+        },
+        {
+          "date": "2026-02-21",
+          "btc_price_usd": 67975.93
+        },
+        {
+          "date": "2026-02-22",
+          "btc_price_usd": 67643.4
+        },
+        {
+          "date": "2026-02-23",
+          "btc_price_usd": 64656.02
+        },
+        {
+          "date": "2026-02-24",
+          "btc_price_usd": 64058.15
+        },
+        {
+          "date": "2026-02-25",
+          "btc_price_usd": 67988.04
+        },
+        {
+          "date": "2026-02-26",
+          "btc_price_usd": 67485.18
+        },
+        {
+          "date": "2026-02-27",
+          "btc_price_usd": 65872.1
+        },
+        {
+          "date": "2026-02-28",
+          "btc_price_usd": 66973.26
+        },
+        {
+          "date": "2026-03-01",
+          "btc_price_usd": 65776.47
+        },
+        {
+          "date": "2026-03-02",
+          "btc_price_usd": 68830.06
+        },
+        {
+          "date": "2026-03-03",
+          "btc_price_usd": 68338.0
+        },
+        {
+          "date": "2026-03-04",
+          "btc_price_usd": 72666.77
+        },
+        {
+          "date": "2026-03-05",
+          "btc_price_usd": 70890.72
+        },
+        {
+          "date": "2026-03-06",
+          "btc_price_usd": 68114.02
+        },
+        {
+          "date": "2026-03-07",
+          "btc_price_usd": 67262.91
+        },
+        {
+          "date": "2026-03-08",
+          "btc_price_usd": 65971.2
+        },
+        {
+          "date": "2026-03-09",
+          "btc_price_usd": 68432.16
+        },
+        {
+          "date": "2026-03-10",
+          "btc_price_usd": 69948.63
+        },
+        {
+          "date": "2026-03-11",
+          "btc_price_usd": 70191.86
+        },
+        {
+          "date": "2026-03-12",
+          "btc_price_usd": 70541.34
+        },
+        {
+          "date": "2026-03-13",
+          "btc_price_usd": 70930.0
+        },
+        {
+          "date": "2026-03-14",
+          "btc_price_usd": 71211.95
+        },
+        {
+          "date": "2026-03-15",
+          "btc_price_usd": 72815.24
+        },
+        {
+          "date": "2026-03-16",
+          "btc_price_usd": 74884.67
+        },
+        {
+          "date": "2026-03-17",
+          "btc_price_usd": 73909.36
+        },
+        {
+          "date": "2026-03-18",
+          "btc_price_usd": 71246.54
+        },
+        {
+          "date": "2026-03-19",
+          "btc_price_usd": 69930.0
+        },
+        {
+          "date": "2026-03-20",
+          "btc_price_usd": 70510.73
+        },
+        {
+          "date": "2026-03-21",
+          "btc_price_usd": 68918.12
+        },
+        {
+          "date": "2026-03-22",
+          "btc_price_usd": 67859.0
+        },
+        {
+          "date": "2026-03-23",
+          "btc_price_usd": 70906.45
+        },
+        {
+          "date": "2026-03-24",
+          "btc_price_usd": 70556.74
+        },
+        {
+          "date": "2026-03-25",
+          "btc_price_usd": 71336.53
+        },
+        {
+          "date": "2026-03-26",
+          "btc_price_usd": 68820.31
+        },
+        {
+          "date": "2026-03-27",
+          "btc_price_usd": 66407.28
+        },
+        {
+          "date": "2026-03-28",
+          "btc_price_usd": 66377.03
+        },
+        {
+          "date": "2026-03-29",
+          "btc_price_usd": 66010.93
+        },
+        {
+          "date": "2026-03-30",
+          "btc_price_usd": 66797.37
+        },
+        {
+          "date": "2026-03-31",
+          "btc_price_usd": 68284.48
+        },
+        {
+          "date": "2026-04-01",
+          "btc_price_usd": 68113.92
+        },
+        {
+          "date": "2026-04-02",
+          "btc_price_usd": 66901.99
+        },
+        {
+          "date": "2026-04-03",
+          "btc_price_usd": 66964.3
+        },
+        {
+          "date": "2026-04-04",
+          "btc_price_usd": 67300.42
+        },
+        {
+          "date": "2026-04-05",
+          "btc_price_usd": 69034.18
+        },
+        {
+          "date": "2026-04-06",
+          "btc_price_usd": 68853.66
+        },
+        {
+          "date": "2026-04-07",
+          "btc_price_usd": 71924.22
+        },
+        {
+          "date": "2026-04-08",
+          "btc_price_usd": 71069.93
+        },
+        {
+          "date": "2026-04-09",
+          "btc_price_usd": 71787.97
+        },
+        {
+          "date": "2026-04-10",
+          "btc_price_usd": 72962.7
+        },
+        {
+          "date": "2026-04-11",
+          "btc_price_usd": 73043.16
+        },
+        {
+          "date": "2026-04-12",
+          "btc_price_usd": 70740.98
+        },
+        {
+          "date": "2026-04-13",
+          "btc_price_usd": 74417.99
+        },
+        {
+          "date": "2026-04-14",
+          "btc_price_usd": 74131.55
+        },
+        {
+          "date": "2026-04-15",
+          "btc_price_usd": 74809.99
+        },
+        {
+          "date": "2026-04-16",
+          "btc_price_usd": 75154.29
+        },
+        {
+          "date": "2026-04-17",
+          "btc_price_usd": 77072.0
+        },
+        {
+          "date": "2026-04-18",
+          "btc_price_usd": 75691.76
+        },
+        {
+          "date": "2026-04-19",
+          "btc_price_usd": 73801.79
+        },
+        {
+          "date": "2026-04-20",
+          "btc_price_usd": 75840.97
+        },
+        {
+          "date": "2026-04-21",
+          "btc_price_usd": 76336.15
+        },
+        {
+          "date": "2026-04-22",
+          "btc_price_usd": 78178.23
+        },
+        {
+          "date": "2026-04-23",
+          "btc_price_usd": 78257.48
+        },
+        {
+          "date": "2026-04-24",
+          "btc_price_usd": 77437.13
+        },
+        {
+          "date": "2026-04-25",
+          "btc_price_usd": 77625.0
+        },
+        {
+          "date": "2026-04-26",
+          "btc_price_usd": 78657.55
+        },
+        {
+          "date": "2026-04-27",
+          "btc_price_usd": 77371.32
+        },
+        {
+          "date": "2026-04-28",
+          "btc_price_usd": 76342.77
+        },
+        {
+          "date": "2026-04-29",
+          "btc_price_usd": 75780.0
+        },
+        {
+          "date": "2026-04-30",
+          "btc_price_usd": 76346.57
+        },
+        {
+          "date": "2026-05-01",
+          "btc_price_usd": 78231.13
+        },
+        {
+          "date": "2026-05-02",
+          "btc_price_usd": 78686.85
+        },
+        {
+          "date": "2026-05-03",
+          "btc_price_usd": 78568.57
+        },
+        {
+          "date": "2026-05-04",
+          "btc_price_usd": 79861.01
+        },
+        {
+          "date": "2026-05-05",
+          "btc_price_usd": 80905.52
+        },
+        {
+          "date": "2026-05-06",
+          "btc_price_usd": 81447.01
+        },
+        {
+          "date": "2026-05-07",
+          "btc_price_usd": 80006.0
+        },
+        {
+          "date": "2026-05-08",
+          "btc_price_usd": 80193.17
+        },
+        {
+          "date": "2026-05-09",
+          "btc_price_usd": 80678.4
+        },
+        {
+          "date": "2026-05-10",
+          "btc_price_usd": 82210.07
+        },
+        {
+          "date": "2026-05-11",
+          "btc_price_usd": 81745.65
+        },
+        {
+          "date": "2026-05-12",
+          "btc_price_usd": 80504.47
+        },
+        {
+          "date": "2026-05-13",
+          "btc_price_usd": 79313.61
+        },
+        {
+          "date": "2026-05-14",
+          "btc_price_usd": 81089.99
+        },
+        {
+          "date": "2026-05-15",
+          "btc_price_usd": 79113.21
+        },
+        {
+          "date": "2026-05-16",
+          "btc_price_usd": 78148.05
+        },
+        {
+          "date": "2026-05-17",
+          "btc_price_usd": 77457.67
+        },
+        {
+          "date": "2026-05-18",
+          "btc_price_usd": 77001.87
+        },
+        {
+          "date": "2026-05-19",
+          "btc_price_usd": 76834.36
+        },
+        {
+          "date": "2026-05-20",
+          "btc_price_usd": 77552.23
+        },
+        {
+          "date": "2026-05-21",
+          "btc_price_usd": 77615.52
+        },
+        {
+          "date": "2026-05-22",
+          "btc_price_usd": 75539.5
+        },
+        {
+          "date": "2026-05-23",
+          "btc_price_usd": 76752.01
+        },
+        {
+          "date": "2026-05-24",
+          "btc_price_usd": 77064.96
+        },
+        {
+          "date": "2026-05-25",
+          "btc_price_usd": 77322.01
+        },
+        {
+          "date": "2026-05-26",
+          "btc_price_usd": 75930.01
+        },
+        {
+          "date": "2026-05-27",
+          "btc_price_usd": 74449.3
+        },
+        {
+          "date": "2026-05-28",
+          "btc_price_usd": 73617.51
+        },
+        {
+          "date": "2026-05-29",
+          "btc_price_usd": 73460.78
+        },
+        {
+          "date": "2026-05-30",
+          "btc_price_usd": 73884.38
+        },
+        {
+          "date": "2026-05-31",
+          "btc_price_usd": 73674.39
+        },
+        {
+          "date": "2026-06-01",
+          "btc_price_usd": 71408.9
+        },
+        {
+          "date": "2026-06-02",
+          "btc_price_usd": 66760.83
+        },
+        {
+          "date": "2026-06-03",
+          "btc_price_usd": 64142.75
+        },
+        {
+          "date": "2026-06-04",
+          "btc_price_usd": 63885.99
+        },
+        {
+          "date": "2026-06-05",
+          "btc_price_usd": 61056.47
+        },
+        {
+          "date": "2026-06-06",
+          "btc_price_usd": 60884.62
+        },
+        {
+          "date": "2026-06-07",
+          "btc_price_usd": 63332.01
+        },
+        {
+          "date": "2026-06-08",
+          "btc_price_usd": 63085.99
+        },
+        {
+          "date": "2026-06-09",
+          "btc_price_usd": 61730.0
+        },
+        {
+          "date": "2026-06-10",
+          "btc_price_usd": 61510.99
+        },
+        {
+          "date": "2026-06-11",
+          "btc_price_usd": 63625.99
+        },
+        {
+          "date": "2026-06-12",
+          "btc_price_usd": 63580.01
+        },
+        {
+          "date": "2026-06-13",
+          "btc_price_usd": 64458.01
+        },
+        {
+          "date": "2026-06-14",
+          "btc_price_usd": 65746.45
+        },
+        {
+          "date": "2026-06-15",
+          "btc_price_usd": 66328.74
+        },
+        {
+          "date": "2026-06-16",
+          "btc_price_usd": 65675.01
+        },
+        {
+          "date": "2026-06-17",
+          "btc_price_usd": 64509.4
+        },
+        {
+          "date": "2026-06-18",
+          "btc_price_usd": 62958.01
+        },
+        {
+          "date": "2026-06-19",
+          "btc_price_usd": 63543.91
+        },
+        {
+          "date": "2026-06-20",
+          "btc_price_usd": 64298.01
+        },
+        {
+          "date": "2026-06-21",
+          "btc_price_usd": 63311.99
+        },
+        {
+          "date": "2026-06-22",
+          "btc_price_usd": 64020.01
+        },
+        {
+          "date": "2026-06-23",
+          "btc_price_usd": 62734.57
+        },
+        {
+          "date": "2026-06-24",
+          "btc_price_usd": 61077.99
+        },
+        {
+          "date": "2026-06-25",
+          "btc_price_usd": 59794.0
+        },
+        {
+          "date": "2026-06-26",
+          "btc_price_usd": 60097.27
+        },
+        {
+          "date": "2026-06-27",
+          "btc_price_usd": 60029.0
+        },
+        {
+          "date": "2026-06-28",
+          "btc_price_usd": 59577.01
+        },
+        {
+          "date": "2026-06-29",
+          "btc_price_usd": 60260.21
+        },
+        {
+          "date": "2026-06-30",
+          "btc_price_usd": 58624.71
+        },
+        {
+          "date": "2026-07-01",
+          "btc_price_usd": 60024.0
+        },
+        {
+          "date": "2026-07-02",
+          "btc_price_usd": 61560.0
+        },
+        {
+          "date": "2026-07-03",
+          "btc_price_usd": 62583.26
+        },
+        {
+          "date": "2026-07-04",
+          "btc_price_usd": 63144.01
+        },
+        {
+          "date": "2026-07-05",
+          "btc_price_usd": 63650.0
+        },
+        {
+          "date": "2026-07-06",
+          "btc_price_usd": 64042.02
+        },
+        {
+          "date": "2026-07-07",
+          "btc_price_usd": 63363.99
+        },
+        {
+          "date": "2026-07-08",
+          "btc_price_usd": 62290.0
+        },
+        {
+          "date": "2026-07-09",
+          "btc_price_usd": 63230.0
+        },
+        {
+          "date": "2026-07-10",
+          "btc_price_usd": 64161.72
+        },
+        {
+          "date": "2026-07-11",
+          "btc_price_usd": 63819.0
+        },
+        {
+          "date": "2026-07-12",
+          "btc_price_usd": 63780.0
+        },
+        {
+          "date": "2026-07-13",
+          "btc_price_usd": 62334.52
+        },
+        {
+          "date": "2026-07-14",
+          "btc_price_usd": 65043.98
+        },
+        {
+          "date": "2026-07-15",
+          "btc_price_usd": 64756.28
+        },
+        {
+          "date": "2026-07-16",
+          "btc_price_usd": 63830.2
+        },
+        {
+          "date": "2026-07-17",
+          "btc_price_usd": 63931.67
+        },
+        {
+          "date": "2026-07-18",
+          "btc_price_usd": 64834.22
+        },
+        {
+          "date": "2026-07-19",
+          "btc_price_usd": 64722.54
+        },
+        {
+          "date": "2026-07-20",
+          "btc_price_usd": 65255.51
+        },
+        {
+          "date": "2026-07-21",
+          "btc_price_usd": 66556.16
+        },
+        {
+          "date": "2026-07-22",
+          "btc_price_usd": 66114.49
+        },
+        {
+          "date": "2026-07-23",
+          "btc_price_usd": 65098.97
+        },
+        {
+          "date": "2026-07-24",
+          "btc_price_usd": 64139.99
+        },
+        {
+          "date": "2026-07-25",
+          "btc_price_usd": 64375.0
+        },
+        {
+          "date": "2026-07-26",
+          "btc_price_usd": 65399.99
+        },
+        {
+          "date": "2026-07-27",
+          "btc_price_usd": 63755.86
+        },
+        {
+          "date": "2026-07-28",
+          "btc_price_usd": 63915.0
+        },
+        {
+          "date": "2026-07-29",
+          "btc_price_usd": 64094.09
+        }
+      ],
+      "polymarket_catalysts": [
         {
           "title": "How low will 10-year Treasury yield get before 2027?",
           "probability_pct": 100.0,
           "end_date": "2026-12-31"
         },
         {
-          "title": "Ethereum ETF Flows on July 28?",
+          "title": "How high will 10-year Treasury yield go before 2027?",
           "probability_pct": 100.0,
-          "end_date": "2026-07-28"
-        },
-        {
-          "title": "Ethereum ETF Flows on July 27?",
-          "probability_pct": 99.5,
-          "end_date": "2026-07-27"
+          "end_date": "2026-12-31"
         },
         {
           "title": "How many Fed rate cuts in 2026?",
-          "probability_pct": 86.4,
+          "probability_pct": 88.6,
           "end_date": "2026-12-31"
         },
         {
           "title": "Fed rate hike in 2026?",
-          "probability_pct": 74.5,
+          "probability_pct": 70.5,
           "end_date": "2026-12-09"
         },
         {
           "title": "Ethereum ETF Flows on July 29?",
-          "probability_pct": 57.5,
+          "probability_pct": 64.5,
           "end_date": "2026-07-29"
         },
         {
           "title": "Bitcoin ETF Flows on July 29?",
-          "probability_pct": 57.0,
+          "probability_pct": 64.5,
           "end_date": "2026-07-29"
         },
         {
           "title": "Bitcoin ETF Flows on July 30?",
-          "probability_pct": 50.0,
+          "probability_pct": 51.0,
           "end_date": "2026-07-30"
+        },
+        {
+          "title": "Ethereum ETF Flows on July 27?",
+          "probability_pct": 50.5,
+          "end_date": "2026-07-27"
+        },
+        {
+          "title": "Ethereum ETF Flows on July 28?",
+          "probability_pct": 50.5,
+          "end_date": "2026-07-28"
         },
         {
           "title": "Ethereum ETF Flows on July 30?",
@@ -5995,10 +7462,10 @@
           "hkma_count": 2,
           "sfc_licensed_count": 13,
           "sfc_pending_count": 6,
-          "total_supply_bn": 307.64,
+          "total_supply_bn": 307.7,
           "total_etf_aum_m": 338.18,
-          "btc_price": null,
-          "cb_premium_bps": null,
+          "btc_price": 64006.88,
+          "cb_premium_bps": -12.89,
           "fear_greed_val": 29,
           "fear_greed_class": "Fear"
         }
@@ -6134,9 +7601,9 @@
     {
       "id": "coinbase_binance",
       "label": "Coinbase & Binance Public Tickers",
-      "status": "degraded",
-      "records": 0,
-      "freshness": "unavailable",
+      "status": "success",
+      "records": 1,
+      "freshness": "live",
       "notes": "Real-time BTC spot price, 1-year price history, and Coinbase Premium spread."
     },
     {
@@ -6160,8 +7627,8 @@
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-stablecoin-crypto/",
     "sector_id": "hk-stablecoin-crypto",
     "sector_name": "Hong Kong Stablecoin & Crypto Infrastructure Monitor",
-    "snapshotId": "2d3321387a84f142",
-    "generatedAt": "2026-07-29T09:09:11Z",
+    "snapshotId": "6599b497092e5abd",
+    "generatedAt": "2026-07-29T18:37:59Z",
     "dataAsOf": "2026-07-29"
   }
 }

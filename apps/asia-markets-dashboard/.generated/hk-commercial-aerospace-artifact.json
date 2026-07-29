@@ -6,9 +6,9 @@
     "title": "Hong Kong Commercial Aerospace Sector Monitor",
     "description": "SSE STAR Market IPO filing status, Launch Library 2 launch cadence, Celestrak satellite counts, and patent filing counts for Chinese commercial space companies.",
     "sector": "hk-commercial-aerospace",
-    "generatedAt": "2026-07-29T09:09:11.699436Z",
+    "generatedAt": "2026-07-29T18:37:59.583265Z",
     "dataAsOf": "2026-07-29",
-    "liveSourcesCount": 3,
+    "liveSourcesCount": 2,
     "totalSourcesCount": 4,
     "cards": [
       {
@@ -325,7 +325,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**Data snapshot:** `908d0d27202818e7` \u00b7 generated 2026-07-29T09:09:11.699436Z.  Official disclosures and public tracking data."
+        "body": "**Data snapshot:** `d9142558ddd22285` \u00b7 generated 2026-07-29T18:37:59.583265Z.  Official disclosures and public tracking data."
       },
       {
         "id": "kpi_grid",
@@ -375,7 +375,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-29T09:09:11.699436Z",
+    "generatedAt": "2026-07-29T18:37:59.583265Z",
     "status": "ready",
     "datasets": {
       "ipo_race": [
@@ -424,17 +424,17 @@
         {
           "net_date": "2026-07-29",
           "provider": "China Aerospace Science and Technology Corporation",
-          "mission": "Long March 7A | Unknown Payload",
+          "mission": "Long March 7A | Tianlian 3-01",
           "pad_name": "201",
-          "orbit": "nan",
-          "status": "Go for Launch"
+          "orbit": "N/A",
+          "status": "Launch Successful"
         },
         {
           "net_date": "2026-07-30",
           "provider": "China Aerospace Science and Technology Corporation",
           "mission": "Long March 6A | Unknown Payload",
           "pad_name": "Launch Complex 9A",
-          "orbit": "nan",
+          "orbit": "N/A",
           "status": "Go for Launch"
         },
         {
@@ -442,7 +442,7 @@
           "provider": "China Rocket Co. Ltd.",
           "mission": "Smart Dragon 3 | Unknown Payload",
           "pad_name": "Haiyang offshore launch location",
-          "orbit": "nan",
+          "orbit": "N/A",
           "status": "To Be Confirmed"
         },
         {
@@ -450,7 +450,7 @@
           "provider": "China Aerospace Science and Technology Corporation",
           "mission": "Long March 8A | Unknown Payload",
           "pad_name": "Commercial LC-1",
-          "orbit": "nan",
+          "orbit": "N/A",
           "status": "Go for Launch"
         },
         {
@@ -458,7 +458,7 @@
           "provider": "China Aerospace Science and Technology Corporation",
           "mission": "Long March 7A | Unknown Payload",
           "pad_name": "201",
-          "orbit": "nan",
+          "orbit": "N/A",
           "status": "To Be Confirmed"
         },
         {
@@ -466,7 +466,7 @@
           "provider": "China Aerospace Science and Technology Corporation",
           "mission": "Long March 12 | Unknown Payload",
           "pad_name": "Commercial LC-2",
-          "orbit": "nan",
+          "orbit": "N/A",
           "status": "To Be Confirmed"
         },
         {
@@ -474,7 +474,7 @@
           "provider": "China Aerospace Science and Technology Corporation",
           "mission": "Long March 5 | Chang'e 7",
           "pad_name": "101",
-          "orbit": "nan",
+          "orbit": "N/A",
           "status": "To Be Confirmed"
         },
         {
@@ -482,7 +482,7 @@
           "provider": "LandSpace",
           "mission": "Zhuque-3 | Flight 2",
           "pad_name": "Launch Area 96B",
-          "orbit": "nan",
+          "orbit": "N/A",
           "status": "To Be Determined"
         },
         {
@@ -490,1000 +490,27 @@
           "provider": "China Aerospace Science and Technology Corporation",
           "mission": "Long March 2F/G | Shenzhou 24",
           "pad_name": "Launch Area 91 (SLS-1 / 921)",
-          "orbit": "nan",
+          "orbit": "N/A",
           "status": "To Be Determined"
         }
       ],
-      "launch_cadence": [
-        {
-          "provider": "LandSpace",
-          "launch_id": "",
-          "name": "Zhuque-2E Block 2 | 2 x SatNet DTC test satellites",
-          "date": "2026-06-09",
-          "month": "2026-06",
-          "year": "2026",
-          "status": "Success"
-        },
-        {
-          "provider": "LandSpace",
-          "launch_id": "",
-          "name": "Zhuque-2E Block 2 | Mass Simulator",
-          "date": "2026-05-14",
-          "month": "2026-05",
-          "year": "2026",
-          "status": "Success"
-        },
-        {
-          "provider": "LandSpace",
-          "launch_id": "",
-          "name": "Zhuque-3 | Demo Flight",
-          "date": "2025-12-03",
-          "month": "2025-12",
-          "year": "2025",
-          "status": "Success"
-        },
-        {
-          "provider": "LandSpace",
-          "launch_id": "",
-          "name": "Zhuque-2E | 4 x SatNet test satellites",
-          "date": "2025-08-15",
-          "month": "2025-08",
-          "year": "2025",
-          "status": "Failure"
-        },
-        {
-          "provider": "LandSpace",
-          "launch_id": "",
-          "name": "Zhuque-2E | 6 satellites",
-          "date": "2025-05-17",
-          "month": "2025-05",
-          "year": "2025",
-          "status": "Success"
-        },
-        {
-          "provider": "LandSpace",
-          "launch_id": "",
-          "name": "Zhuque-2E | Guangchuan-01 & 02",
-          "date": "2024-11-27",
-          "month": "2024-11",
-          "year": "2024",
-          "status": "Success"
-        },
-        {
-          "provider": "LandSpace",
-          "launch_id": "",
-          "name": "Zhuque-2 | Flight 3",
-          "date": "2023-12-08",
-          "month": "2023-12",
-          "year": "2023",
-          "status": "Success"
-        },
-        {
-          "provider": "LandSpace",
-          "launch_id": "",
-          "name": "Zhuque-2 | Flight 2",
-          "date": "2023-07-12",
-          "month": "2023-07",
-          "year": "2023",
-          "status": "Success"
-        },
-        {
-          "provider": "LandSpace",
-          "launch_id": "",
-          "name": "Zhuque-2 | Maiden Flight",
-          "date": "2022-12-14",
-          "month": "2022-12",
-          "year": "2022",
-          "status": "Failure"
-        },
-        {
-          "provider": "LandSpace",
-          "launch_id": "",
-          "name": "Zhuque-1 | Weilai-1 (Future-1)",
-          "date": "2018-10-27",
-          "month": "2018-10",
-          "year": "2018",
-          "status": "Failure"
-        },
-        {
-          "provider": "Galactic Energy",
-          "launch_id": "",
-          "name": "Ceres-2 | Demo Flight",
-          "date": "2026-01-17",
-          "month": "2026-01",
-          "year": "2026",
-          "status": "Failure"
-        },
-        {
-          "provider": "Galactic Energy",
-          "launch_id": "",
-          "name": "Ceres-1S | Tianqi 37-40",
-          "date": "2026-01-15",
-          "month": "2026-01",
-          "year": "2026",
-          "status": "Success"
-        },
-        {
-          "provider": "Galactic Energy",
-          "launch_id": "",
-          "name": "Ceres-1 | Jilin-1 High Resolution-04C and others",
-          "date": "2025-11-10",
-          "month": "2025-11",
-          "year": "2025",
-          "status": "Failure"
-        },
-        {
-          "provider": "Galactic Energy",
-          "launch_id": "",
-          "name": "Ceres-1 | 3 satellites",
-          "date": "2025-09-05",
-          "month": "2025-09",
-          "year": "2025",
-          "status": "Success"
-        },
-        {
-          "provider": "Galactic Energy",
-          "launch_id": "",
-          "name": "Ceres-1S | Tianqi 16-18 & 20",
-          "date": "2025-05-19",
-          "month": "2025-05",
-          "year": "2025",
-          "status": "Success"
-        },
-        {
-          "provider": "Galactic Energy",
-          "launch_id": "",
-          "name": "Ceres-1 | Yunyao-1 43-48",
-          "date": "2025-03-21",
-          "month": "2025-03",
-          "year": "2025",
-          "status": "Success"
-        },
-        {
-          "provider": "Galactic Energy",
-          "launch_id": "",
-          "name": "Ceres-1 | 8 satellites",
-          "date": "2025-03-17",
-          "month": "2025-03",
-          "year": "2025",
-          "status": "Success"
-        },
-        {
-          "provider": "Galactic Energy",
-          "launch_id": "",
-          "name": "Ceres-1 | 5 satellites",
-          "date": "2025-01-20",
-          "month": "2025-01",
-          "year": "2025",
-          "status": "Success"
-        },
-        {
-          "provider": "Galactic Energy",
-          "launch_id": "",
-          "name": "Ceres-1S | Tianqi 33-36",
-          "date": "2024-12-19",
-          "month": "2024-12",
-          "year": "2024",
-          "status": "Success"
-        },
-        {
-          "provider": "Galactic Energy",
-          "launch_id": "",
-          "name": "Ceres-1S | 6 satellites",
-          "date": "2024-08-29",
-          "month": "2024-08",
-          "year": "2024",
-          "status": "Success"
-        },
-        {
-          "provider": "Galactic Energy",
-          "launch_id": "",
-          "name": "Ceres-1 | 3 satellites",
-          "date": "2024-06-06",
-          "month": "2024-06",
-          "year": "2024",
-          "status": "Success"
-        },
-        {
-          "provider": "Galactic Energy",
-          "launch_id": "",
-          "name": "Ceres-1 | 5 satellites",
-          "date": "2024-05-30",
-          "month": "2024-05",
-          "year": "2024",
-          "status": "Success"
-        },
-        {
-          "provider": "Galactic Energy",
-          "launch_id": "",
-          "name": "Ceres-1S | Tianqi 25-28",
-          "date": "2024-05-29",
-          "month": "2024-05",
-          "year": "2024",
-          "status": "Success"
-        },
-        {
-          "provider": "Galactic Energy",
-          "launch_id": "",
-          "name": "Ceres-1 | Tianyan-16 & Starpool-01A",
-          "date": "2023-12-04",
-          "month": "2023-12",
-          "year": "2023",
-          "status": "Success"
-        },
-        {
-          "provider": "Galactic Energy",
-          "launch_id": "",
-          "name": "Ceres-1 | Jilin-1 High Resolution 04B",
-          "date": "2023-09-21",
-          "month": "2023-09",
-          "year": "2023",
-          "status": "Failure"
-        },
-        {
-          "provider": "Galactic Energy",
-          "launch_id": "",
-          "name": "Ceres-1S | Tianqi 21-24",
-          "date": "2023-09-05",
-          "month": "2023-09",
-          "year": "2023",
-          "status": "Success"
-        },
-        {
-          "provider": "Galactic Energy",
-          "launch_id": "",
-          "name": "Ceres-1 | Jilin-1 Wideband-02A",
-          "date": "2023-08-25",
-          "month": "2023-08",
-          "year": "2023",
-          "status": "Success"
-        },
-        {
-          "provider": "Galactic Energy",
-          "launch_id": "",
-          "name": "Ceres-1 | 7 satellites",
-          "date": "2023-08-10",
-          "month": "2023-08",
-          "year": "2023",
-          "status": "Success"
-        },
-        {
-          "provider": "Galactic Energy",
-          "launch_id": "",
-          "name": "Ceres-1 | Qiankun-1 & Xingshidai\u201016",
-          "date": "2023-07-22",
-          "month": "2023-07",
-          "year": "2023",
-          "status": "Success"
-        },
-        {
-          "provider": "Galactic Energy",
-          "launch_id": "",
-          "name": "Ceres-1 | 5 satellites",
-          "date": "2023-01-09",
-          "month": "2023-01",
-          "year": "2023",
-          "status": "Success"
-        },
-        {
-          "provider": "Galactic Energy",
-          "launch_id": "",
-          "name": "Ceres-1 | Jilin-1 High Resolution 03D-08, 51 to 54",
-          "date": "2022-11-16",
-          "month": "2022-11",
-          "year": "2022",
-          "status": "Success"
-        },
-        {
-          "provider": "Galactic Energy",
-          "launch_id": "",
-          "name": "Ceres-1 | Taijing-1-01 & 02",
-          "date": "2022-08-09",
-          "month": "2022-08",
-          "year": "2022",
-          "status": "Success"
-        },
-        {
-          "provider": "Galactic Energy",
-          "launch_id": "",
-          "name": "Ceres-1 | Golden Bauhinia 1-03 & others",
-          "date": "2021-12-07",
-          "month": "2021-12",
-          "year": "2021",
-          "status": "Success"
-        },
-        {
-          "provider": "Galactic Energy",
-          "launch_id": "",
-          "name": "Ceres-1 | Tianqi-11",
-          "date": "2020-11-07",
-          "month": "2020-11",
-          "year": "2020",
-          "status": "Success"
-        },
-        {
-          "provider": "CAS Space",
-          "launch_id": "",
-          "name": "Kinetica 1 | 5 satellites",
-          "date": "2026-07-23",
-          "month": "2026-07",
-          "year": "2026",
-          "status": "Success"
-        },
-        {
-          "provider": "CAS Space",
-          "launch_id": "",
-          "name": "Long March 3B/E | Tianlian 2-06",
-          "date": "2026-07-23",
-          "month": "2026-07",
-          "year": "2026",
-          "status": "Success"
-        },
-        {
-          "provider": "CAS Space",
-          "launch_id": "",
-          "name": "Long March 10B | Demo Flight",
-          "date": "2026-07-10",
-          "month": "2026-07",
-          "year": "2026",
-          "status": "Success"
-        },
-        {
-          "provider": "CAS Space",
-          "launch_id": "",
-          "name": "Long March 8A | SpaceSail Polar Group #14",
-          "date": "2026-07-05",
-          "month": "2026-07",
-          "year": "2026",
-          "status": "Success"
-        },
-        {
-          "provider": "CAS Space",
-          "launch_id": "",
-          "name": "Long March 6A | SpaceSail Polar Group #13",
-          "date": "2026-07-04",
-          "month": "2026-07",
-          "year": "2026",
-          "status": "Success"
-        },
-        {
-          "provider": "CAS Space",
-          "launch_id": "",
-          "name": "Long March 4B | Haiyang 2E",
-          "date": "2026-07-01",
-          "month": "2026-07",
-          "year": "2026",
-          "status": "Success"
-        },
-        {
-          "provider": "CAS Space",
-          "launch_id": "",
-          "name": "Long March 7A | TJSW-26A",
-          "date": "2026-06-23",
-          "month": "2026-06",
-          "year": "2026",
-          "status": "Success"
-        },
-        {
-          "provider": "CAS Space",
-          "launch_id": "",
-          "name": "Long March 12 | SatNet LEO Group 22",
-          "date": "2026-06-17",
-          "month": "2026-06",
-          "year": "2026",
-          "status": "Success"
-        },
-        {
-          "provider": "CAS Space",
-          "launch_id": "",
-          "name": "Long March 3B/E | Shijian 31",
-          "date": "2026-06-16",
-          "month": "2026-06",
-          "year": "2026",
-          "status": "Success"
-        },
-        {
-          "provider": "CAS Space",
-          "launch_id": "",
-          "name": "Kinetica 1 | 8 x Jilin-1",
-          "date": "2026-06-15",
-          "month": "2026-06",
-          "year": "2026",
-          "status": "Success"
-        },
-        {
-          "provider": "CAS Space",
-          "launch_id": "",
-          "name": "Long March 5 | TJSW-25",
-          "date": "2026-06-11",
-          "month": "2026-06",
-          "year": "2026",
-          "status": "Success"
-        },
-        {
-          "provider": "CAS Space",
-          "launch_id": "",
-          "name": "Long March 8 | SpaceSail Polar Group #12",
-          "date": "2026-06-05",
-          "month": "2026-06",
-          "year": "2026",
-          "status": "Success"
-        },
-        {
-          "provider": "CAS Space",
-          "launch_id": "",
-          "name": "Long March 6A | SpaceSail Polar Group #11",
-          "date": "2026-06-04",
-          "month": "2026-06",
-          "year": "2026",
-          "status": "Success"
-        },
-        {
-          "provider": "CAS Space",
-          "launch_id": "",
-          "name": "Long March 12B | Demo Flight (SpaceSail Polar Group #10)",
-          "date": "2026-06-01",
-          "month": "2026-06",
-          "year": "2026",
-          "status": "Success"
-        },
-        {
-          "provider": "CAS Space",
-          "launch_id": "",
-          "name": "Long March 2D | 4 x SatNet test satellites",
-          "date": "2026-05-30",
-          "month": "2026-05",
-          "year": "2026",
-          "status": "Success"
-        },
-        {
-          "provider": "CAS Space",
-          "launch_id": "",
-          "name": "Long March 7A | TJSW-24",
-          "date": "2026-05-26",
-          "month": "2026-05",
-          "year": "2026",
-          "status": "Success"
-        },
-        {
-          "provider": "CAS Space",
-          "launch_id": "",
-          "name": "Long March 2F/G | Shenzhou 23",
-          "date": "2026-05-24",
-          "month": "2026-05",
-          "year": "2026",
-          "status": "Success"
-        },
-        {
-          "provider": "CAS Space",
-          "launch_id": "",
-          "name": "Long March 8 | SpaceSail Polar Group #9",
-          "date": "2026-05-17",
-          "month": "2026-05",
-          "year": "2026",
-          "status": "Success"
-        },
-        {
-          "provider": "CAS Space",
-          "launch_id": "",
-          "name": "Kinetica 1 | 5 satellites",
-          "date": "2026-05-15",
-          "month": "2026-05",
-          "year": "2026",
-          "status": "Success"
-        },
-        {
-          "provider": "CAS Space",
-          "launch_id": "",
-          "name": "Long March 6A | SpaceSail Polar Group #8",
-          "date": "2026-05-12",
-          "month": "2026-05",
-          "year": "2026",
-          "status": "Success"
-        },
-        {
-          "provider": "CAS Space",
-          "launch_id": "",
-          "name": "Long March 7 | Tianzhou-10",
-          "date": "2026-05-11",
-          "month": "2026-05",
-          "year": "2026",
-          "status": "Success"
-        },
-        {
-          "provider": "CAS Space",
-          "launch_id": "",
-          "name": "Falcon 9 Block 5 | CAS500-2 & Others",
-          "date": "2026-05-03",
-          "month": "2026-05",
-          "year": "2026",
-          "status": "Success"
-        },
-        {
-          "provider": "CAS Space",
-          "launch_id": "",
-          "name": "Long March 6 | PRSC-EO3",
-          "date": "2026-04-25",
-          "month": "2026-04",
-          "year": "2026",
-          "status": "Success"
-        },
-        {
-          "provider": "CAS Space",
-          "launch_id": "",
-          "name": "Long March 2D | 4 x SatNet test satellites",
-          "date": "2026-04-24",
-          "month": "2026-04",
-          "year": "2026",
-          "status": "Success"
-        },
-        {
-          "provider": "CAS Space",
-          "launch_id": "",
-          "name": "Long March 4C | Daqi-2 (AEMS)",
-          "date": "2026-04-17",
-          "month": "2026-04",
-          "year": "2026",
-          "status": "Success"
-        },
-        {
-          "provider": "CAS Space",
-          "launch_id": "",
-          "name": "Kinetica 1 | 8 x Jilin-1",
-          "date": "2026-04-14",
-          "month": "2026-04",
-          "year": "2026",
-          "status": "Success"
-        },
-        {
-          "provider": "CAS Space",
-          "launch_id": "",
-          "name": "Long March 6A | SatNet LEO Group 21",
-          "date": "2026-04-08",
-          "month": "2026-04",
-          "year": "2026",
-          "status": "Success"
-        },
-        {
-          "provider": "CAS Space",
-          "launch_id": "",
-          "name": "Long March 8 | SpaceSail Polar Group #7",
-          "date": "2026-04-07",
-          "month": "2026-04",
-          "year": "2026",
-          "status": "Success"
-        },
-        {
-          "provider": "CAS Space",
-          "launch_id": "",
-          "name": "Kinetica 2 | Demo Flight (Qingzhou Prototype Spacecraft)",
-          "date": "2026-03-30",
-          "month": "2026-03",
-          "year": "2026",
-          "status": "Success"
-        },
-        {
-          "provider": "CAS Space",
-          "launch_id": "",
-          "name": "Long March 2C/YZ-1S | Shiyan 33",
-          "date": "2026-03-27",
-          "month": "2026-03",
-          "year": "2026",
-          "status": "Success"
-        },
-        {
-          "provider": "CAS Space",
-          "launch_id": "",
-          "name": "Long March 2D | SuperView Neo 2-05 & 06",
-          "date": "2026-03-25",
-          "month": "2026-03",
-          "year": "2026",
-          "status": "Success"
-        },
-        {
-          "provider": "CAS Space",
-          "launch_id": "",
-          "name": "Long March 6A | Yaogan 50-02",
-          "date": "2026-03-15",
-          "month": "2026-03",
-          "year": "2026",
-          "status": "Success"
-        },
-        {
-          "provider": "CAS Space",
-          "launch_id": "",
-          "name": "Long March 2D | Shiyan 30 03-04",
-          "date": "2026-03-12",
-          "month": "2026-03",
-          "year": "2026",
-          "status": "Success"
-        },
-        {
-          "provider": "CAS Space",
-          "launch_id": "",
-          "name": "Long March 8A | SatNet LEO Group 20",
-          "date": "2026-03-12",
-          "month": "2026-03",
-          "year": "2026",
-          "status": "Success"
-        },
-        {
-          "provider": "CAS Space",
-          "launch_id": "",
-          "name": "Long March 2F/G | Chinese Reusable Space Vehicle",
-          "date": "2026-02-07",
-          "month": "2026-02",
-          "year": "2026",
-          "status": "Success"
-        },
-        {
-          "provider": "CAS Space",
-          "launch_id": "",
-          "name": "Long March 2C | AlSat 3B",
-          "date": "2026-01-31",
-          "month": "2026-01",
-          "year": "2026",
-          "status": "Success"
-        },
-        {
-          "provider": "CAS Space",
-          "launch_id": "",
-          "name": "Long March 12 | SatNet LEO Group 19",
-          "date": "2026-01-19",
-          "month": "2026-01",
-          "year": "2026",
-          "status": "Success"
-        },
-        {
-          "provider": "CAS Space",
-          "launch_id": "",
-          "name": "Long March 3B/E | Shijian 32",
-          "date": "2026-01-16",
-          "month": "2026-01",
-          "year": "2026",
-          "status": "Failure"
-        },
-        {
-          "provider": "CAS Space",
-          "launch_id": "",
-          "name": "Long March 2C | AlSat 3A",
-          "date": "2026-01-15",
-          "month": "2026-01",
-          "year": "2026",
-          "status": "Success"
-        },
-        {
-          "provider": "CAS Space",
-          "launch_id": "",
-          "name": "Long March 8A | SatNet LEO Group 18",
-          "date": "2026-01-13",
-          "month": "2026-01",
-          "year": "2026",
-          "status": "Success"
-        },
-        {
-          "provider": "CAS Space",
-          "launch_id": "",
-          "name": "Long March 6A | Yaogan 50-01",
-          "date": "2026-01-13",
-          "month": "2026-01",
-          "year": "2026",
-          "status": "Success"
-        },
-        {
-          "provider": "CAS Space",
-          "launch_id": "",
-          "name": "Long March 7A | Shijian 29 A-B",
-          "date": "2025-12-30",
-          "month": "2025-12",
-          "year": "2025",
-          "status": "Success"
-        },
-        {
-          "provider": "CAS Space",
-          "launch_id": "",
-          "name": "Long March 4B | Tianhui 7",
-          "date": "2025-12-30",
-          "month": "2025-12",
-          "year": "2025",
-          "status": "Success"
-        },
-        {
-          "provider": "CAS Space",
-          "launch_id": "",
-          "name": "Long March 3B/E | Fengyun-4C",
-          "date": "2025-12-26",
-          "month": "2025-12",
-          "year": "2025",
-          "status": "Success"
-        },
-        {
-          "provider": "CAS Space",
-          "launch_id": "",
-          "name": "Long March 8A | SatNet LEO Group 17",
-          "date": "2025-12-25",
-          "month": "2025-12",
-          "year": "2025",
-          "status": "Success"
-        },
-        {
-          "provider": "CAS Space",
-          "launch_id": "",
-          "name": "Long March 12A | Demo Flight",
-          "date": "2025-12-23",
-          "month": "2025-12",
-          "year": "2025",
-          "status": "Success"
-        },
-        {
-          "provider": "CAS Space",
-          "launch_id": "",
-          "name": "Long March 5 | TJSW-23",
-          "date": "2025-12-20",
-          "month": "2025-12",
-          "year": "2025",
-          "status": "Success"
-        },
-        {
-          "provider": "CAS Space",
-          "launch_id": "",
-          "name": "Long March 4B | Ziyuan-3-04",
-          "date": "2025-12-16",
-          "month": "2025-12",
-          "year": "2025",
-          "status": "Success"
-        },
-        {
-          "provider": "CAS Space",
-          "launch_id": "",
-          "name": "Long March 12 | SatNet LEO Group 16",
-          "date": "2025-12-11",
-          "month": "2025-12",
-          "year": "2025",
-          "status": "Success"
-        },
-        {
-          "provider": "CAS Space",
-          "launch_id": "",
-          "name": "Kinetica 1 | 9 satellites",
-          "date": "2025-12-10",
-          "month": "2025-12",
-          "year": "2025",
-          "status": "Success"
-        },
-        {
-          "provider": "Orienspace",
-          "launch_id": "",
-          "name": "Gravity-1 | 9 satellites",
-          "date": "2026-07-22",
-          "month": "2026-07",
-          "year": "2026",
-          "status": "Success"
-        },
-        {
-          "provider": "Orienspace",
-          "launch_id": "",
-          "name": "Gravity-1 | 3 satellites",
-          "date": "2025-10-11",
-          "month": "2025-10",
-          "year": "2025",
-          "status": "Success"
-        },
-        {
-          "provider": "Orienspace",
-          "launch_id": "",
-          "name": "Gravity-1 | Maiden flight",
-          "date": "2024-01-11",
-          "month": "2024-01",
-          "year": "2024",
-          "status": "Success"
-        },
-        {
-          "provider": "i-Space",
-          "launch_id": "",
-          "name": "Hyperbola-1 | Kunpeng-03",
-          "date": "2025-07-29",
-          "month": "2025-07",
-          "year": "2025",
-          "status": "Success"
-        },
-        {
-          "provider": "i-Space",
-          "launch_id": "",
-          "name": "Hyperbola-1 | Yunyao-1 15-17",
-          "date": "2024-07-10",
-          "month": "2024-07",
-          "year": "2024",
-          "status": "Failure"
-        },
-        {
-          "provider": "i-Space",
-          "launch_id": "",
-          "name": "Hyperbola-1 | DEAR-1",
-          "date": "2023-12-17",
-          "month": "2023-12",
-          "year": "2023",
-          "status": "Success"
-        },
-        {
-          "provider": "i-Space",
-          "launch_id": "",
-          "name": "Hyperbola-1 | Dummy Payload",
-          "date": "2023-04-07",
-          "month": "2023-04",
-          "year": "2023",
-          "status": "Success"
-        },
-        {
-          "provider": "i-Space",
-          "launch_id": "",
-          "name": "Hyperbola-1 | Jilin-1 Mofang-01A(R)",
-          "date": "2022-05-13",
-          "month": "2022-05",
-          "year": "2022",
-          "status": "Failure"
-        },
-        {
-          "provider": "i-Space",
-          "launch_id": "",
-          "name": "Hyperbola-1 | Jilin-1 Mofang-01A (?)",
-          "date": "2021-08-03",
-          "month": "2021-08",
-          "year": "2021",
-          "status": "Failure"
-        },
-        {
-          "provider": "i-Space",
-          "launch_id": "",
-          "name": "Hyperbola-1 | Unknown",
-          "date": "2021-02-01",
-          "month": "2021-02",
-          "year": "2021",
-          "status": "Failure"
-        },
-        {
-          "provider": "i-Space",
-          "launch_id": "",
-          "name": "Hyperbola-1 | Maiden Flight",
-          "date": "2019-07-25",
-          "month": "2019-07",
-          "year": "2019",
-          "status": "Success"
-        },
-        {
-          "provider": "Space Pioneer",
-          "launch_id": "",
-          "name": "Tianlong-3 | Demo Flight",
-          "date": "2026-04-03",
-          "month": "2026-04",
-          "year": "2026",
-          "status": "Failure"
-        },
-        {
-          "provider": "Space Pioneer",
-          "launch_id": "",
-          "name": "Tianlong-2 | Demo Flight",
-          "date": "2023-04-02",
-          "month": "2023-04",
-          "year": "2023",
-          "status": "Success"
-        },
-        {
-          "provider": "Space Pioneer",
-          "launch_id": "",
-          "name": "Thor Delta L | Pioneer E",
-          "date": "1969-08-27",
-          "month": "1969-08",
-          "year": "1969",
-          "status": "Failure"
-        },
-        {
-          "provider": "Space Pioneer",
-          "launch_id": "",
-          "name": "Thor Delta E1 | Pioneer 9",
-          "date": "1968-11-08",
-          "month": "1968-11",
-          "year": "1968",
-          "status": "Success"
-        },
-        {
-          "provider": "Space Pioneer",
-          "launch_id": "",
-          "name": "Thor Delta E1 | Pioneer 8",
-          "date": "1967-12-13",
-          "month": "1967-12",
-          "year": "1967",
-          "status": "Success"
-        },
-        {
-          "provider": "Space Pioneer",
-          "launch_id": "",
-          "name": "Thor Delta E1 | Pioneer 7",
-          "date": "1966-08-17",
-          "month": "1966-08",
-          "year": "1966",
-          "status": "Success"
-        },
-        {
-          "provider": "Space Pioneer",
-          "launch_id": "",
-          "name": "Thor Delta E | Pioneer 6",
-          "date": "1965-12-16",
-          "month": "1965-12",
-          "year": "1965",
-          "status": "Success"
-        },
-        {
-          "provider": "Space Pioneer",
-          "launch_id": "",
-          "name": "Thor Able IV | Pioneer V",
-          "date": "1960-03-11",
-          "month": "1960-03",
-          "year": "1960",
-          "status": "Success"
-        },
-        {
-          "provider": "Space Pioneer",
-          "launch_id": "",
-          "name": "Juno II | Pioneer 4",
-          "date": "1959-03-03",
-          "month": "1959-03",
-          "year": "1959",
-          "status": "Success"
-        },
-        {
-          "provider": "Space Pioneer",
-          "launch_id": "",
-          "name": "Juno II | Pioneer 3",
-          "date": "1958-12-06",
-          "month": "1958-12",
-          "year": "1958",
-          "status": "Success"
-        },
-        {
-          "provider": "Space Pioneer",
-          "launch_id": "",
-          "name": "Thor Able I | Pioneer 2",
-          "date": "1958-11-08",
-          "month": "1958-11",
-          "year": "1958",
-          "status": "Failure"
-        },
-        {
-          "provider": "Space Pioneer",
-          "launch_id": "",
-          "name": "Thor Able I | Pioneer 1",
-          "date": "1958-10-11",
-          "month": "1958-10",
-          "year": "1958",
-          "status": "Success"
-        },
-        {
-          "provider": "Space Pioneer",
-          "launch_id": "",
-          "name": "Thor Able I | Able I (Pioneer)",
-          "date": "1958-08-17",
-          "month": "1958-08",
-          "year": "1958",
-          "status": "Failure"
-        }
-      ],
+      "launch_cadence": [],
       "launch_cadence_summary": [
         {
           "provider": "LandSpace",
-          "launch_count": 10
+          "launch_count": 0
         },
         {
           "provider": "Galactic Energy",
-          "launch_count": 24
+          "launch_count": 0
         },
         {
           "provider": "CAS Space",
-          "launch_count": 50
+          "launch_count": 0
         },
         {
           "provider": "Orienspace",
-          "launch_count": 3
+          "launch_count": 0
         },
         {
           "provider": "Deep Blue Aerospace",
@@ -1491,11 +518,11 @@
         },
         {
           "provider": "i-Space",
-          "launch_count": 8
+          "launch_count": 0
         },
         {
           "provider": "Space Pioneer",
-          "launch_count": 13
+          "launch_count": 0
         }
       ],
       "satellite_counts": [
@@ -1601,7 +628,7 @@
           "cas_space_audit": 2180.0,
           "qianfan_count": 238,
           "jilin1_count": 50,
-          "total_launches": 108
+          "total_launches": 0
         }
       ]
     }
@@ -1674,9 +701,9 @@
       "source_id": "launch_library_2",
       "label": "Launch Library 2 (The Space Devs)",
       "status": "success",
-      "records": 117,
+      "records": 9,
       "latest_observation": "2026-07-29",
-      "freshness": "live",
+      "freshness": "stale",
       "notes": "Launch history for Chinese commercial launch providers (LandSpace, CAS Space, Galactic Energy, Space Pioneer, etc.)."
     },
     {
@@ -1702,8 +729,8 @@
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-commercial-aerospace/",
     "sector_id": "hk-commercial-aerospace",
     "sector_name": "Hong Kong Commercial Aerospace Sector Monitor",
-    "snapshotId": "908d0d27202818e7",
-    "generatedAt": "2026-07-29T09:09:11.699436Z",
+    "snapshotId": "d9142558ddd22285",
+    "generatedAt": "2026-07-29T18:37:59.583265Z",
     "dataAsOf": "2026-07-29"
   }
 }
