@@ -95,7 +95,8 @@ def test_provider_incident_section_renders_live_history_and_coverage(monkeypatch
     app.run()
 
     assert not app.exception
-    assert len(app.get("plotly_chart")) == 2
+    # Weekly activity, provider breakdown, duration scatter, and downtime-by-provider.
+    assert len(app.get("plotly_chart")) == 4
     assert len(app.dataframe) == 2
 
 
