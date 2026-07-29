@@ -155,8 +155,17 @@ The source fetch also archives the current `Md21`–`Md25`, `Md31`, `Md41` and
 to a normalized data contract; only `Md11`–`Md17` summaries and `Md52`–`Md56`
 project-lifecycle records are currently structured for analysis.
 
-Proper historical MoM/YoY for the permit-stage supply charts requires a
-historical backfill and semantic parsing of Md52–Md56 by month.
+`bd_supply_pipeline_history` is the separate historical contract. It uses one
+official December Monthly Digest PDF per archived year (plus the latest direct
+PDF for current years) and parses the more stable Section 1 aggregate tables:
+Table 1.2 for Md52 demolition consents; 1.4 for Md53 approvals; 1.2/1.5 for
+Md54 consent-to-commence counts, units and area; 1.6 for Md55 notification
+units and area; and 1.3/1.7 for Md56 permit counts, units and area. It covers
+2005-01 through 2026-05 at a stage-month aggregate grain. It does not identify
+the same project across stages, infer a regional split, or invent Md52 units
+or floor area. Run it explicitly with `run_bd_history_backfill`; routine
+pipelines and dashboard builds read the latest normalized result and do not
+download the archive.
 
 ### Transactions
 

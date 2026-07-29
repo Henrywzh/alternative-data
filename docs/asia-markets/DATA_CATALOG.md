@@ -19,8 +19,8 @@ dashboard dataset.
 
 | Sector | Builder | Main data families | Important caveat |
 |---|---|---|---|
-| Hong Kong real estate | `build_hk_real_estate_artifact.py` | CCL, MHPI, confidence, RVD price/rent, HKMA mortgage, Land Registry, agency transactions, 28Hse EPI/ERI, Buildings Department | BD Md52–Md56 lifecycle data is currently a snapshot; Md52 is count-only; transaction display is capped. |
-| Hong Kong local consumer | `build_hk_local_consumer_artifact.py` | weather, immigration, gold, retail, restaurant receipts, valuations, complaints, price/food data, store footprints where available | Some endpoints are shallow, stale or unavailable; footprints are not yet trends. |
+| Hong Kong real estate | `build_hk_real_estate_artifact.py` | CCL, MHPI, confidence, RVD price/rent, HKMA mortgage, Land Registry, agency transactions, 28Hse EPI/ERI, Buildings Department | Current Md52–Md56 lifecycle data is a snapshot; archive-backed stage aggregates cover 2005-01 to 2026-05; Md52 remains count-only; transaction display is capped. |
+| Hong Kong local consumer | `build_hk_local_consumer_artifact.py` | weather, immigration, gold, retail, restaurant receipts, valuations, complaints, Price Watch archive coverage and matched-item index, price/food data, store footprints where available | Price Watch uses a product-code-matched chain index by supermarket, not a simple average across changing product lists; it does not adjust for promotions or pack-size changes. Some endpoints are shallow, stale or unavailable; footprints are not yet trends. |
 | Hong Kong utilities | `build_hk_utilities_artifact.py` | CLP, Towngas, temperature/weather | Company disclosures have different cadences and may be quarterly or semiannual. |
 | Hong Kong transport | `build_hk_transport_artifact.py` | MTR patronage, Cathay/HKIA traffic, China listed airlines | Monthly series must keep month and year visible. |
 | Hong Kong telecom | `build_hk_telecom_artifact.py` | HKT, SmarTone, Hutchison Telecom, numbering-plan snapshots | Operator disclosures are usually semiannual; numbering-plan data is irregular. |
@@ -54,10 +54,12 @@ An artifact normally contains:
 | `bd_monthly_stats` | Md11–Md17 | Historical summary-table rows | Detail/scratch table; numeric arrays are not fully semantically labelled. |
 | `bd_supply_pipeline` | Md52–Md56 | Current project lifecycle grouped by stage, region and category | Current-month domestic-unit snapshot; Md52 is excluded because it has no unit field. |
 | `bd_supply_floor_area` | Md52–Md56 | Current project lifecycle grouped by stage and property category | Current-month usable-floor-area snapshot; Md52 is excluded because it has no area field. |
+| `bd_supply_pipeline_history` | Monthly Digest PDF archive, Section 1 Tables 1.2–1.7 | Monthly stage aggregate, all Hong Kong | 2005-01 to 2026-05. Counts, domestic units and area are only populated where the official summary publishes each metric; it is not project-level lifecycle linkage. |
 | Raw Mdxx archive | Md11–Md17, Md21–Md25, Md31, Md41, Md51–Md56 | Current official XLS raw snapshots | Raw archival coverage only unless separately normalized. |
 
-Do not calculate MoM/YoY for the last two datasets until historical Md52–Md56
-files are collected and normalized at the same grain.
+MoM/YoY for the historical stage aggregate is valid only within the same
+stage/metric series. Do not compare projects/consents, units and floor area as
+one measure, and do not infer project-level stage progression from it.
 
 ## Freshness semantics
 
