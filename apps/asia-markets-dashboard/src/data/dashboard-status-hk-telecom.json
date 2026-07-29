@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-07-28T21:59:05.522299Z",
-  "snapshot_id": "03d67351724eccac",
-  "data_as_of": "2025-12-31",
+  "generated_at": "2026-07-29T09:09:11.734416Z",
+  "snapshot_id": "e38fd0af2168054e",
+  "data_as_of": "2026-06-30",
   "overall_status": "Healthy",
   "live_sources": 4,
   "planned_sources": 0,
@@ -11,8 +11,8 @@
       "dataset": "hkt_operating_drivers",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2025-12-31",
-      "records": 4,
+      "latest_observation": "2026-06-30",
+      "records": 3,
       "freshness": "Live",
       "notes": "Semi-annual Key Operating Drivers table (mobile postpaid/prepaid subscribers, consumer broadband lines, Pay TV base) plus postpaid exit ARPU and FTTH share, extracted from HKT's own results announcement narrative text."
     },
@@ -41,11 +41,11 @@
       "dataset": "numbering_plan",
       "type": "Context",
       "status": "Healthy",
-      "latest_observation": "2025-12-31",
+      "latest_observation": "2026-06-30",
       "records": 5,
       "freshness": "Snapshot (irregular updates)",
       "notes": "Mobile number block allocations by operator, all 4 licensed MNOs plus MVNOs -- a capacity/footprint proxy, not a subscriber-count or time-series metric (see table caveat)."
     }
   ],
-  "attachment_filename": "hk-telecom-dashboard-2026-07-28.html"
+  "attachment_filename": "hk-telecom-dashboard-2026-07-29.html"
 }
