@@ -164,6 +164,24 @@ def test_history_is_preserved_across_upserts(tmp_path: Path) -> None:
     assert dates == {"2026-05-08", "2026-05-09"}
 
 
+def test_leaderboard_refresh_prunes_stale_rows_within_fetched_partition(tmp_path: Path) -> None:
+    storage = StorageManager(tmp_path)
+    storage.upsert_dataset("vercel_model_leaderboard", [
+        _leaderboard_record("2026-05-08", "Established", "tokens", 20.0),
+        _leaderboard_record("2026-05-08", "Stale", "tokens", 10.0),
+        _leaderboard_record("2026-05-09", "Prior history", "tokens", 15.0),
+    ])
+
+    merged = storage.upsert_dataset("vercel_model_leaderboard", [
+        _leaderboard_record("2026-05-08", "Established", "tokens", 25.0),
+        _leaderboard_record("2026-05-08", "New entrant", "tokens", 5.0),
+    ])
+
+    same_day = merged[merged["date"] == "2026-05-08"]
+    assert set(same_day["name"]) == {"Established", "New entrant"}
+    assert set(merged[merged["date"] == "2026-05-09"]["name"]) == {"Prior history"}
+
+
 def test_new_ranked_models_are_added_without_losing_prior_models(tmp_path: Path) -> None:
     storage = StorageManager(tmp_path)
     storage.upsert_dataset("vercel_model_leaderboard", [

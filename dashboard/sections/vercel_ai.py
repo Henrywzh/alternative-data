@@ -143,9 +143,18 @@ def _stacked_display(pivot: pd.DataFrame, top_n: int, others_label: str) -> pd.D
 
     A day where an entity is unranked contributes 0 to its band; its share flows
     into the residual. The residual also absorbs Vercel's unreported long tail,
-    so the chart is honest about coverage instead of renormalising the leaders.
+    so the chart is honest about coverage. Vercel rounds shares to four decimal
+    places, so a complete published slice can occasionally total 100.0001%; in
+    that case only the oversubscribed row is proportionally scaled back to 100.
     """
     shown = _daily_ranked(pivot, top_n).fillna(0.0)
+    shown_total = shown.sum(axis=1)
+    oversubscribed = shown_total > 100.0
+    if oversubscribed.any():
+        # Keep the relative ranking intact while preventing a rounded or
+        # malformed upstream slice from pushing the stacked chart above 100%.
+        factors = 100.0 / shown_total[oversubscribed]
+        shown.loc[oversubscribed] = shown.loc[oversubscribed].mul(factors, axis=0)
     residual = (100.0 - shown.sum(axis=1)).clip(lower=0.0)
     shown = shown.copy()
     shown[others_label] = residual
