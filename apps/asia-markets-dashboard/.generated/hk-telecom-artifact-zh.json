@@ -6,7 +6,7 @@
     "title": "香港电讯监测",
     "description": "香港电讯（HKT）、数码通（SmarTone）及和记电讯（3 HK）的半年度用户与 ARPU 披露数据，以及通讯办全运营商手机号码段配额快照。",
     "sector": "hk-telecom",
-    "generatedAt": "2026-07-28T21:59:05.522299Z",
+    "generatedAt": "2026-07-29T18:37:59.620202Z",
     "cards": [
       {
         "id": "hkt_card",
@@ -112,28 +112,6 @@
       }
     ],
     "charts": [
-      {
-        "id": "hkt_arpu_chart",
-        "title": "香港电讯后付费退出 ARPU 走势 (港元)",
-        "subtitle": "半年度后付费退出 ARPU，取自香港电讯自身业绩公告的叙述文本。",
-        "type": "line",
-        "dataset": "hkt_history",
-        "sourceId": "hkt_operating_drivers",
-        "encodings": {
-          "x": {
-            "field": "month",
-            "type": "temporal",
-            "label": "期间"
-          },
-          "y": {
-            "field": "mobile_postpaid_arpu_hkd",
-            "type": "quantitative",
-            "label": "港元"
-          }
-        },
-        "valueFormat": "number",
-        "layout": "full"
-      },
       {
         "id": "smartone_arpu_chart",
         "title": "数码通后付费 ARPU 与用户数走势",
@@ -297,11 +275,6 @@
         ]
       },
       {
-        "id": "hkt_chart",
-        "type": "chart",
-        "chartId": "hkt_arpu_chart"
-      },
-      {
         "id": "hkt_footprint_chart_block",
         "type": "chart",
         "chartId": "hkt_footprint_chart"
@@ -325,19 +298,19 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-28T21:59:05.522299Z",
+    "generatedAt": "2026-07-29T18:37:59.620202Z",
     "status": "ready",
     "datasets": {
       "kpi_hkt": [
         {
-          "latest_arpu": 195,
-          "postpaid_subscribers_thousands": 3494,
-          "ftth_share_pct": 73,
-          "ftth_connections_thousands": 1086,
-          "pay_tv_installed_base_thousands": 1464,
-          "consumer_broadband_lines_thousands": 1488,
-          "period_change": 0.010363,
-          "observation_date": "2025-12-31"
+          "latest_arpu": null,
+          "postpaid_subscribers_thousands": 3522,
+          "ftth_share_pct": null,
+          "ftth_connections_thousands": 1101,
+          "pay_tv_installed_base_thousands": 1490,
+          "consumer_broadband_lines_thousands": 1497,
+          "period_change": null,
+          "observation_date": "2026-06-30"
         }
       ],
       "kpi_smartone": [
@@ -362,42 +335,16 @@
       ],
       "hkt_history": [
         {
-          "period": "2024-06-30",
-          "date": "2024-06-30",
-          "mobile_postpaid_subscribers_thousands": 3433,
-          "mobile_prepaid_subscribers_thousands": 1451,
-          "total_mobile_subscribers_thousands": 4884,
-          "consumer_broadband_lines_thousands": 1472,
-          "ftth_connections_thousands": null,
-          "ftth_share_pct": null,
-          "pay_tv_installed_base_thousands": 1430,
-          "mobile_postpaid_arpu_hkd": 192,
-          "month": "2024-06"
-        },
-        {
-          "period": "2024-12-31",
-          "date": "2024-12-31",
-          "mobile_postpaid_subscribers_thousands": 3459,
-          "mobile_prepaid_subscribers_thousands": 1346,
-          "total_mobile_subscribers_thousands": 4805,
-          "consumer_broadband_lines_thousands": 1474,
-          "ftth_connections_thousands": null,
-          "ftth_share_pct": null,
-          "pay_tv_installed_base_thousands": 1433,
-          "mobile_postpaid_arpu_hkd": 193,
-          "month": "2024-12"
-        },
-        {
           "period": "2025-06-30",
           "date": "2025-06-30",
           "mobile_postpaid_subscribers_thousands": 3478,
           "mobile_prepaid_subscribers_thousands": 1397,
           "total_mobile_subscribers_thousands": 4875,
           "consumer_broadband_lines_thousands": 1482,
-          "ftth_connections_thousands": 1055,
-          "ftth_share_pct": 71,
+          "ftth_connections_thousands": null,
+          "ftth_share_pct": null,
           "pay_tv_installed_base_thousands": 1448,
-          "mobile_postpaid_arpu_hkd": 193,
+          "mobile_postpaid_arpu_hkd": null,
           "month": "2025-06"
         },
         {
@@ -407,37 +354,32 @@
           "mobile_prepaid_subscribers_thousands": 1323,
           "total_mobile_subscribers_thousands": 4817,
           "consumer_broadband_lines_thousands": 1488,
-          "ftth_connections_thousands": 1086,
-          "ftth_share_pct": 73,
+          "ftth_connections_thousands": null,
+          "ftth_share_pct": null,
           "pay_tv_installed_base_thousands": 1464,
-          "mobile_postpaid_arpu_hkd": 195,
+          "mobile_postpaid_arpu_hkd": null,
           "month": "2025-12"
+        },
+        {
+          "period": "2026-06-30",
+          "date": "2026-06-30",
+          "mobile_postpaid_subscribers_thousands": 3522,
+          "mobile_prepaid_subscribers_thousands": 1401,
+          "total_mobile_subscribers_thousands": 4923,
+          "consumer_broadband_lines_thousands": 1497,
+          "ftth_connections_thousands": 1101,
+          "ftth_share_pct": null,
+          "pay_tv_installed_base_thousands": 1490,
+          "mobile_postpaid_arpu_hkd": null,
+          "month": "2026-06"
         }
       ],
       "hkt_footprint_history": [
         {
-          "date": "2025-06-30",
-          "month": "2025-06",
+          "date": "2026-06-30",
+          "month": "2026-06",
           "series": "FTTH 连接数",
-          "value": 1055
-        },
-        {
-          "date": "2025-12-31",
-          "month": "2025-12",
-          "series": "FTTH 连接数",
-          "value": 1086
-        },
-        {
-          "date": "2024-06-30",
-          "month": "2024-06",
-          "series": "收费电视用户数",
-          "value": 1430
-        },
-        {
-          "date": "2024-12-31",
-          "month": "2024-12",
-          "series": "收费电视用户数",
-          "value": 1433
+          "value": 1101
         },
         {
           "date": "2025-06-30",
@@ -450,6 +392,12 @@
           "month": "2025-12",
           "series": "收费电视用户数",
           "value": 1464
+        },
+        {
+          "date": "2026-06-30",
+          "month": "2026-06",
+          "series": "收费电视用户数",
+          "value": 1490
         }
       ],
       "smartone_history": [
@@ -613,7 +561,7 @@
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-telecom/",
-    "snapshotId": "03d67351724eccac",
-    "dataAsOf": "2025-12-31"
+    "snapshotId": "e38fd0af2168054e",
+    "dataAsOf": "2026-06-30"
   }
 }

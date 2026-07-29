@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-07-29T09:09:11Z",
-  "snapshot_id": "2d3321387a84f142",
+  "generated_at": "2026-07-29T18:37:59Z",
+  "snapshot_id": "6599b497092e5abd",
   "data_as_of": "2026-07-29",
   "overall_status": "Healthy",
   "live_sources": 7,
@@ -50,10 +50,10 @@
       "source": "Coinbase & Binance Public Tickers",
       "dataset": "coinbase_binance",
       "type": "Monitor",
-      "status": "Degraded",
+      "status": "Healthy",
       "latest_observation": "2026-07-29",
-      "records": 0,
-      "freshness": "Unavailable",
+      "records": 1,
+      "freshness": "Live",
       "notes": "Real-time BTC spot price, 1-year price history, and Coinbase Premium spread."
     },
     {

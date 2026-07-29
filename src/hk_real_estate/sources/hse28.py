@@ -27,17 +27,42 @@ def fetch_28hse_new_projects() -> pd.DataFrame:
         if title_a:
             title = title_a.get_text(strip=True)
             if title and title != "關閉" and len(title) > 1:
-                district_elem = c.find(['span', 'div'], class_=re.compile(r'district|location|area'))
-                district = district_elem.get_text(strip=True) if district_elem else None
+                # District is the first text node in the ".meta" line, e.g.
+                # "康城 | 康城路1號" -- take the text before the separator span
+                # and street address, not a "district/location/area" class
+                # (28Hse doesn't use one; that selector always returned None).
+                meta_elem = c.find('div', class_='meta')
+                district = None
+                if meta_elem:
+                    first_text = meta_elem.find(string=True, recursive=False)
+                    district = first_text.strip() if first_text and first_text.strip() else None
 
-                text = c.get_text()
-                units_match = re.search(r'(\d+)\s*(伙|個單位|個|夥|units)', text, re.IGNORECASE)
-                units = int(units_match.group(1)) if units_match else None
+                # Total unit count is a labelled "ui mini statistic" block
+                # (label text "總伙數"). A bare digit+"伙" regex over the
+                # whole card's text also matches the remaining/on-sale/sold
+                # counts shown alongside it, so it must be matched by label.
+                units = None
+                for stat in c.find_all('div', class_='ui mini statistic'):
+                    label_elem = stat.find('div', class_='label')
+                    if label_elem and '總伙數' in label_elem.get_text():
+                        value_elem = stat.find('div', class_='value')
+                        if value_elem:
+                            digits = re.sub(r'[^0-9]', '', value_elem.get_text())
+                            units = int(digits) if digits else None
+                        break
+
+                # Estimated move-in year, e.g. "2027年入伙" -- not shown for
+                # every listing (some cards only carry a developer label).
+                move_in_year = None
+                move_in_match = re.search(r'(\d{4})年入伙', c.get_text())
+                if move_in_match:
+                    move_in_year = int(move_in_match.group(1))
 
                 records.append({
                     'project_name': title,
                     'location_district': district,
                     'estimated_total_units': units,
+                    'estimated_move_in_year': move_in_year,
                     'source_platform': '28Hse'
                 })
 

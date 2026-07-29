@@ -6,8 +6,8 @@
     "title": "香港稳定币与加密资产基础设施监测",
     "description": "金管局持牌稳定币发行人沙盒名单、证监会持牌 VATP 虚拟资产交易平台、港交所加密 ETF 规模时间序列、全球稳定币市值与公链分布、DEX 交易量、1 年加密情绪指数与 1 年 BTC 价格走势。",
     "sector": "hk-stablecoin-crypto",
-    "generatedAt": "2026-07-28T21:59:05Z",
-    "dataAsOf": "2026-07-28",
+    "generatedAt": "2026-07-29T18:37:59Z",
+    "dataAsOf": "2026-07-29",
     "liveSourcesCount": 6,
     "totalSourcesCount": 7,
     "cards": [
@@ -500,7 +500,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**数据快照：** `e8df3af9c5130e45` · 生成于 2026-07-28T21:59:05Z。"
+        "body": "**数据快照：** `6599b497092e5abd` · 生成于 2026-07-29T18:37:59Z。"
       },
       {
         "id": "kpi_grid",
@@ -584,7 +584,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-28T21:59:05Z",
+    "generatedAt": "2026-07-29T18:37:59Z",
     "status": "ready",
     "datasets": {
       "hkma_issuers": [
@@ -787,14 +787,14 @@
         {
           "name": "Tether",
           "symbol": "USDT",
-          "circulating_usd_bn": 183.86,
-          "market_share_pct": 59.62
+          "circulating_usd_bn": 183.81,
+          "market_share_pct": 59.74
         },
         {
           "name": "USD Coin",
           "symbol": "USDC",
-          "circulating_usd_bn": 72.51,
-          "market_share_pct": 23.51
+          "circulating_usd_bn": 72.37,
+          "market_share_pct": 23.52
         },
         {
           "name": "Sky Dollar",
@@ -811,13 +811,13 @@
         {
           "name": "World Liberty Financial USD",
           "symbol": "USD1",
-          "circulating_usd_bn": 4.1,
-          "market_share_pct": 1.33
+          "circulating_usd_bn": 4.05,
+          "market_share_pct": 1.32
         },
         {
           "name": "Ethena USDe",
           "symbol": "USDe",
-          "circulating_usd_bn": 3.86,
+          "circulating_usd_bn": 3.84,
           "market_share_pct": 1.25
         },
         {
@@ -830,12 +830,12 @@
           "name": "Circle USYC",
           "symbol": "USYC",
           "circulating_usd_bn": 3.01,
-          "market_share_pct": 0.97
+          "market_share_pct": 0.98
         },
         {
           "name": "PayPal USD",
           "symbol": "PYUSD",
-          "circulating_usd_bn": 2.69,
+          "circulating_usd_bn": 2.67,
           "market_share_pct": 0.87
         },
         {
@@ -846,10 +846,6 @@
         }
       ],
       "stablecoin_history": [
-        {
-          "date": "2025-07-29",
-          "circulating_usd_bn": 264.29
-        },
         {
           "date": "2025-07-30",
           "circulating_usd_bn": 264.5
@@ -2305,40 +2301,44 @@
         {
           "date": "2026-07-28",
           "circulating_usd_bn": 306.3
+        },
+        {
+          "date": "2026-07-29",
+          "circulating_usd_bn": 304.77
         }
       ],
       "stablecoin_chains": [
         {
           "chain": "Ethereum",
-          "circulating_usd_bn": 149.32
+          "circulating_usd_bn": 149.22
         },
         {
           "chain": "Tron",
-          "circulating_usd_bn": 91.08
+          "circulating_usd_bn": 91
         },
         {
           "chain": "BSC",
-          "circulating_usd_bn": 18.04
+          "circulating_usd_bn": 18
         },
         {
           "chain": "Solana",
-          "circulating_usd_bn": 16.18
+          "circulating_usd_bn": 16.17
         },
         {
           "chain": "Hyperliquid L1",
-          "circulating_usd_bn": 6.31
+          "circulating_usd_bn": 6.3
         },
         {
           "chain": "Base",
-          "circulating_usd_bn": 4.8
+          "circulating_usd_bn": 4.81
         },
         {
           "chain": "Arbitrum",
-          "circulating_usd_bn": 3.78
+          "circulating_usd_bn": 3.71
         },
         {
           "chain": "Polygon",
-          "circulating_usd_bn": 3.65
+          "circulating_usd_bn": 3.63
         },
         {
           "chain": "X Layer",
@@ -2350,10 +2350,6 @@
         }
       ],
       "dex_volume_history": [
-        {
-          "date": "2025-07-29",
-          "dex_volume_usd_bn": 15.5
-        },
         {
           "date": "2025-07-30",
           "dex_volume_usd_bn": 15.94
@@ -3720,7 +3716,7 @@
         },
         {
           "date": "2026-07-06",
-          "dex_volume_usd_bn": 7.04
+          "dex_volume_usd_bn": 7.06
         },
         {
           "date": "2026-07-07",
@@ -3804,11 +3800,15 @@
         },
         {
           "date": "2026-07-27",
-          "dex_volume_usd_bn": 7.4
+          "dex_volume_usd_bn": 7.43
         },
         {
           "date": "2026-07-28",
-          "dex_volume_usd_bn": 7.56
+          "dex_volume_usd_bn": 7.26
+        },
+        {
+          "date": "2026-07-29",
+          "dex_volume_usd_bn": 7.57
         }
       ],
       "hkex_etf_summary": [
@@ -4326,10 +4326,6 @@
         }
       ],
       "fear_greed_history": [
-        {
-          "date": "2025-07-29",
-          "score": 73
-        },
         {
           "date": "2025-07-30",
           "score": 74
@@ -5785,13 +5781,13 @@
         {
           "date": "2026-07-28",
           "score": 29
+        },
+        {
+          "date": "2026-07-29",
+          "score": 29
         }
       ],
       "btc_price_history": [
-        {
-          "date": "2025-07-29",
-          "btc_price_usd": 117950.76
-        },
         {
           "date": "2025-07-30",
           "btc_price_usd": 117840.3
@@ -7246,34 +7242,48 @@
         },
         {
           "date": "2026-07-28",
-          "btc_price_usd": 63993.97
+          "btc_price_usd": 63915
+        },
+        {
+          "date": "2026-07-29",
+          "btc_price_usd": 64094.09
         }
       ],
       "polymarket_catalysts": [
-        {
-          "title": "How high will 10-year Treasury yield go before 2027?",
-          "probability_pct": 100,
-          "end_date": "2026-12-31"
-        },
         {
           "title": "How low will 10-year Treasury yield get before 2027?",
           "probability_pct": 100,
           "end_date": "2026-12-31"
         },
         {
+          "title": "How high will 10-year Treasury yield go before 2027?",
+          "probability_pct": 100,
+          "end_date": "2026-12-31"
+        },
+        {
           "title": "How many Fed rate cuts in 2026?",
-          "probability_pct": 85.2,
+          "probability_pct": 88.6,
           "end_date": "2026-12-31"
         },
         {
           "title": "Fed rate hike in 2026?",
-          "probability_pct": 77.5,
+          "probability_pct": 70.5,
           "end_date": "2026-12-09"
         },
         {
-          "title": "Ethereum ETF Flows on July 28?",
-          "probability_pct": 60,
-          "end_date": "2026-07-28"
+          "title": "Ethereum ETF Flows on July 29?",
+          "probability_pct": 64.5,
+          "end_date": "2026-07-29"
+        },
+        {
+          "title": "Bitcoin ETF Flows on July 29?",
+          "probability_pct": 64.5,
+          "end_date": "2026-07-29"
+        },
+        {
+          "title": "Bitcoin ETF Flows on July 30?",
+          "probability_pct": 51,
+          "end_date": "2026-07-30"
         },
         {
           "title": "Ethereum ETF Flows on July 27?",
@@ -7281,22 +7291,12 @@
           "end_date": "2026-07-27"
         },
         {
-          "title": "Bitcoin ETF Flows on July 27?",
-          "probability_pct": 50,
-          "end_date": "2026-07-27"
+          "title": "Ethereum ETF Flows on July 28?",
+          "probability_pct": 50.5,
+          "end_date": "2026-07-28"
         },
         {
-          "title": "Bitcoin ETF Flows on July 29?",
-          "probability_pct": 50,
-          "end_date": "2026-07-29"
-        },
-        {
-          "title": "Ethereum ETF Flows on July 29?",
-          "probability_pct": 50,
-          "end_date": "2026-07-29"
-        },
-        {
-          "title": "Bitcoin ETF Flows on July 30?",
+          "title": "Ethereum ETF Flows on July 30?",
           "probability_pct": 50,
           "end_date": "2026-07-30"
         }
@@ -7462,10 +7462,10 @@
           "hkma_count": 2,
           "sfc_licensed_count": 13,
           "sfc_pending_count": 6,
-          "total_supply_bn": 308.38,
+          "total_supply_bn": 307.7,
           "total_etf_aum_m": 338.18,
-          "btc_price": 63910.97,
-          "cb_premium_bps": -12.97,
+          "btc_price": 64006.88,
+          "cb_premium_bps": -12.89,
           "fear_greed_val": 29,
           "fear_greed_class": "Fear"
         }
@@ -7627,8 +7627,8 @@
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-stablecoin-crypto/",
     "sector_id": "hk-stablecoin-crypto",
     "sector_name": "Hong Kong Stablecoin & Crypto Infrastructure Monitor",
-    "snapshotId": "e8df3af9c5130e45",
-    "generatedAt": "2026-07-28T21:59:05Z",
-    "dataAsOf": "2026-07-28"
+    "snapshotId": "6599b497092e5abd",
+    "generatedAt": "2026-07-29T18:37:59Z",
+    "dataAsOf": "2026-07-29"
   }
 }

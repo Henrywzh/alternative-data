@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-07-29T09:09:11.955367Z",
-  "snapshot_id": "91f07a62b9af1e5e",
+  "generated_at": "2026-07-29T18:37:59.690900Z",
+  "snapshot_id": "3c9f3385dde09fe1",
   "data_as_of": "2026-03-31",
   "overall_status": "Degraded",
   "live_sources": 6,
@@ -73,7 +73,7 @@
       "status": "Degraded",
       "latest_observation": "\u2014",
       "records": 0,
-      "freshness": "partial: spot quotes unavailable",
+      "freshness": "stale/unreachable",
       "notes": "Daily spot price quotes, percentage change, and OHLC daily history for all 6 HK REITs."
     }
   ],

@@ -6,7 +6,7 @@
     "title": "Hong Kong Telecom Sector Monitor",
     "description": "HKT, SmarTone, and Hutchison Telecom (3 HK) semi-annual postpaid subscriber and ARPU disclosures, plus an OFCA all-operator mobile-number-block capacity snapshot.",
     "sector": "hk-telecom",
-    "generatedAt": "2026-07-29T09:09:11.734416Z",
+    "generatedAt": "2026-07-29T18:37:59.620202Z",
     "cards": [
       {
         "id": "hkt_card",
@@ -112,28 +112,6 @@
       }
     ],
     "charts": [
-      {
-        "id": "hkt_arpu_chart",
-        "title": "HKT Postpaid Exit ARPU Trend (HK$)",
-        "subtitle": "Semi-annual postpaid exit ARPU, extracted from HKT's own results announcement narrative text.",
-        "type": "line",
-        "dataset": "hkt_history",
-        "sourceId": "hkt_operating_drivers",
-        "encodings": {
-          "x": {
-            "field": "month",
-            "type": "temporal",
-            "label": "Period"
-          },
-          "y": {
-            "field": "mobile_postpaid_arpu_hkd",
-            "type": "quantitative",
-            "label": "HK$"
-          }
-        },
-        "valueFormat": "number",
-        "layout": "full"
-      },
       {
         "id": "smartone_arpu_chart",
         "title": "SmarTone Postpaid ARPU & Subscriber Trend",
@@ -297,11 +275,6 @@
         ]
       },
       {
-        "id": "hkt_chart",
-        "type": "chart",
-        "chartId": "hkt_arpu_chart"
-      },
-      {
         "id": "hkt_footprint_chart_block",
         "type": "chart",
         "chartId": "hkt_footprint_chart"
@@ -325,7 +298,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-29T09:09:11.734416Z",
+    "generatedAt": "2026-07-29T18:37:59.620202Z",
     "status": "ready",
     "datasets": {
       "kpi_hkt": [
