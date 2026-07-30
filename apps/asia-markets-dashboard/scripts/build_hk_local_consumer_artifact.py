@@ -354,10 +354,12 @@ def _pricewatch_matched_index_rows(index: pd.DataFrame | None) -> list[dict[str,
     result = result.dropna(subset=["year_month", "supermarket_code", "matched_item_index", "matched_products"])
     # Several short-lived/renamed source codes exist in the archive. Showing
     # every one would turn a monitoring chart into an unreadable legend and
-    # imply continuity that the raw code does not establish. Retain the six
-    # longest source-code series with at least one year of linked observations.
+    # imply continuity that the raw code does not establish. Retain the four
+    # longest source-code series with at least one year of linked
+    # observations -- six, even with short codes, measured wider than the
+    # mobile (390px) viewport in the portable-chart delivery pipeline.
     coverage = result.groupby("supermarket_code")["year_month"].nunique()
-    eligible = coverage[coverage >= 12].sort_values(ascending=False).head(6).index
+    eligible = coverage[coverage >= 12].sort_values(ascending=False).head(4).index
     result = result[result["supermarket_code"].isin(eligible)]
     return _records(result.sort_values(["year_month", "supermarket_code"]), list(sorted(required)))
 
@@ -794,12 +796,15 @@ def build_artifact(
     northbound_kpi = _comparison_row(immigration, "land_hk_resident_departures_7d_ma", now)
     southbound_kpi = _comparison_row(immigration, "mainland_visitor_arrivals_7d_ma", now)
 
-    # HK Immigration's daily CSV goes back to 2021-01-01 (~5.5 years). Now
-    # that the chart is resampled to a monthly mean below (~68 months x 2
-    # flow types =~ 136 rows), the portable-artifact plugin's 2,000-row cap
-    # is no longer the binding constraint, so this uses the full real
-    # history rather than an arbitrary day-count window.
-    imm_chart_window = immigration.copy()
+    # HK Immigration's daily CSV goes back to 2021-01-01 (~5.5 years), but
+    # the portable-chart plugin's x-axis auto-tick placement always forces a
+    # label on the very last point regardless of the chosen tick interval;
+    # with the full ~67-month history that forced last tick collides with
+    # the previous auto-picked tick and overlaps text at the chart's right
+    # edge (confirmed empirically -- trimming one partial month just shifted
+    # which two ticks collided, not whether they did). A bounded window
+    # avoids that edge case and was the previously verified-passing state.
+    imm_chart_window = immigration.tail(1000).copy()
     imm_north = imm_chart_window[["date", "land_hk_resident_departures_7d_ma"]].rename(columns={"land_hk_resident_departures_7d_ma": "value"})
     imm_north["flow_type"] = "Northbound"
     imm_south = imm_chart_window[["date", "mainland_visitor_arrivals_7d_ma"]].rename(columns={"mainland_visitor_arrivals_7d_ma": "value"})
@@ -818,6 +823,15 @@ def build_artifact(
     # always-year-labeled tick at the cost of daily resolution, which this
     # already-smoothed series does not need for a dashboard trend line.
     imm_daily["month"] = imm_daily["date"].dt.strftime("%Y-%m")
+    # Drop the current, still-incomplete calendar month: a partial month's
+    # mean sits right next to the prior full month with far less than a
+    # month's worth of days behind it, which both understates the point
+    # and -- pixel-adjacent to the previous tick at the axis's right edge --
+    # is what was overlapping the portable chart's last two x-axis labels
+    # into each other and tripping the delivery pipeline's desktop-width
+    # overflow check.
+    current_month = now.strftime("%Y-%m")
+    imm_daily = imm_daily[imm_daily["month"] < current_month]
     immigration_trend_rows = (
         imm_daily.groupby(["month", "flow_type"], as_index=False)["value"]
         .mean()
@@ -1052,7 +1066,18 @@ def build_artifact(
         ),
         "valuation_pe_chart": _records(valuation_chart_rows, ["company_name", "pe_ttm"]),
         "valuation_history": _records(
-            valuation[valuation["date"] >= valuation["date"].max() - pd.Timedelta(days=30)],
+            valuation[
+                (valuation["date"] >= valuation["date"].max() - pd.Timedelta(days=30))
+                # Top 3 by latest market cap, not all 11 watchlist names: a
+                # legend of full company names past 3 entries measured wider
+                # than the mobile (390px) viewport in the portable-chart
+                # delivery pipeline (confirmed via direct DOM inspection of
+                # the rendered legend at both 1440px and 390px). The full
+                # watchlist is still in valuation_table below.
+                & valuation["company_name"].isin(
+                    valuation_latest.nlargest(3, "market_cap_hkd_b")["company_name"]
+                )
+            ],
             ["date", "ticker", "company_name", "pe_ttm", "pb_ratio", "market_cap_hkd_b"],
         ),
         "kpi_retail": [retail_kpi],
@@ -1229,27 +1254,33 @@ def build_artifact(
             "layout": "full",
             "maxRows": 60,
         },
-        {
-            "id": "severe_weather_daily_trend",
-            "title": "Daily severe-weather disruption hours",
-            "subtitle": "Latest 36 months; warning intervals are split across midnight before daily aggregation.",
-            "type": "bar",
-            "intent": "trend",
-            "dataset": "severe_weather_daily",
-            "sourceId": "weather_demand_drivers",
-            "encodings": {
-                "x": {"field": "month", "type": "temporal", "label": "Month"},
-                "y": {"field": "hours", "type": "quantitative", "label": "Hours"},
-                "color": {"field": "warning_type", "type": "nominal", "label": "Warning type"},
-            },
-            "valueFormat": "number",
-            "layout": "full",
-            "maxRows": 720,
-        },
+        *(
+            [
+                {
+                    "id": "severe_weather_daily_trend",
+                    "title": "Daily severe-weather disruption hours",
+                    "subtitle": "Latest 36 months; warning intervals are split across midnight before daily aggregation.",
+                    "type": "bar",
+                    "intent": "trend",
+                    "dataset": "severe_weather_daily",
+                    "sourceId": "weather_demand_drivers",
+                    "encodings": {
+                        "x": {"field": "month", "type": "temporal", "label": "Month"},
+                        "y": {"field": "hours", "type": "quantitative", "label": "Hours"},
+                        "color": {"field": "warning_type", "type": "nominal", "label": "Warning type"},
+                    },
+                    "valueFormat": "number",
+                    "layout": "full",
+                    "maxRows": 720,
+                }
+            ]
+            if not weather_daily.empty
+            else []
+        ),
         {
             "id": "immigration_trend",
             "title": "Cross-border passenger traffic (7-day MA, monthly average)",
-            "subtitle": "Monthly average of the daily 7-day MA: Northbound (HK resident departures via land control points only) vs Southbound (Mainland visitor arrivals, all control points).",
+            "subtitle": "Monthly average of daily 7-day MA: Northbound (HK resident land departures) vs Southbound (Mainland visitor arrivals).",
             "type": "line",
             "intent": "trend",
             "dataset": "immigration_trend_history",
@@ -1263,23 +1294,29 @@ def build_artifact(
             "layout": "full",
             "maxRows": 180,
         },
-        {
-            "id": "immigration_checkpoint_trend",
-            "title": "Busiest immigration checkpoints — daily traffic",
-            "subtitle": "Top five arrival/departure checkpoint series by latest seven-day average; latest 90 days.",
-            "type": "line",
-            "intent": "trend",
-            "dataset": "immigration_checkpoint_history",
-            "sourceId": "immigration_flow",
-            "encodings": {
-                "x": {"field": "date", "type": "temporal", "label": "Date"},
-                "y": {"field": "value", "type": "quantitative", "label": "Passengers (7d MA)"},
-                "color": {"field": "series", "type": "nominal", "label": "Checkpoint / direction"},
-            },
-            "valueFormat": "number",
-            "layout": "full",
-            "maxRows": 500,
-        },
+        *(
+            [
+                {
+                    "id": "immigration_checkpoint_trend",
+                    "title": "Busiest immigration checkpoints — daily traffic",
+                    "subtitle": "Top five checkpoint series by latest 7-day average; latest 90 days.",
+                    "type": "line",
+                    "intent": "trend",
+                    "dataset": "immigration_checkpoint_history",
+                    "sourceId": "immigration_flow",
+                    "encodings": {
+                        "x": {"field": "date", "type": "temporal", "label": "Date"},
+                        "y": {"field": "value", "type": "quantitative", "label": "Passengers (7d MA)"},
+                        "color": {"field": "series", "type": "nominal", "label": "Checkpoint / direction"},
+                    },
+                    "valueFormat": "number",
+                    "layout": "full",
+                    "maxRows": 500,
+                }
+            ]
+            if not checkpoint_trend.empty
+            else []
+        ),
         {
             "id": "afcd_category_chart",
             "title": "AFCD wholesale prices by category",
@@ -1298,14 +1335,7 @@ def build_artifact(
         {
             "id": "afcd_category_trend",
             "title": "AFCD wholesale prices by category, over time",
-            "subtitle": (
-                "Real daily snapshots accumulated one pipeline run at a time -- AFCD's wholesale-prices feed only "
-                "ever publishes today's readings (no historical archive was found on afcd.gov.hk), so this series "
-                "is not backfilled. It starts as thin as a single day and grows by one real observation per "
-                "category each time this pipeline runs. Legend uses short labels to fit narrow screens: "
-                "FW fish = Freshwater fish, Meat/Poultry = Livestock / Poultry, Marine = Marine fish, "
-                "Veg = Vegetables (full names are in the snapshot chart and tables above)."
-            ),
+            "subtitle": "Daily snapshots accumulated per pipeline run (AFCD only publishes today's readings). Legend: FW fish = Freshwater fish, Meat/Poultry = Livestock/Poultry, Marine = Marine fish, Veg = Vegetables.",
             "type": "line",
             "intent": "trend",
             "dataset": "afcd_category_trend_history",
@@ -1772,7 +1802,15 @@ def build_artifact(
                 "category": r["category"],
                 "amount": r["amount"],
             })
-        latest_top_categories = {row["category"] for row in top10}
+        # Only the top 2 (not top10) get a line in the history trend: with
+        # long category names (e.g. "Food & Entertainment Services"), even 3
+        # entries measured wider than the mobile (390px) viewport and
+        # tripped the portable-chart delivery pipeline's horizontal-overflow
+        # check (confirmed via direct DOM inspection at both 1440px and
+        # 390px -- the legend's own bounding box, not any chart data, was
+        # the overflowing element). The full top-10 breakdown is still
+        # available in the snapshot bar chart and the history table below.
+        latest_top_categories = {row["category"] for row in top10[-2:]}
         complaint_history_chart_rows = [
             {"period": row["period"], "category": row["category"], "amount": row["amount"]}
             for row in complaint_rows
@@ -1932,17 +1970,42 @@ def build_artifact(
                         "This is a published snapshot, not a live connection. Includes official Consumer Council auto fuel calculator pricing."
                     ),
                 },
-                {"id": "market_pulse_1", "type": "metric-strip", "cardIds": ["northbound_card", "southbound_card", "weather_card", "fx_card"]},
+                {"id": "market_pulse_1", "type": "metric-strip", "cardIds": ["northbound_card", "southbound_card", "weather_card"]},
                 {"id": "market_pulse_2", "type": "metric-strip", "cardIds": (
-                    ["gold_card", "retail_card", "restaurant_card", "store_footprint_card"]
-                    if not store_footprint.empty
-                    else ["gold_card", "retail_card", "restaurant_card"]
+                    ["fx_card", "gold_card"]
+                    + (["median_pe_card"] if median_pe_latest is not None else [])
+                )},
+                {"id": "market_pulse_3", "type": "metric-strip", "cardIds": (
+                    ["retail_card", "restaurant_card"]
+                    + (["store_footprint_card"] if not store_footprint.empty else [])
                 )},
                 {"id": "immigration_chart", "type": "chart", "chartId": "immigration_trend"},
-                {"id": "immigration_checkpoint_trend_chart", "type": "chart", "chartId": "immigration_checkpoint_trend"},
+                *(
+                    [
+                        {
+                            "id": "immigration_checkpoint_trend_chart",
+                            "type": "chart",
+                            "chartId": "immigration_checkpoint_trend",
+                        }
+                    ]
+                    if not checkpoint_trend.empty
+                    else []
+                ),
                 {"id": "weather_chart", "type": "chart", "chartId": "severe_weather_trend"},
-                {"id": "weather_daily_chart", "type": "chart", "chartId": "severe_weather_daily_trend"},
-                {"id": "afcd_trend_chart", "type": "chart", "chartId": "afcd_category_trend", "layout": "half"},
+                *(
+                    [
+                        {
+                            "id": "weather_daily_chart",
+                            "type": "chart",
+                            "chartId": "severe_weather_daily_trend",
+                        }
+                    ]
+                    if not weather_daily.empty
+                    else []
+                ),
+                {"id": "weather_log_table", "type": "table", "tableId": "severe_weather_log_table"},
+                {"id": "afcd_trend_chart", "type": "chart", "chartId": "afcd_category_chart", "layout": "half"},
+                {"id": "afcd_category_trend_block", "type": "chart", "chartId": "afcd_category_trend", "layout": "half"},
                 {"id": "gold_chart", "type": "chart", "chartId": "gold_trend", "layout": "half"},
                 {"id": "valuation_chart", "type": "chart", "chartId": "valuation_pe_chart", "layout": "half"},
                 {"id": "valuation_market_cap_chart", "type": "chart", "chartId": "valuation_market_cap_trend"},
@@ -1955,7 +2018,17 @@ def build_artifact(
                 {"id": "complaints_history_chart_block", "type": "chart", "chartId": "consumer_council_complaints_history_chart"},
                 {"id": "complaints_table_block", "type": "table", "tableId": "consumer_council_complaints_table"},
                 {"id": "complaints_history_table_block", "type": "table", "tableId": "consumer_council_complaints_history_table"},
-                {"id": "immigration_checkpoint_table_block", "type": "table", "tableId": "immigration_checkpoint_table"},
+                *(
+                    [
+                        {
+                            "id": "immigration_checkpoint_table_block",
+                            "type": "table",
+                            "tableId": "immigration_checkpoint_table",
+                        }
+                    ]
+                    if checkpoint_rows
+                    else []
+                ),
                 {"id": "afcd_table", "type": "table", "tableId": "afcd_commodity_table"},
                 {"id": "valuation_table_block", "type": "table", "tableId": "valuation_table"},
                 {"id": "retail_trend_chart", "type": "chart", "chartId": "retail_trend"},
