@@ -1,0 +1,43 @@
+{
+  "run_id": "20260730T060401Z-5ba9fc0e",
+  "mode": "daily-update",
+  "scraped_at": "2026-07-30T06:04:01.574648Z",
+  "status": "success",
+  "datasets": [
+    {
+      "dataset_id": "vercel_model_leaderboard",
+      "status": "ok",
+      "rows": 8497,
+      "source_urls": [
+        "https://vercel.com/api/ai/leaderboard-export?dataset=models&format=json&modality=all",
+        "https://vercel.com/api/ai/leaderboard-export?dataset=models&format=json&modality=image",
+        "https://vercel.com/api/ai/leaderboard-export?dataset=models&format=json&modality=text",
+        "https://vercel.com/api/ai/leaderboard-export?dataset=models&format=json&modality=video"
+      ],
+      "new_entities": [
+        "MiniMax M3",
+        "Seedream 5.0 Pro"
+      ]
+    },
+    {
+      "dataset_id": "vercel_lab_leaderboard",
+      "status": "ok",
+      "rows": 16025,
+      "source_urls": [
+        "https://vercel.com/api/ai/leaderboard-export?dataset=labs&format=json&modality=all",
+        "https://vercel.com/api/ai/leaderboard-export?dataset=labs&format=json&modality=image",
+        "https://vercel.com/api/ai/leaderboard-export?dataset=labs&format=json&modality=text",
+        "https://vercel.com/api/ai/leaderboard-export?dataset=labs&format=json&modality=video"
+      ],
+      "new_entities": []
+    },
+    {
+      "dataset_id": "vercel_models",
+      "status": "ok",
+      "rows": 308,
+      "source_urls": [
+        "https://ai-gateway.vercel.sh/v1/models"
+      ]
+    }
+  ]
+}
