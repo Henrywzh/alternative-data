@@ -1118,11 +1118,13 @@ def test_openrouter_derived_marts_load_only_compact_projected_schemas(
         "openrouter_derived", data_sha="derived-sha"
     )
 
-    assert fetched_paths == [
+    # Dataset fetches within a domain run concurrently, so only the *set* of
+    # fetched paths is deterministic, not the order they land in.
+    assert set(fetched_paths) == {
         "data/normalized/marts/openrouter_usage_economics_daily.parquet",
         "data/normalized/marts/daily_provider_economics.parquet",
         "data/normalized/marts/openrouter_workload_intensity_models.parquet",
-    ]
+    }
     assert all("data/raw/" not in path for path in fetched_paths)
     for dataset_id, result in remote_datasets.items():
         assert list(result.frame.columns) == OPENROUTER_LOAD_COLUMNS[dataset_id]
