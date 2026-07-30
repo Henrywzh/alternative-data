@@ -918,6 +918,108 @@ def test_estimate_usage_revenue_falls_back_to_full_pricing_when_usage_date_missi
     assert row["estimated_revenue"] == pytest.approx(0.1023)
 
 
+def test_estimate_usage_revenue_fast_path_matches_shuffled_fallback_path() -> None:
+    # The as-of price-context builder has a fast, incremental path that only
+    # applies when pricing rows are already chronologically ordered, and a
+    # slower per-cutoff fallback used otherwise (see
+    # openrouter_revenue._price_contexts_by_cutoff). Both must produce the
+    # exact same result - feed the same multi-cutoff, multi-model data
+    # through in original (sorted) order and shuffled order and compare.
+    pricing = pd.DataFrame(
+        [
+            {
+                "snapshot_ts": "2026-01-01T00:00:00Z",
+                "model_id": "openai/gpt-5",
+                "canonical_slug": "openai/gpt-5",
+                "provider_prefix": "openai",
+                "pricing_prompt": 0.001,
+                "pricing_completion": 0.002,
+            },
+            {
+                "snapshot_ts": "2026-01-01T00:00:00Z",
+                "model_id": "anthropic/claude-5-sonnet",
+                "canonical_slug": "anthropic/claude-5-sonnet",
+                "provider_prefix": "anthropic",
+                "pricing_prompt": 0.003,
+                "pricing_completion": 0.004,
+            },
+            {
+                "snapshot_ts": "2026-01-05T00:00:00Z",
+                "model_id": "openai/gpt-5",
+                "canonical_slug": "openai/gpt-5",
+                "provider_prefix": "openai",
+                "pricing_prompt": 0.0012,
+                "pricing_completion": 0.0022,
+            },
+            {
+                "snapshot_ts": "2026-01-10T00:00:00Z",
+                "model_id": "anthropic/claude-5-sonnet",
+                "canonical_slug": "anthropic/claude-5-sonnet",
+                "provider_prefix": "anthropic",
+                "pricing_prompt": 0.0032,
+                "pricing_completion": 0.0042,
+            },
+            {
+                "snapshot_ts": "2026-01-15T00:00:00Z",
+                "model_id": "openai/gpt-5",
+                "canonical_slug": "openai/gpt-5",
+                "provider_prefix": "openai",
+                "pricing_prompt": 0.0014,
+                "pricing_completion": 0.0024,
+            },
+        ]
+    )
+    usage = pd.DataFrame(
+        [
+            {
+                "usage_date": usage_date,
+                "provider_slug": provider,
+                "model_permaslug": model,
+                "total_tokens": 1_000_000.0,
+                "prompt_tokens": 0.0,
+                "completion_tokens": 0.0,
+            }
+            for usage_date in ("2026-01-02", "2026-01-06", "2026-01-11", "2026-01-16", "2026-01-20")
+            for provider, model in (("openai", "openai/gpt-5"), ("anthropic", "anthropic/claude-5-sonnet"))
+        ]
+    )
+
+    sorted_result = estimate_usage_revenue(
+        usage, pricing, slug_strategy="canonical", pricing_strategy="provider_fallback"
+    )
+    shuffled_pricing = pricing.sample(frac=1.0, random_state=7).reset_index(drop=True)
+    shuffled_result = estimate_usage_revenue(
+        usage, shuffled_pricing, slug_strategy="canonical", pricing_strategy="provider_fallback"
+    )
+
+    sort_cols = ["usage_date", "provider_slug", "model_permaslug"]
+    pd.testing.assert_frame_equal(
+        sorted_result.sort_values(sort_cols).reset_index(drop=True),
+        shuffled_result.sort_values(sort_cols).reset_index(drop=True),
+    )
+    # Sanity check the fast path actually engaged and produced live prices,
+    # not an accidental all-empty/all-fallback result that would trivially match.
+    assert sorted_result["pricing_join_status"].eq("matched_model_median").all()
+
+
+def test_price_contexts_by_cutoff_falls_back_on_unordered_pricing() -> None:
+    from openrouter_revenue import _price_contexts_by_cutoff
+
+    pricing = pd.DataFrame(
+        [
+            {"snapshot_ts": "2026-01-01T00:00:00Z", "model_id": "openai/gpt-5", "pricing_prompt": 0.001, "pricing_completion": 0.002},
+            {"snapshot_ts": "2026-01-05T00:00:00Z", "model_id": "openai/gpt-5", "pricing_prompt": 0.0012, "pricing_completion": 0.0022},
+        ]
+    )
+    ordered = pricing.copy()
+    ordered["_pricing_date"] = pd.to_datetime(ordered["snapshot_ts"], utc=True).dt.normalize()
+    assert _price_contexts_by_cutoff(ordered) is not None
+
+    shuffled = pricing.iloc[::-1].reset_index(drop=True).copy()
+    shuffled["_pricing_date"] = pd.to_datetime(shuffled["snapshot_ts"], utc=True).dt.normalize()
+    assert _price_contexts_by_cutoff(shuffled) is None
+
+
 def test_estimate_usage_revenue_zero_rates_free_models_without_fallback_pricing() -> None:
     usage = pd.DataFrame(
         [
