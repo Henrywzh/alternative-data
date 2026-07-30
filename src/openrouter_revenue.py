@@ -89,25 +89,35 @@ def blended_unit_price(prompt_price: object, completion_price: object) -> float:
     return np.nan
 
 
-def build_price_context(pricing: pd.DataFrame) -> PriceContext:
-    if pricing.empty:
-        return PriceContext(
-            model_stats=pd.DataFrame(
-                columns=[
-                    "canonical_model_key",
-                    "provider_prefix",
-                    "pricing_snapshot_ts",
-                    "pricing_prompt",
-                    "pricing_completion",
-                    "pricing_blended",
-                ]
-            ),
-            alias_to_model_key={},
-            provider_lookup={},
-            global_stats=None,
-            latest_snapshot_ts=None,
-        )
+_MODEL_STATS_COLUMNS = [
+    "canonical_model_key",
+    "provider_prefix",
+    "pricing_snapshot_ts",
+    "pricing_prompt",
+    "pricing_completion",
+    "pricing_blended",
+]
 
+
+def _empty_price_context() -> PriceContext:
+    return PriceContext(
+        model_stats=pd.DataFrame(columns=_MODEL_STATS_COLUMNS),
+        alias_to_model_key={},
+        provider_lookup={},
+        global_stats=None,
+        latest_snapshot_ts=None,
+    )
+
+
+def _prepare_price_rows(pricing: pd.DataFrame) -> pd.DataFrame:
+    """Resolve per-row model identity and pricing fields.
+
+    Every derived column here depends only on that row's own values, never on
+    which other rows are present - so this can be computed once over any
+    pricing frame (e.g. a whole history) and safely reused for any date
+    subset of it afterward. Any extra columns on the input (e.g. a caller's
+    ``_pricing_date`` cutoff marker) pass through untouched.
+    """
     prepared = pricing.copy()
     prepared["model_id"] = _clean_model_id(prepared["model_id"])
     prepared["canonical_slug"] = _clean_model_id(_optional_series(prepared, "canonical_slug"))
@@ -129,20 +139,20 @@ def build_price_context(pricing: pd.DataFrame) -> PriceContext:
     prepared["canonical_model_key"] = [resolved_keys[pair] for pair in key_pairs]
     prepared["pricing_blended"] = blended_unit_price_series(prepared["pricing_prompt"], prepared["pricing_completion"])
     prepared = prepared.dropna(subset=["canonical_model_key"]).copy()
+    return prepared
 
-    model_stats = (
-        prepared.groupby("canonical_model_key", as_index=False)
-        .agg(
-            provider_prefix=("provider_prefix", "first"),
-            pricing_snapshot_ts=("snapshot_ts", "max"),
-            pricing_prompt=("pricing_prompt", "median"),
-            pricing_completion=("pricing_completion", "median"),
-            pricing_blended=("pricing_blended", "median"),
-        )
-        .sort_values(["provider_prefix", "canonical_model_key"], na_position="last")
-        .reset_index(drop=True)
-    )
 
+def _alias_map_from_rows(prepared: pd.DataFrame) -> dict[str, str]:
+    """Resolve the alias->canonical-key map from unique identity triples.
+
+    Ties (the same alias string produced by two different models) are broken
+    by each triple's own candidate-list position, and - among equal
+    positions - by which triple appears first in ``prepared``'s row order.
+    Callers that need this for many nested, chronologically-growing subsets
+    of the same pricing frame (see ``_price_contexts_by_cutoff``) must feed
+    rows in a chronological sweep to get an identical result to calling this
+    fresh on each subset, since the tie-break is order-sensitive.
+    """
     alias_to_model_key: dict[str, str] = {}
     alias_priority: dict[str, int] = {}
     for row in prepared[["model_id", "canonical_slug", "canonical_model_key"]].drop_duplicates().to_dict(orient="records"):
@@ -164,7 +174,10 @@ def build_price_context(pricing: pd.DataFrame) -> PriceContext:
             if alias not in alias_to_model_key or priority < alias_priority[alias]:
                 alias_to_model_key[alias] = str(model_key)
                 alias_priority[alias] = priority
+    return alias_to_model_key
 
+
+def _provider_and_global_stats(model_stats: pd.DataFrame) -> tuple[dict[str, dict[str, float]], dict[str, float] | None]:
     fallback_source = model_stats[pd.to_numeric(model_stats["pricing_blended"], errors="coerce") > 0].copy()
     provider_lookup = {
         row["provider_prefix"]: {
@@ -194,7 +207,27 @@ def build_price_context(pricing: pd.DataFrame) -> PriceContext:
             else np.nan,
             "pricing_blended": float(fallback_source["pricing_blended"].median()),
         }
+    return provider_lookup, global_stats
 
+
+def _aggregate_price_context(prepared: pd.DataFrame) -> PriceContext:
+    if prepared.empty:
+        return _empty_price_context()
+
+    model_stats = (
+        prepared.groupby("canonical_model_key", as_index=False)
+        .agg(
+            provider_prefix=("provider_prefix", "first"),
+            pricing_snapshot_ts=("snapshot_ts", "max"),
+            pricing_prompt=("pricing_prompt", "median"),
+            pricing_completion=("pricing_completion", "median"),
+            pricing_blended=("pricing_blended", "median"),
+        )
+        .sort_values(["provider_prefix", "canonical_model_key"], na_position="last")
+        .reset_index(drop=True)
+    )
+    alias_to_model_key = _alias_map_from_rows(prepared)
+    provider_lookup, global_stats = _provider_and_global_stats(model_stats)
     latest_snapshot_ts = prepared["snapshot_ts"].max() if prepared["snapshot_ts"].notna().any() else None
     return PriceContext(
         model_stats=model_stats,
@@ -203,6 +236,129 @@ def build_price_context(pricing: pd.DataFrame) -> PriceContext:
         global_stats=global_stats,
         latest_snapshot_ts=latest_snapshot_ts,
     )
+
+
+def build_price_context(pricing: pd.DataFrame) -> PriceContext:
+    if pricing.empty:
+        return _empty_price_context()
+    return _aggregate_price_context(_prepare_price_rows(pricing))
+
+
+def _price_contexts_by_cutoff(pricing_with_dates: pd.DataFrame) -> dict[pd.Timestamp, PriceContext] | None:
+    """Build a PriceContext for every distinct ``_pricing_date`` cutoff in one pass.
+
+    ``build_price_context`` recomputed a full alias map and per-model median
+    from scratch for every cutoff, over that cutoff's *entire* cumulative
+    eligible-pricing set - cost that grows with both the number of cutoffs
+    and the size of pricing history, i.e. roughly quadratically as more time
+    passes. This computes the same PriceContext for every cutoff using each
+    pricing row exactly once:
+
+    - Per-model running median/max/first-provider via pandas' own expanding/
+      cummax/groupby machinery (each row visited once, not once per cutoff
+      it happens to be eligible for).
+    - A single as-of reconstruction (``merge_asof``) turns "per-model stats
+      as of cutoff C" into a lookup over a small models x cutoffs table
+      instead of a fresh groupby over the full, ever-growing pricing rows.
+    - provider_lookup/global_stats are still recomputed per cutoff, but over
+      that small (one row per model) table, not the raw pricing rows.
+    - The alias map is the one piece with no numeric pandas equivalent; it's
+      swept forward once, snapshotting a dict copy at each cutoff boundary.
+
+    Returns None if pricing rows aren't in chronological order (by
+    ``_pricing_date``, in the frame's current row order) - the whole
+    approach depends on "processing cutoffs in ascending order" matching
+    "the row order build_price_context would see for any date subset",
+    which only holds when the input is already date-ordered. The caller
+    should fall back to calling build_price_context per cutoff in that case.
+    """
+    if not pricing_with_dates["_pricing_date"].is_monotonic_increasing:
+        return None
+
+    prepared = _prepare_price_rows(pricing_with_dates)
+    prepared = prepared.dropna(subset=["_pricing_date"])
+    if prepared.empty or not prepared["_pricing_date"].is_monotonic_increasing:
+        # A row-prep drop (e.g. bad model_id) could theoretically disturb
+        # ordering only if the input already wasn't safe; re-check defensively.
+        return None if not prepared.empty else {}
+
+    sorted_by_model = prepared.sort_values("canonical_model_key", kind="stable")
+    grouped = sorted_by_model.groupby("canonical_model_key", sort=False)
+    sorted_by_model = sorted_by_model.assign(
+        _exp_prompt=grouped["pricing_prompt"].expanding().median().reset_index(level=0, drop=True),
+        _exp_completion=grouped["pricing_completion"].expanding().median().reset_index(level=0, drop=True),
+        _exp_blended=grouped["pricing_blended"].expanding().median().reset_index(level=0, drop=True),
+        _cummax_ts=grouped["snapshot_ts"].cummax(),
+        _first_provider=grouped["provider_prefix"].transform("first"),
+    )
+    per_model_cols = ["_exp_prompt", "_exp_completion", "_exp_blended", "_cummax_ts", "_first_provider"]
+    enriched = prepared.join(sorted_by_model[per_model_cols]).sort_values("_pricing_date", kind="stable")
+
+    distinct_dates = sorted(prepared["_pricing_date"].unique())
+    model_keys = prepared["canonical_model_key"].unique()
+    left = pd.MultiIndex.from_product(
+        [model_keys, distinct_dates], names=["canonical_model_key", "_pricing_date"]
+    ).to_frame(index=False).sort_values("_pricing_date", kind="stable")
+    merged = pd.merge_asof(
+        left,
+        enriched[["_pricing_date", "canonical_model_key", *per_model_cols]],
+        on="_pricing_date",
+        by="canonical_model_key",
+        direction="backward",
+    )
+
+    # Alias map: a single forward sweep over cutoffs, snapshotting a dict
+    # copy after each cutoff's rows are folded in (see _alias_map_from_rows
+    # docstring for why row order must stay chronological here).
+    alias_to_model_key: dict[str, str] = {}
+    alias_priority: dict[str, int] = {}
+    seen_triples: set[tuple[object, object, object]] = set()
+    alias_by_cutoff: dict[pd.Timestamp, dict[str, str]] = {}
+    for pricing_date, group in prepared.groupby("_pricing_date", sort=False):
+        for row in group[["model_id", "canonical_slug", "canonical_model_key"]].drop_duplicates().itertuples(index=False):
+            triple = (row.model_id, row.canonical_slug, row.canonical_model_key)
+            if triple in seen_triples:
+                continue
+            seen_triples.add(triple)
+            model_id, canonical_slug, model_key = triple
+            if pd.isna(model_id) or pd.isna(model_key):
+                continue
+            if str(model_id).endswith(":free"):
+                aliases = [str(model_id)]
+            else:
+                aliases = []
+                for raw in (model_id, canonical_slug, model_key):
+                    for alias in generate_candidate_aliases(raw):
+                        if alias not in aliases:
+                            aliases.append(alias)
+            for priority, alias in enumerate(aliases):
+                if alias not in alias_to_model_key or priority < alias_priority[alias]:
+                    alias_to_model_key[alias] = str(model_key)
+                    alias_priority[alias] = priority
+        alias_by_cutoff[pricing_date] = dict(alias_to_model_key)
+
+    contexts: dict[pd.Timestamp, PriceContext] = {}
+    for cutoff in distinct_dates:
+        sub = merged[(merged["_pricing_date"] == cutoff) & merged["_cummax_ts"].notna()]
+        model_stats = sub.rename(
+            columns={
+                "_first_provider": "provider_prefix",
+                "_cummax_ts": "pricing_snapshot_ts",
+                "_exp_prompt": "pricing_prompt",
+                "_exp_completion": "pricing_completion",
+                "_exp_blended": "pricing_blended",
+            }
+        )[_MODEL_STATS_COLUMNS].sort_values(["provider_prefix", "canonical_model_key"], na_position="last").reset_index(drop=True)
+        provider_lookup, global_stats = _provider_and_global_stats(model_stats)
+        latest_snapshot_ts = model_stats["pricing_snapshot_ts"].max() if not model_stats.empty else None
+        contexts[cutoff] = PriceContext(
+            model_stats=model_stats,
+            alias_to_model_key=alias_by_cutoff[cutoff],
+            provider_lookup=provider_lookup,
+            global_stats=global_stats,
+            latest_snapshot_ts=latest_snapshot_ts,
+        )
+    return contexts
 
 
 def resolve_model_key(value: object, alias_to_model_key: dict[str, str], slug_strategy: str = "canonical") -> str | None:
@@ -349,9 +505,9 @@ def estimate_usage_revenue(
     earliest_pricing_date = pricing_with_dates["_pricing_date"].dropna().min()
     # As-of pricing only actually changes on the (typically much sparser) set of
     # dates a new snapshot was published, not on every usage date. Bucket usage
-    # dates by that cutoff so build_price_context - which does real work (alias
-    # generation, groupby/median stats) - runs once per distinct pricing state
-    # instead of once per usage date.
+    # dates by that cutoff so the price context - which does real work (alias
+    # generation, groupby/median stats) - is resolved once per distinct pricing
+    # state instead of once per usage date.
     distinct_pricing_dates = pd.DatetimeIndex(sorted(pricing_with_dates["_pricing_date"].dropna().unique()))
 
     def _cutoff_for(usage_date: pd.Timestamp) -> object:
@@ -362,19 +518,31 @@ def estimate_usage_revenue(
             return "__earliest__" if pd.notna(earliest_pricing_date) else "__empty__"
         return distinct_pricing_dates[position]
 
+    # Try building every cutoff's PriceContext in one linear-ish pass (see
+    # _price_contexts_by_cutoff). This only holds when pricing rows are
+    # already date-ordered; fall back to resolving each cutoff independently
+    # (slower, but always correct) otherwise.
+    batch_contexts = _price_contexts_by_cutoff(pricing_with_dates)
     context_cache: dict[object, PriceContext] = {}
+    if batch_contexts is not None and len(distinct_pricing_dates):
+        context_cache["__earliest__"] = batch_contexts[distinct_pricing_dates[0]]
+        context_cache[None] = batch_contexts[distinct_pricing_dates[-1]]
+        for cutoff_date in distinct_pricing_dates:
+            context_cache[cutoff_date] = batch_contexts[cutoff_date]
+    if "__empty__" not in context_cache:
+        context_cache["__empty__"] = _empty_price_context()
+    if None not in context_cache:
+        # No usable pricing rows at all (or the batch path was unavailable and
+        # there are no distinct dates to seed it): every cutoff is empty.
+        context_cache[None] = build_price_context(pricing_with_dates.drop(columns="_pricing_date"))
 
     def _context_for_cutoff(cutoff: object) -> PriceContext:
         if cutoff in context_cache:
             return context_cache[cutoff]
-        if cutoff is None:
-            eligible_pricing = pricing_with_dates.drop(columns="_pricing_date")
-        elif cutoff == "__earliest__":
+        if cutoff == "__earliest__":
             eligible_pricing = pricing_with_dates[
                 pricing_with_dates["_pricing_date"] == earliest_pricing_date
             ].drop(columns="_pricing_date")
-        elif cutoff == "__empty__":
-            eligible_pricing = pricing_with_dates.iloc[0:0].drop(columns="_pricing_date")
         else:
             eligible_pricing = pricing_with_dates[pricing_with_dates["_pricing_date"] <= cutoff].drop(
                 columns="_pricing_date"
