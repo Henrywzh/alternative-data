@@ -15,11 +15,15 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[3]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+SCRIPTS_DIR = Path(__file__).resolve().parent
+if str(SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_DIR))
 
 from src.hk_utilities.sources.clp_electricity import fetch_clp_electricity
 from src.hk_utilities.sources.hko_temperature import fetch_hko_temperature
 from src.hk_utilities.sources.power_assets_segments import fetch_power_assets_segments
 from src.hk_utilities.sources.towngas_proxy import fetch_towngas_proxy
+from history_policy import DEFAULT_HISTORY_YEARS, history_window
 
 
 PUBLIC_SOURCES = {
@@ -223,6 +227,21 @@ def build_artifact(
                 }
             )
 
+    towngas_history_window = history_window(towngas, "date", years=DEFAULT_HISTORY_YEARS)
+    temperature_history_window = history_window(temp, "date", years=DEFAULT_HISTORY_YEARS)
+    temperature_chart = (
+        temperature_history_window.assign(month=temperature_history_window["date"].dt.strftime("%Y-%m"))
+        .groupby("month", as_index=False)
+        .agg(
+            date=("date", "min"),
+            mean_temp_c=("mean_temp_c", "mean"),
+            month_avg_temp_c=("month_avg_temp_c", "first"),
+        )
+        .sort_values("month")
+    )
+    temperature_chart["mean_temp_c"] = temperature_chart["mean_temp_c"].round(1)
+    temperature_chart["month_avg_temp_c"] = temperature_chart["month_avg_temp_c"].round(1)
+
     datasets = {
         "kpi_clp": [clp_kpi],
         "kpi_towngas": [tg_kpi],
@@ -235,13 +254,13 @@ def build_artifact(
             + _series_history(clp, "Infra & Public", "infrastructure_public_gwh")
             + _series_history(clp, "Manufacturing", "manufacturing_gwh")
         ),
-        "towngas_history": _records_json_safe(towngas.tail(60)),
+        "towngas_history": _records_json_safe(towngas_history_window),
         "towngas_type_history": (
-            _series_history(towngas.tail(60), "Domestic", "domestic_gas_tj")
-            + _series_history(towngas.tail(60), "Commercial", "commercial_gas_tj")
-            + _series_history(towngas.tail(60), "Industrial", "industrial_gas_tj")
+            _series_history(towngas_history_window, "Domestic", "domestic_gas_tj")
+            + _series_history(towngas_history_window, "Commercial", "commercial_gas_tj")
+            + _series_history(towngas_history_window, "Industrial", "industrial_gas_tj")
         ),
-        "temp_history": _records_json_safe(temp.tail(180)),
+        "temp_history": _records_json_safe(temperature_chart),
         "power_assets_geography": pa_geography_rows,
     }
     # Sort the multi-series datasets by (series, date) so each series'
@@ -319,7 +338,7 @@ def build_artifact(
         {
             "id": "towngas_trend_chart",
             "title": "Hong Kong Town Gas Consumption Trend (TJ)",
-            "subtitle": "Monthly gas consumption split by Domestic, Commercial, and Industrial user types.",
+            "subtitle": "Monthly gas consumption split by Domestic, Commercial, and Industrial user types; latest ten years of available history by default.",
             "type": "line",
             "intent": "comparison",
             "dataset": "towngas_type_history",
@@ -334,13 +353,13 @@ def build_artifact(
         },
         {
             "id": "temp_trend_chart",
-            "title": "Hong Kong Observatory Daily Mean Temperature (°C)",
-            "subtitle": "Daily mean temperature history vs monthly averages.",
+            "title": "Hong Kong Observatory Monthly Mean Temperature (°C)",
+            "subtitle": "Monthly average of HKO daily mean temperatures; latest ten years of available history by default. Daily source observations remain at source cadence outside this compact public chart.",
             "type": "line",
             "dataset": "temp_history",
             "sourceId": "hko_temperature",
             "encodings": {
-                "x": {"field": "date", "type": "temporal", "label": "Date"},
+                "x": {"field": "month", "type": "temporal", "label": "Month"},
                 "y": {"field": "mean_temp_c", "type": "quantitative", "label": "°C"},
             },
             "valueFormat": "number",

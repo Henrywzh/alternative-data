@@ -1,0 +1,222 @@
+{
+  "generated_at": "2026-07-30T21:35:23.210074Z",
+  "snapshot_id": "334b277d05868fa6",
+  "data_as_of": "2026-07-27",
+  "overall_status": "Healthy",
+  "live_sources": 10,
+  "planned_sources": 1,
+  "provisional_series": 2,
+  "sources": [
+    {
+      "source": "Centaline City Leading Index (CCL)",
+      "dataset": "Centaline CCL",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2026-07-19",
+      "records": 1699,
+      "freshness": "11d old",
+      "notes": "Latest observation is published without a provisional flag."
+    },
+    {
+      "source": "Midland Realty Market Insight — MHPI",
+      "dataset": "Midland MHPI",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2026-07-27",
+      "records": 542,
+      "freshness": "3d old",
+      "notes": "Latest observation is published without a provisional flag."
+    },
+    {
+      "source": "Midland Realty Market Insight — Confidence Index",
+      "dataset": "Midland Confidence Index",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2026-07-27",
+      "records": 444,
+      "freshness": "3d old",
+      "notes": "Latest observation is published without a provisional flag."
+    },
+    {
+      "source": "Rating and Valuation Department — Private Domestic Price Index",
+      "dataset": "RVD Residential Price Index",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2026-06-01",
+      "records": 402,
+      "freshness": "59d old",
+      "notes": "Latest observation is provisional."
+    },
+    {
+      "source": "Rating and Valuation Department — Private Domestic Rental Index",
+      "dataset": "RVD Residential Rental Index",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2026-06-01",
+      "records": 402,
+      "freshness": "59d old",
+      "notes": "Latest observation is provisional."
+    },
+    {
+      "source": "Centaline CCI — Residential Price Index",
+      "dataset": "Centaline CCI monthly",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2026-05-01",
+      "records": 389,
+      "freshness": "90d old",
+      "notes": "Normalized residential price index; CCI is not a sentiment measure."
+    },
+    {
+      "source": "Centaline CRI — Residential Rental Index",
+      "dataset": "Centaline CRI monthly",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2026-06-01",
+      "records": 354,
+      "freshness": "59d old",
+      "notes": "Normalized residential rental index; rental-yield history is a companion dataset."
+    },
+    {
+      "source": "Centaline CSI — Market Sentiment",
+      "dataset": "Centaline CSI weekly",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2026-07-27",
+      "records": 1116,
+      "freshness": "3d old",
+      "notes": "Normalized sentiment history; not a transaction or price series."
+    },
+    {
+      "source": "Rating and Valuation Department — Office Rental Index",
+      "dataset": "RVD office rental monthly",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2026-05-01",
+      "records": 1604,
+      "freshness": "90d old",
+      "notes": "Official grade-level rental index; provisional flags are retained."
+    },
+    {
+      "source": "Rating and Valuation Department — Retail Rental / Price Index",
+      "dataset": "RVD retail monthly",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2026-05-01",
+      "records": 802,
+      "freshness": "90d old",
+      "notes": "Official retail rental/price indices; provisional flags are retained."
+    },
+    {
+      "source": "28Hse",
+      "dataset": "EPI / ERI",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "—",
+      "records": 1096,
+      "freshness": "Live at build time",
+      "notes": "28Hse EPI / ERI Historical Index; see the chart/table above."
+    },
+    {
+      "source": "Agency transactions",
+      "dataset": "Centaline / Midland / 28Hse transactions",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "—",
+      "records": 300,
+      "freshness": "Live at build time",
+      "notes": "Deduplicated agency transaction feeds; see the chart/table above."
+    },
+    {
+      "source": "Land Registry",
+      "dataset": "Monthly facts + ASP series",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "—",
+      "records": 708,
+      "freshness": "Live at build time",
+      "notes": "Land Registry Monthly Statistics (JSON); see the chart/table above."
+    },
+    {
+      "source": "Buildings Department",
+      "dataset": "Monthly digest + project lifecycle",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "—",
+      "records": 257,
+      "freshness": "Live at build time",
+      "notes": "Buildings Department Monthly Digest / Project Lifecycle; see the chart/table above."
+    },
+    {
+      "source": "Buildings Department history",
+      "dataset": "Md52-Md56 stage aggregates",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "—",
+      "records": 1210,
+      "freshness": "Live at build time",
+      "notes": "Buildings Department Monthly Digest PDF archive (Section 1 aggregate tables); see the chart/table above."
+    },
+    {
+      "source": "Centaline CCI — Residential Price Index",
+      "dataset": "CCI monthly history",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2026-05-01",
+      "records": 389,
+      "freshness": "90d old",
+      "notes": "Centaline residential price cross-check; not a sentiment measure."
+    },
+    {
+      "source": "Centaline CRI — Residential Rental Index",
+      "dataset": "CRI monthly history",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2026-06-01",
+      "records": 354,
+      "freshness": "59d old",
+      "notes": "Centaline residential rental index; yield is stored separately."
+    },
+    {
+      "source": "Centaline CSI — Market Sentiment",
+      "dataset": "CSI weekly history",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2026-07-27",
+      "records": 1116,
+      "freshness": "3d old",
+      "notes": "Centaline sentiment series; not a transaction or price level."
+    },
+    {
+      "source": "Rating and Valuation Department — Office Rental Index",
+      "dataset": "RVD office rental history",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2026-05-01",
+      "records": 1604,
+      "freshness": "90d old",
+      "notes": "Official commercial rental index; grade and provisional flags are retained."
+    },
+    {
+      "source": "Rating and Valuation Department — Retail Rental / Price Index",
+      "dataset": "RVD retail history",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2026-05-01",
+      "records": 802,
+      "freshness": "90d old",
+      "notes": "Official commercial rental/price index; provisional flags are retained."
+    },
+    {
+      "source": "SRPE",
+      "dataset": "First-hand residential project documents",
+      "type": "Catalog",
+      "status": "Catalog only",
+      "latest_observation": "—",
+      "records": 0,
+      "freshness": "Content parser pending",
+      "notes": "Current discovery code does not yet extract sales, units, price lists, or absorption facts."
+    }
+  ],
+  "attachment_filename": "hk-real-estate-dashboard-2026-07-30.html"
+}

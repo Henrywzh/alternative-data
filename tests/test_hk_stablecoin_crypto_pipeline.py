@@ -117,6 +117,52 @@ def test_fear_greed_index():
         assert len(res["classification"]) > 0
 
 
+def test_btc_price_history_paginates_ten_year_request(monkeypatch):
+    """A zero-limit request must walk Binance's 1,000-row kline pages."""
+    import src.hk_stablecoin_crypto.sources.crypto_tickers as tickers
+
+    page_sizes = [1000, 1000, 1000, 653]
+    calls = []
+    next_day = 1_500_000
+
+    class Response:
+        def __init__(self, payload):
+            self.payload = payload
+
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return self.payload
+
+    def fake_get(url, *, params, timeout):
+        calls.append((url, dict(params), timeout))
+        size = page_sizes[len(calls) - 1]
+        start = next_day + sum(page_sizes[: len(calls) - 1])
+        payload = [
+            [
+                (start + offset) * 86_400_000,
+                "0",
+                "0",
+                "0",
+                str(10_000 + start + offset),
+            ]
+            for offset in range(size)
+        ]
+        return Response(payload)
+
+    monkeypatch.setattr(tickers.requests, "get", fake_get)
+    monkeypatch.setattr(tickers, "save_raw_snapshot", lambda *args, **kwargs: None)
+
+    frame = tickers.fetch_btc_price_history(0)
+
+    assert len(frame) == 3653
+    assert frame["date"].is_monotonic_increasing
+    assert len(calls) == 4
+    assert calls[0][1]["limit"] == 1000
+    assert all("endTime" in call[1] for call in calls[1:])
+
+
 def test_polymarket_tag_slug_param(monkeypatch):
     """Verify fetch_markets_by_tag sends the tag_slug parameter to events endpoint."""
     import unittest.mock as mock

@@ -10,6 +10,11 @@ from .pipeline import (
     run_stage_1_pipeline,
     run_stage_2_pipeline,
     run_all_incomplete_pipelines,
+    run_centaline_indices_pipeline,
+    run_midland_monthly_pipeline,
+    run_rvd_commercial_pipeline,
+    run_midland_snapshot_pipeline,
+    run_policy_event_research_pipeline,
 )
 
 def main():
@@ -23,6 +28,11 @@ def main():
     subparsers.add_parser("run-stage-1", help="Run Stage 1 source ingestion")
     subparsers.add_parser("run-stage-2", help="Run Stage 2 financing & stock attribution ingestion")
     subparsers.add_parser("run-incomplete-5", help="Run digestion pipeline for the 5 incomplete data sources")
+    subparsers.add_parser("run-centaline-indices", help="Run Tranche 1 CCI/CRI/CSI ingestion only")
+    subparsers.add_parser("run-midland-monthly", help="Run Tranche 2 Midland monthly ingestion only")
+    subparsers.add_parser("run-rvd-commercial", help="Run Tranche 3 RVD office/retail ingestion only")
+    subparsers.add_parser("run-midland-snapshots", help="Run Tranche 4 Midland snapshot ingestion only")
+    subparsers.add_parser("run-policy-events", help="Run Tranche 5 policy-source and registry research contracts")
 
     args = parser.parse_args()
 
@@ -48,6 +58,21 @@ def main():
         elif args.command == "run-incomplete-5":
             results = run_all_incomplete_pipelines()
             print("\nIncomplete 5 Ingestion completed:\n" + json.dumps(results, indent=2))
+        elif args.command == "run-centaline-indices":
+            results = run_centaline_indices_pipeline()
+            print("\nCentaline Tranche 1 ingestion completed:\n" + json.dumps(results, indent=2))
+        elif args.command == "run-midland-monthly":
+            results = run_midland_monthly_pipeline()
+            print("\nMidland Tranche 2 ingestion completed:\n" + json.dumps(results, indent=2))
+        elif args.command == "run-rvd-commercial":
+            results = run_rvd_commercial_pipeline()
+            print("\nRVD Tranche 3 ingestion completed:\n" + json.dumps(results, indent=2))
+        elif args.command == "run-midland-snapshots":
+            results = run_midland_snapshot_pipeline()
+            print("\nMidland Tranche 4 ingestion completed:\n" + json.dumps(results, indent=2))
+        elif args.command == "run-policy-events":
+            results = run_policy_event_research_pipeline()
+            print("\nPolicy/event Tranche 5 ingestion completed:\n" + json.dumps(results, indent=2))
         else:
             parser.print_help()
     except Exception as e:

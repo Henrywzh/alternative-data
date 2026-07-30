@@ -32,6 +32,12 @@ agency-deal-to-registration follow-up, commercial KPI definition matching, and
 HKEX publication/effective-time audit. Only after those produce a written
 evidence log should source schemas, automation or modelling be fixed.
 
+**Additional discovery TODO (also research-first):** the Centaline CCI/CRI/CSI
+API suite, CVI methodology, Midland monthly price-volume/macro payloads,
+rolling district snapshots, RVD commercial series and a policy-event layer are
+tracked in the real-estate document's “Discovery TODO” table. They require
+source contracts and small validation pilots before any dashboard claim.
+
 ## 2. Stablecoin / Crypto
 
 Full doc: [asia-markets-hk-stablecoin-crypto.md](asia-markets-hk-stablecoin-crypto.md)

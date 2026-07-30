@@ -18,6 +18,7 @@ REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
 MIDLAND_MARKET_INSIGHT_URL = "https://www.midland.com.hk/zh-hk/market-insight"
 CENTALINE_CCI_URL = "https://hk.centanet.com/CCI/index"
 CENTALINE_CCL_API_URL = "https://hk.centanet.com/CCI/api/Index/CCL"
+CENTALINE_INDEX_API_BASE_URL = "https://hk.centanet.com/CCI/api/Index"
 
 # Midland's data.midland.com.hk backend (reverse-engineered from the
 # midland-transaction-history micro-frontend). Any midland.com.hk page visit

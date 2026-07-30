@@ -322,6 +322,20 @@ const HK_REAL_ESTATE_ZH = {
     bd_supply_history_counts_chart: ["屋宇署 — 历史批准／同意书宗数", "官方汇总表已发布的月度项目或同意书宗数；Md55 没有相应宗数栏位。", "月份", "项目／同意书宗数", "审批阶段"],
     hkma_applications_chart: ["香港金管局新批按揭申请宗数", "每月新批住宅按揭贷款申请宗数。", "月份", "申请宗数"],
     hkma_loan_amount_chart: ["香港金管局按揭贷款金额 (百万港元)", "已批出贷款总额、二手市场占比及提取贷款金额，按月。一手/预售楼花及转按明细见下方表格。", "月份", "百万港元", "类别"],
+    residential_price_rebased_chart: ["住宅价格周期 — 五年比较", "CCL、MHPI、CCI 及 EPI 分别以窗口内首个可用月份重设为 100；原始发布方水平见下方图表。", "月份", "重设基准价格指数", "系列"],
+    residential_rent_rebased_chart: ["住宅租金周期 — 五年比较", "CRI、RVD 租金及 ERI 与价格分开重设为 100；原始水平及租金回报率见下方。", "月份", "重设基准租金指数", "系列"],
+    cci_trend: ["中原 CCI — 住宅价格指数", "月度整体 CCI 历史；CCI 是价格指数，不是情绪指标。", "月份", "指数"],
+    cri_trend: ["中原 CRI — 住宅租金指数", "来自中原标准化数据契约的月度整体 CRI 历史。", "月份", "租金指数"],
+    cri_yield_trend: ["中原 CRI 租金回报率", "月度租金回报率配套序列；不是租金水平。", "月份", "回报率 (%)"],
+    csi_trend: ["中原 CSI — 市场情绪", "周度市场情绪历史；目前历史 payload 仅提供住宅价格／租金情绪字段。", "周", "情绪指数", "指标"],
+    rvd_office_trend: ["商业地产 — RVD 写字楼租金", "按等级划分的私人写字楼月度租金指数；数据集保留 provisional 标记。", "月份", "租金指数", "等级"],
+    rvd_retail_trend: ["商业地产 — RVD 零售租金／价格", "私人零售月度租金及价格指数；数据集保留 provisional 标记。", "月份", "指数", "指标／分类"],
+  },
+  blocks: {
+    market_regime_intro: "## 市场周期总览\n\n以时间序列为主：比较住宅价格、租金、活动、信贷、供应及商业地产，不把单一快照当成趋势。",
+    residential_sources_section: "## 住宅来源历史\n\n原始发布方水平与上方重设基准走势分开，方便核对来源定义。",
+    activity_financing_section: "## 成交活动与融资\n\n成交、按揭申请、贷款金额及信贷质素使用相容的独立时间序列。",
+    supply_commercial_section: "## 供应与商业地产\n\n供应历史及官方写字楼／零售租金序列与住宅价格、租金分开。",
   },
   tables: {
     source_health_table: {
@@ -390,10 +404,15 @@ const HK_REAL_ESTATE_ZH = {
   },
   sources: {
     centaline_ccl: "中原城市领先指数（CCL）",
+    centaline_cci: "中原 CCI — 住宅价格指数",
+    centaline_cri: "中原 CRI — 住宅租金指数",
+    centaline_csi: "中原 CSI — 市场情绪",
     midland_mhpi: "美联物业市场资讯 — MHPI",
     midland_confidence: "美联物业市场资讯 — 信心指数",
     rvd_price: "差饷物业估价署 — 私人住宅售价指数",
     rvd_rent: "差饷物业估价署 — 私人住宅租金指数",
+    rvd_office: "差饷物业估价署 — 写字楼租金指数",
+    rvd_retail: "差饷物业估价署 — 零售租金／价格指数",
     cross_source: "跨来源标准化比较",
     source_registry: "香港房地产 dashboard 来源登记表",
     hkma_mortgage: "香港金管局住宅按揭统计调查",
@@ -453,6 +472,21 @@ const HK_REAL_ESTATE_ZH = {
       // already used by rvd_price_card/rvd_rent_card on this same page.
       series: { "RVD Price": "RVD 价格", "RVD Rent": "RVD 租金" },
     },
+    residential_price_rebased: {
+      series: { CCL: "CCL", MHPI: "MHPI", CCI: "CCI", EPI: "EPI" },
+    },
+    residential_rent_rebased: {
+      series: { CRI: "CRI", "RVD Rent": "RVD 租金", ERI: "ERI" },
+    },
+    csi_history: {
+      series: { residential_price: "住宅价格情绪", residential_rental: "住宅租金情绪" },
+    },
+    rvd_office_history: {
+      series: { "Grade A": "甲级", "Grade B": "乙级", "Grade C": "丙级", Overall: "整体" },
+    },
+    rvd_retail_history: {
+      series: { "Rents Overall": "整体租金", "Prices Overall": "整体价格", Rents: "租金", Prices: "价格" },
+    },
   },
 };
 
@@ -471,11 +505,11 @@ const HK_LOCAL_CONSUMER_ZH = {
     store_footprint_card: { description: "11家香港上市零售、珠宝、餐饮及消费品公司的门店/网点数量追踪总数。", metricLabels: ["已追踪网点总数"] },
   },
   charts: {
-    severe_weather_trend: ["月度极端天气干扰时长 (小时)", "按月汇总的八号及以上热带气旋警告与红/黑色暴雨警告持续时间。", "月份", "小时"],
-    immigration_trend: ["跨境旅客流量 (7日移动平均)", "入境事务处发布的每日客流：北上为香港居民经陆路口岸出境，南下为内地访客经全部口岸入境。", "日期", "人次/日 (7日均值)", "流向"],
+    severe_weather_trend: ["月度极端天气干扰时长 (小时)", "按月汇总的八号及以上热带气旋警告与红/黑色暴雨警告持续时间；图表默认显示可用历史中的最近十年。", "月份", "小时"],
+    immigration_trend: ["跨境旅客流量 (7日移动平均)", "入境事务处发布的每日客流：北上为香港居民经陆路口岸出境，南下为内地访客经全部口岸入境；图表默认显示可用历史中的最近十年。", "日期", "人次/日 (7日均值)", "流向"],
     afcd_category_chart: ["农渔护理署批发价按类别", "今日各类别商品的平均批发价（每公斤）。", "类别", "港元 / 公斤"],
     afcd_category_trend: ["农渔护理署批发价按类别走势（逐日累积）", "由每次流水线运行时抓取的真实同日快照逐日累积而成——农渔护理署的批发价数据源只公布当日读数（未发现历史存档），因此本序列不作回填，初期数据量很薄（可能仅有一天），并会随每次运行新增真实观测值而增长。图例为适配窄屏使用缩写：FW fish=淡水鱼，Meat/Poultry=家畜/家禽，Marine=海鱼，Veg=蔬菜（完整类别名称见上方快照图与表格）。", "日期", "港元 / 公斤", "类别"],
-    gold_trend: ["上海黄金交易所 PM 基准价（毛利成本参考）", "近7年人民币/克每日定盘价；作为香港金饰原料成本的辅助参考，与农渔护理署批发食品成本并列展示以供毛利分析——本 dashboard 的主打消费需求图表为上方的跨境人流走势。", "日期", "人民币 / 克"],
+    gold_trend: ["上海黄金交易所 PM 基准价（毛利成本参考）", "人民币/克每日定盘价；图表默认显示可用历史中的最近十年（若数据不足十年则显示全部），作为香港金饰原料成本的辅助参考。", "日期", "人民币 / 克"],
     valuation_pe_chart: ["观察名单历史市盈率对比", "各公司最新的正值历史市盈率；亏损公司不计入此视图。", "公司", "市盈率 (TTM)"],
     retail_trend: ["零售销售价值指数（全部店铺）", "政府统计处月度价值指数，完整已发布历史。", "月份", "价值指数"],
     retail_category_chart: ["零售销售价值指数按类别", "最新发布月份，按零售店铺类型划分。", "类别", "价值指数"],
@@ -484,7 +518,12 @@ const HK_LOCAL_CONSUMER_ZH = {
     store_footprint_chart: ["各公司追踪门店/网点数量", "各公司最新的门店足迹快照（各公司单位不直接可比，详见备注）。", "公司", "门店总数"],
     consumer_council_oilprice_chart: ["各大油公司现金折扣对比 (港元/升)", "美孚、中石油、壳牌、中石化及埃索的每升现金折扣。", "油公司", "折扣 (港元/升)"],
     consumer_council_oilprice_net_chart: ["各大油公司实际油价对比 (港元/升)", "同日美孚、中石油、壳牌、中石化及埃索的每升实际油价。", "油公司", "实际油价 (港元/升)"],
+    consumer_council_oilprice_history_chart: ["普通汽油实际油价走势", "现金折扣后的每日普通汽油实际油价（不含燃油税）；图表默认显示可用历史中的最近十年。", "月份", "港元 / 升（不含税）", "油公司"],
     consumer_council_complaints_chart: ["消费者委员会投诉类别排行", "最新一期十大投诉类别（按投诉宗数）。", "类别", "投诉宗数"],
+    consumer_council_complaints_history_chart: ["消费者委员会投诉类别历史", "每个已发布期间的投诉类别历史；只使用官方提供的期间值，不推算同比。", "发布期间", "投诉宗数", "类别"],
+    valuation_market_cap_trend: ["消费观察名单市值走势", "来源提供的每日市值观察；图表默认显示可用历史中的最近十年。", "日期", "市值（十亿港元）", "公司"],
+    immigration_checkpoint_trend: ["主要出入境管制站客流走势", "按最新 7 日平均客流选出的五个管制站/方向；图表默认显示可用历史中的最近十年。", "日期", "人次（7 日均值）", "管制站 / 方向"],
+    severe_weather_daily_trend: ["每日极端天气干扰时长", "按警告时段跨午夜拆分后的每日持续时长；图表默认显示可用历史中的最近十年。", "月份", "小时", "警告类型"],
   },
   tables: {
     severe_weather_log_table: {
@@ -612,8 +651,8 @@ const HK_UTILITIES_ZH = {
   },
   charts: {
     clp_sector_chart: ["中电香港售电量按行业拆解 (GWh)", "季度售电量拆解为住宅、商业、基础设施与公共服务及制造行业。", "季度", "售电量 (GWh)"],
-    towngas_trend_chart: ["香港煤气消费量走势 (TJ)", "月度全港煤气消费总量拆解为住宅、商业及工业用户。", "月份", "太焦耳 (TJ)"],
-    temp_trend_chart: ["香港天文台日均气温走势 (°C)", "每日平均气温历史与月度平均气温线对比。", "日期", "°C"],
+    towngas_trend_chart: ["香港煤气消费量走势 (TJ)", "月度全港煤气消费总量拆解为住宅、商业及工业用户；图表默认显示可用历史中的最近十年。", "月份", "太焦耳 (TJ)"],
+    temp_trend_chart: ["香港天文台月均气温走势 (°C)", "按香港天文台每日平均气温计算的月度平均；图表默认显示可用历史中的最近十年，日频来源数据在数据层保留。", "月份", "°C"],
   },
   tables: {
     power_assets_geography_table: {
@@ -662,7 +701,7 @@ const HK_TRANSPORT_ZH = {
   },
   charts: {
     mtr_total_patronage_chart: ["港铁总客运量走势 (2000年至今，千人次)", "26 年月度港铁总客运量数据，完整呈现 2003 年沙士（SARS）冲击（2003 年 4 月低点约 4,880 万人次）及更深、更持久的 2019-22 新冠疫情冲击（2022 年 2 月低点约 7,190 万人次），其后复苏至接近 2019 年疫情前月均水平。", "月份", "千人次"],
-    mtr_service_breakdown_chart: ["港铁客运量按服务类型走势 (2018年至今，千人次)", "本地重铁、跨境、高铁、机场快线及轻铁与巴士的月度乘客人次，聚焦近 8 年数据以保持五条曲线清晰可读（完整 26 年总量走势见上图）。", "月份", "千人次"],
+    mtr_service_breakdown_chart: ["港铁客运量按服务类型走势（最近十年，千人次）", "本地重铁、跨境、高铁、机场快线及轻铁与巴士的月度乘客人次；图表默认显示可用历史中的最近十年（若数据不足十年则显示全部）。完整总量历史见上图。", "月份", "千人次"],
     cathay_passengers_chart: ["国泰集团载客人数走势 (2012年至今)", "13 年月度国泰集团载客人数，呈现新冠疫情期间近乎归零的冲击（由 2018 年 8 月约 328 万人次高点跌至 2020 年 4 月约 1.37 万人次低点，跌幅逾 99.5%）及其后的多年复苏。", "月份", "乘客人数"],
     cathay_load_factor_chart: ["国泰集团载客率走势 (%)", "月度载客率——相较于原始载客人数，更能反映国泰自身运力利用率与定价能力，因其已扣除国泰当时投放的运力规模。", "月份", "载客率 (%)"],
     cathay_capacity_demand_chart: ["国泰集团运力与需求对比 (ASK 对比 RPK，千单位)", "可用座位公里（投放运力）与收益乘客公里（实际填补需求）对比——两线差距与旁边载客率图表互为镜像。", "月份", "千单位"],
@@ -763,6 +802,170 @@ const HK_TELECOM_ZH = {
     "## 如何阅读本 dashboard\n\n三家运营商的后付费 ARPU 与用户数均取自其各自的 HKEX 业绩公告或投资者简报叙述文本，半年度更新。",
   dataLabels: {
     hkt_footprint_history: { series: { "FTTH connections": "FTTH 连接数", "Pay TV base": "收费电视用户数" } },
+  },
+};
+
+const LABOUR_INDUSTRY_ZH = {
+  "Mining and quarrying": "采矿及采石",
+  Manufacturing: "制造业",
+  "Electricity and gas supply, and waste management": "电力及燃气供应、废物管理",
+  "Construction sites (manual workers only)": "建筑地盘（仅手工工人）",
+  "Import/export, wholesale and retail trades": "进出口、批发及零售业",
+  "Transportation, storage, postal and courier services": "运输、仓储、邮政及速递服务",
+  "Accommodation and food services": "住宿及膳食服务",
+  "Information and communications": "资讯及通讯",
+  "Financing and insurance": "金融及保险",
+  "Real estate": "地产",
+  "Professional and business services": "专业及商用服务",
+  "Administrative and support services": "行政及支援服务",
+  Education: "教育",
+  "Social and personal services": "社会及个人服务",
+  "Human health and social work services": "人类保健及社会工作服务",
+  "Arts, entertainment and recreation": "艺术、娱乐及康乐",
+  "Other services": "其他服务",
+  Total: "总计",
+  "Retail, accommodation and food services": "零售、住宿及膳食服务",
+  "Transportation, storage, postal and courier services, information and communications": "运输、仓储、邮政及速递服务、资讯及通讯",
+  "Financing, insurance, real estate, professional and business services": "金融、保险、地产、专业及商用服务",
+  "Real estate and professional and business services": "地产及专业、商用服务",
+  "Public administration, social and personal services": "公共行政、社会及个人服务",
+  "Other industries": "其他行业",
+  "Transport, storage & courier": "运输、仓储及速递",
+  "Transport, storage & ICT": "运输、仓储及资讯通讯",
+  "Accommodation & food": "住宿及膳食",
+  "Information & communications": "资讯及通讯",
+  "Professional/scientific/technical": "专业、科学及技术服务",
+  "Professional & business services": "专业及商用服务",
+  "Administrative & support services": "行政及支援服务",
+  "Health & social work": "医疗及社会工作",
+  "Arts, entertainment & recreation": "艺术、娱乐及康乐",
+  "Import/export, wholesale & retail": "进出口、批发及零售",
+  "Social & personal services": "社会及个人服务",
+  "Construction sites": "建筑地盘",
+  "Transport, storage & ICT": "运输、仓储、速递及资讯通讯",
+  "Retail, accommodation & food": "零售、住宿及膳食",
+  "Public admin, social & personal": "公共行政、社会及个人服务",
+  "Real estate & professional/business": "地产及专业、商用服务",
+  "Finance, insurance, real estate & business": "金融、保险、地产及商用服务",
+  "Import/export & wholesale": "进出口及批发",
+  "Finance & insurance": "金融及保险",
+  "Total vacancies": "职位空缺总数",
+  Finance: "金融",
+  Health: "医疗",
+  Trade: "贸易",
+  "Prof & biz": "专业商用",
+  Social: "社会",
+  "F&B": "住宿餐饮",
+  Mfg: "制造",
+  Const: "建造",
+  "Trans.": "运输通讯",
+  "Fin.": "金融",
+  Mgrs: "经理",
+  "Prof.": "专业",
+  "Assoc. prof": "辅专业",
+  Sales: "销售服务",
+  Elementary: "非技术",
+  Retail: "零售业",
+  Construction: "建造业",
+};
+
+const LABOUR_OCCUPATION_ZH = {
+  Total: "总计",
+  Managers: "经理",
+  Professionals: "专业人员",
+  "Associate professionals": "辅专业人员",
+  "Clerical support workers": "文书支援人员",
+  "Services and sales workers": "服务工作及销售人员",
+  "Craft and related trades workers": "工艺及有关人员",
+  "Plant and machine operators and assemblers": "机台及机器操作员及装配员",
+  "Elementary occupations": "非技术工人",
+  "Other occupations": "其他职业",
+};
+
+const LABOUR_POLICY_SERIES_ZH = {
+  ESLS: "补充劳工",
+  GEP: "一般",
+  ASMTP: "内地",
+  TechTAS: "科技",
+  TTPS: "高端",
+  IANG: "IANG",
+  ASSG: "二代港人",
+  QMAS: "优秀",
+};
+
+const HK_LABOUR_MARKET_ZH = {
+  title: "香港劳动力市场与人才政策",
+  description: "劳动力、就业、失业、职位空缺、工资、就业收入及官方人才政策流量的来源快照。",
+  cards: {
+    labour_force_card: { description: "政府统计处每月三个月移动平均劳动力市场指标；最后一项显示实际观察期。", metricLabels: ["劳动力（千人）", "就业人数（千人）", "失业率", "就业不足率", "观察期"] },
+    labour_demand_card: { description: "政府统计处按季职位空缺调查；最后一项显示实际观察期。", metricLabels: ["职位空缺", "就业人数", "职位空缺率", "观察期"] },
+    wage_card: { description: "政府统计处行业工资及薪金指数同比变动；名义与实际指标分开显示。", metricLabels: ["名义工资同比", "实际工资同比", "名义薪金同比", "观察期"] },
+    income_card: { description: "所有行业就业人士每月就业收入中位数，采用最新三个月移动平均观察值。", metricLabels: ["每月就业收入中位数（港元）", "观察期"] },
+    talent_policy_card: { description: "各人才计划的年度申请及批准总数；申请不等于实际抵港或就业。", metricLabels: ["申请数", "批准数", "优秀人才计划配额", "观察年"] },
+  },
+  charts: {
+    labour_force_chart: ["劳动力、就业及失业人数", "每月三个月移动平均，单位为千人；最新点不是单月估计。", "月份", "千人", "指标"],
+    labour_rates_chart: ["失业率及就业不足率", "每月三个月移动平均，数值为百分比。", "月份", "%", "指标"],
+    vacancies_by_industry_chart: ["各行业职位空缺比较", "最新政府统计处季度数据；只显示最高层行业组别。", "行业", "职位空缺数"],
+    vacancy_industry_history_chart: ["所选行业职位空缺历史", "自 2000 年起的季度历史；点击图例显示或隐藏总数及所选行业序列。上方仍保留最新一期完整行业排名。", "季度", "职位空缺数", "行业"],
+    vacancy_rate_chart: ["整体职位空缺率", "政府统计处职位空缺调查的季度整体职位空缺率。", "季度", "%"],
+    wage_yoy_chart: ["工资及薪金增长", "总行业工资及薪金指数同比变动；名义与实际指标分开保留。", "季度", "同比变动", "指标"],
+    earnings_by_industry_chart: ["各行业每月就业收入中位数", "最新三个月移动平均；合并男女数据。", "行业", "港元"],
+    earnings_industry_history_chart: ["所选行业就业收入历史", "自 2008 年起的每月三个月移动平均；点击图例显示或隐藏所选行业。单位为每月港元。", "月份", "港元／月", "行业"],
+    occupation_earnings_history_chart: ["所选职业就业收入历史", "自 2016 年起的每月三个月移动平均；点击图例显示或隐藏所选职业。单位为每月港元。", "月份", "港元／月", "职业"],
+    talent_policy_received_chart: ["人才政策申请数", "按计划划分的年度申请数；属于政策需求，不是已确认的人口流入或就业。", "年份", "申请数", "计划"],
+    talent_policy_approved_chart: ["人才政策批准数", "按计划划分的年度批准数；批准不等于实际抵港、启动签证或进入劳动力市场。", "年份", "批准数", "计划"],
+  },
+  tables: {
+    earnings_by_occupation_table: {
+      title: "各职业每月就业收入中位数",
+      subtitle: "最新三个月移动平均；合并男女数据。",
+      columns: { occupation: "职业", median_monthly_earnings: "收入中位数（港元）" },
+    },
+    talent_policy_latest_table: {
+      title: "最新年度人才政策流量（按计划）",
+      subtitle: "官方年度数字；优秀人才计划配额不等于实际抵港或就业人数。",
+      columns: { series: "计划", applications_received: "申请数", applications_approved: "批准数", qmas_quota: "优秀人才计划配额" },
+    },
+    source_health_table: {
+      title: "劳动力市场数据来源健康度",
+      subtitle: "本页使用的本地审计快照；日期是数据观察日期，不是抓取日期。",
+      columns: { dataset: "数据集", status: "状态", latest_observation: "最新观察日期", records: "记录数", freshness: "刷新模式", notes: "备注" },
+    },
+  },
+  sources: {
+    censtatd_labour_force: "政府统计处劳动力、就业、失业及就业不足统计",
+    censtatd_labour_demand: "政府统计处按行业划分的职位空缺统计",
+    censtatd_wage_payroll: "政府统计处工资及薪金指数",
+    censtatd_earnings: "政府统计处每月就业收入中位数",
+    talent_policy_open_data: "劳工处及入境事务处人才政策公开数据",
+  },
+  snapshotBody: (artifact) => `**数据快照：** \`${artifact.package_info.snapshotId}\` · 生成于 ${artifact.manifest.generatedAt}。`,
+  methodologyBody: "## 如何阅读本 dashboard\n\n本页将政府统计处劳动力市场数据，与劳工处及入境事务处的人才政策流量数据并列。劳动力及就业收入的月度序列是三个月移动平均；职位空缺与工资／薪金指数为季度数据；人才政策数据为年度数据。申请、批准及优秀人才计划配额不应解读为已确认抵港、仍在港就业或劳动力参与人数。",
+  dataLabels: {
+    vacancies_by_industry_latest: { industry: LABOUR_INDUSTRY_ZH },
+    vacancy_industry_history: { series: { Total: "职位空缺总数", Social: "社会", Health: "医疗", Trade: "贸易", "Prof & biz": "专业商用", Finance: "金融" } },
+    earnings_by_industry_latest: { industry: LABOUR_INDUSTRY_ZH },
+    earnings_industry_history: { series: { Total: "总计", Retail: "零售", "F&B": "住宿餐饮", Mfg: "制造", Const: "建造", "Fin.": "金融", "Trans.": "运输通讯" } },
+    earnings_by_occupation_latest: { occupation: LABOUR_OCCUPATION_ZH },
+    earnings_by_occupation_table: { occupation: LABOUR_OCCUPATION_ZH },
+    occupation_earnings_history: { series: { Total: "总计", Mgrs: "经理", "Prof.": "专业", "Assoc. prof": "辅专业", Sales: "销售服务", Elementary: "非技术" } },
+    labour_force_history: { series: { "Labour force": "劳动力", Employed: "就业人数", Unemployed: "失业人数" } },
+    labour_rate_history: { series: { "Unemployment rate": "失业率", "Underemployment rate": "就业不足率" } },
+    vacancy_history: { series: { "Persons engaged": "就业人数", Vacancies: "职位空缺" } },
+    wage_yoy_history: { series: { "Nom wage": "名义工资同比", "Real wage": "实际工资同比", "Nom pay": "名义薪金同比", "Real pay": "实际薪金同比" } },
+    talent_policy_received_history: { series: LABOUR_POLICY_SERIES_ZH },
+    talent_policy_approved_history: { series: LABOUR_POLICY_SERIES_ZH },
+    talent_policy_latest: { series: LABOUR_POLICY_SERIES_ZH },
+    source_health: {
+      dataset: {
+        labour_force_monthly: "劳动力月度数据",
+        labour_demand_by_industry: "按行业划分的职位空缺",
+        wage_payroll_indices: "工资及薪金指数",
+        median_earnings_by_industry: "行业就业收入中位数",
+        talent_policy_supply_panel: "人才政策流量数据",
+      },
+    },
   },
 };
 
@@ -907,6 +1110,11 @@ function localizeArtifact(input, zh) {
   if (snapshot) snapshot.body = zh.snapshotBody(artifact);
   const methodology = artifact.manifest.blocks?.find((block) => block.id === "methodology");
   if (methodology) methodology.body = zh.methodologyBody;
+  if (zh.blocks) {
+    artifact.manifest.blocks?.forEach((block) => {
+      if (zh.blocks[block.id]) block.body = zh.blocks[block.id];
+    });
+  }
   return artifact;
 }
 
@@ -924,7 +1132,7 @@ function addYearAwareStaticChartTicks(html, artifact) {
   };
   const formatMonthYear = (date) => `${monthNames[date.getUTCMonth()]} ${date.getUTCFullYear()}`;
   const figurePattern = /(<figure\b[^>]*data-chart-id="([^"]+)"[\s\S]*?<\/figure>)/g;
-  return html.replace(figurePattern, (figure, _ignored, chartId) => {
+  const patchedHtml = html.replace(figurePattern, (figure, _ignored, chartId) => {
     const chart = charts.get(chartId);
     const x = chart?.encodings?.x;
     if (!x || x.type !== "temporal") return figure;
@@ -967,6 +1175,47 @@ function addYearAwareStaticChartTicks(html, artifact) {
       return output;
     });
   });
+
+  // The static fallback above is what gets emailed or printed, but supported
+  // browsers reveal the interactive reader after load. Its shared renderer
+  // intentionally formats day-precision temporal ticks as \`5 Jan\`, which is
+  // ambiguous on a multi-year chart. Patch only the visible Recharts x-axis
+  // ticks after the reader is ready, using the same artifact rows to map each
+  // tick's x-position back to its source date. This keeps weekly source
+  // cadence intact while making the year visible in both delivery modes.
+  const chartMetadata = Object.fromEntries(
+    [...charts.entries()].map(([id, chart]) => {
+      const x = chart.encodings?.x;
+      const rows = artifact.snapshot?.datasets?.[chart.dataset];
+      const rawDates = x?.type === "temporal" && Array.isArray(rows)
+        ? rows.map((row) => row?.[x.field]).filter((value) => value != null && String(value).trim())
+        : [];
+      const dates = x?.type === "temporal" && Array.isArray(rows)
+        ? rows.map((row) => parseDate(row?.[x.field])).filter(Boolean)
+        : [];
+      return [
+        id,
+        {
+          xType: x?.type,
+          monthGranular: rawDates.length > 0 && rawDates.every((value) => /^\d{4}[-/]\d{1,2}$/.test(String(value))),
+          minTime: dates.length ? Math.min(...dates.map((date) => date.getTime())) : null,
+          maxTime: dates.length ? Math.max(...dates.map((date) => date.getTime())) : null,
+        },
+      ];
+    }),
+  );
+  const runtimeScript = [
+    '<script data-dashboard-year-aware-axis="true">',
+    '(()=>{const charts=',
+    JSON.stringify(chartMetadata),
+    ',formatDate=(date,monthGranular)=>new Intl.DateTimeFormat("en-US",monthGranular?{month:"short",year:"numeric",timeZone:"UTC"}:{day:"numeric",month:"short",year:"numeric",timeZone:"UTC"}).format(date),patch=()=>{Object.entries(charts).forEach(([chartId,meta])=>{if(!meta||meta.xType!=="temporal"||!(meta.maxTime>meta.minTime))return;const roots=[document.getElementById(chartId),...document.querySelectorAll("figure[data-chart-id=\\"" + chartId + "\\"]")].filter(Boolean);roots.forEach((figure)=>{const ticks=[...figure.querySelectorAll(".recharts-xAxis-tick-labels .recharts-cartesian-axis-tick-value")];const positions=ticks.map((tick)=>Number(tick.getAttribute("x"))).filter(Number.isFinite);if(positions.length<2)return;const left=Math.min(...positions),right=Math.max(...positions);if(!(right>left))return;ticks.forEach((tick)=>{if(tick.dataset.dashboardYearAware==="true")return;const x=Number(tick.getAttribute("x"));if(!Number.isFinite(x))return;const date=new Date(meta.minTime+Math.max(0,Math.min(1,(x-left)/(right-left)))*(meta.maxTime-meta.minTime));tick.textContent=formatDate(date,meta.monthGranular);tick.dataset.dashboardYearAware="true"})})})};const schedule=()=>{patch();requestAnimationFrame(()=>patch())};document.addEventListener("data-analytics-portable-reader-ready",schedule);window.addEventListener("data-analytics-portable-reader-ready",schedule);new MutationObserver(()=>patch()).observe(document.documentElement,{childList:true,subtree:true});schedule()})();',
+    '</script>',
+  ].join("");
+  const cleanHtml = patchedHtml.replace(
+    /<script data-dashboard-year-aware-axis="true">[\s\S]*?<\/script>/g,
+    "",
+  );
+  return cleanHtml.replace("</body>", runtimeScript + "</body>");
 }
 
 function addCopyTitleControls(html, artifact, { locale }) {
@@ -982,7 +1231,10 @@ function addCopyTitleControls(html, artifact, { locale }) {
   }
   const css = `<style data-dashboard-copy-title="true">.portable-visual-header{display:flex!important;align-items:flex-start;gap:8px}.portable-visual-header>strong,.portable-visual-header>h1,.portable-visual-header>h2,.portable-visual-header>h3{flex:1}.editable-cell-header{position:relative!important}.editable-cell-header h1,.editable-cell-header h2,.editable-cell-header h3{padding-right:96px}.editable-cell-header .portable-copy-title{position:absolute;top:2px;right:0}.portable-copy-title{flex:0 0 auto;margin:0;padding:3px 8px;border:1px solid var(--portable-border);border-radius:999px;background:transparent;color:var(--portable-muted);font:500 11px/18px ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;cursor:pointer}.portable-copy-title:hover{color:var(--portable-ink);background:var(--portable-surface-subtle)}.portable-copy-title:focus-visible{outline:2px solid var(--portable-accent);outline-offset:2px}</style>`;
   const script = `<script data-dashboard-copy-title-runtime="true">(()=>{const copyLabel=${JSON.stringify(copyLabel)},copiedLabel=${JSON.stringify(copiedLabel)},idToDataset=${JSON.stringify(idToDataset)},enhance=()=>{document.querySelectorAll(".portable-visual-header,.editable-cell-header").forEach((header)=>{if(header.querySelector(".portable-copy-title"))return;const box=header.getBoundingClientRect();if(!box.width||!box.height||getComputedStyle(header).visibility==="hidden")return;const title=header.querySelector("strong,h1,h2,h3");if(!title)return;const artifactEl=header.closest("[data-chart-id],[data-table-id],[data-card-id],[data-artifact-id]");let artifactId=artifactEl?.dataset?.chartId||artifactEl?.dataset?.tableId||artifactEl?.dataset?.cardId||null;if(!artifactId&&artifactEl?.dataset?.artifactId){const raw=artifactEl.dataset.artifactId;const segments=raw.split(":");artifactId=segments[segments.length-1]}const button=document.createElement("button");button.type="button";button.className="portable-copy-title";button.textContent=copyLabel;button.setAttribute("aria-label",copyLabel);button.addEventListener("click",async()=>{const titleText=title.textContent.trim();if(!titleText)return;const dataset=artifactId?idToDataset[artifactId]:null;const text=dataset?(titleText+", "+dataset):titleText;let copied=false;try{await navigator.clipboard.writeText(text);copied=true}catch{const area=document.createElement("textarea");area.value=text;area.setAttribute("readonly","");area.style.position="fixed";area.style.opacity="0";document.body.appendChild(area);area.select();try{copied=document.execCommand("copy")}finally{area.remove()}}button.textContent=copied?copiedLabel:copyLabel;window.setTimeout(()=>{button.textContent=copyLabel},1400)});header.appendChild(button)})};enhance();new MutationObserver(enhance).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["class","style"]})})();</script>`;
-  return html.replace("</head>", `${css}</head>`).replace("</body>", `${script}</body>`);
+  const cleanHtml = html
+    .replace(/<style data-dashboard-copy-title="true">[\s\S]*?<\/style>/g, "")
+    .replace(/<script data-dashboard-copy-title-runtime="true">[\s\S]*?<\/script>/g, "");
+  return cleanHtml.replace("</head>", css + "</head>").replace("</body>", script + "</body>");
 }
 
 function addNavigation(html, { locale, homeEn, homeZh, routeEn, routeZh }) {
@@ -1083,7 +1335,7 @@ const HK_COMMERCIAL_AEROSPACE_ZH = {
 
 const HK_STABLECOIN_CRYPTO_ZH = {
   title: "香港稳定币与加密资产基础设施监测",
-  description: "金管局持牌稳定币发行人沙盒名单、证监会持牌 VATP 虚拟资产交易平台、港交所加密 ETF 规模时间序列、全球稳定币市值与公链分布、DEX 交易量、1 年加密情绪指数与 1 年 BTC 价格走势。",
+  description: "金管局持牌稳定币发行人沙盒名单、证监会持牌 VATP 虚拟资产交易平台、港交所加密 ETF 规模时间序列、全球稳定币市值与公链分布、DEX 交易量、加密情绪指数与 BTC 价格长期走势。",
   cards: {
     regulatory_licensing_card: { description: "金管局稳定币沙盒持牌发行人及证监会持牌交易平台。", metricLabels: ["金管局稳定币发行人", "SFC 持牌 VATP", "SFC 申请中 VATP"] },
     crypto_signals_card: { description: "比特币现货价格、Coinbase 溢价价差及情绪指数。", metricLabels: ["比特币价格 (美元)", "Coinbase 溢价 (bps)", "加密情绪指数"] },
@@ -1091,11 +1343,11 @@ const HK_STABLECOIN_CRYPTO_ZH = {
   },
   charts: {
     etf_aum_history_chart: ["港交所加密现货 ETF 月度 AUM (百万美元)", "香港上市比特币及以太币现货 ETF 基金规模历史。", "月份", "AUM (百万美元)", "代码"],
-    stablecoin_history_chart: ["1 年全球稳定币总流通供应量走势 (十亿美元)", "DefiLlama 统计的全球锚定资产流通市值 365 天扩张/收缩历史时间序列。", "日期", "总供应量 (十亿美元)"],
+    stablecoin_history_chart: ["全球稳定币总流通供应量走势 (十亿美元)", "DefiLlama 统计的每日全球锚定资产流通市值月度平均；图表默认显示可用历史中的最近十年。", "月份", "总供应量 (十亿美元)"],
     stablecoin_chain_chart: ["主要区块链公链稳定币供应量分布 (十亿美元)", "DefiLlama 按底层区块链网络（Ethereum、Tron、BSC、Solana 等）统计的稳定币流通市值分布。", "区块链公链", "供应量 (十亿美元)"],
-    dex_volume_history_chart: ["1 年全球 DEX 每日交易量走势 (十亿美元/日)", "DefiLlama 统计的全球去中心化交易所每日交易量历史时间序列。", "日期", "DEX 交易量 (十亿美元/日)"],
-    fear_greed_history_chart: ["1 年加密情绪指数走势 (Alternative.me)", "Alternative.me 每日加密货币恐慌与贪婪指数 365 天时间序列 (0=极度恐慌, 100=极度贪婪)。", "日期", "情绪得分"],
-    btc_price_history_chart: ["1 年比特币现货价格走势 (美元)", "Binance 每日比特币收盘价 365 天时间序列。", "日期", "BTC 价格 (美元)"],
+    dex_volume_history_chart: ["全球 DEX 每日交易量走势 (十亿美元/日)", "DefiLlama 统计的全球去中心化交易所每日交易量月度平均；图表默认显示可用历史中的最近十年。", "月份", "DEX 交易量 (十亿美元/日)"],
+    fear_greed_history_chart: ["加密情绪指数走势 (Alternative.me)", "Alternative.me 每日加密货币恐慌与贪婪指数月度平均；图表默认显示可用历史中的最近十年 (0=极度恐慌, 100=极度贪婪)。", "月份", "情绪得分"],
+    btc_price_history_chart: ["比特币现货价格走势 (美元)", "Binance 每日比特币收盘价的月末值；图表默认显示可用历史中的最近十年。", "月份", "BTC 价格 (美元)"],
   },
   tables: {
     hkma_issuers_table: {
@@ -1141,7 +1393,52 @@ const HK_STABLECOIN_CRYPTO_ZH = {
   snapshotBody: (artifact) =>
     `**数据快照：** \`${artifact.package_info.snapshotId}\` · 生成于 ${artifact.manifest.generatedAt}。`,
   methodologyBody:
-    "## 如何阅读本 dashboard\n\n香港加密生态由官方监管登记册锚定：金管局稳定币发行人沙盒（Anchorpoint FRS01、汇丰 FRS02）及证监会持牌 VATP 交易平台（OSL、HashKey）。券商（如国泰君安国际 01788.HK）仅具备虚拟资产交易服务许可，非 VATP 交易所运营商；Anchorpoint（Anchorpoint Financial，港元锚定 HKDAP）与 AnchorX（金涌投资 01328.HK，AxCNH）为不同主体。本 dashboard 跟踪监管登记册、港交所 ETF AUM 时间序列、全球稳定币供应走势、主要公链分布、DEX 交易量、1 年加密情绪指数 (Alternative.me)、1 年 BTC 价格走势及标签筛选的 Polymarket 催化剂。本界面不提供投资建议。",
+    "## 如何阅读本 dashboard\n\n香港加密生态由官方监管登记册锚定：金管局稳定币发行人沙盒（Anchorpoint FRS01、汇丰 FRS02）及证监会持牌 VATP 交易平台（OSL、HashKey）。券商（如国泰君安国际 01788.HK）仅具备虚拟资产交易服务许可，非 VATP 交易所运营商；Anchorpoint（Anchorpoint Financial，港元锚定 HKDAP）与 AnchorX（金涌投资 01328.HK，AxCNH）为不同主体。本 dashboard 跟踪监管登记册、港交所 ETF AUM 时间序列、全球稳定币供应走势、主要公链分布、DEX 交易量、加密情绪指数、BTC 价格长期走势及标签筛选的 Polymarket 催化剂。本界面不提供投资建议。",
+};
+
+const HK_POPULATION_MIGRATION_ZH = {
+  title: "香港人口、迁移与跨境数据监测",
+  description: "入境处高频每日出入境净流量、政府统计处人口估算与净移动、积金局永久离港强积金申索、教资会内地生入学人数及大湾区跨境车流/高铁客流。",
+  cards: {
+    kpi_total_pop: { description: "政府统计处半年度人口估算。", metricLabels: ["香港总人口 (千人，年中/年终)"] },
+    kpi_net_mov: { description: "最新半年度净人口移动（单程证持有人及其他）。", metricLabels: ["净人口移动 (千人)"] },
+    kpi_mpfa_claims: { description: "最新季度因永久离开香港而提取的强积金金额。", metricLabels: ["季度强积金永久离港申索金额 (百万港元)"] },
+    kpi_ugc_students: { description: "最新学年教资会资助课程内地学生人数。", metricLabels: ["在港大学内地学生人数"] },
+  },
+  charts: {
+    immd_net_flow_chart: ["入境处高频出入境净流量 (日度)", "香港居民净流出/返回 vs 内地访客净留存。", "日期", "净人数"],
+    csd_population_chart: ["政府统计处人口与净移动走势", "半年度年中/年终人口估算与净人口移动（均为千人）。", "期间", "千人"],
+    mpfa_claims_chart: ["积金局季度永久离港提取金额 (百万港元)", "因永久离开香港而申请提取强积金的涉及金额。", "季度", "百万港元"],
+    mpfa_claims_count_chart: ["积金局季度永久离港申索宗数", "永久离港强积金申索宗数，与提取金额分开显示。", "季度", "宗数"],
+    ugc_students_chart: ["香港大学内地及其他非本地学生人数", "教资会资助课程的学年度在读学生人数。", "学年度", "学生人数"],
+    td_cross_border_chart: ["运输署大湾区跨境车流与高铁客运量", "港珠澳大桥“港车北上”通关车辆数与高铁西九龙站客运量。", "月份", "人次 / 车辆数"],
+  },
+  tables: {},
+  dataLabels: {
+    immd_net_flow_history: {
+      series: { "HK Resident Net Flow": "香港居民净流量", "Mainland Visitor Net Retention": "内地访客净留存" },
+    },
+    csd_population_movement_history: {
+      series: { Population: "人口", "Net Movement": "净人口移动" },
+    },
+    ugc_students_comparison_history: {
+      series: { "Mainland Students": "内地学生", "Other Non-local Students": "其他非本地学生" },
+    },
+    td_cross_border_comparison_history: {
+      series: { "Northbound HK Vehicles": "港车北上车辆", "Express Rail Passengers": "高铁西九龙客运量" },
+    },
+  },
+  sources: {
+    immd: "香港入境事务处每日出入境旅客流量",
+    csd: "政府统计处香港人口估算与净移动",
+    mpfa: "积金局季度统计数字",
+    ugc: "大学教育资助委员会非本地生统计",
+    td: "运输署月度交通统计 Digest",
+  },
+  snapshotBody: (artifact) =>
+    `**数据快照：** \`${artifact.package_info.snapshotId}\` · 生成于 ${artifact.manifest.generatedAt}。这是已发布快照，不是实时连接。`,
+  methodologyBody:
+    "## 如何阅读本 dashboard\n\n本界面整合了入境处高频日度出入境数据、政府统计处半年度人口与净移动估算、积金局永久离港强积金提取、教资会大学内地生源及运输署大湾区跨境通关数据。保监局内地访客保费统计未有展示：监管机构自 2025 年第一季起暂停发布该系列（正就非本地保单持有人的数据收集范围与准则进行检讨），目前没有可靠的替代数据来源。本 dashboard 不提供投资建议。",
 };
 
 // Identity and status-file wiring come from ../sectors.json; only the
@@ -1154,9 +1451,11 @@ const ZH_DICTIONARIES = {
   "hk-utilities": HK_UTILITIES_ZH,
   "hk-transport": HK_TRANSPORT_ZH,
   "hk-telecom": HK_TELECOM_ZH,
+  "hk-labour-market": HK_LABOUR_MARKET_ZH,
   "hk-reit": HK_REIT_ZH,
   "hk-commercial-aerospace": HK_COMMERCIAL_AEROSPACE_ZH,
   "hk-stablecoin-crypto": HK_STABLECOIN_CRYPTO_ZH,
+  "hk-population-migration": HK_POPULATION_MIGRATION_ZH,
 };
 
 const SECTORS = LIVE_SECTORS.map((sector) => {

@@ -15,9 +15,13 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[3]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+SCRIPTS_DIR = Path(__file__).resolve().parent
+if str(SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_DIR))
 
 from src.hk_transport.sources.cathay_traffic import fetch_cathay_traffic
 from src.hk_transport.sources.mtr_patronage import fetch_mtr_patronage
+from history_policy import DEFAULT_HISTORY_YEARS, history_window
 
 
 CHINA_AIRLINE_DATA_PATH = ROOT / "data" / "processed" / "airline_traffic" / "china_airlines_monthly.parquet"
@@ -368,16 +372,11 @@ def build_artifact(
     }
 
     # --- Chart datasets -----------------------------------------------
-    # mtr_history/cathay_history carry the FULL, untruncated history (26yr
-    # MTR back to Jan 2000, 13yr Cathay/HKIA back to Dec 2012) so the
-    # long-run single-line trend charts can show the full SARS (2003) and
-    # COVID-19 (2020-22) collapse-and-recovery story. The 5-way MTR
-    # service-type breakdown is windowed to the most recent ~8 years
-    # (2018-onward) in a separate long-format dataset -- 26 years of five
-    # overlapping lines is unreadable, but a shorter recent window keeps the
-    # by-service-type comparison legible while still spanning the full
-    # COVID collapse and recovery.
-    mtr_breakdown_window = mtr[mtr["date"] >= "2018-01-01"]
+    # The total MTR and Cathay series already carry their full available
+    # histories.  The five-way service breakdown uses the shared default
+    # ten-year date window so it is long enough for structural context without
+    # relying on a cadence-specific row count or an arbitrary 2018 cutoff.
+    mtr_breakdown_window = history_window(mtr, "date", years=DEFAULT_HISTORY_YEARS)
     mtr_service_breakdown_history: list[dict[str, Any]] = []
     for series_label, column in [
         ("Domestic", "domestic_service_thousands"),
@@ -448,8 +447,8 @@ def build_artifact(
         },
         {
             "id": "mtr_service_breakdown_chart",
-            "title": "MTR Patronage by Rail Service, 2018-Present ('000s)",
-            "subtitle": "Monthly passenger journeys across Domestic heavy rail, Cross-boundary, HSR, Airport Express, and Light Rail & Bus -- windowed to the last ~8 years so the five service lines stay legible through the COVID collapse and recovery (see the total-patronage chart above for the full 26-year trend).",
+            "title": "MTR Patronage by Rail Service — Latest 10 Years ('000s)",
+            "subtitle": "Monthly passenger journeys across Domestic heavy rail, Cross-boundary, HSR, Airport Express, and Light Rail & Bus. The chart uses the latest ten years of available history; the total-patronage chart above retains the full source history.",
             "type": "line",
             "dataset": "mtr_service_breakdown_history",
             "sourceId": "mtr_patronage",

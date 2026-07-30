@@ -3,7 +3,13 @@ import requests
 import pandas as pd
 from typing import Tuple
 
-from ..config import RVD_PRICE_1_4M_URL, RVD_RENTAL_1_3M_URL, DEFAULT_HEADERS
+from ..config import (
+    RVD_PRICE_1_4M_URL,
+    RVD_RENTAL_1_3M_URL,
+    RVD_OFFICE_RENTAL_2_3M_URL,
+    RVD_RETAIL_3_2M_URL,
+    DEFAULT_HEADERS,
+)
 from ..storage import save_raw_snapshot
 
 def _parse_rvd_monthly_csv(csv_content: str) -> pd.DataFrame:
@@ -102,6 +108,69 @@ def fetch_rvd_rental_index() -> pd.DataFrame:
     df = _parse_rvd_monthly_csv(r.text)
     df.attrs.update(raw_snapshot=str(raw_path), source_url=RVD_RENTAL_1_3M_URL)
     return df
+
+
+def _parse_rvd_commercial_csv(csv_content: str, sector: str) -> pd.DataFrame:
+    """Parse RVD office/retail files to a long, metric-labelled contract."""
+    lines = [line for line in csv_content.strip().splitlines() if line.strip()]
+    header_idx = next((i for i, line in enumerate(lines[:10]) if "Month" in line), -1)
+    columns = ["date", "segment", "metric", "value", "is_provisional", "source_agency"]
+    if header_idx < 0:
+        return pd.DataFrame(columns=columns)
+    raw = pd.read_csv(io.StringIO("\n".join(lines[header_idx:])))
+    value_columns = [str(col) for col in raw.columns if str(col).strip() != "Month" and "Remarks" not in str(col)]
+    rows = []
+    for _, row in raw.iterrows():
+        date_raw = str(row.get("Month", "")).strip()
+        parts = date_raw.split("-")
+        if len(parts) != 2 or not parts[0].isdigit() or not parts[1].isdigit():
+            continue
+        date = f"{parts[1]}-{parts[0].zfill(2)}-01"
+        for column in value_columns:
+            value = str(row.get(column, "")).replace("P", "").replace(",", "").strip()
+            try:
+                numeric = float(value)
+            except ValueError:
+                continue
+            remarks_column = f"{column} - Remarks"
+            is_provisional = "P" in str(row.get(remarks_column, "")).upper()
+            if sector == "office":
+                metric = "rental_index"
+            else:
+                metric = "rental_index" if column.strip().lower() == "rents" else "price_index"
+            rows.append(
+                {
+                    "date": date,
+                    "segment": column.strip().lower().replace(" ", "_"),
+                    "metric": metric,
+                    "value": numeric,
+                    "is_provisional": is_provisional,
+                    "source_agency": "Rating and Valuation Department",
+                }
+            )
+    result = pd.DataFrame(rows, columns=columns)
+    if not result.empty:
+        if result.duplicated(subset=["date", "segment", "metric"]).any():
+            return pd.DataFrame(columns=columns)
+        result = result.sort_values(["metric", "segment", "date"]).reset_index(drop=True)
+    return result
+
+
+def _fetch_rvd_commercial_index(url: str, source_name: str, sector: str) -> pd.DataFrame:
+    response = requests.get(url, headers=DEFAULT_HEADERS, timeout=15)
+    response.raise_for_status()
+    raw_path = save_raw_snapshot(source_name, response.text, file_ext="csv", source_url=url)
+    result = _parse_rvd_commercial_csv(response.text, sector)
+    result.attrs.update(raw_snapshot=str(raw_path), source_url=url)
+    return result
+
+
+def fetch_rvd_office_rental_index() -> pd.DataFrame:
+    return _fetch_rvd_commercial_index(RVD_OFFICE_RENTAL_2_3M_URL, "rvd_office_rental_2_3M", "office")
+
+
+def fetch_rvd_retail_rental_index() -> pd.DataFrame:
+    return _fetch_rvd_commercial_index(RVD_RETAIL_3_2M_URL, "rvd_retail_3_2M", "retail")
 
 def run_rvd_ingestion() -> Tuple[pd.DataFrame, pd.DataFrame]:
     return fetch_rvd_price_index(), fetch_rvd_rental_index()

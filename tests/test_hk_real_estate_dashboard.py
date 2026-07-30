@@ -107,6 +107,98 @@ def test_rebased_series_start_at_100():
     assert all(value == pytest.approx(100.0) for value in first_by_series.values())
 
 
+def test_stage1_new_series_are_wired_into_separated_regime_and_commercial_views():
+    dates = ["2026-01-01", "2026-02-01", "2026-03-01"]
+    new_series = {
+        "centaline_cci": pd.DataFrame({"date": dates, "series_id": ["overall"] * 3, "metric": ["price_index"] * 3, "index_value": [100, 101, 102]}),
+        "centaline_cri": pd.DataFrame({"date": dates, "series_id": ["overall"] * 3, "metric": ["rental_index"] * 3, "index_value": [90, 91, 92]}),
+        "centaline_cri_yield": pd.DataFrame({"date": dates, "series_id": ["overall"] * 3, "metric": ["rental_yield"] * 3, "index_value": [3.0, 3.1, 3.2]}),
+        "centaline_csi": pd.DataFrame({"date": dates, "series_id": ["residential_price"] * 3, "metric": ["sentiment"] * 3, "index_value": [55, 56, 57]}),
+        "rvd_office": pd.DataFrame({"date": dates, "segment": ["overall"] * 3, "metric": ["rental_index"] * 3, "value": [110, 111, 112], "is_provisional": [False] * 3}),
+        "rvd_retail": pd.DataFrame({"date": dates, "segment": ["overall"] * 3, "metric": ["rental_index"] * 3, "value": [105, 106, 107], "is_provisional": [False] * 3}),
+    }
+    artifact, _ = dashboard_export.build_artifact(
+        _frames(), raw_hkma=_hkma_frame(), raw_cnsd=_cnsd_frame(), raw_new_series=new_series, now=NOW
+    )
+    datasets = artifact["snapshot"]["datasets"]
+    assert len(datasets["cci_history"]) == 3
+    assert len(datasets["cri_history"]) == 3
+    assert len(datasets["rvd_office_history"]) == 3
+    assert {row["date"] for row in datasets["cci_history"]} == {"2026-01", "2026-02", "2026-03"}
+    assert all(len(row["date"]) == 7 for row in datasets["rvd_office_history"])
+    assert len(datasets["residential_price_rebased"]) > 0
+    assert len(datasets["residential_rent_rebased"]) > 0
+    assert all(len(row["date"]) == 7 for row in datasets["residential_price_rebased"])
+    block_ids = [block["id"] for block in artifact["manifest"]["blocks"]]
+    assert block_ids.index("market_regime_intro") < block_ids.index("activity_financing_section") < block_ids.index("supply_commercial_section")
+    assert "rebased_chart" not in block_ids
+
+
+def test_csi_weekly_history_keeps_distinct_week_dates_while_monthly_indices_stay_monthly():
+    monthly_dates = ["2026-01-01", "2026-02-01"]
+    weekly_dates = ["2026-01-05", "2026-01-12", "2026-01-19"]
+    new_series = {
+        "centaline_cci": pd.DataFrame({"date": monthly_dates, "series_id": ["overall"] * 2, "metric": ["price_index"] * 2, "index_value": [100, 101]}),
+        "centaline_cri": pd.DataFrame({"date": monthly_dates, "series_id": ["overall"] * 2, "metric": ["rental_index"] * 2, "index_value": [90, 91]}),
+        "centaline_cri_yield": pd.DataFrame({"date": monthly_dates, "series_id": ["overall"] * 2, "metric": ["rental_yield"] * 2, "index_value": [3.0, 3.1]}),
+        "centaline_csi": pd.DataFrame({"date": weekly_dates, "series_id": ["residential_price"] * 3, "metric": ["sentiment"] * 3, "index_value": [55, 56, 57]}),
+    }
+
+    artifact, _ = dashboard_export.build_artifact(
+        _frames(),
+        raw_hkma=_hkma_frame(),
+        raw_cnsd=_cnsd_frame(),
+        raw_epi_eri=pd.DataFrame(),
+        raw_new_projects=pd.DataFrame(),
+        raw_landreg=(pd.DataFrame(), pd.DataFrame()),
+        raw_bd_monthly_stats=pd.DataFrame(),
+        raw_bd_supply=pd.DataFrame(),
+        raw_bd_supply_history=pd.DataFrame(),
+        raw_unified_tx=pd.DataFrame(),
+        raw_new_series=new_series,
+        now=NOW,
+    )
+
+    datasets = artifact["snapshot"]["datasets"]
+    assert {row["date"] for row in datasets["csi_history"]} == set(weekly_dates)
+    assert len({(row["date"], row["series"]) for row in datasets["csi_history"]}) == 3
+    assert {row["date"] for row in datasets["cci_history"]} == {"2026-01", "2026-02"}
+    chart = next(chart for chart in artifact["manifest"]["charts"] if chart["id"] == "csi_trend")
+    assert chart["encodings"]["x"] == {"field": "date", "type": "temporal", "label": "Week"}
+
+
+def test_new_real_estate_feeds_are_not_repeated_in_source_coverage():
+    new_series = {
+        "centaline_cci": pd.DataFrame({"date": ["2026-01-01"], "series_id": ["overall"], "metric": ["price_index"], "index_value": [100]}),
+        "centaline_cri": pd.DataFrame({"date": ["2026-01-01"], "series_id": ["overall"], "metric": ["rental_index"], "index_value": [90]}),
+        "centaline_cri_yield": pd.DataFrame({"date": ["2026-01-01"], "series_id": ["overall"], "metric": ["rental_yield"], "index_value": [3.0]}),
+        "centaline_csi": pd.DataFrame({"date": ["2026-01-05"], "series_id": ["residential_price"], "metric": ["sentiment"], "index_value": [55]}),
+        "rvd_office": pd.DataFrame({"date": ["2026-01-01"], "segment": ["overall"], "metric": ["rental_index"], "value": [110]}),
+        "rvd_retail": pd.DataFrame({"date": ["2026-01-01"], "segment": ["overall"], "metric": ["rental_index"], "value": [105]}),
+    }
+    artifact, _ = dashboard_export.build_artifact(
+        _frames(),
+        raw_hkma=_hkma_frame(),
+        raw_cnsd=_cnsd_frame(),
+        raw_epi_eri=pd.DataFrame(),
+        raw_new_projects=pd.DataFrame(),
+        raw_landreg=(pd.DataFrame(), pd.DataFrame()),
+        raw_bd_monthly_stats=pd.DataFrame(),
+        raw_bd_supply=pd.DataFrame(),
+        raw_bd_supply_history=pd.DataFrame(),
+        raw_unified_tx=pd.DataFrame(),
+        raw_new_series=new_series,
+        now=NOW,
+    )
+    coverage = artifact["snapshot"]["datasets"]["source_coverage"]
+    names = [row["source"] for row in coverage]
+    for source_id in ("centaline_cci", "centaline_cri", "centaline_csi", "rvd_office", "rvd_retail"):
+        assert names.count(dashboard_export.PUBLIC_SOURCES[source_id]["label"]) == 1
+    csi = next(row for row in coverage if row["source"] == dashboard_export.PUBLIC_SOURCES["centaline_csi"]["label"])
+    assert csi["latest_observation"] == "2026-01-05"
+    assert csi["records"] == 1
+
+
 def test_artifact_contains_no_machine_local_paths_or_secrets():
     artifact, _ = dashboard_export.build_artifact(_frames(), raw_hkma=_hkma_frame(), raw_cnsd=_cnsd_frame(), now=NOW)
     serialized = json.dumps(artifact)
@@ -267,6 +359,15 @@ def test_bd_history_is_a_dated_aggregate_trend_separate_from_current_snapshot():
                 "revision_status": "as_published",
                 "parser_confidence": "LOW",
             },
+            {
+                "observation_month": "2010-01-01",
+                "permit_stage": "Consent to Commence",
+                "total_projects_count": 99,
+                "total_domestic_units": 9_999,
+                "total_domestic_ufa_sqm": 99_999,
+                "revision_status": "as_published",
+                "parser_confidence": "HIGH",
+            },
         ]
     )
     artifact, _ = dashboard_export.build_artifact(
@@ -287,6 +388,8 @@ def test_bd_history_is_a_dated_aggregate_trend_separate_from_current_snapshot():
         (("date", "2024-12"), ("permit_stage", "Demolition Consents"), ("series", "Md52 Demolition"), ("metric", "Project / consent count"), ("value", 2.0)),
     }
     assert "bd_supply_pipeline_history" not in artifact["snapshot"]["datasets"]
+    assert all(row["date"] >= "2014-12" for row in rows)
+    assert not any(row["value"] == 9_999 for row in rows)
     unit_chart = next(chart for chart in artifact["manifest"]["charts"] if chart["id"] == "bd_supply_history_units_chart")
     count_chart = next(chart for chart in artifact["manifest"]["charts"] if chart["id"] == "bd_supply_history_counts_chart")
     assert unit_chart["dataset"] == "bd_supply_pipeline_history_units"

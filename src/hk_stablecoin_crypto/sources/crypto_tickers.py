@@ -127,14 +127,43 @@ def fetch_fear_greed_history(limit: int = 0) -> pd.DataFrame:
 
 
 def fetch_btc_price_history(limit: int = 365) -> pd.DataFrame:
-    """Fetch BTC daily spot price time series from Binance (default 365 days)."""
+    """Fetch BTC daily spot history from Binance.
+
+    Binance limits each klines response to 1,000 rows. ``limit=0`` requests
+    the latest ten years through bounded backward pagination; a positive
+    limit preserves the older single-request API for callers that need a
+    smaller window.
+    """
     now_str = datetime.now(timezone.utc).isoformat()
-    url = f"https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1d&limit={limit}"
+    url = "https://api.binance.com/api/v3/klines"
     try:
-        resp = requests.get(url, timeout=15)
-        resp.raise_for_status()
-        data = resp.json()
-        
+        target_days = limit if limit > 0 else 3653
+        batches: list[list[list[object]]] = []
+        remaining = target_days
+        end_time: int | None = None
+        while remaining > 0:
+            batch_limit = min(1000, remaining)
+            params: dict[str, object] = {
+                "symbol": "BTCUSDT",
+                "interval": "1d",
+                "limit": batch_limit,
+            }
+            if end_time is not None:
+                params["endTime"] = end_time
+            resp = requests.get(url, params=params, timeout=30)
+            resp.raise_for_status()
+            batch = resp.json()
+            if not isinstance(batch, list) or not batch:
+                break
+            batches.append(batch)
+            remaining -= len(batch)
+            oldest_open_time = int(batch[0][0])
+            if len(batch) < batch_limit:
+                break
+            end_time = oldest_open_time - 1
+
+        data = [item for batch in batches for item in batch]
+
         rows = []
         for kline in data:
             ts = int(kline[0]) / 1000.0
@@ -148,9 +177,11 @@ def fetch_btc_price_history(limit: int = 365) -> pd.DataFrame:
             
         if not rows:
             return pd.DataFrame(columns=["date", "btc_price_usd", "fetched_at"])
-            
+
+        result = pd.DataFrame(rows).drop_duplicates(subset=["date"]).sort_values("date")
+        result = result.tail(target_days).reset_index(drop=True)
         save_raw_snapshot("btc_price_history", data, file_ext="json", source_url=url)
-        return pd.DataFrame(rows)
+        return result
     except Exception as exc:
         logger.exception("Failed to fetch BTC price history")
         return pd.DataFrame(columns=["date", "btc_price_usd", "fetched_at"])
@@ -162,4 +193,3 @@ def fetch_all_crypto_signals() -> dict:
         "coinbase_premium": compute_coinbase_premium(),
         "fear_greed": fetch_fear_greed_index(),
     }
-

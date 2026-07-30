@@ -49,9 +49,6 @@ def fetch_hko_temperature() -> pd.DataFrame:
     df["date"] = pd.to_datetime(df["date"], errors="coerce")
     df = df.dropna(subset=["date"]).copy()
 
-    # Filter to 2021+
-    df = df[df["date"] >= "2021-01-01"].copy()
-
     # Compute monthly average mean temp
     monthly_avg = df.groupby("month")["temp_c"].mean().round(1).rename("month_avg_temp_c").reset_index()
     df = df.merge(monthly_avg, on="month", how="left")

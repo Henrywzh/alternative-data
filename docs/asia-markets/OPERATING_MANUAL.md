@@ -103,9 +103,11 @@ The live roster is defined in `sectors.json` and currently includes:
 - Hong Kong utilities and infrastructure
 - Hong Kong transport and aviation
 - Hong Kong telecom
+- Hong Kong labour market and talent policy
 - Hong Kong REITs
 - Hong Kong commercial aerospace
 - Hong Kong stablecoin and crypto
+- Hong Kong population and migration
 
 Planned sectors are intentionally non-clickable research placeholders. Do not
 turn a planned theme into a live dashboard merely because a document exists.

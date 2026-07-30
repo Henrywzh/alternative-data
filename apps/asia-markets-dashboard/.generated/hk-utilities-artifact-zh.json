@@ -6,7 +6,7 @@
     "title": "香港公用事业与基础设施监测",
     "description": "中电控股（CLP）季度售电量拆解、中华煤气（Towngas）代理数据、香港天文台日均气温与电能实业（Power Assets）分部业绩快照。",
     "sector": "hk-utilities",
-    "generatedAt": "2026-07-29T21:17:38.937694Z",
+    "generatedAt": "2026-07-30T23:11:04.463226Z",
     "cards": [
       {
         "id": "clp_card",
@@ -128,7 +128,7 @@
       {
         "id": "towngas_trend_chart",
         "title": "香港煤气消费量走势 (TJ)",
-        "subtitle": "月度全港煤气消费总量拆解为住宅、商业及工业用户。",
+        "subtitle": "月度全港煤气消费总量拆解为住宅、商业及工业用户；图表默认显示可用历史中的最近十年。",
         "type": "line",
         "intent": "comparison",
         "dataset": "towngas_type_history",
@@ -155,16 +155,16 @@
       },
       {
         "id": "temp_trend_chart",
-        "title": "香港天文台日均气温走势 (°C)",
-        "subtitle": "每日平均气温历史与月度平均气温线对比。",
+        "title": "香港天文台月均气温走势 (°C)",
+        "subtitle": "按香港天文台每日平均气温计算的月度平均；图表默认显示可用历史中的最近十年，日频来源数据在数据层保留。",
         "type": "line",
         "dataset": "temp_history",
         "sourceId": "hko_temperature",
         "encodings": {
           "x": {
-            "field": "date",
+            "field": "month",
             "type": "temporal",
-            "label": "日期"
+            "label": "月份"
           },
           "y": {
             "field": "mean_temp_c",
@@ -294,7 +294,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-29T21:17:38.937694Z",
+    "generatedAt": "2026-07-30T23:11:04.463226Z",
     "status": "ready",
     "datasets": {
       "kpi_clp": [
@@ -477,6 +477,494 @@
         }
       ],
       "towngas_history": [
+        {
+          "date": "2016-05-01",
+          "month": "2016-05",
+          "domestic_gas_tj": 1140,
+          "commercial_gas_tj": 971,
+          "industrial_gas_tj": 134,
+          "total_gas_tj": 2246
+        },
+        {
+          "date": "2016-06-01",
+          "month": "2016-06",
+          "domestic_gas_tj": 1047,
+          "commercial_gas_tj": 970,
+          "industrial_gas_tj": 136,
+          "total_gas_tj": 2153
+        },
+        {
+          "date": "2016-07-01",
+          "month": "2016-07",
+          "domestic_gas_tj": 894,
+          "commercial_gas_tj": 927,
+          "industrial_gas_tj": 131,
+          "total_gas_tj": 1953
+        },
+        {
+          "date": "2016-08-01",
+          "month": "2016-08",
+          "domestic_gas_tj": 962,
+          "commercial_gas_tj": 948,
+          "industrial_gas_tj": 128,
+          "total_gas_tj": 2038
+        },
+        {
+          "date": "2016-09-01",
+          "month": "2016-09",
+          "domestic_gas_tj": 1040,
+          "commercial_gas_tj": 960,
+          "industrial_gas_tj": 132,
+          "total_gas_tj": 2132
+        },
+        {
+          "date": "2016-10-01",
+          "month": "2016-10",
+          "domestic_gas_tj": 1013,
+          "commercial_gas_tj": 929,
+          "industrial_gas_tj": 132,
+          "total_gas_tj": 2074
+        },
+        {
+          "date": "2016-11-01",
+          "month": "2016-11",
+          "domestic_gas_tj": 1233,
+          "commercial_gas_tj": 982,
+          "industrial_gas_tj": 141,
+          "total_gas_tj": 2356
+        },
+        {
+          "date": "2016-12-01",
+          "month": "2016-12",
+          "domestic_gas_tj": 1430,
+          "commercial_gas_tj": 970,
+          "industrial_gas_tj": 87,
+          "total_gas_tj": 2487
+        },
+        {
+          "date": "2017-01-01",
+          "month": "2017-01",
+          "domestic_gas_tj": 1632,
+          "commercial_gas_tj": 1126,
+          "industrial_gas_tj": 205,
+          "total_gas_tj": 2963
+        },
+        {
+          "date": "2017-02-01",
+          "month": "2017-02",
+          "domestic_gas_tj": 1744,
+          "commercial_gas_tj": 1076,
+          "industrial_gas_tj": 134,
+          "total_gas_tj": 2953
+        },
+        {
+          "date": "2017-03-01",
+          "month": "2017-03",
+          "domestic_gas_tj": 1490,
+          "commercial_gas_tj": 987,
+          "industrial_gas_tj": 132,
+          "total_gas_tj": 2609
+        },
+        {
+          "date": "2017-04-01",
+          "month": "2017-04",
+          "domestic_gas_tj": 1546,
+          "commercial_gas_tj": 1070,
+          "industrial_gas_tj": 143,
+          "total_gas_tj": 2759
+        },
+        {
+          "date": "2017-05-01",
+          "month": "2017-05",
+          "domestic_gas_tj": 1216,
+          "commercial_gas_tj": 1008,
+          "industrial_gas_tj": 137,
+          "total_gas_tj": 2361
+        },
+        {
+          "date": "2017-06-01",
+          "month": "2017-06",
+          "domestic_gas_tj": 1089,
+          "commercial_gas_tj": 1020,
+          "industrial_gas_tj": 142,
+          "total_gas_tj": 2251
+        },
+        {
+          "date": "2017-07-01",
+          "month": "2017-07",
+          "domestic_gas_tj": 932,
+          "commercial_gas_tj": 975,
+          "industrial_gas_tj": 113,
+          "total_gas_tj": 2020
+        },
+        {
+          "date": "2017-08-01",
+          "month": "2017-08",
+          "domestic_gas_tj": 945,
+          "commercial_gas_tj": 1000,
+          "industrial_gas_tj": 115,
+          "total_gas_tj": 2059
+        },
+        {
+          "date": "2017-09-01",
+          "month": "2017-09",
+          "domestic_gas_tj": 981,
+          "commercial_gas_tj": 986,
+          "industrial_gas_tj": 120,
+          "total_gas_tj": 2087
+        },
+        {
+          "date": "2017-10-01",
+          "month": "2017-10",
+          "domestic_gas_tj": 950,
+          "commercial_gas_tj": 965,
+          "industrial_gas_tj": 117,
+          "total_gas_tj": 2033
+        },
+        {
+          "date": "2017-11-01",
+          "month": "2017-11",
+          "domestic_gas_tj": 1299,
+          "commercial_gas_tj": 1029,
+          "industrial_gas_tj": 138,
+          "total_gas_tj": 2467
+        },
+        {
+          "date": "2017-12-01",
+          "month": "2017-12",
+          "domestic_gas_tj": 1496,
+          "commercial_gas_tj": 919,
+          "industrial_gas_tj": 73,
+          "total_gas_tj": 2488
+        },
+        {
+          "date": "2018-01-01",
+          "month": "2018-01",
+          "domestic_gas_tj": 1748,
+          "commercial_gas_tj": 1261,
+          "industrial_gas_tj": 197,
+          "total_gas_tj": 3206
+        },
+        {
+          "date": "2018-02-01",
+          "month": "2018-02",
+          "domestic_gas_tj": 1885,
+          "commercial_gas_tj": 1165,
+          "industrial_gas_tj": 137,
+          "total_gas_tj": 3187
+        },
+        {
+          "date": "2018-03-01",
+          "month": "2018-03",
+          "domestic_gas_tj": 1435,
+          "commercial_gas_tj": 999,
+          "industrial_gas_tj": 126,
+          "total_gas_tj": 2560
+        },
+        {
+          "date": "2018-04-01",
+          "month": "2018-04",
+          "domestic_gas_tj": 1477,
+          "commercial_gas_tj": 1068,
+          "industrial_gas_tj": 135,
+          "total_gas_tj": 2680
+        },
+        {
+          "date": "2018-05-01",
+          "month": "2018-05",
+          "domestic_gas_tj": 1202,
+          "commercial_gas_tj": 1016,
+          "industrial_gas_tj": 145,
+          "total_gas_tj": 2363
+        },
+        {
+          "date": "2018-06-01",
+          "month": "2018-06",
+          "domestic_gas_tj": 1006,
+          "commercial_gas_tj": 1012,
+          "industrial_gas_tj": 145,
+          "total_gas_tj": 2162
+        },
+        {
+          "date": "2018-07-01",
+          "month": "2018-07",
+          "domestic_gas_tj": 963,
+          "commercial_gas_tj": 973,
+          "industrial_gas_tj": 149,
+          "total_gas_tj": 2084
+        },
+        {
+          "date": "2018-08-01",
+          "month": "2018-08",
+          "domestic_gas_tj": 992,
+          "commercial_gas_tj": 1001,
+          "industrial_gas_tj": 155,
+          "total_gas_tj": 2149
+        },
+        {
+          "date": "2018-09-01",
+          "month": "2018-09",
+          "domestic_gas_tj": 1034,
+          "commercial_gas_tj": 993,
+          "industrial_gas_tj": 147,
+          "total_gas_tj": 2174
+        },
+        {
+          "date": "2018-10-01",
+          "month": "2018-10",
+          "domestic_gas_tj": 1035,
+          "commercial_gas_tj": 964,
+          "industrial_gas_tj": 134,
+          "total_gas_tj": 2133
+        },
+        {
+          "date": "2018-11-01",
+          "month": "2018-11",
+          "domestic_gas_tj": 1273,
+          "commercial_gas_tj": 1033,
+          "industrial_gas_tj": 137,
+          "total_gas_tj": 2443
+        },
+        {
+          "date": "2018-12-01",
+          "month": "2018-12",
+          "domestic_gas_tj": 1416,
+          "commercial_gas_tj": 882,
+          "industrial_gas_tj": 111,
+          "total_gas_tj": 2409
+        },
+        {
+          "date": "2019-01-01",
+          "month": "2019-01",
+          "domestic_gas_tj": 1712,
+          "commercial_gas_tj": 1255,
+          "industrial_gas_tj": 178,
+          "total_gas_tj": 3144
+        },
+        {
+          "date": "2019-02-01",
+          "month": "2019-02",
+          "domestic_gas_tj": 1686,
+          "commercial_gas_tj": 1098,
+          "industrial_gas_tj": 141,
+          "total_gas_tj": 2925
+        },
+        {
+          "date": "2019-03-01",
+          "month": "2019-03",
+          "domestic_gas_tj": 1353,
+          "commercial_gas_tj": 958,
+          "industrial_gas_tj": 140,
+          "total_gas_tj": 2451
+        },
+        {
+          "date": "2019-04-01",
+          "month": "2019-04",
+          "domestic_gas_tj": 1456,
+          "commercial_gas_tj": 1051,
+          "industrial_gas_tj": 156,
+          "total_gas_tj": 2663
+        },
+        {
+          "date": "2019-05-01",
+          "month": "2019-05",
+          "domestic_gas_tj": 1179,
+          "commercial_gas_tj": 986,
+          "industrial_gas_tj": 153,
+          "total_gas_tj": 2318
+        },
+        {
+          "date": "2019-06-01",
+          "month": "2019-06",
+          "domestic_gas_tj": 1101,
+          "commercial_gas_tj": 1007,
+          "industrial_gas_tj": 167,
+          "total_gas_tj": 2275
+        },
+        {
+          "date": "2019-07-01",
+          "month": "2019-07",
+          "domestic_gas_tj": 905,
+          "commercial_gas_tj": 957,
+          "industrial_gas_tj": 167,
+          "total_gas_tj": 2030
+        },
+        {
+          "date": "2019-08-01",
+          "month": "2019-08",
+          "domestic_gas_tj": 948,
+          "commercial_gas_tj": 952,
+          "industrial_gas_tj": 167,
+          "total_gas_tj": 2067
+        },
+        {
+          "date": "2019-09-01",
+          "month": "2019-09",
+          "domestic_gas_tj": 983,
+          "commercial_gas_tj": 949,
+          "industrial_gas_tj": 153,
+          "total_gas_tj": 2085
+        },
+        {
+          "date": "2019-10-01",
+          "month": "2019-10",
+          "domestic_gas_tj": 996,
+          "commercial_gas_tj": 888,
+          "industrial_gas_tj": 145,
+          "total_gas_tj": 2028
+        },
+        {
+          "date": "2019-11-01",
+          "month": "2019-11",
+          "domestic_gas_tj": 1255,
+          "commercial_gas_tj": 928,
+          "industrial_gas_tj": 154,
+          "total_gas_tj": 2338
+        },
+        {
+          "date": "2019-12-01",
+          "month": "2019-12",
+          "domestic_gas_tj": 1446,
+          "commercial_gas_tj": 837,
+          "industrial_gas_tj": 105,
+          "total_gas_tj": 2388
+        },
+        {
+          "date": "2020-01-01",
+          "month": "2020-01",
+          "domestic_gas_tj": 1624,
+          "commercial_gas_tj": 1138,
+          "industrial_gas_tj": 220,
+          "total_gas_tj": 2982
+        },
+        {
+          "date": "2020-02-01",
+          "month": "2020-02",
+          "domestic_gas_tj": 1809,
+          "commercial_gas_tj": 939,
+          "industrial_gas_tj": 142,
+          "total_gas_tj": 2890
+        },
+        {
+          "date": "2020-03-01",
+          "month": "2020-03",
+          "domestic_gas_tj": 1564,
+          "commercial_gas_tj": 734,
+          "industrial_gas_tj": 127,
+          "total_gas_tj": 2425
+        },
+        {
+          "date": "2020-04-01",
+          "month": "2020-04",
+          "domestic_gas_tj": 1638,
+          "commercial_gas_tj": 744,
+          "industrial_gas_tj": 121,
+          "total_gas_tj": 2504
+        },
+        {
+          "date": "2020-05-01",
+          "month": "2020-05",
+          "domestic_gas_tj": 1359,
+          "commercial_gas_tj": 702,
+          "industrial_gas_tj": 112,
+          "total_gas_tj": 2173
+        },
+        {
+          "date": "2020-06-01",
+          "month": "2020-06",
+          "domestic_gas_tj": 1244,
+          "commercial_gas_tj": 817,
+          "industrial_gas_tj": 131,
+          "total_gas_tj": 2191
+        },
+        {
+          "date": "2020-07-01",
+          "month": "2020-07",
+          "domestic_gas_tj": 995,
+          "commercial_gas_tj": 804,
+          "industrial_gas_tj": 132,
+          "total_gas_tj": 1930
+        },
+        {
+          "date": "2020-08-01",
+          "month": "2020-08",
+          "domestic_gas_tj": 1043,
+          "commercial_gas_tj": 641,
+          "industrial_gas_tj": 130,
+          "total_gas_tj": 1814
+        },
+        {
+          "date": "2020-09-01",
+          "month": "2020-09",
+          "domestic_gas_tj": 1131,
+          "commercial_gas_tj": 628,
+          "industrial_gas_tj": 134,
+          "total_gas_tj": 1892
+        },
+        {
+          "date": "2020-10-01",
+          "month": "2020-10",
+          "domestic_gas_tj": 1251,
+          "commercial_gas_tj": 780,
+          "industrial_gas_tj": 128,
+          "total_gas_tj": 2159
+        },
+        {
+          "date": "2020-11-01",
+          "month": "2020-11",
+          "domestic_gas_tj": 1437,
+          "commercial_gas_tj": 872,
+          "industrial_gas_tj": 141,
+          "total_gas_tj": 2450
+        },
+        {
+          "date": "2020-12-01",
+          "month": "2020-12",
+          "domestic_gas_tj": 1590,
+          "commercial_gas_tj": 812,
+          "industrial_gas_tj": 134,
+          "total_gas_tj": 2537
+        },
+        {
+          "date": "2021-01-01",
+          "month": "2021-01",
+          "domestic_gas_tj": 2077,
+          "commercial_gas_tj": 765,
+          "industrial_gas_tj": 140,
+          "total_gas_tj": 2981
+        },
+        {
+          "date": "2021-02-01",
+          "month": "2021-02",
+          "domestic_gas_tj": 1942,
+          "commercial_gas_tj": 769,
+          "industrial_gas_tj": 134,
+          "total_gas_tj": 2844
+        },
+        {
+          "date": "2021-03-01",
+          "month": "2021-03",
+          "domestic_gas_tj": 1436,
+          "commercial_gas_tj": 766,
+          "industrial_gas_tj": 123,
+          "total_gas_tj": 2326
+        },
+        {
+          "date": "2021-04-01",
+          "month": "2021-04",
+          "domestic_gas_tj": 1505,
+          "commercial_gas_tj": 864,
+          "industrial_gas_tj": 136,
+          "total_gas_tj": 2505
+        },
+        {
+          "date": "2021-05-01",
+          "month": "2021-05",
+          "domestic_gas_tj": 1159,
+          "commercial_gas_tj": 841,
+          "industrial_gas_tj": 124,
+          "total_gas_tj": 2124
+        },
         {
           "date": "2021-06-01",
           "month": "2021-06",
@@ -960,6 +1448,372 @@
       ],
       "towngas_type_history": [
         {
+          "date": "2016-05-01",
+          "month": "2016-05",
+          "series": "商业",
+          "value": 971
+        },
+        {
+          "date": "2016-06-01",
+          "month": "2016-06",
+          "series": "商业",
+          "value": 970
+        },
+        {
+          "date": "2016-07-01",
+          "month": "2016-07",
+          "series": "商业",
+          "value": 927
+        },
+        {
+          "date": "2016-08-01",
+          "month": "2016-08",
+          "series": "商业",
+          "value": 948
+        },
+        {
+          "date": "2016-09-01",
+          "month": "2016-09",
+          "series": "商业",
+          "value": 960
+        },
+        {
+          "date": "2016-10-01",
+          "month": "2016-10",
+          "series": "商业",
+          "value": 929
+        },
+        {
+          "date": "2016-11-01",
+          "month": "2016-11",
+          "series": "商业",
+          "value": 982
+        },
+        {
+          "date": "2016-12-01",
+          "month": "2016-12",
+          "series": "商业",
+          "value": 970
+        },
+        {
+          "date": "2017-01-01",
+          "month": "2017-01",
+          "series": "商业",
+          "value": 1126
+        },
+        {
+          "date": "2017-02-01",
+          "month": "2017-02",
+          "series": "商业",
+          "value": 1076
+        },
+        {
+          "date": "2017-03-01",
+          "month": "2017-03",
+          "series": "商业",
+          "value": 987
+        },
+        {
+          "date": "2017-04-01",
+          "month": "2017-04",
+          "series": "商业",
+          "value": 1070
+        },
+        {
+          "date": "2017-05-01",
+          "month": "2017-05",
+          "series": "商业",
+          "value": 1008
+        },
+        {
+          "date": "2017-06-01",
+          "month": "2017-06",
+          "series": "商业",
+          "value": 1020
+        },
+        {
+          "date": "2017-07-01",
+          "month": "2017-07",
+          "series": "商业",
+          "value": 975
+        },
+        {
+          "date": "2017-08-01",
+          "month": "2017-08",
+          "series": "商业",
+          "value": 1000
+        },
+        {
+          "date": "2017-09-01",
+          "month": "2017-09",
+          "series": "商业",
+          "value": 986
+        },
+        {
+          "date": "2017-10-01",
+          "month": "2017-10",
+          "series": "商业",
+          "value": 965
+        },
+        {
+          "date": "2017-11-01",
+          "month": "2017-11",
+          "series": "商业",
+          "value": 1029
+        },
+        {
+          "date": "2017-12-01",
+          "month": "2017-12",
+          "series": "商业",
+          "value": 919
+        },
+        {
+          "date": "2018-01-01",
+          "month": "2018-01",
+          "series": "商业",
+          "value": 1261
+        },
+        {
+          "date": "2018-02-01",
+          "month": "2018-02",
+          "series": "商业",
+          "value": 1165
+        },
+        {
+          "date": "2018-03-01",
+          "month": "2018-03",
+          "series": "商业",
+          "value": 999
+        },
+        {
+          "date": "2018-04-01",
+          "month": "2018-04",
+          "series": "商业",
+          "value": 1068
+        },
+        {
+          "date": "2018-05-01",
+          "month": "2018-05",
+          "series": "商业",
+          "value": 1016
+        },
+        {
+          "date": "2018-06-01",
+          "month": "2018-06",
+          "series": "商业",
+          "value": 1012
+        },
+        {
+          "date": "2018-07-01",
+          "month": "2018-07",
+          "series": "商业",
+          "value": 973
+        },
+        {
+          "date": "2018-08-01",
+          "month": "2018-08",
+          "series": "商业",
+          "value": 1001
+        },
+        {
+          "date": "2018-09-01",
+          "month": "2018-09",
+          "series": "商业",
+          "value": 993
+        },
+        {
+          "date": "2018-10-01",
+          "month": "2018-10",
+          "series": "商业",
+          "value": 964
+        },
+        {
+          "date": "2018-11-01",
+          "month": "2018-11",
+          "series": "商业",
+          "value": 1033
+        },
+        {
+          "date": "2018-12-01",
+          "month": "2018-12",
+          "series": "商业",
+          "value": 882
+        },
+        {
+          "date": "2019-01-01",
+          "month": "2019-01",
+          "series": "商业",
+          "value": 1255
+        },
+        {
+          "date": "2019-02-01",
+          "month": "2019-02",
+          "series": "商业",
+          "value": 1098
+        },
+        {
+          "date": "2019-03-01",
+          "month": "2019-03",
+          "series": "商业",
+          "value": 958
+        },
+        {
+          "date": "2019-04-01",
+          "month": "2019-04",
+          "series": "商业",
+          "value": 1051
+        },
+        {
+          "date": "2019-05-01",
+          "month": "2019-05",
+          "series": "商业",
+          "value": 986
+        },
+        {
+          "date": "2019-06-01",
+          "month": "2019-06",
+          "series": "商业",
+          "value": 1007
+        },
+        {
+          "date": "2019-07-01",
+          "month": "2019-07",
+          "series": "商业",
+          "value": 957
+        },
+        {
+          "date": "2019-08-01",
+          "month": "2019-08",
+          "series": "商业",
+          "value": 952
+        },
+        {
+          "date": "2019-09-01",
+          "month": "2019-09",
+          "series": "商业",
+          "value": 949
+        },
+        {
+          "date": "2019-10-01",
+          "month": "2019-10",
+          "series": "商业",
+          "value": 888
+        },
+        {
+          "date": "2019-11-01",
+          "month": "2019-11",
+          "series": "商业",
+          "value": 928
+        },
+        {
+          "date": "2019-12-01",
+          "month": "2019-12",
+          "series": "商业",
+          "value": 837
+        },
+        {
+          "date": "2020-01-01",
+          "month": "2020-01",
+          "series": "商业",
+          "value": 1138
+        },
+        {
+          "date": "2020-02-01",
+          "month": "2020-02",
+          "series": "商业",
+          "value": 939
+        },
+        {
+          "date": "2020-03-01",
+          "month": "2020-03",
+          "series": "商业",
+          "value": 734
+        },
+        {
+          "date": "2020-04-01",
+          "month": "2020-04",
+          "series": "商业",
+          "value": 744
+        },
+        {
+          "date": "2020-05-01",
+          "month": "2020-05",
+          "series": "商业",
+          "value": 702
+        },
+        {
+          "date": "2020-06-01",
+          "month": "2020-06",
+          "series": "商业",
+          "value": 817
+        },
+        {
+          "date": "2020-07-01",
+          "month": "2020-07",
+          "series": "商业",
+          "value": 804
+        },
+        {
+          "date": "2020-08-01",
+          "month": "2020-08",
+          "series": "商业",
+          "value": 641
+        },
+        {
+          "date": "2020-09-01",
+          "month": "2020-09",
+          "series": "商业",
+          "value": 628
+        },
+        {
+          "date": "2020-10-01",
+          "month": "2020-10",
+          "series": "商业",
+          "value": 780
+        },
+        {
+          "date": "2020-11-01",
+          "month": "2020-11",
+          "series": "商业",
+          "value": 872
+        },
+        {
+          "date": "2020-12-01",
+          "month": "2020-12",
+          "series": "商业",
+          "value": 812
+        },
+        {
+          "date": "2021-01-01",
+          "month": "2021-01",
+          "series": "商业",
+          "value": 765
+        },
+        {
+          "date": "2021-02-01",
+          "month": "2021-02",
+          "series": "商业",
+          "value": 769
+        },
+        {
+          "date": "2021-03-01",
+          "month": "2021-03",
+          "series": "商业",
+          "value": 766
+        },
+        {
+          "date": "2021-04-01",
+          "month": "2021-04",
+          "series": "商业",
+          "value": 864
+        },
+        {
+          "date": "2021-05-01",
+          "month": "2021-05",
+          "series": "商业",
+          "value": 841
+        },
+        {
           "date": "2021-06-01",
           "month": "2021-06",
           "series": "商业",
@@ -1320,6 +2174,372 @@
           "value": 864.3
         },
         {
+          "date": "2016-05-01",
+          "month": "2016-05",
+          "series": "住宅",
+          "value": 1140
+        },
+        {
+          "date": "2016-06-01",
+          "month": "2016-06",
+          "series": "住宅",
+          "value": 1047
+        },
+        {
+          "date": "2016-07-01",
+          "month": "2016-07",
+          "series": "住宅",
+          "value": 894
+        },
+        {
+          "date": "2016-08-01",
+          "month": "2016-08",
+          "series": "住宅",
+          "value": 962
+        },
+        {
+          "date": "2016-09-01",
+          "month": "2016-09",
+          "series": "住宅",
+          "value": 1040
+        },
+        {
+          "date": "2016-10-01",
+          "month": "2016-10",
+          "series": "住宅",
+          "value": 1013
+        },
+        {
+          "date": "2016-11-01",
+          "month": "2016-11",
+          "series": "住宅",
+          "value": 1233
+        },
+        {
+          "date": "2016-12-01",
+          "month": "2016-12",
+          "series": "住宅",
+          "value": 1430
+        },
+        {
+          "date": "2017-01-01",
+          "month": "2017-01",
+          "series": "住宅",
+          "value": 1632
+        },
+        {
+          "date": "2017-02-01",
+          "month": "2017-02",
+          "series": "住宅",
+          "value": 1744
+        },
+        {
+          "date": "2017-03-01",
+          "month": "2017-03",
+          "series": "住宅",
+          "value": 1490
+        },
+        {
+          "date": "2017-04-01",
+          "month": "2017-04",
+          "series": "住宅",
+          "value": 1546
+        },
+        {
+          "date": "2017-05-01",
+          "month": "2017-05",
+          "series": "住宅",
+          "value": 1216
+        },
+        {
+          "date": "2017-06-01",
+          "month": "2017-06",
+          "series": "住宅",
+          "value": 1089
+        },
+        {
+          "date": "2017-07-01",
+          "month": "2017-07",
+          "series": "住宅",
+          "value": 932
+        },
+        {
+          "date": "2017-08-01",
+          "month": "2017-08",
+          "series": "住宅",
+          "value": 945
+        },
+        {
+          "date": "2017-09-01",
+          "month": "2017-09",
+          "series": "住宅",
+          "value": 981
+        },
+        {
+          "date": "2017-10-01",
+          "month": "2017-10",
+          "series": "住宅",
+          "value": 950
+        },
+        {
+          "date": "2017-11-01",
+          "month": "2017-11",
+          "series": "住宅",
+          "value": 1299
+        },
+        {
+          "date": "2017-12-01",
+          "month": "2017-12",
+          "series": "住宅",
+          "value": 1496
+        },
+        {
+          "date": "2018-01-01",
+          "month": "2018-01",
+          "series": "住宅",
+          "value": 1748
+        },
+        {
+          "date": "2018-02-01",
+          "month": "2018-02",
+          "series": "住宅",
+          "value": 1885
+        },
+        {
+          "date": "2018-03-01",
+          "month": "2018-03",
+          "series": "住宅",
+          "value": 1435
+        },
+        {
+          "date": "2018-04-01",
+          "month": "2018-04",
+          "series": "住宅",
+          "value": 1477
+        },
+        {
+          "date": "2018-05-01",
+          "month": "2018-05",
+          "series": "住宅",
+          "value": 1202
+        },
+        {
+          "date": "2018-06-01",
+          "month": "2018-06",
+          "series": "住宅",
+          "value": 1006
+        },
+        {
+          "date": "2018-07-01",
+          "month": "2018-07",
+          "series": "住宅",
+          "value": 963
+        },
+        {
+          "date": "2018-08-01",
+          "month": "2018-08",
+          "series": "住宅",
+          "value": 992
+        },
+        {
+          "date": "2018-09-01",
+          "month": "2018-09",
+          "series": "住宅",
+          "value": 1034
+        },
+        {
+          "date": "2018-10-01",
+          "month": "2018-10",
+          "series": "住宅",
+          "value": 1035
+        },
+        {
+          "date": "2018-11-01",
+          "month": "2018-11",
+          "series": "住宅",
+          "value": 1273
+        },
+        {
+          "date": "2018-12-01",
+          "month": "2018-12",
+          "series": "住宅",
+          "value": 1416
+        },
+        {
+          "date": "2019-01-01",
+          "month": "2019-01",
+          "series": "住宅",
+          "value": 1712
+        },
+        {
+          "date": "2019-02-01",
+          "month": "2019-02",
+          "series": "住宅",
+          "value": 1686
+        },
+        {
+          "date": "2019-03-01",
+          "month": "2019-03",
+          "series": "住宅",
+          "value": 1353
+        },
+        {
+          "date": "2019-04-01",
+          "month": "2019-04",
+          "series": "住宅",
+          "value": 1456
+        },
+        {
+          "date": "2019-05-01",
+          "month": "2019-05",
+          "series": "住宅",
+          "value": 1179
+        },
+        {
+          "date": "2019-06-01",
+          "month": "2019-06",
+          "series": "住宅",
+          "value": 1101
+        },
+        {
+          "date": "2019-07-01",
+          "month": "2019-07",
+          "series": "住宅",
+          "value": 905
+        },
+        {
+          "date": "2019-08-01",
+          "month": "2019-08",
+          "series": "住宅",
+          "value": 948
+        },
+        {
+          "date": "2019-09-01",
+          "month": "2019-09",
+          "series": "住宅",
+          "value": 983
+        },
+        {
+          "date": "2019-10-01",
+          "month": "2019-10",
+          "series": "住宅",
+          "value": 996
+        },
+        {
+          "date": "2019-11-01",
+          "month": "2019-11",
+          "series": "住宅",
+          "value": 1255
+        },
+        {
+          "date": "2019-12-01",
+          "month": "2019-12",
+          "series": "住宅",
+          "value": 1446
+        },
+        {
+          "date": "2020-01-01",
+          "month": "2020-01",
+          "series": "住宅",
+          "value": 1624
+        },
+        {
+          "date": "2020-02-01",
+          "month": "2020-02",
+          "series": "住宅",
+          "value": 1809
+        },
+        {
+          "date": "2020-03-01",
+          "month": "2020-03",
+          "series": "住宅",
+          "value": 1564
+        },
+        {
+          "date": "2020-04-01",
+          "month": "2020-04",
+          "series": "住宅",
+          "value": 1638
+        },
+        {
+          "date": "2020-05-01",
+          "month": "2020-05",
+          "series": "住宅",
+          "value": 1359
+        },
+        {
+          "date": "2020-06-01",
+          "month": "2020-06",
+          "series": "住宅",
+          "value": 1244
+        },
+        {
+          "date": "2020-07-01",
+          "month": "2020-07",
+          "series": "住宅",
+          "value": 995
+        },
+        {
+          "date": "2020-08-01",
+          "month": "2020-08",
+          "series": "住宅",
+          "value": 1043
+        },
+        {
+          "date": "2020-09-01",
+          "month": "2020-09",
+          "series": "住宅",
+          "value": 1131
+        },
+        {
+          "date": "2020-10-01",
+          "month": "2020-10",
+          "series": "住宅",
+          "value": 1251
+        },
+        {
+          "date": "2020-11-01",
+          "month": "2020-11",
+          "series": "住宅",
+          "value": 1437
+        },
+        {
+          "date": "2020-12-01",
+          "month": "2020-12",
+          "series": "住宅",
+          "value": 1590
+        },
+        {
+          "date": "2021-01-01",
+          "month": "2021-01",
+          "series": "住宅",
+          "value": 2077
+        },
+        {
+          "date": "2021-02-01",
+          "month": "2021-02",
+          "series": "住宅",
+          "value": 1942
+        },
+        {
+          "date": "2021-03-01",
+          "month": "2021-03",
+          "series": "住宅",
+          "value": 1436
+        },
+        {
+          "date": "2021-04-01",
+          "month": "2021-04",
+          "series": "住宅",
+          "value": 1505
+        },
+        {
+          "date": "2021-05-01",
+          "month": "2021-05",
+          "series": "住宅",
+          "value": 1159
+        },
+        {
           "date": "2021-06-01",
           "month": "2021-06",
           "series": "住宅",
@@ -1678,6 +2898,372 @@
           "month": "2026-05",
           "series": "住宅",
           "value": 1058.6
+        },
+        {
+          "date": "2016-05-01",
+          "month": "2016-05",
+          "series": "工业",
+          "value": 134
+        },
+        {
+          "date": "2016-06-01",
+          "month": "2016-06",
+          "series": "工业",
+          "value": 136
+        },
+        {
+          "date": "2016-07-01",
+          "month": "2016-07",
+          "series": "工业",
+          "value": 131
+        },
+        {
+          "date": "2016-08-01",
+          "month": "2016-08",
+          "series": "工业",
+          "value": 128
+        },
+        {
+          "date": "2016-09-01",
+          "month": "2016-09",
+          "series": "工业",
+          "value": 132
+        },
+        {
+          "date": "2016-10-01",
+          "month": "2016-10",
+          "series": "工业",
+          "value": 132
+        },
+        {
+          "date": "2016-11-01",
+          "month": "2016-11",
+          "series": "工业",
+          "value": 141
+        },
+        {
+          "date": "2016-12-01",
+          "month": "2016-12",
+          "series": "工业",
+          "value": 87
+        },
+        {
+          "date": "2017-01-01",
+          "month": "2017-01",
+          "series": "工业",
+          "value": 205
+        },
+        {
+          "date": "2017-02-01",
+          "month": "2017-02",
+          "series": "工业",
+          "value": 134
+        },
+        {
+          "date": "2017-03-01",
+          "month": "2017-03",
+          "series": "工业",
+          "value": 132
+        },
+        {
+          "date": "2017-04-01",
+          "month": "2017-04",
+          "series": "工业",
+          "value": 143
+        },
+        {
+          "date": "2017-05-01",
+          "month": "2017-05",
+          "series": "工业",
+          "value": 137
+        },
+        {
+          "date": "2017-06-01",
+          "month": "2017-06",
+          "series": "工业",
+          "value": 142
+        },
+        {
+          "date": "2017-07-01",
+          "month": "2017-07",
+          "series": "工业",
+          "value": 113
+        },
+        {
+          "date": "2017-08-01",
+          "month": "2017-08",
+          "series": "工业",
+          "value": 115
+        },
+        {
+          "date": "2017-09-01",
+          "month": "2017-09",
+          "series": "工业",
+          "value": 120
+        },
+        {
+          "date": "2017-10-01",
+          "month": "2017-10",
+          "series": "工业",
+          "value": 117
+        },
+        {
+          "date": "2017-11-01",
+          "month": "2017-11",
+          "series": "工业",
+          "value": 138
+        },
+        {
+          "date": "2017-12-01",
+          "month": "2017-12",
+          "series": "工业",
+          "value": 73
+        },
+        {
+          "date": "2018-01-01",
+          "month": "2018-01",
+          "series": "工业",
+          "value": 197
+        },
+        {
+          "date": "2018-02-01",
+          "month": "2018-02",
+          "series": "工业",
+          "value": 137
+        },
+        {
+          "date": "2018-03-01",
+          "month": "2018-03",
+          "series": "工业",
+          "value": 126
+        },
+        {
+          "date": "2018-04-01",
+          "month": "2018-04",
+          "series": "工业",
+          "value": 135
+        },
+        {
+          "date": "2018-05-01",
+          "month": "2018-05",
+          "series": "工业",
+          "value": 145
+        },
+        {
+          "date": "2018-06-01",
+          "month": "2018-06",
+          "series": "工业",
+          "value": 145
+        },
+        {
+          "date": "2018-07-01",
+          "month": "2018-07",
+          "series": "工业",
+          "value": 149
+        },
+        {
+          "date": "2018-08-01",
+          "month": "2018-08",
+          "series": "工业",
+          "value": 155
+        },
+        {
+          "date": "2018-09-01",
+          "month": "2018-09",
+          "series": "工业",
+          "value": 147
+        },
+        {
+          "date": "2018-10-01",
+          "month": "2018-10",
+          "series": "工业",
+          "value": 134
+        },
+        {
+          "date": "2018-11-01",
+          "month": "2018-11",
+          "series": "工业",
+          "value": 137
+        },
+        {
+          "date": "2018-12-01",
+          "month": "2018-12",
+          "series": "工业",
+          "value": 111
+        },
+        {
+          "date": "2019-01-01",
+          "month": "2019-01",
+          "series": "工业",
+          "value": 178
+        },
+        {
+          "date": "2019-02-01",
+          "month": "2019-02",
+          "series": "工业",
+          "value": 141
+        },
+        {
+          "date": "2019-03-01",
+          "month": "2019-03",
+          "series": "工业",
+          "value": 140
+        },
+        {
+          "date": "2019-04-01",
+          "month": "2019-04",
+          "series": "工业",
+          "value": 156
+        },
+        {
+          "date": "2019-05-01",
+          "month": "2019-05",
+          "series": "工业",
+          "value": 153
+        },
+        {
+          "date": "2019-06-01",
+          "month": "2019-06",
+          "series": "工业",
+          "value": 167
+        },
+        {
+          "date": "2019-07-01",
+          "month": "2019-07",
+          "series": "工业",
+          "value": 167
+        },
+        {
+          "date": "2019-08-01",
+          "month": "2019-08",
+          "series": "工业",
+          "value": 167
+        },
+        {
+          "date": "2019-09-01",
+          "month": "2019-09",
+          "series": "工业",
+          "value": 153
+        },
+        {
+          "date": "2019-10-01",
+          "month": "2019-10",
+          "series": "工业",
+          "value": 145
+        },
+        {
+          "date": "2019-11-01",
+          "month": "2019-11",
+          "series": "工业",
+          "value": 154
+        },
+        {
+          "date": "2019-12-01",
+          "month": "2019-12",
+          "series": "工业",
+          "value": 105
+        },
+        {
+          "date": "2020-01-01",
+          "month": "2020-01",
+          "series": "工业",
+          "value": 220
+        },
+        {
+          "date": "2020-02-01",
+          "month": "2020-02",
+          "series": "工业",
+          "value": 142
+        },
+        {
+          "date": "2020-03-01",
+          "month": "2020-03",
+          "series": "工业",
+          "value": 127
+        },
+        {
+          "date": "2020-04-01",
+          "month": "2020-04",
+          "series": "工业",
+          "value": 121
+        },
+        {
+          "date": "2020-05-01",
+          "month": "2020-05",
+          "series": "工业",
+          "value": 112
+        },
+        {
+          "date": "2020-06-01",
+          "month": "2020-06",
+          "series": "工业",
+          "value": 131
+        },
+        {
+          "date": "2020-07-01",
+          "month": "2020-07",
+          "series": "工业",
+          "value": 132
+        },
+        {
+          "date": "2020-08-01",
+          "month": "2020-08",
+          "series": "工业",
+          "value": 130
+        },
+        {
+          "date": "2020-09-01",
+          "month": "2020-09",
+          "series": "工业",
+          "value": 134
+        },
+        {
+          "date": "2020-10-01",
+          "month": "2020-10",
+          "series": "工业",
+          "value": 128
+        },
+        {
+          "date": "2020-11-01",
+          "month": "2020-11",
+          "series": "工业",
+          "value": 141
+        },
+        {
+          "date": "2020-12-01",
+          "month": "2020-12",
+          "series": "工业",
+          "value": 134
+        },
+        {
+          "date": "2021-01-01",
+          "month": "2021-01",
+          "series": "工业",
+          "value": 140
+        },
+        {
+          "date": "2021-02-01",
+          "month": "2021-02",
+          "series": "工业",
+          "value": 134
+        },
+        {
+          "date": "2021-03-01",
+          "month": "2021-03",
+          "series": "工业",
+          "value": 123
+        },
+        {
+          "date": "2021-04-01",
+          "month": "2021-04",
+          "series": "工业",
+          "value": 136
+        },
+        {
+          "date": "2021-05-01",
+          "month": "2021-05",
+          "series": "工业",
+          "value": 124
         },
         {
           "date": "2021-06-01",
@@ -2042,1083 +3628,729 @@
       ],
       "temp_history": [
         {
-          "date": "2026-01-02",
-          "month": "2026-01",
-          "mean_temp_c": 15,
-          "month_avg_temp_c": 17.5
+          "month": "2016-06",
+          "date": "2016-06-30",
+          "mean_temp_c": 30,
+          "month_avg_temp_c": 29.4
         },
         {
-          "date": "2026-01-03",
-          "month": "2026-01",
-          "mean_temp_c": 14.3,
-          "month_avg_temp_c": 17.5
+          "month": "2016-07",
+          "date": "2016-07-01",
+          "mean_temp_c": 29.8,
+          "month_avg_temp_c": 29.8
         },
         {
-          "date": "2026-01-04",
-          "month": "2026-01",
-          "mean_temp_c": 17,
-          "month_avg_temp_c": 17.5
+          "month": "2016-08",
+          "date": "2016-08-01",
+          "mean_temp_c": 28.4,
+          "month_avg_temp_c": 28.4
         },
         {
-          "date": "2026-01-05",
-          "month": "2026-01",
-          "mean_temp_c": 18.3,
-          "month_avg_temp_c": 17.5
+          "month": "2016-09",
+          "date": "2016-09-01",
+          "mean_temp_c": 27.9,
+          "month_avg_temp_c": 27.9
         },
         {
-          "date": "2026-01-06",
-          "month": "2026-01",
-          "mean_temp_c": 14,
-          "month_avg_temp_c": 17.5
+          "month": "2016-10",
+          "date": "2016-10-01",
+          "mean_temp_c": 26.8,
+          "month_avg_temp_c": 26.8
         },
         {
-          "date": "2026-01-07",
-          "month": "2026-01",
-          "mean_temp_c": 13.4,
-          "month_avg_temp_c": 17.5
+          "month": "2016-11",
+          "date": "2016-11-01",
+          "mean_temp_c": 22.3,
+          "month_avg_temp_c": 22.3
         },
         {
-          "date": "2026-01-08",
-          "month": "2026-01",
-          "mean_temp_c": 14.9,
-          "month_avg_temp_c": 17.5
-        },
-        {
-          "date": "2026-01-09",
-          "month": "2026-01",
-          "mean_temp_c": 15.7,
-          "month_avg_temp_c": 17.5
-        },
-        {
-          "date": "2026-01-10",
-          "month": "2026-01",
-          "mean_temp_c": 17.1,
-          "month_avg_temp_c": 17.5
-        },
-        {
-          "date": "2026-01-11",
-          "month": "2026-01",
-          "mean_temp_c": 17.5,
-          "month_avg_temp_c": 17.5
-        },
-        {
-          "date": "2026-01-12",
-          "month": "2026-01",
-          "mean_temp_c": 17.5,
-          "month_avg_temp_c": 17.5
-        },
-        {
-          "date": "2026-01-13",
-          "month": "2026-01",
-          "mean_temp_c": 18.9,
-          "month_avg_temp_c": 17.5
-        },
-        {
-          "date": "2026-01-14",
-          "month": "2026-01",
-          "mean_temp_c": 18.8,
-          "month_avg_temp_c": 17.5
-        },
-        {
-          "date": "2026-01-15",
-          "month": "2026-01",
-          "mean_temp_c": 19.2,
-          "month_avg_temp_c": 17.5
-        },
-        {
-          "date": "2026-01-16",
-          "month": "2026-01",
-          "mean_temp_c": 19.9,
-          "month_avg_temp_c": 17.5
-        },
-        {
-          "date": "2026-01-17",
-          "month": "2026-01",
-          "mean_temp_c": 20.7,
-          "month_avg_temp_c": 17.5
-        },
-        {
-          "date": "2026-01-18",
-          "month": "2026-01",
-          "mean_temp_c": 20.2,
-          "month_avg_temp_c": 17.5
-        },
-        {
-          "date": "2026-01-19",
-          "month": "2026-01",
+          "month": "2016-12",
+          "date": "2016-12-01",
           "mean_temp_c": 19.6,
-          "month_avg_temp_c": 17.5
+          "month_avg_temp_c": 19.6
         },
         {
-          "date": "2026-01-20",
-          "month": "2026-01",
+          "month": "2017-01",
+          "date": "2017-01-01",
           "mean_temp_c": 18.6,
-          "month_avg_temp_c": 17.5
+          "month_avg_temp_c": 18.6
         },
         {
-          "date": "2026-01-21",
-          "month": "2026-01",
-          "mean_temp_c": 15.7,
-          "month_avg_temp_c": 17.5
+          "month": "2017-02",
+          "date": "2017-02-01",
+          "mean_temp_c": 17,
+          "month_avg_temp_c": 17
         },
         {
-          "date": "2026-01-22",
-          "month": "2026-01",
-          "mean_temp_c": 14.2,
-          "month_avg_temp_c": 17.5
-        },
-        {
-          "date": "2026-01-23",
-          "month": "2026-01",
-          "mean_temp_c": 14.5,
-          "month_avg_temp_c": 17.5
-        },
-        {
-          "date": "2026-01-24",
-          "month": "2026-01",
-          "mean_temp_c": 16.8,
-          "month_avg_temp_c": 17.5
-        },
-        {
-          "date": "2026-01-25",
-          "month": "2026-01",
-          "mean_temp_c": 18.2,
-          "month_avg_temp_c": 17.5
-        },
-        {
-          "date": "2026-01-26",
-          "month": "2026-01",
-          "mean_temp_c": 19.7,
-          "month_avg_temp_c": 17.5
-        },
-        {
-          "date": "2026-01-27",
-          "month": "2026-01",
-          "mean_temp_c": 21.1,
-          "month_avg_temp_c": 17.5
-        },
-        {
-          "date": "2026-01-28",
-          "month": "2026-01",
-          "mean_temp_c": 18.8,
-          "month_avg_temp_c": 17.5
-        },
-        {
-          "date": "2026-01-29",
-          "month": "2026-01",
-          "mean_temp_c": 18.2,
-          "month_avg_temp_c": 17.5
-        },
-        {
-          "date": "2026-01-30",
-          "month": "2026-01",
-          "mean_temp_c": 19.2,
-          "month_avg_temp_c": 17.5
-        },
-        {
-          "date": "2026-01-31",
-          "month": "2026-01",
-          "mean_temp_c": 18.2,
-          "month_avg_temp_c": 17.5
-        },
-        {
-          "date": "2026-02-01",
-          "month": "2026-02",
-          "mean_temp_c": 15.8,
-          "month_avg_temp_c": 20.1
-        },
-        {
-          "date": "2026-02-02",
-          "month": "2026-02",
-          "mean_temp_c": 17.5,
-          "month_avg_temp_c": 20.1
-        },
-        {
-          "date": "2026-02-03",
-          "month": "2026-02",
-          "mean_temp_c": 17.8,
-          "month_avg_temp_c": 20.1
-        },
-        {
-          "date": "2026-02-04",
-          "month": "2026-02",
-          "mean_temp_c": 18.8,
-          "month_avg_temp_c": 20.1
-        },
-        {
-          "date": "2026-02-05",
-          "month": "2026-02",
-          "mean_temp_c": 20.9,
-          "month_avg_temp_c": 20.1
-        },
-        {
-          "date": "2026-02-06",
-          "month": "2026-02",
-          "mean_temp_c": 22.1,
-          "month_avg_temp_c": 20.1
-        },
-        {
-          "date": "2026-02-07",
-          "month": "2026-02",
-          "mean_temp_c": 19.6,
-          "month_avg_temp_c": 20.1
-        },
-        {
-          "date": "2026-02-08",
-          "month": "2026-02",
-          "mean_temp_c": 16.5,
-          "month_avg_temp_c": 20.1
-        },
-        {
-          "date": "2026-02-09",
-          "month": "2026-02",
-          "mean_temp_c": 15.5,
-          "month_avg_temp_c": 20.1
-        },
-        {
-          "date": "2026-02-10",
-          "month": "2026-02",
-          "mean_temp_c": 17.9,
-          "month_avg_temp_c": 20.1
-        },
-        {
-          "date": "2026-02-11",
-          "month": "2026-02",
-          "mean_temp_c": 21,
-          "month_avg_temp_c": 20.1
-        },
-        {
-          "date": "2026-02-12",
-          "month": "2026-02",
-          "mean_temp_c": 18.4,
-          "month_avg_temp_c": 20.1
-        },
-        {
-          "date": "2026-02-13",
-          "month": "2026-02",
-          "mean_temp_c": 20.2,
-          "month_avg_temp_c": 20.1
-        },
-        {
-          "date": "2026-02-14",
-          "month": "2026-02",
-          "mean_temp_c": 21.8,
-          "month_avg_temp_c": 20.1
-        },
-        {
-          "date": "2026-02-15",
-          "month": "2026-02",
-          "mean_temp_c": 22.9,
-          "month_avg_temp_c": 20.1
-        },
-        {
-          "date": "2026-02-16",
-          "month": "2026-02",
-          "mean_temp_c": 24,
-          "month_avg_temp_c": 20.1
-        },
-        {
-          "date": "2026-02-17",
-          "month": "2026-02",
-          "mean_temp_c": 19.5,
-          "month_avg_temp_c": 20.1
-        },
-        {
-          "date": "2026-02-18",
-          "month": "2026-02",
-          "mean_temp_c": 19.6,
-          "month_avg_temp_c": 20.1
-        },
-        {
-          "date": "2026-02-19",
-          "month": "2026-02",
-          "mean_temp_c": 19.6,
-          "month_avg_temp_c": 20.1
-        },
-        {
-          "date": "2026-02-20",
-          "month": "2026-02",
-          "mean_temp_c": 20.9,
-          "month_avg_temp_c": 20.1
-        },
-        {
-          "date": "2026-02-21",
-          "month": "2026-02",
-          "mean_temp_c": 21,
-          "month_avg_temp_c": 20.1
-        },
-        {
-          "date": "2026-02-22",
-          "month": "2026-02",
-          "mean_temp_c": 22.3,
-          "month_avg_temp_c": 20.1
-        },
-        {
-          "date": "2026-02-23",
-          "month": "2026-02",
-          "mean_temp_c": 21.4,
-          "month_avg_temp_c": 20.1
-        },
-        {
-          "date": "2026-02-24",
-          "month": "2026-02",
-          "mean_temp_c": 22.3,
-          "month_avg_temp_c": 20.1
-        },
-        {
-          "date": "2026-02-25",
-          "month": "2026-02",
-          "mean_temp_c": 22.7,
-          "month_avg_temp_c": 20.1
-        },
-        {
-          "date": "2026-02-26",
-          "month": "2026-02",
-          "mean_temp_c": 20.5,
-          "month_avg_temp_c": 20.1
-        },
-        {
-          "date": "2026-02-27",
-          "month": "2026-02",
-          "mean_temp_c": 21.4,
-          "month_avg_temp_c": 20.1
-        },
-        {
-          "date": "2026-02-28",
-          "month": "2026-02",
-          "mean_temp_c": 20,
-          "month_avg_temp_c": 20.1
-        },
-        {
-          "date": "2026-03-01",
-          "month": "2026-03",
-          "mean_temp_c": 19.8,
-          "month_avg_temp_c": 21.5
-        },
-        {
-          "date": "2026-03-02",
-          "month": "2026-03",
-          "mean_temp_c": 22.5,
-          "month_avg_temp_c": 21.5
-        },
-        {
-          "date": "2026-03-03",
-          "month": "2026-03",
-          "mean_temp_c": 19.8,
-          "month_avg_temp_c": 21.5
-        },
-        {
-          "date": "2026-03-04",
-          "month": "2026-03",
-          "mean_temp_c": 16.5,
-          "month_avg_temp_c": 21.5
-        },
-        {
-          "date": "2026-03-05",
-          "month": "2026-03",
+          "month": "2017-03",
+          "date": "2017-03-01",
           "mean_temp_c": 19.3,
-          "month_avg_temp_c": 21.5
+          "month_avg_temp_c": 19.3
         },
         {
-          "date": "2026-03-06",
-          "month": "2026-03",
-          "mean_temp_c": 20,
-          "month_avg_temp_c": 21.5
+          "month": "2017-04",
+          "date": "2017-04-01",
+          "mean_temp_c": 23.3,
+          "month_avg_temp_c": 23.3
         },
         {
-          "date": "2026-03-07",
-          "month": "2026-03",
-          "mean_temp_c": 19.5,
-          "month_avg_temp_c": 21.5
+          "month": "2017-05",
+          "date": "2017-05-01",
+          "mean_temp_c": 26,
+          "month_avg_temp_c": 26
         },
         {
-          "date": "2026-03-08",
-          "month": "2026-03",
-          "mean_temp_c": 19.1,
-          "month_avg_temp_c": 21.5
+          "month": "2017-06",
+          "date": "2017-06-01",
+          "mean_temp_c": 28.8,
+          "month_avg_temp_c": 28.8
         },
         {
-          "date": "2026-03-09",
-          "month": "2026-03",
-          "mean_temp_c": 19.7,
-          "month_avg_temp_c": 21.5
+          "month": "2017-07",
+          "date": "2017-07-01",
+          "mean_temp_c": 28.7,
+          "month_avg_temp_c": 28.7
         },
         {
-          "date": "2026-03-10",
-          "month": "2026-03",
-          "mean_temp_c": 17.7,
-          "month_avg_temp_c": 21.5
+          "month": "2017-08",
+          "date": "2017-08-01",
+          "mean_temp_c": 29.3,
+          "month_avg_temp_c": 29.3
         },
         {
-          "date": "2026-03-11",
-          "month": "2026-03",
-          "mean_temp_c": 18.8,
-          "month_avg_temp_c": 21.5
+          "month": "2017-09",
+          "date": "2017-09-01",
+          "mean_temp_c": 29,
+          "month_avg_temp_c": 29
         },
         {
-          "date": "2026-03-12",
-          "month": "2026-03",
-          "mean_temp_c": 20.3,
-          "month_avg_temp_c": 21.5
+          "month": "2017-10",
+          "date": "2017-10-01",
+          "mean_temp_c": 26.3,
+          "month_avg_temp_c": 26.3
         },
         {
-          "date": "2026-03-13",
-          "month": "2026-03",
-          "mean_temp_c": 18.8,
-          "month_avg_temp_c": 21.5
+          "month": "2017-11",
+          "date": "2017-11-01",
+          "mean_temp_c": 22.2,
+          "month_avg_temp_c": 22.2
         },
         {
-          "date": "2026-03-14",
-          "month": "2026-03",
-          "mean_temp_c": 19.4,
-          "month_avg_temp_c": 21.5
+          "month": "2017-12",
+          "date": "2017-12-01",
+          "mean_temp_c": 17.9,
+          "month_avg_temp_c": 17.9
         },
         {
-          "date": "2026-03-15",
-          "month": "2026-03",
-          "mean_temp_c": 20.7,
-          "month_avg_temp_c": 21.5
+          "month": "2018-01",
+          "date": "2018-01-01",
+          "mean_temp_c": 16.1,
+          "month_avg_temp_c": 16.1
         },
         {
-          "date": "2026-03-16",
-          "month": "2026-03",
+          "month": "2018-02",
+          "date": "2018-02-01",
+          "mean_temp_c": 16,
+          "month_avg_temp_c": 16
+        },
+        {
+          "month": "2018-03",
+          "date": "2018-03-01",
           "mean_temp_c": 20.8,
-          "month_avg_temp_c": 21.5
+          "month_avg_temp_c": 20.8
         },
         {
-          "date": "2026-03-17",
-          "month": "2026-03",
-          "mean_temp_c": 21.2,
-          "month_avg_temp_c": 21.5
+          "month": "2018-04",
+          "date": "2018-04-01",
+          "mean_temp_c": 23.6,
+          "month_avg_temp_c": 23.6
         },
         {
-          "date": "2026-03-18",
-          "month": "2026-03",
-          "mean_temp_c": 23.4,
-          "month_avg_temp_c": 21.5
+          "month": "2018-05",
+          "date": "2018-05-01",
+          "mean_temp_c": 28.3,
+          "month_avg_temp_c": 28.3
         },
         {
-          "date": "2026-03-19",
-          "month": "2026-03",
+          "month": "2018-06",
+          "date": "2018-06-01",
+          "mean_temp_c": 28.6,
+          "month_avg_temp_c": 28.6
+        },
+        {
+          "month": "2018-07",
+          "date": "2018-07-01",
+          "mean_temp_c": 29.1,
+          "month_avg_temp_c": 29.1
+        },
+        {
+          "month": "2018-08",
+          "date": "2018-08-01",
+          "mean_temp_c": 28.6,
+          "month_avg_temp_c": 28.6
+        },
+        {
+          "month": "2018-09",
+          "date": "2018-09-01",
+          "mean_temp_c": 28,
+          "month_avg_temp_c": 28
+        },
+        {
+          "month": "2018-10",
+          "date": "2018-10-01",
+          "mean_temp_c": 25.3,
+          "month_avg_temp_c": 25.3
+        },
+        {
+          "month": "2018-11",
+          "date": "2018-11-01",
+          "mean_temp_c": 22.9,
+          "month_avg_temp_c": 22.9
+        },
+        {
+          "month": "2018-12",
+          "date": "2018-12-01",
+          "mean_temp_c": 19.2,
+          "month_avg_temp_c": 19.2
+        },
+        {
+          "month": "2019-01",
+          "date": "2019-01-01",
+          "mean_temp_c": 18.1,
+          "month_avg_temp_c": 18.1
+        },
+        {
+          "month": "2019-02",
+          "date": "2019-02-01",
+          "mean_temp_c": 20.1,
+          "month_avg_temp_c": 20.1
+        },
+        {
+          "month": "2019-03",
+          "date": "2019-03-01",
+          "mean_temp_c": 21,
+          "month_avg_temp_c": 21
+        },
+        {
+          "month": "2019-04",
+          "date": "2019-04-01",
+          "mean_temp_c": 24.7,
+          "month_avg_temp_c": 24.7
+        },
+        {
+          "month": "2019-05",
+          "date": "2019-05-01",
+          "mean_temp_c": 25.3,
+          "month_avg_temp_c": 25.3
+        },
+        {
+          "month": "2019-06",
+          "date": "2019-06-01",
+          "mean_temp_c": 29,
+          "month_avg_temp_c": 29
+        },
+        {
+          "month": "2019-07",
+          "date": "2019-07-01",
+          "mean_temp_c": 29.5,
+          "month_avg_temp_c": 29.5
+        },
+        {
+          "month": "2019-08",
+          "date": "2019-08-01",
+          "mean_temp_c": 29,
+          "month_avg_temp_c": 29
+        },
+        {
+          "month": "2019-09",
+          "date": "2019-09-01",
+          "mean_temp_c": 28.7,
+          "month_avg_temp_c": 28.7
+        },
+        {
+          "month": "2019-10",
+          "date": "2019-10-01",
+          "mean_temp_c": 26.6,
+          "month_avg_temp_c": 26.6
+        },
+        {
+          "month": "2019-11",
+          "date": "2019-11-01",
+          "mean_temp_c": 23,
+          "month_avg_temp_c": 23
+        },
+        {
+          "month": "2019-12",
+          "date": "2019-12-01",
+          "mean_temp_c": 19.1,
+          "month_avg_temp_c": 19.1
+        },
+        {
+          "month": "2020-01",
+          "date": "2020-01-01",
+          "mean_temp_c": 18.6,
+          "month_avg_temp_c": 18.6
+        },
+        {
+          "month": "2020-02",
+          "date": "2020-02-01",
+          "mean_temp_c": 18.5,
+          "month_avg_temp_c": 18.5
+        },
+        {
+          "month": "2020-03",
+          "date": "2020-03-01",
+          "mean_temp_c": 21.3,
+          "month_avg_temp_c": 21.3
+        },
+        {
+          "month": "2020-04",
+          "date": "2020-04-01",
+          "mean_temp_c": 22,
+          "month_avg_temp_c": 22
+        },
+        {
+          "month": "2020-05",
+          "date": "2020-05-01",
+          "mean_temp_c": 27.7,
+          "month_avg_temp_c": 27.7
+        },
+        {
+          "month": "2020-06",
+          "date": "2020-06-01",
+          "mean_temp_c": 29.6,
+          "month_avg_temp_c": 29.6
+        },
+        {
+          "month": "2020-07",
+          "date": "2020-07-01",
+          "mean_temp_c": 30.2,
+          "month_avg_temp_c": 30.2
+        },
+        {
+          "month": "2020-08",
+          "date": "2020-08-01",
+          "mean_temp_c": 29,
+          "month_avg_temp_c": 29
+        },
+        {
+          "month": "2020-09",
+          "date": "2020-09-01",
+          "mean_temp_c": 28.4,
+          "month_avg_temp_c": 28.4
+        },
+        {
+          "month": "2020-10",
+          "date": "2020-10-01",
+          "mean_temp_c": 25.6,
+          "month_avg_temp_c": 25.6
+        },
+        {
+          "month": "2020-11",
+          "date": "2020-11-01",
+          "mean_temp_c": 23.5,
+          "month_avg_temp_c": 23.5
+        },
+        {
+          "month": "2020-12",
+          "date": "2020-12-01",
+          "mean_temp_c": 18.1,
+          "month_avg_temp_c": 18.1
+        },
+        {
+          "month": "2021-01",
+          "date": "2021-01-01",
+          "mean_temp_c": 16.2,
+          "month_avg_temp_c": 16.2
+        },
+        {
+          "month": "2021-02",
+          "date": "2021-02-01",
+          "mean_temp_c": 19.8,
+          "month_avg_temp_c": 19.8
+        },
+        {
+          "month": "2021-03",
+          "date": "2021-03-01",
+          "mean_temp_c": 22,
+          "month_avg_temp_c": 22
+        },
+        {
+          "month": "2021-04",
+          "date": "2021-04-01",
           "mean_temp_c": 24.1,
-          "month_avg_temp_c": 21.5
+          "month_avg_temp_c": 24.1
         },
         {
-          "date": "2026-03-20",
-          "month": "2026-03",
+          "month": "2021-05",
+          "date": "2021-05-01",
+          "mean_temp_c": 29,
+          "month_avg_temp_c": 29
+        },
+        {
+          "month": "2021-06",
+          "date": "2021-06-01",
+          "mean_temp_c": 28.8,
+          "month_avg_temp_c": 28.8
+        },
+        {
+          "month": "2021-07",
+          "date": "2021-07-01",
+          "mean_temp_c": 29.7,
+          "month_avg_temp_c": 29.7
+        },
+        {
+          "month": "2021-08",
+          "date": "2021-08-01",
+          "mean_temp_c": 28.8,
+          "month_avg_temp_c": 28.8
+        },
+        {
+          "month": "2021-09",
+          "date": "2021-09-01",
+          "mean_temp_c": 29.7,
+          "month_avg_temp_c": 29.7
+        },
+        {
+          "month": "2021-10",
+          "date": "2021-10-01",
+          "mean_temp_c": 26,
+          "month_avg_temp_c": 26
+        },
+        {
+          "month": "2021-11",
+          "date": "2021-11-01",
+          "mean_temp_c": 22.4,
+          "month_avg_temp_c": 22.4
+        },
+        {
+          "month": "2021-12",
+          "date": "2021-12-01",
+          "mean_temp_c": 18.9,
+          "month_avg_temp_c": 18.9
+        },
+        {
+          "month": "2022-01",
+          "date": "2022-01-01",
+          "mean_temp_c": 18,
+          "month_avg_temp_c": 18
+        },
+        {
+          "month": "2022-02",
+          "date": "2022-02-01",
+          "mean_temp_c": 15.2,
+          "month_avg_temp_c": 15.2
+        },
+        {
+          "month": "2022-03",
+          "date": "2022-03-01",
           "mean_temp_c": 21.5,
           "month_avg_temp_c": 21.5
         },
         {
-          "date": "2026-03-21",
-          "month": "2026-03",
-          "mean_temp_c": 21.4,
-          "month_avg_temp_c": 21.5
-        },
-        {
-          "date": "2026-03-22",
-          "month": "2026-03",
-          "mean_temp_c": 22.3,
-          "month_avg_temp_c": 21.5
-        },
-        {
-          "date": "2026-03-23",
-          "month": "2026-03",
-          "mean_temp_c": 23.4,
-          "month_avg_temp_c": 21.5
-        },
-        {
-          "date": "2026-03-24",
-          "month": "2026-03",
-          "mean_temp_c": 24,
-          "month_avg_temp_c": 21.5
-        },
-        {
-          "date": "2026-03-25",
-          "month": "2026-03",
-          "mean_temp_c": 25.3,
-          "month_avg_temp_c": 21.5
-        },
-        {
-          "date": "2026-03-26",
-          "month": "2026-03",
-          "mean_temp_c": 25,
-          "month_avg_temp_c": 21.5
-        },
-        {
-          "date": "2026-03-27",
-          "month": "2026-03",
-          "mean_temp_c": 24.2,
-          "month_avg_temp_c": 21.5
-        },
-        {
-          "date": "2026-03-28",
-          "month": "2026-03",
-          "mean_temp_c": 24.5,
-          "month_avg_temp_c": 21.5
-        },
-        {
-          "date": "2026-03-29",
-          "month": "2026-03",
-          "mean_temp_c": 23.6,
-          "month_avg_temp_c": 21.5
-        },
-        {
-          "date": "2026-03-30",
-          "month": "2026-03",
-          "mean_temp_c": 25.2,
-          "month_avg_temp_c": 21.5
-        },
-        {
-          "date": "2026-03-31",
-          "month": "2026-03",
-          "mean_temp_c": 25.9,
-          "month_avg_temp_c": 21.5
-        },
-        {
-          "date": "2026-04-01",
-          "month": "2026-04",
-          "mean_temp_c": 24.5,
-          "month_avg_temp_c": 25.5
-        },
-        {
-          "date": "2026-04-02",
-          "month": "2026-04",
-          "mean_temp_c": 23,
-          "month_avg_temp_c": 25.5
-        },
-        {
-          "date": "2026-04-03",
-          "month": "2026-04",
-          "mean_temp_c": 25.5,
-          "month_avg_temp_c": 25.5
-        },
-        {
-          "date": "2026-04-04",
-          "month": "2026-04",
-          "mean_temp_c": 25,
-          "month_avg_temp_c": 25.5
-        },
-        {
-          "date": "2026-04-05",
-          "month": "2026-04",
-          "mean_temp_c": 24,
-          "month_avg_temp_c": 25.5
-        },
-        {
-          "date": "2026-04-06",
-          "month": "2026-04",
-          "mean_temp_c": 26.5,
-          "month_avg_temp_c": 25.5
-        },
-        {
-          "date": "2026-04-07",
-          "month": "2026-04",
-          "mean_temp_c": 27.2,
-          "month_avg_temp_c": 25.5
-        },
-        {
-          "date": "2026-04-08",
-          "month": "2026-04",
-          "mean_temp_c": 23.4,
-          "month_avg_temp_c": 25.5
-        },
-        {
-          "date": "2026-04-09",
-          "month": "2026-04",
-          "mean_temp_c": 25.6,
-          "month_avg_temp_c": 25.5
-        },
-        {
-          "date": "2026-04-10",
-          "month": "2026-04",
-          "mean_temp_c": 26.7,
-          "month_avg_temp_c": 25.5
-        },
-        {
-          "date": "2026-04-11",
-          "month": "2026-04",
-          "mean_temp_c": 26.6,
-          "month_avg_temp_c": 25.5
-        },
-        {
-          "date": "2026-04-12",
-          "month": "2026-04",
-          "mean_temp_c": 26.8,
-          "month_avg_temp_c": 25.5
-        },
-        {
-          "date": "2026-04-13",
-          "month": "2026-04",
-          "mean_temp_c": 27.1,
-          "month_avg_temp_c": 25.5
-        },
-        {
-          "date": "2026-04-14",
-          "month": "2026-04",
-          "mean_temp_c": 27.1,
-          "month_avg_temp_c": 25.5
-        },
-        {
-          "date": "2026-04-15",
-          "month": "2026-04",
-          "mean_temp_c": 26.9,
-          "month_avg_temp_c": 25.5
-        },
-        {
-          "date": "2026-04-16",
-          "month": "2026-04",
-          "mean_temp_c": 27,
-          "month_avg_temp_c": 25.5
-        },
-        {
-          "date": "2026-04-17",
-          "month": "2026-04",
-          "mean_temp_c": 25.2,
-          "month_avg_temp_c": 25.5
-        },
-        {
-          "date": "2026-04-18",
-          "month": "2026-04",
-          "mean_temp_c": 25.5,
-          "month_avg_temp_c": 25.5
-        },
-        {
-          "date": "2026-04-19",
-          "month": "2026-04",
-          "mean_temp_c": 26.7,
-          "month_avg_temp_c": 25.5
-        },
-        {
-          "date": "2026-04-20",
-          "month": "2026-04",
-          "mean_temp_c": 26.7,
-          "month_avg_temp_c": 25.5
-        },
-        {
-          "date": "2026-04-21",
-          "month": "2026-04",
-          "mean_temp_c": 26.8,
-          "month_avg_temp_c": 25.5
-        },
-        {
-          "date": "2026-04-22",
-          "month": "2026-04",
-          "mean_temp_c": 27.2,
-          "month_avg_temp_c": 25.5
-        },
-        {
-          "date": "2026-04-23",
-          "month": "2026-04",
-          "mean_temp_c": 25.8,
-          "month_avg_temp_c": 25.5
-        },
-        {
-          "date": "2026-04-24",
-          "month": "2026-04",
-          "mean_temp_c": 21.1,
-          "month_avg_temp_c": 25.5
-        },
-        {
-          "date": "2026-04-25",
-          "month": "2026-04",
-          "mean_temp_c": 23.2,
-          "month_avg_temp_c": 25.5
-        },
-        {
-          "date": "2026-04-26",
-          "month": "2026-04",
-          "mean_temp_c": 25.1,
-          "month_avg_temp_c": 25.5
-        },
-        {
-          "date": "2026-04-27",
-          "month": "2026-04",
-          "mean_temp_c": 25.2,
-          "month_avg_temp_c": 25.5
-        },
-        {
-          "date": "2026-04-28",
-          "month": "2026-04",
-          "mean_temp_c": 26.3,
-          "month_avg_temp_c": 25.5
-        },
-        {
-          "date": "2026-04-29",
-          "month": "2026-04",
-          "mean_temp_c": 24.8,
-          "month_avg_temp_c": 25.5
-        },
-        {
-          "date": "2026-04-30",
-          "month": "2026-04",
-          "mean_temp_c": 22.7,
-          "month_avg_temp_c": 25.5
-        },
-        {
-          "date": "2026-05-01",
-          "month": "2026-05",
-          "mean_temp_c": 24,
-          "month_avg_temp_c": 26.8
-        },
-        {
-          "date": "2026-05-02",
-          "month": "2026-05",
-          "mean_temp_c": 25.2,
-          "month_avg_temp_c": 26.8
-        },
-        {
-          "date": "2026-05-03",
-          "month": "2026-05",
-          "mean_temp_c": 25.1,
-          "month_avg_temp_c": 26.8
-        },
-        {
-          "date": "2026-05-04",
-          "month": "2026-05",
+          "month": "2022-04",
+          "date": "2022-04-01",
           "mean_temp_c": 23.7,
-          "month_avg_temp_c": 26.8
+          "month_avg_temp_c": 23.7
         },
         {
-          "date": "2026-05-05",
-          "month": "2026-05",
-          "mean_temp_c": 21.3,
-          "month_avg_temp_c": 26.8
+          "month": "2022-05",
+          "date": "2022-05-01",
+          "mean_temp_c": 25,
+          "month_avg_temp_c": 25
         },
         {
-          "date": "2026-05-06",
-          "month": "2026-05",
-          "mean_temp_c": 23.3,
-          "month_avg_temp_c": 26.8
+          "month": "2022-06",
+          "date": "2022-06-01",
+          "mean_temp_c": 28.6,
+          "month_avg_temp_c": 28.6
         },
         {
-          "date": "2026-05-07",
-          "month": "2026-05",
-          "mean_temp_c": 25.9,
-          "month_avg_temp_c": 26.8
+          "month": "2022-07",
+          "date": "2022-07-01",
+          "mean_temp_c": 30.3,
+          "month_avg_temp_c": 30.3
         },
         {
-          "date": "2026-05-08",
-          "month": "2026-05",
-          "mean_temp_c": 26.9,
-          "month_avg_temp_c": 26.8
-        },
-        {
-          "date": "2026-05-09",
-          "month": "2026-05",
-          "mean_temp_c": 23.7,
-          "month_avg_temp_c": 26.8
-        },
-        {
-          "date": "2026-05-10",
-          "month": "2026-05",
-          "mean_temp_c": 24,
-          "month_avg_temp_c": 26.8
-        },
-        {
-          "date": "2026-05-11",
-          "month": "2026-05",
-          "mean_temp_c": 25.7,
-          "month_avg_temp_c": 26.8
-        },
-        {
-          "date": "2026-05-12",
-          "month": "2026-05",
-          "mean_temp_c": 27.6,
-          "month_avg_temp_c": 26.8
-        },
-        {
-          "date": "2026-05-13",
-          "month": "2026-05",
-          "mean_temp_c": 28.3,
-          "month_avg_temp_c": 26.8
-        },
-        {
-          "date": "2026-05-14",
-          "month": "2026-05",
-          "mean_temp_c": 27.5,
-          "month_avg_temp_c": 26.8
-        },
-        {
-          "date": "2026-05-15",
-          "month": "2026-05",
-          "mean_temp_c": 26.1,
-          "month_avg_temp_c": 26.8
-        },
-        {
-          "date": "2026-05-16",
-          "month": "2026-05",
-          "mean_temp_c": 24.6,
-          "month_avg_temp_c": 26.8
-        },
-        {
-          "date": "2026-05-17",
-          "month": "2026-05",
-          "mean_temp_c": 24.3,
-          "month_avg_temp_c": 26.8
-        },
-        {
-          "date": "2026-05-18",
-          "month": "2026-05",
-          "mean_temp_c": 25.4,
-          "month_avg_temp_c": 26.8
-        },
-        {
-          "date": "2026-05-19",
-          "month": "2026-05",
-          "mean_temp_c": 25.6,
-          "month_avg_temp_c": 26.8
-        },
-        {
-          "date": "2026-05-20",
-          "month": "2026-05",
-          "mean_temp_c": 28,
-          "month_avg_temp_c": 26.8
-        },
-        {
-          "date": "2026-05-21",
-          "month": "2026-05",
-          "mean_temp_c": 28.1,
-          "month_avg_temp_c": 26.8
-        },
-        {
-          "date": "2026-05-22",
-          "month": "2026-05",
-          "mean_temp_c": 28.9,
-          "month_avg_temp_c": 26.8
-        },
-        {
-          "date": "2026-05-23",
-          "month": "2026-05",
-          "mean_temp_c": 29,
-          "month_avg_temp_c": 26.8
-        },
-        {
-          "date": "2026-05-24",
-          "month": "2026-05",
-          "mean_temp_c": 29.6,
-          "month_avg_temp_c": 26.8
-        },
-        {
-          "date": "2026-05-25",
-          "month": "2026-05",
-          "mean_temp_c": 29.8,
-          "month_avg_temp_c": 26.8
-        },
-        {
-          "date": "2026-05-26",
-          "month": "2026-05",
-          "mean_temp_c": 30,
-          "month_avg_temp_c": 26.8
-        },
-        {
-          "date": "2026-05-27",
-          "month": "2026-05",
-          "mean_temp_c": 30.7,
-          "month_avg_temp_c": 26.8
-        },
-        {
-          "date": "2026-05-28",
-          "month": "2026-05",
-          "mean_temp_c": 30.6,
-          "month_avg_temp_c": 26.8
-        },
-        {
-          "date": "2026-05-29",
-          "month": "2026-05",
-          "mean_temp_c": 30.6,
-          "month_avg_temp_c": 26.8
-        },
-        {
-          "date": "2026-05-30",
-          "month": "2026-05",
-          "mean_temp_c": 29.3,
-          "month_avg_temp_c": 26.8
-        },
-        {
-          "date": "2026-05-31",
-          "month": "2026-05",
+          "month": "2022-08",
+          "date": "2022-08-01",
           "mean_temp_c": 28.8,
+          "month_avg_temp_c": 28.8
+        },
+        {
+          "month": "2022-09",
+          "date": "2022-09-01",
+          "mean_temp_c": 29.6,
+          "month_avg_temp_c": 29.6
+        },
+        {
+          "month": "2022-10",
+          "date": "2022-10-01",
+          "mean_temp_c": 26.2,
+          "month_avg_temp_c": 26.2
+        },
+        {
+          "month": "2022-11",
+          "date": "2022-11-01",
+          "mean_temp_c": 23.4,
+          "month_avg_temp_c": 23.4
+        },
+        {
+          "month": "2022-12",
+          "date": "2022-12-01",
+          "mean_temp_c": 16.6,
+          "month_avg_temp_c": 16.6
+        },
+        {
+          "month": "2023-01",
+          "date": "2023-01-01",
+          "mean_temp_c": 17,
+          "month_avg_temp_c": 17
+        },
+        {
+          "month": "2023-02",
+          "date": "2023-02-01",
+          "mean_temp_c": 18.8,
+          "month_avg_temp_c": 18.8
+        },
+        {
+          "month": "2023-03",
+          "date": "2023-03-01",
+          "mean_temp_c": 21.3,
+          "month_avg_temp_c": 21.3
+        },
+        {
+          "month": "2023-04",
+          "date": "2023-04-01",
+          "mean_temp_c": 23.6,
+          "month_avg_temp_c": 23.6
+        },
+        {
+          "month": "2023-05",
+          "date": "2023-05-01",
+          "mean_temp_c": 26.6,
+          "month_avg_temp_c": 26.6
+        },
+        {
+          "month": "2023-06",
+          "date": "2023-06-01",
+          "mean_temp_c": 29.2,
+          "month_avg_temp_c": 29.2
+        },
+        {
+          "month": "2023-07",
+          "date": "2023-07-01",
+          "mean_temp_c": 30.1,
+          "month_avg_temp_c": 30.1
+        },
+        {
+          "month": "2023-08",
+          "date": "2023-08-01",
+          "mean_temp_c": 29.6,
+          "month_avg_temp_c": 29.6
+        },
+        {
+          "month": "2023-09",
+          "date": "2023-09-01",
+          "mean_temp_c": 28.5,
+          "month_avg_temp_c": 28.5
+        },
+        {
+          "month": "2023-10",
+          "date": "2023-10-01",
+          "mean_temp_c": 26.5,
+          "month_avg_temp_c": 26.5
+        },
+        {
+          "month": "2023-11",
+          "date": "2023-11-01",
+          "mean_temp_c": 23.5,
+          "month_avg_temp_c": 23.5
+        },
+        {
+          "month": "2023-12",
+          "date": "2023-12-01",
+          "mean_temp_c": 19.2,
+          "month_avg_temp_c": 19.2
+        },
+        {
+          "month": "2024-01",
+          "date": "2024-01-01",
+          "mean_temp_c": 17.9,
+          "month_avg_temp_c": 17.9
+        },
+        {
+          "month": "2024-02",
+          "date": "2024-02-01",
+          "mean_temp_c": 19.4,
+          "month_avg_temp_c": 19.4
+        },
+        {
+          "month": "2024-03",
+          "date": "2024-03-01",
+          "mean_temp_c": 21.1,
+          "month_avg_temp_c": 21.1
+        },
+        {
+          "month": "2024-04",
+          "date": "2024-04-01",
+          "mean_temp_c": 26.4,
+          "month_avg_temp_c": 26.4
+        },
+        {
+          "month": "2024-05",
+          "date": "2024-05-01",
+          "mean_temp_c": 26,
+          "month_avg_temp_c": 26
+        },
+        {
+          "month": "2024-06",
+          "date": "2024-06-01",
+          "mean_temp_c": 28.8,
+          "month_avg_temp_c": 28.8
+        },
+        {
+          "month": "2024-07",
+          "date": "2024-07-01",
+          "mean_temp_c": 29.9,
+          "month_avg_temp_c": 29.9
+        },
+        {
+          "month": "2024-08",
+          "date": "2024-08-01",
+          "mean_temp_c": 29.6,
+          "month_avg_temp_c": 29.6
+        },
+        {
+          "month": "2024-09",
+          "date": "2024-09-01",
+          "mean_temp_c": 29.2,
+          "month_avg_temp_c": 29.2
+        },
+        {
+          "month": "2024-10",
+          "date": "2024-10-01",
+          "mean_temp_c": 27.3,
+          "month_avg_temp_c": 27.3
+        },
+        {
+          "month": "2024-11",
+          "date": "2024-11-01",
+          "mean_temp_c": 23,
+          "month_avg_temp_c": 23
+        },
+        {
+          "month": "2024-12",
+          "date": "2024-12-01",
+          "mean_temp_c": 18.5,
+          "month_avg_temp_c": 18.5
+        },
+        {
+          "month": "2025-01",
+          "date": "2025-01-01",
+          "mean_temp_c": 17.1,
+          "month_avg_temp_c": 17.1
+        },
+        {
+          "month": "2025-02",
+          "date": "2025-02-01",
+          "mean_temp_c": 17.3,
+          "month_avg_temp_c": 17.3
+        },
+        {
+          "month": "2025-03",
+          "date": "2025-03-01",
+          "mean_temp_c": 20.1,
+          "month_avg_temp_c": 20.1
+        },
+        {
+          "month": "2025-04",
+          "date": "2025-04-01",
+          "mean_temp_c": 23.7,
+          "month_avg_temp_c": 23.7
+        },
+        {
+          "month": "2025-05",
+          "date": "2025-05-01",
+          "mean_temp_c": 27.2,
+          "month_avg_temp_c": 27.2
+        },
+        {
+          "month": "2025-06",
+          "date": "2025-06-01",
+          "mean_temp_c": 28.9,
+          "month_avg_temp_c": 28.9
+        },
+        {
+          "month": "2025-07",
+          "date": "2025-07-01",
+          "mean_temp_c": 29.5,
+          "month_avg_temp_c": 29.5
+        },
+        {
+          "month": "2025-08",
+          "date": "2025-08-01",
+          "mean_temp_c": 29,
+          "month_avg_temp_c": 29
+        },
+        {
+          "month": "2025-09",
+          "date": "2025-09-01",
+          "mean_temp_c": 29.3,
+          "month_avg_temp_c": 29.3
+        },
+        {
+          "month": "2025-10",
+          "date": "2025-10-01",
+          "mean_temp_c": 27.4,
+          "month_avg_temp_c": 27.4
+        },
+        {
+          "month": "2025-11",
+          "date": "2025-11-01",
+          "mean_temp_c": 22.3,
+          "month_avg_temp_c": 22.3
+        },
+        {
+          "month": "2025-12",
+          "date": "2025-12-01",
+          "mean_temp_c": 20.2,
+          "month_avg_temp_c": 20.2
+        },
+        {
+          "month": "2026-01",
+          "date": "2026-01-01",
+          "mean_temp_c": 17.5,
+          "month_avg_temp_c": 17.5
+        },
+        {
+          "month": "2026-02",
+          "date": "2026-02-01",
+          "mean_temp_c": 20.1,
+          "month_avg_temp_c": 20.1
+        },
+        {
+          "month": "2026-03",
+          "date": "2026-03-01",
+          "mean_temp_c": 21.5,
+          "month_avg_temp_c": 21.5
+        },
+        {
+          "month": "2026-04",
+          "date": "2026-04-01",
+          "mean_temp_c": 25.5,
+          "month_avg_temp_c": 25.5
+        },
+        {
+          "month": "2026-05",
+          "date": "2026-05-01",
+          "mean_temp_c": 26.8,
           "month_avg_temp_c": 26.8
         },
         {
+          "month": "2026-06",
           "date": "2026-06-01",
-          "month": "2026-06",
-          "mean_temp_c": 29.2,
-          "month_avg_temp_c": 28.6
-        },
-        {
-          "date": "2026-06-02",
-          "month": "2026-06",
-          "mean_temp_c": 30,
-          "month_avg_temp_c": 28.6
-        },
-        {
-          "date": "2026-06-03",
-          "month": "2026-06",
-          "mean_temp_c": 30.5,
-          "month_avg_temp_c": 28.6
-        },
-        {
-          "date": "2026-06-04",
-          "month": "2026-06",
-          "mean_temp_c": 30.8,
-          "month_avg_temp_c": 28.6
-        },
-        {
-          "date": "2026-06-05",
-          "month": "2026-06",
-          "mean_temp_c": 30.7,
-          "month_avg_temp_c": 28.6
-        },
-        {
-          "date": "2026-06-06",
-          "month": "2026-06",
-          "mean_temp_c": 27.7,
-          "month_avg_temp_c": 28.6
-        },
-        {
-          "date": "2026-06-07",
-          "month": "2026-06",
-          "mean_temp_c": 28.1,
-          "month_avg_temp_c": 28.6
-        },
-        {
-          "date": "2026-06-08",
-          "month": "2026-06",
-          "mean_temp_c": 27.6,
-          "month_avg_temp_c": 28.6
-        },
-        {
-          "date": "2026-06-09",
-          "month": "2026-06",
-          "mean_temp_c": 26.7,
-          "month_avg_temp_c": 28.6
-        },
-        {
-          "date": "2026-06-10",
-          "month": "2026-06",
-          "mean_temp_c": 26.3,
-          "month_avg_temp_c": 28.6
-        },
-        {
-          "date": "2026-06-11",
-          "month": "2026-06",
-          "mean_temp_c": 26.7,
-          "month_avg_temp_c": 28.6
-        },
-        {
-          "date": "2026-06-12",
-          "month": "2026-06",
-          "mean_temp_c": 27.4,
-          "month_avg_temp_c": 28.6
-        },
-        {
-          "date": "2026-06-13",
-          "month": "2026-06",
-          "mean_temp_c": 27.8,
-          "month_avg_temp_c": 28.6
-        },
-        {
-          "date": "2026-06-14",
-          "month": "2026-06",
-          "mean_temp_c": 28.9,
-          "month_avg_temp_c": 28.6
-        },
-        {
-          "date": "2026-06-15",
-          "month": "2026-06",
-          "mean_temp_c": 27.3,
-          "month_avg_temp_c": 28.6
-        },
-        {
-          "date": "2026-06-16",
-          "month": "2026-06",
-          "mean_temp_c": 26.1,
-          "month_avg_temp_c": 28.6
-        },
-        {
-          "date": "2026-06-17",
-          "month": "2026-06",
-          "mean_temp_c": 27,
-          "month_avg_temp_c": 28.6
-        },
-        {
-          "date": "2026-06-18",
-          "month": "2026-06",
-          "mean_temp_c": 27.1,
-          "month_avg_temp_c": 28.6
-        },
-        {
-          "date": "2026-06-19",
-          "month": "2026-06",
-          "mean_temp_c": 29.3,
-          "month_avg_temp_c": 28.6
-        },
-        {
-          "date": "2026-06-20",
-          "month": "2026-06",
-          "mean_temp_c": 29.6,
-          "month_avg_temp_c": 28.6
-        },
-        {
-          "date": "2026-06-21",
-          "month": "2026-06",
-          "mean_temp_c": 29.9,
-          "month_avg_temp_c": 28.6
-        },
-        {
-          "date": "2026-06-22",
-          "month": "2026-06",
-          "mean_temp_c": 30.2,
-          "month_avg_temp_c": 28.6
-        },
-        {
-          "date": "2026-06-23",
-          "month": "2026-06",
-          "mean_temp_c": 30.4,
-          "month_avg_temp_c": 28.6
-        },
-        {
-          "date": "2026-06-24",
-          "month": "2026-06",
-          "mean_temp_c": 30.7,
-          "month_avg_temp_c": 28.6
-        },
-        {
-          "date": "2026-06-25",
-          "month": "2026-06",
-          "mean_temp_c": 30.8,
-          "month_avg_temp_c": 28.6
-        },
-        {
-          "date": "2026-06-26",
-          "month": "2026-06",
-          "mean_temp_c": 28.5,
-          "month_avg_temp_c": 28.6
-        },
-        {
-          "date": "2026-06-27",
-          "month": "2026-06",
-          "mean_temp_c": 28.9,
-          "month_avg_temp_c": 28.6
-        },
-        {
-          "date": "2026-06-28",
-          "month": "2026-06",
-          "mean_temp_c": 27.9,
-          "month_avg_temp_c": 28.6
-        },
-        {
-          "date": "2026-06-29",
-          "month": "2026-06",
-          "mean_temp_c": 28.7,
-          "month_avg_temp_c": 28.6
-        },
-        {
-          "date": "2026-06-30",
-          "month": "2026-06",
-          "mean_temp_c": 28.7,
+          "mean_temp_c": 28.6,
           "month_avg_temp_c": 28.6
         }
       ],
@@ -3202,7 +4434,7 @@
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-utilities/",
-    "snapshotId": "c175b8e628ccd260",
+    "snapshotId": "47e1fe2aa8e880b0",
     "dataAsOf": "2026-03-31"
   }
 }

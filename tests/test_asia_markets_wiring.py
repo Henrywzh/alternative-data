@@ -40,7 +40,8 @@ BUILD_SCRIPTS = (
 # src/hk_* packages that intentionally do not back a published sector yet.
 # Format: package -> (reason, expiry). The test fails once the expiry passes,
 # so a snoozed entry resurfaces instead of becoming permanent.
-UNPUBLISHED_PACKAGES: dict[str, tuple[str, str]] = {}
+UNPUBLISHED_PACKAGES: dict[str, tuple[str, str]] = {
+}
 
 # Builder scripts that exist on disk but are not yet rostered in sectors.json.
 # Format: script_filename -> (reason, expiry). Same contract as UNPUBLISHED_PACKAGES.
