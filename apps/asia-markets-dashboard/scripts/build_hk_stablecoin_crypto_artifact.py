@@ -14,6 +14,9 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[3]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+SCRIPTS_DIR = Path(__file__).resolve().parent
+if str(SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_DIR))
 
 from src.hk_stablecoin_crypto.config import (
     COIN_CRCL_SIGNAL_NOTE,
@@ -36,6 +39,7 @@ from src.hk_stablecoin_crypto.sources.hkex_etf_aum import fetch_all_etf_aum
 from src.hk_stablecoin_crypto.sources.hkma_register import fetch_licensed_issuers
 from src.hk_stablecoin_crypto.sources.polymarket_events import fetch_all_polymarket_catalysts
 from src.hk_stablecoin_crypto.sources.sfc_vatp_register import fetch_vatp_register
+from history_policy import DEFAULT_HISTORY_YEARS, history_window
 
 PUBLIC_SOURCES = {
     "hkma_register": {
@@ -100,7 +104,7 @@ PUBLIC_SOURCES = {
             "url": "https://api.exchange.coinbase.com/products/BTC-USD/ticker",
             "language": "JSON",
             "sql": "SELECT price_usd, volume_24h, premium_bps FROM crypto_tickers;",
-            "description": "Real-time BTC spot price, 1-year price history, and Coinbase Premium spread.",
+            "description": "Real-time BTC spot price, long-run price history, and Coinbase Premium spread.",
         },
     },
     "fear_greed": {
@@ -134,6 +138,22 @@ PUBLIC_SOURCES = {
 
 def _utc_now() -> datetime:
     return datetime.now(timezone.utc)
+
+
+def _monthly_history(frame: pd.DataFrame, value_column: str, *, method: str = "mean") -> pd.DataFrame:
+    """Compact a daily history to one point per month for portable charts."""
+    if frame.empty or value_column not in frame.columns:
+        return pd.DataFrame(columns=["date", "month", value_column])
+    window = history_window(frame, "date", years=DEFAULT_HISTORY_YEARS).copy()
+    window["date"] = pd.to_datetime(window["date"], errors="coerce")
+    window = window.dropna(subset=["date", value_column])
+    window["month"] = window["date"].dt.strftime("%Y-%m")
+    if method == "last":
+        compact = window.sort_values("date").groupby("month", as_index=False).tail(1)
+        return compact[["date", "month", value_column]].sort_values("month").reset_index(drop=True)
+    compact = window.groupby("month", as_index=False)[value_column].mean()
+    compact["date"] = pd.to_datetime(compact["month"] + "-01")
+    return compact[["date", "month", value_column]].sort_values("month").reset_index(drop=True)
 
 
 def build_artifact(now: datetime | None = None) -> tuple[dict[str, Any], dict[str, Any]]:
@@ -204,11 +224,14 @@ def build_artifact(now: datetime | None = None) -> tuple[dict[str, Any], dict[st
                     "market_share_pct": share_pct,
                 })
                 
-        hist_df = fetch_stablecoin_history(365)
+        hist_df = fetch_stablecoin_history(0)
         if not hist_df.empty:
-            for _, row in hist_df.iterrows():
+            hist_monthly = _monthly_history(hist_df, "circulating_usd_bn")
+            hist_monthly["circulating_usd_bn"] = hist_monthly["circulating_usd_bn"].round(2)
+            for _, row in hist_monthly.iterrows():
                 stablecoin_history_rows.append({
-                    "date": row["date"],
+                    "date": row["date"].strftime("%Y-%m-%d"),
+                    "month": row["month"],
                     "circulating_usd_bn": float(row["circulating_usd_bn"]),
                 })
 
@@ -220,11 +243,14 @@ def build_artifact(now: datetime | None = None) -> tuple[dict[str, Any], dict[st
                     "circulating_usd_bn": float(row["circulating_usd_bn"]),
                 })
 
-        dex_df = fetch_dex_volume_history(365)
+        dex_df = fetch_dex_volume_history(0)
         if not dex_df.empty:
-            for _, row in dex_df.iterrows():
+            dex_monthly = _monthly_history(dex_df, "dex_volume_usd_bn")
+            dex_monthly["dex_volume_usd_bn"] = dex_monthly["dex_volume_usd_bn"].round(2)
+            for _, row in dex_monthly.iterrows():
                 dex_volume_history_rows.append({
-                    "date": row["date"],
+                    "date": row["date"].strftime("%Y-%m-%d"),
+                    "month": row["month"],
                     "dex_volume_usd_bn": float(row["dex_volume_usd_bn"]),
                 })
     except Exception as e:
@@ -268,7 +294,7 @@ def build_artifact(now: datetime | None = None) -> tuple[dict[str, Any], dict[st
     except Exception as e:
         print(f"Warning: HKEX ETF fetch failed - {e}")
 
-    # 5. Crypto Signals & 1-Year Time Series
+    # 5. Crypto Signals & long-run time series
     btc_price = None
     cb_premium_bps = None
     fng_val = None
@@ -288,19 +314,22 @@ def build_artifact(now: datetime | None = None) -> tuple[dict[str, Any], dict[st
             
         fng_df = fetch_fear_greed_history(0)  # full backfill
         if not fng_df.empty:
-            # slice recent 365 days for dashboard chart display
-            recent_fng = fng_df.tail(365)
+            recent_fng = _monthly_history(fng_df, "score")
+            recent_fng["score"] = recent_fng["score"].round(1)
             for _, r in recent_fng.iterrows():
                 fng_history_rows.append({
-                    "date": r["date"],
-                    "score": int(r["score"]),
+                    "date": r["date"].strftime("%Y-%m-%d"),
+                    "month": r["month"],
+                    "score": float(r["score"]),
                 })
                 
-        btc_df = fetch_btc_price_history(365)
+        btc_df = fetch_btc_price_history(0)
         if not btc_df.empty:
-            for _, r in btc_df.iterrows():
+            btc_monthly = _monthly_history(btc_df, "btc_price_usd", method="last")
+            for _, r in btc_monthly.iterrows():
                 btc_history_rows.append({
-                    "date": r["date"],
+                    "date": r["date"].strftime("%Y-%m-%d"),
+                    "month": r["month"],
                     "btc_price_usd": float(r["btc_price_usd"]),
                 })
     except Exception as e:
@@ -425,13 +454,13 @@ def build_artifact(now: datetime | None = None) -> tuple[dict[str, Any], dict[st
         },
         {
             "id": "stablecoin_history_chart",
-            "title": "1-Year Global Total Stablecoin Circulating Supply ($B USD)",
-            "subtitle": "Historical global pegged asset circulating market cap expansion/contraction time series via DefiLlama.",
+            "title": "Global Total Stablecoin Circulating Supply ($B USD)",
+            "subtitle": "Monthly average of daily global pegged-asset circulating market-cap history via DefiLlama; latest ten years of available history by default.",
             "type": "line",
             "dataset": "stablecoin_history",
             "sourceId": "defillama",
             "encodings": {
-                "x": {"field": "date", "type": "temporal", "label": "Date"},
+                "x": {"field": "month", "type": "temporal", "label": "Month"},
                 "y": {"field": "circulating_usd_bn", "type": "quantitative", "label": "Total Supply ($B USD)"},
             },
             "valueFormat": "number",
@@ -453,13 +482,13 @@ def build_artifact(now: datetime | None = None) -> tuple[dict[str, Any], dict[st
         },
         {
             "id": "dex_volume_history_chart",
-            "title": "1-Year Global Daily DEX Trading Volume ($B USD/day)",
-            "subtitle": "Daily global decentralized exchange trading volume time series via DefiLlama.",
+            "title": "Global Daily DEX Trading Volume ($B USD/day)",
+            "subtitle": "Monthly average of daily global decentralized-exchange trading-volume history via DefiLlama; latest ten years of available history by default.",
             "type": "line",
             "dataset": "dex_volume_history",
             "sourceId": "defillama",
             "encodings": {
-                "x": {"field": "date", "type": "temporal", "label": "Date"},
+                "x": {"field": "month", "type": "temporal", "label": "Month"},
                 "y": {"field": "dex_volume_usd_bn", "type": "quantitative", "label": "DEX Volume ($B USD/day)"},
             },
             "valueFormat": "number",
@@ -467,13 +496,13 @@ def build_artifact(now: datetime | None = None) -> tuple[dict[str, Any], dict[st
         },
         {
             "id": "fear_greed_history_chart",
-            "title": "1-Year Crypto Fear & Greed Index (Alternative.me)",
-            "subtitle": "Daily Crypto Fear & Greed Index score time series (0=Extreme Fear, 100=Extreme Greed) sourced from Alternative.me (https://alternative.me/crypto/fear-and-greed-index/).",
+            "title": "Crypto Fear & Greed Index (Alternative.me)",
+            "subtitle": "Monthly average of the daily Crypto Fear & Greed Index score (0=Extreme Fear, 100=Extreme Greed) sourced from Alternative.me; latest ten years of available history by default.",
             "type": "line",
             "dataset": "fear_greed_history",
             "sourceId": "fear_greed",
             "encodings": {
-                "x": {"field": "date", "type": "temporal", "label": "Date"},
+                "x": {"field": "month", "type": "temporal", "label": "Month"},
                 "y": {"field": "score", "type": "quantitative", "label": "Sentiment Score"},
             },
             "valueFormat": "number",
@@ -481,13 +510,13 @@ def build_artifact(now: datetime | None = None) -> tuple[dict[str, Any], dict[st
         },
         {
             "id": "btc_price_history_chart",
-            "title": "1-Year BTC Spot Price Trend ($ USD)",
-            "subtitle": "Daily Bitcoin close price 365-day time series via Binance.",
+            "title": "BTC Spot Price Trend ($ USD)",
+            "subtitle": "Monthly closing price from daily Bitcoin observations via Binance; latest ten years of available history by default.",
             "type": "line",
             "dataset": "btc_price_history",
             "sourceId": "coinbase_binance",
             "encodings": {
-                "x": {"field": "date", "type": "temporal", "label": "Date"},
+                "x": {"field": "month", "type": "temporal", "label": "Month"},
                 "y": {"field": "btc_price_usd", "type": "quantitative", "label": "BTC Price (USD)"},
             },
             "valueFormat": "number",
@@ -702,8 +731,8 @@ def build_artifact(now: datetime | None = None) -> tuple[dict[str, Any], dict[st
                 "Brokers (e.g. Guotai Junan International 01788.HK) hold dealing permissions but are NOT VATP exchange "
                 "operators; Anchorpoint (HKD-pegged HKDAP) is distinct from AnchorX (Jinyong Investment 01328.HK, AxCNH). "
                 "This monitor tracks regulatory registers, HKEX ETF AUM time series, global stablecoin circulating supply trends, "
-                "blockchain chain distribution, global DEX trading volume, 1-year Crypto Fear & Greed Index (Alternative.me), "
-                "1-year BTC price trends, and tag-filtered Polymarket regulatory catalysts. No investment recommendation is produced."
+                "blockchain chain distribution, global DEX trading volume, long-run Crypto Fear & Greed Index (Alternative.me), "
+                "long-run BTC price trends, and tag-filtered Polymarket regulatory catalysts. No investment recommendation is produced."
             ),
         },
     ])

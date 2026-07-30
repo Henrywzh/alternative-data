@@ -148,6 +148,36 @@ export const STATUS_ZH = {
       source: "电能实业地理分部报告",
       notes: "半年度地理分部报告（收入、分部利润、合营/联营公司应占业绩），按香港电灯、英国、澳洲及其他地区拆分。",
     },
+    labour_force_monthly: {
+      dataset: "劳动力月度数据",
+      source: "政府统计处劳动力、就业、失业及就业不足统计",
+      notes: "每月三个月移动平均系列；年度估计另行保留。",
+    },
+    labour_demand_by_industry: {
+      dataset: "按行业划分的职位空缺",
+      source: "政府统计处按行业划分的职位空缺统计",
+      notes: "按季劳动力需求调查；不包括公务员职位空缺。",
+    },
+    nominal_wage_index_by_industry: {
+      dataset: "名义工资及薪金指数",
+      source: "政府统计处工资及薪金指数",
+      notes: "政府统计处发布的工资及薪金指数；与就业收入中位数并非同一指标。",
+    },
+    wage_payroll_indices: {
+      dataset: "工资及薪金指数",
+      source: "政府统计处工资及薪金指数",
+      notes: "政府统计处发布的工资及薪金指数；与就业收入中位数并非同一指标。",
+    },
+    median_earnings_by_industry: {
+      dataset: "行业就业收入中位数",
+      source: "政府统计处每月就业收入中位数",
+      notes: "每月就业收入中位数；主趋势图采用三个月移动平均系列。",
+    },
+    talent_policy_supply_panel: {
+      dataset: "人才政策流量数据",
+      source: "劳工处及入境事务处人才政策公开数据",
+      notes: "申请、批准及优秀人才计划配额是政策流量指标，不是实际抵港或就业人数。",
+    },
     mtr_patronage: {
       dataset: "港铁客流",
       source: "港铁公司投资者关系月度客流",

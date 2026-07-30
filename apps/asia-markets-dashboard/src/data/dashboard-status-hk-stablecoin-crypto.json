@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-07-30T08:50:04Z",
-  "snapshot_id": "8387a00bda9be15c",
+  "generated_at": "2026-07-30T23:25:13Z",
+  "snapshot_id": "17ff406aa413ef22",
   "data_as_of": "2026-07-30",
   "overall_status": "Healthy",
   "live_sources": 7,
@@ -10,20 +10,20 @@
       "source": "HKMA Licensed Stablecoin Issuers Register",
       "dataset": "hkma_register",
       "type": "Monitor",
-      "status": "Healthy",
+      "status": "Degraded",
       "latest_observation": "2026-07-30",
-      "records": 2,
-      "freshness": "Live",
+      "records": 0,
+      "freshness": "Unavailable",
       "notes": "Official ground-truth sandbox register of licensed stablecoin issuers (Anchorpoint FRS01, HSBC FRS02)."
     },
     {
       "source": "SFC Virtual Asset Trading Platforms Register",
       "dataset": "sfc_vatp",
       "type": "Monitor",
-      "status": "Healthy",
+      "status": "Degraded",
       "latest_observation": "2026-07-30",
-      "records": 36,
-      "freshness": "Live",
+      "records": 0,
+      "freshness": "Unavailable",
       "notes": "Official 4-status SFC register of VATP exchange operators (licensed, pending, withdrawn, forced-closure)."
     },
     {
@@ -50,11 +50,11 @@
       "source": "Coinbase & Binance Public Tickers",
       "dataset": "coinbase_binance",
       "type": "Monitor",
-      "status": "Degraded",
+      "status": "Healthy",
       "latest_observation": "2026-07-30",
-      "records": 0,
-      "freshness": "Unavailable",
-      "notes": "Real-time BTC spot price, 1-year price history, and Coinbase Premium spread."
+      "records": 1,
+      "freshness": "Live",
+      "notes": "Real-time BTC spot price, long-run price history, and Coinbase Premium spread."
     },
     {
       "source": "Crypto Fear & Greed Index (Alternative.me)",

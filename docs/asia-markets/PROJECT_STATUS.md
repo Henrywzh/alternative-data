@@ -8,7 +8,7 @@ replacement for the operating manual or generated source-status JSON.
 - Production surface: Cloudflare Pages, non-Streamlit dashboard.
 - Canonical financial-data sibling: `/Users/henrywzh/Desktop/Quant/financial-data`;
   see `REPO_BRIDGE.md` for the shared contract.
-- Live sector roster: 8 sectors; see `apps/asia-markets-dashboard/sectors.json`.
+- Live sector roster: 10 sectors; see `apps/asia-markets-dashboard/sectors.json`.
 - English and Chinese hub/data-status pages are published.
 - Sector artifacts are generated as portable HTML from `.generated/*.json`.
 - The dashboard has explicit month/year chart ticks and visible copy-title
@@ -20,13 +20,75 @@ replacement for the operating manual or generated source-status JSON.
 
 - China listed airline monthly operating data is wired into transport: passenger
   traffic, ASK, RPK, load factor and regional split.
+- Cloudflare historical charts now use a date-based latest-ten-year display
+  policy for the transport service breakdown, utilities gas/temperature views,
+  local-consumer weather/immigration/gold/retail/restaurant/oil-price views,
+  and stablecoin/crypto histories. The source cadence is retained; feeds with
+  less than ten years show all available history and must say so in the chart
+  context. Snapshot, ranking and recent-event views remain explicitly outside
+  this trend-window rule.
+- The refactor exposed genuine source limits: Consumer Council watchlist
+  valuation history currently returns only a rolling ~365 days from its
+  endpoint, while AFCD category prices remain a run-accumulated snapshot.
+  Neither is presented as a fabricated ten-year series.
 - Dashboard source-status pages were updated and Chinese labels/caveats were
   localized.
+- Hong Kong labour-market and talent-policy data is now a live sector with
+  official C&SD labour, earnings, vacancies, wage and policy-flow panels.
+- Hong Kong population and migration data is now a live sector with ImmD daily
+  traffic, C&SD population/net movement, MPFA departure claims, UGC non-local
+  enrolment and Transport Department cross-border traffic. Stage 1 persists
+  normalized run-scoped Parquet datasets and the builder reads those before any
+  bootstrap fetch; per-source status rows retain each source's own observation
+  date.
 - Store-footprint, Google Trends and other planned integrations remain separate
   until their source history and data flow are validated.
 - Real-estate dashboard work includes agency transaction pulse, 28Hse EPI/ERI,
   Land Registry statistics, HKMA mortgage measures, Buildings Department data
   and REIT/property trend series.
+- Centaline Tranche 1 ingestion is now implemented as a standalone
+  `run-centaline-indices` command. The 2026-07-30 run successfully materialised
+  CCI (389 monthly rows), CRI (354 monthly rows), CRI yield (353 monthly rows),
+  CSI (1,116 weekly rows) and 33 current CCI/CRI/CSI snapshot rows, each with
+  raw JSON lineage. Stage 1 now wires CCI/CRI/CRI yield/CSI into the real-estate
+  dashboard's regime and residential rent views; CSI's historical payload
+  currently exposes residential price/rent history only, with office/
+  industrial/retail values available as snapshots.
+- CSI ingestion preserves unique weekly source observations and the artifact
+  retains day-precision weekly dates; the portable chart runtime supplies the
+  visible year without collapsing observations to a month.
+- Midland Tranche 2 ingestion is implemented as a standalone
+  `run-midland-monthly` command. The 2026-07-30 run materialised 355 monthly
+  `mrIndex` rows with price, transaction-count and first-hand fields, plus
+  3,185 long-form `economicIndicators` rows and a persisted
+  `midland_field_dictionary`. Monthly, macro and dictionary rows share the
+  frozen HTML lineage; Midland macro units remain Midland-derived until the
+  planned HKMA/C&SD reconciliation. The routine `run-all` path now includes
+  this tranche, while `HK_RE_SKIP_MIDLAND` marks it skipped in blocked CI.
+- RVD commercial Tranche 3 is implemented as a standalone
+  `run-rvd-commercial` command. The 2026-07-30 run materialised 1,604 office
+  rental rows across Grades A/B/C and Overall, plus 802 retail rows covering
+  rental and price metrics, preserving official provisional flags and raw CSV
+  lineage. Stage 1 now wires the office and retail rental histories into the
+  commercial-property dashboard section; retail price and grade-level drilldown
+  remain follow-up work.
+- Midland Tranche 4 is implemented as a standalone
+  `run-midland-snapshots` command. The 2026-07-30 run materialised 598 rows
+  from all/region/district current and previous-window market statistics, plus
+  32 rows from the current registration summary and 45 Midland
+  `propertyEvent` research hints. Market rows preserve units, source fields
+  and optional window dates; registration rows preserve as-of/update dates
+  and explicit transaction/amount units. These are explicitly as-of snapshots
+  or discovery hints, not historical trends or official policy events; at
+  least 90 days of dated snapshots are required before any MoM/YoY chart is
+  considered. This tranche is also included in routine `run-all` with the
+  Midland CI skip guard.
+- Tranche 5 policy/event research contracts are implemented through
+  `run-policy-events`: four primary-source catalog entries and a validated
+  audit of the curated developer/project registry. Both outputs now retain a
+  local raw snapshot and explicit lineage type; Midland events remain
+  `research_only` until matched to an HKMA, Government, Lands Department or
+  HKEX primary source with publication/effective-time semantics.
 
 ## Open decisions / known limitations
 
@@ -39,9 +101,12 @@ replacement for the operating manual or generated source-status JSON.
 - Buildings Department Md52–Md56 current XLS charts/tables remain project
   snapshots. A separate archive-backed `bd_supply_pipeline_history` now covers
   2005-01 to 2026-05 as month/stage aggregates parsed from the official PDF
-  summary tables. `Md52` demolition consents supply counts only; the history
-  is not project-level stage linkage. `bd_monthly_stats` remains a distinct
-  Md11–Md17 scratch dataset with unlabelled numeric arrays.
+  summary tables. The dashboard chart deliberately displays only the latest
+  ten-year lookback (currently 2016-05 to 2026-05) for readability; the
+  archive-backed normalized rows remain available for research. `Md52`
+  demolition consents supply counts only; the history is not project-level
+  stage linkage. `bd_monthly_stats` remains a distinct Md11–Md17 scratch
+  dataset with unlabelled numeric arrays.
 - The current monthly-digest fetch archives 20 Mdxx XLS files. Most of those
   are raw-only archival coverage, not normalized analytical datasets.
 - Buildings Department coverage is split between raw Mdxx archival files,
@@ -51,7 +116,14 @@ replacement for the operating manual or generated source-status JSON.
 - Source coverage for newer feeds currently uses `Live at build time` when a
   build fetched rows, but often leaves `latest_observation` as `—`. This should
   be improved to expose actual as-of dates and age where possible.
-- Weekly/daily chart labels must preserve distinct points while showing a year;
+- Population/migration source dates are mixed by design (daily, half-yearly,
+  quarterly, academic-year and monthly). The status page shows each source's
+  own latest label; the package-wide `data_as_of` is the latest dated source
+  observation, not a claim that every source has that recency.
+- Weekly/daily chart labels preserve distinct points while showing a year;
+  month-granularity series use month/year labels. The portable packaging layer
+  patches the shared reader's day-only axis labels in both interactive and
+  static delivery modes.
   do not solve this by aggregating the data to monthly grain.
 - Most store-footprint companies have only one or two dated snapshots; present
   them as footprint snapshots rather than trends.

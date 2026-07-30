@@ -5,8 +5,9 @@ Companion to [asia-markets-hk-sectors.md](asia-markets-hk-sectors.md) and
 Current top priority in the [focus list](asia-markets-hk-focus-list.md).
 This is a folded/summarized version of ten research rounds — narrative
 "here's what I checked" framing has been cut; what remains is the current
-state of knowledge and what's still open. Status: **research and source
-audit only — no scraper, schema, or model has been built yet.**
+state of knowledge and what's still open. Status: **research-first, with
+Tranche 1 Centaline ingestion now implemented and validated; no new series is
+promoted to the dashboard until its contract gate passes.**
 
 akshare's Hong Kong macro functions (`macro_china_hk_cpi`, `_gbp` [GDP],
 `_rate_of_unemployment`, `_ppi`, `_building_amount`, `_trade_diff_ratio`,
@@ -242,6 +243,127 @@ scraping, automation, or model-building yet.
 Each still needs: source-access/terms confirmation, a stable-identifier
 proposal (legal phase/SPV, not marketing name), and a small validation
 pilot before any schema or automation decision.
+
+### Discovery TODO — low-effort private benchmarks and missing market layers
+
+These items are **not yet implemented**. They are deliberately ordered as
+source-contract work before ingestion, model or dashboard work.
+
+| Order | Source family | Intended use | Validation / implementation plan | Do not infer |
+|---|---|---|---|---|
+| P0 | Centaline CCI, CRI and CSI APIs | Monthly price cross-check, monthly rent/yield, weekly manager sentiment | Preserve sample responses; define series, geography, index base, publication lag, revisions and overlap with CCL/RVD/ERI. Then add normalized history and source-owned tests. | CCI is not a longer-history replacement for CCL; CRI is not the first rental series; CSI is survey sentiment, not transaction data. |
+| P0 | Centaline CVI API + first-party methodology | Potential valuation/credit-condition signal | Verify its published construction and whether it genuinely represents bank valuation before any chart. | That a CVI move equals a bank credit-policy change or mortgage valuation. |
+| P1 | Midland `mrIndex` and `economicIndicators` | Monthly price-volume, affordability and macro context | Validate field units, segment definitions, release/revision behaviour and provenance; cross-check official fields against HKMA/C&SD. | That a Midland-derived affordability or ratio field is an official statistic. |
+| P2 | Midland `marketStat*`, district statistics and `langRegRecords` | Rolling-market/district snapshots | Persist as-of snapshots before calculating trends; document every window and previous-period comparator. | MoM/YoY from a one-off rolling-window response. |
+| P2 | RVD office/retail rent, vacancy and completion data | Commercial landlord / REIT market anchor | Build a separate commercial contract and reconcile terms with company occupancy, passing rent and reversion disclosures. | That RVD rent, occupancy and company-reported KPIs share a definition. |
+| P2 | Policy-event layer | Chart annotations and catalyst monitoring | Use `propertyEvent` only to discover events; cite and timestamp HKMA/Government/Lands primary releases. | Completeness or legal effect from an agency event list alone. |
+| P3 | Market-to-equity transmission | Explain stock earnings / valuation channels | Join SRPE, mortgage/supply, completion, corporate disclosures and the financial-data sibling only after issuer/project identifiers and point-in-time availability rules are defined. | That presales equal revenue, or that market price indices alone explain a developer's earnings. |
+
+### Proposed ingestion order — planning only
+
+The unit of work below is a source-owned ingestion contract, not “add every
+field visible in a response.” Each completed tranche must write immutable raw
+payloads and a run manifest before the next tranche begins. No dashboard chart
+is part of the tranche exit gate unless stated explicitly.
+
+#### Tranche 0 — shared contract harness (first)
+
+1. Extend the existing real-estate storage/run-manifest pattern for the new
+   source families: `source_url`, `fetched_at`, raw payload hash, parser
+   version, source observation period, and a `data_status` of `live`,
+   `stale`, `incomplete` or `research_only`.
+2. Add fixture-based tests for parser shape and one generic dated-series gate:
+   non-null date/value, uniqueness at the declared series grain, bounded
+   numeric values, explicit cadence, and latest-observation age.
+3. Declare a separate normalized dataset for every distinct grain. Never put
+   weekly CCL/CSI, monthly CCI/CRI/MHPI, rolling-window snapshots and event
+   records in one “market data” table.
+
+**Exit:** a failed fetch or parser cannot overwrite the last validated
+normalized run, and every successful run has raw lineage.
+
+#### Tranche 1 — Centaline structured indices: CRI, CSI, then CCI
+
+| Dataset | Endpoint | Proposed normalized grain | Required fields / gates |
+|---|---|---|---|
+| `centaline_cri_monthly` | `/CCI/api/Index/CRI` | one `observation_date × series_id` | index level, regional/size split, rental-yield flag/value where supplied, source period, series label; monthly uniqueness, positive index/yield, lag/freshness check. |
+| `centaline_csi_weekly` | `/CCI/api/Index/CSI` | one `observation_date × sector × measure` | residential/office/industrial/retail price and rent sentiment fields, published week, label; weekly uniqueness and a documented survey-scale/range. |
+| `centaline_cci_monthly` | `/CCI/api/Index/CCI` | one `observation_date × series_id` | overall and documented regional/size splits, level, source period; monthly uniqueness and comparison-only caveat versus CCL. |
+
+Plan: capture two raw payloads on different publication dates before
+normalizing, so field stability and revision behaviour are observed rather
+than assumed. Backfill the history only after the parser fixture passes. Keep
+CRI/yield, CSI and CCI in separate datasets, then expose only their source
+health initially. Add charts after a manual overlap check against RVD/ERI/CCL.
+
+**Do not ingest CVI in this tranche.** First store a methodology note sourced
+from Centaline; if its construction cannot be stated precisely, its endpoint
+remains `research_only` even if it is technically fetchable.
+
+#### Tranche 2 — Midland monthly price-volume and macro context
+
+Use the same Market Insight page acquisition as the existing weekly Midland
+pipeline, but save the complete versioned `__NEXT_DATA__` payload once per run
+before extracting either family. Midland's WAF constraint in CI means initial
+validation and scheduling must be local/residential-IP compatible; CI should
+consume only successfully materialised normalized output.
+
+| Dataset | Payload block | Proposed grain | Required checks |
+|---|---|---|---|
+| `midland_mhpi_monthly` | `mrIndex` | `month × region/overall` | index, `net_ft_price`, all transaction-count fields retained separately; one row per declared segment/month; units are documented in the persisted `midland_field_dictionary`. |
+| `midland_economic_indicators_monthly` | `economicIndicators` | `month × indicator_name` | numeric value, unit, Midland field name and source attribution; preserve raw field name; do not relabel as official without reconciliation. |
+
+Plan: first build a field dictionary from a frozen payload; then normalize all
+observations without deriving ratios. Reconcile mortgage rate and unemployment
+against HKMA/C&SD for a short overlap; label non-reconcilable affordability
+metrics “Midland-derived.” Only then add monthly price-volume or affordability
+views. `mrIndexWeekly` remains a separate existing contract.
+
+#### Tranche 3 — official commercial market series
+
+1. Fetch the configured RVD office-rental (`2.3M.csv`) and retail-rental
+   (`3.2M.csv`) files as separate raw snapshots, preserving any provisional
+   flags/release date exactly as with residential RVD.
+2. Discover and separately contract RVD vacancy/completion files; do not
+   assume their period, stock universe or unit from a filename.
+3. Normalize to `rvd_office_rental_index_monthly`,
+   `rvd_retail_rental_index_monthly`, and (only after definition review)
+   `rvd_commercial_vacancy_*` / `rvd_commercial_completion_*`.
+4. Run a small reconciliation notebook against a disclosed office/retail REIT
+   period. The expected result is a definition map, not numerical equality.
+
+**Exit:** every displayed commercial metric states market, class, unit,
+observation period and provisional/revision status.
+
+#### Tranche 4 — rolling Midland market snapshots
+
+For `marketStatDistrict`, `marketStatAll`, `marketStatRegion` and
+`langRegRecords`, save the complete response daily with both `fetched_at` and
+the source's own as-of/window fields. Normalize into snapshot tables keyed by
+`snapshot_date × geography × metric`; retain `window_start`, `window_end`,
+`as_of_date`, `update_date` and `previous_window_*` fields when provided.
+Market and registration metrics carry explicit units and source-field names.
+Operate for a minimum 90 calendar
+days before considering a trend chart. Until then, allow only an explicitly
+dated snapshot card/table.
+
+#### Tranche 5 — policy events and market-to-equity joins
+
+`propertyEvent` is discovery input only. Ingest no event until a primary
+HKMA/Government/Lands source supplies the publication time, effective date,
+policy channel and URL. In parallel, define (but do not yet automate) the
+join registry for issuer, legal project phase/SPV, attributable ownership,
+asset type and availability time. That registry is the prerequisite for SRPE,
+supply, mortgage, HKEX and financial-data facts to become an equity-facing
+dataset.
+
+### Promotion rule
+
+A tranche may be promoted from `research_only` to a dashboard source only when
+it has: (1) two successful raw captures or an archived history with known
+vintage semantics, (2) a tested normalized schema, (3) period/freshness and
+revision rules, (4) a documented unit and interpretation caveat, and (5) a
+small visual/record-count QA in both dashboard languages.
 
 ## Open questions
 - Complete the three not-started evidence gates above.

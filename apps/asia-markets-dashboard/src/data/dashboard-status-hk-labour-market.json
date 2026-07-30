@@ -1,0 +1,61 @@
+{
+  "generated_at": "2026-07-30T23:25:13.184365Z",
+  "snapshot_id": "aa7195ed3d75f93a",
+  "data_as_of": "2026-06-30",
+  "overall_status": "Healthy",
+  "live_sources": 5,
+  "planned_sources": 0,
+  "sources": [
+    {
+      "source": "C&SD Labour Force, Employment, Unemployment & Underemployment",
+      "dataset": "labour_force_monthly",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2026-06-30",
+      "records": 13425,
+      "freshness": "Live at build time",
+      "notes": "Monthly rolling-three-month series; annual estimates are retained."
+    },
+    {
+      "source": "C&SD Labour Demand by Industry",
+      "dataset": "labour_demand_by_industry",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2026-03-31",
+      "records": 6930,
+      "freshness": "Live at build time",
+      "notes": "Quarterly labour-demand survey; excludes civil-service vacancies."
+    },
+    {
+      "source": "C&SD Wage and Payroll Indices",
+      "dataset": "wage_payroll_indices",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2026-03-31",
+      "records": 3738,
+      "freshness": "Live at build time",
+      "notes": "C&SD-published wage/payroll indices; wage/payroll series are not the same as median earnings."
+    },
+    {
+      "source": "C&SD Median Employment Earnings",
+      "dataset": "median_earnings_by_industry",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2026-05-31",
+      "records": 3083,
+      "freshness": "Live at build time",
+      "notes": "Median monthly earnings; the dashboard uses the rolling-three-month series for the main trend."
+    },
+    {
+      "source": "Labour Department and Immigration Department Talent-policy Open Data",
+      "dataset": "talent_policy_supply_panel",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2025-12-31",
+      "records": 279,
+      "freshness": "Live at build time",
+      "notes": "Applications/approvals and QMAS quota are policy-flow indicators, not actual arrivals or employment."
+    }
+  ],
+  "attachment_filename": "hk-labour-market-dashboard-2026-07-30.html"
+}

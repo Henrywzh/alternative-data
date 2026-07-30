@@ -27,9 +27,13 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from src.hk_real_estate.pipeline import SKIP_MIDLAND_ENV_VAR
-from src.hk_real_estate.sources.centaline import fetch_centaline_ccl
+from src.hk_real_estate.sources.centaline import fetch_centaline_ccl, fetch_centaline_index_bundle
 from src.hk_real_estate.sources.midland import run_midland_ingestion
-from src.hk_real_estate.sources.rvd import run_rvd_ingestion
+from src.hk_real_estate.sources.rvd import (
+    fetch_rvd_office_rental_index,
+    fetch_rvd_retail_rental_index,
+    run_rvd_ingestion,
+)
 from src.hk_real_estate.sources.hkma import fetch_hkma_residential_mortgage_survey
 from src.common.cnsd_mdt import fetch_cnsd_table
 from src.hk_real_estate.storage import load_latest_normalized
@@ -110,6 +114,39 @@ PUBLIC_SOURCES = {
             ],
         },
     },
+    "centaline_cci": {
+        "id": "centaline_cci",
+        "label": "Centaline CCI — Residential Price Index",
+        "href": "https://hk.centanet.com/CCI/index",
+        "query": {
+            "engine": "first-party HTTP JSON",
+            "url": "https://hk.centanet.com/CCI/api/Index/CCI",
+            "language": "JSON",
+            "description": "Monthly CCI history from the normalized Centaline index contract.",
+        },
+    },
+    "centaline_cri": {
+        "id": "centaline_cri",
+        "label": "Centaline CRI — Residential Rental Index",
+        "href": "https://hk.centanet.com/CCI/index",
+        "query": {
+            "engine": "first-party HTTP JSON",
+            "url": "https://hk.centanet.com/CCI/api/Index/CRI",
+            "language": "JSON",
+            "description": "Monthly residential rental index and rental-yield history from the normalized Centaline contract.",
+        },
+    },
+    "centaline_csi": {
+        "id": "centaline_csi",
+        "label": "Centaline CSI — Market Sentiment",
+        "href": "https://hk.centanet.com/CCI/index",
+        "query": {
+            "engine": "first-party HTTP JSON",
+            "url": "https://hk.centanet.com/CCI/api/Index/CSI",
+            "language": "JSON",
+            "description": "Weekly Centaline sentiment observations; not a transaction or price index.",
+        },
+    },
     "midland_mhpi": {
         "id": "midland_mhpi",
         "label": "Midland Realty Market Insight — MHPI",
@@ -167,6 +204,28 @@ PUBLIC_SOURCES = {
                 "RVD rent latest is the All Classes monthly private domestic rental index.",
                 "Monthly and yearly movements are latest divided by the prior month or observation twelve months earlier, minus one.",
             ],
+        },
+    },
+    "rvd_office": {
+        "id": "rvd_office",
+        "label": "Rating and Valuation Department — Office Rental Index",
+        "href": "https://www.rvd.gov.hk/en/property_market_statistics/index.html",
+        "query": {
+            "engine": "official CSV",
+            "url": "https://www.rvd.gov.hk/datagovhk/2.3M.csv",
+            "language": "CSV",
+            "description": "Monthly private office rental indices by grade, including official provisional flags.",
+        },
+    },
+    "rvd_retail": {
+        "id": "rvd_retail",
+        "label": "Rating and Valuation Department — Retail Rental / Price Index",
+        "href": "https://www.rvd.gov.hk/en/property_market_statistics/index.html",
+        "query": {
+            "engine": "official CSV",
+            "url": "https://www.rvd.gov.hk/datagovhk/3.2M.csv",
+            "language": "CSV",
+            "description": "Monthly private retail rental and price indices with official provisional flags.",
         },
     },
     "cross_source": {
@@ -391,6 +450,83 @@ def _series_records(frame: pd.DataFrame, value_column: str) -> list[dict[str, An
     return _records(renamed, ["date", "value"])
 
 
+def _index_history_rows(
+    frame: pd.DataFrame,
+    *,
+    metric: str | None = None,
+    series_label: str | None = None,
+    series_column: str = "series_id",
+    date_format: str = "%Y-%m",
+) -> list[dict[str, Any]]:
+    """Convert a normalized index family to bounded chart rows at source grain."""
+    if frame.empty or not {"date", "index_value"}.issubset(frame.columns):
+        return []
+    selected = frame.copy()
+    if metric is not None and "metric" in selected.columns:
+        selected = selected[selected["metric"].eq(metric)]
+    rows = []
+    for _, row in selected.iterrows():
+        value = pd.to_numeric(row.get("index_value"), errors="coerce")
+        date = pd.to_datetime(row.get("date"), errors="coerce")
+        if pd.isna(value) or pd.isna(date):
+            continue
+        label = series_label or str(row.get(series_column, "overall"))
+        rows.append({"date": date.strftime(date_format), "series": label, "value": float(value)})
+    return sorted(rows, key=lambda row: (row["series"], row["date"]))
+
+
+def _commercial_history_rows(
+    frame: pd.DataFrame,
+    *,
+    metric: str | None = None,
+    label_prefix: str = "",
+) -> list[dict[str, Any]]:
+    """Convert RVD commercial long-form rows to chart rows."""
+    if frame.empty or not {"date", "value", "segment", "metric"}.issubset(frame.columns):
+        return []
+    selected = frame.copy()
+    if metric is not None:
+        selected = selected[selected["metric"].eq(metric)]
+    rows = []
+    for _, row in selected.iterrows():
+        value = pd.to_numeric(row.get("value"), errors="coerce")
+        date = pd.to_datetime(row.get("date"), errors="coerce")
+        if pd.isna(value) or pd.isna(date):
+            continue
+        segment = str(row.get("segment", "overall")).replace("_", " ").title()
+        rows.append({
+            # RVD commercial observations are monthly, not daily. Month
+            # precision keeps the year visible without changing the cadence.
+            "date": date.strftime("%Y-%m"),
+            "series": f"{label_prefix}{segment}".strip(),
+            "value": float(value),
+            "is_provisional": bool(row.get("is_provisional", False)),
+        })
+    return sorted(rows, key=lambda row: (row["series"], row["date"]))
+
+
+def _rebase_chart_rows(rows: list[dict[str, Any]], now: datetime, *, years: int = 5) -> list[dict[str, Any]]:
+    """Rebase compatible index rows to 100 without mixing asset classes."""
+    if not rows:
+        return []
+    frame = pd.DataFrame(rows)
+    frame["date"] = pd.to_datetime(frame["date"], errors="coerce")
+    frame["value"] = pd.to_numeric(frame["value"], errors="coerce")
+    frame = frame.dropna(subset=["date", "value"])
+    start = pd.Timestamp(now.replace(tzinfo=None)) - pd.DateOffset(years=years)
+    output = []
+    for series, group in frame.groupby("series"):
+        monthly = group.set_index("date")["value"].sort_index()
+        monthly = monthly.loc[monthly.index >= start].resample("ME").last().dropna()
+        if monthly.empty or float(monthly.iloc[0]) == 0:
+            continue
+        for date, value in (monthly / float(monthly.iloc[0]) * 100).items():
+            # This view is explicitly monthly; month-granularity labels render
+            # as `Aug 2021` in the shared portable chart reader.
+            output.append({"date": date.strftime("%Y-%m"), "series": series, "value": round(float(value), 4)})
+    return sorted(output, key=lambda row: (row["date"], row["series"]))
+
+
 def _safe_fetch(label: str, fetch_fn, *args, **kwargs) -> pd.DataFrame:
     """Call a live fetch function, returning an empty frame (not a crash) on failure.
 
@@ -425,7 +561,7 @@ def _rebased_records(frames: dict[str, pd.DataFrame], now: datetime) -> list[dic
         rebased = monthly / float(monthly.iloc[0]) * 100
         rows.extend(
             {
-                "date": index.strftime("%Y-%m-%d"),
+                "date": index.strftime("%Y-%m"),
                 "series": label,
                 "value": round(float(value), 4),
             }
@@ -457,6 +593,34 @@ def _source_health(frames: dict[str, pd.DataFrame], now: datetime) -> list[dict[
     return rows
 
 
+def _new_source_health(
+    frame: pd.DataFrame,
+    *,
+    source_id: str,
+    dataset: str,
+    now: datetime,
+    note: str,
+) -> dict[str, Any] | None:
+    """Build a source-health row for an optional normalized tranche."""
+    if frame.empty or "date" not in frame.columns:
+        return None
+    dates = pd.to_datetime(frame["date"], errors="coerce").dropna()
+    if dates.empty:
+        return None
+    latest = dates.max()
+    age = (pd.Timestamp(now.replace(tzinfo=None)).normalize() - latest.normalize()).days
+    return {
+        "source": PUBLIC_SOURCES[source_id]["label"],
+        "dataset": dataset,
+        "type": "Measure",
+        "status": "Healthy",
+        "latest_observation": latest.strftime("%Y-%m-%d"),
+        "records": int(len(frame)),
+        "freshness": f"{age}d old",
+        "notes": note,
+    }
+
+
 def _stamp_sources(generated_at: str) -> list[dict[str, Any]]:
     result = []
     for source in PUBLIC_SOURCES.values():
@@ -477,6 +641,7 @@ def build_artifact(
     raw_bd_supply: pd.DataFrame | None = None,
     raw_bd_supply_history: pd.DataFrame | None = None,
     raw_unified_tx: pd.DataFrame | None = None,
+    raw_new_series: dict[str, pd.DataFrame] | None = None,
     *,
     now: datetime | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
@@ -498,6 +663,27 @@ def build_artifact(
         raise ValueError("RVD price and rent observation dates do not align")
     generated_at = now.isoformat().replace("+00:00", "Z")
     health = _source_health(frames, now)
+    new_series = raw_new_series or {}
+    df_cci = new_series.get("centaline_cci", pd.DataFrame())
+    df_cri = new_series.get("centaline_cri", pd.DataFrame())
+    df_cri_yield = new_series.get("centaline_cri_yield", pd.DataFrame())
+    df_csi = new_series.get("centaline_csi", pd.DataFrame())
+    df_rvd_office = new_series.get("rvd_office", pd.DataFrame())
+    df_rvd_retail = new_series.get("rvd_retail", pd.DataFrame())
+
+    # New normalized tranches are deliberately kept optional.  A clean
+    # checkout can still build the legacy artifact while a local or scheduled
+    # run that has materialised the tranche exposes the richer chart family.
+    cci_rows = _index_history_rows(df_cci, metric="price_index", series_label="Overall")
+    cri_rows = _index_history_rows(df_cri, metric="rental_index", series_label="Overall")
+    cri_yield_rows = _index_history_rows(df_cri_yield, metric="rental_yield", series_label="Rental yield")
+    # CSI is genuinely weekly. Keep the source date so several observations in
+    # one month remain separate chart points; the packaging runtime supplies
+    # the year in visible day/weekly labels.
+    csi_rows = _index_history_rows(df_csi, metric="sentiment", date_format="%Y-%m-%d")
+    rvd_office_rows = _commercial_history_rows(df_rvd_office, metric="rental_index")
+    rvd_retail_rows = _commercial_history_rows(df_rvd_retail)
+
     df_hkma = raw_hkma if raw_hkma is not None else fetch_hkma_residential_mortgage_survey()
     df_cnsd = raw_cnsd if raw_cnsd is not None else fetch_cnsd_table("615-66001")
 
@@ -625,6 +811,47 @@ def build_artifact(
                     {"date": str(r["date"])[:10], "series": str(r["index_type"]), "value": float(r["index_value"])}
                 )
         epi_eri_rows.sort(key=lambda r: (r["series"], r["date"]))
+
+    # Keep price and rent normalization separate.  Combining a rent index with
+    # price indices in one rebased chart is numerically possible but visually
+    # ambiguous, so the dashboard exposes two explicit comparison families.
+    price_rebase_input = [
+        {"date": row["date"], "series": "CCL", "value": row["value"]}
+        for row in _series_records(frames["ccl"], "ccl_index")
+    ]
+    price_rebase_input.extend(
+        {"date": row["date"], "series": "MHPI", "value": row["value"]}
+        for row in _series_records(frames["mhpi"], "mhpi_overall")
+    )
+    price_rebase_input.extend({"date": row["date"], "series": "CCI", "value": row["value"]} for row in cci_rows)
+    rent_rebase_input = []
+    rent_rebase_input.extend(
+        {"date": row["date"], "series": "CRI", "value": row["value"]}
+        for row in cri_rows
+    )
+    for _, row in frames["rvd_rent"].iterrows():
+        rent_rebase_input.append({
+            "date": pd.to_datetime(row["date"]).strftime("%Y-%m-%d"),
+            "series": "RVD Rent",
+            "value": float(row["overall"]),
+        })
+    for row in epi_eri_rows:
+        upper_series = row["series"].upper()
+        if "EPI" in upper_series or "PRICE" in upper_series:
+            price_rebase_input.append({"date": row["date"], "series": "EPI", "value": row["value"]})
+        elif "ERI" in upper_series or "RENT" in upper_series:
+            rent_rebase_input.append({"date": row["date"], "series": "ERI", "value": row["value"]})
+    residential_price_rebased = _rebase_chart_rows(price_rebase_input, now)
+    residential_rent_rebased = _rebase_chart_rows(rent_rebase_input, now)
+    for health_row in (
+        _new_source_health(df_cci, source_id="centaline_cci", dataset="Centaline CCI monthly", now=now, note="Normalized residential price index; CCI is not a sentiment measure."),
+        _new_source_health(df_cri, source_id="centaline_cri", dataset="Centaline CRI monthly", now=now, note="Normalized residential rental index; rental-yield history is a companion dataset."),
+        _new_source_health(df_csi, source_id="centaline_csi", dataset="Centaline CSI weekly", now=now, note="Normalized sentiment history; not a transaction or price series."),
+        _new_source_health(df_rvd_office, source_id="rvd_office", dataset="RVD office rental monthly", now=now, note="Official grade-level rental index; provisional flags are retained."),
+        _new_source_health(df_rvd_retail, source_id="rvd_retail", dataset="RVD retail monthly", now=now, note="Official retail rental/price indices; provisional flags are retained."),
+    ):
+        if health_row:
+            health.append(health_row)
 
     # 28Hse new-project catalogue -> small supporting table.
     df_new_projects = (
@@ -769,6 +996,16 @@ def build_artifact(
             visible_history = visible_history[visible_history["parser_confidence"] == "HIGH"]
         if "revision_status" in visible_history.columns:
             visible_history = visible_history[visible_history["revision_status"] == "as_published"]
+        # Keep the archive-backed source complete for research, but keep the
+        # dashboard chart readable with a ten-year lookback. Anchor the cutoff
+        # to the latest published month so stale upstream data does not make
+        # the visible window shorter than intended.
+        history_months = pd.to_datetime(visible_history["observation_month"], errors="coerce").dropna()
+        if not history_months.empty:
+            latest_history_month = history_months.max()
+            cutoff_history_month = latest_history_month - pd.DateOffset(years=10)
+            parsed_history_months = pd.to_datetime(visible_history["observation_month"], errors="coerce")
+            visible_history = visible_history[parsed_history_months >= cutoff_history_month]
         for _, r in visible_history.iterrows():
             date = str(r["observation_month"])[:7]
             for column, metric in (
@@ -905,6 +1142,10 @@ def build_artifact(
             }
         )
 
+    # New normalized Centaline/RVD feeds already contribute one complete row
+    # each through `health` above (including observation date and row count).
+    # Do not add aliases here: the coverage table is a source inventory, not a
+    # list of every chart using that source.
     coverage = health + additional_coverage + PLANNED_COVERAGE
 
     datasets = {
@@ -915,6 +1156,12 @@ def build_artifact(
         "ccl_history": _series_records(frames["ccl"], "ccl_index"),
         "mhpi_history": _series_records(frames["mhpi"], "mhpi_overall"),
         "confidence_history": _series_records(frames["confidence"], "confidence_index"),
+        "cci_history": cci_rows,
+        "cri_history": cri_rows,
+        "cri_yield_history": cri_yield_rows,
+        "csi_history": csi_rows,
+        "rvd_office_history": rvd_office_rows,
+        "rvd_retail_history": rvd_retail_rows,
         "rvd_history": [
             {
                 # One observation per calendar month (see obs_d above).
@@ -927,6 +1174,8 @@ def build_artifact(
             for (_, price), (_, rent) in zip(frames["rvd_price"].iterrows(), frames["rvd_rent"].iterrows())
         ],
         "rebased_five_year": _rebased_records(frames, now),
+        "residential_price_rebased": residential_price_rebased,
+        "residential_rent_rebased": residential_rent_rebased,
         "hkma_mortgage_rate_mix": hkma_rows,
         "hkma_ltv_history": hkma_ltv_rows,
         "hkma_credit_quality_history": hkma_credit_quality_rows,
@@ -1092,6 +1341,147 @@ def build_artifact(
             "maxRows": 1_000,
         },
     ]
+
+    # Stage 1 chart family: keep price and rent as separate rebased views,
+    # then expose source-owned raw histories below them for inspection.
+    if residential_price_rebased:
+        charts.append(
+            {
+                "id": "residential_price_rebased_chart",
+                "title": "Residential Price Regime — Five-year comparison",
+                "subtitle": "CCL, MHPI, CCI and EPI are each rebased to 100 at the first available month; use the raw source charts for publisher levels.",
+                "type": "line",
+                "intent": "comparison",
+                "dataset": "residential_price_rebased",
+                "sourceId": "cross_source",
+                "encodings": {
+                    "x": {"field": "date", "type": "temporal", "label": "Month"},
+                    "y": {"field": "value", "type": "quantitative", "label": "Rebased price index"},
+                    "color": {"field": "series", "type": "nominal", "label": "Series"},
+                },
+                "valueFormat": "number",
+                "layout": "full",
+                "maxRows": 500,
+                "comparisonContext": {"grain": "month", "normalization": "First available month = 100", "assetClass": "residential price"},
+            }
+        )
+    if residential_rent_rebased:
+        charts.append(
+            {
+                "id": "residential_rent_rebased_chart",
+                "title": "Residential Rent Regime — Five-year comparison",
+                "subtitle": "CRI, RVD rent and ERI are rebased separately from prices; raw levels and rental yield remain available below.",
+                "type": "line",
+                "intent": "comparison",
+                "dataset": "residential_rent_rebased",
+                "sourceId": "cross_source",
+                "encodings": {
+                    "x": {"field": "date", "type": "temporal", "label": "Month"},
+                    "y": {"field": "value", "type": "quantitative", "label": "Rebased rent index"},
+                    "color": {"field": "series", "type": "nominal", "label": "Series"},
+                },
+                "valueFormat": "number",
+                "layout": "full",
+                "maxRows": 500,
+                "comparisonContext": {"grain": "month", "normalization": "First available month = 100", "assetClass": "residential rent"},
+            }
+        )
+    if cci_rows:
+        charts.append(
+            {
+                "id": "cci_trend",
+                "title": "Centaline CCI — Residential price index",
+                "subtitle": "Monthly overall CCI history; CCI is a price index, not a sentiment measure.",
+                "type": "line",
+                "intent": "trend",
+                "dataset": "cci_history",
+                "sourceId": "centaline_cci",
+                "encodings": {"x": {"field": "date", "type": "temporal", "label": "Month"}, "y": {"field": "value", "type": "quantitative", "label": "Index"}},
+                "valueFormat": "number",
+                "layout": "half",
+                "maxRows": 500,
+            }
+        )
+    if cri_rows:
+        charts.append(
+            {
+                "id": "cri_trend",
+                "title": "Centaline CRI — Residential rental index",
+                "subtitle": "Monthly overall CRI history from the normalized Centaline contract.",
+                "type": "line",
+                "intent": "trend",
+                "dataset": "cri_history",
+                "sourceId": "centaline_cri",
+                "encodings": {"x": {"field": "date", "type": "temporal", "label": "Month"}, "y": {"field": "value", "type": "quantitative", "label": "Rental index"}},
+                "valueFormat": "number",
+                "layout": "half",
+                "maxRows": 500,
+            }
+        )
+    if cri_yield_rows:
+        charts.append(
+            {
+                "id": "cri_yield_trend",
+                "title": "Centaline CRI rental yield",
+                "subtitle": "Monthly rental-yield companion series; this is not a rent level.",
+                "type": "line",
+                "intent": "trend",
+                "dataset": "cri_yield_history",
+                "sourceId": "centaline_cri",
+                "encodings": {"x": {"field": "date", "type": "temporal", "label": "Month"}, "y": {"field": "value", "type": "quantitative", "label": "Yield (%)"}},
+                "valueFormat": "number",
+                "layout": "half",
+                "maxRows": 500,
+            }
+        )
+    if csi_rows:
+        charts.append(
+            {
+                "id": "csi_trend",
+                "title": "Centaline CSI — Market sentiment",
+                "subtitle": "Weekly sentiment history; the historical payload currently exposes residential price/rent sentiment fields.",
+                "type": "line",
+                "intent": "trend",
+                "dataset": "csi_history",
+                "sourceId": "centaline_csi",
+                "encodings": {"x": {"field": "date", "type": "temporal", "label": "Week"}, "y": {"field": "value", "type": "quantitative", "label": "Sentiment index"}, "color": {"field": "series", "type": "nominal", "label": "Measure"}},
+                "valueFormat": "number",
+                "layout": "full",
+                "maxRows": 1_500,
+            }
+        )
+    if rvd_office_rows:
+        charts.append(
+            {
+                "id": "rvd_office_trend",
+                "title": "Commercial Property — RVD office rental",
+                "subtitle": "Monthly private office rental indices by grade; provisional observations remain flagged in the dataset.",
+                "type": "line",
+                "intent": "comparison",
+                "dataset": "rvd_office_history",
+                "sourceId": "rvd_office",
+                "encodings": {"x": {"field": "date", "type": "temporal", "label": "Month"}, "y": {"field": "value", "type": "quantitative", "label": "Rental index"}, "color": {"field": "series", "type": "nominal", "label": "Grade"}},
+                "valueFormat": "number",
+                "layout": "full",
+                "maxRows": 2_000,
+            }
+        )
+    if rvd_retail_rows:
+        charts.append(
+            {
+                "id": "rvd_retail_trend",
+                "title": "Commercial Property — RVD retail rental / price",
+                "subtitle": "Monthly private retail rental and price indices; provisional observations remain flagged in the dataset.",
+                "type": "line",
+                "intent": "comparison",
+                "dataset": "rvd_retail_history",
+                "sourceId": "rvd_retail",
+                "encodings": {"x": {"field": "date", "type": "temporal", "label": "Month"}, "y": {"field": "value", "type": "quantitative", "label": "Index"}, "color": {"field": "series", "type": "nominal", "label": "Measure / segment"}},
+                "valueFormat": "number",
+                "layout": "full",
+                "maxRows": 1_000,
+            }
+        )
 
     if hkma_rows:
         charts.append(
@@ -1509,10 +1899,36 @@ def build_artifact(
                 "This is a published snapshot, not a live connection. RVD observations marked provisional may be revised."
             ),
         },
+        {
+            "id": "market_regime_intro",
+            "type": "markdown",
+            "body": "## Market Regime Overview\n\nTime-series first: compare residential prices, rents, activity, credit, supply and commercial property without treating a snapshot as a trend.",
+        },
         {"id": "market_pulse", "type": "metric-strip", "cardIds": [card["id"] for card in cards]},
+    ]
+    if residential_price_rebased:
+        blocks.append({"id": "residential_price_regime_block", "type": "chart", "chartId": "residential_price_rebased_chart"})
+    if residential_rent_rebased:
+        blocks.append({"id": "residential_rent_regime_block", "type": "chart", "chartId": "residential_rent_rebased_chart"})
+    blocks.append({"id": "residential_sources_section", "type": "markdown", "body": "## Residential source histories\n\nRaw publisher levels and sentiment remain separate from the rebased regime views above."})
+    blocks.extend([
         {"id": "ccl_chart", "type": "chart", "chartId": "ccl_trend", "layout": "half"},
         {"id": "mhpi_chart", "type": "chart", "chartId": "mhpi_trend", "layout": "half"},
-    ]
+    ])
+    if cci_rows:
+        blocks.append({"id": "cci_chart_block", "type": "chart", "chartId": "cci_trend", "layout": "half"})
+    if cri_rows:
+        blocks.append({"id": "cri_chart_block", "type": "chart", "chartId": "cri_trend", "layout": "half"})
+    if cri_yield_rows:
+        blocks.append({"id": "cri_yield_chart_block", "type": "chart", "chartId": "cri_yield_trend", "layout": "half"})
+    if csi_rows:
+        blocks.append({"id": "csi_chart_block", "type": "chart", "chartId": "csi_trend", "layout": "half"})
+    blocks.extend([
+        {"id": "rvd_price_chart", "type": "chart", "chartId": "rvd_trend", "layout": "half"},
+        {"id": "rvd_rent_chart", "type": "chart", "chartId": "rvd_rent_trend", "layout": "half"},
+        {"id": "confidence_chart", "type": "chart", "chartId": "confidence_trend"},
+    ])
+    blocks.append({"id": "activity_financing_section", "type": "markdown", "body": "## Activity & financing\n\nTransactions, mortgage applications, loan amounts and credit quality are shown as separate compatible time series."})
     if hkma_rows:
         blocks.append({"id": "hkma_mortgage_chart_block", "type": "chart", "chartId": "hkma_mortgage_rate_mix_chart"})
     if cnsd_const_rows:
@@ -1529,12 +1945,11 @@ def build_artifact(
     if hkma_activity_rows:
         blocks.append({"id": "hkma_mortgage_activity_table_block", "type": "table", "tableId": "hkma_mortgage_activity_table"})
 
-    blocks.extend([
-        {"id": "rvd_price_chart", "type": "chart", "chartId": "rvd_trend", "layout": "half"},
-        {"id": "rvd_rent_chart", "type": "chart", "chartId": "rvd_rent_trend", "layout": "half"},
-        {"id": "rebased_chart", "type": "chart", "chartId": "rebased_trend"},
-        {"id": "confidence_chart", "type": "chart", "chartId": "confidence_trend"},
-    ])
+    blocks.append({"id": "supply_commercial_section", "type": "markdown", "body": "## Supply & commercial property\n\nSupply history and official office/retail rent series are separate from residential price and rent levels."})
+    if rvd_office_rows:
+        blocks.append({"id": "rvd_office_chart_block", "type": "chart", "chartId": "rvd_office_trend"})
+    if rvd_retail_rows:
+        blocks.append({"id": "rvd_retail_chart_block", "type": "chart", "chartId": "rvd_retail_trend"})
 
     if epi_eri_rows:
         blocks.append({"id": "epi_eri_chart_block", "type": "chart", "chartId": "epi_eri_chart"})
@@ -1635,6 +2050,22 @@ def _load_midland_fallback_from_committed_artifact(dataset_key: str, value_colum
     return pd.DataFrame({"date": [r["date"] for r in rows], value_column: [r["value"] for r in rows]})
 
 
+def _load_normalized_or_fetch(dataset_name: str, label: str, fetch_fn) -> pd.DataFrame:
+    """Prefer durable normalized output, with a bounded live-fetch fallback."""
+    normalized = load_latest_normalized(dataset_name)
+    if not normalized.empty:
+        return normalized
+    return _safe_fetch(label, fetch_fn)
+
+
+def _fetch_centaline_history(index_code: str) -> pd.DataFrame:
+    try:
+        return fetch_centaline_index_bundle(index_code)[0]
+    except Exception as exc:  # noqa: BLE001
+        print(f"  [hk_real_estate] Centaline {index_code} fetch failed, continuing without it: {exc}", file=sys.stderr)
+        return pd.DataFrame()
+
+
 def fetch_live_frames() -> dict[str, pd.DataFrame]:
     if os.environ.get(SKIP_MIDLAND_ENV_VAR):
         # Midland's WAF blocks GitHub Actions' datacenter IP range (confirmed
@@ -1653,6 +2084,12 @@ def fetch_live_frames() -> dict[str, pd.DataFrame]:
     else:
         mhpi, confidence, estates = run_midland_ingestion()
     rvd_price, rvd_rent = run_rvd_ingestion()
+    cci = _load_normalized_or_fetch("centaline_cci_monthly", "Centaline CCI", lambda: _fetch_centaline_history("CCI"))
+    cri = _load_normalized_or_fetch("centaline_cri_monthly", "Centaline CRI", lambda: _fetch_centaline_history("CRI"))
+    cri_yield = _load_normalized_or_fetch("centaline_cri_yield_monthly", "Centaline CRI yield", lambda: _fetch_centaline_history("CRI"))
+    csi = _load_normalized_or_fetch("centaline_csi_weekly", "Centaline CSI", lambda: _fetch_centaline_history("CSI"))
+    rvd_office = _load_normalized_or_fetch("rvd_office_rental_index_monthly", "RVD office rental", fetch_rvd_office_rental_index)
+    rvd_retail = _load_normalized_or_fetch("rvd_retail_index_monthly", "RVD retail rental", fetch_rvd_retail_rental_index)
     agency_frames = []
     for label, fetch_fn in (
         ("28Hse transactions", fetch_28hse_transaction_pilot),
@@ -1669,6 +2106,12 @@ def fetch_live_frames() -> dict[str, pd.DataFrame]:
         "confidence": confidence,
         "rvd_price": rvd_price,
         "rvd_rent": rvd_rent,
+        "centaline_cci": cci,
+        "centaline_cri": cri,
+        "centaline_cri_yield": cri_yield,
+        "centaline_csi": csi,
+        "rvd_office": rvd_office,
+        "rvd_retail": rvd_retail,
         "midland_estates": estates,
         "unified_tx": unified_tx,
         "bd_supply_history": load_latest_normalized("bd_supply_pipeline_history"),
@@ -1684,7 +2127,16 @@ def main() -> int:
     live_frames = fetch_live_frames()
     unified_tx = live_frames.pop("unified_tx", pd.DataFrame())
     bd_supply_history = live_frames.pop("bd_supply_history", pd.DataFrame())
-    artifact, status = build_artifact(live_frames, raw_unified_tx=unified_tx, raw_bd_supply_history=bd_supply_history)
+    new_series = {
+        key: live_frames.pop(key, pd.DataFrame())
+        for key in ("centaline_cci", "centaline_cri", "centaline_cri_yield", "centaline_csi", "rvd_office", "rvd_retail")
+    }
+    artifact, status = build_artifact(
+        live_frames,
+        raw_unified_tx=unified_tx,
+        raw_bd_supply_history=bd_supply_history,
+        raw_new_series=new_series,
+    )
     _atomic_json(args.output, artifact)
     _atomic_json(args.status_output, status)
     print(

@@ -63,6 +63,15 @@
       "statusFile": "dashboard-status-hk-telecom.json"
     },
     {
+      "code": "11",
+      "id": "hk-labour-market",
+      "package": "hk_labour_market",
+      "nameEn": "Hong Kong Labour Market & Talent Policy",
+      "nameZh": "香港劳动力市场与人才政策",
+      "builder": "scripts/build_hk_labour_market_artifact.py",
+      "statusFile": "dashboard-status-hk-labour-market.json"
+    },
+    {
       "code": "05",
       "id": "hk-reit",
       "package": "hk_reit",
@@ -88,6 +97,15 @@
       "nameZh": "香港稳定币与加密资产",
       "builder": "scripts/build_hk_stablecoin_crypto_artifact.py",
       "statusFile": "dashboard-status-hk-stablecoin-crypto.json"
+    },
+    {
+      "code": "10",
+      "id": "hk-population-migration",
+      "package": "hk_population_migration",
+      "nameEn": "Hong Kong Population & Migration",
+      "nameZh": "香港人口与迁移流动",
+      "builder": "scripts/build_hk_population_migration_artifact.py",
+      "statusFile": "dashboard-status-hk-population-migration.json"
     }
   ],
   "planned": [

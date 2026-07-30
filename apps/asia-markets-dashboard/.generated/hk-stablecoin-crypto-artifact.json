@@ -6,9 +6,9 @@
     "title": "Hong Kong Stablecoin & Crypto Infrastructure Monitor",
     "description": "HKMA licensed stablecoin issuers, SFC licensed VATP exchanges, HKEX crypto ETF AUM, stablecoin market cap & chain tracking, DEX volume, and market sentiment indicators.",
     "sector": "hk-stablecoin-crypto",
-    "generatedAt": "2026-07-30T08:50:04Z",
+    "generatedAt": "2026-07-30T23:25:13Z",
     "dataAsOf": "2026-07-30",
-    "liveSourcesCount": 6,
+    "liveSourcesCount": 4,
     "totalSourcesCount": 7,
     "cards": [
       {
@@ -106,16 +106,16 @@
       },
       {
         "id": "stablecoin_history_chart",
-        "title": "1-Year Global Total Stablecoin Circulating Supply ($B USD)",
-        "subtitle": "Historical global pegged asset circulating market cap expansion/contraction time series via DefiLlama.",
+        "title": "Global Total Stablecoin Circulating Supply ($B USD)",
+        "subtitle": "Monthly average of daily global pegged-asset circulating market-cap history via DefiLlama; latest ten years of available history by default.",
         "type": "line",
         "dataset": "stablecoin_history",
         "sourceId": "defillama",
         "encodings": {
           "x": {
-            "field": "date",
+            "field": "month",
             "type": "temporal",
-            "label": "Date"
+            "label": "Month"
           },
           "y": {
             "field": "circulating_usd_bn",
@@ -150,16 +150,16 @@
       },
       {
         "id": "dex_volume_history_chart",
-        "title": "1-Year Global Daily DEX Trading Volume ($B USD/day)",
-        "subtitle": "Daily global decentralized exchange trading volume time series via DefiLlama.",
+        "title": "Global Daily DEX Trading Volume ($B USD/day)",
+        "subtitle": "Monthly average of daily global decentralized-exchange trading-volume history via DefiLlama; latest ten years of available history by default.",
         "type": "line",
         "dataset": "dex_volume_history",
         "sourceId": "defillama",
         "encodings": {
           "x": {
-            "field": "date",
+            "field": "month",
             "type": "temporal",
-            "label": "Date"
+            "label": "Month"
           },
           "y": {
             "field": "dex_volume_usd_bn",
@@ -172,16 +172,16 @@
       },
       {
         "id": "fear_greed_history_chart",
-        "title": "1-Year Crypto Fear & Greed Index (Alternative.me)",
-        "subtitle": "Daily Crypto Fear & Greed Index score time series (0=Extreme Fear, 100=Extreme Greed) sourced from Alternative.me (https://alternative.me/crypto/fear-and-greed-index/).",
+        "title": "Crypto Fear & Greed Index (Alternative.me)",
+        "subtitle": "Monthly average of the daily Crypto Fear & Greed Index score (0=Extreme Fear, 100=Extreme Greed) sourced from Alternative.me; latest ten years of available history by default.",
         "type": "line",
         "dataset": "fear_greed_history",
         "sourceId": "fear_greed",
         "encodings": {
           "x": {
-            "field": "date",
+            "field": "month",
             "type": "temporal",
-            "label": "Date"
+            "label": "Month"
           },
           "y": {
             "field": "score",
@@ -194,16 +194,16 @@
       },
       {
         "id": "btc_price_history_chart",
-        "title": "1-Year BTC Spot Price Trend ($ USD)",
-        "subtitle": "Daily Bitcoin close price 365-day time series via Binance.",
+        "title": "BTC Spot Price Trend ($ USD)",
+        "subtitle": "Monthly closing price from daily Bitcoin observations via Binance; latest ten years of available history by default.",
         "type": "line",
         "dataset": "btc_price_history",
         "sourceId": "coinbase_binance",
         "encodings": {
           "x": {
-            "field": "date",
+            "field": "month",
             "type": "temporal",
-            "label": "Date"
+            "label": "Month"
           },
           "y": {
             "field": "btc_price_usd",
@@ -466,7 +466,7 @@
           "url": "https://api.exchange.coinbase.com/products/BTC-USD/ticker",
           "language": "JSON",
           "sql": "SELECT price_usd, volume_24h, premium_bps FROM crypto_tickers;",
-          "description": "Real-time BTC spot price, 1-year price history, and Coinbase Premium spread."
+          "description": "Real-time BTC spot price, long-run price history, and Coinbase Premium spread."
         }
       },
       {
@@ -500,7 +500,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**Data snapshot:** `8387a00bda9be15c` · generated 2026-07-30T08:50:04Z.  Official HKMA & SFC regulatory registers and market tracking data."
+        "body": "**Data snapshot:** `17ff406aa413ef22` · generated 2026-07-30T23:25:13Z.  Official HKMA & SFC regulatory registers and market tracking data."
       },
       {
         "id": "kpi_grid",
@@ -557,7 +557,13 @@
         "id": "fear_greed_chart_block",
         "type": "chart",
         "chartId": "fear_greed_history_chart",
-        "layout": "full"
+        "layout": "half"
+      },
+      {
+        "id": "btc_price_chart_block",
+        "type": "chart",
+        "chartId": "btc_price_history_chart",
+        "layout": "half"
       },
       {
         "id": "polymarket_table_block",
@@ -572,223 +578,29 @@
       {
         "id": "methodology",
         "type": "markdown",
-        "body": "## Reading the Stablecoin & Crypto Infrastructure Monitor\n\nHong Kong's crypto ecosystem is anchored by official regulatory registers: HKMA stablecoin issuer sandbox licensees (Anchorpoint FRS01, HSBC FRS02) and SFC licensed VATP exchange operators (OSL, HashKey). Brokers (e.g. Guotai Junan International 01788.HK) hold dealing permissions but are NOT VATP exchange operators; Anchorpoint (HKD-pegged HKDAP) is distinct from AnchorX (Jinyong Investment 01328.HK, AxCNH). This monitor tracks regulatory registers, HKEX ETF AUM time series, global stablecoin circulating supply trends, blockchain chain distribution, global DEX trading volume, 1-year Crypto Fear & Greed Index (Alternative.me), 1-year BTC price trends, and tag-filtered Polymarket regulatory catalysts. No investment recommendation is produced."
+        "body": "## Reading the Stablecoin & Crypto Infrastructure Monitor\n\nHong Kong's crypto ecosystem is anchored by official regulatory registers: HKMA stablecoin issuer sandbox licensees (Anchorpoint FRS01, HSBC FRS02) and SFC licensed VATP exchange operators (OSL, HashKey). Brokers (e.g. Guotai Junan International 01788.HK) hold dealing permissions but are NOT VATP exchange operators; Anchorpoint (HKD-pegged HKDAP) is distinct from AnchorX (Jinyong Investment 01328.HK, AxCNH). This monitor tracks regulatory registers, HKEX ETF AUM time series, global stablecoin circulating supply trends, blockchain chain distribution, global DEX trading volume, long-run Crypto Fear & Greed Index (Alternative.me), long-run BTC price trends, and tag-filtered Polymarket regulatory catalysts. No investment recommendation is produced."
       }
     ]
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-30T08:50:04Z",
+    "generatedAt": "2026-07-30T23:25:13Z",
     "status": "ready",
     "datasets": {
-      "hkma_issuers": [
-        {
-          "issuer": "Anchorpoint Financial Limited",
-          "licence_number": "FRS01",
-          "effective_date": "10/04/2026",
-          "status": "Sandbox Licensed"
-        },
-        {
-          "issuer": "The Hongkong and Shanghai Banking Corporation Limited",
-          "licence_number": "FRS02",
-          "effective_date": "10/04/2026",
-          "status": "Sandbox Licensed"
-        }
-      ],
-      "sfc_vatps": [
-        {
-          "platform_name": "OSL Digital Securities Limited",
-          "status": "Licensed",
-          "licensed_date": "15/12/2020"
-        },
-        {
-          "platform_name": "Hash Blockchain Limited",
-          "status": "Licensed",
-          "licensed_date": "09/11/2022"
-        },
-        {
-          "platform_name": "Hong Kong Virtual Asset Exchange Limited",
-          "status": "Licensed",
-          "licensed_date": "03/10/2024"
-        },
-        {
-          "platform_name": "Hong Kong Digital Asset EX Limited",
-          "status": "Licensed",
-          "licensed_date": "18/12/2024"
-        },
-        {
-          "platform_name": "Accumulus GBA Technology (Hongkong) Co., Limited",
-          "status": "Licensed",
-          "licensed_date": "18/12/2024"
-        },
-        {
-          "platform_name": "DFX Labs Company Limited",
-          "status": "Licensed",
-          "licensed_date": "18/12/2024"
-        },
-        {
-          "platform_name": "EXIO Limited",
-          "status": "Licensed",
-          "licensed_date": "18/12/2024"
-        },
-        {
-          "platform_name": "Panthertrade (Hong Kong) Limited",
-          "status": "Licensed",
-          "licensed_date": "27/01/2025"
-        },
-        {
-          "platform_name": "YAX (Hong Kong) Limited",
-          "status": "Licensed",
-          "licensed_date": "27/01/2025"
-        },
-        {
-          "platform_name": "Bullish HK Markets Limited",
-          "status": "Licensed",
-          "licensed_date": "18/02/2025"
-        },
-        {
-          "platform_name": "Hong Kong BGE Limited",
-          "status": "Licensed",
-          "licensed_date": "17/06/2025"
-        },
-        {
-          "platform_name": "Victory Fintech Company Limited",
-          "status": "Licensed",
-          "licensed_date": "13/02/2026"
-        },
-        {
-          "platform_name": "NewBX Limited",
-          "status": "Licensed",
-          "licensed_date": "18/05/2026"
-        },
-        {
-          "platform_name": "HighBlock Limited",
-          "status": "Pending",
-          "licensed_date": "06/02/2024"
-        },
-        {
-          "platform_name": "Foris DAX HK Limited^",
-          "status": "Pending",
-          "licensed_date": "09/02/2024"
-        },
-        {
-          "platform_name": "Whalefin Markets Limited^",
-          "status": "Pending",
-          "licensed_date": "21/02/2024"
-        },
-        {
-          "platform_name": "Flying Hippo Technologies Limited^#",
-          "status": "Pending",
-          "licensed_date": "26/02/2024"
-        },
-        {
-          "platform_name": "Nebulas Hong Kong Limited",
-          "status": "Pending",
-          "licensed_date": "25/10/2024"
-        },
-        {
-          "platform_name": "Spark Fintech Limited",
-          "status": "Pending",
-          "licensed_date": "06/06/2025"
-        },
-        {
-          "platform_name": "AMMBR (HK) LIMITED",
-          "status": "Withdrawn",
-          "licensed_date": "29/09/2023"
-        },
-        {
-          "platform_name": "BitHarbour (Hong Kong) Limited",
-          "status": "Withdrawn",
-          "licensed_date": "11/01/2024"
-        },
-        {
-          "platform_name": "Meex Digital Securities Limited",
-          "status": "Withdrawn",
-          "licensed_date": "12/10/2023"
-        },
-        {
-          "platform_name": "HBGL Hong Kong Limited",
-          "status": "Withdrawn",
-          "licensed_date": "20/02/2024"
-        },
-        {
-          "platform_name": "BX SERVICES LIMITED",
-          "status": "Withdrawn",
-          "licensed_date": "04/01/2024"
-        },
-        {
-          "platform_name": "Willows Asia Technology Company Limited",
-          "status": "Withdrawn",
-          "licensed_date": "22/02/2024"
-        },
-        {
-          "platform_name": "QuanX Lab Limited",
-          "status": "Withdrawn",
-          "licensed_date": "29/02/2024"
-        },
-        {
-          "platform_name": "HBGL Hong Kong Limited",
-          "status": "Withdrawn",
-          "licensed_date": "26/02/2024"
-        },
-        {
-          "platform_name": "Gate Digital Limited",
-          "status": "Withdrawn",
-          "licensed_date": "28/02/2024"
-        },
-        {
-          "platform_name": "OKX Hong Kong FinTech Company Limited",
-          "status": "Withdrawn",
-          "licensed_date": "16/11/2023"
-        },
-        {
-          "platform_name": "Hong Kong VAEXC Limited",
-          "status": "Withdrawn",
-          "licensed_date": "25/11/2023"
-        },
-        {
-          "platform_name": "Spark Fintech Limited",
-          "status": "Withdrawn",
-          "licensed_date": "31/01/2024"
-        },
-        {
-          "platform_name": "hi5 (Hong Kong) Limited",
-          "status": "Withdrawn",
-          "licensed_date": "29/02/2024"
-        },
-        {
-          "platform_name": "Hong Kong Digital Asset Xchange Limited",
-          "status": "Withdrawn",
-          "licensed_date": "27/08/2024"
-        },
-        {
-          "platform_name": "Bitcoin World Technology Limited",
-          "status": "Withdrawn",
-          "licensed_date": "17/05/2024"
-        },
-        {
-          "platform_name": "Bitcoin World Technology Limited",
-          "status": "Withdrawn",
-          "licensed_date": "10/06/2025"
-        },
-        {
-          "platform_name": "Spread Technologies Hong Kong Limited",
-          "status": "Withdrawn",
-          "licensed_date": "27/06/2025"
-        }
-      ],
+      "hkma_issuers": [],
+      "sfc_vatps": [],
       "stablecoin_supplies": [
         {
           "name": "Tether",
           "symbol": "USDT",
-          "circulating_usd_bn": 183.65,
-          "market_share_pct": 59.76
+          "circulating_usd_bn": 183.27,
+          "market_share_pct": 59.73
         },
         {
           "name": "USD Coin",
           "symbol": "USDC",
-          "circulating_usd_bn": 72.16,
-          "market_share_pct": 23.48
+          "circulating_usd_bn": 72.06,
+          "market_share_pct": 23.49
         },
         {
           "name": "Sky Dollar",
@@ -805,1510 +617,575 @@
         {
           "name": "World Liberty Financial USD",
           "symbol": "USD1",
-          "circulating_usd_bn": 4.04,
+          "circulating_usd_bn": 4.02,
           "market_share_pct": 1.31
         },
         {
           "name": "Ethena USDe",
           "symbol": "USDe",
-          "circulating_usd_bn": 3.85,
-          "market_share_pct": 1.25
+          "circulating_usd_bn": 3.87,
+          "market_share_pct": 1.26
         },
         {
           "name": "Global Dollar",
           "symbol": "USDG",
-          "circulating_usd_bn": 3.29,
-          "market_share_pct": 1.07
+          "circulating_usd_bn": 3.31,
+          "market_share_pct": 1.08
         },
         {
           "name": "Circle USYC",
           "symbol": "USYC",
-          "circulating_usd_bn": 3.0,
+          "circulating_usd_bn": 3.01,
           "market_share_pct": 0.98
-        },
-        {
-          "name": "PayPal USD",
-          "symbol": "PYUSD",
-          "circulating_usd_bn": 2.67,
-          "market_share_pct": 0.87
         },
         {
           "name": "BlackRock USD",
           "symbol": "BUIDL",
           "circulating_usd_bn": 2.67,
           "market_share_pct": 0.87
+        },
+        {
+          "name": "PayPal USD",
+          "symbol": "PYUSD",
+          "circulating_usd_bn": 2.66,
+          "market_share_pct": 0.87
         }
       ],
       "stablecoin_history": [
         {
-          "date": "2025-07-31",
-          "circulating_usd_bn": 265.16
+          "date": "2017-11-01",
+          "month": "2017-11",
+          "circulating_usd_bn": 0.0
+        },
+        {
+          "date": "2017-12-01",
+          "month": "2017-12",
+          "circulating_usd_bn": 0.0
+        },
+        {
+          "date": "2018-01-01",
+          "month": "2018-01",
+          "circulating_usd_bn": 0.02
+        },
+        {
+          "date": "2018-02-01",
+          "month": "2018-02",
+          "circulating_usd_bn": 0.06
+        },
+        {
+          "date": "2018-03-01",
+          "month": "2018-03",
+          "circulating_usd_bn": 0.06
+        },
+        {
+          "date": "2018-04-01",
+          "month": "2018-04",
+          "circulating_usd_bn": 0.06
+        },
+        {
+          "date": "2018-05-01",
+          "month": "2018-05",
+          "circulating_usd_bn": 0.06
+        },
+        {
+          "date": "2018-06-01",
+          "month": "2018-06",
+          "circulating_usd_bn": 0.06
+        },
+        {
+          "date": "2018-07-01",
+          "month": "2018-07",
+          "circulating_usd_bn": 0.06
+        },
+        {
+          "date": "2018-08-01",
+          "month": "2018-08",
+          "circulating_usd_bn": 0.02
+        },
+        {
+          "date": "2018-09-01",
+          "month": "2018-09",
+          "circulating_usd_bn": 0.03
+        },
+        {
+          "date": "2018-10-01",
+          "month": "2018-10",
+          "circulating_usd_bn": 0.13
+        },
+        {
+          "date": "2018-11-01",
+          "month": "2018-11",
+          "circulating_usd_bn": 0.31
+        },
+        {
+          "date": "2018-12-01",
+          "month": "2018-12",
+          "circulating_usd_bn": 0.39
+        },
+        {
+          "date": "2019-01-01",
+          "month": "2019-01",
+          "circulating_usd_bn": 0.66
+        },
+        {
+          "date": "2019-02-01",
+          "month": "2019-02",
+          "circulating_usd_bn": 0.61
+        },
+        {
+          "date": "2019-03-01",
+          "month": "2019-03",
+          "circulating_usd_bn": 0.62
+        },
+        {
+          "date": "2019-04-01",
+          "month": "2019-04",
+          "circulating_usd_bn": 0.77
+        },
+        {
+          "date": "2019-05-01",
+          "month": "2019-05",
+          "circulating_usd_bn": 1.16
+        },
+        {
+          "date": "2019-06-01",
+          "month": "2019-06",
+          "circulating_usd_bn": 1.54
+        },
+        {
+          "date": "2019-07-01",
+          "month": "2019-07",
+          "circulating_usd_bn": 2.17
+        },
+        {
+          "date": "2019-08-01",
+          "month": "2019-08",
+          "circulating_usd_bn": 2.45
+        },
+        {
+          "date": "2019-09-01",
+          "month": "2019-09",
+          "circulating_usd_bn": 2.76
+        },
+        {
+          "date": "2019-10-01",
+          "month": "2019-10",
+          "circulating_usd_bn": 3.17
+        },
+        {
+          "date": "2019-11-01",
+          "month": "2019-11",
+          "circulating_usd_bn": 3.62
+        },
+        {
+          "date": "2019-12-01",
+          "month": "2019-12",
+          "circulating_usd_bn": 3.99
+        },
+        {
+          "date": "2020-01-01",
+          "month": "2020-01",
+          "circulating_usd_bn": 5.17
+        },
+        {
+          "date": "2020-02-01",
+          "month": "2020-02",
+          "circulating_usd_bn": 5.22
+        },
+        {
+          "date": "2020-03-01",
+          "month": "2020-03",
+          "circulating_usd_bn": 5.36
+        },
+        {
+          "date": "2020-04-01",
+          "month": "2020-04",
+          "circulating_usd_bn": 7.76
+        },
+        {
+          "date": "2020-05-01",
+          "month": "2020-05",
+          "circulating_usd_bn": 10.02
+        },
+        {
+          "date": "2020-06-01",
+          "month": "2020-06",
+          "circulating_usd_bn": 11.0
+        },
+        {
+          "date": "2020-07-01",
+          "month": "2020-07",
+          "circulating_usd_bn": 11.91
+        },
+        {
+          "date": "2020-08-01",
+          "month": "2020-08",
+          "circulating_usd_bn": 14.66
+        },
+        {
+          "date": "2020-09-01",
+          "month": "2020-09",
+          "circulating_usd_bn": 17.69
+        },
+        {
+          "date": "2020-10-01",
+          "month": "2020-10",
+          "circulating_usd_bn": 20.12
+        },
+        {
+          "date": "2020-11-01",
+          "month": "2020-11",
+          "circulating_usd_bn": 22.33
+        },
+        {
+          "date": "2020-12-01",
+          "month": "2020-12",
+          "circulating_usd_bn": 25.36
+        },
+        {
+          "date": "2021-01-01",
+          "month": "2021-01",
+          "circulating_usd_bn": 32.64
+        },
+        {
+          "date": "2021-02-01",
+          "month": "2021-02",
+          "circulating_usd_bn": 44.72
+        },
+        {
+          "date": "2021-03-01",
+          "month": "2021-03",
+          "circulating_usd_bn": 57.65
+        },
+        {
+          "date": "2021-04-01",
+          "month": "2021-04",
+          "circulating_usd_bn": 75.02
+        },
+        {
+          "date": "2021-05-01",
+          "month": "2021-05",
+          "circulating_usd_bn": 95.37
+        },
+        {
+          "date": "2021-06-01",
+          "month": "2021-06",
+          "circulating_usd_bn": 108.18
+        },
+        {
+          "date": "2021-07-01",
+          "month": "2021-07",
+          "circulating_usd_bn": 112.07
+        },
+        {
+          "date": "2021-08-01",
+          "month": "2021-08",
+          "circulating_usd_bn": 115.64
+        },
+        {
+          "date": "2021-09-01",
+          "month": "2021-09",
+          "circulating_usd_bn": 123.77
+        },
+        {
+          "date": "2021-10-01",
+          "month": "2021-10",
+          "circulating_usd_bn": 129.07
+        },
+        {
+          "date": "2021-11-01",
+          "month": "2021-11",
+          "circulating_usd_bn": 141.48
+        },
+        {
+          "date": "2021-12-01",
+          "month": "2021-12",
+          "circulating_usd_bn": 156.96
+        },
+        {
+          "date": "2022-01-01",
+          "month": "2022-01",
+          "circulating_usd_bn": 169.24
+        },
+        {
+          "date": "2022-02-01",
+          "month": "2022-02",
+          "circulating_usd_bn": 179.27
+        },
+        {
+          "date": "2022-03-01",
+          "month": "2022-03",
+          "circulating_usd_bn": 184.85
+        },
+        {
+          "date": "2022-04-01",
+          "month": "2022-04",
+          "circulating_usd_bn": 186.46
+        },
+        {
+          "date": "2022-05-01",
+          "month": "2022-05",
+          "circulating_usd_bn": 168.07
+        },
+        {
+          "date": "2022-06-01",
+          "month": "2022-06",
+          "circulating_usd_bn": 156.21
+        },
+        {
+          "date": "2022-07-01",
+          "month": "2022-07",
+          "circulating_usd_bn": 152.87
+        },
+        {
+          "date": "2022-08-01",
+          "month": "2022-08",
+          "circulating_usd_bn": 152.65
+        },
+        {
+          "date": "2022-09-01",
+          "month": "2022-09",
+          "circulating_usd_bn": 151.77
+        },
+        {
+          "date": "2022-10-01",
+          "month": "2022-10",
+          "circulating_usd_bn": 146.85
+        },
+        {
+          "date": "2022-11-01",
+          "month": "2022-11",
+          "circulating_usd_bn": 144.56
+        },
+        {
+          "date": "2022-12-01",
+          "month": "2022-12",
+          "circulating_usd_bn": 139.83
+        },
+        {
+          "date": "2023-01-01",
+          "month": "2023-01",
+          "circulating_usd_bn": 136.94
+        },
+        {
+          "date": "2023-02-01",
+          "month": "2023-02",
+          "circulating_usd_bn": 136.11
+        },
+        {
+          "date": "2023-03-01",
+          "month": "2023-03",
+          "circulating_usd_bn": 133.37
+        },
+        {
+          "date": "2023-04-01",
+          "month": "2023-04",
+          "circulating_usd_bn": 131.12
+        },
+        {
+          "date": "2023-05-01",
+          "month": "2023-05",
+          "circulating_usd_bn": 129.91
+        },
+        {
+          "date": "2023-06-01",
+          "month": "2023-06",
+          "circulating_usd_bn": 128.49
+        },
+        {
+          "date": "2023-07-01",
+          "month": "2023-07",
+          "circulating_usd_bn": 126.65
+        },
+        {
+          "date": "2023-08-01",
+          "month": "2023-08",
+          "circulating_usd_bn": 124.41
+        },
+        {
+          "date": "2023-09-01",
+          "month": "2023-09",
+          "circulating_usd_bn": 124.41
+        },
+        {
+          "date": "2023-10-01",
+          "month": "2023-10",
+          "circulating_usd_bn": 124.14
+        },
+        {
+          "date": "2023-11-01",
+          "month": "2023-11",
+          "circulating_usd_bn": 126.25
+        },
+        {
+          "date": "2023-12-01",
+          "month": "2023-12",
+          "circulating_usd_bn": 129.39
+        },
+        {
+          "date": "2024-01-01",
+          "month": "2024-01",
+          "circulating_usd_bn": 133.39
+        },
+        {
+          "date": "2024-02-01",
+          "month": "2024-02",
+          "circulating_usd_bn": 137.27
+        },
+        {
+          "date": "2024-03-01",
+          "month": "2024-03",
+          "circulating_usd_bn": 146.02
+        },
+        {
+          "date": "2024-04-01",
+          "month": "2024-04",
+          "circulating_usd_bn": 155.98
+        },
+        {
+          "date": "2024-05-01",
+          "month": "2024-05",
+          "circulating_usd_bn": 160.67
+        },
+        {
+          "date": "2024-06-01",
+          "month": "2024-06",
+          "circulating_usd_bn": 161.85
+        },
+        {
+          "date": "2024-07-01",
+          "month": "2024-07",
+          "circulating_usd_bn": 163.68
+        },
+        {
+          "date": "2024-08-01",
+          "month": "2024-08",
+          "circulating_usd_bn": 167.85
+        },
+        {
+          "date": "2024-09-01",
+          "month": "2024-09",
+          "circulating_usd_bn": 171.94
+        },
+        {
+          "date": "2024-10-01",
+          "month": "2024-10",
+          "circulating_usd_bn": 173.45
+        },
+        {
+          "date": "2024-11-01",
+          "month": "2024-11",
+          "circulating_usd_bn": 183.99
+        },
+        {
+          "date": "2024-12-01",
+          "month": "2024-12",
+          "circulating_usd_bn": 202.63
+        },
+        {
+          "date": "2025-01-01",
+          "month": "2025-01",
+          "circulating_usd_bn": 211.56
+        },
+        {
+          "date": "2025-02-01",
+          "month": "2025-02",
+          "circulating_usd_bn": 225.22
+        },
+        {
+          "date": "2025-03-01",
+          "month": "2025-03",
+          "circulating_usd_bn": 230.53
+        },
+        {
+          "date": "2025-04-01",
+          "month": "2025-04",
+          "circulating_usd_bn": 235.42
+        },
+        {
+          "date": "2025-05-01",
+          "month": "2025-05",
+          "circulating_usd_bn": 243.76
+        },
+        {
+          "date": "2025-06-01",
+          "month": "2025-06",
+          "circulating_usd_bn": 250.04
+        },
+        {
+          "date": "2025-07-01",
+          "month": "2025-07",
+          "circulating_usd_bn": 258.4
         },
         {
           "date": "2025-08-01",
-          "circulating_usd_bn": 265.77
-        },
-        {
-          "date": "2025-08-02",
-          "circulating_usd_bn": 266.0
-        },
-        {
-          "date": "2025-08-03",
-          "circulating_usd_bn": 265.96
-        },
-        {
-          "date": "2025-08-04",
-          "circulating_usd_bn": 266.48
-        },
-        {
-          "date": "2025-08-05",
-          "circulating_usd_bn": 266.81
-        },
-        {
-          "date": "2025-08-06",
-          "circulating_usd_bn": 266.96
-        },
-        {
-          "date": "2025-08-07",
-          "circulating_usd_bn": 267.07
-        },
-        {
-          "date": "2025-08-08",
-          "circulating_usd_bn": 268.2
-        },
-        {
-          "date": "2025-08-09",
-          "circulating_usd_bn": 268.78
-        },
-        {
-          "date": "2025-08-10",
-          "circulating_usd_bn": 269.32
-        },
-        {
-          "date": "2025-08-11",
-          "circulating_usd_bn": 268.7
-        },
-        {
-          "date": "2025-08-12",
-          "circulating_usd_bn": 269.49
-        },
-        {
-          "date": "2025-08-13",
-          "circulating_usd_bn": 270.3
-        },
-        {
-          "date": "2025-08-14",
-          "circulating_usd_bn": 271.77
-        },
-        {
-          "date": "2025-08-15",
-          "circulating_usd_bn": 273.59
-        },
-        {
-          "date": "2025-08-16",
-          "circulating_usd_bn": 274.92
-        },
-        {
-          "date": "2025-08-17",
-          "circulating_usd_bn": 274.86
-        },
-        {
-          "date": "2025-08-18",
-          "circulating_usd_bn": 276.05
-        },
-        {
-          "date": "2025-08-19",
-          "circulating_usd_bn": 276.08
-        },
-        {
-          "date": "2025-08-20",
-          "circulating_usd_bn": 276.04
-        },
-        {
-          "date": "2025-08-21",
-          "circulating_usd_bn": 276.3
-        },
-        {
-          "date": "2025-08-22",
-          "circulating_usd_bn": 275.37
-        },
-        {
-          "date": "2025-08-23",
-          "circulating_usd_bn": 275.25
-        },
-        {
-          "date": "2025-08-24",
-          "circulating_usd_bn": 276.55
-        },
-        {
-          "date": "2025-08-25",
-          "circulating_usd_bn": 276.58
-        },
-        {
-          "date": "2025-08-26",
-          "circulating_usd_bn": 278.46
-        },
-        {
-          "date": "2025-08-27",
-          "circulating_usd_bn": 278.55
-        },
-        {
-          "date": "2025-08-28",
-          "circulating_usd_bn": 279.28
-        },
-        {
-          "date": "2025-08-29",
-          "circulating_usd_bn": 281.69
-        },
-        {
-          "date": "2025-08-30",
-          "circulating_usd_bn": 281.83
-        },
-        {
-          "date": "2025-08-31",
-          "circulating_usd_bn": 282.19
+          "month": "2025-08",
+          "circulating_usd_bn": 273.07
         },
         {
           "date": "2025-09-01",
-          "circulating_usd_bn": 282.94
-        },
-        {
-          "date": "2025-09-02",
-          "circulating_usd_bn": 282.94
-        },
-        {
-          "date": "2025-09-03",
-          "circulating_usd_bn": 282.09
-        },
-        {
-          "date": "2025-09-04",
-          "circulating_usd_bn": 283.93
-        },
-        {
-          "date": "2025-09-05",
-          "circulating_usd_bn": 286.56
-        },
-        {
-          "date": "2025-09-06",
-          "circulating_usd_bn": 285.02
-        },
-        {
-          "date": "2025-09-07",
-          "circulating_usd_bn": 285.06
-        },
-        {
-          "date": "2025-09-08",
-          "circulating_usd_bn": 284.84
-        },
-        {
-          "date": "2025-09-09",
-          "circulating_usd_bn": 285.0
-        },
-        {
-          "date": "2025-09-10",
-          "circulating_usd_bn": 285.49
-        },
-        {
-          "date": "2025-09-11",
-          "circulating_usd_bn": 285.6
-        },
-        {
-          "date": "2025-09-12",
-          "circulating_usd_bn": 286.22
-        },
-        {
-          "date": "2025-09-13",
-          "circulating_usd_bn": 287.6
-        },
-        {
-          "date": "2025-09-14",
-          "circulating_usd_bn": 288.3
-        },
-        {
-          "date": "2025-09-15",
-          "circulating_usd_bn": 288.52
-        },
-        {
-          "date": "2025-09-16",
-          "circulating_usd_bn": 288.83
-        },
-        {
-          "date": "2025-09-17",
-          "circulating_usd_bn": 289.65
-        },
-        {
-          "date": "2025-09-18",
-          "circulating_usd_bn": 289.81
-        },
-        {
-          "date": "2025-09-19",
-          "circulating_usd_bn": 290.95
-        },
-        {
-          "date": "2025-09-20",
-          "circulating_usd_bn": 291.72
-        },
-        {
-          "date": "2025-09-21",
-          "circulating_usd_bn": 291.93
-        },
-        {
-          "date": "2025-09-22",
-          "circulating_usd_bn": 291.77
-        },
-        {
-          "date": "2025-09-23",
-          "circulating_usd_bn": 292.81
-        },
-        {
-          "date": "2025-09-24",
-          "circulating_usd_bn": 293.45
-        },
-        {
-          "date": "2025-09-25",
-          "circulating_usd_bn": 294.47
-        },
-        {
-          "date": "2025-09-26",
-          "circulating_usd_bn": 294.45
-        },
-        {
-          "date": "2025-09-27",
-          "circulating_usd_bn": 295.38
-        },
-        {
-          "date": "2025-09-28",
-          "circulating_usd_bn": 295.63
-        },
-        {
-          "date": "2025-09-29",
-          "circulating_usd_bn": 295.78
-        },
-        {
-          "date": "2025-09-30",
-          "circulating_usd_bn": 296.6
+          "month": "2025-09",
+          "circulating_usd_bn": 289.11
         },
         {
           "date": "2025-10-01",
-          "circulating_usd_bn": 298.0
-        },
-        {
-          "date": "2025-10-02",
-          "circulating_usd_bn": 298.6
-        },
-        {
-          "date": "2025-10-03",
-          "circulating_usd_bn": 299.98
-        },
-        {
-          "date": "2025-10-04",
-          "circulating_usd_bn": 301.57
-        },
-        {
-          "date": "2025-10-05",
-          "circulating_usd_bn": 301.95
-        },
-        {
-          "date": "2025-10-06",
-          "circulating_usd_bn": 301.64
-        },
-        {
-          "date": "2025-10-07",
-          "circulating_usd_bn": 302.28
-        },
-        {
-          "date": "2025-10-08",
-          "circulating_usd_bn": 302.93
-        },
-        {
-          "date": "2025-10-09",
-          "circulating_usd_bn": 303.04
-        },
-        {
-          "date": "2025-10-10",
-          "circulating_usd_bn": 302.77
-        },
-        {
-          "date": "2025-10-11",
-          "circulating_usd_bn": 303.44
-        },
-        {
-          "date": "2025-10-12",
-          "circulating_usd_bn": 303.06
-        },
-        {
-          "date": "2025-10-13",
-          "circulating_usd_bn": 303.12
-        },
-        {
-          "date": "2025-10-14",
-          "circulating_usd_bn": 304.08
-        },
-        {
-          "date": "2025-10-15",
-          "circulating_usd_bn": 305.3
-        },
-        {
-          "date": "2025-10-16",
-          "circulating_usd_bn": 306.17
-        },
-        {
-          "date": "2025-10-17",
-          "circulating_usd_bn": 306.19
-        },
-        {
-          "date": "2025-10-18",
-          "circulating_usd_bn": 306.31
-        },
-        {
-          "date": "2025-10-19",
-          "circulating_usd_bn": 306.32
-        },
-        {
-          "date": "2025-10-20",
-          "circulating_usd_bn": 306.62
-        },
-        {
-          "date": "2025-10-21",
-          "circulating_usd_bn": 306.56
-        },
-        {
-          "date": "2025-10-22",
-          "circulating_usd_bn": 307.83
-        },
-        {
-          "date": "2025-10-23",
-          "circulating_usd_bn": 307.2
-        },
-        {
-          "date": "2025-10-24",
-          "circulating_usd_bn": 307.24
-        },
-        {
-          "date": "2025-10-25",
-          "circulating_usd_bn": 307.84
-        },
-        {
-          "date": "2025-10-26",
-          "circulating_usd_bn": 307.64
-        },
-        {
-          "date": "2025-10-27",
-          "circulating_usd_bn": 307.51
-        },
-        {
-          "date": "2025-10-28",
-          "circulating_usd_bn": 307.14
-        },
-        {
-          "date": "2025-10-29",
-          "circulating_usd_bn": 307.32
-        },
-        {
-          "date": "2025-10-30",
-          "circulating_usd_bn": 306.78
-        },
-        {
-          "date": "2025-10-31",
-          "circulating_usd_bn": 306.54
+          "month": "2025-10",
+          "circulating_usd_bn": 304.61
         },
         {
           "date": "2025-11-01",
-          "circulating_usd_bn": 306.33
-        },
-        {
-          "date": "2025-11-02",
-          "circulating_usd_bn": 306.45
-        },
-        {
-          "date": "2025-11-03",
-          "circulating_usd_bn": 306.42
-        },
-        {
-          "date": "2025-11-04",
-          "circulating_usd_bn": 306.25
-        },
-        {
-          "date": "2025-11-05",
-          "circulating_usd_bn": 305.1
-        },
-        {
-          "date": "2025-11-06",
-          "circulating_usd_bn": 305.15
-        },
-        {
-          "date": "2025-11-07",
-          "circulating_usd_bn": 305.02
-        },
-        {
-          "date": "2025-11-08",
-          "circulating_usd_bn": 305.44
-        },
-        {
-          "date": "2025-11-09",
-          "circulating_usd_bn": 304.94
-        },
-        {
-          "date": "2025-11-10",
-          "circulating_usd_bn": 304.91
-        },
-        {
-          "date": "2025-11-11",
-          "circulating_usd_bn": 305.12
-        },
-        {
-          "date": "2025-11-12",
-          "circulating_usd_bn": 305.23
-        },
-        {
-          "date": "2025-11-13",
-          "circulating_usd_bn": 305.56
-        },
-        {
-          "date": "2025-11-14",
-          "circulating_usd_bn": 304.38
-        },
-        {
-          "date": "2025-11-15",
-          "circulating_usd_bn": 303.69
-        },
-        {
-          "date": "2025-11-16",
-          "circulating_usd_bn": 303.53
-        },
-        {
-          "date": "2025-11-17",
-          "circulating_usd_bn": 303.38
-        },
-        {
-          "date": "2025-11-18",
-          "circulating_usd_bn": 302.89
-        },
-        {
-          "date": "2025-11-19",
-          "circulating_usd_bn": 302.86
-        },
-        {
-          "date": "2025-11-20",
-          "circulating_usd_bn": 302.68
-        },
-        {
-          "date": "2025-11-21",
-          "circulating_usd_bn": 302.46
-        },
-        {
-          "date": "2025-11-22",
-          "circulating_usd_bn": 302.15
-        },
-        {
-          "date": "2025-11-23",
-          "circulating_usd_bn": 302.28
-        },
-        {
-          "date": "2025-11-24",
-          "circulating_usd_bn": 302.06
-        },
-        {
-          "date": "2025-11-25",
-          "circulating_usd_bn": 303.15
-        },
-        {
-          "date": "2025-11-26",
-          "circulating_usd_bn": 303.72
-        },
-        {
-          "date": "2025-11-27",
-          "circulating_usd_bn": 304.7
-        },
-        {
-          "date": "2025-11-28",
-          "circulating_usd_bn": 305.07
-        },
-        {
-          "date": "2025-11-29",
-          "circulating_usd_bn": 305.62
-        },
-        {
-          "date": "2025-11-30",
-          "circulating_usd_bn": 305.65
+          "month": "2025-11",
+          "circulating_usd_bn": 304.41
         },
         {
           "date": "2025-12-01",
-          "circulating_usd_bn": 305.52
-        },
-        {
-          "date": "2025-12-02",
-          "circulating_usd_bn": 306.33
-        },
-        {
-          "date": "2025-12-03",
-          "circulating_usd_bn": 306.9
-        },
-        {
-          "date": "2025-12-04",
-          "circulating_usd_bn": 307.09
-        },
-        {
-          "date": "2025-12-05",
-          "circulating_usd_bn": 307.48
-        },
-        {
-          "date": "2025-12-06",
-          "circulating_usd_bn": 307.78
-        },
-        {
-          "date": "2025-12-07",
-          "circulating_usd_bn": 307.67
-        },
-        {
-          "date": "2025-12-08",
-          "circulating_usd_bn": 307.68
-        },
-        {
-          "date": "2025-12-09",
-          "circulating_usd_bn": 308.12
-        },
-        {
-          "date": "2025-12-10",
-          "circulating_usd_bn": 308.34
-        },
-        {
-          "date": "2025-12-11",
-          "circulating_usd_bn": 308.27
-        },
-        {
-          "date": "2025-12-12",
-          "circulating_usd_bn": 309.21
-        },
-        {
-          "date": "2025-12-13",
-          "circulating_usd_bn": 309.29
-        },
-        {
-          "date": "2025-12-14",
-          "circulating_usd_bn": 309.26
-        },
-        {
-          "date": "2025-12-15",
-          "circulating_usd_bn": 309.16
-        },
-        {
-          "date": "2025-12-16",
-          "circulating_usd_bn": 309.02
-        },
-        {
-          "date": "2025-12-17",
-          "circulating_usd_bn": 308.89
-        },
-        {
-          "date": "2025-12-18",
-          "circulating_usd_bn": 308.98
-        },
-        {
-          "date": "2025-12-19",
-          "circulating_usd_bn": 308.24
-        },
-        {
-          "date": "2025-12-20",
-          "circulating_usd_bn": 308.7
-        },
-        {
-          "date": "2025-12-21",
-          "circulating_usd_bn": 309.64
-        },
-        {
-          "date": "2025-12-22",
-          "circulating_usd_bn": 308.55
-        },
-        {
-          "date": "2025-12-23",
-          "circulating_usd_bn": 308.68
-        },
-        {
-          "date": "2025-12-24",
-          "circulating_usd_bn": 308.45
-        },
-        {
-          "date": "2025-12-25",
-          "circulating_usd_bn": 307.98
-        },
-        {
-          "date": "2025-12-26",
-          "circulating_usd_bn": 308.05
-        },
-        {
-          "date": "2025-12-27",
-          "circulating_usd_bn": 307.95
-        },
-        {
-          "date": "2025-12-28",
-          "circulating_usd_bn": 307.85
-        },
-        {
-          "date": "2025-12-29",
-          "circulating_usd_bn": 307.81
-        },
-        {
-          "date": "2025-12-30",
-          "circulating_usd_bn": 307.75
-        },
-        {
-          "date": "2025-12-31",
-          "circulating_usd_bn": 307.52
+          "month": "2025-12",
+          "circulating_usd_bn": 308.13
         },
         {
           "date": "2026-01-01",
-          "circulating_usd_bn": 306.63
-        },
-        {
-          "date": "2026-01-02",
-          "circulating_usd_bn": 306.32
-        },
-        {
-          "date": "2026-01-03",
-          "circulating_usd_bn": 307.1
-        },
-        {
-          "date": "2026-01-04",
-          "circulating_usd_bn": 307.12
-        },
-        {
-          "date": "2026-01-05",
-          "circulating_usd_bn": 307.27
-        },
-        {
-          "date": "2026-01-06",
-          "circulating_usd_bn": 307.86
-        },
-        {
-          "date": "2026-01-07",
-          "circulating_usd_bn": 307.56
-        },
-        {
-          "date": "2026-01-08",
-          "circulating_usd_bn": 307.26
-        },
-        {
-          "date": "2026-01-09",
-          "circulating_usd_bn": 307.02
-        },
-        {
-          "date": "2026-01-10",
-          "circulating_usd_bn": 307.31
-        },
-        {
-          "date": "2026-01-11",
-          "circulating_usd_bn": 307.44
-        },
-        {
-          "date": "2026-01-12",
-          "circulating_usd_bn": 307.36
-        },
-        {
-          "date": "2026-01-13",
-          "circulating_usd_bn": 306.71
-        },
-        {
-          "date": "2026-01-14",
-          "circulating_usd_bn": 307.92
-        },
-        {
-          "date": "2026-01-15",
-          "circulating_usd_bn": 308.88
-        },
-        {
-          "date": "2026-01-16",
-          "circulating_usd_bn": 309.95
-        },
-        {
-          "date": "2026-01-17",
-          "circulating_usd_bn": 310.61
-        },
-        {
-          "date": "2026-01-18",
-          "circulating_usd_bn": 310.69
-        },
-        {
-          "date": "2026-01-19",
-          "circulating_usd_bn": 310.75
-        },
-        {
-          "date": "2026-01-20",
-          "circulating_usd_bn": 310.71
-        },
-        {
-          "date": "2026-01-21",
-          "circulating_usd_bn": 308.74
-        },
-        {
-          "date": "2026-01-22",
-          "circulating_usd_bn": 308.38
-        },
-        {
-          "date": "2026-01-23",
+          "month": "2026-01",
           "circulating_usd_bn": 307.93
         },
         {
-          "date": "2026-01-24",
-          "circulating_usd_bn": 308.39
-        },
-        {
-          "date": "2026-01-25",
-          "circulating_usd_bn": 308.46
-        },
-        {
-          "date": "2026-01-26",
-          "circulating_usd_bn": 308.41
-        },
-        {
-          "date": "2026-01-27",
-          "circulating_usd_bn": 307.9
-        },
-        {
-          "date": "2026-01-28",
-          "circulating_usd_bn": 307.34
-        },
-        {
-          "date": "2026-01-29",
-          "circulating_usd_bn": 307.15
-        },
-        {
-          "date": "2026-01-30",
-          "circulating_usd_bn": 305.66
-        },
-        {
-          "date": "2026-01-31",
-          "circulating_usd_bn": 304.89
-        },
-        {
           "date": "2026-02-01",
-          "circulating_usd_bn": 304.62
-        },
-        {
-          "date": "2026-02-02",
-          "circulating_usd_bn": 304.74
-        },
-        {
-          "date": "2026-02-03",
-          "circulating_usd_bn": 304.91
-        },
-        {
-          "date": "2026-02-04",
-          "circulating_usd_bn": 305.27
-        },
-        {
-          "date": "2026-02-05",
-          "circulating_usd_bn": 305.5
-        },
-        {
-          "date": "2026-02-06",
-          "circulating_usd_bn": 304.57
-        },
-        {
-          "date": "2026-02-07",
-          "circulating_usd_bn": 304.9
-        },
-        {
-          "date": "2026-02-08",
-          "circulating_usd_bn": 305.11
-        },
-        {
-          "date": "2026-02-09",
-          "circulating_usd_bn": 306.31
-        },
-        {
-          "date": "2026-02-10",
-          "circulating_usd_bn": 306.2
-        },
-        {
-          "date": "2026-02-11",
-          "circulating_usd_bn": 305.86
-        },
-        {
-          "date": "2026-02-12",
-          "circulating_usd_bn": 305.6
-        },
-        {
-          "date": "2026-02-13",
-          "circulating_usd_bn": 305.34
-        },
-        {
-          "date": "2026-02-14",
-          "circulating_usd_bn": 306.1
-        },
-        {
-          "date": "2026-02-15",
-          "circulating_usd_bn": 306.22
-        },
-        {
-          "date": "2026-02-16",
-          "circulating_usd_bn": 306.34
-        },
-        {
-          "date": "2026-02-17",
-          "circulating_usd_bn": 306.59
-        },
-        {
-          "date": "2026-02-18",
-          "circulating_usd_bn": 306.36
-        },
-        {
-          "date": "2026-02-19",
-          "circulating_usd_bn": 306.61
-        },
-        {
-          "date": "2026-02-20",
-          "circulating_usd_bn": 306.6
-        },
-        {
-          "date": "2026-02-21",
-          "circulating_usd_bn": 306.16
-        },
-        {
-          "date": "2026-02-22",
-          "circulating_usd_bn": 306.1
-        },
-        {
-          "date": "2026-02-23",
-          "circulating_usd_bn": 307.08
-        },
-        {
-          "date": "2026-02-24",
-          "circulating_usd_bn": 306.98
-        },
-        {
-          "date": "2026-02-25",
-          "circulating_usd_bn": 307.04
-        },
-        {
-          "date": "2026-02-26",
-          "circulating_usd_bn": 307.65
-        },
-        {
-          "date": "2026-02-27",
-          "circulating_usd_bn": 307.37
-        },
-        {
-          "date": "2026-02-28",
-          "circulating_usd_bn": 307.57
+          "month": "2026-02",
+          "circulating_usd_bn": 306.06
         },
         {
           "date": "2026-03-01",
-          "circulating_usd_bn": 307.76
-        },
-        {
-          "date": "2026-03-02",
-          "circulating_usd_bn": 307.57
-        },
-        {
-          "date": "2026-03-03",
-          "circulating_usd_bn": 308.46
-        },
-        {
-          "date": "2026-03-04",
-          "circulating_usd_bn": 308.72
-        },
-        {
-          "date": "2026-03-05",
-          "circulating_usd_bn": 309.63
-        },
-        {
-          "date": "2026-03-06",
-          "circulating_usd_bn": 310.72
-        },
-        {
-          "date": "2026-03-07",
-          "circulating_usd_bn": 310.88
-        },
-        {
-          "date": "2026-03-08",
-          "circulating_usd_bn": 310.86
-        },
-        {
-          "date": "2026-03-09",
-          "circulating_usd_bn": 311.02
-        },
-        {
-          "date": "2026-03-10",
-          "circulating_usd_bn": 312.27
-        },
-        {
-          "date": "2026-03-11",
-          "circulating_usd_bn": 312.54
-        },
-        {
-          "date": "2026-03-12",
-          "circulating_usd_bn": 312.85
-        },
-        {
-          "date": "2026-03-13",
-          "circulating_usd_bn": 313.25
-        },
-        {
-          "date": "2026-03-14",
-          "circulating_usd_bn": 313.71
-        },
-        {
-          "date": "2026-03-15",
-          "circulating_usd_bn": 313.66
-        },
-        {
-          "date": "2026-03-16",
-          "circulating_usd_bn": 313.65
-        },
-        {
-          "date": "2026-03-17",
-          "circulating_usd_bn": 313.7
-        },
-        {
-          "date": "2026-03-18",
-          "circulating_usd_bn": 314.02
-        },
-        {
-          "date": "2026-03-19",
-          "circulating_usd_bn": 313.37
-        },
-        {
-          "date": "2026-03-20",
-          "circulating_usd_bn": 313.96
-        },
-        {
-          "date": "2026-03-21",
-          "circulating_usd_bn": 313.91
-        },
-        {
-          "date": "2026-03-22",
-          "circulating_usd_bn": 314.18
-        },
-        {
-          "date": "2026-03-23",
-          "circulating_usd_bn": 314.01
-        },
-        {
-          "date": "2026-03-24",
-          "circulating_usd_bn": 313.52
-        },
-        {
-          "date": "2026-03-25",
-          "circulating_usd_bn": 313.8
-        },
-        {
-          "date": "2026-03-26",
-          "circulating_usd_bn": 313.96
-        },
-        {
-          "date": "2026-03-27",
-          "circulating_usd_bn": 313.46
-        },
-        {
-          "date": "2026-03-28",
-          "circulating_usd_bn": 313.14
-        },
-        {
-          "date": "2026-03-29",
-          "circulating_usd_bn": 313.07
-        },
-        {
-          "date": "2026-03-30",
-          "circulating_usd_bn": 313.37
-        },
-        {
-          "date": "2026-03-31",
-          "circulating_usd_bn": 313.68
+          "month": "2026-03",
+          "circulating_usd_bn": 312.35
         },
         {
           "date": "2026-04-01",
-          "circulating_usd_bn": 314.07
-        },
-        {
-          "date": "2026-04-02",
-          "circulating_usd_bn": 314.27
-        },
-        {
-          "date": "2026-04-03",
-          "circulating_usd_bn": 314.49
-        },
-        {
-          "date": "2026-04-04",
-          "circulating_usd_bn": 314.88
-        },
-        {
-          "date": "2026-04-05",
-          "circulating_usd_bn": 314.83
-        },
-        {
-          "date": "2026-04-06",
-          "circulating_usd_bn": 314.84
-        },
-        {
-          "date": "2026-04-07",
-          "circulating_usd_bn": 314.51
-        },
-        {
-          "date": "2026-04-08",
-          "circulating_usd_bn": 315.23
-        },
-        {
-          "date": "2026-04-09",
-          "circulating_usd_bn": 315.23
-        },
-        {
-          "date": "2026-04-10",
-          "circulating_usd_bn": 315.43
-        },
-        {
-          "date": "2026-04-11",
-          "circulating_usd_bn": 316.12
-        },
-        {
-          "date": "2026-04-12",
-          "circulating_usd_bn": 316.23
-        },
-        {
-          "date": "2026-04-13",
-          "circulating_usd_bn": 316.29
-        },
-        {
-          "date": "2026-04-14",
-          "circulating_usd_bn": 316.43
-        },
-        {
-          "date": "2026-04-15",
-          "circulating_usd_bn": 317.51
-        },
-        {
-          "date": "2026-04-16",
-          "circulating_usd_bn": 317.56
-        },
-        {
-          "date": "2026-04-17",
-          "circulating_usd_bn": 318.23
-        },
-        {
-          "date": "2026-04-18",
-          "circulating_usd_bn": 318.99
-        },
-        {
-          "date": "2026-04-19",
-          "circulating_usd_bn": 318.94
-        },
-        {
-          "date": "2026-04-20",
-          "circulating_usd_bn": 318.22
-        },
-        {
-          "date": "2026-04-21",
-          "circulating_usd_bn": 318.29
-        },
-        {
-          "date": "2026-04-22",
-          "circulating_usd_bn": 318.84
-        },
-        {
-          "date": "2026-04-23",
-          "circulating_usd_bn": 318.5
-        },
-        {
-          "date": "2026-04-24",
-          "circulating_usd_bn": 318.24
-        },
-        {
-          "date": "2026-04-25",
-          "circulating_usd_bn": 317.99
-        },
-        {
-          "date": "2026-04-26",
-          "circulating_usd_bn": 318.07
-        },
-        {
-          "date": "2026-04-27",
-          "circulating_usd_bn": 318.12
-        },
-        {
-          "date": "2026-04-28",
-          "circulating_usd_bn": 317.9
-        },
-        {
-          "date": "2026-04-29",
-          "circulating_usd_bn": 318.09
-        },
-        {
-          "date": "2026-04-30",
-          "circulating_usd_bn": 317.31
+          "month": "2026-04",
+          "circulating_usd_bn": 316.79
         },
         {
           "date": "2026-05-01",
-          "circulating_usd_bn": 317.93
-        },
-        {
-          "date": "2026-05-02",
-          "circulating_usd_bn": 318.33
-        },
-        {
-          "date": "2026-05-03",
-          "circulating_usd_bn": 318.76
-        },
-        {
-          "date": "2026-05-04",
-          "circulating_usd_bn": 318.81
-        },
-        {
-          "date": "2026-05-05",
-          "circulating_usd_bn": 319.29
-        },
-        {
-          "date": "2026-05-06",
-          "circulating_usd_bn": 319.98
-        },
-        {
-          "date": "2026-05-07",
-          "circulating_usd_bn": 320.25
-        },
-        {
-          "date": "2026-05-08",
-          "circulating_usd_bn": 320.51
-        },
-        {
-          "date": "2026-05-09",
-          "circulating_usd_bn": 319.19
-        },
-        {
-          "date": "2026-05-10",
-          "circulating_usd_bn": 319.92
-        },
-        {
-          "date": "2026-05-11",
-          "circulating_usd_bn": 320.2
-        },
-        {
-          "date": "2026-05-12",
-          "circulating_usd_bn": 320.4
-        },
-        {
-          "date": "2026-05-13",
-          "circulating_usd_bn": 320.19
-        },
-        {
-          "date": "2026-05-14",
-          "circulating_usd_bn": 319.89
-        },
-        {
-          "date": "2026-05-15",
-          "circulating_usd_bn": 320.07
-        },
-        {
-          "date": "2026-05-16",
-          "circulating_usd_bn": 320.73
-        },
-        {
-          "date": "2026-05-17",
-          "circulating_usd_bn": 320.83
-        },
-        {
-          "date": "2026-05-18",
-          "circulating_usd_bn": 320.82
-        },
-        {
-          "date": "2026-05-19",
-          "circulating_usd_bn": 320.82
-        },
-        {
-          "date": "2026-05-20",
-          "circulating_usd_bn": 321.06
-        },
-        {
-          "date": "2026-05-21",
-          "circulating_usd_bn": 319.71
-        },
-        {
-          "date": "2026-05-22",
-          "circulating_usd_bn": 320.52
-        },
-        {
-          "date": "2026-05-23",
-          "circulating_usd_bn": 320.62
-        },
-        {
-          "date": "2026-05-24",
-          "circulating_usd_bn": 320.52
-        },
-        {
-          "date": "2026-05-25",
-          "circulating_usd_bn": 320.37
-        },
-        {
-          "date": "2026-05-26",
-          "circulating_usd_bn": 320.43
-        },
-        {
-          "date": "2026-05-27",
-          "circulating_usd_bn": 320.33
-        },
-        {
-          "date": "2026-05-28",
-          "circulating_usd_bn": 319.68
-        },
-        {
-          "date": "2026-05-29",
-          "circulating_usd_bn": 318.68
-        },
-        {
-          "date": "2026-05-30",
-          "circulating_usd_bn": 318.08
-        },
-        {
-          "date": "2026-05-31",
-          "circulating_usd_bn": 317.89
+          "month": "2026-05",
+          "circulating_usd_bn": 319.83
         },
         {
           "date": "2026-06-01",
-          "circulating_usd_bn": 317.62
-        },
-        {
-          "date": "2026-06-02",
-          "circulating_usd_bn": 317.68
-        },
-        {
-          "date": "2026-06-03",
-          "circulating_usd_bn": 317.18
-        },
-        {
-          "date": "2026-06-04",
-          "circulating_usd_bn": 316.37
-        },
-        {
-          "date": "2026-06-05",
-          "circulating_usd_bn": 314.92
-        },
-        {
-          "date": "2026-06-06",
-          "circulating_usd_bn": 314.44
-        },
-        {
-          "date": "2026-06-07",
-          "circulating_usd_bn": 313.95
-        },
-        {
-          "date": "2026-06-08",
-          "circulating_usd_bn": 313.86
-        },
-        {
-          "date": "2026-06-09",
-          "circulating_usd_bn": 314.55
-        },
-        {
-          "date": "2026-06-10",
-          "circulating_usd_bn": 313.46
-        },
-        {
-          "date": "2026-06-11",
-          "circulating_usd_bn": 313.34
-        },
-        {
-          "date": "2026-06-12",
-          "circulating_usd_bn": 313.12
-        },
-        {
-          "date": "2026-06-13",
-          "circulating_usd_bn": 312.69
-        },
-        {
-          "date": "2026-06-14",
-          "circulating_usd_bn": 312.7
-        },
-        {
-          "date": "2026-06-15",
-          "circulating_usd_bn": 312.7
-        },
-        {
-          "date": "2026-06-16",
-          "circulating_usd_bn": 313.17
-        },
-        {
-          "date": "2026-06-17",
-          "circulating_usd_bn": 313.05
-        },
-        {
-          "date": "2026-06-18",
-          "circulating_usd_bn": 312.49
-        },
-        {
-          "date": "2026-06-19",
-          "circulating_usd_bn": 312.48
-        },
-        {
-          "date": "2026-06-20",
-          "circulating_usd_bn": 312.65
-        },
-        {
-          "date": "2026-06-21",
-          "circulating_usd_bn": 312.7
-        },
-        {
-          "date": "2026-06-22",
-          "circulating_usd_bn": 312.74
-        },
-        {
-          "date": "2026-06-23",
-          "circulating_usd_bn": 312.79
-        },
-        {
-          "date": "2026-06-24",
-          "circulating_usd_bn": 312.38
-        },
-        {
-          "date": "2026-06-25",
-          "circulating_usd_bn": 312.08
-        },
-        {
-          "date": "2026-06-26",
-          "circulating_usd_bn": 311.97
-        },
-        {
-          "date": "2026-06-27",
-          "circulating_usd_bn": 310.58
-        },
-        {
-          "date": "2026-06-28",
-          "circulating_usd_bn": 310.57
-        },
-        {
-          "date": "2026-06-29",
-          "circulating_usd_bn": 310.39
-        },
-        {
-          "date": "2026-06-30",
-          "circulating_usd_bn": 309.75
+          "month": "2026-06",
+          "circulating_usd_bn": 313.28
         },
         {
           "date": "2026-07-01",
-          "circulating_usd_bn": 308.91
-        },
-        {
-          "date": "2026-07-02",
-          "circulating_usd_bn": 309.05
-        },
-        {
-          "date": "2026-07-03",
-          "circulating_usd_bn": 308.74
-        },
-        {
-          "date": "2026-07-04",
-          "circulating_usd_bn": 308.57
-        },
-        {
-          "date": "2026-07-05",
-          "circulating_usd_bn": 308.55
-        },
-        {
-          "date": "2026-07-06",
-          "circulating_usd_bn": 309.23
-        },
-        {
-          "date": "2026-07-07",
-          "circulating_usd_bn": 308.79
-        },
-        {
-          "date": "2026-07-08",
-          "circulating_usd_bn": 306.84
-        },
-        {
-          "date": "2026-07-09",
-          "circulating_usd_bn": 306.87
-        },
-        {
-          "date": "2026-07-10",
-          "circulating_usd_bn": 307.74
-        },
-        {
-          "date": "2026-07-11",
-          "circulating_usd_bn": 307.91
-        },
-        {
-          "date": "2026-07-12",
-          "circulating_usd_bn": 307.84
-        },
-        {
-          "date": "2026-07-13",
-          "circulating_usd_bn": 307.87
-        },
-        {
-          "date": "2026-07-14",
-          "circulating_usd_bn": 306.47
-        },
-        {
-          "date": "2026-07-15",
-          "circulating_usd_bn": 306.57
-        },
-        {
-          "date": "2026-07-16",
-          "circulating_usd_bn": 305.86
-        },
-        {
-          "date": "2026-07-17",
-          "circulating_usd_bn": 306.11
-        },
-        {
-          "date": "2026-07-18",
-          "circulating_usd_bn": 306.34
-        },
-        {
-          "date": "2026-07-19",
-          "circulating_usd_bn": 306.47
-        },
-        {
-          "date": "2026-07-20",
-          "circulating_usd_bn": 306.45
-        },
-        {
-          "date": "2026-07-21",
-          "circulating_usd_bn": 306.29
-        },
-        {
-          "date": "2026-07-22",
-          "circulating_usd_bn": 306.16
-        },
-        {
-          "date": "2026-07-23",
-          "circulating_usd_bn": 307.18
-        },
-        {
-          "date": "2026-07-24",
-          "circulating_usd_bn": 305.89
-        },
-        {
-          "date": "2026-07-25",
-          "circulating_usd_bn": 306.75
-        },
-        {
-          "date": "2026-07-26",
-          "circulating_usd_bn": 306.63
-        },
-        {
-          "date": "2026-07-27",
-          "circulating_usd_bn": 306.17
-        },
-        {
-          "date": "2026-07-28",
-          "circulating_usd_bn": 306.3
-        },
-        {
-          "date": "2026-07-29",
-          "circulating_usd_bn": 304.77
-        },
-        {
-          "date": "2026-07-30",
-          "circulating_usd_bn": 304.5
+          "month": "2026-07",
+          "circulating_usd_bn": 307.06
         }
       ],
       "stablecoin_chains": [
         {
           "chain": "Ethereum",
-          "circulating_usd_bn": 148.87
+          "circulating_usd_bn": 148.25
         },
         {
           "chain": "Tron",
-          "circulating_usd_bn": 90.95
+          "circulating_usd_bn": 90.99
         },
         {
           "chain": "BSC",
@@ -2316,7 +1193,7 @@
         },
         {
           "chain": "Solana",
-          "circulating_usd_bn": 16.29
+          "circulating_usd_bn": 16.32
         },
         {
           "chain": "Hyperliquid L1",
@@ -2324,15 +1201,15 @@
         },
         {
           "chain": "Base",
-          "circulating_usd_bn": 4.83
+          "circulating_usd_bn": 4.88
         },
         {
           "chain": "Arbitrum",
-          "circulating_usd_bn": 3.72
+          "circulating_usd_bn": 3.71
         },
         {
           "chain": "Polygon",
-          "circulating_usd_bn": 3.63
+          "circulating_usd_bn": 3.59
         },
         {
           "chain": "X Layer",
@@ -2340,1469 +1217,614 @@
         },
         {
           "chain": "Avalanche",
-          "circulating_usd_bn": 1.65
+          "circulating_usd_bn": 1.64
         }
       ],
       "dex_volume_history": [
         {
-          "date": "2025-07-31",
-          "dex_volume_usd_bn": 15.03
+          "date": "2016-07-01",
+          "month": "2016-07",
+          "dex_volume_usd_bn": 0.0
         },
         {
-          "date": "2025-08-01",
-          "dex_volume_usd_bn": 17.71
+          "date": "2016-08-01",
+          "month": "2016-08",
+          "dex_volume_usd_bn": 0.0
         },
         {
-          "date": "2025-08-02",
-          "dex_volume_usd_bn": 11.99
+          "date": "2016-09-01",
+          "month": "2016-09",
+          "dex_volume_usd_bn": 0.0
         },
         {
-          "date": "2025-08-03",
-          "dex_volume_usd_bn": 10.79
+          "date": "2016-10-01",
+          "month": "2016-10",
+          "dex_volume_usd_bn": 0.0
         },
         {
-          "date": "2025-08-04",
-          "dex_volume_usd_bn": 12.63
+          "date": "2016-11-01",
+          "month": "2016-11",
+          "dex_volume_usd_bn": 0.0
         },
         {
-          "date": "2025-08-05",
-          "dex_volume_usd_bn": 13.13
+          "date": "2016-12-01",
+          "month": "2016-12",
+          "dex_volume_usd_bn": 0.0
         },
         {
-          "date": "2025-08-06",
-          "dex_volume_usd_bn": 12.57
+          "date": "2017-01-01",
+          "month": "2017-01",
+          "dex_volume_usd_bn": 0.0
         },
         {
-          "date": "2025-08-07",
-          "dex_volume_usd_bn": 14.25
+          "date": "2017-02-01",
+          "month": "2017-02",
+          "dex_volume_usd_bn": 0.0
         },
         {
-          "date": "2025-08-08",
-          "dex_volume_usd_bn": 15.23
+          "date": "2017-03-01",
+          "month": "2017-03",
+          "dex_volume_usd_bn": 0.0
         },
         {
-          "date": "2025-08-09",
-          "dex_volume_usd_bn": 16.25
+          "date": "2017-04-01",
+          "month": "2017-04",
+          "dex_volume_usd_bn": 0.0
         },
         {
-          "date": "2025-08-10",
-          "dex_volume_usd_bn": 14.26
+          "date": "2017-05-01",
+          "month": "2017-05",
+          "dex_volume_usd_bn": 0.0
         },
         {
-          "date": "2025-08-11",
-          "dex_volume_usd_bn": 17.79
+          "date": "2017-06-01",
+          "month": "2017-06",
+          "dex_volume_usd_bn": 0.0
         },
         {
-          "date": "2025-08-12",
-          "dex_volume_usd_bn": 21.13
+          "date": "2017-07-01",
+          "month": "2017-07",
+          "dex_volume_usd_bn": 0.0
         },
         {
-          "date": "2025-08-13",
-          "dex_volume_usd_bn": 20.79
+          "date": "2017-08-01",
+          "month": "2017-08",
+          "dex_volume_usd_bn": 0.0
         },
         {
-          "date": "2025-08-14",
-          "dex_volume_usd_bn": 25.18
+          "date": "2017-09-01",
+          "month": "2017-09",
+          "dex_volume_usd_bn": 0.0
         },
         {
-          "date": "2025-08-15",
-          "dex_volume_usd_bn": 17.57
+          "date": "2017-10-01",
+          "month": "2017-10",
+          "dex_volume_usd_bn": 0.0
         },
         {
-          "date": "2025-08-16",
-          "dex_volume_usd_bn": 10.89
+          "date": "2017-11-01",
+          "month": "2017-11",
+          "dex_volume_usd_bn": 0.0
         },
         {
-          "date": "2025-08-17",
-          "dex_volume_usd_bn": 11.33
+          "date": "2017-12-01",
+          "month": "2017-12",
+          "dex_volume_usd_bn": 0.0
         },
         {
-          "date": "2025-08-18",
-          "dex_volume_usd_bn": 16.98
+          "date": "2018-01-01",
+          "month": "2018-01",
+          "dex_volume_usd_bn": 0.0
         },
         {
-          "date": "2025-08-19",
-          "dex_volume_usd_bn": 16.21
+          "date": "2018-02-01",
+          "month": "2018-02",
+          "dex_volume_usd_bn": 0.0
         },
         {
-          "date": "2025-08-20",
-          "dex_volume_usd_bn": 16.28
+          "date": "2018-03-01",
+          "month": "2018-03",
+          "dex_volume_usd_bn": 0.0
         },
         {
-          "date": "2025-08-21",
-          "dex_volume_usd_bn": 16.15
+          "date": "2018-04-01",
+          "month": "2018-04",
+          "dex_volume_usd_bn": 0.0
         },
         {
-          "date": "2025-08-22",
-          "dex_volume_usd_bn": 22.68
+          "date": "2018-05-01",
+          "month": "2018-05",
+          "dex_volume_usd_bn": 0.0
         },
         {
-          "date": "2025-08-23",
-          "dex_volume_usd_bn": 16.72
+          "date": "2018-06-01",
+          "month": "2018-06",
+          "dex_volume_usd_bn": 0.0
         },
         {
-          "date": "2025-08-24",
-          "dex_volume_usd_bn": 20.97
+          "date": "2018-07-01",
+          "month": "2018-07",
+          "dex_volume_usd_bn": 0.0
         },
         {
-          "date": "2025-08-25",
-          "dex_volume_usd_bn": 21.45
+          "date": "2018-08-01",
+          "month": "2018-08",
+          "dex_volume_usd_bn": 0.0
         },
         {
-          "date": "2025-08-26",
-          "dex_volume_usd_bn": 17.78
+          "date": "2018-09-01",
+          "month": "2018-09",
+          "dex_volume_usd_bn": 0.0
         },
         {
-          "date": "2025-08-27",
-          "dex_volume_usd_bn": 18.22
+          "date": "2018-10-01",
+          "month": "2018-10",
+          "dex_volume_usd_bn": 0.0
         },
         {
-          "date": "2025-08-28",
-          "dex_volume_usd_bn": 15.7
+          "date": "2018-11-01",
+          "month": "2018-11",
+          "dex_volume_usd_bn": 0.0
         },
         {
-          "date": "2025-08-29",
-          "dex_volume_usd_bn": 19.44
+          "date": "2018-12-01",
+          "month": "2018-12",
+          "dex_volume_usd_bn": 0.0
         },
         {
-          "date": "2025-08-30",
-          "dex_volume_usd_bn": 10.3
+          "date": "2019-01-01",
+          "month": "2019-01",
+          "dex_volume_usd_bn": 0.0
         },
         {
-          "date": "2025-08-31",
-          "dex_volume_usd_bn": 10.73
+          "date": "2019-02-01",
+          "month": "2019-02",
+          "dex_volume_usd_bn": 0.0
         },
         {
-          "date": "2025-09-01",
-          "dex_volume_usd_bn": 15.57
+          "date": "2019-03-01",
+          "month": "2019-03",
+          "dex_volume_usd_bn": 0.0
         },
         {
-          "date": "2025-09-02",
-          "dex_volume_usd_bn": 15.08
+          "date": "2019-04-01",
+          "month": "2019-04",
+          "dex_volume_usd_bn": 0.0
         },
         {
-          "date": "2025-09-03",
-          "dex_volume_usd_bn": 14.27
+          "date": "2019-05-01",
+          "month": "2019-05",
+          "dex_volume_usd_bn": 0.0
         },
         {
-          "date": "2025-09-04",
-          "dex_volume_usd_bn": 14.84
+          "date": "2019-06-01",
+          "month": "2019-06",
+          "dex_volume_usd_bn": 0.0
         },
         {
-          "date": "2025-09-05",
-          "dex_volume_usd_bn": 16.9
+          "date": "2019-07-01",
+          "month": "2019-07",
+          "dex_volume_usd_bn": 0.0
         },
         {
-          "date": "2025-09-06",
-          "dex_volume_usd_bn": 9.65
+          "date": "2019-08-01",
+          "month": "2019-08",
+          "dex_volume_usd_bn": 0.0
         },
         {
-          "date": "2025-09-07",
-          "dex_volume_usd_bn": 9.24
+          "date": "2019-09-01",
+          "month": "2019-09",
+          "dex_volume_usd_bn": 0.0
         },
         {
-          "date": "2025-09-08",
-          "dex_volume_usd_bn": 14.33
+          "date": "2019-10-01",
+          "month": "2019-10",
+          "dex_volume_usd_bn": 0.0
         },
         {
-          "date": "2025-09-09",
-          "dex_volume_usd_bn": 15.47
+          "date": "2019-11-01",
+          "month": "2019-11",
+          "dex_volume_usd_bn": 0.0
         },
         {
-          "date": "2025-09-10",
-          "dex_volume_usd_bn": 16.17
+          "date": "2019-12-01",
+          "month": "2019-12",
+          "dex_volume_usd_bn": 0.0
         },
         {
-          "date": "2025-09-11",
-          "dex_volume_usd_bn": 16.39
+          "date": "2020-01-01",
+          "month": "2020-01",
+          "dex_volume_usd_bn": 0.0
         },
         {
-          "date": "2025-09-12",
-          "dex_volume_usd_bn": 17.81
+          "date": "2020-02-01",
+          "month": "2020-02",
+          "dex_volume_usd_bn": 0.0
         },
         {
-          "date": "2025-09-13",
-          "dex_volume_usd_bn": 15.07
+          "date": "2020-03-01",
+          "month": "2020-03",
+          "dex_volume_usd_bn": 0.01
         },
         {
-          "date": "2025-09-14",
-          "dex_volume_usd_bn": 15.76
+          "date": "2020-04-01",
+          "month": "2020-04",
+          "dex_volume_usd_bn": 0.01
         },
         {
-          "date": "2025-09-15",
-          "dex_volume_usd_bn": 19.73
+          "date": "2020-05-01",
+          "month": "2020-05",
+          "dex_volume_usd_bn": 0.01
         },
         {
-          "date": "2025-09-16",
-          "dex_volume_usd_bn": 16.76
+          "date": "2020-06-01",
+          "month": "2020-06",
+          "dex_volume_usd_bn": 0.02
         },
         {
-          "date": "2025-09-17",
-          "dex_volume_usd_bn": 19.77
+          "date": "2020-07-01",
+          "month": "2020-07",
+          "dex_volume_usd_bn": 0.06
         },
         {
-          "date": "2025-09-18",
-          "dex_volume_usd_bn": 17.85
+          "date": "2020-08-01",
+          "month": "2020-08",
+          "dex_volume_usd_bn": 0.22
         },
         {
-          "date": "2025-09-19",
-          "dex_volume_usd_bn": 16.1
+          "date": "2020-09-01",
+          "month": "2020-09",
+          "dex_volume_usd_bn": 0.66
         },
         {
-          "date": "2025-09-20",
-          "dex_volume_usd_bn": 14.48
+          "date": "2020-10-01",
+          "month": "2020-10",
+          "dex_volume_usd_bn": 0.41
         },
         {
-          "date": "2025-09-21",
-          "dex_volume_usd_bn": 16.15
+          "date": "2020-11-01",
+          "month": "2020-11",
+          "dex_volume_usd_bn": 0.43
         },
         {
-          "date": "2025-09-22",
-          "dex_volume_usd_bn": 22.93
+          "date": "2020-12-01",
+          "month": "2020-12",
+          "dex_volume_usd_bn": 0.54
         },
         {
-          "date": "2025-09-23",
-          "dex_volume_usd_bn": 20.68
+          "date": "2021-01-01",
+          "month": "2021-01",
+          "dex_volume_usd_bn": 1.43
         },
         {
-          "date": "2025-09-24",
-          "dex_volume_usd_bn": 19.84
+          "date": "2021-02-01",
+          "month": "2021-02",
+          "dex_volume_usd_bn": 2.63
         },
         {
-          "date": "2025-09-25",
-          "dex_volume_usd_bn": 29.77
+          "date": "2021-03-01",
+          "month": "2021-03",
+          "dex_volume_usd_bn": 2.42
         },
         {
-          "date": "2025-09-26",
-          "dex_volume_usd_bn": 21.49
+          "date": "2021-04-01",
+          "month": "2021-04",
+          "dex_volume_usd_bn": 4.56
         },
         {
-          "date": "2025-09-27",
-          "dex_volume_usd_bn": 14.01
+          "date": "2021-05-01",
+          "month": "2021-05",
+          "dex_volume_usd_bn": 9.09
         },
         {
-          "date": "2025-09-28",
-          "dex_volume_usd_bn": 13.3
+          "date": "2021-06-01",
+          "month": "2021-06",
+          "dex_volume_usd_bn": 3.96
         },
         {
-          "date": "2025-09-29",
-          "dex_volume_usd_bn": 16.7
+          "date": "2021-07-01",
+          "month": "2021-07",
+          "dex_volume_usd_bn": 3.05
         },
         {
-          "date": "2025-09-30",
-          "dex_volume_usd_bn": 16.87
+          "date": "2021-08-01",
+          "month": "2021-08",
+          "dex_volume_usd_bn": 4.47
         },
         {
-          "date": "2025-10-01",
-          "dex_volume_usd_bn": 17.75
-        },
-        {
-          "date": "2025-10-02",
-          "dex_volume_usd_bn": 19.7
-        },
-        {
-          "date": "2025-10-03",
-          "dex_volume_usd_bn": 20.24
-        },
-        {
-          "date": "2025-10-04",
-          "dex_volume_usd_bn": 13.59
-        },
-        {
-          "date": "2025-10-05",
-          "dex_volume_usd_bn": 16.83
-        },
-        {
-          "date": "2025-10-06",
-          "dex_volume_usd_bn": 19.98
-        },
-        {
-          "date": "2025-10-07",
-          "dex_volume_usd_bn": 24.6
-        },
-        {
-          "date": "2025-10-08",
-          "dex_volume_usd_bn": 23.03
-        },
-        {
-          "date": "2025-10-09",
-          "dex_volume_usd_bn": 22.66
-        },
-        {
-          "date": "2025-10-10",
-          "dex_volume_usd_bn": 34.45
-        },
-        {
-          "date": "2025-10-11",
-          "dex_volume_usd_bn": 26.13
-        },
-        {
-          "date": "2025-10-12",
-          "dex_volume_usd_bn": 23.04
-        },
-        {
-          "date": "2025-10-13",
-          "dex_volume_usd_bn": 22.6
-        },
-        {
-          "date": "2025-10-14",
-          "dex_volume_usd_bn": 25.16
-        },
-        {
-          "date": "2025-10-15",
-          "dex_volume_usd_bn": 20.86
-        },
-        {
-          "date": "2025-10-16",
-          "dex_volume_usd_bn": 21.12
-        },
-        {
-          "date": "2025-10-17",
-          "dex_volume_usd_bn": 20.43
-        },
-        {
-          "date": "2025-10-18",
-          "dex_volume_usd_bn": 12.69
-        },
-        {
-          "date": "2025-10-19",
-          "dex_volume_usd_bn": 14.01
-        },
-        {
-          "date": "2025-10-20",
-          "dex_volume_usd_bn": 14.74
-        },
-        {
-          "date": "2025-10-21",
-          "dex_volume_usd_bn": 17.7
-        },
-        {
-          "date": "2025-10-22",
-          "dex_volume_usd_bn": 17.4
-        },
-        {
-          "date": "2025-10-23",
-          "dex_volume_usd_bn": 16.31
-        },
-        {
-          "date": "2025-10-24",
-          "dex_volume_usd_bn": 15.48
-        },
-        {
-          "date": "2025-10-25",
-          "dex_volume_usd_bn": 11.18
-        },
-        {
-          "date": "2025-10-26",
-          "dex_volume_usd_bn": 12.01
-        },
-        {
-          "date": "2025-10-27",
-          "dex_volume_usd_bn": 17.4
-        },
-        {
-          "date": "2025-10-28",
-          "dex_volume_usd_bn": 16.21
-        },
-        {
-          "date": "2025-10-29",
-          "dex_volume_usd_bn": 16.9
-        },
-        {
-          "date": "2025-10-30",
-          "dex_volume_usd_bn": 18.51
-        },
-        {
-          "date": "2025-10-31",
-          "dex_volume_usd_bn": 15.35
-        },
-        {
-          "date": "2025-11-01",
-          "dex_volume_usd_bn": 10.72
-        },
-        {
-          "date": "2025-11-02",
-          "dex_volume_usd_bn": 10.72
-        },
-        {
-          "date": "2025-11-03",
-          "dex_volume_usd_bn": 18.94
-        },
-        {
-          "date": "2025-11-04",
-          "dex_volume_usd_bn": 25.27
-        },
-        {
-          "date": "2025-11-05",
-          "dex_volume_usd_bn": 17.71
-        },
-        {
-          "date": "2025-11-06",
-          "dex_volume_usd_bn": 17.45
-        },
-        {
-          "date": "2025-11-07",
-          "dex_volume_usd_bn": 19.86
-        },
-        {
-          "date": "2025-11-08",
-          "dex_volume_usd_bn": 12.98
-        },
-        {
-          "date": "2025-11-09",
-          "dex_volume_usd_bn": 15.57
-        },
-        {
-          "date": "2025-11-10",
-          "dex_volume_usd_bn": 15.71
-        },
-        {
-          "date": "2025-11-11",
-          "dex_volume_usd_bn": 15.21
-        },
-        {
-          "date": "2025-11-12",
-          "dex_volume_usd_bn": 15.22
-        },
-        {
-          "date": "2025-11-13",
-          "dex_volume_usd_bn": 16.04
-        },
-        {
-          "date": "2025-11-14",
-          "dex_volume_usd_bn": 15.59
-        },
-        {
-          "date": "2025-11-15",
-          "dex_volume_usd_bn": 11.17
-        },
-        {
-          "date": "2025-11-16",
-          "dex_volume_usd_bn": 11.56
-        },
-        {
-          "date": "2025-11-17",
-          "dex_volume_usd_bn": 13.91
-        },
-        {
-          "date": "2025-11-18",
-          "dex_volume_usd_bn": 13.73
-        },
-        {
-          "date": "2025-11-19",
-          "dex_volume_usd_bn": 12.9
-        },
-        {
-          "date": "2025-11-20",
-          "dex_volume_usd_bn": 14.29
-        },
-        {
-          "date": "2025-11-21",
-          "dex_volume_usd_bn": 18.34
-        },
-        {
-          "date": "2025-11-22",
-          "dex_volume_usd_bn": 9.47
-        },
-        {
-          "date": "2025-11-23",
-          "dex_volume_usd_bn": 9.61
-        },
-        {
-          "date": "2025-11-24",
-          "dex_volume_usd_bn": 10.92
-        },
-        {
-          "date": "2025-11-25",
-          "dex_volume_usd_bn": 10.64
-        },
-        {
-          "date": "2025-11-26",
-          "dex_volume_usd_bn": 11.07
-        },
-        {
-          "date": "2025-11-27",
-          "dex_volume_usd_bn": 11.84
-        },
-        {
-          "date": "2025-11-28",
-          "dex_volume_usd_bn": 11.41
-        },
-        {
-          "date": "2025-11-29",
-          "dex_volume_usd_bn": 8.88
-        },
-        {
-          "date": "2025-11-30",
-          "dex_volume_usd_bn": 8.75
-        },
-        {
-          "date": "2025-12-01",
-          "dex_volume_usd_bn": 13.8
-        },
-        {
-          "date": "2025-12-02",
-          "dex_volume_usd_bn": 12.36
-        },
-        {
-          "date": "2025-12-03",
-          "dex_volume_usd_bn": 12.23
-        },
-        {
-          "date": "2025-12-04",
-          "dex_volume_usd_bn": 11.64
-        },
-        {
-          "date": "2025-12-05",
-          "dex_volume_usd_bn": 11.42
-        },
-        {
-          "date": "2025-12-06",
-          "dex_volume_usd_bn": 8.18
-        },
-        {
-          "date": "2025-12-07",
-          "dex_volume_usd_bn": 10.23
-        },
-        {
-          "date": "2025-12-08",
-          "dex_volume_usd_bn": 11.26
-        },
-        {
-          "date": "2025-12-09",
-          "dex_volume_usd_bn": 13.96
-        },
-        {
-          "date": "2025-12-10",
-          "dex_volume_usd_bn": 12.23
-        },
-        {
-          "date": "2025-12-11",
-          "dex_volume_usd_bn": 12.58
-        },
-        {
-          "date": "2025-12-12",
-          "dex_volume_usd_bn": 11.25
-        },
-        {
-          "date": "2025-12-13",
-          "dex_volume_usd_bn": 7.4
-        },
-        {
-          "date": "2025-12-14",
-          "dex_volume_usd_bn": 7.82
-        },
-        {
-          "date": "2025-12-15",
-          "dex_volume_usd_bn": 12.58
-        },
-        {
-          "date": "2025-12-16",
-          "dex_volume_usd_bn": 11.12
-        },
-        {
-          "date": "2025-12-17",
-          "dex_volume_usd_bn": 11.6
-        },
-        {
-          "date": "2025-12-18",
-          "dex_volume_usd_bn": 12.56
-        },
-        {
-          "date": "2025-12-19",
-          "dex_volume_usd_bn": 11.66
-        },
-        {
-          "date": "2025-12-20",
-          "dex_volume_usd_bn": 7.53
-        },
-        {
-          "date": "2025-12-21",
-          "dex_volume_usd_bn": 8.26
-        },
-        {
-          "date": "2025-12-22",
-          "dex_volume_usd_bn": 11.22
-        },
-        {
-          "date": "2025-12-23",
-          "dex_volume_usd_bn": 10.8
-        },
-        {
-          "date": "2025-12-24",
-          "dex_volume_usd_bn": 9.08
-        },
-        {
-          "date": "2025-12-25",
-          "dex_volume_usd_bn": 8.65
-        },
-        {
-          "date": "2025-12-26",
-          "dex_volume_usd_bn": 9.46
-        },
-        {
-          "date": "2025-12-27",
-          "dex_volume_usd_bn": 7.35
-        },
-        {
-          "date": "2025-12-28",
-          "dex_volume_usd_bn": 7.2
-        },
-        {
-          "date": "2025-12-29",
-          "dex_volume_usd_bn": 11.59
-        },
-        {
-          "date": "2025-12-30",
-          "dex_volume_usd_bn": 11.37
-        },
-        {
-          "date": "2025-12-31",
-          "dex_volume_usd_bn": 10.56
-        },
-        {
-          "date": "2026-01-01",
-          "dex_volume_usd_bn": 7.48
-        },
-        {
-          "date": "2026-01-02",
-          "dex_volume_usd_bn": 10.93
-        },
-        {
-          "date": "2026-01-03",
-          "dex_volume_usd_bn": 8.97
-        },
-        {
-          "date": "2026-01-04",
-          "dex_volume_usd_bn": 9.37
-        },
-        {
-          "date": "2026-01-05",
-          "dex_volume_usd_bn": 13.08
-        },
-        {
-          "date": "2026-01-06",
-          "dex_volume_usd_bn": 14.07
-        },
-        {
-          "date": "2026-01-07",
-          "dex_volume_usd_bn": 12.41
-        },
-        {
-          "date": "2026-01-08",
-          "dex_volume_usd_bn": 10.38
-        },
-        {
-          "date": "2026-01-09",
-          "dex_volume_usd_bn": 9.67
-        },
-        {
-          "date": "2026-01-10",
-          "dex_volume_usd_bn": 6.13
-        },
-        {
-          "date": "2026-01-11",
-          "dex_volume_usd_bn": 8.04
-        },
-        {
-          "date": "2026-01-12",
-          "dex_volume_usd_bn": 10.76
-        },
-        {
-          "date": "2026-01-13",
-          "dex_volume_usd_bn": 12.53
-        },
-        {
-          "date": "2026-01-14",
-          "dex_volume_usd_bn": 14.48
-        },
-        {
-          "date": "2026-01-15",
-          "dex_volume_usd_bn": 13.34
-        },
-        {
-          "date": "2026-01-16",
-          "dex_volume_usd_bn": 11.68
-        },
-        {
-          "date": "2026-01-17",
-          "dex_volume_usd_bn": 8.39
-        },
-        {
-          "date": "2026-01-18",
-          "dex_volume_usd_bn": 8.78
-        },
-        {
-          "date": "2026-01-19",
-          "dex_volume_usd_bn": 12.04
-        },
-        {
-          "date": "2026-01-20",
-          "dex_volume_usd_bn": 16.21
-        },
-        {
-          "date": "2026-01-21",
-          "dex_volume_usd_bn": 17.58
-        },
-        {
-          "date": "2026-01-22",
-          "dex_volume_usd_bn": 13.61
-        },
-        {
-          "date": "2026-01-23",
-          "dex_volume_usd_bn": 12.7
-        },
-        {
-          "date": "2026-01-24",
-          "dex_volume_usd_bn": 8.91
-        },
-        {
-          "date": "2026-01-25",
-          "dex_volume_usd_bn": 10.82
-        },
-        {
-          "date": "2026-01-26",
-          "dex_volume_usd_bn": 12.26
-        },
-        {
-          "date": "2026-01-27",
-          "dex_volume_usd_bn": 12.54
-        },
-        {
-          "date": "2026-01-28",
-          "dex_volume_usd_bn": 12.73
-        },
-        {
-          "date": "2026-01-29",
-          "dex_volume_usd_bn": 12.5
-        },
-        {
-          "date": "2026-01-30",
-          "dex_volume_usd_bn": 16.16
-        },
-        {
-          "date": "2026-01-31",
-          "dex_volume_usd_bn": 18.66
-        },
-        {
-          "date": "2026-02-01",
-          "dex_volume_usd_bn": 14.89
-        },
-        {
-          "date": "2026-02-02",
-          "dex_volume_usd_bn": 16.44
-        },
-        {
-          "date": "2026-02-03",
-          "dex_volume_usd_bn": 16.18
-        },
-        {
-          "date": "2026-02-04",
-          "dex_volume_usd_bn": 16.17
-        },
-        {
-          "date": "2026-02-05",
-          "dex_volume_usd_bn": 22.11
-        },
-        {
-          "date": "2026-02-06",
-          "dex_volume_usd_bn": 19.63
-        },
-        {
-          "date": "2026-02-07",
-          "dex_volume_usd_bn": 13.61
-        },
-        {
-          "date": "2026-02-08",
-          "dex_volume_usd_bn": 9.83
-        },
-        {
-          "date": "2026-02-09",
-          "dex_volume_usd_bn": 11.24
-        },
-        {
-          "date": "2026-02-10",
-          "dex_volume_usd_bn": 10.12
-        },
-        {
-          "date": "2026-02-11",
-          "dex_volume_usd_bn": 11.24
-        },
-        {
-          "date": "2026-02-12",
-          "dex_volume_usd_bn": 9.79
-        },
-        {
-          "date": "2026-02-13",
-          "dex_volume_usd_bn": 10.32
-        },
-        {
-          "date": "2026-02-14",
-          "dex_volume_usd_bn": 7.4
-        },
-        {
-          "date": "2026-02-15",
-          "dex_volume_usd_bn": 9.19
-        },
-        {
-          "date": "2026-02-16",
-          "dex_volume_usd_bn": 9.05
-        },
-        {
-          "date": "2026-02-17",
-          "dex_volume_usd_bn": 8.19
-        },
-        {
-          "date": "2026-02-18",
-          "dex_volume_usd_bn": 8.4
-        },
-        {
-          "date": "2026-02-19",
-          "dex_volume_usd_bn": 8.7
-        },
-        {
-          "date": "2026-02-20",
-          "dex_volume_usd_bn": 8.42
-        },
-        {
-          "date": "2026-02-21",
-          "dex_volume_usd_bn": 5.48
-        },
-        {
-          "date": "2026-02-22",
-          "dex_volume_usd_bn": 5.64
-        },
-        {
-          "date": "2026-02-23",
-          "dex_volume_usd_bn": 9.02
-        },
-        {
-          "date": "2026-02-24",
-          "dex_volume_usd_bn": 8.68
-        },
-        {
-          "date": "2026-02-25",
-          "dex_volume_usd_bn": 9.55
-        },
-        {
-          "date": "2026-02-26",
-          "dex_volume_usd_bn": 8.32
-        },
-        {
-          "date": "2026-02-27",
-          "dex_volume_usd_bn": 8.2
-        },
-        {
-          "date": "2026-02-28",
-          "dex_volume_usd_bn": 9.39
-        },
-        {
-          "date": "2026-03-01",
-          "dex_volume_usd_bn": 8.72
-        },
-        {
-          "date": "2026-03-02",
-          "dex_volume_usd_bn": 10.31
-        },
-        {
-          "date": "2026-03-03",
-          "dex_volume_usd_bn": 9.37
-        },
-        {
-          "date": "2026-03-04",
-          "dex_volume_usd_bn": 10.58
-        },
-        {
-          "date": "2026-03-05",
-          "dex_volume_usd_bn": 8.9
-        },
-        {
-          "date": "2026-03-06",
-          "dex_volume_usd_bn": 7.98
-        },
-        {
-          "date": "2026-03-07",
-          "dex_volume_usd_bn": 5.19
-        },
-        {
-          "date": "2026-03-08",
-          "dex_volume_usd_bn": 6.29
-        },
-        {
-          "date": "2026-03-09",
-          "dex_volume_usd_bn": 9.14
-        },
-        {
-          "date": "2026-03-10",
-          "dex_volume_usd_bn": 9.12
-        },
-        {
-          "date": "2026-03-11",
-          "dex_volume_usd_bn": 7.69
-        },
-        {
-          "date": "2026-03-12",
-          "dex_volume_usd_bn": 8.42
-        },
-        {
-          "date": "2026-03-13",
-          "dex_volume_usd_bn": 9.67
-        },
-        {
-          "date": "2026-03-14",
-          "dex_volume_usd_bn": 5.11
-        },
-        {
-          "date": "2026-03-15",
-          "dex_volume_usd_bn": 6.4
-        },
-        {
-          "date": "2026-03-16",
-          "dex_volume_usd_bn": 9.4
-        },
-        {
-          "date": "2026-03-17",
-          "dex_volume_usd_bn": 8.39
-        },
-        {
-          "date": "2026-03-18",
-          "dex_volume_usd_bn": 9.69
-        },
-        {
-          "date": "2026-03-19",
-          "dex_volume_usd_bn": 8.15
-        },
-        {
-          "date": "2026-03-20",
-          "dex_volume_usd_bn": 7.5
-        },
-        {
-          "date": "2026-03-21",
-          "dex_volume_usd_bn": 4.9
-        },
-        {
-          "date": "2026-03-22",
-          "dex_volume_usd_bn": 7.65
-        },
-        {
-          "date": "2026-03-23",
-          "dex_volume_usd_bn": 10.3
-        },
-        {
-          "date": "2026-03-24",
-          "dex_volume_usd_bn": 7.12
-        },
-        {
-          "date": "2026-03-25",
-          "dex_volume_usd_bn": 6.69
-        },
-        {
-          "date": "2026-03-26",
-          "dex_volume_usd_bn": 6.53
-        },
-        {
-          "date": "2026-03-27",
-          "dex_volume_usd_bn": 7.01
-        },
-        {
-          "date": "2026-03-28",
-          "dex_volume_usd_bn": 4.64
-        },
-        {
-          "date": "2026-03-29",
-          "dex_volume_usd_bn": 4.98
-        },
-        {
-          "date": "2026-03-30",
-          "dex_volume_usd_bn": 7.12
-        },
-        {
-          "date": "2026-03-31",
-          "dex_volume_usd_bn": 7.75
-        },
-        {
-          "date": "2026-04-01",
-          "dex_volume_usd_bn": 9.13
-        },
-        {
-          "date": "2026-04-02",
-          "dex_volume_usd_bn": 6.86
-        },
-        {
-          "date": "2026-04-03",
-          "dex_volume_usd_bn": 5.19
-        },
-        {
-          "date": "2026-04-04",
-          "dex_volume_usd_bn": 3.95
-        },
-        {
-          "date": "2026-04-05",
-          "dex_volume_usd_bn": 4.41
-        },
-        {
-          "date": "2026-04-06",
-          "dex_volume_usd_bn": 7.09
-        },
-        {
-          "date": "2026-04-07",
-          "dex_volume_usd_bn": 7.52
-        },
-        {
-          "date": "2026-04-08",
-          "dex_volume_usd_bn": 7.71
-        },
-        {
-          "date": "2026-04-09",
-          "dex_volume_usd_bn": 6.81
-        },
-        {
-          "date": "2026-04-10",
-          "dex_volume_usd_bn": 6.25
-        },
-        {
-          "date": "2026-04-11",
-          "dex_volume_usd_bn": 4.92
-        },
-        {
-          "date": "2026-04-12",
-          "dex_volume_usd_bn": 5.21
-        },
-        {
-          "date": "2026-04-13",
-          "dex_volume_usd_bn": 7.5
-        },
-        {
-          "date": "2026-04-14",
-          "dex_volume_usd_bn": 8.25
-        },
-        {
-          "date": "2026-04-15",
-          "dex_volume_usd_bn": 6.41
-        },
-        {
-          "date": "2026-04-16",
-          "dex_volume_usd_bn": 7.36
-        },
-        {
-          "date": "2026-04-17",
-          "dex_volume_usd_bn": 8.32
-        },
-        {
-          "date": "2026-04-18",
-          "dex_volume_usd_bn": 6.4
-        },
-        {
-          "date": "2026-04-19",
-          "dex_volume_usd_bn": 9.16
-        },
-        {
-          "date": "2026-04-20",
-          "dex_volume_usd_bn": 8.15
-        },
-        {
-          "date": "2026-04-21",
-          "dex_volume_usd_bn": 8.98
-        },
-        {
-          "date": "2026-04-22",
-          "dex_volume_usd_bn": 9.04
-        },
-        {
-          "date": "2026-04-23",
-          "dex_volume_usd_bn": 7.68
-        },
-        {
-          "date": "2026-04-24",
-          "dex_volume_usd_bn": 6.08
-        },
-        {
-          "date": "2026-04-25",
-          "dex_volume_usd_bn": 4.4
-        },
-        {
-          "date": "2026-04-26",
-          "dex_volume_usd_bn": 4.99
-        },
-        {
-          "date": "2026-04-27",
-          "dex_volume_usd_bn": 6.53
-        },
-        {
-          "date": "2026-04-28",
-          "dex_volume_usd_bn": 6.99
-        },
-        {
-          "date": "2026-04-29",
-          "dex_volume_usd_bn": 6.76
-        },
-        {
-          "date": "2026-04-30",
-          "dex_volume_usd_bn": 5.86
-        },
-        {
-          "date": "2026-05-01",
-          "dex_volume_usd_bn": 5.6
-        },
-        {
-          "date": "2026-05-02",
-          "dex_volume_usd_bn": 3.87
-        },
-        {
-          "date": "2026-05-03",
-          "dex_volume_usd_bn": 4.26
-        },
-        {
-          "date": "2026-05-04",
-          "dex_volume_usd_bn": 7.89
-        },
-        {
-          "date": "2026-05-05",
-          "dex_volume_usd_bn": 6.5
-        },
-        {
-          "date": "2026-05-06",
-          "dex_volume_usd_bn": 7.08
-        },
-        {
-          "date": "2026-05-07",
-          "dex_volume_usd_bn": 7.11
-        },
-        {
-          "date": "2026-05-08",
-          "dex_volume_usd_bn": 7.86
-        },
-        {
-          "date": "2026-05-09",
-          "dex_volume_usd_bn": 5.7
-        },
-        {
-          "date": "2026-05-10",
-          "dex_volume_usd_bn": 6.51
-        },
-        {
-          "date": "2026-05-11",
-          "dex_volume_usd_bn": 7.35
-        },
-        {
-          "date": "2026-05-12",
-          "dex_volume_usd_bn": 7.07
-        },
-        {
-          "date": "2026-05-13",
-          "dex_volume_usd_bn": 6.98
-        },
-        {
-          "date": "2026-05-14",
-          "dex_volume_usd_bn": 7.81
-        },
-        {
-          "date": "2026-05-15",
-          "dex_volume_usd_bn": 7.48
-        },
-        {
-          "date": "2026-05-16",
-          "dex_volume_usd_bn": 5.21
-        },
-        {
-          "date": "2026-05-17",
-          "dex_volume_usd_bn": 4.67
-        },
-        {
-          "date": "2026-05-18",
-          "dex_volume_usd_bn": 7.03
-        },
-        {
-          "date": "2026-05-19",
-          "dex_volume_usd_bn": 5.87
-        },
-        {
-          "date": "2026-05-20",
-          "dex_volume_usd_bn": 6.45
-        },
-        {
-          "date": "2026-05-21",
-          "dex_volume_usd_bn": 6.88
-        },
-        {
-          "date": "2026-05-22",
-          "dex_volume_usd_bn": 6.73
-        },
-        {
-          "date": "2026-05-23",
-          "dex_volume_usd_bn": 6.18
-        },
-        {
-          "date": "2026-05-24",
-          "dex_volume_usd_bn": 5.33
-        },
-        {
-          "date": "2026-05-25",
-          "dex_volume_usd_bn": 5.88
-        },
-        {
-          "date": "2026-05-26",
-          "dex_volume_usd_bn": 8.46
-        },
-        {
-          "date": "2026-05-27",
-          "dex_volume_usd_bn": 6.57
-        },
-        {
-          "date": "2026-05-28",
-          "dex_volume_usd_bn": 7.45
-        },
-        {
-          "date": "2026-05-29",
-          "dex_volume_usd_bn": 6.86
-        },
-        {
-          "date": "2026-05-30",
-          "dex_volume_usd_bn": 5.04
-        },
-        {
-          "date": "2026-05-31",
-          "dex_volume_usd_bn": 5.53
-        },
-        {
-          "date": "2026-06-01",
-          "dex_volume_usd_bn": 8.87
-        },
-        {
-          "date": "2026-06-02",
-          "dex_volume_usd_bn": 9.7
-        },
-        {
-          "date": "2026-06-03",
-          "dex_volume_usd_bn": 9.81
-        },
-        {
-          "date": "2026-06-04",
-          "dex_volume_usd_bn": 12.73
-        },
-        {
-          "date": "2026-06-05",
-          "dex_volume_usd_bn": 13.49
-        },
-        {
-          "date": "2026-06-06",
-          "dex_volume_usd_bn": 7.4
-        },
-        {
-          "date": "2026-06-07",
-          "dex_volume_usd_bn": 6.32
-        },
-        {
-          "date": "2026-06-08",
-          "dex_volume_usd_bn": 7.53
-        },
-        {
-          "date": "2026-06-09",
-          "dex_volume_usd_bn": 7.05
-        },
-        {
-          "date": "2026-06-10",
-          "dex_volume_usd_bn": 6.82
-        },
-        {
-          "date": "2026-06-11",
-          "dex_volume_usd_bn": 6.45
-        },
-        {
-          "date": "2026-06-12",
-          "dex_volume_usd_bn": 6.28
-        },
-        {
-          "date": "2026-06-13",
-          "dex_volume_usd_bn": 4.18
-        },
-        {
-          "date": "2026-06-14",
+          "date": "2021-09-01",
+          "month": "2021-09",
           "dex_volume_usd_bn": 5.03
         },
         {
-          "date": "2026-06-15",
-          "dex_volume_usd_bn": 7.73
+          "date": "2021-10-01",
+          "month": "2021-10",
+          "dex_volume_usd_bn": 6.3
         },
         {
-          "date": "2026-06-16",
-          "dex_volume_usd_bn": 6.99
+          "date": "2021-11-01",
+          "month": "2021-11",
+          "dex_volume_usd_bn": 9.77
         },
         {
-          "date": "2026-06-17",
-          "dex_volume_usd_bn": 7.82
+          "date": "2021-12-01",
+          "month": "2021-12",
+          "dex_volume_usd_bn": 8.2
         },
         {
-          "date": "2026-06-18",
-          "dex_volume_usd_bn": 7.53
+          "date": "2022-01-01",
+          "month": "2022-01",
+          "dex_volume_usd_bn": 7.04
         },
         {
-          "date": "2026-06-19",
-          "dex_volume_usd_bn": 5.39
+          "date": "2022-02-01",
+          "month": "2022-02",
+          "dex_volume_usd_bn": 5.71
         },
         {
-          "date": "2026-06-20",
+          "date": "2022-03-01",
+          "month": "2022-03",
+          "dex_volume_usd_bn": 5.01
+        },
+        {
+          "date": "2022-04-01",
+          "month": "2022-04",
+          "dex_volume_usd_bn": 5.04
+        },
+        {
+          "date": "2022-05-01",
+          "month": "2022-05",
           "dex_volume_usd_bn": 5.36
         },
         {
-          "date": "2026-06-21",
-          "dex_volume_usd_bn": 4.84
+          "date": "2022-06-01",
+          "month": "2022-06",
+          "dex_volume_usd_bn": 3.22
         },
         {
-          "date": "2026-06-22",
-          "dex_volume_usd_bn": 6.63
+          "date": "2022-07-01",
+          "month": "2022-07",
+          "dex_volume_usd_bn": 2.49
         },
         {
-          "date": "2026-06-23",
-          "dex_volume_usd_bn": 6.91
+          "date": "2022-08-01",
+          "month": "2022-08",
+          "dex_volume_usd_bn": 2.78
         },
         {
-          "date": "2026-06-24",
-          "dex_volume_usd_bn": 8.61
+          "date": "2022-09-01",
+          "month": "2022-09",
+          "dex_volume_usd_bn": 2.38
         },
         {
-          "date": "2026-06-25",
-          "dex_volume_usd_bn": 8.79
+          "date": "2022-10-01",
+          "month": "2022-10",
+          "dex_volume_usd_bn": 1.89
         },
         {
-          "date": "2026-06-26",
-          "dex_volume_usd_bn": 8.17
+          "date": "2022-11-01",
+          "month": "2022-11",
+          "dex_volume_usd_bn": 3.46
         },
         {
-          "date": "2026-06-27",
-          "dex_volume_usd_bn": 4.14
+          "date": "2022-12-01",
+          "month": "2022-12",
+          "dex_volume_usd_bn": 1.47
         },
         {
-          "date": "2026-06-28",
-          "dex_volume_usd_bn": 4.83
+          "date": "2023-01-01",
+          "month": "2023-01",
+          "dex_volume_usd_bn": 2.09
         },
         {
-          "date": "2026-06-29",
-          "dex_volume_usd_bn": 7.52
+          "date": "2023-02-01",
+          "month": "2023-02",
+          "dex_volume_usd_bn": 2.85
         },
         {
-          "date": "2026-06-30",
-          "dex_volume_usd_bn": 6.87
+          "date": "2023-03-01",
+          "month": "2023-03",
+          "dex_volume_usd_bn": 3.65
         },
         {
-          "date": "2026-07-01",
-          "dex_volume_usd_bn": 7.35
+          "date": "2023-04-01",
+          "month": "2023-04",
+          "dex_volume_usd_bn": 2.38
         },
         {
-          "date": "2026-07-02",
-          "dex_volume_usd_bn": 6.87
+          "date": "2023-05-01",
+          "month": "2023-05",
+          "dex_volume_usd_bn": 1.97
         },
         {
-          "date": "2026-07-03",
-          "dex_volume_usd_bn": 5.7
+          "date": "2023-06-01",
+          "month": "2023-06",
+          "dex_volume_usd_bn": 2.16
         },
         {
-          "date": "2026-07-04",
-          "dex_volume_usd_bn": 5.46
+          "date": "2023-07-01",
+          "month": "2023-07",
+          "dex_volume_usd_bn": 1.83
         },
         {
-          "date": "2026-07-05",
-          "dex_volume_usd_bn": 5.2
+          "date": "2023-08-01",
+          "month": "2023-08",
+          "dex_volume_usd_bn": 1.79
         },
         {
-          "date": "2026-07-06",
-          "dex_volume_usd_bn": 7.06
+          "date": "2023-09-01",
+          "month": "2023-09",
+          "dex_volume_usd_bn": 1.47
         },
         {
-          "date": "2026-07-07",
-          "dex_volume_usd_bn": 7.41
+          "date": "2023-10-01",
+          "month": "2023-10",
+          "dex_volume_usd_bn": 1.94
         },
         {
-          "date": "2026-07-08",
-          "dex_volume_usd_bn": 7.92
+          "date": "2023-11-01",
+          "month": "2023-11",
+          "dex_volume_usd_bn": 3.21
         },
         {
-          "date": "2026-07-09",
-          "dex_volume_usd_bn": 6.44
+          "date": "2023-12-01",
+          "month": "2023-12",
+          "dex_volume_usd_bn": 4.34
         },
         {
-          "date": "2026-07-10",
-          "dex_volume_usd_bn": 6.43
+          "date": "2024-01-01",
+          "month": "2024-01",
+          "dex_volume_usd_bn": 4.21
         },
         {
-          "date": "2026-07-11",
-          "dex_volume_usd_bn": 5.29
+          "date": "2024-02-01",
+          "month": "2024-02",
+          "dex_volume_usd_bn": 3.99
         },
         {
-          "date": "2026-07-12",
-          "dex_volume_usd_bn": 5.72
+          "date": "2024-03-01",
+          "month": "2024-03",
+          "dex_volume_usd_bn": 8.24
         },
         {
-          "date": "2026-07-13",
+          "date": "2024-04-01",
+          "month": "2024-04",
+          "dex_volume_usd_bn": 6.21
+        },
+        {
+          "date": "2024-05-01",
+          "month": "2024-05",
+          "dex_volume_usd_bn": 5.58
+        },
+        {
+          "date": "2024-06-01",
+          "month": "2024-06",
+          "dex_volume_usd_bn": 8.64
+        },
+        {
+          "date": "2024-07-01",
+          "month": "2024-07",
+          "dex_volume_usd_bn": 5.86
+        },
+        {
+          "date": "2024-08-01",
+          "month": "2024-08",
+          "dex_volume_usd_bn": 5.26
+        },
+        {
+          "date": "2024-09-01",
+          "month": "2024-09",
+          "dex_volume_usd_bn": 4.12
+        },
+        {
+          "date": "2024-10-01",
+          "month": "2024-10",
+          "dex_volume_usd_bn": 6.05
+        },
+        {
+          "date": "2024-11-01",
+          "month": "2024-11",
+          "dex_volume_usd_bn": 12.77
+        },
+        {
+          "date": "2024-12-01",
+          "month": "2024-12",
+          "dex_volume_usd_bn": 13.38
+        },
+        {
+          "date": "2025-01-01",
+          "month": "2025-01",
+          "dex_volume_usd_bn": 17.96
+        },
+        {
+          "date": "2025-02-01",
+          "month": "2025-02",
+          "dex_volume_usd_bn": 13.17
+        },
+        {
+          "date": "2025-03-01",
+          "month": "2025-03",
+          "dex_volume_usd_bn": 7.97
+        },
+        {
+          "date": "2025-04-01",
+          "month": "2025-04",
+          "dex_volume_usd_bn": 8.26
+        },
+        {
+          "date": "2025-05-01",
+          "month": "2025-05",
+          "dex_volume_usd_bn": 12.62
+        },
+        {
+          "date": "2025-06-01",
+          "month": "2025-06",
+          "dex_volume_usd_bn": 11.2
+        },
+        {
+          "date": "2025-07-01",
+          "month": "2025-07",
+          "dex_volume_usd_bn": 13.78
+        },
+        {
+          "date": "2025-08-01",
+          "month": "2025-08",
+          "dex_volume_usd_bn": 16.23
+        },
+        {
+          "date": "2025-09-01",
+          "month": "2025-09",
+          "dex_volume_usd_bn": 16.77
+        },
+        {
+          "date": "2025-10-01",
+          "month": "2025-10",
+          "dex_volume_usd_bn": 18.97
+        },
+        {
+          "date": "2025-11-01",
+          "month": "2025-11",
+          "dex_volume_usd_bn": 13.85
+        },
+        {
+          "date": "2025-12-01",
+          "month": "2025-12",
+          "dex_volume_usd_bn": 10.61
+        },
+        {
+          "date": "2026-01-01",
+          "month": "2026-01",
+          "dex_volume_usd_bn": 11.85
+        },
+        {
+          "date": "2026-02-01",
+          "month": "2026-02",
+          "dex_volume_usd_bn": 10.9
+        },
+        {
+          "date": "2026-03-01",
+          "month": "2026-03",
           "dex_volume_usd_bn": 7.76
         },
         {
-          "date": "2026-07-14",
-          "dex_volume_usd_bn": 7.93
+          "date": "2026-04-01",
+          "month": "2026-04",
+          "dex_volume_usd_bn": 6.8
         },
         {
-          "date": "2026-07-15",
-          "dex_volume_usd_bn": 7.56
+          "date": "2026-05-01",
+          "month": "2026-05",
+          "dex_volume_usd_bn": 6.43
         },
         {
-          "date": "2026-07-16",
-          "dex_volume_usd_bn": 6.51
+          "date": "2026-06-01",
+          "month": "2026-06",
+          "dex_volume_usd_bn": 7.33
         },
         {
-          "date": "2026-07-17",
-          "dex_volume_usd_bn": 6.47
-        },
-        {
-          "date": "2026-07-18",
-          "dex_volume_usd_bn": 4.66
-        },
-        {
-          "date": "2026-07-19",
-          "dex_volume_usd_bn": 5.46
-        },
-        {
-          "date": "2026-07-20",
-          "dex_volume_usd_bn": 7.63
-        },
-        {
-          "date": "2026-07-21",
-          "dex_volume_usd_bn": 6.22
-        },
-        {
-          "date": "2026-07-22",
-          "dex_volume_usd_bn": 6.42
-        },
-        {
-          "date": "2026-07-23",
-          "dex_volume_usd_bn": 6.47
-        },
-        {
-          "date": "2026-07-24",
-          "dex_volume_usd_bn": 6.6
-        },
-        {
-          "date": "2026-07-25",
-          "dex_volume_usd_bn": 4.64
-        },
-        {
-          "date": "2026-07-26",
-          "dex_volume_usd_bn": 5.48
-        },
-        {
-          "date": "2026-07-27",
-          "dex_volume_usd_bn": 7.43
-        },
-        {
-          "date": "2026-07-28",
-          "dex_volume_usd_bn": 7.26
-        },
-        {
-          "date": "2026-07-29",
-          "dex_volume_usd_bn": 8.06
-        },
-        {
-          "date": "2026-07-30",
-          "dex_volume_usd_bn": 7.73
+          "date": "2026-07-01",
+          "month": "2026-07",
+          "dex_volume_usd_bn": 6.58
         }
       ],
       "hkex_etf_summary": [
@@ -3810,15 +1832,15 @@
           "ticker": "3008.HK",
           "name": "Bosera HashKey Bitcoin ETF",
           "fund_id": "BUU104",
-          "latest_month": "2026-05",
-          "aum_usd_m": 80.06
+          "latest_month": "2026-06",
+          "aum_usd_m": 47.75
         },
         {
           "ticker": "3009.HK",
           "name": "Bosera HashKey Ether ETF",
           "fund_id": "BUU105",
-          "latest_month": "2026-05",
-          "aum_usd_m": 18.94
+          "latest_month": "2026-06",
+          "aum_usd_m": 14.97
         },
         {
           "ticker": "3042.HK",
@@ -3838,8 +1860,8 @@
           "ticker": "3439.HK",
           "name": "Harvest Bitcoin Spot ETF",
           "fund_id": "BUT244",
-          "latest_month": "2026-05",
-          "aum_usd_m": 15.51
+          "latest_month": "2026-06",
+          "aum_usd_m": 12.7
         }
       ],
       "hkex_etf_aum_history": [
@@ -4317,1479 +2339,1085 @@
           "month": "2026-05",
           "series": "3439",
           "value": 15.51
+        },
+        {
+          "month": "2026-06",
+          "series": "3008",
+          "value": 47.75
+        },
+        {
+          "month": "2026-06",
+          "series": "3009",
+          "value": 14.97
+        },
+        {
+          "month": "2026-06",
+          "series": "3439",
+          "value": 12.7
         }
       ],
       "fear_greed_history": [
         {
-          "date": "2025-07-31",
-          "score": 72
+          "date": "2018-02-01",
+          "month": "2018-02",
+          "score": 42.6
+        },
+        {
+          "date": "2018-03-01",
+          "month": "2018-03",
+          "score": 35.2
+        },
+        {
+          "date": "2018-04-01",
+          "month": "2018-04",
+          "score": 29.8
+        },
+        {
+          "date": "2018-05-01",
+          "month": "2018-05",
+          "score": 40.1
+        },
+        {
+          "date": "2018-06-01",
+          "month": "2018-06",
+          "score": 26.2
+        },
+        {
+          "date": "2018-07-01",
+          "month": "2018-07",
+          "score": 40.1
+        },
+        {
+          "date": "2018-08-01",
+          "month": "2018-08",
+          "score": 22.6
+        },
+        {
+          "date": "2018-09-01",
+          "month": "2018-09",
+          "score": 25.8
+        },
+        {
+          "date": "2018-10-01",
+          "month": "2018-10",
+          "score": 26.9
+        },
+        {
+          "date": "2018-11-01",
+          "month": "2018-11",
+          "score": 31.0
+        },
+        {
+          "date": "2018-12-01",
+          "month": "2018-12",
+          "score": 19.7
+        },
+        {
+          "date": "2019-01-01",
+          "month": "2019-01",
+          "score": 30.6
+        },
+        {
+          "date": "2019-02-01",
+          "month": "2019-02",
+          "score": 41.8
+        },
+        {
+          "date": "2019-03-01",
+          "month": "2019-03",
+          "score": 50.7
+        },
+        {
+          "date": "2019-04-01",
+          "month": "2019-04",
+          "score": 57.9
+        },
+        {
+          "date": "2019-05-01",
+          "month": "2019-05",
+          "score": 68.0
+        },
+        {
+          "date": "2019-06-01",
+          "month": "2019-06",
+          "score": 68.2
+        },
+        {
+          "date": "2019-07-01",
+          "month": "2019-07",
+          "score": 47.8
+        },
+        {
+          "date": "2019-08-01",
+          "month": "2019-08",
+          "score": 38.1
+        },
+        {
+          "date": "2019-09-01",
+          "month": "2019-09",
+          "score": 35.4
+        },
+        {
+          "date": "2019-10-01",
+          "month": "2019-10",
+          "score": 38.9
+        },
+        {
+          "date": "2019-11-01",
+          "month": "2019-11",
+          "score": 37.2
+        },
+        {
+          "date": "2019-12-01",
+          "month": "2019-12",
+          "score": 27.2
+        },
+        {
+          "date": "2020-01-01",
+          "month": "2020-01",
+          "score": 47.4
+        },
+        {
+          "date": "2020-02-01",
+          "month": "2020-02",
+          "score": 52.0
+        },
+        {
+          "date": "2020-03-01",
+          "month": "2020-03",
+          "score": 18.5
+        },
+        {
+          "date": "2020-04-01",
+          "month": "2020-04",
+          "score": 18.1
+        },
+        {
+          "date": "2020-05-01",
+          "month": "2020-05",
+          "score": 44.4
+        },
+        {
+          "date": "2020-06-01",
+          "month": "2020-06",
+          "score": 44.8
+        },
+        {
+          "date": "2020-07-01",
+          "month": "2020-07",
+          "score": 48.7
+        },
+        {
+          "date": "2020-08-01",
+          "month": "2020-08",
+          "score": 77.5
+        },
+        {
+          "date": "2020-09-01",
+          "month": "2020-09",
+          "score": 46.9
+        },
+        {
+          "date": "2020-10-01",
+          "month": "2020-10",
+          "score": 57.1
+        },
+        {
+          "date": "2020-11-01",
+          "month": "2020-11",
+          "score": 86.2
+        },
+        {
+          "date": "2020-12-01",
+          "month": "2020-12",
+          "score": 92.1
+        },
+        {
+          "date": "2021-01-01",
+          "month": "2021-01",
+          "score": 81.5
+        },
+        {
+          "date": "2021-02-01",
+          "month": "2021-02",
+          "score": 84.4
+        },
+        {
+          "date": "2021-03-01",
+          "month": "2021-03",
+          "score": 71.5
+        },
+        {
+          "date": "2021-04-01",
+          "month": "2021-04",
+          "score": 66.1
+        },
+        {
+          "date": "2021-05-01",
+          "month": "2021-05",
+          "score": 37.4
+        },
+        {
+          "date": "2021-06-01",
+          "month": "2021-06",
+          "score": 22.7
+        },
+        {
+          "date": "2021-07-01",
+          "month": "2021-07",
+          "score": 26.3
+        },
+        {
+          "date": "2021-08-01",
+          "month": "2021-08",
+          "score": 68.4
+        },
+        {
+          "date": "2021-09-01",
+          "month": "2021-09",
+          "score": 45.3
+        },
+        {
+          "date": "2021-10-01",
+          "month": "2021-10",
+          "score": 69.9
+        },
+        {
+          "date": "2021-11-01",
+          "month": "2021-11",
+          "score": 58.1
+        },
+        {
+          "date": "2021-12-01",
+          "month": "2021-12",
+          "score": 28.8
+        },
+        {
+          "date": "2022-01-01",
+          "month": "2022-01",
+          "score": 20.8
+        },
+        {
+          "date": "2022-02-01",
+          "month": "2022-02",
+          "score": 34.6
+        },
+        {
+          "date": "2022-03-01",
+          "month": "2022-03",
+          "score": 34.0
+        },
+        {
+          "date": "2022-04-01",
+          "month": "2022-04",
+          "score": 31.3
+        },
+        {
+          "date": "2022-05-01",
+          "month": "2022-05",
+          "score": 14.8
+        },
+        {
+          "date": "2022-06-01",
+          "month": "2022-06",
+          "score": 11.3
+        },
+        {
+          "date": "2022-07-01",
+          "month": "2022-07",
+          "score": 24.2
+        },
+        {
+          "date": "2022-08-01",
+          "month": "2022-08",
+          "score": 32.6
+        },
+        {
+          "date": "2022-09-01",
+          "month": "2022-09",
+          "score": 23.2
+        },
+        {
+          "date": "2022-10-01",
+          "month": "2022-10",
+          "score": 24.4
+        },
+        {
+          "date": "2022-11-01",
+          "month": "2022-11",
+          "score": 25.9
+        },
+        {
+          "date": "2022-12-01",
+          "month": "2022-12",
+          "score": 27.4
+        },
+        {
+          "date": "2023-01-01",
+          "month": "2023-01",
+          "score": 41.3
+        },
+        {
+          "date": "2023-02-01",
+          "month": "2023-02",
+          "score": 55.3
+        },
+        {
+          "date": "2023-03-01",
+          "month": "2023-03",
+          "score": 53.8
+        },
+        {
+          "date": "2023-04-01",
+          "month": "2023-04",
+          "score": 61.0
+        },
+        {
+          "date": "2023-05-01",
+          "month": "2023-05",
+          "score": 53.1
+        },
+        {
+          "date": "2023-06-01",
+          "month": "2023-06",
+          "score": 52.4
+        },
+        {
+          "date": "2023-07-01",
+          "month": "2023-07",
+          "score": 55.6
+        },
+        {
+          "date": "2023-08-01",
+          "month": "2023-08",
+          "score": 46.5
+        },
+        {
+          "date": "2023-09-01",
+          "month": "2023-09",
+          "score": 43.2
+        },
+        {
+          "date": "2023-10-01",
+          "month": "2023-10",
+          "score": 54.7
+        },
+        {
+          "date": "2023-11-01",
+          "month": "2023-11",
+          "score": 68.7
+        },
+        {
+          "date": "2023-12-01",
+          "month": "2023-12",
+          "score": 71.1
+        },
+        {
+          "date": "2024-01-01",
+          "month": "2024-01",
+          "score": 61.8
+        },
+        {
+          "date": "2024-02-01",
+          "month": "2024-02",
+          "score": 71.2
+        },
+        {
+          "date": "2024-03-01",
+          "month": "2024-03",
+          "score": 79.6
+        },
+        {
+          "date": "2024-04-01",
+          "month": "2024-04",
+          "score": 71.8
+        },
+        {
+          "date": "2024-05-01",
+          "month": "2024-05",
+          "score": 67.0
+        },
+        {
+          "date": "2024-06-01",
+          "month": "2024-06",
+          "score": 63.5
+        },
+        {
+          "date": "2024-07-01",
+          "month": "2024-07",
+          "score": 52.4
+        },
+        {
+          "date": "2024-08-01",
+          "month": "2024-08",
+          "score": 35.1
+        },
+        {
+          "date": "2024-09-01",
+          "month": "2024-09",
+          "score": 41.9
+        },
+        {
+          "date": "2024-10-01",
+          "month": "2024-10",
+          "score": 59.6
+        },
+        {
+          "date": "2024-11-01",
+          "month": "2024-11",
+          "score": 80.0
+        },
+        {
+          "date": "2024-12-01",
+          "month": "2024-12",
+          "score": 76.3
+        },
+        {
+          "date": "2025-01-01",
+          "month": "2025-01",
+          "score": 71.7
+        },
+        {
+          "date": "2025-02-01",
+          "month": "2025-02",
+          "score": 45.9
+        },
+        {
+          "date": "2025-03-01",
+          "month": "2025-03",
+          "score": 32.5
+        },
+        {
+          "date": "2025-04-01",
+          "month": "2025-04",
+          "score": 40.6
+        },
+        {
+          "date": "2025-05-01",
+          "month": "2025-05",
+          "score": 68.2
+        },
+        {
+          "date": "2025-06-01",
+          "month": "2025-06",
+          "score": 60.7
+        },
+        {
+          "date": "2025-07-01",
+          "month": "2025-07",
+          "score": 71.4
         },
         {
           "date": "2025-08-01",
-          "score": 65
-        },
-        {
-          "date": "2025-08-02",
-          "score": 55
-        },
-        {
-          "date": "2025-08-03",
-          "score": 53
-        },
-        {
-          "date": "2025-08-04",
-          "score": 64
-        },
-        {
-          "date": "2025-08-05",
-          "score": 60
-        },
-        {
-          "date": "2025-08-06",
-          "score": 54
-        },
-        {
-          "date": "2025-08-07",
-          "score": 62
-        },
-        {
-          "date": "2025-08-08",
-          "score": 74
-        },
-        {
-          "date": "2025-08-09",
-          "score": 67
-        },
-        {
-          "date": "2025-08-10",
-          "score": 69
-        },
-        {
-          "date": "2025-08-11",
-          "score": 70
-        },
-        {
-          "date": "2025-08-12",
-          "score": 68
-        },
-        {
-          "date": "2025-08-13",
-          "score": 73
-        },
-        {
-          "date": "2025-08-14",
-          "score": 75
-        },
-        {
-          "date": "2025-08-15",
-          "score": 60
-        },
-        {
-          "date": "2025-08-16",
-          "score": 56
-        },
-        {
-          "date": "2025-08-17",
-          "score": 64
-        },
-        {
-          "date": "2025-08-18",
-          "score": 60
-        },
-        {
-          "date": "2025-08-19",
-          "score": 56
-        },
-        {
-          "date": "2025-08-20",
-          "score": 44
-        },
-        {
-          "date": "2025-08-21",
-          "score": 50
-        },
-        {
-          "date": "2025-08-22",
-          "score": 50
-        },
-        {
-          "date": "2025-08-23",
-          "score": 60
-        },
-        {
-          "date": "2025-08-24",
-          "score": 53
-        },
-        {
-          "date": "2025-08-25",
-          "score": 47
-        },
-        {
-          "date": "2025-08-26",
-          "score": 48
-        },
-        {
-          "date": "2025-08-27",
-          "score": 51
-        },
-        {
-          "date": "2025-08-28",
-          "score": 48
-        },
-        {
-          "date": "2025-08-29",
-          "score": 50
-        },
-        {
-          "date": "2025-08-30",
-          "score": 39
-        },
-        {
-          "date": "2025-08-31",
-          "score": 48
+          "month": "2025-08",
+          "score": 57.8
         },
         {
           "date": "2025-09-01",
-          "score": 46
-        },
-        {
-          "date": "2025-09-02",
-          "score": 49
-        },
-        {
-          "date": "2025-09-03",
-          "score": 55
-        },
-        {
-          "date": "2025-09-04",
-          "score": 51
-        },
-        {
-          "date": "2025-09-05",
-          "score": 48
-        },
-        {
-          "date": "2025-09-06",
-          "score": 48
-        },
-        {
-          "date": "2025-09-07",
-          "score": 44
-        },
-        {
-          "date": "2025-09-08",
-          "score": 51
-        },
-        {
-          "date": "2025-09-09",
-          "score": 48
-        },
-        {
-          "date": "2025-09-10",
-          "score": 49
-        },
-        {
-          "date": "2025-09-11",
-          "score": 54
-        },
-        {
-          "date": "2025-09-12",
-          "score": 57
-        },
-        {
-          "date": "2025-09-13",
-          "score": 52
-        },
-        {
-          "date": "2025-09-14",
-          "score": 55
-        },
-        {
-          "date": "2025-09-15",
-          "score": 53
-        },
-        {
-          "date": "2025-09-16",
-          "score": 52
-        },
-        {
-          "date": "2025-09-17",
-          "score": 53
-        },
-        {
-          "date": "2025-09-18",
-          "score": 52
-        },
-        {
-          "date": "2025-09-19",
-          "score": 53
-        },
-        {
-          "date": "2025-09-20",
-          "score": 48
-        },
-        {
-          "date": "2025-09-21",
-          "score": 49
-        },
-        {
-          "date": "2025-09-22",
-          "score": 45
-        },
-        {
-          "date": "2025-09-23",
-          "score": 43
-        },
-        {
-          "date": "2025-09-24",
-          "score": 44
-        },
-        {
-          "date": "2025-09-25",
-          "score": 44
-        },
-        {
-          "date": "2025-09-26",
-          "score": 28
-        },
-        {
-          "date": "2025-09-27",
-          "score": 33
-        },
-        {
-          "date": "2025-09-28",
-          "score": 37
-        },
-        {
-          "date": "2025-09-29",
-          "score": 50
-        },
-        {
-          "date": "2025-09-30",
-          "score": 50
+          "month": "2025-09",
+          "score": 48.0
         },
         {
           "date": "2025-10-01",
-          "score": 49
-        },
-        {
-          "date": "2025-10-02",
-          "score": 64
-        },
-        {
-          "date": "2025-10-03",
-          "score": 63
-        },
-        {
-          "date": "2025-10-04",
-          "score": 71
-        },
-        {
-          "date": "2025-10-05",
-          "score": 74
-        },
-        {
-          "date": "2025-10-06",
-          "score": 71
-        },
-        {
-          "date": "2025-10-07",
-          "score": 70
-        },
-        {
-          "date": "2025-10-08",
-          "score": 60
-        },
-        {
-          "date": "2025-10-09",
-          "score": 70
-        },
-        {
-          "date": "2025-10-10",
-          "score": 64
-        },
-        {
-          "date": "2025-10-11",
-          "score": 27
-        },
-        {
-          "date": "2025-10-12",
-          "score": 24
-        },
-        {
-          "date": "2025-10-13",
-          "score": 38
-        },
-        {
-          "date": "2025-10-14",
-          "score": 38
-        },
-        {
-          "date": "2025-10-15",
-          "score": 34
-        },
-        {
-          "date": "2025-10-16",
-          "score": 28
-        },
-        {
-          "date": "2025-10-17",
-          "score": 22
-        },
-        {
-          "date": "2025-10-18",
-          "score": 23
-        },
-        {
-          "date": "2025-10-19",
-          "score": 29
-        },
-        {
-          "date": "2025-10-20",
-          "score": 29
-        },
-        {
-          "date": "2025-10-21",
-          "score": 34
-        },
-        {
-          "date": "2025-10-22",
-          "score": 25
-        },
-        {
-          "date": "2025-10-23",
-          "score": 27
-        },
-        {
-          "date": "2025-10-24",
-          "score": 30
-        },
-        {
-          "date": "2025-10-25",
-          "score": 37
-        },
-        {
-          "date": "2025-10-26",
-          "score": 40
-        },
-        {
-          "date": "2025-10-27",
-          "score": 51
-        },
-        {
-          "date": "2025-10-28",
-          "score": 50
-        },
-        {
-          "date": "2025-10-29",
-          "score": 51
-        },
-        {
-          "date": "2025-10-30",
-          "score": 34
-        },
-        {
-          "date": "2025-10-31",
-          "score": 29
+          "month": "2025-10",
+          "score": 43.7
         },
         {
           "date": "2025-11-01",
-          "score": 33
-        },
-        {
-          "date": "2025-11-02",
-          "score": 37
-        },
-        {
-          "date": "2025-11-03",
-          "score": 42
-        },
-        {
-          "date": "2025-11-04",
-          "score": 21
-        },
-        {
-          "date": "2025-11-05",
-          "score": 23
-        },
-        {
-          "date": "2025-11-06",
-          "score": 27
-        },
-        {
-          "date": "2025-11-07",
-          "score": 24
-        },
-        {
-          "date": "2025-11-08",
-          "score": 20
-        },
-        {
-          "date": "2025-11-09",
-          "score": 22
-        },
-        {
-          "date": "2025-11-10",
-          "score": 29
-        },
-        {
-          "date": "2025-11-11",
-          "score": 26
-        },
-        {
-          "date": "2025-11-12",
-          "score": 24
-        },
-        {
-          "date": "2025-11-13",
-          "score": 15
-        },
-        {
-          "date": "2025-11-14",
-          "score": 16
-        },
-        {
-          "date": "2025-11-15",
-          "score": 10
-        },
-        {
-          "date": "2025-11-16",
-          "score": 10
-        },
-        {
-          "date": "2025-11-17",
-          "score": 14
-        },
-        {
-          "date": "2025-11-18",
-          "score": 11
-        },
-        {
-          "date": "2025-11-19",
-          "score": 15
-        },
-        {
-          "date": "2025-11-20",
-          "score": 11
-        },
-        {
-          "date": "2025-11-21",
-          "score": 14
-        },
-        {
-          "date": "2025-11-22",
-          "score": 11
-        },
-        {
-          "date": "2025-11-23",
-          "score": 13
-        },
-        {
-          "date": "2025-11-24",
-          "score": 19
-        },
-        {
-          "date": "2025-11-25",
-          "score": 20
-        },
-        {
-          "date": "2025-11-26",
-          "score": 15
-        },
-        {
-          "date": "2025-11-27",
-          "score": 22
-        },
-        {
-          "date": "2025-11-28",
-          "score": 25
-        },
-        {
-          "date": "2025-11-29",
-          "score": 28
-        },
-        {
-          "date": "2025-11-30",
-          "score": 28
+          "month": "2025-11",
+          "score": 20.8
         },
         {
           "date": "2025-12-01",
-          "score": 24
-        },
-        {
-          "date": "2025-12-02",
-          "score": 23
-        },
-        {
-          "date": "2025-12-03",
-          "score": 28
-        },
-        {
-          "date": "2025-12-04",
-          "score": 26
-        },
-        {
-          "date": "2025-12-05",
-          "score": 28
-        },
-        {
-          "date": "2025-12-06",
-          "score": 23
-        },
-        {
-          "date": "2025-12-07",
-          "score": 20
-        },
-        {
-          "date": "2025-12-08",
-          "score": 20
-        },
-        {
-          "date": "2025-12-09",
-          "score": 22
-        },
-        {
-          "date": "2025-12-10",
-          "score": 26
-        },
-        {
-          "date": "2025-12-11",
-          "score": 29
-        },
-        {
-          "date": "2025-12-12",
-          "score": 29
-        },
-        {
-          "date": "2025-12-13",
-          "score": 23
-        },
-        {
-          "date": "2025-12-14",
-          "score": 21
-        },
-        {
-          "date": "2025-12-15",
-          "score": 16
-        },
-        {
-          "date": "2025-12-16",
-          "score": 11
-        },
-        {
-          "date": "2025-12-17",
-          "score": 16
-        },
-        {
-          "date": "2025-12-18",
-          "score": 17
-        },
-        {
-          "date": "2025-12-19",
-          "score": 16
-        },
-        {
-          "date": "2025-12-20",
-          "score": 20
-        },
-        {
-          "date": "2025-12-21",
-          "score": 20
-        },
-        {
-          "date": "2025-12-22",
-          "score": 25
-        },
-        {
-          "date": "2025-12-23",
-          "score": 24
-        },
-        {
-          "date": "2025-12-24",
-          "score": 24
-        },
-        {
-          "date": "2025-12-25",
-          "score": 23
-        },
-        {
-          "date": "2025-12-26",
-          "score": 20
-        },
-        {
-          "date": "2025-12-27",
-          "score": 23
-        },
-        {
-          "date": "2025-12-28",
-          "score": 24
-        },
-        {
-          "date": "2025-12-29",
-          "score": 24
-        },
-        {
-          "date": "2025-12-30",
-          "score": 23
-        },
-        {
-          "date": "2025-12-31",
-          "score": 21
+          "month": "2025-12",
+          "score": 22.2
         },
         {
           "date": "2026-01-01",
-          "score": 20
-        },
-        {
-          "date": "2026-01-02",
-          "score": 28
-        },
-        {
-          "date": "2026-01-03",
-          "score": 29
-        },
-        {
-          "date": "2026-01-04",
-          "score": 25
-        },
-        {
-          "date": "2026-01-05",
-          "score": 26
-        },
-        {
-          "date": "2026-01-06",
-          "score": 44
-        },
-        {
-          "date": "2026-01-07",
-          "score": 42
-        },
-        {
-          "date": "2026-01-08",
-          "score": 28
-        },
-        {
-          "date": "2026-01-09",
-          "score": 27
-        },
-        {
-          "date": "2026-01-10",
-          "score": 25
-        },
-        {
-          "date": "2026-01-11",
-          "score": 29
-        },
-        {
-          "date": "2026-01-12",
-          "score": 27
-        },
-        {
-          "date": "2026-01-13",
-          "score": 26
-        },
-        {
-          "date": "2026-01-14",
-          "score": 48
-        },
-        {
-          "date": "2026-01-15",
-          "score": 61
-        },
-        {
-          "date": "2026-01-16",
-          "score": 49
-        },
-        {
-          "date": "2026-01-17",
-          "score": 50
-        },
-        {
-          "date": "2026-01-18",
-          "score": 49
-        },
-        {
-          "date": "2026-01-19",
-          "score": 44
-        },
-        {
-          "date": "2026-01-20",
-          "score": 32
-        },
-        {
-          "date": "2026-01-21",
-          "score": 24
-        },
-        {
-          "date": "2026-01-22",
-          "score": 20
-        },
-        {
-          "date": "2026-01-23",
-          "score": 24
-        },
-        {
-          "date": "2026-01-24",
-          "score": 25
-        },
-        {
-          "date": "2026-01-25",
-          "score": 25
-        },
-        {
-          "date": "2026-01-26",
-          "score": 20
-        },
-        {
-          "date": "2026-01-27",
-          "score": 29
-        },
-        {
-          "date": "2026-01-28",
-          "score": 29
-        },
-        {
-          "date": "2026-01-29",
-          "score": 26
-        },
-        {
-          "date": "2026-01-30",
-          "score": 16
-        },
-        {
-          "date": "2026-01-31",
-          "score": 20
+          "month": "2026-01",
+          "score": 31.2
         },
         {
           "date": "2026-02-01",
-          "score": 14
-        },
-        {
-          "date": "2026-02-02",
-          "score": 14
-        },
-        {
-          "date": "2026-02-03",
-          "score": 17
-        },
-        {
-          "date": "2026-02-04",
-          "score": 14
-        },
-        {
-          "date": "2026-02-05",
-          "score": 12
-        },
-        {
-          "date": "2026-02-06",
-          "score": 9
-        },
-        {
-          "date": "2026-02-07",
-          "score": 6
-        },
-        {
-          "date": "2026-02-08",
-          "score": 7
-        },
-        {
-          "date": "2026-02-09",
-          "score": 14
-        },
-        {
-          "date": "2026-02-10",
-          "score": 9
-        },
-        {
-          "date": "2026-02-11",
-          "score": 11
-        },
-        {
-          "date": "2026-02-12",
-          "score": 5
-        },
-        {
-          "date": "2026-02-13",
-          "score": 9
-        },
-        {
-          "date": "2026-02-14",
-          "score": 9
-        },
-        {
-          "date": "2026-02-15",
-          "score": 8
-        },
-        {
-          "date": "2026-02-16",
-          "score": 12
-        },
-        {
-          "date": "2026-02-17",
-          "score": 10
-        },
-        {
-          "date": "2026-02-18",
-          "score": 8
-        },
-        {
-          "date": "2026-02-19",
-          "score": 9
-        },
-        {
-          "date": "2026-02-20",
-          "score": 7
-        },
-        {
-          "date": "2026-02-21",
-          "score": 8
-        },
-        {
-          "date": "2026-02-22",
-          "score": 9
-        },
-        {
-          "date": "2026-02-23",
-          "score": 5
-        },
-        {
-          "date": "2026-02-24",
-          "score": 8
-        },
-        {
-          "date": "2026-02-25",
-          "score": 11
-        },
-        {
-          "date": "2026-02-26",
-          "score": 11
-        },
-        {
-          "date": "2026-02-27",
-          "score": 13
-        },
-        {
-          "date": "2026-02-28",
-          "score": 11
+          "month": "2026-02",
+          "score": 10.0
         },
         {
           "date": "2026-03-01",
-          "score": 14
-        },
-        {
-          "date": "2026-03-02",
-          "score": 10
-        },
-        {
-          "date": "2026-03-03",
-          "score": 14
-        },
-        {
-          "date": "2026-03-04",
-          "score": 10
-        },
-        {
-          "date": "2026-03-05",
-          "score": 22
-        },
-        {
-          "date": "2026-03-06",
-          "score": 18
-        },
-        {
-          "date": "2026-03-07",
-          "score": 12
-        },
-        {
-          "date": "2026-03-08",
-          "score": 12
-        },
-        {
-          "date": "2026-03-09",
-          "score": 8
-        },
-        {
-          "date": "2026-03-10",
-          "score": 13
-        },
-        {
-          "date": "2026-03-11",
-          "score": 15
-        },
-        {
-          "date": "2026-03-12",
-          "score": 18
-        },
-        {
-          "date": "2026-03-13",
-          "score": 15
-        },
-        {
-          "date": "2026-03-14",
-          "score": 16
-        },
-        {
-          "date": "2026-03-15",
-          "score": 15
-        },
-        {
-          "date": "2026-03-16",
-          "score": 23
-        },
-        {
-          "date": "2026-03-17",
-          "score": 28
-        },
-        {
-          "date": "2026-03-18",
-          "score": 26
-        },
-        {
-          "date": "2026-03-19",
-          "score": 23
-        },
-        {
-          "date": "2026-03-20",
-          "score": 11
-        },
-        {
-          "date": "2026-03-21",
-          "score": 12
-        },
-        {
-          "date": "2026-03-22",
-          "score": 10
-        },
-        {
-          "date": "2026-03-23",
-          "score": 8
-        },
-        {
-          "date": "2026-03-24",
-          "score": 11
-        },
-        {
-          "date": "2026-03-25",
-          "score": 14
-        },
-        {
-          "date": "2026-03-26",
-          "score": 10
-        },
-        {
-          "date": "2026-03-27",
-          "score": 13
-        },
-        {
-          "date": "2026-03-28",
-          "score": 12
-        },
-        {
-          "date": "2026-03-29",
-          "score": 9
-        },
-        {
-          "date": "2026-03-30",
-          "score": 8
-        },
-        {
-          "date": "2026-03-31",
-          "score": 11
+          "month": "2026-03",
+          "score": 14.2
         },
         {
           "date": "2026-04-01",
-          "score": 8
-        },
-        {
-          "date": "2026-04-02",
-          "score": 12
-        },
-        {
-          "date": "2026-04-03",
-          "score": 9
-        },
-        {
-          "date": "2026-04-04",
-          "score": 11
-        },
-        {
-          "date": "2026-04-05",
-          "score": 12
-        },
-        {
-          "date": "2026-04-06",
-          "score": 13
-        },
-        {
-          "date": "2026-04-07",
-          "score": 11
-        },
-        {
-          "date": "2026-04-08",
-          "score": 17
-        },
-        {
-          "date": "2026-04-09",
-          "score": 14
-        },
-        {
-          "date": "2026-04-10",
-          "score": 16
-        },
-        {
-          "date": "2026-04-11",
-          "score": 15
-        },
-        {
-          "date": "2026-04-12",
-          "score": 16
-        },
-        {
-          "date": "2026-04-13",
-          "score": 12
-        },
-        {
-          "date": "2026-04-14",
-          "score": 21
-        },
-        {
-          "date": "2026-04-15",
-          "score": 23
-        },
-        {
-          "date": "2026-04-16",
-          "score": 23
-        },
-        {
-          "date": "2026-04-17",
-          "score": 21
-        },
-        {
-          "date": "2026-04-18",
-          "score": 26
-        },
-        {
-          "date": "2026-04-19",
-          "score": 27
-        },
-        {
-          "date": "2026-04-20",
-          "score": 29
-        },
-        {
-          "date": "2026-04-21",
-          "score": 33
-        },
-        {
-          "date": "2026-04-22",
-          "score": 32
-        },
-        {
-          "date": "2026-04-23",
-          "score": 46
-        },
-        {
-          "date": "2026-04-24",
-          "score": 39
-        },
-        {
-          "date": "2026-04-25",
-          "score": 31
-        },
-        {
-          "date": "2026-04-26",
-          "score": 33
-        },
-        {
-          "date": "2026-04-27",
-          "score": 47
-        },
-        {
-          "date": "2026-04-28",
-          "score": 33
-        },
-        {
-          "date": "2026-04-29",
-          "score": 26
-        },
-        {
-          "date": "2026-04-30",
-          "score": 29
+          "month": "2026-04",
+          "score": 22.8
         },
         {
           "date": "2026-05-01",
-          "score": 26
-        },
-        {
-          "date": "2026-05-02",
-          "score": 39
-        },
-        {
-          "date": "2026-05-03",
-          "score": 47
-        },
-        {
-          "date": "2026-05-04",
-          "score": 40
-        },
-        {
-          "date": "2026-05-05",
-          "score": 50
-        },
-        {
-          "date": "2026-05-06",
-          "score": 46
-        },
-        {
-          "date": "2026-05-07",
-          "score": 47
-        },
-        {
-          "date": "2026-05-08",
-          "score": 38
-        },
-        {
-          "date": "2026-05-09",
-          "score": 38
-        },
-        {
-          "date": "2026-05-10",
-          "score": 47
-        },
-        {
-          "date": "2026-05-11",
-          "score": 48
-        },
-        {
-          "date": "2026-05-12",
-          "score": 49
-        },
-        {
-          "date": "2026-05-13",
-          "score": 42
-        },
-        {
-          "date": "2026-05-14",
-          "score": 34
-        },
-        {
-          "date": "2026-05-15",
-          "score": 43
-        },
-        {
-          "date": "2026-05-16",
-          "score": 31
-        },
-        {
-          "date": "2026-05-17",
-          "score": 27
-        },
-        {
-          "date": "2026-05-18",
-          "score": 28
-        },
-        {
-          "date": "2026-05-19",
-          "score": 25
-        },
-        {
-          "date": "2026-05-20",
-          "score": 27
-        },
-        {
-          "date": "2026-05-21",
-          "score": 29
-        },
-        {
-          "date": "2026-05-22",
-          "score": 28
-        },
-        {
-          "date": "2026-05-23",
-          "score": 28
-        },
-        {
-          "date": "2026-05-24",
-          "score": 25
-        },
-        {
-          "date": "2026-05-25",
-          "score": 30
-        },
-        {
-          "date": "2026-05-26",
-          "score": 34
-        },
-        {
-          "date": "2026-05-27",
-          "score": 25
-        },
-        {
-          "date": "2026-05-28",
-          "score": 22
-        },
-        {
-          "date": "2026-05-29",
-          "score": 23
-        },
-        {
-          "date": "2026-05-30",
-          "score": 23
-        },
-        {
-          "date": "2026-05-31",
-          "score": 28
+          "month": "2026-05",
+          "score": 34.4
         },
         {
           "date": "2026-06-01",
-          "score": 29
-        },
-        {
-          "date": "2026-06-02",
-          "score": 23
-        },
-        {
-          "date": "2026-06-03",
-          "score": 11
-        },
-        {
-          "date": "2026-06-04",
-          "score": 12
-        },
-        {
-          "date": "2026-06-05",
-          "score": 12
-        },
-        {
-          "date": "2026-06-06",
-          "score": 12
-        },
-        {
-          "date": "2026-06-07",
-          "score": 12
-        },
-        {
-          "date": "2026-06-08",
-          "score": 8
-        },
-        {
-          "date": "2026-06-09",
-          "score": 10
-        },
-        {
-          "date": "2026-06-10",
-          "score": 9
-        },
-        {
-          "date": "2026-06-11",
-          "score": 12
-        },
-        {
-          "date": "2026-06-12",
-          "score": 12
-        },
-        {
-          "date": "2026-06-13",
-          "score": 13
-        },
-        {
-          "date": "2026-06-14",
-          "score": 18
-        },
-        {
-          "date": "2026-06-15",
-          "score": 20
-        },
-        {
-          "date": "2026-06-16",
-          "score": 23
-        },
-        {
-          "date": "2026-06-17",
-          "score": 22
-        },
-        {
-          "date": "2026-06-18",
-          "score": 15
-        },
-        {
-          "date": "2026-06-19",
-          "score": 14
-        },
-        {
-          "date": "2026-06-20",
-          "score": 23
-        },
-        {
-          "date": "2026-06-21",
-          "score": 23
-        },
-        {
-          "date": "2026-06-22",
-          "score": 20
-        },
-        {
-          "date": "2026-06-23",
-          "score": 23
-        },
-        {
-          "date": "2026-06-24",
-          "score": 17
-        },
-        {
-          "date": "2026-06-25",
-          "score": 12
-        },
-        {
-          "date": "2026-06-26",
-          "score": 13
-        },
-        {
-          "date": "2026-06-27",
-          "score": 15
-        },
-        {
-          "date": "2026-06-28",
-          "score": 18
-        },
-        {
-          "date": "2026-06-29",
-          "score": 12
-        },
-        {
-          "date": "2026-06-30",
-          "score": 15
+          "month": "2026-06",
+          "score": 15.9
         },
         {
           "date": "2026-07-01",
-          "score": 11
+          "month": "2026-07",
+          "score": 25.3
+        }
+      ],
+      "btc_price_history": [
+        {
+          "date": "2017-08-31",
+          "month": "2017-08",
+          "btc_price_usd": 4724.89
         },
         {
-          "date": "2026-07-02",
-          "score": 19
+          "date": "2017-09-30",
+          "month": "2017-09",
+          "btc_price_usd": 4378.51
         },
         {
-          "date": "2026-07-03",
-          "score": 21
+          "date": "2017-10-31",
+          "month": "2017-10",
+          "btc_price_usd": 6463.0
         },
         {
-          "date": "2026-07-04",
-          "score": 22
+          "date": "2017-11-30",
+          "month": "2017-11",
+          "btc_price_usd": 9838.96
         },
         {
-          "date": "2026-07-05",
-          "score": 23
+          "date": "2017-12-31",
+          "month": "2017-12",
+          "btc_price_usd": 13716.36
         },
         {
-          "date": "2026-07-06",
-          "score": 24
+          "date": "2018-01-31",
+          "month": "2018-01",
+          "btc_price_usd": 10285.1
         },
         {
-          "date": "2026-07-07",
-          "score": 27
+          "date": "2018-02-28",
+          "month": "2018-02",
+          "btc_price_usd": 10326.76
         },
         {
-          "date": "2026-07-08",
-          "score": 20
+          "date": "2018-03-31",
+          "month": "2018-03",
+          "btc_price_usd": 6923.91
         },
         {
-          "date": "2026-07-09",
-          "score": 22
+          "date": "2018-04-30",
+          "month": "2018-04",
+          "btc_price_usd": 9246.01
         },
         {
-          "date": "2026-07-10",
-          "score": 23
+          "date": "2018-05-31",
+          "month": "2018-05",
+          "btc_price_usd": 7485.01
         },
         {
-          "date": "2026-07-11",
-          "score": 26
+          "date": "2018-06-30",
+          "month": "2018-06",
+          "btc_price_usd": 6390.07
         },
         {
-          "date": "2026-07-12",
-          "score": 26
+          "date": "2018-07-31",
+          "month": "2018-07",
+          "btc_price_usd": 7730.93
         },
         {
-          "date": "2026-07-13",
-          "score": 28
+          "date": "2018-08-31",
+          "month": "2018-08",
+          "btc_price_usd": 7011.21
         },
         {
-          "date": "2026-07-14",
-          "score": 22
+          "date": "2018-09-30",
+          "month": "2018-09",
+          "btc_price_usd": 6626.57
         },
         {
-          "date": "2026-07-15",
-          "score": 25
+          "date": "2018-10-31",
+          "month": "2018-10",
+          "btc_price_usd": 6371.93
         },
         {
-          "date": "2026-07-16",
-          "score": 25
+          "date": "2018-11-30",
+          "month": "2018-11",
+          "btc_price_usd": 4041.32
         },
         {
-          "date": "2026-07-17",
-          "score": 27
+          "date": "2018-12-31",
+          "month": "2018-12",
+          "btc_price_usd": 3702.9
         },
         {
-          "date": "2026-07-18",
-          "score": 25
+          "date": "2019-01-31",
+          "month": "2019-01",
+          "btc_price_usd": 3434.1
         },
         {
-          "date": "2026-07-19",
-          "score": 28
+          "date": "2019-02-28",
+          "month": "2019-02",
+          "btc_price_usd": 3813.69
         },
         {
-          "date": "2026-07-20",
-          "score": 29
+          "date": "2019-03-31",
+          "month": "2019-03",
+          "btc_price_usd": 4103.95
         },
         {
-          "date": "2026-07-21",
-          "score": 25
+          "date": "2019-04-30",
+          "month": "2019-04",
+          "btc_price_usd": 5320.81
         },
         {
-          "date": "2026-07-22",
-          "score": 33
+          "date": "2019-05-31",
+          "month": "2019-05",
+          "btc_price_usd": 8555.0
         },
         {
-          "date": "2026-07-23",
-          "score": 31
+          "date": "2019-06-30",
+          "month": "2019-06",
+          "btc_price_usd": 10854.1
         },
         {
-          "date": "2026-07-24",
-          "score": 28
+          "date": "2019-07-31",
+          "month": "2019-07",
+          "btc_price_usd": 10080.53
         },
         {
-          "date": "2026-07-25",
-          "score": 27
+          "date": "2019-08-31",
+          "month": "2019-08",
+          "btc_price_usd": 9587.47
         },
         {
-          "date": "2026-07-26",
-          "score": 26
+          "date": "2019-09-30",
+          "month": "2019-09",
+          "btc_price_usd": 8289.34
         },
         {
-          "date": "2026-07-27",
-          "score": 30
+          "date": "2019-10-31",
+          "month": "2019-10",
+          "btc_price_usd": 9140.85
         },
         {
-          "date": "2026-07-28",
-          "score": 29
+          "date": "2019-11-30",
+          "month": "2019-11",
+          "btc_price_usd": 7541.89
         },
         {
-          "date": "2026-07-29",
-          "score": 29
+          "date": "2019-12-31",
+          "month": "2019-12",
+          "btc_price_usd": 7195.23
+        },
+        {
+          "date": "2020-01-31",
+          "month": "2020-01",
+          "btc_price_usd": 9352.89
+        },
+        {
+          "date": "2020-02-29",
+          "month": "2020-02",
+          "btc_price_usd": 8523.61
+        },
+        {
+          "date": "2020-03-31",
+          "month": "2020-03",
+          "btc_price_usd": 6410.44
+        },
+        {
+          "date": "2020-04-30",
+          "month": "2020-04",
+          "btc_price_usd": 8620.0
+        },
+        {
+          "date": "2020-05-31",
+          "month": "2020-05",
+          "btc_price_usd": 9448.27
+        },
+        {
+          "date": "2020-06-30",
+          "month": "2020-06",
+          "btc_price_usd": 9138.55
+        },
+        {
+          "date": "2020-07-31",
+          "month": "2020-07",
+          "btc_price_usd": 11335.46
+        },
+        {
+          "date": "2020-08-31",
+          "month": "2020-08",
+          "btc_price_usd": 11649.51
+        },
+        {
+          "date": "2020-09-30",
+          "month": "2020-09",
+          "btc_price_usd": 10776.59
+        },
+        {
+          "date": "2020-10-31",
+          "month": "2020-10",
+          "btc_price_usd": 13791.0
+        },
+        {
+          "date": "2020-11-30",
+          "month": "2020-11",
+          "btc_price_usd": 19695.87
+        },
+        {
+          "date": "2020-12-31",
+          "month": "2020-12",
+          "btc_price_usd": 28923.63
+        },
+        {
+          "date": "2021-01-31",
+          "month": "2021-01",
+          "btc_price_usd": 33092.98
+        },
+        {
+          "date": "2021-02-28",
+          "month": "2021-02",
+          "btc_price_usd": 45135.66
+        },
+        {
+          "date": "2021-03-31",
+          "month": "2021-03",
+          "btc_price_usd": 58740.55
+        },
+        {
+          "date": "2021-04-30",
+          "month": "2021-04",
+          "btc_price_usd": 57694.27
+        },
+        {
+          "date": "2021-05-31",
+          "month": "2021-05",
+          "btc_price_usd": 37253.81
+        },
+        {
+          "date": "2021-06-30",
+          "month": "2021-06",
+          "btc_price_usd": 35045.0
+        },
+        {
+          "date": "2021-07-31",
+          "month": "2021-07",
+          "btc_price_usd": 41461.83
+        },
+        {
+          "date": "2021-08-31",
+          "month": "2021-08",
+          "btc_price_usd": 47100.89
+        },
+        {
+          "date": "2021-09-30",
+          "month": "2021-09",
+          "btc_price_usd": 43824.1
+        },
+        {
+          "date": "2021-10-31",
+          "month": "2021-10",
+          "btc_price_usd": 61299.8
+        },
+        {
+          "date": "2021-11-30",
+          "month": "2021-11",
+          "btc_price_usd": 56950.56
+        },
+        {
+          "date": "2021-12-31",
+          "month": "2021-12",
+          "btc_price_usd": 46216.93
+        },
+        {
+          "date": "2022-01-31",
+          "month": "2022-01",
+          "btc_price_usd": 38466.9
+        },
+        {
+          "date": "2022-02-28",
+          "month": "2022-02",
+          "btc_price_usd": 43160.0
+        },
+        {
+          "date": "2022-03-31",
+          "month": "2022-03",
+          "btc_price_usd": 45510.34
+        },
+        {
+          "date": "2022-04-30",
+          "month": "2022-04",
+          "btc_price_usd": 37630.8
+        },
+        {
+          "date": "2022-05-31",
+          "month": "2022-05",
+          "btc_price_usd": 31801.04
+        },
+        {
+          "date": "2022-06-30",
+          "month": "2022-06",
+          "btc_price_usd": 19942.21
+        },
+        {
+          "date": "2022-07-31",
+          "month": "2022-07",
+          "btc_price_usd": 23293.32
+        },
+        {
+          "date": "2022-08-31",
+          "month": "2022-08",
+          "btc_price_usd": 20050.02
+        },
+        {
+          "date": "2022-09-30",
+          "month": "2022-09",
+          "btc_price_usd": 19422.61
+        },
+        {
+          "date": "2022-10-31",
+          "month": "2022-10",
+          "btc_price_usd": 20490.74
+        },
+        {
+          "date": "2022-11-30",
+          "month": "2022-11",
+          "btc_price_usd": 17163.64
+        },
+        {
+          "date": "2022-12-31",
+          "month": "2022-12",
+          "btc_price_usd": 16542.4
+        },
+        {
+          "date": "2023-01-31",
+          "month": "2023-01",
+          "btc_price_usd": 23125.13
+        },
+        {
+          "date": "2023-02-28",
+          "month": "2023-02",
+          "btc_price_usd": 23141.57
+        },
+        {
+          "date": "2023-03-31",
+          "month": "2023-03",
+          "btc_price_usd": 28465.36
+        },
+        {
+          "date": "2023-04-30",
+          "month": "2023-04",
+          "btc_price_usd": 29233.21
+        },
+        {
+          "date": "2023-05-31",
+          "month": "2023-05",
+          "btc_price_usd": 27210.35
+        },
+        {
+          "date": "2023-06-30",
+          "month": "2023-06",
+          "btc_price_usd": 30472.0
+        },
+        {
+          "date": "2023-07-31",
+          "month": "2023-07",
+          "btc_price_usd": 29232.25
+        },
+        {
+          "date": "2023-08-31",
+          "month": "2023-08",
+          "btc_price_usd": 25940.78
+        },
+        {
+          "date": "2023-09-30",
+          "month": "2023-09",
+          "btc_price_usd": 26962.56
+        },
+        {
+          "date": "2023-10-31",
+          "month": "2023-10",
+          "btc_price_usd": 34639.77
+        },
+        {
+          "date": "2023-11-30",
+          "month": "2023-11",
+          "btc_price_usd": 37723.96
+        },
+        {
+          "date": "2023-12-31",
+          "month": "2023-12",
+          "btc_price_usd": 42283.58
+        },
+        {
+          "date": "2024-01-31",
+          "month": "2024-01",
+          "btc_price_usd": 42580.0
+        },
+        {
+          "date": "2024-02-29",
+          "month": "2024-02",
+          "btc_price_usd": 61130.98
+        },
+        {
+          "date": "2024-03-31",
+          "month": "2024-03",
+          "btc_price_usd": 71280.01
+        },
+        {
+          "date": "2024-04-30",
+          "month": "2024-04",
+          "btc_price_usd": 60672.0
+        },
+        {
+          "date": "2024-05-31",
+          "month": "2024-05",
+          "btc_price_usd": 67540.01
+        },
+        {
+          "date": "2024-06-30",
+          "month": "2024-06",
+          "btc_price_usd": 62772.01
+        },
+        {
+          "date": "2024-07-31",
+          "month": "2024-07",
+          "btc_price_usd": 64628.0
+        },
+        {
+          "date": "2024-08-31",
+          "month": "2024-08",
+          "btc_price_usd": 58973.99
+        },
+        {
+          "date": "2024-09-30",
+          "month": "2024-09",
+          "btc_price_usd": 63327.59
+        },
+        {
+          "date": "2024-10-31",
+          "month": "2024-10",
+          "btc_price_usd": 70292.01
+        },
+        {
+          "date": "2024-11-30",
+          "month": "2024-11",
+          "btc_price_usd": 96407.99
+        },
+        {
+          "date": "2024-12-31",
+          "month": "2024-12",
+          "btc_price_usd": 93576.0
+        },
+        {
+          "date": "2025-01-31",
+          "month": "2025-01",
+          "btc_price_usd": 102429.56
+        },
+        {
+          "date": "2025-02-28",
+          "month": "2025-02",
+          "btc_price_usd": 84349.94
+        },
+        {
+          "date": "2025-03-31",
+          "month": "2025-03",
+          "btc_price_usd": 82550.01
+        },
+        {
+          "date": "2025-04-30",
+          "month": "2025-04",
+          "btc_price_usd": 94172.0
+        },
+        {
+          "date": "2025-05-31",
+          "month": "2025-05",
+          "btc_price_usd": 104591.88
+        },
+        {
+          "date": "2025-06-30",
+          "month": "2025-06",
+          "btc_price_usd": 107146.5
+        },
+        {
+          "date": "2025-07-31",
+          "month": "2025-07",
+          "btc_price_usd": 115764.08
+        },
+        {
+          "date": "2025-08-31",
+          "month": "2025-08",
+          "btc_price_usd": 108246.35
+        },
+        {
+          "date": "2025-09-30",
+          "month": "2025-09",
+          "btc_price_usd": 114048.93
+        },
+        {
+          "date": "2025-10-31",
+          "month": "2025-10",
+          "btc_price_usd": 109608.01
+        },
+        {
+          "date": "2025-11-30",
+          "month": "2025-11",
+          "btc_price_usd": 90360.0
+        },
+        {
+          "date": "2025-12-31",
+          "month": "2025-12",
+          "btc_price_usd": 87648.22
+        },
+        {
+          "date": "2026-01-31",
+          "month": "2026-01",
+          "btc_price_usd": 78741.09
+        },
+        {
+          "date": "2026-02-28",
+          "month": "2026-02",
+          "btc_price_usd": 66973.26
+        },
+        {
+          "date": "2026-03-31",
+          "month": "2026-03",
+          "btc_price_usd": 68284.48
+        },
+        {
+          "date": "2026-04-30",
+          "month": "2026-04",
+          "btc_price_usd": 76346.57
+        },
+        {
+          "date": "2026-05-31",
+          "month": "2026-05",
+          "btc_price_usd": 73674.39
+        },
+        {
+          "date": "2026-06-30",
+          "month": "2026-06",
+          "btc_price_usd": 58624.71
         },
         {
           "date": "2026-07-30",
-          "score": 28
+          "month": "2026-07",
+          "btc_price_usd": 64930.0
         }
       ],
-      "btc_price_history": [],
       "polymarket_catalysts": [
         {
-          "title": "How high will 10-year Treasury yield go before 2027?",
+          "title": "How low will 10-year Treasury yield get before 2027?",
           "probability_pct": 100.0,
           "end_date": "2026-12-31"
         },
         {
-          "title": "How low will 10-year Treasury yield get before 2027?",
+          "title": "How high will 10-year Treasury yield go before 2027?",
           "probability_pct": 100.0,
           "end_date": "2026-12-31"
         },
@@ -5799,39 +3427,39 @@
           "end_date": "2026-12-31"
         },
         {
-          "title": "Fed rate hike in 2026?",
-          "probability_pct": 67.5,
-          "end_date": "2026-12-09"
-        },
-        {
           "title": "What will be the next Fed rate change?",
-          "probability_pct": 63.5,
+          "probability_pct": 67.0,
           "end_date": "2028-12-31"
         },
         {
-          "title": "Bitcoin ETF Flows on July 30?",
-          "probability_pct": 58.0,
+          "title": "Fed rate hike in 2026?",
+          "probability_pct": 66.5,
+          "end_date": "2026-12-09"
+        },
+        {
+          "title": "Largest Company end of December 2026?",
+          "probability_pct": 57.5,
+          "end_date": "2026-12-31"
+        },
+        {
+          "title": "Bitcoin ETF Flows on July 31?",
+          "probability_pct": 50.5,
+          "end_date": "2026-07-31"
+        },
+        {
+          "title": "Ethereum ETF Flows on July 30?",
+          "probability_pct": 50.0,
           "end_date": "2026-07-30"
-        },
-        {
-          "title": "Ethereum ETF Flows on July 28?",
-          "probability_pct": 50.5,
-          "end_date": "2026-07-28"
-        },
-        {
-          "title": "Bitcoin ETF Flows on July 29?",
-          "probability_pct": 50.5,
-          "end_date": "2026-07-29"
-        },
-        {
-          "title": "Ethereum ETF Flows on July 27?",
-          "probability_pct": 50.5,
-          "end_date": "2026-07-27"
         },
         {
           "title": "Ethereum ETF Flows on July 31?",
           "probability_pct": 50.0,
           "end_date": "2026-07-31"
+        },
+        {
+          "title": "Bitcoin ETF Flows on August 3?",
+          "probability_pct": 50.0,
+          "end_date": "2026-08-03"
         }
       ],
       "crypto_watchlist": [
@@ -5992,13 +3620,13 @@
       ],
       "market_kpi_summary": [
         {
-          "hkma_count": 2,
-          "sfc_licensed_count": 13,
-          "sfc_pending_count": 6,
-          "total_supply_bn": 307.33,
-          "total_etf_aum_m": 338.18,
-          "btc_price": null,
-          "cb_premium_bps": null,
+          "hkma_count": 0,
+          "sfc_licensed_count": 0,
+          "sfc_pending_count": 0,
+          "total_supply_bn": 306.83,
+          "total_etf_aum_m": 299.09,
+          "btc_price": 64875.91,
+          "cb_premium_bps": -8.02,
           "fear_greed_val": 28,
           "fear_greed_class": "Fear"
         }
@@ -6068,7 +3696,7 @@
         "url": "https://api.exchange.coinbase.com/products/BTC-USD/ticker",
         "language": "JSON",
         "sql": "SELECT price_usd, volume_24h, premium_bps FROM crypto_tickers;",
-        "description": "Real-time BTC spot price, 1-year price history, and Coinbase Premium spread."
+        "description": "Real-time BTC spot price, long-run price history, and Coinbase Premium spread."
       }
     },
     {
@@ -6102,17 +3730,17 @@
     {
       "id": "hkma_register",
       "label": "HKMA Licensed Stablecoin Issuers Register",
-      "status": "success",
-      "records": 2,
-      "freshness": "live",
+      "status": "degraded",
+      "records": 0,
+      "freshness": "unavailable",
       "notes": "Official ground-truth sandbox register of licensed stablecoin issuers (Anchorpoint FRS01, HSBC FRS02)."
     },
     {
       "id": "sfc_vatp",
       "label": "SFC Virtual Asset Trading Platforms Register",
-      "status": "success",
-      "records": 36,
-      "freshness": "live",
+      "status": "degraded",
+      "records": 0,
+      "freshness": "unavailable",
       "notes": "Official 4-status SFC register of VATP exchange operators (licensed, pending, withdrawn, forced-closure)."
     },
     {
@@ -6134,10 +3762,10 @@
     {
       "id": "coinbase_binance",
       "label": "Coinbase & Binance Public Tickers",
-      "status": "degraded",
-      "records": 0,
-      "freshness": "unavailable",
-      "notes": "Real-time BTC spot price, 1-year price history, and Coinbase Premium spread."
+      "status": "success",
+      "records": 1,
+      "freshness": "live",
+      "notes": "Real-time BTC spot price, long-run price history, and Coinbase Premium spread."
     },
     {
       "id": "fear_greed",
@@ -6160,8 +3788,8 @@
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-stablecoin-crypto/",
     "sector_id": "hk-stablecoin-crypto",
     "sector_name": "Hong Kong Stablecoin & Crypto Infrastructure Monitor",
-    "snapshotId": "8387a00bda9be15c",
-    "generatedAt": "2026-07-30T08:50:04Z",
+    "snapshotId": "17ff406aa413ef22",
+    "generatedAt": "2026-07-30T23:25:13Z",
     "dataAsOf": "2026-07-30"
   }
 }

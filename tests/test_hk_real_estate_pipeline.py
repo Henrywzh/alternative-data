@@ -8,10 +8,25 @@ from unittest.mock import MagicMock, patch
 import pandas as pd
 import pytest
 
-from src.hk_real_estate.sources.midland import parse_midland_mhpi, parse_midland_confidence, parse_midland_estate_counts
-from src.hk_real_estate.sources.centaline import fetch_centaline_ccl, parse_centaline_ccl_payload
+from src.hk_real_estate.sources.midland import (
+    build_midland_field_dictionary,
+    parse_midland_mhpi,
+    parse_midland_confidence,
+    parse_midland_estate_counts,
+    parse_midland_mhpi_monthly,
+    parse_midland_economic_indicators,
+    parse_midland_market_snapshots,
+    parse_midland_transaction_summary_snapshot,
+    parse_midland_property_event_hints,
+)
+from src.hk_real_estate.sources.centaline import (
+    fetch_centaline_ccl,
+    parse_centaline_ccl_payload,
+    parse_centaline_index_history,
+    parse_centaline_index_snapshots,
+)
 from src.hk_real_estate.sources.hse28 import fetch_28hse_new_projects
-from src.hk_real_estate.sources.rvd import _parse_rvd_monthly_csv
+from src.hk_real_estate.sources.rvd import _parse_rvd_monthly_csv, _parse_rvd_commercial_csv
 from src.hk_real_estate.sources.landreg import fetch_landreg_monthly_sp, fetch_landreg_monthly_statistics, _clean_t6_region
 from src.hk_real_estate.storage import save_normalized_dataset, save_raw_snapshot
 from src.hk_real_estate.mapping.developer_registry import DeveloperRegistry
@@ -29,10 +44,12 @@ from src.hk_real_estate.sources.bd_history import (
     parse_bd_history_text,
 )
 from src.hk_real_estate.mapping.developer_registry import GENERIC_FUZZY_EXCLUDED_ALIASES
+from src.hk_real_estate.sources.policy_events import validate_developer_project_registry, build_primary_policy_sources_catalog
 from src.hk_real_estate.dedup.transaction_dedup import deduplicate_agency_transactions, generate_dedup_hash
 from src.hk_real_estate.sources.srpe import fetch_srpe_firsthand_sales_digest
 from src.hk_real_estate.sources.midland_transactions import _parse_building_payload
 from src.hk_real_estate.pipeline import _quality_errors
+import src.hk_real_estate.pipeline as pipeline_module
 
 
 @pytest.fixture(autouse=True)
@@ -605,6 +622,190 @@ def test_parse_midland_mhpi():
     assert df.iloc[0]["mhpi_overall"] == 124.7
 
 
+def test_parse_midland_monthly_preserves_volume_and_price_fields():
+    df = parse_midland_mhpi_monthly(
+        {
+            "mrIndex": [
+                {
+                    "date": "2025-01-01T00:00:00.000Z",
+                    "mr_index": 100,
+                    "mr_index_hk": 101,
+                    "mr_index_kln": 99,
+                    "mr_index_nt": 98,
+                    "tx_count": 1000,
+                    "tx_count_hk": 300,
+                    "tx_count_kln": 350,
+                    "tx_count_nt": 350,
+                    "fh_tx_count": 120,
+                    "net_ft_price": 12000,
+                    "ft_price": 11000,
+                    "net_ft_rent": 35.0,
+                    "ft_rent": 30.0,
+                }
+            ]
+        }
+    )
+    assert len(df) == 1
+    assert df.iloc[0]["transaction_count_total"] == 1000
+    assert df.iloc[0]["net_ft_price_overall"] == 12000
+
+
+def test_midland_field_dictionary_persists_units_for_wide_and_long_contracts():
+    dictionary = build_midland_field_dictionary()
+    assert {
+        "midland_mhpi_monthly",
+        "midland_economic_indicators_monthly",
+        "midland_market_snapshots",
+        "midland_transaction_summary_snapshot",
+    }.issubset(set(dictionary["dataset"]))
+    assert dictionary.loc[dictionary["source_field"].eq("net_ft_price_overall"), "unit"].iloc[0] == "HKD_per_sqft_net"
+    assert dictionary.loc[dictionary["source_field"].eq("amount"), "unit"].iloc[0] == "HKD_bn"
+
+
+def test_parse_midland_economic_indicators_is_long_and_preserves_source_fields():
+    df = parse_midland_economic_indicators(
+        {
+            "economicIndicators": [
+                {
+                    "date": "2025-01-01T00:00:00.000Z",
+                    "Mortgage_Interest_Rate": 3.5,
+                    "House_Price_to_Income_Ratio": 10.2,
+                }
+            ]
+        }
+    )
+    assert set(df["indicator_name"]) == {"Mortgage_Interest_Rate", "House_Price_to_Income_Ratio"}
+    assert set(df["unit"]) == {"percent", "ratio"}
+    assert set(df["source_field"]) == set(df["indicator_name"])
+
+
+def test_parse_midland_snapshots_preserves_windows_and_as_of_date():
+    props = {
+        "marketStatAll": [
+            {
+                "id": "ALL",
+                "daily": {
+                    "date": "2026-07-29T16:00:00.000Z",
+                    "avg_net_ft_price": 14925,
+                    "pre_avg_net_ft_price": 14924,
+                    "total_tx_count": 3382,
+                    "pre_total_tx_count": 5029,
+                    "window_start": "2026-07-01",
+                    "window_end": "2026-07-29",
+                    "pre_window_start": "2026-06-01",
+                    "pre_window_end": "2026-06-30",
+                },
+            }
+        ],
+        "marketStatRegion": [],
+        "marketStatDistrict": [],
+        "langRegRecords": [
+            {
+                "firsthand_private": {"number": 726, "amount": 138.75, "number_chg": -62.2, "amount_chg": -50},
+                "as_of_date": "2026-07-29T00:00:00.000Z",
+                "update_date": "2026-07-30T05:55:33.757Z",
+            }
+        ],
+    }
+    market = parse_midland_market_snapshots(props)
+    assert set(market["period_type"]) == {"current", "previous_window"}
+    assert market[market["metric"].eq("avg_net_ft_price")]["value"].tolist() == [14925.0, 14924.0]
+    current = market[(market["period_type"] == "current") & market["metric"].eq("avg_net_ft_price")].iloc[0]
+    previous = market[(market["period_type"] == "previous_window") & market["metric"].eq("avg_net_ft_price")].iloc[0]
+    assert current["unit"] == "HKD_per_sqft_net"
+    assert current["window_start"] == "2026-07-01"
+    assert previous["window_end"] == "2026-06-30"
+    summary = parse_midland_transaction_summary_snapshot(props)
+    assert set(summary["asset_class"]) == {"firsthand_private"}
+    assert summary[summary["metric"].eq("number")].iloc[0]["value"] == 726
+    amount = summary[summary["metric"].eq("amount")].iloc[0]
+    assert amount["unit"] == "HKD_bn"
+    assert amount["as_of_date"] == "2026-07-29"
+    assert amount["update_date"].startswith("2026-07-30T05:55:33")
+
+
+def test_property_events_are_research_hints_and_registry_contract_is_explicit():
+    hints = parse_midland_property_event_hints(
+        {"propertyEvent": [{"post_date": "2026-02-25T04:00:00Z", "id": "A", "description": "Stamp duty hint"}]}
+    )
+    assert hints.iloc[0]["status"] == "research_only"
+    assert hints.iloc[0]["source_agency"] == "Midland Realty"
+    catalog = build_primary_policy_sources_catalog()
+    assert len(catalog) >= 4
+    assert catalog["status"].eq("catalog_only").all()
+    registry = pd.DataFrame(
+        [{
+            "stock_code": "0016", "listed_company_en": "SHKP", "subsidiary_spv_name": "SPV",
+            "project_name_en": "Project", "project_aliases": "Alias", "asset_type": "residential_dev",
+            "ownership_pct": 50, "source_document": "Annual report", "last_verified_date": "2026-01-01",
+            "effective_from": "2025-01-01", "effective_to": "",
+        }]
+    )
+    _, errors = validate_developer_project_registry(registry)
+    assert errors == []
+
+
+def test_registry_validator_rejects_missing_stock_code_and_required_text():
+    registry = pd.DataFrame([{
+        "stock_code": None, "listed_company_en": "", "subsidiary_spv_name": "SPV",
+        "project_name_en": "Project", "project_aliases": "Alias", "asset_type": "residential_dev",
+        "ownership_pct": 50, "source_document": "Annual report", "last_verified_date": "2026-01-01",
+        "effective_from": "2025-01-01", "effective_to": "",
+    }])
+    _, errors = validate_developer_project_registry(registry)
+    assert "stock_code contains empty values" in errors
+    assert "listed_company_en contains empty values" in errors
+
+
+def test_parse_centaline_cci_cri_and_csi_history_contracts():
+    cci = parse_centaline_index_history(
+        {
+            "cci": {"chartData": {"date": ["2025-01-01", "2025-02-01"], "index": [100, 101.5]}}
+        },
+        "CCI",
+    )
+    assert cci[["date", "series_id", "metric", "index_value"]].to_dict("records") == [
+        {"date": "2025-01-01", "series_id": "overall", "metric": "price_index", "index_value": 100.0},
+        {"date": "2025-02-01", "series_id": "overall", "metric": "price_index", "index_value": 101.5},
+    ]
+
+    cri = parse_centaline_index_history(
+        {
+            "cri": {"chartData": {"date": ["2025-01-01", "2025-02-01"], "index": [100, 101]}},
+            "criYield": {"chartData": {"date": ["2025-01-01", "2025-02-01"], "index": [4.0, 3.9]}},
+        },
+        "CRI",
+    )
+    assert set(cri["metric"]) == {"rental_index", "rental_yield"}
+    assert len(cri) == 4
+
+    csi = parse_centaline_index_history(
+        {
+            "chartData": {
+                "date": ["2025-01-06", "2025-01-13"],
+                "residPrice": [60, 61],
+                "residRental": [None, 62],
+            }
+        },
+        "CSI",
+    )
+    assert set(csi["series_id"]) == {"residential_price", "residential_rental"}
+    assert len(csi) == 3
+
+
+def test_parse_centaline_snapshots_keeps_current_cross_section_separate():
+    snapshots = parse_centaline_index_snapshots(
+        {
+            "cci": {"index": 155.7, "voteDate": "2026-05-01T00:00:00", "publishDate": "2026-07-18T16:00:00"},
+            "hk": {"index": 150.1, "voteDate": "2026-05-01T00:00:00", "publishDate": "2026-07-18T16:00:00"},
+            "dateRange": {"start": "1994-01-01", "end": "2026-05-01"},
+        },
+        "CCI",
+    )
+    assert set(snapshots["series_id"]) == {"overall", "hk_island"}
+    assert snapshots["date"].eq("2026-05-01").all()
+
+
 def test_parse_rvd_monthly_csv_reads_all_classes_and_remarks():
     sample_csv = """PRIVATE DOMESTIC - PRICE INDICES,,,,,,,,,,,,,,,,
 Month,Class A,Class A - Remarks,Class B,Class B - Remarks,Class C,Class C - Remarks,Class D,Class D - Remarks,Class E,Class E - Remarks,"Classes A, B & C","Classes A, B & C - Remarks",Classes D & E,Classes D & E - Remarks,All Classes,All Classes - Remarks
@@ -616,6 +817,21 @@ Month,Class A,Class A - Remarks,Class B,Class B - Remarks,Class C,Class C - Rema
     assert df.iloc[0]["overall"] == 321.9
     assert df.iloc[1]["overall"] == 320.5
     assert bool(df.iloc[1]["is_provisional"]) is True
+
+
+def test_parse_rvd_commercial_csv_preserves_office_grades_and_retail_metrics():
+    office = _parse_rvd_commercial_csv(
+        "PRIVATE OFFICES,,,,,,,,\nMonth,Grade A,Grade A - Remarks,Grade B,Grade B - Remarks,Grade C,Grade C - Remarks,Overall,Overall - Remarks\n01-2026,120.0,,110.0,P,100.0,,115.0,\n",
+        "office",
+    )
+    assert set(office["segment"]) == {"grade_a", "grade_b", "grade_c", "overall"}
+    assert bool(office[office["segment"].eq("grade_b")].iloc[0]["is_provisional"]) is True
+    retail = _parse_rvd_commercial_csv(
+        "PRIVATE RETAIL,,,,\nMonth,Rents,Rents - Remarks,Prices,Prices - Remarks\n01-2026,105.0,,98.0,P\n",
+        "retail",
+    )
+    assert set(retail["metric"]) == {"rental_index", "price_index"}
+    assert bool(retail[retail["metric"].eq("price_index")].iloc[0]["is_provisional"]) is True
 
 
 def test_raw_snapshots_are_unique_and_preserve_actual_extension(tmp_path):
@@ -633,6 +849,64 @@ def test_save_normalized_dataset_is_run_scoped_and_has_lineage():
     assert "/test_dataset/run-123/" in result["parquet"]
     lineage = json.loads(Path(result["lineage"]).read_text())
     assert lineage["raw_snapshot"] == "/tmp/raw.csv"
+    assert lineage["raw_snapshots"] == ["/tmp/raw.csv"]
+
+
+def test_save_normalized_dataset_supports_multi_parent_lineage():
+    result = save_normalized_dataset(
+        "multi_parent",
+        pd.DataFrame([{"date": "2026-07-22", "val": 100.0}]),
+        run_id="run-multi",
+        raw_snapshots=["/tmp/a.json", "/tmp/b.json"],
+        source_urls=["https://a.test", "https://b.test"],
+        lineage_metadata={"lineage_type": "combined_snapshot"},
+    )
+    lineage = json.loads(Path(result["lineage"]).read_text())
+    assert lineage["raw_snapshot"] is None
+    assert lineage["raw_snapshots"] == ["/tmp/a.json", "/tmp/b.json"]
+    assert lineage["source_urls"] == ["https://a.test", "https://b.test"]
+    assert lineage["lineage_type"] == "combined_snapshot"
+
+
+def test_quality_gate_rejects_non_numeric_or_negative_new_measures():
+    invalid = pd.DataFrame([{
+        "date": "2026-07-22", "series_id": "overall", "metric": "price_index", "index_value": "bad"
+    }])
+    assert _quality_errors("centaline_cci_monthly", invalid) == ["index_value contains non-numeric values"]
+    negative = invalid.assign(index_value=-1)
+    assert _quality_errors("centaline_cci_monthly", negative) == ["index_value contains negative values"]
+    out_of_scale = invalid.assign(index_value=101)
+    assert _quality_errors("centaline_csi_weekly", out_of_scale) == ["index_value is outside the allowed range [0, 100]"]
+    market_change = pd.DataFrame([{
+        "date": "2026-07-22", "as_of_date": "2026-07-22", "scope_type": "all", "scope_id": "ALL",
+        "period_type": "current", "metric": "avg_net_ft_price_chg", "value": -2.5, "unit": "percent",
+    }])
+    assert _quality_errors("midland_market_snapshots", market_change) == []
+
+
+def test_run_all_includes_new_tranches(monkeypatch):
+    runner_names = {
+        "run_group_a_pipeline": "group_a_dataset",
+        "run_group_b_pipeline": "group_b_dataset",
+        "run_group_c_pipeline": "group_c_dataset",
+        "run_stage_2_pipeline": "stage_2_dataset",
+        "run_all_incomplete_pipelines": "incomplete_dataset",
+        "run_midland_monthly_pipeline": "midland_monthly_dataset",
+        "run_rvd_commercial_pipeline": "rvd_commercial_dataset",
+        "run_midland_snapshot_pipeline": "midland_snapshot_dataset",
+        "run_policy_event_research_pipeline": "policy_dataset",
+    }
+    called = []
+    for function_name, dataset_name in runner_names.items():
+        def fake_runner(run_id=None, *, _raise_on_failure=True, _dataset_name=dataset_name):
+            called.append(_dataset_name)
+            return {_dataset_name: {"status": "success", "records": 1}}
+        monkeypatch.setattr(pipeline_module, function_name, fake_runner)
+    monkeypatch.setattr(pipeline_module, "write_run_manifest", lambda *args, **kwargs: "/tmp/manifest.json")
+    monkeypatch.delenv(pipeline_module.SKIP_MIDLAND_ENV_VAR, raising=False)
+    result = pipeline_module.run_all_pipelines()
+    assert set(called) == set(runner_names.values())
+    assert set(result) == set(runner_names.values())
 
 
 def _rows_to_xls_bytes(rows: list[list], header: bool = False) -> bytes:

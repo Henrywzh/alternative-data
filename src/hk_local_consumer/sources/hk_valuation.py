@@ -23,7 +23,12 @@ _YI_TO_BILLIONS = 0.1
 
 
 def fetch_hk_consumer_valuations(tickers: Optional[Dict[str, str]] = None) -> pd.DataFrame:
-    """Fetch daily HK stock valuation time series via akshare Baidu valuation."""
+    """Fetch the latest ten years of daily HK stock valuation history.
+
+    The Baidu valuation endpoint returns a longer history than the dashboard
+    needs. Keep a date-based ten-year window here rather than a fixed 30-row
+    tail so the source contract remains historical for a daily series.
+    """
     target_tickers = tickers or HK_CONSUMER_TICKERS
     source_url = "akshare.stock_hk_valuation_baidu"
 
@@ -42,8 +47,13 @@ def fetch_hk_consumer_valuations(tickers: Optional[Dict[str, str]] = None) -> pd
                 df_ind = ak.stock_hk_valuation_baidu(symbol=padded_symbol, indicator=indicator)
                 if df_ind is None or df_ind.empty:
                     continue
-                df_ind = df_ind.tail(30).rename(columns={"value": field})
-                df_ind["date"] = pd.to_datetime(df_ind["date"]).dt.strftime("%Y-%m-%d")
+                df_ind["date"] = pd.to_datetime(df_ind["date"], errors="coerce")
+                df_ind = df_ind.dropna(subset=["date"])
+                if not df_ind.empty:
+                    cutoff = df_ind["date"].max() - pd.DateOffset(years=10)
+                    df_ind = df_ind[df_ind["date"] >= cutoff]
+                df_ind = df_ind.rename(columns={"value": field})
+                df_ind["date"] = df_ind["date"].dt.strftime("%Y-%m-%d")
                 field_frames[field] = df_ind.set_index("date")[field]
             except Exception as e:
                 logger.debug(f"Could not fetch {indicator} for ticker {padded_symbol}: {e}")

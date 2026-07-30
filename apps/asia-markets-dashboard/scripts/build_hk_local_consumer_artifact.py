@@ -27,6 +27,9 @@ import pandas as pd
 REPO_ROOT = Path(__file__).resolve().parents[3]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
+SCRIPTS_DIR = Path(__file__).resolve().parent
+if str(SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_DIR))
 
 from src.hk_local_consumer.sources.afcd_food import fetch_afcd_food_prices
 from src.hk_local_consumer.sources.sge_gold import fetch_sge_gold_benchmark
@@ -45,6 +48,7 @@ from src.hk_local_consumer.sources.consumer_council_pricewatch import (
     load_historical_pricewatch_summary,
 )
 from src.hk_local_consumer.config import NORMALIZED_DIR
+from history_policy import DEFAULT_HISTORY_YEARS, history_window
 
 
 # AFCD's wholesale-prices CSV was verified (live fetch + a scan of the
@@ -804,24 +808,16 @@ def build_artifact(
     # edge (confirmed empirically -- trimming one partial month just shifted
     # which two ticks collided, not whether they did). A bounded window
     # avoids that edge case and was the previously verified-passing state.
-    imm_chart_window = immigration.tail(1000).copy()
+    imm_chart_window = history_window(immigration, "date", years=DEFAULT_HISTORY_YEARS)
     imm_north = imm_chart_window[["date", "land_hk_resident_departures_7d_ma"]].rename(columns={"land_hk_resident_departures_7d_ma": "value"})
     imm_north["flow_type"] = "Northbound"
     imm_south = imm_chart_window[["date", "mainland_visitor_arrivals_7d_ma"]].rename(columns={"mainland_visitor_arrivals_7d_ma": "value"})
     imm_south["flow_type"] = "Southbound"
     imm_daily = pd.concat([imm_north, imm_south], ignore_index=True)
-    # Resampled to a monthly mean (of the already-smoothed 7d moving
-    # average) for the chart specifically: this ~2.7-year window is
-    # genuinely daily-granularity data, and the portable-chart plugin's
-    # date-axis formatter has no schema-level way to force the year onto
-    # day-granularity tick labels (it's a hardcoded default in the
-    # renderer's formatDateAxisLabel, not something artifact JSON can
-    # override) -- every tick would otherwise show only "Mon DD" and, with
-    # ~2.7 years of daily points, the same day-of-month recurs across
-    # multiple different years with no way to tell them apart. Rolling up
-    # to a "YYYY-MM" `month` column keeps every point on a distinct,
-    # always-year-labeled tick at the cost of daily resolution, which this
-    # already-smoothed series does not need for a dashboard trend line.
+    # Resample to a monthly mean of the already-smoothed 7-day moving average
+    # for the chart. The source is genuinely daily, but monthly aggregation
+    # keeps the year visible and makes a ten-year public trend readable while
+    # the source-backed daily frame remains available for KPIs and tables.
     imm_daily["month"] = imm_daily["date"].dt.strftime("%Y-%m")
     # Drop the current, still-incomplete calendar month: a partial month's
     # mean sits right next to the prior full month with far less than a
@@ -860,18 +856,19 @@ def build_artifact(
         top_series = latest_window.groupby("series")["value"].mean().nlargest(5).index
         checkpoint_trend = checkpoint_history[checkpoint_history["series"].isin(top_series)].copy()
         checkpoint_trend["value"] = checkpoint_trend.sort_values("date").groupby("series")["value"].transform(lambda values: values.rolling(7, min_periods=1).mean()).round(1)
-        checkpoint_trend = checkpoint_trend[checkpoint_trend["date"] >= checkpoint_trend["date"].max() - pd.Timedelta(days=89)]
+        checkpoint_trend = history_window(checkpoint_trend, "date", years=DEFAULT_HISTORY_YEARS)
 
     # Severe weather & FX demand driver KPIs and charts
     weather_kpi = _comparison_row(weather, "total_disruption_hours", now)
     fx_kpi = _comparison_row(weather, "rmb_per_100_hkd", now)
-    weather_chart_rows = weather.tail(36).copy()
+    weather_chart_rows = history_window(weather, "date", years=DEFAULT_HISTORY_YEARS)
     # Same reasoning as checkpoint_history above: use the events already
     # attached to raw_weather's fetch rather than the gitignored, locally-only
     # normalized cache, so this chart also works on a fresh CI checkout.
+    weather_latest_date = pd.to_datetime(weather["date"], errors="coerce").max()
     weather_daily = _daily_weather_hours(
         raw_weather.attrs.get("events", []),
-        pd.Timestamp(now.replace(tzinfo=None)).normalize() - pd.DateOffset(months=36),
+        weather_latest_date - pd.DateOffset(years=DEFAULT_HISTORY_YEARS),
     )
     if not weather_daily.empty:
         weather_daily["month"] = weather_daily["date"].dt.strftime("%Y-%m")
@@ -1012,19 +1009,12 @@ def build_artifact(
             }
         )
 
-    # KPI comparisons use the full validated history; the chart itself is
-    # windowed to the portable artifact's 2,000-row-per-dataset cap, then
-    # resampled to a monthly mean. This ~7-year window is genuinely
-    # daily-granularity data, and the portable-chart plugin's date-axis
-    # formatter has no schema-level way to force the year onto
-    # day-granularity tick labels (it always includes the year for
-    # month-granularity values but omits it by default for day-granularity
-    # ones, hardcoded in the renderer's formatDateAxisLabel) -- every tick
-    # would otherwise show only "Mon DD" and the same day-of-month recurs
-    # across many different years with no way to tell them apart. Rolling
-    # up to a "YYYY-MM" `month` column keeps every point on a distinct,
-    # always-year-labeled tick.
-    gold_chart_daily = gold.tail(1_800).rename(columns={"gold_benchmark_pm_rmb_gram": "value"})[["date", "value"]].copy()
+    # KPI comparisons use the full validated history; the public chart uses
+    # the latest ten years of available daily observations and resamples them
+    # to monthly means so the date axis remains legible and year-aware.
+    gold_chart_daily = history_window(gold, "date", years=DEFAULT_HISTORY_YEARS).rename(
+        columns={"gold_benchmark_pm_rmb_gram": "value"}
+    )[["date", "value"]].copy()
     gold_chart_daily["month"] = gold_chart_daily["date"].dt.strftime("%Y-%m")
     gold_chart_window = (
         gold_chart_daily.groupby("month", as_index=False)["value"]
@@ -1035,6 +1025,9 @@ def build_artifact(
     gold_chart_window["value"] = gold_chart_window["value"].round(2)
 
     recent_weather_events = weather.attrs.get("recent_events", [])
+
+    valuation_history_window = history_window(valuation, "date", years=DEFAULT_HISTORY_YEARS)
+    top_valuation_companies = valuation_latest.nlargest(3, "market_cap_hkd_b")["company_name"]
 
     datasets = {
         "kpi_weather": [weather_kpi],
@@ -1053,7 +1046,7 @@ def build_artifact(
         "gold_history": _records(gold_chart_window, ["month", "value"]),
         "afcd_category_summary": _records(category_summary, ["category", "avg_price_hkd_per_kg", "commodities"]),
         "afcd_category_trend_history": _records(
-            afcd_category_history.tail(450).assign(
+            history_window(afcd_category_history, "date", years=DEFAULT_HISTORY_YEARS).assign(
                 category_short=lambda frame: frame["category"].map(_afcd_category_short_label)
             ),
             ["date", "category", "category_short", "avg_price_hkd_per_kg", "commodities"],
@@ -1066,23 +1059,22 @@ def build_artifact(
         ),
         "valuation_pe_chart": _records(valuation_chart_rows, ["company_name", "pe_ttm"]),
         "valuation_history": _records(
-            valuation[
-                (valuation["date"] >= valuation["date"].max() - pd.Timedelta(days=30))
+            valuation_history_window[
                 # Top 3 by latest market cap, not all 11 watchlist names: a
                 # legend of full company names past 3 entries measured wider
                 # than the mobile (390px) viewport in the portable-chart
                 # delivery pipeline (confirmed via direct DOM inspection of
                 # the rendered legend at both 1440px and 390px). The full
                 # watchlist is still in valuation_table below.
-                & valuation["company_name"].isin(
-                    valuation_latest.nlargest(3, "market_cap_hkd_b")["company_name"]
-                )
+                valuation_history_window["company_name"].isin(top_valuation_companies)
             ],
             ["date", "ticker", "company_name", "pe_ttm", "pb_ratio", "market_cap_hkd_b"],
         ),
         "kpi_retail": [retail_kpi],
         "retail_history": _records(
-            retail_total.tail(120).rename(columns={"sales_value_index": "value"}), ["date", "month", "value"]
+            history_window(retail_total, "date", years=DEFAULT_HISTORY_YEARS).rename(
+                columns={"sales_value_index": "value"}
+            ), ["date", "month", "value"]
         ),
         "retail_category_snapshot": _records(
             retail_category_snapshot, ["category", "sales_value_index", "sales_volume_index", "yoy_change", "mom_change", "date"]
@@ -1090,7 +1082,9 @@ def build_artifact(
         "retail_category_chart": _records(retail_chart_rows, ["category", "yoy_change"]),
         "kpi_restaurant": [restaurant_kpi],
         "restaurant_history": _records(
-            restaurant_total.tail(80).rename(columns={"total_receipts_hkd_m": "value"}), ["date", "month", "value"]
+            history_window(restaurant_total, "date", years=DEFAULT_HISTORY_YEARS).rename(
+                columns={"total_receipts_hkd_m": "value"}
+            ), ["date", "month", "value"]
         ),
         "restaurant_snapshot": _records(
             restaurant_snapshot,
@@ -1241,7 +1235,7 @@ def build_artifact(
         {
             "id": "severe_weather_trend",
             "title": "Monthly severe weather disruption hours",
-            "subtitle": "Total duration (hours per month) under Typhoon Signal 8+ and Red/Black Rainstorm warnings in Hong Kong.",
+                "subtitle": "Total duration (hours per month) under Typhoon Signal 8+ and Red/Black Rainstorm warnings in Hong Kong; latest ten years of available history by default.",
             "type": "bar",
             "intent": "trend",
             "dataset": "severe_weather_history",
@@ -1252,14 +1246,14 @@ def build_artifact(
             },
             "valueFormat": "number",
             "layout": "full",
-            "maxRows": 60,
+            "maxRows": 240,
         },
         *(
             [
                 {
                     "id": "severe_weather_daily_trend",
                     "title": "Daily severe-weather disruption hours",
-                    "subtitle": "Latest 36 months; warning intervals are split across midnight before daily aggregation.",
+                    "subtitle": "Latest ten years of available warning history; intervals are split across midnight before daily aggregation.",
                     "type": "bar",
                     "intent": "trend",
                     "dataset": "severe_weather_daily",
@@ -1271,7 +1265,7 @@ def build_artifact(
                     },
                     "valueFormat": "number",
                     "layout": "full",
-                    "maxRows": 720,
+                    "maxRows": 5000,
                 }
             ]
             if not weather_daily.empty
@@ -1280,7 +1274,7 @@ def build_artifact(
         {
             "id": "immigration_trend",
             "title": "Cross-border passenger traffic (7-day MA, monthly average)",
-            "subtitle": "Monthly average of daily 7-day MA: Northbound (HK resident land departures) vs Southbound (Mainland visitor arrivals).",
+            "subtitle": "Monthly average of daily 7-day MA: Northbound (HK resident land departures) vs Southbound (Mainland visitor arrivals); latest ten years of available history by default.",
             "type": "line",
             "intent": "trend",
             "dataset": "immigration_trend_history",
@@ -1299,7 +1293,7 @@ def build_artifact(
                 {
                     "id": "immigration_checkpoint_trend",
                     "title": "Busiest immigration checkpoints — daily traffic",
-                    "subtitle": "Top five checkpoint series by latest 7-day average; latest 90 days.",
+            "subtitle": "Top five checkpoint series by latest 7-day average; latest ten years of available history by default.",
                     "type": "line",
                     "intent": "trend",
                     "dataset": "immigration_checkpoint_history",
@@ -1311,7 +1305,7 @@ def build_artifact(
                     },
                     "valueFormat": "number",
                     "layout": "full",
-                    "maxRows": 500,
+                    "maxRows": 20000,
                 }
             ]
             if not checkpoint_trend.empty
@@ -1353,7 +1347,8 @@ def build_artifact(
             "id": "gold_trend",
             "title": "Shanghai Gold Exchange PM benchmark (margin-cost reference)",
             "subtitle": (
-                "Monthly average of the daily PM fixing in RMB per gram, last ~7 years; a secondary reference for "
+                "Monthly average of the daily PM fixing in RMB per gram; latest ten years of available history or all "
+                "available history when shorter. It is a secondary reference for "
                 "HK gold-jewellery input costs, shown alongside AFCD wholesale food costs for margin context -- see "
                 "the cross-border passenger traffic chart above for the featured consumer-demand signal."
             ),
@@ -1367,7 +1362,7 @@ def build_artifact(
             },
             "valueFormat": "number",
             "layout": "half",
-            "maxRows": 180,
+            "maxRows": 240,
         },
         {
             "id": "valuation_pe_chart",
@@ -1387,7 +1382,7 @@ def build_artifact(
         {
             "id": "valuation_market_cap_trend",
             "title": "Consumer watchlist market-cap trend",
-            "subtitle": "Latest 30 calendar days of source-provided daily observations; market capitalisation in HKD billions.",
+            "subtitle": "Source-provided daily observations; latest ten years of available history by default, with market capitalisation in HKD billions.",
             "type": "line",
             "intent": "trend",
             "dataset": "valuation_history",
@@ -1399,7 +1394,7 @@ def build_artifact(
             },
             "valueFormat": "number",
             "layout": "full",
-            "maxRows": 400,
+            "maxRows": 10000,
         },
         {
             "id": "retail_trend",
@@ -1415,7 +1410,7 @@ def build_artifact(
             },
             "valueFormat": "number",
             "layout": "full",
-            "maxRows": 120,
+            "maxRows": 240,
         },
         {
             "id": "retail_category_chart",
@@ -1683,8 +1678,22 @@ def build_artifact(
     if not df_oil_history.empty:
         df_oil_history["date"] = pd.to_datetime(df_oil_history["date"], errors="coerce")
         for fuel_type, history in df_oil_history.groupby("fuel_type"):
-            compact = history[history["date"] >= history["date"].max() - pd.Timedelta(days=365)].copy()
+            compact = history_window(history, "date", years=DEFAULT_HISTORY_YEARS)
             compact["month"] = compact["date"].dt.strftime("%Y-%m")
+            # The normalized cache retains daily observations, but the
+            # portable artifact caps a dataset at 2,000 rows. A ten-year
+            # daily, multi-company chart would exceed that cap and would be
+            # visually noisy anyway, so publish a transparent monthly mean
+            # per company while keeping the daily source history locally.
+            compact = (
+                compact.groupby(["month", "company"], as_index=False)["net_price_ex_duty_hkd"]
+                .mean()
+                .assign(
+                    date=lambda frame: pd.to_datetime(frame["month"] + "-01"),
+                    net_price_ex_duty_hkd=lambda frame: frame["net_price_ex_duty_hkd"].round(4),
+                )
+                .sort_values(["month", "company"])
+            )
             oil_history_rows[fuel_type] = _records(compact, ["date", "month", "company", "net_price_ex_duty_hkd"])
         ordered = df_oil_history.sort_values(["fuel_type", "company", "date"]).copy()
         ordered["prior_7d"] = ordered.groupby(["fuel_type", "company"])["net_price_ex_duty_hkd"].shift(7)
@@ -1733,7 +1742,7 @@ def build_artifact(
             {
                 "id": "consumer_council_oilprice_history_chart",
                 "title": "Standard petrol net price trend",
-                "subtitle": "Latest 12 months; daily net price after walk-in discount, excluding fuel duty.",
+                "subtitle": "Monthly average of daily net price after walk-in discount, excluding fuel duty; latest ten years of available history by default.",
                 "type": "line",
                 "intent": "trend",
                 "dataset": "consumer_council_oilprice_history_regular",
@@ -1745,7 +1754,7 @@ def build_artifact(
                 },
                 "valueFormat": "number",
                 "layout": "full",
-                "maxRows": 1830,
+                "maxRows": 2000,
             }
         )
         tables.append(

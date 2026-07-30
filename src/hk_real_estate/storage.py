@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 import uuid
 import pandas as pd
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Mapping, Optional, Union
 
 from .config import RAW_DIR, NORMALIZED_DIR
 
@@ -85,7 +85,10 @@ def save_normalized_dataset(
     run_id: Optional[str] = None,
     raw_snapshot: Optional[str] = None,
     source_url: Optional[str] = None,
-) -> Dict[str, str]:
+    raw_snapshots: Optional[list[str]] = None,
+    source_urls: Optional[list[str]] = None,
+    lineage_metadata: Optional[Mapping[str, Any]] = None,
+) -> Dict[str, Any]:
     """
     Save normalized output as an immutable run-scoped dataset with lineage.
     """
@@ -97,20 +100,27 @@ def save_normalized_dataset(
     df.to_parquet(parquet_path, index=False)
 
     lineage_path = target_dir / "lineage.json"
-    with open(lineage_path, 'w', encoding='utf-8') as f:
-        json.dump({
+    lineage = {
             'dataset_name': dataset_name,
             'run_id': run_id,
             'created_at': datetime.now(timezone.utc).isoformat(),
             'raw_snapshot': raw_snapshot,
             'source_url': source_url,
+            'raw_snapshots': raw_snapshots if raw_snapshots is not None else ([raw_snapshot] if raw_snapshot else []),
+            'source_urls': source_urls if source_urls is not None else ([source_url] if source_url else []),
             'records': len(df),
             'columns': list(df.columns),
-        }, f, indent=2)
+        }
+    if lineage_metadata:
+        lineage.update(dict(lineage_metadata))
+    with open(lineage_path, 'w', encoding='utf-8') as f:
+        json.dump(lineage, f, indent=2)
 
     return {
         'parquet': str(parquet_path),
         'lineage': str(lineage_path),
         'run_id': run_id,
         'raw_snapshot': raw_snapshot,
+        'raw_snapshots': raw_snapshots if raw_snapshots is not None else ([raw_snapshot] if raw_snapshot else []),
+        'source_urls': source_urls if source_urls is not None else ([source_url] if source_url else []),
     }
