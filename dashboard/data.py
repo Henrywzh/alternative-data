@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import io
 import json
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -940,10 +941,13 @@ DOMAIN_ORDER = {
     ],
     # Only this compact subset is loaded by OpenRouter Intelligence. The larger
     # benchmarks/tasks/apps history remains queryable without inflating the tab.
+    # official_legacy_reconciliation and official_source_health are part of the
+    # full "openrouter_official" domain below, not read by anything on the
+    # Intelligence tab - keep this list to the one dataset it actually renders
+    # (see _latest_provider_market_coverage) so the tab isn't fetching and
+    # parsing data nothing displays.
     "openrouter_official_market": [
         "official_model_rankings_daily",
-        "official_legacy_reconciliation",
-        "official_source_health",
     ],
     "vercel_ai": [
         "vercel_model_leaderboard",
@@ -2246,10 +2250,19 @@ def load_domain_datasets(
     base_dir: Path | None = None,
     data_sha: str | None = None,
 ) -> dict[str, DatasetLoadResult]:
-    return {
-        dataset_id: load_dataset(dataset_id, base_dir=base_dir, data_sha=data_sha)
-        for dataset_id in domain_dataset_ids(domain)
-    }
+    ids = domain_dataset_ids(domain)
+    if len(ids) <= 1:
+        return {
+            dataset_id: load_dataset(dataset_id, base_dir=base_dir, data_sha=data_sha)
+            for dataset_id in ids
+        }
+    # Each dataset load is an independent, I/O-bound read (local parquet, or an
+    # HTTP fetch to raw.githubusercontent.com on Streamlit Cloud). Loading them
+    # concurrently turns N sequential round-trips into roughly one round-trip's
+    # worth of wall-clock time instead of their sum.
+    with ThreadPoolExecutor(max_workers=min(8, len(ids))) as executor:
+        results = executor.map(lambda dataset_id: load_dataset(dataset_id, base_dir=base_dir, data_sha=data_sha), ids)
+        return dict(zip(ids, results))
 
 
 def load_latest_manifest(

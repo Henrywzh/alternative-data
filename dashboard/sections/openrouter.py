@@ -1427,6 +1427,7 @@ def _drop_identical_route_alias_rows(frame: pd.DataFrame) -> pd.DataFrame:
     return result.drop(index=list(drop_indices)).drop(columns=["_is_free_route", "_base_model"])
 
 
+@st.cache_data(ttl=3600, max_entries=12)
 def build_openrouter_explorer_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, object]:
     """Build compact, reusable frames for company, model, and catalog exploration."""
     catalog_views = compute_compute_availability_views(datasets)

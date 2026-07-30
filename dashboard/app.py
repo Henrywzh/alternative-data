@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 import sys
 import re
@@ -307,12 +308,20 @@ def main() -> None:
     if selected_section != "OpenRouter Models":
         _clear_model_query_param()
     selected_domains = section_domains(selected_section)
-    domain_shas = {
-        domain: remote.latest_data_sha(
-            f"{remote.DATA_PATH_PREFIX}/{dataset_source_for_domain(domain)}"
-        )
-        for domain in selected_domains
-    } if remote.remote_enabled() else {domain: None for domain in selected_domains}
+
+    def _domain_sha(domain: str) -> tuple[str, str | None]:
+        return domain, remote.latest_data_sha(f"{remote.DATA_PATH_PREFIX}/{dataset_source_for_domain(domain)}")
+
+    if remote.remote_enabled():
+        # Each lookup is an independent GitHub API call; running them concurrently
+        # avoids paying N sequential round-trips just to resolve N domains' SHAs.
+        if len(selected_domains) > 1:
+            with ThreadPoolExecutor(max_workers=min(8, len(selected_domains))) as executor:
+                domain_shas = dict(executor.map(_domain_sha, selected_domains))
+        else:
+            domain_shas = dict(_domain_sha(domain) for domain in selected_domains)
+    else:
+        domain_shas = {domain: None for domain in selected_domains}
     with st.sidebar:
         st.divider()
         if st.button("🔄 Refresh data", width="stretch"):
@@ -322,15 +331,22 @@ def main() -> None:
         if visible_shas:
             st.caption(f"Data {' · '.join(f'`{sha}`' for sha in visible_shas)}")
 
-    domain_states = {
-        domain: load_domain_state_cached(
+    def _load_domain(domain: str) -> tuple[str, tuple[dict[str, DatasetLoadResult], FreshnessInfo, list[CheckResult]]]:
+        return domain, load_domain_state_cached(
             BASE_DIR,
             domain,
             build_domain_signature(BASE_DIR, domain),
             data_sha=domain_shas[domain],
         )
-        for domain in selected_domains
-    }
+
+    # Domains are independent (each has its own cache key), so loading them
+    # concurrently lets their underlying dataset fetches overlap instead of
+    # queuing one domain's worth of network I/O behind the previous one's.
+    if len(selected_domains) > 1:
+        with ThreadPoolExecutor(max_workers=min(8, len(selected_domains))) as executor:
+            domain_states = dict(executor.map(_load_domain, selected_domains))
+    else:
+        domain_states = dict(_load_domain(domain) for domain in selected_domains)
 
     datasets: dict[str, DatasetLoadResult] = {}
     _all_freshness: list[FreshnessInfo] = []
