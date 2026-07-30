@@ -47,7 +47,10 @@ class ArtificialAnalysisCapexSource:
         return urljoin(self.page_url, match.group(1))
 
     def resolve_capex_data_bundle_urls(self, html: str) -> list[str]:
-        match = re.search(r'I\[\d+,\[(?P<chunks>.*?)\],\\"CapexQuarterContextProvider\\"', html, re.DOTALL)
+        # Match any component name ending in "CapexQuarterContextProvider" -
+        # the site has renamed this (e.g. to "TrendsCapexQuarterContextProvider")
+        # without changing the surrounding RSC payload shape.
+        match = re.search(r'I\[\d+,\[(?P<chunks>.*?)\],\\"[A-Za-z]*CapexQuarterContextProvider\\"', html, re.DOTALL)
         if match is None:
             return []
         chunk_paths = re.findall(r'static/chunks/[^"\\]+\.js', match.group("chunks"))
