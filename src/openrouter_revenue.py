@@ -347,21 +347,46 @@ def estimate_usage_revenue(
     pricing_with_dates["_pricing_date"] = pricing_dates
     estimated["_usage_date"] = usage_dates
     earliest_pricing_date = pricing_with_dates["_pricing_date"].dropna().min()
+    # As-of pricing only actually changes on the (typically much sparser) set of
+    # dates a new snapshot was published, not on every usage date. Bucket usage
+    # dates by that cutoff so build_price_context - which does real work (alias
+    # generation, groupby/median stats) - runs once per distinct pricing state
+    # instead of once per usage date.
+    distinct_pricing_dates = pd.DatetimeIndex(sorted(pricing_with_dates["_pricing_date"].dropna().unique()))
+
+    def _cutoff_for(usage_date: pd.Timestamp) -> object:
+        if pd.isna(usage_date):
+            return None
+        position = distinct_pricing_dates.searchsorted(usage_date, side="right") - 1
+        if position < 0:
+            return "__earliest__" if pd.notna(earliest_pricing_date) else "__empty__"
+        return distinct_pricing_dates[position]
+
+    context_cache: dict[object, PriceContext] = {}
+
+    def _context_for_cutoff(cutoff: object) -> PriceContext:
+        if cutoff in context_cache:
+            return context_cache[cutoff]
+        if cutoff is None:
+            eligible_pricing = pricing_with_dates.drop(columns="_pricing_date")
+        elif cutoff == "__earliest__":
+            eligible_pricing = pricing_with_dates[
+                pricing_with_dates["_pricing_date"] == earliest_pricing_date
+            ].drop(columns="_pricing_date")
+        elif cutoff == "__empty__":
+            eligible_pricing = pricing_with_dates.iloc[0:0].drop(columns="_pricing_date")
+        else:
+            eligible_pricing = pricing_with_dates[pricing_with_dates["_pricing_date"] <= cutoff].drop(
+                columns="_pricing_date"
+            )
+        context = build_price_context(eligible_pricing)
+        context_cache[cutoff] = context
+        return context
 
     resolved_frames: list[pd.DataFrame] = []
     for usage_date, group in estimated.groupby("_usage_date", dropna=False, sort=False):
-        if pd.notna(usage_date):
-            eligible_pricing = pricing_with_dates[pricing_with_dates["_pricing_date"] <= usage_date].drop(
-                columns="_pricing_date"
-            )
-            if eligible_pricing.empty and pd.notna(earliest_pricing_date):
-                eligible_pricing = pricing_with_dates[
-                    pricing_with_dates["_pricing_date"] == earliest_pricing_date
-                ].drop(columns="_pricing_date")
-        else:
-            eligible_pricing = pricing_with_dates.drop(columns="_pricing_date")
+        context = _context_for_cutoff(_cutoff_for(usage_date))
         group = group.drop(columns="_usage_date")
-        context = build_price_context(eligible_pricing)
         resolved_frames.append(
             _estimate_with_context(
                 group,
@@ -598,28 +623,54 @@ def _forward_fill_target_route_pricing(priced: pd.DataFrame, pricing: pd.DataFra
         return priced
 
     result = priced.copy()
-    for index in priced.index[needs_fill]:
-        model_id = model_ids.at[index]
-        usage_date = usage_dates.at[index]
-        candidates: list[pd.DataFrame] = []
+    # Candidate-alias generation and the future-price concat/sort only depend
+    # on model_id, not on the individual row's usage_date - and many rows
+    # needing a fill share the same model_id. Build each model's combined,
+    # priority-sorted candidate table once, then resolve every row for that
+    # model with a single vectorized as-of lookup instead of one concat+sort
+    # per row.
+    candidate_tables: dict[str, pd.DataFrame | None] = {}
+
+    def _candidates_for_model(model_id: str) -> pd.DataFrame | None:
+        if model_id in candidate_tables:
+            return candidate_tables[model_id]
+        pieces = []
         for priority, alias in enumerate(generate_candidate_aliases(model_id)):
             group = by_alias.get(alias)
             if group is None:
                 continue
-            future = group.loc[group["snapshot_ts"] > usage_date].copy()
-            if not future.empty:
-                future["_alias_priority"] = priority
-                candidates.append(future)
-        if not candidates:
+            tagged = group.copy()
+            tagged["_alias_priority"] = priority
+            pieces.append(tagged)
+        table = None
+        if pieces:
+            table = pd.concat(pieces, ignore_index=True).sort_values(
+                ["snapshot_ts", "_alias_priority"], kind="stable"
+            ).reset_index(drop=True)
+        candidate_tables[model_id] = table
+        return table
+
+    fill_frame = pd.DataFrame(
+        {"model_id": model_ids, "usage_date": usage_dates}, index=priced.index
+    ).loc[needs_fill]
+    for model_id, group in fill_frame.groupby("model_id", sort=False):
+        table = _candidates_for_model(model_id)
+        if table is None or table.empty:
             continue
-        future_prices = pd.concat(candidates, ignore_index=True).sort_values(
-            ["snapshot_ts", "_alias_priority"], kind="stable"
-        )
-        selected = future_prices.iloc[0]
-        result.at[index, "pricing_snapshot_ts"] = selected["snapshot_ts"]
-        result.at[index, "pricing_prompt"] = selected["pricing_prompt"]
-        result.at[index, "pricing_completion"] = selected["pricing_completion"]
-        result.at[index, "pricing_join_status"] = "historical_route_price_fill"
+        # First candidate strictly after usage_date, in the same
+        # [snapshot_ts, alias_priority] order the row-by-row version selected
+        # its iloc[0] from - side="right" on ties lands on the first row past
+        # every equal-or-earlier snapshot_ts, i.e. strictly greater.
+        positions = table["snapshot_ts"].searchsorted(group["usage_date"], side="right")
+        valid = positions < len(table)
+        if not valid.any():
+            continue
+        matched_index = group.index[valid]
+        selected = table.iloc[positions[valid]]
+        result.loc[matched_index, "pricing_snapshot_ts"] = selected["snapshot_ts"].to_numpy()
+        result.loc[matched_index, "pricing_prompt"] = selected["pricing_prompt"].to_numpy()
+        result.loc[matched_index, "pricing_completion"] = selected["pricing_completion"].to_numpy()
+        result.loc[matched_index, "pricing_join_status"] = "historical_route_price_fill"
     return result
 
 
