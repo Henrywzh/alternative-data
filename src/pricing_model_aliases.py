@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from functools import lru_cache
 
 
 SUPPORTED_TAG_SUFFIX_RE = re.compile(r":(free|beta|alpha|online|chat|search)$")
@@ -72,11 +73,8 @@ def reorder_anthropic_variant(value: object) -> str | None:
     return f"anthropic/claude-{match.group(2)}-{match.group(1)}{suffix}"
 
 
-def generate_candidate_aliases(value: object) -> list[str]:
-    slug = clean_slug(value)
-    if slug is None:
-        return []
-
+@lru_cache(maxsize=4096)
+def _generate_candidate_aliases_cached(slug: str) -> tuple[str, ...]:
     aliases: list[str] = []
 
     def add(candidate: str | None) -> None:
@@ -100,4 +98,20 @@ def generate_candidate_aliases(value: object) -> list[str]:
         if "max" in anthropic_punct:
             add("qwen/qwen-max")
 
-    return aliases
+    return tuple(aliases)
+
+
+def generate_candidate_aliases(value: object) -> list[str]:
+    """Return candidate pricing aliases for ``value``, in priority order.
+
+    Pure function of ``value`` - callers must not mutate the returned list in
+    place, since the underlying computation is cached across calls (this is
+    invoked millions of times over the same handful of model slugs while
+    resolving as-of pricing context across many usage dates).
+    """
+    slug = clean_slug(value)
+    if slug is None:
+        return []
+    return list(_generate_candidate_aliases_cached(slug))
+
+
