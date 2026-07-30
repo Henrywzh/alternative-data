@@ -5,7 +5,7 @@
     "surface": "dashboard",
     "title": "Hong Kong Local Consumer Monitor",
     "description": "A source-backed snapshot of cross-border passenger traffic, fresh-food wholesale prices, gold input costs, auto fuel pricing, and watchlist valuations for HK local-consumer names.",
-    "generatedAt": "2026-07-29T22:30:33.740230Z",
+    "generatedAt": "2026-07-29T23:47:40.080936Z",
     "cards": [
       {
         "id": "northbound_card",
@@ -229,38 +229,9 @@
         "maxRows": 60
       },
       {
-        "id": "severe_weather_daily_trend",
-        "title": "Daily severe-weather disruption hours",
-        "subtitle": "Latest 36 months; warning intervals are split across midnight before daily aggregation.",
-        "type": "bar",
-        "intent": "trend",
-        "dataset": "severe_weather_daily",
-        "sourceId": "weather_demand_drivers",
-        "encodings": {
-          "x": {
-            "field": "month",
-            "type": "temporal",
-            "label": "Month"
-          },
-          "y": {
-            "field": "hours",
-            "type": "quantitative",
-            "label": "Hours"
-          },
-          "color": {
-            "field": "warning_type",
-            "type": "nominal",
-            "label": "Warning type"
-          }
-        },
-        "valueFormat": "number",
-        "layout": "full",
-        "maxRows": 720
-      },
-      {
         "id": "immigration_trend",
         "title": "Cross-border passenger traffic (7-day MA, monthly average)",
-        "subtitle": "Monthly average of the daily 7-day MA: Northbound (HK resident departures via land control points only) vs Southbound (Mainland visitor arrivals, all control points).",
+        "subtitle": "Monthly average of daily 7-day MA: Northbound (HK resident land departures) vs Southbound (Mainland visitor arrivals).",
         "type": "line",
         "intent": "trend",
         "dataset": "immigration_trend_history",
@@ -285,35 +256,6 @@
         "valueFormat": "number",
         "layout": "full",
         "maxRows": 180
-      },
-      {
-        "id": "immigration_checkpoint_trend",
-        "title": "Busiest immigration checkpoints — daily traffic",
-        "subtitle": "Top five arrival/departure checkpoint series by latest seven-day average; latest 90 days.",
-        "type": "line",
-        "intent": "trend",
-        "dataset": "immigration_checkpoint_history",
-        "sourceId": "immigration_flow",
-        "encodings": {
-          "x": {
-            "field": "date",
-            "type": "temporal",
-            "label": "Date"
-          },
-          "y": {
-            "field": "value",
-            "type": "quantitative",
-            "label": "Passengers (7d MA)"
-          },
-          "color": {
-            "field": "series",
-            "type": "nominal",
-            "label": "Checkpoint / direction"
-          }
-        },
-        "valueFormat": "number",
-        "layout": "full",
-        "maxRows": 500
       },
       {
         "id": "afcd_category_chart",
@@ -341,7 +283,7 @@
       {
         "id": "afcd_category_trend",
         "title": "AFCD wholesale prices by category, over time",
-        "subtitle": "Real daily snapshots accumulated one pipeline run at a time -- AFCD's wholesale-prices feed only ever publishes today's readings (no historical archive was found on afcd.gov.hk), so this series is not backfilled. It starts as thin as a single day and grows by one real observation per category each time this pipeline runs. Legend uses short labels to fit narrow screens: FW fish = Freshwater fish, Meat/Poultry = Livestock / Poultry, Marine = Marine fish, Veg = Vegetables (full names are in the snapshot chart and tables above).",
+        "subtitle": "Daily snapshots accumulated per pipeline run (AFCD only publishes today's readings). Legend: FW fish = Freshwater fish, Meat/Poultry = Livestock/Poultry, Marine = Marine fish, Veg = Vegetables.",
         "type": "line",
         "intent": "trend",
         "dataset": "afcd_category_trend_history",
@@ -1366,7 +1308,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**Data snapshot:** `72ea30583c6a52de` · generated 2026-07-29T22:30:33.740230Z.  This is a published snapshot, not a live connection. Includes official Consumer Council auto fuel calculator pricing."
+        "body": "**Data snapshot:** `90ffaede73a8948c` · generated 2026-07-29T23:47:40.080936Z.  This is a published snapshot, not a live connection. Includes official Consumer Council auto fuel calculator pricing."
       },
       {
         "id": "market_pulse_1",
@@ -1374,15 +1316,22 @@
         "cardIds": [
           "northbound_card",
           "southbound_card",
-          "weather_card",
-          "fx_card"
+          "weather_card"
         ]
       },
       {
         "id": "market_pulse_2",
         "type": "metric-strip",
         "cardIds": [
+          "fx_card",
           "gold_card",
+          "median_pe_card"
+        ]
+      },
+      {
+        "id": "market_pulse_3",
+        "type": "metric-strip",
+        "cardIds": [
           "retail_card",
           "restaurant_card",
           "store_footprint_card"
@@ -1394,22 +1343,23 @@
         "chartId": "immigration_trend"
       },
       {
-        "id": "immigration_checkpoint_trend_chart",
-        "type": "chart",
-        "chartId": "immigration_checkpoint_trend"
-      },
-      {
         "id": "weather_chart",
         "type": "chart",
         "chartId": "severe_weather_trend"
       },
       {
-        "id": "weather_daily_chart",
-        "type": "chart",
-        "chartId": "severe_weather_daily_trend"
+        "id": "weather_log_table",
+        "type": "table",
+        "tableId": "severe_weather_log_table"
       },
       {
         "id": "afcd_trend_chart",
+        "type": "chart",
+        "chartId": "afcd_category_chart",
+        "layout": "half"
+      },
+      {
+        "id": "afcd_category_trend_block",
         "type": "chart",
         "chartId": "afcd_category_trend",
         "layout": "half"
@@ -1478,11 +1428,6 @@
         "id": "complaints_history_table_block",
         "type": "table",
         "tableId": "consumer_council_complaints_history_table"
-      },
-      {
-        "id": "immigration_checkpoint_table_block",
-        "type": "table",
-        "tableId": "immigration_checkpoint_table"
       },
       {
         "id": "afcd_table",
@@ -1570,7 +1515,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-29T22:30:33.740230Z",
+    "generatedAt": "2026-07-29T23:47:40.080936Z",
     "status": "ready",
     "datasets": {
       "kpi_weather": [
@@ -1863,353 +1808,13 @@
       ],
       "immigration_trend_history": [
         {
-          "month": "2021-01",
-          "value": 1815.5,
-          "flow_type": "Northbound"
-        },
-        {
-          "month": "2021-01",
-          "value": 82.1,
-          "flow_type": "Southbound"
-        },
-        {
-          "month": "2021-02",
-          "value": 636.2,
-          "flow_type": "Northbound"
-        },
-        {
-          "month": "2021-02",
-          "value": 114.3,
-          "flow_type": "Southbound"
-        },
-        {
-          "month": "2021-03",
-          "value": 791.5,
-          "flow_type": "Northbound"
-        },
-        {
-          "month": "2021-03",
-          "value": 152.3,
-          "flow_type": "Southbound"
-        },
-        {
-          "month": "2021-04",
-          "value": 876.0,
-          "flow_type": "Northbound"
-        },
-        {
-          "month": "2021-04",
-          "value": 124.1,
-          "flow_type": "Southbound"
-        },
-        {
-          "month": "2021-05",
-          "value": 1006.7,
-          "flow_type": "Northbound"
-        },
-        {
-          "month": "2021-05",
-          "value": 114.0,
-          "flow_type": "Southbound"
-        },
-        {
-          "month": "2021-06",
-          "value": 812.0,
-          "flow_type": "Northbound"
-        },
-        {
-          "month": "2021-06",
-          "value": 139.3,
-          "flow_type": "Southbound"
-        },
-        {
-          "month": "2021-07",
-          "value": 1484.7,
-          "flow_type": "Northbound"
-        },
-        {
-          "month": "2021-07",
-          "value": 163.8,
-          "flow_type": "Southbound"
-        },
-        {
-          "month": "2021-08",
-          "value": 1126.2,
-          "flow_type": "Northbound"
-        },
-        {
-          "month": "2021-08",
-          "value": 232.2,
-          "flow_type": "Southbound"
-        },
-        {
-          "month": "2021-09",
-          "value": 906.0,
-          "flow_type": "Northbound"
-        },
-        {
-          "month": "2021-09",
-          "value": 223.9,
-          "flow_type": "Southbound"
-        },
-        {
-          "month": "2021-10",
-          "value": 878.1,
-          "flow_type": "Northbound"
-        },
-        {
-          "month": "2021-10",
-          "value": 202.8,
-          "flow_type": "Southbound"
-        },
-        {
-          "month": "2021-11",
-          "value": 832.7,
-          "flow_type": "Northbound"
-        },
-        {
-          "month": "2021-11",
-          "value": 191.6,
-          "flow_type": "Southbound"
-        },
-        {
-          "month": "2021-12",
-          "value": 1480.7,
-          "flow_type": "Northbound"
-        },
-        {
-          "month": "2021-12",
-          "value": 190.6,
-          "flow_type": "Southbound"
-        },
-        {
-          "month": "2022-01",
-          "value": 1109.6,
-          "flow_type": "Northbound"
-        },
-        {
-          "month": "2022-01",
-          "value": 178.9,
-          "flow_type": "Southbound"
-        },
-        {
-          "month": "2022-02",
-          "value": 1153.9,
-          "flow_type": "Northbound"
-        },
-        {
-          "month": "2022-02",
-          "value": 62.1,
-          "flow_type": "Southbound"
-        },
-        {
-          "month": "2022-03",
-          "value": 620.5,
-          "flow_type": "Northbound"
-        },
-        {
-          "month": "2022-03",
-          "value": 28.4,
-          "flow_type": "Southbound"
-        },
-        {
-          "month": "2022-04",
-          "value": 457.7,
-          "flow_type": "Northbound"
-        },
-        {
-          "month": "2022-04",
-          "value": 78.2,
-          "flow_type": "Southbound"
-        },
-        {
-          "month": "2022-05",
-          "value": 657.8,
-          "flow_type": "Northbound"
-        },
-        {
-          "month": "2022-05",
-          "value": 387.9,
-          "flow_type": "Southbound"
-        },
-        {
-          "month": "2022-06",
-          "value": 607.8,
-          "flow_type": "Northbound"
-        },
-        {
-          "month": "2022-06",
-          "value": 1130.4,
-          "flow_type": "Southbound"
-        },
-        {
-          "month": "2022-07",
-          "value": 1326.6,
-          "flow_type": "Northbound"
-        },
-        {
-          "month": "2022-07",
-          "value": 1271.4,
-          "flow_type": "Southbound"
-        },
-        {
-          "month": "2022-08",
-          "value": 1902.0,
-          "flow_type": "Northbound"
-        },
-        {
-          "month": "2022-08",
-          "value": 1479.4,
-          "flow_type": "Southbound"
-        },
-        {
-          "month": "2022-09",
-          "value": 1326.3,
-          "flow_type": "Northbound"
-        },
-        {
-          "month": "2022-09",
-          "value": 1735.6,
-          "flow_type": "Southbound"
-        },
-        {
-          "month": "2022-10",
-          "value": 1123.4,
-          "flow_type": "Northbound"
-        },
-        {
-          "month": "2022-10",
-          "value": 1528.8,
-          "flow_type": "Southbound"
-        },
-        {
-          "month": "2022-11",
-          "value": 1091.0,
-          "flow_type": "Northbound"
-        },
-        {
-          "month": "2022-11",
-          "value": 1883.0,
-          "flow_type": "Southbound"
-        },
-        {
-          "month": "2022-12",
-          "value": 1856.8,
-          "flow_type": "Northbound"
-        },
-        {
-          "month": "2022-12",
-          "value": 2114.2,
-          "flow_type": "Southbound"
-        },
-        {
-          "month": "2023-01",
-          "value": 28652.0,
-          "flow_type": "Northbound"
-        },
-        {
-          "month": "2023-01",
-          "value": 7964.8,
-          "flow_type": "Southbound"
-        },
-        {
-          "month": "2023-02",
-          "value": 96278.7,
-          "flow_type": "Northbound"
-        },
-        {
-          "month": "2023-02",
-          "value": 35062.9,
-          "flow_type": "Southbound"
-        },
-        {
-          "month": "2023-03",
-          "value": 143397.5,
-          "flow_type": "Northbound"
-        },
-        {
-          "month": "2023-03",
-          "value": 63205.4,
-          "flow_type": "Southbound"
-        },
-        {
-          "month": "2023-04",
-          "value": 172457.2,
-          "flow_type": "Northbound"
-        },
-        {
-          "month": "2023-04",
-          "value": 70221.2,
-          "flow_type": "Southbound"
-        },
-        {
-          "month": "2023-05",
-          "value": 159954.6,
-          "flow_type": "Northbound"
-        },
-        {
-          "month": "2023-05",
-          "value": 79574.4,
-          "flow_type": "Southbound"
-        },
-        {
-          "month": "2023-06",
-          "value": 162363.5,
-          "flow_type": "Northbound"
-        },
-        {
-          "month": "2023-06",
-          "value": 71114.2,
-          "flow_type": "Southbound"
-        },
-        {
-          "month": "2023-07",
-          "value": 180406.1,
-          "flow_type": "Northbound"
-        },
-        {
-          "month": "2023-07",
-          "value": 92759.7,
-          "flow_type": "Southbound"
-        },
-        {
-          "month": "2023-08",
-          "value": 194324.0,
-          "flow_type": "Northbound"
-        },
-        {
-          "month": "2023-08",
-          "value": 113530.7,
-          "flow_type": "Southbound"
-        },
-        {
-          "month": "2023-09",
-          "value": 170603.9,
-          "flow_type": "Northbound"
-        },
-        {
-          "month": "2023-09",
-          "value": 68452.6,
-          "flow_type": "Southbound"
-        },
-        {
-          "month": "2023-10",
-          "value": 198509.1,
-          "flow_type": "Northbound"
-        },
-        {
-          "month": "2023-10",
-          "value": 90092.5,
-          "flow_type": "Southbound"
-        },
-        {
           "month": "2023-11",
-          "value": 213953.6,
+          "value": 214684.6,
           "flow_type": "Northbound"
         },
         {
           "month": "2023-11",
-          "value": 81400.5,
+          "value": 81444.7,
           "flow_type": "Southbound"
         },
         {
@@ -2520,16 +2125,6 @@
         {
           "month": "2026-06",
           "value": 96584.7,
-          "flow_type": "Southbound"
-        },
-        {
-          "month": "2026-07",
-          "value": 289411.4,
-          "flow_type": "Northbound"
-        },
-        {
-          "month": "2026-07",
-          "value": 113755.3,
           "flow_type": "Southbound"
         }
       ],
@@ -3440,1686 +3035,6 @@
       "valuation_history": [
         {
           "date": "2026-06-30",
-          "ticker": "00052.HK",
-          "company_name": "Fairwood Holdings",
-          "pe_ttm": 14.06,
-          "pb_ratio": 0.87,
-          "market_cap_hkd_b": 0.584
-        },
-        {
-          "date": "2026-07-01",
-          "ticker": "00052.HK",
-          "company_name": "Fairwood Holdings",
-          "pe_ttm": 14.06,
-          "pb_ratio": 0.87,
-          "market_cap_hkd_b": 0.584
-        },
-        {
-          "date": "2026-07-02",
-          "ticker": "00052.HK",
-          "company_name": "Fairwood Holdings",
-          "pe_ttm": 14.03,
-          "pb_ratio": 0.87,
-          "market_cap_hkd_b": 0.583
-        },
-        {
-          "date": "2026-07-03",
-          "ticker": "00052.HK",
-          "company_name": "Fairwood Holdings",
-          "pe_ttm": 14.03,
-          "pb_ratio": 0.87,
-          "market_cap_hkd_b": 0.583
-        },
-        {
-          "date": "2026-07-04",
-          "ticker": "00052.HK",
-          "company_name": "Fairwood Holdings",
-          "pe_ttm": 14.03,
-          "pb_ratio": 0.87,
-          "market_cap_hkd_b": 0.583
-        },
-        {
-          "date": "2026-07-05",
-          "ticker": "00052.HK",
-          "company_name": "Fairwood Holdings",
-          "pe_ttm": 14.03,
-          "pb_ratio": 0.87,
-          "market_cap_hkd_b": 0.583
-        },
-        {
-          "date": "2026-07-06",
-          "ticker": "00052.HK",
-          "company_name": "Fairwood Holdings",
-          "pe_ttm": 14.03,
-          "pb_ratio": 0.87,
-          "market_cap_hkd_b": 0.583
-        },
-        {
-          "date": "2026-07-07",
-          "ticker": "00052.HK",
-          "company_name": "Fairwood Holdings",
-          "pe_ttm": 14.03,
-          "pb_ratio": 0.87,
-          "market_cap_hkd_b": 0.583
-        },
-        {
-          "date": "2026-07-08",
-          "ticker": "00052.HK",
-          "company_name": "Fairwood Holdings",
-          "pe_ttm": 14.03,
-          "pb_ratio": 0.87,
-          "market_cap_hkd_b": 0.583
-        },
-        {
-          "date": "2026-07-09",
-          "ticker": "00052.HK",
-          "company_name": "Fairwood Holdings",
-          "pe_ttm": 13.93,
-          "pb_ratio": 0.87,
-          "market_cap_hkd_b": 0.579
-        },
-        {
-          "date": "2026-07-10",
-          "ticker": "00052.HK",
-          "company_name": "Fairwood Holdings",
-          "pe_ttm": 14.03,
-          "pb_ratio": 0.87,
-          "market_cap_hkd_b": 0.583
-        },
-        {
-          "date": "2026-07-11",
-          "ticker": "00052.HK",
-          "company_name": "Fairwood Holdings",
-          "pe_ttm": 14.03,
-          "pb_ratio": 0.87,
-          "market_cap_hkd_b": 0.583
-        },
-        {
-          "date": "2026-07-12",
-          "ticker": "00052.HK",
-          "company_name": "Fairwood Holdings",
-          "pe_ttm": 14.03,
-          "pb_ratio": 0.87,
-          "market_cap_hkd_b": 0.583
-        },
-        {
-          "date": "2026-07-13",
-          "ticker": "00052.HK",
-          "company_name": "Fairwood Holdings",
-          "pe_ttm": 14.0,
-          "pb_ratio": 0.87,
-          "market_cap_hkd_b": 0.582
-        },
-        {
-          "date": "2026-07-14",
-          "ticker": "00052.HK",
-          "company_name": "Fairwood Holdings",
-          "pe_ttm": 14.03,
-          "pb_ratio": 0.87,
-          "market_cap_hkd_b": 0.583
-        },
-        {
-          "date": "2026-07-15",
-          "ticker": "00052.HK",
-          "company_name": "Fairwood Holdings",
-          "pe_ttm": 13.97,
-          "pb_ratio": 0.87,
-          "market_cap_hkd_b": 0.58
-        },
-        {
-          "date": "2026-07-16",
-          "ticker": "00052.HK",
-          "company_name": "Fairwood Holdings",
-          "pe_ttm": 14.03,
-          "pb_ratio": 0.87,
-          "market_cap_hkd_b": 0.583
-        },
-        {
-          "date": "2026-07-17",
-          "ticker": "00052.HK",
-          "company_name": "Fairwood Holdings",
-          "pe_ttm": 13.9,
-          "pb_ratio": 0.86,
-          "market_cap_hkd_b": 0.578
-        },
-        {
-          "date": "2026-07-18",
-          "ticker": "00052.HK",
-          "company_name": "Fairwood Holdings",
-          "pe_ttm": 13.9,
-          "pb_ratio": 0.86,
-          "market_cap_hkd_b": 0.578
-        },
-        {
-          "date": "2026-07-19",
-          "ticker": "00052.HK",
-          "company_name": "Fairwood Holdings",
-          "pe_ttm": 13.9,
-          "pb_ratio": 0.86,
-          "market_cap_hkd_b": 0.578
-        },
-        {
-          "date": "2026-07-20",
-          "ticker": "00052.HK",
-          "company_name": "Fairwood Holdings",
-          "pe_ttm": 14.03,
-          "pb_ratio": 0.87,
-          "market_cap_hkd_b": 0.583
-        },
-        {
-          "date": "2026-07-21",
-          "ticker": "00052.HK",
-          "company_name": "Fairwood Holdings",
-          "pe_ttm": 14.06,
-          "pb_ratio": 0.87,
-          "market_cap_hkd_b": 0.584
-        },
-        {
-          "date": "2026-07-22",
-          "ticker": "00052.HK",
-          "company_name": "Fairwood Holdings",
-          "pe_ttm": 14.03,
-          "pb_ratio": 0.87,
-          "market_cap_hkd_b": 0.583
-        },
-        {
-          "date": "2026-07-23",
-          "ticker": "00052.HK",
-          "company_name": "Fairwood Holdings",
-          "pe_ttm": 13.9,
-          "pb_ratio": 0.86,
-          "market_cap_hkd_b": 0.578
-        },
-        {
-          "date": "2026-07-24",
-          "ticker": "00052.HK",
-          "company_name": "Fairwood Holdings",
-          "pe_ttm": 13.9,
-          "pb_ratio": 0.86,
-          "market_cap_hkd_b": 0.578
-        },
-        {
-          "date": "2026-07-25",
-          "ticker": "00052.HK",
-          "company_name": "Fairwood Holdings",
-          "pe_ttm": 13.9,
-          "pb_ratio": 0.86,
-          "market_cap_hkd_b": 0.578
-        },
-        {
-          "date": "2026-07-26",
-          "ticker": "00052.HK",
-          "company_name": "Fairwood Holdings",
-          "pe_ttm": 13.9,
-          "pb_ratio": 0.86,
-          "market_cap_hkd_b": 0.578
-        },
-        {
-          "date": "2026-07-27",
-          "ticker": "00052.HK",
-          "company_name": "Fairwood Holdings",
-          "pe_ttm": 14.06,
-          "pb_ratio": 0.87,
-          "market_cap_hkd_b": 0.584
-        },
-        {
-          "date": "2026-07-28",
-          "ticker": "00052.HK",
-          "company_name": "Fairwood Holdings",
-          "pe_ttm": 14.09,
-          "pb_ratio": 0.88,
-          "market_cap_hkd_b": 0.586
-        },
-        {
-          "date": "2026-07-29",
-          "ticker": "00052.HK",
-          "company_name": "Fairwood Holdings",
-          "pe_ttm": 14.06,
-          "pb_ratio": 0.87,
-          "market_cap_hkd_b": 0.584
-        },
-        {
-          "date": "2026-06-30",
-          "ticker": "00116.HK",
-          "company_name": "Chow Sang Sang Holdings",
-          "pe_ttm": 3.8,
-          "pb_ratio": 0.45,
-          "market_cap_hkd_b": 6.529
-        },
-        {
-          "date": "2026-07-01",
-          "ticker": "00116.HK",
-          "company_name": "Chow Sang Sang Holdings",
-          "pe_ttm": 3.8,
-          "pb_ratio": 0.45,
-          "market_cap_hkd_b": 6.529
-        },
-        {
-          "date": "2026-07-02",
-          "ticker": "00116.HK",
-          "company_name": "Chow Sang Sang Holdings",
-          "pe_ttm": 3.86,
-          "pb_ratio": 0.46,
-          "market_cap_hkd_b": 6.623
-        },
-        {
-          "date": "2026-07-03",
-          "ticker": "00116.HK",
-          "company_name": "Chow Sang Sang Holdings",
-          "pe_ttm": 4.04,
-          "pb_ratio": 0.48,
-          "market_cap_hkd_b": 6.939
-        },
-        {
-          "date": "2026-07-04",
-          "ticker": "00116.HK",
-          "company_name": "Chow Sang Sang Holdings",
-          "pe_ttm": 4.04,
-          "pb_ratio": 0.48,
-          "market_cap_hkd_b": 6.939
-        },
-        {
-          "date": "2026-07-05",
-          "ticker": "00116.HK",
-          "company_name": "Chow Sang Sang Holdings",
-          "pe_ttm": 4.04,
-          "pb_ratio": 0.48,
-          "market_cap_hkd_b": 6.939
-        },
-        {
-          "date": "2026-07-06",
-          "ticker": "00116.HK",
-          "company_name": "Chow Sang Sang Holdings",
-          "pe_ttm": 4.09,
-          "pb_ratio": 0.49,
-          "market_cap_hkd_b": 7.019
-        },
-        {
-          "date": "2026-07-07",
-          "ticker": "00116.HK",
-          "company_name": "Chow Sang Sang Holdings",
-          "pe_ttm": 3.97,
-          "pb_ratio": 0.47,
-          "market_cap_hkd_b": 6.811
-        },
-        {
-          "date": "2026-07-08",
-          "ticker": "00116.HK",
-          "company_name": "Chow Sang Sang Holdings",
-          "pe_ttm": 4.02,
-          "pb_ratio": 0.48,
-          "market_cap_hkd_b": 6.912
-        },
-        {
-          "date": "2026-07-09",
-          "ticker": "00116.HK",
-          "company_name": "Chow Sang Sang Holdings",
-          "pe_ttm": 3.95,
-          "pb_ratio": 0.47,
-          "market_cap_hkd_b": 6.784
-        },
-        {
-          "date": "2026-07-10",
-          "ticker": "00116.HK",
-          "company_name": "Chow Sang Sang Holdings",
-          "pe_ttm": 4.05,
-          "pb_ratio": 0.48,
-          "market_cap_hkd_b": 6.959
-        },
-        {
-          "date": "2026-07-11",
-          "ticker": "00116.HK",
-          "company_name": "Chow Sang Sang Holdings",
-          "pe_ttm": 4.05,
-          "pb_ratio": 0.48,
-          "market_cap_hkd_b": 6.959
-        },
-        {
-          "date": "2026-07-12",
-          "ticker": "00116.HK",
-          "company_name": "Chow Sang Sang Holdings",
-          "pe_ttm": 4.05,
-          "pb_ratio": 0.48,
-          "market_cap_hkd_b": 6.959
-        },
-        {
-          "date": "2026-07-13",
-          "ticker": "00116.HK",
-          "company_name": "Chow Sang Sang Holdings",
-          "pe_ttm": 4.03,
-          "pb_ratio": 0.48,
-          "market_cap_hkd_b": 6.925
-        },
-        {
-          "date": "2026-07-14",
-          "ticker": "00116.HK",
-          "company_name": "Chow Sang Sang Holdings",
-          "pe_ttm": 4.09,
-          "pb_ratio": 0.49,
-          "market_cap_hkd_b": 7.033
-        },
-        {
-          "date": "2026-07-15",
-          "ticker": "00116.HK",
-          "company_name": "Chow Sang Sang Holdings",
-          "pe_ttm": 4.17,
-          "pb_ratio": 0.5,
-          "market_cap_hkd_b": 7.16
-        },
-        {
-          "date": "2026-07-16",
-          "ticker": "00116.HK",
-          "company_name": "Chow Sang Sang Holdings",
-          "pe_ttm": 4.21,
-          "pb_ratio": 0.5,
-          "market_cap_hkd_b": 7.228
-        },
-        {
-          "date": "2026-07-17",
-          "ticker": "00116.HK",
-          "company_name": "Chow Sang Sang Holdings",
-          "pe_ttm": 4.23,
-          "pb_ratio": 0.5,
-          "market_cap_hkd_b": 7.261
-        },
-        {
-          "date": "2026-07-18",
-          "ticker": "00116.HK",
-          "company_name": "Chow Sang Sang Holdings",
-          "pe_ttm": 4.23,
-          "pb_ratio": 0.5,
-          "market_cap_hkd_b": 7.261
-        },
-        {
-          "date": "2026-07-19",
-          "ticker": "00116.HK",
-          "company_name": "Chow Sang Sang Holdings",
-          "pe_ttm": 4.23,
-          "pb_ratio": 0.5,
-          "market_cap_hkd_b": 7.261
-        },
-        {
-          "date": "2026-07-20",
-          "ticker": "00116.HK",
-          "company_name": "Chow Sang Sang Holdings",
-          "pe_ttm": 4.31,
-          "pb_ratio": 0.51,
-          "market_cap_hkd_b": 7.409
-        },
-        {
-          "date": "2026-07-21",
-          "ticker": "00116.HK",
-          "company_name": "Chow Sang Sang Holdings",
-          "pe_ttm": 4.49,
-          "pb_ratio": 0.53,
-          "market_cap_hkd_b": 7.711
-        },
-        {
-          "date": "2026-07-22",
-          "ticker": "00116.HK",
-          "company_name": "Chow Sang Sang Holdings",
-          "pe_ttm": 4.52,
-          "pb_ratio": 0.54,
-          "market_cap_hkd_b": 7.758
-        },
-        {
-          "date": "2026-07-23",
-          "ticker": "00116.HK",
-          "company_name": "Chow Sang Sang Holdings",
-          "pe_ttm": 4.65,
-          "pb_ratio": 0.55,
-          "market_cap_hkd_b": 7.98
-        },
-        {
-          "date": "2026-07-24",
-          "ticker": "00116.HK",
-          "company_name": "Chow Sang Sang Holdings",
-          "pe_ttm": 4.54,
-          "pb_ratio": 0.54,
-          "market_cap_hkd_b": 7.805
-        },
-        {
-          "date": "2026-07-25",
-          "ticker": "00116.HK",
-          "company_name": "Chow Sang Sang Holdings",
-          "pe_ttm": 4.54,
-          "pb_ratio": 0.54,
-          "market_cap_hkd_b": 7.805
-        },
-        {
-          "date": "2026-07-26",
-          "ticker": "00116.HK",
-          "company_name": "Chow Sang Sang Holdings",
-          "pe_ttm": 4.54,
-          "pb_ratio": 0.54,
-          "market_cap_hkd_b": 7.805
-        },
-        {
-          "date": "2026-07-27",
-          "ticker": "00116.HK",
-          "company_name": "Chow Sang Sang Holdings",
-          "pe_ttm": 4.64,
-          "pb_ratio": 0.55,
-          "market_cap_hkd_b": 7.967
-        },
-        {
-          "date": "2026-07-28",
-          "ticker": "00116.HK",
-          "company_name": "Chow Sang Sang Holdings",
-          "pe_ttm": 4.48,
-          "pb_ratio": 0.53,
-          "market_cap_hkd_b": 7.698
-        },
-        {
-          "date": "2026-07-29",
-          "ticker": "00116.HK",
-          "company_name": "Chow Sang Sang Holdings",
-          "pe_ttm": 4.45,
-          "pb_ratio": 0.53,
-          "market_cap_hkd_b": 7.651
-        },
-        {
-          "date": "2026-06-30",
-          "ticker": "00178.HK",
-          "company_name": "Sa Sa International",
-          "pe_ttm": 14.24,
-          "pb_ratio": 2.23,
-          "market_cap_hkd_b": 2.855
-        },
-        {
-          "date": "2026-07-01",
-          "ticker": "00178.HK",
-          "company_name": "Sa Sa International",
-          "pe_ttm": 14.24,
-          "pb_ratio": 2.23,
-          "market_cap_hkd_b": 2.855
-        },
-        {
-          "date": "2026-07-02",
-          "ticker": "00178.HK",
-          "company_name": "Sa Sa International",
-          "pe_ttm": 14.24,
-          "pb_ratio": 2.23,
-          "market_cap_hkd_b": 2.855
-        },
-        {
-          "date": "2026-07-03",
-          "ticker": "00178.HK",
-          "company_name": "Sa Sa International",
-          "pe_ttm": 14.7,
-          "pb_ratio": 2.3,
-          "market_cap_hkd_b": 2.948
-        },
-        {
-          "date": "2026-07-04",
-          "ticker": "00178.HK",
-          "company_name": "Sa Sa International",
-          "pe_ttm": 14.7,
-          "pb_ratio": 2.3,
-          "market_cap_hkd_b": 2.948
-        },
-        {
-          "date": "2026-07-05",
-          "ticker": "00178.HK",
-          "company_name": "Sa Sa International",
-          "pe_ttm": 14.7,
-          "pb_ratio": 2.3,
-          "market_cap_hkd_b": 2.948
-        },
-        {
-          "date": "2026-07-06",
-          "ticker": "00178.HK",
-          "company_name": "Sa Sa International",
-          "pe_ttm": 14.39,
-          "pb_ratio": 2.25,
-          "market_cap_hkd_b": 2.886
-        },
-        {
-          "date": "2026-07-07",
-          "ticker": "00178.HK",
-          "company_name": "Sa Sa International",
-          "pe_ttm": 14.24,
-          "pb_ratio": 2.23,
-          "market_cap_hkd_b": 2.855
-        },
-        {
-          "date": "2026-07-08",
-          "ticker": "00178.HK",
-          "company_name": "Sa Sa International",
-          "pe_ttm": 14.39,
-          "pb_ratio": 2.25,
-          "market_cap_hkd_b": 2.886
-        },
-        {
-          "date": "2026-07-09",
-          "ticker": "00178.HK",
-          "company_name": "Sa Sa International",
-          "pe_ttm": 14.24,
-          "pb_ratio": 2.23,
-          "market_cap_hkd_b": 2.855
-        },
-        {
-          "date": "2026-07-10",
-          "ticker": "00178.HK",
-          "company_name": "Sa Sa International",
-          "pe_ttm": 14.09,
-          "pb_ratio": 2.2,
-          "market_cap_hkd_b": 2.824
-        },
-        {
-          "date": "2026-07-11",
-          "ticker": "00178.HK",
-          "company_name": "Sa Sa International",
-          "pe_ttm": 14.09,
-          "pb_ratio": 2.2,
-          "market_cap_hkd_b": 2.824
-        },
-        {
-          "date": "2026-07-12",
-          "ticker": "00178.HK",
-          "company_name": "Sa Sa International",
-          "pe_ttm": 14.09,
-          "pb_ratio": 2.2,
-          "market_cap_hkd_b": 2.824
-        },
-        {
-          "date": "2026-07-13",
-          "ticker": "00178.HK",
-          "company_name": "Sa Sa International",
-          "pe_ttm": 14.09,
-          "pb_ratio": 2.2,
-          "market_cap_hkd_b": 2.824
-        },
-        {
-          "date": "2026-07-14",
-          "ticker": "00178.HK",
-          "company_name": "Sa Sa International",
-          "pe_ttm": 14.09,
-          "pb_ratio": 2.2,
-          "market_cap_hkd_b": 2.824
-        },
-        {
-          "date": "2026-07-15",
-          "ticker": "00178.HK",
-          "company_name": "Sa Sa International",
-          "pe_ttm": 13.93,
-          "pb_ratio": 2.18,
-          "market_cap_hkd_b": 2.793
-        },
-        {
-          "date": "2026-07-16",
-          "ticker": "00178.HK",
-          "company_name": "Sa Sa International",
-          "pe_ttm": 13.93,
-          "pb_ratio": 2.18,
-          "market_cap_hkd_b": 2.793
-        },
-        {
-          "date": "2026-07-17",
-          "ticker": "00178.HK",
-          "company_name": "Sa Sa International",
-          "pe_ttm": 14.09,
-          "pb_ratio": 2.2,
-          "market_cap_hkd_b": 2.824
-        },
-        {
-          "date": "2026-07-18",
-          "ticker": "00178.HK",
-          "company_name": "Sa Sa International",
-          "pe_ttm": 14.09,
-          "pb_ratio": 2.2,
-          "market_cap_hkd_b": 2.824
-        },
-        {
-          "date": "2026-07-19",
-          "ticker": "00178.HK",
-          "company_name": "Sa Sa International",
-          "pe_ttm": 14.09,
-          "pb_ratio": 2.2,
-          "market_cap_hkd_b": 2.824
-        },
-        {
-          "date": "2026-07-20",
-          "ticker": "00178.HK",
-          "company_name": "Sa Sa International",
-          "pe_ttm": 13.78,
-          "pb_ratio": 2.15,
-          "market_cap_hkd_b": 2.762
-        },
-        {
-          "date": "2026-07-21",
-          "ticker": "00178.HK",
-          "company_name": "Sa Sa International",
-          "pe_ttm": 13.78,
-          "pb_ratio": 2.15,
-          "market_cap_hkd_b": 2.762
-        },
-        {
-          "date": "2026-07-22",
-          "ticker": "00178.HK",
-          "company_name": "Sa Sa International",
-          "pe_ttm": 13.93,
-          "pb_ratio": 2.18,
-          "market_cap_hkd_b": 2.793
-        },
-        {
-          "date": "2026-07-23",
-          "ticker": "00178.HK",
-          "company_name": "Sa Sa International",
-          "pe_ttm": 13.78,
-          "pb_ratio": 2.15,
-          "market_cap_hkd_b": 2.762
-        },
-        {
-          "date": "2026-07-24",
-          "ticker": "00178.HK",
-          "company_name": "Sa Sa International",
-          "pe_ttm": 13.78,
-          "pb_ratio": 2.15,
-          "market_cap_hkd_b": 2.762
-        },
-        {
-          "date": "2026-07-25",
-          "ticker": "00178.HK",
-          "company_name": "Sa Sa International",
-          "pe_ttm": 13.78,
-          "pb_ratio": 2.15,
-          "market_cap_hkd_b": 2.762
-        },
-        {
-          "date": "2026-07-26",
-          "ticker": "00178.HK",
-          "company_name": "Sa Sa International",
-          "pe_ttm": 13.78,
-          "pb_ratio": 2.15,
-          "market_cap_hkd_b": 2.762
-        },
-        {
-          "date": "2026-07-27",
-          "ticker": "00178.HK",
-          "company_name": "Sa Sa International",
-          "pe_ttm": 14.24,
-          "pb_ratio": 2.23,
-          "market_cap_hkd_b": 2.855
-        },
-        {
-          "date": "2026-07-28",
-          "ticker": "00178.HK",
-          "company_name": "Sa Sa International",
-          "pe_ttm": 14.39,
-          "pb_ratio": 2.25,
-          "market_cap_hkd_b": 2.886
-        },
-        {
-          "date": "2026-07-29",
-          "ticker": "00178.HK",
-          "company_name": "Sa Sa International",
-          "pe_ttm": 14.39,
-          "pb_ratio": 2.25,
-          "market_cap_hkd_b": 2.886
-        },
-        {
-          "date": "2026-06-30",
-          "ticker": "00341.HK",
-          "company_name": "Café de Coral Holdings",
-          "pe_ttm": 18.21,
-          "pb_ratio": 1.1,
-          "market_cap_hkd_b": 2.987
-        },
-        {
-          "date": "2026-07-01",
-          "ticker": "00341.HK",
-          "company_name": "Café de Coral Holdings",
-          "pe_ttm": 18.21,
-          "pb_ratio": 1.1,
-          "market_cap_hkd_b": 2.987
-        },
-        {
-          "date": "2026-07-02",
-          "ticker": "00341.HK",
-          "company_name": "Café de Coral Holdings",
-          "pe_ttm": 18.53,
-          "pb_ratio": 1.12,
-          "market_cap_hkd_b": 3.039
-        },
-        {
-          "date": "2026-07-03",
-          "ticker": "00341.HK",
-          "company_name": "Café de Coral Holdings",
-          "pe_ttm": 18.42,
-          "pb_ratio": 1.11,
-          "market_cap_hkd_b": 3.022
-        },
-        {
-          "date": "2026-07-04",
-          "ticker": "00341.HK",
-          "company_name": "Café de Coral Holdings",
-          "pe_ttm": 18.42,
-          "pb_ratio": 1.11,
-          "market_cap_hkd_b": 3.022
-        },
-        {
-          "date": "2026-07-05",
-          "ticker": "00341.HK",
-          "company_name": "Café de Coral Holdings",
-          "pe_ttm": 18.42,
-          "pb_ratio": 1.11,
-          "market_cap_hkd_b": 3.022
-        },
-        {
-          "date": "2026-07-06",
-          "ticker": "00341.HK",
-          "company_name": "Café de Coral Holdings",
-          "pe_ttm": 18.28,
-          "pb_ratio": 1.1,
-          "market_cap_hkd_b": 2.999
-        },
-        {
-          "date": "2026-07-07",
-          "ticker": "00341.HK",
-          "company_name": "Café de Coral Holdings",
-          "pe_ttm": 18.63,
-          "pb_ratio": 1.12,
-          "market_cap_hkd_b": 3.057
-        },
-        {
-          "date": "2026-07-08",
-          "ticker": "00341.HK",
-          "company_name": "Café de Coral Holdings",
-          "pe_ttm": 19.16,
-          "pb_ratio": 1.16,
-          "market_cap_hkd_b": 3.144
-        },
-        {
-          "date": "2026-07-09",
-          "ticker": "00341.HK",
-          "company_name": "Café de Coral Holdings",
-          "pe_ttm": 19.16,
-          "pb_ratio": 1.16,
-          "market_cap_hkd_b": 3.144
-        },
-        {
-          "date": "2026-07-10",
-          "ticker": "00341.HK",
-          "company_name": "Café de Coral Holdings",
-          "pe_ttm": 19.69,
-          "pb_ratio": 1.19,
-          "market_cap_hkd_b": 3.231
-        },
-        {
-          "date": "2026-07-11",
-          "ticker": "00341.HK",
-          "company_name": "Café de Coral Holdings",
-          "pe_ttm": 19.69,
-          "pb_ratio": 1.19,
-          "market_cap_hkd_b": 3.231
-        },
-        {
-          "date": "2026-07-12",
-          "ticker": "00341.HK",
-          "company_name": "Café de Coral Holdings",
-          "pe_ttm": 19.69,
-          "pb_ratio": 1.19,
-          "market_cap_hkd_b": 3.231
-        },
-        {
-          "date": "2026-07-13",
-          "ticker": "00341.HK",
-          "company_name": "Café de Coral Holdings",
-          "pe_ttm": 19.16,
-          "pb_ratio": 1.16,
-          "market_cap_hkd_b": 3.144
-        },
-        {
-          "date": "2026-07-14",
-          "ticker": "00341.HK",
-          "company_name": "Café de Coral Holdings",
-          "pe_ttm": 19.09,
-          "pb_ratio": 1.15,
-          "market_cap_hkd_b": 3.132
-        },
-        {
-          "date": "2026-07-15",
-          "ticker": "00341.HK",
-          "company_name": "Café de Coral Holdings",
-          "pe_ttm": 19.06,
-          "pb_ratio": 1.15,
-          "market_cap_hkd_b": 3.126
-        },
-        {
-          "date": "2026-07-16",
-          "ticker": "00341.HK",
-          "company_name": "Café de Coral Holdings",
-          "pe_ttm": 18.91,
-          "pb_ratio": 1.14,
-          "market_cap_hkd_b": 3.103
-        },
-        {
-          "date": "2026-07-17",
-          "ticker": "00341.HK",
-          "company_name": "Café de Coral Holdings",
-          "pe_ttm": 18.74,
-          "pb_ratio": 1.13,
-          "market_cap_hkd_b": 3.074
-        },
-        {
-          "date": "2026-07-18",
-          "ticker": "00341.HK",
-          "company_name": "Café de Coral Holdings",
-          "pe_ttm": 18.74,
-          "pb_ratio": 1.13,
-          "market_cap_hkd_b": 3.074
-        },
-        {
-          "date": "2026-07-19",
-          "ticker": "00341.HK",
-          "company_name": "Café de Coral Holdings",
-          "pe_ttm": 18.74,
-          "pb_ratio": 1.13,
-          "market_cap_hkd_b": 3.074
-        },
-        {
-          "date": "2026-07-20",
-          "ticker": "00341.HK",
-          "company_name": "Café de Coral Holdings",
-          "pe_ttm": 18.84,
-          "pb_ratio": 1.14,
-          "market_cap_hkd_b": 3.091
-        },
-        {
-          "date": "2026-07-21",
-          "ticker": "00341.HK",
-          "company_name": "Café de Coral Holdings",
-          "pe_ttm": 19.27,
-          "pb_ratio": 1.16,
-          "market_cap_hkd_b": 3.161
-        },
-        {
-          "date": "2026-07-22",
-          "ticker": "00341.HK",
-          "company_name": "Café de Coral Holdings",
-          "pe_ttm": 19.09,
-          "pb_ratio": 1.15,
-          "market_cap_hkd_b": 3.132
-        },
-        {
-          "date": "2026-07-23",
-          "ticker": "00341.HK",
-          "company_name": "Café de Coral Holdings",
-          "pe_ttm": 18.99,
-          "pb_ratio": 1.15,
-          "market_cap_hkd_b": 3.115
-        },
-        {
-          "date": "2026-07-24",
-          "ticker": "00341.HK",
-          "company_name": "Café de Coral Holdings",
-          "pe_ttm": 18.7,
-          "pb_ratio": 1.13,
-          "market_cap_hkd_b": 3.068
-        },
-        {
-          "date": "2026-07-25",
-          "ticker": "00341.HK",
-          "company_name": "Café de Coral Holdings",
-          "pe_ttm": 18.7,
-          "pb_ratio": 1.13,
-          "market_cap_hkd_b": 3.068
-        },
-        {
-          "date": "2026-07-26",
-          "ticker": "00341.HK",
-          "company_name": "Café de Coral Holdings",
-          "pe_ttm": 18.7,
-          "pb_ratio": 1.13,
-          "market_cap_hkd_b": 3.068
-        },
-        {
-          "date": "2026-07-27",
-          "ticker": "00341.HK",
-          "company_name": "Café de Coral Holdings",
-          "pe_ttm": 19.2,
-          "pb_ratio": 1.16,
-          "market_cap_hkd_b": 3.149
-        },
-        {
-          "date": "2026-07-28",
-          "ticker": "00341.HK",
-          "company_name": "Café de Coral Holdings",
-          "pe_ttm": 19.13,
-          "pb_ratio": 1.15,
-          "market_cap_hkd_b": 3.138
-        },
-        {
-          "date": "2026-07-29",
-          "ticker": "00341.HK",
-          "company_name": "Café de Coral Holdings",
-          "pe_ttm": 19.59,
-          "pb_ratio": 1.18,
-          "market_cap_hkd_b": 3.213
-        },
-        {
-          "date": "2026-06-30",
-          "ticker": "00590.HK",
-          "company_name": "Luk Fook Holdings",
-          "pe_ttm": 6.35,
-          "pb_ratio": 0.87,
-          "market_cap_hkd_b": 12.999
-        },
-        {
-          "date": "2026-07-01",
-          "ticker": "00590.HK",
-          "company_name": "Luk Fook Holdings",
-          "pe_ttm": 6.35,
-          "pb_ratio": 0.87,
-          "market_cap_hkd_b": 12.999
-        },
-        {
-          "date": "2026-07-02",
-          "ticker": "00590.HK",
-          "company_name": "Luk Fook Holdings",
-          "pe_ttm": 6.37,
-          "pb_ratio": 0.87,
-          "market_cap_hkd_b": 13.022
-        },
-        {
-          "date": "2026-07-03",
-          "ticker": "00590.HK",
-          "company_name": "Luk Fook Holdings",
-          "pe_ttm": 6.54,
-          "pb_ratio": 0.89,
-          "market_cap_hkd_b": 13.386
-        },
-        {
-          "date": "2026-07-04",
-          "ticker": "00590.HK",
-          "company_name": "Luk Fook Holdings",
-          "pe_ttm": 6.54,
-          "pb_ratio": 0.89,
-          "market_cap_hkd_b": 13.386
-        },
-        {
-          "date": "2026-07-05",
-          "ticker": "00590.HK",
-          "company_name": "Luk Fook Holdings",
-          "pe_ttm": 6.54,
-          "pb_ratio": 0.89,
-          "market_cap_hkd_b": 13.386
-        },
-        {
-          "date": "2026-07-06",
-          "ticker": "00590.HK",
-          "company_name": "Luk Fook Holdings",
-          "pe_ttm": 6.54,
-          "pb_ratio": 0.89,
-          "market_cap_hkd_b": 13.386
-        },
-        {
-          "date": "2026-07-07",
-          "ticker": "00590.HK",
-          "company_name": "Luk Fook Holdings",
-          "pe_ttm": 6.51,
-          "pb_ratio": 0.89,
-          "market_cap_hkd_b": 13.327
-        },
-        {
-          "date": "2026-07-08",
-          "ticker": "00590.HK",
-          "company_name": "Luk Fook Holdings",
-          "pe_ttm": 6.55,
-          "pb_ratio": 0.89,
-          "market_cap_hkd_b": 13.41
-        },
-        {
-          "date": "2026-07-09",
-          "ticker": "00590.HK",
-          "company_name": "Luk Fook Holdings",
-          "pe_ttm": 6.48,
-          "pb_ratio": 0.88,
-          "market_cap_hkd_b": 13.257
-        },
-        {
-          "date": "2026-07-10",
-          "ticker": "00590.HK",
-          "company_name": "Luk Fook Holdings",
-          "pe_ttm": 6.43,
-          "pb_ratio": 0.88,
-          "market_cap_hkd_b": 13.163
-        },
-        {
-          "date": "2026-07-11",
-          "ticker": "00590.HK",
-          "company_name": "Luk Fook Holdings",
-          "pe_ttm": 6.43,
-          "pb_ratio": 0.88,
-          "market_cap_hkd_b": 13.163
-        },
-        {
-          "date": "2026-07-12",
-          "ticker": "00590.HK",
-          "company_name": "Luk Fook Holdings",
-          "pe_ttm": 6.43,
-          "pb_ratio": 0.88,
-          "market_cap_hkd_b": 13.163
-        },
-        {
-          "date": "2026-07-13",
-          "ticker": "00590.HK",
-          "company_name": "Luk Fook Holdings",
-          "pe_ttm": 6.46,
-          "pb_ratio": 0.88,
-          "market_cap_hkd_b": 13.222
-        },
-        {
-          "date": "2026-07-14",
-          "ticker": "00590.HK",
-          "company_name": "Luk Fook Holdings",
-          "pe_ttm": 6.49,
-          "pb_ratio": 0.88,
-          "market_cap_hkd_b": 13.269
-        },
-        {
-          "date": "2026-07-15",
-          "ticker": "00590.HK",
-          "company_name": "Luk Fook Holdings",
-          "pe_ttm": 6.59,
-          "pb_ratio": 0.9,
-          "market_cap_hkd_b": 13.492
-        },
-        {
-          "date": "2026-07-16",
-          "ticker": "00590.HK",
-          "company_name": "Luk Fook Holdings",
-          "pe_ttm": 6.6,
-          "pb_ratio": 0.9,
-          "market_cap_hkd_b": 13.503
-        },
-        {
-          "date": "2026-07-17",
-          "ticker": "00590.HK",
-          "company_name": "Luk Fook Holdings",
-          "pe_ttm": 6.53,
-          "pb_ratio": 0.89,
-          "market_cap_hkd_b": 13.351
-        },
-        {
-          "date": "2026-07-18",
-          "ticker": "00590.HK",
-          "company_name": "Luk Fook Holdings",
-          "pe_ttm": 6.53,
-          "pb_ratio": 0.89,
-          "market_cap_hkd_b": 13.351
-        },
-        {
-          "date": "2026-07-19",
-          "ticker": "00590.HK",
-          "company_name": "Luk Fook Holdings",
-          "pe_ttm": 6.53,
-          "pb_ratio": 0.89,
-          "market_cap_hkd_b": 13.351
-        },
-        {
-          "date": "2026-07-20",
-          "ticker": "00590.HK",
-          "company_name": "Luk Fook Holdings",
-          "pe_ttm": 6.58,
-          "pb_ratio": 0.9,
-          "market_cap_hkd_b": 13.468
-        },
-        {
-          "date": "2026-07-21",
-          "ticker": "00590.HK",
-          "company_name": "Luk Fook Holdings",
-          "pe_ttm": 6.62,
-          "pb_ratio": 0.9,
-          "market_cap_hkd_b": 13.55
-        },
-        {
-          "date": "2026-07-22",
-          "ticker": "00590.HK",
-          "company_name": "Luk Fook Holdings",
-          "pe_ttm": 6.93,
-          "pb_ratio": 0.94,
-          "market_cap_hkd_b": 14.173
-        },
-        {
-          "date": "2026-07-23",
-          "ticker": "00590.HK",
-          "company_name": "Luk Fook Holdings",
-          "pe_ttm": 7.01,
-          "pb_ratio": 0.95,
-          "market_cap_hkd_b": 14.337
-        },
-        {
-          "date": "2026-07-24",
-          "ticker": "00590.HK",
-          "company_name": "Luk Fook Holdings",
-          "pe_ttm": 6.9,
-          "pb_ratio": 0.94,
-          "market_cap_hkd_b": 14.126
-        },
-        {
-          "date": "2026-07-25",
-          "ticker": "00590.HK",
-          "company_name": "Luk Fook Holdings",
-          "pe_ttm": 6.9,
-          "pb_ratio": 0.94,
-          "market_cap_hkd_b": 14.126
-        },
-        {
-          "date": "2026-07-26",
-          "ticker": "00590.HK",
-          "company_name": "Luk Fook Holdings",
-          "pe_ttm": 6.9,
-          "pb_ratio": 0.94,
-          "market_cap_hkd_b": 14.126
-        },
-        {
-          "date": "2026-07-27",
-          "ticker": "00590.HK",
-          "company_name": "Luk Fook Holdings",
-          "pe_ttm": 7.09,
-          "pb_ratio": 0.97,
-          "market_cap_hkd_b": 14.513
-        },
-        {
-          "date": "2026-07-28",
-          "ticker": "00590.HK",
-          "company_name": "Luk Fook Holdings",
-          "pe_ttm": 7.01,
-          "pb_ratio": 0.96,
-          "market_cap_hkd_b": 14.349
-        },
-        {
-          "date": "2026-07-29",
-          "ticker": "00590.HK",
-          "company_name": "Luk Fook Holdings",
-          "pe_ttm": 7.0,
-          "pb_ratio": 0.95,
-          "market_cap_hkd_b": 14.325
-        },
-        {
-          "date": "2026-06-30",
-          "ticker": "00709.HK",
-          "company_name": "Giordano International",
-          "pe_ttm": 10.13,
-          "pb_ratio": 1.09,
-          "market_cap_hkd_b": 2.198
-        },
-        {
-          "date": "2026-07-01",
-          "ticker": "00709.HK",
-          "company_name": "Giordano International",
-          "pe_ttm": 10.13,
-          "pb_ratio": 1.09,
-          "market_cap_hkd_b": 2.198
-        },
-        {
-          "date": "2026-07-02",
-          "ticker": "00709.HK",
-          "company_name": "Giordano International",
-          "pe_ttm": 10.2,
-          "pb_ratio": 1.1,
-          "market_cap_hkd_b": 2.214
-        },
-        {
-          "date": "2026-07-03",
-          "ticker": "00709.HK",
-          "company_name": "Giordano International",
-          "pe_ttm": 10.28,
-          "pb_ratio": 1.1,
-          "market_cap_hkd_b": 2.231
-        },
-        {
-          "date": "2026-07-04",
-          "ticker": "00709.HK",
-          "company_name": "Giordano International",
-          "pe_ttm": 10.28,
-          "pb_ratio": 1.1,
-          "market_cap_hkd_b": 2.231
-        },
-        {
-          "date": "2026-07-05",
-          "ticker": "00709.HK",
-          "company_name": "Giordano International",
-          "pe_ttm": 10.28,
-          "pb_ratio": 1.1,
-          "market_cap_hkd_b": 2.231
-        },
-        {
-          "date": "2026-07-06",
-          "ticker": "00709.HK",
-          "company_name": "Giordano International",
-          "pe_ttm": 10.43,
-          "pb_ratio": 1.12,
-          "market_cap_hkd_b": 2.263
-        },
-        {
-          "date": "2026-07-07",
-          "ticker": "00709.HK",
-          "company_name": "Giordano International",
-          "pe_ttm": 10.28,
-          "pb_ratio": 1.1,
-          "market_cap_hkd_b": 2.231
-        },
-        {
-          "date": "2026-07-08",
-          "ticker": "00709.HK",
-          "company_name": "Giordano International",
-          "pe_ttm": 10.35,
-          "pb_ratio": 1.11,
-          "market_cap_hkd_b": 2.247
-        },
-        {
-          "date": "2026-07-09",
-          "ticker": "00709.HK",
-          "company_name": "Giordano International",
-          "pe_ttm": 10.43,
-          "pb_ratio": 1.12,
-          "market_cap_hkd_b": 2.263
-        },
-        {
-          "date": "2026-07-10",
-          "ticker": "00709.HK",
-          "company_name": "Giordano International",
-          "pe_ttm": 10.5,
-          "pb_ratio": 1.13,
-          "market_cap_hkd_b": 2.279
-        },
-        {
-          "date": "2026-07-11",
-          "ticker": "00709.HK",
-          "company_name": "Giordano International",
-          "pe_ttm": 10.5,
-          "pb_ratio": 1.13,
-          "market_cap_hkd_b": 2.279
-        },
-        {
-          "date": "2026-07-12",
-          "ticker": "00709.HK",
-          "company_name": "Giordano International",
-          "pe_ttm": 10.5,
-          "pb_ratio": 1.13,
-          "market_cap_hkd_b": 2.279
-        },
-        {
-          "date": "2026-07-13",
-          "ticker": "00709.HK",
-          "company_name": "Giordano International",
-          "pe_ttm": 10.5,
-          "pb_ratio": 1.13,
-          "market_cap_hkd_b": 2.279
-        },
-        {
-          "date": "2026-07-14",
-          "ticker": "00709.HK",
-          "company_name": "Giordano International",
-          "pe_ttm": 10.43,
-          "pb_ratio": 1.12,
-          "market_cap_hkd_b": 2.263
-        },
-        {
-          "date": "2026-07-15",
-          "ticker": "00709.HK",
-          "company_name": "Giordano International",
-          "pe_ttm": 10.5,
-          "pb_ratio": 1.13,
-          "market_cap_hkd_b": 2.279
-        },
-        {
-          "date": "2026-07-16",
-          "ticker": "00709.HK",
-          "company_name": "Giordano International",
-          "pe_ttm": 10.43,
-          "pb_ratio": 1.12,
-          "market_cap_hkd_b": 2.263
-        },
-        {
-          "date": "2026-07-17",
-          "ticker": "00709.HK",
-          "company_name": "Giordano International",
-          "pe_ttm": 10.35,
-          "pb_ratio": 1.11,
-          "market_cap_hkd_b": 2.247
-        },
-        {
-          "date": "2026-07-18",
-          "ticker": "00709.HK",
-          "company_name": "Giordano International",
-          "pe_ttm": 10.35,
-          "pb_ratio": 1.11,
-          "market_cap_hkd_b": 2.247
-        },
-        {
-          "date": "2026-07-19",
-          "ticker": "00709.HK",
-          "company_name": "Giordano International",
-          "pe_ttm": 10.35,
-          "pb_ratio": 1.11,
-          "market_cap_hkd_b": 2.247
-        },
-        {
-          "date": "2026-07-20",
-          "ticker": "00709.HK",
-          "company_name": "Giordano International",
-          "pe_ttm": 10.35,
-          "pb_ratio": 1.11,
-          "market_cap_hkd_b": 2.247
-        },
-        {
-          "date": "2026-07-21",
-          "ticker": "00709.HK",
-          "company_name": "Giordano International",
-          "pe_ttm": 10.35,
-          "pb_ratio": 1.11,
-          "market_cap_hkd_b": 2.247
-        },
-        {
-          "date": "2026-07-22",
-          "ticker": "00709.HK",
-          "company_name": "Giordano International",
-          "pe_ttm": 10.35,
-          "pb_ratio": 1.11,
-          "market_cap_hkd_b": 2.247
-        },
-        {
-          "date": "2026-07-23",
-          "ticker": "00709.HK",
-          "company_name": "Giordano International",
-          "pe_ttm": 10.35,
-          "pb_ratio": 1.11,
-          "market_cap_hkd_b": 2.247
-        },
-        {
-          "date": "2026-07-24",
-          "ticker": "00709.HK",
-          "company_name": "Giordano International",
-          "pe_ttm": 10.43,
-          "pb_ratio": 1.12,
-          "market_cap_hkd_b": 2.263
-        },
-        {
-          "date": "2026-07-25",
-          "ticker": "00709.HK",
-          "company_name": "Giordano International",
-          "pe_ttm": 10.43,
-          "pb_ratio": 1.12,
-          "market_cap_hkd_b": 2.263
-        },
-        {
-          "date": "2026-07-26",
-          "ticker": "00709.HK",
-          "company_name": "Giordano International",
-          "pe_ttm": 10.43,
-          "pb_ratio": 1.12,
-          "market_cap_hkd_b": 2.263
-        },
-        {
-          "date": "2026-07-27",
-          "ticker": "00709.HK",
-          "company_name": "Giordano International",
-          "pe_ttm": 10.28,
-          "pb_ratio": 1.1,
-          "market_cap_hkd_b": 2.231
-        },
-        {
-          "date": "2026-07-28",
-          "ticker": "00709.HK",
-          "company_name": "Giordano International",
-          "pe_ttm": 10.35,
-          "pb_ratio": 1.11,
-          "market_cap_hkd_b": 2.247
-        },
-        {
-          "date": "2026-07-29",
-          "ticker": "00709.HK",
-          "company_name": "Giordano International",
-          "pe_ttm": 10.43,
-          "pb_ratio": 1.12,
-          "market_cap_hkd_b": 2.263
-        },
-        {
-          "date": "2026-06-30",
-          "ticker": "01255.HK",
-          "company_name": "TATA Health",
-          "pe_ttm": 65.49,
-          "pb_ratio": -16.06,
-          "market_cap_hkd_b": 0.874
-        },
-        {
-          "date": "2026-07-01",
-          "ticker": "01255.HK",
-          "company_name": "TATA Health",
-          "pe_ttm": 65.49,
-          "pb_ratio": -16.06,
-          "market_cap_hkd_b": 0.874
-        },
-        {
-          "date": "2026-07-02",
-          "ticker": "01255.HK",
-          "company_name": "TATA Health",
-          "pe_ttm": 60.03,
-          "pb_ratio": -14.72,
-          "market_cap_hkd_b": 0.801
-        },
-        {
-          "date": "2026-07-03",
-          "ticker": "01255.HK",
-          "company_name": "TATA Health",
-          "pe_ttm": 58.39,
-          "pb_ratio": -14.32,
-          "market_cap_hkd_b": 0.78
-        },
-        {
-          "date": "2026-07-04",
-          "ticker": "01255.HK",
-          "company_name": "TATA Health",
-          "pe_ttm": 58.39,
-          "pb_ratio": -14.32,
-          "market_cap_hkd_b": 0.78
-        },
-        {
-          "date": "2026-07-05",
-          "ticker": "01255.HK",
-          "company_name": "TATA Health",
-          "pe_ttm": 58.39,
-          "pb_ratio": -14.32,
-          "market_cap_hkd_b": 0.78
-        },
-        {
-          "date": "2026-07-06",
-          "ticker": "01255.HK",
-          "company_name": "TATA Health",
-          "pe_ttm": 55.48,
-          "pb_ratio": -13.61,
-          "market_cap_hkd_b": 0.741
-        },
-        {
-          "date": "2026-07-07",
-          "ticker": "01255.HK",
-          "company_name": "TATA Health",
-          "pe_ttm": 54.57,
-          "pb_ratio": -13.38,
-          "market_cap_hkd_b": 0.729
-        },
-        {
-          "date": "2026-07-08",
-          "ticker": "01255.HK",
-          "company_name": "TATA Health",
-          "pe_ttm": 53.66,
-          "pb_ratio": -13.16,
-          "market_cap_hkd_b": 0.716
-        },
-        {
-          "date": "2026-07-09",
-          "ticker": "01255.HK",
-          "company_name": "TATA Health",
-          "pe_ttm": 52.57,
-          "pb_ratio": -12.89,
-          "market_cap_hkd_b": 0.702
-        },
-        {
-          "date": "2026-07-10",
-          "ticker": "01255.HK",
-          "company_name": "TATA Health",
-          "pe_ttm": 50.93,
-          "pb_ratio": -12.49,
-          "market_cap_hkd_b": 0.68
-        },
-        {
-          "date": "2026-07-11",
-          "ticker": "01255.HK",
-          "company_name": "TATA Health",
-          "pe_ttm": 50.93,
-          "pb_ratio": -12.49,
-          "market_cap_hkd_b": 0.68
-        },
-        {
-          "date": "2026-07-12",
-          "ticker": "01255.HK",
-          "company_name": "TATA Health",
-          "pe_ttm": 50.93,
-          "pb_ratio": -12.49,
-          "market_cap_hkd_b": 0.68
-        },
-        {
-          "date": "2026-07-13",
-          "ticker": "01255.HK",
-          "company_name": "TATA Health",
-          "pe_ttm": 50.02,
-          "pb_ratio": -12.27,
-          "market_cap_hkd_b": 0.668
-        },
-        {
-          "date": "2026-07-14",
-          "ticker": "01255.HK",
-          "company_name": "TATA Health",
-          "pe_ttm": 48.21,
-          "pb_ratio": -11.82,
-          "market_cap_hkd_b": 0.644
-        },
-        {
-          "date": "2026-07-15",
-          "ticker": "01255.HK",
-          "company_name": "TATA Health",
-          "pe_ttm": 48.21,
-          "pb_ratio": -11.82,
-          "market_cap_hkd_b": 0.644
-        },
-        {
-          "date": "2026-07-16",
-          "ticker": "01255.HK",
-          "company_name": "TATA Health",
-          "pe_ttm": 48.21,
-          "pb_ratio": -11.82,
-          "market_cap_hkd_b": 0.644
-        },
-        {
-          "date": "2026-07-17",
-          "ticker": "01255.HK",
-          "company_name": "TATA Health",
-          "pe_ttm": 48.21,
-          "pb_ratio": -11.82,
-          "market_cap_hkd_b": 0.644
-        },
-        {
-          "date": "2026-07-18",
-          "ticker": "01255.HK",
-          "company_name": "TATA Health",
-          "pe_ttm": 48.21,
-          "pb_ratio": -11.82,
-          "market_cap_hkd_b": 0.644
-        },
-        {
-          "date": "2026-07-19",
-          "ticker": "01255.HK",
-          "company_name": "TATA Health",
-          "pe_ttm": 48.21,
-          "pb_ratio": -11.82,
-          "market_cap_hkd_b": 0.644
-        },
-        {
-          "date": "2026-07-20",
-          "ticker": "01255.HK",
-          "company_name": "TATA Health",
-          "pe_ttm": 46.39,
-          "pb_ratio": -11.37,
-          "market_cap_hkd_b": 0.619
-        },
-        {
-          "date": "2026-07-21",
-          "ticker": "01255.HK",
-          "company_name": "TATA Health",
-          "pe_ttm": 44.57,
-          "pb_ratio": -10.93,
-          "market_cap_hkd_b": 0.595
-        },
-        {
-          "date": "2026-07-22",
-          "ticker": "01255.HK",
-          "company_name": "TATA Health",
-          "pe_ttm": 42.75,
-          "pb_ratio": -10.48,
-          "market_cap_hkd_b": 0.571
-        },
-        {
-          "date": "2026-07-23",
-          "ticker": "01255.HK",
-          "company_name": "TATA Health",
-          "pe_ttm": 42.75,
-          "pb_ratio": -10.48,
-          "market_cap_hkd_b": 0.571
-        },
-        {
-          "date": "2026-07-24",
-          "ticker": "01255.HK",
-          "company_name": "TATA Health",
-          "pe_ttm": 39.11,
-          "pb_ratio": -9.59,
-          "market_cap_hkd_b": 0.522
-        },
-        {
-          "date": "2026-07-25",
-          "ticker": "01255.HK",
-          "company_name": "TATA Health",
-          "pe_ttm": 39.11,
-          "pb_ratio": -9.59,
-          "market_cap_hkd_b": 0.522
-        },
-        {
-          "date": "2026-07-26",
-          "ticker": "01255.HK",
-          "company_name": "TATA Health",
-          "pe_ttm": 39.11,
-          "pb_ratio": -9.59,
-          "market_cap_hkd_b": 0.522
-        },
-        {
-          "date": "2026-07-27",
-          "ticker": "01255.HK",
-          "company_name": "TATA Health",
-          "pe_ttm": 46.39,
-          "pb_ratio": -11.37,
-          "market_cap_hkd_b": 0.619
-        },
-        {
-          "date": "2026-07-28",
-          "ticker": "01255.HK",
-          "company_name": "TATA Health",
-          "pe_ttm": 44.02,
-          "pb_ratio": -10.8,
-          "market_cap_hkd_b": 0.588
-        },
-        {
-          "date": "2026-07-29",
-          "ticker": "01255.HK",
-          "company_name": "TATA Health",
-          "pe_ttm": 40.02,
-          "pb_ratio": -9.81,
-          "market_cap_hkd_b": 0.534
-        },
-        {
-          "date": "2026-06-30",
           "ticker": "01910.HK",
           "company_name": "Samsonite",
           "pe_ttm": 8.68,
@@ -5837,246 +3752,6 @@
           "pe_ttm": 13.26,
           "pb_ratio": 3.85,
           "market_cap_hkd_b": 119.383
-        },
-        {
-          "date": "2026-06-30",
-          "ticker": "06811.HK",
-          "company_name": "Tai Hing Group",
-          "pe_ttm": 9.62,
-          "pb_ratio": 1.16,
-          "market_cap_hkd_b": 1.039
-        },
-        {
-          "date": "2026-07-01",
-          "ticker": "06811.HK",
-          "company_name": "Tai Hing Group",
-          "pe_ttm": 9.62,
-          "pb_ratio": 1.16,
-          "market_cap_hkd_b": 1.039
-        },
-        {
-          "date": "2026-07-02",
-          "ticker": "06811.HK",
-          "company_name": "Tai Hing Group",
-          "pe_ttm": 9.53,
-          "pb_ratio": 1.15,
-          "market_cap_hkd_b": 1.03
-        },
-        {
-          "date": "2026-07-03",
-          "ticker": "06811.HK",
-          "company_name": "Tai Hing Group",
-          "pe_ttm": 9.8,
-          "pb_ratio": 1.18,
-          "market_cap_hkd_b": 1.059
-        },
-        {
-          "date": "2026-07-04",
-          "ticker": "06811.HK",
-          "company_name": "Tai Hing Group",
-          "pe_ttm": 9.8,
-          "pb_ratio": 1.18,
-          "market_cap_hkd_b": 1.059
-        },
-        {
-          "date": "2026-07-05",
-          "ticker": "06811.HK",
-          "company_name": "Tai Hing Group",
-          "pe_ttm": 9.8,
-          "pb_ratio": 1.18,
-          "market_cap_hkd_b": 1.059
-        },
-        {
-          "date": "2026-07-06",
-          "ticker": "06811.HK",
-          "company_name": "Tai Hing Group",
-          "pe_ttm": 10.15,
-          "pb_ratio": 1.22,
-          "market_cap_hkd_b": 1.098
-        },
-        {
-          "date": "2026-07-07",
-          "ticker": "06811.HK",
-          "company_name": "Tai Hing Group",
-          "pe_ttm": 10.42,
-          "pb_ratio": 1.26,
-          "market_cap_hkd_b": 1.127
-        },
-        {
-          "date": "2026-07-08",
-          "ticker": "06811.HK",
-          "company_name": "Tai Hing Group",
-          "pe_ttm": 10.51,
-          "pb_ratio": 1.27,
-          "market_cap_hkd_b": 1.137
-        },
-        {
-          "date": "2026-07-09",
-          "ticker": "06811.HK",
-          "company_name": "Tai Hing Group",
-          "pe_ttm": 10.42,
-          "pb_ratio": 1.26,
-          "market_cap_hkd_b": 1.127
-        },
-        {
-          "date": "2026-07-10",
-          "ticker": "06811.HK",
-          "company_name": "Tai Hing Group",
-          "pe_ttm": 10.24,
-          "pb_ratio": 1.23,
-          "market_cap_hkd_b": 1.107
-        },
-        {
-          "date": "2026-07-11",
-          "ticker": "06811.HK",
-          "company_name": "Tai Hing Group",
-          "pe_ttm": 10.24,
-          "pb_ratio": 1.23,
-          "market_cap_hkd_b": 1.107
-        },
-        {
-          "date": "2026-07-12",
-          "ticker": "06811.HK",
-          "company_name": "Tai Hing Group",
-          "pe_ttm": 10.24,
-          "pb_ratio": 1.23,
-          "market_cap_hkd_b": 1.107
-        },
-        {
-          "date": "2026-07-13",
-          "ticker": "06811.HK",
-          "company_name": "Tai Hing Group",
-          "pe_ttm": 10.24,
-          "pb_ratio": 1.23,
-          "market_cap_hkd_b": 1.107
-        },
-        {
-          "date": "2026-07-14",
-          "ticker": "06811.HK",
-          "company_name": "Tai Hing Group",
-          "pe_ttm": 10.33,
-          "pb_ratio": 1.24,
-          "market_cap_hkd_b": 1.117
-        },
-        {
-          "date": "2026-07-15",
-          "ticker": "06811.HK",
-          "company_name": "Tai Hing Group",
-          "pe_ttm": 10.15,
-          "pb_ratio": 1.22,
-          "market_cap_hkd_b": 1.098
-        },
-        {
-          "date": "2026-07-16",
-          "ticker": "06811.HK",
-          "company_name": "Tai Hing Group",
-          "pe_ttm": 10.33,
-          "pb_ratio": 1.24,
-          "market_cap_hkd_b": 1.117
-        },
-        {
-          "date": "2026-07-17",
-          "ticker": "06811.HK",
-          "company_name": "Tai Hing Group",
-          "pe_ttm": 10.24,
-          "pb_ratio": 1.23,
-          "market_cap_hkd_b": 1.107
-        },
-        {
-          "date": "2026-07-18",
-          "ticker": "06811.HK",
-          "company_name": "Tai Hing Group",
-          "pe_ttm": 10.24,
-          "pb_ratio": 1.23,
-          "market_cap_hkd_b": 1.107
-        },
-        {
-          "date": "2026-07-19",
-          "ticker": "06811.HK",
-          "company_name": "Tai Hing Group",
-          "pe_ttm": 10.24,
-          "pb_ratio": 1.23,
-          "market_cap_hkd_b": 1.107
-        },
-        {
-          "date": "2026-07-20",
-          "ticker": "06811.HK",
-          "company_name": "Tai Hing Group",
-          "pe_ttm": 10.51,
-          "pb_ratio": 1.27,
-          "market_cap_hkd_b": 1.137
-        },
-        {
-          "date": "2026-07-21",
-          "ticker": "06811.HK",
-          "company_name": "Tai Hing Group",
-          "pe_ttm": 10.51,
-          "pb_ratio": 1.27,
-          "market_cap_hkd_b": 1.137
-        },
-        {
-          "date": "2026-07-22",
-          "ticker": "06811.HK",
-          "company_name": "Tai Hing Group",
-          "pe_ttm": 10.51,
-          "pb_ratio": 1.27,
-          "market_cap_hkd_b": 1.137
-        },
-        {
-          "date": "2026-07-23",
-          "ticker": "06811.HK",
-          "company_name": "Tai Hing Group",
-          "pe_ttm": 10.51,
-          "pb_ratio": 1.27,
-          "market_cap_hkd_b": 1.137
-        },
-        {
-          "date": "2026-07-24",
-          "ticker": "06811.HK",
-          "company_name": "Tai Hing Group",
-          "pe_ttm": 10.6,
-          "pb_ratio": 1.28,
-          "market_cap_hkd_b": 1.146
-        },
-        {
-          "date": "2026-07-25",
-          "ticker": "06811.HK",
-          "company_name": "Tai Hing Group",
-          "pe_ttm": 10.6,
-          "pb_ratio": 1.28,
-          "market_cap_hkd_b": 1.146
-        },
-        {
-          "date": "2026-07-26",
-          "ticker": "06811.HK",
-          "company_name": "Tai Hing Group",
-          "pe_ttm": 10.6,
-          "pb_ratio": 1.28,
-          "market_cap_hkd_b": 1.146
-        },
-        {
-          "date": "2026-07-27",
-          "ticker": "06811.HK",
-          "company_name": "Tai Hing Group",
-          "pe_ttm": 10.69,
-          "pb_ratio": 1.29,
-          "market_cap_hkd_b": 1.156
-        },
-        {
-          "date": "2026-07-28",
-          "ticker": "06811.HK",
-          "company_name": "Tai Hing Group",
-          "pe_ttm": 10.6,
-          "pb_ratio": 1.28,
-          "market_cap_hkd_b": 1.146
-        },
-        {
-          "date": "2026-07-29",
-          "ticker": "06811.HK",
-          "company_name": "Tai Hing Group",
-          "pe_ttm": 10.69,
-          "pb_ratio": 1.29,
-          "market_cap_hkd_b": 1.156
         }
       ],
       "kpi_retail": [
@@ -7427,13 +5102,6 @@
         {
           "match_rate": 1.0,
           "matched_item_index": 100.0,
-          "matched_products": 1409,
-          "supermarket_code": "WELLCOME",
-          "year_month": "2020-05"
-        },
-        {
-          "match_rate": 1.0,
-          "matched_item_index": 100.0,
           "matched_products": 535,
           "supermarket_code": "AEON",
           "year_month": "2020-06"
@@ -7457,13 +5125,6 @@
           "matched_item_index": 100.05,
           "matched_products": 405,
           "supermarket_code": "WATSONS",
-          "year_month": "2020-06"
-        },
-        {
-          "match_rate": 0.9894,
-          "matched_item_index": 99.92,
-          "matched_products": 1404,
-          "supermarket_code": "WELLCOME",
           "year_month": "2020-06"
         },
         {
@@ -7495,13 +5156,6 @@
           "year_month": "2020-07"
         },
         {
-          "match_rate": 0.886,
-          "matched_item_index": 100.1,
-          "matched_products": 1360,
-          "supermarket_code": "WELLCOME",
-          "year_month": "2020-07"
-        },
-        {
           "match_rate": 0.8913,
           "matched_item_index": 101.15,
           "matched_products": 582,
@@ -7527,13 +5181,6 @@
           "matched_item_index": 96.97,
           "matched_products": 421,
           "supermarket_code": "WATSONS",
-          "year_month": "2020-08"
-        },
-        {
-          "match_rate": 0.9557,
-          "matched_item_index": 100.53,
-          "matched_products": 1531,
-          "supermarket_code": "WELLCOME",
           "year_month": "2020-08"
         },
         {
@@ -7565,13 +5212,6 @@
           "year_month": "2020-09"
         },
         {
-          "match_rate": 0.9747,
-          "matched_item_index": 100.54,
-          "matched_products": 1577,
-          "supermarket_code": "WELLCOME",
-          "year_month": "2020-09"
-        },
-        {
           "match_rate": 0.9512,
           "matched_item_index": 101.41,
           "matched_products": 643,
@@ -7597,13 +5237,6 @@
           "matched_item_index": 96.64,
           "matched_products": 447,
           "supermarket_code": "WATSONS",
-          "year_month": "2020-10"
-        },
-        {
-          "match_rate": 0.9918,
-          "matched_item_index": 100.31,
-          "matched_products": 1580,
-          "supermarket_code": "WELLCOME",
           "year_month": "2020-10"
         },
         {
@@ -7635,13 +5268,6 @@
           "year_month": "2020-11"
         },
         {
-          "match_rate": 0.9691,
-          "matched_item_index": 99.94,
-          "matched_products": 1566,
-          "supermarket_code": "WELLCOME",
-          "year_month": "2020-11"
-        },
-        {
           "match_rate": 0.986,
           "matched_item_index": 100.79,
           "matched_products": 703,
@@ -7667,13 +5293,6 @@
           "matched_item_index": 96.1,
           "matched_products": 472,
           "supermarket_code": "WATSONS",
-          "year_month": "2020-12"
-        },
-        {
-          "match_rate": 0.9919,
-          "matched_item_index": 99.89,
-          "matched_products": 1596,
-          "supermarket_code": "WELLCOME",
           "year_month": "2020-12"
         },
         {
@@ -7705,13 +5324,6 @@
           "year_month": "2021-01"
         },
         {
-          "match_rate": 0.9858,
-          "matched_item_index": 99.76,
-          "matched_products": 1599,
-          "supermarket_code": "WELLCOME",
-          "year_month": "2021-01"
-        },
-        {
           "match_rate": 0.9943,
           "matched_item_index": 99.67,
           "matched_products": 700,
@@ -7737,13 +5349,6 @@
           "matched_item_index": 95.76,
           "matched_products": 462,
           "supermarket_code": "WATSONS",
-          "year_month": "2021-02"
-        },
-        {
-          "match_rate": 0.9981,
-          "matched_item_index": 99.91,
-          "matched_products": 1540,
-          "supermarket_code": "WELLCOME",
           "year_month": "2021-02"
         },
         {
@@ -7775,13 +5380,6 @@
           "year_month": "2021-03"
         },
         {
-          "match_rate": 0.9864,
-          "matched_item_index": 100.3,
-          "matched_products": 1526,
-          "supermarket_code": "WELLCOME",
-          "year_month": "2021-03"
-        },
-        {
           "match_rate": 0.9773,
           "matched_item_index": 100.3,
           "matched_products": 688,
@@ -7810,13 +5408,6 @@
           "year_month": "2021-04"
         },
         {
-          "match_rate": 0.9849,
-          "matched_item_index": 100.69,
-          "matched_products": 1499,
-          "supermarket_code": "WELLCOME",
-          "year_month": "2021-04"
-        },
-        {
           "match_rate": 0.9859,
           "matched_item_index": 99.76,
           "matched_products": 699,
@@ -7828,13 +5419,6 @@
           "matched_item_index": 103.6,
           "matched_products": 164,
           "supermarket_code": "DCHFOOD",
-          "year_month": "2021-05"
-        },
-        {
-          "match_rate": 1.0,
-          "matched_item_index": 100.0,
-          "matched_products": 357,
-          "supermarket_code": "MANNINGS",
           "year_month": "2021-05"
         },
         {
@@ -7852,13 +5436,6 @@
           "year_month": "2021-05"
         },
         {
-          "match_rate": 0.9875,
-          "matched_item_index": 100.68,
-          "matched_products": 1503,
-          "supermarket_code": "WELLCOME",
-          "year_month": "2021-05"
-        },
-        {
           "match_rate": 0.9749,
           "matched_item_index": 100.94,
           "matched_products": 700,
@@ -7870,13 +5447,6 @@
           "matched_item_index": 101.91,
           "matched_products": 160,
           "supermarket_code": "DCHFOOD",
-          "year_month": "2021-06"
-        },
-        {
-          "match_rate": 0.9916,
-          "matched_item_index": 99.82,
-          "matched_products": 354,
-          "supermarket_code": "MANNINGS",
           "year_month": "2021-06"
         },
         {
@@ -7894,13 +5464,6 @@
           "year_month": "2021-06"
         },
         {
-          "match_rate": 0.9804,
-          "matched_item_index": 101.11,
-          "matched_products": 1499,
-          "supermarket_code": "WELLCOME",
-          "year_month": "2021-06"
-        },
-        {
           "match_rate": 0.986,
           "matched_item_index": 101.29,
           "matched_products": 704,
@@ -7912,13 +5475,6 @@
           "matched_item_index": 101.93,
           "matched_products": 165,
           "supermarket_code": "DCHFOOD",
-          "year_month": "2021-07"
-        },
-        {
-          "match_rate": 0.983,
-          "matched_item_index": 100.52,
-          "matched_products": 346,
-          "supermarket_code": "MANNINGS",
           "year_month": "2021-07"
         },
         {
@@ -7936,13 +5492,6 @@
           "year_month": "2021-07"
         },
         {
-          "match_rate": 1.0,
-          "matched_item_index": 101.76,
-          "matched_products": 53,
-          "supermarket_code": "WELLCOME",
-          "year_month": "2021-07"
-        },
-        {
           "match_rate": 0.9381,
           "matched_item_index": 100.47,
           "matched_products": 697,
@@ -7954,13 +5503,6 @@
           "matched_item_index": 102.14,
           "matched_products": 165,
           "supermarket_code": "DCHFOOD",
-          "year_month": "2021-08"
-        },
-        {
-          "match_rate": 0.9556,
-          "matched_item_index": 100.99,
-          "matched_products": 344,
-          "supermarket_code": "MANNINGS",
           "year_month": "2021-08"
         },
         {
@@ -7992,13 +5534,6 @@
           "year_month": "2021-09"
         },
         {
-          "match_rate": 0.9641,
-          "matched_item_index": 100.86,
-          "matched_products": 349,
-          "supermarket_code": "MANNINGS",
-          "year_month": "2021-09"
-        },
-        {
           "match_rate": 0.9709,
           "matched_item_index": 100.58,
           "matched_products": 1833,
@@ -8024,13 +5559,6 @@
           "matched_item_index": 102.28,
           "matched_products": 166,
           "supermarket_code": "DCHFOOD",
-          "year_month": "2021-10"
-        },
-        {
-          "match_rate": 0.9942,
-          "matched_item_index": 100.71,
-          "matched_products": 343,
-          "supermarket_code": "MANNINGS",
           "year_month": "2021-10"
         },
         {
@@ -8062,13 +5590,6 @@
           "year_month": "2021-11"
         },
         {
-          "match_rate": 0.9941,
-          "matched_item_index": 100.21,
-          "matched_products": 338,
-          "supermarket_code": "MANNINGS",
-          "year_month": "2021-11"
-        },
-        {
           "match_rate": 0.9762,
           "matched_item_index": 101.66,
           "matched_products": 1765,
@@ -8094,13 +5615,6 @@
           "matched_item_index": 103.19,
           "matched_products": 168,
           "supermarket_code": "DCHFOOD",
-          "year_month": "2021-12"
-        },
-        {
-          "match_rate": 0.9793,
-          "matched_item_index": 100.33,
-          "matched_products": 331,
-          "supermarket_code": "MANNINGS",
           "year_month": "2021-12"
         },
         {
@@ -8132,13 +5646,6 @@
           "year_month": "2022-01"
         },
         {
-          "match_rate": 0.9881,
-          "matched_item_index": 100.93,
-          "matched_products": 333,
-          "supermarket_code": "MANNINGS",
-          "year_month": "2022-01"
-        },
-        {
           "match_rate": 0.9728,
           "matched_item_index": 100.88,
           "matched_products": 1751,
@@ -8164,13 +5671,6 @@
           "matched_item_index": 103.9,
           "matched_products": 151,
           "supermarket_code": "DCHFOOD",
-          "year_month": "2022-02"
-        },
-        {
-          "match_rate": 0.997,
-          "matched_item_index": 100.92,
-          "matched_products": 331,
-          "supermarket_code": "MANNINGS",
           "year_month": "2022-02"
         },
         {
@@ -8202,13 +5702,6 @@
           "year_month": "2022-03"
         },
         {
-          "match_rate": 0.9413,
-          "matched_item_index": 100.75,
-          "matched_products": 321,
-          "supermarket_code": "MANNINGS",
-          "year_month": "2022-03"
-        },
-        {
           "match_rate": 0.9898,
           "matched_item_index": 102.73,
           "matched_products": 1740,
@@ -8234,13 +5727,6 @@
           "matched_item_index": 105.06,
           "matched_products": 93,
           "supermarket_code": "DCHFOOD",
-          "year_month": "2022-04"
-        },
-        {
-          "match_rate": 0.9711,
-          "matched_item_index": 100.04,
-          "matched_products": 336,
-          "supermarket_code": "MANNINGS",
           "year_month": "2022-04"
         },
         {
@@ -8272,13 +5758,6 @@
           "year_month": "2022-05"
         },
         {
-          "match_rate": 0.9773,
-          "matched_item_index": 99.54,
-          "matched_products": 344,
-          "supermarket_code": "MANNINGS",
-          "year_month": "2022-05"
-        },
-        {
           "match_rate": 0.9916,
           "matched_item_index": 103.41,
           "matched_products": 1656,
@@ -8304,13 +5783,6 @@
           "matched_item_index": 105.48,
           "matched_products": 94,
           "supermarket_code": "DCHFOOD",
-          "year_month": "2022-06"
-        },
-        {
-          "match_rate": 0.9914,
-          "matched_item_index": 99.72,
-          "matched_products": 344,
-          "supermarket_code": "MANNINGS",
           "year_month": "2022-06"
         },
         {
@@ -8342,13 +5814,6 @@
           "year_month": "2022-07"
         },
         {
-          "match_rate": 0.988,
-          "matched_item_index": 100.29,
-          "matched_products": 330,
-          "supermarket_code": "MANNINGS",
-          "year_month": "2022-07"
-        },
-        {
           "match_rate": 0.9738,
           "matched_item_index": 103.64,
           "matched_products": 1633,
@@ -8374,13 +5839,6 @@
           "matched_item_index": 106.57,
           "matched_products": 94,
           "supermarket_code": "DCHFOOD",
-          "year_month": "2022-08"
-        },
-        {
-          "match_rate": 0.9451,
-          "matched_item_index": 100.08,
-          "matched_products": 327,
-          "supermarket_code": "MANNINGS",
           "year_month": "2022-08"
         },
         {
@@ -8412,13 +5870,6 @@
           "year_month": "2022-09"
         },
         {
-          "match_rate": 0.9649,
-          "matched_item_index": 99.78,
-          "matched_products": 330,
-          "supermarket_code": "MANNINGS",
-          "year_month": "2022-09"
-        },
-        {
           "match_rate": 0.9863,
           "matched_item_index": 104.06,
           "matched_products": 1653,
@@ -8444,13 +5895,6 @@
           "matched_item_index": 110.56,
           "matched_products": 66,
           "supermarket_code": "DCHFOOD",
-          "year_month": "2022-10"
-        },
-        {
-          "match_rate": 1.0,
-          "matched_item_index": 100.29,
-          "matched_products": 329,
-          "supermarket_code": "MANNINGS",
           "year_month": "2022-10"
         },
         {
@@ -8482,13 +5926,6 @@
           "year_month": "2022-11"
         },
         {
-          "match_rate": 0.9812,
-          "matched_item_index": 100.05,
-          "matched_products": 314,
-          "supermarket_code": "MANNINGS",
-          "year_month": "2022-11"
-        },
-        {
           "match_rate": 0.9828,
           "matched_item_index": 104.53,
           "matched_products": 1655,
@@ -8514,13 +5951,6 @@
           "matched_item_index": 110.94,
           "matched_products": 69,
           "supermarket_code": "DCHFOOD",
-          "year_month": "2022-12"
-        },
-        {
-          "match_rate": 0.9905,
-          "matched_item_index": 100.88,
-          "matched_products": 314,
-          "supermarket_code": "MANNINGS",
           "year_month": "2022-12"
         },
         {
@@ -8552,13 +5982,6 @@
           "year_month": "2023-01"
         },
         {
-          "match_rate": 0.9371,
-          "matched_item_index": 101.33,
-          "matched_products": 313,
-          "supermarket_code": "MANNINGS",
-          "year_month": "2023-01"
-        },
-        {
           "match_rate": 0.9826,
           "matched_item_index": 105.55,
           "matched_products": 1638,
@@ -8584,13 +6007,6 @@
           "matched_item_index": 111.58,
           "matched_products": 70,
           "supermarket_code": "DCHFOOD",
-          "year_month": "2023-02"
-        },
-        {
-          "match_rate": 0.9852,
-          "matched_item_index": 102.19,
-          "matched_products": 333,
-          "supermarket_code": "MANNINGS",
           "year_month": "2023-02"
         },
         {
@@ -8622,13 +6038,6 @@
           "year_month": "2023-03"
         },
         {
-          "match_rate": 1.0,
-          "matched_item_index": 102.3,
-          "matched_products": 336,
-          "supermarket_code": "MANNINGS",
-          "year_month": "2023-03"
-        },
-        {
           "match_rate": 0.9885,
           "matched_item_index": 106.97,
           "matched_products": 1640,
@@ -8654,13 +6063,6 @@
           "matched_item_index": 111.18,
           "matched_products": 65,
           "supermarket_code": "DCHFOOD",
-          "year_month": "2023-04"
-        },
-        {
-          "match_rate": 1.0,
-          "matched_item_index": 102.97,
-          "matched_products": 326,
-          "supermarket_code": "MANNINGS",
           "year_month": "2023-04"
         },
         {
@@ -8692,13 +6094,6 @@
           "year_month": "2023-05"
         },
         {
-          "match_rate": 0.952,
-          "matched_item_index": 103.41,
-          "matched_products": 317,
-          "supermarket_code": "MANNINGS",
-          "year_month": "2023-05"
-        },
-        {
           "match_rate": 0.9769,
           "matched_item_index": 106.19,
           "matched_products": 1610,
@@ -8724,13 +6119,6 @@
           "matched_item_index": 110.75,
           "matched_products": 85,
           "supermarket_code": "DCHFOOD",
-          "year_month": "2023-06"
-        },
-        {
-          "match_rate": 0.9939,
-          "matched_item_index": 103.65,
-          "matched_products": 327,
-          "supermarket_code": "MANNINGS",
           "year_month": "2023-06"
         },
         {
@@ -8762,13 +6150,6 @@
           "year_month": "2023-07"
         },
         {
-          "match_rate": 0.997,
-          "matched_item_index": 103.83,
-          "matched_products": 327,
-          "supermarket_code": "MANNINGS",
-          "year_month": "2023-07"
-        },
-        {
           "match_rate": 0.989,
           "matched_item_index": 107.01,
           "matched_products": 1622,
@@ -8794,13 +6175,6 @@
           "matched_item_index": 110.75,
           "matched_products": 86,
           "supermarket_code": "DCHFOOD",
-          "year_month": "2023-08"
-        },
-        {
-          "match_rate": 0.9876,
-          "matched_item_index": 104.87,
-          "matched_products": 318,
-          "supermarket_code": "MANNINGS",
           "year_month": "2023-08"
         },
         {
@@ -8832,13 +6206,6 @@
           "year_month": "2023-09"
         },
         {
-          "match_rate": 0.9969,
-          "matched_item_index": 104.86,
-          "matched_products": 317,
-          "supermarket_code": "MANNINGS",
-          "year_month": "2023-09"
-        },
-        {
           "match_rate": 0.987,
           "matched_item_index": 106.9,
           "matched_products": 1599,
@@ -8867,13 +6234,6 @@
           "year_month": "2023-10"
         },
         {
-          "match_rate": 0.9968,
-          "matched_item_index": 105.25,
-          "matched_products": 313,
-          "supermarket_code": "MANNINGS",
-          "year_month": "2023-10"
-        },
-        {
           "match_rate": 0.9816,
           "matched_item_index": 107.03,
           "matched_products": 1597,
@@ -8899,13 +6259,6 @@
           "matched_item_index": 110.75,
           "matched_products": 93,
           "supermarket_code": "DCHFOOD",
-          "year_month": "2023-11"
-        },
-        {
-          "match_rate": 0.8812,
-          "matched_item_index": 105.02,
-          "matched_products": 304,
-          "supermarket_code": "MANNINGS",
           "year_month": "2023-11"
         },
         {
@@ -8938,13 +6291,6 @@
         },
         {
           "match_rate": 0.99,
-          "matched_item_index": 105.27,
-          "matched_products": 296,
-          "supermarket_code": "MANNINGS",
-          "year_month": "2023-12"
-        },
-        {
-          "match_rate": 0.99,
           "matched_item_index": 107.59,
           "matched_products": 1590,
           "supermarket_code": "PARKNSHOP",
@@ -8969,13 +6315,6 @@
           "matched_item_index": 114.51,
           "matched_products": 90,
           "supermarket_code": "DCHFOOD",
-          "year_month": "2024-01"
-        },
-        {
-          "match_rate": 1.0,
-          "matched_item_index": 105.52,
-          "matched_products": 287,
-          "supermarket_code": "MANNINGS",
           "year_month": "2024-01"
         },
         {
@@ -9007,13 +6346,6 @@
           "year_month": "2024-02"
         },
         {
-          "match_rate": 0.9896,
-          "matched_item_index": 105.41,
-          "matched_products": 285,
-          "supermarket_code": "MANNINGS",
-          "year_month": "2024-02"
-        },
-        {
           "match_rate": 0.9468,
           "matched_item_index": 107.26,
           "matched_products": 1514,
@@ -9039,13 +6371,6 @@
           "matched_item_index": 99.78,
           "matched_products": 70,
           "supermarket_code": "DCHFOOD",
-          "year_month": "2024-03"
-        },
-        {
-          "match_rate": 0.9825,
-          "matched_item_index": 105.55,
-          "matched_products": 281,
-          "supermarket_code": "MANNINGS",
           "year_month": "2024-03"
         },
         {
@@ -9077,13 +6402,6 @@
           "year_month": "2024-04"
         },
         {
-          "match_rate": 0.8459,
-          "matched_item_index": 105.27,
-          "matched_products": 280,
-          "supermarket_code": "MANNINGS",
-          "year_month": "2024-04"
-        },
-        {
           "match_rate": 0.9911,
           "matched_item_index": 107.62,
           "matched_products": 1561,
@@ -9109,13 +6427,6 @@
           "matched_item_index": 99.66,
           "matched_products": 40,
           "supermarket_code": "DCHFOOD",
-          "year_month": "2024-05"
-        },
-        {
-          "match_rate": 0.9879,
-          "matched_item_index": 106.13,
-          "matched_products": 327,
-          "supermarket_code": "MANNINGS",
           "year_month": "2024-05"
         },
         {
@@ -9147,13 +6458,6 @@
           "year_month": "2024-06"
         },
         {
-          "match_rate": 0.9162,
-          "matched_item_index": 105.99,
-          "matched_products": 328,
-          "supermarket_code": "MANNINGS",
-          "year_month": "2024-06"
-        },
-        {
           "match_rate": 0.791,
           "matched_item_index": 106.93,
           "matched_products": 1582,
@@ -9179,13 +6483,6 @@
           "matched_item_index": 98.48,
           "matched_products": 47,
           "supermarket_code": "DCHFOOD",
-          "year_month": "2024-07"
-        },
-        {
-          "match_rate": 0.9023,
-          "matched_item_index": 106.13,
-          "matched_products": 351,
-          "supermarket_code": "MANNINGS",
           "year_month": "2024-07"
         },
         {
@@ -9217,13 +6514,6 @@
           "year_month": "2024-08"
         },
         {
-          "match_rate": 0.9871,
-          "matched_item_index": 105.62,
-          "matched_products": 384,
-          "supermarket_code": "MANNINGS",
-          "year_month": "2024-08"
-        },
-        {
           "match_rate": 0.9879,
           "matched_item_index": 106.97,
           "matched_products": 2036,
@@ -9249,13 +6539,6 @@
           "matched_item_index": 101.87,
           "matched_products": 50,
           "supermarket_code": "DCHFOOD",
-          "year_month": "2024-09"
-        },
-        {
-          "match_rate": 0.9796,
-          "matched_item_index": 105.47,
-          "matched_products": 384,
-          "supermarket_code": "MANNINGS",
           "year_month": "2024-09"
         },
         {
@@ -9287,13 +6570,6 @@
           "year_month": "2024-10"
         },
         {
-          "match_rate": 0.9872,
-          "matched_item_index": 104.95,
-          "matched_products": 386,
-          "supermarket_code": "MANNINGS",
-          "year_month": "2024-10"
-        },
-        {
           "match_rate": 0.9907,
           "matched_item_index": 106.67,
           "matched_products": 2020,
@@ -9319,13 +6595,6 @@
           "matched_item_index": 103.71,
           "matched_products": 43,
           "supermarket_code": "DCHFOOD",
-          "year_month": "2024-11"
-        },
-        {
-          "match_rate": 0.9973,
-          "matched_item_index": 105.35,
-          "matched_products": 372,
-          "supermarket_code": "MANNINGS",
           "year_month": "2024-11"
         },
         {
@@ -9357,13 +6626,6 @@
           "year_month": "2024-12"
         },
         {
-          "match_rate": 0.9735,
-          "matched_item_index": 105.57,
-          "matched_products": 368,
-          "supermarket_code": "MANNINGS",
-          "year_month": "2024-12"
-        },
-        {
           "match_rate": 0.9941,
           "matched_item_index": 106.13,
           "matched_products": 2029,
@@ -9389,13 +6651,6 @@
           "matched_item_index": 103.68,
           "matched_products": 43,
           "supermarket_code": "DCHFOOD",
-          "year_month": "2025-01"
-        },
-        {
-          "match_rate": 0.992,
-          "matched_item_index": 105.13,
-          "matched_products": 371,
-          "supermarket_code": "MANNINGS",
           "year_month": "2025-01"
         },
         {
@@ -9427,13 +6682,6 @@
           "year_month": "2025-02"
         },
         {
-          "match_rate": 0.9973,
-          "matched_item_index": 105.41,
-          "matched_products": 368,
-          "supermarket_code": "MANNINGS",
-          "year_month": "2025-02"
-        },
-        {
           "match_rate": 0.996,
           "matched_item_index": 106.19,
           "matched_products": 2011,
@@ -9459,13 +6707,6 @@
           "matched_item_index": 102.36,
           "matched_products": 37,
           "supermarket_code": "DCHFOOD",
-          "year_month": "2025-03"
-        },
-        {
-          "match_rate": 0.9917,
-          "matched_item_index": 105.27,
-          "matched_products": 360,
-          "supermarket_code": "MANNINGS",
           "year_month": "2025-03"
         },
         {
@@ -9497,13 +6738,6 @@
           "year_month": "2025-04"
         },
         {
-          "match_rate": 0.9862,
-          "matched_item_index": 105.15,
-          "matched_products": 357,
-          "supermarket_code": "MANNINGS",
-          "year_month": "2025-04"
-        },
-        {
           "match_rate": 0.9985,
           "matched_item_index": 106.65,
           "matched_products": 1988,
@@ -9529,13 +6763,6 @@
           "matched_item_index": 101.88,
           "matched_products": 40,
           "supermarket_code": "DCHFOOD",
-          "year_month": "2025-05"
-        },
-        {
-          "match_rate": 0.9831,
-          "matched_item_index": 105.12,
-          "matched_products": 348,
-          "supermarket_code": "MANNINGS",
           "year_month": "2025-05"
         },
         {
@@ -9567,13 +6794,6 @@
           "year_month": "2025-06"
         },
         {
-          "match_rate": 0.9534,
-          "matched_item_index": 105.16,
-          "matched_products": 348,
-          "supermarket_code": "MANNINGS",
-          "year_month": "2025-06"
-        },
-        {
           "match_rate": 0.9869,
           "matched_item_index": 106.61,
           "matched_products": 1957,
@@ -9599,13 +6819,6 @@
           "matched_item_index": 98.42,
           "matched_products": 35,
           "supermarket_code": "DCHFOOD",
-          "year_month": "2025-07"
-        },
-        {
-          "match_rate": 0.9831,
-          "matched_item_index": 105.23,
-          "matched_products": 349,
-          "supermarket_code": "MANNINGS",
           "year_month": "2025-07"
         },
         {
@@ -9637,13 +6850,6 @@
           "year_month": "2025-08"
         },
         {
-          "match_rate": 0.9831,
-          "matched_item_index": 105.19,
-          "matched_products": 349,
-          "supermarket_code": "MANNINGS",
-          "year_month": "2025-08"
-        },
-        {
           "match_rate": 0.9929,
           "matched_item_index": 106.05,
           "matched_products": 1958,
@@ -9669,13 +6875,6 @@
           "matched_item_index": 96.81,
           "matched_products": 38,
           "supermarket_code": "DCHFOOD",
-          "year_month": "2025-09"
-        },
-        {
-          "match_rate": 0.9971,
-          "matched_item_index": 104.69,
-          "matched_products": 344,
-          "supermarket_code": "MANNINGS",
           "year_month": "2025-09"
         },
         {
@@ -9707,13 +6906,6 @@
           "year_month": "2025-10"
         },
         {
-          "match_rate": 0.9798,
-          "matched_item_index": 105.27,
-          "matched_products": 339,
-          "supermarket_code": "MANNINGS",
-          "year_month": "2025-10"
-        },
-        {
           "match_rate": 0.9888,
           "matched_item_index": 106.61,
           "matched_products": 1943,
@@ -9739,13 +6931,6 @@
           "matched_item_index": 97.26,
           "matched_products": 31,
           "supermarket_code": "DCHFOOD",
-          "year_month": "2025-11"
-        },
-        {
-          "match_rate": 0.9913,
-          "matched_item_index": 105.37,
-          "matched_products": 341,
-          "supermarket_code": "MANNINGS",
           "year_month": "2025-11"
         },
         {
@@ -9777,13 +6962,6 @@
           "year_month": "2025-12"
         },
         {
-          "match_rate": 0.9417,
-          "matched_item_index": 104.95,
-          "matched_products": 339,
-          "supermarket_code": "MANNINGS",
-          "year_month": "2025-12"
-        },
-        {
           "match_rate": 0.9868,
           "matched_item_index": 106.53,
           "matched_products": 1951,
@@ -9809,13 +6987,6 @@
           "matched_item_index": 99.36,
           "matched_products": 24,
           "supermarket_code": "DCHFOOD",
-          "year_month": "2026-01"
-        },
-        {
-          "match_rate": 0.9806,
-          "matched_item_index": 105.04,
-          "matched_products": 353,
-          "supermarket_code": "MANNINGS",
           "year_month": "2026-01"
         },
         {
@@ -9847,13 +7018,6 @@
           "year_month": "2026-02"
         },
         {
-          "match_rate": 0.997,
-          "matched_item_index": 104.84,
-          "matched_products": 329,
-          "supermarket_code": "MANNINGS",
-          "year_month": "2026-02"
-        },
-        {
           "match_rate": 0.999,
           "matched_item_index": 105.64,
           "matched_products": 1937,
@@ -9872,13 +7036,6 @@
           "matched_item_index": 107.53,
           "matched_products": 383,
           "supermarket_code": "AEON",
-          "year_month": "2026-03"
-        },
-        {
-          "match_rate": 0.8814,
-          "matched_item_index": 104.88,
-          "matched_products": 312,
-          "supermarket_code": "MANNINGS",
           "year_month": "2026-03"
         },
         {
@@ -9903,13 +7060,6 @@
           "year_month": "2026-04"
         },
         {
-          "match_rate": 0.9589,
-          "matched_item_index": 104.55,
-          "matched_products": 350,
-          "supermarket_code": "MANNINGS",
-          "year_month": "2026-04"
-        },
-        {
           "match_rate": 0.9869,
           "matched_item_index": 106.03,
           "matched_products": 1954,
@@ -9928,13 +7078,6 @@
           "matched_item_index": 108.9,
           "matched_products": 421,
           "supermarket_code": "AEON",
-          "year_month": "2026-05"
-        },
-        {
-          "match_rate": 0.9201,
-          "matched_item_index": 104.4,
-          "matched_products": 357,
-          "supermarket_code": "MANNINGS",
           "year_month": "2026-05"
         },
         {
@@ -9959,13 +7102,6 @@
           "year_month": "2026-06"
         },
         {
-          "match_rate": 0.9763,
-          "matched_item_index": 104.53,
-          "matched_products": 371,
-          "supermarket_code": "MANNINGS",
-          "year_month": "2026-06"
-        },
-        {
           "match_rate": 0.9801,
           "matched_item_index": 106.25,
           "matched_products": 2020,
@@ -9984,13 +7120,6 @@
           "matched_item_index": 109.1,
           "matched_products": 552,
           "supermarket_code": "AEON",
-          "year_month": "2026-07"
-        },
-        {
-          "match_rate": 0.992,
-          "matched_item_index": 103.79,
-          "matched_products": 373,
-          "supermarket_code": "MANNINGS",
           "year_month": "2026-07"
         },
         {
@@ -33488,63 +30617,13 @@
       "consumer_council_complaints_history_chart": [
         {
           "period": "2024 1-12",
-          "category": "Foods & Drinks",
-          "amount": 1289
-        },
-        {
-          "period": "2024 1-12",
-          "category": "Medicine & Health Foods",
-          "amount": 1373
-        },
-        {
-          "period": "2024 1-12",
           "category": "Travel Matters",
           "amount": 2966
         },
         {
           "period": "2024 1-12",
-          "category": "Clothing & Apparel",
-          "amount": 1590
-        },
-        {
-          "period": "2024 1-12",
-          "category": "Telecommunication Services",
-          "amount": 3106
-        },
-        {
-          "period": "2024 1-12",
-          "category": "Personal Care Products",
-          "amount": 1443
-        },
-        {
-          "period": "2024 1-12",
-          "category": "Beauty Services",
-          "amount": 3028
-        },
-        {
-          "period": "2024 1-12",
           "category": "Food & Entertainment Services",
           "amount": 5640
-        },
-        {
-          "period": "2024 1-12",
-          "category": "Local Accommodation",
-          "amount": 840
-        },
-        {
-          "period": "2024 1-12",
-          "category": "Electrical Appliances",
-          "amount": 2467
-        },
-        {
-          "period": "2025 1-12",
-          "category": "Foods & Drinks",
-          "amount": 1202
-        },
-        {
-          "period": "2025 1-12",
-          "category": "Medicine & Health Foods",
-          "amount": 1562
         },
         {
           "period": "2025 1-12",
@@ -33553,48 +30632,8 @@
         },
         {
           "period": "2025 1-12",
-          "category": "Clothing & Apparel",
-          "amount": 1448
-        },
-        {
-          "period": "2025 1-12",
-          "category": "Telecommunication Services",
-          "amount": 2661
-        },
-        {
-          "period": "2025 1-12",
-          "category": "Personal Care Products",
-          "amount": 1182
-        },
-        {
-          "period": "2025 1-12",
-          "category": "Beauty Services",
-          "amount": 1509
-        },
-        {
-          "period": "2025 1-12",
           "category": "Food & Entertainment Services",
           "amount": 6689
-        },
-        {
-          "period": "2025 1-12",
-          "category": "Local Accommodation",
-          "amount": 1101
-        },
-        {
-          "period": "2025 1-12",
-          "category": "Electrical Appliances",
-          "amount": 2176
-        },
-        {
-          "period": "2026",
-          "category": "Foods & Drinks",
-          "amount": 466
-        },
-        {
-          "period": "2026",
-          "category": "Medicine & Health Foods",
-          "amount": 904
         },
         {
           "period": "2026",
@@ -33603,38 +30642,8 @@
         },
         {
           "period": "2026",
-          "category": "Clothing & Apparel",
-          "amount": 639
-        },
-        {
-          "period": "2026",
-          "category": "Telecommunication Services",
-          "amount": 1026
-        },
-        {
-          "period": "2026",
-          "category": "Personal Care Products",
-          "amount": 469
-        },
-        {
-          "period": "2026",
-          "category": "Beauty Services",
-          "amount": 696
-        },
-        {
-          "period": "2026",
           "category": "Food & Entertainment Services",
           "amount": 2175
-        },
-        {
-          "period": "2026",
-          "category": "Local Accommodation",
-          "amount": 495
-        },
-        {
-          "period": "2026",
-          "category": "Electrical Appliances",
-          "amount": 983
         }
       ],
       "immigration_checkpoint_snapshot": []
@@ -33650,7 +30659,7 @@
         "url": "https://oil-price.consumer.org.hk/en",
         "language": "JSON",
         "description": "Daily auto-fuel pump prices, walk-in discounts, and net prices across Caltex, PetroChina, Shell, Sinopec, and Esso.",
-        "executed_at": "2026-07-29T22:30:33.740230Z"
+        "executed_at": "2026-07-29T23:47:40.080936Z"
       }
     },
     {
@@ -33662,7 +30671,7 @@
         "url": "https://www.consumer.org.hk/node/32290/export-complaints/json?lang=en",
         "language": "JSON",
         "description": "Annual consumer complaints by category across Hong Kong consumer sectors.",
-        "executed_at": "2026-07-29T22:30:33.740230Z"
+        "executed_at": "2026-07-29T23:47:40.080936Z"
       }
     },
     {
@@ -33674,7 +30683,7 @@
         "url": "https://online-price-watch.consumer.org.hk/opw/opendata/pricewatch_en.csv",
         "language": "CSV / Parquet",
         "description": "Supermarket item prices and promotion offers. The dashboard currently reports only validated local archive coverage; it does not present an assortment-sensitive arithmetic mean as a price index.",
-        "executed_at": "2026-07-29T22:30:33.740230Z"
+        "executed_at": "2026-07-29T23:47:40.080936Z"
       }
     },
     {
@@ -33689,7 +30698,7 @@
         "metric_definitions": [
           "Each commodity's price is the mean of same-day readings across the wholesale markets/sources AFCD reports for it."
         ],
-        "executed_at": "2026-07-29T22:30:33.740230Z"
+        "executed_at": "2026-07-29T23:47:40.080936Z"
       }
     },
     {
@@ -33705,7 +30714,7 @@
           "Latest is the most recent published PM benchmark fixing.",
           "Day and year movements are latest divided by the prior trading day or the observation on/before one year earlier, minus one."
         ],
-        "executed_at": "2026-07-29T22:30:33.740230Z"
+        "executed_at": "2026-07-29T23:47:40.080936Z"
       }
     },
     {
@@ -33721,7 +30730,7 @@
           "PE (TTM), PB, and market cap (HKD bn) are each ticker's latest published daily value.",
           "No dividend-yield indicator exists on this endpoint; yield is not reported here."
         ],
-        "executed_at": "2026-07-29T22:30:33.740230Z"
+        "executed_at": "2026-07-29T23:47:40.080936Z"
       }
     },
     {
@@ -33737,7 +30746,7 @@
           "All retail outlet is the classification group's own published total across all outlet types.",
           "Month and year movements are latest divided by the prior month or the observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-07-29T22:30:33.740230Z"
+        "executed_at": "2026-07-29T23:47:40.080936Z"
       }
     },
     {
@@ -33753,7 +30762,7 @@
           "Purchases are only published sector-wide, not broken out by restaurant type.",
           "Quarter and year movements are latest divided by the prior quarter or the observation four quarters earlier, minus one."
         ],
-        "executed_at": "2026-07-29T22:30:33.740230Z"
+        "executed_at": "2026-07-29T23:47:40.080936Z"
       }
     },
     {
@@ -33770,7 +30779,7 @@
           "Southbound (南下) flow is daily Mainland visitor arrivals across all 17 control points, since Mainland visitors legitimately arrive by air, rail, and sea, not just by land.",
           "7-day moving averages (7d MA) smooth out day-of-week seasonality (weekend shopping spikes)."
         ],
-        "executed_at": "2026-07-29T22:30:33.740230Z"
+        "executed_at": "2026-07-29T23:47:40.080936Z"
       }
     },
     {
@@ -33787,7 +30796,7 @@
           "Red/Black Rainstorm hours measures total duration under Red or Black rainstorm warnings.",
           "RMB per 100 HKD is derived from FRED daily DEXCHUS and DEXHKUS rates."
         ],
-        "executed_at": "2026-07-29T22:30:33.740230Z"
+        "executed_at": "2026-07-29T23:47:40.080936Z"
       }
     },
     {
@@ -33802,7 +30811,7 @@
           "Total stores is each company's own latest snapshot count (not a cross-company-comparable unit -- a POP MART Roboshop and a Chow Tai Fook boutique are both counted as one location).",
           "This is a footprint snapshot, not a trend: most companies only have 1-2 dated snapshots so far, so month-over-month change is not yet meaningful."
         ],
-        "executed_at": "2026-07-29T22:30:33.740230Z"
+        "executed_at": "2026-07-29T23:47:40.080936Z"
       }
     },
     {
@@ -33816,13 +30825,13 @@
           "Validated live measure frames",
           "Declared future-source registry"
         ],
-        "executed_at": "2026-07-29T22:30:33.740230Z"
+        "executed_at": "2026-07-29T23:47:40.080936Z"
       }
     }
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-local-consumer/",
-    "snapshotId": "72ea30583c6a52de",
+    "snapshotId": "90ffaede73a8948c",
     "dataAsOf": "2026-07-27"
   }
 }
