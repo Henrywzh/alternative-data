@@ -13,10 +13,57 @@
   color: var(--ink);
 }
 
+/* Auto: follow the OS/browser preference when the reader hasn't picked one
+   explicitly (no data-theme attribute yet). Same variable names as the
+   per-sector portable dashboards' dark palette, kept in the same warm
+   ink-on-paper register rather than switching to a neutral black/white. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --paper: #1c1b17;
+    --paper-deep: #141310;
+    --ink: #ece8df;
+    --muted: #a19a8c;
+    --line: #3a3833;
+    --signal: #ff6b52;
+    --healthy: #4caf82;
+  }
+}
+
+/* Manual: the toggle button sets data-theme explicitly, which must win
+   over the OS preference above regardless of media-query match. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --paper: #1c1b17;
+  --paper-deep: #141310;
+  --ink: #ece8df;
+  --muted: #a19a8c;
+  --line: #3a3833;
+  --signal: #ff6b52;
+  --healthy: #4caf82;
+}
+
 * { box-sizing: border-box; }
 html { background: var(--paper); scroll-behavior: smooth; }
-body { margin: 0; min-width: 320px; background: var(--paper); }
+body { margin: 0; min-width: 320px; background: var(--paper); transition: background-color 160ms ease, color 160ms ease; }
 a { color: inherit; }
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1;
+  padding: 0;
+}
+.theme-toggle:hover, .theme-toggle:focus-visible { border-color: var(--muted); }
 
 .site-header {
   height: var(--header-height);
