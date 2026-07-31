@@ -133,6 +133,16 @@ data/processed/popmart_stores/*
 data/processed/airline_traffic/*
 !data/processed/airline_traffic/*.parquet
 
+# HK Transport Department scrapers (passenger journeys, private car fleet
+# stock, net growth): commit the time series, same reasoning as
+# airline_traffic above -- these are re-scraped in full each run (no
+# incremental fetch), so an unignored-but-uncommitted copy would silently
+# vanish from a fresh checkout with no missing-cache caveat anywhere in the
+# builder that reads them.
+!data/processed/transport/
+data/processed/transport/*
+!data/processed/transport/*.parquet
+
 # artificial_analysis: commit normalized CSVs/parquet + raw run manifests only
 !data/normalized/artificial_analysis/
 data/normalized/artificial_analysis/*

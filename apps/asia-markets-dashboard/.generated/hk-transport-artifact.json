@@ -4,9 +4,9 @@
     "version": 1,
     "surface": "dashboard",
     "title": "HK Transport & Aviation Sector Monitor",
-    "description": "MTR Corporation monthly rail patronage, CAD HKIA airport traffic, Cathay Pacific Group operating statistics, and China listed-airline operating data.",
+    "description": "MTR Corporation monthly rail patronage, CAD HKIA airport traffic, Cathay Pacific Group operating statistics, China listed-airline operating data, TD public-transport and private-car series, C&SD cross-boundary movements, EV registrations and capacity-covered real-time car-park occupancy.",
     "sector": "hk-transport",
-    "generatedAt": "2026-07-30T23:00:46.860981Z",
+    "generatedAt": "2026-07-31T22:47:36.754107Z",
     "cards": [
       {
         "id": "mtr_card",
@@ -61,6 +61,75 @@
             "label": "vs. 2019 Avg",
             "field": "recovery_vs_2019_pct",
             "format": "percent"
+          }
+        ]
+      },
+      {
+        "id": "journeys_card",
+        "description": "Monthly KMB (Transport International, 00062.HK) passenger journeys, and the territory-wide public transport total across every mode.",
+        "dataset": "kpi_journeys",
+        "sourceId": "hk_passenger_journeys",
+        "metrics": [
+          {
+            "label": "KMB ('000s)",
+            "field": "kmb_k",
+            "format": "number"
+          },
+          {
+            "label": "All-Mode Total ('000s)",
+            "field": "total_k",
+            "format": "number"
+          },
+          {
+            "label": "MoM Change (Total)",
+            "field": "period_change",
+            "format": "percent"
+          }
+        ]
+      },
+      {
+        "id": "fleet_card",
+        "description": "Private car fleet stock and electric vehicle share of the registered fleet.",
+        "dataset": "kpi_fleet",
+        "sourceId": "hk_vehicle_stock",
+        "metrics": [
+          {
+            "label": "Registered Private Cars",
+            "field": "total_registered",
+            "format": "number"
+          },
+          {
+            "label": "EV Share of Fleet",
+            "field": "ev_share_pct",
+            "format": "number"
+          },
+          {
+            "label": "EV Share Change (pp)",
+            "field": "ev_share_change_pp",
+            "format": "number"
+          }
+        ]
+      },
+      {
+        "id": "net_growth_card",
+        "description": "Monthly private-car net first registration: gross first registrations less cumulative deregistrations reported by TD.",
+        "dataset": "kpi_net_growth",
+        "sourceId": "hk_private_car_net_growth",
+        "metrics": [
+          {
+            "label": "Gross First Registrations",
+            "field": "gross_first_registrations",
+            "format": "number"
+          },
+          {
+            "label": "Deregistrations",
+            "field": "deregistrations",
+            "format": "number"
+          },
+          {
+            "label": "Net First Registration",
+            "field": "net_first_registrations",
+            "format": "number"
           }
         ]
       }
@@ -342,6 +411,126 @@
         },
         "valueFormat": "number",
         "layout": "half"
+      },
+      {
+        "id": "hk_total_transport_journeys_chart",
+        "title": "Hong Kong Public Transport Journeys \u2014 All Modes ('000s)",
+        "subtitle": "Territory-wide monthly passenger journeys across franchised buses, MTR (heavy rail, Airport Express, Light Rail), Tramways, public light buses, ferries and taxis.",
+        "type": "line",
+        "dataset": "hk_total_transport_journeys_history",
+        "sourceId": "hk_passenger_journeys",
+        "encodings": {
+          "x": {
+            "field": "month",
+            "type": "temporal",
+            "label": "Month"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "label": "Thousands ('000s)"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "full"
+      },
+      {
+        "id": "hk_modal_split_chart",
+        "title": "Hong Kong Public Transport Journeys by Mode ('000s)",
+        "subtitle": "Franchised buses, rail (MTR heavy rail + Airport Express + Light Rail + Tramways combined), public light buses, ferries and taxis.",
+        "type": "line",
+        "dataset": "hk_modal_split_history",
+        "sourceId": "hk_passenger_journeys",
+        "encodings": {
+          "x": {
+            "field": "month",
+            "type": "temporal",
+            "label": "Month"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "label": "Thousands ('000s)"
+          },
+          "color": {
+            "field": "series",
+            "type": "nominal",
+            "label": "Mode"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "full"
+      },
+      {
+        "id": "hk_franchised_bus_operator_chart",
+        "title": "Hong Kong Franchised Bus Journeys by Operator ('000s)",
+        "subtitle": "KMB (Transport International, 00062.HK), Citybus, LWB and NLB. NWFB is not shown separately after it folded into Citybus's own reporting.",
+        "type": "line",
+        "dataset": "hk_franchised_bus_operator_history",
+        "sourceId": "hk_passenger_journeys",
+        "encodings": {
+          "x": {
+            "field": "month",
+            "type": "temporal",
+            "label": "Month"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "label": "Thousands ('000s)"
+          },
+          "color": {
+            "field": "series",
+            "type": "nominal",
+            "label": "Operator"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "half"
+      },
+      {
+        "id": "hk_private_car_fleet_ev_share_chart",
+        "title": "EV Share of Hong Kong Private-Car Fleet",
+        "subtitle": "Electric vehicles as a share of the cumulative registered private-car fleet. This is a stock/adoption measure, distinct from the monthly first-registration flow share below.",
+        "type": "line",
+        "dataset": "hk_private_car_fleet_ev_share_history",
+        "sourceId": "hk_vehicle_stock",
+        "encodings": {
+          "x": {
+            "field": "month",
+            "type": "temporal",
+            "label": "Month"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "label": "EV Share (%)"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "full"
+      },
+      {
+        "id": "hk_private_car_net_growth_chart",
+        "title": "Hong Kong Private Car Net Fleet Growth ('000s)",
+        "subtitle": "Monthly net first registrations (gross first registrations minus deregistrations for any reason) -- the fleet's net monthly addition.",
+        "type": "bar",
+        "dataset": "hk_private_car_net_growth_history",
+        "sourceId": "hk_private_car_net_growth",
+        "encodings": {
+          "x": {
+            "field": "month",
+            "type": "temporal",
+            "label": "Month"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "label": "Net New Registrations"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "half"
       }
     ],
     "tables": [
@@ -349,45 +538,15 @@
         "id": "china_airline_latest_snapshot_table",
         "title": "China Listed Airlines Latest Operating Snapshot",
         "subtitle": "Latest available month, split by carrier and operating region.",
-        "dataset": "china_airline_latest_snapshot",
+        "dataset": "china_airline_latest_snapshot_summary",
         "sourceId": "china_airline_traffic",
         "density": "dense",
         "layout": "full",
         "columns": [
           {
-            "field": "airline",
-            "label": "Airline",
+            "field": "summary",
+            "label": "Airline Operating Summary",
             "type": "text"
-          },
-          {
-            "field": "region",
-            "label": "Region",
-            "type": "text"
-          },
-          {
-            "field": "passengers",
-            "label": "Passengers",
-            "format": "number"
-          },
-          {
-            "field": "ask",
-            "label": "ASK",
-            "format": "number"
-          },
-          {
-            "field": "rpk",
-            "label": "RPK",
-            "format": "number"
-          },
-          {
-            "field": "load_factor_pct",
-            "label": "Load Factor (%)",
-            "format": "number"
-          },
-          {
-            "field": "observation_date",
-            "label": "Month",
-            "type": "date"
           }
         ]
       }
@@ -428,6 +587,131 @@
           "language": "Parquet",
           "description": "Monthly passengers, ASK, RPK and passenger load factor for Air China, China Southern, China Eastern and Spring Airlines, split by domestic, international and regional operations."
         }
+      },
+      {
+        "id": "hk_passenger_journeys",
+        "label": "Transport Department Monthly Traffic and Transport Digest \u2014 Table 2.1",
+        "href": "https://www.td.gov.hk/en/transport_in_hong_kong/transport_figures/monthly_traffic_and_transport_digest/index.html",
+        "path": "sources/hk_passenger_journeys.sql",
+        "query": {
+          "engine": "official Table 2.1 workbook (table21.xls), both sheets",
+          "url": "https://www.td.gov.hk/filemanager/en/content_5404/table21.xls",
+          "language": "XLS",
+          "description": "Monthly public transport passenger journeys ('000s) by operator: KMB, Citybus, LWB, NLB (franchised buses), MTR heavy rail, Airport Express, Light Rail, Tramways, public light buses, ferries, taxis, and the territory-wide total.",
+          "tables_used": [
+            "table21.xls sheet 1 (operator rows)",
+            "table21.xls sheet 2 (mode totals)"
+          ],
+          "metric_definitions": [
+            "KMB is read from the header-validated KMB row on sheet 1, column 2.",
+            "The territory-wide total is read from the keyword-distinguished total row on sheet 2, column 22; subtotal rows are not used as the total.",
+            "The accepted workbook row must reconcile the published mode components to the reported total within 0.5 thousand journeys."
+          ]
+        }
+      },
+      {
+        "id": "mttd_passenger_journeys",
+        "label": "Transport Department Monthly Traffic and Transport Digest \u2014 Table 2.3",
+        "href": "https://data.gov.hk/en-data/dataset/hk-td-tis_17-monthly-traffic-and-transport-digest-csv",
+        "path": "sources/mttd_passenger_journeys.sql",
+        "query": {
+          "engine": "official MTTD Table 2.3 CSV",
+          "url": "https://www.td.gov.hk/datagovhk_tis/mttd-csv/en/table23_eng.csv",
+          "language": "CSV",
+          "description": "Monthly passenger journeys ('000s) for MTRC rail lines and franchised-bus operators, with HK Island, Kowloon/New Territories and cross-harbour geography where reported. Publication lags the current month by roughly two to three months."
+        }
+      },
+      {
+        "id": "censtatd_boundary_movements",
+        "label": "C&SD Table E705 \u2014 Cross-Boundary Aircraft, Vessel, Vehicle and Train Movements",
+        "href": "https://www.censtatd.gov.hk/en/data/stat_report/subject/340/report_index.json",
+        "path": "sources/censtatd_boundary_movements.sql",
+        "query": {
+          "engine": "official C&SD Table E705 XLSX discovered through the subject report index",
+          "url": "https://www.censtatd.gov.hk/en/data/stat_report/subject/340/report_index.json ; https://www.censtatd.gov.hk/en/data/stat_report/product/D7000005/att/<latest-file>",
+          "language": "XLSX",
+          "description": "Monthly inward and outward movements of aircraft, ocean/river/cargo vessels, goods/passenger vehicles and passenger trains. Some latest-year cells may be provisional estimates or N.A.; monthly history begins in 2023 in the current workbook."
+        }
+      },
+      {
+        "id": "hk_vehicle_stock",
+        "label": "Transport Department Registration and Licensing of Vehicles \u2014 Table 4.1(a), Private Cars",
+        "href": "https://www.td.gov.hk/en/transport_in_hong_kong/transport_figures/monthly_traffic_and_transport_digest/index.html",
+        "path": "sources/hk_vehicle_stock.sql",
+        "query": {
+          "engine": "official Table 4.1(a) workbook (table41a.xls), Private Cars sheet",
+          "url": "https://www.td.gov.hk/filemanager/en/content_4883/table41a.xls",
+          "language": "XLS",
+          "description": "Monthly private car fleet stock (total registered and licensed) split by fuel type -- Petrol, Electric, Diesel, Other -- the basis for the EV road-fleet registered-share chart.",
+          "tables_used": [
+            "table41a.xls sheet whose header identifies Private Cars / \u79c1\u5bb6\u8f66"
+          ],
+          "metric_definitions": [
+            "The Private Cars sheet is located by matching its own header text rather than relying on a fixed sheet index.",
+            "EV fleet share is electric total registered divided by all-fuel total registered.",
+            "The all-fuel total is accepted only when it reconciles to the sum of the four per-fuel total-registration columns."
+          ]
+        }
+      },
+      {
+        "id": "hk_private_car_net_growth",
+        "label": "Transport Department Net First Registration of Private Cars \u2014 Table 4.1(c)",
+        "href": "https://www.td.gov.hk/en/transport_in_hong_kong/transport_figures/monthly_traffic_and_transport_digest/index.html",
+        "path": "sources/hk_private_car_net_growth.sql",
+        "query": {
+          "engine": "official Table 4.1(c) workbook (table41c.xls)",
+          "url": "https://www.td.gov.hk/filemanager/en/content_4884/table41c.xls",
+          "language": "XLS",
+          "description": "Monthly gross first registrations, deregistrations (all reasons, per TD's own header -- not scrappage specifically) and net first registration of private cars."
+        }
+      },
+      {
+        "id": "hk_private_car_first_reg",
+        "label": "Transport Department Monthly Private-Car First Registrations by Make and Fuel",
+        "href": "https://data.gov.hk/en-data/dataset/hk-td-tis_17-monthly-traffic-and-transport-digest-csv/resource/472658ca-1640-4fc2-be5c-eae62f9bf547",
+        "path": "sources/hk_private_car_first_reg.sql",
+        "query": {
+          "engine": "official TD Monthly Traffic and Transport Digest CSV \u2014 Table 4.1(e)",
+          "url": "https://www.td.gov.hk/datagovhk_tis/mttd-csv/en/table41e_eng.csv",
+          "language": "CSV",
+          "description": "Monthly first registrations of private cars by make, fuel type, first-registration status and body type; a genuine time series from May 2016 onward."
+        }
+      },
+      {
+        "id": "hk_private_car_first_reg_details",
+        "label": "Transport Department Latest Private-Car First-Registration Make/Model Details",
+        "href": "https://www.td.gov.hk/en/public_services/licences_and_permits/vehicle_first_registration/vehicle_particulars/index.html",
+        "path": "sources/hk_private_car_first_reg_details.sql",
+        "query": {
+          "engine": "official TD monthly particulars of first registered vehicles CSV",
+          "url": "https://www.td.gov.hk/datagovhk_td/first-reg-vehicle/resources/en/particulars_of_first_registered_vehicle_{month}_{year}_eng.csv",
+          "language": "CSV",
+          "description": "Latest available monthly private-car make/model detail; used as a bounded lookup snapshot, while the make/fuel history above supplies the time-series chart."
+        }
+      },
+      {
+        "id": "td_parking_vacancy",
+        "label": "Transport Department Real-Time Parking Vacancy",
+        "href": "https://resource.data.one.gov.hk/td/carpark/TD_Parking_Vacancy_Data_Specification.pdf",
+        "path": "sources/td_parking_vacancy.sql",
+        "query": {
+          "engine": "official TD real-time vacancy and basic-information JSON feeds",
+          "url": "https://resource.data.one.gov.hk/td/carpark/vacancy_all.json ; https://resource.data.one.gov.hk/td/carpark/basic_info_all.json",
+          "language": "JSON",
+          "description": "Current vacancy by participating car park, vehicle type and vacancy status; the collection script appends snapshots for a genuine high-frequency history and does not treat unknown vacancy as zero."
+        }
+      },
+      {
+        "id": "td_carpark_occupancy",
+        "label": "Transport Department Car-Park Occupancy Signal",
+        "href": "https://api.data.gov.hk/v1/carpark-info-vacancy",
+        "path": "sources/td_carpark_occupancy.sql",
+        "query": {
+          "engine": "official TD live vacancy JSON joined to Digital Policy Office One-Stop static capacity JSON",
+          "url": "https://resource.data.one.gov.hk/td/carpark/vacancy_all.json ; https://resource.data.one.gov.hk/td/carpark/basic_info_all.json ; https://api.data.gov.hk/v1/carpark-info-vacancy",
+          "language": "JSON",
+          "description": "Capacity-weighted private-car occupancy rate from exact hourly vacancy counts. The denominator is available only for a capacity-covered subset of TD car parks; sample_size and coverage are retained, and the signal is not presented as all-park occupancy."
+        }
       }
     ],
     "blocks": [
@@ -436,7 +720,10 @@
         "type": "metric-strip",
         "cardIds": [
           "mtr_card",
-          "cathay_card"
+          "cathay_card",
+          "journeys_card",
+          "fleet_card",
+          "net_growth_card"
         ]
       },
       {
@@ -504,12 +791,39 @@
         "id": "china_airline_snapshot_table_block",
         "type": "table",
         "tableId": "china_airline_latest_snapshot_table"
+      },
+      {
+        "id": "hk_total_transport_journeys_chart_block",
+        "type": "chart",
+        "chartId": "hk_total_transport_journeys_chart"
+      },
+      {
+        "id": "hk_modal_split_chart_block",
+        "type": "chart",
+        "chartId": "hk_modal_split_chart"
+      },
+      {
+        "id": "hk_franchised_bus_operator_chart_block",
+        "type": "chart",
+        "chartId": "hk_franchised_bus_operator_chart",
+        "layout": "half"
+      },
+      {
+        "id": "hk_private_car_fleet_ev_share_chart_block",
+        "type": "chart",
+        "chartId": "hk_private_car_fleet_ev_share_chart"
+      },
+      {
+        "id": "hk_private_car_net_growth_chart_block",
+        "type": "chart",
+        "chartId": "hk_private_car_net_growth_chart",
+        "layout": "half"
       }
     ]
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-30T23:00:46.860981Z",
+    "generatedAt": "2026-07-31T22:47:36.754107Z",
     "status": "ready",
     "datasets": {
       "kpi_mtr": [
@@ -30934,7 +31248,1809 @@
           "load_factor_pct": 91.26,
           "observation_date": "2026-06-01"
         }
-      ]
+      ],
+      "china_airline_latest_snapshot_summary": [
+        {
+          "summary": "Air China / Domestic: passengers 10,051.2; ASK 18,356.2; RPK 15,418.5; load factor 84%"
+        },
+        {
+          "summary": "Air China / International: passengers 1,519; ASK 8,588.1; RPK 7,221.2; load factor 84.1%"
+        },
+        {
+          "summary": "Air China / Regional: passengers 366.4; ASK 701.5; RPK 561.9; load factor 80.1%"
+        },
+        {
+          "summary": "China Eastern / Domestic: passengers 9,114.3; ASK 15,547.1; RPK 13,414.5; load factor 86.3%"
+        },
+        {
+          "summary": "China Eastern / International: passengers 1,661.8; ASK 8,424.1; RPK 7,349; load factor 87.2%"
+        },
+        {
+          "summary": "China Eastern / Regional: passengers 303.3; ASK 475.9; RPK 411.3; load factor 86.4%"
+        },
+        {
+          "summary": "China Southern / Domestic: passengers 10,985.8; ASK 21,345.7; RPK 18,000; load factor 84.3%"
+        },
+        {
+          "summary": "China Southern / International: passengers 1,740.7; ASK 8,532.1; RPK 7,119.3; load factor 83.4%"
+        },
+        {
+          "summary": "China Southern / Regional: passengers 153.1; ASK 292.7; RPK 231.8; load factor 79.2%"
+        },
+        {
+          "summary": "China Southern / Total: passengers 12,879.5; ASK 30,170.5; RPK 25,351; load factor 84%"
+        },
+        {
+          "summary": "Spring Airlines / Domestic: passengers 2,446.6; ASK 4,681.9; RPK 4,300.7; load factor 91.9%"
+        },
+        {
+          "summary": "Spring Airlines / International: passengers 408.1; ASK 879; RPK 807.9; load factor 91.9%"
+        },
+        {
+          "summary": "Spring Airlines / Regional: passengers 22.3; ASK 34.1; RPK 31.1; load factor 91.3%"
+        }
+      ],
+      "kpi_journeys": [
+        {
+          "kmb_k": 77507.732,
+          "total_k": 360021.518,
+          "period_change": 0.048413,
+          "observation_date": "2026-05-01"
+        }
+      ],
+      "kpi_fleet": [
+        {
+          "total_registered": 647162.0,
+          "ev_share_pct": 27.0164,
+          "ev_share_change_pp": 0.1671,
+          "observation_date": "2026-06-01"
+        }
+      ],
+      "kpi_net_growth": [
+        {
+          "gross_first_registrations": 2593.0,
+          "deregistrations": 2.0,
+          "net_first_registrations": 2591.0,
+          "observation_date": "2026-06-01"
+        }
+      ],
+      "hk_total_transport_journeys_history": [
+        {
+          "date": "2024-12-01",
+          "month": "2024-12",
+          "series": "Total",
+          "value": 368305.209
+        },
+        {
+          "date": "2025-01-01",
+          "month": "2025-01",
+          "series": "Total",
+          "value": 365465.21
+        },
+        {
+          "date": "2025-02-01",
+          "month": "2025-02",
+          "series": "Total",
+          "value": 330962.866
+        },
+        {
+          "date": "2025-03-01",
+          "month": "2025-03",
+          "series": "Total",
+          "value": 369157.965
+        },
+        {
+          "date": "2025-04-01",
+          "month": "2025-04",
+          "series": "Total",
+          "value": 339975.674
+        },
+        {
+          "date": "2025-05-01",
+          "month": "2025-05",
+          "series": "Total",
+          "value": 361718.053
+        },
+        {
+          "date": "2025-06-01",
+          "month": "2025-06",
+          "series": "Total",
+          "value": 349568.526
+        },
+        {
+          "date": "2025-07-01",
+          "month": "2025-07",
+          "series": "Total",
+          "value": 353225.753
+        },
+        {
+          "date": "2025-08-01",
+          "month": "2025-08",
+          "series": "Total",
+          "value": 353873.479
+        },
+        {
+          "date": "2025-09-01",
+          "month": "2025-09",
+          "series": "Total",
+          "value": 340149.369
+        },
+        {
+          "date": "2025-10-01",
+          "month": "2025-10",
+          "series": "Total",
+          "value": 374776.514
+        },
+        {
+          "date": "2025-11-01",
+          "month": "2025-11",
+          "series": "Total",
+          "value": 367777.93
+        },
+        {
+          "date": "2025-12-01",
+          "month": "2025-12",
+          "series": "Total",
+          "value": 370660.365
+        },
+        {
+          "date": "2026-01-01",
+          "month": "2026-01",
+          "series": "Total",
+          "value": 376595.222
+        },
+        {
+          "date": "2026-02-01",
+          "month": "2026-02",
+          "series": "Total",
+          "value": 331738.903
+        },
+        {
+          "date": "2026-03-01",
+          "month": "2026-03",
+          "series": "Total",
+          "value": 376869.455
+        },
+        {
+          "date": "2026-04-01",
+          "month": "2026-04",
+          "series": "Total",
+          "value": 343396.619
+        },
+        {
+          "date": "2026-05-01",
+          "month": "2026-05",
+          "series": "Total",
+          "value": 360021.518
+        }
+      ],
+      "hk_modal_split_history": [
+        {
+          "date": "2024-12-01",
+          "month": "2024-12",
+          "series": "Bus",
+          "value": 118309.486
+        },
+        {
+          "date": "2024-12-01",
+          "month": "2024-12",
+          "series": "Ferry",
+          "value": 3598.819
+        },
+        {
+          "date": "2024-12-01",
+          "month": "2024-12",
+          "series": "PLB",
+          "value": 45945.581
+        },
+        {
+          "date": "2024-12-01",
+          "month": "2024-12",
+          "series": "Rail",
+          "value": 169135.206
+        },
+        {
+          "date": "2024-12-01",
+          "month": "2024-12",
+          "series": "Taxi",
+          "value": 20518.576
+        },
+        {
+          "date": "2025-01-01",
+          "month": "2025-01",
+          "series": "Bus",
+          "value": 117545.593
+        },
+        {
+          "date": "2025-01-01",
+          "month": "2025-01",
+          "series": "Ferry",
+          "value": 3682.921
+        },
+        {
+          "date": "2025-01-01",
+          "month": "2025-01",
+          "series": "PLB",
+          "value": 45746.947
+        },
+        {
+          "date": "2025-01-01",
+          "month": "2025-01",
+          "series": "Rail",
+          "value": 166925.518
+        },
+        {
+          "date": "2025-01-01",
+          "month": "2025-01",
+          "series": "Taxi",
+          "value": 20921.543
+        },
+        {
+          "date": "2025-02-01",
+          "month": "2025-02",
+          "series": "Bus",
+          "value": 106096.1
+        },
+        {
+          "date": "2025-02-01",
+          "month": "2025-02",
+          "series": "Ferry",
+          "value": 3155.135
+        },
+        {
+          "date": "2025-02-01",
+          "month": "2025-02",
+          "series": "PLB",
+          "value": 41822.353
+        },
+        {
+          "date": "2025-02-01",
+          "month": "2025-02",
+          "series": "Rail",
+          "value": 151378.487
+        },
+        {
+          "date": "2025-02-01",
+          "month": "2025-02",
+          "series": "Taxi",
+          "value": 18946.338
+        },
+        {
+          "date": "2025-03-01",
+          "month": "2025-03",
+          "series": "Bus",
+          "value": 118790.059
+        },
+        {
+          "date": "2025-03-01",
+          "month": "2025-03",
+          "series": "Ferry",
+          "value": 3318.61
+        },
+        {
+          "date": "2025-03-01",
+          "month": "2025-03",
+          "series": "PLB",
+          "value": 47095.209
+        },
+        {
+          "date": "2025-03-01",
+          "month": "2025-03",
+          "series": "Rail",
+          "value": 167823.681
+        },
+        {
+          "date": "2025-03-01",
+          "month": "2025-03",
+          "series": "Taxi",
+          "value": 21225.61
+        },
+        {
+          "date": "2025-04-01",
+          "month": "2025-04",
+          "series": "Bus",
+          "value": 109492.041
+        },
+        {
+          "date": "2025-04-01",
+          "month": "2025-04",
+          "series": "Ferry",
+          "value": 3248.282
+        },
+        {
+          "date": "2025-04-01",
+          "month": "2025-04",
+          "series": "PLB",
+          "value": 43589.168
+        },
+        {
+          "date": "2025-04-01",
+          "month": "2025-04",
+          "series": "Rail",
+          "value": 153736.009
+        },
+        {
+          "date": "2025-04-01",
+          "month": "2025-04",
+          "series": "Taxi",
+          "value": 19864.07
+        },
+        {
+          "date": "2025-05-01",
+          "month": "2025-05",
+          "series": "Bus",
+          "value": 117221.456
+        },
+        {
+          "date": "2025-05-01",
+          "month": "2025-05",
+          "series": "Ferry",
+          "value": 3327.646
+        },
+        {
+          "date": "2025-05-01",
+          "month": "2025-05",
+          "series": "PLB",
+          "value": 46947.592
+        },
+        {
+          "date": "2025-05-01",
+          "month": "2025-05",
+          "series": "Rail",
+          "value": 162850.453
+        },
+        {
+          "date": "2025-05-01",
+          "month": "2025-05",
+          "series": "Taxi",
+          "value": 20579.664
+        },
+        {
+          "date": "2025-06-01",
+          "month": "2025-06",
+          "series": "Bus",
+          "value": 112860.388
+        },
+        {
+          "date": "2025-06-01",
+          "month": "2025-06",
+          "series": "Ferry",
+          "value": 2776.496
+        },
+        {
+          "date": "2025-06-01",
+          "month": "2025-06",
+          "series": "PLB",
+          "value": 45601.354
+        },
+        {
+          "date": "2025-06-01",
+          "month": "2025-06",
+          "series": "Rail",
+          "value": 157626.478
+        },
+        {
+          "date": "2025-06-01",
+          "month": "2025-06",
+          "series": "Taxi",
+          "value": 20232.618
+        },
+        {
+          "date": "2025-07-01",
+          "month": "2025-07",
+          "series": "Bus",
+          "value": 111937.717
+        },
+        {
+          "date": "2025-07-01",
+          "month": "2025-07",
+          "series": "Ferry",
+          "value": 3179.253
+        },
+        {
+          "date": "2025-07-01",
+          "month": "2025-07",
+          "series": "PLB",
+          "value": 45239.667
+        },
+        {
+          "date": "2025-07-01",
+          "month": "2025-07",
+          "series": "Rail",
+          "value": 161904.664
+        },
+        {
+          "date": "2025-07-01",
+          "month": "2025-07",
+          "series": "Taxi",
+          "value": 20682.641
+        },
+        {
+          "date": "2025-08-01",
+          "month": "2025-08",
+          "series": "Bus",
+          "value": 111296.638
+        },
+        {
+          "date": "2025-08-01",
+          "month": "2025-08",
+          "series": "Ferry",
+          "value": 3445.125
+        },
+        {
+          "date": "2025-08-01",
+          "month": "2025-08",
+          "series": "PLB",
+          "value": 44787.238
+        },
+        {
+          "date": "2025-08-01",
+          "month": "2025-08",
+          "series": "Rail",
+          "value": 163484.419
+        },
+        {
+          "date": "2025-08-01",
+          "month": "2025-08",
+          "series": "Taxi",
+          "value": 20592.857
+        },
+        {
+          "date": "2025-09-01",
+          "month": "2025-09",
+          "series": "Bus",
+          "value": 108512.319
+        },
+        {
+          "date": "2025-09-01",
+          "month": "2025-09",
+          "series": "Ferry",
+          "value": 2390.597
+        },
+        {
+          "date": "2025-09-01",
+          "month": "2025-09",
+          "series": "PLB",
+          "value": 44136.729
+        },
+        {
+          "date": "2025-09-01",
+          "month": "2025-09",
+          "series": "Rail",
+          "value": 155982.171
+        },
+        {
+          "date": "2025-09-01",
+          "month": "2025-09",
+          "series": "Taxi",
+          "value": 18989.45
+        },
+        {
+          "date": "2025-10-01",
+          "month": "2025-10",
+          "series": "Bus",
+          "value": 119953.476
+        },
+        {
+          "date": "2025-10-01",
+          "month": "2025-10",
+          "series": "Ferry",
+          "value": 3341.986
+        },
+        {
+          "date": "2025-10-01",
+          "month": "2025-10",
+          "series": "PLB",
+          "value": 48135.761
+        },
+        {
+          "date": "2025-10-01",
+          "month": "2025-10",
+          "series": "Rail",
+          "value": 171568.13
+        },
+        {
+          "date": "2025-10-01",
+          "month": "2025-10",
+          "series": "Taxi",
+          "value": 20756.339
+        },
+        {
+          "date": "2025-11-01",
+          "month": "2025-11",
+          "series": "Bus",
+          "value": 117506.209
+        },
+        {
+          "date": "2025-11-01",
+          "month": "2025-11",
+          "series": "Ferry",
+          "value": 3344.956
+        },
+        {
+          "date": "2025-11-01",
+          "month": "2025-11",
+          "series": "PLB",
+          "value": 46803.682
+        },
+        {
+          "date": "2025-11-01",
+          "month": "2025-11",
+          "series": "Rail",
+          "value": 167627.862
+        },
+        {
+          "date": "2025-11-01",
+          "month": "2025-11",
+          "series": "Taxi",
+          "value": 21717.699
+        },
+        {
+          "date": "2025-12-01",
+          "month": "2025-12",
+          "series": "Bus",
+          "value": 117985.697
+        },
+        {
+          "date": "2025-12-01",
+          "month": "2025-12",
+          "series": "Ferry",
+          "value": 3711.71
+        },
+        {
+          "date": "2025-12-01",
+          "month": "2025-12",
+          "series": "PLB",
+          "value": 46639.432
+        },
+        {
+          "date": "2025-12-01",
+          "month": "2025-12",
+          "series": "Rail",
+          "value": 169415.431
+        },
+        {
+          "date": "2025-12-01",
+          "month": "2025-12",
+          "series": "Taxi",
+          "value": 22269.617
+        },
+        {
+          "date": "2026-01-01",
+          "month": "2026-01",
+          "series": "Bus",
+          "value": 119734.804
+        },
+        {
+          "date": "2026-01-01",
+          "month": "2026-01",
+          "series": "Ferry",
+          "value": 3519.688
+        },
+        {
+          "date": "2026-01-01",
+          "month": "2026-01",
+          "series": "PLB",
+          "value": 47748.877
+        },
+        {
+          "date": "2026-01-01",
+          "month": "2026-01",
+          "series": "Rail",
+          "value": 172332.961
+        },
+        {
+          "date": "2026-01-01",
+          "month": "2026-01",
+          "series": "Taxi",
+          "value": 22389.346
+        },
+        {
+          "date": "2026-02-01",
+          "month": "2026-02",
+          "series": "Bus",
+          "value": 105450.957
+        },
+        {
+          "date": "2026-02-01",
+          "month": "2026-02",
+          "series": "Ferry",
+          "value": 3757.901
+        },
+        {
+          "date": "2026-02-01",
+          "month": "2026-02",
+          "series": "PLB",
+          "value": 40951.218
+        },
+        {
+          "date": "2026-02-01",
+          "month": "2026-02",
+          "series": "Rail",
+          "value": 151907.726
+        },
+        {
+          "date": "2026-02-01",
+          "month": "2026-02",
+          "series": "Taxi",
+          "value": 20301.895
+        },
+        {
+          "date": "2026-03-01",
+          "month": "2026-03",
+          "series": "Bus",
+          "value": 120968.635
+        },
+        {
+          "date": "2026-03-01",
+          "month": "2026-03",
+          "series": "Ferry",
+          "value": 3375.604
+        },
+        {
+          "date": "2026-03-01",
+          "month": "2026-03",
+          "series": "PLB",
+          "value": 47712.315
+        },
+        {
+          "date": "2026-03-01",
+          "month": "2026-03",
+          "series": "Rail",
+          "value": 171305.92
+        },
+        {
+          "date": "2026-03-01",
+          "month": "2026-03",
+          "series": "Taxi",
+          "value": 22483.973
+        },
+        {
+          "date": "2026-04-01",
+          "month": "2026-04",
+          "series": "Bus",
+          "value": 110708.604
+        },
+        {
+          "date": "2026-04-01",
+          "month": "2026-04",
+          "series": "Ferry",
+          "value": 3148.396
+        },
+        {
+          "date": "2026-04-01",
+          "month": "2026-04",
+          "series": "PLB",
+          "value": 43618.347
+        },
+        {
+          "date": "2026-04-01",
+          "month": "2026-04",
+          "series": "Rail",
+          "value": 155197.92
+        },
+        {
+          "date": "2026-04-01",
+          "month": "2026-04",
+          "series": "Taxi",
+          "value": 20554.068
+        },
+        {
+          "date": "2026-05-01",
+          "month": "2026-05",
+          "series": "Bus",
+          "value": 115832.157
+        },
+        {
+          "date": "2026-05-01",
+          "month": "2026-05",
+          "series": "Ferry",
+          "value": 3151.599
+        },
+        {
+          "date": "2026-05-01",
+          "month": "2026-05",
+          "series": "PLB",
+          "value": 45900.675
+        },
+        {
+          "date": "2026-05-01",
+          "month": "2026-05",
+          "series": "Rail",
+          "value": 162909.31
+        },
+        {
+          "date": "2026-05-01",
+          "month": "2026-05",
+          "series": "Taxi",
+          "value": 21430.569
+        }
+      ],
+      "hk_franchised_bus_operator_history": [
+        {
+          "date": "2024-12-01",
+          "month": "2024-12",
+          "series": "Citybus",
+          "value": 31078.905
+        },
+        {
+          "date": "2024-12-01",
+          "month": "2024-12",
+          "series": "KMB",
+          "value": 79800.706
+        },
+        {
+          "date": "2024-12-01",
+          "month": "2024-12",
+          "series": "LWB",
+          "value": 4275.709
+        },
+        {
+          "date": "2024-12-01",
+          "month": "2024-12",
+          "series": "NLB",
+          "value": 3154.166
+        },
+        {
+          "date": "2025-01-01",
+          "month": "2025-01",
+          "series": "Citybus",
+          "value": 30982.141
+        },
+        {
+          "date": "2025-01-01",
+          "month": "2025-01",
+          "series": "KMB",
+          "value": 79277.472
+        },
+        {
+          "date": "2025-01-01",
+          "month": "2025-01",
+          "series": "LWB",
+          "value": 4106.445
+        },
+        {
+          "date": "2025-01-01",
+          "month": "2025-01",
+          "series": "NLB",
+          "value": 3179.535
+        },
+        {
+          "date": "2025-02-01",
+          "month": "2025-02",
+          "series": "Citybus",
+          "value": 27870.051
+        },
+        {
+          "date": "2025-02-01",
+          "month": "2025-02",
+          "series": "KMB",
+          "value": 71594.419
+        },
+        {
+          "date": "2025-02-01",
+          "month": "2025-02",
+          "series": "LWB",
+          "value": 3776.289
+        },
+        {
+          "date": "2025-02-01",
+          "month": "2025-02",
+          "series": "NLB",
+          "value": 2855.341
+        },
+        {
+          "date": "2025-03-01",
+          "month": "2025-03",
+          "series": "Citybus",
+          "value": 31159.58
+        },
+        {
+          "date": "2025-03-01",
+          "month": "2025-03",
+          "series": "KMB",
+          "value": 80338.286
+        },
+        {
+          "date": "2025-03-01",
+          "month": "2025-03",
+          "series": "LWB",
+          "value": 4109.423
+        },
+        {
+          "date": "2025-03-01",
+          "month": "2025-03",
+          "series": "NLB",
+          "value": 3182.77
+        },
+        {
+          "date": "2025-04-01",
+          "month": "2025-04",
+          "series": "Citybus",
+          "value": 28875.171
+        },
+        {
+          "date": "2025-04-01",
+          "month": "2025-04",
+          "series": "KMB",
+          "value": 73580.993
+        },
+        {
+          "date": "2025-04-01",
+          "month": "2025-04",
+          "series": "LWB",
+          "value": 4074.514
+        },
+        {
+          "date": "2025-04-01",
+          "month": "2025-04",
+          "series": "NLB",
+          "value": 2961.363
+        },
+        {
+          "date": "2025-05-01",
+          "month": "2025-05",
+          "series": "Citybus",
+          "value": 30983.918
+        },
+        {
+          "date": "2025-05-01",
+          "month": "2025-05",
+          "series": "KMB",
+          "value": 78974.967
+        },
+        {
+          "date": "2025-05-01",
+          "month": "2025-05",
+          "series": "LWB",
+          "value": 4134.07
+        },
+        {
+          "date": "2025-05-01",
+          "month": "2025-05",
+          "series": "NLB",
+          "value": 3128.501
+        },
+        {
+          "date": "2025-06-01",
+          "month": "2025-06",
+          "series": "Citybus",
+          "value": 29503.83
+        },
+        {
+          "date": "2025-06-01",
+          "month": "2025-06",
+          "series": "KMB",
+          "value": 76369.546
+        },
+        {
+          "date": "2025-06-01",
+          "month": "2025-06",
+          "series": "LWB",
+          "value": 3990.344
+        },
+        {
+          "date": "2025-06-01",
+          "month": "2025-06",
+          "series": "NLB",
+          "value": 2996.668
+        },
+        {
+          "date": "2025-07-01",
+          "month": "2025-07",
+          "series": "Citybus",
+          "value": 29183.946
+        },
+        {
+          "date": "2025-07-01",
+          "month": "2025-07",
+          "series": "KMB",
+          "value": 75682.243
+        },
+        {
+          "date": "2025-07-01",
+          "month": "2025-07",
+          "series": "LWB",
+          "value": 4129.292
+        },
+        {
+          "date": "2025-07-01",
+          "month": "2025-07",
+          "series": "NLB",
+          "value": 2942.236
+        },
+        {
+          "date": "2025-08-01",
+          "month": "2025-08",
+          "series": "Citybus",
+          "value": 29207.384
+        },
+        {
+          "date": "2025-08-01",
+          "month": "2025-08",
+          "series": "KMB",
+          "value": 74831.121
+        },
+        {
+          "date": "2025-08-01",
+          "month": "2025-08",
+          "series": "LWB",
+          "value": 4261.21
+        },
+        {
+          "date": "2025-08-01",
+          "month": "2025-08",
+          "series": "NLB",
+          "value": 2996.923
+        },
+        {
+          "date": "2025-09-01",
+          "month": "2025-09",
+          "series": "Citybus",
+          "value": 28158.177
+        },
+        {
+          "date": "2025-09-01",
+          "month": "2025-09",
+          "series": "KMB",
+          "value": 73699.797
+        },
+        {
+          "date": "2025-09-01",
+          "month": "2025-09",
+          "series": "LWB",
+          "value": 3824.634
+        },
+        {
+          "date": "2025-09-01",
+          "month": "2025-09",
+          "series": "NLB",
+          "value": 2829.711
+        },
+        {
+          "date": "2025-10-01",
+          "month": "2025-10",
+          "series": "Citybus",
+          "value": 31467.653
+        },
+        {
+          "date": "2025-10-01",
+          "month": "2025-10",
+          "series": "KMB",
+          "value": 80946.996
+        },
+        {
+          "date": "2025-10-01",
+          "month": "2025-10",
+          "series": "LWB",
+          "value": 4291.524
+        },
+        {
+          "date": "2025-10-01",
+          "month": "2025-10",
+          "series": "NLB",
+          "value": 3247.303
+        },
+        {
+          "date": "2025-11-01",
+          "month": "2025-11",
+          "series": "Citybus",
+          "value": 30944.049
+        },
+        {
+          "date": "2025-11-01",
+          "month": "2025-11",
+          "series": "KMB",
+          "value": 79027.386
+        },
+        {
+          "date": "2025-11-01",
+          "month": "2025-11",
+          "series": "LWB",
+          "value": 4274.988
+        },
+        {
+          "date": "2025-11-01",
+          "month": "2025-11",
+          "series": "NLB",
+          "value": 3259.786
+        },
+        {
+          "date": "2025-12-01",
+          "month": "2025-12",
+          "series": "Citybus",
+          "value": 31449.184
+        },
+        {
+          "date": "2025-12-01",
+          "month": "2025-12",
+          "series": "KMB",
+          "value": 78702.362
+        },
+        {
+          "date": "2025-12-01",
+          "month": "2025-12",
+          "series": "LWB",
+          "value": 4507.271
+        },
+        {
+          "date": "2025-12-01",
+          "month": "2025-12",
+          "series": "NLB",
+          "value": 3326.88
+        },
+        {
+          "date": "2026-01-01",
+          "month": "2026-01",
+          "series": "Citybus",
+          "value": 31809.335
+        },
+        {
+          "date": "2026-01-01",
+          "month": "2026-01",
+          "series": "KMB",
+          "value": 80144.869
+        },
+        {
+          "date": "2026-01-01",
+          "month": "2026-01",
+          "series": "LWB",
+          "value": 4428.912
+        },
+        {
+          "date": "2026-01-01",
+          "month": "2026-01",
+          "series": "NLB",
+          "value": 3351.688
+        },
+        {
+          "date": "2026-02-01",
+          "month": "2026-02",
+          "series": "Citybus",
+          "value": 28328.822
+        },
+        {
+          "date": "2026-02-01",
+          "month": "2026-02",
+          "series": "KMB",
+          "value": 70175.08
+        },
+        {
+          "date": "2026-02-01",
+          "month": "2026-02",
+          "series": "LWB",
+          "value": 3947.375
+        },
+        {
+          "date": "2026-02-01",
+          "month": "2026-02",
+          "series": "NLB",
+          "value": 2999.68
+        },
+        {
+          "date": "2026-03-01",
+          "month": "2026-03",
+          "series": "Citybus",
+          "value": 31950.258
+        },
+        {
+          "date": "2026-03-01",
+          "month": "2026-03",
+          "series": "KMB",
+          "value": 81139.954
+        },
+        {
+          "date": "2026-03-01",
+          "month": "2026-03",
+          "series": "LWB",
+          "value": 4491.757
+        },
+        {
+          "date": "2026-03-01",
+          "month": "2026-03",
+          "series": "NLB",
+          "value": 3386.666
+        },
+        {
+          "date": "2026-04-01",
+          "month": "2026-04",
+          "series": "Citybus",
+          "value": 29284.081
+        },
+        {
+          "date": "2026-04-01",
+          "month": "2026-04",
+          "series": "KMB",
+          "value": 73882.131
+        },
+        {
+          "date": "2026-04-01",
+          "month": "2026-04",
+          "series": "LWB",
+          "value": 4339.176
+        },
+        {
+          "date": "2026-04-01",
+          "month": "2026-04",
+          "series": "NLB",
+          "value": 3203.216
+        },
+        {
+          "date": "2026-05-01",
+          "month": "2026-05",
+          "series": "Citybus",
+          "value": 30536.742
+        },
+        {
+          "date": "2026-05-01",
+          "month": "2026-05",
+          "series": "KMB",
+          "value": 77507.732
+        },
+        {
+          "date": "2026-05-01",
+          "month": "2026-05",
+          "series": "LWB",
+          "value": 4418.613
+        },
+        {
+          "date": "2026-05-01",
+          "month": "2026-05",
+          "series": "NLB",
+          "value": 3369.07
+        }
+      ],
+      "mttd_passenger_journeys_history": [],
+      "mttd_passenger_journeys_latest": [],
+      "censtatd_boundary_movements_history": [],
+      "censtatd_boundary_movements_latest": [],
+      "hk_private_car_fleet_by_fuel_history": [
+        {
+          "date": "2025-01-01",
+          "month": "2025-01",
+          "series": "Diesel",
+          "value": 11502.0
+        },
+        {
+          "date": "2025-01-01",
+          "month": "2025-01",
+          "series": "Electric",
+          "value": 109657.0
+        },
+        {
+          "date": "2025-01-01",
+          "month": "2025-01",
+          "series": "Other",
+          "value": 113.0
+        },
+        {
+          "date": "2025-01-01",
+          "month": "2025-01",
+          "series": "Petrol",
+          "value": 509844.0
+        },
+        {
+          "date": "2025-02-01",
+          "month": "2025-02",
+          "series": "Diesel",
+          "value": 11492.0
+        },
+        {
+          "date": "2025-02-01",
+          "month": "2025-02",
+          "series": "Electric",
+          "value": 112062.0
+        },
+        {
+          "date": "2025-02-01",
+          "month": "2025-02",
+          "series": "Other",
+          "value": 113.0
+        },
+        {
+          "date": "2025-02-01",
+          "month": "2025-02",
+          "series": "Petrol",
+          "value": 508349.0
+        },
+        {
+          "date": "2025-03-01",
+          "month": "2025-03",
+          "series": "Diesel",
+          "value": 11484.0
+        },
+        {
+          "date": "2025-03-01",
+          "month": "2025-03",
+          "series": "Electric",
+          "value": 114514.0
+        },
+        {
+          "date": "2025-03-01",
+          "month": "2025-03",
+          "series": "Other",
+          "value": 114.0
+        },
+        {
+          "date": "2025-03-01",
+          "month": "2025-03",
+          "series": "Petrol",
+          "value": 506495.0
+        },
+        {
+          "date": "2025-04-01",
+          "month": "2025-04",
+          "series": "Diesel",
+          "value": 11472.0
+        },
+        {
+          "date": "2025-04-01",
+          "month": "2025-04",
+          "series": "Electric",
+          "value": 116589.0
+        },
+        {
+          "date": "2025-04-01",
+          "month": "2025-04",
+          "series": "Other",
+          "value": 114.0
+        },
+        {
+          "date": "2025-04-01",
+          "month": "2025-04",
+          "series": "Petrol",
+          "value": 504125.0
+        },
+        {
+          "date": "2025-05-01",
+          "month": "2025-05",
+          "series": "Diesel",
+          "value": 11414.0
+        },
+        {
+          "date": "2025-05-01",
+          "month": "2025-05",
+          "series": "Electric",
+          "value": 119747.0
+        },
+        {
+          "date": "2025-05-01",
+          "month": "2025-05",
+          "series": "Other",
+          "value": 112.0
+        },
+        {
+          "date": "2025-05-01",
+          "month": "2025-05",
+          "series": "Petrol",
+          "value": 496679.0
+        },
+        {
+          "date": "2025-06-01",
+          "month": "2025-06",
+          "series": "Diesel",
+          "value": 11403.0
+        },
+        {
+          "date": "2025-06-01",
+          "month": "2025-06",
+          "series": "Electric",
+          "value": 122870.0
+        },
+        {
+          "date": "2025-06-01",
+          "month": "2025-06",
+          "series": "Other",
+          "value": 112.0
+        },
+        {
+          "date": "2025-06-01",
+          "month": "2025-06",
+          "series": "Petrol",
+          "value": 494719.0
+        },
+        {
+          "date": "2025-07-01",
+          "month": "2025-07",
+          "series": "Diesel",
+          "value": 11380.0
+        },
+        {
+          "date": "2025-07-01",
+          "month": "2025-07",
+          "series": "Electric",
+          "value": 125500.0
+        },
+        {
+          "date": "2025-07-01",
+          "month": "2025-07",
+          "series": "Other",
+          "value": 113.0
+        },
+        {
+          "date": "2025-07-01",
+          "month": "2025-07",
+          "series": "Petrol",
+          "value": 492406.0
+        },
+        {
+          "date": "2025-08-01",
+          "month": "2025-08",
+          "series": "Diesel",
+          "value": 11365.0
+        },
+        {
+          "date": "2025-08-01",
+          "month": "2025-08",
+          "series": "Electric",
+          "value": 128357.0
+        },
+        {
+          "date": "2025-08-01",
+          "month": "2025-08",
+          "series": "Other",
+          "value": 113.0
+        },
+        {
+          "date": "2025-08-01",
+          "month": "2025-08",
+          "series": "Petrol",
+          "value": 490578.0
+        },
+        {
+          "date": "2025-09-01",
+          "month": "2025-09",
+          "series": "Diesel",
+          "value": 11348.0
+        },
+        {
+          "date": "2025-09-01",
+          "month": "2025-09",
+          "series": "Electric",
+          "value": 131868.0
+        },
+        {
+          "date": "2025-09-01",
+          "month": "2025-09",
+          "series": "Other",
+          "value": 113.0
+        },
+        {
+          "date": "2025-09-01",
+          "month": "2025-09",
+          "series": "Petrol",
+          "value": 488295.0
+        },
+        {
+          "date": "2025-10-01",
+          "month": "2025-10",
+          "series": "Diesel",
+          "value": 11329.0
+        },
+        {
+          "date": "2025-10-01",
+          "month": "2025-10",
+          "series": "Electric",
+          "value": 135799.0
+        },
+        {
+          "date": "2025-10-01",
+          "month": "2025-10",
+          "series": "Other",
+          "value": 113.0
+        },
+        {
+          "date": "2025-10-01",
+          "month": "2025-10",
+          "series": "Petrol",
+          "value": 485723.0
+        },
+        {
+          "date": "2025-11-01",
+          "month": "2025-11",
+          "series": "Diesel",
+          "value": 11299.0
+        },
+        {
+          "date": "2025-11-01",
+          "month": "2025-11",
+          "series": "Electric",
+          "value": 139541.0
+        },
+        {
+          "date": "2025-11-01",
+          "month": "2025-11",
+          "series": "Other",
+          "value": 113.0
+        },
+        {
+          "date": "2025-11-01",
+          "month": "2025-11",
+          "series": "Petrol",
+          "value": 482754.0
+        },
+        {
+          "date": "2025-12-01",
+          "month": "2025-12",
+          "series": "Diesel",
+          "value": 11270.0
+        },
+        {
+          "date": "2025-12-01",
+          "month": "2025-12",
+          "series": "Electric",
+          "value": 144655.0
+        },
+        {
+          "date": "2025-12-01",
+          "month": "2025-12",
+          "series": "Other",
+          "value": 113.0
+        },
+        {
+          "date": "2025-12-01",
+          "month": "2025-12",
+          "series": "Petrol",
+          "value": 479895.0
+        },
+        {
+          "date": "2026-01-01",
+          "month": "2026-01",
+          "series": "Diesel",
+          "value": 11232.0
+        },
+        {
+          "date": "2026-01-01",
+          "month": "2026-01",
+          "series": "Electric",
+          "value": 148291.0
+        },
+        {
+          "date": "2026-01-01",
+          "month": "2026-01",
+          "series": "Other",
+          "value": 113.0
+        },
+        {
+          "date": "2026-01-01",
+          "month": "2026-01",
+          "series": "Petrol",
+          "value": 476314.0
+        },
+        {
+          "date": "2026-02-01",
+          "month": "2026-02",
+          "series": "Diesel",
+          "value": 11193.0
+        },
+        {
+          "date": "2026-02-01",
+          "month": "2026-02",
+          "series": "Electric",
+          "value": 152127.0
+        },
+        {
+          "date": "2026-02-01",
+          "month": "2026-02",
+          "series": "Other",
+          "value": 113.0
+        },
+        {
+          "date": "2026-02-01",
+          "month": "2026-02",
+          "series": "Petrol",
+          "value": 472478.0
+        },
+        {
+          "date": "2026-03-01",
+          "month": "2026-03",
+          "series": "Diesel",
+          "value": 11111.0
+        },
+        {
+          "date": "2026-03-01",
+          "month": "2026-03",
+          "series": "Electric",
+          "value": 161118.0
+        },
+        {
+          "date": "2026-03-01",
+          "month": "2026-03",
+          "series": "Other",
+          "value": 113.0
+        },
+        {
+          "date": "2026-03-01",
+          "month": "2026-03",
+          "series": "Petrol",
+          "value": 461432.0
+        },
+        {
+          "date": "2026-04-01",
+          "month": "2026-04",
+          "series": "Diesel",
+          "value": 11099.0
+        },
+        {
+          "date": "2026-04-01",
+          "month": "2026-04",
+          "series": "Electric",
+          "value": 169178.0
+        },
+        {
+          "date": "2026-04-01",
+          "month": "2026-04",
+          "series": "Other",
+          "value": 113.0
+        },
+        {
+          "date": "2026-04-01",
+          "month": "2026-04",
+          "series": "Petrol",
+          "value": 461558.0
+        },
+        {
+          "date": "2026-05-01",
+          "month": "2026-05",
+          "series": "Diesel",
+          "value": 11083.0
+        },
+        {
+          "date": "2026-05-01",
+          "month": "2026-05",
+          "series": "Electric",
+          "value": 173469.0
+        },
+        {
+          "date": "2026-05-01",
+          "month": "2026-05",
+          "series": "Other",
+          "value": 113.0
+        },
+        {
+          "date": "2026-05-01",
+          "month": "2026-05",
+          "series": "Petrol",
+          "value": 461419.0
+        },
+        {
+          "date": "2026-06-01",
+          "month": "2026-06",
+          "series": "Diesel",
+          "value": 11071.0
+        },
+        {
+          "date": "2026-06-01",
+          "month": "2026-06",
+          "series": "Electric",
+          "value": 174840.0
+        },
+        {
+          "date": "2026-06-01",
+          "month": "2026-06",
+          "series": "Other",
+          "value": 114.0
+        },
+        {
+          "date": "2026-06-01",
+          "month": "2026-06",
+          "series": "Petrol",
+          "value": 461137.0
+        }
+      ],
+      "hk_private_car_fleet_ev_share_history": [
+        {
+          "date": "2025-01-01",
+          "month": "2025-01",
+          "value": 17.3751
+        },
+        {
+          "date": "2025-02-01",
+          "month": "2025-02",
+          "value": 17.7309
+        },
+        {
+          "date": "2025-03-01",
+          "month": "2025-03",
+          "value": 18.1019
+        },
+        {
+          "date": "2025-04-01",
+          "month": "2025-04",
+          "value": 18.4389
+        },
+        {
+          "date": "2025-05-01",
+          "month": "2025-05",
+          "value": 19.0695
+        },
+        {
+          "date": "2025-06-01",
+          "month": "2025-06",
+          "value": 19.531
+        },
+        {
+          "date": "2025-07-01",
+          "month": "2025-07",
+          "value": 19.9397
+        },
+        {
+          "date": "2025-08-01",
+          "month": "2025-08",
+          "value": 20.3608
+        },
+        {
+          "date": "2025-09-01",
+          "month": "2025-09",
+          "value": 20.8776
+        },
+        {
+          "date": "2025-10-01",
+          "month": "2025-10",
+          "value": 21.4545
+        },
+        {
+          "date": "2025-11-01",
+          "month": "2025-11",
+          "value": 22.0198
+        },
+        {
+          "date": "2025-12-01",
+          "month": "2025-12",
+          "value": 22.7469
+        },
+        {
+          "date": "2026-01-01",
+          "month": "2026-01",
+          "value": 23.318
+        },
+        {
+          "date": "2026-02-01",
+          "month": "2026-02",
+          "value": 23.9227
+        },
+        {
+          "date": "2026-03-01",
+          "month": "2026-03",
+          "value": 25.422
+        },
+        {
+          "date": "2026-04-01",
+          "month": "2026-04",
+          "value": 26.3538
+        },
+        {
+          "date": "2026-05-01",
+          "month": "2026-05",
+          "value": 26.8493
+        },
+        {
+          "date": "2026-06-01",
+          "month": "2026-06",
+          "value": 27.0164
+        }
+      ],
+      "hk_private_car_net_growth_history": [
+        {
+          "date": "2025-01-01",
+          "month": "2025-01",
+          "series": "Net first registrations",
+          "value": 2974.0
+        },
+        {
+          "date": "2025-02-01",
+          "month": "2025-02",
+          "series": "Net first registrations",
+          "value": 3209.0
+        },
+        {
+          "date": "2025-03-01",
+          "month": "2025-03",
+          "series": "Net first registrations",
+          "value": 3617.0
+        },
+        {
+          "date": "2025-04-01",
+          "month": "2025-04",
+          "series": "Net first registrations",
+          "value": 3119.0
+        },
+        {
+          "date": "2025-05-01",
+          "month": "2025-05",
+          "series": "Net first registrations",
+          "value": 4392.0
+        },
+        {
+          "date": "2025-06-01",
+          "month": "2025-06",
+          "series": "Net first registrations",
+          "value": 4378.0
+        },
+        {
+          "date": "2025-07-01",
+          "month": "2025-07",
+          "series": "Net first registrations",
+          "value": 3876.0
+        },
+        {
+          "date": "2025-08-01",
+          "month": "2025-08",
+          "series": "Net first registrations",
+          "value": 4100.0
+        },
+        {
+          "date": "2025-09-01",
+          "month": "2025-09",
+          "series": "Net first registrations",
+          "value": 4668.0
+        },
+        {
+          "date": "2025-10-01",
+          "month": "2025-10",
+          "series": "Net first registrations",
+          "value": 5179.0
+        },
+        {
+          "date": "2025-11-01",
+          "month": "2025-11",
+          "series": "Net first registrations",
+          "value": 4954.0
+        },
+        {
+          "date": "2025-12-01",
+          "month": "2025-12",
+          "series": "Net first registrations",
+          "value": 6329.0
+        },
+        {
+          "date": "2026-01-01",
+          "month": "2026-01",
+          "series": "Net first registrations",
+          "value": 4974.0
+        },
+        {
+          "date": "2026-02-01",
+          "month": "2026-02",
+          "series": "Net first registrations",
+          "value": 4801.0
+        },
+        {
+          "date": "2026-03-01",
+          "month": "2026-03",
+          "series": "Net first registrations",
+          "value": 10439.0
+        },
+        {
+          "date": "2026-04-01",
+          "month": "2026-04",
+          "series": "Net first registrations",
+          "value": 9280.0
+        },
+        {
+          "date": "2026-05-01",
+          "month": "2026-05",
+          "series": "Net first registrations",
+          "value": 5522.0
+        },
+        {
+          "date": "2026-06-01",
+          "month": "2026-06",
+          "series": "Net first registrations",
+          "value": 2591.0
+        }
+      ],
+      "kpi_private_car_first_reg": [],
+      "hk_private_car_ev_make_history": [],
+      "hk_private_car_ev_share_history": [],
+      "hk_private_car_ev_make_latest": [],
+      "hk_private_car_ev_model_latest": [],
+      "kpi_parking": [],
+      "hk_parking_vacancy_history": [],
+      "hk_parking_current_district": [],
+      "kpi_carpark_occupancy": [],
+      "td_carpark_occupancy_history": [],
+      "td_carpark_occupancy_latest_district": []
     }
   },
   "sources": [
@@ -30973,11 +33089,136 @@
         "language": "Parquet",
         "description": "Monthly passengers, ASK, RPK and passenger load factor for Air China, China Southern, China Eastern and Spring Airlines, split by domestic, international and regional operations."
       }
+    },
+    {
+      "id": "hk_passenger_journeys",
+      "label": "Transport Department Monthly Traffic and Transport Digest \u2014 Table 2.1",
+      "href": "https://www.td.gov.hk/en/transport_in_hong_kong/transport_figures/monthly_traffic_and_transport_digest/index.html",
+      "path": "sources/hk_passenger_journeys.sql",
+      "query": {
+        "engine": "official Table 2.1 workbook (table21.xls), both sheets",
+        "url": "https://www.td.gov.hk/filemanager/en/content_5404/table21.xls",
+        "language": "XLS",
+        "description": "Monthly public transport passenger journeys ('000s) by operator: KMB, Citybus, LWB, NLB (franchised buses), MTR heavy rail, Airport Express, Light Rail, Tramways, public light buses, ferries, taxis, and the territory-wide total.",
+        "tables_used": [
+          "table21.xls sheet 1 (operator rows)",
+          "table21.xls sheet 2 (mode totals)"
+        ],
+        "metric_definitions": [
+          "KMB is read from the header-validated KMB row on sheet 1, column 2.",
+          "The territory-wide total is read from the keyword-distinguished total row on sheet 2, column 22; subtotal rows are not used as the total.",
+          "The accepted workbook row must reconcile the published mode components to the reported total within 0.5 thousand journeys."
+        ]
+      }
+    },
+    {
+      "id": "mttd_passenger_journeys",
+      "label": "Transport Department Monthly Traffic and Transport Digest \u2014 Table 2.3",
+      "href": "https://data.gov.hk/en-data/dataset/hk-td-tis_17-monthly-traffic-and-transport-digest-csv",
+      "path": "sources/mttd_passenger_journeys.sql",
+      "query": {
+        "engine": "official MTTD Table 2.3 CSV",
+        "url": "https://www.td.gov.hk/datagovhk_tis/mttd-csv/en/table23_eng.csv",
+        "language": "CSV",
+        "description": "Monthly passenger journeys ('000s) for MTRC rail lines and franchised-bus operators, with HK Island, Kowloon/New Territories and cross-harbour geography where reported. Publication lags the current month by roughly two to three months."
+      }
+    },
+    {
+      "id": "censtatd_boundary_movements",
+      "label": "C&SD Table E705 \u2014 Cross-Boundary Aircraft, Vessel, Vehicle and Train Movements",
+      "href": "https://www.censtatd.gov.hk/en/data/stat_report/subject/340/report_index.json",
+      "path": "sources/censtatd_boundary_movements.sql",
+      "query": {
+        "engine": "official C&SD Table E705 XLSX discovered through the subject report index",
+        "url": "https://www.censtatd.gov.hk/en/data/stat_report/subject/340/report_index.json ; https://www.censtatd.gov.hk/en/data/stat_report/product/D7000005/att/<latest-file>",
+        "language": "XLSX",
+        "description": "Monthly inward and outward movements of aircraft, ocean/river/cargo vessels, goods/passenger vehicles and passenger trains. Some latest-year cells may be provisional estimates or N.A.; monthly history begins in 2023 in the current workbook."
+      }
+    },
+    {
+      "id": "hk_vehicle_stock",
+      "label": "Transport Department Registration and Licensing of Vehicles \u2014 Table 4.1(a), Private Cars",
+      "href": "https://www.td.gov.hk/en/transport_in_hong_kong/transport_figures/monthly_traffic_and_transport_digest/index.html",
+      "path": "sources/hk_vehicle_stock.sql",
+      "query": {
+        "engine": "official Table 4.1(a) workbook (table41a.xls), Private Cars sheet",
+        "url": "https://www.td.gov.hk/filemanager/en/content_4883/table41a.xls",
+        "language": "XLS",
+        "description": "Monthly private car fleet stock (total registered and licensed) split by fuel type -- Petrol, Electric, Diesel, Other -- the basis for the EV road-fleet registered-share chart.",
+        "tables_used": [
+          "table41a.xls sheet whose header identifies Private Cars / \u79c1\u5bb6\u8f66"
+        ],
+        "metric_definitions": [
+          "The Private Cars sheet is located by matching its own header text rather than relying on a fixed sheet index.",
+          "EV fleet share is electric total registered divided by all-fuel total registered.",
+          "The all-fuel total is accepted only when it reconciles to the sum of the four per-fuel total-registration columns."
+        ]
+      }
+    },
+    {
+      "id": "hk_private_car_net_growth",
+      "label": "Transport Department Net First Registration of Private Cars \u2014 Table 4.1(c)",
+      "href": "https://www.td.gov.hk/en/transport_in_hong_kong/transport_figures/monthly_traffic_and_transport_digest/index.html",
+      "path": "sources/hk_private_car_net_growth.sql",
+      "query": {
+        "engine": "official Table 4.1(c) workbook (table41c.xls)",
+        "url": "https://www.td.gov.hk/filemanager/en/content_4884/table41c.xls",
+        "language": "XLS",
+        "description": "Monthly gross first registrations, deregistrations (all reasons, per TD's own header -- not scrappage specifically) and net first registration of private cars."
+      }
+    },
+    {
+      "id": "hk_private_car_first_reg",
+      "label": "Transport Department Monthly Private-Car First Registrations by Make and Fuel",
+      "href": "https://data.gov.hk/en-data/dataset/hk-td-tis_17-monthly-traffic-and-transport-digest-csv/resource/472658ca-1640-4fc2-be5c-eae62f9bf547",
+      "path": "sources/hk_private_car_first_reg.sql",
+      "query": {
+        "engine": "official TD Monthly Traffic and Transport Digest CSV \u2014 Table 4.1(e)",
+        "url": "https://www.td.gov.hk/datagovhk_tis/mttd-csv/en/table41e_eng.csv",
+        "language": "CSV",
+        "description": "Monthly first registrations of private cars by make, fuel type, first-registration status and body type; a genuine time series from May 2016 onward."
+      }
+    },
+    {
+      "id": "hk_private_car_first_reg_details",
+      "label": "Transport Department Latest Private-Car First-Registration Make/Model Details",
+      "href": "https://www.td.gov.hk/en/public_services/licences_and_permits/vehicle_first_registration/vehicle_particulars/index.html",
+      "path": "sources/hk_private_car_first_reg_details.sql",
+      "query": {
+        "engine": "official TD monthly particulars of first registered vehicles CSV",
+        "url": "https://www.td.gov.hk/datagovhk_td/first-reg-vehicle/resources/en/particulars_of_first_registered_vehicle_{month}_{year}_eng.csv",
+        "language": "CSV",
+        "description": "Latest available monthly private-car make/model detail; used as a bounded lookup snapshot, while the make/fuel history above supplies the time-series chart."
+      }
+    },
+    {
+      "id": "td_parking_vacancy",
+      "label": "Transport Department Real-Time Parking Vacancy",
+      "href": "https://resource.data.one.gov.hk/td/carpark/TD_Parking_Vacancy_Data_Specification.pdf",
+      "path": "sources/td_parking_vacancy.sql",
+      "query": {
+        "engine": "official TD real-time vacancy and basic-information JSON feeds",
+        "url": "https://resource.data.one.gov.hk/td/carpark/vacancy_all.json ; https://resource.data.one.gov.hk/td/carpark/basic_info_all.json",
+        "language": "JSON",
+        "description": "Current vacancy by participating car park, vehicle type and vacancy status; the collection script appends snapshots for a genuine high-frequency history and does not treat unknown vacancy as zero."
+      }
+    },
+    {
+      "id": "td_carpark_occupancy",
+      "label": "Transport Department Car-Park Occupancy Signal",
+      "href": "https://api.data.gov.hk/v1/carpark-info-vacancy",
+      "path": "sources/td_carpark_occupancy.sql",
+      "query": {
+        "engine": "official TD live vacancy JSON joined to Digital Policy Office One-Stop static capacity JSON",
+        "url": "https://resource.data.one.gov.hk/td/carpark/vacancy_all.json ; https://resource.data.one.gov.hk/td/carpark/basic_info_all.json ; https://api.data.gov.hk/v1/carpark-info-vacancy",
+        "language": "JSON",
+        "description": "Capacity-weighted private-car occupancy rate from exact hourly vacancy counts. The denominator is available only for a capacity-covered subset of TD car parks; sample_size and coverage are retained, and the signal is not presented as all-park occupancy."
+      }
     }
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-transport/",
-    "snapshotId": "027677b652c4527f",
+    "snapshotId": "a3e5a800b34be4bb",
     "dataAsOf": "2026-06-01"
   }
 }

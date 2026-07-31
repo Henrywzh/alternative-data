@@ -128,3 +128,141 @@ def test_partial_region_coverage_leaves_a_gap_instead_of_a_derived_total():
     )
     # The complete metric is unaffected.
     assert [row["value"] for row in gapped["china_airline_rpk_history"]] == [128.0]
+
+
+def test_load_transport_monthly_rejects_missing_columns(tmp_path):
+    """The shared TD-table loader must not silently accept a truncated schema.
+
+    scripts/scrape_hk_passenger_journeys.py and its two siblings each
+    recompute TD's own published subtotals from their parts and refuse to
+    write output that doesn't reconcile (see tests/test_hk_transport_scrapers.py
+    for the guards themselves) -- this loader's own job is narrower: confirm
+    the columns it was told to expect are actually present before the
+    builder trusts any of them.
+    """
+    builder = _load_builder("build_hk_transport_artifact.py", "transport_builder_schema_test")
+    path = tmp_path / "hk_passenger_journeys_monthly.parquet"
+    pd.DataFrame([{"date": "2026-01", "kmb_k": 100.0}]).to_parquet(path, index=False)
+
+    with pytest.raises(ValueError, match="missing columns"):
+        builder.load_passenger_journeys(path)
+
+
+def test_load_transport_monthly_parses_year_month_date(tmp_path):
+    """These three parquets store `date` as a bare "YYYY-MM" string (month
+    grain, no day) -- unlike china_airline's full "YYYY-MM-DD" -- so the
+    loader must append a day component itself rather than pass the string
+    straight to pd.to_datetime.
+    """
+    builder = _load_builder("build_hk_transport_artifact.py", "transport_builder_date_test")
+    path = tmp_path / "hk_private_car_net_growth_monthly.parquet"
+    pd.DataFrame(
+        [{"date": "2026-03", "gross_first_registrations": 100.0, "deregistrations": 5.0, "net_first_registrations": 95.0}]
+    ).to_parquet(path, index=False)
+
+    result = builder.load_net_growth(path)
+
+    assert result.iloc[0]["date"] == pd.Timestamp("2026-03-01")
+
+
+def test_passenger_journeys_views_are_wired_into_transport_artifact():
+    builder = _load_builder("build_hk_transport_artifact.py", "transport_builder_journeys_views_test")
+    frame = pd.DataFrame(
+        [
+            {
+                "date": pd.Timestamp("2026-01-01"),
+                "kmb_k": 80000.0, "citybus_subtotal_k": 30000.0, "nwfb_k": None,
+                "lwb_k": 4000.0, "nlb_k": 3000.0, "bus_subtotal_k": 117000.0,
+                "mtr_heavy_rail_k": 150000.0, "airport_express_k": 1200.0,
+                "light_rail_k": 13000.0, "tramways_k": 4500.0, "rail_subtotal_k": 168700.0,
+                "plb_subtotal_k": 46000.0, "ferry_subtotal_k": 3600.0, "taxis_k": 20500.0,
+                "total_k": 355800.0,
+            }
+        ]
+    )
+
+    views = builder.build_passenger_journeys_views(frame)
+
+    assert set(views) == {
+        "hk_total_transport_journeys_history",
+        "hk_modal_split_history",
+        "hk_franchised_bus_operator_history",
+    }
+    assert views["hk_total_transport_journeys_history"][0]["value"] == 355800.0
+    assert {row["series"] for row in views["hk_modal_split_history"]} == {
+        "Bus", "Rail", "PLB", "Ferry", "Taxi",
+    }
+    kmb_row = next(row for row in views["hk_franchised_bus_operator_history"] if row["series"] == "KMB")
+    assert kmb_row["value"] == 80000.0
+    # nwfb_k is None (folded into Citybus's own reporting since ~2023) -- must
+    # not appear as a series in the operator chart, not even as a zero.
+    assert "NWFB" not in {row["series"] for row in views["hk_franchised_bus_operator_history"]}
+
+
+def test_vehicle_stock_and_net_growth_views_are_wired_into_transport_artifact():
+    builder = _load_builder("build_hk_transport_artifact.py", "transport_builder_fleet_views_test")
+    stock = pd.DataFrame(
+        [
+            {
+                "date": pd.Timestamp("2026-01-01"),
+                "petrol_total_registered": 460000.0, "electric_total_registered": 150000.0,
+                "diesel_total_registered": 11000.0, "other_total_registered": 100.0,
+                "all_fuel_total_registered": 621100.0, "all_fuel_total_licensed": 570000.0,
+            }
+        ]
+    )
+    growth = pd.DataFrame(
+        [{"date": pd.Timestamp("2026-01-01"), "gross_first_registrations": 3000.0,
+          "deregistrations": 10.0, "net_first_registrations": 2990.0}]
+    )
+
+    stock_views = builder.build_vehicle_stock_views(stock)
+    growth_views = builder.build_net_growth_views(growth)
+
+    assert set(stock_views) == {"hk_private_car_fleet_by_fuel_history"}
+    electric_row = next(row for row in stock_views["hk_private_car_fleet_by_fuel_history"] if row["series"] == "Electric")
+    assert electric_row["value"] == 150000.0
+
+    assert set(growth_views) == {"hk_private_car_net_growth_history"}
+    assert growth_views["hk_private_car_net_growth_history"][0]["value"] == 2990.0
+
+
+def test_private_car_first_registration_views_build_flow_and_make_series():
+    builder = _load_builder("build_hk_transport_artifact.py", "transport_builder_ev_first_reg_views_test")
+    frame = pd.DataFrame(
+        [
+            {"date": pd.Timestamp("2026-01-01"), "month": "2026-01", "make": "BYD", "fuel_type": "ELECTRIC", "first_reg": 100},
+            {"date": pd.Timestamp("2026-01-01"), "month": "2026-01", "make": "TESLA", "fuel_type": "ELECTRIC", "first_reg": 50},
+            {"date": pd.Timestamp("2026-01-01"), "month": "2026-01", "make": "TOYOTA", "fuel_type": "PETROL", "first_reg": 350},
+            {"date": pd.Timestamp("2026-02-01"), "month": "2026-02", "make": "BYD", "fuel_type": "ELECTRIC", "first_reg": 120},
+            {"date": pd.Timestamp("2026-02-01"), "month": "2026-02", "make": "TOYOTA", "fuel_type": "PETROL", "first_reg": 380},
+        ]
+    )
+
+    views = builder.build_private_car_first_reg_views(frame)
+
+    assert views["kpi_private_car_first_reg"][0]["total_first_reg"] == 500.0
+    assert views["kpi_private_car_first_reg"][0]["electric_first_reg"] == 120.0
+    assert views["kpi_private_car_first_reg"][0]["ev_share_pct"] == pytest.approx(24.0)
+    assert {row["series"] for row in views["hk_private_car_ev_make_history"]} == {"BYD", "Tesla"}
+    assert views["hk_private_car_ev_share_history"][-1]["value"] == pytest.approx(24.0)
+
+
+def test_parking_vacancy_views_exclude_unknown_counts_and_keep_history():
+    builder = _load_builder("build_hk_transport_artifact.py", "transport_builder_parking_views_test")
+    frame = pd.DataFrame(
+        [
+            {"snapshot_at": pd.Timestamp("2026-07-31 10:00"), "park_id": "p1", "district_en": "Central", "vehicle_type": "P", "service_category": "HOURLY", "vacancy_type": "A", "vacancy": 10},
+            {"snapshot_at": pd.Timestamp("2026-07-31 10:00"), "park_id": "p2", "district_en": "Wan Chai", "vehicle_type": "P", "service_category": "HOURLY", "vacancy_type": "B", "vacancy": 1},
+            {"snapshot_at": pd.Timestamp("2026-07-31 10:05"), "park_id": "p1", "district_en": "Central", "vehicle_type": "P", "service_category": "HOURLY", "vacancy_type": "A", "vacancy": 7},
+            {"snapshot_at": pd.Timestamp("2026-07-31 10:05"), "park_id": "p2", "district_en": "Wan Chai", "vehicle_type": "P", "service_category": "HOURLY", "vacancy_type": "B", "vacancy": 1},
+        ]
+    )
+
+    views = builder.build_parking_vacancy_views(frame)
+
+    assert views["kpi_parking"][0]["available_spaces"] == 7
+    assert views["kpi_parking"][0]["parks_reporting_exact"] == 1
+    assert views["kpi_parking"][0]["parks_with_unknown_count"] == 1
+    assert len(views["hk_parking_vacancy_history"]) == 2
+    assert "Central" in views["hk_parking_current_district"][0]["summary"]

@@ -312,6 +312,7 @@ const HK_REAL_ESTATE_ZH = {
     confidence_trend: ["美联物业信心指数", "辅助性的市场情绪指标，不是住宅价格指标。", "周", "信心指数"],
     hkma_mortgage_rate_mix_chart: ["香港金管局住宅按揭利率计划组合 (%)", "新批按揭中，按 HIBOR 定价与最优惠利率（P按）定价的占比。", "月份", "占比 (%)", "利率计划"],
     cnsd_construction_value_chart: ["政府统计处建筑工程总值 (百万港元)", "主要承建商季度建筑工程总值——供应端管道指标。", "季度", "百万港元"],
+    censtatd_land_disposals_chart: ["政府卖地（按方式划分，平方米）", "按公开拍卖／招标与私人协约方式批地划分的季度卖地面积——供应端管道指标。", "季度", "面积 (平方米)", "方式"],
     hkma_ltv_chart: ["香港金管局平均按揭成数 (%)", "新批按揭的平均贷款成数（LTV）。", "月份", "按揭成数 (%)"],
     hkma_credit_quality_chart: ["香港金管局按揭信贷质素 (%)", "拖欠比率及重订还款安排贷款比率——真实的信贷周期风险指标。", "月份", "%", "指标"],
     epi_eri_chart: ["28Hse 屋苑价格及租金指数 (EPI / ERI)", "2016年至今全港屋苑周度价格及租金指数。", "周", "指数", "指数"],
@@ -417,6 +418,7 @@ const HK_REAL_ESTATE_ZH = {
     source_registry: "香港房地产 dashboard 来源登记表",
     hkma_mortgage: "香港金管局住宅按揭统计调查",
     cnsd_construction: "政府统计处建筑工程总值统计",
+    censtatd_land_disposals: "政府统计处表 E704 — 政府卖地统计",
     hse28_epi_eri: "28Hse 屋苑价格及租金指数",
     landreg_monthly: "土地注册处月度统计",
     bd_supply: "屋宇署房屋供应管道",
@@ -487,6 +489,9 @@ const HK_REAL_ESTATE_ZH = {
     rvd_retail_history: {
       series: { "Rents Overall": "整体租金", "Prices Overall": "整体价格", Rents: "租金", Prices: "价格" },
     },
+    censtatd_land_disposals_area: {
+      series: { "Public Auction/Tender": "公开拍卖／招标", "Private Treaty Grant": "私人协约方式批地" },
+    },
   },
 };
 
@@ -501,6 +506,7 @@ const HK_LOCAL_CONSUMER_ZH = {
     gold_card: { description: "上海黄金交易所 PM 基准定盘价（人民币/克）；日环比与同比变动。", metricLabels: ["黄金 PM 基准价 (人民币/克)", "日环比", "同比"] },
     median_pe_card: { description: "本地消费观察名单各公司历史市盈率的中位数。", metricLabels: ["市盈率中位数 (TTM)"] },
     retail_card: { description: "政府统计处零售销售价值指数（全部零售店铺）；月环比与同比变动。", metricLabels: ["零售销售指数", "月环比", "同比"] },
+    cpi_card: { description: "综合消费物价指数（2019/20年基期＝100）；月环比与同比变动。", metricLabels: ["综合消费物价指数", "月环比", "同比"] },
     restaurant_card: { description: "全行业季度餐饮收益（百万港元）；季环比与同比变动。", metricLabels: ["餐饮收益 (百万港元)", "季环比", "同比"] },
     store_footprint_card: { description: "11家香港上市零售、珠宝、餐饮及消费品公司的门店/网点数量追踪总数。", metricLabels: ["已追踪网点总数"] },
   },
@@ -512,6 +518,8 @@ const HK_LOCAL_CONSUMER_ZH = {
     gold_trend: ["上海黄金交易所 PM 基准价（毛利成本参考）", "人民币/克每日定盘价；图表默认显示可用历史中的最近十年（若数据不足十年则显示全部），作为香港金饰原料成本的辅助参考。", "日期", "人民币 / 克"],
     valuation_pe_chart: ["观察名单历史市盈率对比", "各公司最新的正值历史市盈率；亏损公司不计入此视图。", "公司", "市盈率 (TTM)"],
     retail_trend: ["零售销售价值指数（全部店铺）", "政府统计处月度价值指数，完整已发布历史。", "月份", "价值指数"],
+    cpi_trend: ["综合消费物价指数", "月度综合消费物价指数（2019/20年基期＝100），1974年10月至今完整已发布历史。", "月份", "指数 (2019/20＝100)"],
+    cpi_by_category_chart: ["消费物价指数按类别 — 食品、房屋与交通", "2005年至今的月度分类指数（历史长度较综合指数短）。", "月份", "指数 (2019/20＝100)", "类别"],
     retail_category_chart: ["零售销售价值指数按类别", "最新发布月份，按零售店铺类型划分。", "类别", "价值指数"],
     restaurant_trend: ["餐饮收益（全部食肆）", "季度全行业收益，百万港元，完整已发布历史。", "季度", "百万港元"],
     restaurant_chart: ["餐饮收益按类型", "最新发布季度，百万港元。", "食肆类型", "百万港元"],
@@ -611,6 +619,7 @@ const HK_LOCAL_CONSUMER_ZH = {
     sge_gold: "上海黄金交易所 AM/PM 基准价",
     hk_valuation: "百度股市通香港股票估值",
     cnsd_retail: "政府统计处零售销售价值/销量指数",
+    censtatd_cpi: "政府统计处综合消费物价指数",
     censtatd_restaurant: "政府统计处季度餐饮收益及采购调查",
     immigration_flow: "入境事务处每日出入境旅客流量统计",
     weather_demand_drivers: "香港天文台警告数据库 & FRED 汇率",
@@ -637,28 +646,47 @@ const HK_LOCAL_CONSUMER_ZH = {
     consumer_council_complaints_table: { category: CONSUMER_COMPLAINT_CATEGORY_ZH },
     consumer_council_complaints_chart: { category: CONSUMER_COMPLAINT_CATEGORY_ZH },
     immigration_checkpoint_snapshot: { control_point: CONTROL_POINT_ZH, direction: DIRECTION_ZH },
+    censtatd_cpi_by_category_history: {
+      series: {
+        "Food and non-alcoholic beverages": "食品及非酒精饮品",
+        "Housing, water, electricity, gas and other fuels": "房屋、水电煤及其他燃料",
+        "Transport": "交通",
+      },
+    },
   },
 };
 
 const HK_UTILITIES_ZH = {
   title: "香港公用事业与基础设施监测",
-  description: "中电控股（CLP）季度售电量拆解、中华煤气（Towngas）代理数据、香港天文台日均气温与电能实业（Power Assets）分部业绩快照。",
+  description: "中电控股（CLP）季度售电量拆解、中华煤气（Towngas）代理数据、香港天文台日均气温、电能实业（Power Assets）分部业绩、渠务署污水流量/实验室数据及水务署停水通告。",
   cards: {
     clp_card: { description: "季度中电香港本地售电总量、商业售电量及 AI 数据中心用电同比变动。", metricLabels: ["总售电量 (GWh)", "商业售电量 (GWh)", "AI 数据中心同比"] },
     towngas_card: { description: "政府统计处月度全港煤气消费总量，按住宅及商业用户拆解。", metricLabels: ["总耗气量 (TJ)", "住宅耗气量 (TJ)", "商业耗气量 (TJ)"] },
     temp_card: { description: "香港天文台录得的最新日均气温及月度平均气温。", metricLabels: ["最新气温 (°C)", "月均气温 (°C)"] },
     power_assets_card: { description: "电能实业半年度分部收入、分部溢利及合资/联营业绩总额。", metricLabels: ["总分部收入 (百万港元)", "总分部溢利 (百万港元)", "合资/联营业绩 (百万港元)"] },
+    water_suspension_card: { description: "水务署当前计划及紧急停水事件资料。", metricLabels: ["目前通告", "资料行数", "近七日紧急通告"] },
   },
   charts: {
     clp_sector_chart: ["中电香港售电量按行业拆解 (GWh)", "季度售电量拆解为住宅、商业、基础设施与公共服务及制造行业。", "季度", "售电量 (GWh)"],
     towngas_trend_chart: ["香港煤气消费量走势 (TJ)", "月度全港煤气消费总量拆解为住宅、商业及工业用户；图表默认显示可用历史中的最近十年。", "月份", "太焦耳 (TJ)"],
     temp_trend_chart: ["香港天文台月均气温走势 (°C)", "按香港天文台每日平均气温计算的月度平均；图表默认显示可用历史中的最近十年，日频来源数据在数据层保留。", "月份", "°C"],
+    sewage_flow_chart: ["各污水处理厂报告污水流量（月度总和）", "按每月可用污水处理厂汇总每日最终排放流量；来源仍为日度，覆盖会随时间改变，按厂历史仍保留在数据集中。", "月份", "报告每日流量 (立方米/日)"],
   },
   tables: {
     power_assets_geography_table: {
       title: "电能实业（Power Assets）按地理区域划分的分部业绩",
       subtitle: "半年度分部财务数据（2025 上半年），百万港元；「港灯投资」按权益法入账，在本注释下的收入/分部溢利列示为零，其贡献计入合资/联营业绩一栏。",
-      columns: { geography: "地区", revenue_hkdm: "分部收入 (百万港元)", segment_profit_hkdm: "分部溢利 (百万港元)", jv_associate_results_hkdm: "合资/联营业绩 (百万港元)" },
+      columns: { summary: "地理分部摘要" },
+    },
+    sewage_latest_lab_table: {
+      title: "各污水处理厂最新流量及实验室观测",
+      subtitle: "每间污水处理厂的最新可用记录；表内展示核心实验室字段，其他来源稀疏字段仍保留在数据集中，不作填补。",
+      columns: { summary: "污水处理厂及最新指标" },
+    },
+    water_suspension_events_table: {
+      title: "当前停水通告",
+      subtitle: "水务署当前计划/紧急停水通告，包括未来已排期事件；表内展示核心时间及状态，地址和原因仍保留在数据集中。这是事件快照，不是用水消费时间序列。",
+      columns: { summary: "通告摘要" },
     },
   },
   sources: {
@@ -666,9 +694,11 @@ const HK_UTILITIES_ZH = {
     towngas_proxy: "政府统计处能源统计（煤气消费量）",
     hko_temperature: "香港天文台每日平均气温",
     power_assets_segments: "电能实业（0006.HK）中期及全年业绩报告",
+    dsd_sewage_flow_lab: "渠务署每日污水流量及排放水实验室数据",
+    wsd_water_suspension: "水务署当前停水通告",
   },
   snapshotBody: (artifact) => `**数据快照：** \`${artifact.package_info.snapshotId}\` · 生成于 ${artifact.manifest.generatedAt}。`,
-  methodologyBody: "## 如何阅读本 dashboard\n\n售电量与燃气消费量反映香港公用事业核心业务运营水平；日均气温为夏日用电负荷的物理驱动因素。",
+  methodologyBody: "## 如何阅读本 dashboard\n\n售电量与燃气消费量反映香港公用事业核心业务运营水平；日均气温为夏日用电负荷的物理驱动因素。渠务署污水数据保留日度流量和来源稀疏的最终排放实验室字段，各污水处理厂的覆盖期可能不同。水务署通告是每五分钟更新的当前事件快照，包含计划中的未来停水，不应解读为连续用水消费指标。",
   dataLabels: {
     power_assets_geography: {
       geography: {
@@ -689,15 +719,26 @@ const HK_UTILITIES_ZH = {
     towngas_type_history: {
       series: { Domestic: "住宅", Commercial: "商业", Industrial: "工业" },
     },
+    water_suspension_events: {
+      water_type: { "Fresh Water": "食水", "Salt Water": "鹹水", "Fresh And Salt Water": "食水及鹹水" },
+      nature: { Planned: "计划", Emergency: "紧急" },
+      status: { "Supply resumed": "供水已恢复", "Supply being suspended": "供水暂停中", "Suspension not yet started": "停水尚未开始" },
+    },
   },
 };
 
 const HK_TRANSPORT_ZH = {
   title: "香港交通与航空监测",
-  description: "港铁月度客运量（本地/跨境/高铁）、国泰航空运营数据与香港国际机场流量的来源快照。",
+  description: "港铁月度客运量（本地/跨境/高铁）、国泰航空及香港国际机场流量、中国上市航空公司运营数据、运输署公共交通/私家车/电动车登记、C&SD跨境移动及容量覆盖停车场占用率数据。",
   cards: {
     mtr_card: { description: "港铁月度总客运量，按本地及跨境服务拆解，并附对比 2019 年月均水平的复苏率。", metricLabels: ["总客运量 (千人次)", "本地 (千人次)", "跨境 (千人次)", "较 2019 年均值"] },
     cathay_card: { description: "国泰集团月度载客人数、载客率及香港国际机场客运量，并附对比 2019 年月均水平的复苏率。", metricLabels: ["国泰乘客人数", "载客率 (%)", "机场乘客人数", "较 2019 年均值"] },
+    journeys_card: { description: "九巴（运输国际，00062.HK）月度载客人次，以及涵盖各交通模式的全港公共交通总客运量。", metricLabels: ["九巴 (千人次)", "全港合计 (千人次)", "总量按月变动"] },
+    fleet_card: { description: "私家车车队存量及电动车占登记车队的比例。", metricLabels: ["登记私家车数目", "电动车占比", "电动车占比变动 (百分点)"] },
+    net_growth_card: { description: "私家车月度首次登记净额：首次登记总数减运输署报告的累计取消登记数。", metricLabels: ["首次登记总数", "取消登记数", "首次登记净额"] },
+    private_car_first_reg_card: { description: "按厂名及燃料类型划分的私家车月度首次登记；电动车占比是当月流量占比，不是累计车队占比。", metricLabels: ["私家车首次登记", "电动车首次登记", "当月电动车占比"] },
+    parking_card: { description: "运输署实时停车场空置快照；只把能提供确切数字的车场计入空置车位总数。", metricLabels: ["确切空置车位", "有确切数字的车场", "数据源车场数"] },
+    carpark_occupancy_card: { description: "对同时有确切空置数及容量资料的运输署私家车小时停车场子集计算的容量加权占用率，不代表全部停车场。", metricLabels: ["占用率", "有容量资料的车场", "车位容量"] },
   },
   charts: {
     mtr_total_patronage_chart: ["港铁总客运量走势 (2000年至今，千人次)", "26 年月度港铁总客运量数据，完整呈现 2003 年沙士（SARS）冲击（2003 年 4 月低点约 4,880 万人次）及更深、更持久的 2019-22 新冠疫情冲击（2022 年 2 月低点约 7,190 万人次），其后复苏至接近 2019 年疫情前月均水平。", "月份", "千人次"],
@@ -711,29 +752,66 @@ const HK_TRANSPORT_ZH = {
     china_airline_rpk_chart: ["中国上市航空公司收入乘客公里 (RPK)", "各航空公司月度收入乘客公里（实际填补需求）。", "月份", "千单位"],
     china_airline_load_factor_chart: ["中国上市航空公司载客率走势", "各航空公司月度载客率，按公司整体运营口径计算。", "月份", "%"],
     china_airline_region_split_chart: ["中国上市航空公司客运量按地区拆分", "四家航空公司合计客运量，按国内、国际及地区航线拆分；各公司分项数值见下方最新运营数据表。", "月份", "乘客人数"],
+    hk_total_transport_journeys_chart: ["香港公共交通乘客人次——全部交通模式 (千人次)", "全港月度乘客人次，涵盖专营巴士、港铁（重铁、机场快线、轻铁）、香港电车、公共小巴、渡轮及的士。", "月份", "千人次"],
+    hk_modal_split_chart: ["香港公共交通乘客人次按交通模式拆分 (千人次)", "专营巴士、铁路（港铁重铁 + 机场快线 + 轻铁 + 电车合计）、公共小巴、渡轮及的士。", "月份", "千人次"],
+    hk_franchised_bus_operator_chart: ["香港专营巴士乘客人次按营办商拆分 (千人次)", "九巴（运输国际，00062.HK）、城巴、龙运及新大屿山巴士。新巴并入城巴申报后不再单独列示。", "月份", "千人次"],
+    hk_private_car_fleet_ev_share_chart: ["香港私家车车队电动车占比", "电动车占累计登记私家车车队的比例，是车队存量/采用率指标，与下方每月首次登记流量占比不同。", "月份", "电动车占比 (%)"],
+    hk_private_car_net_growth_chart: ["香港私家车车队净增长", "月度首次登记净额（首次登记总数减任何原因的取消登记数）——即车队每月净增加量。", "月份", "净新登记数"],
+    hk_private_car_ev_make_chart: ["香港私家车电动车首次登记按厂名走势", "月度电动车私家车首次登记：比亚迪、Tesla 及其他电动车厂名合计；这是登记流量，不是累计车队存量。", "月份", "首次登记数"],
+    hk_private_car_ev_share_chart: ["每月私家车首次登记中的电动车占比", "每月电动车首次登记数除以全部私家车首次登记数；与上方累计登记车队中的电动车占比不同。", "月份", "电动车占比 (%)"],
+    hk_parking_vacancy_history_chart: ["实时停车位空置——确切空置车位", "按参与的私家车小时停车场数据汇总；只有重复采集形成历史后才显示，无法提供确切数字的空置类型不会计入总数。", "时间", "确切空置车位"],
+    mttd_passenger_journeys_chart: ["运输署月报表 2.3 乘客人次 (千人次)", "运输署月报表中的港铁本地、港铁机场/轻铁/接驳及专营巴士月度乘客人次；表 2.3 是对上方表 2.1 综合模式总量的另一组营运商/地区拆解。", "月份", "千人次"],
+    censtatd_boundary_movements_chart: ["香港跨境移动——C&SD 表 E705", "月度飞机、客运车辆及货运车辆进出境架/辆次；最新 C&SD 单元可能是临时估计，完整 E705 数据另保留船只及客运火车。", "月份", "移动次数"],
+    td_carpark_occupancy_chart: ["运输署容量覆盖停车场占用率", "仅使用同时有确切空置数及公开容量的私家车小时停车场计算加权占用率；重复轮询后才显示历史，不代表全部停车场。", "时间", "占用率 (%)"],
   },
   tables: {
     china_airline_latest_snapshot_table: {
       title: "中国上市航空公司最新运营数据",
       subtitle: "最新可得月份数据，按航空公司及运营地区拆分。",
-      columns: {
-        airline: "航空公司",
-        region: "地区",
-        passengers: "乘客人数",
-        ask: "可用座位公里 (ASK)",
-        rpk: "收入乘客公里 (RPK)",
-        load_factor_pct: "载客率 (%)",
-        observation_date: "月份",
-      },
+      columns: { summary: "航空公司运营摘要" },
+    },
+    hk_private_car_ev_model_table: {
+      title: "最新电动车私家车厂名/型号快照",
+      subtitle: "最新可得月度详情文件中的电动车私家车厂名/型号组合；月度时间序列使用另一个运输署表 4.1(e)来源。",
+      columns: { summary: "厂名／型号摘要" },
+    },
+    hk_parking_current_district_table: {
+      title: "当前各区确切停车位空置",
+      subtitle: "按地区汇总当前私家车小时停车场空置；B/C 空置类型及负数不会当作确切空置车位。",
+      columns: { summary: "地区摘要" },
+    },
+    mttd_passenger_journeys_latest_table: {
+      title: "运输署表 2.3 最新乘客人次摘要",
+      subtitle: "按图表使用的简化分组列示最新可用月份；底层快照仍保留原始地区及营办商维度。",
+      columns: { summary: "乘客人次摘要" },
+    },
+    censtatd_boundary_movements_latest_table: {
+      title: "C&SD 表 E705 最新跨境移动摘要",
+      subtitle: "最新月度飞机、车辆及其他主要移动总量；来源为临时估计的单元会在摘要中标示。",
+      columns: { summary: "移动摘要" },
+    },
+    td_carpark_occupancy_latest_district_table: {
+      title: "容量覆盖停车场按区占用率",
+      subtitle: "仅列示有容量资料子集的最新按区加权占用率。",
+      columns: { summary: "地区占用率" },
     },
   },
   sources: {
     mtr_patronage: "港铁公司投资者关系月度客运量",
     cathay_hkia_traffic: "民航处香港国际机场月度流量 & 国泰航空数据",
     china_airline_traffic: "中国国航、南方航空、东方航空及春秋航空月度运营数据公告",
+    hk_passenger_journeys: "运输署《公共交通及运输月报》表 2.1",
+    mttd_passenger_journeys: "运输署《公共交通及运输月报》表 2.3",
+    censtatd_boundary_movements: "政府统计处表 E705 跨境飞机、船只、车辆及火车移动",
+    hk_vehicle_stock: "运输署车辆登记及领牌统计数字 表 4.1(a) 私家车",
+    hk_private_car_net_growth: "运输署私家车首次登记净额统计数字 表 4.1(c)",
+    hk_private_car_first_reg: "运输署月报表 4.1(e) 私家车按厂名/燃料类型首次登记",
+    hk_private_car_first_reg_details: "运输署最新私家车首次登记厂名/型号详情",
+    td_parking_vacancy: "运输署实时停车场空置数据",
+    td_carpark_occupancy: "运输署实时停车场空置数据及政府一站式停车场容量资料",
   },
   snapshotBody: (artifact) => `**数据快照：** \`${artifact.package_info.snapshotId}\` · 生成于 ${artifact.manifest.generatedAt}。`,
-  methodologyBody: "## 如何阅读本 dashboard\n\n港铁客运量按服务类型拆解（本地重铁、跨境及高铁）；机场与国泰数据反映国际与区域航空客货运复苏进度。",
+  methodologyBody: "## 如何阅读本 dashboard\n\n港铁客运量按服务类型拆解（本地重铁、跨境及高铁）；机场与国泰数据反映国际与区域航空客货运复苏进度。私家车累计车队电动车占比与每月首次登记电动车占比是两个不同指标。停车位空置数据是运输署当前快照；重复运行采集器后才会形成五分钟级历史，不应把无法提供确切数字的停车场当作零空置。容量覆盖停车场占用率只使用同时有公开容量的子集，不代表全部车场。",
   dataLabels: {
     // Cathay's ASK/RPK series are industry-standard aviation acronyms kept
     // in English even in the zh chart title above -- not translated here,
@@ -766,6 +844,45 @@ const HK_TRANSPORT_ZH = {
       airline: { "Air China": "中国国航", "China Eastern": "东方航空", "China Southern": "南方航空", "Spring Airlines": "春秋航空" },
       region: { Domestic: "国内", International: "国际", Regional: "地区", Total: "合计" },
     },
+    hk_total_transport_journeys_history: {
+      series: { Total: "总计" },
+    },
+    hk_modal_split_history: {
+      series: {
+        Bus: "巴士",
+        Rail: "铁路",
+        PLB: "小巴",
+        Ferry: "渡轮",
+        Taxi: "的士",
+      },
+    },
+    hk_franchised_bus_operator_history: {
+      series: { KMB: "九巴", Citybus: "城巴", LWB: "龙运", NLB: "新大屿山巴士" },
+    },
+    hk_private_car_fleet_by_fuel_history: {
+      series: { Petrol: "汽油", Electric: "电力", Diesel: "柴油", Other: "其他" },
+    },
+    hk_private_car_net_growth_history: {
+      series: { "Net first registrations": "首次登记净额" },
+    },
+    hk_private_car_ev_make_history: {
+      series: { BYD: "比亚迪", Tesla: "Tesla", "Other EV makes": "其他电动车厂名" },
+    },
+    mttd_passenger_journeys_history: {
+      series: {
+        "MTR Local": "港铁本地",
+        "MTR Airport / LRT / feeder": "港铁机场／轻铁／接驳",
+        "Franchised buses": "专营巴士",
+      },
+    },
+    censtatd_boundary_movements_history: {
+      series: {
+        Aircraft: "飞机",
+        "Passenger vehicles": "客运车辆",
+        "Goods vehicles": "货运车辆",
+      },
+    },
+    hk_parking_current_district: {},
   },
 };
 
@@ -901,7 +1018,7 @@ const HK_LABOUR_MARKET_ZH = {
     labour_demand_card: { description: "政府统计处按季职位空缺调查；最后一项显示实际观察期。", metricLabels: ["职位空缺", "就业人数", "职位空缺率", "观察期"] },
     wage_card: { description: "政府统计处行业工资及薪金指数同比变动；名义与实际指标分开显示。", metricLabels: ["名义工资同比", "实际工资同比", "名义薪金同比", "观察期"] },
     income_card: { description: "所有行业就业人士每月就业收入中位数，采用最新三个月移动平均观察值。", metricLabels: ["每月就业收入中位数（港元）", "观察期"] },
-    talent_policy_card: { description: "各人才计划的年度申请及批准总数；申请不等于实际抵港或就业。", metricLabels: ["申请数", "批准数", "优秀人才计划配额", "观察年"] },
+    talent_policy_card: { description: "各人才计划的年度申请及批准总数；QMAS 使用官方获配名额（甄选成功个案）作为批准等值指标；申请不等于实际抵港或就业。", metricLabels: ["申请数", "批准数", "优秀人才计划配额", "观察年"] },
   },
   charts: {
     labour_force_chart: ["劳动力、就业及失业人数", "每月三个月移动平均，单位为千人；最新点不是单月估计。", "月份", "千人", "指标"],
@@ -914,7 +1031,7 @@ const HK_LABOUR_MARKET_ZH = {
     earnings_industry_history_chart: ["所选行业就业收入历史", "自 2008 年起的每月三个月移动平均；点击图例显示或隐藏所选行业。单位为每月港元。", "月份", "港元／月", "行业"],
     occupation_earnings_history_chart: ["所选职业就业收入历史", "自 2016 年起的每月三个月移动平均；点击图例显示或隐藏所选职业。单位为每月港元。", "月份", "港元／月", "职业"],
     talent_policy_received_chart: ["人才政策申请数", "按计划划分的年度申请数；属于政策需求，不是已确认的人口流入或就业。", "年份", "申请数", "计划"],
-    talent_policy_approved_chart: ["人才政策批准数", "按计划划分的年度批准数；批准不等于实际抵港、启动签证或进入劳动力市场。", "年份", "批准数", "计划"],
+    talent_policy_approved_chart: ["人才政策批准数", "按计划划分的年度批准数；QMAS 使用官方获配名额（甄选成功个案）作为批准等值指标。批准不等于实际抵港、启动签证或进入劳动力市场。", "年份", "批准数", "计划"],
   },
   tables: {
     earnings_by_occupation_table: {
@@ -924,7 +1041,7 @@ const HK_LABOUR_MARKET_ZH = {
     },
     talent_policy_latest_table: {
       title: "最新年度人才政策流量（按计划）",
-      subtitle: "官方年度数字；优秀人才计划配额不等于实际抵港或就业人数。",
+      subtitle: "官方年度数字；QMAS 的批准数使用获配名额（甄选成功个案），原始配额另行保留，不等于实际抵港或就业人数。",
       columns: { series: "计划", applications_received: "申请数", applications_approved: "批准数", qmas_quota: "优秀人才计划配额" },
     },
     source_health_table: {
@@ -941,7 +1058,7 @@ const HK_LABOUR_MARKET_ZH = {
     talent_policy_open_data: "劳工处及入境事务处人才政策公开数据",
   },
   snapshotBody: (artifact) => `**数据快照：** \`${artifact.package_info.snapshotId}\` · 生成于 ${artifact.manifest.generatedAt}。`,
-  methodologyBody: "## 如何阅读本 dashboard\n\n本页将政府统计处劳动力市场数据，与劳工处及入境事务处的人才政策流量数据并列。劳动力及就业收入的月度序列是三个月移动平均；职位空缺与工资／薪金指数为季度数据；人才政策数据为年度数据。申请、批准及优秀人才计划配额不应解读为已确认抵港、仍在港就业或劳动力参与人数。",
+  methodologyBody: "## 如何阅读本 dashboard\n\n本页将政府统计处劳动力市场数据，与劳工处及入境事务处的人才政策流量数据并列。劳动力及就业收入的月度序列是三个月移动平均；职位空缺与工资／薪金指数为季度数据；人才政策数据为年度数据。QMAS 官方获配名额代表甄选成功个案，并在批准数显示中作为批准等值指标；原始 QMAS 配额字段仍会单独保留。申请、批准及优秀人才计划配额不应解读为已确认抵港、仍在港就业或劳动力参与人数。",
   dataLabels: {
     vacancies_by_industry_latest: { industry: LABOUR_INDUSTRY_ZH },
     vacancy_industry_history: { series: { Total: "职位空缺总数", Social: "社会", Health: "医疗", Trade: "贸易", "Prof & biz": "专业商用", Finance: "金融" } },
