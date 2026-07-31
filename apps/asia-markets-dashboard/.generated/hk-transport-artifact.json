@@ -6,7 +6,7 @@
     "title": "HK Transport & Aviation Sector Monitor",
     "description": "MTR Corporation monthly rail patronage, CAD HKIA airport traffic, Cathay Pacific Group operating statistics, China listed-airline operating data, TD public-transport and private-car series, C&SD cross-boundary movements, EV registrations and capacity-covered real-time car-park occupancy.",
     "sector": "hk-transport",
-    "generatedAt": "2026-07-31T22:47:36.754107Z",
+    "generatedAt": "2026-07-31T22:59:05.782596Z",
     "cards": [
       {
         "id": "mtr_card",
@@ -538,15 +538,40 @@
         "id": "china_airline_latest_snapshot_table",
         "title": "China Listed Airlines Latest Operating Snapshot",
         "subtitle": "Latest available month, split by carrier and operating region.",
-        "dataset": "china_airline_latest_snapshot_summary",
+        "dataset": "china_airline_latest_snapshot",
         "sourceId": "china_airline_traffic",
         "density": "dense",
         "layout": "full",
         "columns": [
           {
-            "field": "summary",
-            "label": "Airline Operating Summary",
+            "field": "airline",
+            "label": "Airline",
             "type": "text"
+          },
+          {
+            "field": "region",
+            "label": "Region",
+            "type": "text"
+          },
+          {
+            "field": "passengers",
+            "label": "Passengers ('000s)",
+            "format": "number"
+          },
+          {
+            "field": "ask",
+            "label": "ASK ('000s)",
+            "format": "number"
+          },
+          {
+            "field": "rpk",
+            "label": "RPK ('000s)",
+            "format": "number"
+          },
+          {
+            "field": "load_factor_pct",
+            "label": "Load factor (%)",
+            "format": "number"
           }
         ]
       }
@@ -703,14 +728,14 @@
       },
       {
         "id": "td_carpark_occupancy",
-        "label": "Transport Department Car-Park Occupancy Signal",
-        "href": "https://api.data.gov.hk/v1/carpark-info-vacancy",
+        "label": "Transport Department Metered Parking-Space Occupancy",
+        "href": "https://portal.csdi.gov.hk/geoportal/?datasetId=td_rcd_1638930345315_81787",
         "path": "sources/td_carpark_occupancy.sql",
         "query": {
-          "engine": "official TD live vacancy JSON joined to Digital Policy Office One-Stop static capacity JSON",
-          "url": "https://resource.data.one.gov.hk/td/carpark/vacancy_all.json ; https://resource.data.one.gov.hk/td/carpark/basic_info_all.json ; https://api.data.gov.hk/v1/carpark-info-vacancy",
-          "language": "JSON",
-          "description": "Capacity-weighted private-car occupancy rate from exact hourly vacancy counts. The denominator is available only for a capacity-covered subset of TD car parks; sample_size and coverage are retained, and the signal is not presented as all-park occupancy."
+          "engine": "official TD CSDI metered-space GeoJSON inventory + live occupancy-status CSV",
+          "url": "https://portal.csdi.gov.hk/csdi-webpage/file-api?dataset_id=td_rcd_1638930345315_81787&format=geojson&layer_name=parkingspaces ; https://resource.data.one.gov.hk/td/psiparkingspaces/occupancystatus/occupancystatus.csv",
+          "language": "GeoJSON + CSV",
+          "description": "Observed occupancy rate for sensor-backed metered/on-street parking spaces. The static inventory supplies the listed-space denominator and the live CSV marks each observed space occupied or vacant; sample_size and listed_spaces remain visible because a small number of status rows may be unmatched."
         }
       }
     ],
@@ -823,7 +848,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-31T22:47:36.754107Z",
+    "generatedAt": "2026-07-31T22:59:05.782596Z",
     "status": "ready",
     "datasets": {
       "kpi_mtr": [
@@ -31249,47 +31274,6 @@
           "observation_date": "2026-06-01"
         }
       ],
-      "china_airline_latest_snapshot_summary": [
-        {
-          "summary": "Air China / Domestic: passengers 10,051.2; ASK 18,356.2; RPK 15,418.5; load factor 84%"
-        },
-        {
-          "summary": "Air China / International: passengers 1,519; ASK 8,588.1; RPK 7,221.2; load factor 84.1%"
-        },
-        {
-          "summary": "Air China / Regional: passengers 366.4; ASK 701.5; RPK 561.9; load factor 80.1%"
-        },
-        {
-          "summary": "China Eastern / Domestic: passengers 9,114.3; ASK 15,547.1; RPK 13,414.5; load factor 86.3%"
-        },
-        {
-          "summary": "China Eastern / International: passengers 1,661.8; ASK 8,424.1; RPK 7,349; load factor 87.2%"
-        },
-        {
-          "summary": "China Eastern / Regional: passengers 303.3; ASK 475.9; RPK 411.3; load factor 86.4%"
-        },
-        {
-          "summary": "China Southern / Domestic: passengers 10,985.8; ASK 21,345.7; RPK 18,000; load factor 84.3%"
-        },
-        {
-          "summary": "China Southern / International: passengers 1,740.7; ASK 8,532.1; RPK 7,119.3; load factor 83.4%"
-        },
-        {
-          "summary": "China Southern / Regional: passengers 153.1; ASK 292.7; RPK 231.8; load factor 79.2%"
-        },
-        {
-          "summary": "China Southern / Total: passengers 12,879.5; ASK 30,170.5; RPK 25,351; load factor 84%"
-        },
-        {
-          "summary": "Spring Airlines / Domestic: passengers 2,446.6; ASK 4,681.9; RPK 4,300.7; load factor 91.9%"
-        },
-        {
-          "summary": "Spring Airlines / International: passengers 408.1; ASK 879; RPK 807.9; load factor 91.9%"
-        },
-        {
-          "summary": "Spring Airlines / Regional: passengers 22.3; ASK 34.1; RPK 31.1; load factor 91.3%"
-        }
-      ],
       "kpi_journeys": [
         {
           "kmb_k": 77507.732,
@@ -33205,20 +33189,20 @@
     },
     {
       "id": "td_carpark_occupancy",
-      "label": "Transport Department Car-Park Occupancy Signal",
-      "href": "https://api.data.gov.hk/v1/carpark-info-vacancy",
+      "label": "Transport Department Metered Parking-Space Occupancy",
+      "href": "https://portal.csdi.gov.hk/geoportal/?datasetId=td_rcd_1638930345315_81787",
       "path": "sources/td_carpark_occupancy.sql",
       "query": {
-        "engine": "official TD live vacancy JSON joined to Digital Policy Office One-Stop static capacity JSON",
-        "url": "https://resource.data.one.gov.hk/td/carpark/vacancy_all.json ; https://resource.data.one.gov.hk/td/carpark/basic_info_all.json ; https://api.data.gov.hk/v1/carpark-info-vacancy",
-        "language": "JSON",
-        "description": "Capacity-weighted private-car occupancy rate from exact hourly vacancy counts. The denominator is available only for a capacity-covered subset of TD car parks; sample_size and coverage are retained, and the signal is not presented as all-park occupancy."
+        "engine": "official TD CSDI metered-space GeoJSON inventory + live occupancy-status CSV",
+        "url": "https://portal.csdi.gov.hk/csdi-webpage/file-api?dataset_id=td_rcd_1638930345315_81787&format=geojson&layer_name=parkingspaces ; https://resource.data.one.gov.hk/td/psiparkingspaces/occupancystatus/occupancystatus.csv",
+        "language": "GeoJSON + CSV",
+        "description": "Observed occupancy rate for sensor-backed metered/on-street parking spaces. The static inventory supplies the listed-space denominator and the live CSV marks each observed space occupied or vacant; sample_size and listed_spaces remain visible because a small number of status rows may be unmatched."
       }
     }
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-transport/",
-    "snapshotId": "a3e5a800b34be4bb",
+    "snapshotId": "cab30ee1e8cf58fe",
     "dataAsOf": "2026-06-01"
   }
 }

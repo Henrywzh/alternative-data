@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-07-30T22:48:58.457273Z",
-  "snapshot_id": "9765f42a28bf5ef8",
-  "data_as_of": "2026-07-29",
-  "overall_status": "Healthy",
-  "live_sources": 5,
+  "generated_at": "2026-07-31T09:16:54.319983Z",
+  "snapshot_id": "2dac5d7d456ca460",
+  "data_as_of": "2026-07-30",
+  "overall_status": "Degraded",
+  "live_sources": 4,
   "planned_sources": 0,
   "sources": [
     {
@@ -11,7 +11,7 @@
       "dataset": "immd",
       "type": "Monitor",
       "status": "Healthy",
-      "latest_observation": "2026-07-29",
+      "latest_observation": "2026-07-30",
       "records": 365,
       "freshness": "Dated snapshot",
       "notes": "Daily passenger clearance by control point, direction and residency, used to derive HK-resident net flow and Mainland-visitor net retention."
@@ -30,10 +30,10 @@
       "source": "MPFA Statistical Digest",
       "dataset": "mpfa",
       "type": "Monitor",
-      "status": "Healthy",
-      "latest_observation": "2026-Q1",
-      "records": 14,
-      "freshness": "Dated snapshot",
+      "status": "Degraded",
+      "latest_observation": "—",
+      "records": 0,
+      "freshness": "Unavailable",
       "notes": "Quarterly MPF claims for permanent departure from Hong Kong (count and amount), parsed from the official Statistical Digest."
     },
     {
@@ -57,5 +57,5 @@
       "notes": "Monthly HZMB vehicular traffic (incl. Northbound Travel for HK Vehicles 港车北上) and cross-boundary passenger traffic incl. Express Rail West Kowloon."
     }
   ],
-  "attachment_filename": "hk-population-migration-dashboard-2026-07-30.html"
+  "attachment_filename": "hk-population-migration-dashboard-2026-07-31.html"
 }
