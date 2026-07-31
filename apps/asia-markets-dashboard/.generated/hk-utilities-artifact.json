@@ -6,7 +6,7 @@
     "title": "HK Utilities & Infrastructure Sector Monitor",
     "description": "CLP quarterly electricity sales by customer sector, CenStatD town gas consumption, HKO temperature, and Power Assets geographic segment reporting.",
     "sector": "hk-utilities",
-    "generatedAt": "2026-07-30T23:11:04.463226Z",
+    "generatedAt": "2026-07-31T09:16:53.805097Z",
     "cards": [
       {
         "id": "clp_card",
@@ -294,7 +294,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-30T23:11:04.463226Z",
+    "generatedAt": "2026-07-31T09:16:53.805097Z",
     "status": "ready",
     "datasets": {
       "kpi_clp": [
@@ -308,11 +308,11 @@
       ],
       "kpi_towngas": [
         {
-          "latest": 2047.8,
-          "domestic_tj": 1058.6,
-          "commercial_tj": 864.3,
-          "period_change": -0.156451,
-          "observation_date": "2026-05-01"
+          "latest": 2137.3,
+          "domestic_tj": 1099.9,
+          "commercial_tj": 906.0,
+          "period_change": 0.043705,
+          "observation_date": "2026-06-01"
         }
       ],
       "kpi_temp": [
@@ -477,14 +477,6 @@
         }
       ],
       "towngas_history": [
-        {
-          "date": "2016-05-01",
-          "month": "2016-05",
-          "domestic_gas_tj": 1140.0,
-          "commercial_gas_tj": 971.0,
-          "industrial_gas_tj": 134.0,
-          "total_gas_tj": 2246.0
-        },
         {
           "date": "2016-06-01",
           "month": "2016-06",
@@ -1444,15 +1436,17 @@
           "commercial_gas_tj": 864.3,
           "industrial_gas_tj": 124.8,
           "total_gas_tj": 2047.8
+        },
+        {
+          "date": "2026-06-01",
+          "month": "2026-06",
+          "domestic_gas_tj": 1099.9,
+          "commercial_gas_tj": 906.0,
+          "industrial_gas_tj": 131.4,
+          "total_gas_tj": 2137.3
         }
       ],
       "towngas_type_history": [
-        {
-          "date": "2016-05-01",
-          "month": "2016-05",
-          "series": "Commercial",
-          "value": 971.0
-        },
         {
           "date": "2016-06-01",
           "month": "2016-06",
@@ -2174,10 +2168,10 @@
           "value": 864.3
         },
         {
-          "date": "2016-05-01",
-          "month": "2016-05",
-          "series": "Domestic",
-          "value": 1140.0
+          "date": "2026-06-01",
+          "month": "2026-06",
+          "series": "Commercial",
+          "value": 906.0
         },
         {
           "date": "2016-06-01",
@@ -2900,10 +2894,10 @@
           "value": 1058.6
         },
         {
-          "date": "2016-05-01",
-          "month": "2016-05",
-          "series": "Industrial",
-          "value": 134.0
+          "date": "2026-06-01",
+          "month": "2026-06",
+          "series": "Domestic",
+          "value": 1099.9
         },
         {
           "date": "2016-06-01",
@@ -3624,6 +3618,12 @@
           "month": "2026-05",
           "series": "Industrial",
           "value": 124.8
+        },
+        {
+          "date": "2026-06-01",
+          "month": "2026-06",
+          "series": "Industrial",
+          "value": 131.4
         }
       ],
       "temp_history": [
@@ -4434,7 +4434,7 @@
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-utilities/",
-    "snapshotId": "47e1fe2aa8e880b0",
+    "snapshotId": "3c086151b40c91fe",
     "dataAsOf": "2026-03-31"
   }
 }
