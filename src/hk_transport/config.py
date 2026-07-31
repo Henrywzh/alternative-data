@@ -18,6 +18,46 @@ MTR_PATRONAGE_URL = "https://www.mtr.com.hk/en/corporate/investor/patronage.php"
 # Civil Aviation Department (CAD) HKIA Monthly Airport Traffic Excel Workbook
 CAD_HKIA_XLSX_URL = "https://www.cad.gov.hk/english/pdf/Stat%20Webpage.xlsx"
 
+# Transport Department monthly private-car first-registration breakdown by
+# make, fuel type and body type. The source has a genuine monthly history.
+TD_PRIVATE_CAR_FIRST_REG_URL = "https://www.td.gov.hk/datagovhk_tis/mttd-csv/en/table41e_eng.csv"
+
+# Transport Department Table 4.1(a): monthly private-car fleet stock by fuel
+# type. The workbook is refreshed as part of the monthly traffic digest.
+TD_VEHICLE_FLEET_STOCK_URL = "https://www.td.gov.hk/filemanager/en/content_4883/table41a.xls"
+
+# Transport Department Table 4.1(c): private-car gross registrations,
+# deregistrations and net first-registration growth.
+TD_PRIVATE_CAR_NET_REGISTRATION_URL = "https://www.td.gov.hk/filemanager/en/content_4884/table41c.xls"
+
+# Transport Department Monthly Traffic and Transport Digest Table 2.3.
+MTTD_PASSENGER_JOURNEYS_URL = "https://www.td.gov.hk/datagovhk_tis/mttd-csv/en/table23_eng.csv"
+
+# Transport Department's latest per-vehicle first-registration detail feed.
+# The month is substituted as a lowercase English abbreviation (for example,
+# ``jun``) by the source module, which walks backwards until a published CSV
+# is found.
+TD_FIRST_REGISTERED_VEHICLE_URL_TEMPLATE = (
+    "https://www.td.gov.hk/datagovhk_td/first-reg-vehicle/resources/en/"
+    "particulars_of_first_registered_vehicle_{month}_{year}_eng.csv"
+)
+TD_FIRST_REGISTERED_VEHICLE_INDEX_URL = (
+    "https://www.td.gov.hk/en/public_services/licences_and_permits/vehicle_first_registration/"
+    "vehicle_particulars/index.html"
+)
+
+# Transport Department online parking-vacancy feeds. Vacancy is a current
+# operational snapshot; the collection script appends snapshots to a local
+# parquet history so the dashboard can show a genuine time series once runs
+# accumulate.
+TD_PARKING_VACANCY_URL = "https://resource.data.one.gov.hk/td/carpark/vacancy_all.json"
+TD_PARKING_BASIC_INFO_URL = "https://resource.data.one.gov.hk/td/carpark/basic_info_all.json"
+# The TD vacancy feed has no capacity field. This Digital Policy Office
+# One-Stop feed supplies static private-car capacities for the subset of TD
+# car parks where that metadata is published; occupancy is computed only for
+# that explicit capacity-covered subset.
+TD_PARKING_CAPACITY_URL = "https://api.data.gov.hk/v1/carpark-info-vacancy"
+
 # Data Storage directories
 ROOT_DIR = Path(__file__).resolve().parents[2]
 RAW_DIR = ROOT_DIR / "data" / "raw" / "hk_transport"

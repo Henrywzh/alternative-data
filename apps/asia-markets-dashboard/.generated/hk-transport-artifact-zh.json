@@ -4,9 +4,9 @@
     "version": 1,
     "surface": "dashboard",
     "title": "香港交通与航空监测",
-    "description": "港铁月度客运量（本地/跨境/高铁）、国泰航空运营数据与香港国际机场流量的来源快照。",
+    "description": "港铁月度客运量（本地/跨境/高铁）、国泰航空及香港国际机场流量、中国上市航空公司运营数据、运输署公共交通/私家车/电动车登记、C&SD跨境移动及容量覆盖停车场占用率数据。",
     "sector": "hk-transport",
-    "generatedAt": "2026-07-30T23:00:46.860981Z",
+    "generatedAt": "2026-07-31T22:47:36.754107Z",
     "cards": [
       {
         "id": "mtr_card",
@@ -61,6 +61,75 @@
             "label": "较 2019 年均值",
             "field": "recovery_vs_2019_pct",
             "format": "percent"
+          }
+        ]
+      },
+      {
+        "id": "journeys_card",
+        "description": "九巴（运输国际，00062.HK）月度载客人次，以及涵盖各交通模式的全港公共交通总客运量。",
+        "dataset": "kpi_journeys",
+        "sourceId": "hk_passenger_journeys",
+        "metrics": [
+          {
+            "label": "九巴 (千人次)",
+            "field": "kmb_k",
+            "format": "number"
+          },
+          {
+            "label": "全港合计 (千人次)",
+            "field": "total_k",
+            "format": "number"
+          },
+          {
+            "label": "总量按月变动",
+            "field": "period_change",
+            "format": "percent"
+          }
+        ]
+      },
+      {
+        "id": "fleet_card",
+        "description": "私家车车队存量及电动车占登记车队的比例。",
+        "dataset": "kpi_fleet",
+        "sourceId": "hk_vehicle_stock",
+        "metrics": [
+          {
+            "label": "登记私家车数目",
+            "field": "total_registered",
+            "format": "number"
+          },
+          {
+            "label": "电动车占比",
+            "field": "ev_share_pct",
+            "format": "number"
+          },
+          {
+            "label": "电动车占比变动 (百分点)",
+            "field": "ev_share_change_pp",
+            "format": "number"
+          }
+        ]
+      },
+      {
+        "id": "net_growth_card",
+        "description": "私家车月度首次登记净额：首次登记总数减运输署报告的累计取消登记数。",
+        "dataset": "kpi_net_growth",
+        "sourceId": "hk_private_car_net_growth",
+        "metrics": [
+          {
+            "label": "首次登记总数",
+            "field": "gross_first_registrations",
+            "format": "number"
+          },
+          {
+            "label": "取消登记数",
+            "field": "deregistrations",
+            "format": "number"
+          },
+          {
+            "label": "首次登记净额",
+            "field": "net_first_registrations",
+            "format": "number"
           }
         ]
       }
@@ -342,6 +411,126 @@
         },
         "valueFormat": "number",
         "layout": "half"
+      },
+      {
+        "id": "hk_total_transport_journeys_chart",
+        "title": "香港公共交通乘客人次——全部交通模式 (千人次)",
+        "subtitle": "全港月度乘客人次，涵盖专营巴士、港铁（重铁、机场快线、轻铁）、香港电车、公共小巴、渡轮及的士。",
+        "type": "line",
+        "dataset": "hk_total_transport_journeys_history",
+        "sourceId": "hk_passenger_journeys",
+        "encodings": {
+          "x": {
+            "field": "month",
+            "type": "temporal",
+            "label": "月份"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "label": "千人次"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "full"
+      },
+      {
+        "id": "hk_modal_split_chart",
+        "title": "香港公共交通乘客人次按交通模式拆分 (千人次)",
+        "subtitle": "专营巴士、铁路（港铁重铁 + 机场快线 + 轻铁 + 电车合计）、公共小巴、渡轮及的士。",
+        "type": "line",
+        "dataset": "hk_modal_split_history",
+        "sourceId": "hk_passenger_journeys",
+        "encodings": {
+          "x": {
+            "field": "month",
+            "type": "temporal",
+            "label": "月份"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "label": "千人次"
+          },
+          "color": {
+            "field": "series",
+            "type": "nominal",
+            "label": "序列"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "full"
+      },
+      {
+        "id": "hk_franchised_bus_operator_chart",
+        "title": "香港专营巴士乘客人次按营办商拆分 (千人次)",
+        "subtitle": "九巴（运输国际，00062.HK）、城巴、龙运及新大屿山巴士。新巴并入城巴申报后不再单独列示。",
+        "type": "line",
+        "dataset": "hk_franchised_bus_operator_history",
+        "sourceId": "hk_passenger_journeys",
+        "encodings": {
+          "x": {
+            "field": "month",
+            "type": "temporal",
+            "label": "月份"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "label": "千人次"
+          },
+          "color": {
+            "field": "series",
+            "type": "nominal",
+            "label": "序列"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "half"
+      },
+      {
+        "id": "hk_private_car_fleet_ev_share_chart",
+        "title": "香港私家车车队电动车占比",
+        "subtitle": "电动车占累计登记私家车车队的比例，是车队存量/采用率指标，与下方每月首次登记流量占比不同。",
+        "type": "line",
+        "dataset": "hk_private_car_fleet_ev_share_history",
+        "sourceId": "hk_vehicle_stock",
+        "encodings": {
+          "x": {
+            "field": "month",
+            "type": "temporal",
+            "label": "月份"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "label": "电动车占比 (%)"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "full"
+      },
+      {
+        "id": "hk_private_car_net_growth_chart",
+        "title": "香港私家车车队净增长",
+        "subtitle": "月度首次登记净额（首次登记总数减任何原因的取消登记数）——即车队每月净增加量。",
+        "type": "bar",
+        "dataset": "hk_private_car_net_growth_history",
+        "sourceId": "hk_private_car_net_growth",
+        "encodings": {
+          "x": {
+            "field": "month",
+            "type": "temporal",
+            "label": "月份"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "label": "净新登记数"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "half"
       }
     ],
     "tables": [
@@ -349,45 +538,15 @@
         "id": "china_airline_latest_snapshot_table",
         "title": "中国上市航空公司最新运营数据",
         "subtitle": "最新可得月份数据，按航空公司及运营地区拆分。",
-        "dataset": "china_airline_latest_snapshot",
+        "dataset": "china_airline_latest_snapshot_summary",
         "sourceId": "china_airline_traffic",
         "density": "dense",
         "layout": "full",
         "columns": [
           {
-            "field": "airline",
-            "label": "航空公司",
+            "field": "summary",
+            "label": "航空公司运营摘要",
             "type": "text"
-          },
-          {
-            "field": "region",
-            "label": "地区",
-            "type": "text"
-          },
-          {
-            "field": "passengers",
-            "label": "乘客人数",
-            "format": "number"
-          },
-          {
-            "field": "ask",
-            "label": "可用座位公里 (ASK)",
-            "format": "number"
-          },
-          {
-            "field": "rpk",
-            "label": "收入乘客公里 (RPK)",
-            "format": "number"
-          },
-          {
-            "field": "load_factor_pct",
-            "label": "载客率 (%)",
-            "format": "number"
-          },
-          {
-            "field": "observation_date",
-            "label": "月份",
-            "type": "date"
           }
         ]
       }
@@ -428,6 +587,131 @@
           "language": "Parquet",
           "description": "构建时从公开来源读取并校验 中国国航、南方航空、东方航空及春秋航空月度运营数据公告。"
         }
+      },
+      {
+        "id": "hk_passenger_journeys",
+        "label": "运输署《公共交通及运输月报》表 2.1",
+        "href": "https://www.td.gov.hk/en/transport_in_hong_kong/transport_figures/monthly_traffic_and_transport_digest/index.html",
+        "path": "sources/hk_passenger_journeys.sql",
+        "query": {
+          "engine": "official Table 2.1 workbook (table21.xls), both sheets",
+          "url": "https://www.td.gov.hk/filemanager/en/content_5404/table21.xls",
+          "language": "XLS",
+          "description": "构建时从公开来源读取并校验 运输署《公共交通及运输月报》表 2.1。",
+          "tables_used": [
+            "table21.xls sheet 1 (operator rows)",
+            "table21.xls sheet 2 (mode totals)"
+          ],
+          "metric_definitions": [
+            "KMB is read from the header-validated KMB row on sheet 1, column 2.",
+            "The territory-wide total is read from the keyword-distinguished total row on sheet 2, column 22; subtotal rows are not used as the total.",
+            "The accepted workbook row must reconcile the published mode components to the reported total within 0.5 thousand journeys."
+          ]
+        }
+      },
+      {
+        "id": "mttd_passenger_journeys",
+        "label": "运输署《公共交通及运输月报》表 2.3",
+        "href": "https://data.gov.hk/en-data/dataset/hk-td-tis_17-monthly-traffic-and-transport-digest-csv",
+        "path": "sources/mttd_passenger_journeys.sql",
+        "query": {
+          "engine": "official MTTD Table 2.3 CSV",
+          "url": "https://www.td.gov.hk/datagovhk_tis/mttd-csv/en/table23_eng.csv",
+          "language": "CSV",
+          "description": "构建时从公开来源读取并校验 运输署《公共交通及运输月报》表 2.3。"
+        }
+      },
+      {
+        "id": "censtatd_boundary_movements",
+        "label": "政府统计处表 E705 跨境飞机、船只、车辆及火车移动",
+        "href": "https://www.censtatd.gov.hk/en/data/stat_report/subject/340/report_index.json",
+        "path": "sources/censtatd_boundary_movements.sql",
+        "query": {
+          "engine": "official C&SD Table E705 XLSX discovered through the subject report index",
+          "url": "https://www.censtatd.gov.hk/en/data/stat_report/subject/340/report_index.json ; https://www.censtatd.gov.hk/en/data/stat_report/product/D7000005/att/<latest-file>",
+          "language": "XLSX",
+          "description": "构建时从公开来源读取并校验 政府统计处表 E705 跨境飞机、船只、车辆及火车移动。"
+        }
+      },
+      {
+        "id": "hk_vehicle_stock",
+        "label": "运输署车辆登记及领牌统计数字 表 4.1(a) 私家车",
+        "href": "https://www.td.gov.hk/en/transport_in_hong_kong/transport_figures/monthly_traffic_and_transport_digest/index.html",
+        "path": "sources/hk_vehicle_stock.sql",
+        "query": {
+          "engine": "official Table 4.1(a) workbook (table41a.xls), Private Cars sheet",
+          "url": "https://www.td.gov.hk/filemanager/en/content_4883/table41a.xls",
+          "language": "XLS",
+          "description": "构建时从公开来源读取并校验 运输署车辆登记及领牌统计数字 表 4.1(a) 私家车。",
+          "tables_used": [
+            "table41a.xls sheet whose header identifies Private Cars / 私家车"
+          ],
+          "metric_definitions": [
+            "The Private Cars sheet is located by matching its own header text rather than relying on a fixed sheet index.",
+            "EV fleet share is electric total registered divided by all-fuel total registered.",
+            "The all-fuel total is accepted only when it reconciles to the sum of the four per-fuel total-registration columns."
+          ]
+        }
+      },
+      {
+        "id": "hk_private_car_net_growth",
+        "label": "运输署私家车首次登记净额统计数字 表 4.1(c)",
+        "href": "https://www.td.gov.hk/en/transport_in_hong_kong/transport_figures/monthly_traffic_and_transport_digest/index.html",
+        "path": "sources/hk_private_car_net_growth.sql",
+        "query": {
+          "engine": "official Table 4.1(c) workbook (table41c.xls)",
+          "url": "https://www.td.gov.hk/filemanager/en/content_4884/table41c.xls",
+          "language": "XLS",
+          "description": "构建时从公开来源读取并校验 运输署私家车首次登记净额统计数字 表 4.1(c)。"
+        }
+      },
+      {
+        "id": "hk_private_car_first_reg",
+        "label": "运输署月报表 4.1(e) 私家车按厂名/燃料类型首次登记",
+        "href": "https://data.gov.hk/en-data/dataset/hk-td-tis_17-monthly-traffic-and-transport-digest-csv/resource/472658ca-1640-4fc2-be5c-eae62f9bf547",
+        "path": "sources/hk_private_car_first_reg.sql",
+        "query": {
+          "engine": "official TD Monthly Traffic and Transport Digest CSV — Table 4.1(e)",
+          "url": "https://www.td.gov.hk/datagovhk_tis/mttd-csv/en/table41e_eng.csv",
+          "language": "CSV",
+          "description": "构建时从公开来源读取并校验 运输署月报表 4.1(e) 私家车按厂名/燃料类型首次登记。"
+        }
+      },
+      {
+        "id": "hk_private_car_first_reg_details",
+        "label": "运输署最新私家车首次登记厂名/型号详情",
+        "href": "https://www.td.gov.hk/en/public_services/licences_and_permits/vehicle_first_registration/vehicle_particulars/index.html",
+        "path": "sources/hk_private_car_first_reg_details.sql",
+        "query": {
+          "engine": "official TD monthly particulars of first registered vehicles CSV",
+          "url": "https://www.td.gov.hk/datagovhk_td/first-reg-vehicle/resources/en/particulars_of_first_registered_vehicle_{month}_{year}_eng.csv",
+          "language": "CSV",
+          "description": "构建时从公开来源读取并校验 运输署最新私家车首次登记厂名/型号详情。"
+        }
+      },
+      {
+        "id": "td_parking_vacancy",
+        "label": "运输署实时停车场空置数据",
+        "href": "https://resource.data.one.gov.hk/td/carpark/TD_Parking_Vacancy_Data_Specification.pdf",
+        "path": "sources/td_parking_vacancy.sql",
+        "query": {
+          "engine": "official TD real-time vacancy and basic-information JSON feeds",
+          "url": "https://resource.data.one.gov.hk/td/carpark/vacancy_all.json ; https://resource.data.one.gov.hk/td/carpark/basic_info_all.json",
+          "language": "JSON",
+          "description": "构建时从公开来源读取并校验 运输署实时停车场空置数据。"
+        }
+      },
+      {
+        "id": "td_carpark_occupancy",
+        "label": "运输署实时停车场空置数据及政府一站式停车场容量资料",
+        "href": "https://api.data.gov.hk/v1/carpark-info-vacancy",
+        "path": "sources/td_carpark_occupancy.sql",
+        "query": {
+          "engine": "official TD live vacancy JSON joined to Digital Policy Office One-Stop static capacity JSON",
+          "url": "https://resource.data.one.gov.hk/td/carpark/vacancy_all.json ; https://resource.data.one.gov.hk/td/carpark/basic_info_all.json ; https://api.data.gov.hk/v1/carpark-info-vacancy",
+          "language": "JSON",
+          "description": "构建时从公开来源读取并校验 运输署实时停车场空置数据及政府一站式停车场容量资料。"
+        }
       }
     ],
     "blocks": [
@@ -436,7 +720,10 @@
         "type": "metric-strip",
         "cardIds": [
           "mtr_card",
-          "cathay_card"
+          "cathay_card",
+          "journeys_card",
+          "fleet_card",
+          "net_growth_card"
         ]
       },
       {
@@ -504,12 +791,39 @@
         "id": "china_airline_snapshot_table_block",
         "type": "table",
         "tableId": "china_airline_latest_snapshot_table"
+      },
+      {
+        "id": "hk_total_transport_journeys_chart_block",
+        "type": "chart",
+        "chartId": "hk_total_transport_journeys_chart"
+      },
+      {
+        "id": "hk_modal_split_chart_block",
+        "type": "chart",
+        "chartId": "hk_modal_split_chart"
+      },
+      {
+        "id": "hk_franchised_bus_operator_chart_block",
+        "type": "chart",
+        "chartId": "hk_franchised_bus_operator_chart",
+        "layout": "half"
+      },
+      {
+        "id": "hk_private_car_fleet_ev_share_chart_block",
+        "type": "chart",
+        "chartId": "hk_private_car_fleet_ev_share_chart"
+      },
+      {
+        "id": "hk_private_car_net_growth_chart_block",
+        "type": "chart",
+        "chartId": "hk_private_car_net_growth_chart",
+        "layout": "half"
       }
     ]
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-30T23:00:46.860981Z",
+    "generatedAt": "2026-07-31T22:47:36.754107Z",
     "status": "ready",
     "datasets": {
       "kpi_mtr": [
@@ -30934,7 +31248,1809 @@
           "load_factor_pct": 91.26,
           "observation_date": "2026-06-01"
         }
-      ]
+      ],
+      "china_airline_latest_snapshot_summary": [
+        {
+          "summary": "Air China / Domestic: passengers 10,051.2; ASK 18,356.2; RPK 15,418.5; load factor 84%"
+        },
+        {
+          "summary": "Air China / International: passengers 1,519; ASK 8,588.1; RPK 7,221.2; load factor 84.1%"
+        },
+        {
+          "summary": "Air China / Regional: passengers 366.4; ASK 701.5; RPK 561.9; load factor 80.1%"
+        },
+        {
+          "summary": "China Eastern / Domestic: passengers 9,114.3; ASK 15,547.1; RPK 13,414.5; load factor 86.3%"
+        },
+        {
+          "summary": "China Eastern / International: passengers 1,661.8; ASK 8,424.1; RPK 7,349; load factor 87.2%"
+        },
+        {
+          "summary": "China Eastern / Regional: passengers 303.3; ASK 475.9; RPK 411.3; load factor 86.4%"
+        },
+        {
+          "summary": "China Southern / Domestic: passengers 10,985.8; ASK 21,345.7; RPK 18,000; load factor 84.3%"
+        },
+        {
+          "summary": "China Southern / International: passengers 1,740.7; ASK 8,532.1; RPK 7,119.3; load factor 83.4%"
+        },
+        {
+          "summary": "China Southern / Regional: passengers 153.1; ASK 292.7; RPK 231.8; load factor 79.2%"
+        },
+        {
+          "summary": "China Southern / Total: passengers 12,879.5; ASK 30,170.5; RPK 25,351; load factor 84%"
+        },
+        {
+          "summary": "Spring Airlines / Domestic: passengers 2,446.6; ASK 4,681.9; RPK 4,300.7; load factor 91.9%"
+        },
+        {
+          "summary": "Spring Airlines / International: passengers 408.1; ASK 879; RPK 807.9; load factor 91.9%"
+        },
+        {
+          "summary": "Spring Airlines / Regional: passengers 22.3; ASK 34.1; RPK 31.1; load factor 91.3%"
+        }
+      ],
+      "kpi_journeys": [
+        {
+          "kmb_k": 77507.732,
+          "total_k": 360021.518,
+          "period_change": 0.048413,
+          "observation_date": "2026-05-01"
+        }
+      ],
+      "kpi_fleet": [
+        {
+          "total_registered": 647162,
+          "ev_share_pct": 27.0164,
+          "ev_share_change_pp": 0.1671,
+          "observation_date": "2026-06-01"
+        }
+      ],
+      "kpi_net_growth": [
+        {
+          "gross_first_registrations": 2593,
+          "deregistrations": 2,
+          "net_first_registrations": 2591,
+          "observation_date": "2026-06-01"
+        }
+      ],
+      "hk_total_transport_journeys_history": [
+        {
+          "date": "2024-12-01",
+          "month": "2024-12",
+          "series": "总计",
+          "value": 368305.209
+        },
+        {
+          "date": "2025-01-01",
+          "month": "2025-01",
+          "series": "总计",
+          "value": 365465.21
+        },
+        {
+          "date": "2025-02-01",
+          "month": "2025-02",
+          "series": "总计",
+          "value": 330962.866
+        },
+        {
+          "date": "2025-03-01",
+          "month": "2025-03",
+          "series": "总计",
+          "value": 369157.965
+        },
+        {
+          "date": "2025-04-01",
+          "month": "2025-04",
+          "series": "总计",
+          "value": 339975.674
+        },
+        {
+          "date": "2025-05-01",
+          "month": "2025-05",
+          "series": "总计",
+          "value": 361718.053
+        },
+        {
+          "date": "2025-06-01",
+          "month": "2025-06",
+          "series": "总计",
+          "value": 349568.526
+        },
+        {
+          "date": "2025-07-01",
+          "month": "2025-07",
+          "series": "总计",
+          "value": 353225.753
+        },
+        {
+          "date": "2025-08-01",
+          "month": "2025-08",
+          "series": "总计",
+          "value": 353873.479
+        },
+        {
+          "date": "2025-09-01",
+          "month": "2025-09",
+          "series": "总计",
+          "value": 340149.369
+        },
+        {
+          "date": "2025-10-01",
+          "month": "2025-10",
+          "series": "总计",
+          "value": 374776.514
+        },
+        {
+          "date": "2025-11-01",
+          "month": "2025-11",
+          "series": "总计",
+          "value": 367777.93
+        },
+        {
+          "date": "2025-12-01",
+          "month": "2025-12",
+          "series": "总计",
+          "value": 370660.365
+        },
+        {
+          "date": "2026-01-01",
+          "month": "2026-01",
+          "series": "总计",
+          "value": 376595.222
+        },
+        {
+          "date": "2026-02-01",
+          "month": "2026-02",
+          "series": "总计",
+          "value": 331738.903
+        },
+        {
+          "date": "2026-03-01",
+          "month": "2026-03",
+          "series": "总计",
+          "value": 376869.455
+        },
+        {
+          "date": "2026-04-01",
+          "month": "2026-04",
+          "series": "总计",
+          "value": 343396.619
+        },
+        {
+          "date": "2026-05-01",
+          "month": "2026-05",
+          "series": "总计",
+          "value": 360021.518
+        }
+      ],
+      "hk_modal_split_history": [
+        {
+          "date": "2024-12-01",
+          "month": "2024-12",
+          "series": "巴士",
+          "value": 118309.486
+        },
+        {
+          "date": "2024-12-01",
+          "month": "2024-12",
+          "series": "渡轮",
+          "value": 3598.819
+        },
+        {
+          "date": "2024-12-01",
+          "month": "2024-12",
+          "series": "小巴",
+          "value": 45945.581
+        },
+        {
+          "date": "2024-12-01",
+          "month": "2024-12",
+          "series": "铁路",
+          "value": 169135.206
+        },
+        {
+          "date": "2024-12-01",
+          "month": "2024-12",
+          "series": "的士",
+          "value": 20518.576
+        },
+        {
+          "date": "2025-01-01",
+          "month": "2025-01",
+          "series": "巴士",
+          "value": 117545.593
+        },
+        {
+          "date": "2025-01-01",
+          "month": "2025-01",
+          "series": "渡轮",
+          "value": 3682.921
+        },
+        {
+          "date": "2025-01-01",
+          "month": "2025-01",
+          "series": "小巴",
+          "value": 45746.947
+        },
+        {
+          "date": "2025-01-01",
+          "month": "2025-01",
+          "series": "铁路",
+          "value": 166925.518
+        },
+        {
+          "date": "2025-01-01",
+          "month": "2025-01",
+          "series": "的士",
+          "value": 20921.543
+        },
+        {
+          "date": "2025-02-01",
+          "month": "2025-02",
+          "series": "巴士",
+          "value": 106096.1
+        },
+        {
+          "date": "2025-02-01",
+          "month": "2025-02",
+          "series": "渡轮",
+          "value": 3155.135
+        },
+        {
+          "date": "2025-02-01",
+          "month": "2025-02",
+          "series": "小巴",
+          "value": 41822.353
+        },
+        {
+          "date": "2025-02-01",
+          "month": "2025-02",
+          "series": "铁路",
+          "value": 151378.487
+        },
+        {
+          "date": "2025-02-01",
+          "month": "2025-02",
+          "series": "的士",
+          "value": 18946.338
+        },
+        {
+          "date": "2025-03-01",
+          "month": "2025-03",
+          "series": "巴士",
+          "value": 118790.059
+        },
+        {
+          "date": "2025-03-01",
+          "month": "2025-03",
+          "series": "渡轮",
+          "value": 3318.61
+        },
+        {
+          "date": "2025-03-01",
+          "month": "2025-03",
+          "series": "小巴",
+          "value": 47095.209
+        },
+        {
+          "date": "2025-03-01",
+          "month": "2025-03",
+          "series": "铁路",
+          "value": 167823.681
+        },
+        {
+          "date": "2025-03-01",
+          "month": "2025-03",
+          "series": "的士",
+          "value": 21225.61
+        },
+        {
+          "date": "2025-04-01",
+          "month": "2025-04",
+          "series": "巴士",
+          "value": 109492.041
+        },
+        {
+          "date": "2025-04-01",
+          "month": "2025-04",
+          "series": "渡轮",
+          "value": 3248.282
+        },
+        {
+          "date": "2025-04-01",
+          "month": "2025-04",
+          "series": "小巴",
+          "value": 43589.168
+        },
+        {
+          "date": "2025-04-01",
+          "month": "2025-04",
+          "series": "铁路",
+          "value": 153736.009
+        },
+        {
+          "date": "2025-04-01",
+          "month": "2025-04",
+          "series": "的士",
+          "value": 19864.07
+        },
+        {
+          "date": "2025-05-01",
+          "month": "2025-05",
+          "series": "巴士",
+          "value": 117221.456
+        },
+        {
+          "date": "2025-05-01",
+          "month": "2025-05",
+          "series": "渡轮",
+          "value": 3327.646
+        },
+        {
+          "date": "2025-05-01",
+          "month": "2025-05",
+          "series": "小巴",
+          "value": 46947.592
+        },
+        {
+          "date": "2025-05-01",
+          "month": "2025-05",
+          "series": "铁路",
+          "value": 162850.453
+        },
+        {
+          "date": "2025-05-01",
+          "month": "2025-05",
+          "series": "的士",
+          "value": 20579.664
+        },
+        {
+          "date": "2025-06-01",
+          "month": "2025-06",
+          "series": "巴士",
+          "value": 112860.388
+        },
+        {
+          "date": "2025-06-01",
+          "month": "2025-06",
+          "series": "渡轮",
+          "value": 2776.496
+        },
+        {
+          "date": "2025-06-01",
+          "month": "2025-06",
+          "series": "小巴",
+          "value": 45601.354
+        },
+        {
+          "date": "2025-06-01",
+          "month": "2025-06",
+          "series": "铁路",
+          "value": 157626.478
+        },
+        {
+          "date": "2025-06-01",
+          "month": "2025-06",
+          "series": "的士",
+          "value": 20232.618
+        },
+        {
+          "date": "2025-07-01",
+          "month": "2025-07",
+          "series": "巴士",
+          "value": 111937.717
+        },
+        {
+          "date": "2025-07-01",
+          "month": "2025-07",
+          "series": "渡轮",
+          "value": 3179.253
+        },
+        {
+          "date": "2025-07-01",
+          "month": "2025-07",
+          "series": "小巴",
+          "value": 45239.667
+        },
+        {
+          "date": "2025-07-01",
+          "month": "2025-07",
+          "series": "铁路",
+          "value": 161904.664
+        },
+        {
+          "date": "2025-07-01",
+          "month": "2025-07",
+          "series": "的士",
+          "value": 20682.641
+        },
+        {
+          "date": "2025-08-01",
+          "month": "2025-08",
+          "series": "巴士",
+          "value": 111296.638
+        },
+        {
+          "date": "2025-08-01",
+          "month": "2025-08",
+          "series": "渡轮",
+          "value": 3445.125
+        },
+        {
+          "date": "2025-08-01",
+          "month": "2025-08",
+          "series": "小巴",
+          "value": 44787.238
+        },
+        {
+          "date": "2025-08-01",
+          "month": "2025-08",
+          "series": "铁路",
+          "value": 163484.419
+        },
+        {
+          "date": "2025-08-01",
+          "month": "2025-08",
+          "series": "的士",
+          "value": 20592.857
+        },
+        {
+          "date": "2025-09-01",
+          "month": "2025-09",
+          "series": "巴士",
+          "value": 108512.319
+        },
+        {
+          "date": "2025-09-01",
+          "month": "2025-09",
+          "series": "渡轮",
+          "value": 2390.597
+        },
+        {
+          "date": "2025-09-01",
+          "month": "2025-09",
+          "series": "小巴",
+          "value": 44136.729
+        },
+        {
+          "date": "2025-09-01",
+          "month": "2025-09",
+          "series": "铁路",
+          "value": 155982.171
+        },
+        {
+          "date": "2025-09-01",
+          "month": "2025-09",
+          "series": "的士",
+          "value": 18989.45
+        },
+        {
+          "date": "2025-10-01",
+          "month": "2025-10",
+          "series": "巴士",
+          "value": 119953.476
+        },
+        {
+          "date": "2025-10-01",
+          "month": "2025-10",
+          "series": "渡轮",
+          "value": 3341.986
+        },
+        {
+          "date": "2025-10-01",
+          "month": "2025-10",
+          "series": "小巴",
+          "value": 48135.761
+        },
+        {
+          "date": "2025-10-01",
+          "month": "2025-10",
+          "series": "铁路",
+          "value": 171568.13
+        },
+        {
+          "date": "2025-10-01",
+          "month": "2025-10",
+          "series": "的士",
+          "value": 20756.339
+        },
+        {
+          "date": "2025-11-01",
+          "month": "2025-11",
+          "series": "巴士",
+          "value": 117506.209
+        },
+        {
+          "date": "2025-11-01",
+          "month": "2025-11",
+          "series": "渡轮",
+          "value": 3344.956
+        },
+        {
+          "date": "2025-11-01",
+          "month": "2025-11",
+          "series": "小巴",
+          "value": 46803.682
+        },
+        {
+          "date": "2025-11-01",
+          "month": "2025-11",
+          "series": "铁路",
+          "value": 167627.862
+        },
+        {
+          "date": "2025-11-01",
+          "month": "2025-11",
+          "series": "的士",
+          "value": 21717.699
+        },
+        {
+          "date": "2025-12-01",
+          "month": "2025-12",
+          "series": "巴士",
+          "value": 117985.697
+        },
+        {
+          "date": "2025-12-01",
+          "month": "2025-12",
+          "series": "渡轮",
+          "value": 3711.71
+        },
+        {
+          "date": "2025-12-01",
+          "month": "2025-12",
+          "series": "小巴",
+          "value": 46639.432
+        },
+        {
+          "date": "2025-12-01",
+          "month": "2025-12",
+          "series": "铁路",
+          "value": 169415.431
+        },
+        {
+          "date": "2025-12-01",
+          "month": "2025-12",
+          "series": "的士",
+          "value": 22269.617
+        },
+        {
+          "date": "2026-01-01",
+          "month": "2026-01",
+          "series": "巴士",
+          "value": 119734.804
+        },
+        {
+          "date": "2026-01-01",
+          "month": "2026-01",
+          "series": "渡轮",
+          "value": 3519.688
+        },
+        {
+          "date": "2026-01-01",
+          "month": "2026-01",
+          "series": "小巴",
+          "value": 47748.877
+        },
+        {
+          "date": "2026-01-01",
+          "month": "2026-01",
+          "series": "铁路",
+          "value": 172332.961
+        },
+        {
+          "date": "2026-01-01",
+          "month": "2026-01",
+          "series": "的士",
+          "value": 22389.346
+        },
+        {
+          "date": "2026-02-01",
+          "month": "2026-02",
+          "series": "巴士",
+          "value": 105450.957
+        },
+        {
+          "date": "2026-02-01",
+          "month": "2026-02",
+          "series": "渡轮",
+          "value": 3757.901
+        },
+        {
+          "date": "2026-02-01",
+          "month": "2026-02",
+          "series": "小巴",
+          "value": 40951.218
+        },
+        {
+          "date": "2026-02-01",
+          "month": "2026-02",
+          "series": "铁路",
+          "value": 151907.726
+        },
+        {
+          "date": "2026-02-01",
+          "month": "2026-02",
+          "series": "的士",
+          "value": 20301.895
+        },
+        {
+          "date": "2026-03-01",
+          "month": "2026-03",
+          "series": "巴士",
+          "value": 120968.635
+        },
+        {
+          "date": "2026-03-01",
+          "month": "2026-03",
+          "series": "渡轮",
+          "value": 3375.604
+        },
+        {
+          "date": "2026-03-01",
+          "month": "2026-03",
+          "series": "小巴",
+          "value": 47712.315
+        },
+        {
+          "date": "2026-03-01",
+          "month": "2026-03",
+          "series": "铁路",
+          "value": 171305.92
+        },
+        {
+          "date": "2026-03-01",
+          "month": "2026-03",
+          "series": "的士",
+          "value": 22483.973
+        },
+        {
+          "date": "2026-04-01",
+          "month": "2026-04",
+          "series": "巴士",
+          "value": 110708.604
+        },
+        {
+          "date": "2026-04-01",
+          "month": "2026-04",
+          "series": "渡轮",
+          "value": 3148.396
+        },
+        {
+          "date": "2026-04-01",
+          "month": "2026-04",
+          "series": "小巴",
+          "value": 43618.347
+        },
+        {
+          "date": "2026-04-01",
+          "month": "2026-04",
+          "series": "铁路",
+          "value": 155197.92
+        },
+        {
+          "date": "2026-04-01",
+          "month": "2026-04",
+          "series": "的士",
+          "value": 20554.068
+        },
+        {
+          "date": "2026-05-01",
+          "month": "2026-05",
+          "series": "巴士",
+          "value": 115832.157
+        },
+        {
+          "date": "2026-05-01",
+          "month": "2026-05",
+          "series": "渡轮",
+          "value": 3151.599
+        },
+        {
+          "date": "2026-05-01",
+          "month": "2026-05",
+          "series": "小巴",
+          "value": 45900.675
+        },
+        {
+          "date": "2026-05-01",
+          "month": "2026-05",
+          "series": "铁路",
+          "value": 162909.31
+        },
+        {
+          "date": "2026-05-01",
+          "month": "2026-05",
+          "series": "的士",
+          "value": 21430.569
+        }
+      ],
+      "hk_franchised_bus_operator_history": [
+        {
+          "date": "2024-12-01",
+          "month": "2024-12",
+          "series": "城巴",
+          "value": 31078.905
+        },
+        {
+          "date": "2024-12-01",
+          "month": "2024-12",
+          "series": "九巴",
+          "value": 79800.706
+        },
+        {
+          "date": "2024-12-01",
+          "month": "2024-12",
+          "series": "龙运",
+          "value": 4275.709
+        },
+        {
+          "date": "2024-12-01",
+          "month": "2024-12",
+          "series": "新大屿山巴士",
+          "value": 3154.166
+        },
+        {
+          "date": "2025-01-01",
+          "month": "2025-01",
+          "series": "城巴",
+          "value": 30982.141
+        },
+        {
+          "date": "2025-01-01",
+          "month": "2025-01",
+          "series": "九巴",
+          "value": 79277.472
+        },
+        {
+          "date": "2025-01-01",
+          "month": "2025-01",
+          "series": "龙运",
+          "value": 4106.445
+        },
+        {
+          "date": "2025-01-01",
+          "month": "2025-01",
+          "series": "新大屿山巴士",
+          "value": 3179.535
+        },
+        {
+          "date": "2025-02-01",
+          "month": "2025-02",
+          "series": "城巴",
+          "value": 27870.051
+        },
+        {
+          "date": "2025-02-01",
+          "month": "2025-02",
+          "series": "九巴",
+          "value": 71594.419
+        },
+        {
+          "date": "2025-02-01",
+          "month": "2025-02",
+          "series": "龙运",
+          "value": 3776.289
+        },
+        {
+          "date": "2025-02-01",
+          "month": "2025-02",
+          "series": "新大屿山巴士",
+          "value": 2855.341
+        },
+        {
+          "date": "2025-03-01",
+          "month": "2025-03",
+          "series": "城巴",
+          "value": 31159.58
+        },
+        {
+          "date": "2025-03-01",
+          "month": "2025-03",
+          "series": "九巴",
+          "value": 80338.286
+        },
+        {
+          "date": "2025-03-01",
+          "month": "2025-03",
+          "series": "龙运",
+          "value": 4109.423
+        },
+        {
+          "date": "2025-03-01",
+          "month": "2025-03",
+          "series": "新大屿山巴士",
+          "value": 3182.77
+        },
+        {
+          "date": "2025-04-01",
+          "month": "2025-04",
+          "series": "城巴",
+          "value": 28875.171
+        },
+        {
+          "date": "2025-04-01",
+          "month": "2025-04",
+          "series": "九巴",
+          "value": 73580.993
+        },
+        {
+          "date": "2025-04-01",
+          "month": "2025-04",
+          "series": "龙运",
+          "value": 4074.514
+        },
+        {
+          "date": "2025-04-01",
+          "month": "2025-04",
+          "series": "新大屿山巴士",
+          "value": 2961.363
+        },
+        {
+          "date": "2025-05-01",
+          "month": "2025-05",
+          "series": "城巴",
+          "value": 30983.918
+        },
+        {
+          "date": "2025-05-01",
+          "month": "2025-05",
+          "series": "九巴",
+          "value": 78974.967
+        },
+        {
+          "date": "2025-05-01",
+          "month": "2025-05",
+          "series": "龙运",
+          "value": 4134.07
+        },
+        {
+          "date": "2025-05-01",
+          "month": "2025-05",
+          "series": "新大屿山巴士",
+          "value": 3128.501
+        },
+        {
+          "date": "2025-06-01",
+          "month": "2025-06",
+          "series": "城巴",
+          "value": 29503.83
+        },
+        {
+          "date": "2025-06-01",
+          "month": "2025-06",
+          "series": "九巴",
+          "value": 76369.546
+        },
+        {
+          "date": "2025-06-01",
+          "month": "2025-06",
+          "series": "龙运",
+          "value": 3990.344
+        },
+        {
+          "date": "2025-06-01",
+          "month": "2025-06",
+          "series": "新大屿山巴士",
+          "value": 2996.668
+        },
+        {
+          "date": "2025-07-01",
+          "month": "2025-07",
+          "series": "城巴",
+          "value": 29183.946
+        },
+        {
+          "date": "2025-07-01",
+          "month": "2025-07",
+          "series": "九巴",
+          "value": 75682.243
+        },
+        {
+          "date": "2025-07-01",
+          "month": "2025-07",
+          "series": "龙运",
+          "value": 4129.292
+        },
+        {
+          "date": "2025-07-01",
+          "month": "2025-07",
+          "series": "新大屿山巴士",
+          "value": 2942.236
+        },
+        {
+          "date": "2025-08-01",
+          "month": "2025-08",
+          "series": "城巴",
+          "value": 29207.384
+        },
+        {
+          "date": "2025-08-01",
+          "month": "2025-08",
+          "series": "九巴",
+          "value": 74831.121
+        },
+        {
+          "date": "2025-08-01",
+          "month": "2025-08",
+          "series": "龙运",
+          "value": 4261.21
+        },
+        {
+          "date": "2025-08-01",
+          "month": "2025-08",
+          "series": "新大屿山巴士",
+          "value": 2996.923
+        },
+        {
+          "date": "2025-09-01",
+          "month": "2025-09",
+          "series": "城巴",
+          "value": 28158.177
+        },
+        {
+          "date": "2025-09-01",
+          "month": "2025-09",
+          "series": "九巴",
+          "value": 73699.797
+        },
+        {
+          "date": "2025-09-01",
+          "month": "2025-09",
+          "series": "龙运",
+          "value": 3824.634
+        },
+        {
+          "date": "2025-09-01",
+          "month": "2025-09",
+          "series": "新大屿山巴士",
+          "value": 2829.711
+        },
+        {
+          "date": "2025-10-01",
+          "month": "2025-10",
+          "series": "城巴",
+          "value": 31467.653
+        },
+        {
+          "date": "2025-10-01",
+          "month": "2025-10",
+          "series": "九巴",
+          "value": 80946.996
+        },
+        {
+          "date": "2025-10-01",
+          "month": "2025-10",
+          "series": "龙运",
+          "value": 4291.524
+        },
+        {
+          "date": "2025-10-01",
+          "month": "2025-10",
+          "series": "新大屿山巴士",
+          "value": 3247.303
+        },
+        {
+          "date": "2025-11-01",
+          "month": "2025-11",
+          "series": "城巴",
+          "value": 30944.049
+        },
+        {
+          "date": "2025-11-01",
+          "month": "2025-11",
+          "series": "九巴",
+          "value": 79027.386
+        },
+        {
+          "date": "2025-11-01",
+          "month": "2025-11",
+          "series": "龙运",
+          "value": 4274.988
+        },
+        {
+          "date": "2025-11-01",
+          "month": "2025-11",
+          "series": "新大屿山巴士",
+          "value": 3259.786
+        },
+        {
+          "date": "2025-12-01",
+          "month": "2025-12",
+          "series": "城巴",
+          "value": 31449.184
+        },
+        {
+          "date": "2025-12-01",
+          "month": "2025-12",
+          "series": "九巴",
+          "value": 78702.362
+        },
+        {
+          "date": "2025-12-01",
+          "month": "2025-12",
+          "series": "龙运",
+          "value": 4507.271
+        },
+        {
+          "date": "2025-12-01",
+          "month": "2025-12",
+          "series": "新大屿山巴士",
+          "value": 3326.88
+        },
+        {
+          "date": "2026-01-01",
+          "month": "2026-01",
+          "series": "城巴",
+          "value": 31809.335
+        },
+        {
+          "date": "2026-01-01",
+          "month": "2026-01",
+          "series": "九巴",
+          "value": 80144.869
+        },
+        {
+          "date": "2026-01-01",
+          "month": "2026-01",
+          "series": "龙运",
+          "value": 4428.912
+        },
+        {
+          "date": "2026-01-01",
+          "month": "2026-01",
+          "series": "新大屿山巴士",
+          "value": 3351.688
+        },
+        {
+          "date": "2026-02-01",
+          "month": "2026-02",
+          "series": "城巴",
+          "value": 28328.822
+        },
+        {
+          "date": "2026-02-01",
+          "month": "2026-02",
+          "series": "九巴",
+          "value": 70175.08
+        },
+        {
+          "date": "2026-02-01",
+          "month": "2026-02",
+          "series": "龙运",
+          "value": 3947.375
+        },
+        {
+          "date": "2026-02-01",
+          "month": "2026-02",
+          "series": "新大屿山巴士",
+          "value": 2999.68
+        },
+        {
+          "date": "2026-03-01",
+          "month": "2026-03",
+          "series": "城巴",
+          "value": 31950.258
+        },
+        {
+          "date": "2026-03-01",
+          "month": "2026-03",
+          "series": "九巴",
+          "value": 81139.954
+        },
+        {
+          "date": "2026-03-01",
+          "month": "2026-03",
+          "series": "龙运",
+          "value": 4491.757
+        },
+        {
+          "date": "2026-03-01",
+          "month": "2026-03",
+          "series": "新大屿山巴士",
+          "value": 3386.666
+        },
+        {
+          "date": "2026-04-01",
+          "month": "2026-04",
+          "series": "城巴",
+          "value": 29284.081
+        },
+        {
+          "date": "2026-04-01",
+          "month": "2026-04",
+          "series": "九巴",
+          "value": 73882.131
+        },
+        {
+          "date": "2026-04-01",
+          "month": "2026-04",
+          "series": "龙运",
+          "value": 4339.176
+        },
+        {
+          "date": "2026-04-01",
+          "month": "2026-04",
+          "series": "新大屿山巴士",
+          "value": 3203.216
+        },
+        {
+          "date": "2026-05-01",
+          "month": "2026-05",
+          "series": "城巴",
+          "value": 30536.742
+        },
+        {
+          "date": "2026-05-01",
+          "month": "2026-05",
+          "series": "九巴",
+          "value": 77507.732
+        },
+        {
+          "date": "2026-05-01",
+          "month": "2026-05",
+          "series": "龙运",
+          "value": 4418.613
+        },
+        {
+          "date": "2026-05-01",
+          "month": "2026-05",
+          "series": "新大屿山巴士",
+          "value": 3369.07
+        }
+      ],
+      "mttd_passenger_journeys_history": [],
+      "mttd_passenger_journeys_latest": [],
+      "censtatd_boundary_movements_history": [],
+      "censtatd_boundary_movements_latest": [],
+      "hk_private_car_fleet_by_fuel_history": [
+        {
+          "date": "2025-01-01",
+          "month": "2025-01",
+          "series": "柴油",
+          "value": 11502
+        },
+        {
+          "date": "2025-01-01",
+          "month": "2025-01",
+          "series": "电力",
+          "value": 109657
+        },
+        {
+          "date": "2025-01-01",
+          "month": "2025-01",
+          "series": "其他",
+          "value": 113
+        },
+        {
+          "date": "2025-01-01",
+          "month": "2025-01",
+          "series": "汽油",
+          "value": 509844
+        },
+        {
+          "date": "2025-02-01",
+          "month": "2025-02",
+          "series": "柴油",
+          "value": 11492
+        },
+        {
+          "date": "2025-02-01",
+          "month": "2025-02",
+          "series": "电力",
+          "value": 112062
+        },
+        {
+          "date": "2025-02-01",
+          "month": "2025-02",
+          "series": "其他",
+          "value": 113
+        },
+        {
+          "date": "2025-02-01",
+          "month": "2025-02",
+          "series": "汽油",
+          "value": 508349
+        },
+        {
+          "date": "2025-03-01",
+          "month": "2025-03",
+          "series": "柴油",
+          "value": 11484
+        },
+        {
+          "date": "2025-03-01",
+          "month": "2025-03",
+          "series": "电力",
+          "value": 114514
+        },
+        {
+          "date": "2025-03-01",
+          "month": "2025-03",
+          "series": "其他",
+          "value": 114
+        },
+        {
+          "date": "2025-03-01",
+          "month": "2025-03",
+          "series": "汽油",
+          "value": 506495
+        },
+        {
+          "date": "2025-04-01",
+          "month": "2025-04",
+          "series": "柴油",
+          "value": 11472
+        },
+        {
+          "date": "2025-04-01",
+          "month": "2025-04",
+          "series": "电力",
+          "value": 116589
+        },
+        {
+          "date": "2025-04-01",
+          "month": "2025-04",
+          "series": "其他",
+          "value": 114
+        },
+        {
+          "date": "2025-04-01",
+          "month": "2025-04",
+          "series": "汽油",
+          "value": 504125
+        },
+        {
+          "date": "2025-05-01",
+          "month": "2025-05",
+          "series": "柴油",
+          "value": 11414
+        },
+        {
+          "date": "2025-05-01",
+          "month": "2025-05",
+          "series": "电力",
+          "value": 119747
+        },
+        {
+          "date": "2025-05-01",
+          "month": "2025-05",
+          "series": "其他",
+          "value": 112
+        },
+        {
+          "date": "2025-05-01",
+          "month": "2025-05",
+          "series": "汽油",
+          "value": 496679
+        },
+        {
+          "date": "2025-06-01",
+          "month": "2025-06",
+          "series": "柴油",
+          "value": 11403
+        },
+        {
+          "date": "2025-06-01",
+          "month": "2025-06",
+          "series": "电力",
+          "value": 122870
+        },
+        {
+          "date": "2025-06-01",
+          "month": "2025-06",
+          "series": "其他",
+          "value": 112
+        },
+        {
+          "date": "2025-06-01",
+          "month": "2025-06",
+          "series": "汽油",
+          "value": 494719
+        },
+        {
+          "date": "2025-07-01",
+          "month": "2025-07",
+          "series": "柴油",
+          "value": 11380
+        },
+        {
+          "date": "2025-07-01",
+          "month": "2025-07",
+          "series": "电力",
+          "value": 125500
+        },
+        {
+          "date": "2025-07-01",
+          "month": "2025-07",
+          "series": "其他",
+          "value": 113
+        },
+        {
+          "date": "2025-07-01",
+          "month": "2025-07",
+          "series": "汽油",
+          "value": 492406
+        },
+        {
+          "date": "2025-08-01",
+          "month": "2025-08",
+          "series": "柴油",
+          "value": 11365
+        },
+        {
+          "date": "2025-08-01",
+          "month": "2025-08",
+          "series": "电力",
+          "value": 128357
+        },
+        {
+          "date": "2025-08-01",
+          "month": "2025-08",
+          "series": "其他",
+          "value": 113
+        },
+        {
+          "date": "2025-08-01",
+          "month": "2025-08",
+          "series": "汽油",
+          "value": 490578
+        },
+        {
+          "date": "2025-09-01",
+          "month": "2025-09",
+          "series": "柴油",
+          "value": 11348
+        },
+        {
+          "date": "2025-09-01",
+          "month": "2025-09",
+          "series": "电力",
+          "value": 131868
+        },
+        {
+          "date": "2025-09-01",
+          "month": "2025-09",
+          "series": "其他",
+          "value": 113
+        },
+        {
+          "date": "2025-09-01",
+          "month": "2025-09",
+          "series": "汽油",
+          "value": 488295
+        },
+        {
+          "date": "2025-10-01",
+          "month": "2025-10",
+          "series": "柴油",
+          "value": 11329
+        },
+        {
+          "date": "2025-10-01",
+          "month": "2025-10",
+          "series": "电力",
+          "value": 135799
+        },
+        {
+          "date": "2025-10-01",
+          "month": "2025-10",
+          "series": "其他",
+          "value": 113
+        },
+        {
+          "date": "2025-10-01",
+          "month": "2025-10",
+          "series": "汽油",
+          "value": 485723
+        },
+        {
+          "date": "2025-11-01",
+          "month": "2025-11",
+          "series": "柴油",
+          "value": 11299
+        },
+        {
+          "date": "2025-11-01",
+          "month": "2025-11",
+          "series": "电力",
+          "value": 139541
+        },
+        {
+          "date": "2025-11-01",
+          "month": "2025-11",
+          "series": "其他",
+          "value": 113
+        },
+        {
+          "date": "2025-11-01",
+          "month": "2025-11",
+          "series": "汽油",
+          "value": 482754
+        },
+        {
+          "date": "2025-12-01",
+          "month": "2025-12",
+          "series": "柴油",
+          "value": 11270
+        },
+        {
+          "date": "2025-12-01",
+          "month": "2025-12",
+          "series": "电力",
+          "value": 144655
+        },
+        {
+          "date": "2025-12-01",
+          "month": "2025-12",
+          "series": "其他",
+          "value": 113
+        },
+        {
+          "date": "2025-12-01",
+          "month": "2025-12",
+          "series": "汽油",
+          "value": 479895
+        },
+        {
+          "date": "2026-01-01",
+          "month": "2026-01",
+          "series": "柴油",
+          "value": 11232
+        },
+        {
+          "date": "2026-01-01",
+          "month": "2026-01",
+          "series": "电力",
+          "value": 148291
+        },
+        {
+          "date": "2026-01-01",
+          "month": "2026-01",
+          "series": "其他",
+          "value": 113
+        },
+        {
+          "date": "2026-01-01",
+          "month": "2026-01",
+          "series": "汽油",
+          "value": 476314
+        },
+        {
+          "date": "2026-02-01",
+          "month": "2026-02",
+          "series": "柴油",
+          "value": 11193
+        },
+        {
+          "date": "2026-02-01",
+          "month": "2026-02",
+          "series": "电力",
+          "value": 152127
+        },
+        {
+          "date": "2026-02-01",
+          "month": "2026-02",
+          "series": "其他",
+          "value": 113
+        },
+        {
+          "date": "2026-02-01",
+          "month": "2026-02",
+          "series": "汽油",
+          "value": 472478
+        },
+        {
+          "date": "2026-03-01",
+          "month": "2026-03",
+          "series": "柴油",
+          "value": 11111
+        },
+        {
+          "date": "2026-03-01",
+          "month": "2026-03",
+          "series": "电力",
+          "value": 161118
+        },
+        {
+          "date": "2026-03-01",
+          "month": "2026-03",
+          "series": "其他",
+          "value": 113
+        },
+        {
+          "date": "2026-03-01",
+          "month": "2026-03",
+          "series": "汽油",
+          "value": 461432
+        },
+        {
+          "date": "2026-04-01",
+          "month": "2026-04",
+          "series": "柴油",
+          "value": 11099
+        },
+        {
+          "date": "2026-04-01",
+          "month": "2026-04",
+          "series": "电力",
+          "value": 169178
+        },
+        {
+          "date": "2026-04-01",
+          "month": "2026-04",
+          "series": "其他",
+          "value": 113
+        },
+        {
+          "date": "2026-04-01",
+          "month": "2026-04",
+          "series": "汽油",
+          "value": 461558
+        },
+        {
+          "date": "2026-05-01",
+          "month": "2026-05",
+          "series": "柴油",
+          "value": 11083
+        },
+        {
+          "date": "2026-05-01",
+          "month": "2026-05",
+          "series": "电力",
+          "value": 173469
+        },
+        {
+          "date": "2026-05-01",
+          "month": "2026-05",
+          "series": "其他",
+          "value": 113
+        },
+        {
+          "date": "2026-05-01",
+          "month": "2026-05",
+          "series": "汽油",
+          "value": 461419
+        },
+        {
+          "date": "2026-06-01",
+          "month": "2026-06",
+          "series": "柴油",
+          "value": 11071
+        },
+        {
+          "date": "2026-06-01",
+          "month": "2026-06",
+          "series": "电力",
+          "value": 174840
+        },
+        {
+          "date": "2026-06-01",
+          "month": "2026-06",
+          "series": "其他",
+          "value": 114
+        },
+        {
+          "date": "2026-06-01",
+          "month": "2026-06",
+          "series": "汽油",
+          "value": 461137
+        }
+      ],
+      "hk_private_car_fleet_ev_share_history": [
+        {
+          "date": "2025-01-01",
+          "month": "2025-01",
+          "value": 17.3751
+        },
+        {
+          "date": "2025-02-01",
+          "month": "2025-02",
+          "value": 17.7309
+        },
+        {
+          "date": "2025-03-01",
+          "month": "2025-03",
+          "value": 18.1019
+        },
+        {
+          "date": "2025-04-01",
+          "month": "2025-04",
+          "value": 18.4389
+        },
+        {
+          "date": "2025-05-01",
+          "month": "2025-05",
+          "value": 19.0695
+        },
+        {
+          "date": "2025-06-01",
+          "month": "2025-06",
+          "value": 19.531
+        },
+        {
+          "date": "2025-07-01",
+          "month": "2025-07",
+          "value": 19.9397
+        },
+        {
+          "date": "2025-08-01",
+          "month": "2025-08",
+          "value": 20.3608
+        },
+        {
+          "date": "2025-09-01",
+          "month": "2025-09",
+          "value": 20.8776
+        },
+        {
+          "date": "2025-10-01",
+          "month": "2025-10",
+          "value": 21.4545
+        },
+        {
+          "date": "2025-11-01",
+          "month": "2025-11",
+          "value": 22.0198
+        },
+        {
+          "date": "2025-12-01",
+          "month": "2025-12",
+          "value": 22.7469
+        },
+        {
+          "date": "2026-01-01",
+          "month": "2026-01",
+          "value": 23.318
+        },
+        {
+          "date": "2026-02-01",
+          "month": "2026-02",
+          "value": 23.9227
+        },
+        {
+          "date": "2026-03-01",
+          "month": "2026-03",
+          "value": 25.422
+        },
+        {
+          "date": "2026-04-01",
+          "month": "2026-04",
+          "value": 26.3538
+        },
+        {
+          "date": "2026-05-01",
+          "month": "2026-05",
+          "value": 26.8493
+        },
+        {
+          "date": "2026-06-01",
+          "month": "2026-06",
+          "value": 27.0164
+        }
+      ],
+      "hk_private_car_net_growth_history": [
+        {
+          "date": "2025-01-01",
+          "month": "2025-01",
+          "series": "首次登记净额",
+          "value": 2974
+        },
+        {
+          "date": "2025-02-01",
+          "month": "2025-02",
+          "series": "首次登记净额",
+          "value": 3209
+        },
+        {
+          "date": "2025-03-01",
+          "month": "2025-03",
+          "series": "首次登记净额",
+          "value": 3617
+        },
+        {
+          "date": "2025-04-01",
+          "month": "2025-04",
+          "series": "首次登记净额",
+          "value": 3119
+        },
+        {
+          "date": "2025-05-01",
+          "month": "2025-05",
+          "series": "首次登记净额",
+          "value": 4392
+        },
+        {
+          "date": "2025-06-01",
+          "month": "2025-06",
+          "series": "首次登记净额",
+          "value": 4378
+        },
+        {
+          "date": "2025-07-01",
+          "month": "2025-07",
+          "series": "首次登记净额",
+          "value": 3876
+        },
+        {
+          "date": "2025-08-01",
+          "month": "2025-08",
+          "series": "首次登记净额",
+          "value": 4100
+        },
+        {
+          "date": "2025-09-01",
+          "month": "2025-09",
+          "series": "首次登记净额",
+          "value": 4668
+        },
+        {
+          "date": "2025-10-01",
+          "month": "2025-10",
+          "series": "首次登记净额",
+          "value": 5179
+        },
+        {
+          "date": "2025-11-01",
+          "month": "2025-11",
+          "series": "首次登记净额",
+          "value": 4954
+        },
+        {
+          "date": "2025-12-01",
+          "month": "2025-12",
+          "series": "首次登记净额",
+          "value": 6329
+        },
+        {
+          "date": "2026-01-01",
+          "month": "2026-01",
+          "series": "首次登记净额",
+          "value": 4974
+        },
+        {
+          "date": "2026-02-01",
+          "month": "2026-02",
+          "series": "首次登记净额",
+          "value": 4801
+        },
+        {
+          "date": "2026-03-01",
+          "month": "2026-03",
+          "series": "首次登记净额",
+          "value": 10439
+        },
+        {
+          "date": "2026-04-01",
+          "month": "2026-04",
+          "series": "首次登记净额",
+          "value": 9280
+        },
+        {
+          "date": "2026-05-01",
+          "month": "2026-05",
+          "series": "首次登记净额",
+          "value": 5522
+        },
+        {
+          "date": "2026-06-01",
+          "month": "2026-06",
+          "series": "首次登记净额",
+          "value": 2591
+        }
+      ],
+      "kpi_private_car_first_reg": [],
+      "hk_private_car_ev_make_history": [],
+      "hk_private_car_ev_share_history": [],
+      "hk_private_car_ev_make_latest": [],
+      "hk_private_car_ev_model_latest": [],
+      "kpi_parking": [],
+      "hk_parking_vacancy_history": [],
+      "hk_parking_current_district": [],
+      "kpi_carpark_occupancy": [],
+      "td_carpark_occupancy_history": [],
+      "td_carpark_occupancy_latest_district": []
     }
   },
   "sources": [
@@ -30973,11 +33089,136 @@
         "language": "Parquet",
         "description": "构建时从公开来源读取并校验 中国国航、南方航空、东方航空及春秋航空月度运营数据公告。"
       }
+    },
+    {
+      "id": "hk_passenger_journeys",
+      "label": "运输署《公共交通及运输月报》表 2.1",
+      "href": "https://www.td.gov.hk/en/transport_in_hong_kong/transport_figures/monthly_traffic_and_transport_digest/index.html",
+      "path": "sources/hk_passenger_journeys.sql",
+      "query": {
+        "engine": "official Table 2.1 workbook (table21.xls), both sheets",
+        "url": "https://www.td.gov.hk/filemanager/en/content_5404/table21.xls",
+        "language": "XLS",
+        "description": "构建时从公开来源读取并校验 运输署《公共交通及运输月报》表 2.1。",
+        "tables_used": [
+          "table21.xls sheet 1 (operator rows)",
+          "table21.xls sheet 2 (mode totals)"
+        ],
+        "metric_definitions": [
+          "KMB is read from the header-validated KMB row on sheet 1, column 2.",
+          "The territory-wide total is read from the keyword-distinguished total row on sheet 2, column 22; subtotal rows are not used as the total.",
+          "The accepted workbook row must reconcile the published mode components to the reported total within 0.5 thousand journeys."
+        ]
+      }
+    },
+    {
+      "id": "mttd_passenger_journeys",
+      "label": "运输署《公共交通及运输月报》表 2.3",
+      "href": "https://data.gov.hk/en-data/dataset/hk-td-tis_17-monthly-traffic-and-transport-digest-csv",
+      "path": "sources/mttd_passenger_journeys.sql",
+      "query": {
+        "engine": "official MTTD Table 2.3 CSV",
+        "url": "https://www.td.gov.hk/datagovhk_tis/mttd-csv/en/table23_eng.csv",
+        "language": "CSV",
+        "description": "构建时从公开来源读取并校验 运输署《公共交通及运输月报》表 2.3。"
+      }
+    },
+    {
+      "id": "censtatd_boundary_movements",
+      "label": "政府统计处表 E705 跨境飞机、船只、车辆及火车移动",
+      "href": "https://www.censtatd.gov.hk/en/data/stat_report/subject/340/report_index.json",
+      "path": "sources/censtatd_boundary_movements.sql",
+      "query": {
+        "engine": "official C&SD Table E705 XLSX discovered through the subject report index",
+        "url": "https://www.censtatd.gov.hk/en/data/stat_report/subject/340/report_index.json ; https://www.censtatd.gov.hk/en/data/stat_report/product/D7000005/att/<latest-file>",
+        "language": "XLSX",
+        "description": "构建时从公开来源读取并校验 政府统计处表 E705 跨境飞机、船只、车辆及火车移动。"
+      }
+    },
+    {
+      "id": "hk_vehicle_stock",
+      "label": "运输署车辆登记及领牌统计数字 表 4.1(a) 私家车",
+      "href": "https://www.td.gov.hk/en/transport_in_hong_kong/transport_figures/monthly_traffic_and_transport_digest/index.html",
+      "path": "sources/hk_vehicle_stock.sql",
+      "query": {
+        "engine": "official Table 4.1(a) workbook (table41a.xls), Private Cars sheet",
+        "url": "https://www.td.gov.hk/filemanager/en/content_4883/table41a.xls",
+        "language": "XLS",
+        "description": "构建时从公开来源读取并校验 运输署车辆登记及领牌统计数字 表 4.1(a) 私家车。",
+        "tables_used": [
+          "table41a.xls sheet whose header identifies Private Cars / 私家车"
+        ],
+        "metric_definitions": [
+          "The Private Cars sheet is located by matching its own header text rather than relying on a fixed sheet index.",
+          "EV fleet share is electric total registered divided by all-fuel total registered.",
+          "The all-fuel total is accepted only when it reconciles to the sum of the four per-fuel total-registration columns."
+        ]
+      }
+    },
+    {
+      "id": "hk_private_car_net_growth",
+      "label": "运输署私家车首次登记净额统计数字 表 4.1(c)",
+      "href": "https://www.td.gov.hk/en/transport_in_hong_kong/transport_figures/monthly_traffic_and_transport_digest/index.html",
+      "path": "sources/hk_private_car_net_growth.sql",
+      "query": {
+        "engine": "official Table 4.1(c) workbook (table41c.xls)",
+        "url": "https://www.td.gov.hk/filemanager/en/content_4884/table41c.xls",
+        "language": "XLS",
+        "description": "构建时从公开来源读取并校验 运输署私家车首次登记净额统计数字 表 4.1(c)。"
+      }
+    },
+    {
+      "id": "hk_private_car_first_reg",
+      "label": "运输署月报表 4.1(e) 私家车按厂名/燃料类型首次登记",
+      "href": "https://data.gov.hk/en-data/dataset/hk-td-tis_17-monthly-traffic-and-transport-digest-csv/resource/472658ca-1640-4fc2-be5c-eae62f9bf547",
+      "path": "sources/hk_private_car_first_reg.sql",
+      "query": {
+        "engine": "official TD Monthly Traffic and Transport Digest CSV — Table 4.1(e)",
+        "url": "https://www.td.gov.hk/datagovhk_tis/mttd-csv/en/table41e_eng.csv",
+        "language": "CSV",
+        "description": "构建时从公开来源读取并校验 运输署月报表 4.1(e) 私家车按厂名/燃料类型首次登记。"
+      }
+    },
+    {
+      "id": "hk_private_car_first_reg_details",
+      "label": "运输署最新私家车首次登记厂名/型号详情",
+      "href": "https://www.td.gov.hk/en/public_services/licences_and_permits/vehicle_first_registration/vehicle_particulars/index.html",
+      "path": "sources/hk_private_car_first_reg_details.sql",
+      "query": {
+        "engine": "official TD monthly particulars of first registered vehicles CSV",
+        "url": "https://www.td.gov.hk/datagovhk_td/first-reg-vehicle/resources/en/particulars_of_first_registered_vehicle_{month}_{year}_eng.csv",
+        "language": "CSV",
+        "description": "构建时从公开来源读取并校验 运输署最新私家车首次登记厂名/型号详情。"
+      }
+    },
+    {
+      "id": "td_parking_vacancy",
+      "label": "运输署实时停车场空置数据",
+      "href": "https://resource.data.one.gov.hk/td/carpark/TD_Parking_Vacancy_Data_Specification.pdf",
+      "path": "sources/td_parking_vacancy.sql",
+      "query": {
+        "engine": "official TD real-time vacancy and basic-information JSON feeds",
+        "url": "https://resource.data.one.gov.hk/td/carpark/vacancy_all.json ; https://resource.data.one.gov.hk/td/carpark/basic_info_all.json",
+        "language": "JSON",
+        "description": "构建时从公开来源读取并校验 运输署实时停车场空置数据。"
+      }
+    },
+    {
+      "id": "td_carpark_occupancy",
+      "label": "运输署实时停车场空置数据及政府一站式停车场容量资料",
+      "href": "https://api.data.gov.hk/v1/carpark-info-vacancy",
+      "path": "sources/td_carpark_occupancy.sql",
+      "query": {
+        "engine": "official TD live vacancy JSON joined to Digital Policy Office One-Stop static capacity JSON",
+        "url": "https://resource.data.one.gov.hk/td/carpark/vacancy_all.json ; https://resource.data.one.gov.hk/td/carpark/basic_info_all.json ; https://api.data.gov.hk/v1/carpark-info-vacancy",
+        "language": "JSON",
+        "description": "构建时从公开来源读取并校验 运输署实时停车场空置数据及政府一站式停车场容量资料。"
+      }
     }
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-transport/",
-    "snapshotId": "027677b652c4527f",
+    "snapshotId": "a3e5a800b34be4bb",
     "dataAsOf": "2026-06-01"
   }
 }
