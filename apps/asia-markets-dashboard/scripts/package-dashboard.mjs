@@ -1360,9 +1360,44 @@ function addNavigation(html, { locale, homeEn, homeZh, routeEn, routeZh }) {
   const languageHref = chinese ? routeEn : routeZh;
   const backLabel = chinese ? "← 返回主 dashboard" : "← Back to main dashboard";
   const languageLabel = chinese ? "English" : "简体中文";
-  const css = `<style>.am-dashboard-nav{position:fixed;top:12px;left:12px;z-index:1000;display:flex;gap:8px;align-items:center;font:500 12px/1.2 system-ui,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif}.am-dashboard-nav a{display:inline-flex;align-items:center;min-height:30px;padding:0 10px;border:1px solid rgba(128,128,128,.35);border-radius:999px;background:rgba(255,255,255,.94);color:#1f2937;text-decoration:none;box-shadow:0 2px 8px rgba(0,0,0,.08)}.am-dashboard-nav a:hover{background:#f2f4f7}@media(prefers-color-scheme:dark){.am-dashboard-nav a{background:rgba(31,35,42,.92);color:#f3f4f6;border-color:rgba(255,255,255,.25)}.am-dashboard-nav a:hover{background:rgba(55,60,68,.92)}}</style>`;
-  const nav = `<nav class="am-dashboard-nav" aria-label="Dashboard navigation"><a href="${home}">${backLabel}</a><a href="${languageHref}">${languageLabel}</a></nav>`;
-  return html.replace("</head>", `${css}</head>`).replace("<body>", `<body>${nav}`);
+  const css = `<style>.am-dashboard-nav{position:fixed;top:12px;left:12px;z-index:1000;display:flex;gap:8px;align-items:center;font:500 12px/1.2 system-ui,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif}.am-dashboard-nav a,.am-dashboard-nav button{display:inline-flex;align-items:center;justify-content:center;min-height:30px;padding:0 10px;border:1px solid rgba(128,128,128,.35);border-radius:999px;background:rgba(255,255,255,.94);color:#1f2937;text-decoration:none;box-shadow:0 2px 8px rgba(0,0,0,.08);font:inherit;cursor:pointer}.am-dashboard-nav a:hover,.am-dashboard-nav button:hover{background:#f2f4f7}.am-theme-toggle{width:30px;padding:0}@media(prefers-color-scheme:dark){.am-dashboard-nav a,.am-dashboard-nav button{background:rgba(31,35,42,.92);color:#f3f4f6;border-color:rgba(255,255,255,.25)}.am-dashboard-nav a:hover,.am-dashboard-nav button:hover{background:rgba(55,60,68,.92)}}
+  /* Manual theme override for the portable renderer's own --portable-* palette
+     (see build_portable_artifact.mjs) -- higher specificity than its plain
+     :root rules (default and its prefers-color-scheme:dark block), so this
+     wins in both directions once data-theme is set; when unset, neither rule
+     matches and the renderer's own auto (OS-following) behavior is untouched. */
+  :root[data-theme="dark"]{color-scheme:dark;--portable-canvas:#181818;--portable-surface:#212121;--portable-surface-subtle:#2a2a2a;--portable-ink:#dfdfdf;--portable-muted:#cdcdcd;--portable-tertiary:#afafaf;--portable-table-text:#cdcdcd;--portable-border:rgba(255,255,255,.12);--portable-accent:#66b5ff;--portable-positive:#79d996;--portable-positive-bg:rgba(64,180,99,.16);--portable-negative:#ff8583;--portable-negative-bg:rgba(224,74,70,.16);--portable-warning-bg:#302817;--portable-warning-border:#8b6a20}
+  :root[data-theme="light"]{color-scheme:light;--portable-canvas:#fff;--portable-surface:#fff;--portable-surface-subtle:#f7f7f7;--portable-ink:#0d0d0d;--portable-muted:#5d5d5d;--portable-tertiary:#8f8f8f;--portable-table-text:#5d5d5d;--portable-border:rgba(13,13,13,.1);--portable-accent:#0285ff;--portable-positive:#00692a;--portable-positive-bg:#edfaf2;--portable-negative:#ba2623;--portable-negative-bg:#fff0f0;--portable-warning-bg:#fff8e6;--portable-warning-border:#e7b84b}
+  </style>`;
+  // Blocking init (runs before the renderer's own <style>, via <head> insertion
+  // below) applies a stored preference before first paint; absent entry means
+  // "no manual choice yet", left to the renderer's own prefers-color-scheme
+  // behavior. Shares the 'am-theme' localStorage key with the hub pages
+  // (build-static-hub.mjs), so one choice, made anywhere on the site, persists
+  // everywhere -- the key is scoped per-origin, so it carries across routes.
+  const themeInit = `<script>(function(){try{var t=localStorage.getItem('am-theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>`;
+  const themeToggleScript = `<script>(function(){
+    var btn = document.getElementById('am-theme-toggle');
+    if (!btn) return;
+    function current(){
+      var attr = document.documentElement.getAttribute('data-theme');
+      if (attr === 'dark' || attr === 'light') return attr;
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    function apply(theme){
+      document.documentElement.setAttribute('data-theme', theme);
+      try { localStorage.setItem('am-theme', theme); } catch (e) {}
+      btn.textContent = theme === 'dark' ? '\\u2600' : '\\u263E';
+    }
+    apply(current());
+    btn.addEventListener('click', function(){ apply(current() === 'dark' ? 'light' : 'dark'); });
+  })();</script>`;
+  const nav = `<nav class="am-dashboard-nav" aria-label="Dashboard navigation"><a href="${home}">${backLabel}</a><a href="${languageHref}">${languageLabel}</a><button type="button" class="am-theme-toggle" id="am-theme-toggle" aria-label="Toggle dark mode">☾</button></nav>`;
+  return html
+    .replace("<head>", `<head>${themeInit}`)
+    .replace("</head>", `${css}</head>`)
+    .replace("<body>", `<body>${nav}`)
+    .replace("</body>", `${themeToggleScript}</body>`);
 }
 
 function spawnDelivery(deliveryScript, args) {

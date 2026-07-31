@@ -16,10 +16,34 @@ const escapeHtml = (value) => String(value ?? "")
 const css = fs.readFileSync(path.join(appRoot, "src", "styles", "global.css"), "utf8");
 
 function layout({ title, description, body, lang = "en", homeHref = "/", statusHref = "/data-status/", languageHref = "/zh/", languageLabel = "简体中文" }) {
+  // Blocking, runs before <style> so a stored preference applies before
+  // first paint (no flash of the wrong theme). Absent localStorage entry
+  // means "no manual choice yet" -- left to the prefers-color-scheme media
+  // query in global.css, not defaulted to light here.
+  const themeInitScript = `<script>(function(){try{var t=localStorage.getItem('am-theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>`;
+  const themeToggleScript = `<script>(function(){
+    var btn = document.getElementById('theme-toggle');
+    if (!btn) return;
+    function current(){
+      var attr = document.documentElement.getAttribute('data-theme');
+      if (attr === 'dark' || attr === 'light') return attr;
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    function apply(theme){
+      document.documentElement.setAttribute('data-theme', theme);
+      try { localStorage.setItem('am-theme', theme); } catch (e) {}
+      btn.textContent = theme === 'dark' ? '\\u2600' : '\\u263E';
+      btn.setAttribute('aria-label', theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
+    }
+    apply(current());
+    btn.addEventListener('click', function(){ apply(current() === 'dark' ? 'light' : 'dark'); });
+  })();</script>`;
+
   return `<!doctype html>
 <html lang="${lang}">
   <head>
     <meta charset="UTF-8" />
+    ${themeInitScript}
     <meta name="viewport" content="width=device-width" />
     <meta name="description" content="${escapeHtml(description)}" />
     <meta name="robots" content="noindex, nofollow" />
@@ -33,10 +57,11 @@ function layout({ title, description, body, lang = "en", homeHref = "/", statusH
         <span class="brand-mark" aria-hidden="true">AM</span>
         <span>Asia Markets</span>
       </a>
-      <nav aria-label="Primary"><a href="${homeHref}">${lang === "zh-CN" ? "板块" : "Sectors"}</a><a href="${statusHref}">${lang === "zh-CN" ? "数据状态" : "Data status"}</a><a href="${languageHref}">${languageLabel}</a></nav>
+      <nav aria-label="Primary"><a href="${homeHref}">${lang === "zh-CN" ? "板块" : "Sectors"}</a><a href="${statusHref}">${lang === "zh-CN" ? "数据状态" : "Data status"}</a><a href="${languageHref}">${languageLabel}</a><button type="button" class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">☾</button></nav>
     </header>
     <main>${body}</main>
     <footer><span>${lang === "zh-CN" ? "已发布的研究快照" : "Published research snapshots"}</span><span>${lang === "zh-CN" ? "不构成投资建议" : "Not investment advice"}</span></footer>
+    ${themeToggleScript}
   </body>
 </html>`;
 }
