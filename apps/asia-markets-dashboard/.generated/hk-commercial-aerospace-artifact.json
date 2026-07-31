@@ -6,8 +6,8 @@
     "title": "Hong Kong Commercial Aerospace Sector Monitor",
     "description": "SSE STAR Market IPO filing status, Launch Library 2 launch cadence, Celestrak satellite counts, and patent filing counts for Chinese commercial space companies.",
     "sector": "hk-commercial-aerospace",
-    "generatedAt": "2026-07-30T23:25:13.192710Z",
-    "dataAsOf": "2026-07-30",
+    "generatedAt": "2026-07-31T09:16:54.101880Z",
+    "dataAsOf": "2026-07-31",
     "liveSourcesCount": 3,
     "totalSourcesCount": 4,
     "cards": [
@@ -325,7 +325,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**Data snapshot:** `821b89d09cf89249` \u00b7 generated 2026-07-30T23:25:13.192710Z.  Official disclosures and public tracking data."
+        "body": "**Data snapshot:** `9c511ef604ebb6ad` \u00b7 generated 2026-07-31T09:16:54.101880Z.  Official disclosures and public tracking data."
       },
       {
         "id": "kpi_grid",
@@ -375,7 +375,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-30T23:25:13.192710Z",
+    "generatedAt": "2026-07-31T09:16:54.101880Z",
     "status": "ready",
     "datasets": {
       "ipo_race": [
@@ -421,14 +421,6 @@
         }
       ],
       "upcoming_launches": [
-        {
-          "net_date": "2026-07-30",
-          "provider": "China Aerospace Science and Technology Corporation",
-          "mission": "Long March 6A | TJSW-27A & B",
-          "pad_name": "Launch Complex 9A",
-          "orbit": "nan",
-          "status": "Launch Successful"
-        },
         {
           "net_date": "2026-08-04",
           "provider": "China Aerospace Science and Technology Corporation",
@@ -1495,19 +1487,19 @@
           "constellation": "Qianfan",
           "operator": "Shanghai Spacecom Satellite Technology",
           "count": 238,
-          "as_of": "2026-07-30"
+          "as_of": "2026-07-31"
         },
         {
           "constellation": "Jilin1",
           "operator": "Chang Guang Satellite Technology",
           "count": 50,
-          "as_of": "2026-07-30"
+          "as_of": "2026-07-31"
         },
         {
           "constellation": "Guowang",
           "operator": "China Satellite Network Group",
           "count": null,
-          "as_of": "2026-07-30"
+          "as_of": "2026-07-31"
         }
       ],
       "patent_counts": [],
@@ -1658,7 +1650,7 @@
       "label": "SSE STAR Market IPO Filing Status (JSONP)",
       "status": "success",
       "records": 5,
-      "latest_observation": "2026-07-30",
+      "latest_observation": "2026-07-31",
       "freshness": "live",
       "notes": "Filing status, numeric audit numbers (stockAuditNum), and update dates for Chinese commercial launch companies."
     },
@@ -1666,8 +1658,8 @@
       "source_id": "launch_library_2",
       "label": "Launch Library 2 (The Space Devs)",
       "status": "success",
-      "records": 116,
-      "latest_observation": "2026-07-30",
+      "records": 115,
+      "latest_observation": "2026-07-31",
       "freshness": "live",
       "notes": "Launch history for Chinese commercial launch providers (LandSpace, CAS Space, Galactic Energy, Space Pioneer, etc.)."
     },
@@ -1676,7 +1668,7 @@
       "label": "Celestrak NORAD TLE / GP Orbit Data",
       "status": "success",
       "records": 2,
-      "latest_observation": "2026-07-30",
+      "latest_observation": "2026-07-31",
       "freshness": "live",
       "notes": "Active satellite counts for Qianfan (G60) and Jilin-1 constellations."
     },
@@ -1685,7 +1677,7 @@
       "label": "Google Patents Search",
       "status": "failed",
       "records": 0,
-      "latest_observation": "2026-07-30",
+      "latest_observation": "2026-07-31",
       "freshness": "unavailable",
       "notes": "Estimated patent filing counts for Chinese commercial space companies."
     }
@@ -1694,8 +1686,8 @@
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-commercial-aerospace/",
     "sector_id": "hk-commercial-aerospace",
     "sector_name": "Hong Kong Commercial Aerospace Sector Monitor",
-    "snapshotId": "821b89d09cf89249",
-    "generatedAt": "2026-07-30T23:25:13.192710Z",
-    "dataAsOf": "2026-07-30"
+    "snapshotId": "9c511ef604ebb6ad",
+    "generatedAt": "2026-07-31T09:16:54.101880Z",
+    "dataAsOf": "2026-07-31"
   }
 }

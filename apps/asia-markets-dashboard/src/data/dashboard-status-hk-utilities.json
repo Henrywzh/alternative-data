@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-07-30T23:11:04.463226Z",
-  "snapshot_id": "47e1fe2aa8e880b0",
+  "generated_at": "2026-07-31T09:16:53.805097Z",
+  "snapshot_id": "3c086151b40c91fe",
   "data_as_of": "2026-03-31",
   "overall_status": "Healthy",
   "live_sources": 4,
@@ -21,8 +21,8 @@
       "dataset": "towngas_proxy",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-05-01",
-      "records": 569,
+      "latest_observation": "2026-06-01",
+      "records": 570,
       "freshness": "Live",
       "notes": "Monthly town gas consumption in Terajoules (TJ) by user type (Domestic, Commercial, Industrial) \u2014 de facto Towngas monopoly operational proxy."
     },
@@ -47,5 +47,5 @@
       "notes": "Semi-annual geographic segment reporting note (revenue, segment profit, share of JV/associate results) broken out by Investment in HKEI, United Kingdom, Australia, and Others."
     }
   ],
-  "attachment_filename": "hk-utilities-dashboard-2026-07-30.html"
+  "attachment_filename": "hk-utilities-dashboard-2026-07-31.html"
 }

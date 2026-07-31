@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-07-31T22:47:36.754107Z",
-  "snapshot_id": "a3e5a800b34be4bb",
+  "generated_at": "2026-07-31T22:59:05.782596Z",
+  "snapshot_id": "cab30ee1e8cf58fe",
   "data_as_of": "2026-06-01",
   "overall_status": "Degraded",
   "live_sources": 6,
@@ -117,14 +117,14 @@
       "notes": "Current vacancy by participating car park, vehicle type and vacancy status; the collection script appends snapshots for a genuine high-frequency history and does not treat unknown vacancy as zero."
     },
     {
-      "source": "Transport Department Car-Park Occupancy Signal",
+      "source": "Transport Department Metered Parking-Space Occupancy",
       "dataset": "td_carpark_occupancy",
       "type": "Snapshot",
       "status": "Degraded",
       "latest_observation": "\u2014",
       "records": 0,
       "freshness": "Capacity-covered subset unavailable",
-      "notes": "Capacity-weighted private-car occupancy rate from exact hourly vacancy counts. The denominator is available only for a capacity-covered subset of TD car parks; sample_size and coverage are retained, and the signal is not presented as all-park occupancy."
+      "notes": "Observed occupancy rate for sensor-backed metered/on-street parking spaces. The static inventory supplies the listed-space denominator and the live CSV marks each observed space occupied or vacant; sample_size and listed_spaces remain visible because a small number of status rows may be unmatched."
     }
   ],
   "attachment_filename": "hk-transport-dashboard-2026-07-31.html"
