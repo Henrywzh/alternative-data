@@ -6,9 +6,9 @@
     "title": "Hong Kong Stablecoin & Crypto Infrastructure Monitor",
     "description": "HKMA licensed stablecoin issuers, SFC licensed VATP exchanges, HKEX crypto ETF AUM, stablecoin market cap & chain tracking, DEX volume, and market sentiment indicators.",
     "sector": "hk-stablecoin-crypto",
-    "generatedAt": "2026-07-30T23:25:13Z",
-    "dataAsOf": "2026-07-30",
-    "liveSourcesCount": 4,
+    "generatedAt": "2026-07-31T09:16:53Z",
+    "dataAsOf": "2026-07-31",
+    "liveSourcesCount": 6,
     "totalSourcesCount": 7,
     "cards": [
       {
@@ -500,7 +500,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**Data snapshot:** `17ff406aa413ef22` · generated 2026-07-30T23:25:13Z.  Official HKMA & SFC regulatory registers and market tracking data."
+        "body": "**Data snapshot:** `d2377cd038871eeb` · generated 2026-07-31T09:16:53Z.  Official HKMA & SFC regulatory registers and market tracking data."
       },
       {
         "id": "kpi_grid",
@@ -557,13 +557,7 @@
         "id": "fear_greed_chart_block",
         "type": "chart",
         "chartId": "fear_greed_history_chart",
-        "layout": "half"
-      },
-      {
-        "id": "btc_price_chart_block",
-        "type": "chart",
-        "chartId": "btc_price_history_chart",
-        "layout": "half"
+        "layout": "full"
       },
       {
         "id": "polymarket_table_block",
@@ -584,28 +578,222 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-30T23:25:13Z",
+    "generatedAt": "2026-07-31T09:16:53Z",
     "status": "ready",
     "datasets": {
-      "hkma_issuers": [],
-      "sfc_vatps": [],
+      "hkma_issuers": [
+        {
+          "issuer": "Anchorpoint Financial Limited",
+          "licence_number": "FRS01",
+          "effective_date": "10/04/2026",
+          "status": "Sandbox Licensed"
+        },
+        {
+          "issuer": "The Hongkong and Shanghai Banking Corporation Limited",
+          "licence_number": "FRS02",
+          "effective_date": "10/04/2026",
+          "status": "Sandbox Licensed"
+        }
+      ],
+      "sfc_vatps": [
+        {
+          "platform_name": "OSL Digital Securities Limited",
+          "status": "Licensed",
+          "licensed_date": "15/12/2020"
+        },
+        {
+          "platform_name": "Hash Blockchain Limited",
+          "status": "Licensed",
+          "licensed_date": "09/11/2022"
+        },
+        {
+          "platform_name": "Hong Kong Virtual Asset Exchange Limited",
+          "status": "Licensed",
+          "licensed_date": "03/10/2024"
+        },
+        {
+          "platform_name": "Hong Kong Digital Asset EX Limited",
+          "status": "Licensed",
+          "licensed_date": "18/12/2024"
+        },
+        {
+          "platform_name": "Accumulus GBA Technology (Hongkong) Co., Limited",
+          "status": "Licensed",
+          "licensed_date": "18/12/2024"
+        },
+        {
+          "platform_name": "DFX Labs Company Limited",
+          "status": "Licensed",
+          "licensed_date": "18/12/2024"
+        },
+        {
+          "platform_name": "EXIO Limited",
+          "status": "Licensed",
+          "licensed_date": "18/12/2024"
+        },
+        {
+          "platform_name": "Panthertrade (Hong Kong) Limited",
+          "status": "Licensed",
+          "licensed_date": "27/01/2025"
+        },
+        {
+          "platform_name": "YAX (Hong Kong) Limited",
+          "status": "Licensed",
+          "licensed_date": "27/01/2025"
+        },
+        {
+          "platform_name": "Bullish HK Markets Limited",
+          "status": "Licensed",
+          "licensed_date": "18/02/2025"
+        },
+        {
+          "platform_name": "Hong Kong BGE Limited",
+          "status": "Licensed",
+          "licensed_date": "17/06/2025"
+        },
+        {
+          "platform_name": "Victory Fintech Company Limited",
+          "status": "Licensed",
+          "licensed_date": "13/02/2026"
+        },
+        {
+          "platform_name": "NewBX Limited",
+          "status": "Licensed",
+          "licensed_date": "18/05/2026"
+        },
+        {
+          "platform_name": "HighBlock Limited",
+          "status": "Pending",
+          "licensed_date": "06/02/2024"
+        },
+        {
+          "platform_name": "Foris DAX HK Limited^",
+          "status": "Pending",
+          "licensed_date": "09/02/2024"
+        },
+        {
+          "platform_name": "Whalefin Markets Limited^",
+          "status": "Pending",
+          "licensed_date": "21/02/2024"
+        },
+        {
+          "platform_name": "Flying Hippo Technologies Limited^#",
+          "status": "Pending",
+          "licensed_date": "26/02/2024"
+        },
+        {
+          "platform_name": "Nebulas Hong Kong Limited",
+          "status": "Pending",
+          "licensed_date": "25/10/2024"
+        },
+        {
+          "platform_name": "Spark Fintech Limited",
+          "status": "Pending",
+          "licensed_date": "06/06/2025"
+        },
+        {
+          "platform_name": "AMMBR (HK) LIMITED",
+          "status": "Withdrawn",
+          "licensed_date": "29/09/2023"
+        },
+        {
+          "platform_name": "BitHarbour (Hong Kong) Limited",
+          "status": "Withdrawn",
+          "licensed_date": "11/01/2024"
+        },
+        {
+          "platform_name": "Meex Digital Securities Limited",
+          "status": "Withdrawn",
+          "licensed_date": "12/10/2023"
+        },
+        {
+          "platform_name": "HBGL Hong Kong Limited",
+          "status": "Withdrawn",
+          "licensed_date": "20/02/2024"
+        },
+        {
+          "platform_name": "BX SERVICES LIMITED",
+          "status": "Withdrawn",
+          "licensed_date": "04/01/2024"
+        },
+        {
+          "platform_name": "Willows Asia Technology Company Limited",
+          "status": "Withdrawn",
+          "licensed_date": "22/02/2024"
+        },
+        {
+          "platform_name": "QuanX Lab Limited",
+          "status": "Withdrawn",
+          "licensed_date": "29/02/2024"
+        },
+        {
+          "platform_name": "HBGL Hong Kong Limited",
+          "status": "Withdrawn",
+          "licensed_date": "26/02/2024"
+        },
+        {
+          "platform_name": "Gate Digital Limited",
+          "status": "Withdrawn",
+          "licensed_date": "28/02/2024"
+        },
+        {
+          "platform_name": "OKX Hong Kong FinTech Company Limited",
+          "status": "Withdrawn",
+          "licensed_date": "16/11/2023"
+        },
+        {
+          "platform_name": "Hong Kong VAEXC Limited",
+          "status": "Withdrawn",
+          "licensed_date": "25/11/2023"
+        },
+        {
+          "platform_name": "Spark Fintech Limited",
+          "status": "Withdrawn",
+          "licensed_date": "31/01/2024"
+        },
+        {
+          "platform_name": "hi5 (Hong Kong) Limited",
+          "status": "Withdrawn",
+          "licensed_date": "29/02/2024"
+        },
+        {
+          "platform_name": "Hong Kong Digital Asset Xchange Limited",
+          "status": "Withdrawn",
+          "licensed_date": "27/08/2024"
+        },
+        {
+          "platform_name": "Bitcoin World Technology Limited",
+          "status": "Withdrawn",
+          "licensed_date": "17/05/2024"
+        },
+        {
+          "platform_name": "Bitcoin World Technology Limited",
+          "status": "Withdrawn",
+          "licensed_date": "10/06/2025"
+        },
+        {
+          "platform_name": "Spread Technologies Hong Kong Limited",
+          "status": "Withdrawn",
+          "licensed_date": "27/06/2025"
+        }
+      ],
       "stablecoin_supplies": [
         {
           "name": "Tether",
           "symbol": "USDT",
-          "circulating_usd_bn": 183.27,
-          "market_share_pct": 59.73
+          "circulating_usd_bn": 183.45,
+          "market_share_pct": 59.77
         },
         {
           "name": "USD Coin",
           "symbol": "USDC",
-          "circulating_usd_bn": 72.06,
-          "market_share_pct": 23.49
+          "circulating_usd_bn": 71.93,
+          "market_share_pct": 23.43
         },
         {
           "name": "Sky Dollar",
           "symbol": "USDS",
-          "circulating_usd_bn": 6.53,
+          "circulating_usd_bn": 6.55,
           "market_share_pct": 2.13
         },
         {
@@ -617,19 +805,19 @@
         {
           "name": "World Liberty Financial USD",
           "symbol": "USD1",
-          "circulating_usd_bn": 4.02,
+          "circulating_usd_bn": 4.01,
           "market_share_pct": 1.31
         },
         {
           "name": "Ethena USDe",
           "symbol": "USDe",
-          "circulating_usd_bn": 3.87,
+          "circulating_usd_bn": 3.88,
           "market_share_pct": 1.26
         },
         {
           "name": "Global Dollar",
           "symbol": "USDG",
-          "circulating_usd_bn": 3.31,
+          "circulating_usd_bn": 3.32,
           "market_share_pct": 1.08
         },
         {
@@ -639,15 +827,15 @@
           "market_share_pct": 0.98
         },
         {
-          "name": "BlackRock USD",
-          "symbol": "BUIDL",
-          "circulating_usd_bn": 2.67,
+          "name": "PayPal USD",
+          "symbol": "PYUSD",
+          "circulating_usd_bn": 2.68,
           "market_share_pct": 0.87
         },
         {
-          "name": "PayPal USD",
-          "symbol": "PYUSD",
-          "circulating_usd_bn": 2.66,
+          "name": "BlackRock USD",
+          "symbol": "BUIDL",
+          "circulating_usd_bn": 2.67,
           "market_share_pct": 0.87
         }
       ],
@@ -1175,21 +1363,21 @@
         {
           "date": "2026-07-01",
           "month": "2026-07",
-          "circulating_usd_bn": 307.06
+          "circulating_usd_bn": 306.95
         }
       ],
       "stablecoin_chains": [
         {
           "chain": "Ethereum",
-          "circulating_usd_bn": 148.25
+          "circulating_usd_bn": 148.14
         },
         {
           "chain": "Tron",
-          "circulating_usd_bn": 90.99
+          "circulating_usd_bn": 91.31
         },
         {
           "chain": "BSC",
-          "circulating_usd_bn": 18.0
+          "circulating_usd_bn": 17.99
         },
         {
           "chain": "Solana",
@@ -1197,19 +1385,19 @@
         },
         {
           "chain": "Hyperliquid L1",
-          "circulating_usd_bn": 6.32
+          "circulating_usd_bn": 6.3
         },
         {
           "chain": "Base",
-          "circulating_usd_bn": 4.88
+          "circulating_usd_bn": 4.77
         },
         {
           "chain": "Arbitrum",
-          "circulating_usd_bn": 3.71
+          "circulating_usd_bn": 3.73
         },
         {
           "chain": "Polygon",
-          "circulating_usd_bn": 3.59
+          "circulating_usd_bn": 3.6
         },
         {
           "chain": "X Layer",
@@ -1217,7 +1405,7 @@
         },
         {
           "chain": "Avalanche",
-          "circulating_usd_bn": 1.64
+          "circulating_usd_bn": 1.63
         }
       ],
       "dex_volume_history": [
@@ -1824,7 +2012,7 @@
         {
           "date": "2026-07-01",
           "month": "2026-07",
-          "dex_volume_usd_bn": 6.58
+          "dex_volume_usd_bn": 6.55
         }
       ],
       "hkex_etf_summary": [
@@ -2868,548 +3056,7 @@
           "score": 25.3
         }
       ],
-      "btc_price_history": [
-        {
-          "date": "2017-08-31",
-          "month": "2017-08",
-          "btc_price_usd": 4724.89
-        },
-        {
-          "date": "2017-09-30",
-          "month": "2017-09",
-          "btc_price_usd": 4378.51
-        },
-        {
-          "date": "2017-10-31",
-          "month": "2017-10",
-          "btc_price_usd": 6463.0
-        },
-        {
-          "date": "2017-11-30",
-          "month": "2017-11",
-          "btc_price_usd": 9838.96
-        },
-        {
-          "date": "2017-12-31",
-          "month": "2017-12",
-          "btc_price_usd": 13716.36
-        },
-        {
-          "date": "2018-01-31",
-          "month": "2018-01",
-          "btc_price_usd": 10285.1
-        },
-        {
-          "date": "2018-02-28",
-          "month": "2018-02",
-          "btc_price_usd": 10326.76
-        },
-        {
-          "date": "2018-03-31",
-          "month": "2018-03",
-          "btc_price_usd": 6923.91
-        },
-        {
-          "date": "2018-04-30",
-          "month": "2018-04",
-          "btc_price_usd": 9246.01
-        },
-        {
-          "date": "2018-05-31",
-          "month": "2018-05",
-          "btc_price_usd": 7485.01
-        },
-        {
-          "date": "2018-06-30",
-          "month": "2018-06",
-          "btc_price_usd": 6390.07
-        },
-        {
-          "date": "2018-07-31",
-          "month": "2018-07",
-          "btc_price_usd": 7730.93
-        },
-        {
-          "date": "2018-08-31",
-          "month": "2018-08",
-          "btc_price_usd": 7011.21
-        },
-        {
-          "date": "2018-09-30",
-          "month": "2018-09",
-          "btc_price_usd": 6626.57
-        },
-        {
-          "date": "2018-10-31",
-          "month": "2018-10",
-          "btc_price_usd": 6371.93
-        },
-        {
-          "date": "2018-11-30",
-          "month": "2018-11",
-          "btc_price_usd": 4041.32
-        },
-        {
-          "date": "2018-12-31",
-          "month": "2018-12",
-          "btc_price_usd": 3702.9
-        },
-        {
-          "date": "2019-01-31",
-          "month": "2019-01",
-          "btc_price_usd": 3434.1
-        },
-        {
-          "date": "2019-02-28",
-          "month": "2019-02",
-          "btc_price_usd": 3813.69
-        },
-        {
-          "date": "2019-03-31",
-          "month": "2019-03",
-          "btc_price_usd": 4103.95
-        },
-        {
-          "date": "2019-04-30",
-          "month": "2019-04",
-          "btc_price_usd": 5320.81
-        },
-        {
-          "date": "2019-05-31",
-          "month": "2019-05",
-          "btc_price_usd": 8555.0
-        },
-        {
-          "date": "2019-06-30",
-          "month": "2019-06",
-          "btc_price_usd": 10854.1
-        },
-        {
-          "date": "2019-07-31",
-          "month": "2019-07",
-          "btc_price_usd": 10080.53
-        },
-        {
-          "date": "2019-08-31",
-          "month": "2019-08",
-          "btc_price_usd": 9587.47
-        },
-        {
-          "date": "2019-09-30",
-          "month": "2019-09",
-          "btc_price_usd": 8289.34
-        },
-        {
-          "date": "2019-10-31",
-          "month": "2019-10",
-          "btc_price_usd": 9140.85
-        },
-        {
-          "date": "2019-11-30",
-          "month": "2019-11",
-          "btc_price_usd": 7541.89
-        },
-        {
-          "date": "2019-12-31",
-          "month": "2019-12",
-          "btc_price_usd": 7195.23
-        },
-        {
-          "date": "2020-01-31",
-          "month": "2020-01",
-          "btc_price_usd": 9352.89
-        },
-        {
-          "date": "2020-02-29",
-          "month": "2020-02",
-          "btc_price_usd": 8523.61
-        },
-        {
-          "date": "2020-03-31",
-          "month": "2020-03",
-          "btc_price_usd": 6410.44
-        },
-        {
-          "date": "2020-04-30",
-          "month": "2020-04",
-          "btc_price_usd": 8620.0
-        },
-        {
-          "date": "2020-05-31",
-          "month": "2020-05",
-          "btc_price_usd": 9448.27
-        },
-        {
-          "date": "2020-06-30",
-          "month": "2020-06",
-          "btc_price_usd": 9138.55
-        },
-        {
-          "date": "2020-07-31",
-          "month": "2020-07",
-          "btc_price_usd": 11335.46
-        },
-        {
-          "date": "2020-08-31",
-          "month": "2020-08",
-          "btc_price_usd": 11649.51
-        },
-        {
-          "date": "2020-09-30",
-          "month": "2020-09",
-          "btc_price_usd": 10776.59
-        },
-        {
-          "date": "2020-10-31",
-          "month": "2020-10",
-          "btc_price_usd": 13791.0
-        },
-        {
-          "date": "2020-11-30",
-          "month": "2020-11",
-          "btc_price_usd": 19695.87
-        },
-        {
-          "date": "2020-12-31",
-          "month": "2020-12",
-          "btc_price_usd": 28923.63
-        },
-        {
-          "date": "2021-01-31",
-          "month": "2021-01",
-          "btc_price_usd": 33092.98
-        },
-        {
-          "date": "2021-02-28",
-          "month": "2021-02",
-          "btc_price_usd": 45135.66
-        },
-        {
-          "date": "2021-03-31",
-          "month": "2021-03",
-          "btc_price_usd": 58740.55
-        },
-        {
-          "date": "2021-04-30",
-          "month": "2021-04",
-          "btc_price_usd": 57694.27
-        },
-        {
-          "date": "2021-05-31",
-          "month": "2021-05",
-          "btc_price_usd": 37253.81
-        },
-        {
-          "date": "2021-06-30",
-          "month": "2021-06",
-          "btc_price_usd": 35045.0
-        },
-        {
-          "date": "2021-07-31",
-          "month": "2021-07",
-          "btc_price_usd": 41461.83
-        },
-        {
-          "date": "2021-08-31",
-          "month": "2021-08",
-          "btc_price_usd": 47100.89
-        },
-        {
-          "date": "2021-09-30",
-          "month": "2021-09",
-          "btc_price_usd": 43824.1
-        },
-        {
-          "date": "2021-10-31",
-          "month": "2021-10",
-          "btc_price_usd": 61299.8
-        },
-        {
-          "date": "2021-11-30",
-          "month": "2021-11",
-          "btc_price_usd": 56950.56
-        },
-        {
-          "date": "2021-12-31",
-          "month": "2021-12",
-          "btc_price_usd": 46216.93
-        },
-        {
-          "date": "2022-01-31",
-          "month": "2022-01",
-          "btc_price_usd": 38466.9
-        },
-        {
-          "date": "2022-02-28",
-          "month": "2022-02",
-          "btc_price_usd": 43160.0
-        },
-        {
-          "date": "2022-03-31",
-          "month": "2022-03",
-          "btc_price_usd": 45510.34
-        },
-        {
-          "date": "2022-04-30",
-          "month": "2022-04",
-          "btc_price_usd": 37630.8
-        },
-        {
-          "date": "2022-05-31",
-          "month": "2022-05",
-          "btc_price_usd": 31801.04
-        },
-        {
-          "date": "2022-06-30",
-          "month": "2022-06",
-          "btc_price_usd": 19942.21
-        },
-        {
-          "date": "2022-07-31",
-          "month": "2022-07",
-          "btc_price_usd": 23293.32
-        },
-        {
-          "date": "2022-08-31",
-          "month": "2022-08",
-          "btc_price_usd": 20050.02
-        },
-        {
-          "date": "2022-09-30",
-          "month": "2022-09",
-          "btc_price_usd": 19422.61
-        },
-        {
-          "date": "2022-10-31",
-          "month": "2022-10",
-          "btc_price_usd": 20490.74
-        },
-        {
-          "date": "2022-11-30",
-          "month": "2022-11",
-          "btc_price_usd": 17163.64
-        },
-        {
-          "date": "2022-12-31",
-          "month": "2022-12",
-          "btc_price_usd": 16542.4
-        },
-        {
-          "date": "2023-01-31",
-          "month": "2023-01",
-          "btc_price_usd": 23125.13
-        },
-        {
-          "date": "2023-02-28",
-          "month": "2023-02",
-          "btc_price_usd": 23141.57
-        },
-        {
-          "date": "2023-03-31",
-          "month": "2023-03",
-          "btc_price_usd": 28465.36
-        },
-        {
-          "date": "2023-04-30",
-          "month": "2023-04",
-          "btc_price_usd": 29233.21
-        },
-        {
-          "date": "2023-05-31",
-          "month": "2023-05",
-          "btc_price_usd": 27210.35
-        },
-        {
-          "date": "2023-06-30",
-          "month": "2023-06",
-          "btc_price_usd": 30472.0
-        },
-        {
-          "date": "2023-07-31",
-          "month": "2023-07",
-          "btc_price_usd": 29232.25
-        },
-        {
-          "date": "2023-08-31",
-          "month": "2023-08",
-          "btc_price_usd": 25940.78
-        },
-        {
-          "date": "2023-09-30",
-          "month": "2023-09",
-          "btc_price_usd": 26962.56
-        },
-        {
-          "date": "2023-10-31",
-          "month": "2023-10",
-          "btc_price_usd": 34639.77
-        },
-        {
-          "date": "2023-11-30",
-          "month": "2023-11",
-          "btc_price_usd": 37723.96
-        },
-        {
-          "date": "2023-12-31",
-          "month": "2023-12",
-          "btc_price_usd": 42283.58
-        },
-        {
-          "date": "2024-01-31",
-          "month": "2024-01",
-          "btc_price_usd": 42580.0
-        },
-        {
-          "date": "2024-02-29",
-          "month": "2024-02",
-          "btc_price_usd": 61130.98
-        },
-        {
-          "date": "2024-03-31",
-          "month": "2024-03",
-          "btc_price_usd": 71280.01
-        },
-        {
-          "date": "2024-04-30",
-          "month": "2024-04",
-          "btc_price_usd": 60672.0
-        },
-        {
-          "date": "2024-05-31",
-          "month": "2024-05",
-          "btc_price_usd": 67540.01
-        },
-        {
-          "date": "2024-06-30",
-          "month": "2024-06",
-          "btc_price_usd": 62772.01
-        },
-        {
-          "date": "2024-07-31",
-          "month": "2024-07",
-          "btc_price_usd": 64628.0
-        },
-        {
-          "date": "2024-08-31",
-          "month": "2024-08",
-          "btc_price_usd": 58973.99
-        },
-        {
-          "date": "2024-09-30",
-          "month": "2024-09",
-          "btc_price_usd": 63327.59
-        },
-        {
-          "date": "2024-10-31",
-          "month": "2024-10",
-          "btc_price_usd": 70292.01
-        },
-        {
-          "date": "2024-11-30",
-          "month": "2024-11",
-          "btc_price_usd": 96407.99
-        },
-        {
-          "date": "2024-12-31",
-          "month": "2024-12",
-          "btc_price_usd": 93576.0
-        },
-        {
-          "date": "2025-01-31",
-          "month": "2025-01",
-          "btc_price_usd": 102429.56
-        },
-        {
-          "date": "2025-02-28",
-          "month": "2025-02",
-          "btc_price_usd": 84349.94
-        },
-        {
-          "date": "2025-03-31",
-          "month": "2025-03",
-          "btc_price_usd": 82550.01
-        },
-        {
-          "date": "2025-04-30",
-          "month": "2025-04",
-          "btc_price_usd": 94172.0
-        },
-        {
-          "date": "2025-05-31",
-          "month": "2025-05",
-          "btc_price_usd": 104591.88
-        },
-        {
-          "date": "2025-06-30",
-          "month": "2025-06",
-          "btc_price_usd": 107146.5
-        },
-        {
-          "date": "2025-07-31",
-          "month": "2025-07",
-          "btc_price_usd": 115764.08
-        },
-        {
-          "date": "2025-08-31",
-          "month": "2025-08",
-          "btc_price_usd": 108246.35
-        },
-        {
-          "date": "2025-09-30",
-          "month": "2025-09",
-          "btc_price_usd": 114048.93
-        },
-        {
-          "date": "2025-10-31",
-          "month": "2025-10",
-          "btc_price_usd": 109608.01
-        },
-        {
-          "date": "2025-11-30",
-          "month": "2025-11",
-          "btc_price_usd": 90360.0
-        },
-        {
-          "date": "2025-12-31",
-          "month": "2025-12",
-          "btc_price_usd": 87648.22
-        },
-        {
-          "date": "2026-01-31",
-          "month": "2026-01",
-          "btc_price_usd": 78741.09
-        },
-        {
-          "date": "2026-02-28",
-          "month": "2026-02",
-          "btc_price_usd": 66973.26
-        },
-        {
-          "date": "2026-03-31",
-          "month": "2026-03",
-          "btc_price_usd": 68284.48
-        },
-        {
-          "date": "2026-04-30",
-          "month": "2026-04",
-          "btc_price_usd": 76346.57
-        },
-        {
-          "date": "2026-05-31",
-          "month": "2026-05",
-          "btc_price_usd": 73674.39
-        },
-        {
-          "date": "2026-06-30",
-          "month": "2026-06",
-          "btc_price_usd": 58624.71
-        },
-        {
-          "date": "2026-07-30",
-          "month": "2026-07",
-          "btc_price_usd": 64930.0
-        }
-      ],
+      "btc_price_history": [],
       "polymarket_catalysts": [
         {
           "title": "How low will 10-year Treasury yield get before 2027?",
@@ -3422,14 +3069,19 @@
           "end_date": "2026-12-31"
         },
         {
+          "title": "Ethereum ETF Flows on July 30?",
+          "probability_pct": 100.0,
+          "end_date": "2026-07-30"
+        },
+        {
+          "title": "Bitcoin ETF Flows on July 30?",
+          "probability_pct": 100.0,
+          "end_date": "2026-07-30"
+        },
+        {
           "title": "How many Fed rate cuts in 2026?",
           "probability_pct": 89.3,
           "end_date": "2026-12-31"
-        },
-        {
-          "title": "What will be the next Fed rate change?",
-          "probability_pct": 67.0,
-          "end_date": "2028-12-31"
         },
         {
           "title": "Fed rate hike in 2026?",
@@ -3437,28 +3089,23 @@
           "end_date": "2026-12-09"
         },
         {
+          "title": "What will be the next Fed rate change?",
+          "probability_pct": 63.5,
+          "end_date": "2028-12-31"
+        },
+        {
+          "title": "Ethereum ETF Flows on July 31?",
+          "probability_pct": 63.5,
+          "end_date": "2026-07-31"
+        },
+        {
           "title": "Largest Company end of December 2026?",
           "probability_pct": 57.5,
           "end_date": "2026-12-31"
         },
         {
-          "title": "Bitcoin ETF Flows on July 31?",
-          "probability_pct": 50.5,
-          "end_date": "2026-07-31"
-        },
-        {
-          "title": "Ethereum ETF Flows on July 30?",
-          "probability_pct": 50.0,
-          "end_date": "2026-07-30"
-        },
-        {
-          "title": "Ethereum ETF Flows on July 31?",
-          "probability_pct": 50.0,
-          "end_date": "2026-07-31"
-        },
-        {
           "title": "Bitcoin ETF Flows on August 3?",
-          "probability_pct": 50.0,
+          "probability_pct": 51.0,
           "end_date": "2026-08-03"
         }
       ],
@@ -3620,15 +3267,15 @@
       ],
       "market_kpi_summary": [
         {
-          "hkma_count": 0,
-          "sfc_licensed_count": 0,
-          "sfc_pending_count": 0,
-          "total_supply_bn": 306.83,
+          "hkma_count": 2,
+          "sfc_licensed_count": 13,
+          "sfc_pending_count": 6,
+          "total_supply_bn": 306.93,
           "total_etf_aum_m": 299.09,
-          "btc_price": 64875.91,
-          "cb_premium_bps": -8.02,
-          "fear_greed_val": 28,
-          "fear_greed_class": "Fear"
+          "btc_price": null,
+          "cb_premium_bps": null,
+          "fear_greed_val": 25,
+          "fear_greed_class": "Extreme Fear"
         }
       ]
     }
@@ -3730,17 +3377,17 @@
     {
       "id": "hkma_register",
       "label": "HKMA Licensed Stablecoin Issuers Register",
-      "status": "degraded",
-      "records": 0,
-      "freshness": "unavailable",
+      "status": "success",
+      "records": 2,
+      "freshness": "live",
       "notes": "Official ground-truth sandbox register of licensed stablecoin issuers (Anchorpoint FRS01, HSBC FRS02)."
     },
     {
       "id": "sfc_vatp",
       "label": "SFC Virtual Asset Trading Platforms Register",
-      "status": "degraded",
-      "records": 0,
-      "freshness": "unavailable",
+      "status": "success",
+      "records": 36,
+      "freshness": "live",
       "notes": "Official 4-status SFC register of VATP exchange operators (licensed, pending, withdrawn, forced-closure)."
     },
     {
@@ -3762,9 +3409,9 @@
     {
       "id": "coinbase_binance",
       "label": "Coinbase & Binance Public Tickers",
-      "status": "success",
-      "records": 1,
-      "freshness": "live",
+      "status": "degraded",
+      "records": 0,
+      "freshness": "unavailable",
       "notes": "Real-time BTC spot price, long-run price history, and Coinbase Premium spread."
     },
     {
@@ -3788,8 +3435,8 @@
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-stablecoin-crypto/",
     "sector_id": "hk-stablecoin-crypto",
     "sector_name": "Hong Kong Stablecoin & Crypto Infrastructure Monitor",
-    "snapshotId": "17ff406aa413ef22",
-    "generatedAt": "2026-07-30T23:25:13Z",
-    "dataAsOf": "2026-07-30"
+    "snapshotId": "d2377cd038871eeb",
+    "generatedAt": "2026-07-31T09:16:53Z",
+    "dataAsOf": "2026-07-31"
   }
 }

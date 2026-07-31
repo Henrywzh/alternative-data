@@ -6,9 +6,9 @@
     "title": "Hong Kong Population, Migration & Cross-Border Data Monitor",
     "description": "High-frequency passenger net flow, population estimates, MPF departure claims, Mainland student enrolment & GBA transport signals.",
     "sector": "hk-population-migration",
-    "generatedAt": "2026-07-30T22:48:58.457273Z",
-    "dataAsOf": "2026-07-29",
-    "liveSourcesCount": 5,
+    "generatedAt": "2026-07-31T09:16:54.319983Z",
+    "dataAsOf": "2026-07-30",
+    "liveSourcesCount": 4,
     "totalSourcesCount": 5,
     "cards": [
       {
@@ -291,7 +291,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**Data snapshot:** `9765f42a28bf5ef8` · generated 2026-07-30T22:48:58.457273Z.  This is a published snapshot, not a live connection. Official ImmD, C&SD, MPFA, UGC and TD open data."
+        "body": "**Data snapshot:** `2dac5d7d456ca460` · generated 2026-07-31T09:16:54.319983Z.  This is a published snapshot, not a live connection. Official ImmD, C&SD, MPFA, UGC and TD open data."
       },
       {
         "id": "kpi_grid",
@@ -319,18 +319,6 @@
         "chartId": "td_cross_border_chart"
       },
       {
-        "id": "mpfa_claims_chart_block",
-        "type": "chart",
-        "chartId": "mpfa_claims_chart",
-        "layout": "half"
-      },
-      {
-        "id": "mpfa_claims_count_chart_block",
-        "type": "chart",
-        "chartId": "mpfa_claims_count_chart",
-        "layout": "half"
-      },
-      {
         "id": "ugc_students_chart_block",
         "type": "chart",
         "chartId": "ugc_students_chart",
@@ -345,17 +333,10 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-30T22:48:58.457273Z",
-    "status": "ready",
+    "generatedAt": "2026-07-31T09:16:54.319983Z",
+    "status": "partial",
     "datasets": {
       "immd_daily_traffic": [
-        {
-          "date": "2025-07-30",
-          "hk_resident_net_flow": 2477.0,
-          "mainland_visitor_net_retention": -1600.0,
-          "hk_resident_departures_7d_ma": 339618.4,
-          "mainland_visitor_arrivals_7d_ma": 134529.6
-        },
         {
           "date": "2025-07-31",
           "hk_resident_net_flow": -4379.0,
@@ -2903,19 +2884,16 @@
           "mainland_visitor_net_retention": 14590.0,
           "hk_resident_departures_7d_ma": 304758.6,
           "mainland_visitor_arrivals_7d_ma": 117278.0
+        },
+        {
+          "date": "2026-07-30",
+          "hk_resident_net_flow": -9576.0,
+          "mainland_visitor_net_retention": 3089.0,
+          "hk_resident_departures_7d_ma": 303323.1,
+          "mainland_visitor_arrivals_7d_ma": 117918.3
         }
       ],
       "immd_net_flow_history": [
-        {
-          "date": "2025-07-30",
-          "series": "HK Resident Net Flow",
-          "value": 2477.0
-        },
-        {
-          "date": "2025-07-30",
-          "series": "Mainland Visitor Net Retention",
-          "value": -1600.0
-        },
         {
           "date": "2025-07-31",
           "series": "HK Resident Net Flow",
@@ -6555,6 +6533,16 @@
           "date": "2026-07-29",
           "series": "Mainland Visitor Net Retention",
           "value": 14590.0
+        },
+        {
+          "date": "2026-07-30",
+          "series": "HK Resident Net Flow",
+          "value": -9576.0
+        },
+        {
+          "date": "2026-07-30",
+          "series": "Mainland Visitor Net Retention",
+          "value": 3089.0
         }
       ],
       "csd_population": [
@@ -8631,78 +8619,7 @@
           "value": 7510.8
         }
       ],
-      "mpfa_claims": [
-        {
-          "quarter": "2022-Q4",
-          "claims_count": 7000,
-          "amount_mhkd": 1716.0
-        },
-        {
-          "quarter": "2023-Q1",
-          "claims_count": 6700,
-          "amount_mhkd": 1573.0
-        },
-        {
-          "quarter": "2023-Q2",
-          "claims_count": 7300,
-          "amount_mhkd": 1787.0
-        },
-        {
-          "quarter": "2023-Q3",
-          "claims_count": 8700,
-          "amount_mhkd": 2213.0
-        },
-        {
-          "quarter": "2023-Q4",
-          "claims_count": 7200,
-          "amount_mhkd": 1688.0
-        },
-        {
-          "quarter": "2024-Q1",
-          "claims_count": 6500,
-          "amount_mhkd": 1507.0
-        },
-        {
-          "quarter": "2024-Q2",
-          "claims_count": 7300,
-          "amount_mhkd": 1702.0
-        },
-        {
-          "quarter": "2024-Q3",
-          "claims_count": 7600,
-          "amount_mhkd": 1815.0
-        },
-        {
-          "quarter": "2024-Q4",
-          "claims_count": 6600,
-          "amount_mhkd": 1572.0
-        },
-        {
-          "quarter": "2025-Q1",
-          "claims_count": 6700,
-          "amount_mhkd": 1626.0
-        },
-        {
-          "quarter": "2025-Q2",
-          "claims_count": 6400,
-          "amount_mhkd": 1575.0
-        },
-        {
-          "quarter": "2025-Q3",
-          "claims_count": 6900,
-          "amount_mhkd": 1661.0
-        },
-        {
-          "quarter": "2025-Q4",
-          "claims_count": 4200,
-          "amount_mhkd": 1024.0
-        },
-        {
-          "quarter": "2026-Q1",
-          "claims_count": 5000,
-          "amount_mhkd": 1188.0
-        }
-      ],
+      "mpfa_claims": [],
       "ugc_students": [
         {
           "academic_year": "2010/11",
@@ -10443,7 +10360,7 @@
         {
           "latest_pop": 7510.8,
           "latest_net_mov": 29.1,
-          "latest_mpfa": 1188.0,
+          "latest_mpfa": null,
           "latest_ugc": 23961
         }
       ]
@@ -10517,7 +10434,7 @@
       "label": "Immigration Department Daily Passenger Traffic",
       "status": "success",
       "records": 365,
-      "latest_observation": "2026-07-29",
+      "latest_observation": "2026-07-30",
       "freshness": "dated",
       "notes": "Daily passenger clearance by control point, direction and residency, used to derive HK-resident net flow and Mainland-visitor net retention."
     },
@@ -10533,10 +10450,10 @@
     {
       "id": "mpfa",
       "label": "MPFA Statistical Digest",
-      "status": "success",
-      "records": 14,
-      "latest_observation": "2026-Q1",
-      "freshness": "dated",
+      "status": "degraded",
+      "records": 0,
+      "latest_observation": "—",
+      "freshness": "unavailable",
       "notes": "Quarterly MPF claims for permanent departure from Hong Kong (count and amount), parsed from the official Statistical Digest."
     },
     {
@@ -10562,8 +10479,8 @@
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-population-migration/",
     "sector_id": "hk-population-migration",
     "sector_name": "Hong Kong Population, Migration & Cross-Border Data Monitor",
-    "snapshotId": "9765f42a28bf5ef8",
-    "generatedAt": "2026-07-30T22:48:58.457273Z",
-    "dataAsOf": "2026-07-29"
+    "snapshotId": "2dac5d7d456ca460",
+    "generatedAt": "2026-07-31T09:16:54.319983Z",
+    "dataAsOf": "2026-07-30"
   }
 }
