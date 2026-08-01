@@ -1173,29 +1173,33 @@ def compute_compute_availability_views(datasets: dict[str, DatasetLoadResult]) -
         max_snapshot_size = max(group["model_id"].nunique() for _, group in snapshot_groups)
         full_snapshot_threshold = max_snapshot_size * 0.8
 
-        current_catalog: dict[str, pd.Series] = {}
+        # Catalog size over time ("as of this snapshot"): walk snapshots in
+        # order tracking which model_ids are known - a full snapshot replaces
+        # the known set entirely, a partial/change-only snapshot only adds to
+        # it. Only the *count* is needed here, so track a set of model_ids
+        # rather than full row data (no per-row Python objects at all).
+        current_model_ids: set[str] = set()
         growth_rows: list[dict[str, object]] = []
+        last_full_snapshot_ts: pd.Timestamp | None = None
 
         for snapshot_ts, group in snapshot_groups:
-            snapshot_rows = (
-                group.drop_duplicates(subset=["model_id"], keep="last")
-                .sort_values("model_id")
-                .reset_index(drop=True)
-            )
-
-            if snapshot_rows["model_id"].nunique() >= full_snapshot_threshold:
-                current_catalog = {
-                    str(row["model_id"]): row.copy()
-                    for _, row in snapshot_rows.iterrows()
-                }
+            snapshot_model_ids = set(group["model_id"].astype(str).unique())
+            if len(snapshot_model_ids) >= full_snapshot_threshold:
+                current_model_ids = snapshot_model_ids
+                last_full_snapshot_ts = snapshot_ts
             else:
-                for _, row in snapshot_rows.iterrows():
-                    current_catalog[str(row["model_id"])] = row.copy()
-
-            growth_rows.append({"snapshot_ts": snapshot_ts, "model_count": len(current_catalog)})
+                current_model_ids |= snapshot_model_ids
+            growth_rows.append({"snapshot_ts": snapshot_ts, "model_count": len(current_model_ids)})
 
         latest_ts = snapshot_groups[-1][0]
-        latest_models = pd.DataFrame(current_catalog.values()).sort_values("model_id").reset_index(drop=True)
+        # A full snapshot wholesale-replaces the catalog, so anything before
+        # the *last* full snapshot can never survive into the final state -
+        # only that snapshot and whatever comes after it can still matter.
+        # That lets the final row-level catalog come from a single sort +
+        # drop_duplicates(keep="last") instead of repeating the per-snapshot
+        # walk with full row payloads.
+        relevant = df if last_full_snapshot_ts is None else df[df["snapshot_ts"] >= last_full_snapshot_ts]
+        latest_models = relevant.drop_duplicates(subset="model_id", keep="last").sort_values("model_id").reset_index(drop=True)
         # Prefer the authoritative current catalog emitted by the daily source.
         # The historical table is change-only and therefore cannot remove a
         # model that disappeared from the upstream API.
@@ -1399,8 +1403,24 @@ def _drop_identical_route_alias_rows(frame: pd.DataFrame) -> pd.DataFrame:
     if not compare_columns:
         return frame
     grouping = [column for column in ("usage_date_dt", "category_slug", "_base_model") if column in result.columns]
+    # Almost every (date, category, base_model) group has just one row -
+    # a group only needs the detailed row-by-row comparison below if it has
+    # BOTH a free and a paid route, which is rare (a handful of groups out of
+    # what's typically tens of thousands). Find those candidate groups with a
+    # single cheap vectorized pass instead of running pandas' groupby/iterrows
+    # machinery, with all its per-group DataFrame construction overhead, on
+    # every group only to immediately skip almost all of them.
+    route_counts = result.groupby(grouping, dropna=False)["_is_free_route"].agg(["sum", "count"])
+    candidate_keys = route_counts.index[(route_counts["sum"] > 0) & (route_counts["sum"] < route_counts["count"])]
+    if len(candidate_keys) == 0:
+        return frame
+    candidate_mask = (
+        result.set_index(grouping).index.isin(candidate_keys)
+        if len(grouping) > 1
+        else result[grouping[0]].isin(candidate_keys)
+    )
     drop_indices: set[object] = set()
-    for _, group in result.groupby(grouping, dropna=False, sort=False):
+    for _, group in result.loc[candidate_mask].groupby(grouping, dropna=False, sort=False):
         free_rows = group[group["_is_free_route"]]
         paid_rows = group[~group["_is_free_route"]]
         if free_rows.empty or paid_rows.empty:
