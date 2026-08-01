@@ -259,6 +259,11 @@ data/registries/*
 # bloats git history (these are regenerated daily). Keep parquet only.
 data/normalized/**/*.csv
 
+# Commercial aerospace append-only history used to turn CelesTrak snapshots
+# into a real time series across scheduled artifact builds.
+!data/normalized/hk_commercial_aerospace/
+!data/normalized/hk_commercial_aerospace/*.jsonl
+
 # Secrets and environment
 .env
 .env.*

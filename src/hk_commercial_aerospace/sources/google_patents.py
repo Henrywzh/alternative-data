@@ -8,7 +8,6 @@ import requests
 import pandas as pd
 
 from ..config import (
-    DEFAULT_HEADERS,
     DEFAULT_TIMEOUT,
     GOOGLE_PATENTS_URL,
 )

@@ -1654,6 +1654,9 @@ const HK_COMMERCIAL_AEROSPACE_ZH = {
     satellite_count_chart: ["中国商业卫星星座在轨数量", "Celestrak 追踪的千帆 (G60) 及吉林一号星座在轨活跃卫星数。", "星座", "卫星数"],
     patent_count_chart: ["商业火箭企业专利申请估算", "各火箭制造企业专利申请数量估算。", "企业", "专利数"],
     launch_cadence_chart: ["各商业航天企业发射次数统计", "Launch Library 2 追踪的历史商业发射次数。", "发射企业", "发射次数"],
+    launch_monthly_chart: ["中国商业航天月度发射次数", "按 Launch Library 2 精确企业匹配、按发射编号去重的月度历史。", "月份", "发射次数", "发射企业"],
+    satellite_history_chart: ["中国商业卫星星座追踪历史", "Celestrak 累积的日度快照；追踪目标不一定等同于正在运行的卫星。", "日期", "追踪目标数", "星座"],
+    global_space_benchmark_chart: ["全球进入太空的物体数量", "基于 UNOOSA 的年度 World、中国和美国基准；统计的是物体/有效载荷，不是火箭发射次数。", "年份", "物体数量", "地区"],
   },
   tables: {
     ipo_race_table: {
@@ -1676,12 +1679,57 @@ const HK_COMMERCIAL_AEROSPACE_ZH = {
       subtitle: "中央经济工作会议及政府工作报告政策定位。",
       columns: { date: "日期", event: "政策里程碑" },
     },
+    szse_ipo_table: {
+      title: "深交所航天相关行业 IPO 项目",
+      subtitle: "深交所广义行业分类包含航空、铁路及其他运输设备；原始行业字段保留供复核。",
+      columns: { company_name: "公司", board: "板块", status: "状态", industry: "行业分类", update_date: "更新日期", accept_date: "受理日期" },
+    },
+    faa_kpi_table: {
+      title: "FAA 商业航天监管指标",
+      subtitle: "美国联邦航空管理局官方累计指标及当前有效授权数量。",
+      columns: { metric: "指标", value: "数值", observed_date: "观察日期" },
+    },
+    usaspending_contracts_table: {
+      title: "美国商业航天政府合同发现",
+      subtitle: "按关键词发现的联邦政府合同；合同金额不是公司营业收入。",
+      columns: { award_id: "合同编号", recipient_name: "收款方", award_amount: "合同金额", awarding_agency: "授予机构", start_date: "开始日期", keyword: "匹配关键词" },
+    },
+    sec_space_filings_table: {
+      title: "上市商业航天公司 SEC 披露",
+      subtitle: "官方证券披露事件流；目前仅使用 filing metadata，不推断订单或融资金额。",
+      columns: { ticker: "代码", company_name: "公司", form: "表格类型", filing_date: "提交日期", primary_doc_description: "文件说明", filing_url: "披露文件" },
+    },
+  },
+  dataLabels: {
+    launch_cadence: {
+      provider: { LandSpace: "蓝箭航天", "Galactic Energy": "星河动力", "CAS Space": "中科宇航", "Space Pioneer": "天兵科技", "Orienspace": "东方空间", "Deep Blue Aerospace": "深蓝航天", "i-Space": "星际荣耀" },
+    },
+    launch_cadence_summary: {
+      provider: { LandSpace: "蓝箭航天", "Galactic Energy": "星河动力", "CAS Space": "中科宇航", "Space Pioneer": "天兵科技", "Orienspace": "东方空间", "Deep Blue Aerospace": "深蓝航天", "i-Space": "星际荣耀" },
+    },
+    launch_monthly: {
+      provider: { LandSpace: "蓝箭航天", "Galactic Energy": "星河动力", "CAS Space": "中科宇航", "Space Pioneer": "天兵科技", "Orienspace": "东方空间", "Deep Blue Aerospace": "深蓝航天", "i-Space": "星际荣耀" },
+    },
+    satellite_counts: {
+      constellation: { Qianfan: "千帆", Jilin1: "吉林一号", Guowang: "国网" },
+    },
+    satellite_history: {
+      constellation: { Qianfan: "千帆", Jilin1: "吉林一号", Guowang: "国网" },
+    },
+    global_space_benchmark: {
+      entity: { World: "全球", China: "中国", "United States": "美国" },
+    },
   },
   sources: {
     sse_star_market_ipo: "上交所科创板 IPO 审核状态",
     launch_library_2: "Launch Library 2 商业发射数据库",
     celestrak: "Celestrak NORAD 卫星轨道数据",
     google_patents: "Google Patents 专利搜索",
+    szse_aerospace_ipo: "深交所航天相关行业 IPO 项目",
+    faa_commercial_space: "美国联邦航空管理局商业航天指标",
+    usaspending_contracts: "美国联邦合同支出数据库",
+    sec_space_company_filings: "美国证券交易委员会公司披露",
+    global_space_benchmark: "UNOOSA / Our World in Data 全球太空活动基准",
   },
   snapshotBody: (artifact) =>
     `**数据快照：** \`${artifact.package_info.snapshotId}\` · 生成于 ${artifact.manifest.generatedAt}。`,

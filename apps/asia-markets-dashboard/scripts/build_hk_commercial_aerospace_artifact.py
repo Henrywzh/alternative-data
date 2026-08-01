@@ -16,9 +16,21 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from src.hk_commercial_aerospace.sources.sse_ipo_status import fetch_all_ipo_statuses
-from src.hk_commercial_aerospace.sources.launch_library import fetch_chinese_commercial_launches, fetch_upcoming_launches
-from src.hk_commercial_aerospace.sources.celestrak_satellites import fetch_all_constellations, KNOWN_GAPS
+from src.hk_commercial_aerospace.sources.launch_library import (
+    build_monthly_launch_summary,
+    fetch_chinese_commercial_launches,
+    fetch_upcoming_launches,
+)
+from src.hk_commercial_aerospace.sources.celestrak_satellites import (
+    fetch_all_constellations,
+    load_constellation_history,
+)
 from src.hk_commercial_aerospace.sources.google_patents import fetch_all_patent_counts
+from src.hk_commercial_aerospace.sources.szse_ipo_status import fetch_aerospace_ipo_projects
+from src.hk_commercial_aerospace.sources.faa_commercial_space import fetch_faa_commercial_space_kpis
+from src.hk_commercial_aerospace.sources.usaspending import fetch_commercial_space_contracts
+from src.hk_commercial_aerospace.sources.global_space_benchmark import fetch_global_objects_launched
+from src.hk_commercial_aerospace.sources.sec_space_companies import fetch_sec_space_company_filings
 from src.hk_commercial_aerospace.config import (
     HK_AEROSPACE_WATCHLIST,
     POLICY_MILESTONES,
@@ -79,6 +91,71 @@ PUBLIC_SOURCES = {
             "description": "Estimated patent filing counts for Chinese commercial space companies.",
         },
     },
+    "szse_aerospace_ipo": {
+        "id": "szse_aerospace_ipo",
+        "label": "SZSE ChiNext Aerospace-Industry IPO Projects",
+        "href": "https://www.szse.cn/listing/projectdynamic/ipo/index.html",
+        "path": "sources/szse_ipo_status.sql",
+        "query": {
+            "engine": "SZSE projectrends REST endpoint",
+            "url": "https://listing.szse.cn/api/ras/projectrends/query",
+            "language": "REST",
+            "sql": "SELECT company_name, board, status, industry, update_date FROM szse_aerospace_ipo;",
+            "description": "Current IPO projects classified by SZSE under rail, ship, aviation, aerospace and other transport equipment manufacturing.",
+        },
+    },
+    "faa_commercial_space": {
+        "id": "faa_commercial_space",
+        "label": "FAA Commercial Space By the Numbers",
+        "href": "https://www.faa.gov/node/52196",
+        "path": "sources/faa_commercial_space.sql",
+        "query": {
+            "engine": "FAA official HTML KPI page",
+            "url": "https://www.faa.gov/node/52196",
+            "language": "HTML",
+            "sql": "SELECT metric, value, observed_date FROM faa_commercial_space;",
+            "description": "Cumulative licensed launches, reentries, spaceport licenses, experimental launches, safety approvals and active launch licenses.",
+        },
+    },
+    "usaspending_contracts": {
+        "id": "usaspending_contracts",
+        "label": "USAspending Commercial Space Contracts",
+        "href": "https://www.usaspending.gov/search",
+        "path": "sources/usaspending.sql",
+        "query": {
+            "engine": "USAspending v2 spending_by_award",
+            "url": "https://api.usaspending.gov/api/v2/search/spending_by_award/",
+            "language": "REST",
+            "sql": "SELECT award_id, recipient_name, award_amount, awarding_agency, description FROM usaspending_contracts;",
+            "description": "Recent federal awards discovered using commercial-space, commercial-satellite and launch-services keywords.",
+        },
+    },
+    "sec_space_company_filings": {
+        "id": "sec_space_company_filings",
+        "label": "SEC Commercial Space Company Filings",
+        "href": "https://www.sec.gov/edgar/search/",
+        "path": "sources/sec_space_companies.sql",
+        "query": {
+            "engine": "SEC submissions JSON",
+            "url": "https://data.sec.gov/submissions/CIK{cik}.json",
+            "language": "REST",
+            "sql": "SELECT ticker, company_name, form, filing_date, primary_doc_description FROM sec_space_company_filings;",
+            "description": "Official filing-event feed for Rocket Lab, AST SpaceMobile, Planet Labs, Intuitive Machines and Redwire; no inferred order amount.",
+        },
+    },
+    "global_space_benchmark": {
+        "id": "global_space_benchmark",
+        "label": "Global Objects Launched into Space",
+        "href": "https://ourworldindata.org/grapher/yearly-number-of-objects-launched-into-outer-space",
+        "path": "sources/global_space_benchmark.sql",
+        "query": {
+            "engine": "UNOOSA data via Our World in Data CSV",
+            "url": "https://ourworldindata.org/grapher/yearly-number-of-objects-launched-into-outer-space.csv",
+            "language": "CSV",
+            "sql": "SELECT entity, year, objects_launched FROM global_space_benchmark;",
+            "description": "Annual objects launched for World, China and the United States. This is payload/object activity, not rocket launch count.",
+        },
+    },
 }
 
 
@@ -86,15 +163,22 @@ def _utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+def _latest_observation(rows: list[dict], field: str, fallback: str | None = None) -> str | None:
+    values = [str(row.get(field, ""))[:10] for row in rows if row.get(field)]
+    return max(values) if values else fallback
+
+
 def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict[str, Any]]:
     now = now or _utc_now()
     generated_at = now.isoformat().replace("+00:00", "Z")
     data_as_of = now.strftime("%Y-%m-%d")
 
-    live_count = 0
+    empty_source_frame = pd.DataFrame()
 
     # 1. Fetch IPO status
     ipo_rows = []
+    ipo_df = empty_source_frame
+    szse_ipo_df = empty_source_frame
     landspace_status = "Unknown"
     landspace_audit = None
     cas_space_status = "Unknown"
@@ -103,7 +187,6 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
     try:
         ipo_df = fetch_all_ipo_statuses()
         if not ipo_df.empty:
-            live_count += 1
             for _, row in ipo_df.iterrows():
                 comp_en = row["name_en"]
                 comp_zh = row["name_zh"]
@@ -137,13 +220,31 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
                 "exchange": "SSE STAR Market" if comp.get("audit_num") else "N/A",
             })
 
+    # 1b. Fetch SZSE aerospace-industry IPO projects.
+    szse_ipo_rows = []
+    try:
+        szse_ipo_df = fetch_aerospace_ipo_projects()
+        if not szse_ipo_df.empty:
+            szse_ipo_rows = szse_ipo_df.to_dict(orient="records")
+    except Exception as e:
+        print(f"Warning: SZSE IPO fetch failed - {e}")
+
     # 2. Fetch Launches
     launch_rows = []
     total_launches = 0
+    launch_source = "unavailable"
     try:
         launches_dict = fetch_chinese_commercial_launches()
-        if any(not df.empty for df in launches_dict.values()):
-            live_count += 1
+        launch_sources = {
+            frame.attrs.get("source", "unavailable")
+            for frame in launches_dict.values()
+        }
+        if "live" in launch_sources:
+            launch_source = "live"
+        elif "cache" in launch_sources:
+            launch_source = "cache"
+        elif "history" in launch_sources:
+            launch_source = "history"
 
         for provider, df in launches_dict.items():
             if not df.empty:
@@ -159,6 +260,15 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
                         "month": year_month,
                         "year": year_str,
                         "status": row["status_abbrev"],
+                        "provider_id": row.get("provider_id"),
+                        "rocket_name": row.get("rocket_name"),
+                        "rocket_family": row.get("rocket_family"),
+                        "pad_name": row.get("pad_name"),
+                        "orbit": row.get("orbit_abbrev"),
+                        "mission_type": row.get("mission_type"),
+                        "launch_designator": row.get("launch_designator"),
+                        "country_code": row.get("country_code"),
+                        "last_updated": row.get("last_updated"),
                     })
                     total_launches += 1
     except Exception as e:
@@ -166,7 +276,7 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
 
     # 2b. Fetch Upcoming Launch Calendar
     upcoming_rows = []
-    upcoming_source = "live"
+    upcoming_source = "unavailable"
     try:
         up_df = fetch_upcoming_launches(100)
         upcoming_source = up_df.attrs.get("source", "live")
@@ -191,24 +301,46 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
     except Exception as e:
         print(f"Warning: Upcoming launch fetch failed - {e}")
 
+    launch_frame = pd.DataFrame(launch_rows)
+    if not launch_frame.empty:
+        launch_frame = launch_frame.drop_duplicates("launch_id")
+        total_launches = len(launch_frame)
+
+    launch_monthly_df = build_monthly_launch_summary(
+        pd.DataFrame([
+            {
+                "launch_id": row.get("launch_id"),
+                "net_time": row.get("date"),
+                "provider_name": row.get("provider"),
+                "status_abbrev": row.get("status"),
+            }
+            for row in (launch_frame.to_dict(orient="records") if not launch_frame.empty else [])
+        ])
+    )
+
     # Aggregated launch cadence by provider (total launches per company)
     launch_cadence_summary = []
     provider_counts: dict[str, int] = {}
-    for r in launch_rows:
-        p = r["provider"]
-        provider_counts[p] = provider_counts.get(p, 0) + 1
+    if not launch_frame.empty:
+        for provider, count in launch_frame["provider"].value_counts().items():
+            provider_counts[provider] = int(count)
     for p in CHINESE_LAUNCH_AGENCIES:
         cnt = provider_counts.get(p, 0)
         launch_cadence_summary.append({"provider": p, "launch_count": cnt})
 
     # 3. Fetch Satellites
     sat_rows = []
+    sat_df = empty_source_frame
+    satellite_history_df = empty_source_frame
+    satellite_source = "unavailable"
+    satellite_partial = False
     qianfan_count = None
     jilin1_count = None
     try:
         sat_df = fetch_all_constellations()
+        satellite_source = sat_df.attrs.get("source", "unavailable")
+        satellite_partial = bool(sat_df.attrs.get("partial", False))
         if not sat_df.empty:
-            live_count += 1
             for _, row in sat_df.iterrows():
                 c_name = row["constellation"]
                 cnt = row["satellite_count"]
@@ -222,6 +354,7 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
                     "count": cnt,
                     "as_of": row["fetched_at"][:10] if row.get("fetched_at") else data_as_of,
                 })
+        satellite_history_df = load_constellation_history()
         sat_rows.append({
             "constellation": "Guowang",
             "operator": "China Satellite Network Group",
@@ -233,10 +366,10 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
 
     # 4. Fetch Patents
     patent_rows = []
+    pat_df = empty_source_frame
     try:
         pat_df = fetch_all_patent_counts()
         if not pat_df.empty and pat_df["estimated_count"].notna().any():
-            live_count += 1
             for _, row in pat_df.iterrows():
                 cnt = row["estimated_count"]
                 if pd.notna(cnt):
@@ -247,7 +380,29 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
     except Exception as e:
         print(f"Warning: Patent fetch failed - {e}")
 
-    # 5. HK-listed Watchlist
+    # 5. Stage 2 public global/US feeds.
+    faa_df = empty_source_frame
+    contracts_df = empty_source_frame
+    sec_filings_df = empty_source_frame
+    global_benchmark_df = empty_source_frame
+    try:
+        faa_df = fetch_faa_commercial_space_kpis()
+    except Exception as e:
+        print(f"Warning: FAA commercial-space fetch failed - {e}")
+    try:
+        contracts_df = fetch_commercial_space_contracts()
+    except Exception as e:
+        print(f"Warning: USAspending fetch failed - {e}")
+    try:
+        sec_filings_df = fetch_sec_space_company_filings()
+    except Exception as e:
+        print(f"Warning: SEC space-company fetch failed - {e}")
+    try:
+        global_benchmark_df = fetch_global_objects_launched()
+    except Exception as e:
+        print(f"Warning: Global benchmark fetch failed - {e}")
+
+    # 6. HK-listed Watchlist
     watchlist_rows = []
     for ticker, desc in HK_AEROSPACE_WATCHLIST.items():
         is_core = "[NOTE:" not in desc
@@ -271,9 +426,16 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
         "ipo_race": ipo_rows,
         "upcoming_launches": upcoming_rows,
         "launch_cadence": launch_rows,
+        "launch_monthly": launch_monthly_df.to_dict(orient="records"),
         "launch_cadence_summary": launch_cadence_summary,
         "satellite_counts": sat_rows,
+        "satellite_history": satellite_history_df.to_dict(orient="records") if not satellite_history_df.empty else [],
         "patent_counts": patent_rows,
+        "szse_ipo_projects": szse_ipo_rows,
+        "faa_commercial_space": faa_df.to_dict(orient="records") if not faa_df.empty else [],
+        "usaspending_contracts": contracts_df.to_dict(orient="records") if not contracts_df.empty else [],
+        "sec_space_filings": sec_filings_df.to_dict(orient="records") if not sec_filings_df.empty else [],
+        "global_space_benchmark": global_benchmark_df.to_dict(orient="records") if not global_benchmark_df.empty else [],
         "aerospace_watchlist": watchlist_rows,
         "policy_milestones": policy_rows,
         "kpi_summary": [{
@@ -358,6 +520,51 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
             "valueFormat": "number",
             "layout": "full",
         },
+        {
+            "id": "launch_monthly_chart",
+            "title": "Chinese Commercial Launches by Month",
+            "subtitle": "Exact Launch Library 2 provider matches, deduplicated by launch ID.",
+            "type": "line",
+            "dataset": "launch_monthly",
+            "sourceId": "launch_library_2",
+            "encodings": {
+                "x": {"field": "month", "type": "temporal", "label": "Month"},
+                "y": {"field": "launch_count", "type": "quantitative", "label": "Launches"},
+                "series": {"field": "provider", "type": "nominal", "label": "Provider"},
+            },
+            "valueFormat": "number",
+            "layout": "full",
+        },
+        {
+            "id": "satellite_history_chart",
+            "title": "Tracked Chinese Commercial Constellation History",
+            "subtitle": "Daily snapshots accumulated from CelesTrak; tracked objects are not guaranteed operational satellites.",
+            "type": "line",
+            "dataset": "satellite_history",
+            "sourceId": "celestrak",
+            "encodings": {
+                "x": {"field": "as_of", "type": "temporal", "label": "Date"},
+                "y": {"field": "satellite_count", "type": "quantitative", "label": "Tracked Objects"},
+                "series": {"field": "constellation", "type": "nominal", "label": "Constellation"},
+            },
+            "valueFormat": "number",
+            "layout": "full",
+        },
+        {
+            "id": "global_space_benchmark_chart",
+            "title": "Global Objects Launched into Space",
+            "subtitle": "Annual UNOOSA-based benchmark for World, China and the United States; this counts objects, not rocket launches.",
+            "type": "line",
+            "dataset": "global_space_benchmark",
+            "sourceId": "global_space_benchmark",
+            "encodings": {
+                "x": {"field": "year", "type": "temporal", "label": "Year"},
+                "y": {"field": "objects_launched", "type": "quantitative", "label": "Objects"},
+                "series": {"field": "entity", "type": "nominal", "label": "Entity"},
+            },
+            "valueFormat": "number",
+            "layout": "full",
+        },
     ]
 
     # Tables
@@ -424,9 +631,81 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
                 {"field": "event", "label": "Policy Milestone", "type": "text"},
             ],
         },
+        {
+            "id": "szse_ipo_table",
+            "title": "SZSE Aerospace-Industry IPO Projects",
+            "subtitle": "The classification is broader than pure commercial space; industry remains visible for review.",
+            "dataset": "szse_ipo_projects",
+            "sourceId": "szse_aerospace_ipo",
+            "density": "dense",
+            "layout": "full",
+            "columns": [
+                {"field": "company_name", "label": "Company", "type": "text"},
+                {"field": "board", "label": "Board", "type": "text"},
+                {"field": "status", "label": "Status", "type": "text"},
+                {"field": "industry", "label": "Industry", "type": "text"},
+                {"field": "update_date", "label": "Updated", "type": "text"},
+                {"field": "accept_date", "label": "Accepted", "type": "text"},
+            ],
+        },
+        {
+            "id": "faa_kpi_table",
+            "title": "FAA Commercial Space Regulatory KPIs",
+            "subtitle": "Official cumulative and active authorization metrics.",
+            "dataset": "faa_commercial_space",
+            "sourceId": "faa_commercial_space",
+            "density": "dense",
+            "layout": "half",
+            "columns": [
+                {"field": "metric", "label": "Metric", "type": "text"},
+                {"field": "value", "label": "Value", "type": "number"},
+                {"field": "observed_date", "label": "Observed", "type": "text"},
+            ],
+        },
+        {
+            "id": "usaspending_contracts_table",
+            "title": "US Commercial Space Contract Discovery",
+            "subtitle": "Federal awards discovered by keyword; amounts are award amounts, not company revenue.",
+            "dataset": "usaspending_contracts",
+            "sourceId": "usaspending_contracts",
+            "density": "dense",
+            "layout": "full",
+            "columns": [
+                {"field": "award_id", "label": "Award ID", "type": "text"},
+                {"field": "recipient_name", "label": "Recipient", "type": "text"},
+                {"field": "award_amount", "label": "Award Amount", "type": "number"},
+                {"field": "awarding_agency", "label": "Agency", "type": "text"},
+                {"field": "start_date", "label": "Start", "type": "text"},
+                {"field": "keyword", "label": "Matched Keyword", "type": "text"},
+            ],
+        },
+        {
+            "id": "sec_space_filings_table",
+            "title": "Listed Commercial Space Company Filings",
+            "subtitle": "Official SEC filing events for global listed space companies; filing metadata only.",
+            "dataset": "sec_space_filings",
+            "sourceId": "sec_space_company_filings",
+            "density": "dense",
+            "layout": "full",
+            "columns": [
+                {"field": "ticker", "label": "Ticker", "type": "text"},
+                {"field": "company_name", "label": "Company", "type": "text"},
+                {"field": "form", "label": "Form", "type": "text"},
+                {"field": "filing_date", "label": "Filing Date", "type": "text"},
+                {"field": "primary_doc_description", "label": "Description", "type": "text"},
+                {"field": "filing_url", "label": "Filing", "type": "text"},
+            ],
+        },
     ]
 
     manifest_sources = list(PUBLIC_SOURCES.values())
+
+    launch_history_latest = _latest_observation(launch_rows, "date")
+    upcoming_latest = _latest_observation(upcoming_rows, "net_date")
+    satellite_history_latest = _latest_observation(
+        satellite_history_df.to_dict(orient="records") if not satellite_history_df.empty else [],
+        "as_of",
+    )
 
     # Build dynamic source_health entries based on actual fetch results
     source_stats = {
@@ -434,25 +713,67 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
             "status": "success" if (not ipo_df.empty) else "degraded",
             "records": len(ipo_df) if (not ipo_df.empty) else 0,
             "freshness": "live" if (not ipo_df.empty) else "unavailable",
+            "latest_observation": _latest_observation(ipo_rows, "update_date", data_as_of if not ipo_df.empty else None),
         },
         "launch_library_2": {
-            "status": "success" if (total_launches > 0 or len(upcoming_rows) > 0) else "degraded",
+            "status": "success" if (launch_source == "live" or upcoming_source == "live") else "degraded",
             "records": total_launches + len(upcoming_rows),
             "freshness": (
-                "live" if (total_launches > 0 or upcoming_source == "live")
-                else "stale" if len(upcoming_rows) > 0
+                "live" if (launch_source == "live" or upcoming_source == "live")
+                else "stale" if (total_launches > 0 or len(upcoming_rows) > 0)
                 else "unavailable"
             ),
+            "latest_observation": launch_history_latest or upcoming_latest,
         },
         "celestrak": {
-            "status": "success" if (not sat_df.empty) else "degraded",
+            "status": (
+                "degraded" if satellite_partial
+                else "success" if satellite_source == "live"
+                else "degraded"
+            ),
             "records": len(sat_df) if (not sat_df.empty) else 0,
-            "freshness": "live" if (not sat_df.empty) else "unavailable",
+            "freshness": "live" if satellite_source == "live" else "unavailable",
+            "latest_observation": _latest_observation(
+                sat_df.to_dict(orient="records") if satellite_source == "live" else [],
+                "fetched_at",
+                satellite_history_latest,
+            ),
         },
         "google_patents": {
             "status": "success" if (not pat_df.empty and pat_df["estimated_count"].notna().any()) else "failed",
             "records": int(pat_df["estimated_count"].notna().sum()) if not pat_df.empty else 0,
             "freshness": "live" if (not pat_df.empty and pat_df["estimated_count"].notna().any()) else "unavailable",
+            "latest_observation": data_as_of if (not pat_df.empty and pat_df["estimated_count"].notna().any()) else None,
+        },
+        "szse_aerospace_ipo": {
+            "status": "success" if not szse_ipo_df.empty else "degraded",
+            "records": len(szse_ipo_df),
+            "freshness": "live" if not szse_ipo_df.empty else "unavailable",
+            "latest_observation": _latest_observation(szse_ipo_rows, "update_date", data_as_of if not szse_ipo_df.empty else None),
+        },
+        "faa_commercial_space": {
+            "status": "success" if not faa_df.empty else "degraded",
+            "records": len(faa_df),
+            "freshness": "live" if not faa_df.empty else "unavailable",
+            "latest_observation": _latest_observation(faa_df.to_dict(orient="records"), "observed_date", data_as_of if not faa_df.empty else None),
+        },
+        "usaspending_contracts": {
+            "status": "success" if not contracts_df.empty else "degraded",
+            "records": len(contracts_df),
+            "freshness": "live" if not contracts_df.empty else "unavailable",
+            "latest_observation": data_as_of if not contracts_df.empty else None,
+        },
+        "sec_space_company_filings": {
+            "status": "success" if not sec_filings_df.empty else "degraded",
+            "records": len(sec_filings_df),
+            "freshness": "live" if not sec_filings_df.empty else "unavailable",
+            "latest_observation": _latest_observation(sec_filings_df.to_dict(orient="records"), "filing_date", data_as_of if not sec_filings_df.empty else None),
+        },
+        "global_space_benchmark": {
+            "status": "success" if not global_benchmark_df.empty else "degraded",
+            "records": len(global_benchmark_df),
+            "freshness": "live" if not global_benchmark_df.empty else "unavailable",
+            "latest_observation": _latest_observation(global_benchmark_df.to_dict(orient="records"), "year", data_as_of if not global_benchmark_df.empty else None),
         },
     }
 
@@ -462,7 +783,7 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
             "label": s["label"],
             "status": source_stats[key]["status"],
             "records": source_stats[key]["records"],
-            "latest_observation": data_as_of,
+            "latest_observation": source_stats[key].get("latest_observation"),
             "freshness": source_stats[key]["freshness"],
             "notes": s["query"]["description"],
         }
@@ -471,7 +792,7 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
 
     snapshot_payload = {
         "datasets": datasets,
-        "source_urls": [s.get("url") for s in PUBLIC_SOURCES.values() if s.get("url")],
+        "source_urls": [s.get("href") for s in PUBLIC_SOURCES.values() if s.get("href")],
     }
     snapshot_id = hashlib.sha256(
         json.dumps(snapshot_payload, sort_keys=True, separators=(",", ":"), default=str).encode("utf-8")
@@ -511,6 +832,20 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
             ),
         },
     ])
+    if not launch_monthly_df.empty:
+        blocks.append({"id": "launch_monthly_chart_block", "type": "chart", "chartId": "launch_monthly_chart"})
+    if not satellite_history_df.empty:
+        blocks.append({"id": "satellite_history_chart_block", "type": "chart", "chartId": "satellite_history_chart"})
+    if szse_ipo_rows:
+        blocks.append({"id": "szse_ipo_table_block", "type": "table", "tableId": "szse_ipo_table"})
+    if not faa_df.empty:
+        blocks.append({"id": "faa_kpi_table_block", "type": "table", "tableId": "faa_kpi_table"})
+    if not contracts_df.empty:
+        blocks.append({"id": "usaspending_contracts_table_block", "type": "table", "tableId": "usaspending_contracts_table"})
+    if not sec_filings_df.empty:
+        blocks.append({"id": "sec_space_filings_table_block", "type": "table", "tableId": "sec_space_filings_table"})
+    if not global_benchmark_df.empty:
+        blocks.append({"id": "global_space_benchmark_chart_block", "type": "chart", "chartId": "global_space_benchmark_chart"})
 
     artifact = {
         "surface": "dashboard",
@@ -522,7 +857,7 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
             "sector": "hk-commercial-aerospace",
             "generatedAt": generated_at,
             "dataAsOf": data_as_of,
-            "liveSourcesCount": live_count if live_count > 0 else len(PUBLIC_SOURCES),
+            "liveSourcesCount": sum(item["status"] == "success" for item in source_stats.values()),
             "totalSourcesCount": len(PUBLIC_SOURCES),
             "cards": cards,
             "charts": charts,
@@ -547,8 +882,8 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
         "generated_at": generated_at,
         "snapshot_id": snapshot_id,
         "data_as_of": data_as_of,
-        "overall_status": "Healthy",
-        "live_sources": len(PUBLIC_SOURCES),
+        "overall_status": "Healthy" if all(item["status"] == "success" for item in source_stats.values()) else "Degraded",
+        "live_sources": sum(item["status"] == "success" for item in source_stats.values()),
         "planned_sources": 0,
         "sources": [
             {

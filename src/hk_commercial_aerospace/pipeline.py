@@ -3,13 +3,17 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
 from typing import Any
 
 from .sources.launch_library import fetch_upcoming_launches, fetch_chinese_commercial_launches
 from .sources.sse_ipo_status import fetch_all_ipo_statuses
 from .sources.celestrak_satellites import fetch_all_constellations
 from .sources.google_patents import fetch_all_patent_counts
+from .sources.szse_ipo_status import fetch_aerospace_ipo_projects
+from .sources.faa_commercial_space import fetch_faa_commercial_space_kpis
+from .sources.usaspending import fetch_commercial_space_contracts
+from .sources.global_space_benchmark import fetch_global_objects_launched
+from .sources.sec_space_companies import fetch_sec_space_company_filings
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +42,31 @@ QUALITY_SPECS = {
         "kind": "measure",
         "required": ["assignee_query", "fetched_at"],
         "max_age_days": 30,
+    },
+    "szse_ipo_projects": {
+        "kind": "status_table",
+        "required": ["company_name", "status", "industry", "fetched_at"],
+        "max_age_days": 7,
+    },
+    "faa_commercial_space": {
+        "kind": "measure",
+        "required": ["metric", "value", "observed_date", "fetched_at"],
+        "max_age_days": 30,
+    },
+    "usaspending_contracts": {
+        "kind": "event_feed",
+        "required": ["award_id", "recipient_name", "award_amount", "fetched_at"],
+        "max_age_days": 30,
+    },
+    "global_space_benchmark": {
+        "kind": "measure",
+        "required": ["entity", "year", "objects_launched", "fetched_at"],
+        "max_age_days": 365,
+    },
+    "sec_space_filings": {
+        "kind": "event_feed",
+        "required": ["ticker", "form", "filing_date", "fetched_at"],
+        "max_age_days": 14,
     },
 }
 
@@ -115,4 +144,30 @@ def run_stage_1_pipeline() -> dict[str, Any]:
         logger.exception("Patent Counts ingestion failed")
         results["patent_counts"] = {"error": str(exc)}
 
+    try:
+        logger.info("Ingesting SZSE aerospace IPO projects...")
+        results["szse_ipo_projects"] = fetch_aerospace_ipo_projects()
+    except Exception as exc:
+        logger.exception("SZSE aerospace IPO ingestion failed")
+        results["szse_ipo_projects"] = {"error": str(exc)}
+
+    return results
+
+
+def run_stage_2_pipeline() -> dict[str, Any]:
+    """Execute Stage 2 global contracts, regulatory and company-event feeds."""
+    results: dict[str, Any] = {}
+    fetchers = {
+        "faa_commercial_space": fetch_faa_commercial_space_kpis,
+        "usaspending_contracts": fetch_commercial_space_contracts,
+        "global_space_benchmark": fetch_global_objects_launched,
+        "sec_space_filings": fetch_sec_space_company_filings,
+    }
+    for key, fetcher in fetchers.items():
+        try:
+            logger.info("Ingesting %s...", key)
+            results[key] = fetcher()
+        except Exception as exc:
+            logger.exception("%s ingestion failed", key)
+            results[key] = {"error": str(exc)}
     return results
