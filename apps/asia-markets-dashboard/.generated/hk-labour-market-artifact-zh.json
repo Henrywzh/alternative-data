@@ -6,7 +6,7 @@
     "title": "香港劳动力市场与人才政策",
     "description": "劳动力、就业、失业、职位空缺、工资、就业收入及官方人才政策流量的来源快照。",
     "sector": "hk-labour-market",
-    "generatedAt": "2026-07-30T23:25:13.184365Z",
+    "generatedAt": "2026-07-31T20:19:45.796215Z",
     "cards": [
       {
         "id": "labour_force_card",
@@ -117,7 +117,7 @@
       },
       {
         "id": "talent_policy_card",
-        "description": "各人才计划的年度申请及批准总数；申请不等于实际抵港或就业。",
+        "description": "各人才计划的年度申请及批准总数；QMAS 使用官方获配名额（甄选成功个案）作为批准等值指标；申请不等于实际抵港或就业。",
         "dataset": "kpi_talent_policy",
         "sourceId": "talent_policy_open_data",
         "metrics": [
@@ -418,7 +418,7 @@
       {
         "id": "talent_policy_approved_chart",
         "title": "人才政策批准数",
-        "subtitle": "按计划划分的年度批准数；批准不等于实际抵港、启动签证或进入劳动力市场。",
+        "subtitle": "按计划划分的年度批准数；QMAS 使用官方获配名额（甄选成功个案）作为批准等值指标。批准不等于实际抵港、启动签证或进入劳动力市场。",
         "type": "line",
         "intent": "trend",
         "dataset": "talent_policy_approved_history",
@@ -469,7 +469,7 @@
       {
         "id": "talent_policy_latest_table",
         "title": "最新年度人才政策流量（按计划）",
-        "subtitle": "官方年度数字；优秀人才计划配额不等于实际抵港或就业人数。",
+        "subtitle": "官方年度数字；QMAS 的批准数使用获配名额（甄选成功个案），原始配额另行保留，不等于实际抵港或就业人数。",
         "dataset": "talent_policy_latest",
         "sourceId": "talent_policy_open_data",
         "density": "dense",
@@ -681,18 +681,18 @@
       {
         "id": "methodology",
         "type": "markdown",
-        "body": "## 如何阅读本 dashboard\n\n本页将政府统计处劳动力市场数据，与劳工处及入境事务处的人才政策流量数据并列。劳动力及就业收入的月度序列是三个月移动平均；职位空缺与工资／薪金指数为季度数据；人才政策数据为年度数据。申请、批准及优秀人才计划配额不应解读为已确认抵港、仍在港就业或劳动力参与人数。"
+        "body": "## 如何阅读本 dashboard\n\n本页将政府统计处劳动力市场数据，与劳工处及入境事务处的人才政策流量数据并列。劳动力及就业收入的月度序列是三个月移动平均；职位空缺与工资／薪金指数为季度数据；人才政策数据为年度数据。QMAS 官方获配名额代表甄选成功个案，并在批准数显示中作为批准等值指标；原始 QMAS 配额字段仍会单独保留。申请、批准及优秀人才计划配额不应解读为已确认抵港、仍在港就业或劳动力参与人数。"
       },
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**数据快照：** `aa7195ed3d75f93a` · 生成于 2026-07-30T23:25:13.184365Z。"
+        "body": "**数据快照：** `cba9287a3610f8ab` · 生成于 2026-07-31T20:19:45.796215Z。"
       }
     ]
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-30T23:25:13.184365Z",
+    "generatedAt": "2026-07-31T20:19:45.796215Z",
     "status": "ready",
     "datasets": {
       "kpi_labour_force": [
@@ -730,7 +730,7 @@
       "kpi_talent_policy": [
         {
           "applications_received": 147454,
-          "applications_approved": 117359,
+          "applications_approved": 124460,
           "qmas_quota": 7101,
           "observation_date": "2025-12-31"
         }
@@ -36540,205 +36540,309 @@
           "month": "2016-12",
           "date": "2016-12-31",
           "series": "内地",
-          "value": 10404
+          "value": 10404,
+          "approval_basis": "applications_approved"
         },
         {
           "month": "2016-12",
           "date": "2016-12-31",
           "series": "一般",
-          "value": 35997
+          "value": 35997,
+          "approval_basis": "applications_approved"
         },
         {
           "month": "2016-12",
           "date": "2016-12-31",
           "series": "IANG",
-          "value": 9289
+          "value": 9289,
+          "approval_basis": "applications_approved"
+        },
+        {
+          "month": "2016-12",
+          "date": "2016-12-31",
+          "series": "优秀",
+          "value": 273,
+          "approval_basis": "quota_allotted"
         },
         {
           "month": "2017-12",
           "date": "2017-12-31",
           "series": "内地",
-          "value": 12381
+          "value": 12381,
+          "approval_basis": "applications_approved"
         },
         {
           "month": "2017-12",
           "date": "2017-12-31",
           "series": "一般",
-          "value": 39952
+          "value": 39952,
+          "approval_basis": "applications_approved"
         },
         {
           "month": "2017-12",
           "date": "2017-12-31",
           "series": "IANG",
-          "value": 9331
+          "value": 9331,
+          "approval_basis": "applications_approved"
+        },
+        {
+          "month": "2017-12",
+          "date": "2017-12-31",
+          "series": "优秀",
+          "value": 411,
+          "approval_basis": "quota_allotted"
         },
         {
           "month": "2018-12",
           "date": "2018-12-31",
           "series": "内地",
-          "value": 13768
+          "value": 13768,
+          "approval_basis": "applications_approved"
         },
         {
           "month": "2018-12",
           "date": "2018-12-31",
           "series": "一般",
-          "value": 41592
+          "value": 41592,
+          "approval_basis": "applications_approved"
         },
         {
           "month": "2018-12",
           "date": "2018-12-31",
           "series": "IANG",
-          "value": 10150
+          "value": 10150,
+          "approval_basis": "applications_approved"
+        },
+        {
+          "month": "2018-12",
+          "date": "2018-12-31",
+          "series": "优秀",
+          "value": 555,
+          "approval_basis": "quota_allotted"
         },
         {
           "month": "2019-12",
           "date": "2019-12-31",
           "series": "内地",
-          "value": 14053
+          "value": 14053,
+          "approval_basis": "applications_approved"
         },
         {
           "month": "2019-12",
           "date": "2019-12-31",
           "series": "一般",
-          "value": 41289
+          "value": 41289,
+          "approval_basis": "applications_approved"
         },
         {
           "month": "2019-12",
           "date": "2019-12-31",
           "series": "IANG",
-          "value": 10799
+          "value": 10799,
+          "approval_basis": "applications_approved"
+        },
+        {
+          "month": "2019-12",
+          "date": "2019-12-31",
+          "series": "优秀",
+          "value": 874,
+          "approval_basis": "quota_allotted"
         },
         {
           "month": "2020-12",
           "date": "2020-12-31",
           "series": "内地",
-          "value": 6995
+          "value": 6995,
+          "approval_basis": "applications_approved"
         },
         {
           "month": "2020-12",
           "date": "2020-12-31",
           "series": "一般",
-          "value": 14617
+          "value": 14617,
+          "approval_basis": "applications_approved"
         },
         {
           "month": "2020-12",
           "date": "2020-12-31",
           "series": "IANG",
-          "value": 7154
+          "value": 7154,
+          "approval_basis": "applications_approved"
+        },
+        {
+          "month": "2020-12",
+          "date": "2020-12-31",
+          "series": "优秀",
+          "value": 1709,
+          "approval_basis": "quota_allotted"
         },
         {
           "month": "2021-12",
           "date": "2021-12-31",
           "series": "内地",
-          "value": 9065
+          "value": 9065,
+          "approval_basis": "applications_approved"
         },
         {
           "month": "2021-12",
           "date": "2021-12-31",
           "series": "一般",
-          "value": 13821
+          "value": 13821,
+          "approval_basis": "applications_approved"
         },
         {
           "month": "2021-12",
           "date": "2021-12-31",
           "series": "IANG",
-          "value": 7259
+          "value": 7259,
+          "approval_basis": "applications_approved"
+        },
+        {
+          "month": "2021-12",
+          "date": "2021-12-31",
+          "series": "优秀",
+          "value": 2004,
+          "approval_basis": "quota_allotted"
         },
         {
           "month": "2022-12",
           "date": "2022-12-31",
           "series": "内地",
-          "value": 11768
+          "value": 11768,
+          "approval_basis": "applications_approved"
         },
         {
           "month": "2022-12",
           "date": "2022-12-31",
           "series": "一般",
-          "value": 13495
+          "value": 13495,
+          "approval_basis": "applications_approved"
         },
         {
           "month": "2022-12",
           "date": "2022-12-31",
           "series": "IANG",
-          "value": 10391
+          "value": 10391,
+          "approval_basis": "applications_approved"
+        },
+        {
+          "month": "2022-12",
+          "date": "2022-12-31",
+          "series": "优秀",
+          "value": 2845,
+          "approval_basis": "quota_allotted"
         },
         {
           "month": "2022-12",
           "date": "2022-12-31",
           "series": "高端",
-          "value": 875
+          "value": 875,
+          "approval_basis": "applications_approved"
         },
         {
           "month": "2023-12",
           "date": "2023-12-31",
           "series": "内地",
-          "value": 19757
+          "value": 19757,
+          "approval_basis": "applications_approved"
         },
         {
           "month": "2023-12",
           "date": "2023-12-31",
           "series": "一般",
-          "value": 26270
+          "value": 26270,
+          "approval_basis": "applications_approved"
         },
         {
           "month": "2023-12",
           "date": "2023-12-31",
           "series": "IANG",
-          "value": 26089
+          "value": 26089,
+          "approval_basis": "applications_approved"
+        },
+        {
+          "month": "2023-12",
+          "date": "2023-12-31",
+          "series": "优秀",
+          "value": 12969,
+          "approval_basis": "quota_allotted"
         },
         {
           "month": "2023-12",
           "date": "2023-12-31",
           "series": "高端",
-          "value": 49737
+          "value": 49737,
+          "approval_basis": "applications_approved"
         },
         {
           "month": "2024-12",
           "date": "2024-12-31",
           "series": "内地",
-          "value": 25344
+          "value": 25344,
+          "approval_basis": "applications_approved"
         },
         {
           "month": "2024-12",
           "date": "2024-12-31",
           "series": "一般",
-          "value": 35058
+          "value": 35058,
+          "approval_basis": "applications_approved"
         },
         {
           "month": "2024-12",
           "date": "2024-12-31",
           "series": "IANG",
-          "value": 25475
+          "value": 25475,
+          "approval_basis": "applications_approved"
+        },
+        {
+          "month": "2024-12",
+          "date": "2024-12-31",
+          "series": "优秀",
+          "value": 11848,
+          "approval_basis": "quota_allotted"
         },
         {
           "month": "2024-12",
           "date": "2024-12-31",
           "series": "高端",
-          "value": 41057
+          "value": 41057,
+          "approval_basis": "applications_approved"
         },
         {
           "month": "2025-12",
           "date": "2025-12-31",
           "series": "内地",
-          "value": 26714
+          "value": 26714,
+          "approval_basis": "applications_approved"
         },
         {
           "month": "2025-12",
           "date": "2025-12-31",
           "series": "一般",
-          "value": 31278
+          "value": 31278,
+          "approval_basis": "applications_approved"
         },
         {
           "month": "2025-12",
           "date": "2025-12-31",
           "series": "IANG",
-          "value": 27630
+          "value": 27630,
+          "approval_basis": "applications_approved"
+        },
+        {
+          "month": "2025-12",
+          "date": "2025-12-31",
+          "series": "优秀",
+          "value": 7101,
+          "approval_basis": "quota_allotted"
         },
         {
           "month": "2025-12",
           "date": "2025-12-31",
           "series": "高端",
-          "value": 31508
+          "value": 31508,
+          "approval_basis": "applications_approved"
         }
       ],
       "talent_policy_latest": [
@@ -36774,7 +36878,7 @@
           "scheme": "Quality Migrant Admission Scheme",
           "series": "优秀",
           "applications_received": 18707,
-          "applications_approved": null,
+          "applications_approved": 7101,
           "qmas_quota": 7101
         },
         {
@@ -36910,7 +37014,7 @@
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-labour-market/",
-    "snapshotId": "aa7195ed3d75f93a",
+    "snapshotId": "cba9287a3610f8ab",
     "dataAsOf": "2026-06-30"
   }
 }

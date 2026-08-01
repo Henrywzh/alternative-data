@@ -7,8 +7,9 @@ or the related `src/hk_*` pipelines.
 ## 1. Project purpose
 
 Asia Markets is a source-backed Hong Kong-first market-monitoring project. It
-combines research notes, normalized data pipelines, published artifacts and a
-non-Streamlit static/interactive dashboard hosted on Cloudflare Pages.
+combines research notes, normalized data pipelines, published artifacts, a
+public static/interactive dashboard hosted on Cloudflare Pages and a private
+Streamlit research terminal.
 
 The dashboard is not an investment-advice product. Do not add rankings,
 forecasts or recommendations unless the user explicitly asks for a separate
@@ -21,8 +22,11 @@ The current production dashboard is:
 - Data status: <https://asia-markets-dashboard.pages.dev/data-status/>
 - Chinese data status: <https://asia-markets-dashboard.pages.dev/zh/data-status/>
 
-This project is separate from any Streamlit app. The Cloudflare dashboard is
-the primary published surface unless the user explicitly says otherwise.
+The Cloudflare dashboard is the public monitoring surface and remains the
+primary published surface unless the user explicitly says otherwise. The
+Streamlit app is a separate private research surface for richer interactive
+views; it reads the existing generated artifacts and does not replace the
+Cloudflare pipeline.
 
 ## 2. Read first
 
@@ -30,9 +34,13 @@ At the beginning of a task:
 
 1. Read this manual.
 2. Read `PROJECT_STATUS.md` and `DATA_CATALOG.md`.
-3. Inspect `apps/asia-markets-dashboard/sectors.json` before changing the
+3. Read `STREAMLIT_PARITY_PROTOCOL.md` before changing Cloudflare artifacts,
+   dashboard builders, source contracts or sector wiring. The non-blocking
+   GitHub Action automatically reminds agents when a structural Cloudflare
+   change needs a Streamlit decision; routine value-only refreshes stay quiet.
+4. Inspect `apps/asia-markets-dashboard/sectors.json` before changing the
    sector roster.
-4. Run `git status --short` and preserve existing user work. Do not reset,
+5. Run `git status --short` and preserve existing user work. Do not reset,
    discard or overwrite unrelated changes.
 
 The repository root `AGENTS.md` and `CLAUDE.md` point here for Codex,
@@ -76,6 +84,19 @@ source/API/scraper
   -> apps/asia-markets-dashboard/dist/
   -> Cloudflare Pages
 ```
+
+The private Streamlit V1 flow is intentionally thinner:
+
+```text
+existing .generated/<sector>-artifact.json
+  -> apps/asia-markets-streamlit/app.py
+  -> Plotly charts, KPI cards, tables and source-health views
+```
+
+The current Streamlit V1 connects only `hk-labour-market` and
+`hk-population-migration`. It must not fetch from external sources during page
+navigation or create a second copy of the source pipelines. Other markets,
+company explorer and cross-market comparison are future scope.
 
 Important files:
 
@@ -178,6 +199,16 @@ cap is not the same as source-history availability. Always distinguish:
 - rows retained in the artifact;
 - rows displayed in the table/chart.
 
+### Transport parking signals
+
+Keep the two TD parking feeds separate. The 548-car-park vacancy feed is a
+current vacancy snapshot with vacancy-type exclusions; it has no historical
+capacity denominator. The metered/on-street occupancy feed joins the official
+parking-space inventory to live occupied/vacant sensor status and is a
+different, sensor-covered sample. It becomes a trend only through repeated
+dated collector runs; never present either feed as all-Hong-Kong parking
+occupancy.
+
 ### Store footprints
 
 Store-footprint data is a snapshot unless enough dated observations exist for a
@@ -253,6 +284,16 @@ PYTHON_BIN=/Users/henrywzh/.pyenv/shims/python3 npm run build
 
 It may perform network fetches and update generated data. Do not run it merely
 to inspect a source file when a focused artifact or test is enough.
+
+For the private Streamlit V1 local app:
+
+```bash
+cd /Users/henrywzh/Desktop/Quant/alternative-data
+streamlit run apps/asia-markets-streamlit/app.py
+```
+
+This command is for local development or an explicitly requested Streamlit
+deployment; it is not part of the Cloudflare build.
 
 ## 9. Deployment rules
 

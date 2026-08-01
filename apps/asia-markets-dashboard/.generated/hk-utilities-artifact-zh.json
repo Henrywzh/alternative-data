@@ -4,9 +4,9 @@
     "version": 1,
     "surface": "dashboard",
     "title": "香港公用事业与基础设施监测",
-    "description": "中电控股（CLP）季度售电量拆解、中华煤气（Towngas）代理数据、香港天文台日均气温与电能实业（Power Assets）分部业绩快照。",
+    "description": "中电控股（CLP）季度售电量拆解、中华煤气（Towngas）代理数据、香港天文台日均气温、电能实业（Power Assets）分部业绩、渠务署污水流量/实验室数据及水务署停水通告。",
     "sector": "hk-utilities",
-    "generatedAt": "2026-07-30T23:11:04.463226Z",
+    "generatedAt": "2026-08-01T08:34:39.880848Z",
     "cards": [
       {
         "id": "clp_card",
@@ -188,22 +188,22 @@
         "columns": [
           {
             "field": "geography",
-            "label": "地区",
+            "label": "Geography",
             "type": "text"
           },
           {
             "field": "revenue_hkdm",
-            "label": "分部收入 (百万港元)",
+            "label": "Segment Revenue (HK$m)",
             "format": "number"
           },
           {
             "field": "segment_profit_hkdm",
-            "label": "分部溢利 (百万港元)",
+            "label": "Segment Profit (HK$m)",
             "format": "number"
           },
           {
             "field": "jv_associate_results_hkdm",
-            "label": "合资/联营业绩 (百万港元)",
+            "label": "JV/Associate Results (HK$m)",
             "format": "number"
           }
         ]
@@ -294,7 +294,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-30T23:11:04.463226Z",
+    "generatedAt": "2026-08-01T08:34:39.880848Z",
     "status": "ready",
     "datasets": {
       "kpi_clp": [
@@ -308,11 +308,11 @@
       ],
       "kpi_towngas": [
         {
-          "latest": 2047.8,
-          "domestic_tj": 1058.6,
-          "commercial_tj": 864.3,
-          "period_change": -0.156451,
-          "observation_date": "2026-05-01"
+          "latest": 2137.3,
+          "domestic_tj": 1099.9,
+          "commercial_tj": 906,
+          "period_change": 0.043705,
+          "observation_date": "2026-06-01"
         }
       ],
       "kpi_temp": [
@@ -477,14 +477,6 @@
         }
       ],
       "towngas_history": [
-        {
-          "date": "2016-05-01",
-          "month": "2016-05",
-          "domestic_gas_tj": 1140,
-          "commercial_gas_tj": 971,
-          "industrial_gas_tj": 134,
-          "total_gas_tj": 2246
-        },
         {
           "date": "2016-06-01",
           "month": "2016-06",
@@ -1444,15 +1436,17 @@
           "commercial_gas_tj": 864.3,
           "industrial_gas_tj": 124.8,
           "total_gas_tj": 2047.8
+        },
+        {
+          "date": "2026-06-01",
+          "month": "2026-06",
+          "domestic_gas_tj": 1099.9,
+          "commercial_gas_tj": 906,
+          "industrial_gas_tj": 131.4,
+          "total_gas_tj": 2137.3
         }
       ],
       "towngas_type_history": [
-        {
-          "date": "2016-05-01",
-          "month": "2016-05",
-          "series": "商业",
-          "value": 971
-        },
         {
           "date": "2016-06-01",
           "month": "2016-06",
@@ -2174,10 +2168,10 @@
           "value": 864.3
         },
         {
-          "date": "2016-05-01",
-          "month": "2016-05",
-          "series": "住宅",
-          "value": 1140
+          "date": "2026-06-01",
+          "month": "2026-06",
+          "series": "商业",
+          "value": 906
         },
         {
           "date": "2016-06-01",
@@ -2900,10 +2894,10 @@
           "value": 1058.6
         },
         {
-          "date": "2016-05-01",
-          "month": "2016-05",
-          "series": "工业",
-          "value": 134
+          "date": "2026-06-01",
+          "month": "2026-06",
+          "series": "住宅",
+          "value": 1099.9
         },
         {
           "date": "2016-06-01",
@@ -3624,6 +3618,12 @@
           "month": "2026-05",
           "series": "工业",
           "value": 124.8
+        },
+        {
+          "date": "2026-06-01",
+          "month": "2026-06",
+          "series": "工业",
+          "value": 131.4
         }
       ],
       "temp_history": [
@@ -4434,7 +4434,7 @@
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-utilities/",
-    "snapshotId": "47e1fe2aa8e880b0",
+    "snapshotId": "3c086151b40c91fe",
     "dataAsOf": "2026-03-31"
   }
 }

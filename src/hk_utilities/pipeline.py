@@ -9,9 +9,11 @@ from typing import Any
 import pandas as pd
 
 from .sources.clp_electricity import fetch_clp_electricity
+from .sources.dsd_sewage_flow_lab import fetch_dsd_sewage_flow_lab
 from .sources.hko_temperature import fetch_hko_temperature
 from .sources.power_assets_segments import fetch_power_assets_segments
 from .sources.towngas_proxy import fetch_towngas_proxy
+from .sources.wsd_water_suspension import fetch_wsd_water_suspension
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +40,18 @@ QUALITY_SPECS = {
         # multi-week lag -- much wider tolerance than the daily/monthly
         # sources above, since a "stale" gap of several months is normal.
         "max_age_days": 300,
+    },
+    "dsd_sewage_flow_lab_daily": {
+        "kind": "measure",
+        "required": ["date", "plant", "daily_flow_cum_d"],
+        # DSD publishes this source monthly and the latest observation can
+        # legitimately lag the fetch date by several weeks.
+        "max_age_days": 120,
+    },
+    "wsd_water_suspension_events": {
+        "kind": "event",
+        "required": ["suspension_id", "suspension_start", "status"],
+        "max_age_days": 1,
     },
 }
 
@@ -74,5 +88,19 @@ def run_stage_1_pipeline() -> dict[str, Any]:
     except Exception as exc:
         logger.exception("Power Assets segment reporting ingestion failed")
         results["power_assets_segments_semiannual"] = {"error": str(exc)}
+
+    try:
+        logger.info("Ingesting DSD daily sewage flow and effluent laboratory data...")
+        results["dsd_sewage_flow_lab_daily"] = fetch_dsd_sewage_flow_lab()
+    except Exception as exc:
+        logger.exception("DSD sewage flow/laboratory ingestion failed")
+        results["dsd_sewage_flow_lab_daily"] = {"error": str(exc)}
+
+    try:
+        logger.info("Ingesting WSD temporary water-suspension notices...")
+        results["wsd_water_suspension_events"] = fetch_wsd_water_suspension()
+    except Exception as exc:
+        logger.exception("WSD water-suspension ingestion failed")
+        results["wsd_water_suspension_events"] = {"error": str(exc)}
 
     return results

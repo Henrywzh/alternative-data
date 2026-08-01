@@ -46,6 +46,9 @@ def test_hk_transport_stage_1_execution():
     assert results is not None
     assert "mtr_patronage_monthly" in results
     assert "cathay_hkia_traffic_monthly" in results
+    assert "td_private_car_first_reg_monthly" in results
+    assert "td_first_registered_vehicle_details_monthly" in results
+    assert "td_parking_vacancy_current" in results
 
 
 def test_cathay_discover_traffic_pdfs_real_archive():

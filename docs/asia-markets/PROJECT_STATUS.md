@@ -6,11 +6,19 @@ replacement for the operating manual or generated source-status JSON.
 ## Current state
 
 - Production surface: Cloudflare Pages, non-Streamlit dashboard.
+- Private research surface: `apps/asia-markets-streamlit/app.py`; V1 currently
+  connects only Hong Kong labour-market/talent-policy and population/migration
+  artifacts.
 - Canonical financial-data sibling: `/Users/henrywzh/Desktop/Quant/financial-data`;
   see `REPO_BRIDGE.md` for the shared contract.
 - Live sector roster: 10 sectors; see `apps/asia-markets-dashboard/sectors.json`.
 - English and Chinese hub/data-status pages are published.
 - Sector artifacts are generated as portable HTML from `.generated/*.json`.
+- `STREAMLIT_PARITY_PROTOCOL.md` is the shared Cloudflare-to-Streamlit
+  decision guide. The non-blocking GitHub Action
+  `.github/workflows/streamlit-parity-reminder.yml` compares structural
+  artifact changes and reminds agents when a Streamlit review is needed;
+  value-only refreshes are intentionally ignored.
 - The dashboard has explicit month/year chart ticks and visible copy-title
   controls in the current packaging path.
 - The project contains both historical time series and current snapshots. Do
@@ -20,6 +28,20 @@ replacement for the operating manual or generated source-status JSON.
 
 - China listed airline monthly operating data is wired into transport: passenger
   traffic, ASK, RPK, load factor and regional split.
+- Hong Kong transport now includes TD monthly private-car first-registration
+  make/fuel history (with BYD/Tesla/other-EV time series), latest make/model
+  detail, and two distinct parking signals: the TD real-time car-park vacancy
+  snapshot plus metered/on-street sensor-space occupancy. Group 1 also adds TD
+  private-car fleet stock and net first-registration history, MTTD Table 2.3
+  passenger journeys, and C&SD E705 boundary movements. Parking histories are
+  append-only; the metered occupancy chart is a genuine time series only after
+  repeated collector runs, and the dashboard does not infer historical values
+  from a current feed.
+- Hong Kong utilities now includes DSD daily sewage flow/final-effluent
+  laboratory observations and WSD temporary water-suspension event notices.
+  The public artifact preserves a treatment-works flow chart, latest lab table
+  and current event table; DSD lab fields remain sparse and WSD is explicitly
+  modeled as a five-minute event snapshot rather than a consumption series.
 - Cloudflare historical charts now use a date-based latest-ten-year display
   policy for the transport service breakdown, utilities gas/temperature views,
   local-consumer weather/immigration/gold/retail/restaurant/oil-price views,
@@ -37,10 +59,18 @@ replacement for the operating manual or generated source-status JSON.
   official C&SD labour, earnings, vacancies, wage and policy-flow panels.
 - Hong Kong population and migration data is now a live sector with ImmD daily
   traffic, C&SD population/net movement, MPFA departure claims, UGC non-local
-  enrolment and Transport Department cross-border traffic. Stage 1 persists
-  normalized run-scoped Parquet datasets and the builder reads those before any
-  bootstrap fetch; per-source status rows retain each source's own observation
-  date.
+  enrolment, Transport Department cross-border traffic and C&SD visitor
+  arrivals by region. Stage 1 persists normalized run-scoped Parquet datasets
+  and the builder reads those before any bootstrap fetch; per-source status rows
+  retain each source's own observation date. The full visitor-arrivals history
+  remains in normalized storage, while the portable artifact uses a latest-
+  ten-year regional detail window to stay under its per-dataset row limit.
+- Streamlit V1 is implemented as a private research terminal. It reads the
+  existing labour-market and population/migration artifacts, provides an
+  Overview, scrollable sector pages with Plotly charts and Level/MoM/YoY-style
+  controls, a read-only Data Explorer and Source Health. It intentionally does
+  not connect the other Hong Kong sectors, company explorer or cross-market
+  pages yet.
 - Store-footprint, Google Trends and other planned integrations remain separate
   until their source history and data flow are validated.
 - Real-estate dashboard work includes agency transaction pulse, 28Hse EPI/ERI,

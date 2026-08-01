@@ -69,7 +69,9 @@ compact row or card containing:
 - sector name and market/country label;
 - status and latest observation date;
 - at most three curated headline metrics;
-- one small trend sparkline only when a dated time series exists;
+- one small trend sparkline only when a dated time series exists, with a
+  selectable text label, latest value, plotted-observation count, cadence and
+  plotted date range;
 - a clear action to open the sector page.
 
 The current V1 pulse entries will be labour market/talent policy and population
@@ -85,9 +87,11 @@ in the sidebar and through the compact pulse action.
 ### 3. Featured trends
 
 Overview has a hard budget of at most two chart panels. The panels are explicit
-featured slots, not one chart per sector. For the current V1, the default
-featured choices should be one labour-market trend and one population/mobility
-trend, using only existing historical artifact datasets.
+featured slots, not one chart per sector. The slots are intentionally blank for
+the current V1: raw low-frequency charts or a single un-derived series are not
+good enough for the Overview's purpose. They will be enabled only after the
+required higher-frequency data has been ingested and the derived signals have
+been validated.
 
 Each featured chart may expose the existing history-window/view controls when
 they add value. Overview should not introduce a large dataset selector or a
@@ -182,15 +186,16 @@ The implementation is acceptable when:
    reading before navigation.
 2. Both current sectors appear in the compact pulse with real values, dates and
    links.
-3. No more than two featured chart panels render, regardless of the number of
-   configured sectors.
-4. Featured charts render from existing artifacts, show the configured history
-   window and retain source/cadence context.
+3. Zero or no more than two featured chart panels render, regardless of the
+   number of configured sectors; the current V1 renders zero.
+4. When featured charts are later enabled, they must render from validated
+   higher-frequency/derived signals, show the configured history window and
+   retain source/cadence context.
 5. Source-health summary links to the existing Source Health page and does not
    duplicate the full table.
 6. Labour, Population & Migration, Data Explorer and Source Health still pass
    Streamlit AppTest without app exceptions.
-7. Browser QA confirms the first viewport, chart rendering, sidebar navigation,
-   desktop layout and a narrow/mobile layout without framework overlays or
+7. Browser QA confirms the first viewport, intentional blank Featured Trends
+   state, sidebar navigation, desktop layout and a narrow/mobile layout without
+   framework overlays or
    relevant console errors.
-

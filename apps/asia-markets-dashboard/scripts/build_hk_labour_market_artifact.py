@@ -83,7 +83,7 @@ PUBLIC_SOURCES: dict[str, dict[str, Any]] = {
             "engine": "official Labour Department XML and Immigration Department annual CSV open data",
             "url": "https://www.immd.gov.hk/eng/opendata.html",
             "language": "English / official CSV",
-            "description": "Annual applications received, applications approved and QMAS quota cases. These are policy-flow measures, not a count of people who ultimately arrived, remained employed or entered the labour force.",
+            "description": "Annual applications received and approved; QMAS quota-allotted successful selection cases are used as the approval-equivalent display measure. These are policy-flow measures, not a count of people who ultimately arrived, remained employed or entered the labour force.",
         },
     },
 }
@@ -248,6 +248,40 @@ def _policy_short_name(value: str) -> str:
         "Enhanced Supplementary Labour Scheme": "ESLS",
     }
     return names.get(value, value)
+
+
+def _add_qmas_approval_equivalent(policy_scheme: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Add QMAS quota cases to the approval display without changing raw source labels.
+
+    ImmD's QMAS open-data CSV calls the successful selection count ``quota
+    allotted`` rather than ``applications approved``.  The annual review/facts
+    surfaces use the latter label for the same successful selection outcome.
+    Keep the raw ``quota_allotted`` row and add a display-only approval row with
+    explicit basis metadata.  If ImmD ever publishes an actual QMAS approved
+    column, prefer that source row and do not double-count the quota.
+    """
+    display = policy_scheme.copy()
+    approved = display[display["metric_name"].eq("applications_approved")].copy()
+    approved["approval_basis"] = "applications_approved"
+
+    qmas_actual_approved = approved[approved["scheme"].eq("Quality Migrant Admission Scheme")]
+    qmas_quota = display[
+        display["scheme"].eq("Quality Migrant Admission Scheme")
+        & display["metric_name"].eq("quota_allotted")
+        & display["dimension_label"].isin(["All applicants", "Total"])
+    ].copy()
+    if qmas_actual_approved.empty and not qmas_quota.empty:
+        qmas_quota["metric_name"] = "applications_approved"
+        qmas_quota["metric_label"] = (
+            "Quota allotted under Quality Migrant Admission Scheme "
+            "(approval-equivalent successful selection cases)"
+        )
+        qmas_quota["approval_basis"] = "quota_allotted"
+        display = pd.concat([display, qmas_quota], ignore_index=True)
+        approved = pd.concat([approved, qmas_quota], ignore_index=True)
+
+    approved = approved.sort_values(["date", "series"]).reset_index(drop=True)
+    return display, approved
 
 
 def build_artifact(
@@ -451,7 +485,7 @@ def build_artifact(
     policy_scheme["month"] = policy_scheme["date"].dt.strftime("%Y-%m")
     policy_scheme["date"] = policy_scheme["date"].dt.strftime("%Y-%m-%d")
     policy_received = policy_scheme[policy_scheme["metric_name"].eq("applications_received")].copy()
-    policy_approved = policy_scheme[policy_scheme["metric_name"].eq("applications_approved")].copy()
+    policy_scheme_display, policy_approved = _add_qmas_approval_equivalent(policy_scheme)
     # Keep the chart legend readable on a 390px viewport. The full set of
     # schemes, including the smaller ASSG/TechTAS flows, remains in the latest
     # annual table below.
@@ -459,7 +493,7 @@ def build_artifact(
     policy_received = policy_received[policy_received["series"].isin(chart_policy_schemes)].copy()
     policy_approved = policy_approved[policy_approved["series"].isin(chart_policy_schemes)].copy()
     policy_latest_year = policy_scheme["date"].max()[:4]
-    policy_latest = policy_scheme[policy_scheme["date"].str.startswith(policy_latest_year)].copy()
+    policy_latest = policy_scheme_display[policy_scheme_display["date"].str.startswith(policy_latest_year)].copy()
     policy_received_total = policy_latest.loc[policy_latest["metric_name"].eq("applications_received"), "value"].sum()
     policy_approved_total = policy_latest.loc[policy_latest["metric_name"].eq("applications_approved"), "value"].sum()
     qmas_quota = policy_latest.loc[
@@ -504,7 +538,7 @@ def build_artifact(
         "occupation_earnings_history": _records_json_safe(occupation_history, ["month", "date", "series", "value"]),
         "earnings_by_occupation_latest": _records_json_safe(occupation, ["occupation", "median_monthly_earnings"]),
         "talent_policy_received_history": _records_json_safe(policy_received, ["month", "date", "series", "value"]),
-        "talent_policy_approved_history": _records_json_safe(policy_approved, ["month", "date", "series", "value"]),
+        "talent_policy_approved_history": _records_json_safe(policy_approved, ["month", "date", "series", "value", "approval_basis"]),
         "talent_policy_latest": _records_json_safe(policy_latest_table, ["scheme", "series", "applications_received", "applications_approved", "qmas_quota"]),
     }
 
@@ -514,7 +548,7 @@ def build_artifact(
         ("censtatd_labour_demand", "labour_demand_by_industry", demand, "Quarterly labour-demand survey; excludes civil-service vacancies."),
         ("censtatd_wage_payroll", "wage_payroll_indices", sector[sector["dataset_id"].isin(["nominal_wage_index_by_industry", "real_wage_index_by_industry", "nominal_payroll_index_by_industry", "real_payroll_index_by_industry"])], "C&SD-published wage/payroll indices; wage/payroll series are not the same as median earnings."),
         ("censtatd_earnings", "median_earnings_by_industry", earnings, "Median monthly earnings; the dashboard uses the rolling-three-month series for the main trend."),
-        ("talent_policy_open_data", "talent_policy_supply_panel", policy, "Applications/approvals and QMAS quota are policy-flow indicators, not actual arrivals or employment."),
+        ("talent_policy_open_data", "talent_policy_supply_panel", policy, "Applications/approvals and QMAS quota are policy-flow indicators; QMAS quota-allotted successful selection cases are included as the approval-equivalent display measure, not actual arrivals or employment."),
     ]
     for source_id, dataset_id, frame, notes in dataset_status_specs:
         latest = _latest_date(frame)
@@ -591,7 +625,7 @@ def build_artifact(
         },
         {
             "id": "talent_policy_card",
-            "description": "Annual policy-flow totals across the schemes in the mart; applications are not the same as arrivals or employment.",
+            "description": "Annual policy-flow totals across the schemes; QMAS quota-allotted successful selection cases are included in the approval-equivalent total. Applications are not the same as arrivals or employment.",
             "dataset": "kpi_talent_policy",
             "sourceId": "talent_policy_open_data",
             "metrics": [
@@ -732,7 +766,7 @@ def build_artifact(
         {
             "id": "talent_policy_approved_chart",
             "title": "Talent-policy applications approved",
-            "subtitle": "Annual approvals by scheme; approval is not the same as arrival, visa activation or labour-force entry.",
+            "subtitle": "Annual approvals by scheme; QMAS uses the official quota-allotted successful selection count as the approval-equivalent measure. Approval is not the same as arrival, visa activation or labour-force entry.",
             "type": "line",
             "intent": "trend",
             "dataset": "talent_policy_approved_history",
@@ -760,7 +794,7 @@ def build_artifact(
         {
             "id": "talent_policy_latest_table",
             "title": "Latest annual talent-policy flow by scheme",
-            "subtitle": f"Official annual figures for {policy_latest_year}; QMAS quota cases are not a count of arrivals or employment.",
+            "subtitle": f"Official annual figures for {policy_latest_year}; QMAS approval uses quota-allotted successful selection cases, while the raw QMAS quota remains shown separately.",
             "dataset": "talent_policy_latest",
             "sourceId": "talent_policy_open_data",
             "density": "dense",
@@ -807,7 +841,7 @@ def build_artifact(
         {"id": "earnings_by_occupation_table_block", "type": "table", "tableId": "earnings_by_occupation_table"},
         {"id": "talent_policy_latest_table_block", "type": "table", "tableId": "talent_policy_latest_table"},
         {"id": "source_health_table_block", "type": "table", "tableId": "source_health_table"},
-        {"id": "methodology", "type": "markdown", "body": "## How to read this dashboard\n\nThis page combines official C&SD labour-market series with Labour Department and Immigration Department policy-flow data. Monthly labour-force and earnings observations are rolling-three-month measures; labour demand and wage/payroll indices are quarterly; talent-policy data are annual. Applications, approvals and QMAS quota cases should not be interpreted as confirmed arrivals, employment or labour-force participation."},
+        {"id": "methodology", "type": "markdown", "body": "## How to read this dashboard\n\nThis page combines official C&SD labour-market series with Labour Department and Immigration Department policy-flow data. Monthly labour-force and earnings observations are rolling-three-month measures; labour demand and wage/payroll indices are quarterly; talent-policy data are annual. QMAS quota-allotted successful selection cases are used as the approval-equivalent display measure, while the raw QMAS quota field is retained separately. Applications, approvals and QMAS quota cases should not be interpreted as confirmed arrivals, employment or labour-force participation."},
         {"id": "snapshot_context", "type": "markdown", "body": f"## Snapshot\n\nData snapshot generated {generated_at}."},
     ]
 

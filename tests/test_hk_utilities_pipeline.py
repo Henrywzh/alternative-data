@@ -64,3 +64,5 @@ def test_hk_utilities_stage_1_execution():
     assert "towngas_proxy_gas_monthly" in results
     assert "hko_mean_temperature_daily" in results
     assert "power_assets_segments_semiannual" in results
+    assert "dsd_sewage_flow_lab_daily" in results
+    assert "wsd_water_suspension_events" in results

@@ -110,6 +110,16 @@ def _number(value: Any) -> float | None:
         raise ValueError(f"TD Table 4.1(a) has an unparseable numeric value: {value!r}") from exc
 
 
+def _integer(value: Any) -> int | None:
+    if pd.isna(value):
+        return None
+    try:
+        number = float(str(value).strip())
+    except (TypeError, ValueError):
+        return None
+    return int(number) if number.is_integer() else None
+
+
 def _check_identity(frame: pd.DataFrame, parts: list[str], total: str, label: str) -> None:
     computed = frame[parts].fillna(0).sum(axis=1)
     reported = frame[total]
@@ -127,18 +137,18 @@ def parse_private_car_fleet_sheet(frame: pd.DataFrame) -> pd.DataFrame:
     records: list[dict[str, Any]] = []
     current_year: int | None = None
     for _, row in frame.iterrows():
-        first = str(row.iloc[0]).strip() if pd.notna(row.iloc[0]) else ""
-        second = str(row.iloc[1]).strip() if pd.notna(row.iloc[1]) else ""
-        if first.isdigit() and len(first) == 4:
-            current_year = int(first)
-            month_text = second
-        elif current_year and (first.isdigit() or second.isdigit()):
-            month_text = second if second.isdigit() else first
+        first = _integer(row.iloc[0])
+        second = _integer(row.iloc[1])
+        if first is not None and len(str(first)) == 4:
+            current_year = first
+            month_number = second
+        elif current_year and (first is not None or second is not None):
+            month_number = second if second is not None else first
         else:
             continue
-        if not month_text.isdigit() or not 1 <= int(month_text) <= 12:
+        if month_number is None or not 1 <= month_number <= 12:
             continue
-        month = int(month_text)
+        month = month_number
         record: dict[str, Any] = {
             "date": f"{current_year}-{month:02d}",
             "year": current_year,

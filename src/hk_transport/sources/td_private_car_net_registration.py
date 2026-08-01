@@ -33,6 +33,16 @@ def _number(value: Any) -> float | None:
         raise ValueError(f"TD Table 4.1(c) has an unparseable numeric value: {value!r}") from exc
 
 
+def _integer(value: Any) -> int | None:
+    if pd.isna(value):
+        return None
+    try:
+        number = float(str(value).strip())
+    except (TypeError, ValueError):
+        return None
+    return int(number) if number.is_integer() else None
+
+
 def _check_headers(frame: pd.DataFrame) -> None:
     header_text = " ".join(str(value) for value in frame.iloc[:8].to_numpy().flatten() if pd.notna(value))
     required = ("Gross First Registration", "Cumulative Deregistration", "Net First Registration")
@@ -47,14 +57,14 @@ def parse_private_car_net_registration_sheet(frame: pd.DataFrame) -> pd.DataFram
     records: list[dict[str, Any]] = []
     current_year: int | None = None
     for _, row in frame.iterrows():
-        first = str(row.iloc[0]).strip() if pd.notna(row.iloc[0]) else ""
-        second = str(row.iloc[1]).strip() if pd.notna(row.iloc[1]) else ""
-        if first.isdigit() and len(first) == 4:
-            current_year = int(first)
-        month_text = second if second.isdigit() else ""
-        if current_year is None or not month_text.isdigit() or not 1 <= int(month_text) <= 12:
+        first = _integer(row.iloc[0])
+        second = _integer(row.iloc[1])
+        if first is not None and len(str(first)) == 4:
+            current_year = first
+        month_number = second
+        if current_year is None or month_number is None or not 1 <= month_number <= 12:
             continue
-        month = int(month_text)
+        month = month_number
         gross = _number(row.iloc[2]) if len(row) > 2 else None
         deregistered = _number(row.iloc[3]) if len(row) > 3 else None
         net = _number(row.iloc[4]) if len(row) > 4 else None

@@ -6,7 +6,7 @@
     "title": "Hong Kong Labour Market & Talent Policy",
     "description": "Hong Kong labour-force conditions, labour demand, wages, employment earnings and official talent-policy flows.",
     "sector": "hk-labour-market",
-    "generatedAt": "2026-07-30T23:25:13.184365Z",
+    "generatedAt": "2026-07-31T20:19:45.796215Z",
     "cards": [
       {
         "id": "labour_force_card",
@@ -117,7 +117,7 @@
       },
       {
         "id": "talent_policy_card",
-        "description": "Annual policy-flow totals across the schemes in the mart; applications are not the same as arrivals or employment.",
+        "description": "Annual policy-flow totals across the schemes; QMAS quota-allotted successful selection cases are included in the approval-equivalent total. Applications are not the same as arrivals or employment.",
         "dataset": "kpi_talent_policy",
         "sourceId": "talent_policy_open_data",
         "metrics": [
@@ -418,7 +418,7 @@
       {
         "id": "talent_policy_approved_chart",
         "title": "Talent-policy applications approved",
-        "subtitle": "Annual approvals by scheme; approval is not the same as arrival, visa activation or labour-force entry.",
+        "subtitle": "Annual approvals by scheme; QMAS uses the official quota-allotted successful selection count as the approval-equivalent measure. Approval is not the same as arrival, visa activation or labour-force entry.",
         "type": "line",
         "intent": "trend",
         "dataset": "talent_policy_approved_history",
@@ -469,7 +469,7 @@
       {
         "id": "talent_policy_latest_table",
         "title": "Latest annual talent-policy flow by scheme",
-        "subtitle": "Official annual figures for 2025; QMAS quota cases are not a count of arrivals or employment.",
+        "subtitle": "Official annual figures for 2025; QMAS approval uses quota-allotted successful selection cases, while the raw QMAS quota remains shown separately.",
         "dataset": "talent_policy_latest",
         "sourceId": "talent_policy_open_data",
         "density": "dense",
@@ -592,7 +592,7 @@
           "engine": "official Labour Department XML and Immigration Department annual CSV open data",
           "url": "https://www.immd.gov.hk/eng/opendata.html",
           "language": "English / official CSV",
-          "description": "Annual applications received, applications approved and QMAS quota cases. These are policy-flow measures, not a count of people who ultimately arrived, remained employed or entered the labour force."
+          "description": "Annual applications received and approved; QMAS quota-allotted successful selection cases are used as the approval-equivalent display measure. These are policy-flow measures, not a count of people who ultimately arrived, remained employed or entered the labour force."
         }
       }
     ],
@@ -681,18 +681,18 @@
       {
         "id": "methodology",
         "type": "markdown",
-        "body": "## How to read this dashboard\n\nThis page combines official C&SD labour-market series with Labour Department and Immigration Department policy-flow data. Monthly labour-force and earnings observations are rolling-three-month measures; labour demand and wage/payroll indices are quarterly; talent-policy data are annual. Applications, approvals and QMAS quota cases should not be interpreted as confirmed arrivals, employment or labour-force participation."
+        "body": "## How to read this dashboard\n\nThis page combines official C&SD labour-market series with Labour Department and Immigration Department policy-flow data. Monthly labour-force and earnings observations are rolling-three-month measures; labour demand and wage/payroll indices are quarterly; talent-policy data are annual. QMAS quota-allotted successful selection cases are used as the approval-equivalent display measure, while the raw QMAS quota field is retained separately. Applications, approvals and QMAS quota cases should not be interpreted as confirmed arrivals, employment or labour-force participation."
       },
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "## Snapshot\n\nData snapshot generated 2026-07-30T23:25:13.184365Z."
+        "body": "## Snapshot\n\nData snapshot generated 2026-07-31T20:19:45.796215Z."
       }
     ]
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-30T23:25:13.184365Z",
+    "generatedAt": "2026-07-31T20:19:45.796215Z",
     "status": "ready",
     "datasets": {
       "kpi_labour_force": [
@@ -730,7 +730,7 @@
       "kpi_talent_policy": [
         {
           "applications_received": 147454.0,
-          "applications_approved": 117359.0,
+          "applications_approved": 124460.0,
           "qmas_quota": 7101.0,
           "observation_date": "2025-12-31"
         }
@@ -36540,205 +36540,309 @@
           "month": "2016-12",
           "date": "2016-12-31",
           "series": "ASMTP",
-          "value": 10404.0
+          "value": 10404.0,
+          "approval_basis": "applications_approved"
         },
         {
           "month": "2016-12",
           "date": "2016-12-31",
           "series": "GEP",
-          "value": 35997.0
+          "value": 35997.0,
+          "approval_basis": "applications_approved"
         },
         {
           "month": "2016-12",
           "date": "2016-12-31",
           "series": "IANG",
-          "value": 9289.0
+          "value": 9289.0,
+          "approval_basis": "applications_approved"
+        },
+        {
+          "month": "2016-12",
+          "date": "2016-12-31",
+          "series": "QMAS",
+          "value": 273.0,
+          "approval_basis": "quota_allotted"
         },
         {
           "month": "2017-12",
           "date": "2017-12-31",
           "series": "ASMTP",
-          "value": 12381.0
+          "value": 12381.0,
+          "approval_basis": "applications_approved"
         },
         {
           "month": "2017-12",
           "date": "2017-12-31",
           "series": "GEP",
-          "value": 39952.0
+          "value": 39952.0,
+          "approval_basis": "applications_approved"
         },
         {
           "month": "2017-12",
           "date": "2017-12-31",
           "series": "IANG",
-          "value": 9331.0
+          "value": 9331.0,
+          "approval_basis": "applications_approved"
+        },
+        {
+          "month": "2017-12",
+          "date": "2017-12-31",
+          "series": "QMAS",
+          "value": 411.0,
+          "approval_basis": "quota_allotted"
         },
         {
           "month": "2018-12",
           "date": "2018-12-31",
           "series": "ASMTP",
-          "value": 13768.0
+          "value": 13768.0,
+          "approval_basis": "applications_approved"
         },
         {
           "month": "2018-12",
           "date": "2018-12-31",
           "series": "GEP",
-          "value": 41592.0
+          "value": 41592.0,
+          "approval_basis": "applications_approved"
         },
         {
           "month": "2018-12",
           "date": "2018-12-31",
           "series": "IANG",
-          "value": 10150.0
+          "value": 10150.0,
+          "approval_basis": "applications_approved"
+        },
+        {
+          "month": "2018-12",
+          "date": "2018-12-31",
+          "series": "QMAS",
+          "value": 555.0,
+          "approval_basis": "quota_allotted"
         },
         {
           "month": "2019-12",
           "date": "2019-12-31",
           "series": "ASMTP",
-          "value": 14053.0
+          "value": 14053.0,
+          "approval_basis": "applications_approved"
         },
         {
           "month": "2019-12",
           "date": "2019-12-31",
           "series": "GEP",
-          "value": 41289.0
+          "value": 41289.0,
+          "approval_basis": "applications_approved"
         },
         {
           "month": "2019-12",
           "date": "2019-12-31",
           "series": "IANG",
-          "value": 10799.0
+          "value": 10799.0,
+          "approval_basis": "applications_approved"
+        },
+        {
+          "month": "2019-12",
+          "date": "2019-12-31",
+          "series": "QMAS",
+          "value": 874.0,
+          "approval_basis": "quota_allotted"
         },
         {
           "month": "2020-12",
           "date": "2020-12-31",
           "series": "ASMTP",
-          "value": 6995.0
+          "value": 6995.0,
+          "approval_basis": "applications_approved"
         },
         {
           "month": "2020-12",
           "date": "2020-12-31",
           "series": "GEP",
-          "value": 14617.0
+          "value": 14617.0,
+          "approval_basis": "applications_approved"
         },
         {
           "month": "2020-12",
           "date": "2020-12-31",
           "series": "IANG",
-          "value": 7154.0
+          "value": 7154.0,
+          "approval_basis": "applications_approved"
+        },
+        {
+          "month": "2020-12",
+          "date": "2020-12-31",
+          "series": "QMAS",
+          "value": 1709.0,
+          "approval_basis": "quota_allotted"
         },
         {
           "month": "2021-12",
           "date": "2021-12-31",
           "series": "ASMTP",
-          "value": 9065.0
+          "value": 9065.0,
+          "approval_basis": "applications_approved"
         },
         {
           "month": "2021-12",
           "date": "2021-12-31",
           "series": "GEP",
-          "value": 13821.0
+          "value": 13821.0,
+          "approval_basis": "applications_approved"
         },
         {
           "month": "2021-12",
           "date": "2021-12-31",
           "series": "IANG",
-          "value": 7259.0
+          "value": 7259.0,
+          "approval_basis": "applications_approved"
+        },
+        {
+          "month": "2021-12",
+          "date": "2021-12-31",
+          "series": "QMAS",
+          "value": 2004.0,
+          "approval_basis": "quota_allotted"
         },
         {
           "month": "2022-12",
           "date": "2022-12-31",
           "series": "ASMTP",
-          "value": 11768.0
+          "value": 11768.0,
+          "approval_basis": "applications_approved"
         },
         {
           "month": "2022-12",
           "date": "2022-12-31",
           "series": "GEP",
-          "value": 13495.0
+          "value": 13495.0,
+          "approval_basis": "applications_approved"
         },
         {
           "month": "2022-12",
           "date": "2022-12-31",
           "series": "IANG",
-          "value": 10391.0
+          "value": 10391.0,
+          "approval_basis": "applications_approved"
+        },
+        {
+          "month": "2022-12",
+          "date": "2022-12-31",
+          "series": "QMAS",
+          "value": 2845.0,
+          "approval_basis": "quota_allotted"
         },
         {
           "month": "2022-12",
           "date": "2022-12-31",
           "series": "TTPS",
-          "value": 875.0
+          "value": 875.0,
+          "approval_basis": "applications_approved"
         },
         {
           "month": "2023-12",
           "date": "2023-12-31",
           "series": "ASMTP",
-          "value": 19757.0
+          "value": 19757.0,
+          "approval_basis": "applications_approved"
         },
         {
           "month": "2023-12",
           "date": "2023-12-31",
           "series": "GEP",
-          "value": 26270.0
+          "value": 26270.0,
+          "approval_basis": "applications_approved"
         },
         {
           "month": "2023-12",
           "date": "2023-12-31",
           "series": "IANG",
-          "value": 26089.0
+          "value": 26089.0,
+          "approval_basis": "applications_approved"
+        },
+        {
+          "month": "2023-12",
+          "date": "2023-12-31",
+          "series": "QMAS",
+          "value": 12969.0,
+          "approval_basis": "quota_allotted"
         },
         {
           "month": "2023-12",
           "date": "2023-12-31",
           "series": "TTPS",
-          "value": 49737.0
+          "value": 49737.0,
+          "approval_basis": "applications_approved"
         },
         {
           "month": "2024-12",
           "date": "2024-12-31",
           "series": "ASMTP",
-          "value": 25344.0
+          "value": 25344.0,
+          "approval_basis": "applications_approved"
         },
         {
           "month": "2024-12",
           "date": "2024-12-31",
           "series": "GEP",
-          "value": 35058.0
+          "value": 35058.0,
+          "approval_basis": "applications_approved"
         },
         {
           "month": "2024-12",
           "date": "2024-12-31",
           "series": "IANG",
-          "value": 25475.0
+          "value": 25475.0,
+          "approval_basis": "applications_approved"
+        },
+        {
+          "month": "2024-12",
+          "date": "2024-12-31",
+          "series": "QMAS",
+          "value": 11848.0,
+          "approval_basis": "quota_allotted"
         },
         {
           "month": "2024-12",
           "date": "2024-12-31",
           "series": "TTPS",
-          "value": 41057.0
+          "value": 41057.0,
+          "approval_basis": "applications_approved"
         },
         {
           "month": "2025-12",
           "date": "2025-12-31",
           "series": "ASMTP",
-          "value": 26714.0
+          "value": 26714.0,
+          "approval_basis": "applications_approved"
         },
         {
           "month": "2025-12",
           "date": "2025-12-31",
           "series": "GEP",
-          "value": 31278.0
+          "value": 31278.0,
+          "approval_basis": "applications_approved"
         },
         {
           "month": "2025-12",
           "date": "2025-12-31",
           "series": "IANG",
-          "value": 27630.0
+          "value": 27630.0,
+          "approval_basis": "applications_approved"
+        },
+        {
+          "month": "2025-12",
+          "date": "2025-12-31",
+          "series": "QMAS",
+          "value": 7101.0,
+          "approval_basis": "quota_allotted"
         },
         {
           "month": "2025-12",
           "date": "2025-12-31",
           "series": "TTPS",
-          "value": 31508.0
+          "value": 31508.0,
+          "approval_basis": "applications_approved"
         }
       ],
       "talent_policy_latest": [
@@ -36774,7 +36878,7 @@
           "scheme": "Quality Migrant Admission Scheme",
           "series": "QMAS",
           "applications_received": 18707.0,
-          "applications_approved": null,
+          "applications_approved": 7101.0,
           "qmas_quota": 7101.0
         },
         {
@@ -36841,7 +36945,7 @@
           "latest_observation": "2025-12-31",
           "records": 279,
           "freshness": "Live at build time",
-          "notes": "Applications/approvals and QMAS quota are policy-flow indicators, not actual arrivals or employment."
+          "notes": "Applications/approvals and QMAS quota are policy-flow indicators; QMAS quota-allotted successful selection cases are included as the approval-equivalent display measure, not actual arrivals or employment."
         }
       ]
     }
@@ -36904,13 +37008,13 @@
         "engine": "official Labour Department XML and Immigration Department annual CSV open data",
         "url": "https://www.immd.gov.hk/eng/opendata.html",
         "language": "English / official CSV",
-        "description": "Annual applications received, applications approved and QMAS quota cases. These are policy-flow measures, not a count of people who ultimately arrived, remained employed or entered the labour force."
+        "description": "Annual applications received and approved; QMAS quota-allotted successful selection cases are used as the approval-equivalent display measure. These are policy-flow measures, not a count of people who ultimately arrived, remained employed or entered the labour force."
       }
     }
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-labour-market/",
-    "snapshotId": "aa7195ed3d75f93a",
+    "snapshotId": "cba9287a3610f8ab",
     "dataAsOf": "2026-06-30"
   }
 }

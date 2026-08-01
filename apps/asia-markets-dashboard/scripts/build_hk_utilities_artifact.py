@@ -20,9 +20,11 @@ if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
 from src.hk_utilities.sources.clp_electricity import fetch_clp_electricity
+from src.hk_utilities.sources.dsd_sewage_flow_lab import fetch_dsd_sewage_flow_lab
 from src.hk_utilities.sources.hko_temperature import fetch_hko_temperature
 from src.hk_utilities.sources.power_assets_segments import fetch_power_assets_segments
 from src.hk_utilities.sources.towngas_proxy import fetch_towngas_proxy
+from src.hk_utilities.sources.wsd_water_suspension import fetch_wsd_water_suspension
 from history_policy import DEFAULT_HISTORY_YEARS, history_window
 
 
@@ -75,6 +77,30 @@ PUBLIC_SOURCES = {
             "description": "Semi-annual geographic segment reporting note (revenue, segment profit, share of JV/associate results) broken out by Investment in HKEI, United Kingdom, Australia, and Others.",
         },
     },
+    "dsd_sewage_flow_lab": {
+        "id": "dsd_sewage_flow_lab",
+        "label": "DSD Daily Sewage Flow and Effluent Laboratory Data",
+        "href": "https://portal.csdi.gov.hk/csdi-webpage/dataset/dsd_rcd_1636622115573_60635",
+        "path": "sources/dsd_sewage_flow_lab.sql",
+        "query": {
+            "engine": "official DSD CSV catalogued by CSDI",
+            "url": "https://www.dsd.gov.hk/datagovhk/data/shatin_lab_open_data_eng.csv",
+            "language": "UTF-16 tab-delimited CSV",
+            "description": "Daily final-effluent flow and sparse laboratory observations (BOD, TSS, nitrogen, oil/grease, pH and E. coli) by sewage treatment works; treatment-works coverage changes over time.",
+        },
+    },
+    "wsd_water_suspension": {
+        "id": "wsd_water_suspension",
+        "label": "WSD Temporary Water Suspension Notices",
+        "href": "https://portal.csdi.gov.hk/csdi-webpage/dataset/wsd_rcd_1696485865245_52313",
+        "path": "sources/wsd_water_suspension.sql",
+        "query": {
+            "engine": "official WSD event feed catalogued by CSDI",
+            "url": "https://www.esd.wsd.gov.hk/wsms_open_data/WSMS_OPEN_DATA(all).csv",
+            "language": "Pipe-delimited CSV",
+            "description": "Current planned and emergency water-suspension notices with district, affected address, start/resumption time, cause and current status; refreshed every five minutes and not a continuous consumption series.",
+        },
+    },
 }
 
 
@@ -121,11 +147,23 @@ def _records_json_safe(frame: pd.DataFrame) -> list[dict[str, Any]]:
     return json.loads(selected.to_json(orient="records", date_format="iso"))
 
 
+def _display_value(value: Any) -> str:
+    """Format a scalar for compact, mobile-safe summary table rows."""
+    if value is None or (isinstance(value, float) and pd.isna(value)) or value is pd.NA:
+        return "n/a"
+    if isinstance(value, (int, float)):
+        formatted = f"{float(value):,.1f}"
+        return formatted.rstrip("0").rstrip(".")
+    return str(value)
+
+
 def build_artifact(
     raw_clp: pd.DataFrame | None = None,
     raw_towngas: pd.DataFrame | None = None,
     raw_temp: pd.DataFrame | None = None,
     raw_power_assets: pd.DataFrame | None = None,
+    raw_sewage: pd.DataFrame | None = None,
+    raw_water_suspension: pd.DataFrame | None = None,
     *,
     now: datetime | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
@@ -135,6 +173,12 @@ def build_artifact(
     towngas = raw_towngas if raw_towngas is not None else fetch_towngas_proxy()
     temp = raw_temp if raw_temp is not None else fetch_hko_temperature()
     power_assets = raw_power_assets if raw_power_assets is not None else fetch_power_assets_segments()
+    sewage = raw_sewage if raw_sewage is not None else fetch_dsd_sewage_flow_lab()
+    water_suspension = (
+        raw_water_suspension
+        if raw_water_suspension is not None
+        else fetch_wsd_water_suspension()
+    )
 
     # CLP's existing `quarter` column (e.g. "2023 Q1") repeats the same
     # quarter label across different years (all 4 rows are "Q1"), and its
@@ -226,6 +270,124 @@ def build_artifact(
                     "jv_associate_results_hkdm": float(pa_latest[f"jv_associate_results_{geo_key}_hkdm"]),
                 }
             )
+    pa_geography_summary = [
+        {
+            "summary": (
+                f"{row['geography']}: revenue HK${_display_value(row['revenue_hkdm'])}m; "
+                f"segment profit HK${_display_value(row['segment_profit_hkdm'])}m; "
+                f"JV/associate results HK${_display_value(row['jv_associate_results_hkdm'])}m"
+            )
+        }
+        for row in pa_geography_rows
+    ]
+
+    sewage_available = not sewage.empty and {"date", "plant", "daily_flow_cum_d"}.issubset(sewage.columns)
+    sewage_history_window = history_window(sewage, "date") if sewage_available else sewage.iloc[0:0].copy()
+    if sewage_available:
+        sewage_monthly = (
+            sewage_history_window.dropna(subset=["daily_flow_cum_d"])
+            .assign(month=sewage_history_window["date"].dt.strftime("%Y-%m"))
+            .groupby(["month", "plant"], as_index=False)
+            .agg(
+                date=("date", "min"),
+                value=("daily_flow_cum_d", "mean"),
+                observations=("daily_flow_cum_d", "count"),
+            )
+            .sort_values(["plant", "month"])
+        )
+        sewage_monthly["value"] = sewage_monthly["value"].round(1)
+        sewage_monthly["series"] = sewage_monthly["plant"]
+        sewage_chart = (
+            sewage_monthly.groupby("month", as_index=False)
+            .agg(
+                date=("date", "min"),
+                value=("value", "sum"),
+                observations=("observations", "sum"),
+                treatment_works=("plant", "nunique"),
+            )
+            .sort_values("month")
+        )
+        sewage_chart["value"] = sewage_chart["value"].round(1)
+        sewage_latest = (
+            sewage.dropna(subset=["date"])
+            .sort_values(["plant", "date"])
+            .groupby("plant", as_index=False, sort=False)
+            .tail(1)
+            .sort_values("plant")
+        )
+    else:
+        sewage_monthly = pd.DataFrame(columns=["month", "plant", "date", "value", "observations", "series"])
+        sewage_chart = pd.DataFrame(columns=["date", "month", "value", "observations", "treatment_works"])
+        sewage_latest = sewage.iloc[0:0].copy()
+    sewage_latest_summary = [
+        {
+            "summary": (
+                f"{row['plant']} ({pd.Timestamp(row['date']).strftime('%Y-%m-%d')}): "
+                f"flow {_display_value(row.get('daily_flow_cum_d'))} CuM/d; "
+                f"BOD {_display_value(row.get('bod_mg_o2_l'))}; "
+                f"TSS {_display_value(row.get('tss_mg_l'))}; "
+                f"NH3-N {_display_value(row.get('nh3_n_mg_l'))}; "
+                f"NOx-N {_display_value(row.get('nox_n_mg_l'))}; "
+                f"oil/grease {_display_value(row.get('og_mg_l'))}; "
+                f"TN {_display_value(row.get('tn_mg_l'))}; "
+                f"pH {_display_value(row.get('ph'))}; "
+                f"E. coli {_display_value(row.get('e_coli_cfu_100ml'))}"
+            )
+        }
+        for _, row in sewage_latest.iterrows()
+    ]
+
+    water_available = not water_suspension.empty and {
+        "suspension_id",
+        "suspension_start",
+        "nature",
+        "status",
+        "is_active",
+    }.issubset(water_suspension.columns)
+    if water_available:
+        water_recent_cutoff = pd.Timestamp(now.replace(tzinfo=None)) - pd.Timedelta(days=7)
+        water_emergency_recent = int(
+            (
+                water_suspension["nature"].eq("Emergency")
+                & water_suspension["suspension_start"].ge(water_recent_cutoff)
+            ).sum()
+        )
+        water_kpi = {
+            "active_notices": int(water_suspension["is_active"].fillna(False).sum()),
+            "total_notices": int(len(water_suspension)),
+            "recent_emergency_notices": water_emergency_recent,
+            "observation_date": now.date().isoformat(),
+        }
+        water_events = water_suspension.sort_values(
+            "suspension_start", ascending=False, na_position="last"
+        ).copy()
+    else:
+        water_kpi = {
+            "active_notices": 0,
+            "total_notices": 0,
+            "recent_emergency_notices": 0,
+            "observation_date": now.date().isoformat(),
+        }
+        water_events = water_suspension.copy()
+
+    water_events_for_artifact = water_events.copy()
+    for column in ("suspension_start", "actual_resumption"):
+        if column in water_events_for_artifact.columns:
+            parsed = pd.to_datetime(water_events_for_artifact[column], errors="coerce")
+            water_events_for_artifact[column] = parsed.dt.strftime("%Y-%m-%d %H:%M")
+    if "suspension_date" in water_events_for_artifact.columns:
+        parsed_date = pd.to_datetime(water_events_for_artifact["suspension_date"], errors="coerce")
+        water_events_for_artifact["suspension_date"] = parsed_date.dt.strftime("%Y-%m-%d")
+    water_suspension_summary = [
+        {
+            "summary": (
+                f"{row['suspension_id']} ({row.get('suspension_start') or 'n/a'}): "
+                f"{row.get('district') or 'n/a'}; {row.get('water_type') or 'n/a'}; "
+                f"{row.get('nature') or 'n/a'}; {row.get('status') or 'n/a'}"
+            )
+        }
+        for _, row in water_events_for_artifact.iterrows()
+    ]
 
     towngas_history_window = history_window(towngas, "date", years=DEFAULT_HISTORY_YEARS)
     temperature_history_window = history_window(temp, "date", years=DEFAULT_HISTORY_YEARS)
@@ -262,6 +424,18 @@ def build_artifact(
         ),
         "temp_history": _records_json_safe(temperature_chart),
         "power_assets_geography": pa_geography_rows,
+        "power_assets_geography_summary": pa_geography_summary,
+        "kpi_water_suspension": [water_kpi],
+        "sewage_flow_history": _records_json_safe(
+            sewage_monthly[["date", "month", "series", "value", "observations"]]
+            if not sewage_monthly.empty
+            else sewage_monthly
+        ),
+        "sewage_flow_chart_history": _records_json_safe(sewage_chart),
+        "sewage_latest_lab": _records_json_safe(sewage_latest),
+        "sewage_latest_summary": sewage_latest_summary,
+        "water_suspension_events": _records_json_safe(water_events_for_artifact),
+        "water_suspension_summary": water_suspension_summary,
     }
     # Sort the multi-series datasets by (series, date) so each series'
     # points are contiguous in the array (same requirement as REIT charts)
@@ -316,6 +490,17 @@ def build_artifact(
                 {"label": "JV/Associate Results (HK$m)", "field": "jv_associate_results_total_hkdm", "format": "number"},
             ],
         },
+        {
+            "id": "water_suspension_card",
+            "description": "Current WSD planned and emergency water-suspension event feed.",
+            "dataset": "kpi_water_suspension",
+            "sourceId": "wsd_water_suspension",
+            "metrics": [
+                {"label": "Active Notices", "field": "active_notices", "format": "number"},
+                {"label": "Feed Rows", "field": "total_notices", "format": "number"},
+                {"label": "Emergency (7d)", "field": "recent_emergency_notices", "format": "number"},
+            ],
+        },
     ]
 
     charts = [
@@ -365,6 +550,21 @@ def build_artifact(
             "valueFormat": "number",
             "layout": "full",
         },
+        {
+            "id": "sewage_flow_chart",
+            "title": "Reported Sewage Flow across Treatment Works (Monthly Sum)",
+            "subtitle": "Monthly sum of daily final-effluent flow reported by the treatment works available in each month; the source remains daily and coverage changes over time. Per-works history remains in the dataset.",
+            "type": "line",
+            "intent": "comparison",
+            "dataset": "sewage_flow_chart_history",
+            "sourceId": "dsd_sewage_flow_lab",
+            "encodings": {
+                "x": {"field": "month", "type": "temporal", "label": "Month"},
+                "y": {"field": "value", "type": "quantitative", "label": "Reported Daily Flow (CuM/d)"},
+            },
+            "valueFormat": "number",
+            "layout": "full",
+        },
     ]
 
     tables: list[dict[str, Any]] = [
@@ -378,18 +578,43 @@ def build_artifact(
                 if pa_available
                 else "No Power Assets interim segment filing available yet for the current period."
             ),
-            "dataset": "power_assets_geography",
+            "dataset": "power_assets_geography_summary",
             "sourceId": "power_assets_segments",
             "density": "dense",
             "layout": "full",
-            "columns": [
-                {"field": "geography", "label": "Geography", "type": "text"},
-                {"field": "revenue_hkdm", "label": "Segment Revenue (HK$m)", "format": "number"},
-                {"field": "segment_profit_hkdm", "label": "Segment Profit (HK$m)", "format": "number"},
-                {"field": "jv_associate_results_hkdm", "label": "JV/Associate Results (HK$m)", "format": "number"},
-            ],
-        }
+            "columns": [{"field": "summary", "label": "Geographic Segment Summary", "type": "text"}],
+        },
+        {
+            "id": "sewage_latest_lab_table",
+            "title": "Latest Sewage Treatment Works Flow and Laboratory Observations",
+            "subtitle": "Latest available row for each treatment works. Core lab fields are shown; additional source-sparse lab fields remain in the dataset and are not imputed.",
+            "dataset": "sewage_latest_summary",
+            "sourceId": "dsd_sewage_flow_lab",
+            "density": "dense",
+            "layout": "full",
+            "columns": [{"field": "summary", "label": "Treatment Works and Latest Metrics", "type": "text"}],
+        },
+        {
+            "id": "water_suspension_events_table",
+            "title": "Current Water Suspension Notices",
+            "subtitle": "Current WSD planned/emergency notices, including scheduled future notices. Start/status fields are shown; source address and cause fields remain in the dataset. This is an event snapshot, not a water-consumption time series.",
+            "dataset": "water_suspension_summary",
+            "sourceId": "wsd_water_suspension",
+            "density": "dense",
+            "layout": "full",
+            "columns": [{"field": "summary", "label": "Notice Summary", "type": "text"}],
+        },
     ]
+
+    data_as_of_candidates = [
+        clp_kpi.get("observation_date"),
+        tg_kpi.get("observation_date"),
+        temp_kpi.get("observation_date"),
+        pa_kpi.get("observation_date"),
+    ]
+    if sewage_available and sewage["date"].notna().any():
+        data_as_of_candidates.append(sewage["date"].max().strftime("%Y-%m-%d"))
+    data_as_of = max(value for value in data_as_of_candidates if value)
 
     sources = list(PUBLIC_SOURCES.values())
 
@@ -403,7 +628,7 @@ def build_artifact(
             "version": 1,
             "surface": "dashboard",
             "title": "HK Utilities & Infrastructure Sector Monitor",
-            "description": "CLP quarterly electricity sales by customer sector, CenStatD town gas consumption, HKO temperature, and Power Assets geographic segment reporting.",
+            "description": "CLP quarterly electricity sales by customer sector, CenStatD town gas consumption, HKO temperature, Power Assets geographic segment reporting, DSD sewage flow/laboratory data and WSD water-suspension notices.",
             "sector": "hk-utilities",
             "generatedAt": generated_at,
             "cards": cards,
@@ -415,12 +640,15 @@ def build_artifact(
                 {"id": "clp_chart", "type": "chart", "chartId": "clp_sector_chart"},
                 {"id": "towngas_chart", "type": "chart", "chartId": "towngas_trend_chart"},
                 {"id": "temp_chart", "type": "chart", "chartId": "temp_trend_chart"},
+                {"id": "sewage_chart", "type": "chart", "chartId": "sewage_flow_chart"},
                 {"id": "power_assets_table", "type": "table", "tableId": "power_assets_geography_table"},
+                {"id": "sewage_table", "type": "table", "tableId": "sewage_latest_lab_table"},
+                {"id": "water_table", "type": "table", "tableId": "water_suspension_events_table"},
             ],
         },
         "snapshot": {"version": 1, "generatedAt": generated_at, "status": "ready", "datasets": datasets},
         "sources": sources,
-        "package_info": {"originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-utilities/", "snapshotId": snapshot_id, "dataAsOf": clp_kpi["observation_date"]},
+        "package_info": {"originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-utilities/", "snapshotId": snapshot_id, "dataAsOf": data_as_of},
     }
 
     record_counts = {
@@ -428,30 +656,64 @@ def build_artifact(
         "towngas_proxy": len(towngas),
         "hko_temperature": len(temp),
         "power_assets_segments": len(power_assets),
+        "dsd_sewage_flow_lab": len(sewage),
+        "wsd_water_suspension": len(water_suspension),
     }
+    sewage_latest_observation = (
+        sewage["date"].max().strftime("%Y-%m-%d")
+        if sewage_available and sewage["date"].notna().any()
+        else "—"
+    )
+    # The feed contains future scheduled notices. Source health should report
+    # the build date, not the furthest future scheduled start date, as the
+    # latest observation.
+    water_latest_observation = now.date().isoformat() if water_available else "—"
     latest_observation_dates = {
         "clp_electricity": clp_kpi["observation_date"],
         "towngas_proxy": tg_kpi["observation_date"],
         "hko_temperature": temp_kpi["observation_date"],
         "power_assets_segments": pa_kpi["observation_date"],
+        "dsd_sewage_flow_lab": sewage_latest_observation,
+        "wsd_water_suspension": water_latest_observation,
+    }
+    sewage_age_days = None
+    if sewage_latest_observation != "—":
+        sewage_age_days = max(
+            0,
+            (now.replace(tzinfo=None).date() - pd.Timestamp(sewage_latest_observation).date()).days,
+        )
+    freshness_by_source = {
+        "clp_electricity": "Live",
+        "towngas_proxy": "Live",
+        "hko_temperature": "Live",
+        "power_assets_segments": "Live",
+        "dsd_sewage_flow_lab": f"{sewage_age_days}d old" if sewage_age_days is not None else "Endpoint returns no data",
+        "wsd_water_suspension": "Live at build time" if water_available else "Endpoint returns no data",
+    }
+    type_by_source = {
+        "wsd_water_suspension": "Event",
+    }
+    source_status_by_id = {
+        source_id: "Healthy" if record_counts[source_id] > 0 else "Degraded"
+        for source_id in record_counts
     }
 
     status = {
         "generated_at": generated_at,
         "snapshot_id": snapshot_id,
         "data_as_of": artifact["package_info"]["dataAsOf"],
-        "overall_status": "Healthy" if pa_available else "Degraded",
+        "overall_status": "Healthy" if all(value == "Healthy" for value in source_status_by_id.values()) else "Degraded",
         "live_sources": len(PUBLIC_SOURCES),
         "planned_sources": 0,
         "sources": [
             {
                 "source": s["label"],
                 "dataset": s["id"],
-                "type": "Measure",
-                "status": "Healthy" if record_counts[s["id"]] > 0 else "Degraded",
+                "type": type_by_source.get(s["id"], "Measure"),
+                "status": source_status_by_id[s["id"]],
                 "latest_observation": latest_observation_dates[s["id"]],
                 "records": record_counts[s["id"]],
-                "freshness": "Live",
+                "freshness": freshness_by_source[s["id"]],
                 "notes": s["query"]["description"],
             }
             for s in PUBLIC_SOURCES.values()
