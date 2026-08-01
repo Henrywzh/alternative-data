@@ -42,6 +42,7 @@ from src.hk_commercial_aerospace.sources.global_space_benchmark import fetch_glo
 from src.hk_commercial_aerospace.sources.global_object_catalog import (
     build_monthly_catalog_summary,
     fetch_celestrak_satcat,
+    load_monthly_summary,
     persist_monthly_summary,
 )
 from src.hk_commercial_aerospace.sources.wikimedia_pageviews import (
@@ -608,6 +609,11 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
             )
     except Exception as e:
         print(f"Warning: Global object catalog fetch failed - {e}")
+    if global_object_catalog_df.empty:
+        cached_catalog_df = load_monthly_summary()
+        if not cached_catalog_df.empty:
+            global_object_catalog_df = cached_catalog_df
+            global_object_catalog_source = "cache"
     try:
         wikipedia_pageviews_df = fetch_wikipedia_aerospace_pageviews()
         wikipedia_pageviews_source = wikipedia_pageviews_df.attrs.get("source", "unavailable")
@@ -808,8 +814,8 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
         },
         {
             "id": "satellite_history_chart",
-            "title": "Tracked Chinese Commercial Constellation History",
-            "subtitle": "Daily CelesTrak snapshots; the current history is a short observed run, and tracked objects are not guaranteed operational satellites.",
+            "title": "Tracked Chinese Commercial Constellation Inventory Snapshots",
+            "subtitle": "CelesTrak catalogue snapshots; this chart is published only after at least 8 distinct observations, and tracked objects are not guaranteed operational satellites.",
             "type": "line",
             "dataset": "satellite_history",
             "sourceId": "celestrak",
@@ -830,7 +836,7 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
             "dataset": "global_space_benchmark",
             "sourceId": "global_space_benchmark",
             "encodings": {
-                "x": {"field": "year", "type": "nominal", "label": "Year"},
+                "x": {"field": "year_label", "type": "nominal", "label": "Year"},
                 "y": {"field": "objects_launched", "type": "quantitative", "label": "Objects"},
                 "color": {"field": "entity", "type": "nominal", "label": "Entity"},
             },
@@ -1170,7 +1176,11 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
         "global_object_catalog": {
             "status": "success" if not global_object_catalog_df.empty else "degraded",
             "records": len(global_object_catalog_df),
-            "freshness": "live" if global_object_catalog_source == "live" else "unavailable",
+            "freshness": (
+                "live" if global_object_catalog_source == "live"
+                else "stale" if global_object_catalog_source == "cache"
+                else "unavailable"
+            ),
             "latest_observation": _latest_observation(
                 global_object_catalog_df.to_dict(orient="records") if not global_object_catalog_df.empty else [],
                 "month",
@@ -1262,9 +1272,11 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
             ),
         },
     ])
-    if not launch_monthly_df.empty:
-        blocks.append({"id": "launch_monthly_chart_block", "type": "chart", "chartId": "launch_monthly_chart"})
-    if not satellite_history_df.empty:
+    # `china_launch_monthly_chart` already contains the commercial-provider
+    # class alongside national and state-owned commercial launches. Keep the
+    # provider-only dataset/chart in the contract/Data Explorer, but avoid a
+    # duplicate public block on the main dashboard.
+    if not satellite_history_df.empty and satellite_history_df["as_of"].nunique() >= 8:
         blocks.append({"id": "satellite_history_chart_block", "type": "chart", "chartId": "satellite_history_chart"})
     if szse_ipo_rows:
         blocks.append({"id": "szse_ipo_table_block", "type": "table", "tableId": "szse_ipo_table"})

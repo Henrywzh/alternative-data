@@ -1,7 +1,7 @@
 """Asia Markets private Streamlit research terminal — V1.
 
-V1 connects the reviewed Hong Kong labour, population, transport and global
-crypto-context sectors.
+V1 connects the reviewed Hong Kong labour, population, transport, commercial
+aerospace and global crypto-context sectors.
 The app reads existing, source-backed artifacts as a compact local data
 contract; it does not fetch during navigation or duplicate the source
 pipelines.
@@ -51,6 +51,13 @@ SECTORS: dict[str, dict[str, str]] = {
         "name_zh": "香港稳定币与加密资产",
         "short_en": "Stablecoin & Crypto",
         "short_zh": "稳定币与加密资产",
+    },
+    "aerospace": {
+        "slug": "hk-commercial-aerospace",
+        "name_en": "Hong Kong Commercial Aerospace",
+        "name_zh": "香港商业航天",
+        "short_en": "Commercial Aerospace",
+        "short_zh": "商业航天",
     },
 }
 
@@ -168,6 +175,92 @@ MTR_SERIES_LABELS_ZH = {
     "HSR": "高铁",
     "Airport Exp": "机场快线",
     "LR & Bus": "轻铁／巴士",
+}
+
+CRYPTO_ATTENTION_AGENT_LABELS = {
+    "user": "User",
+    "spider": "Search-engine spider",
+    "automated": "Automated",
+    "all-agents": "All agents",
+}
+
+CRYPTO_ATTENTION_AGENT_LABELS_ZH = {
+    "user": "用户",
+    "spider": "搜索引擎爬虫",
+    "automated": "自动化程序",
+    "all-agents": "全部代理",
+}
+
+CRYPTO_PAGE_LABELS = {
+    "Bitcoin": "Bitcoin",
+    "Ethereum": "Ethereum",
+    "Cryptocurrency": "Cryptocurrency",
+    "Stablecoin": "Stablecoin",
+    "Tether": "Tether",
+    "USD Coin": "USD Coin",
+    "Decentralized finance": "Decentralized finance",
+    "Decentralized exchange": "Decentralized exchange",
+}
+
+CRYPTO_PAGE_LABELS_ZH = {
+    "Bitcoin": "比特币",
+    "Ethereum": "以太坊",
+    "Cryptocurrency": "加密货币",
+    "Stablecoin": "稳定币",
+    "Tether": "Tether",
+    "USD Coin": "USD Coin",
+    "Decentralized finance": "去中心化金融",
+    "Decentralized exchange": "去中心化交易所",
+}
+
+AEROSPACE_PROGRAM_LABELS = {
+    "national_program": "National program",
+    "state_owned_commercial": "State-owned commercial",
+    "commercial_provider": "Commercial provider",
+}
+
+AEROSPACE_PROGRAM_LABELS_ZH = {
+    "national_program": "国家队项目",
+    "state_owned_commercial": "国企商业化",
+    "commercial_provider": "商业发射服务商",
+}
+
+AEROSPACE_OBJECT_TYPE_LABELS = {
+    "Payload": "Payload",
+    "Rocket body": "Rocket body",
+    "Debris": "Debris",
+    "Unknown": "Unknown",
+}
+
+AEROSPACE_OBJECT_TYPE_LABELS_ZH = {
+    "Payload": "有效载荷",
+    "Rocket body": "火箭体",
+    "Debris": "碎片",
+    "Unknown": "未知",
+}
+
+AEROSPACE_ATTENTION_PAGE_LABELS = {
+    "SpaceX": "SpaceX",
+    "Starlink": "Starlink",
+    "Rocket Lab": "Rocket Lab",
+    "Falcon 9": "Falcon 9",
+    "New Glenn": "New Glenn",
+    "Long March": "Long March",
+    "Chinese space program": "Chinese space program",
+    "Satellite constellation": "Satellite constellation",
+    "Commercial spaceflight": "Commercial spaceflight",
+}
+
+AEROSPACE_ATTENTION_PAGE_LABELS_ZH = {
+    "SpaceX": "SpaceX",
+    "Starlink": "Starlink",
+    "Rocket Lab": "Rocket Lab",
+    "Falcon 9": "猎鹰9号",
+    "New Glenn": "新格伦",
+    "Long March": "长征系列运载火箭",
+    "Chinese space program": "中国航天计划",
+    "Satellite constellation": "卫星星座",
+    "Commercial spaceflight": "商业航天飞行",
 }
 
 PAIR_CARD_HEIGHT = 700
@@ -314,6 +407,43 @@ OVERVIEW_PULSE_CONFIG: dict[str, dict[str, Any]] = {
             "format": "number",
         },
     },
+    "aerospace": {
+        "metrics": (
+            {
+                "field": "national_program",
+                "format": "number",
+                "series": True,
+                "chart_id": "china_launch_monthly_chart",
+                "label_en": "Latest national-program launches",
+                "label_zh": "国家队项目最新发射次数",
+            },
+            {
+                "field": "commercial_provider",
+                "format": "number",
+                "series": True,
+                "chart_id": "china_launch_monthly_chart",
+                "label_en": "Latest commercial-provider launches",
+                "label_zh": "商业发射服务商最新发射次数",
+            },
+            {
+                "field": "Qianfan",
+                "format": "number",
+                "series": True,
+                "chart_id": "satellite_history_chart",
+                "label_en": "Qianfan tracked inventory",
+                "label_zh": "千帆跟踪目标数",
+            },
+        ),
+        "sparkline": {
+            "chart_id": "china_launch_monthly_chart",
+            "series": "national_program",
+            "title_en": "National launch cadence",
+            "title_zh": "国家队发射节奏",
+            "note_en": "Monthly verified launch events",
+            "note_zh": "每月已核验发射任务",
+            "format": "number",
+        },
+    },
 }
 
 # Keep the featured-trend budget explicit, but leave it empty until higher-
@@ -331,6 +461,7 @@ def view_label(language: str, view: str) -> str:
         "MoM %": ("MoM %", "环比 %"),
         "QoQ %": ("QoQ %", "环比 %"),
         "YoY %": ("YoY %", "同比 %"),
+        "WoW %": ("WoW %", "周环比 %"),
         "Day %": ("Day %", "日变化 %"),
         "MoM Δpp": ("MoM Δpp", "环比 Δ百分点"),
         "YoY Δpp": ("YoY Δpp", "同比 Δ百分点"),
@@ -790,6 +921,8 @@ def line_view_frame(
             label = f"MoM {suffix}"
         elif "QoQ" in view:
             label = f"QoQ {suffix}"
+        elif "WoW" in view:
+            label = f"WoW {suffix}"
         else:
             label = suffix
         return output.dropna(subset=["_value"]), label, "number"
@@ -801,6 +934,8 @@ def line_view_frame(
         label = "MoM %"
     elif "QoQ" in view:
         label = "QoQ %"
+    elif "WoW" in view:
+        label = "WoW %"
     elif "Day" in view:
         label = "Day %"
     else:
@@ -965,6 +1100,7 @@ def render_table(
     language: str,
     *,
     value_maps: dict[str, dict[str, str]] | None = None,
+    max_rows: int | None = None,
 ) -> None:
     spec = manifest_item(artifact, "tables", table_id)
     label_spec = manifest_item(labels, "tables", table_id)
@@ -976,6 +1112,15 @@ def render_table(
     if frame.empty:
         st.info(tr(language, "No rows are available.", "没有可用数据。"))
         return
+    if max_rows is not None and len(frame) > max_rows:
+        date_field = next(
+            (field for field in ["launch_date", "date_time", "issue_date", "date"] if field in frame.columns),
+            None,
+        )
+        if date_field:
+            frame = frame.assign(_sort_date=pd.to_datetime(frame[date_field], errors="coerce"))
+            frame = frame.sort_values("_sort_date", ascending=False, na_position="last")
+        frame = frame.head(max_rows).copy()
     fields = [column["field"] for column in spec.get("columns", []) if column["field"] in frame.columns]
     labels_by_field = {
         column["field"]: column.get("label", column["field"])
@@ -2144,11 +2289,323 @@ def crypto_metric_delta(signal: dict[str, Any]) -> str | None:
     return f"{change:+,.1f}% YoY"
 
 
-def render_crypto(artifact: dict[str, Any], labels: dict[str, Any], language: str, window: str) -> None:
-    """Render V1 as a global crypto-market context page.
+def render_aerospace(artifact: dict[str, Any], labels: dict[str, Any], language: str, window: str) -> None:
+    """Render the bounded V1 commercial-aerospace research page."""
+    render_header(
+        artifact,
+        labels,
+        language,
+        "aerospace",
+        title_override=tr(language, "Commercial Aerospace Monitor", "商业航天监测"),
+        description_override=tr(
+            language,
+            "Verified China launch activity, constellation inventory, catalogued space objects and aerospace attention signals.",
+            "已核验的中国发射活动、商业星座库存、已编目空间物体及航天关注度信号。",
+        ),
+    )
 
-    Hong Kong regulatory and adoption measures remain outside this first page
-    until a recurring local activity series is validated.
+    section_heading(
+        language,
+        "China launch pulse",
+        "中国发射脉搏",
+        "The primary series separates national-program, state-owned commercial and commercial-provider launches; the commercial-only dataset remains available in Data Explorer.",
+        "主序列分开显示国家队项目、国企商业化和商业发射服务商；仅商业发射数据仍保留在数据探索器。",
+    )
+    with st.container(border=True):
+        render_line_chart(
+            artifact,
+            labels,
+            "china_launch_monthly_chart",
+            language,
+            window,
+            views=("Level", "MoM %", "YoY %"),
+            periods_per_year=12,
+            height=430,
+            series_label_map=AEROSPACE_PROGRAM_LABELS_ZH if language == "zh" else AEROSPACE_PROGRAM_LABELS,
+        )
+
+    section_heading(
+        language,
+        "Verified mission detail",
+        "已核验任务明细",
+        "Latest 30 official-baseline events are shown here; the complete canonical history remains in the artifact and Data Explorer.",
+        "此处显示最新 30 条官方基准任务；完整规范化历史保留在 artifact 和数据探索器。",
+    )
+    with st.container(border=True):
+        render_table(artifact, labels, "china_launch_events_table", language, max_rows=30)
+
+    section_heading(
+        language,
+        "Constellation inventory & object catalog",
+        "星座库存与空间物体目录",
+        "Constellation counts are tracked/catalogued inventory, not guaranteed operational satellites. SATCAT is a separate global launch-month catalog.",
+        "星座数量是追踪／编目库存，不保证等同于正在运行的卫星；SATCAT 是独立的全球发射月份目录。",
+    )
+    with st.container(border=True):
+        render_bar_chart(artifact, labels, "satellite_count_chart", language, height=360)
+
+    satellite_history = frame_for_dataset(artifact, "satellite_history")
+    snapshot_count = satellite_history["as_of"].nunique() if "as_of" in satellite_history.columns else 0
+    if snapshot_count >= 8:
+        with st.container(border=True):
+            render_line_chart(
+                artifact,
+                labels,
+                "satellite_history_chart",
+                language,
+                window,
+                views=("Level", "WoW %"),
+                periods_per_year=1,
+                height=400,
+                series_label_map=(
+                    {"Qianfan": "千帆", "Jilin1": "吉林一号", "Guowang": "国网"}
+                    if language == "zh"
+                    else {"Qianfan": "Qianfan", "Jilin1": "Jilin-1", "Guowang": "Guowang"}
+                ),
+            )
+    else:
+        st.info(
+            tr(
+                language,
+                f"Inventory history is withheld until 8 distinct snapshots are available; current coverage is {snapshot_count}.",
+                f"库存历史图将在累计 8 个独立快照后显示；当前有 {snapshot_count} 个。",
+            )
+        )
+
+    with st.container(border=True):
+        render_line_chart(
+            artifact,
+            labels,
+            "global_object_catalog_monthly_chart",
+            language,
+            window,
+            views=("Level", "MoM %", "YoY %"),
+            periods_per_year=12,
+            height=430,
+            series_label_map=(
+                AEROSPACE_OBJECT_TYPE_LABELS_ZH
+                if language == "zh"
+                else AEROSPACE_OBJECT_TYPE_LABELS
+            ),
+        )
+
+    section_heading(
+        language,
+        "Aerospace attention",
+        "航天关注度",
+        "Wikipedia pageviews are an attention proxy, not launch activity, search volume or unique people.",
+        "Wikipedia 页面访问量是关注度代理，不是发射活动、搜索量或独立人数。",
+    )
+    with st.container(border=True):
+        render_line_chart(
+            artifact,
+            labels,
+            "wikipedia_attention_agent_weekly_chart",
+            language,
+            window,
+            views=("Level", "WoW %", "YoY %"),
+            periods_per_year=52,
+            height=430,
+            series_label_map=(
+                CRYPTO_ATTENTION_AGENT_LABELS_ZH
+                if language == "zh"
+                else CRYPTO_ATTENTION_AGENT_LABELS
+            ),
+        )
+    with st.container(border=True):
+        render_line_chart(
+            artifact,
+            labels,
+            "wikipedia_user_attention_monthly_chart",
+            language,
+            window,
+            views=("Level", "MoM %", "YoY %"),
+            periods_per_year=12,
+            height=430,
+            series_label_map=(
+                AEROSPACE_ATTENTION_PAGE_LABELS_ZH
+                if language == "zh"
+                else AEROSPACE_ATTENTION_PAGE_LABELS
+            ),
+        )
+
+    with st.expander(tr(language, "Annual benchmark context", "年度 benchmark 背景"), expanded=False):
+        st.caption(
+            tr(
+                language,
+                "The annual World/China/United States objects-launched series counts objects or payloads, not rocket launches; it is context rather than a high-frequency signal.",
+                "年度全球／中国／美国进入太空物体序列统计物体或有效载荷，不是火箭发射次数；这里只作为背景，不是高频信号。",
+            )
+        )
+        render_line_chart(
+            artifact,
+            labels,
+            "global_space_benchmark_chart",
+            language,
+            "Full history",
+            views=("Level",),
+            periods_per_year=1,
+            height=380,
+        )
+
+    render_source_coverage({"aerospace": artifact}, {"aerospace": labels}, language)
+
+
+def render_crypto_policy_pulse(
+    artifact: dict[str, Any],
+    labels: dict[str, Any],
+    language: str,
+) -> None:
+    """Render official Hong Kong crypto policy facts separately from forecasts."""
+    section_heading(
+        language,
+        "Hong Kong regulatory & policy pulse",
+        "香港监管与政策脉搏",
+        "Official HKMA and SFC registers provide the status layer; the news pulse shows regulatory activity, not market sentiment.",
+        "金管局和证监会官方登记册提供状态层；新闻脉搏反映监管活动度，不代表市场情绪。",
+    )
+
+    kpi = latest_row(frame_for_dataset(artifact, "market_kpi_summary"))
+    status_metrics = (
+        ("hkma_count", "hkma_issuers", "number", tr(language, "HKMA stablecoin issuers", "金管局稳定币发行人")),
+        ("sfc_licensed_count", "sfc_vatps", "number", tr(language, "SFC licensed VATPs", "证监会持牌 VATP")),
+        ("sfc_pending_count", "sfc_vatps", "number", tr(language, "SFC pending VATPs", "证监会申请中 VATP")),
+    )
+    register_available = any(
+        not frame_for_dataset(artifact, dataset_id).empty
+        for _, dataset_id, _, _ in status_metrics
+    )
+    with st.container(border=True):
+        columns = st.columns(len(status_metrics))
+        for column, (field, dataset_id, fmt, label) in zip(columns, status_metrics):
+            with column:
+                register_rows = frame_for_dataset(artifact, dataset_id)
+                value = format_metric(kpi.get(field), fmt) if not register_rows.empty else "—"
+                st.metric(label, value)
+                st.caption(
+                    tr(language, "Current register snapshot", "当前登记册快照")
+                    if value != "—"
+                    else tr(
+                        language,
+                        "Register unavailable in this artifact build",
+                        "本次 artifact 构建没有可用登记册记录",
+                    )
+                )
+    if not register_available:
+        st.caption(
+            tr(
+                language,
+                "A blank status is different from zero: the latest local build did not contain register rows, so no licensing count is inferred.",
+                "空白状态不等于零：最新本地构建没有登记册记录，因此不推断持牌数量。",
+            )
+        )
+
+    news = frame_for_dataset(artifact, "regulatory_news").copy()
+    if news.empty or "issue_date" not in news.columns:
+        st.info(tr(language, "No official regulatory news is available.", "没有可用的官方监管新闻。"))
+    else:
+        news["_date"] = pd.to_datetime(news["issue_date"], errors="coerce")
+        news = news.dropna(subset=["_date"]).sort_values("_date", ascending=False).copy()
+        latest_news_date = news["_date"].max()
+        recent = news[news["_date"] >= latest_news_date - pd.Timedelta(days=90)]
+        source_counts = recent["source"].astype(str).str.upper().value_counts()
+        source_cards = (
+            ("HKMA", tr(language, "HKMA releases", "金管局新闻")),
+            ("SFC", tr(language, "SFC releases", "证监会新闻")),
+            ("__total__", tr(language, "Official releases", "官方新闻合计")),
+        )
+        with st.container(border=True):
+            columns = st.columns(len(source_cards))
+            for column, (source, label) in zip(columns, source_cards):
+                with column:
+                    count = len(recent) if source == "__total__" else int(source_counts.get(source, 0))
+                    st.metric(label, f"{count:,}")
+                    st.caption(
+                        tr(
+                            language,
+                            f"Trailing 90 days through {latest_news_date:%d %b %Y}",
+                            f"截至 {latest_news_date.year}年{latest_news_date.month}月{latest_news_date.day}日的最近90日",
+                        )
+                    )
+
+        monthly = news.assign(month=news["_date"].dt.to_period("M").dt.to_timestamp())
+        monthly["source_display"] = monthly["source"].astype(str).str.upper().map(
+            {
+                "HKMA": tr(language, "HKMA", "金管局"),
+                "SFC": tr(language, "SFC", "证监会"),
+            }
+        ).fillna(monthly["source"].astype(str).str.upper())
+        monthly = (
+            monthly.groupby(["month", "source_display"], as_index=False)
+            .size()
+            .rename(columns={"size": "count"})
+            .sort_values("month")
+        )
+        st.markdown(
+            f'<div class="am-chart-title">{tr(language, "Official regulatory news activity", "官方监管新闻活动度")}</div>',
+            unsafe_allow_html=True,
+        )
+        st.caption(
+            tr(
+                language,
+                "Monthly count of crypto-relevant HKMA and SFC releases retained by the artifact; this is an activity count, not a policy score.",
+                "artifact 保留的金管局及证监会加密相关新闻月度数量；这是活动度统计，不是政策评分。",
+            )
+        )
+        fig = px.bar(
+            monthly,
+            x="month",
+            y="count",
+            color="source_display",
+            barmode="stack",
+            color_discrete_sequence=PALETTE,
+        )
+        fig.update_xaxes(title=None, tickformat="%b %Y")
+        fig.update_yaxes(title=tr(language, "Official releases", "官方新闻数"), dtick=1)
+        for trace in fig.data:
+            trace.hovertemplate = f"<b>%{{x|%b %Y}}</b><br>{trace.name}: %{{y:,.0f}}<extra></extra>"
+        fig = chart_theme(fig, date_axis=True, height=370)
+        st.plotly_chart(fig, width="stretch", config={"displaylogo": False, "responsive": True})
+
+    section_heading(
+        language,
+        "Policy timeline",
+        "政策时间线",
+        "The table is an official-source timeline, not a media sentiment feed.",
+        "以下是官方来源时间线，不是媒体情绪新闻流。",
+    )
+    with st.container(border=True):
+        render_table(artifact, labels, "regulatory_news_table", language)
+
+    with st.expander(
+        tr(language, "Market expectations — separate from official policy facts", "市场预期——与官方政策事实分开"),
+        expanded=False,
+    ):
+        st.caption(
+            tr(
+                language,
+                "Polymarket probabilities are prediction-market observations, not HKMA or SFC positions.",
+                "Polymarket 概率是预测市场观察值，不代表金管局或证监会立场。",
+            )
+        )
+        render_table(artifact, labels, "polymarket_table", language)
+
+    with st.expander(tr(language, "Company disclosures on HKEXnews", "港交所披露易公司公告"), expanded=False):
+        st.caption(
+            tr(
+                language,
+                "Recent announcements from the tracked Hong Kong crypto/stablecoin company watchlist; these are company disclosures, not regulatory decisions.",
+                "香港加密／稳定币观察名单公司的近期公告；这是公司披露，不是监管决定。",
+            )
+        )
+        render_table(artifact, labels, "hkexnews_announcements_table", language)
+
+
+def render_crypto(artifact: dict[str, Any], labels: dict[str, Any], language: str, window: str) -> None:
+    """Render V1 as global crypto context plus an official HK policy pulse.
+
+    Local adoption and on-chain Hong Kong activity remain outside this first
+    page until a recurring data series is validated.
     """
     render_header(
         artifact,
@@ -2158,8 +2615,8 @@ def render_crypto(artifact: dict[str, Any], labels: dict[str, Any], language: st
         title_override=tr(language, "Global Crypto Market Context", "全球加密市场背景"),
         description_override=tr(
             language,
-            "V1 focuses on global stablecoin liquidity, decentralized-exchange activity and crypto sentiment. Hong Kong-local adoption signals remain a later data track.",
-            "V1 聚焦全球稳定币流动性、去中心化交易所活动和加密市场情绪。香港本地采用度信号待后续数据验证后接入。",
+            "V1 combines global stablecoin liquidity, decentralized-exchange activity and crypto sentiment with an official Hong Kong regulatory and policy pulse. Local adoption signals remain a later data track.",
+            "V1 结合全球稳定币流动性、去中心化交易所活动、加密市场情绪，以及香港官方监管与政策脉搏。本地采用度信号待后续数据验证后接入。",
         ),
     )
 
@@ -2257,6 +2714,49 @@ def render_crypto(artifact: dict[str, Any], labels: dict[str, Any], language: st
             ),
         )
 
+    section_heading(
+        language,
+        "Crypto attention",
+        "加密资产关注度",
+        "Wikipedia pageviews are an attention proxy, not trading activity. The weekly view separates traffic agents; the monthly view keeps user pageviews by topic page.",
+        "Wikipedia 页面访问量是关注度代理，不是交易活动。周度图按流量代理拆分，月度图按主题页面保留用户访问量。",
+    )
+    with st.container(border=True):
+        render_line_chart(
+            artifact,
+            labels,
+            "wikipedia_crypto_attention_agent_weekly_chart",
+            language,
+            window,
+            views=("Level", "WoW %", "YoY %"),
+            periods_per_year=52,
+            height=430,
+            series_label_map=(
+                CRYPTO_ATTENTION_AGENT_LABELS_ZH
+                if language == "zh"
+                else CRYPTO_ATTENTION_AGENT_LABELS
+            ),
+        )
+    with st.container(border=True):
+        render_line_chart(
+            artifact,
+            labels,
+            "wikipedia_crypto_user_attention_monthly_chart",
+            language,
+            window,
+            views=("Level", "MoM %", "YoY %"),
+            periods_per_year=12,
+            height=430,
+            series_label_map=CRYPTO_PAGE_LABELS_ZH if language == "zh" else CRYPTO_PAGE_LABELS,
+        )
+    st.caption(
+        tr(
+            language,
+            "Coverage: curated English Wikipedia pages for Bitcoin, Ethereum, stablecoins and DeFi. Automated/spider traffic is retained for transparency; use the user series for the cleaner attention signal.",
+            "覆盖范围：精选英文 Wikipedia 比特币、以太坊、稳定币及 DeFi 页面。自动化程序和爬虫流量为透明度而保留；如需较干净的关注度信号，应优先查看用户序列。",
+        )
+    )
+
     with st.container(border=True):
         st.markdown(
             f'<div class="am-chart-title">{tr(language, "V1 scope note", "V1 范围说明")}</div>',
@@ -2265,11 +2765,12 @@ def render_crypto(artifact: dict[str, Any], labels: dict[str, Any], language: st
         st.caption(
             tr(
                 language,
-                "These are global context indicators, not Hong Kong trading-volume or stablecoin-adoption measures. HKMA/SFC regulatory status, HKEX ETF activity and local on-chain metrics will be added only after their recurring data paths are validated.",
-                "这些是全球背景指标，不代表香港交易量或本地稳定币采用度。金管局／证监会监管状态、港交所 ETF 活动及本地链上指标，会在建立稳定的重复数据路径后再接入。",
+                "These global indicators are not Hong Kong trading-volume or stablecoin-adoption measures. The official HKMA/SFC policy layer below is a separate fact stream; HKEX ETF activity and local on-chain metrics remain separate data tracks.",
+                "这些全球指标不代表香港交易量或本地稳定币采用度。下方的金管局／证监会政策层是独立的事实流；港交所 ETF 活动及本地链上指标仍是独立数据路径。",
             )
         )
 
+    render_crypto_policy_pulse(artifact, labels, language)
     render_source_coverage({"crypto": artifact}, {"crypto": labels}, language)
 
 
@@ -2340,7 +2841,7 @@ def combined_dataset_index(artifacts: dict[str, dict[str, Any]], language: str) 
 
 def render_data_explorer(artifacts: dict[str, dict[str, Any]], language: str) -> None:
     st.markdown(f'<div class="am-page-title">{tr(language, "Data Explorer", "数据探索器")}</div>', unsafe_allow_html=True)
-    st.caption(tr(language, "Inspect the actual rows behind the four connected V1 sectors.", "查看目前已接入的四个 V1 板块的实际数据行。"))
+    st.caption(tr(language, "Inspect the actual rows behind the five connected V1 sectors.", "查看目前已接入的五个 V1 板块的实际数据行。"))
     options = combined_dataset_index(artifacts, language)
     labels = [label for _, label, _ in options]
     selected_label = st.selectbox(tr(language, "Dataset", "数据集"), labels)
@@ -2480,7 +2981,7 @@ def render_sector_pulse(
             if metric.get("series"):
                 value, date = latest_series_reading(
                     artifact,
-                    "immd_net_flow_chart",
+                    metric.get("chart_id", "immd_net_flow_chart"),
                     metric["field"],
                     metric.get("format", "number"),
                     language,
@@ -2687,6 +3188,7 @@ def make_sidebar(language: str) -> tuple[str, str, str]:
             "labour": tr(active_language, "Labour Market", "劳动力市场"),
             "population": tr(active_language, "Population & Migration", "人口与迁移"),
             "transport": tr(active_language, "Transport & Aviation", "交通与航空"),
+            "aerospace": tr(active_language, "Commercial Aerospace", "商业航天"),
             "crypto": tr(active_language, "Stablecoin & Crypto", "稳定币与加密资产"),
             "data": tr(active_language, "Data Explorer", "数据探索器"),
             "health": tr(active_language, "Source Health", "来源健康度"),
@@ -2715,6 +3217,7 @@ def make_sidebar(language: str) -> tuple[str, str, str]:
         nav_button("labour")
         nav_button("population")
         nav_button("transport")
+        nav_button("aerospace")
         nav_button("crypto")
         st.markdown(f'<div class="am-sidebar-group-label">{tr(active_language, "Data", "数据")}</div>', unsafe_allow_html=True)
         nav_button("data")
@@ -2729,7 +3232,7 @@ def make_sidebar(language: str) -> tuple[str, str, str]:
         )
         st.divider()
         st.caption(tr(active_language, "V1 scope", "V1 范围"))
-        st.caption(tr(active_language, "Hong Kong · 4 sectors", "香港 · 4 个板块"))
+        st.caption(tr(active_language, "Hong Kong · 5 sectors", "香港 · 5 个板块"))
     return active_language, current_page, history_window_name
 
 
@@ -2761,13 +3264,15 @@ def main() -> None:
         render_population(artifacts["population"], labels["population"], language, window)
     elif page == "transport":
         render_transport_tabs(artifacts["transport"], labels["transport"], language, window)
+    elif page == "aerospace":
+        render_aerospace(artifacts["aerospace"], labels["aerospace"], language, window)
     elif page == "crypto":
         render_crypto(artifacts["crypto"], labels["crypto"], language, window)
     elif page == "data":
         render_data_explorer(artifacts, language)
     elif page == "health":
         st.markdown(f'<div class="am-page-title">{tr(language, "Source Health", "来源健康度")}</div>', unsafe_allow_html=True)
-        st.caption(tr(language, "Freshness and coverage for the four connected V1 sectors.", "四个已接入 V1 板块的更新时间和覆盖情况。"))
+        st.caption(tr(language, "Freshness and coverage for the five connected V1 sectors.", "五个已接入 V1 板块的更新时间和覆盖情况。"))
         render_source_coverage(artifacts, labels, language)
 
 

@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-08-01T20:54:41.721772Z",
-  "snapshot_id": "5bef9e04df3f05d2",
+  "generated_at": "2026-08-01T23:39:50.734326Z",
+  "snapshot_id": "ca1687bcdc063cc5",
   "data_as_of": "2026-08-01",
   "overall_status": "Degraded",
   "live_sources": 11,
@@ -11,7 +11,7 @@
       "dataset": "sse_star_market_ipo",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "nan",
+      "latest_observation": "2026-06-29",
       "records": 5,
       "freshness": "Live",
       "notes": "Filing status, numeric audit numbers (stockAuditNum), and update dates for Chinese commercial launch companies."
@@ -111,7 +111,7 @@
       "dataset": "global_space_benchmark",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2025\u200b",
+      "latest_observation": "2025",
       "records": 187,
       "freshness": "Live",
       "notes": "Annual objects launched for World, China and the United States. This is payload/object activity, not rocket launch count."

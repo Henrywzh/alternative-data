@@ -218,6 +218,8 @@ def test_global_benchmark_keeps_world_china_us_only():
         frame = fetch_global_objects_launched()
     assert set(frame["entity"]) == {"World", "China", "United States"}
     assert int(frame.loc[frame["entity"] == "World", "objects_launched"].iloc[0]) == 2849
+    assert int(frame.loc[frame["entity"] == "World", "year"].iloc[0]) == 2024
+    assert frame.loc[frame["entity"] == "World", "year_label"].iloc[0] == "2024"
 
 
 def test_celestrak_catalog_builds_monthly_object_type_counts():

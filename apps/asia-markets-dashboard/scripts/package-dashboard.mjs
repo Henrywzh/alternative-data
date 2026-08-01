@@ -1787,7 +1787,7 @@ const HK_COMMERCIAL_AEROSPACE_ZH = {
     launch_monthly_chart: ["中国商业航天月度发射次数", "按已配置的中国商业发射服务商统计；没有匹配发射的月份显示为 0，国家队发射不包含在此序列。", "月份", "发射次数"],
     china_launch_monthly_chart: ["中国火箭发射：按项目类别", "展示最新十年的零填充月度序列；规范化发射历史自 1970 年起保留，未匹配的 LL2 候选不计入核验序列。", "月份", "发射次数", "项目类别"],
     china_launch_family_chart: ["按火箭系列统计的已核验发射次数", "按标准化火箭系列统计逐次发射；统计的是火箭发射次数，不是卫星或有效载荷数量。", "火箭系列", "发射次数", "项目类别"],
-    satellite_history_chart: ["中国商业卫星星座追踪历史", "Celestrak 每日快照；当前历史仍是较短的已收集序列，追踪目标不一定等同于正在运行的卫星。", "日期", "追踪目标数", "星座"],
+    satellite_history_chart: ["中国商业卫星星座库存快照", "Celestrak 目录快照；累计至少 8 个独立观察值后才发布为历史图表，追踪目标不一定等同于正在运行的卫星。", "日期", "追踪目标数", "星座"],
     global_space_benchmark_chart: ["全球进入太空的物体数量", "基于 UNOOSA 的年度全球总量，并列显示中国和美国；统计的是物体/有效载荷，不是火箭发射次数。", "年份", "物体数量", "地区"],
     global_object_catalog_monthly_chart: ["全球已编目空间物体发射（月度）", "Celestrak SATCAT 按发射日期统计的最新十年月度序列；Payload 最接近 UNOOSA 基准，火箭体、碎片和未知物体单独列出，不能与 UNOOSA 注册物体直接等同。", "月份", "已编目物体数", "物体类型"],
     wikipedia_attention_agent_weekly_chart: ["航天 Wikipedia 关注度：按周", "从每日访问量汇总的完整周一至周日数据；显示最近 500 个完整周，精选英文 Wikipedia 航天页面篮子按用户、搜索引擎爬虫、自动化程序及全部代理流量分开显示，当前未完成周不纳入。", "周起始日", "页面访问量", "流量代理"],
@@ -1952,6 +1952,8 @@ const HK_STABLECOIN_CRYPTO_ZH = {
     dex_volume_history_chart: ["全球 DEX 每日交易量走势 (十亿美元/日)", "DefiLlama 统计的全球去中心化交易所每日交易量月度平均；图表默认显示可用历史中的最近十年。", "月份", "DEX 交易量 (十亿美元/日)"],
     fear_greed_history_chart: ["加密情绪指数走势 (Alternative.me)", "Alternative.me 每日加密货币恐慌与贪婪指数月度平均；图表默认显示可用历史中的最近十年 (0=极度恐慌, 100=极度贪婪)。", "月份", "情绪得分"],
     btc_price_history_chart: ["比特币现货价格走势 (美元)", "Binance 每日比特币收盘价的月末值；图表默认显示可用历史中的最近十年。", "月份", "BTC 价格 (美元)"],
+    wikipedia_crypto_attention_agent_weekly_chart: ["加密资产 Wikipedia 关注度：按流量代理", "精选英文加密资产／DeFi 页面按日访问量汇总的最近 500 个完整周；用户、搜索引擎爬虫、自动化程序及全部代理流量分开显示，标准化缓存保留更长历史。", "周起始日", "页面访问量", "流量代理"],
+    wikipedia_crypto_user_attention_monthly_chart: ["加密资产 Wikipedia 用户关注度：按页面", "精选英文加密资产／DeFi 页面按月用户访问量；在可用范围内显示最近十年。", "月份", "用户页面访问量", "Wikipedia 页面"],
   },
   tables: {
     hkma_issuers_table: {
@@ -2007,6 +2009,7 @@ const HK_STABLECOIN_CRYPTO_ZH = {
     hkma_news: "香港金管局新闻稿（加密相关筛选）",
     hkexnews_announcements: "香港交易所披露易公司公告（观察名单）",
     watchlist_price: "香港观察名单实时股票行情",
+    wikimedia_crypto_pageviews: "Wikimedia Wikipedia 加密资产页面访问量",
   },
   snapshotBody: (artifact) =>
     `**数据快照：** \`${artifact.package_info.snapshotId}\` · 生成于 ${artifact.manifest.generatedAt}。`,
