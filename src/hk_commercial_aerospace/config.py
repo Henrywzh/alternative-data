@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 DEFAULT_TIMEOUT = 15
@@ -28,6 +29,16 @@ SSE_REFERER = "https://www.sse.com.cn/"
 
 CELESTRAK_URL = "https://celestrak.org/NORAD/elements/gp.php"
 GOOGLE_PATENTS_URL = "https://patents.google.com/xhr/query"
+SZSE_PROJECT_API_URL = "https://listing.szse.cn/api/ras/projectrends/query"
+FAA_COMMERCIAL_SPACE_NUMBERS_URL = "https://www.faa.gov/node/52196"
+USASPENDING_SPENDING_BY_AWARD_URL = "https://api.usaspending.gov/api/v2/search/spending_by_award/"
+OWID_OBJECTS_LAUNCHED_URL = (
+    "https://ourworldindata.org/grapher/"
+    "yearly-number-of-objects-launched-into-outer-space.csv"
+    "?v=1&csvType=full&useColumnShortNames=false"
+)
+SEC_SUBMISSIONS_URL = "https://data.sec.gov/submissions/CIK{cik}.json"
+SEC_USER_AGENT = os.getenv("SEC_USER_AGENT", "AsiaMarketsData/1.0")
 
 # Constants
 HK_AEROSPACE_WATCHLIST = {
@@ -67,9 +78,29 @@ CHINESE_LAUNCH_AGENCIES = [
     "Space Pioneer",
 ]
 
+# Stable Launch Library 2 agency IDs. These are used instead of the broad
+# `search=` parameter, which searches mission names and payload text too.
+CHINESE_LAUNCH_AGENCY_IDS = {
+    "LandSpace": 259,
+    "Galactic Energy": 1021,
+    "CAS Space": 1040,
+    "Orienspace": 1080,
+    "Deep Blue Aerospace": 1102,
+    "i-Space": 274,
+    "Space Pioneer": 1049,
+}
+
+SEC_SPACE_COMPANIES = {
+    "RKLB": {"cik": "0001819994", "name": "Rocket Lab"},
+    "ASTS": {"cik": "0001780312", "name": "AST SpaceMobile"},
+    "PL": {"cik": "0001836833", "name": "Planet Labs"},
+    "LUNR": {"cik": "0001844452", "name": "Intuitive Machines"},
+    "RDW": {"cik": "0001819810", "name": "Redwire"},
+}
+
 POLICY_MILESTONES = [
     {"date": "2023-12", "event": "Central Economic Work Conference designates commercial space a strategic emerging industry"},
     {"date": "2024-03", "event": "2024 Government Work Report names commercial space a 'new engine of economic growth' (first appearance)"},
     {"date": "2025-03", "event": "2025 Government Work Report continues commercial space mention (two-year progression)"},
-    {"date": "2025-01", "event": "CNSA publishes Action Plan for Promoting High-Quality and Safe Development of Commercial Space (2025–2027)"},
+    {"date": "2025-11-25", "event": "CNSA publishes Action Plan for Promoting High-Quality and Safe Development of Commercial Space (2025–2027)"},
 ]

@@ -181,14 +181,52 @@ names; the rest is more diffuse theme exposure.
 
 ## What to do next
 - Confirm whether Goldwind/Junda genuinely belong in this watchlist.
-- Verify US-side policy catalysts (NASA contracts, FAA licensing) —
-  flagged as "almost certainly free" but not individually checked.
 - Confirm Guowang's Celestrak designator by cross-referencing candidate
-  international designators (e.g. `2026-168A`–`2026-168J`) against Launch
-  Library 2's mission data once its rate limit resets.
+- international designators against Launch Library 2 mission data once the
+  provider/API rate limit resets.
 - Periodically re-run the SSE STAR Market keyword search for Galactic
   Energy, Space Pioneer, and i-Space to catch when/if any of them gets an
   accepted filing.
-- Check whether any of the 5 IPO-race companies has instead filed with
-  Shenzhen's ChiNext rather than Shanghai's STAR Market — not checked
-  this pass, since the confirmed API only covers Shanghai.
+- Separate the 25 SZSE aerospace-industry projects into pure commercial
+  space, aviation, rail and other adjacent categories before using them as a
+  company basket.
+- Fix Google Patents' XHR request shape and normalize patent families before
+  considering it for a signal.
+
+## Stage 1 / Stage 2 ingestion update (2026-08-01)
+
+The first implementation pass now carries the following normalized datasets
+into the artifact builder:
+
+- Launch Library 2 historical launch events are filtered by exact launch
+  service provider IDs, deduplicated by `launch_id`, and aggregated into
+  `launch_monthly`. The normalized event history is retained in
+  `data/normalized/hk_commercial_aerospace/launch_events_history.jsonl` so a
+  clean scheduled CI checkout does not lose prior events when the free API
+  returns HTTP 429. Raw provider snapshots remain a local fallback; cached or
+  persisted rows are never reported as new live observations.
+- CelesTrak Qianfan and Jilin-1 counts are appended to
+  `data/normalized/hk_commercial_aerospace/celestrak_constellation_history.jsonl`.
+  The count means tracked/catalogued objects, not confirmed operational
+  satellites. Guowang remains a documented gap.
+- SZSE's public `/api/ras/projectrends/query` endpoint is filtered to the
+  broad industry classification `铁路、船舶、航空航天和其他运输设备制造业`.
+  This is an aerospace-adjacent IPO feed, not a pure commercial-space list;
+  the original industry field is retained for review.
+- The official FAA Commercial Space By the Numbers page contributes current
+  cumulative/active authorization KPIs. It is not a historical launch series.
+- USAspending contributes keyword-discovered federal award events. Award
+  amounts are government award values, not company revenue, and the keyword
+  feed is filtered for space-related terms and obvious false matches.
+- SEC submissions contribute filing metadata for Rocket Lab, AST SpaceMobile,
+  Planet Labs, Intuitive Machines and Redwire. The feed is an official event
+  discovery layer; it does not infer order or financing amounts from a filing.
+- The UNOOSA-derived Our World in Data series contributes annual World,
+  China and US objects-launched benchmarks. It counts objects/payloads, not
+  rocket launches.
+
+Google Patents remains a degraded, non-core source until the direct Google
+Patents request shape, assignee normalization and patent-family deduplication
+are fixed. SerpAPI is deliberately not used for this source. The dashboard
+should keep that gap visible rather than treating an empty result as zero
+patents.

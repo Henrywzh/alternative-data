@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from .config import NORMALIZED_DIR, RAW_DIR
+from .config import RAW_DIR
 
 
 def save_raw_snapshot(
