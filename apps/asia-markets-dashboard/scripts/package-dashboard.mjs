@@ -144,26 +144,6 @@ function localizeDataLabels(artifact, dataLabels) {
   });
 }
 
-// hk-local-consumer: AFCD wholesale-price category names. Reused for both
-// the full-name field (category) and its narrow-legend abbreviation
-// (category_short) -- the abbreviation only exists because the portable
-// renderer can't wrap a multi-series legend onto multiple lines at mobile
-// width (see AFCD_CATEGORY_SHORT_LABELS in build_hk_local_consumer_artifact.py);
-// translating to short Chinese terms keeps that legend narrow too.
-const AFCD_CATEGORY_ZH = {
-  "Marine fish": "海鱼",
-  "Livestock / Poultry": "家畜/家禽",
-  "Freshwater fish": "淡水鱼",
-  Vegetables: "蔬菜",
-  Eggs: "蛋类",
-};
-const AFCD_CATEGORY_SHORT_ZH = {
-  "FW fish": "淡水鱼",
-  "Meat/Poultry": "畜禽",
-  Marine: "海鱼",
-  Veg: "蔬菜",
-  Eggs: "蛋类",
-};
 // hk-local-consumer: C&SD retail-sales-by-outlet-type categories (official
 // C&SD Chinese terminology).
 const RETAIL_CATEGORY_ZH = {
@@ -263,9 +243,10 @@ const FUEL_TYPE_ZH = {
   "Standard Petrol": "普通汽油",
   "Premium Petrol": "高级汽油",
 };
-// hk-local-consumer: Consumer Council complaint categories, shared between
-// consumer_council_complaints_table and consumer_council_complaints_chart
-// (two different dataset ids for the same 47-category vocabulary).
+// hk-local-consumer: Consumer Council complaint categories, shared across
+// consumer_council_complaints_chart/_history_table (same 47-category
+// vocabulary; the redundant "latest period" table this once also served
+// was removed since consumer_council_complaints_history_table subsumes it).
 const CONSUMER_COMPLAINT_CATEGORY_ZH = {
   "Agency Services": "代理服务",
   "Baby Products": "婴儿用品",
@@ -538,8 +519,6 @@ const HK_LOCAL_CONSUMER_ZH = {
   charts: {
     severe_weather_trend: ["月度极端天气干扰时长 (小时)", "按月汇总的八号及以上热带气旋警告与红/黑色暴雨警告持续时间；图表默认显示可用历史中的最近十年。", "月份", "小时"],
     immigration_trend: ["跨境旅客流量 (7日移动平均)", "入境事务处发布的每日客流：北上为香港居民经陆路口岸出境，南下为内地访客经全部口岸入境；图表默认显示可用历史中的最近十年。", "日期", "人次/日 (7日均值)", "流向"],
-    afcd_category_chart: ["农渔护理署批发价按类别", "今日各类别商品的平均批发价（每公斤）。", "类别", "港元 / 公斤"],
-    afcd_category_trend: ["农渔护理署批发价按类别走势（逐日累积）", "由每次流水线运行时抓取的真实同日快照逐日累积而成——农渔护理署的批发价数据源只公布当日读数（未发现历史存档），因此本序列不作回填，初期数据量很薄（可能仅有一天），并会随每次运行新增真实观测值而增长。图例为适配窄屏使用缩写：FW fish=淡水鱼，Meat/Poultry=家畜/家禽，Marine=海鱼，Veg=蔬菜（完整类别名称见上方快照图与表格）。", "日期", "港元 / 公斤", "类别"],
     gold_trend: ["上海黄金交易所 PM 基准价（毛利成本参考）", "人民币/克每日定盘价；图表默认显示可用历史中的最近十年（若数据不足十年则显示全部），作为香港金饰原料成本的辅助参考。", "日期", "人民币 / 克"],
     valuation_pe_chart: ["观察名单历史市盈率对比", "各公司最新的正值历史市盈率；亏损公司不计入此视图。", "公司", "市盈率 (TTM)"],
     retail_trend: ["零售销售价值指数（全部店铺）", "政府统计处月度价值指数，完整已发布历史。", "月份", "价值指数"],
@@ -564,11 +543,6 @@ const HK_LOCAL_CONSUMER_ZH = {
       title: "近期极端天气警告事件记录",
       subtitle: "近期红/黑色暴雨警告及八号或以上热带气旋警告的开始时间、结束时间及持续时长。",
       columns: { signal_name: "警告信号", start: "开始时间 (HKT)", end: "结束时间 (HKT)", duration_hours: "持续时长 (小时)" },
-    },
-    afcd_commodity_table: {
-      title: "农渔护理署批发价快照",
-      subtitle: "同日各商品平均价格，港元/公斤（由官方公布的港元/斤换算）。",
-      columns: { category: "类别", commodity_name: "商品", avg_price_hkd_per_kg: "港元 / 公斤", num_readings: "读数个数" },
     },
     valuation_table: {
       title: "消费观察名单估值快照",
@@ -622,9 +596,20 @@ const HK_LOCAL_CONSUMER_ZH = {
         discounted_price_hkd: "实际油价 (港元/升)",
       },
     },
-    consumer_council_complaints_table: {
-      title: "消费者委员会投诉类别（最新一期）",
-      subtitle: "最新一期全部投诉类别，按投诉宗数排序。",
+    consumer_council_oilprice_wow_table: {
+      title: "汽车燃油实际油价 — 近7日变动",
+      subtitle: "扣除现金折扣及不含燃油税的每日实际油价，与七个日历日前比较。",
+      columns: {
+        company: "油公司",
+        fuel_type: "油品",
+        net_price_ex_duty_hkd: "实际油价 (港元/升，不含燃油税)",
+        wow_change: "7日变动 (%)",
+        date: "数据日期",
+      },
+    },
+    consumer_council_complaints_history_table: {
+      title: "消费者委员会投诉类别 — 全部可得期间",
+      subtitle: "官方 API 提供的每个类别及期间数据；2026年数据不视为全年总数。",
       columns: { period: "期间", category: "类别", amount: "投诉宗数" },
     },
     immigration_checkpoint_table: {
@@ -641,7 +626,6 @@ const HK_LOCAL_CONSUMER_ZH = {
     },
   },
   sources: {
-    afcd_wholesale: "农渔护理署新鲜食品批发价格",
     sge_gold: "上海黄金交易所 AM/PM 基准价",
     hk_valuation: "百度股市通香港股票估值",
     cnsd_retail: "政府统计处零售销售价值/销量指数",
@@ -658,20 +642,18 @@ const HK_LOCAL_CONSUMER_ZH = {
   snapshotBody: (artifact) =>
     `**数据快照：** \`${artifact.package_info.snapshotId}\` · 生成于 ${artifact.manifest.generatedAt}。`,
   methodologyBody:
-    "## 如何阅读本 dashboard\n\n跨境人流（北上/南下）为本 dashboard 主打的消费需求信号。黄金为金饰原料成本的辅助参考，与农渔护理署批发食品成本并列展示以供毛利分析，而非独立的主打图表。农渔护理署批发价按类别走势图逐日累积真实观测值（该数据源无历史存档），因此初期数据量很薄，会随时间增长。本界面整合物理天气干扰、汇率环境、出入境流量、零售金价溢价、零售销售、餐饮收益与消费股估值等代理指标，以评估香港本地零售与餐饮业的宏观受压情况。「已跟踪数据信号」列出已有实时数据支撑的来源；「覆盖范围与下一步采集目标」追踪端点仍存在问题或未经验证的来源。",
+    "## 如何阅读本 dashboard\n\n跨境人流（北上/南下）为本 dashboard 主打的消费需求信号。黄金为金饰原料成本的辅助参考。本界面整合物理天气干扰、汇率环境、出入境流量、零售金价溢价、零售销售、餐饮收益、综合消费物价指数与消费股估值等代理指标，以评估香港本地零售与餐饮业的宏观受压情况。「已跟踪数据信号」列出已有实时数据支撑的来源；「覆盖范围与下一步采集目标」追踪端点仍存在问题或未经验证的来源。",
   dataLabels: {
     immigration_trend_history: { flow_type: { Northbound: "北上", Southbound: "南下" } },
-    afcd_category_summary: { category: AFCD_CATEGORY_ZH },
-    afcd_commodity_table: { category: AFCD_CATEGORY_ZH },
-    afcd_category_trend_history: { category_short: AFCD_CATEGORY_SHORT_ZH },
     retail_category_snapshot: { category: RETAIL_CATEGORY_ZH },
     retail_category_chart: { category: RETAIL_CATEGORY_ZH },
     restaurant_snapshot: { sub_sector: RESTAURANT_SUBSECTOR_ZH },
     restaurant_chart: { sub_sector: RESTAURANT_SUBSECTOR_ZH },
     severe_weather_log: { signal_name: translateHkoSignalName },
     consumer_council_oilprice: { fuel_type: FUEL_TYPE_ZH },
-    consumer_council_complaints_table: { category: CONSUMER_COMPLAINT_CATEGORY_ZH },
+    consumer_council_complaints: { category: CONSUMER_COMPLAINT_CATEGORY_ZH },
     consumer_council_complaints_chart: { category: CONSUMER_COMPLAINT_CATEGORY_ZH },
+    consumer_council_complaints_history_chart: { category: CONSUMER_COMPLAINT_CATEGORY_ZH },
     immigration_checkpoint_snapshot: { control_point: CONTROL_POINT_ZH, direction: DIRECTION_ZH },
     censtatd_cpi_by_category_history: {
       series: {
