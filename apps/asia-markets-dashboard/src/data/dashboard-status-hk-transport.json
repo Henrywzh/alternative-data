@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-07-31T22:59:05.782596Z",
-  "snapshot_id": "cab30ee1e8cf58fe",
+  "generated_at": "2026-08-01T08:34:40.187544Z",
+  "snapshot_id": "5edbf584f1827831",
   "data_as_of": "2026-06-01",
   "overall_status": "Degraded",
   "live_sources": 6,
@@ -22,7 +22,7 @@
       "type": "Measure",
       "status": "Healthy",
       "latest_observation": "2026-06-01",
-      "records": 133,
+      "records": 123,
       "freshness": "Live",
       "notes": "HKIA airport monthly aircraft movements, passenger volume, and freight tonnage alongside Cathay Pacific passengers, RPK, ASK, and Passenger Load Factor (%), fetched directly from Cathay's own investor-relations traffic-figures PDF (deterministic per-month URL)."
     },
@@ -117,15 +117,15 @@
       "notes": "Current vacancy by participating car park, vehicle type and vacancy status; the collection script appends snapshots for a genuine high-frequency history and does not treat unknown vacancy as zero."
     },
     {
-      "source": "Transport Department Metered Parking-Space Occupancy",
+      "source": "Transport Department Car-Park Occupancy Signal",
       "dataset": "td_carpark_occupancy",
       "type": "Snapshot",
       "status": "Degraded",
       "latest_observation": "\u2014",
       "records": 0,
       "freshness": "Capacity-covered subset unavailable",
-      "notes": "Observed occupancy rate for sensor-backed metered/on-street parking spaces. The static inventory supplies the listed-space denominator and the live CSV marks each observed space occupied or vacant; sample_size and listed_spaces remain visible because a small number of status rows may be unmatched."
+      "notes": "Capacity-weighted private-car occupancy rate from exact hourly vacancy counts. The denominator is available only for a capacity-covered subset of TD car parks; sample_size and coverage are retained, and the signal is not presented as all-park occupancy."
     }
   ],
-  "attachment_filename": "hk-transport-dashboard-2026-07-31.html"
+  "attachment_filename": "hk-transport-dashboard-2026-08-01.html"
 }
