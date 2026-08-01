@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-07-31T09:17:24.803872Z",
-  "snapshot_id": "b187a737e3f58cca",
+  "generated_at": "2026-07-31T23:14:24.758631Z",
+  "snapshot_id": "625c4de342cebd83",
   "data_as_of": "2026-07-27",
   "overall_status": "Healthy",
   "live_sources": 10,
@@ -73,7 +73,7 @@
       "type": "Measure",
       "status": "Healthy",
       "latest_observation": "2026-06-01",
-      "records": 707,
+      "records": 354,
       "freshness": "60d old",
       "notes": "Normalized residential rental index; rental-yield history is a companion dataset."
     },
@@ -151,11 +151,11 @@
       "source": "Buildings Department history",
       "dataset": "Md52-Md56 stage aggregates",
       "type": "Measure",
-      "status": "No data this run",
+      "status": "Healthy",
       "latest_observation": "—",
-      "records": 0,
-      "freshness": "Fetch returned no rows",
-      "notes": "Buildings Department Monthly Digest PDF archive (Section 1 aggregate tables); live fetch returned no usable rows this run."
+      "records": 1210,
+      "freshness": "Live at build time",
+      "notes": "Buildings Department Monthly Digest PDF archive (Section 1 aggregate tables); see the chart/table above."
     },
     {
       "source": "SRPE",

@@ -44,6 +44,7 @@ from src.hk_real_estate.sources.centaline_transactions import fetch_centaline_tr
 from src.hk_real_estate.sources.landreg import fetch_landreg_monthly_statistics
 from src.hk_real_estate.sources.buildings_dept import fetch_buildings_dept_monthly_stats
 from src.hk_real_estate.sources.bd_projects import fetch_bd_supply_leading_indicators
+from src.hk_real_estate.sources.land_disposals import fetch_land_disposals
 from src.hk_real_estate.dedup.transaction_dedup import deduplicate_agency_transactions
 
 
@@ -97,6 +98,17 @@ PUBLIC_SOURCES = {
             "url": "https://www.censtatd.gov.hk/api/get.php?id=615-66001&lang=en&full_series=1",
             "language": "JSON",
             "description": "Quarterly gross value of construction works performed by main contractors.",
+        },
+    },
+    "censtatd_land_disposals": {
+        "id": "censtatd_land_disposals",
+        "label": "C&SD Table E704 — Disposals of Government Land",
+        "href": "https://www.censtatd.gov.hk/en/data/stat_report/subject/100/report_index.json",
+        "query": {
+            "engine": "official C&SD publication archive",
+            "url": "https://www.censtatd.gov.hk/en/data/stat_report/product/D7000004/att/D7000004.xlsx",
+            "language": "XLSX",
+            "description": "Quarterly area (sq. m.) and realised premium (HK$ million) of government land disposed via public auction/tender vs. private treaty grant, sourced from Lands Department.",
         },
     },
     "centaline_ccl": {
@@ -642,6 +654,7 @@ def build_artifact(
     raw_bd_supply_history: pd.DataFrame | None = None,
     raw_unified_tx: pd.DataFrame | None = None,
     raw_new_series: dict[str, pd.DataFrame] | None = None,
+    raw_land_disposals: pd.DataFrame | None = None,
     *,
     now: datetime | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
@@ -800,6 +813,33 @@ def build_artifact(
                 "unit": str(r.get("unit", "HK$ million")),
             })
         cnsd_const_rows.sort(key=lambda row: row["date"])
+
+    df_land_disposals = raw_land_disposals if raw_land_disposals is not None else fetch_land_disposals()
+    land_disposal_rows: list[dict[str, Any]] = []
+    if not df_land_disposals.empty:
+        # The raw table splits every method by district (Urban/New
+        # Territories) and use category (Residential/Commercial/...); the
+        # dashboard signal is total land supply released per method, so sum
+        # the "total" use-category row across both districts rather than
+        # exposing the full disaggregation. Two series (method), capped well
+        # under the mobile-viewport chart series limit.
+        _LAND_METHOD_LABELS = {
+            "public_auction_tender": "Public Auction/Tender",
+            "private_treaty_grant": "Private Treaty Grant",
+        }
+        totals = df_land_disposals[
+            (df_land_disposals["use_category"] == "total") & (df_land_disposals["metric"] == "area_sqm")
+        ]
+        grouped = totals.groupby(["quarter", "method"], as_index=False)["value"].sum()
+        for _, r in grouped.iterrows():
+            land_disposal_rows.append(
+                {
+                    "date": str(r["quarter"])[:7],
+                    "series": _LAND_METHOD_LABELS.get(r["method"], r["method"]),
+                    "value": float(r["value"]),
+                }
+            )
+        land_disposal_rows.sort(key=lambda row: (row["series"], row["date"]))
 
     # 28Hse EPI/ERI weekly index history -> two-series line chart.
     df_epi_eri = raw_epi_eri if raw_epi_eri is not None else _safe_fetch("28Hse EPI/ERI", fetch_28hse_epi_eri)
@@ -1183,6 +1223,7 @@ def build_artifact(
         "hkma_applications_history": hkma_applications_rows,
         "hkma_loan_amount_history": hkma_loan_amount_rows,
         "cnsd_construction_value": cnsd_const_rows,
+        "censtatd_land_disposals_area": land_disposal_rows,
         "epi_eri_history": epi_eri_rows,
         "hse28_new_projects": new_project_rows,
         "landreg_asp_history": landreg_asp_rows,
@@ -1516,6 +1557,26 @@ def build_artifact(
                 "encodings": {
                     "x": {"field": "date", "type": "temporal", "label": "Quarter"},
                     "y": {"field": "value", "type": "quantitative", "label": "HK$ million"},
+                },
+                "valueFormat": "number",
+                "layout": "full",
+            }
+        )
+
+    if land_disposal_rows:
+        charts.append(
+            {
+                "id": "censtatd_land_disposals_chart",
+                "title": "Government Land Disposed by Method (sq. m.)",
+                "subtitle": "Quarterly land area released via public auction/tender vs. private treaty grant (supply-side pipeline).",
+                "type": "line",
+                "intent": "trend",
+                "dataset": "censtatd_land_disposals_area",
+                "sourceId": "censtatd_land_disposals",
+                "encodings": {
+                    "x": {"field": "date", "type": "temporal", "label": "Quarter"},
+                    "y": {"field": "value", "type": "quantitative", "label": "Area (sq. m.)"},
+                    "color": {"field": "series", "type": "nominal", "label": "Method"},
                 },
                 "valueFormat": "number",
                 "layout": "full",
@@ -1933,6 +1994,8 @@ def build_artifact(
         blocks.append({"id": "hkma_mortgage_chart_block", "type": "chart", "chartId": "hkma_mortgage_rate_mix_chart"})
     if cnsd_const_rows:
         blocks.append({"id": "cnsd_construction_chart_block", "type": "chart", "chartId": "cnsd_construction_value_chart"})
+    if land_disposal_rows:
+        blocks.append({"id": "censtatd_land_disposals_chart_block", "type": "chart", "chartId": "censtatd_land_disposals_chart"})
 
     if hkma_ltv_rows:
         blocks.append({"id": "hkma_ltv_chart_block", "type": "chart", "chartId": "hkma_ltv_chart", "layout": "half"})
