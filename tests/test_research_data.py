@@ -729,6 +729,58 @@ def test_provider_revenue_daily_defaults_to_conservative_observed_estimate(tmp_p
     assert pd.isna(synthetic["estimated_revenue"])
 
 
+def test_conservative_economics_breaks_pricing_ties_by_lowest_alias_priority() -> None:
+    # Two different pricing model_ids can alias to the same lookup key at the
+    # exact same snapshot_ts (e.g. a plain "provider/model" slug and a dated
+    # "provider/model-20260101" variant that also strips down to "provider/
+    # model"). The exact match (lowest alias_priority) must win, matching the
+    # tie-break rule build_price_context and _forward_fill_target_route_pricing
+    # already use elsewhere for this exact kind of ambiguity - not whichever
+    # row an unrelated sort happens to leave last.
+    provider_activity = pd.DataFrame(
+        [
+            {
+                "usage_date": "2026-01-02",
+                "entity_id": "testprovider",
+                "entity_name": "TestProvider",
+                "model_permaslug": "testprovider/base-model",
+                "total_tokens": 1_000_000.0,
+                "prompt_tokens": 0.0,
+                "completion_tokens": 0.0,
+            }
+        ]
+    )
+    pricing = pd.DataFrame(
+        [
+            {
+                "snapshot_ts": "2026-01-01T00:00:00Z",
+                "model_id": "testprovider/base-model-20260101",
+                "canonical_slug": "testprovider/base-model-20260101",
+                "provider_prefix": "testprovider",
+                "pricing_prompt": 0.005,
+                "pricing_completion": 0.006,
+            },
+            {
+                "snapshot_ts": "2026-01-01T00:00:00Z",
+                "model_id": "testprovider/base-model",
+                "canonical_slug": "testprovider/base-model",
+                "provider_prefix": "testprovider",
+                "pricing_prompt": 0.002,
+                "pricing_completion": 0.003,
+            },
+        ]
+    )
+
+    economics = build_conservative_provider_economics(provider_activity, pricing)
+
+    row = economics.iloc[0]
+    assert row["pricing_prompt"] == pytest.approx(0.002)
+    assert row["pricing_completion"] == pytest.approx(0.003)
+    # No prompt/completion split, so revenue uses the blended rate.
+    blended = 0.002 * 0.977 + 0.003 * 0.023
+    assert row["estimated_revenue"] == pytest.approx(1_000_000.0 * blended)
+
+
 def test_estimate_usage_revenue_uses_asof_snapshot_for_historical_usage() -> None:
     usage = pd.DataFrame(
         [

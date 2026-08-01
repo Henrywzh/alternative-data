@@ -758,52 +758,57 @@ def _attach_latest_prior_pricing(usage: pd.DataFrame, pricing: pd.DataFrame) -> 
         slug: [alias for alias in generate_candidate_aliases(slug) if alias in pricing_keys]
         for slug in unique_usage_slugs
     }
-    expanded_rows: list[dict[str, object]] = []
-    for row in usage.to_dict(orient="records"):
-        slug = row.get("model_permaslug")
-        candidates = candidates_lookup.get(slug) or []
-        if not candidates:
-            candidates = [str(slug)] if pd.notna(slug) else []
-        for priority, candidate in enumerate(candidates):
-            expanded_rows.append({**row, "pricing_lookup_key": candidate, "usage_alias_priority": priority})
 
-    expanded = pd.DataFrame(expanded_rows)
-    if expanded.empty:
+    def _candidates_or_fallback(slug: object) -> list[str]:
+        candidates = candidates_lookup.get(slug) or []
+        return candidates if candidates else [str(slug)]
+
+    # A row with no model_permaslug has no candidates at all (matching the
+    # historical behavior: such rows never appeared in `expanded` below).
+    usage_with_slug = usage[usage["model_permaslug"].notna()].copy()
+    if usage_with_slug.empty:
         for column in ["pricing_snapshot_ts", "pricing_prompt", "pricing_completion", "matched_model_id"]:
             usage[column] = pd.NA
         return usage.drop(columns=["_usage_row_id", "_usage_date"])
 
+    usage_with_slug["pricing_lookup_key"] = usage_with_slug["model_permaslug"].map(_candidates_or_fallback)
+    expanded = usage_with_slug.explode("pricing_lookup_key", ignore_index=True)
+    expanded["usage_alias_priority"] = expanded.groupby("_usage_row_id").cumcount()
+
     price_frame = aliases[
-        ["pricing_lookup_key", "snapshot_ts", "pricing_prompt", "pricing_completion", "model_id"]
+        ["pricing_lookup_key", "snapshot_ts", "pricing_prompt", "pricing_completion", "model_id", "alias_priority"]
     ].rename(columns={"snapshot_ts": "pricing_snapshot_ts", "model_id": "matched_model_id"})
 
-    joined_groups: list[pd.DataFrame] = []
-    for key, usage_group in expanded.groupby("pricing_lookup_key", dropna=False):
-        price_group = price_frame[price_frame["pricing_lookup_key"] == key].sort_values("pricing_snapshot_ts")
-        if price_group.empty:
-            missing = usage_group.copy()
-            missing["pricing_snapshot_ts"] = pd.NaT
-            missing["pricing_prompt"] = np.nan
-            missing["pricing_completion"] = np.nan
-            missing["matched_model_id"] = pd.Series(pd.NA, index=missing.index, dtype="string")
-            joined_groups.append(missing)
-            continue
-        joined_groups.append(
-            pd.merge_asof(
-                usage_group.sort_values("_usage_date"),
-                price_group,
-                left_on="_usage_date",
-                right_on="pricing_snapshot_ts",
-                direction="backward",
-            )
-        )
+    # Two different pricing model_ids can alias to the same pricing_lookup_key
+    # at the exact same snapshot_ts with different prices (e.g. a plain slug
+    # like "provider/model" and a dated variant "provider/model-20260101" both
+    # stripping down to the same lookup key). merge_asof(direction="backward")
+    # resolves an exact tie on the `on` value by picking the LAST matching row
+    # in `right`'s current order, so sort alias_priority descending within
+    # each timestamp: the lowest (most exact) priority ends up last and wins -
+    # the same "lowest alias_priority wins" rule build_price_context and
+    # _forward_fill_target_route_pricing already apply for this exact kind of
+    # ambiguity.
+    expanded_sorted = expanded.sort_values("_usage_date", kind="stable")
+    price_frame_sorted = price_frame.sort_values(
+        ["pricing_snapshot_ts", "alias_priority"], ascending=[True, False], kind="stable"
+    ).drop(columns="alias_priority")
+    joined = pd.merge_asof(
+        expanded_sorted,
+        price_frame_sorted,
+        left_on="_usage_date",
+        right_on="pricing_snapshot_ts",
+        by="pricing_lookup_key",
+        direction="backward",
+    )
 
-    joined = pd.concat(joined_groups, ignore_index=True)
     joined["_price_rank"] = np.where(joined["pricing_snapshot_ts"].notna(), 0, 1)
     joined = joined.sort_values(["_usage_row_id", "_price_rank", "usage_alias_priority"]).drop_duplicates(
         "_usage_row_id", keep="first"
     )
-    return joined.drop(columns=["_usage_row_id", "_usage_date", "usage_alias_priority"], errors="ignore")
+    return joined.drop(
+        columns=["_usage_row_id", "_usage_date", "usage_alias_priority", "pricing_lookup_key"], errors="ignore"
+    )
 
 
 def _forward_fill_target_route_pricing(priced: pd.DataFrame, pricing: pd.DataFrame) -> pd.DataFrame:
