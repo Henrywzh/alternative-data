@@ -13,6 +13,16 @@ from src.hk_commercial_aerospace.sources.launch_library import (
     _merge_launch_history,
     _parse_launch_results,
     build_monthly_launch_summary,
+    build_monthly_launch_total_summary,
+)
+from src.hk_commercial_aerospace.sources.china_launch_records import (
+    EVENT_COLUMNS as CHINA_EVENT_COLUMNS,
+    _parse_calt_rows,
+    _parse_casc_rows,
+    build_china_launch_monthly,
+    build_rocket_family_summary,
+    enrich_with_ll2,
+    parse_payload_count,
 )
 from src.hk_commercial_aerospace.sources.usaspending import fetch_commercial_space_contracts
 from src.hk_commercial_aerospace.sources.celestrak_satellites import fetch_all_constellations
@@ -53,6 +63,124 @@ def test_monthly_launch_summary_deduplicates_launch_id():
     summary = build_monthly_launch_summary(frame)
     assert summary["launch_count"].sum() == 2
     assert set(summary["status"]) == {"Success", "Failure"}
+
+
+def test_monthly_launch_total_is_zero_filled_and_not_provider_status_grain():
+    frame = pd.DataFrame([
+        {"launch_id": "a", "net_time": "2026-01-02T00:00:00Z", "provider_name": "LandSpace", "status_abbrev": "Success"},
+        {"launch_id": "b", "net_time": "2026-03-15T00:00:00Z", "provider_name": "CAS Space", "status_abbrev": "Success"},
+        {"launch_id": "b", "net_time": "2026-03-15T00:00:00Z", "provider_name": "CAS Space", "status_abbrev": "Success"},
+    ])
+    summary = build_monthly_launch_total_summary(frame)
+    assert summary.to_dict(orient="records") == [
+        {"month": "2026-01", "launch_count": 1},
+        {"month": "2026-02", "launch_count": 0},
+        {"month": "2026-03", "launch_count": 1},
+    ]
+
+
+def test_official_launch_parsers_keep_long_march_and_jielong_fields():
+    casc_html = """
+    <table><tr><th>发射序号</th><th>运载火箭</th><th>发射日期</th><th>卫星/航天器</th><th>发射地点</th></tr>
+    <tr><td>660</td><td>长征六号改运载火箭</td><td>2026.07.30</td><td>通信技术试验卫星二十七号A/B星</td><td>太原卫星发射中心</td></tr>
+    </table>
+    """
+    calt_html = """
+    <table><tr><th>发射日期</th><th>运载火箭</th><th>发射卫星</th><th>发射基地</th><th>发射次数</th><th>结果</th></tr>
+    <tr><td>2026年2月12日</td><td>捷龙三号</td><td>基斯坦PRSC-EO2卫星、港中大一号卫星</td><td>广东阳江附近海域</td><td>捷龙系列第10次</td><td>成功</td></tr>
+    <tr><td>2026年7月29日</td><td>长征七号A</td><td>天链三号01星</td><td>文昌</td><td>第387次</td><td>成功</td></tr>
+    </table>
+    """
+    casc = _parse_casc_rows(casc_html, "casc-url", "casc.raw", "2026-08-01T00:00:00Z")
+    calt = _parse_calt_rows(calt_html, "calt-url", "calt.raw", "2026-08-01T00:00:00Z")
+    assert len(casc) == 1
+    assert casc[0]["program_class"] == "national_program"
+    assert casc[0]["official_sequence"] == "long-march-660"
+    assert len(calt) == 2
+    jielong = next(row for row in calt if row["program_class"] == "state_owned_commercial")
+    assert jielong["payload_summary"].startswith("基斯坦")
+
+
+def test_payload_count_only_uses_explicit_source_language():
+    assert parse_payload_count("一箭十四星") == 14
+    assert parse_payload_count("烟台二号卫星等9颗卫星") == 9
+    assert parse_payload_count("天仪41星、星时代-15卫星等8颗商业卫星") == 8
+    assert parse_payload_count("通信技术试验卫星二十七号A/B星") is None
+
+
+def test_official_events_are_enriched_by_date_rocket_and_site_without_ll2_only_rows():
+    official = pd.DataFrame([
+        {
+            "event_id": "casc-long-march-660",
+            "official_source_id": "casc:long-march-660",
+            "official_sequence": "long-march-660",
+            "launch_date": "2026-07-30",
+            "launch_time": None,
+            "launch_time_precision": "date",
+            "rocket_name": "长征六号改运载火箭",
+            "rocket_family": "长征",
+            "rocket_variant": "长征六号改运载火箭",
+            "mission_name": "通信技术试验卫星二十七号A/B星",
+            "launch_site": "太原卫星发射中心",
+            "launch_pad": None,
+            "target_orbit": None,
+            "mission_type": None,
+            "outcome": "成功",
+            "outcome_normalized": "Success",
+            "program_class": "national_program",
+            "classification_status": "verified",
+            "payload_summary": "通信技术试验卫星二十七号A/B星",
+            "payload_count": None,
+            "official_source_url": "casc-url",
+            "official_source_kind": "casc-long-march",
+            "ll2_launch_id": None,
+            "ll2_match_status": "not_checked",
+            "ll2_match_confidence": None,
+            "ll2_provider_name": None,
+            "source_snapshot": "casc.raw",
+            "fetched_at": "2026-08-01T00:00:00Z",
+            "parser_version": "test",
+        }
+    ], columns=CHINA_EVENT_COLUMNS)
+    ll2 = pd.DataFrame([
+        {
+            "launch_id": "ll2-660",
+            "net_time": "2026-07-30T02:00:00Z",
+            "rocket_name": "Long March 6A",
+            "pad_name": "Taiyuan Satellite Launch Center",
+            "orbit_abbrev": "SSO",
+            "mission_type": "Communications",
+            "provider_name": "China Aerospace Science and Technology Corporation",
+        },
+        {
+            "launch_id": "ll2-unmatched",
+            "net_time": "2026-07-31T02:00:00Z",
+            "rocket_name": "Long March 7A",
+            "pad_name": "Wenchang",
+            "orbit_abbrev": "GTO",
+            "mission_type": "Communications",
+            "provider_name": "China Aerospace Science and Technology Corporation",
+        },
+    ])
+    enriched = enrich_with_ll2(official, ll2)
+    assert enriched.loc[0, "ll2_launch_id"] == "ll2-660"
+    assert enriched.loc[0, "ll2_match_status"] == "matched"
+    assert enriched.loc[0, "launch_time_precision"] == "timestamp"
+    assert len(enriched) == 1
+
+
+def test_china_monthly_comparison_is_zero_filled_and_reconciles_classes():
+    events = pd.DataFrame([
+        {"event_id": "national-1", "launch_date": "2024-01-10", "program_class": "national_program", "classification_status": "verified", "outcome_normalized": "Success", "rocket_family": "长征"},
+        {"event_id": "jielong-1", "launch_date": "2024-03-10", "program_class": "state_owned_commercial", "classification_status": "verified", "outcome_normalized": "Success", "rocket_family": "捷龙"},
+        {"event_id": "commercial-1", "launch_date": "2024-03-10", "program_class": "commercial_provider", "classification_status": "verified", "outcome_normalized": "Failure", "rocket_family": "Zhuque"},
+    ])
+    monthly = build_china_launch_monthly(events)
+    assert monthly["launch_count"].sum() == 3
+    assert monthly[(monthly["month"] == "2024-02")]["launch_count"].sum() == 0
+    assert monthly[(monthly["month"] == "2024-03") & (monthly["program_class"] == "commercial_provider")]["failed_launch_count"].iloc[0] == 1
+    family = build_rocket_family_summary(events)
+    assert family["launch_count"].sum() == 3
 
 
 def test_faa_parser_extracts_official_metrics():

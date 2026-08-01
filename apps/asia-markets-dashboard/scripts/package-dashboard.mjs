@@ -1654,9 +1654,11 @@ const HK_COMMERCIAL_AEROSPACE_ZH = {
     satellite_count_chart: ["中国商业卫星星座在轨数量", "Celestrak 追踪的千帆 (G60) 及吉林一号星座在轨活跃卫星数。", "星座", "卫星数"],
     patent_count_chart: ["商业火箭企业专利申请估算", "各火箭制造企业专利申请数量估算。", "企业", "专利数"],
     launch_cadence_chart: ["各商业航天企业发射次数统计", "Launch Library 2 追踪的历史商业发射次数。", "发射企业", "发射次数"],
-    launch_monthly_chart: ["中国商业航天月度发射次数", "按 Launch Library 2 精确企业匹配、按发射编号去重的月度历史。", "月份", "发射次数", "发射企业"],
-    satellite_history_chart: ["中国商业卫星星座追踪历史", "Celestrak 累积的日度快照；追踪目标不一定等同于正在运行的卫星。", "日期", "追踪目标数", "星座"],
-    global_space_benchmark_chart: ["全球进入太空的物体数量", "基于 UNOOSA 的年度 World、中国和美国基准；统计的是物体/有效载荷，不是火箭发射次数。", "年份", "物体数量", "地区"],
+    launch_monthly_chart: ["中国商业航天月度发射次数", "按已配置的中国商业发射服务商统计；没有匹配发射的月份显示为 0，国家队发射不包含在此序列。", "月份", "发射次数"],
+    china_launch_monthly_chart: ["中国火箭发射：按项目类别", "展示最新十年的零填充月度序列；规范化发射历史自 1970 年起保留，未匹配的 LL2 候选不计入核验序列。", "月份", "发射次数", "项目类别"],
+    china_launch_family_chart: ["按火箭系列统计的已核验发射次数", "按标准化火箭系列统计逐次发射；统计的是火箭发射次数，不是卫星或有效载荷数量。", "火箭系列", "发射次数", "项目类别"],
+    satellite_history_chart: ["中国商业卫星星座追踪历史", "Celestrak 每日快照；当前历史仍是较短的已收集序列，追踪目标不一定等同于正在运行的卫星。", "日期", "追踪目标数", "星座"],
+    global_space_benchmark_chart: ["全球进入太空的物体数量", "基于 UNOOSA 的年度全球总量，并列显示中国和美国；统计的是物体/有效载荷，不是火箭发射次数。", "年份", "物体数量", "地区"],
   },
   tables: {
     ipo_race_table: {
@@ -1668,6 +1670,11 @@ const HK_COMMERCIAL_AEROSPACE_ZH = {
       title: "中国商业火箭及卫星发射日程表",
       subtitle: "Launch Library 2 追踪的最新发射窗口（不早于 NET 日期）、发射企业、火箭型号、发射场及状态。",
       columns: { net_date: "目标发射日期 (NET)", provider: "发射企业 / 机构", mission: "任务 / 火箭型号", pad_name: "发射场", orbit: "轨道", status: "状态" },
+    },
+    china_launch_events_table: {
+      title: "已核验中国火箭发射任务明细",
+      subtitle: "每行代表一次规范化发射；是否计入由官方一手记录决定，LL2 字段仅在匹配成功时补充。",
+      columns: { launch_date: "发射日期", mission_name: "任务 / 载荷", rocket_name: "火箭", program_class: "项目类别", launch_site: "发射场", payload_summary: "载荷摘要", payload_count: "载荷数量", outcome: "结果", ll2_match_status: "LL2 匹配" },
     },
     aerospace_watchlist_table: {
       title: "香港上市商业航天及国防观察名单",
@@ -1710,6 +1717,17 @@ const HK_COMMERCIAL_AEROSPACE_ZH = {
     launch_monthly: {
       provider: { LandSpace: "蓝箭航天", "Galactic Energy": "星河动力", "CAS Space": "中科宇航", "Space Pioneer": "天兵科技", "Orienspace": "东方空间", "Deep Blue Aerospace": "深蓝航天", "i-Space": "星际荣耀" },
     },
+    china_launch_monthly: {
+      program_class: { national_program: "国家队项目", state_owned_commercial: "国企商业化", commercial_provider: "商业发射服务商" },
+    },
+    china_launch_family_summary: {
+      program_class: { national_program: "国家队项目", state_owned_commercial: "国企商业化", commercial_provider: "商业发射服务商" },
+    },
+    china_launch_events: {
+      program_class: { national_program: "国家队项目", state_owned_commercial: "国企商业化", commercial_provider: "商业发射服务商" },
+      outcome_normalized: { Success: "成功", Failure: "失利", Unknown: "未知" },
+      ll2_match_status: { matched: "已匹配", unmatched: "未匹配", ambiguous: "有歧义", source_event: "原始事件", not_checked: "未核对" },
+    },
     satellite_counts: {
       constellation: { Qianfan: "千帆", Jilin1: "吉林一号", Guowang: "国网" },
     },
@@ -1723,6 +1741,8 @@ const HK_COMMERCIAL_AEROSPACE_ZH = {
   sources: {
     sse_star_market_ipo: "上交所科创板 IPO 审核状态",
     launch_library_2: "Launch Library 2 商业发射数据库",
+    official_china_launch_records: "中国运载火箭技术研究院 / 中国航天科技集团官方发射记录",
+    launch_library_2_national_enrichment: "Launch Library 2 国家队及国企发射字段补充",
     celestrak: "Celestrak NORAD 卫星轨道数据",
     google_patents: "Google Patents 专利搜索",
     szse_aerospace_ipo: "深交所航天相关行业 IPO 项目",
@@ -1734,7 +1754,7 @@ const HK_COMMERCIAL_AEROSPACE_ZH = {
   snapshotBody: (artifact) =>
     `**数据快照：** \`${artifact.package_info.snapshotId}\` · 生成于 ${artifact.manifest.generatedAt}。`,
   methodologyBody:
-    "## 如何阅读本 dashboard\n\n中国商业航天板块受两大核心催化剂驱动：上交所科创板 IPO 审核进展（蓝箭航天 #2174、中科宇航 #2180）与低轨卫星星座组网（千帆 G60、吉林一号）。国网 (SatNet) Celestrak 标识未定，列为已知数据缝隙。本 dashboard 不提供股票排名、预测或投资建议。",
+    "## 如何阅读本 dashboard\n\n中国商业航天板块受两大核心催化剂驱动：上交所科创板 IPO 审核进展（蓝箭航天 #2174、中科宇航 #2180）与低轨卫星星座组网（千帆 G60、吉林一号）。发射比较以官方长征/捷龙记录决定是否计入，现有商业发射服务商序列保持独立；Launch Library 2 只为已匹配的官方任务补充结构化字段。国网 (SatNet) Celestrak 标识未定，列为已知数据缝隙。本 dashboard 不提供股票排名、预测或投资建议。",
 };
 
 const HK_STABLECOIN_CRYPTO_ZH = {

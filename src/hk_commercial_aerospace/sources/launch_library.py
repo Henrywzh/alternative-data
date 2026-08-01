@@ -18,6 +18,7 @@ from ..config import (
     LAUNCH_LIBRARY_BASE,
     CHINESE_LAUNCH_AGENCIES,
     CHINESE_LAUNCH_AGENCY_IDS,
+    STATE_LAUNCH_PROVIDER_IDS,
     LL2_MAX_REQUESTS_PER_HOUR,
     NORMALIZED_DIR,
     RAW_DIR,
@@ -98,7 +99,14 @@ def _load_cached_agency_payload(agency_name: str) -> dict | None:
     """Load the latest raw agency payload when LL2 throttles a scheduled run."""
     import json
 
-    paths = sorted(RAW_DIR.glob(f"ll2_agency_launches_{agency_name.replace(' ', '_')}_*.json"), reverse=True)
+    agency_token = agency_name.replace(" ", "_")
+    paths = sorted(
+        [
+            *RAW_DIR.glob(f"ll2_agency_launches_{agency_token}_*.json"),
+            *RAW_DIR.glob(f"ll2_national_launches_{agency_token}_*.json"),
+        ],
+        reverse=True,
+    )
     for path in paths:
         try:
             payload = json.loads(path.read_text(encoding="utf-8"))
@@ -375,16 +383,77 @@ def fetch_chinese_commercial_launches() -> dict[str, pd.DataFrame]:
     return _merge_launch_history(results)
 
 
-def build_monthly_launch_summary(launches: pd.DataFrame) -> pd.DataFrame:
-    """Aggregate exact launch events into provider/month/status counts."""
-    columns = ["month", "provider", "status", "launch_count"]
+def fetch_state_launch_enrichment(limit: int = 100) -> pd.DataFrame:
+    """Fetch recent LL2 rows for state/national providers as enrichment only.
+
+    These rows are deliberately not merged into the existing commercial
+    history. The official CALT/CASC event table decides which launches count;
+    callers join these structured fields onto already verified events.
+    """
+    frames: list[pd.DataFrame] = []
+    sources: set[str] = set()
+    for provider_name, provider_id in STATE_LAUNCH_PROVIDER_IDS.items():
+        url = f"{LAUNCH_LIBRARY_BASE}/launch/previous/"
+        params = {"format": "json", "limit": min(limit, 100), "lsp__id": provider_id}
+        fetched_at = datetime.now(timezone.utc).isoformat()
+        data = None
+        source = "unavailable"
+        try:
+            response = requests.get(url, params=params, headers=DEFAULT_HEADERS, timeout=DEFAULT_TIMEOUT)
+            if response.status_code == 429:
+                logger.warning("LL2 rate limit reached while fetching state provider %s", provider_name)
+            else:
+                response.raise_for_status()
+                data = response.json()
+                save_raw_snapshot(
+                    f"ll2_national_launches_{provider_name.replace(' ', '_')}",
+                    data,
+                    source_url=response.url,
+                )
+                source = "live"
+        except Exception as exc:
+            logger.warning("Failed to fetch LL2 state provider %s: %s", provider_name, exc)
+
+        if not data:
+            data = _load_cached_agency_payload(provider_name)
+            if data:
+                source = "cache"
+        results = _exact_provider_rows(
+            (data or {}).get("results", []),
+            provider_id=provider_id,
+            provider_name=provider_name,
+        )
+        parsed = _parse_launch_results(results, fetched_at)
+        frame = pd.DataFrame(parsed, columns=SCHEMA_COLUMNS)
+        frame.attrs["source"] = source
+        frame.attrs["provider_name"] = provider_name
+        frames.append(frame)
+        sources.add(source)
+
+    combined = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame(columns=SCHEMA_COLUMNS)
+    if not combined.empty:
+        combined = combined.drop_duplicates("launch_id").reset_index(drop=True)
+    combined.attrs["source"] = "live" if "live" in sources else "cache" if "cache" in sources else "unavailable"
+    return combined
+
+
+def _normalized_launch_month_frame(launches: pd.DataFrame) -> pd.DataFrame:
+    """Return deduplicated launch events with a normalized calendar month."""
     if launches.empty:
-        return pd.DataFrame(columns=columns)
+        return pd.DataFrame(columns=["launch_id", "month", "provider_name", "status_abbrev"])
     frame = launches.copy()
     frame["launch_id"] = frame["launch_id"].astype(str)
     frame = frame[frame["launch_id"].ne("")].drop_duplicates("launch_id")
     frame["month"] = pd.to_datetime(frame["net_time"], errors="coerce", utc=True).dt.strftime("%Y-%m")
-    frame = frame[frame["month"].notna()]
+    return frame[frame["month"].notna()].copy()
+
+
+def build_monthly_launch_summary(launches: pd.DataFrame) -> pd.DataFrame:
+    """Aggregate exact launch events into provider/month/status counts."""
+    columns = ["month", "provider", "status", "launch_count"]
+    frame = _normalized_launch_month_frame(launches)
+    if frame.empty:
+        return pd.DataFrame(columns=columns)
     summary = (
         frame.groupby(["month", "provider_name", "status_abbrev"], dropna=False)
         .size()
@@ -392,3 +461,18 @@ def build_monthly_launch_summary(launches: pd.DataFrame) -> pd.DataFrame:
         .rename(columns={"provider_name": "provider", "status_abbrev": "status"})
     )
     return summary[columns].sort_values(["month", "provider", "status"]).reset_index(drop=True)
+
+
+def build_monthly_launch_total_summary(launches: pd.DataFrame) -> pd.DataFrame:
+    """Aggregate exact launch events into a zero-filled monthly total series."""
+    columns = ["month", "launch_count"]
+    frame = _normalized_launch_month_frame(launches)
+    if frame.empty:
+        return pd.DataFrame(columns=columns)
+
+    counts = frame.groupby("month").size()
+    months = pd.period_range(frame["month"].min(), frame["month"].max(), freq="M").strftime("%Y-%m")
+    return pd.DataFrame({
+        "month": months,
+        "launch_count": counts.reindex(months, fill_value=0).astype(int).to_numpy(),
+    })

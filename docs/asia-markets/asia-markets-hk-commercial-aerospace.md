@@ -199,12 +199,36 @@ The first implementation pass now carries the following normalized datasets
 into the artifact builder:
 
 - Launch Library 2 historical launch events are filtered by exact launch
-  service provider IDs, deduplicated by `launch_id`, and aggregated into
-  `launch_monthly`. The normalized event history is retained in
+  service provider IDs, deduplicated by `launch_id`, and retained as
+  provider/status detail in `launch_monthly`. The visible monthly chart uses
+  the separate zero-filled `launch_monthly_total` series, so missing months
+  are shown as zero rather than being silently bridged; national-program
+  launches are not included in that commercial series. The normalized event history is retained in
   `data/normalized/hk_commercial_aerospace/launch_events_history.jsonl` so a
   clean scheduled CI checkout does not lose prior events when the free API
   returns HTTP 429. Raw provider snapshots remain a local fallback; cached or
   persisted rows are never reported as new live observations.
+- The official national baseline is now retained in
+  `data/normalized/hk_commercial_aerospace/china_launch_events.jsonl`.
+  It combines the first-party CASC Long March table with the CALT archive's
+  historical Long March/Jielong records, deduplicating overlapping first-party
+  rows by date, rocket signature and launch site. The current verified baseline
+  covers 1970-04-24 through 2026-07-30: 598 Long March events classified as
+  `national_program` and 11 Jielong events classified as
+  `state_owned_commercial`. It preserves official sequence, payload summary,
+  explicit payload counts where the source states them, outcome and source
+  snapshot lineage.
+- `china_launch_monthly` is the zero-filled comparison series across
+  `national_program`, `state_owned_commercial` and the existing
+  `commercial_provider` events. `china_launch_events` is the canonical mission
+  table; LL2-only candidates are never counted. Launch Library 2 provider IDs
+  88 and 272 are used only to enrich official events with time, pad, orbit,
+  mission type and structured status fields. A cached LL2 enrichment is marked
+  stale when the 15-request/hour free-tier limit is hit.
+- Kuaizhou/CASIC and other state launch families remain outside the verified
+  V1 baseline until a first-party historical source contract is separately
+  validated. The absence of those families is visible coverage scope, not a
+  claim that they did not launch.
 - CelesTrak Qianfan and Jilin-1 counts are appended to
   `data/normalized/hk_commercial_aerospace/celestrak_constellation_history.jsonl`.
   The count means tracked/catalogued objects, not confirmed operational

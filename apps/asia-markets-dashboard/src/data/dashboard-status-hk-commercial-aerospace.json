@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-08-01T15:13:33.089464Z",
-  "snapshot_id": "53f724083e1e1420",
+  "generated_at": "2026-08-01T17:39:10.842105Z",
+  "snapshot_id": "69c18ab49f74e558",
   "data_as_of": "2026-08-01",
   "overall_status": "Degraded",
-  "live_sources": 7,
+  "live_sources": 9,
   "planned_sources": 0,
   "sources": [
     {
@@ -11,7 +11,7 @@
       "dataset": "sse_star_market_ipo",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-08-01",
+      "latest_observation": "2026-06-29",
       "records": 5,
       "freshness": "Live",
       "notes": "Filing status, numeric audit numbers (stockAuditNum), and update dates for Chinese commercial launch companies."
@@ -21,10 +21,30 @@
       "dataset": "launch_library_2",
       "type": "Measure",
       "status": "Degraded",
-      "latest_observation": "2026-08-01",
+      "latest_observation": "2026-07-23",
       "records": 70,
       "freshness": "Stale",
       "notes": "Launch history for Chinese commercial launch providers (LandSpace, CAS Space, Galactic Energy, Space Pioneer, etc.)."
+    },
+    {
+      "source": "CALT / CASC Official Chinese Launch Records",
+      "dataset": "official_china_launch_records",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2026-07-30",
+      "records": 609,
+      "freshness": "Live",
+      "notes": "First-party Long March and Jielong event baseline; official records decide inclusion in the national/state-owned monthly series."
+    },
+    {
+      "source": "Launch Library 2 National/State Provider Enrichment",
+      "dataset": "launch_library_2_national_enrichment",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2026-07-30",
+      "records": 112,
+      "freshness": "Stale",
+      "notes": "Structured fields for matching official Long March/Jielong events; LL2-only rows are never counted as official launches."
     },
     {
       "source": "Celestrak NORAD TLE / GP Orbit Data",
@@ -51,7 +71,7 @@
       "dataset": "szse_aerospace_ipo",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-08-01",
+      "latest_observation": "2026-07-20",
       "records": 25,
       "freshness": "Live",
       "notes": "Current IPO projects classified by SZSE under rail, ship, aviation, aerospace and other transport equipment manufacturing."
@@ -81,7 +101,7 @@
       "dataset": "sec_space_company_filings",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-08-01",
+      "latest_observation": "2026-07-20",
       "records": 150,
       "freshness": "Live",
       "notes": "Official filing-event feed for Rocket Lab, AST SpaceMobile, Planet Labs, Intuitive Machines and Redwire; no inferred order amount."
@@ -91,7 +111,7 @@
       "dataset": "global_space_benchmark",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-08-01",
+      "latest_observation": "2025",
       "records": 187,
       "freshness": "Live",
       "notes": "Annual objects launched for World, China and the United States. This is payload/object activity, not rocket launch count."

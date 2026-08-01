@@ -18,8 +18,17 @@ if str(ROOT) not in sys.path:
 from src.hk_commercial_aerospace.sources.sse_ipo_status import fetch_all_ipo_statuses
 from src.hk_commercial_aerospace.sources.launch_library import (
     build_monthly_launch_summary,
+    build_monthly_launch_total_summary,
     fetch_chinese_commercial_launches,
+    fetch_state_launch_enrichment,
     fetch_upcoming_launches,
+)
+from src.hk_commercial_aerospace.sources.china_launch_records import (
+    build_china_launch_monthly,
+    build_rocket_family_summary,
+    enrich_with_ll2,
+    fetch_official_china_launches,
+    persist_china_launch_history,
 )
 from src.hk_commercial_aerospace.sources.celestrak_satellites import (
     fetch_all_constellations,
@@ -63,6 +72,32 @@ PUBLIC_SOURCES = {
             "language": "REST",
             "sql": "SELECT provider, launch_id, name, net_time, status_abbrev FROM launch_library_2;",
             "description": "Launch history for Chinese commercial launch providers (LandSpace, CAS Space, Galactic Energy, Space Pioneer, etc.).",
+        },
+    },
+    "official_china_launch_records": {
+        "id": "official_china_launch_records",
+        "label": "CALT / CASC Official Chinese Launch Records",
+        "href": "https://calt.spacechina.com/n482/n505/index.html",
+        "path": "sources/china_launch_records.sql",
+        "query": {
+            "engine": "CALT launch-record archive plus CASC Long March table",
+            "url": "https://calt.spacechina.com/n482/n505/index.html",
+            "language": "HTML",
+            "sql": "SELECT event_id, launch_date, rocket_name, payload_summary, launch_site, outcome FROM official_china_launch_records;",
+            "description": "First-party Long March and Jielong event baseline; official records decide inclusion in the national/state-owned monthly series.",
+        },
+    },
+    "launch_library_2_national_enrichment": {
+        "id": "launch_library_2_national_enrichment",
+        "label": "Launch Library 2 National/State Provider Enrichment",
+        "href": "https://ll.thespacedevs.com/",
+        "path": "sources/launch_library_2_national_enrichment.sql",
+        "query": {
+            "engine": "The Space Devs REST API v2.2.0",
+            "url": "https://ll.thespacedevs.com/2.2.0/launch/previous/",
+            "language": "REST",
+            "sql": "SELECT launch_id, provider_name, net_time, rocket_name, pad_name, orbit_abbrev FROM launch_library_2_national_enrichment;",
+            "description": "Structured fields for matching official Long March/Jielong events; LL2-only rows are never counted as official launches.",
         },
     },
     "celestrak": {
@@ -168,6 +203,58 @@ def _latest_observation(rows: list[dict], field: str, fallback: str | None = Non
     return max(values) if values else fallback
 
 
+def _normalize_launch_outcome(value: object) -> str:
+    text = str(value or "").lower()
+    if any(token in text for token in ("success", "successful", "成功")):
+        return "Success"
+    if any(token in text for token in ("failure", "failed", "失利", "失败")):
+        return "Failure"
+    return "Unknown"
+
+
+def _commercial_event_rows(launch_frame: pd.DataFrame) -> list[dict]:
+    """Adapt existing exact-provider LL2 rows to the canonical event schema."""
+    if launch_frame.empty:
+        return []
+    rows = []
+    for row in launch_frame.to_dict(orient="records"):
+        launch_id = str(row.get("launch_id") or "")
+        if not launch_id:
+            continue
+        rows.append({
+            "event_id": f"ll2-commercial-{launch_id}",
+            "official_source_id": None,
+            "official_sequence": None,
+            "launch_date": row.get("date"),
+            "launch_time": row.get("net_time"),
+            "launch_time_precision": "timestamp" if row.get("net_time") else "date",
+            "rocket_name": row.get("rocket_name"),
+            "rocket_family": row.get("rocket_family") or row.get("rocket_name") or "Unknown",
+            "rocket_variant": row.get("rocket_name"),
+            "mission_name": row.get("name"),
+            "launch_site": row.get("pad_name"),
+            "launch_pad": row.get("pad_name"),
+            "target_orbit": row.get("orbit"),
+            "mission_type": row.get("mission_type"),
+            "outcome": row.get("status_name") or row.get("status"),
+            "outcome_normalized": _normalize_launch_outcome(row.get("status_name") or row.get("status")),
+            "program_class": "commercial_provider",
+            "classification_status": "verified",
+            "payload_summary": row.get("name"),
+            "payload_count": None,
+            "official_source_url": None,
+            "official_source_kind": None,
+            "ll2_launch_id": launch_id,
+            "ll2_match_status": "source_event",
+            "ll2_match_confidence": "high",
+            "ll2_provider_name": row.get("provider"),
+            "source_snapshot": None,
+            "fetched_at": row.get("fetched_at") or row.get("last_updated"),
+            "parser_version": "ll2-commercial-adapter-v1",
+        })
+    return rows
+
+
 def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict[str, Any]]:
     now = now or _utc_now()
     generated_at = now.isoformat().replace("+00:00", "Z")
@@ -257,9 +344,11 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
                         "launch_id": row["launch_id"],
                         "name": row["name"],
                         "date": net_str[:10] if len(net_str) >= 10 else net_str,
+                        "net_time": net_str,
                         "month": year_month,
                         "year": year_str,
                         "status": row["status_abbrev"],
+                        "status_name": row.get("status_name"),
                         "provider_id": row.get("provider_id"),
                         "rocket_name": row.get("rocket_name"),
                         "rocket_family": row.get("rocket_family"),
@@ -269,6 +358,7 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
                         "launch_designator": row.get("launch_designator"),
                         "country_code": row.get("country_code"),
                         "last_updated": row.get("last_updated"),
+                        "fetched_at": row.get("fetched_at"),
                     })
                     total_launches += 1
     except Exception as e:
@@ -317,6 +407,65 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
             for row in (launch_frame.to_dict(orient="records") if not launch_frame.empty else [])
         ])
     )
+    launch_monthly_total_df = build_monthly_launch_total_summary(
+        pd.DataFrame([
+            {
+                "launch_id": row.get("launch_id"),
+                "net_time": row.get("date"),
+                "provider_name": row.get("provider"),
+                "status_abbrev": row.get("status"),
+            }
+            for row in (launch_frame.to_dict(orient="records") if not launch_frame.empty else [])
+        ])
+    )
+
+    # 2a. Fetch the first-party Long March/Jielong baseline, then enrich only
+    # those verified events with structured LL2 fields. Official rows remain
+    # the inclusion authority; LL2-only rows are never added here.
+    official_launch_df = empty_source_frame
+    official_launch_source = "unavailable"
+    state_enrichment_df = empty_source_frame
+    state_enrichment_source = "unavailable"
+    canonical_official_df = empty_source_frame
+    try:
+        official_launch_df = fetch_official_china_launches()
+        official_launch_source = official_launch_df.attrs.get("source", "unavailable")
+    except Exception as e:
+        print(f"Warning: Official China launch-record fetch failed - {e}")
+    try:
+        state_enrichment_df = fetch_state_launch_enrichment()
+        state_enrichment_source = state_enrichment_df.attrs.get("source", "unavailable")
+    except Exception as e:
+        print(f"Warning: LL2 national enrichment fetch failed - {e}")
+
+    if not official_launch_df.empty:
+        try:
+            canonical_official_df = enrich_with_ll2(official_launch_df, state_enrichment_df)
+            persist_china_launch_history(canonical_official_df)
+        except Exception as e:
+            print(f"Warning: Official launch enrichment failed - {e}")
+            canonical_official_df = official_launch_df
+
+    canonical_event_rows = (
+        canonical_official_df.to_dict(orient="records") if not canonical_official_df.empty else []
+    )
+    canonical_event_rows.extend(_commercial_event_rows(launch_frame))
+    canonical_events_df = pd.DataFrame(canonical_event_rows)
+    if not canonical_events_df.empty:
+        canonical_events_df = canonical_events_df.drop_duplicates("event_id").reset_index(drop=True)
+    china_launch_monthly_full_df = build_china_launch_monthly(canonical_events_df)
+    # The normalized event history retains the full 1970-present baseline.
+    # The portable renderer caps one dataset at 2,000 rows, so publish the
+    # latest ten years of the already-zero-filled comparison grid (120 months
+    # x 3 classes = 360 rows) and expose the full source range in the caveat.
+    china_launch_monthly_df = china_launch_monthly_full_df
+    if not china_launch_monthly_full_df.empty:
+        latest_month = pd.Period(str(china_launch_monthly_full_df["month"].max()), freq="M")
+        first_display_month = str(latest_month - 119)
+        china_launch_monthly_df = china_launch_monthly_full_df[
+            china_launch_monthly_full_df["month"].ge(first_display_month)
+        ].reset_index(drop=True)
+    rocket_family_summary_df = build_rocket_family_summary(canonical_events_df)
 
     # Aggregated launch cadence by provider (total launches per company)
     launch_cadence_summary = []
@@ -401,7 +550,6 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
         global_benchmark_df = fetch_global_objects_launched()
     except Exception as e:
         print(f"Warning: Global benchmark fetch failed - {e}")
-
     # 6. HK-listed Watchlist
     watchlist_rows = []
     for ticker, desc in HK_AEROSPACE_WATCHLIST.items():
@@ -427,6 +575,13 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
         "upcoming_launches": upcoming_rows,
         "launch_cadence": launch_rows,
         "launch_monthly": launch_monthly_df.to_dict(orient="records"),
+        "launch_monthly_total": launch_monthly_total_df.to_dict(orient="records"),
+        "china_launch_monthly": china_launch_monthly_df.to_dict(orient="records"),
+        "china_launch_family_summary": rocket_family_summary_df.to_dict(orient="records"),
+        "china_launch_events": (
+            canonical_events_df.sort_values(["launch_date", "event_id"], ascending=[False, True]).to_dict(orient="records")
+            if not canonical_events_df.empty else []
+        ),
         "launch_cadence_summary": launch_cadence_summary,
         "satellite_counts": sat_rows,
         "satellite_history": satellite_history_df.to_dict(orient="records") if not satellite_history_df.empty else [],
@@ -523,14 +678,43 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
         {
             "id": "launch_monthly_chart",
             "title": "Chinese Commercial Launches by Month",
-            "subtitle": "Exact Launch Library 2 provider matches, deduplicated by launch ID.",
+            "subtitle": "Monthly total for the configured Chinese commercial launch providers; months without a matched launch are shown as zero. National-program launches are excluded.",
             "type": "line",
-            "dataset": "launch_monthly",
+            "dataset": "launch_monthly_total",
             "sourceId": "launch_library_2",
             "encodings": {
                 "x": {"field": "month", "type": "temporal", "label": "Month"},
                 "y": {"field": "launch_count", "type": "quantitative", "label": "Launches"},
-                "series": {"field": "provider", "type": "nominal", "label": "Provider"},
+            },
+            "valueFormat": "number",
+            "layout": "full",
+        },
+        {
+            "id": "china_launch_monthly_chart",
+            "title": "China Launches by Program Class",
+            "subtitle": "Latest-ten-year view of the zero-filled monthly counts from the verified Long March/Jielong first-party baseline plus the existing exact-provider commercial series; normalized event history begins in 1970 and LL2-only candidates are excluded.",
+            "type": "line",
+            "dataset": "china_launch_monthly",
+            "sourceId": "official_china_launch_records",
+            "encodings": {
+                "x": {"field": "month", "type": "temporal", "label": "Month"},
+                "y": {"field": "launch_count", "type": "quantitative", "label": "Launches"},
+                "color": {"field": "program_class", "type": "nominal", "label": "Program Class"},
+            },
+            "valueFormat": "number",
+            "layout": "full",
+        },
+        {
+            "id": "china_launch_family_chart",
+            "title": "Verified Launch Count by Rocket Family",
+            "subtitle": "Canonical launch events grouped by rocket family; this counts rocket launches, not payloads or satellites.",
+            "type": "bar",
+            "dataset": "china_launch_family_summary",
+            "sourceId": "official_china_launch_records",
+            "encodings": {
+                "x": {"field": "rocket_family", "type": "nominal", "label": "Rocket Family"},
+                "y": {"field": "launch_count", "type": "quantitative", "label": "Launches"},
+                "color": {"field": "program_class", "type": "nominal", "label": "Program Class"},
             },
             "valueFormat": "number",
             "layout": "full",
@@ -538,29 +722,30 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
         {
             "id": "satellite_history_chart",
             "title": "Tracked Chinese Commercial Constellation History",
-            "subtitle": "Daily snapshots accumulated from CelesTrak; tracked objects are not guaranteed operational satellites.",
+            "subtitle": "Daily CelesTrak snapshots; the current history is a short observed run, and tracked objects are not guaranteed operational satellites.",
             "type": "line",
             "dataset": "satellite_history",
             "sourceId": "celestrak",
             "encodings": {
                 "x": {"field": "as_of", "type": "temporal", "label": "Date"},
                 "y": {"field": "satellite_count", "type": "quantitative", "label": "Tracked Objects"},
-                "series": {"field": "constellation", "type": "nominal", "label": "Constellation"},
+                "color": {"field": "constellation", "type": "nominal", "label": "Constellation"},
             },
+            "settings": {"showPoints": "always"},
             "valueFormat": "number",
             "layout": "full",
         },
         {
             "id": "global_space_benchmark_chart",
             "title": "Global Objects Launched into Space",
-            "subtitle": "Annual UNOOSA-based benchmark for World, China and the United States; this counts objects, not rocket launches.",
+            "subtitle": "Annual UNOOSA-based benchmark: World total alongside China and United States; this counts objects, not rocket launches.",
             "type": "line",
             "dataset": "global_space_benchmark",
             "sourceId": "global_space_benchmark",
             "encodings": {
-                "x": {"field": "year", "type": "temporal", "label": "Year"},
+                "x": {"field": "year", "type": "ordinal", "label": "Year"},
                 "y": {"field": "objects_launched", "type": "quantitative", "label": "Objects"},
-                "series": {"field": "entity", "type": "nominal", "label": "Entity"},
+                "color": {"field": "entity", "type": "nominal", "label": "Entity"},
             },
             "valueFormat": "number",
             "layout": "full",
@@ -601,6 +786,26 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
                 {"field": "pad_name", "label": "Launch Site", "type": "text"},
                 {"field": "orbit", "label": "Orbit", "type": "text"},
                 {"field": "status", "label": "Status", "type": "text"},
+            ],
+        },
+        {
+            "id": "china_launch_events_table",
+            "title": "Verified China Launch Mission Details",
+            "subtitle": "One row per canonical launch; the official first-party baseline determines inclusion and LL2 fields are shown only when matched.",
+            "dataset": "china_launch_events",
+            "sourceId": "official_china_launch_records",
+            "density": "dense",
+            "layout": "full",
+            "columns": [
+                {"field": "launch_date", "label": "Launch Date", "type": "text"},
+                {"field": "mission_name", "label": "Mission / Payload", "type": "text"},
+                {"field": "rocket_name", "label": "Rocket", "type": "text"},
+                {"field": "program_class", "label": "Program Class", "type": "text"},
+                {"field": "launch_site", "label": "Launch Site", "type": "text"},
+                {"field": "payload_summary", "label": "Payload Summary", "type": "text"},
+                {"field": "payload_count", "label": "Payload Count", "type": "number"},
+                {"field": "outcome", "label": "Outcome", "type": "text"},
+                {"field": "ll2_match_status", "label": "LL2 Match", "type": "text"},
             ],
         },
         {
@@ -701,6 +906,10 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
     manifest_sources = list(PUBLIC_SOURCES.values())
 
     launch_history_latest = _latest_observation(launch_rows, "date")
+    official_launch_latest = _latest_observation(
+        canonical_events_df.to_dict(orient="records") if not canonical_events_df.empty else [],
+        "launch_date",
+    )
     upcoming_latest = _latest_observation(upcoming_rows, "net_date")
     satellite_history_latest = _latest_observation(
         satellite_history_df.to_dict(orient="records") if not satellite_history_df.empty else [],
@@ -724,6 +933,24 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
                 else "unavailable"
             ),
             "latest_observation": launch_history_latest or upcoming_latest,
+        },
+        "official_china_launch_records": {
+            "status": "success" if not canonical_official_df.empty else "degraded",
+            "records": len(canonical_official_df) if not canonical_official_df.empty else 0,
+            "freshness": "live" if official_launch_source == "live" else "stale" if not canonical_official_df.empty else "unavailable",
+            "latest_observation": _latest_observation(
+                canonical_official_df.to_dict(orient="records") if not canonical_official_df.empty else [],
+                "launch_date",
+            ),
+        },
+        "launch_library_2_national_enrichment": {
+            "status": "success" if not state_enrichment_df.empty else "degraded",
+            "records": len(state_enrichment_df),
+            "freshness": "live" if state_enrichment_source == "live" else "stale" if not state_enrichment_df.empty else "unavailable",
+            "latest_observation": _latest_observation(
+                state_enrichment_df.to_dict(orient="records") if not state_enrichment_df.empty else [],
+                "net_time",
+            ),
         },
         "celestrak": {
             "status": (
@@ -812,6 +1039,12 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
     ]
     if upcoming_rows:
         blocks.append({"id": "upcoming_table_block", "type": "table", "tableId": "upcoming_launches_table"})
+    if not china_launch_monthly_df.empty:
+        blocks.append({"id": "china_launch_monthly_chart_block", "type": "chart", "chartId": "china_launch_monthly_chart"})
+    if not rocket_family_summary_df.empty:
+        blocks.append({"id": "china_launch_family_chart_block", "type": "chart", "chartId": "china_launch_family_chart"})
+    if not canonical_events_df.empty:
+        blocks.append({"id": "china_launch_events_table_block", "type": "table", "tableId": "china_launch_events_table"})
     blocks.append({"id": "satellite_chart_block", "type": "chart", "chartId": "satellite_count_chart", "layout": "half" if patent_rows else "full"})
     if patent_rows:
         blocks.append({"id": "patent_chart_block", "type": "chart", "chartId": "patent_count_chart", "layout": "half"})
@@ -826,6 +1059,8 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
                 "## Reading the Commercial Aerospace Monitor\n\n"
                 "China's commercial aerospace sector is driven by twin catalysts: SSE STAR Market IPO filings "
                 "(LandSpace #2174, CAS Space #2180) and satellite constellation deployment (Qianfan G60, Jilin-1). "
+                "The launch comparison uses first-party Long March/Jielong records as the inclusion baseline and keeps "
+                "the existing exact-provider commercial series separate; Launch Library 2 only enriches matched official events. "
                 "Guowang (SatNet) Celestrak identifiers remain unresolved and are tracked as a documented data gap. "
                 "This monitor tracks regulatory filings, launch cadence, constellation counts, and HK-listed "
                 "supply-chain tickers. No stock recommendation is produced."
@@ -853,7 +1088,7 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
             "version": 1,
             "surface": "dashboard",
             "title": "Hong Kong Commercial Aerospace Sector Monitor",
-            "description": "SSE STAR Market IPO filing status, Launch Library 2 launch cadence, Celestrak satellite counts, and patent filing counts for Chinese commercial space companies.",
+            "description": "Official Chinese Long March/Jielong launch baseline, Launch Library 2 commercial and enrichment data, Celestrak satellite counts, IPO status, and broader commercial-space indicators.",
             "sector": "hk-commercial-aerospace",
             "generatedAt": generated_at,
             "dataAsOf": data_as_of,
@@ -891,7 +1126,7 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
                 "dataset": key,
                 "type": "Measure",
                 "status": "Healthy" if source_stats[key]["status"] == "success" else "Degraded",
-                "latest_observation": data_as_of,
+                "latest_observation": source_stats[key].get("latest_observation") or data_as_of,
                 "records": source_stats[key]["records"],
                 "freshness": {"live": "Live", "stale": "Stale"}.get(source_stats[key]["freshness"], "Unavailable"),
                 "notes": s["query"]["description"],
