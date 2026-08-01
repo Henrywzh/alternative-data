@@ -503,6 +503,14 @@ const HK_REAL_ESTATE_ZH = {
 const HK_LOCAL_CONSUMER_ZH = {
   title: "香港本地消费监测",
   description: "极端天气干扰时长、港元/人民币汇率、跨境出入境人流（北上/南下）、黄金原料成本、零售销售、餐饮收益及消费股估值的来源快照。",
+  blocks: {
+    demand_signals_section: "## 消费需求信号\n\n跨境旅客流量为主打需求信号；天气为影响人流的控制变量。",
+    prices_inflation_section: "## 物价与通胀\n\n综合消费物价指数（总体及分类）、汽车燃油、黄金及超市价格监察指数。",
+    retail_fnb_section: "## 零售与餐饮活动\n\n官方零售销售及餐饮收益数据、各区持牌食肆密度及店铺足迹追踪。",
+    complaints_section: "## 消费者投诉\n\n消费者委员会各类别投诉宗数。",
+    valuations_section: "## 消费股估值\n\n消费观察名单市盈率、市净率及市值——仅供参考，不构成股票排名或投资建议。",
+    sources_methodology_section: "## 数据来源与方法",
+  },
   cards: {
     northbound_card: { description: "每日经陆路口岸（不含机场及邮轮/渡轮码头）出境的香港居民人次（7日移动平均）；日环比与同比变动。", metricLabels: ["北上7日均值（陆路口岸）", "日环比", "同比"] },
     southbound_card: { description: "每日内地访客入境人次（7日移动平均）；日环比与同比变动。", metricLabels: ["南下7日均值", "日环比", "同比"] },

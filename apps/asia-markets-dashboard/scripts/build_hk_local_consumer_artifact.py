@@ -1981,6 +1981,11 @@ def build_artifact(
                         "This is a published snapshot, not a live connection. Includes official Consumer Council auto fuel calculator pricing."
                     ),
                 },
+                {
+                    "id": "demand_signals_section",
+                    "type": "markdown",
+                    "body": "## Consumer Demand Signals\n\nCross-border passenger traffic is the featured demand signal; weather is a footfall-suppression control variable.",
+                },
                 {"id": "market_pulse_1", "type": "metric-strip", "cardIds": ["northbound_card", "southbound_card", "weather_card"]},
                 {"id": "market_pulse_2", "type": "metric-strip", "cardIds": (
                     ["fx_card", "gold_card"]
@@ -2004,6 +2009,17 @@ def build_artifact(
                     if not checkpoint_trend.empty
                     else []
                 ),
+                *(
+                    [
+                        {
+                            "id": "immigration_checkpoint_table_block",
+                            "type": "table",
+                            "tableId": "immigration_checkpoint_table",
+                        }
+                    ]
+                    if checkpoint_rows
+                    else []
+                ),
                 {"id": "weather_chart", "type": "chart", "chartId": "severe_weather_trend"},
                 *(
                     [
@@ -2017,29 +2033,11 @@ def build_artifact(
                     else []
                 ),
                 {"id": "weather_log_table", "type": "table", "tableId": "severe_weather_log_table"},
-                {"id": "gold_chart", "type": "chart", "chartId": "gold_trend", "layout": "half"},
-                {"id": "valuation_chart", "type": "chart", "chartId": "valuation_pe_chart", "layout": "half"},
-                {"id": "valuation_market_cap_chart", "type": "chart", "chartId": "valuation_market_cap_trend"},
-                {"id": "oilprice_chart_block", "type": "chart", "chartId": "consumer_council_oilprice_chart", "layout": "half"},
-                {"id": "oilprice_net_chart_block", "type": "chart", "chartId": "consumer_council_oilprice_net_chart", "layout": "half"},
-                {"id": "oilprice_history_chart_block", "type": "chart", "chartId": "consumer_council_oilprice_history_chart"},
-                {"id": "oilprice_table_block", "type": "table", "tableId": "consumer_council_oilprice_table"},
-                {"id": "oilprice_wow_table_block", "type": "table", "tableId": "consumer_council_oilprice_wow_table"},
-                {"id": "complaints_chart_block", "type": "chart", "chartId": "consumer_council_complaints_chart", "layout": "half"},
-                {"id": "complaints_history_chart_block", "type": "chart", "chartId": "consumer_council_complaints_history_chart"},
-                {"id": "complaints_history_table_block", "type": "table", "tableId": "consumer_council_complaints_history_table"},
-                *(
-                    [
-                        {
-                            "id": "immigration_checkpoint_table_block",
-                            "type": "table",
-                            "tableId": "immigration_checkpoint_table",
-                        }
-                    ]
-                    if checkpoint_rows
-                    else []
-                ),
-                {"id": "valuation_table_block", "type": "table", "tableId": "valuation_table"},
+                {
+                    "id": "prices_inflation_section",
+                    "type": "markdown",
+                    "body": "## Prices & Inflation\n\nHeadline and category CPI, auto fuel, wholesale gold, and matched-item supermarket pricing.",
+                },
                 *(
                     [
                         {"id": "cpi_trend_chart_block", "type": "chart", "chartId": "cpi_trend", "layout": "half"},
@@ -2048,23 +2046,12 @@ def build_artifact(
                     if cpi_kpi is not None
                     else []
                 ),
-                # No block for fehd_opened_closed yet: it's a real, correctly
-                # wired dataset, but is empty until a second pipeline run has
-                # been persisted (see diff_against_previous_snapshot's
-                # docstring) -- nothing to render on day one specifically.
-                *(
-                    [{"id": "fehd_district_chart_block", "type": "chart", "chartId": "fehd_district_chart"}]
-                    if fehd_district_rows
-                    else []
-                ),
-                {"id": "retail_trend_chart", "type": "chart", "chartId": "retail_trend"},
-                {"id": "retail_category_chart_block", "type": "chart", "chartId": "retail_category_chart", "layout": "half"},
-                {"id": "restaurant_chart_block", "type": "chart", "chartId": "restaurant_chart", "layout": "half"},
-                {"id": "retail_category_table_block", "type": "table", "tableId": "retail_category_table"},
-                {"id": "restaurant_trend_chart", "type": "chart", "chartId": "restaurant_trend"},
-                {"id": "restaurant_snapshot_table_block", "type": "table", "tableId": "restaurant_snapshot_table"},
-                {"id": "store_footprint_chart_block", "type": "chart", "chartId": "store_footprint_chart"},
-                {"id": "store_footprint_table_block", "type": "table", "tableId": "store_footprint_table"},
+                {"id": "gold_chart", "type": "chart", "chartId": "gold_trend", "layout": "half"},
+                {"id": "oilprice_chart_block", "type": "chart", "chartId": "consumer_council_oilprice_chart", "layout": "half"},
+                {"id": "oilprice_net_chart_block", "type": "chart", "chartId": "consumer_council_oilprice_net_chart", "layout": "half"},
+                {"id": "oilprice_history_chart_block", "type": "chart", "chartId": "consumer_council_oilprice_history_chart"},
+                {"id": "oilprice_table_block", "type": "table", "tableId": "consumer_council_oilprice_table"},
+                {"id": "oilprice_wow_table_block", "type": "table", "tableId": "consumer_council_oilprice_wow_table"},
                 *(
                     [
                         {
@@ -2087,6 +2074,49 @@ def build_artifact(
                     if pricewatch_archive
                     else []
                 ),
+                {
+                    "id": "retail_fnb_section",
+                    "type": "markdown",
+                    "body": "## Retail & F&B Activity\n\nOfficial retail sales and restaurant receipts, licensed-restaurant density by district, and store-footprint tracking.",
+                },
+                {"id": "retail_trend_chart", "type": "chart", "chartId": "retail_trend"},
+                {"id": "retail_category_chart_block", "type": "chart", "chartId": "retail_category_chart", "layout": "half"},
+                {"id": "restaurant_chart_block", "type": "chart", "chartId": "restaurant_chart", "layout": "half"},
+                {"id": "retail_category_table_block", "type": "table", "tableId": "retail_category_table"},
+                {"id": "restaurant_trend_chart", "type": "chart", "chartId": "restaurant_trend"},
+                {"id": "restaurant_snapshot_table_block", "type": "table", "tableId": "restaurant_snapshot_table"},
+                # No block for fehd_opened_closed yet: it's a real, correctly
+                # wired dataset, but is empty until a second pipeline run has
+                # been persisted (see diff_against_previous_snapshot's
+                # docstring) -- nothing to render on day one specifically.
+                *(
+                    [{"id": "fehd_district_chart_block", "type": "chart", "chartId": "fehd_district_chart"}]
+                    if fehd_district_rows
+                    else []
+                ),
+                {"id": "store_footprint_chart_block", "type": "chart", "chartId": "store_footprint_chart"},
+                {"id": "store_footprint_table_block", "type": "table", "tableId": "store_footprint_table"},
+                {
+                    "id": "complaints_section",
+                    "type": "markdown",
+                    "body": "## Consumer Complaints\n\nConsumer Council complaint volumes by category.",
+                },
+                {"id": "complaints_chart_block", "type": "chart", "chartId": "consumer_council_complaints_chart", "layout": "half"},
+                {"id": "complaints_history_chart_block", "type": "chart", "chartId": "consumer_council_complaints_history_chart"},
+                {"id": "complaints_history_table_block", "type": "table", "tableId": "consumer_council_complaints_history_table"},
+                {
+                    "id": "valuations_section",
+                    "type": "markdown",
+                    "body": "## Listed Company Valuations\n\nConsumer-sector watchlist PE, PB, and market cap -- context, not a stock ranking or recommendation.",
+                },
+                {"id": "valuation_chart", "type": "chart", "chartId": "valuation_pe_chart", "layout": "half"},
+                {"id": "valuation_market_cap_chart", "type": "chart", "chartId": "valuation_market_cap_trend"},
+                {"id": "valuation_table_block", "type": "table", "tableId": "valuation_table"},
+                {
+                    "id": "sources_methodology_section",
+                    "type": "markdown",
+                    "body": "## Sources & Methodology",
+                },
                 {"id": "source_health", "type": "table", "tableId": "source_health_table"},
                 {"id": "active_signals", "type": "table", "tableId": "active_signals_table"},
                 {"id": "coverage", "type": "table", "tableId": "coverage_table"},
