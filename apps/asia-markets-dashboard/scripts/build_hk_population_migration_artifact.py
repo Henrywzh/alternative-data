@@ -21,6 +21,10 @@ from src.hk_population_migration.sources.csd_population import fetch_csd_populat
 from src.hk_population_migration.sources.mpfa_claims import fetch_mpfa_permanent_departure_claims
 from src.hk_population_migration.sources.ugc_students import fetch_ugc_nonlocal_students
 from src.hk_population_migration.sources.td_cross_border import fetch_td_cross_border_traffic
+from src.hk_population_migration.sources.censtatd_visitor_arrivals import (
+    fetch_visitor_arrivals_by_region,
+    mainland_vs_rest_of_world,
+)
 from src.hk_population_migration.storage import load_latest_normalized
 # IA Mainland Visitor premiums are intentionally not wired in here: the
 # regulator suspended this series (every release since Q1 2025 states it is
@@ -30,6 +34,13 @@ from src.hk_population_migration.storage import load_latest_normalized
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
+
+# The normalized C&SD visitor-arrivals source retains the full history. The
+# portable artifact also carries a raw regional detail dataset for Data
+# Explorer, but the delivery runtime caps any one dataset at 2,000 rows. A
+# date window keeps that detail usable and consistent with the dashboard's
+# long-history display policy without discarding the source archive.
+VISITOR_DETAIL_HISTORY_YEARS = 10
 
 PUBLIC_SOURCES = {
     "immd": {
@@ -92,6 +103,18 @@ PUBLIC_SOURCES = {
             "description": "Monthly HZMB vehicular traffic (incl. Northbound Travel for HK Vehicles 港车北上) and cross-boundary passenger traffic incl. Express Rail West Kowloon.",
         },
     },
+    "visitor_arrivals": {
+        "id": "visitor_arrivals",
+        "label": "C&SD Visitor Arrivals by Region",
+        "href": "https://www.censtatd.gov.hk/en/web_table.html?id=650-80001",
+        "query": {
+            "engine": "official Web Table API",
+            "url": "https://www.censtatd.gov.hk/api/get.php?id=650-80001&lang=en&full_series=1",
+            "language": "JSON",
+            "sql": "SELECT date, region, visitors FROM censtatd_visitor_arrivals;",
+            "description": "Monthly visitor arrivals by nationality/region since 2004, a geographic companion/cross-check to ImmD's cross-border passenger data.",
+        },
+    },
 }
 
 
@@ -148,6 +171,7 @@ def build_artifact(
     raw_mpfa: pd.DataFrame | None = None,
     raw_ugc: pd.DataFrame | None = None,
     raw_td: pd.DataFrame | None = None,
+    raw_visitor_arrivals: pd.DataFrame | None = None,
     *,
     now: datetime | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
@@ -160,6 +184,11 @@ def build_artifact(
     df_mpfa = raw_mpfa if raw_mpfa is not None else _load_normalized_or_fetch("mpfa_departure_claims", fetch_mpfa_permanent_departure_claims)
     df_ugc = raw_ugc if raw_ugc is not None else _load_normalized_or_fetch("ugc_nonlocal_students", fetch_ugc_nonlocal_students)
     df_td = raw_td if raw_td is not None else _load_normalized_or_fetch("td_cross_border_traffic", fetch_td_cross_border_traffic)
+    df_visitor = (
+        raw_visitor_arrivals
+        if raw_visitor_arrivals is not None
+        else _load_normalized_or_fetch("censtatd_visitor_arrivals", fetch_visitor_arrivals_by_region)
+    )
 
     generated_at = now.isoformat().replace("+00:00", "Z")
 
@@ -219,6 +248,26 @@ def build_artifact(
                 "express_rail_passengers": int(r["express_rail_passengers"]) if pd.notna(r.get("express_rail_passengers")) else 0,
             })
 
+    # 6. C&SD Visitor Arrivals by Region. Keep the full normalized frame on
+    # disk, but window the artifact detail dataset so portable delivery stays
+    # below its per-dataset row limit. The comparison chart uses the same
+    # window, rather than silently showing a longer history than the detail.
+    visitor_frame = df_visitor.copy()
+    if not visitor_frame.empty:
+        visitor_frame["_date"] = pd.to_datetime(visitor_frame["date"], errors="coerce")
+        visitor_start = pd.Timestamp(now.replace(tzinfo=None)) - pd.DateOffset(years=VISITOR_DETAIL_HISTORY_YEARS)
+        visitor_frame = visitor_frame[
+            visitor_frame["_date"].notna() & (visitor_frame["_date"] >= visitor_start)
+        ].copy()
+    visitor_rows: list[dict[str, Any]] = []
+    if not visitor_frame.empty:
+        for _, r in visitor_frame.iterrows():
+            visitor_rows.append({
+                "date": str(r["date"]),
+                "region": str(r["region"]),
+                "visitors": float(r["visitors"]) if pd.notna(r.get("visitors")) else None,
+            })
+
     immd_chart_rows = _long_series_rows(
         immd_rows,
         period_field="date",
@@ -251,12 +300,23 @@ def build_artifact(
             "express_rail_passengers": "Express Rail Passengers",
         },
     )
+    visitor_mvw = mainland_vs_rest_of_world(visitor_frame.drop(columns=["_date"], errors="ignore"))
+    visitor_chart_rows = [
+        {"date": row["date"], "series": row["series"], "value": row["visitors"]}
+        for row in visitor_mvw.to_dict(orient="records")
+    ] if not visitor_mvw.empty else []
 
     # Latest KPI values, backing the metric-strip cards below
     latest_pop = pop_rows[-1]["mid_year_population_thousands"] if pop_rows else None
     latest_net_mov = pop_rows[-1]["net_movement_thousands"] if pop_rows else None
     latest_mpfa = mpfa_rows[-1]["amount_mhkd"] if mpfa_rows else None
     latest_ugc = ugc_rows[-1]["mainland_students"] if ugc_rows else None
+    latest_visitors = None
+    if visitor_rows:
+        latest_visitor_date = max(row["date"] for row in visitor_rows)
+        latest_visitors = sum(
+            row["visitors"] for row in visitor_rows if row["date"] == latest_visitor_date and row["visitors"] is not None
+        )
 
     cards = [
         {
@@ -286,6 +346,13 @@ def build_artifact(
             "dataset": "market_kpi_summary",
             "sourceId": "ugc",
             "metrics": [{"label": "Mainland Students in HK Universities", "field": "latest_ugc", "format": "number"}],
+        },
+        {
+            "id": "kpi_visitor_arrivals",
+            "description": "Total visitor arrivals across all regions, latest published month.",
+            "dataset": "market_kpi_summary",
+            "sourceId": "visitor_arrivals",
+            "metrics": [{"label": "Total Visitor Arrivals", "field": "latest_visitors", "format": "number"}],
         },
     ]
 
@@ -369,6 +436,22 @@ def build_artifact(
             "layout": "half",
         },
         {
+            "id": "visitor_arrivals_chart",
+            "title": "Visitor Arrivals — Mainland vs. Rest of World",
+            "subtitle": "Monthly visitor arrivals by region, collapsed to Mainland China vs. all other regions combined.",
+            "type": "line",
+            "intent": "comparison",
+            "dataset": "visitor_arrivals_mainland_vs_row",
+            "sourceId": "visitor_arrivals",
+            "encodings": {
+                "x": {"field": "date", "type": "temporal", "label": "Month"},
+                "y": {"field": "value", "type": "quantitative", "label": "Visitors"},
+                "color": {"field": "series", "type": "nominal", "label": "Region"},
+            },
+            "valueFormat": "number",
+            "layout": "full",
+        },
+        {
             "id": "td_cross_border_chart",
             "title": "Transport Department — GBA Cross-Border Vehicle & Train Traffic",
             "subtitle": "HZMB HK Vehicles ('Northbound Travel' 港车北上) and High-Speed Rail West Kowloon Passengers.",
@@ -403,6 +486,7 @@ def build_artifact(
         "mpfa": len(mpfa_rows),
         "ugc": len(ugc_rows),
         "td": len(td_rows),
+        "visitor_arrivals": len(df_visitor),
     }
     source_latest_observation = {
         "immd": _latest_observation(immd_rows, "date"),
@@ -410,6 +494,7 @@ def build_artifact(
         "mpfa": _latest_observation(mpfa_rows, "quarter"),
         "ugc": _latest_observation(ugc_rows, "academic_year"),
         "td": _latest_observation(td_rows, "month"),
+        "visitor_arrivals": _latest_observation(visitor_rows, "date"),
     }
     source_health = [
         {
@@ -434,11 +519,14 @@ def build_artifact(
         "ugc_students_comparison_history": ugc_chart_rows,
         "td_cross_border": td_rows,
         "td_cross_border_comparison_history": td_chart_rows,
+        "visitor_arrivals_by_region": visitor_rows,
+        "visitor_arrivals_mainland_vs_row": visitor_chart_rows,
         "market_kpi_summary": [{
             "latest_pop": latest_pop,
             "latest_net_mov": latest_net_mov,
             "latest_mpfa": latest_mpfa,
             "latest_ugc": latest_ugc,
+            "latest_visitors": latest_visitors,
         }],
     }
 
@@ -475,6 +563,8 @@ def build_artifact(
         blocks.append({"id": "csd_population_chart_block", "type": "chart", "chartId": "csd_population_chart"})
     if td_rows:
         blocks.append({"id": "td_cross_border_chart_block", "type": "chart", "chartId": "td_cross_border_chart"})
+    if visitor_chart_rows:
+        blocks.append({"id": "visitor_arrivals_chart_block", "type": "chart", "chartId": "visitor_arrivals_chart"})
     if mpfa_rows:
         blocks.append({"id": "mpfa_claims_chart_block", "type": "chart", "chartId": "mpfa_claims_chart", "layout": "half"})
         blocks.append({"id": "mpfa_claims_count_chart_block", "type": "chart", "chartId": "mpfa_claims_count_chart", "layout": "half"})

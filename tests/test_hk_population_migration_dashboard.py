@@ -97,6 +97,7 @@ def test_status_uses_each_source_latest_observation_and_degrades_when_any_requir
         "mpfa": "2026-Q1",
         "ugc": "2025/26",
         "td": "—",
+        "visitor_arrivals": "2026-05",
     }
     assert status["overall_status"] == "Degraded"
     assert artifact["manifest"]["dataAsOf"] == "2026-07-29"
@@ -136,3 +137,25 @@ def test_builder_prefers_normalized_inputs_before_network_fetch(monkeypatch):
     artifact, status = dashboard_export.build_artifact(now=NOW)
     assert artifact["manifest"]["dataAsOf"] == "2026-07-29"
     assert status["overall_status"] == "Healthy"
+
+
+def test_visitor_arrivals_detail_keeps_full_source_count_but_windows_artifact_rows():
+    visitor = pd.DataFrame(
+        {
+            "date": ["2004-01", "2004-01", "2016-08", "2016-08", "2026-05", "2026-05"],
+            "region": [
+                "Chinese Mainland", "Europe",
+                "Chinese Mainland", "Europe",
+                "Chinese Mainland", "Europe",
+            ],
+            "visitors": [100, 50, 200, 75, 300, 125],
+        }
+    )
+
+    artifact, status = _build(raw_visitor_arrivals=visitor)
+
+    detail = artifact["snapshot"]["datasets"]["visitor_arrivals_by_region"]
+    assert {row["date"] for row in detail} == {"2016-08", "2026-05"}
+    assert len(detail) <= 2_000
+    visitor_status = next(row for row in status["sources"] if row["dataset"] == "visitor_arrivals")
+    assert visitor_status["records"] == len(visitor)

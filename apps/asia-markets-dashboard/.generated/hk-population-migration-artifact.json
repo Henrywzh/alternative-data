@@ -6,10 +6,10 @@
     "title": "Hong Kong Population, Migration & Cross-Border Data Monitor",
     "description": "High-frequency passenger net flow, population estimates, MPF departure claims, Mainland student enrolment & GBA transport signals.",
     "sector": "hk-population-migration",
-    "generatedAt": "2026-07-31T09:16:54.319983Z",
+    "generatedAt": "2026-08-01T00:40:07.905663Z",
     "dataAsOf": "2026-07-30",
-    "liveSourcesCount": 4,
-    "totalSourcesCount": 5,
+    "liveSourcesCount": 6,
+    "totalSourcesCount": 6,
     "cards": [
       {
         "id": "kpi_total_pop",
@@ -59,6 +59,19 @@
           {
             "label": "Mainland Students in HK Universities",
             "field": "latest_ugc",
+            "format": "number"
+          }
+        ]
+      },
+      {
+        "id": "kpi_visitor_arrivals",
+        "description": "Total visitor arrivals across all regions, latest published month.",
+        "dataset": "market_kpi_summary",
+        "sourceId": "visitor_arrivals",
+        "metrics": [
+          {
+            "label": "Total Visitor Arrivals",
+            "field": "latest_visitors",
             "format": "number"
           }
         ]
@@ -196,9 +209,37 @@
         "layout": "half"
       },
       {
+        "id": "visitor_arrivals_chart",
+        "title": "Visitor Arrivals \u2014 Mainland vs. Rest of World",
+        "subtitle": "Monthly visitor arrivals by region, collapsed to Mainland China vs. all other regions combined.",
+        "type": "line",
+        "intent": "comparison",
+        "dataset": "visitor_arrivals_mainland_vs_row",
+        "sourceId": "visitor_arrivals",
+        "encodings": {
+          "x": {
+            "field": "date",
+            "type": "temporal",
+            "label": "Month"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "label": "Visitors"
+          },
+          "color": {
+            "field": "series",
+            "type": "nominal",
+            "label": "Region"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "full"
+      },
+      {
         "id": "td_cross_border_chart",
-        "title": "Transport Department — GBA Cross-Border Vehicle & Train Traffic",
-        "subtitle": "HZMB HK Vehicles ('Northbound Travel' 港车北上) and High-Speed Rail West Kowloon Passengers.",
+        "title": "Transport Department \u2014 GBA Cross-Border Vehicle & Train Traffic",
+        "subtitle": "HZMB HK Vehicles ('Northbound Travel' \u6e2f\u8f66\u5317\u4e0a) and High-Speed Rail West Kowloon Passengers.",
         "type": "line",
         "intent": "trend",
         "dataset": "td_cross_border_comparison_history",
@@ -283,7 +324,19 @@
           "url": "https://www.td.gov.hk/datagovhk_tis/mttd-csv/en/table81e_eng.csv",
           "language": "CSV",
           "sql": "SELECT month, hzmb_vehicular_traffic, hzmb_northbound_hk_vehicles, express_rail_passengers FROM td_cross_border_traffic;",
-          "description": "Monthly HZMB vehicular traffic (incl. Northbound Travel for HK Vehicles 港车北上) and cross-boundary passenger traffic incl. Express Rail West Kowloon."
+          "description": "Monthly HZMB vehicular traffic (incl. Northbound Travel for HK Vehicles \u6e2f\u8f66\u5317\u4e0a) and cross-boundary passenger traffic incl. Express Rail West Kowloon."
+        }
+      },
+      {
+        "id": "visitor_arrivals",
+        "label": "C&SD Visitor Arrivals by Region",
+        "href": "https://www.censtatd.gov.hk/en/web_table.html?id=650-80001",
+        "query": {
+          "engine": "official Web Table API",
+          "url": "https://www.censtatd.gov.hk/api/get.php?id=650-80001&lang=en&full_series=1",
+          "language": "JSON",
+          "sql": "SELECT date, region, visitors FROM censtatd_visitor_arrivals;",
+          "description": "Monthly visitor arrivals by nationality/region since 2004, a geographic companion/cross-check to ImmD's cross-border passenger data."
         }
       }
     ],
@@ -291,7 +344,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**Data snapshot:** `2dac5d7d456ca460` · generated 2026-07-31T09:16:54.319983Z.  This is a published snapshot, not a live connection. Official ImmD, C&SD, MPFA, UGC and TD open data."
+        "body": "**Data snapshot:** `95c0697d78b5718c` \u00b7 generated 2026-08-01T00:40:07.905663Z.  This is a published snapshot, not a live connection. Official ImmD, C&SD, MPFA, UGC and TD open data."
       },
       {
         "id": "kpi_grid",
@@ -300,7 +353,8 @@
           "kpi_total_pop",
           "kpi_net_mov",
           "kpi_mpfa_claims",
-          "kpi_ugc_students"
+          "kpi_ugc_students",
+          "kpi_visitor_arrivals"
         ]
       },
       {
@@ -319,6 +373,23 @@
         "chartId": "td_cross_border_chart"
       },
       {
+        "id": "visitor_arrivals_chart_block",
+        "type": "chart",
+        "chartId": "visitor_arrivals_chart"
+      },
+      {
+        "id": "mpfa_claims_chart_block",
+        "type": "chart",
+        "chartId": "mpfa_claims_chart",
+        "layout": "half"
+      },
+      {
+        "id": "mpfa_claims_count_chart_block",
+        "type": "chart",
+        "chartId": "mpfa_claims_count_chart",
+        "layout": "half"
+      },
+      {
         "id": "ugc_students_chart_block",
         "type": "chart",
         "chartId": "ugc_students_chart",
@@ -333,8 +404,8 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-31T09:16:54.319983Z",
-    "status": "partial",
+    "generatedAt": "2026-08-01T00:40:07.905663Z",
+    "status": "ready",
     "datasets": {
       "immd_daily_traffic": [
         {
@@ -8619,7 +8690,78 @@
           "value": 7510.8
         }
       ],
-      "mpfa_claims": [],
+      "mpfa_claims": [
+        {
+          "quarter": "2022-Q4",
+          "claims_count": 7000,
+          "amount_mhkd": 1716.0
+        },
+        {
+          "quarter": "2023-Q1",
+          "claims_count": 6700,
+          "amount_mhkd": 1573.0
+        },
+        {
+          "quarter": "2023-Q2",
+          "claims_count": 7300,
+          "amount_mhkd": 1787.0
+        },
+        {
+          "quarter": "2023-Q3",
+          "claims_count": 8700,
+          "amount_mhkd": 2213.0
+        },
+        {
+          "quarter": "2023-Q4",
+          "claims_count": 7200,
+          "amount_mhkd": 1688.0
+        },
+        {
+          "quarter": "2024-Q1",
+          "claims_count": 6500,
+          "amount_mhkd": 1507.0
+        },
+        {
+          "quarter": "2024-Q2",
+          "claims_count": 7300,
+          "amount_mhkd": 1702.0
+        },
+        {
+          "quarter": "2024-Q3",
+          "claims_count": 7600,
+          "amount_mhkd": 1815.0
+        },
+        {
+          "quarter": "2024-Q4",
+          "claims_count": 6600,
+          "amount_mhkd": 1572.0
+        },
+        {
+          "quarter": "2025-Q1",
+          "claims_count": 6700,
+          "amount_mhkd": 1626.0
+        },
+        {
+          "quarter": "2025-Q2",
+          "claims_count": 6400,
+          "amount_mhkd": 1575.0
+        },
+        {
+          "quarter": "2025-Q3",
+          "claims_count": 6900,
+          "amount_mhkd": 1661.0
+        },
+        {
+          "quarter": "2025-Q4",
+          "claims_count": 4200,
+          "amount_mhkd": 1024.0
+        },
+        {
+          "quarter": "2026-Q1",
+          "claims_count": 5000,
+          "amount_mhkd": 1188.0
+        }
+      ],
       "ugc_students": [
         {
           "academic_year": "2010/11",
@@ -10356,12 +10498,7622 @@
           "value": 16640
         }
       ],
+      "visitor_arrivals_by_region": [
+        {
+          "date": "2016-09",
+          "region": "Africa",
+          "visitors": 11850.0
+        },
+        {
+          "date": "2016-10",
+          "region": "Africa",
+          "visitors": 14033.0
+        },
+        {
+          "date": "2016-11",
+          "region": "Africa",
+          "visitors": 11715.0
+        },
+        {
+          "date": "2016-12",
+          "region": "Africa",
+          "visitors": 14934.0
+        },
+        {
+          "date": "2017-01",
+          "region": "Africa",
+          "visitors": 9525.0
+        },
+        {
+          "date": "2017-02",
+          "region": "Africa",
+          "visitors": 6809.0
+        },
+        {
+          "date": "2017-03",
+          "region": "Africa",
+          "visitors": 11724.0
+        },
+        {
+          "date": "2017-04",
+          "region": "Africa",
+          "visitors": 15623.0
+        },
+        {
+          "date": "2017-05",
+          "region": "Africa",
+          "visitors": 10892.0
+        },
+        {
+          "date": "2017-06",
+          "region": "Africa",
+          "visitors": 8556.0
+        },
+        {
+          "date": "2017-07",
+          "region": "Africa",
+          "visitors": 11005.0
+        },
+        {
+          "date": "2017-08",
+          "region": "Africa",
+          "visitors": 9577.0
+        },
+        {
+          "date": "2017-09",
+          "region": "Africa",
+          "visitors": 10951.0
+        },
+        {
+          "date": "2017-10",
+          "region": "Africa",
+          "visitors": 12961.0
+        },
+        {
+          "date": "2017-11",
+          "region": "Africa",
+          "visitors": 10366.0
+        },
+        {
+          "date": "2017-12",
+          "region": "Africa",
+          "visitors": 14007.0
+        },
+        {
+          "date": "2018-01",
+          "region": "Africa",
+          "visitors": 10661.0
+        },
+        {
+          "date": "2018-02",
+          "region": "Africa",
+          "visitors": 5408.0
+        },
+        {
+          "date": "2018-03",
+          "region": "Africa",
+          "visitors": 11098.0
+        },
+        {
+          "date": "2018-04",
+          "region": "Africa",
+          "visitors": 15477.0
+        },
+        {
+          "date": "2018-05",
+          "region": "Africa",
+          "visitors": 9246.0
+        },
+        {
+          "date": "2018-06",
+          "region": "Africa",
+          "visitors": 8651.0
+        },
+        {
+          "date": "2018-07",
+          "region": "Africa",
+          "visitors": 11262.0
+        },
+        {
+          "date": "2018-08",
+          "region": "Africa",
+          "visitors": 9879.0
+        },
+        {
+          "date": "2018-09",
+          "region": "Africa",
+          "visitors": 11224.0
+        },
+        {
+          "date": "2018-10",
+          "region": "Africa",
+          "visitors": 12639.0
+        },
+        {
+          "date": "2018-11",
+          "region": "Africa",
+          "visitors": 10377.0
+        },
+        {
+          "date": "2018-12",
+          "region": "Africa",
+          "visitors": 14491.0
+        },
+        {
+          "date": "2019-01",
+          "region": "Africa",
+          "visitors": 10096.0
+        },
+        {
+          "date": "2019-02",
+          "region": "Africa",
+          "visitors": 5629.0
+        },
+        {
+          "date": "2019-03",
+          "region": "Africa",
+          "visitors": 11960.0
+        },
+        {
+          "date": "2019-04",
+          "region": "Africa",
+          "visitors": 14819.0
+        },
+        {
+          "date": "2019-05",
+          "region": "Africa",
+          "visitors": 8656.0
+        },
+        {
+          "date": "2019-06",
+          "region": "Africa",
+          "visitors": 9973.0
+        },
+        {
+          "date": "2019-07",
+          "region": "Africa",
+          "visitors": 9979.0
+        },
+        {
+          "date": "2019-08",
+          "region": "Africa",
+          "visitors": 8601.0
+        },
+        {
+          "date": "2019-09",
+          "region": "Africa",
+          "visitors": 9436.0
+        },
+        {
+          "date": "2019-10",
+          "region": "Africa",
+          "visitors": 10084.0
+        },
+        {
+          "date": "2019-11",
+          "region": "Africa",
+          "visitors": 7778.0
+        },
+        {
+          "date": "2019-12",
+          "region": "Africa",
+          "visitors": 9656.0
+        },
+        {
+          "date": "2020-01",
+          "region": "Africa",
+          "visitors": 6761.0
+        },
+        {
+          "date": "2020-02",
+          "region": "Africa",
+          "visitors": 1168.0
+        },
+        {
+          "date": "2020-03",
+          "region": "Africa",
+          "visitors": 461.0
+        },
+        {
+          "date": "2020-04",
+          "region": "Africa",
+          "visitors": 7.0
+        },
+        {
+          "date": "2020-05",
+          "region": "Africa",
+          "visitors": 11.0
+        },
+        {
+          "date": "2020-06",
+          "region": "Africa",
+          "visitors": 65.0
+        },
+        {
+          "date": "2020-07",
+          "region": "Africa",
+          "visitors": 89.0
+        },
+        {
+          "date": "2020-08",
+          "region": "Africa",
+          "visitors": 26.0
+        },
+        {
+          "date": "2020-09",
+          "region": "Africa",
+          "visitors": 67.0
+        },
+        {
+          "date": "2020-10",
+          "region": "Africa",
+          "visitors": 25.0
+        },
+        {
+          "date": "2020-11",
+          "region": "Africa",
+          "visitors": 41.0
+        },
+        {
+          "date": "2020-12",
+          "region": "Africa",
+          "visitors": 57.0
+        },
+        {
+          "date": "2021-01",
+          "region": "Africa",
+          "visitors": 11.0
+        },
+        {
+          "date": "2021-02",
+          "region": "Africa",
+          "visitors": 27.0
+        },
+        {
+          "date": "2021-03",
+          "region": "Africa",
+          "visitors": 34.0
+        },
+        {
+          "date": "2021-04",
+          "region": "Africa",
+          "visitors": 30.0
+        },
+        {
+          "date": "2021-05",
+          "region": "Africa",
+          "visitors": 29.0
+        },
+        {
+          "date": "2021-06",
+          "region": "Africa",
+          "visitors": 51.0
+        },
+        {
+          "date": "2021-07",
+          "region": "Africa",
+          "visitors": 71.0
+        },
+        {
+          "date": "2021-08",
+          "region": "Africa",
+          "visitors": 39.0
+        },
+        {
+          "date": "2021-09",
+          "region": "Africa",
+          "visitors": 49.0
+        },
+        {
+          "date": "2021-10",
+          "region": "Africa",
+          "visitors": 34.0
+        },
+        {
+          "date": "2021-11",
+          "region": "Africa",
+          "visitors": 37.0
+        },
+        {
+          "date": "2021-12",
+          "region": "Africa",
+          "visitors": 39.0
+        },
+        {
+          "date": "2022-01",
+          "region": "Africa",
+          "visitors": 18.0
+        },
+        {
+          "date": "2022-02",
+          "region": "Africa",
+          "visitors": 15.0
+        },
+        {
+          "date": "2022-03",
+          "region": "Africa",
+          "visitors": 5.0
+        },
+        {
+          "date": "2022-04",
+          "region": "Africa",
+          "visitors": 25.0
+        },
+        {
+          "date": "2022-05",
+          "region": "Africa",
+          "visitors": 69.0
+        },
+        {
+          "date": "2022-06",
+          "region": "Africa",
+          "visitors": 55.0
+        },
+        {
+          "date": "2022-07",
+          "region": "Africa",
+          "visitors": 89.0
+        },
+        {
+          "date": "2022-08",
+          "region": "Africa",
+          "visitors": 169.0
+        },
+        {
+          "date": "2022-09",
+          "region": "Africa",
+          "visitors": 207.0
+        },
+        {
+          "date": "2022-10",
+          "region": "Africa",
+          "visitors": 456.0
+        },
+        {
+          "date": "2022-11",
+          "region": "Africa",
+          "visitors": 616.0
+        },
+        {
+          "date": "2022-12",
+          "region": "Africa",
+          "visitors": 840.0
+        },
+        {
+          "date": "2023-01",
+          "region": "Africa",
+          "visitors": 1540.0
+        },
+        {
+          "date": "2023-02",
+          "region": "Africa",
+          "visitors": 1545.0
+        },
+        {
+          "date": "2023-03",
+          "region": "Africa",
+          "visitors": 2296.0
+        },
+        {
+          "date": "2023-04",
+          "region": "Africa",
+          "visitors": 3171.0
+        },
+        {
+          "date": "2023-05",
+          "region": "Africa",
+          "visitors": 2886.0
+        },
+        {
+          "date": "2023-06",
+          "region": "Africa",
+          "visitors": 2837.0
+        },
+        {
+          "date": "2023-07",
+          "region": "Africa",
+          "visitors": 3340.0
+        },
+        {
+          "date": "2023-08",
+          "region": "Africa",
+          "visitors": 3910.0
+        },
+        {
+          "date": "2023-09",
+          "region": "Africa",
+          "visitors": 4473.0
+        },
+        {
+          "date": "2023-10",
+          "region": "Africa",
+          "visitors": 5657.0
+        },
+        {
+          "date": "2023-11",
+          "region": "Africa",
+          "visitors": 4707.0
+        },
+        {
+          "date": "2023-12",
+          "region": "Africa",
+          "visitors": 5857.0
+        },
+        {
+          "date": "2024-01",
+          "region": "Africa",
+          "visitors": 4565.0
+        },
+        {
+          "date": "2024-02",
+          "region": "Africa",
+          "visitors": 3701.0
+        },
+        {
+          "date": "2024-03",
+          "region": "Africa",
+          "visitors": 4925.0
+        },
+        {
+          "date": "2024-04",
+          "region": "Africa",
+          "visitors": 7655.0
+        },
+        {
+          "date": "2024-05",
+          "region": "Africa",
+          "visitors": 5055.0
+        },
+        {
+          "date": "2024-06",
+          "region": "Africa",
+          "visitors": 4378.0
+        },
+        {
+          "date": "2024-07",
+          "region": "Africa",
+          "visitors": 5040.0
+        },
+        {
+          "date": "2024-08",
+          "region": "Africa",
+          "visitors": 5140.0
+        },
+        {
+          "date": "2024-09",
+          "region": "Africa",
+          "visitors": 5886.0
+        },
+        {
+          "date": "2024-10",
+          "region": "Africa",
+          "visitors": 7832.0
+        },
+        {
+          "date": "2024-11",
+          "region": "Africa",
+          "visitors": 5734.0
+        },
+        {
+          "date": "2024-12",
+          "region": "Africa",
+          "visitors": 7091.0
+        },
+        {
+          "date": "2025-01",
+          "region": "Africa",
+          "visitors": 5393.0
+        },
+        {
+          "date": "2025-02",
+          "region": "Africa",
+          "visitors": 3835.0
+        },
+        {
+          "date": "2025-03",
+          "region": "Africa",
+          "visitors": 5452.0
+        },
+        {
+          "date": "2025-04",
+          "region": "Africa",
+          "visitors": 8113.0
+        },
+        {
+          "date": "2025-05",
+          "region": "Africa",
+          "visitors": 6053.0
+        },
+        {
+          "date": "2025-06",
+          "region": "Africa",
+          "visitors": 5239.0
+        },
+        {
+          "date": "2025-07",
+          "region": "Africa",
+          "visitors": 6623.0
+        },
+        {
+          "date": "2025-08",
+          "region": "Africa",
+          "visitors": 6597.0
+        },
+        {
+          "date": "2025-09",
+          "region": "Africa",
+          "visitors": 6972.0
+        },
+        {
+          "date": "2025-10",
+          "region": "Africa",
+          "visitors": 9826.0
+        },
+        {
+          "date": "2025-11",
+          "region": "Africa",
+          "visitors": 7796.0
+        },
+        {
+          "date": "2025-12",
+          "region": "Africa",
+          "visitors": 10583.0
+        },
+        {
+          "date": "2026-01",
+          "region": "Africa",
+          "visitors": 7934.0
+        },
+        {
+          "date": "2026-02",
+          "region": "Africa",
+          "visitors": 4726.0
+        },
+        {
+          "date": "2026-03",
+          "region": "Africa",
+          "visitors": 5200.0
+        },
+        {
+          "date": "2026-04",
+          "region": "Africa",
+          "visitors": 9809.0
+        },
+        {
+          "date": "2026-05",
+          "region": "Africa",
+          "visitors": 8102.0
+        },
+        {
+          "date": "2016-09",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 62755.0
+        },
+        {
+          "date": "2016-10",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 69566.0
+        },
+        {
+          "date": "2016-11",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 56926.0
+        },
+        {
+          "date": "2016-12",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 64906.0
+        },
+        {
+          "date": "2017-01",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 61409.0
+        },
+        {
+          "date": "2017-02",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 39593.0
+        },
+        {
+          "date": "2017-03",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 55353.0
+        },
+        {
+          "date": "2017-04",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 77150.0
+        },
+        {
+          "date": "2017-05",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 51593.0
+        },
+        {
+          "date": "2017-06",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 58351.0
+        },
+        {
+          "date": "2017-07",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 57310.0
+        },
+        {
+          "date": "2017-08",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 45342.0
+        },
+        {
+          "date": "2017-09",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 66410.0
+        },
+        {
+          "date": "2017-10",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 67313.0
+        },
+        {
+          "date": "2017-11",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 61627.0
+        },
+        {
+          "date": "2017-12",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 68668.0
+        },
+        {
+          "date": "2018-01",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 72922.0
+        },
+        {
+          "date": "2018-02",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 32520.0
+        },
+        {
+          "date": "2018-03",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 58856.0
+        },
+        {
+          "date": "2018-04",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 73099.0
+        },
+        {
+          "date": "2018-05",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 54096.0
+        },
+        {
+          "date": "2018-06",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 54497.0
+        },
+        {
+          "date": "2018-07",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 60626.0
+        },
+        {
+          "date": "2018-08",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 51385.0
+        },
+        {
+          "date": "2018-09",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 62168.0
+        },
+        {
+          "date": "2018-10",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 68678.0
+        },
+        {
+          "date": "2018-11",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 59080.0
+        },
+        {
+          "date": "2018-12",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 74300.0
+        },
+        {
+          "date": "2019-01",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 75286.0
+        },
+        {
+          "date": "2019-02",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 37143.0
+        },
+        {
+          "date": "2019-03",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 58868.0
+        },
+        {
+          "date": "2019-04",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 78854.0
+        },
+        {
+          "date": "2019-05",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 56882.0
+        },
+        {
+          "date": "2019-06",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 54019.0
+        },
+        {
+          "date": "2019-07",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 52575.0
+        },
+        {
+          "date": "2019-08",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 38247.0
+        },
+        {
+          "date": "2019-09",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 44423.0
+        },
+        {
+          "date": "2019-10",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 45714.0
+        },
+        {
+          "date": "2019-11",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 34393.0
+        },
+        {
+          "date": "2019-12",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 47631.0
+        },
+        {
+          "date": "2020-01",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 49002.0
+        },
+        {
+          "date": "2020-02",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 6782.0
+        },
+        {
+          "date": "2020-03",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 2269.0
+        },
+        {
+          "date": "2020-04",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 42.0
+        },
+        {
+          "date": "2020-05",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 110.0
+        },
+        {
+          "date": "2020-06",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 169.0
+        },
+        {
+          "date": "2020-07",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 127.0
+        },
+        {
+          "date": "2020-08",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 45.0
+        },
+        {
+          "date": "2020-09",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 41.0
+        },
+        {
+          "date": "2020-10",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 69.0
+        },
+        {
+          "date": "2020-11",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 73.0
+        },
+        {
+          "date": "2020-12",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 53.0
+        },
+        {
+          "date": "2021-01",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 42.0
+        },
+        {
+          "date": "2021-02",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 26.0
+        },
+        {
+          "date": "2021-03",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 36.0
+        },
+        {
+          "date": "2021-04",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 25.0
+        },
+        {
+          "date": "2021-05",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 45.0
+        },
+        {
+          "date": "2021-06",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 41.0
+        },
+        {
+          "date": "2021-07",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 74.0
+        },
+        {
+          "date": "2021-08",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 87.0
+        },
+        {
+          "date": "2021-09",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 99.0
+        },
+        {
+          "date": "2021-10",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 92.0
+        },
+        {
+          "date": "2021-11",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 119.0
+        },
+        {
+          "date": "2021-12",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 136.0
+        },
+        {
+          "date": "2022-01",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 27.0
+        },
+        {
+          "date": "2022-02",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 22.0
+        },
+        {
+          "date": "2022-03",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 20.0
+        },
+        {
+          "date": "2022-04",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 29.0
+        },
+        {
+          "date": "2022-05",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 195.0
+        },
+        {
+          "date": "2022-06",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 284.0
+        },
+        {
+          "date": "2022-07",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 331.0
+        },
+        {
+          "date": "2022-08",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 511.0
+        },
+        {
+          "date": "2022-09",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 766.0
+        },
+        {
+          "date": "2022-10",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 2214.0
+        },
+        {
+          "date": "2022-11",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 3882.0
+        },
+        {
+          "date": "2022-12",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 6487.0
+        },
+        {
+          "date": "2023-01",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 9315.0
+        },
+        {
+          "date": "2023-02",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 10379.0
+        },
+        {
+          "date": "2023-03",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 16831.0
+        },
+        {
+          "date": "2023-04",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 23803.0
+        },
+        {
+          "date": "2023-05",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 20600.0
+        },
+        {
+          "date": "2023-06",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 22437.0
+        },
+        {
+          "date": "2023-07",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 21278.0
+        },
+        {
+          "date": "2023-08",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 20083.0
+        },
+        {
+          "date": "2023-09",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 31806.0
+        },
+        {
+          "date": "2023-10",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 33806.0
+        },
+        {
+          "date": "2023-11",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 34444.0
+        },
+        {
+          "date": "2023-12",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 46130.0
+        },
+        {
+          "date": "2024-01",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 49379.0
+        },
+        {
+          "date": "2024-02",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 23467.0
+        },
+        {
+          "date": "2024-03",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 36020.0
+        },
+        {
+          "date": "2024-04",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 41511.0
+        },
+        {
+          "date": "2024-05",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 25865.0
+        },
+        {
+          "date": "2024-06",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 26994.0
+        },
+        {
+          "date": "2024-07",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 27393.0
+        },
+        {
+          "date": "2024-08",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 23108.0
+        },
+        {
+          "date": "2024-09",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 42315.0
+        },
+        {
+          "date": "2024-10",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 47595.0
+        },
+        {
+          "date": "2024-11",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 45068.0
+        },
+        {
+          "date": "2024-12",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 62760.0
+        },
+        {
+          "date": "2025-01",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 63388.0
+        },
+        {
+          "date": "2025-02",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 32923.0
+        },
+        {
+          "date": "2025-03",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 47009.0
+        },
+        {
+          "date": "2025-04",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 56192.0
+        },
+        {
+          "date": "2025-05",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 36268.0
+        },
+        {
+          "date": "2025-06",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 34290.0
+        },
+        {
+          "date": "2025-07",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 35954.0
+        },
+        {
+          "date": "2025-08",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 26888.0
+        },
+        {
+          "date": "2025-09",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 45252.0
+        },
+        {
+          "date": "2025-10",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 56572.0
+        },
+        {
+          "date": "2025-11",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 52904.0
+        },
+        {
+          "date": "2025-12",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 80904.0
+        },
+        {
+          "date": "2026-01",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 83413.0
+        },
+        {
+          "date": "2026-02",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 33336.0
+        },
+        {
+          "date": "2026-03",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 52070.0
+        },
+        {
+          "date": "2026-04",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 66119.0
+        },
+        {
+          "date": "2026-05",
+          "region": "Australia, New Zealand and South Pacific",
+          "visitors": 43537.0
+        },
+        {
+          "date": "2016-09",
+          "region": "Chinese Mainland",
+          "visitors": 3316227.0
+        },
+        {
+          "date": "2016-10",
+          "region": "Chinese Mainland",
+          "visitors": 3698301.0
+        },
+        {
+          "date": "2016-11",
+          "region": "Chinese Mainland",
+          "visitors": 3375070.0
+        },
+        {
+          "date": "2016-12",
+          "region": "Chinese Mainland",
+          "visitors": 3928584.0
+        },
+        {
+          "date": "2017-01",
+          "region": "Chinese Mainland",
+          "visitors": 4328327.0
+        },
+        {
+          "date": "2017-02",
+          "region": "Chinese Mainland",
+          "visitors": 3119324.0
+        },
+        {
+          "date": "2017-03",
+          "region": "Chinese Mainland",
+          "visitors": 3315455.0
+        },
+        {
+          "date": "2017-04",
+          "region": "Chinese Mainland",
+          "visitors": 3499426.0
+        },
+        {
+          "date": "2017-05",
+          "region": "Chinese Mainland",
+          "visitors": 3430689.0
+        },
+        {
+          "date": "2017-06",
+          "region": "Chinese Mainland",
+          "visitors": 3081708.0
+        },
+        {
+          "date": "2017-07",
+          "region": "Chinese Mainland",
+          "visitors": 4055415.0
+        },
+        {
+          "date": "2017-08",
+          "region": "Chinese Mainland",
+          "visitors": 3936326.0
+        },
+        {
+          "date": "2017-09",
+          "region": "Chinese Mainland",
+          "visitors": 3555836.0
+        },
+        {
+          "date": "2017-10",
+          "region": "Chinese Mainland",
+          "visitors": 4006921.0
+        },
+        {
+          "date": "2017-11",
+          "region": "Chinese Mainland",
+          "visitors": 3659694.0
+        },
+        {
+          "date": "2017-12",
+          "region": "Chinese Mainland",
+          "visitors": 4205819.0
+        },
+        {
+          "date": "2018-01",
+          "region": "Chinese Mainland",
+          "visitors": 4094994.0
+        },
+        {
+          "date": "2018-02",
+          "region": "Chinese Mainland",
+          "visitors": 4377990.0
+        },
+        {
+          "date": "2018-03",
+          "region": "Chinese Mainland",
+          "visitors": 3651676.0
+        },
+        {
+          "date": "2018-04",
+          "region": "Chinese Mainland",
+          "visitors": 4032387.0
+        },
+        {
+          "date": "2018-05",
+          "region": "Chinese Mainland",
+          "visitors": 3803977.0
+        },
+        {
+          "date": "2018-06",
+          "region": "Chinese Mainland",
+          "visitors": 3616705.0
+        },
+        {
+          "date": "2018-07",
+          "region": "Chinese Mainland",
+          "visitors": 4383980.0
+        },
+        {
+          "date": "2018-08",
+          "region": "Chinese Mainland",
+          "visitors": 4803626.0
+        },
+        {
+          "date": "2018-09",
+          "region": "Chinese Mainland",
+          "visitors": 3693871.0
+        },
+        {
+          "date": "2018-10",
+          "region": "Chinese Mainland",
+          "visitors": 4628552.0
+        },
+        {
+          "date": "2018-11",
+          "region": "Chinese Mainland",
+          "visitors": 4613103.0
+        },
+        {
+          "date": "2018-12",
+          "region": "Chinese Mainland",
+          "visitors": 5102464.0
+        },
+        {
+          "date": "2019-01",
+          "region": "Chinese Mainland",
+          "visitors": 5524443.0
+        },
+        {
+          "date": "2019-02",
+          "region": "Chinese Mainland",
+          "visitors": 4540646.0
+        },
+        {
+          "date": "2019-03",
+          "region": "Chinese Mainland",
+          "visitors": 4462586.0
+        },
+        {
+          "date": "2019-04",
+          "region": "Chinese Mainland",
+          "visitors": 4256683.0
+        },
+        {
+          "date": "2019-05",
+          "region": "Chinese Mainland",
+          "visitors": 4700039.0
+        },
+        {
+          "date": "2019-06",
+          "region": "Chinese Mainland",
+          "visitors": 3986242.0
+        },
+        {
+          "date": "2019-07",
+          "region": "Chinese Mainland",
+          "visitors": 4148998.0
+        },
+        {
+          "date": "2019-08",
+          "region": "Chinese Mainland",
+          "visitors": 2771480.0
+        },
+        {
+          "date": "2019-09",
+          "region": "Chinese Mainland",
+          "visitors": 2401471.0
+        },
+        {
+          "date": "2019-10",
+          "region": "Chinese Mainland",
+          "visitors": 2503210.0
+        },
+        {
+          "date": "2019-11",
+          "region": "Chinese Mainland",
+          "visitors": 1921951.0
+        },
+        {
+          "date": "2019-12",
+          "region": "Chinese Mainland",
+          "visitors": 2389309.0
+        },
+        {
+          "date": "2020-01",
+          "region": "Chinese Mainland",
+          "visitors": 2520594.0
+        },
+        {
+          "date": "2020-02",
+          "region": "Chinese Mainland",
+          "visitors": 96716.0
+        },
+        {
+          "date": "2020-03",
+          "region": "Chinese Mainland",
+          "visitors": 27525.0
+        },
+        {
+          "date": "2020-04",
+          "region": "Chinese Mainland",
+          "visitors": 2945.0
+        },
+        {
+          "date": "2020-05",
+          "region": "Chinese Mainland",
+          "visitors": 5623.0
+        },
+        {
+          "date": "2020-06",
+          "region": "Chinese Mainland",
+          "visitors": 6633.0
+        },
+        {
+          "date": "2020-07",
+          "region": "Chinese Mainland",
+          "visitors": 5709.0
+        },
+        {
+          "date": "2020-08",
+          "region": "Chinese Mainland",
+          "visitors": 2323.0
+        },
+        {
+          "date": "2020-09",
+          "region": "Chinese Mainland",
+          "visitors": 6211.0
+        },
+        {
+          "date": "2020-10",
+          "region": "Chinese Mainland",
+          "visitors": 4849.0
+        },
+        {
+          "date": "2020-11",
+          "region": "Chinese Mainland",
+          "visitors": 3555.0
+        },
+        {
+          "date": "2020-12",
+          "region": "Chinese Mainland",
+          "visitors": 2425.0
+        },
+        {
+          "date": "2021-01",
+          "region": "Chinese Mainland",
+          "visitors": 2874.0
+        },
+        {
+          "date": "2021-02",
+          "region": "Chinese Mainland",
+          "visitors": 3799.0
+        },
+        {
+          "date": "2021-03",
+          "region": "Chinese Mainland",
+          "visitors": 4916.0
+        },
+        {
+          "date": "2021-04",
+          "region": "Chinese Mainland",
+          "visitors": 4120.0
+        },
+        {
+          "date": "2021-05",
+          "region": "Chinese Mainland",
+          "visitors": 3896.0
+        },
+        {
+          "date": "2021-06",
+          "region": "Chinese Mainland",
+          "visitors": 4647.0
+        },
+        {
+          "date": "2021-07",
+          "region": "Chinese Mainland",
+          "visitors": 6302.0
+        },
+        {
+          "date": "2021-08",
+          "region": "Chinese Mainland",
+          "visitors": 8523.0
+        },
+        {
+          "date": "2021-09",
+          "region": "Chinese Mainland",
+          "visitors": 6955.0
+        },
+        {
+          "date": "2021-10",
+          "region": "Chinese Mainland",
+          "visitors": 6680.0
+        },
+        {
+          "date": "2021-11",
+          "region": "Chinese Mainland",
+          "visitors": 6444.0
+        },
+        {
+          "date": "2021-12",
+          "region": "Chinese Mainland",
+          "visitors": 6475.0
+        },
+        {
+          "date": "2022-01",
+          "region": "Chinese Mainland",
+          "visitors": 5755.0
+        },
+        {
+          "date": "2022-02",
+          "region": "Chinese Mainland",
+          "visitors": 1810.0
+        },
+        {
+          "date": "2022-03",
+          "region": "Chinese Mainland",
+          "visitors": 996.0
+        },
+        {
+          "date": "2022-04",
+          "region": "Chinese Mainland",
+          "visitors": 3593.0
+        },
+        {
+          "date": "2022-05",
+          "region": "Chinese Mainland",
+          "visitors": 14419.0
+        },
+        {
+          "date": "2022-06",
+          "region": "Chinese Mainland",
+          "visitors": 35359.0
+        },
+        {
+          "date": "2022-07",
+          "region": "Chinese Mainland",
+          "visitors": 40091.0
+        },
+        {
+          "date": "2022-08",
+          "region": "Chinese Mainland",
+          "visitors": 48295.0
+        },
+        {
+          "date": "2022-09",
+          "region": "Chinese Mainland",
+          "visitors": 51282.0
+        },
+        {
+          "date": "2022-10",
+          "region": "Chinese Mainland",
+          "visitors": 47658.0
+        },
+        {
+          "date": "2022-11",
+          "region": "Chinese Mainland",
+          "visitors": 58699.0
+        },
+        {
+          "date": "2022-12",
+          "region": "Chinese Mainland",
+          "visitors": 67258.0
+        },
+        {
+          "date": "2023-01",
+          "region": "Chinese Mainland",
+          "visitors": 279717.0
+        },
+        {
+          "date": "2023-02",
+          "region": "Chinese Mainland",
+          "visitors": 1108653.0
+        },
+        {
+          "date": "2023-03",
+          "region": "Chinese Mainland",
+          "visitors": 1967602.0
+        },
+        {
+          "date": "2023-04",
+          "region": "Chinese Mainland",
+          "visitors": 2303943.0
+        },
+        {
+          "date": "2023-05",
+          "region": "Chinese Mainland",
+          "visitors": 2287811.0
+        },
+        {
+          "date": "2023-06",
+          "region": "Chinese Mainland",
+          "visitors": 2156627.0
+        },
+        {
+          "date": "2023-07",
+          "region": "Chinese Mainland",
+          "visitors": 2975902.0
+        },
+        {
+          "date": "2023-08",
+          "region": "Chinese Mainland",
+          "visitors": 3434202.0
+        },
+        {
+          "date": "2023-09",
+          "region": "Chinese Mainland",
+          "visitors": 2163378.0
+        },
+        {
+          "date": "2023-10",
+          "region": "Chinese Mainland",
+          "visitors": 2700141.0
+        },
+        {
+          "date": "2023-11",
+          "region": "Chinese Mainland",
+          "visitors": 2429531.0
+        },
+        {
+          "date": "2023-12",
+          "region": "Chinese Mainland",
+          "visitors": 2948056.0
+        },
+        {
+          "date": "2024-01",
+          "region": "Chinese Mainland",
+          "visitors": 2984761.0
+        },
+        {
+          "date": "2024-02",
+          "region": "Chinese Mainland",
+          "visitors": 3245911.0
+        },
+        {
+          "date": "2024-03",
+          "region": "Chinese Mainland",
+          "visitors": 2467491.0
+        },
+        {
+          "date": "2024-04",
+          "region": "Chinese Mainland",
+          "visitors": 2483291.0
+        },
+        {
+          "date": "2024-05",
+          "region": "Chinese Mainland",
+          "visitors": 2627401.0
+        },
+        {
+          "date": "2024-06",
+          "region": "Chinese Mainland",
+          "visitors": 2341637.0
+        },
+        {
+          "date": "2024-07",
+          "region": "Chinese Mainland",
+          "visitors": 3140563.0
+        },
+        {
+          "date": "2024-08",
+          "region": "Chinese Mainland",
+          "visitors": 3659538.0
+        },
+        {
+          "date": "2024-09",
+          "region": "Chinese Mainland",
+          "visitors": 2295568.0
+        },
+        {
+          "date": "2024-10",
+          "region": "Chinese Mainland",
+          "visitors": 3138319.0
+        },
+        {
+          "date": "2024-11",
+          "region": "Chinese Mainland",
+          "visitors": 2557894.0
+        },
+        {
+          "date": "2024-12",
+          "region": "Chinese Mainland",
+          "visitors": 3100753.0
+        },
+        {
+          "date": "2025-01",
+          "region": "Chinese Mainland",
+          "visitors": 3726236.0
+        },
+        {
+          "date": "2025-02",
+          "region": "Chinese Mainland",
+          "visitors": 2769404.0
+        },
+        {
+          "date": "2025-03",
+          "region": "Chinese Mainland",
+          "visitors": 2749719.0
+        },
+        {
+          "date": "2025-04",
+          "region": "Chinese Mainland",
+          "visitors": 2813526.0
+        },
+        {
+          "date": "2025-05",
+          "region": "Chinese Mainland",
+          "visitors": 3123593.0
+        },
+        {
+          "date": "2025-06",
+          "region": "Chinese Mainland",
+          "visitors": 2611276.0
+        },
+        {
+          "date": "2025-07",
+          "region": "Chinese Mainland",
+          "visitors": 3510343.0
+        },
+        {
+          "date": "2025-08",
+          "region": "Chinese Mainland",
+          "visitors": 4223347.0
+        },
+        {
+          "date": "2025-09",
+          "region": "Chinese Mainland",
+          "visitors": 2458439.0
+        },
+        {
+          "date": "2025-10",
+          "region": "Chinese Mainland",
+          "visitors": 3452168.0
+        },
+        {
+          "date": "2025-11",
+          "region": "Chinese Mainland",
+          "visitors": 3041327.0
+        },
+        {
+          "date": "2025-12",
+          "region": "Chinese Mainland",
+          "visitors": 3354406.0
+        },
+        {
+          "date": "2026-01",
+          "region": "Chinese Mainland",
+          "visitors": 3645646.0
+        },
+        {
+          "date": "2026-02",
+          "region": "Chinese Mainland",
+          "visitors": 4248174.0
+        },
+        {
+          "date": "2026-03",
+          "region": "Chinese Mainland",
+          "visitors": 3186639.0
+        },
+        {
+          "date": "2026-04",
+          "region": "Chinese Mainland",
+          "visitors": 3104167.0
+        },
+        {
+          "date": "2026-05",
+          "region": "Chinese Mainland",
+          "visitors": 3485728.0
+        },
+        {
+          "date": "2016-09",
+          "region": "Europe",
+          "visitors": 138201.0
+        },
+        {
+          "date": "2016-10",
+          "region": "Europe",
+          "visitors": 214089.0
+        },
+        {
+          "date": "2016-11",
+          "region": "Europe",
+          "visitors": 195159.0
+        },
+        {
+          "date": "2016-12",
+          "region": "Europe",
+          "visitors": 158161.0
+        },
+        {
+          "date": "2017-01",
+          "region": "Europe",
+          "visitors": 153135.0
+        },
+        {
+          "date": "2017-02",
+          "region": "Europe",
+          "visitors": 141753.0
+        },
+        {
+          "date": "2017-03",
+          "region": "Europe",
+          "visitors": 188894.0
+        },
+        {
+          "date": "2017-04",
+          "region": "Europe",
+          "visitors": 206032.0
+        },
+        {
+          "date": "2017-05",
+          "region": "Europe",
+          "visitors": 142898.0
+        },
+        {
+          "date": "2017-06",
+          "region": "Europe",
+          "visitors": 120111.0
+        },
+        {
+          "date": "2017-07",
+          "region": "Europe",
+          "visitors": 136313.0
+        },
+        {
+          "date": "2017-08",
+          "region": "Europe",
+          "visitors": 137014.0
+        },
+        {
+          "date": "2017-09",
+          "region": "Europe",
+          "visitors": 136778.0
+        },
+        {
+          "date": "2017-10",
+          "region": "Europe",
+          "visitors": 202004.0
+        },
+        {
+          "date": "2017-11",
+          "region": "Europe",
+          "visitors": 198704.0
+        },
+        {
+          "date": "2017-12",
+          "region": "Europe",
+          "visitors": 159498.0
+        },
+        {
+          "date": "2018-01",
+          "region": "Europe",
+          "visitors": 165238.0
+        },
+        {
+          "date": "2018-02",
+          "region": "Europe",
+          "visitors": 126994.0
+        },
+        {
+          "date": "2018-03",
+          "region": "Europe",
+          "visitors": 204500.0
+        },
+        {
+          "date": "2018-04",
+          "region": "Europe",
+          "visitors": 205690.0
+        },
+        {
+          "date": "2018-05",
+          "region": "Europe",
+          "visitors": 149578.0
+        },
+        {
+          "date": "2018-06",
+          "region": "Europe",
+          "visitors": 122470.0
+        },
+        {
+          "date": "2018-07",
+          "region": "Europe",
+          "visitors": 137977.0
+        },
+        {
+          "date": "2018-08",
+          "region": "Europe",
+          "visitors": 144865.0
+        },
+        {
+          "date": "2018-09",
+          "region": "Europe",
+          "visitors": 132582.0
+        },
+        {
+          "date": "2018-10",
+          "region": "Europe",
+          "visitors": 204774.0
+        },
+        {
+          "date": "2018-11",
+          "region": "Europe",
+          "visitors": 199821.0
+        },
+        {
+          "date": "2018-12",
+          "region": "Europe",
+          "visitors": 159289.0
+        },
+        {
+          "date": "2019-01",
+          "region": "Europe",
+          "visitors": 159550.0
+        },
+        {
+          "date": "2019-02",
+          "region": "Europe",
+          "visitors": 133759.0
+        },
+        {
+          "date": "2019-03",
+          "region": "Europe",
+          "visitors": 196032.0
+        },
+        {
+          "date": "2019-04",
+          "region": "Europe",
+          "visitors": 209467.0
+        },
+        {
+          "date": "2019-05",
+          "region": "Europe",
+          "visitors": 145273.0
+        },
+        {
+          "date": "2019-06",
+          "region": "Europe",
+          "visitors": 113959.0
+        },
+        {
+          "date": "2019-07",
+          "region": "Europe",
+          "visitors": 132468.0
+        },
+        {
+          "date": "2019-08",
+          "region": "Europe",
+          "visitors": 120627.0
+        },
+        {
+          "date": "2019-09",
+          "region": "Europe",
+          "visitors": 108339.0
+        },
+        {
+          "date": "2019-10",
+          "region": "Europe",
+          "visitors": 160768.0
+        },
+        {
+          "date": "2019-11",
+          "region": "Europe",
+          "visitors": 139570.0
+        },
+        {
+          "date": "2019-12",
+          "region": "Europe",
+          "visitors": 121210.0
+        },
+        {
+          "date": "2020-01",
+          "region": "Europe",
+          "visitors": 114477.0
+        },
+        {
+          "date": "2020-02",
+          "region": "Europe",
+          "visitors": 22507.0
+        },
+        {
+          "date": "2020-03",
+          "region": "Europe",
+          "visitors": 9261.0
+        },
+        {
+          "date": "2020-04",
+          "region": "Europe",
+          "visitors": 262.0
+        },
+        {
+          "date": "2020-05",
+          "region": "Europe",
+          "visitors": 960.0
+        },
+        {
+          "date": "2020-06",
+          "region": "Europe",
+          "visitors": 3608.0
+        },
+        {
+          "date": "2020-07",
+          "region": "Europe",
+          "visitors": 6260.0
+        },
+        {
+          "date": "2020-08",
+          "region": "Europe",
+          "visitors": 538.0
+        },
+        {
+          "date": "2020-09",
+          "region": "Europe",
+          "visitors": 644.0
+        },
+        {
+          "date": "2020-10",
+          "region": "Europe",
+          "visitors": 564.0
+        },
+        {
+          "date": "2020-11",
+          "region": "Europe",
+          "visitors": 533.0
+        },
+        {
+          "date": "2020-12",
+          "region": "Europe",
+          "visitors": 598.0
+        },
+        {
+          "date": "2021-01",
+          "region": "Europe",
+          "visitors": 350.0
+        },
+        {
+          "date": "2021-02",
+          "region": "Europe",
+          "visitors": 372.0
+        },
+        {
+          "date": "2021-03",
+          "region": "Europe",
+          "visitors": 503.0
+        },
+        {
+          "date": "2021-04",
+          "region": "Europe",
+          "visitors": 445.0
+        },
+        {
+          "date": "2021-05",
+          "region": "Europe",
+          "visitors": 547.0
+        },
+        {
+          "date": "2021-06",
+          "region": "Europe",
+          "visitors": 466.0
+        },
+        {
+          "date": "2021-07",
+          "region": "Europe",
+          "visitors": 617.0
+        },
+        {
+          "date": "2021-08",
+          "region": "Europe",
+          "visitors": 650.0
+        },
+        {
+          "date": "2021-09",
+          "region": "Europe",
+          "visitors": 663.0
+        },
+        {
+          "date": "2021-10",
+          "region": "Europe",
+          "visitors": 745.0
+        },
+        {
+          "date": "2021-11",
+          "region": "Europe",
+          "visitors": 686.0
+        },
+        {
+          "date": "2021-12",
+          "region": "Europe",
+          "visitors": 545.0
+        },
+        {
+          "date": "2022-01",
+          "region": "Europe",
+          "visitors": 279.0
+        },
+        {
+          "date": "2022-02",
+          "region": "Europe",
+          "visitors": 170.0
+        },
+        {
+          "date": "2022-03",
+          "region": "Europe",
+          "visitors": 138.0
+        },
+        {
+          "date": "2022-04",
+          "region": "Europe",
+          "visitors": 219.0
+        },
+        {
+          "date": "2022-05",
+          "region": "Europe",
+          "visitors": 882.0
+        },
+        {
+          "date": "2022-06",
+          "region": "Europe",
+          "visitors": 1221.0
+        },
+        {
+          "date": "2022-07",
+          "region": "Europe",
+          "visitors": 1618.0
+        },
+        {
+          "date": "2022-08",
+          "region": "Europe",
+          "visitors": 2053.0
+        },
+        {
+          "date": "2022-09",
+          "region": "Europe",
+          "visitors": 2447.0
+        },
+        {
+          "date": "2022-10",
+          "region": "Europe",
+          "visitors": 6296.0
+        },
+        {
+          "date": "2022-11",
+          "region": "Europe",
+          "visitors": 11347.0
+        },
+        {
+          "date": "2022-12",
+          "region": "Europe",
+          "visitors": 12797.0
+        },
+        {
+          "date": "2023-01",
+          "region": "Europe",
+          "visitors": 22996.0
+        },
+        {
+          "date": "2023-02",
+          "region": "Europe",
+          "visitors": 35399.0
+        },
+        {
+          "date": "2023-03",
+          "region": "Europe",
+          "visitors": 64596.0
+        },
+        {
+          "date": "2023-04",
+          "region": "Europe",
+          "visitors": 79869.0
+        },
+        {
+          "date": "2023-05",
+          "region": "Europe",
+          "visitors": 56431.0
+        },
+        {
+          "date": "2023-06",
+          "region": "Europe",
+          "visitors": 49647.0
+        },
+        {
+          "date": "2023-07",
+          "region": "Europe",
+          "visitors": 58191.0
+        },
+        {
+          "date": "2023-08",
+          "region": "Europe",
+          "visitors": 61533.0
+        },
+        {
+          "date": "2023-09",
+          "region": "Europe",
+          "visitors": 62518.0
+        },
+        {
+          "date": "2023-10",
+          "region": "Europe",
+          "visitors": 99885.0
+        },
+        {
+          "date": "2023-11",
+          "region": "Europe",
+          "visitors": 101077.0
+        },
+        {
+          "date": "2023-12",
+          "region": "Europe",
+          "visitors": 83596.0
+        },
+        {
+          "date": "2024-01",
+          "region": "Europe",
+          "visitors": 93244.0
+        },
+        {
+          "date": "2024-02",
+          "region": "Europe",
+          "visitors": 85496.0
+        },
+        {
+          "date": "2024-03",
+          "region": "Europe",
+          "visitors": 131794.0
+        },
+        {
+          "date": "2024-04",
+          "region": "Europe",
+          "visitors": 134492.0
+        },
+        {
+          "date": "2024-05",
+          "region": "Europe",
+          "visitors": 86209.0
+        },
+        {
+          "date": "2024-06",
+          "region": "Europe",
+          "visitors": 67537.0
+        },
+        {
+          "date": "2024-07",
+          "region": "Europe",
+          "visitors": 79813.0
+        },
+        {
+          "date": "2024-08",
+          "region": "Europe",
+          "visitors": 88786.0
+        },
+        {
+          "date": "2024-09",
+          "region": "Europe",
+          "visitors": 84861.0
+        },
+        {
+          "date": "2024-10",
+          "region": "Europe",
+          "visitors": 136938.0
+        },
+        {
+          "date": "2024-11",
+          "region": "Europe",
+          "visitors": 132901.0
+        },
+        {
+          "date": "2024-12",
+          "region": "Europe",
+          "visitors": 110457.0
+        },
+        {
+          "date": "2025-01",
+          "region": "Europe",
+          "visitors": 111321.0
+        },
+        {
+          "date": "2025-02",
+          "region": "Europe",
+          "visitors": 101232.0
+        },
+        {
+          "date": "2025-03",
+          "region": "Europe",
+          "visitors": 147660.0
+        },
+        {
+          "date": "2025-04",
+          "region": "Europe",
+          "visitors": 155237.0
+        },
+        {
+          "date": "2025-05",
+          "region": "Europe",
+          "visitors": 104704.0
+        },
+        {
+          "date": "2025-06",
+          "region": "Europe",
+          "visitors": 79825.0
+        },
+        {
+          "date": "2025-07",
+          "region": "Europe",
+          "visitors": 98593.0
+        },
+        {
+          "date": "2025-08",
+          "region": "Europe",
+          "visitors": 112111.0
+        },
+        {
+          "date": "2025-09",
+          "region": "Europe",
+          "visitors": 99124.0
+        },
+        {
+          "date": "2025-10",
+          "region": "Europe",
+          "visitors": 165792.0
+        },
+        {
+          "date": "2025-11",
+          "region": "Europe",
+          "visitors": 173360.0
+        },
+        {
+          "date": "2025-12",
+          "region": "Europe",
+          "visitors": 152805.0
+        },
+        {
+          "date": "2026-01",
+          "region": "Europe",
+          "visitors": 161632.0
+        },
+        {
+          "date": "2026-02",
+          "region": "Europe",
+          "visitors": 121492.0
+        },
+        {
+          "date": "2026-03",
+          "region": "Europe",
+          "visitors": 178565.0
+        },
+        {
+          "date": "2026-04",
+          "region": "Europe",
+          "visitors": 188588.0
+        },
+        {
+          "date": "2026-05",
+          "region": "Europe",
+          "visitors": 135144.0
+        },
+        {
+          "date": "2016-09",
+          "region": "Macao",
+          "visitors": 72268.0
+        },
+        {
+          "date": "2016-10",
+          "region": "Macao",
+          "visitors": 75864.0
+        },
+        {
+          "date": "2016-11",
+          "region": "Macao",
+          "visitors": 72033.0
+        },
+        {
+          "date": "2016-12",
+          "region": "Macao",
+          "visitors": 112341.0
+        },
+        {
+          "date": "2017-01",
+          "region": "Macao",
+          "visitors": 80474.0
+        },
+        {
+          "date": "2017-02",
+          "region": "Macao",
+          "visitors": 71767.0
+        },
+        {
+          "date": "2017-03",
+          "region": "Macao",
+          "visitors": 70799.0
+        },
+        {
+          "date": "2017-04",
+          "region": "Macao",
+          "visitors": 80498.0
+        },
+        {
+          "date": "2017-05",
+          "region": "Macao",
+          "visitors": 73885.0
+        },
+        {
+          "date": "2017-06",
+          "region": "Macao",
+          "visitors": 70673.0
+        },
+        {
+          "date": "2017-07",
+          "region": "Macao",
+          "visitors": 92478.0
+        },
+        {
+          "date": "2017-08",
+          "region": "Macao",
+          "visitors": 90941.0
+        },
+        {
+          "date": "2017-09",
+          "region": "Macao",
+          "visitors": 73958.0
+        },
+        {
+          "date": "2017-10",
+          "region": "Macao",
+          "visitors": 77452.0
+        },
+        {
+          "date": "2017-11",
+          "region": "Macao",
+          "visitors": 78042.0
+        },
+        {
+          "date": "2017-12",
+          "region": "Macao",
+          "visitors": 111216.0
+        },
+        {
+          "date": "2018-01",
+          "region": "Macao",
+          "visitors": 72462.0
+        },
+        {
+          "date": "2018-02",
+          "region": "Macao",
+          "visitors": 71719.0
+        },
+        {
+          "date": "2018-03",
+          "region": "Macao",
+          "visitors": 81986.0
+        },
+        {
+          "date": "2018-04",
+          "region": "Macao",
+          "visitors": 71182.0
+        },
+        {
+          "date": "2018-05",
+          "region": "Macao",
+          "visitors": 74417.0
+        },
+        {
+          "date": "2018-06",
+          "region": "Macao",
+          "visitors": 71433.0
+        },
+        {
+          "date": "2018-07",
+          "region": "Macao",
+          "visitors": 88904.0
+        },
+        {
+          "date": "2018-08",
+          "region": "Macao",
+          "visitors": 96393.0
+        },
+        {
+          "date": "2018-09",
+          "region": "Macao",
+          "visitors": 68590.0
+        },
+        {
+          "date": "2018-10",
+          "region": "Macao",
+          "visitors": 86271.0
+        },
+        {
+          "date": "2018-11",
+          "region": "Macao",
+          "visitors": 116256.0
+        },
+        {
+          "date": "2018-12",
+          "region": "Macao",
+          "visitors": 161023.0
+        },
+        {
+          "date": "2019-01",
+          "region": "Macao",
+          "visitors": 110712.0
+        },
+        {
+          "date": "2019-02",
+          "region": "Macao",
+          "visitors": 115413.0
+        },
+        {
+          "date": "2019-03",
+          "region": "Macao",
+          "visitors": 112730.0
+        },
+        {
+          "date": "2019-04",
+          "region": "Macao",
+          "visitors": 114434.0
+        },
+        {
+          "date": "2019-05",
+          "region": "Macao",
+          "visitors": 112692.0
+        },
+        {
+          "date": "2019-06",
+          "region": "Macao",
+          "visitors": 110963.0
+        },
+        {
+          "date": "2019-07",
+          "region": "Macao",
+          "visitors": 119518.0
+        },
+        {
+          "date": "2019-08",
+          "region": "Macao",
+          "visitors": 104969.0
+        },
+        {
+          "date": "2019-09",
+          "region": "Macao",
+          "visitors": 73389.0
+        },
+        {
+          "date": "2019-10",
+          "region": "Macao",
+          "visitors": 65521.0
+        },
+        {
+          "date": "2019-11",
+          "region": "Macao",
+          "visitors": 64527.0
+        },
+        {
+          "date": "2019-12",
+          "region": "Macao",
+          "visitors": 101092.0
+        },
+        {
+          "date": "2020-01",
+          "region": "Macao",
+          "visitors": 78621.0
+        },
+        {
+          "date": "2020-02",
+          "region": "Macao",
+          "visitors": 18027.0
+        },
+        {
+          "date": "2020-03",
+          "region": "Macao",
+          "visitors": 15073.0
+        },
+        {
+          "date": "2020-04",
+          "region": "Macao",
+          "visitors": 46.0
+        },
+        {
+          "date": "2020-05",
+          "region": "Macao",
+          "visitors": 100.0
+        },
+        {
+          "date": "2020-06",
+          "region": "Macao",
+          "visitors": 114.0
+        },
+        {
+          "date": "2020-07",
+          "region": "Macao",
+          "visitors": 144.0
+        },
+        {
+          "date": "2020-08",
+          "region": "Macao",
+          "visitors": 136.0
+        },
+        {
+          "date": "2020-09",
+          "region": "Macao",
+          "visitors": 90.0
+        },
+        {
+          "date": "2020-10",
+          "region": "Macao",
+          "visitors": 135.0
+        },
+        {
+          "date": "2020-11",
+          "region": "Macao",
+          "visitors": 110.0
+        },
+        {
+          "date": "2020-12",
+          "region": "Macao",
+          "visitors": 91.0
+        },
+        {
+          "date": "2021-01",
+          "region": "Macao",
+          "visitors": 75.0
+        },
+        {
+          "date": "2021-02",
+          "region": "Macao",
+          "visitors": 53.0
+        },
+        {
+          "date": "2021-03",
+          "region": "Macao",
+          "visitors": 65.0
+        },
+        {
+          "date": "2021-04",
+          "region": "Macao",
+          "visitors": 86.0
+        },
+        {
+          "date": "2021-05",
+          "region": "Macao",
+          "visitors": 75.0
+        },
+        {
+          "date": "2021-06",
+          "region": "Macao",
+          "visitors": 111.0
+        },
+        {
+          "date": "2021-07",
+          "region": "Macao",
+          "visitors": 119.0
+        },
+        {
+          "date": "2021-08",
+          "region": "Macao",
+          "visitors": 169.0
+        },
+        {
+          "date": "2021-09",
+          "region": "Macao",
+          "visitors": 255.0
+        },
+        {
+          "date": "2021-10",
+          "region": "Macao",
+          "visitors": 138.0
+        },
+        {
+          "date": "2021-11",
+          "region": "Macao",
+          "visitors": 309.0
+        },
+        {
+          "date": "2021-12",
+          "region": "Macao",
+          "visitors": 452.0
+        },
+        {
+          "date": "2022-01",
+          "region": "Macao",
+          "visitors": 266.0
+        },
+        {
+          "date": "2022-02",
+          "region": "Macao",
+          "visitors": 161.0
+        },
+        {
+          "date": "2022-03",
+          "region": "Macao",
+          "visitors": 67.0
+        },
+        {
+          "date": "2022-04",
+          "region": "Macao",
+          "visitors": 136.0
+        },
+        {
+          "date": "2022-05",
+          "region": "Macao",
+          "visitors": 281.0
+        },
+        {
+          "date": "2022-06",
+          "region": "Macao",
+          "visitors": 425.0
+        },
+        {
+          "date": "2022-07",
+          "region": "Macao",
+          "visitors": 817.0
+        },
+        {
+          "date": "2022-08",
+          "region": "Macao",
+          "visitors": 731.0
+        },
+        {
+          "date": "2022-09",
+          "region": "Macao",
+          "visitors": 858.0
+        },
+        {
+          "date": "2022-10",
+          "region": "Macao",
+          "visitors": 950.0
+        },
+        {
+          "date": "2022-11",
+          "region": "Macao",
+          "visitors": 1091.0
+        },
+        {
+          "date": "2022-12",
+          "region": "Macao",
+          "visitors": 4213.0
+        },
+        {
+          "date": "2023-01",
+          "region": "Macao",
+          "visitors": 72665.0
+        },
+        {
+          "date": "2023-02",
+          "region": "Macao",
+          "visitors": 98553.0
+        },
+        {
+          "date": "2023-03",
+          "region": "Macao",
+          "visitors": 103162.0
+        },
+        {
+          "date": "2023-04",
+          "region": "Macao",
+          "visitors": 109620.0
+        },
+        {
+          "date": "2023-05",
+          "region": "Macao",
+          "visitors": 91529.0
+        },
+        {
+          "date": "2023-06",
+          "region": "Macao",
+          "visitors": 84643.0
+        },
+        {
+          "date": "2023-07",
+          "region": "Macao",
+          "visitors": 112408.0
+        },
+        {
+          "date": "2023-08",
+          "region": "Macao",
+          "visitors": 135597.0
+        },
+        {
+          "date": "2023-09",
+          "region": "Macao",
+          "visitors": 77388.0
+        },
+        {
+          "date": "2023-10",
+          "region": "Macao",
+          "visitors": 92449.0
+        },
+        {
+          "date": "2023-11",
+          "region": "Macao",
+          "visitors": 91348.0
+        },
+        {
+          "date": "2023-12",
+          "region": "Macao",
+          "visitors": 137322.0
+        },
+        {
+          "date": "2024-01",
+          "region": "Macao",
+          "visitors": 90568.0
+        },
+        {
+          "date": "2024-02",
+          "region": "Macao",
+          "visitors": 102063.0
+        },
+        {
+          "date": "2024-03",
+          "region": "Macao",
+          "visitors": 94954.0
+        },
+        {
+          "date": "2024-04",
+          "region": "Macao",
+          "visitors": 80463.0
+        },
+        {
+          "date": "2024-05",
+          "region": "Macao",
+          "visitors": 83740.0
+        },
+        {
+          "date": "2024-06",
+          "region": "Macao",
+          "visitors": 86225.0
+        },
+        {
+          "date": "2024-07",
+          "region": "Macao",
+          "visitors": 111349.0
+        },
+        {
+          "date": "2024-08",
+          "region": "Macao",
+          "visitors": 129499.0
+        },
+        {
+          "date": "2024-09",
+          "region": "Macao",
+          "visitors": 79678.0
+        },
+        {
+          "date": "2024-10",
+          "region": "Macao",
+          "visitors": 88507.0
+        },
+        {
+          "date": "2024-11",
+          "region": "Macao",
+          "visitors": 87763.0
+        },
+        {
+          "date": "2024-12",
+          "region": "Macao",
+          "visitors": 128791.0
+        },
+        {
+          "date": "2025-01",
+          "region": "Macao",
+          "visitors": 97801.0
+        },
+        {
+          "date": "2025-02",
+          "region": "Macao",
+          "visitors": 89898.0
+        },
+        {
+          "date": "2025-03",
+          "region": "Macao",
+          "visitors": 87651.0
+        },
+        {
+          "date": "2025-04",
+          "region": "Macao",
+          "visitors": 92504.0
+        },
+        {
+          "date": "2025-05",
+          "region": "Macao",
+          "visitors": 96001.0
+        },
+        {
+          "date": "2025-06",
+          "region": "Macao",
+          "visitors": 85363.0
+        },
+        {
+          "date": "2025-07",
+          "region": "Macao",
+          "visitors": 111905.0
+        },
+        {
+          "date": "2025-08",
+          "region": "Macao",
+          "visitors": 141968.0
+        },
+        {
+          "date": "2025-09",
+          "region": "Macao",
+          "visitors": 73198.0
+        },
+        {
+          "date": "2025-10",
+          "region": "Macao",
+          "visitors": 93573.0
+        },
+        {
+          "date": "2025-11",
+          "region": "Macao",
+          "visitors": 92349.0
+        },
+        {
+          "date": "2025-12",
+          "region": "Macao",
+          "visitors": 122571.0
+        },
+        {
+          "date": "2026-01",
+          "region": "Macao",
+          "visitors": 92273.0
+        },
+        {
+          "date": "2026-02",
+          "region": "Macao",
+          "visitors": 99143.0
+        },
+        {
+          "date": "2026-03",
+          "region": "Macao",
+          "visitors": 91383.0
+        },
+        {
+          "date": "2026-04",
+          "region": "Macao",
+          "visitors": 90216.0
+        },
+        {
+          "date": "2026-05",
+          "region": "Macao",
+          "visitors": 93231.0
+        },
+        {
+          "date": "2016-09",
+          "region": "Middle East",
+          "visitors": 16070.0
+        },
+        {
+          "date": "2016-10",
+          "region": "Middle East",
+          "visitors": 15826.0
+        },
+        {
+          "date": "2016-11",
+          "region": "Middle East",
+          "visitors": 13010.0
+        },
+        {
+          "date": "2016-12",
+          "region": "Middle East",
+          "visitors": 12551.0
+        },
+        {
+          "date": "2017-01",
+          "region": "Middle East",
+          "visitors": 12079.0
+        },
+        {
+          "date": "2017-02",
+          "region": "Middle East",
+          "visitors": 10296.0
+        },
+        {
+          "date": "2017-03",
+          "region": "Middle East",
+          "visitors": 15167.0
+        },
+        {
+          "date": "2017-04",
+          "region": "Middle East",
+          "visitors": 16763.0
+        },
+        {
+          "date": "2017-05",
+          "region": "Middle East",
+          "visitors": 11054.0
+        },
+        {
+          "date": "2017-06",
+          "region": "Middle East",
+          "visitors": 9924.0
+        },
+        {
+          "date": "2017-07",
+          "region": "Middle East",
+          "visitors": 12956.0
+        },
+        {
+          "date": "2017-08",
+          "region": "Middle East",
+          "visitors": 14569.0
+        },
+        {
+          "date": "2017-09",
+          "region": "Middle East",
+          "visitors": 13405.0
+        },
+        {
+          "date": "2017-10",
+          "region": "Middle East",
+          "visitors": 16250.0
+        },
+        {
+          "date": "2017-11",
+          "region": "Middle East",
+          "visitors": 13409.0
+        },
+        {
+          "date": "2017-12",
+          "region": "Middle East",
+          "visitors": 13966.0
+        },
+        {
+          "date": "2018-01",
+          "region": "Middle East",
+          "visitors": 15184.0
+        },
+        {
+          "date": "2018-02",
+          "region": "Middle East",
+          "visitors": 9270.0
+        },
+        {
+          "date": "2018-03",
+          "region": "Middle East",
+          "visitors": 14748.0
+        },
+        {
+          "date": "2018-04",
+          "region": "Middle East",
+          "visitors": 15805.0
+        },
+        {
+          "date": "2018-05",
+          "region": "Middle East",
+          "visitors": 9658.0
+        },
+        {
+          "date": "2018-06",
+          "region": "Middle East",
+          "visitors": 9757.0
+        },
+        {
+          "date": "2018-07",
+          "region": "Middle East",
+          "visitors": 13024.0
+        },
+        {
+          "date": "2018-08",
+          "region": "Middle East",
+          "visitors": 14741.0
+        },
+        {
+          "date": "2018-09",
+          "region": "Middle East",
+          "visitors": 12389.0
+        },
+        {
+          "date": "2018-10",
+          "region": "Middle East",
+          "visitors": 14689.0
+        },
+        {
+          "date": "2018-11",
+          "region": "Middle East",
+          "visitors": 12226.0
+        },
+        {
+          "date": "2018-12",
+          "region": "Middle East",
+          "visitors": 12908.0
+        },
+        {
+          "date": "2019-01",
+          "region": "Middle East",
+          "visitors": 11936.0
+        },
+        {
+          "date": "2019-02",
+          "region": "Middle East",
+          "visitors": 9030.0
+        },
+        {
+          "date": "2019-03",
+          "region": "Middle East",
+          "visitors": 12575.0
+        },
+        {
+          "date": "2019-04",
+          "region": "Middle East",
+          "visitors": 15278.0
+        },
+        {
+          "date": "2019-05",
+          "region": "Middle East",
+          "visitors": 8697.0
+        },
+        {
+          "date": "2019-06",
+          "region": "Middle East",
+          "visitors": 9471.0
+        },
+        {
+          "date": "2019-07",
+          "region": "Middle East",
+          "visitors": 12313.0
+        },
+        {
+          "date": "2019-08",
+          "region": "Middle East",
+          "visitors": 11853.0
+        },
+        {
+          "date": "2019-09",
+          "region": "Middle East",
+          "visitors": 9520.0
+        },
+        {
+          "date": "2019-10",
+          "region": "Middle East",
+          "visitors": 12498.0
+        },
+        {
+          "date": "2019-11",
+          "region": "Middle East",
+          "visitors": 9072.0
+        },
+        {
+          "date": "2019-12",
+          "region": "Middle East",
+          "visitors": 8845.0
+        },
+        {
+          "date": "2020-01",
+          "region": "Middle East",
+          "visitors": 8419.0
+        },
+        {
+          "date": "2020-02",
+          "region": "Middle East",
+          "visitors": 814.0
+        },
+        {
+          "date": "2020-03",
+          "region": "Middle East",
+          "visitors": 371.0
+        },
+        {
+          "date": "2020-04",
+          "region": "Middle East",
+          "visitors": 2.0
+        },
+        {
+          "date": "2020-05",
+          "region": "Middle East",
+          "visitors": 3.0
+        },
+        {
+          "date": "2020-06",
+          "region": "Middle East",
+          "visitors": 269.0
+        },
+        {
+          "date": "2020-07",
+          "region": "Middle East",
+          "visitors": 540.0
+        },
+        {
+          "date": "2020-08",
+          "region": "Middle East",
+          "visitors": 55.0
+        },
+        {
+          "date": "2020-09",
+          "region": "Middle East",
+          "visitors": 53.0
+        },
+        {
+          "date": "2020-10",
+          "region": "Middle East",
+          "visitors": 13.0
+        },
+        {
+          "date": "2020-11",
+          "region": "Middle East",
+          "visitors": 14.0
+        },
+        {
+          "date": "2020-12",
+          "region": "Middle East",
+          "visitors": 21.0
+        },
+        {
+          "date": "2021-01",
+          "region": "Middle East",
+          "visitors": 27.0
+        },
+        {
+          "date": "2021-02",
+          "region": "Middle East",
+          "visitors": 20.0
+        },
+        {
+          "date": "2021-03",
+          "region": "Middle East",
+          "visitors": 10.0
+        },
+        {
+          "date": "2021-04",
+          "region": "Middle East",
+          "visitors": 43.0
+        },
+        {
+          "date": "2021-05",
+          "region": "Middle East",
+          "visitors": 7.0
+        },
+        {
+          "date": "2021-06",
+          "region": "Middle East",
+          "visitors": 15.0
+        },
+        {
+          "date": "2021-07",
+          "region": "Middle East",
+          "visitors": 19.0
+        },
+        {
+          "date": "2021-08",
+          "region": "Middle East",
+          "visitors": 21.0
+        },
+        {
+          "date": "2021-09",
+          "region": "Middle East",
+          "visitors": 13.0
+        },
+        {
+          "date": "2021-10",
+          "region": "Middle East",
+          "visitors": 42.0
+        },
+        {
+          "date": "2021-11",
+          "region": "Middle East",
+          "visitors": 76.0
+        },
+        {
+          "date": "2021-12",
+          "region": "Middle East",
+          "visitors": 32.0
+        },
+        {
+          "date": "2022-01",
+          "region": "Middle East",
+          "visitors": 15.0
+        },
+        {
+          "date": "2022-02",
+          "region": "Middle East",
+          "visitors": 5.0
+        },
+        {
+          "date": "2022-03",
+          "region": "Middle East",
+          "visitors": 5.0
+        },
+        {
+          "date": "2022-04",
+          "region": "Middle East",
+          "visitors": 7.0
+        },
+        {
+          "date": "2022-05",
+          "region": "Middle East",
+          "visitors": 59.0
+        },
+        {
+          "date": "2022-06",
+          "region": "Middle East",
+          "visitors": 60.0
+        },
+        {
+          "date": "2022-07",
+          "region": "Middle East",
+          "visitors": 74.0
+        },
+        {
+          "date": "2022-08",
+          "region": "Middle East",
+          "visitors": 148.0
+        },
+        {
+          "date": "2022-09",
+          "region": "Middle East",
+          "visitors": 273.0
+        },
+        {
+          "date": "2022-10",
+          "region": "Middle East",
+          "visitors": 472.0
+        },
+        {
+          "date": "2022-11",
+          "region": "Middle East",
+          "visitors": 722.0
+        },
+        {
+          "date": "2022-12",
+          "region": "Middle East",
+          "visitors": 843.0
+        },
+        {
+          "date": "2023-01",
+          "region": "Middle East",
+          "visitors": 1532.0
+        },
+        {
+          "date": "2023-02",
+          "region": "Middle East",
+          "visitors": 3021.0
+        },
+        {
+          "date": "2023-03",
+          "region": "Middle East",
+          "visitors": 3743.0
+        },
+        {
+          "date": "2023-04",
+          "region": "Middle East",
+          "visitors": 5570.0
+        },
+        {
+          "date": "2023-05",
+          "region": "Middle East",
+          "visitors": 3897.0
+        },
+        {
+          "date": "2023-06",
+          "region": "Middle East",
+          "visitors": 4500.0
+        },
+        {
+          "date": "2023-07",
+          "region": "Middle East",
+          "visitors": 4672.0
+        },
+        {
+          "date": "2023-08",
+          "region": "Middle East",
+          "visitors": 5059.0
+        },
+        {
+          "date": "2023-09",
+          "region": "Middle East",
+          "visitors": 6007.0
+        },
+        {
+          "date": "2023-10",
+          "region": "Middle East",
+          "visitors": 6099.0
+        },
+        {
+          "date": "2023-11",
+          "region": "Middle East",
+          "visitors": 4312.0
+        },
+        {
+          "date": "2023-12",
+          "region": "Middle East",
+          "visitors": 4220.0
+        },
+        {
+          "date": "2024-01",
+          "region": "Middle East",
+          "visitors": 4390.0
+        },
+        {
+          "date": "2024-02",
+          "region": "Middle East",
+          "visitors": 4430.0
+        },
+        {
+          "date": "2024-03",
+          "region": "Middle East",
+          "visitors": 4456.0
+        },
+        {
+          "date": "2024-04",
+          "region": "Middle East",
+          "visitors": 6618.0
+        },
+        {
+          "date": "2024-05",
+          "region": "Middle East",
+          "visitors": 4760.0
+        },
+        {
+          "date": "2024-06",
+          "region": "Middle East",
+          "visitors": 5051.0
+        },
+        {
+          "date": "2024-07",
+          "region": "Middle East",
+          "visitors": 4543.0
+        },
+        {
+          "date": "2024-08",
+          "region": "Middle East",
+          "visitors": 4572.0
+        },
+        {
+          "date": "2024-09",
+          "region": "Middle East",
+          "visitors": 6076.0
+        },
+        {
+          "date": "2024-10",
+          "region": "Middle East",
+          "visitors": 7784.0
+        },
+        {
+          "date": "2024-11",
+          "region": "Middle East",
+          "visitors": 7352.0
+        },
+        {
+          "date": "2024-12",
+          "region": "Middle East",
+          "visitors": 6847.0
+        },
+        {
+          "date": "2025-01",
+          "region": "Middle East",
+          "visitors": 5446.0
+        },
+        {
+          "date": "2025-02",
+          "region": "Middle East",
+          "visitors": 5019.0
+        },
+        {
+          "date": "2025-03",
+          "region": "Middle East",
+          "visitors": 6688.0
+        },
+        {
+          "date": "2025-04",
+          "region": "Middle East",
+          "visitors": 9026.0
+        },
+        {
+          "date": "2025-05",
+          "region": "Middle East",
+          "visitors": 5644.0
+        },
+        {
+          "date": "2025-06",
+          "region": "Middle East",
+          "visitors": 6471.0
+        },
+        {
+          "date": "2025-07",
+          "region": "Middle East",
+          "visitors": 6913.0
+        },
+        {
+          "date": "2025-08",
+          "region": "Middle East",
+          "visitors": 8624.0
+        },
+        {
+          "date": "2025-09",
+          "region": "Middle East",
+          "visitors": 7551.0
+        },
+        {
+          "date": "2025-10",
+          "region": "Middle East",
+          "visitors": 9772.0
+        },
+        {
+          "date": "2025-11",
+          "region": "Middle East",
+          "visitors": 10650.0
+        },
+        {
+          "date": "2025-12",
+          "region": "Middle East",
+          "visitors": 9933.0
+        },
+        {
+          "date": "2026-01",
+          "region": "Middle East",
+          "visitors": 9673.0
+        },
+        {
+          "date": "2026-02",
+          "region": "Middle East",
+          "visitors": 5000.0
+        },
+        {
+          "date": "2026-03",
+          "region": "Middle East",
+          "visitors": 5290.0
+        },
+        {
+          "date": "2026-04",
+          "region": "Middle East",
+          "visitors": 7913.0
+        },
+        {
+          "date": "2026-05",
+          "region": "Middle East",
+          "visitors": 8001.0
+        },
+        {
+          "date": "2016-09",
+          "region": "North Asia",
+          "visitors": 222867.0
+        },
+        {
+          "date": "2016-10",
+          "region": "North Asia",
+          "visitors": 208275.0
+        },
+        {
+          "date": "2016-11",
+          "region": "North Asia",
+          "visitors": 241826.0
+        },
+        {
+          "date": "2016-12",
+          "region": "North Asia",
+          "visitors": 253066.0
+        },
+        {
+          "date": "2017-01",
+          "region": "North Asia",
+          "visitors": 243757.0
+        },
+        {
+          "date": "2017-02",
+          "region": "North Asia",
+          "visitors": 260958.0
+        },
+        {
+          "date": "2017-03",
+          "region": "North Asia",
+          "visitors": 259632.0
+        },
+        {
+          "date": "2017-04",
+          "region": "North Asia",
+          "visitors": 199681.0
+        },
+        {
+          "date": "2017-05",
+          "region": "North Asia",
+          "visitors": 221583.0
+        },
+        {
+          "date": "2017-06",
+          "region": "North Asia",
+          "visitors": 205091.0
+        },
+        {
+          "date": "2017-07",
+          "region": "North Asia",
+          "visitors": 205351.0
+        },
+        {
+          "date": "2017-08",
+          "region": "North Asia",
+          "visitors": 250270.0
+        },
+        {
+          "date": "2017-09",
+          "region": "North Asia",
+          "visitors": 227893.0
+        },
+        {
+          "date": "2017-10",
+          "region": "North Asia",
+          "visitors": 242989.0
+        },
+        {
+          "date": "2017-11",
+          "region": "North Asia",
+          "visitors": 256327.0
+        },
+        {
+          "date": "2017-12",
+          "region": "North Asia",
+          "visitors": 253361.0
+        },
+        {
+          "date": "2018-01",
+          "region": "North Asia",
+          "visitors": 282749.0
+        },
+        {
+          "date": "2018-02",
+          "region": "North Asia",
+          "visitors": 206696.0
+        },
+        {
+          "date": "2018-03",
+          "region": "North Asia",
+          "visitors": 280132.0
+        },
+        {
+          "date": "2018-04",
+          "region": "North Asia",
+          "visitors": 205845.0
+        },
+        {
+          "date": "2018-05",
+          "region": "North Asia",
+          "visitors": 223367.0
+        },
+        {
+          "date": "2018-06",
+          "region": "North Asia",
+          "visitors": 198258.0
+        },
+        {
+          "date": "2018-07",
+          "region": "North Asia",
+          "visitors": 193718.0
+        },
+        {
+          "date": "2018-08",
+          "region": "North Asia",
+          "visitors": 240674.0
+        },
+        {
+          "date": "2018-09",
+          "region": "North Asia",
+          "visitors": 215034.0
+        },
+        {
+          "date": "2018-10",
+          "region": "North Asia",
+          "visitors": 225060.0
+        },
+        {
+          "date": "2018-11",
+          "region": "North Asia",
+          "visitors": 265069.0
+        },
+        {
+          "date": "2018-12",
+          "region": "North Asia",
+          "visitors": 271509.0
+        },
+        {
+          "date": "2019-01",
+          "region": "North Asia",
+          "visitors": 281091.0
+        },
+        {
+          "date": "2019-02",
+          "region": "North Asia",
+          "visitors": 243822.0
+        },
+        {
+          "date": "2019-03",
+          "region": "North Asia",
+          "visitors": 297883.0
+        },
+        {
+          "date": "2019-04",
+          "region": "North Asia",
+          "visitors": 210562.0
+        },
+        {
+          "date": "2019-05",
+          "region": "North Asia",
+          "visitors": 228985.0
+        },
+        {
+          "date": "2019-06",
+          "region": "North Asia",
+          "visitors": 193628.0
+        },
+        {
+          "date": "2019-07",
+          "region": "North Asia",
+          "visitors": 172929.0
+        },
+        {
+          "date": "2019-08",
+          "region": "North Asia",
+          "visitors": 165755.0
+        },
+        {
+          "date": "2019-09",
+          "region": "North Asia",
+          "visitors": 109293.0
+        },
+        {
+          "date": "2019-10",
+          "region": "North Asia",
+          "visitors": 108723.0
+        },
+        {
+          "date": "2019-11",
+          "region": "North Asia",
+          "visitors": 90381.0
+        },
+        {
+          "date": "2019-12",
+          "region": "North Asia",
+          "visitors": 88136.0
+        },
+        {
+          "date": "2020-01",
+          "region": "North Asia",
+          "visitors": 83304.0
+        },
+        {
+          "date": "2020-02",
+          "region": "North Asia",
+          "visitors": 10319.0
+        },
+        {
+          "date": "2020-03",
+          "region": "North Asia",
+          "visitors": 1546.0
+        },
+        {
+          "date": "2020-04",
+          "region": "North Asia",
+          "visitors": 40.0
+        },
+        {
+          "date": "2020-05",
+          "region": "North Asia",
+          "visitors": 76.0
+        },
+        {
+          "date": "2020-06",
+          "region": "North Asia",
+          "visitors": 136.0
+        },
+        {
+          "date": "2020-07",
+          "region": "North Asia",
+          "visitors": 158.0
+        },
+        {
+          "date": "2020-08",
+          "region": "North Asia",
+          "visitors": 44.0
+        },
+        {
+          "date": "2020-09",
+          "region": "North Asia",
+          "visitors": 62.0
+        },
+        {
+          "date": "2020-10",
+          "region": "North Asia",
+          "visitors": 65.0
+        },
+        {
+          "date": "2020-11",
+          "region": "North Asia",
+          "visitors": 72.0
+        },
+        {
+          "date": "2020-12",
+          "region": "North Asia",
+          "visitors": 50.0
+        },
+        {
+          "date": "2021-01",
+          "region": "North Asia",
+          "visitors": 35.0
+        },
+        {
+          "date": "2021-02",
+          "region": "North Asia",
+          "visitors": 36.0
+        },
+        {
+          "date": "2021-03",
+          "region": "North Asia",
+          "visitors": 19.0
+        },
+        {
+          "date": "2021-04",
+          "region": "North Asia",
+          "visitors": 30.0
+        },
+        {
+          "date": "2021-05",
+          "region": "North Asia",
+          "visitors": 59.0
+        },
+        {
+          "date": "2021-06",
+          "region": "North Asia",
+          "visitors": 37.0
+        },
+        {
+          "date": "2021-07",
+          "region": "North Asia",
+          "visitors": 31.0
+        },
+        {
+          "date": "2021-08",
+          "region": "North Asia",
+          "visitors": 91.0
+        },
+        {
+          "date": "2021-09",
+          "region": "North Asia",
+          "visitors": 140.0
+        },
+        {
+          "date": "2021-10",
+          "region": "North Asia",
+          "visitors": 186.0
+        },
+        {
+          "date": "2021-11",
+          "region": "North Asia",
+          "visitors": 212.0
+        },
+        {
+          "date": "2021-12",
+          "region": "North Asia",
+          "visitors": 97.0
+        },
+        {
+          "date": "2022-01",
+          "region": "North Asia",
+          "visitors": 32.0
+        },
+        {
+          "date": "2022-02",
+          "region": "North Asia",
+          "visitors": 29.0
+        },
+        {
+          "date": "2022-03",
+          "region": "North Asia",
+          "visitors": 7.0
+        },
+        {
+          "date": "2022-04",
+          "region": "North Asia",
+          "visitors": 42.0
+        },
+        {
+          "date": "2022-05",
+          "region": "North Asia",
+          "visitors": 268.0
+        },
+        {
+          "date": "2022-06",
+          "region": "North Asia",
+          "visitors": 290.0
+        },
+        {
+          "date": "2022-07",
+          "region": "North Asia",
+          "visitors": 368.0
+        },
+        {
+          "date": "2022-08",
+          "region": "North Asia",
+          "visitors": 629.0
+        },
+        {
+          "date": "2022-09",
+          "region": "North Asia",
+          "visitors": 892.0
+        },
+        {
+          "date": "2022-10",
+          "region": "North Asia",
+          "visitors": 2420.0
+        },
+        {
+          "date": "2022-11",
+          "region": "North Asia",
+          "visitors": 4176.0
+        },
+        {
+          "date": "2022-12",
+          "region": "North Asia",
+          "visitors": 6477.0
+        },
+        {
+          "date": "2023-01",
+          "region": "North Asia",
+          "visitors": 12135.0
+        },
+        {
+          "date": "2023-02",
+          "region": "North Asia",
+          "visitors": 26511.0
+        },
+        {
+          "date": "2023-03",
+          "region": "North Asia",
+          "visitors": 40000.0
+        },
+        {
+          "date": "2023-04",
+          "region": "North Asia",
+          "visitors": 43175.0
+        },
+        {
+          "date": "2023-05",
+          "region": "North Asia",
+          "visitors": 52778.0
+        },
+        {
+          "date": "2023-06",
+          "region": "North Asia",
+          "visitors": 49292.0
+        },
+        {
+          "date": "2023-07",
+          "region": "North Asia",
+          "visitors": 56170.0
+        },
+        {
+          "date": "2023-08",
+          "region": "North Asia",
+          "visitors": 73533.0
+        },
+        {
+          "date": "2023-09",
+          "region": "North Asia",
+          "visitors": 83152.0
+        },
+        {
+          "date": "2023-10",
+          "region": "North Asia",
+          "visitors": 85712.0
+        },
+        {
+          "date": "2023-11",
+          "region": "North Asia",
+          "visitors": 113481.0
+        },
+        {
+          "date": "2023-12",
+          "region": "North Asia",
+          "visitors": 118067.0
+        },
+        {
+          "date": "2024-01",
+          "region": "North Asia",
+          "visitors": 144389.0
+        },
+        {
+          "date": "2024-02",
+          "region": "North Asia",
+          "visitors": 131893.0
+        },
+        {
+          "date": "2024-03",
+          "region": "North Asia",
+          "visitors": 129995.0
+        },
+        {
+          "date": "2024-04",
+          "region": "North Asia",
+          "visitors": 102717.0
+        },
+        {
+          "date": "2024-05",
+          "region": "North Asia",
+          "visitors": 98963.0
+        },
+        {
+          "date": "2024-06",
+          "region": "North Asia",
+          "visitors": 80651.0
+        },
+        {
+          "date": "2024-07",
+          "region": "North Asia",
+          "visitors": 79720.0
+        },
+        {
+          "date": "2024-08",
+          "region": "North Asia",
+          "visitors": 109392.0
+        },
+        {
+          "date": "2024-09",
+          "region": "North Asia",
+          "visitors": 118551.0
+        },
+        {
+          "date": "2024-10",
+          "region": "North Asia",
+          "visitors": 125186.0
+        },
+        {
+          "date": "2024-11",
+          "region": "North Asia",
+          "visitors": 139418.0
+        },
+        {
+          "date": "2024-12",
+          "region": "North Asia",
+          "visitors": 154167.0
+        },
+        {
+          "date": "2025-01",
+          "region": "North Asia",
+          "visitors": 178790.0
+        },
+        {
+          "date": "2025-02",
+          "region": "North Asia",
+          "visitors": 187967.0
+        },
+        {
+          "date": "2025-03",
+          "region": "North Asia",
+          "visitors": 178220.0
+        },
+        {
+          "date": "2025-04",
+          "region": "North Asia",
+          "visitors": 104407.0
+        },
+        {
+          "date": "2025-05",
+          "region": "North Asia",
+          "visitors": 129560.0
+        },
+        {
+          "date": "2025-06",
+          "region": "North Asia",
+          "visitors": 95826.0
+        },
+        {
+          "date": "2025-07",
+          "region": "North Asia",
+          "visitors": 97491.0
+        },
+        {
+          "date": "2025-08",
+          "region": "North Asia",
+          "visitors": 132183.0
+        },
+        {
+          "date": "2025-09",
+          "region": "North Asia",
+          "visitors": 115717.0
+        },
+        {
+          "date": "2025-10",
+          "region": "North Asia",
+          "visitors": 155080.0
+        },
+        {
+          "date": "2025-11",
+          "region": "North Asia",
+          "visitors": 171496.0
+        },
+        {
+          "date": "2025-12",
+          "region": "North Asia",
+          "visitors": 158739.0
+        },
+        {
+          "date": "2026-01",
+          "region": "North Asia",
+          "visitors": 186951.0
+        },
+        {
+          "date": "2026-02",
+          "region": "North Asia",
+          "visitors": 139657.0
+        },
+        {
+          "date": "2026-03",
+          "region": "North Asia",
+          "visitors": 169278.0
+        },
+        {
+          "date": "2026-04",
+          "region": "North Asia",
+          "visitors": 112201.0
+        },
+        {
+          "date": "2026-05",
+          "region": "North Asia",
+          "visitors": 118756.0
+        },
+        {
+          "date": "2016-09",
+          "region": "Not identified",
+          "visitors": 12.0
+        },
+        {
+          "date": "2016-10",
+          "region": "Not identified",
+          "visitors": 6.0
+        },
+        {
+          "date": "2016-11",
+          "region": "Not identified",
+          "visitors": 16.0
+        },
+        {
+          "date": "2016-12",
+          "region": "Not identified",
+          "visitors": 20.0
+        },
+        {
+          "date": "2017-01",
+          "region": "Not identified",
+          "visitors": 6.0
+        },
+        {
+          "date": "2017-02",
+          "region": "Not identified",
+          "visitors": 4.0
+        },
+        {
+          "date": "2017-03",
+          "region": "Not identified",
+          "visitors": 6.0
+        },
+        {
+          "date": "2017-04",
+          "region": "Not identified",
+          "visitors": 5.0
+        },
+        {
+          "date": "2017-05",
+          "region": "Not identified",
+          "visitors": 12.0
+        },
+        {
+          "date": "2017-06",
+          "region": "Not identified",
+          "visitors": 7.0
+        },
+        {
+          "date": "2017-07",
+          "region": "Not identified",
+          "visitors": 6.0
+        },
+        {
+          "date": "2017-08",
+          "region": "Not identified",
+          "visitors": 4.0
+        },
+        {
+          "date": "2017-09",
+          "region": "Not identified",
+          "visitors": 5.0
+        },
+        {
+          "date": "2017-10",
+          "region": "Not identified",
+          "visitors": 14.0
+        },
+        {
+          "date": "2017-11",
+          "region": "Not identified",
+          "visitors": 11.0
+        },
+        {
+          "date": "2017-12",
+          "region": "Not identified",
+          "visitors": 10.0
+        },
+        {
+          "date": "2018-01",
+          "region": "Not identified",
+          "visitors": 26.0
+        },
+        {
+          "date": "2018-02",
+          "region": "Not identified",
+          "visitors": 8.0
+        },
+        {
+          "date": "2018-03",
+          "region": "Not identified",
+          "visitors": 22.0
+        },
+        {
+          "date": "2018-04",
+          "region": "Not identified",
+          "visitors": 10.0
+        },
+        {
+          "date": "2018-05",
+          "region": "Not identified",
+          "visitors": 11.0
+        },
+        {
+          "date": "2018-06",
+          "region": "Not identified",
+          "visitors": 3.0
+        },
+        {
+          "date": "2018-07",
+          "region": "Not identified",
+          "visitors": 7.0
+        },
+        {
+          "date": "2018-08",
+          "region": "Not identified",
+          "visitors": 11.0
+        },
+        {
+          "date": "2018-09",
+          "region": "Not identified",
+          "visitors": 7.0
+        },
+        {
+          "date": "2018-10",
+          "region": "Not identified",
+          "visitors": 20.0
+        },
+        {
+          "date": "2018-11",
+          "region": "Not identified",
+          "visitors": 9.0
+        },
+        {
+          "date": "2018-12",
+          "region": "Not identified",
+          "visitors": 5.0
+        },
+        {
+          "date": "2019-01",
+          "region": "Not identified",
+          "visitors": 6.0
+        },
+        {
+          "date": "2019-02",
+          "region": "Not identified",
+          "visitors": 7.0
+        },
+        {
+          "date": "2019-03",
+          "region": "Not identified",
+          "visitors": 4.0
+        },
+        {
+          "date": "2019-04",
+          "region": "Not identified",
+          "visitors": 8.0
+        },
+        {
+          "date": "2019-05",
+          "region": "Not identified",
+          "visitors": 8.0
+        },
+        {
+          "date": "2019-06",
+          "region": "Not identified",
+          "visitors": 13.0
+        },
+        {
+          "date": "2019-07",
+          "region": "Not identified",
+          "visitors": 11.0
+        },
+        {
+          "date": "2019-08",
+          "region": "Not identified",
+          "visitors": 0.0
+        },
+        {
+          "date": "2019-09",
+          "region": "Not identified",
+          "visitors": 5.0
+        },
+        {
+          "date": "2019-10",
+          "region": "Not identified",
+          "visitors": 1.0
+        },
+        {
+          "date": "2019-11",
+          "region": "Not identified",
+          "visitors": 6.0
+        },
+        {
+          "date": "2019-12",
+          "region": "Not identified",
+          "visitors": 2.0
+        },
+        {
+          "date": "2020-01",
+          "region": "Not identified",
+          "visitors": 5.0
+        },
+        {
+          "date": "2020-02",
+          "region": "Not identified",
+          "visitors": 0.0
+        },
+        {
+          "date": "2020-03",
+          "region": "Not identified",
+          "visitors": 1.0
+        },
+        {
+          "date": "2020-04",
+          "region": "Not identified",
+          "visitors": 0.0
+        },
+        {
+          "date": "2020-05",
+          "region": "Not identified",
+          "visitors": 0.0
+        },
+        {
+          "date": "2020-06",
+          "region": "Not identified",
+          "visitors": 0.0
+        },
+        {
+          "date": "2020-07",
+          "region": "Not identified",
+          "visitors": 0.0
+        },
+        {
+          "date": "2020-08",
+          "region": "Not identified",
+          "visitors": 0.0
+        },
+        {
+          "date": "2020-09",
+          "region": "Not identified",
+          "visitors": 0.0
+        },
+        {
+          "date": "2020-10",
+          "region": "Not identified",
+          "visitors": 0.0
+        },
+        {
+          "date": "2020-11",
+          "region": "Not identified",
+          "visitors": 0.0
+        },
+        {
+          "date": "2020-12",
+          "region": "Not identified",
+          "visitors": 0.0
+        },
+        {
+          "date": "2021-01",
+          "region": "Not identified",
+          "visitors": 0.0
+        },
+        {
+          "date": "2021-02",
+          "region": "Not identified",
+          "visitors": 0.0
+        },
+        {
+          "date": "2021-03",
+          "region": "Not identified",
+          "visitors": 0.0
+        },
+        {
+          "date": "2021-04",
+          "region": "Not identified",
+          "visitors": 0.0
+        },
+        {
+          "date": "2021-05",
+          "region": "Not identified",
+          "visitors": 0.0
+        },
+        {
+          "date": "2021-06",
+          "region": "Not identified",
+          "visitors": 0.0
+        },
+        {
+          "date": "2021-07",
+          "region": "Not identified",
+          "visitors": 0.0
+        },
+        {
+          "date": "2021-08",
+          "region": "Not identified",
+          "visitors": 0.0
+        },
+        {
+          "date": "2021-09",
+          "region": "Not identified",
+          "visitors": 0.0
+        },
+        {
+          "date": "2021-10",
+          "region": "Not identified",
+          "visitors": 0.0
+        },
+        {
+          "date": "2021-11",
+          "region": "Not identified",
+          "visitors": 0.0
+        },
+        {
+          "date": "2021-12",
+          "region": "Not identified",
+          "visitors": 0.0
+        },
+        {
+          "date": "2022-01",
+          "region": "Not identified",
+          "visitors": 1.0
+        },
+        {
+          "date": "2022-02",
+          "region": "Not identified",
+          "visitors": 0.0
+        },
+        {
+          "date": "2022-03",
+          "region": "Not identified",
+          "visitors": 0.0
+        },
+        {
+          "date": "2022-04",
+          "region": "Not identified",
+          "visitors": 0.0
+        },
+        {
+          "date": "2022-05",
+          "region": "Not identified",
+          "visitors": 0.0
+        },
+        {
+          "date": "2022-06",
+          "region": "Not identified",
+          "visitors": 0.0
+        },
+        {
+          "date": "2022-07",
+          "region": "Not identified",
+          "visitors": 0.0
+        },
+        {
+          "date": "2022-08",
+          "region": "Not identified",
+          "visitors": 1.0
+        },
+        {
+          "date": "2022-09",
+          "region": "Not identified",
+          "visitors": 0.0
+        },
+        {
+          "date": "2022-10",
+          "region": "Not identified",
+          "visitors": 1.0
+        },
+        {
+          "date": "2022-11",
+          "region": "Not identified",
+          "visitors": 0.0
+        },
+        {
+          "date": "2022-12",
+          "region": "Not identified",
+          "visitors": 2.0
+        },
+        {
+          "date": "2023-01",
+          "region": "Not identified",
+          "visitors": 4.0
+        },
+        {
+          "date": "2023-02",
+          "region": "Not identified",
+          "visitors": 2.0
+        },
+        {
+          "date": "2023-03",
+          "region": "Not identified",
+          "visitors": 8.0
+        },
+        {
+          "date": "2023-04",
+          "region": "Not identified",
+          "visitors": 7.0
+        },
+        {
+          "date": "2023-05",
+          "region": "Not identified",
+          "visitors": 8.0
+        },
+        {
+          "date": "2023-06",
+          "region": "Not identified",
+          "visitors": 9.0
+        },
+        {
+          "date": "2023-07",
+          "region": "Not identified",
+          "visitors": 4.0
+        },
+        {
+          "date": "2023-08",
+          "region": "Not identified",
+          "visitors": 14.0
+        },
+        {
+          "date": "2023-09",
+          "region": "Not identified",
+          "visitors": 9.0
+        },
+        {
+          "date": "2023-10",
+          "region": "Not identified",
+          "visitors": 13.0
+        },
+        {
+          "date": "2023-11",
+          "region": "Not identified",
+          "visitors": 15.0
+        },
+        {
+          "date": "2023-12",
+          "region": "Not identified",
+          "visitors": 18.0
+        },
+        {
+          "date": "2024-01",
+          "region": "Not identified",
+          "visitors": 11.0
+        },
+        {
+          "date": "2024-02",
+          "region": "Not identified",
+          "visitors": 12.0
+        },
+        {
+          "date": "2024-03",
+          "region": "Not identified",
+          "visitors": 12.0
+        },
+        {
+          "date": "2024-04",
+          "region": "Not identified",
+          "visitors": 7.0
+        },
+        {
+          "date": "2024-05",
+          "region": "Not identified",
+          "visitors": 8.0
+        },
+        {
+          "date": "2024-06",
+          "region": "Not identified",
+          "visitors": 12.0
+        },
+        {
+          "date": "2024-07",
+          "region": "Not identified",
+          "visitors": 12.0
+        },
+        {
+          "date": "2024-08",
+          "region": "Not identified",
+          "visitors": 24.0
+        },
+        {
+          "date": "2024-09",
+          "region": "Not identified",
+          "visitors": 9.0
+        },
+        {
+          "date": "2024-10",
+          "region": "Not identified",
+          "visitors": 18.0
+        },
+        {
+          "date": "2024-11",
+          "region": "Not identified",
+          "visitors": 11.0
+        },
+        {
+          "date": "2024-12",
+          "region": "Not identified",
+          "visitors": 6.0
+        },
+        {
+          "date": "2025-01",
+          "region": "Not identified",
+          "visitors": 7.0
+        },
+        {
+          "date": "2025-02",
+          "region": "Not identified",
+          "visitors": 6.0
+        },
+        {
+          "date": "2025-03",
+          "region": "Not identified",
+          "visitors": 10.0
+        },
+        {
+          "date": "2025-04",
+          "region": "Not identified",
+          "visitors": 10.0
+        },
+        {
+          "date": "2025-05",
+          "region": "Not identified",
+          "visitors": 11.0
+        },
+        {
+          "date": "2025-06",
+          "region": "Not identified",
+          "visitors": 6.0
+        },
+        {
+          "date": "2025-07",
+          "region": "Not identified",
+          "visitors": 7.0
+        },
+        {
+          "date": "2025-08",
+          "region": "Not identified",
+          "visitors": 8.0
+        },
+        {
+          "date": "2025-09",
+          "region": "Not identified",
+          "visitors": 12.0
+        },
+        {
+          "date": "2025-10",
+          "region": "Not identified",
+          "visitors": 11.0
+        },
+        {
+          "date": "2025-11",
+          "region": "Not identified",
+          "visitors": 21.0
+        },
+        {
+          "date": "2025-12",
+          "region": "Not identified",
+          "visitors": 13.0
+        },
+        {
+          "date": "2026-01",
+          "region": "Not identified",
+          "visitors": 9.0
+        },
+        {
+          "date": "2026-02",
+          "region": "Not identified",
+          "visitors": 5.0
+        },
+        {
+          "date": "2026-03",
+          "region": "Not identified",
+          "visitors": 10.0
+        },
+        {
+          "date": "2026-04",
+          "region": "Not identified",
+          "visitors": 10.0
+        },
+        {
+          "date": "2026-05",
+          "region": "Not identified",
+          "visitors": 10.0
+        },
+        {
+          "date": "2016-09",
+          "region": "South and Southeast Asia",
+          "visitors": 272247.0
+        },
+        {
+          "date": "2016-10",
+          "region": "South and Southeast Asia",
+          "visitors": 308038.0
+        },
+        {
+          "date": "2016-11",
+          "region": "South and Southeast Asia",
+          "visitors": 343317.0
+        },
+        {
+          "date": "2016-12",
+          "region": "South and Southeast Asia",
+          "visitors": 440880.0
+        },
+        {
+          "date": "2017-01",
+          "region": "South and Southeast Asia",
+          "visitors": 268231.0
+        },
+        {
+          "date": "2017-02",
+          "region": "South and Southeast Asia",
+          "visitors": 237639.0
+        },
+        {
+          "date": "2017-03",
+          "region": "South and Southeast Asia",
+          "visitors": 331953.0
+        },
+        {
+          "date": "2017-04",
+          "region": "South and Southeast Asia",
+          "visitors": 330009.0
+        },
+        {
+          "date": "2017-05",
+          "region": "South and Southeast Asia",
+          "visitors": 325920.0
+        },
+        {
+          "date": "2017-06",
+          "region": "South and Southeast Asia",
+          "visitors": 335496.0
+        },
+        {
+          "date": "2017-07",
+          "region": "South and Southeast Asia",
+          "visitors": 266014.0
+        },
+        {
+          "date": "2017-08",
+          "region": "South and Southeast Asia",
+          "visitors": 230800.0
+        },
+        {
+          "date": "2017-09",
+          "region": "South and Southeast Asia",
+          "visitors": 258508.0
+        },
+        {
+          "date": "2017-10",
+          "region": "South and Southeast Asia",
+          "visitors": 297991.0
+        },
+        {
+          "date": "2017-11",
+          "region": "South and Southeast Asia",
+          "visitors": 344523.0
+        },
+        {
+          "date": "2017-12",
+          "region": "South and Southeast Asia",
+          "visitors": 412349.0
+        },
+        {
+          "date": "2018-01",
+          "region": "South and Southeast Asia",
+          "visitors": 304308.0
+        },
+        {
+          "date": "2018-02",
+          "region": "South and Southeast Asia",
+          "visitors": 176512.0
+        },
+        {
+          "date": "2018-03",
+          "region": "South and Southeast Asia",
+          "visitors": 338377.0
+        },
+        {
+          "date": "2018-04",
+          "region": "South and Southeast Asia",
+          "visitors": 314091.0
+        },
+        {
+          "date": "2018-05",
+          "region": "South and Southeast Asia",
+          "visitors": 319104.0
+        },
+        {
+          "date": "2018-06",
+          "region": "South and Southeast Asia",
+          "visitors": 337834.0
+        },
+        {
+          "date": "2018-07",
+          "region": "South and Southeast Asia",
+          "visitors": 240865.0
+        },
+        {
+          "date": "2018-08",
+          "region": "South and Southeast Asia",
+          "visitors": 226806.0
+        },
+        {
+          "date": "2018-09",
+          "region": "South and Southeast Asia",
+          "visitors": 236218.0
+        },
+        {
+          "date": "2018-10",
+          "region": "South and Southeast Asia",
+          "visitors": 293650.0
+        },
+        {
+          "date": "2018-11",
+          "region": "South and Southeast Asia",
+          "visitors": 362585.0
+        },
+        {
+          "date": "2018-12",
+          "region": "South and Southeast Asia",
+          "visitors": 434339.0
+        },
+        {
+          "date": "2019-01",
+          "region": "South and Southeast Asia",
+          "visitors": 289212.0
+        },
+        {
+          "date": "2019-02",
+          "region": "South and Southeast Asia",
+          "visitors": 228967.0
+        },
+        {
+          "date": "2019-03",
+          "region": "South and Southeast Asia",
+          "visitors": 358200.0
+        },
+        {
+          "date": "2019-04",
+          "region": "South and Southeast Asia",
+          "visitors": 325757.0
+        },
+        {
+          "date": "2019-05",
+          "region": "South and Southeast Asia",
+          "visitors": 347121.0
+        },
+        {
+          "date": "2019-06",
+          "region": "South and Southeast Asia",
+          "visitors": 359946.0
+        },
+        {
+          "date": "2019-07",
+          "region": "South and Southeast Asia",
+          "visitors": 242182.0
+        },
+        {
+          "date": "2019-08",
+          "region": "South and Southeast Asia",
+          "visitors": 157320.0
+        },
+        {
+          "date": "2019-09",
+          "region": "South and Southeast Asia",
+          "visitors": 157064.0
+        },
+        {
+          "date": "2019-10",
+          "region": "South and Southeast Asia",
+          "visitors": 178379.0
+        },
+        {
+          "date": "2019-11",
+          "region": "South and Southeast Asia",
+          "visitors": 181203.0
+        },
+        {
+          "date": "2019-12",
+          "region": "South and Southeast Asia",
+          "visitors": 229114.0
+        },
+        {
+          "date": "2020-01",
+          "region": "South and Southeast Asia",
+          "visitors": 149432.0
+        },
+        {
+          "date": "2020-02",
+          "region": "South and Southeast Asia",
+          "visitors": 19247.0
+        },
+        {
+          "date": "2020-03",
+          "region": "South and Southeast Asia",
+          "visitors": 11245.0
+        },
+        {
+          "date": "2020-04",
+          "region": "South and Southeast Asia",
+          "visitors": 366.0
+        },
+        {
+          "date": "2020-05",
+          "region": "South and Southeast Asia",
+          "visitors": 394.0
+        },
+        {
+          "date": "2020-06",
+          "region": "South and Southeast Asia",
+          "visitors": 2393.0
+        },
+        {
+          "date": "2020-07",
+          "region": "South and Southeast Asia",
+          "visitors": 6249.0
+        },
+        {
+          "date": "2020-08",
+          "region": "South and Southeast Asia",
+          "visitors": 779.0
+        },
+        {
+          "date": "2020-09",
+          "region": "South and Southeast Asia",
+          "visitors": 1305.0
+        },
+        {
+          "date": "2020-10",
+          "region": "South and Southeast Asia",
+          "visitors": 1452.0
+        },
+        {
+          "date": "2020-11",
+          "region": "South and Southeast Asia",
+          "visitors": 998.0
+        },
+        {
+          "date": "2020-12",
+          "region": "South and Southeast Asia",
+          "visitors": 1006.0
+        },
+        {
+          "date": "2021-01",
+          "region": "South and Southeast Asia",
+          "visitors": 560.0
+        },
+        {
+          "date": "2021-02",
+          "region": "South and Southeast Asia",
+          "visitors": 818.0
+        },
+        {
+          "date": "2021-03",
+          "region": "South and Southeast Asia",
+          "visitors": 669.0
+        },
+        {
+          "date": "2021-04",
+          "region": "South and Southeast Asia",
+          "visitors": 546.0
+        },
+        {
+          "date": "2021-05",
+          "region": "South and Southeast Asia",
+          "visitors": 361.0
+        },
+        {
+          "date": "2021-06",
+          "region": "South and Southeast Asia",
+          "visitors": 586.0
+        },
+        {
+          "date": "2021-07",
+          "region": "South and Southeast Asia",
+          "visitors": 1101.0
+        },
+        {
+          "date": "2021-08",
+          "region": "South and Southeast Asia",
+          "visitors": 757.0
+        },
+        {
+          "date": "2021-09",
+          "region": "South and Southeast Asia",
+          "visitors": 1253.0
+        },
+        {
+          "date": "2021-10",
+          "region": "South and Southeast Asia",
+          "visitors": 867.0
+        },
+        {
+          "date": "2021-11",
+          "region": "South and Southeast Asia",
+          "visitors": 1004.0
+        },
+        {
+          "date": "2021-12",
+          "region": "South and Southeast Asia",
+          "visitors": 1006.0
+        },
+        {
+          "date": "2022-01",
+          "region": "South and Southeast Asia",
+          "visitors": 224.0
+        },
+        {
+          "date": "2022-02",
+          "region": "South and Southeast Asia",
+          "visitors": 175.0
+        },
+        {
+          "date": "2022-03",
+          "region": "South and Southeast Asia",
+          "visitors": 392.0
+        },
+        {
+          "date": "2022-04",
+          "region": "South and Southeast Asia",
+          "visitors": 369.0
+        },
+        {
+          "date": "2022-05",
+          "region": "South and Southeast Asia",
+          "visitors": 1334.0
+        },
+        {
+          "date": "2022-06",
+          "region": "South and Southeast Asia",
+          "visitors": 1514.0
+        },
+        {
+          "date": "2022-07",
+          "region": "South and Southeast Asia",
+          "visitors": 1935.0
+        },
+        {
+          "date": "2022-08",
+          "region": "South and Southeast Asia",
+          "visitors": 3069.0
+        },
+        {
+          "date": "2022-09",
+          "region": "South and Southeast Asia",
+          "visitors": 4103.0
+        },
+        {
+          "date": "2022-10",
+          "region": "South and Southeast Asia",
+          "visitors": 10305.0
+        },
+        {
+          "date": "2022-11",
+          "region": "South and Southeast Asia",
+          "visitors": 17296.0
+        },
+        {
+          "date": "2022-12",
+          "region": "South and Southeast Asia",
+          "visitors": 36492.0
+        },
+        {
+          "date": "2023-01",
+          "region": "South and Southeast Asia",
+          "visitors": 48035.0
+        },
+        {
+          "date": "2023-02",
+          "region": "South and Southeast Asia",
+          "visitors": 106191.0
+        },
+        {
+          "date": "2023-03",
+          "region": "South and Southeast Asia",
+          "visitors": 145987.0
+        },
+        {
+          "date": "2023-04",
+          "region": "South and Southeast Asia",
+          "visitors": 191531.0
+        },
+        {
+          "date": "2023-05",
+          "region": "South and Southeast Asia",
+          "visitors": 183157.0
+        },
+        {
+          "date": "2023-06",
+          "region": "South and Southeast Asia",
+          "visitors": 222423.0
+        },
+        {
+          "date": "2023-07",
+          "region": "South and Southeast Asia",
+          "visitors": 189973.0
+        },
+        {
+          "date": "2023-08",
+          "region": "South and Southeast Asia",
+          "visitors": 177721.0
+        },
+        {
+          "date": "2023-09",
+          "region": "South and Southeast Asia",
+          "visitors": 188804.0
+        },
+        {
+          "date": "2023-10",
+          "region": "South and Southeast Asia",
+          "visitors": 242304.0
+        },
+        {
+          "date": "2023-11",
+          "region": "South and Southeast Asia",
+          "visitors": 310426.0
+        },
+        {
+          "date": "2023-12",
+          "region": "South and Southeast Asia",
+          "visitors": 391589.0
+        },
+        {
+          "date": "2024-01",
+          "region": "South and Southeast Asia",
+          "visitors": 262896.0
+        },
+        {
+          "date": "2024-02",
+          "region": "South and Southeast Asia",
+          "visitors": 215194.0
+        },
+        {
+          "date": "2024-03",
+          "region": "South and Southeast Asia",
+          "visitors": 313160.0
+        },
+        {
+          "date": "2024-04",
+          "region": "South and Southeast Asia",
+          "visitors": 306127.0
+        },
+        {
+          "date": "2024-05",
+          "region": "South and Southeast Asia",
+          "visitors": 272902.0
+        },
+        {
+          "date": "2024-06",
+          "region": "South and Southeast Asia",
+          "visitors": 294016.0
+        },
+        {
+          "date": "2024-07",
+          "region": "South and Southeast Asia",
+          "visitors": 242681.0
+        },
+        {
+          "date": "2024-08",
+          "region": "South and Southeast Asia",
+          "visitors": 223333.0
+        },
+        {
+          "date": "2024-09",
+          "region": "South and Southeast Asia",
+          "visitors": 240412.0
+        },
+        {
+          "date": "2024-10",
+          "region": "South and Southeast Asia",
+          "visitors": 296174.0
+        },
+        {
+          "date": "2024-11",
+          "region": "South and Southeast Asia",
+          "visitors": 348027.0
+        },
+        {
+          "date": "2024-12",
+          "region": "South and Southeast Asia",
+          "visitors": 441786.0
+        },
+        {
+          "date": "2025-01",
+          "region": "South and Southeast Asia",
+          "visitors": 299884.0
+        },
+        {
+          "date": "2025-02",
+          "region": "South and Southeast Asia",
+          "visitors": 256361.0
+        },
+        {
+          "date": "2025-03",
+          "region": "South and Southeast Asia",
+          "visitors": 337286.0
+        },
+        {
+          "date": "2025-04",
+          "region": "South and Southeast Asia",
+          "visitors": 343729.0
+        },
+        {
+          "date": "2025-05",
+          "region": "South and Southeast Asia",
+          "visitors": 338482.0
+        },
+        {
+          "date": "2025-06",
+          "region": "South and Southeast Asia",
+          "visitors": 309604.0
+        },
+        {
+          "date": "2025-07",
+          "region": "South and Southeast Asia",
+          "visitors": 247436.0
+        },
+        {
+          "date": "2025-08",
+          "region": "South and Southeast Asia",
+          "visitors": 238622.0
+        },
+        {
+          "date": "2025-09",
+          "region": "South and Southeast Asia",
+          "visitors": 260115.0
+        },
+        {
+          "date": "2025-10",
+          "region": "South and Southeast Asia",
+          "visitors": 324811.0
+        },
+        {
+          "date": "2025-11",
+          "region": "South and Southeast Asia",
+          "visitors": 346341.0
+        },
+        {
+          "date": "2025-12",
+          "region": "South and Southeast Asia",
+          "visitors": 463918.0
+        },
+        {
+          "date": "2026-01",
+          "region": "South and Southeast Asia",
+          "visitors": 354561.0
+        },
+        {
+          "date": "2026-02",
+          "region": "South and Southeast Asia",
+          "visitors": 224979.0
+        },
+        {
+          "date": "2026-03",
+          "region": "South and Southeast Asia",
+          "visitors": 363272.0
+        },
+        {
+          "date": "2026-04",
+          "region": "South and Southeast Asia",
+          "visitors": 325735.0
+        },
+        {
+          "date": "2026-05",
+          "region": "South and Southeast Asia",
+          "visitors": 316270.0
+        },
+        {
+          "date": "2016-09",
+          "region": "Taiwan",
+          "visitors": 172979.0
+        },
+        {
+          "date": "2016-10",
+          "region": "Taiwan",
+          "visitors": 168426.0
+        },
+        {
+          "date": "2016-11",
+          "region": "Taiwan",
+          "visitors": 157904.0
+        },
+        {
+          "date": "2016-12",
+          "region": "Taiwan",
+          "visitors": 187147.0
+        },
+        {
+          "date": "2017-01",
+          "region": "Taiwan",
+          "visitors": 171745.0
+        },
+        {
+          "date": "2017-02",
+          "region": "Taiwan",
+          "visitors": 170626.0
+        },
+        {
+          "date": "2017-03",
+          "region": "Taiwan",
+          "visitors": 164759.0
+        },
+        {
+          "date": "2017-04",
+          "region": "Taiwan",
+          "visitors": 173439.0
+        },
+        {
+          "date": "2017-05",
+          "region": "Taiwan",
+          "visitors": 172407.0
+        },
+        {
+          "date": "2017-06",
+          "region": "Taiwan",
+          "visitors": 168775.0
+        },
+        {
+          "date": "2017-07",
+          "region": "Taiwan",
+          "visitors": 188216.0
+        },
+        {
+          "date": "2017-08",
+          "region": "Taiwan",
+          "visitors": 184171.0
+        },
+        {
+          "date": "2017-09",
+          "region": "Taiwan",
+          "visitors": 163174.0
+        },
+        {
+          "date": "2017-10",
+          "region": "Taiwan",
+          "visitors": 182317.0
+        },
+        {
+          "date": "2017-11",
+          "region": "Taiwan",
+          "visitors": 165574.0
+        },
+        {
+          "date": "2017-12",
+          "region": "Taiwan",
+          "visitors": 182864.0
+        },
+        {
+          "date": "2018-01",
+          "region": "Taiwan",
+          "visitors": 162142.0
+        },
+        {
+          "date": "2018-02",
+          "region": "Taiwan",
+          "visitors": 154569.0
+        },
+        {
+          "date": "2018-03",
+          "region": "Taiwan",
+          "visitors": 162753.0
+        },
+        {
+          "date": "2018-04",
+          "region": "Taiwan",
+          "visitors": 180108.0
+        },
+        {
+          "date": "2018-05",
+          "region": "Taiwan",
+          "visitors": 156411.0
+        },
+        {
+          "date": "2018-06",
+          "region": "Taiwan",
+          "visitors": 170433.0
+        },
+        {
+          "date": "2018-07",
+          "region": "Taiwan",
+          "visitors": 179562.0
+        },
+        {
+          "date": "2018-08",
+          "region": "Taiwan",
+          "visitors": 175455.0
+        },
+        {
+          "date": "2018-09",
+          "region": "Taiwan",
+          "visitors": 158089.0
+        },
+        {
+          "date": "2018-10",
+          "region": "Taiwan",
+          "visitors": 164252.0
+        },
+        {
+          "date": "2018-11",
+          "region": "Taiwan",
+          "visitors": 158295.0
+        },
+        {
+          "date": "2018-12",
+          "region": "Taiwan",
+          "visitors": 185455.0
+        },
+        {
+          "date": "2019-01",
+          "region": "Taiwan",
+          "visitors": 167835.0
+        },
+        {
+          "date": "2019-02",
+          "region": "Taiwan",
+          "visitors": 154400.0
+        },
+        {
+          "date": "2019-03",
+          "region": "Taiwan",
+          "visitors": 162626.0
+        },
+        {
+          "date": "2019-04",
+          "region": "Taiwan",
+          "visitors": 163919.0
+        },
+        {
+          "date": "2019-05",
+          "region": "Taiwan",
+          "visitors": 152922.0
+        },
+        {
+          "date": "2019-06",
+          "region": "Taiwan",
+          "visitors": 161124.0
+        },
+        {
+          "date": "2019-07",
+          "region": "Taiwan",
+          "visitors": 158541.0
+        },
+        {
+          "date": "2019-08",
+          "region": "Taiwan",
+          "visitors": 112614.0
+        },
+        {
+          "date": "2019-09",
+          "region": "Taiwan",
+          "visitors": 99718.0
+        },
+        {
+          "date": "2019-10",
+          "region": "Taiwan",
+          "visitors": 104610.0
+        },
+        {
+          "date": "2019-11",
+          "region": "Taiwan",
+          "visitors": 82069.0
+        },
+        {
+          "date": "2019-12",
+          "region": "Taiwan",
+          "visitors": 87037.0
+        },
+        {
+          "date": "2020-01",
+          "region": "Taiwan",
+          "visitors": 93864.0
+        },
+        {
+          "date": "2020-02",
+          "region": "Taiwan",
+          "visitors": 8778.0
+        },
+        {
+          "date": "2020-03",
+          "region": "Taiwan",
+          "visitors": 9288.0
+        },
+        {
+          "date": "2020-04",
+          "region": "Taiwan",
+          "visitors": 211.0
+        },
+        {
+          "date": "2020-05",
+          "region": "Taiwan",
+          "visitors": 480.0
+        },
+        {
+          "date": "2020-06",
+          "region": "Taiwan",
+          "visitors": 495.0
+        },
+        {
+          "date": "2020-07",
+          "region": "Taiwan",
+          "visitors": 552.0
+        },
+        {
+          "date": "2020-08",
+          "region": "Taiwan",
+          "visitors": 269.0
+        },
+        {
+          "date": "2020-09",
+          "region": "Taiwan",
+          "visitors": 402.0
+        },
+        {
+          "date": "2020-10",
+          "region": "Taiwan",
+          "visitors": 412.0
+        },
+        {
+          "date": "2020-11",
+          "region": "Taiwan",
+          "visitors": 355.0
+        },
+        {
+          "date": "2020-12",
+          "region": "Taiwan",
+          "visitors": 341.0
+        },
+        {
+          "date": "2021-01",
+          "region": "Taiwan",
+          "visitors": 232.0
+        },
+        {
+          "date": "2021-02",
+          "region": "Taiwan",
+          "visitors": 229.0
+        },
+        {
+          "date": "2021-03",
+          "region": "Taiwan",
+          "visitors": 302.0
+        },
+        {
+          "date": "2021-04",
+          "region": "Taiwan",
+          "visitors": 283.0
+        },
+        {
+          "date": "2021-05",
+          "region": "Taiwan",
+          "visitors": 170.0
+        },
+        {
+          "date": "2021-06",
+          "region": "Taiwan",
+          "visitors": 51.0
+        },
+        {
+          "date": "2021-07",
+          "region": "Taiwan",
+          "visitors": 98.0
+        },
+        {
+          "date": "2021-08",
+          "region": "Taiwan",
+          "visitors": 146.0
+        },
+        {
+          "date": "2021-09",
+          "region": "Taiwan",
+          "visitors": 156.0
+        },
+        {
+          "date": "2021-10",
+          "region": "Taiwan",
+          "visitors": 228.0
+        },
+        {
+          "date": "2021-11",
+          "region": "Taiwan",
+          "visitors": 238.0
+        },
+        {
+          "date": "2021-12",
+          "region": "Taiwan",
+          "visitors": 428.0
+        },
+        {
+          "date": "2022-01",
+          "region": "Taiwan",
+          "visitors": 329.0
+        },
+        {
+          "date": "2022-02",
+          "region": "Taiwan",
+          "visitors": 178.0
+        },
+        {
+          "date": "2022-03",
+          "region": "Taiwan",
+          "visitors": 113.0
+        },
+        {
+          "date": "2022-04",
+          "region": "Taiwan",
+          "visitors": 152.0
+        },
+        {
+          "date": "2022-05",
+          "region": "Taiwan",
+          "visitors": 399.0
+        },
+        {
+          "date": "2022-06",
+          "region": "Taiwan",
+          "visitors": 422.0
+        },
+        {
+          "date": "2022-07",
+          "region": "Taiwan",
+          "visitors": 1058.0
+        },
+        {
+          "date": "2022-08",
+          "region": "Taiwan",
+          "visitors": 1237.0
+        },
+        {
+          "date": "2022-09",
+          "region": "Taiwan",
+          "visitors": 1487.0
+        },
+        {
+          "date": "2022-10",
+          "region": "Taiwan",
+          "visitors": 3345.0
+        },
+        {
+          "date": "2022-11",
+          "region": "Taiwan",
+          "visitors": 5707.0
+        },
+        {
+          "date": "2022-12",
+          "region": "Taiwan",
+          "visitors": 9997.0
+        },
+        {
+          "date": "2023-01",
+          "region": "Taiwan",
+          "visitors": 28890.0
+        },
+        {
+          "date": "2023-02",
+          "region": "Taiwan",
+          "visitors": 41581.0
+        },
+        {
+          "date": "2023-03",
+          "region": "Taiwan",
+          "visitors": 58716.0
+        },
+        {
+          "date": "2023-04",
+          "region": "Taiwan",
+          "visitors": 62478.0
+        },
+        {
+          "date": "2023-05",
+          "region": "Taiwan",
+          "visitors": 58944.0
+        },
+        {
+          "date": "2023-06",
+          "region": "Taiwan",
+          "visitors": 73464.0
+        },
+        {
+          "date": "2023-07",
+          "region": "Taiwan",
+          "visitors": 78606.0
+        },
+        {
+          "date": "2023-08",
+          "region": "Taiwan",
+          "visitors": 80476.0
+        },
+        {
+          "date": "2023-09",
+          "region": "Taiwan",
+          "visitors": 74823.0
+        },
+        {
+          "date": "2023-10",
+          "region": "Taiwan",
+          "visitors": 80534.0
+        },
+        {
+          "date": "2023-11",
+          "region": "Taiwan",
+          "visitors": 80380.0
+        },
+        {
+          "date": "2023-12",
+          "region": "Taiwan",
+          "visitors": 90400.0
+        },
+        {
+          "date": "2024-01",
+          "region": "Taiwan",
+          "visitors": 93916.0
+        },
+        {
+          "date": "2024-02",
+          "region": "Taiwan",
+          "visitors": 99726.0
+        },
+        {
+          "date": "2024-03",
+          "region": "Taiwan",
+          "visitors": 91534.0
+        },
+        {
+          "date": "2024-04",
+          "region": "Taiwan",
+          "visitors": 101924.0
+        },
+        {
+          "date": "2024-05",
+          "region": "Taiwan",
+          "visitors": 93048.0
+        },
+        {
+          "date": "2024-06",
+          "region": "Taiwan",
+          "visitors": 112192.0
+        },
+        {
+          "date": "2024-07",
+          "region": "Taiwan",
+          "visitors": 112633.0
+        },
+        {
+          "date": "2024-08",
+          "region": "Taiwan",
+          "visitors": 113214.0
+        },
+        {
+          "date": "2024-09",
+          "region": "Taiwan",
+          "visitors": 102359.0
+        },
+        {
+          "date": "2024-10",
+          "region": "Taiwan",
+          "visitors": 108366.0
+        },
+        {
+          "date": "2024-11",
+          "region": "Taiwan",
+          "visitors": 102291.0
+        },
+        {
+          "date": "2024-12",
+          "region": "Taiwan",
+          "visitors": 113407.0
+        },
+        {
+          "date": "2025-01",
+          "region": "Taiwan",
+          "visitors": 139003.0
+        },
+        {
+          "date": "2025-02",
+          "region": "Taiwan",
+          "visitors": 118849.0
+        },
+        {
+          "date": "2025-03",
+          "region": "Taiwan",
+          "visitors": 112569.0
+        },
+        {
+          "date": "2025-04",
+          "region": "Taiwan",
+          "visitors": 124218.0
+        },
+        {
+          "date": "2025-05",
+          "region": "Taiwan",
+          "visitors": 123435.0
+        },
+        {
+          "date": "2025-06",
+          "region": "Taiwan",
+          "visitors": 125246.0
+        },
+        {
+          "date": "2025-07",
+          "region": "Taiwan",
+          "visitors": 140392.0
+        },
+        {
+          "date": "2025-08",
+          "region": "Taiwan",
+          "visitors": 148511.0
+        },
+        {
+          "date": "2025-09",
+          "region": "Taiwan",
+          "visitors": 128829.0
+        },
+        {
+          "date": "2025-10",
+          "region": "Taiwan",
+          "visitors": 157831.0
+        },
+        {
+          "date": "2025-11",
+          "region": "Taiwan",
+          "visitors": 127113.0
+        },
+        {
+          "date": "2025-12",
+          "region": "Taiwan",
+          "visitors": 132498.0
+        },
+        {
+          "date": "2026-01",
+          "region": "Taiwan",
+          "visitors": 135401.0
+        },
+        {
+          "date": "2026-02",
+          "region": "Taiwan",
+          "visitors": 150588.0
+        },
+        {
+          "date": "2026-03",
+          "region": "Taiwan",
+          "visitors": 133497.0
+        },
+        {
+          "date": "2026-04",
+          "region": "Taiwan",
+          "visitors": 137869.0
+        },
+        {
+          "date": "2026-05",
+          "region": "Taiwan",
+          "visitors": 118724.0
+        },
+        {
+          "date": "2016-09",
+          "region": "The Americas",
+          "visitors": 136965.0
+        },
+        {
+          "date": "2016-10",
+          "region": "The Americas",
+          "visitors": 181281.0
+        },
+        {
+          "date": "2016-11",
+          "region": "The Americas",
+          "visitors": 179962.0
+        },
+        {
+          "date": "2016-12",
+          "region": "The Americas",
+          "visitors": 163437.0
+        },
+        {
+          "date": "2017-01",
+          "region": "The Americas",
+          "visitors": 146488.0
+        },
+        {
+          "date": "2017-02",
+          "region": "The Americas",
+          "visitors": 122648.0
+        },
+        {
+          "date": "2017-03",
+          "region": "The Americas",
+          "visitors": 172444.0
+        },
+        {
+          "date": "2017-04",
+          "region": "The Americas",
+          "visitors": 177208.0
+        },
+        {
+          "date": "2017-05",
+          "region": "The Americas",
+          "visitors": 146081.0
+        },
+        {
+          "date": "2017-06",
+          "region": "The Americas",
+          "visitors": 144564.0
+        },
+        {
+          "date": "2017-07",
+          "region": "The Americas",
+          "visitors": 142636.0
+        },
+        {
+          "date": "2017-08",
+          "region": "The Americas",
+          "visitors": 124419.0
+        },
+        {
+          "date": "2017-09",
+          "region": "The Americas",
+          "visitors": 128243.0
+        },
+        {
+          "date": "2017-10",
+          "region": "The Americas",
+          "visitors": 172465.0
+        },
+        {
+          "date": "2017-11",
+          "region": "The Americas",
+          "visitors": 182842.0
+        },
+        {
+          "date": "2017-12",
+          "region": "The Americas",
+          "visitors": 165426.0
+        },
+        {
+          "date": "2018-01",
+          "region": "The Americas",
+          "visitors": 152876.0
+        },
+        {
+          "date": "2018-02",
+          "region": "The Americas",
+          "visitors": 119285.0
+        },
+        {
+          "date": "2018-03",
+          "region": "The Americas",
+          "visitors": 190974.0
+        },
+        {
+          "date": "2018-04",
+          "region": "The Americas",
+          "visitors": 187908.0
+        },
+        {
+          "date": "2018-05",
+          "region": "The Americas",
+          "visitors": 153138.0
+        },
+        {
+          "date": "2018-06",
+          "region": "The Americas",
+          "visitors": 151738.0
+        },
+        {
+          "date": "2018-07",
+          "region": "The Americas",
+          "visitors": 151297.0
+        },
+        {
+          "date": "2018-08",
+          "region": "The Americas",
+          "visitors": 132116.0
+        },
+        {
+          "date": "2018-09",
+          "region": "The Americas",
+          "visitors": 128364.0
+        },
+        {
+          "date": "2018-10",
+          "region": "The Americas",
+          "visitors": 185927.0
+        },
+        {
+          "date": "2018-11",
+          "region": "The Americas",
+          "visitors": 198206.0
+        },
+        {
+          "date": "2018-12",
+          "region": "The Americas",
+          "visitors": 170485.0
+        },
+        {
+          "date": "2019-01",
+          "region": "The Americas",
+          "visitors": 154239.0
+        },
+        {
+          "date": "2019-02",
+          "region": "The Americas",
+          "visitors": 120812.0
+        },
+        {
+          "date": "2019-03",
+          "region": "The Americas",
+          "visitors": 186882.0
+        },
+        {
+          "date": "2019-04",
+          "region": "The Americas",
+          "visitors": 187420.0
+        },
+        {
+          "date": "2019-05",
+          "region": "The Americas",
+          "visitors": 155266.0
+        },
+        {
+          "date": "2019-06",
+          "region": "The Americas",
+          "visitors": 144396.0
+        },
+        {
+          "date": "2019-07",
+          "region": "The Americas",
+          "visitors": 147455.0
+        },
+        {
+          "date": "2019-08",
+          "region": "The Americas",
+          "visitors": 99105.0
+        },
+        {
+          "date": "2019-09",
+          "region": "The Americas",
+          "visitors": 91391.0
+        },
+        {
+          "date": "2019-10",
+          "region": "The Americas",
+          "visitors": 122063.0
+        },
+        {
+          "date": "2019-11",
+          "region": "The Americas",
+          "visitors": 115177.0
+        },
+        {
+          "date": "2019-12",
+          "region": "The Americas",
+          "visitors": 109434.0
+        },
+        {
+          "date": "2020-01",
+          "region": "The Americas",
+          "visitors": 103323.0
+        },
+        {
+          "date": "2020-02",
+          "region": "The Americas",
+          "visitors": 14765.0
+        },
+        {
+          "date": "2020-03",
+          "region": "The Americas",
+          "visitors": 5245.0
+        },
+        {
+          "date": "2020-04",
+          "region": "The Americas",
+          "visitors": 204.0
+        },
+        {
+          "date": "2020-05",
+          "region": "The Americas",
+          "visitors": 382.0
+        },
+        {
+          "date": "2020-06",
+          "region": "The Americas",
+          "visitors": 724.0
+        },
+        {
+          "date": "2020-07",
+          "region": "The Americas",
+          "visitors": 740.0
+        },
+        {
+          "date": "2020-08",
+          "region": "The Americas",
+          "visitors": 234.0
+        },
+        {
+          "date": "2020-09",
+          "region": "The Americas",
+          "visitors": 257.0
+        },
+        {
+          "date": "2020-10",
+          "region": "The Americas",
+          "visitors": 233.0
+        },
+        {
+          "date": "2020-11",
+          "region": "The Americas",
+          "visitors": 211.0
+        },
+        {
+          "date": "2020-12",
+          "region": "The Americas",
+          "visitors": 225.0
+        },
+        {
+          "date": "2021-01",
+          "region": "The Americas",
+          "visitors": 162.0
+        },
+        {
+          "date": "2021-02",
+          "region": "The Americas",
+          "visitors": 115.0
+        },
+        {
+          "date": "2021-03",
+          "region": "The Americas",
+          "visitors": 121.0
+        },
+        {
+          "date": "2021-04",
+          "region": "The Americas",
+          "visitors": 98.0
+        },
+        {
+          "date": "2021-05",
+          "region": "The Americas",
+          "visitors": 116.0
+        },
+        {
+          "date": "2021-06",
+          "region": "The Americas",
+          "visitors": 195.0
+        },
+        {
+          "date": "2021-07",
+          "region": "The Americas",
+          "visitors": 234.0
+        },
+        {
+          "date": "2021-08",
+          "region": "The Americas",
+          "visitors": 328.0
+        },
+        {
+          "date": "2021-09",
+          "region": "The Americas",
+          "visitors": 296.0
+        },
+        {
+          "date": "2021-10",
+          "region": "The Americas",
+          "visitors": 341.0
+        },
+        {
+          "date": "2021-11",
+          "region": "The Americas",
+          "visitors": 367.0
+        },
+        {
+          "date": "2021-12",
+          "region": "The Americas",
+          "visitors": 238.0
+        },
+        {
+          "date": "2022-01",
+          "region": "The Americas",
+          "visitors": 118.0
+        },
+        {
+          "date": "2022-02",
+          "region": "The Americas",
+          "visitors": 61.0
+        },
+        {
+          "date": "2022-03",
+          "region": "The Americas",
+          "visitors": 57.0
+        },
+        {
+          "date": "2022-04",
+          "region": "The Americas",
+          "visitors": 120.0
+        },
+        {
+          "date": "2022-05",
+          "region": "The Americas",
+          "visitors": 804.0
+        },
+        {
+          "date": "2022-06",
+          "region": "The Americas",
+          "visitors": 1482.0
+        },
+        {
+          "date": "2022-07",
+          "region": "The Americas",
+          "visitors": 1667.0
+        },
+        {
+          "date": "2022-08",
+          "region": "The Americas",
+          "visitors": 2767.0
+        },
+        {
+          "date": "2022-09",
+          "region": "The Americas",
+          "visitors": 3722.0
+        },
+        {
+          "date": "2022-10",
+          "region": "The Americas",
+          "visitors": 6407.0
+        },
+        {
+          "date": "2022-11",
+          "region": "The Americas",
+          "visitors": 10227.0
+        },
+        {
+          "date": "2022-12",
+          "region": "The Americas",
+          "visitors": 15172.0
+        },
+        {
+          "date": "2023-01",
+          "region": "The Americas",
+          "visitors": 21860.0
+        },
+        {
+          "date": "2023-02",
+          "region": "The Americas",
+          "visitors": 30134.0
+        },
+        {
+          "date": "2023-03",
+          "region": "The Americas",
+          "visitors": 51152.0
+        },
+        {
+          "date": "2023-04",
+          "region": "The Americas",
+          "visitors": 69089.0
+        },
+        {
+          "date": "2023-05",
+          "region": "The Americas",
+          "visitors": 70343.0
+        },
+        {
+          "date": "2023-06",
+          "region": "The Americas",
+          "visitors": 82609.0
+        },
+        {
+          "date": "2023-07",
+          "region": "The Americas",
+          "visitors": 87986.0
+        },
+        {
+          "date": "2023-08",
+          "region": "The Americas",
+          "visitors": 85618.0
+        },
+        {
+          "date": "2023-09",
+          "region": "The Americas",
+          "visitors": 79468.0
+        },
+        {
+          "date": "2023-10",
+          "region": "The Americas",
+          "visitors": 112178.0
+        },
+        {
+          "date": "2023-11",
+          "region": "The Americas",
+          "visitors": 119194.0
+        },
+        {
+          "date": "2023-12",
+          "region": "The Americas",
+          "visitors": 104731.0
+        },
+        {
+          "date": "2024-01",
+          "region": "The Americas",
+          "visitors": 97498.0
+        },
+        {
+          "date": "2024-02",
+          "region": "The Americas",
+          "visitors": 89297.0
+        },
+        {
+          "date": "2024-03",
+          "region": "The Americas",
+          "visitors": 127650.0
+        },
+        {
+          "date": "2024-04",
+          "region": "The Americas",
+          "visitors": 126576.0
+        },
+        {
+          "date": "2024-05",
+          "region": "The Americas",
+          "visitors": 100507.0
+        },
+        {
+          "date": "2024-06",
+          "region": "The Americas",
+          "visitors": 113905.0
+        },
+        {
+          "date": "2024-07",
+          "region": "The Americas",
+          "visitors": 117883.0
+        },
+        {
+          "date": "2024-08",
+          "region": "The Americas",
+          "visitors": 97271.0
+        },
+        {
+          "date": "2024-09",
+          "region": "The Americas",
+          "visitors": 86288.0
+        },
+        {
+          "date": "2024-10",
+          "region": "The Americas",
+          "visitors": 133335.0
+        },
+        {
+          "date": "2024-11",
+          "region": "The Americas",
+          "visitors": 141978.0
+        },
+        {
+          "date": "2024-12",
+          "region": "The Americas",
+          "visitors": 129486.0
+        },
+        {
+          "date": "2025-01",
+          "region": "The Americas",
+          "visitors": 114797.0
+        },
+        {
+          "date": "2025-02",
+          "region": "The Americas",
+          "visitors": 102177.0
+        },
+        {
+          "date": "2025-03",
+          "region": "The Americas",
+          "visitors": 146248.0
+        },
+        {
+          "date": "2025-04",
+          "region": "The Americas",
+          "visitors": 140972.0
+        },
+        {
+          "date": "2025-05",
+          "region": "The Americas",
+          "visitors": 115187.0
+        },
+        {
+          "date": "2025-06",
+          "region": "The Americas",
+          "visitors": 127833.0
+        },
+        {
+          "date": "2025-07",
+          "region": "The Americas",
+          "visitors": 134857.0
+        },
+        {
+          "date": "2025-08",
+          "region": "The Americas",
+          "visitors": 113978.0
+        },
+        {
+          "date": "2025-09",
+          "region": "The Americas",
+          "visitors": 96988.0
+        },
+        {
+          "date": "2025-10",
+          "region": "The Americas",
+          "visitors": 163079.0
+        },
+        {
+          "date": "2025-11",
+          "region": "The Americas",
+          "visitors": 165915.0
+        },
+        {
+          "date": "2025-12",
+          "region": "The Americas",
+          "visitors": 159027.0
+        },
+        {
+          "date": "2026-01",
+          "region": "The Americas",
+          "visitors": 134207.0
+        },
+        {
+          "date": "2026-02",
+          "region": "The Americas",
+          "visitors": 114614.0
+        },
+        {
+          "date": "2026-03",
+          "region": "The Americas",
+          "visitors": 169025.0
+        },
+        {
+          "date": "2026-04",
+          "region": "The Americas",
+          "visitors": 174684.0
+        },
+        {
+          "date": "2026-05",
+          "region": "The Americas",
+          "visitors": 137337.0
+        }
+      ],
+      "visitor_arrivals_mainland_vs_row": [
+        {
+          "date": "2016-09",
+          "series": "Mainland China",
+          "value": 3316227.0
+        },
+        {
+          "date": "2016-10",
+          "series": "Mainland China",
+          "value": 3698301.0
+        },
+        {
+          "date": "2016-11",
+          "series": "Mainland China",
+          "value": 3375070.0
+        },
+        {
+          "date": "2016-12",
+          "series": "Mainland China",
+          "value": 3928584.0
+        },
+        {
+          "date": "2017-01",
+          "series": "Mainland China",
+          "value": 4328327.0
+        },
+        {
+          "date": "2017-02",
+          "series": "Mainland China",
+          "value": 3119324.0
+        },
+        {
+          "date": "2017-03",
+          "series": "Mainland China",
+          "value": 3315455.0
+        },
+        {
+          "date": "2017-04",
+          "series": "Mainland China",
+          "value": 3499426.0
+        },
+        {
+          "date": "2017-05",
+          "series": "Mainland China",
+          "value": 3430689.0
+        },
+        {
+          "date": "2017-06",
+          "series": "Mainland China",
+          "value": 3081708.0
+        },
+        {
+          "date": "2017-07",
+          "series": "Mainland China",
+          "value": 4055415.0
+        },
+        {
+          "date": "2017-08",
+          "series": "Mainland China",
+          "value": 3936326.0
+        },
+        {
+          "date": "2017-09",
+          "series": "Mainland China",
+          "value": 3555836.0
+        },
+        {
+          "date": "2017-10",
+          "series": "Mainland China",
+          "value": 4006921.0
+        },
+        {
+          "date": "2017-11",
+          "series": "Mainland China",
+          "value": 3659694.0
+        },
+        {
+          "date": "2017-12",
+          "series": "Mainland China",
+          "value": 4205819.0
+        },
+        {
+          "date": "2018-01",
+          "series": "Mainland China",
+          "value": 4094994.0
+        },
+        {
+          "date": "2018-02",
+          "series": "Mainland China",
+          "value": 4377990.0
+        },
+        {
+          "date": "2018-03",
+          "series": "Mainland China",
+          "value": 3651676.0
+        },
+        {
+          "date": "2018-04",
+          "series": "Mainland China",
+          "value": 4032387.0
+        },
+        {
+          "date": "2018-05",
+          "series": "Mainland China",
+          "value": 3803977.0
+        },
+        {
+          "date": "2018-06",
+          "series": "Mainland China",
+          "value": 3616705.0
+        },
+        {
+          "date": "2018-07",
+          "series": "Mainland China",
+          "value": 4383980.0
+        },
+        {
+          "date": "2018-08",
+          "series": "Mainland China",
+          "value": 4803626.0
+        },
+        {
+          "date": "2018-09",
+          "series": "Mainland China",
+          "value": 3693871.0
+        },
+        {
+          "date": "2018-10",
+          "series": "Mainland China",
+          "value": 4628552.0
+        },
+        {
+          "date": "2018-11",
+          "series": "Mainland China",
+          "value": 4613103.0
+        },
+        {
+          "date": "2018-12",
+          "series": "Mainland China",
+          "value": 5102464.0
+        },
+        {
+          "date": "2019-01",
+          "series": "Mainland China",
+          "value": 5524443.0
+        },
+        {
+          "date": "2019-02",
+          "series": "Mainland China",
+          "value": 4540646.0
+        },
+        {
+          "date": "2019-03",
+          "series": "Mainland China",
+          "value": 4462586.0
+        },
+        {
+          "date": "2019-04",
+          "series": "Mainland China",
+          "value": 4256683.0
+        },
+        {
+          "date": "2019-05",
+          "series": "Mainland China",
+          "value": 4700039.0
+        },
+        {
+          "date": "2019-06",
+          "series": "Mainland China",
+          "value": 3986242.0
+        },
+        {
+          "date": "2019-07",
+          "series": "Mainland China",
+          "value": 4148998.0
+        },
+        {
+          "date": "2019-08",
+          "series": "Mainland China",
+          "value": 2771480.0
+        },
+        {
+          "date": "2019-09",
+          "series": "Mainland China",
+          "value": 2401471.0
+        },
+        {
+          "date": "2019-10",
+          "series": "Mainland China",
+          "value": 2503210.0
+        },
+        {
+          "date": "2019-11",
+          "series": "Mainland China",
+          "value": 1921951.0
+        },
+        {
+          "date": "2019-12",
+          "series": "Mainland China",
+          "value": 2389309.0
+        },
+        {
+          "date": "2020-01",
+          "series": "Mainland China",
+          "value": 2520594.0
+        },
+        {
+          "date": "2020-02",
+          "series": "Mainland China",
+          "value": 96716.0
+        },
+        {
+          "date": "2020-03",
+          "series": "Mainland China",
+          "value": 27525.0
+        },
+        {
+          "date": "2020-04",
+          "series": "Mainland China",
+          "value": 2945.0
+        },
+        {
+          "date": "2020-05",
+          "series": "Mainland China",
+          "value": 5623.0
+        },
+        {
+          "date": "2020-06",
+          "series": "Mainland China",
+          "value": 6633.0
+        },
+        {
+          "date": "2020-07",
+          "series": "Mainland China",
+          "value": 5709.0
+        },
+        {
+          "date": "2020-08",
+          "series": "Mainland China",
+          "value": 2323.0
+        },
+        {
+          "date": "2020-09",
+          "series": "Mainland China",
+          "value": 6211.0
+        },
+        {
+          "date": "2020-10",
+          "series": "Mainland China",
+          "value": 4849.0
+        },
+        {
+          "date": "2020-11",
+          "series": "Mainland China",
+          "value": 3555.0
+        },
+        {
+          "date": "2020-12",
+          "series": "Mainland China",
+          "value": 2425.0
+        },
+        {
+          "date": "2021-01",
+          "series": "Mainland China",
+          "value": 2874.0
+        },
+        {
+          "date": "2021-02",
+          "series": "Mainland China",
+          "value": 3799.0
+        },
+        {
+          "date": "2021-03",
+          "series": "Mainland China",
+          "value": 4916.0
+        },
+        {
+          "date": "2021-04",
+          "series": "Mainland China",
+          "value": 4120.0
+        },
+        {
+          "date": "2021-05",
+          "series": "Mainland China",
+          "value": 3896.0
+        },
+        {
+          "date": "2021-06",
+          "series": "Mainland China",
+          "value": 4647.0
+        },
+        {
+          "date": "2021-07",
+          "series": "Mainland China",
+          "value": 6302.0
+        },
+        {
+          "date": "2021-08",
+          "series": "Mainland China",
+          "value": 8523.0
+        },
+        {
+          "date": "2021-09",
+          "series": "Mainland China",
+          "value": 6955.0
+        },
+        {
+          "date": "2021-10",
+          "series": "Mainland China",
+          "value": 6680.0
+        },
+        {
+          "date": "2021-11",
+          "series": "Mainland China",
+          "value": 6444.0
+        },
+        {
+          "date": "2021-12",
+          "series": "Mainland China",
+          "value": 6475.0
+        },
+        {
+          "date": "2022-01",
+          "series": "Mainland China",
+          "value": 5755.0
+        },
+        {
+          "date": "2022-02",
+          "series": "Mainland China",
+          "value": 1810.0
+        },
+        {
+          "date": "2022-03",
+          "series": "Mainland China",
+          "value": 996.0
+        },
+        {
+          "date": "2022-04",
+          "series": "Mainland China",
+          "value": 3593.0
+        },
+        {
+          "date": "2022-05",
+          "series": "Mainland China",
+          "value": 14419.0
+        },
+        {
+          "date": "2022-06",
+          "series": "Mainland China",
+          "value": 35359.0
+        },
+        {
+          "date": "2022-07",
+          "series": "Mainland China",
+          "value": 40091.0
+        },
+        {
+          "date": "2022-08",
+          "series": "Mainland China",
+          "value": 48295.0
+        },
+        {
+          "date": "2022-09",
+          "series": "Mainland China",
+          "value": 51282.0
+        },
+        {
+          "date": "2022-10",
+          "series": "Mainland China",
+          "value": 47658.0
+        },
+        {
+          "date": "2022-11",
+          "series": "Mainland China",
+          "value": 58699.0
+        },
+        {
+          "date": "2022-12",
+          "series": "Mainland China",
+          "value": 67258.0
+        },
+        {
+          "date": "2023-01",
+          "series": "Mainland China",
+          "value": 279717.0
+        },
+        {
+          "date": "2023-02",
+          "series": "Mainland China",
+          "value": 1108653.0
+        },
+        {
+          "date": "2023-03",
+          "series": "Mainland China",
+          "value": 1967602.0
+        },
+        {
+          "date": "2023-04",
+          "series": "Mainland China",
+          "value": 2303943.0
+        },
+        {
+          "date": "2023-05",
+          "series": "Mainland China",
+          "value": 2287811.0
+        },
+        {
+          "date": "2023-06",
+          "series": "Mainland China",
+          "value": 2156627.0
+        },
+        {
+          "date": "2023-07",
+          "series": "Mainland China",
+          "value": 2975902.0
+        },
+        {
+          "date": "2023-08",
+          "series": "Mainland China",
+          "value": 3434202.0
+        },
+        {
+          "date": "2023-09",
+          "series": "Mainland China",
+          "value": 2163378.0
+        },
+        {
+          "date": "2023-10",
+          "series": "Mainland China",
+          "value": 2700141.0
+        },
+        {
+          "date": "2023-11",
+          "series": "Mainland China",
+          "value": 2429531.0
+        },
+        {
+          "date": "2023-12",
+          "series": "Mainland China",
+          "value": 2948056.0
+        },
+        {
+          "date": "2024-01",
+          "series": "Mainland China",
+          "value": 2984761.0
+        },
+        {
+          "date": "2024-02",
+          "series": "Mainland China",
+          "value": 3245911.0
+        },
+        {
+          "date": "2024-03",
+          "series": "Mainland China",
+          "value": 2467491.0
+        },
+        {
+          "date": "2024-04",
+          "series": "Mainland China",
+          "value": 2483291.0
+        },
+        {
+          "date": "2024-05",
+          "series": "Mainland China",
+          "value": 2627401.0
+        },
+        {
+          "date": "2024-06",
+          "series": "Mainland China",
+          "value": 2341637.0
+        },
+        {
+          "date": "2024-07",
+          "series": "Mainland China",
+          "value": 3140563.0
+        },
+        {
+          "date": "2024-08",
+          "series": "Mainland China",
+          "value": 3659538.0
+        },
+        {
+          "date": "2024-09",
+          "series": "Mainland China",
+          "value": 2295568.0
+        },
+        {
+          "date": "2024-10",
+          "series": "Mainland China",
+          "value": 3138319.0
+        },
+        {
+          "date": "2024-11",
+          "series": "Mainland China",
+          "value": 2557894.0
+        },
+        {
+          "date": "2024-12",
+          "series": "Mainland China",
+          "value": 3100753.0
+        },
+        {
+          "date": "2025-01",
+          "series": "Mainland China",
+          "value": 3726236.0
+        },
+        {
+          "date": "2025-02",
+          "series": "Mainland China",
+          "value": 2769404.0
+        },
+        {
+          "date": "2025-03",
+          "series": "Mainland China",
+          "value": 2749719.0
+        },
+        {
+          "date": "2025-04",
+          "series": "Mainland China",
+          "value": 2813526.0
+        },
+        {
+          "date": "2025-05",
+          "series": "Mainland China",
+          "value": 3123593.0
+        },
+        {
+          "date": "2025-06",
+          "series": "Mainland China",
+          "value": 2611276.0
+        },
+        {
+          "date": "2025-07",
+          "series": "Mainland China",
+          "value": 3510343.0
+        },
+        {
+          "date": "2025-08",
+          "series": "Mainland China",
+          "value": 4223347.0
+        },
+        {
+          "date": "2025-09",
+          "series": "Mainland China",
+          "value": 2458439.0
+        },
+        {
+          "date": "2025-10",
+          "series": "Mainland China",
+          "value": 3452168.0
+        },
+        {
+          "date": "2025-11",
+          "series": "Mainland China",
+          "value": 3041327.0
+        },
+        {
+          "date": "2025-12",
+          "series": "Mainland China",
+          "value": 3354406.0
+        },
+        {
+          "date": "2026-01",
+          "series": "Mainland China",
+          "value": 3645646.0
+        },
+        {
+          "date": "2026-02",
+          "series": "Mainland China",
+          "value": 4248174.0
+        },
+        {
+          "date": "2026-03",
+          "series": "Mainland China",
+          "value": 3186639.0
+        },
+        {
+          "date": "2026-04",
+          "series": "Mainland China",
+          "value": 3104167.0
+        },
+        {
+          "date": "2026-05",
+          "series": "Mainland China",
+          "value": 3485728.0
+        },
+        {
+          "date": "2016-09",
+          "series": "Rest of World",
+          "value": 1106214.0
+        },
+        {
+          "date": "2016-10",
+          "series": "Rest of World",
+          "value": 1255404.0
+        },
+        {
+          "date": "2016-11",
+          "series": "Rest of World",
+          "value": 1271868.0
+        },
+        {
+          "date": "2016-12",
+          "series": "Rest of World",
+          "value": 1407443.0
+        },
+        {
+          "date": "2017-01",
+          "series": "Rest of World",
+          "value": 1146849.0
+        },
+        {
+          "date": "2017-02",
+          "series": "Rest of World",
+          "value": 1062093.0
+        },
+        {
+          "date": "2017-03",
+          "series": "Rest of World",
+          "value": 1270731.0
+        },
+        {
+          "date": "2017-04",
+          "series": "Rest of World",
+          "value": 1276408.0
+        },
+        {
+          "date": "2017-05",
+          "series": "Rest of World",
+          "value": 1156325.0
+        },
+        {
+          "date": "2017-06",
+          "series": "Rest of World",
+          "value": 1121548.0
+        },
+        {
+          "date": "2017-07",
+          "series": "Rest of World",
+          "value": 1112285.0
+        },
+        {
+          "date": "2017-08",
+          "series": "Rest of World",
+          "value": 1087107.0
+        },
+        {
+          "date": "2017-09",
+          "series": "Rest of World",
+          "value": 1079325.0
+        },
+        {
+          "date": "2017-10",
+          "series": "Rest of World",
+          "value": 1271756.0
+        },
+        {
+          "date": "2017-11",
+          "series": "Rest of World",
+          "value": 1311425.0
+        },
+        {
+          "date": "2017-12",
+          "series": "Rest of World",
+          "value": 1381365.0
+        },
+        {
+          "date": "2018-01",
+          "series": "Rest of World",
+          "value": 1238568.0
+        },
+        {
+          "date": "2018-02",
+          "series": "Rest of World",
+          "value": 902981.0
+        },
+        {
+          "date": "2018-03",
+          "series": "Rest of World",
+          "value": 1343446.0
+        },
+        {
+          "date": "2018-04",
+          "series": "Rest of World",
+          "value": 1269215.0
+        },
+        {
+          "date": "2018-05",
+          "series": "Rest of World",
+          "value": 1149026.0
+        },
+        {
+          "date": "2018-06",
+          "series": "Rest of World",
+          "value": 1125074.0
+        },
+        {
+          "date": "2018-07",
+          "series": "Rest of World",
+          "value": 1077242.0
+        },
+        {
+          "date": "2018-08",
+          "series": "Rest of World",
+          "value": 1092325.0
+        },
+        {
+          "date": "2018-09",
+          "series": "Rest of World",
+          "value": 1024665.0
+        },
+        {
+          "date": "2018-10",
+          "series": "Rest of World",
+          "value": 1255960.0
+        },
+        {
+          "date": "2018-11",
+          "series": "Rest of World",
+          "value": 1381924.0
+        },
+        {
+          "date": "2018-12",
+          "series": "Rest of World",
+          "value": 1483804.0
+        },
+        {
+          "date": "2019-01",
+          "series": "Rest of World",
+          "value": 1259963.0
+        },
+        {
+          "date": "2019-02",
+          "series": "Rest of World",
+          "value": 1048982.0
+        },
+        {
+          "date": "2019-03",
+          "series": "Rest of World",
+          "value": 1397760.0
+        },
+        {
+          "date": "2019-04",
+          "series": "Rest of World",
+          "value": 1320518.0
+        },
+        {
+          "date": "2019-05",
+          "series": "Rest of World",
+          "value": 1216502.0
+        },
+        {
+          "date": "2019-06",
+          "series": "Rest of World",
+          "value": 1157492.0
+        },
+        {
+          "date": "2019-07",
+          "series": "Rest of World",
+          "value": 1047971.0
+        },
+        {
+          "date": "2019-08",
+          "series": "Rest of World",
+          "value": 819091.0
+        },
+        {
+          "date": "2019-09",
+          "series": "Rest of World",
+          "value": 702578.0
+        },
+        {
+          "date": "2019-10",
+          "series": "Rest of World",
+          "value": 808361.0
+        },
+        {
+          "date": "2019-11",
+          "series": "Rest of World",
+          "value": 724176.0
+        },
+        {
+          "date": "2019-12",
+          "series": "Rest of World",
+          "value": 802157.0
+        },
+        {
+          "date": "2020-01",
+          "series": "Rest of World",
+          "value": 687208.0
+        },
+        {
+          "date": "2020-02",
+          "series": "Rest of World",
+          "value": 102407.0
+        },
+        {
+          "date": "2020-03",
+          "series": "Rest of World",
+          "value": 54760.0
+        },
+        {
+          "date": "2020-04",
+          "series": "Rest of World",
+          "value": 1180.0
+        },
+        {
+          "date": "2020-05",
+          "series": "Rest of World",
+          "value": 2516.0
+        },
+        {
+          "date": "2020-06",
+          "series": "Rest of World",
+          "value": 7973.0
+        },
+        {
+          "date": "2020-07",
+          "series": "Rest of World",
+          "value": 14859.0
+        },
+        {
+          "date": "2020-08",
+          "series": "Rest of World",
+          "value": 2126.0
+        },
+        {
+          "date": "2020-09",
+          "series": "Rest of World",
+          "value": 2921.0
+        },
+        {
+          "date": "2020-10",
+          "series": "Rest of World",
+          "value": 2968.0
+        },
+        {
+          "date": "2020-11",
+          "series": "Rest of World",
+          "value": 2407.0
+        },
+        {
+          "date": "2020-12",
+          "series": "Rest of World",
+          "value": 2442.0
+        },
+        {
+          "date": "2021-01",
+          "series": "Rest of World",
+          "value": 1494.0
+        },
+        {
+          "date": "2021-02",
+          "series": "Rest of World",
+          "value": 1696.0
+        },
+        {
+          "date": "2021-03",
+          "series": "Rest of World",
+          "value": 1759.0
+        },
+        {
+          "date": "2021-04",
+          "series": "Rest of World",
+          "value": 1586.0
+        },
+        {
+          "date": "2021-05",
+          "series": "Rest of World",
+          "value": 1409.0
+        },
+        {
+          "date": "2021-06",
+          "series": "Rest of World",
+          "value": 1553.0
+        },
+        {
+          "date": "2021-07",
+          "series": "Rest of World",
+          "value": 2364.0
+        },
+        {
+          "date": "2021-08",
+          "series": "Rest of World",
+          "value": 2288.0
+        },
+        {
+          "date": "2021-09",
+          "series": "Rest of World",
+          "value": 2924.0
+        },
+        {
+          "date": "2021-10",
+          "series": "Rest of World",
+          "value": 2673.0
+        },
+        {
+          "date": "2021-11",
+          "series": "Rest of World",
+          "value": 3048.0
+        },
+        {
+          "date": "2021-12",
+          "series": "Rest of World",
+          "value": 2973.0
+        },
+        {
+          "date": "2022-01",
+          "series": "Rest of World",
+          "value": 1309.0
+        },
+        {
+          "date": "2022-02",
+          "series": "Rest of World",
+          "value": 816.0
+        },
+        {
+          "date": "2022-03",
+          "series": "Rest of World",
+          "value": 804.0
+        },
+        {
+          "date": "2022-04",
+          "series": "Rest of World",
+          "value": 1099.0
+        },
+        {
+          "date": "2022-05",
+          "series": "Rest of World",
+          "value": 4291.0
+        },
+        {
+          "date": "2022-06",
+          "series": "Rest of World",
+          "value": 5753.0
+        },
+        {
+          "date": "2022-07",
+          "series": "Rest of World",
+          "value": 7957.0
+        },
+        {
+          "date": "2022-08",
+          "series": "Rest of World",
+          "value": 11315.0
+        },
+        {
+          "date": "2022-09",
+          "series": "Rest of World",
+          "value": 14755.0
+        },
+        {
+          "date": "2022-10",
+          "series": "Rest of World",
+          "value": 32866.0
+        },
+        {
+          "date": "2022-11",
+          "series": "Rest of World",
+          "value": 55064.0
+        },
+        {
+          "date": "2022-12",
+          "series": "Rest of World",
+          "value": 93320.0
+        },
+        {
+          "date": "2023-01",
+          "series": "Rest of World",
+          "value": 218972.0
+        },
+        {
+          "date": "2023-02",
+          "series": "Rest of World",
+          "value": 353316.0
+        },
+        {
+          "date": "2023-03",
+          "series": "Rest of World",
+          "value": 486491.0
+        },
+        {
+          "date": "2023-04",
+          "series": "Rest of World",
+          "value": 588313.0
+        },
+        {
+          "date": "2023-05",
+          "series": "Rest of World",
+          "value": 540573.0
+        },
+        {
+          "date": "2023-06",
+          "series": "Rest of World",
+          "value": 591861.0
+        },
+        {
+          "date": "2023-07",
+          "series": "Rest of World",
+          "value": 612628.0
+        },
+        {
+          "date": "2023-08",
+          "series": "Rest of World",
+          "value": 643544.0
+        },
+        {
+          "date": "2023-09",
+          "series": "Rest of World",
+          "value": 608448.0
+        },
+        {
+          "date": "2023-10",
+          "series": "Rest of World",
+          "value": 758637.0
+        },
+        {
+          "date": "2023-11",
+          "series": "Rest of World",
+          "value": 859384.0
+        },
+        {
+          "date": "2023-12",
+          "series": "Rest of World",
+          "value": 981930.0
+        },
+        {
+          "date": "2024-01",
+          "series": "Rest of World",
+          "value": 840856.0
+        },
+        {
+          "date": "2024-02",
+          "series": "Rest of World",
+          "value": 755279.0
+        },
+        {
+          "date": "2024-03",
+          "series": "Rest of World",
+          "value": 934500.0
+        },
+        {
+          "date": "2024-04",
+          "series": "Rest of World",
+          "value": 908090.0
+        },
+        {
+          "date": "2024-05",
+          "series": "Rest of World",
+          "value": 771057.0
+        },
+        {
+          "date": "2024-06",
+          "series": "Rest of World",
+          "value": 790961.0
+        },
+        {
+          "date": "2024-07",
+          "series": "Rest of World",
+          "value": 781067.0
+        },
+        {
+          "date": "2024-08",
+          "series": "Rest of World",
+          "value": 794339.0
+        },
+        {
+          "date": "2024-09",
+          "series": "Rest of World",
+          "value": 766435.0
+        },
+        {
+          "date": "2024-10",
+          "series": "Rest of World",
+          "value": 951735.0
+        },
+        {
+          "date": "2024-11",
+          "series": "Rest of World",
+          "value": 1010543.0
+        },
+        {
+          "date": "2024-12",
+          "series": "Rest of World",
+          "value": 1154798.0
+        },
+        {
+          "date": "2025-01",
+          "series": "Rest of World",
+          "value": 1015830.0
+        },
+        {
+          "date": "2025-02",
+          "series": "Rest of World",
+          "value": 898267.0
+        },
+        {
+          "date": "2025-03",
+          "series": "Rest of World",
+          "value": 1068793.0
+        },
+        {
+          "date": "2025-04",
+          "series": "Rest of World",
+          "value": 1034408.0
+        },
+        {
+          "date": "2025-05",
+          "series": "Rest of World",
+          "value": 955345.0
+        },
+        {
+          "date": "2025-06",
+          "series": "Rest of World",
+          "value": 869703.0
+        },
+        {
+          "date": "2025-07",
+          "series": "Rest of World",
+          "value": 880171.0
+        },
+        {
+          "date": "2025-08",
+          "series": "Rest of World",
+          "value": 929490.0
+        },
+        {
+          "date": "2025-09",
+          "series": "Rest of World",
+          "value": 833758.0
+        },
+        {
+          "date": "2025-10",
+          "series": "Rest of World",
+          "value": 1136347.0
+        },
+        {
+          "date": "2025-11",
+          "series": "Rest of World",
+          "value": 1147945.0
+        },
+        {
+          "date": "2025-12",
+          "series": "Rest of World",
+          "value": 1290991.0
+        },
+        {
+          "date": "2026-01",
+          "series": "Rest of World",
+          "value": 1166054.0
+        },
+        {
+          "date": "2026-02",
+          "series": "Rest of World",
+          "value": 893540.0
+        },
+        {
+          "date": "2026-03",
+          "series": "Rest of World",
+          "value": 1167590.0
+        },
+        {
+          "date": "2026-04",
+          "series": "Rest of World",
+          "value": 1113144.0
+        },
+        {
+          "date": "2026-05",
+          "series": "Rest of World",
+          "value": 979112.0
+        }
+      ],
       "market_kpi_summary": [
         {
           "latest_pop": 7510.8,
           "latest_net_mov": 29.1,
-          "latest_mpfa": null,
-          "latest_ugc": 23961
+          "latest_mpfa": 1188.0,
+          "latest_ugc": 23961,
+          "latest_visitors": 4464840.0
         }
       ]
     }
@@ -10424,7 +18176,19 @@
         "url": "https://www.td.gov.hk/datagovhk_tis/mttd-csv/en/table81e_eng.csv",
         "language": "CSV",
         "sql": "SELECT month, hzmb_vehicular_traffic, hzmb_northbound_hk_vehicles, express_rail_passengers FROM td_cross_border_traffic;",
-        "description": "Monthly HZMB vehicular traffic (incl. Northbound Travel for HK Vehicles 港车北上) and cross-boundary passenger traffic incl. Express Rail West Kowloon."
+        "description": "Monthly HZMB vehicular traffic (incl. Northbound Travel for HK Vehicles \u6e2f\u8f66\u5317\u4e0a) and cross-boundary passenger traffic incl. Express Rail West Kowloon."
+      }
+    },
+    {
+      "id": "visitor_arrivals",
+      "label": "C&SD Visitor Arrivals by Region",
+      "href": "https://www.censtatd.gov.hk/en/web_table.html?id=650-80001",
+      "query": {
+        "engine": "official Web Table API",
+        "url": "https://www.censtatd.gov.hk/api/get.php?id=650-80001&lang=en&full_series=1",
+        "language": "JSON",
+        "sql": "SELECT date, region, visitors FROM censtatd_visitor_arrivals;",
+        "description": "Monthly visitor arrivals by nationality/region since 2004, a geographic companion/cross-check to ImmD's cross-border passenger data."
       }
     }
   ],
@@ -10450,10 +18214,10 @@
     {
       "id": "mpfa",
       "label": "MPFA Statistical Digest",
-      "status": "degraded",
-      "records": 0,
-      "latest_observation": "—",
-      "freshness": "unavailable",
+      "status": "success",
+      "records": 14,
+      "latest_observation": "2026-Q1",
+      "freshness": "dated",
       "notes": "Quarterly MPF claims for permanent departure from Hong Kong (count and amount), parsed from the official Statistical Digest."
     },
     {
@@ -10472,15 +18236,24 @@
       "records": 92,
       "latest_observation": "2026-05",
       "freshness": "dated",
-      "notes": "Monthly HZMB vehicular traffic (incl. Northbound Travel for HK Vehicles 港车北上) and cross-boundary passenger traffic incl. Express Rail West Kowloon."
+      "notes": "Monthly HZMB vehicular traffic (incl. Northbound Travel for HK Vehicles \u6e2f\u8f66\u5317\u4e0a) and cross-boundary passenger traffic incl. Express Rail West Kowloon."
+    },
+    {
+      "id": "visitor_arrivals",
+      "label": "C&SD Visitor Arrivals by Region",
+      "status": "success",
+      "records": 2959,
+      "latest_observation": "2026-05",
+      "freshness": "dated",
+      "notes": "Monthly visitor arrivals by nationality/region since 2004, a geographic companion/cross-check to ImmD's cross-border passenger data."
     }
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-population-migration/",
     "sector_id": "hk-population-migration",
     "sector_name": "Hong Kong Population, Migration & Cross-Border Data Monitor",
-    "snapshotId": "2dac5d7d456ca460",
-    "generatedAt": "2026-07-31T09:16:54.319983Z",
+    "snapshotId": "95c0697d78b5718c",
+    "generatedAt": "2026-08-01T00:40:07.905663Z",
     "dataAsOf": "2026-07-30"
   }
 }

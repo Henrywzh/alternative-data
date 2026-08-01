@@ -107,6 +107,16 @@ CENSTATD_RESTAURANT_TABLE_ID = "625-68003"
 CENSTATD_RESTAURANT_TOTALS_TABLE_ID = "625-68001"
 CENSTATD_RESTAURANT_THEME_ID = "90"
 
+# Composite Consumer Price Index (theme id 54).
+# Table 510-60001: headline Composite/A/B/C CPI (base 2019/20=100), monthly
+# since Oct 1974, no COICOP category breakdown.
+CENSTATD_CPI_HEADLINE_TABLE_ID = "510-60001"
+# Table 510-60003: same A/B/C/Composite basis indices, but broken out by
+# COICOP category (Food, Housing, Transport, etc.) -- monthly only since
+# 2005, thirty years shorter than the headline table.
+CENSTATD_CPI_CATEGORY_TABLE_ID = "510-60003"
+CENSTATD_CPI_THEME_ID = "54"
+
 DEFAULT_HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
     'Accept': 'text/html,application/json,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',

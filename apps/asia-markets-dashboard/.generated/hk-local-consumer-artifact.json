@@ -5,7 +5,7 @@
     "surface": "dashboard",
     "title": "Hong Kong Local Consumer Monitor",
     "description": "A source-backed snapshot of cross-border passenger traffic, fresh-food wholesale prices, gold input costs, auto fuel pricing, and watchlist valuations for HK local-consumer names.",
-    "generatedAt": "2026-07-30T23:25:23.273856Z",
+    "generatedAt": "2026-08-01T00:23:03.548101Z",
     "cards": [
       {
         "id": "northbound_card",
@@ -161,6 +161,44 @@
             "field": "year_change",
             "format": "percent",
             "signed": true
+          }
+        ]
+      },
+      {
+        "id": "cpi_card",
+        "description": "Headline Composite CPI (base 2019/20=100); month and year-on-year movements.",
+        "dataset": "kpi_cpi",
+        "sourceId": "censtatd_cpi",
+        "metrics": [
+          {
+            "label": "Composite CPI",
+            "field": "latest",
+            "format": "number"
+          },
+          {
+            "label": "MoM",
+            "field": "period_change",
+            "format": "percent",
+            "signed": true
+          },
+          {
+            "label": "YoY",
+            "field": "year_change",
+            "format": "percent",
+            "signed": true
+          }
+        ]
+      },
+      {
+        "id": "fehd_card",
+        "description": "Total licensed restaurants (General/Light Refreshment/Marine) territory-wide, as of today's FEHD directory snapshot.",
+        "dataset": "kpi_fehd",
+        "sourceId": "fehd_licensed_premises",
+        "metrics": [
+          {
+            "label": "Licensed restaurants",
+            "field": "latest",
+            "format": "number"
           }
         ]
       },
@@ -430,6 +468,80 @@
           }
         },
         "valueFormat": "percent",
+        "layout": "half"
+      },
+      {
+        "id": "cpi_trend",
+        "title": "Composite Consumer Price Index",
+        "subtitle": "Monthly headline CPI (base 2019/20=100), full published history since October 1974.",
+        "type": "line",
+        "intent": "trend",
+        "dataset": "censtatd_cpi_headline_history",
+        "sourceId": "censtatd_cpi",
+        "encodings": {
+          "x": {
+            "field": "date",
+            "type": "temporal",
+            "label": "Month"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "label": "Index (2019/20=100)"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "half"
+      },
+      {
+        "id": "cpi_by_category_chart",
+        "title": "CPI by category — Food, Housing & Transport",
+        "subtitle": "Monthly sub-indices since 2005 (shorter history than the headline CPI table).",
+        "type": "line",
+        "intent": "trend",
+        "dataset": "censtatd_cpi_by_category_history",
+        "sourceId": "censtatd_cpi",
+        "encodings": {
+          "x": {
+            "field": "date",
+            "type": "temporal",
+            "label": "Month"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "label": "Index (2019/20=100)"
+          },
+          "color": {
+            "field": "series",
+            "type": "nominal",
+            "label": "Category"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "half"
+      },
+      {
+        "id": "fehd_district_chart",
+        "title": "Licensed restaurants by district",
+        "subtitle": "Today's FEHD directory snapshot; all licence types combined.",
+        "type": "horizontalBar",
+        "intent": "comparison",
+        "dataset": "fehd_district_density",
+        "sourceId": "fehd_licensed_premises",
+        "encodings": {
+          "x": {
+            "field": "district_name",
+            "type": "nominal",
+            "label": "District"
+          },
+          "y": {
+            "field": "count",
+            "type": "quantitative",
+            "label": "Licensed restaurants"
+          }
+        },
+        "valueFormat": "number",
         "layout": "half"
       },
       {
@@ -1281,6 +1393,18 @@
         "path": "sources/censtatd_restaurant.sql"
       },
       {
+        "id": "fehd_licensed_premises",
+        "label": "FEHD Licensed Restaurant Directory",
+        "href": "https://www.fehd.gov.hk/english/licensing/license/text/LP_Restaurants_EN.XML",
+        "path": "sources/fehd_licensed_premises.sql"
+      },
+      {
+        "id": "censtatd_cpi",
+        "label": "C&SD Composite Consumer Price Index",
+        "href": "https://www.censtatd.gov.hk/en/web_table.html?id=510-60001",
+        "path": "sources/censtatd_cpi.sql"
+      },
+      {
         "id": "immigration_flow",
         "label": "HK Immigration Department Daily Passenger Traffic",
         "href": "https://www.immd.gov.hk/opendata/eng/transport/immigration_clearance/statistics_on_daily_passenger_traffic.csv",
@@ -1308,7 +1432,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**Data snapshot:** `f5ed14a57bfdb989` · generated 2026-07-30T23:25:23.273856Z.  This is a published snapshot, not a live connection. Includes official Consumer Council auto fuel calculator pricing."
+        "body": "**Data snapshot:** `ea63ca8c0574327b` · generated 2026-08-01T00:23:03.548101Z.  This is a published snapshot, not a live connection. Includes official Consumer Council auto fuel calculator pricing."
       },
       {
         "id": "market_pulse_1",
@@ -1334,6 +1458,8 @@
         "cardIds": [
           "retail_card",
           "restaurant_card",
+          "cpi_card",
+          "fehd_card",
           "store_footprint_card"
         ]
       },
@@ -1440,6 +1566,23 @@
         "tableId": "valuation_table"
       },
       {
+        "id": "cpi_trend_chart_block",
+        "type": "chart",
+        "chartId": "cpi_trend",
+        "layout": "half"
+      },
+      {
+        "id": "cpi_by_category_chart_block",
+        "type": "chart",
+        "chartId": "cpi_by_category_chart",
+        "layout": "half"
+      },
+      {
+        "id": "fehd_district_chart_block",
+        "type": "chart",
+        "chartId": "fehd_district_chart"
+      },
+      {
         "id": "retail_trend_chart",
         "type": "chart",
         "chartId": "retail_trend"
@@ -1515,14 +1658,14 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-30T23:25:23.273856Z",
+    "generatedAt": "2026-08-01T00:23:03.548101Z",
     "status": "ready",
     "datasets": {
       "kpi_weather": [
         {
           "latest": 20.5,
           "period_change": 0.541353,
-          "year_change": -0.305085,
+          "year_change": -0.33871,
           "observation_date": "2026-07-01"
         }
       ],
@@ -2389,7 +2532,7 @@
         {
           "latest": 262361.0,
           "period_change": -0.00116,
-          "year_change": -0.107501,
+          "year_change": -0.099566,
           "observation_date": "2026-07-28"
         }
       ],
@@ -2397,7 +2540,7 @@
         {
           "latest": 116646.6,
           "period_change": 0.00821,
-          "year_change": -0.13293,
+          "year_change": -0.119068,
           "observation_date": "2026-07-28"
         }
       ],
@@ -3061,6 +3204,16 @@
           "month": "2026-06",
           "value": 96584.7,
           "flow_type": "Southbound"
+        },
+        {
+          "month": "2026-07",
+          "value": 289411.4,
+          "flow_type": "Northbound"
+        },
+        {
+          "month": "2026-07",
+          "value": 113755.3,
+          "flow_type": "Southbound"
         }
       ],
       "immigration_checkpoint_history": [],
@@ -3068,7 +3221,7 @@
         {
           "latest": 882.55,
           "period_change": -0.011912,
-          "year_change": 0.151132,
+          "year_change": 0.150547,
           "observation_date": "2026-07-27"
         }
       ],
@@ -3796,6 +3949,76 @@
         },
         {
           "date": "2026-07-30",
+          "category": "Vegetables",
+          "category_short": "Veg",
+          "avg_price_hkd_per_kg": 7.74,
+          "commodities": 13
+        },
+        {
+          "date": "2026-07-31",
+          "category": "Eggs",
+          "category_short": "Eggs",
+          "avg_price_hkd_per_kg": 1.62,
+          "commodities": 2
+        },
+        {
+          "date": "2026-07-31",
+          "category": "Freshwater fish",
+          "category_short": "FW fish",
+          "avg_price_hkd_per_kg": 34.11,
+          "commodities": 3
+        },
+        {
+          "date": "2026-07-31",
+          "category": "Livestock / Poultry",
+          "category_short": "Meat/Poultry",
+          "avg_price_hkd_per_kg": 47.32,
+          "commodities": 3
+        },
+        {
+          "date": "2026-07-31",
+          "category": "Marine fish",
+          "category_short": "Marine",
+          "avg_price_hkd_per_kg": 92.88,
+          "commodities": 10
+        },
+        {
+          "date": "2026-07-31",
+          "category": "Vegetables",
+          "category_short": "Veg",
+          "avg_price_hkd_per_kg": 7.74,
+          "commodities": 13
+        },
+        {
+          "date": "2026-08-01",
+          "category": "Eggs",
+          "category_short": "Eggs",
+          "avg_price_hkd_per_kg": 1.62,
+          "commodities": 2
+        },
+        {
+          "date": "2026-08-01",
+          "category": "Freshwater fish",
+          "category_short": "FW fish",
+          "avg_price_hkd_per_kg": 34.11,
+          "commodities": 3
+        },
+        {
+          "date": "2026-08-01",
+          "category": "Livestock / Poultry",
+          "category_short": "Meat/Poultry",
+          "avg_price_hkd_per_kg": 47.32,
+          "commodities": 3
+        },
+        {
+          "date": "2026-08-01",
+          "category": "Marine fish",
+          "category_short": "Marine",
+          "avg_price_hkd_per_kg": 92.88,
+          "commodities": 10
+        },
+        {
+          "date": "2026-08-01",
           "category": "Vegetables",
           "category_short": "Veg",
           "avg_price_hkd_per_kg": 7.74,
@@ -12892,7 +13115,7 @@
         {
           "latest": 121.0,
           "period_change": 0.076512,
-          "year_change": 0.13936,
+          "year_change": 0.113155,
           "observation_date": "2026-05-01"
         }
       ],
@@ -16081,6 +16304,6718 @@
           "year_month": "2026-07"
         }
       ],
+      "kpi_cpi": [
+        {
+          "latest": 110.4,
+          "period_change": 0.0,
+          "year_change": 0.012844,
+          "observation_date": "2026-06-01"
+        }
+      ],
+      "censtatd_cpi_headline_history": [
+        {
+          "date": "1980-10",
+          "value": 19.4,
+          "is_provisional": false
+        },
+        {
+          "date": "1980-11",
+          "value": 19.6,
+          "is_provisional": false
+        },
+        {
+          "date": "1980-12",
+          "value": 19.7,
+          "is_provisional": false
+        },
+        {
+          "date": "1981-01",
+          "value": 20.0,
+          "is_provisional": false
+        },
+        {
+          "date": "1981-02",
+          "value": 20.4,
+          "is_provisional": false
+        },
+        {
+          "date": "1981-03",
+          "value": 20.7,
+          "is_provisional": false
+        },
+        {
+          "date": "1981-04",
+          "value": 20.8,
+          "is_provisional": false
+        },
+        {
+          "date": "1981-05",
+          "value": 21.0,
+          "is_provisional": false
+        },
+        {
+          "date": "1981-06",
+          "value": 21.3,
+          "is_provisional": false
+        },
+        {
+          "date": "1981-07",
+          "value": 21.6,
+          "is_provisional": false
+        },
+        {
+          "date": "1981-08",
+          "value": 21.9,
+          "is_provisional": false
+        },
+        {
+          "date": "1981-09",
+          "value": 22.0,
+          "is_provisional": false
+        },
+        {
+          "date": "1981-10",
+          "value": 22.4,
+          "is_provisional": false
+        },
+        {
+          "date": "1981-11",
+          "value": 22.4,
+          "is_provisional": false
+        },
+        {
+          "date": "1981-12",
+          "value": 22.4,
+          "is_provisional": false
+        },
+        {
+          "date": "1982-01",
+          "value": 22.8,
+          "is_provisional": false
+        },
+        {
+          "date": "1982-02",
+          "value": 23.0,
+          "is_provisional": false
+        },
+        {
+          "date": "1982-03",
+          "value": 23.0,
+          "is_provisional": false
+        },
+        {
+          "date": "1982-04",
+          "value": 23.2,
+          "is_provisional": false
+        },
+        {
+          "date": "1982-05",
+          "value": 23.6,
+          "is_provisional": false
+        },
+        {
+          "date": "1982-06",
+          "value": 23.8,
+          "is_provisional": false
+        },
+        {
+          "date": "1982-07",
+          "value": 23.9,
+          "is_provisional": false
+        },
+        {
+          "date": "1982-08",
+          "value": 24.0,
+          "is_provisional": false
+        },
+        {
+          "date": "1982-09",
+          "value": 24.2,
+          "is_provisional": false
+        },
+        {
+          "date": "1982-10",
+          "value": 24.4,
+          "is_provisional": false
+        },
+        {
+          "date": "1982-11",
+          "value": 24.6,
+          "is_provisional": false
+        },
+        {
+          "date": "1982-12",
+          "value": 24.7,
+          "is_provisional": false
+        },
+        {
+          "date": "1983-01",
+          "value": 24.7,
+          "is_provisional": false
+        },
+        {
+          "date": "1983-02",
+          "value": 25.2,
+          "is_provisional": false
+        },
+        {
+          "date": "1983-03",
+          "value": 25.5,
+          "is_provisional": false
+        },
+        {
+          "date": "1983-04",
+          "value": 25.8,
+          "is_provisional": false
+        },
+        {
+          "date": "1983-05",
+          "value": 25.6,
+          "is_provisional": false
+        },
+        {
+          "date": "1983-06",
+          "value": 25.9,
+          "is_provisional": false
+        },
+        {
+          "date": "1983-07",
+          "value": 26.0,
+          "is_provisional": false
+        },
+        {
+          "date": "1983-08",
+          "value": 26.1,
+          "is_provisional": false
+        },
+        {
+          "date": "1983-09",
+          "value": 26.7,
+          "is_provisional": false
+        },
+        {
+          "date": "1983-10",
+          "value": 27.4,
+          "is_provisional": false
+        },
+        {
+          "date": "1983-11",
+          "value": 27.3,
+          "is_provisional": false
+        },
+        {
+          "date": "1983-12",
+          "value": 27.4,
+          "is_provisional": false
+        },
+        {
+          "date": "1984-01",
+          "value": 27.6,
+          "is_provisional": false
+        },
+        {
+          "date": "1984-02",
+          "value": 28.0,
+          "is_provisional": false
+        },
+        {
+          "date": "1984-03",
+          "value": 27.9,
+          "is_provisional": false
+        },
+        {
+          "date": "1984-04",
+          "value": 28.2,
+          "is_provisional": false
+        },
+        {
+          "date": "1984-05",
+          "value": 28.2,
+          "is_provisional": false
+        },
+        {
+          "date": "1984-06",
+          "value": 28.5,
+          "is_provisional": false
+        },
+        {
+          "date": "1984-07",
+          "value": 28.5,
+          "is_provisional": false
+        },
+        {
+          "date": "1984-08",
+          "value": 28.5,
+          "is_provisional": false
+        },
+        {
+          "date": "1984-09",
+          "value": 28.7,
+          "is_provisional": false
+        },
+        {
+          "date": "1984-10",
+          "value": 28.7,
+          "is_provisional": false
+        },
+        {
+          "date": "1984-11",
+          "value": 28.7,
+          "is_provisional": false
+        },
+        {
+          "date": "1984-12",
+          "value": 28.8,
+          "is_provisional": false
+        },
+        {
+          "date": "1985-01",
+          "value": 28.8,
+          "is_provisional": false
+        },
+        {
+          "date": "1985-02",
+          "value": 28.9,
+          "is_provisional": false
+        },
+        {
+          "date": "1985-03",
+          "value": 29.2,
+          "is_provisional": false
+        },
+        {
+          "date": "1985-04",
+          "value": 29.3,
+          "is_provisional": false
+        },
+        {
+          "date": "1985-05",
+          "value": 29.2,
+          "is_provisional": false
+        },
+        {
+          "date": "1985-06",
+          "value": 29.4,
+          "is_provisional": false
+        },
+        {
+          "date": "1985-07",
+          "value": 29.3,
+          "is_provisional": false
+        },
+        {
+          "date": "1985-08",
+          "value": 29.4,
+          "is_provisional": false
+        },
+        {
+          "date": "1985-09",
+          "value": 29.8,
+          "is_provisional": false
+        },
+        {
+          "date": "1985-10",
+          "value": 29.7,
+          "is_provisional": false
+        },
+        {
+          "date": "1985-11",
+          "value": 29.7,
+          "is_provisional": false
+        },
+        {
+          "date": "1985-12",
+          "value": 29.7,
+          "is_provisional": false
+        },
+        {
+          "date": "1986-01",
+          "value": 29.7,
+          "is_provisional": false
+        },
+        {
+          "date": "1986-02",
+          "value": 30.0,
+          "is_provisional": false
+        },
+        {
+          "date": "1986-03",
+          "value": 30.0,
+          "is_provisional": false
+        },
+        {
+          "date": "1986-04",
+          "value": 30.2,
+          "is_provisional": false
+        },
+        {
+          "date": "1986-05",
+          "value": 30.2,
+          "is_provisional": false
+        },
+        {
+          "date": "1986-06",
+          "value": 30.5,
+          "is_provisional": false
+        },
+        {
+          "date": "1986-07",
+          "value": 30.6,
+          "is_provisional": false
+        },
+        {
+          "date": "1986-08",
+          "value": 30.5,
+          "is_provisional": false
+        },
+        {
+          "date": "1986-09",
+          "value": 30.7,
+          "is_provisional": false
+        },
+        {
+          "date": "1986-10",
+          "value": 30.8,
+          "is_provisional": false
+        },
+        {
+          "date": "1986-11",
+          "value": 30.9,
+          "is_provisional": false
+        },
+        {
+          "date": "1986-12",
+          "value": 30.9,
+          "is_provisional": false
+        },
+        {
+          "date": "1987-01",
+          "value": 31.1,
+          "is_provisional": false
+        },
+        {
+          "date": "1987-02",
+          "value": 31.3,
+          "is_provisional": false
+        },
+        {
+          "date": "1987-03",
+          "value": 31.4,
+          "is_provisional": false
+        },
+        {
+          "date": "1987-04",
+          "value": 31.7,
+          "is_provisional": false
+        },
+        {
+          "date": "1987-05",
+          "value": 31.9,
+          "is_provisional": false
+        },
+        {
+          "date": "1987-06",
+          "value": 32.3,
+          "is_provisional": false
+        },
+        {
+          "date": "1987-07",
+          "value": 32.1,
+          "is_provisional": false
+        },
+        {
+          "date": "1987-08",
+          "value": 32.4,
+          "is_provisional": false
+        },
+        {
+          "date": "1987-09",
+          "value": 32.6,
+          "is_provisional": false
+        },
+        {
+          "date": "1987-10",
+          "value": 32.8,
+          "is_provisional": false
+        },
+        {
+          "date": "1987-11",
+          "value": 32.9,
+          "is_provisional": false
+        },
+        {
+          "date": "1987-12",
+          "value": 33.2,
+          "is_provisional": false
+        },
+        {
+          "date": "1988-01",
+          "value": 33.1,
+          "is_provisional": false
+        },
+        {
+          "date": "1988-02",
+          "value": 33.5,
+          "is_provisional": false
+        },
+        {
+          "date": "1988-03",
+          "value": 33.7,
+          "is_provisional": false
+        },
+        {
+          "date": "1988-04",
+          "value": 34.2,
+          "is_provisional": false
+        },
+        {
+          "date": "1988-05",
+          "value": 34.3,
+          "is_provisional": false
+        },
+        {
+          "date": "1988-06",
+          "value": 34.6,
+          "is_provisional": false
+        },
+        {
+          "date": "1988-07",
+          "value": 34.8,
+          "is_provisional": false
+        },
+        {
+          "date": "1988-08",
+          "value": 35.0,
+          "is_provisional": false
+        },
+        {
+          "date": "1988-09",
+          "value": 35.5,
+          "is_provisional": false
+        },
+        {
+          "date": "1988-10",
+          "value": 35.4,
+          "is_provisional": false
+        },
+        {
+          "date": "1988-11",
+          "value": 35.8,
+          "is_provisional": false
+        },
+        {
+          "date": "1988-12",
+          "value": 36.0,
+          "is_provisional": false
+        },
+        {
+          "date": "1989-01",
+          "value": 36.3,
+          "is_provisional": false
+        },
+        {
+          "date": "1989-02",
+          "value": 37.0,
+          "is_provisional": false
+        },
+        {
+          "date": "1989-03",
+          "value": 37.0,
+          "is_provisional": false
+        },
+        {
+          "date": "1989-04",
+          "value": 37.6,
+          "is_provisional": false
+        },
+        {
+          "date": "1989-05",
+          "value": 37.9,
+          "is_provisional": false
+        },
+        {
+          "date": "1989-06",
+          "value": 38.3,
+          "is_provisional": false
+        },
+        {
+          "date": "1989-07",
+          "value": 38.4,
+          "is_provisional": false
+        },
+        {
+          "date": "1989-08",
+          "value": 38.6,
+          "is_provisional": false
+        },
+        {
+          "date": "1989-09",
+          "value": 39.1,
+          "is_provisional": false
+        },
+        {
+          "date": "1989-10",
+          "value": 39.2,
+          "is_provisional": false
+        },
+        {
+          "date": "1989-11",
+          "value": 39.4,
+          "is_provisional": false
+        },
+        {
+          "date": "1989-12",
+          "value": 39.6,
+          "is_provisional": false
+        },
+        {
+          "date": "1990-01",
+          "value": 40.0,
+          "is_provisional": false
+        },
+        {
+          "date": "1990-02",
+          "value": 40.3,
+          "is_provisional": false
+        },
+        {
+          "date": "1990-03",
+          "value": 40.8,
+          "is_provisional": false
+        },
+        {
+          "date": "1990-04",
+          "value": 41.3,
+          "is_provisional": false
+        },
+        {
+          "date": "1990-05",
+          "value": 41.7,
+          "is_provisional": false
+        },
+        {
+          "date": "1990-06",
+          "value": 42.1,
+          "is_provisional": false
+        },
+        {
+          "date": "1990-07",
+          "value": 42.3,
+          "is_provisional": false
+        },
+        {
+          "date": "1990-08",
+          "value": 42.4,
+          "is_provisional": false
+        },
+        {
+          "date": "1990-09",
+          "value": 43.2,
+          "is_provisional": false
+        },
+        {
+          "date": "1990-10",
+          "value": 43.5,
+          "is_provisional": false
+        },
+        {
+          "date": "1990-11",
+          "value": 43.9,
+          "is_provisional": false
+        },
+        {
+          "date": "1990-12",
+          "value": 44.2,
+          "is_provisional": false
+        },
+        {
+          "date": "1991-01",
+          "value": 44.5,
+          "is_provisional": false
+        },
+        {
+          "date": "1991-02",
+          "value": 45.2,
+          "is_provisional": false
+        },
+        {
+          "date": "1991-03",
+          "value": 45.7,
+          "is_provisional": false
+        },
+        {
+          "date": "1991-04",
+          "value": 46.4,
+          "is_provisional": false
+        },
+        {
+          "date": "1991-05",
+          "value": 46.6,
+          "is_provisional": false
+        },
+        {
+          "date": "1991-06",
+          "value": 46.9,
+          "is_provisional": false
+        },
+        {
+          "date": "1991-07",
+          "value": 47.1,
+          "is_provisional": false
+        },
+        {
+          "date": "1991-08",
+          "value": 47.3,
+          "is_provisional": false
+        },
+        {
+          "date": "1991-09",
+          "value": 47.7,
+          "is_provisional": false
+        },
+        {
+          "date": "1991-10",
+          "value": 48.0,
+          "is_provisional": false
+        },
+        {
+          "date": "1991-11",
+          "value": 48.4,
+          "is_provisional": false
+        },
+        {
+          "date": "1991-12",
+          "value": 48.5,
+          "is_provisional": false
+        },
+        {
+          "date": "1992-01",
+          "value": 49.0,
+          "is_provisional": false
+        },
+        {
+          "date": "1992-02",
+          "value": 49.8,
+          "is_provisional": false
+        },
+        {
+          "date": "1992-03",
+          "value": 50.1,
+          "is_provisional": false
+        },
+        {
+          "date": "1992-04",
+          "value": 50.7,
+          "is_provisional": false
+        },
+        {
+          "date": "1992-05",
+          "value": 50.9,
+          "is_provisional": false
+        },
+        {
+          "date": "1992-06",
+          "value": 51.3,
+          "is_provisional": false
+        },
+        {
+          "date": "1992-07",
+          "value": 51.5,
+          "is_provisional": false
+        },
+        {
+          "date": "1992-08",
+          "value": 51.6,
+          "is_provisional": false
+        },
+        {
+          "date": "1992-09",
+          "value": 52.5,
+          "is_provisional": false
+        },
+        {
+          "date": "1992-10",
+          "value": 52.7,
+          "is_provisional": false
+        },
+        {
+          "date": "1992-11",
+          "value": 52.9,
+          "is_provisional": false
+        },
+        {
+          "date": "1992-12",
+          "value": 53.2,
+          "is_provisional": false
+        },
+        {
+          "date": "1993-01",
+          "value": 54.0,
+          "is_provisional": false
+        },
+        {
+          "date": "1993-02",
+          "value": 54.2,
+          "is_provisional": false
+        },
+        {
+          "date": "1993-03",
+          "value": 54.3,
+          "is_provisional": false
+        },
+        {
+          "date": "1993-04",
+          "value": 54.9,
+          "is_provisional": false
+        },
+        {
+          "date": "1993-05",
+          "value": 55.4,
+          "is_provisional": false
+        },
+        {
+          "date": "1993-06",
+          "value": 55.9,
+          "is_provisional": false
+        },
+        {
+          "date": "1993-07",
+          "value": 55.9,
+          "is_provisional": false
+        },
+        {
+          "date": "1993-08",
+          "value": 56.1,
+          "is_provisional": false
+        },
+        {
+          "date": "1993-09",
+          "value": 56.8,
+          "is_provisional": false
+        },
+        {
+          "date": "1993-10",
+          "value": 57.4,
+          "is_provisional": false
+        },
+        {
+          "date": "1993-11",
+          "value": 57.5,
+          "is_provisional": false
+        },
+        {
+          "date": "1993-12",
+          "value": 58.0,
+          "is_provisional": false
+        },
+        {
+          "date": "1994-01",
+          "value": 57.9,
+          "is_provisional": false
+        },
+        {
+          "date": "1994-02",
+          "value": 58.8,
+          "is_provisional": false
+        },
+        {
+          "date": "1994-03",
+          "value": 58.8,
+          "is_provisional": false
+        },
+        {
+          "date": "1994-04",
+          "value": 59.6,
+          "is_provisional": false
+        },
+        {
+          "date": "1994-05",
+          "value": 60.2,
+          "is_provisional": false
+        },
+        {
+          "date": "1994-06",
+          "value": 60.6,
+          "is_provisional": false
+        },
+        {
+          "date": "1994-07",
+          "value": 60.8,
+          "is_provisional": false
+        },
+        {
+          "date": "1994-08",
+          "value": 61.6,
+          "is_provisional": false
+        },
+        {
+          "date": "1994-09",
+          "value": 62.1,
+          "is_provisional": false
+        },
+        {
+          "date": "1994-10",
+          "value": 62.6,
+          "is_provisional": false
+        },
+        {
+          "date": "1994-11",
+          "value": 63.0,
+          "is_provisional": false
+        },
+        {
+          "date": "1994-12",
+          "value": 63.5,
+          "is_provisional": false
+        },
+        {
+          "date": "1995-01",
+          "value": 63.9,
+          "is_provisional": false
+        },
+        {
+          "date": "1995-02",
+          "value": 64.3,
+          "is_provisional": false
+        },
+        {
+          "date": "1995-03",
+          "value": 64.6,
+          "is_provisional": false
+        },
+        {
+          "date": "1995-04",
+          "value": 65.4,
+          "is_provisional": false
+        },
+        {
+          "date": "1995-05",
+          "value": 65.8,
+          "is_provisional": false
+        },
+        {
+          "date": "1995-06",
+          "value": 66.3,
+          "is_provisional": false
+        },
+        {
+          "date": "1995-07",
+          "value": 66.4,
+          "is_provisional": false
+        },
+        {
+          "date": "1995-08",
+          "value": 67.0,
+          "is_provisional": false
+        },
+        {
+          "date": "1995-09",
+          "value": 67.6,
+          "is_provisional": false
+        },
+        {
+          "date": "1995-10",
+          "value": 68.0,
+          "is_provisional": false
+        },
+        {
+          "date": "1995-11",
+          "value": 68.1,
+          "is_provisional": false
+        },
+        {
+          "date": "1995-12",
+          "value": 68.0,
+          "is_provisional": false
+        },
+        {
+          "date": "1996-01",
+          "value": 68.1,
+          "is_provisional": false
+        },
+        {
+          "date": "1996-02",
+          "value": 68.8,
+          "is_provisional": false
+        },
+        {
+          "date": "1996-03",
+          "value": 69.1,
+          "is_provisional": false
+        },
+        {
+          "date": "1996-04",
+          "value": 70.0,
+          "is_provisional": false
+        },
+        {
+          "date": "1996-05",
+          "value": 70.1,
+          "is_provisional": false
+        },
+        {
+          "date": "1996-06",
+          "value": 70.5,
+          "is_provisional": false
+        },
+        {
+          "date": "1996-07",
+          "value": 70.5,
+          "is_provisional": false
+        },
+        {
+          "date": "1996-08",
+          "value": 70.6,
+          "is_provisional": false
+        },
+        {
+          "date": "1996-09",
+          "value": 71.4,
+          "is_provisional": false
+        },
+        {
+          "date": "1996-10",
+          "value": 71.9,
+          "is_provisional": false
+        },
+        {
+          "date": "1996-11",
+          "value": 72.2,
+          "is_provisional": false
+        },
+        {
+          "date": "1996-12",
+          "value": 72.5,
+          "is_provisional": false
+        },
+        {
+          "date": "1997-01",
+          "value": 72.4,
+          "is_provisional": false
+        },
+        {
+          "date": "1997-02",
+          "value": 73.1,
+          "is_provisional": false
+        },
+        {
+          "date": "1997-03",
+          "value": 73.2,
+          "is_provisional": false
+        },
+        {
+          "date": "1997-04",
+          "value": 73.9,
+          "is_provisional": false
+        },
+        {
+          "date": "1997-05",
+          "value": 74.2,
+          "is_provisional": false
+        },
+        {
+          "date": "1997-06",
+          "value": 74.4,
+          "is_provisional": false
+        },
+        {
+          "date": "1997-07",
+          "value": 75.0,
+          "is_provisional": false
+        },
+        {
+          "date": "1997-08",
+          "value": 75.1,
+          "is_provisional": false
+        },
+        {
+          "date": "1997-09",
+          "value": 75.4,
+          "is_provisional": false
+        },
+        {
+          "date": "1997-10",
+          "value": 75.9,
+          "is_provisional": false
+        },
+        {
+          "date": "1997-11",
+          "value": 76.1,
+          "is_provisional": false
+        },
+        {
+          "date": "1997-12",
+          "value": 76.2,
+          "is_provisional": false
+        },
+        {
+          "date": "1998-01",
+          "value": 76.3,
+          "is_provisional": false
+        },
+        {
+          "date": "1998-02",
+          "value": 76.5,
+          "is_provisional": false
+        },
+        {
+          "date": "1998-03",
+          "value": 76.7,
+          "is_provisional": false
+        },
+        {
+          "date": "1998-04",
+          "value": 77.4,
+          "is_provisional": false
+        },
+        {
+          "date": "1998-05",
+          "value": 77.5,
+          "is_provisional": false
+        },
+        {
+          "date": "1998-06",
+          "value": 77.4,
+          "is_provisional": false
+        },
+        {
+          "date": "1998-07",
+          "value": 77.4,
+          "is_provisional": false
+        },
+        {
+          "date": "1998-08",
+          "value": 77.2,
+          "is_provisional": false
+        },
+        {
+          "date": "1998-09",
+          "value": 77.3,
+          "is_provisional": false
+        },
+        {
+          "date": "1998-10",
+          "value": 76.0,
+          "is_provisional": false
+        },
+        {
+          "date": "1998-11",
+          "value": 75.5,
+          "is_provisional": false
+        },
+        {
+          "date": "1998-12",
+          "value": 75.0,
+          "is_provisional": false
+        },
+        {
+          "date": "1999-01",
+          "value": 75.5,
+          "is_provisional": false
+        },
+        {
+          "date": "1999-02",
+          "value": 75.2,
+          "is_provisional": false
+        },
+        {
+          "date": "1999-03",
+          "value": 74.7,
+          "is_provisional": false
+        },
+        {
+          "date": "1999-04",
+          "value": 74.5,
+          "is_provisional": false
+        },
+        {
+          "date": "1999-05",
+          "value": 74.4,
+          "is_provisional": false
+        },
+        {
+          "date": "1999-06",
+          "value": 74.2,
+          "is_provisional": false
+        },
+        {
+          "date": "1999-07",
+          "value": 73.1,
+          "is_provisional": false
+        },
+        {
+          "date": "1999-08",
+          "value": 72.4,
+          "is_provisional": false
+        },
+        {
+          "date": "1999-09",
+          "value": 72.6,
+          "is_provisional": false
+        },
+        {
+          "date": "1999-10",
+          "value": 72.8,
+          "is_provisional": false
+        },
+        {
+          "date": "1999-11",
+          "value": 72.3,
+          "is_provisional": false
+        },
+        {
+          "date": "1999-12",
+          "value": 72.0,
+          "is_provisional": false
+        },
+        {
+          "date": "2000-01",
+          "value": 71.5,
+          "is_provisional": false
+        },
+        {
+          "date": "2000-02",
+          "value": 71.4,
+          "is_provisional": false
+        },
+        {
+          "date": "2000-03",
+          "value": 71.2,
+          "is_provisional": false
+        },
+        {
+          "date": "2000-04",
+          "value": 71.2,
+          "is_provisional": false
+        },
+        {
+          "date": "2000-05",
+          "value": 71.1,
+          "is_provisional": false
+        },
+        {
+          "date": "2000-06",
+          "value": 70.8,
+          "is_provisional": false
+        },
+        {
+          "date": "2000-07",
+          "value": 70.7,
+          "is_provisional": false
+        },
+        {
+          "date": "2000-08",
+          "value": 70.5,
+          "is_provisional": false
+        },
+        {
+          "date": "2000-09",
+          "value": 70.6,
+          "is_provisional": false
+        },
+        {
+          "date": "2000-10",
+          "value": 70.6,
+          "is_provisional": false
+        },
+        {
+          "date": "2000-11",
+          "value": 70.7,
+          "is_provisional": false
+        },
+        {
+          "date": "2000-12",
+          "value": 70.5,
+          "is_provisional": false
+        },
+        {
+          "date": "2001-01",
+          "value": 70.4,
+          "is_provisional": false
+        },
+        {
+          "date": "2001-02",
+          "value": 69.7,
+          "is_provisional": false
+        },
+        {
+          "date": "2001-03",
+          "value": 69.8,
+          "is_provisional": false
+        },
+        {
+          "date": "2001-04",
+          "value": 70.2,
+          "is_provisional": false
+        },
+        {
+          "date": "2001-05",
+          "value": 70.0,
+          "is_provisional": false
+        },
+        {
+          "date": "2001-06",
+          "value": 70.0,
+          "is_provisional": false
+        },
+        {
+          "date": "2001-07",
+          "value": 70.1,
+          "is_provisional": false
+        },
+        {
+          "date": "2001-08",
+          "value": 69.7,
+          "is_provisional": false
+        },
+        {
+          "date": "2001-09",
+          "value": 69.8,
+          "is_provisional": false
+        },
+        {
+          "date": "2001-10",
+          "value": 69.7,
+          "is_provisional": false
+        },
+        {
+          "date": "2001-11",
+          "value": 69.7,
+          "is_provisional": false
+        },
+        {
+          "date": "2001-12",
+          "value": 68.0,
+          "is_provisional": false
+        },
+        {
+          "date": "2002-01",
+          "value": 68.0,
+          "is_provisional": false
+        },
+        {
+          "date": "2002-02",
+          "value": 68.1,
+          "is_provisional": false
+        },
+        {
+          "date": "2002-03",
+          "value": 68.3,
+          "is_provisional": false
+        },
+        {
+          "date": "2002-04",
+          "value": 68.1,
+          "is_provisional": false
+        },
+        {
+          "date": "2002-05",
+          "value": 67.8,
+          "is_provisional": false
+        },
+        {
+          "date": "2002-06",
+          "value": 67.7,
+          "is_provisional": false
+        },
+        {
+          "date": "2002-07",
+          "value": 67.7,
+          "is_provisional": false
+        },
+        {
+          "date": "2002-08",
+          "value": 67.5,
+          "is_provisional": false
+        },
+        {
+          "date": "2002-09",
+          "value": 67.2,
+          "is_provisional": false
+        },
+        {
+          "date": "2002-10",
+          "value": 67.2,
+          "is_provisional": false
+        },
+        {
+          "date": "2002-11",
+          "value": 67.1,
+          "is_provisional": false
+        },
+        {
+          "date": "2002-12",
+          "value": 66.9,
+          "is_provisional": false
+        },
+        {
+          "date": "2003-01",
+          "value": 66.9,
+          "is_provisional": false
+        },
+        {
+          "date": "2003-02",
+          "value": 66.7,
+          "is_provisional": false
+        },
+        {
+          "date": "2003-03",
+          "value": 66.8,
+          "is_provisional": false
+        },
+        {
+          "date": "2003-04",
+          "value": 66.9,
+          "is_provisional": false
+        },
+        {
+          "date": "2003-05",
+          "value": 66.2,
+          "is_provisional": false
+        },
+        {
+          "date": "2003-06",
+          "value": 65.6,
+          "is_provisional": false
+        },
+        {
+          "date": "2003-07",
+          "value": 65.0,
+          "is_provisional": false
+        },
+        {
+          "date": "2003-08",
+          "value": 64.9,
+          "is_provisional": false
+        },
+        {
+          "date": "2003-09",
+          "value": 65.0,
+          "is_provisional": false
+        },
+        {
+          "date": "2003-10",
+          "value": 65.4,
+          "is_provisional": false
+        },
+        {
+          "date": "2003-11",
+          "value": 65.5,
+          "is_provisional": false
+        },
+        {
+          "date": "2003-12",
+          "value": 65.7,
+          "is_provisional": false
+        },
+        {
+          "date": "2004-01",
+          "value": 65.9,
+          "is_provisional": false
+        },
+        {
+          "date": "2004-02",
+          "value": 65.4,
+          "is_provisional": false
+        },
+        {
+          "date": "2004-03",
+          "value": 65.5,
+          "is_provisional": false
+        },
+        {
+          "date": "2004-04",
+          "value": 65.8,
+          "is_provisional": false
+        },
+        {
+          "date": "2004-05",
+          "value": 65.6,
+          "is_provisional": false
+        },
+        {
+          "date": "2004-06",
+          "value": 65.5,
+          "is_provisional": false
+        },
+        {
+          "date": "2004-07",
+          "value": 65.5,
+          "is_provisional": false
+        },
+        {
+          "date": "2004-08",
+          "value": 65.4,
+          "is_provisional": false
+        },
+        {
+          "date": "2004-09",
+          "value": 65.5,
+          "is_provisional": false
+        },
+        {
+          "date": "2004-10",
+          "value": 65.8,
+          "is_provisional": false
+        },
+        {
+          "date": "2004-11",
+          "value": 65.9,
+          "is_provisional": false
+        },
+        {
+          "date": "2004-12",
+          "value": 65.9,
+          "is_provisional": false
+        },
+        {
+          "date": "2005-01",
+          "value": 65.7,
+          "is_provisional": false
+        },
+        {
+          "date": "2005-02",
+          "value": 65.9,
+          "is_provisional": false
+        },
+        {
+          "date": "2005-03",
+          "value": 65.9,
+          "is_provisional": false
+        },
+        {
+          "date": "2005-04",
+          "value": 66.1,
+          "is_provisional": false
+        },
+        {
+          "date": "2005-05",
+          "value": 66.0,
+          "is_provisional": false
+        },
+        {
+          "date": "2005-06",
+          "value": 66.2,
+          "is_provisional": false
+        },
+        {
+          "date": "2005-07",
+          "value": 66.3,
+          "is_provisional": false
+        },
+        {
+          "date": "2005-08",
+          "value": 66.2,
+          "is_provisional": false
+        },
+        {
+          "date": "2005-09",
+          "value": 66.5,
+          "is_provisional": false
+        },
+        {
+          "date": "2005-10",
+          "value": 66.6,
+          "is_provisional": false
+        },
+        {
+          "date": "2005-11",
+          "value": 66.7,
+          "is_provisional": false
+        },
+        {
+          "date": "2005-12",
+          "value": 66.8,
+          "is_provisional": false
+        },
+        {
+          "date": "2006-01",
+          "value": 66.9,
+          "is_provisional": false
+        },
+        {
+          "date": "2006-02",
+          "value": 66.7,
+          "is_provisional": false
+        },
+        {
+          "date": "2006-03",
+          "value": 67.0,
+          "is_provisional": false
+        },
+        {
+          "date": "2006-04",
+          "value": 67.3,
+          "is_provisional": false
+        },
+        {
+          "date": "2006-05",
+          "value": 67.4,
+          "is_provisional": false
+        },
+        {
+          "date": "2006-06",
+          "value": 67.6,
+          "is_provisional": false
+        },
+        {
+          "date": "2006-07",
+          "value": 67.8,
+          "is_provisional": false
+        },
+        {
+          "date": "2006-08",
+          "value": 67.8,
+          "is_provisional": false
+        },
+        {
+          "date": "2006-09",
+          "value": 67.9,
+          "is_provisional": false
+        },
+        {
+          "date": "2006-10",
+          "value": 68.0,
+          "is_provisional": false
+        },
+        {
+          "date": "2006-11",
+          "value": 68.1,
+          "is_provisional": false
+        },
+        {
+          "date": "2006-12",
+          "value": 68.3,
+          "is_provisional": false
+        },
+        {
+          "date": "2007-01",
+          "value": 68.2,
+          "is_provisional": false
+        },
+        {
+          "date": "2007-02",
+          "value": 67.3,
+          "is_provisional": false
+        },
+        {
+          "date": "2007-03",
+          "value": 68.6,
+          "is_provisional": false
+        },
+        {
+          "date": "2007-04",
+          "value": 68.2,
+          "is_provisional": false
+        },
+        {
+          "date": "2007-05",
+          "value": 68.2,
+          "is_provisional": false
+        },
+        {
+          "date": "2007-06",
+          "value": 68.5,
+          "is_provisional": false
+        },
+        {
+          "date": "2007-07",
+          "value": 68.9,
+          "is_provisional": false
+        },
+        {
+          "date": "2007-08",
+          "value": 68.9,
+          "is_provisional": false
+        },
+        {
+          "date": "2007-09",
+          "value": 69.0,
+          "is_provisional": false
+        },
+        {
+          "date": "2007-10",
+          "value": 70.1,
+          "is_provisional": false
+        },
+        {
+          "date": "2007-11",
+          "value": 70.5,
+          "is_provisional": false
+        },
+        {
+          "date": "2007-12",
+          "value": 70.9,
+          "is_provisional": false
+        },
+        {
+          "date": "2008-01",
+          "value": 70.4,
+          "is_provisional": false
+        },
+        {
+          "date": "2008-02",
+          "value": 71.5,
+          "is_provisional": false
+        },
+        {
+          "date": "2008-03",
+          "value": 71.5,
+          "is_provisional": false
+        },
+        {
+          "date": "2008-04",
+          "value": 71.9,
+          "is_provisional": false
+        },
+        {
+          "date": "2008-05",
+          "value": 72.1,
+          "is_provisional": false
+        },
+        {
+          "date": "2008-06",
+          "value": 72.7,
+          "is_provisional": false
+        },
+        {
+          "date": "2008-07",
+          "value": 73.2,
+          "is_provisional": false
+        },
+        {
+          "date": "2008-08",
+          "value": 72.1,
+          "is_provisional": false
+        },
+        {
+          "date": "2008-09",
+          "value": 71.1,
+          "is_provisional": false
+        },
+        {
+          "date": "2008-10",
+          "value": 71.4,
+          "is_provisional": false
+        },
+        {
+          "date": "2008-11",
+          "value": 72.6,
+          "is_provisional": false
+        },
+        {
+          "date": "2008-12",
+          "value": 72.4,
+          "is_provisional": false
+        },
+        {
+          "date": "2009-01",
+          "value": 72.6,
+          "is_provisional": false
+        },
+        {
+          "date": "2009-02",
+          "value": 72.1,
+          "is_provisional": false
+        },
+        {
+          "date": "2009-03",
+          "value": 72.3,
+          "is_provisional": false
+        },
+        {
+          "date": "2009-04",
+          "value": 72.3,
+          "is_provisional": false
+        },
+        {
+          "date": "2009-05",
+          "value": 72.2,
+          "is_provisional": false
+        },
+        {
+          "date": "2009-06",
+          "value": 72.1,
+          "is_provisional": false
+        },
+        {
+          "date": "2009-07",
+          "value": 72.1,
+          "is_provisional": false
+        },
+        {
+          "date": "2009-08",
+          "value": 70.9,
+          "is_provisional": false
+        },
+        {
+          "date": "2009-09",
+          "value": 71.4,
+          "is_provisional": false
+        },
+        {
+          "date": "2009-10",
+          "value": 73.2,
+          "is_provisional": false
+        },
+        {
+          "date": "2009-11",
+          "value": 73.2,
+          "is_provisional": false
+        },
+        {
+          "date": "2009-12",
+          "value": 73.5,
+          "is_provisional": false
+        },
+        {
+          "date": "2010-01",
+          "value": 73.5,
+          "is_provisional": false
+        },
+        {
+          "date": "2010-02",
+          "value": 74.2,
+          "is_provisional": false
+        },
+        {
+          "date": "2010-03",
+          "value": 73.9,
+          "is_provisional": false
+        },
+        {
+          "date": "2010-04",
+          "value": 74.2,
+          "is_provisional": false
+        },
+        {
+          "date": "2010-05",
+          "value": 74.1,
+          "is_provisional": false
+        },
+        {
+          "date": "2010-06",
+          "value": 74.2,
+          "is_provisional": false
+        },
+        {
+          "date": "2010-07",
+          "value": 72.5,
+          "is_provisional": false
+        },
+        {
+          "date": "2010-08",
+          "value": 72.5,
+          "is_provisional": false
+        },
+        {
+          "date": "2010-09",
+          "value": 72.8,
+          "is_provisional": false
+        },
+        {
+          "date": "2010-10",
+          "value": 75.0,
+          "is_provisional": false
+        },
+        {
+          "date": "2010-11",
+          "value": 75.2,
+          "is_provisional": false
+        },
+        {
+          "date": "2010-12",
+          "value": 75.7,
+          "is_provisional": false
+        },
+        {
+          "date": "2011-01",
+          "value": 76.1,
+          "is_provisional": false
+        },
+        {
+          "date": "2011-02",
+          "value": 76.9,
+          "is_provisional": false
+        },
+        {
+          "date": "2011-03",
+          "value": 77.1,
+          "is_provisional": false
+        },
+        {
+          "date": "2011-04",
+          "value": 77.6,
+          "is_provisional": false
+        },
+        {
+          "date": "2011-05",
+          "value": 78.0,
+          "is_provisional": false
+        },
+        {
+          "date": "2011-06",
+          "value": 78.4,
+          "is_provisional": false
+        },
+        {
+          "date": "2011-07",
+          "value": 78.3,
+          "is_provisional": false
+        },
+        {
+          "date": "2011-08",
+          "value": 76.7,
+          "is_provisional": false
+        },
+        {
+          "date": "2011-09",
+          "value": 77.0,
+          "is_provisional": false
+        },
+        {
+          "date": "2011-10",
+          "value": 79.3,
+          "is_provisional": false
+        },
+        {
+          "date": "2011-11",
+          "value": 79.5,
+          "is_provisional": false
+        },
+        {
+          "date": "2011-12",
+          "value": 80.0,
+          "is_provisional": false
+        },
+        {
+          "date": "2012-01",
+          "value": 80.7,
+          "is_provisional": false
+        },
+        {
+          "date": "2012-02",
+          "value": 80.5,
+          "is_provisional": false
+        },
+        {
+          "date": "2012-03",
+          "value": 80.9,
+          "is_provisional": false
+        },
+        {
+          "date": "2012-04",
+          "value": 81.3,
+          "is_provisional": false
+        },
+        {
+          "date": "2012-05",
+          "value": 81.3,
+          "is_provisional": false
+        },
+        {
+          "date": "2012-06",
+          "value": 81.3,
+          "is_provisional": false
+        },
+        {
+          "date": "2012-07",
+          "value": 79.6,
+          "is_provisional": false
+        },
+        {
+          "date": "2012-08",
+          "value": 79.6,
+          "is_provisional": false
+        },
+        {
+          "date": "2012-09",
+          "value": 79.9,
+          "is_provisional": false
+        },
+        {
+          "date": "2012-10",
+          "value": 82.3,
+          "is_provisional": false
+        },
+        {
+          "date": "2012-11",
+          "value": 82.5,
+          "is_provisional": false
+        },
+        {
+          "date": "2012-12",
+          "value": 82.9,
+          "is_provisional": false
+        },
+        {
+          "date": "2013-01",
+          "value": 83.1,
+          "is_provisional": false
+        },
+        {
+          "date": "2013-02",
+          "value": 84.0,
+          "is_provisional": false
+        },
+        {
+          "date": "2013-03",
+          "value": 83.8,
+          "is_provisional": false
+        },
+        {
+          "date": "2013-04",
+          "value": 84.6,
+          "is_provisional": false
+        },
+        {
+          "date": "2013-05",
+          "value": 84.5,
+          "is_provisional": false
+        },
+        {
+          "date": "2013-06",
+          "value": 84.6,
+          "is_provisional": false
+        },
+        {
+          "date": "2013-07",
+          "value": 85.1,
+          "is_provisional": false
+        },
+        {
+          "date": "2013-08",
+          "value": 83.2,
+          "is_provisional": false
+        },
+        {
+          "date": "2013-09",
+          "value": 83.6,
+          "is_provisional": false
+        },
+        {
+          "date": "2013-10",
+          "value": 85.9,
+          "is_provisional": false
+        },
+        {
+          "date": "2013-11",
+          "value": 86.1,
+          "is_provisional": false
+        },
+        {
+          "date": "2013-12",
+          "value": 86.5,
+          "is_provisional": false
+        },
+        {
+          "date": "2014-01",
+          "value": 86.9,
+          "is_provisional": false
+        },
+        {
+          "date": "2014-02",
+          "value": 87.3,
+          "is_provisional": false
+        },
+        {
+          "date": "2014-03",
+          "value": 87.1,
+          "is_provisional": false
+        },
+        {
+          "date": "2014-04",
+          "value": 87.7,
+          "is_provisional": false
+        },
+        {
+          "date": "2014-05",
+          "value": 87.6,
+          "is_provisional": false
+        },
+        {
+          "date": "2014-06",
+          "value": 87.7,
+          "is_provisional": false
+        },
+        {
+          "date": "2014-07",
+          "value": 88.5,
+          "is_provisional": false
+        },
+        {
+          "date": "2014-08",
+          "value": 86.5,
+          "is_provisional": false
+        },
+        {
+          "date": "2014-09",
+          "value": 89.1,
+          "is_provisional": false
+        },
+        {
+          "date": "2014-10",
+          "value": 90.3,
+          "is_provisional": false
+        },
+        {
+          "date": "2014-11",
+          "value": 90.5,
+          "is_provisional": false
+        },
+        {
+          "date": "2014-12",
+          "value": 90.7,
+          "is_provisional": false
+        },
+        {
+          "date": "2015-01",
+          "value": 90.4,
+          "is_provisional": false
+        },
+        {
+          "date": "2015-02",
+          "value": 91.2,
+          "is_provisional": false
+        },
+        {
+          "date": "2015-03",
+          "value": 90.9,
+          "is_provisional": false
+        },
+        {
+          "date": "2015-04",
+          "value": 90.2,
+          "is_provisional": false
+        },
+        {
+          "date": "2015-05",
+          "value": 90.2,
+          "is_provisional": false
+        },
+        {
+          "date": "2015-06",
+          "value": 90.3,
+          "is_provisional": false
+        },
+        {
+          "date": "2015-07",
+          "value": 90.8,
+          "is_provisional": false
+        },
+        {
+          "date": "2015-08",
+          "value": 89.1,
+          "is_provisional": false
+        },
+        {
+          "date": "2015-09",
+          "value": 90.9,
+          "is_provisional": false
+        },
+        {
+          "date": "2015-10",
+          "value": 92.3,
+          "is_provisional": false
+        },
+        {
+          "date": "2015-11",
+          "value": 92.5,
+          "is_provisional": false
+        },
+        {
+          "date": "2015-12",
+          "value": 92.8,
+          "is_provisional": false
+        },
+        {
+          "date": "2016-01",
+          "value": 92.7,
+          "is_provisional": false
+        },
+        {
+          "date": "2016-02",
+          "value": 93.9,
+          "is_provisional": false
+        },
+        {
+          "date": "2016-03",
+          "value": 93.5,
+          "is_provisional": false
+        },
+        {
+          "date": "2016-04",
+          "value": 92.6,
+          "is_provisional": false
+        },
+        {
+          "date": "2016-05",
+          "value": 92.5,
+          "is_provisional": false
+        },
+        {
+          "date": "2016-06",
+          "value": 92.5,
+          "is_provisional": false
+        },
+        {
+          "date": "2016-07",
+          "value": 92.9,
+          "is_provisional": false
+        },
+        {
+          "date": "2016-08",
+          "value": 93.0,
+          "is_provisional": false
+        },
+        {
+          "date": "2016-09",
+          "value": 93.3,
+          "is_provisional": false
+        },
+        {
+          "date": "2016-10",
+          "value": 93.4,
+          "is_provisional": false
+        },
+        {
+          "date": "2016-11",
+          "value": 93.7,
+          "is_provisional": false
+        },
+        {
+          "date": "2016-12",
+          "value": 93.9,
+          "is_provisional": false
+        },
+        {
+          "date": "2017-01",
+          "value": 93.9,
+          "is_provisional": false
+        },
+        {
+          "date": "2017-02",
+          "value": 93.8,
+          "is_provisional": false
+        },
+        {
+          "date": "2017-03",
+          "value": 94.0,
+          "is_provisional": false
+        },
+        {
+          "date": "2017-04",
+          "value": 94.5,
+          "is_provisional": false
+        },
+        {
+          "date": "2017-05",
+          "value": 94.4,
+          "is_provisional": false
+        },
+        {
+          "date": "2017-06",
+          "value": 94.3,
+          "is_provisional": false
+        },
+        {
+          "date": "2017-07",
+          "value": 94.7,
+          "is_provisional": false
+        },
+        {
+          "date": "2017-08",
+          "value": 94.8,
+          "is_provisional": false
+        },
+        {
+          "date": "2017-09",
+          "value": 94.6,
+          "is_provisional": false
+        },
+        {
+          "date": "2017-10",
+          "value": 94.9,
+          "is_provisional": false
+        },
+        {
+          "date": "2017-11",
+          "value": 95.2,
+          "is_provisional": false
+        },
+        {
+          "date": "2017-12",
+          "value": 95.5,
+          "is_provisional": false
+        },
+        {
+          "date": "2018-01",
+          "value": 95.5,
+          "is_provisional": false
+        },
+        {
+          "date": "2018-02",
+          "value": 96.7,
+          "is_provisional": false
+        },
+        {
+          "date": "2018-03",
+          "value": 96.4,
+          "is_provisional": false
+        },
+        {
+          "date": "2018-04",
+          "value": 96.3,
+          "is_provisional": false
+        },
+        {
+          "date": "2018-05",
+          "value": 96.4,
+          "is_provisional": false
+        },
+        {
+          "date": "2018-06",
+          "value": 96.6,
+          "is_provisional": false
+        },
+        {
+          "date": "2018-07",
+          "value": 96.9,
+          "is_provisional": false
+        },
+        {
+          "date": "2018-08",
+          "value": 97.0,
+          "is_provisional": false
+        },
+        {
+          "date": "2018-09",
+          "value": 97.2,
+          "is_provisional": false
+        },
+        {
+          "date": "2018-10",
+          "value": 97.4,
+          "is_provisional": false
+        },
+        {
+          "date": "2018-11",
+          "value": 97.6,
+          "is_provisional": false
+        },
+        {
+          "date": "2018-12",
+          "value": 97.9,
+          "is_provisional": false
+        },
+        {
+          "date": "2019-01",
+          "value": 97.8,
+          "is_provisional": false
+        },
+        {
+          "date": "2019-02",
+          "value": 98.7,
+          "is_provisional": false
+        },
+        {
+          "date": "2019-03",
+          "value": 98.4,
+          "is_provisional": false
+        },
+        {
+          "date": "2019-04",
+          "value": 99.1,
+          "is_provisional": false
+        },
+        {
+          "date": "2019-05",
+          "value": 99.0,
+          "is_provisional": false
+        },
+        {
+          "date": "2019-06",
+          "value": 99.7,
+          "is_provisional": false
+        },
+        {
+          "date": "2019-07",
+          "value": 100.1,
+          "is_provisional": false
+        },
+        {
+          "date": "2019-08",
+          "value": 100.3,
+          "is_provisional": false
+        },
+        {
+          "date": "2019-09",
+          "value": 100.3,
+          "is_provisional": false
+        },
+        {
+          "date": "2019-10",
+          "value": 100.6,
+          "is_provisional": false
+        },
+        {
+          "date": "2019-11",
+          "value": 100.7,
+          "is_provisional": false
+        },
+        {
+          "date": "2019-12",
+          "value": 100.7,
+          "is_provisional": false
+        },
+        {
+          "date": "2020-01",
+          "value": 98.5,
+          "is_provisional": false
+        },
+        {
+          "date": "2020-02",
+          "value": 101.0,
+          "is_provisional": false
+        },
+        {
+          "date": "2020-03",
+          "value": 100.9,
+          "is_provisional": false
+        },
+        {
+          "date": "2020-04",
+          "value": 101.0,
+          "is_provisional": false
+        },
+        {
+          "date": "2020-05",
+          "value": 100.7,
+          "is_provisional": false
+        },
+        {
+          "date": "2020-06",
+          "value": 100.6,
+          "is_provisional": false
+        },
+        {
+          "date": "2020-07",
+          "value": 97.7,
+          "is_provisional": false
+        },
+        {
+          "date": "2020-08",
+          "value": 99.9,
+          "is_provisional": false
+        },
+        {
+          "date": "2020-09",
+          "value": 97.8,
+          "is_provisional": false
+        },
+        {
+          "date": "2020-10",
+          "value": 100.2,
+          "is_provisional": false
+        },
+        {
+          "date": "2020-11",
+          "value": 100.3,
+          "is_provisional": false
+        },
+        {
+          "date": "2020-12",
+          "value": 99.8,
+          "is_provisional": false
+        },
+        {
+          "date": "2021-01",
+          "value": 101.1,
+          "is_provisional": false
+        },
+        {
+          "date": "2021-02",
+          "value": 101.4,
+          "is_provisional": false
+        },
+        {
+          "date": "2021-03",
+          "value": 101.5,
+          "is_provisional": false
+        },
+        {
+          "date": "2021-04",
+          "value": 101.8,
+          "is_provisional": false
+        },
+        {
+          "date": "2021-05",
+          "value": 101.6,
+          "is_provisional": false
+        },
+        {
+          "date": "2021-06",
+          "value": 101.3,
+          "is_provisional": false
+        },
+        {
+          "date": "2021-07",
+          "value": 101.4,
+          "is_provisional": false
+        },
+        {
+          "date": "2021-08",
+          "value": 101.5,
+          "is_provisional": false
+        },
+        {
+          "date": "2021-09",
+          "value": 99.2,
+          "is_provisional": false
+        },
+        {
+          "date": "2021-10",
+          "value": 102.0,
+          "is_provisional": false
+        },
+        {
+          "date": "2021-11",
+          "value": 102.2,
+          "is_provisional": false
+        },
+        {
+          "date": "2021-12",
+          "value": 102.2,
+          "is_provisional": false
+        },
+        {
+          "date": "2022-01",
+          "value": 102.3,
+          "is_provisional": false
+        },
+        {
+          "date": "2022-02",
+          "value": 103.1,
+          "is_provisional": false
+        },
+        {
+          "date": "2022-03",
+          "value": 103.3,
+          "is_provisional": false
+        },
+        {
+          "date": "2022-04",
+          "value": 103.1,
+          "is_provisional": false
+        },
+        {
+          "date": "2022-05",
+          "value": 102.9,
+          "is_provisional": false
+        },
+        {
+          "date": "2022-06",
+          "value": 103.2,
+          "is_provisional": false
+        },
+        {
+          "date": "2022-07",
+          "value": 103.3,
+          "is_provisional": false
+        },
+        {
+          "date": "2022-08",
+          "value": 103.4,
+          "is_provisional": false
+        },
+        {
+          "date": "2022-09",
+          "value": 103.5,
+          "is_provisional": false
+        },
+        {
+          "date": "2022-10",
+          "value": 103.8,
+          "is_provisional": false
+        },
+        {
+          "date": "2022-11",
+          "value": 104.0,
+          "is_provisional": false
+        },
+        {
+          "date": "2022-12",
+          "value": 104.2,
+          "is_provisional": false
+        },
+        {
+          "date": "2023-01",
+          "value": 104.8,
+          "is_provisional": false
+        },
+        {
+          "date": "2023-02",
+          "value": 104.9,
+          "is_provisional": false
+        },
+        {
+          "date": "2023-03",
+          "value": 105.0,
+          "is_provisional": false
+        },
+        {
+          "date": "2023-04",
+          "value": 105.2,
+          "is_provisional": false
+        },
+        {
+          "date": "2023-05",
+          "value": 105.0,
+          "is_provisional": false
+        },
+        {
+          "date": "2023-06",
+          "value": 105.2,
+          "is_provisional": false
+        },
+        {
+          "date": "2023-07",
+          "value": 105.2,
+          "is_provisional": false
+        },
+        {
+          "date": "2023-08",
+          "value": 105.2,
+          "is_provisional": false
+        },
+        {
+          "date": "2023-09",
+          "value": 105.6,
+          "is_provisional": false
+        },
+        {
+          "date": "2023-10",
+          "value": 106.7,
+          "is_provisional": false
+        },
+        {
+          "date": "2023-11",
+          "value": 106.6,
+          "is_provisional": false
+        },
+        {
+          "date": "2023-12",
+          "value": 106.7,
+          "is_provisional": false
+        },
+        {
+          "date": "2024-01",
+          "value": 106.6,
+          "is_provisional": false
+        },
+        {
+          "date": "2024-02",
+          "value": 107.1,
+          "is_provisional": false
+        },
+        {
+          "date": "2024-03",
+          "value": 107.1,
+          "is_provisional": false
+        },
+        {
+          "date": "2024-04",
+          "value": 106.4,
+          "is_provisional": false
+        },
+        {
+          "date": "2024-05",
+          "value": 106.2,
+          "is_provisional": false
+        },
+        {
+          "date": "2024-06",
+          "value": 106.7,
+          "is_provisional": false
+        },
+        {
+          "date": "2024-07",
+          "value": 107.8,
+          "is_provisional": false
+        },
+        {
+          "date": "2024-08",
+          "value": 107.8,
+          "is_provisional": false
+        },
+        {
+          "date": "2024-09",
+          "value": 107.9,
+          "is_provisional": false
+        },
+        {
+          "date": "2024-10",
+          "value": 108.1,
+          "is_provisional": false
+        },
+        {
+          "date": "2024-11",
+          "value": 108.1,
+          "is_provisional": false
+        },
+        {
+          "date": "2024-12",
+          "value": 108.2,
+          "is_provisional": false
+        },
+        {
+          "date": "2025-01",
+          "value": 108.7,
+          "is_provisional": false
+        },
+        {
+          "date": "2025-02",
+          "value": 108.6,
+          "is_provisional": false
+        },
+        {
+          "date": "2025-03",
+          "value": 108.6,
+          "is_provisional": false
+        },
+        {
+          "date": "2025-04",
+          "value": 108.5,
+          "is_provisional": false
+        },
+        {
+          "date": "2025-05",
+          "value": 108.2,
+          "is_provisional": false
+        },
+        {
+          "date": "2025-06",
+          "value": 108.3,
+          "is_provisional": false
+        },
+        {
+          "date": "2025-07",
+          "value": 108.9,
+          "is_provisional": false
+        },
+        {
+          "date": "2025-08",
+          "value": 109.0,
+          "is_provisional": false
+        },
+        {
+          "date": "2025-09",
+          "value": 109.1,
+          "is_provisional": false
+        },
+        {
+          "date": "2025-10",
+          "value": 109.4,
+          "is_provisional": false
+        },
+        {
+          "date": "2025-11",
+          "value": 109.4,
+          "is_provisional": false
+        },
+        {
+          "date": "2025-12",
+          "value": 109.8,
+          "is_provisional": false
+        },
+        {
+          "date": "2026-01",
+          "value": 110.0,
+          "is_provisional": false
+        },
+        {
+          "date": "2026-02",
+          "value": 110.5,
+          "is_provisional": false
+        },
+        {
+          "date": "2026-03",
+          "value": 110.5,
+          "is_provisional": false
+        },
+        {
+          "date": "2026-04",
+          "value": 110.4,
+          "is_provisional": false
+        },
+        {
+          "date": "2026-05",
+          "value": 110.4,
+          "is_provisional": false
+        },
+        {
+          "date": "2026-06",
+          "value": 110.4,
+          "is_provisional": false
+        }
+      ],
+      "censtatd_cpi_by_category_history": [
+        {
+          "date": "2005-01",
+          "series": "Food",
+          "value": 43.7
+        },
+        {
+          "date": "2005-02",
+          "series": "Food",
+          "value": 45.0
+        },
+        {
+          "date": "2005-03",
+          "series": "Food",
+          "value": 44.9
+        },
+        {
+          "date": "2005-04",
+          "series": "Food",
+          "value": 44.2
+        },
+        {
+          "date": "2005-05",
+          "series": "Food",
+          "value": 44.4
+        },
+        {
+          "date": "2005-06",
+          "series": "Food",
+          "value": 45.0
+        },
+        {
+          "date": "2005-07",
+          "series": "Food",
+          "value": 45.0
+        },
+        {
+          "date": "2005-08",
+          "series": "Food",
+          "value": 44.6
+        },
+        {
+          "date": "2005-09",
+          "series": "Food",
+          "value": 44.8
+        },
+        {
+          "date": "2005-10",
+          "series": "Food",
+          "value": 44.5
+        },
+        {
+          "date": "2005-11",
+          "series": "Food",
+          "value": 44.2
+        },
+        {
+          "date": "2005-12",
+          "series": "Food",
+          "value": 44.4
+        },
+        {
+          "date": "2006-01",
+          "series": "Food",
+          "value": 44.9
+        },
+        {
+          "date": "2006-02",
+          "series": "Food",
+          "value": 45.1
+        },
+        {
+          "date": "2006-03",
+          "series": "Food",
+          "value": 45.0
+        },
+        {
+          "date": "2006-04",
+          "series": "Food",
+          "value": 45.0
+        },
+        {
+          "date": "2006-05",
+          "series": "Food",
+          "value": 45.3
+        },
+        {
+          "date": "2006-06",
+          "series": "Food",
+          "value": 46.4
+        },
+        {
+          "date": "2006-07",
+          "series": "Food",
+          "value": 46.4
+        },
+        {
+          "date": "2006-08",
+          "series": "Food",
+          "value": 46.4
+        },
+        {
+          "date": "2006-09",
+          "series": "Food",
+          "value": 45.9
+        },
+        {
+          "date": "2006-10",
+          "series": "Food",
+          "value": 45.8
+        },
+        {
+          "date": "2006-11",
+          "series": "Food",
+          "value": 45.7
+        },
+        {
+          "date": "2006-12",
+          "series": "Food",
+          "value": 46.3
+        },
+        {
+          "date": "2007-01",
+          "series": "Food",
+          "value": 46.1
+        },
+        {
+          "date": "2007-02",
+          "series": "Food",
+          "value": 47.5
+        },
+        {
+          "date": "2007-03",
+          "series": "Food",
+          "value": 47.3
+        },
+        {
+          "date": "2007-04",
+          "series": "Food",
+          "value": 46.9
+        },
+        {
+          "date": "2007-05",
+          "series": "Food",
+          "value": 46.9
+        },
+        {
+          "date": "2007-06",
+          "series": "Food",
+          "value": 48.5
+        },
+        {
+          "date": "2007-07",
+          "series": "Food",
+          "value": 49.1
+        },
+        {
+          "date": "2007-08",
+          "series": "Food",
+          "value": 50.0
+        },
+        {
+          "date": "2007-09",
+          "series": "Food",
+          "value": 50.9
+        },
+        {
+          "date": "2007-10",
+          "series": "Food",
+          "value": 51.2
+        },
+        {
+          "date": "2007-11",
+          "series": "Food",
+          "value": 50.9
+        },
+        {
+          "date": "2007-12",
+          "series": "Food",
+          "value": 51.7
+        },
+        {
+          "date": "2008-01",
+          "series": "Food",
+          "value": 53.3
+        },
+        {
+          "date": "2008-02",
+          "series": "Food",
+          "value": 56.7
+        },
+        {
+          "date": "2008-03",
+          "series": "Food",
+          "value": 55.4
+        },
+        {
+          "date": "2008-04",
+          "series": "Food",
+          "value": 56.0
+        },
+        {
+          "date": "2008-05",
+          "series": "Food",
+          "value": 55.9
+        },
+        {
+          "date": "2008-06",
+          "series": "Food",
+          "value": 57.7
+        },
+        {
+          "date": "2008-07",
+          "series": "Food",
+          "value": 58.8
+        },
+        {
+          "date": "2008-08",
+          "series": "Food",
+          "value": 58.5
+        },
+        {
+          "date": "2008-09",
+          "series": "Food",
+          "value": 58.5
+        },
+        {
+          "date": "2008-10",
+          "series": "Food",
+          "value": 58.9
+        },
+        {
+          "date": "2008-11",
+          "series": "Food",
+          "value": 58.5
+        },
+        {
+          "date": "2008-12",
+          "series": "Food",
+          "value": 57.7
+        },
+        {
+          "date": "2009-01",
+          "series": "Food",
+          "value": 59.3
+        },
+        {
+          "date": "2009-02",
+          "series": "Food",
+          "value": 58.5
+        },
+        {
+          "date": "2009-03",
+          "series": "Food",
+          "value": 58.4
+        },
+        {
+          "date": "2009-04",
+          "series": "Food",
+          "value": 57.3
+        },
+        {
+          "date": "2009-05",
+          "series": "Food",
+          "value": 57.2
+        },
+        {
+          "date": "2009-06",
+          "series": "Food",
+          "value": 57.2
+        },
+        {
+          "date": "2009-07",
+          "series": "Food",
+          "value": 57.2
+        },
+        {
+          "date": "2009-08",
+          "series": "Food",
+          "value": 57.3
+        },
+        {
+          "date": "2009-09",
+          "series": "Food",
+          "value": 57.3
+        },
+        {
+          "date": "2009-10",
+          "series": "Food",
+          "value": 57.6
+        },
+        {
+          "date": "2009-11",
+          "series": "Food",
+          "value": 57.4
+        },
+        {
+          "date": "2009-12",
+          "series": "Food",
+          "value": 57.7
+        },
+        {
+          "date": "2010-01",
+          "series": "Food",
+          "value": 58.4
+        },
+        {
+          "date": "2010-02",
+          "series": "Food",
+          "value": 61.1
+        },
+        {
+          "date": "2010-03",
+          "series": "Food",
+          "value": 59.4
+        },
+        {
+          "date": "2010-04",
+          "series": "Food",
+          "value": 58.8
+        },
+        {
+          "date": "2010-05",
+          "series": "Food",
+          "value": 58.9
+        },
+        {
+          "date": "2010-06",
+          "series": "Food",
+          "value": 58.8
+        },
+        {
+          "date": "2010-07",
+          "series": "Food",
+          "value": 59.3
+        },
+        {
+          "date": "2010-08",
+          "series": "Food",
+          "value": 59.1
+        },
+        {
+          "date": "2010-09",
+          "series": "Food",
+          "value": 60.2
+        },
+        {
+          "date": "2010-10",
+          "series": "Food",
+          "value": 60.7
+        },
+        {
+          "date": "2010-11",
+          "series": "Food",
+          "value": 60.5
+        },
+        {
+          "date": "2010-12",
+          "series": "Food",
+          "value": 61.2
+        },
+        {
+          "date": "2011-01",
+          "series": "Food",
+          "value": 62.8
+        },
+        {
+          "date": "2011-02",
+          "series": "Food",
+          "value": 64.4
+        },
+        {
+          "date": "2011-03",
+          "series": "Food",
+          "value": 64.1
+        },
+        {
+          "date": "2011-04",
+          "series": "Food",
+          "value": 64.0
+        },
+        {
+          "date": "2011-05",
+          "series": "Food",
+          "value": 64.8
+        },
+        {
+          "date": "2011-06",
+          "series": "Food",
+          "value": 65.0
+        },
+        {
+          "date": "2011-07",
+          "series": "Food",
+          "value": 65.7
+        },
+        {
+          "date": "2011-08",
+          "series": "Food",
+          "value": 66.1
+        },
+        {
+          "date": "2011-09",
+          "series": "Food",
+          "value": 67.0
+        },
+        {
+          "date": "2011-10",
+          "series": "Food",
+          "value": 67.6
+        },
+        {
+          "date": "2011-11",
+          "series": "Food",
+          "value": 67.4
+        },
+        {
+          "date": "2011-12",
+          "series": "Food",
+          "value": 68.2
+        },
+        {
+          "date": "2012-01",
+          "series": "Food",
+          "value": 69.7
+        },
+        {
+          "date": "2012-02",
+          "series": "Food",
+          "value": 69.5
+        },
+        {
+          "date": "2012-03",
+          "series": "Food",
+          "value": 70.1
+        },
+        {
+          "date": "2012-04",
+          "series": "Food",
+          "value": 69.6
+        },
+        {
+          "date": "2012-05",
+          "series": "Food",
+          "value": 70.3
+        },
+        {
+          "date": "2012-06",
+          "series": "Food",
+          "value": 69.6
+        },
+        {
+          "date": "2012-07",
+          "series": "Food",
+          "value": 70.0
+        },
+        {
+          "date": "2012-08",
+          "series": "Food",
+          "value": 69.5
+        },
+        {
+          "date": "2012-09",
+          "series": "Food",
+          "value": 69.3
+        },
+        {
+          "date": "2012-10",
+          "series": "Food",
+          "value": 69.8
+        },
+        {
+          "date": "2012-11",
+          "series": "Food",
+          "value": 69.8
+        },
+        {
+          "date": "2012-12",
+          "series": "Food",
+          "value": 71.2
+        },
+        {
+          "date": "2013-01",
+          "series": "Food",
+          "value": 71.8
+        },
+        {
+          "date": "2013-02",
+          "series": "Food",
+          "value": 73.2
+        },
+        {
+          "date": "2013-03",
+          "series": "Food",
+          "value": 71.9
+        },
+        {
+          "date": "2013-04",
+          "series": "Food",
+          "value": 74.2
+        },
+        {
+          "date": "2013-05",
+          "series": "Food",
+          "value": 72.8
+        },
+        {
+          "date": "2013-06",
+          "series": "Food",
+          "value": 72.6
+        },
+        {
+          "date": "2013-07",
+          "series": "Food",
+          "value": 72.5
+        },
+        {
+          "date": "2013-08",
+          "series": "Food",
+          "value": 72.6
+        },
+        {
+          "date": "2013-09",
+          "series": "Food",
+          "value": 73.9
+        },
+        {
+          "date": "2013-10",
+          "series": "Food",
+          "value": 73.0
+        },
+        {
+          "date": "2013-11",
+          "series": "Food",
+          "value": 72.9
+        },
+        {
+          "date": "2013-12",
+          "series": "Food",
+          "value": 73.5
+        },
+        {
+          "date": "2014-01",
+          "series": "Food",
+          "value": 74.2
+        },
+        {
+          "date": "2014-02",
+          "series": "Food",
+          "value": 76.2
+        },
+        {
+          "date": "2014-03",
+          "series": "Food",
+          "value": 75.3
+        },
+        {
+          "date": "2014-04",
+          "series": "Food",
+          "value": 76.0
+        },
+        {
+          "date": "2014-05",
+          "series": "Food",
+          "value": 75.3
+        },
+        {
+          "date": "2014-06",
+          "series": "Food",
+          "value": 75.0
+        },
+        {
+          "date": "2014-07",
+          "series": "Food",
+          "value": 75.0
+        },
+        {
+          "date": "2014-08",
+          "series": "Food",
+          "value": 74.9
+        },
+        {
+          "date": "2014-09",
+          "series": "Food",
+          "value": 75.9
+        },
+        {
+          "date": "2014-10",
+          "series": "Food",
+          "value": 76.0
+        },
+        {
+          "date": "2014-11",
+          "series": "Food",
+          "value": 76.2
+        },
+        {
+          "date": "2014-12",
+          "series": "Food",
+          "value": 76.1
+        },
+        {
+          "date": "2015-01",
+          "series": "Food",
+          "value": 76.4
+        },
+        {
+          "date": "2015-02",
+          "series": "Food",
+          "value": 78.2
+        },
+        {
+          "date": "2015-03",
+          "series": "Food",
+          "value": 78.4
+        },
+        {
+          "date": "2015-04",
+          "series": "Food",
+          "value": 77.1
+        },
+        {
+          "date": "2015-05",
+          "series": "Food",
+          "value": 77.3
+        },
+        {
+          "date": "2015-06",
+          "series": "Food",
+          "value": 77.7
+        },
+        {
+          "date": "2015-07",
+          "series": "Food",
+          "value": 77.9
+        },
+        {
+          "date": "2015-08",
+          "series": "Food",
+          "value": 77.8
+        },
+        {
+          "date": "2015-09",
+          "series": "Food",
+          "value": 78.5
+        },
+        {
+          "date": "2015-10",
+          "series": "Food",
+          "value": 78.8
+        },
+        {
+          "date": "2015-11",
+          "series": "Food",
+          "value": 78.6
+        },
+        {
+          "date": "2015-12",
+          "series": "Food",
+          "value": 79.1
+        },
+        {
+          "date": "2016-01",
+          "series": "Food",
+          "value": 80.0
+        },
+        {
+          "date": "2016-02",
+          "series": "Food",
+          "value": 85.5
+        },
+        {
+          "date": "2016-03",
+          "series": "Food",
+          "value": 82.4
+        },
+        {
+          "date": "2016-04",
+          "series": "Food",
+          "value": 80.8
+        },
+        {
+          "date": "2016-05",
+          "series": "Food",
+          "value": 79.4
+        },
+        {
+          "date": "2016-06",
+          "series": "Food",
+          "value": 79.1
+        },
+        {
+          "date": "2016-07",
+          "series": "Food",
+          "value": 79.4
+        },
+        {
+          "date": "2016-08",
+          "series": "Food",
+          "value": 79.6
+        },
+        {
+          "date": "2016-09",
+          "series": "Food",
+          "value": 80.3
+        },
+        {
+          "date": "2016-10",
+          "series": "Food",
+          "value": 80.2
+        },
+        {
+          "date": "2016-11",
+          "series": "Food",
+          "value": 81.4
+        },
+        {
+          "date": "2016-12",
+          "series": "Food",
+          "value": 81.5
+        },
+        {
+          "date": "2017-01",
+          "series": "Food",
+          "value": 81.8
+        },
+        {
+          "date": "2017-02",
+          "series": "Food",
+          "value": 82.3
+        },
+        {
+          "date": "2017-03",
+          "series": "Food",
+          "value": 81.1
+        },
+        {
+          "date": "2017-04",
+          "series": "Food",
+          "value": 81.0
+        },
+        {
+          "date": "2017-05",
+          "series": "Food",
+          "value": 80.9
+        },
+        {
+          "date": "2017-06",
+          "series": "Food",
+          "value": 80.6
+        },
+        {
+          "date": "2017-07",
+          "series": "Food",
+          "value": 81.1
+        },
+        {
+          "date": "2017-08",
+          "series": "Food",
+          "value": 81.1
+        },
+        {
+          "date": "2017-09",
+          "series": "Food",
+          "value": 81.8
+        },
+        {
+          "date": "2017-10",
+          "series": "Food",
+          "value": 82.8
+        },
+        {
+          "date": "2017-11",
+          "series": "Food",
+          "value": 82.7
+        },
+        {
+          "date": "2017-12",
+          "series": "Food",
+          "value": 83.0
+        },
+        {
+          "date": "2018-01",
+          "series": "Food",
+          "value": 83.4
+        },
+        {
+          "date": "2018-02",
+          "series": "Food",
+          "value": 86.1
+        },
+        {
+          "date": "2018-03",
+          "series": "Food",
+          "value": 85.1
+        },
+        {
+          "date": "2018-04",
+          "series": "Food",
+          "value": 84.8
+        },
+        {
+          "date": "2018-05",
+          "series": "Food",
+          "value": 84.7
+        },
+        {
+          "date": "2018-06",
+          "series": "Food",
+          "value": 84.8
+        },
+        {
+          "date": "2018-07",
+          "series": "Food",
+          "value": 85.1
+        },
+        {
+          "date": "2018-08",
+          "series": "Food",
+          "value": 84.8
+        },
+        {
+          "date": "2018-09",
+          "series": "Food",
+          "value": 86.0
+        },
+        {
+          "date": "2018-10",
+          "series": "Food",
+          "value": 86.1
+        },
+        {
+          "date": "2018-11",
+          "series": "Food",
+          "value": 85.6
+        },
+        {
+          "date": "2018-12",
+          "series": "Food",
+          "value": 86.1
+        },
+        {
+          "date": "2019-01",
+          "series": "Food",
+          "value": 86.9
+        },
+        {
+          "date": "2019-02",
+          "series": "Food",
+          "value": 90.4
+        },
+        {
+          "date": "2019-03",
+          "series": "Food",
+          "value": 89.1
+        },
+        {
+          "date": "2019-04",
+          "series": "Food",
+          "value": 88.6
+        },
+        {
+          "date": "2019-05",
+          "series": "Food",
+          "value": 90.2
+        },
+        {
+          "date": "2019-06",
+          "series": "Food",
+          "value": 95.0
+        },
+        {
+          "date": "2019-07",
+          "series": "Food",
+          "value": 95.9
+        },
+        {
+          "date": "2019-08",
+          "series": "Food",
+          "value": 96.8
+        },
+        {
+          "date": "2019-09",
+          "series": "Food",
+          "value": 97.2
+        },
+        {
+          "date": "2019-10",
+          "series": "Food",
+          "value": 97.1
+        },
+        {
+          "date": "2019-11",
+          "series": "Food",
+          "value": 97.1
+        },
+        {
+          "date": "2019-12",
+          "series": "Food",
+          "value": 97.8
+        },
+        {
+          "date": "2020-01",
+          "series": "Food",
+          "value": 100.5
+        },
+        {
+          "date": "2020-02",
+          "series": "Food",
+          "value": 102.8
+        },
+        {
+          "date": "2020-03",
+          "series": "Food",
+          "value": 100.9
+        },
+        {
+          "date": "2020-04",
+          "series": "Food",
+          "value": 101.5
+        },
+        {
+          "date": "2020-05",
+          "series": "Food",
+          "value": 100.6
+        },
+        {
+          "date": "2020-06",
+          "series": "Food",
+          "value": 100.2
+        },
+        {
+          "date": "2020-07",
+          "series": "Food",
+          "value": 100.3
+        },
+        {
+          "date": "2020-08",
+          "series": "Food",
+          "value": 100.8
+        },
+        {
+          "date": "2020-09",
+          "series": "Food",
+          "value": 100.4
+        },
+        {
+          "date": "2020-10",
+          "series": "Food",
+          "value": 100.7
+        },
+        {
+          "date": "2020-11",
+          "series": "Food",
+          "value": 100.4
+        },
+        {
+          "date": "2020-12",
+          "series": "Food",
+          "value": 100.3
+        },
+        {
+          "date": "2021-01",
+          "series": "Food",
+          "value": 101.5
+        },
+        {
+          "date": "2021-02",
+          "series": "Food",
+          "value": 104.7
+        },
+        {
+          "date": "2021-03",
+          "series": "Food",
+          "value": 103.3
+        },
+        {
+          "date": "2021-04",
+          "series": "Food",
+          "value": 102.4
+        },
+        {
+          "date": "2021-05",
+          "series": "Food",
+          "value": 101.6
+        },
+        {
+          "date": "2021-06",
+          "series": "Food",
+          "value": 101.3
+        },
+        {
+          "date": "2021-07",
+          "series": "Food",
+          "value": 101.4
+        },
+        {
+          "date": "2021-08",
+          "series": "Food",
+          "value": 101.3
+        },
+        {
+          "date": "2021-09",
+          "series": "Food",
+          "value": 101.7
+        },
+        {
+          "date": "2021-10",
+          "series": "Food",
+          "value": 102.4
+        },
+        {
+          "date": "2021-11",
+          "series": "Food",
+          "value": 102.2
+        },
+        {
+          "date": "2021-12",
+          "series": "Food",
+          "value": 102.2
+        },
+        {
+          "date": "2022-01",
+          "series": "Food",
+          "value": 103.1
+        },
+        {
+          "date": "2022-02",
+          "series": "Food",
+          "value": 109.4
+        },
+        {
+          "date": "2022-03",
+          "series": "Food",
+          "value": 111.2
+        },
+        {
+          "date": "2022-04",
+          "series": "Food",
+          "value": 107.8
+        },
+        {
+          "date": "2022-05",
+          "series": "Food",
+          "value": 106.6
+        },
+        {
+          "date": "2022-06",
+          "series": "Food",
+          "value": 106.2
+        },
+        {
+          "date": "2022-07",
+          "series": "Food",
+          "value": 106.5
+        },
+        {
+          "date": "2022-08",
+          "series": "Food",
+          "value": 106.0
+        },
+        {
+          "date": "2022-09",
+          "series": "Food",
+          "value": 106.1
+        },
+        {
+          "date": "2022-10",
+          "series": "Food",
+          "value": 105.8
+        },
+        {
+          "date": "2022-11",
+          "series": "Food",
+          "value": 105.6
+        },
+        {
+          "date": "2022-12",
+          "series": "Food",
+          "value": 106.5
+        },
+        {
+          "date": "2023-01",
+          "series": "Food",
+          "value": 109.3
+        },
+        {
+          "date": "2023-02",
+          "series": "Food",
+          "value": 108.8
+        },
+        {
+          "date": "2023-03",
+          "series": "Food",
+          "value": 108.0
+        },
+        {
+          "date": "2023-04",
+          "series": "Food",
+          "value": 107.8
+        },
+        {
+          "date": "2023-05",
+          "series": "Food",
+          "value": 107.1
+        },
+        {
+          "date": "2023-06",
+          "series": "Food",
+          "value": 106.3
+        },
+        {
+          "date": "2023-07",
+          "series": "Food",
+          "value": 105.9
+        },
+        {
+          "date": "2023-08",
+          "series": "Food",
+          "value": 105.9
+        },
+        {
+          "date": "2023-09",
+          "series": "Food",
+          "value": 107.4
+        },
+        {
+          "date": "2023-10",
+          "series": "Food",
+          "value": 107.4
+        },
+        {
+          "date": "2023-11",
+          "series": "Food",
+          "value": 106.8
+        },
+        {
+          "date": "2023-12",
+          "series": "Food",
+          "value": 106.7
+        },
+        {
+          "date": "2024-01",
+          "series": "Food",
+          "value": 106.8
+        },
+        {
+          "date": "2024-02",
+          "series": "Food",
+          "value": 108.6
+        },
+        {
+          "date": "2024-03",
+          "series": "Food",
+          "value": 107.5
+        },
+        {
+          "date": "2024-04",
+          "series": "Food",
+          "value": 107.3
+        },
+        {
+          "date": "2024-05",
+          "series": "Food",
+          "value": 107.2
+        },
+        {
+          "date": "2024-06",
+          "series": "Food",
+          "value": 106.8
+        },
+        {
+          "date": "2024-07",
+          "series": "Food",
+          "value": 106.5
+        },
+        {
+          "date": "2024-08",
+          "series": "Food",
+          "value": 106.7
+        },
+        {
+          "date": "2024-09",
+          "series": "Food",
+          "value": 106.9
+        },
+        {
+          "date": "2024-10",
+          "series": "Food",
+          "value": 106.8
+        },
+        {
+          "date": "2024-11",
+          "series": "Food",
+          "value": 106.4
+        },
+        {
+          "date": "2024-12",
+          "series": "Food",
+          "value": 106.1
+        },
+        {
+          "date": "2025-01",
+          "series": "Food",
+          "value": 107.1
+        },
+        {
+          "date": "2025-02",
+          "series": "Food",
+          "value": 106.6
+        },
+        {
+          "date": "2025-03",
+          "series": "Food",
+          "value": 105.9
+        },
+        {
+          "date": "2025-04",
+          "series": "Food",
+          "value": 106.0
+        },
+        {
+          "date": "2025-05",
+          "series": "Food",
+          "value": 105.8
+        },
+        {
+          "date": "2025-06",
+          "series": "Food",
+          "value": 106.4
+        },
+        {
+          "date": "2025-07",
+          "series": "Food",
+          "value": 106.4
+        },
+        {
+          "date": "2025-08",
+          "series": "Food",
+          "value": 106.7
+        },
+        {
+          "date": "2025-09",
+          "series": "Food",
+          "value": 106.9
+        },
+        {
+          "date": "2025-10",
+          "series": "Food",
+          "value": 107.0
+        },
+        {
+          "date": "2025-11",
+          "series": "Food",
+          "value": 107.2
+        },
+        {
+          "date": "2025-12",
+          "series": "Food",
+          "value": 106.8
+        },
+        {
+          "date": "2026-01",
+          "series": "Food",
+          "value": 106.7
+        },
+        {
+          "date": "2026-02",
+          "series": "Food",
+          "value": 107.2
+        },
+        {
+          "date": "2026-03",
+          "series": "Food",
+          "value": 107.1
+        },
+        {
+          "date": "2026-04",
+          "series": "Food",
+          "value": 106.4
+        },
+        {
+          "date": "2026-05",
+          "series": "Food",
+          "value": 106.2
+        },
+        {
+          "date": "2026-06",
+          "series": "Food",
+          "value": 105.9
+        },
+        {
+          "date": "2005-01",
+          "series": "Housing & Utilities",
+          "value": 58.7
+        },
+        {
+          "date": "2005-02",
+          "series": "Housing & Utilities",
+          "value": 58.7
+        },
+        {
+          "date": "2005-03",
+          "series": "Housing & Utilities",
+          "value": 58.7
+        },
+        {
+          "date": "2005-04",
+          "series": "Housing & Utilities",
+          "value": 58.9
+        },
+        {
+          "date": "2005-05",
+          "series": "Housing & Utilities",
+          "value": 59.1
+        },
+        {
+          "date": "2005-06",
+          "series": "Housing & Utilities",
+          "value": 59.2
+        },
+        {
+          "date": "2005-07",
+          "series": "Housing & Utilities",
+          "value": 59.4
+        },
+        {
+          "date": "2005-08",
+          "series": "Housing & Utilities",
+          "value": 59.5
+        },
+        {
+          "date": "2005-09",
+          "series": "Housing & Utilities",
+          "value": 59.9
+        },
+        {
+          "date": "2005-10",
+          "series": "Housing & Utilities",
+          "value": 60.3
+        },
+        {
+          "date": "2005-11",
+          "series": "Housing & Utilities",
+          "value": 60.5
+        },
+        {
+          "date": "2005-12",
+          "series": "Housing & Utilities",
+          "value": 60.7
+        },
+        {
+          "date": "2006-01",
+          "series": "Housing & Utilities",
+          "value": 60.9
+        },
+        {
+          "date": "2006-02",
+          "series": "Housing & Utilities",
+          "value": 61.0
+        },
+        {
+          "date": "2006-03",
+          "series": "Housing & Utilities",
+          "value": 61.5
+        },
+        {
+          "date": "2006-04",
+          "series": "Housing & Utilities",
+          "value": 61.7
+        },
+        {
+          "date": "2006-05",
+          "series": "Housing & Utilities",
+          "value": 61.9
+        },
+        {
+          "date": "2006-06",
+          "series": "Housing & Utilities",
+          "value": 62.0
+        },
+        {
+          "date": "2006-07",
+          "series": "Housing & Utilities",
+          "value": 62.2
+        },
+        {
+          "date": "2006-08",
+          "series": "Housing & Utilities",
+          "value": 62.4
+        },
+        {
+          "date": "2006-09",
+          "series": "Housing & Utilities",
+          "value": 62.7
+        },
+        {
+          "date": "2006-10",
+          "series": "Housing & Utilities",
+          "value": 62.6
+        },
+        {
+          "date": "2006-11",
+          "series": "Housing & Utilities",
+          "value": 62.8
+        },
+        {
+          "date": "2006-12",
+          "series": "Housing & Utilities",
+          "value": 63.1
+        },
+        {
+          "date": "2007-01",
+          "series": "Housing & Utilities",
+          "value": 63.4
+        },
+        {
+          "date": "2007-02",
+          "series": "Housing & Utilities",
+          "value": 59.4
+        },
+        {
+          "date": "2007-03",
+          "series": "Housing & Utilities",
+          "value": 63.8
+        },
+        {
+          "date": "2007-04",
+          "series": "Housing & Utilities",
+          "value": 62.0
+        },
+        {
+          "date": "2007-05",
+          "series": "Housing & Utilities",
+          "value": 62.3
+        },
+        {
+          "date": "2007-06",
+          "series": "Housing & Utilities",
+          "value": 62.5
+        },
+        {
+          "date": "2007-07",
+          "series": "Housing & Utilities",
+          "value": 62.7
+        },
+        {
+          "date": "2007-08",
+          "series": "Housing & Utilities",
+          "value": 62.5
+        },
+        {
+          "date": "2007-09",
+          "series": "Housing & Utilities",
+          "value": 62.7
+        },
+        {
+          "date": "2007-10",
+          "series": "Housing & Utilities",
+          "value": 65.0
+        },
+        {
+          "date": "2007-11",
+          "series": "Housing & Utilities",
+          "value": 65.4
+        },
+        {
+          "date": "2007-12",
+          "series": "Housing & Utilities",
+          "value": 65.9
+        },
+        {
+          "date": "2008-01",
+          "series": "Housing & Utilities",
+          "value": 64.4
+        },
+        {
+          "date": "2008-02",
+          "series": "Housing & Utilities",
+          "value": 64.7
+        },
+        {
+          "date": "2008-03",
+          "series": "Housing & Utilities",
+          "value": 65.4
+        },
+        {
+          "date": "2008-04",
+          "series": "Housing & Utilities",
+          "value": 65.7
+        },
+        {
+          "date": "2008-05",
+          "series": "Housing & Utilities",
+          "value": 66.1
+        },
+        {
+          "date": "2008-06",
+          "series": "Housing & Utilities",
+          "value": 66.5
+        },
+        {
+          "date": "2008-07",
+          "series": "Housing & Utilities",
+          "value": 67.0
+        },
+        {
+          "date": "2008-08",
+          "series": "Housing & Utilities",
+          "value": 64.1
+        },
+        {
+          "date": "2008-09",
+          "series": "Housing & Utilities",
+          "value": 62.2
+        },
+        {
+          "date": "2008-10",
+          "series": "Housing & Utilities",
+          "value": 62.4
+        },
+        {
+          "date": "2008-11",
+          "series": "Housing & Utilities",
+          "value": 65.7
+        },
+        {
+          "date": "2008-12",
+          "series": "Housing & Utilities",
+          "value": 65.8
+        },
+        {
+          "date": "2009-01",
+          "series": "Housing & Utilities",
+          "value": 65.6
+        },
+        {
+          "date": "2009-02",
+          "series": "Housing & Utilities",
+          "value": 65.7
+        },
+        {
+          "date": "2009-03",
+          "series": "Housing & Utilities",
+          "value": 65.6
+        },
+        {
+          "date": "2009-04",
+          "series": "Housing & Utilities",
+          "value": 65.8
+        },
+        {
+          "date": "2009-05",
+          "series": "Housing & Utilities",
+          "value": 65.7
+        },
+        {
+          "date": "2009-06",
+          "series": "Housing & Utilities",
+          "value": 65.6
+        },
+        {
+          "date": "2009-07",
+          "series": "Housing & Utilities",
+          "value": 65.6
+        },
+        {
+          "date": "2009-08",
+          "series": "Housing & Utilities",
+          "value": 62.2
+        },
+        {
+          "date": "2009-09",
+          "series": "Housing & Utilities",
+          "value": 63.6
+        },
+        {
+          "date": "2009-10",
+          "series": "Housing & Utilities",
+          "value": 67.5
+        },
+        {
+          "date": "2009-11",
+          "series": "Housing & Utilities",
+          "value": 67.5
+        },
+        {
+          "date": "2009-12",
+          "series": "Housing & Utilities",
+          "value": 67.9
+        },
+        {
+          "date": "2010-01",
+          "series": "Housing & Utilities",
+          "value": 68.4
+        },
+        {
+          "date": "2010-02",
+          "series": "Housing & Utilities",
+          "value": 68.6
+        },
+        {
+          "date": "2010-03",
+          "series": "Housing & Utilities",
+          "value": 68.7
+        },
+        {
+          "date": "2010-04",
+          "series": "Housing & Utilities",
+          "value": 68.7
+        },
+        {
+          "date": "2010-05",
+          "series": "Housing & Utilities",
+          "value": 68.9
+        },
+        {
+          "date": "2010-06",
+          "series": "Housing & Utilities",
+          "value": 69.0
+        },
+        {
+          "date": "2010-07",
+          "series": "Housing & Utilities",
+          "value": 64.1
+        },
+        {
+          "date": "2010-08",
+          "series": "Housing & Utilities",
+          "value": 64.1
+        },
+        {
+          "date": "2010-09",
+          "series": "Housing & Utilities",
+          "value": 64.4
+        },
+        {
+          "date": "2010-10",
+          "series": "Housing & Utilities",
+          "value": 69.5
+        },
+        {
+          "date": "2010-11",
+          "series": "Housing & Utilities",
+          "value": 69.8
+        },
+        {
+          "date": "2010-12",
+          "series": "Housing & Utilities",
+          "value": 70.2
+        },
+        {
+          "date": "2011-01",
+          "series": "Housing & Utilities",
+          "value": 70.7
+        },
+        {
+          "date": "2011-02",
+          "series": "Housing & Utilities",
+          "value": 71.5
+        },
+        {
+          "date": "2011-03",
+          "series": "Housing & Utilities",
+          "value": 72.1
+        },
+        {
+          "date": "2011-04",
+          "series": "Housing & Utilities",
+          "value": 72.4
+        },
+        {
+          "date": "2011-05",
+          "series": "Housing & Utilities",
+          "value": 73.2
+        },
+        {
+          "date": "2011-06",
+          "series": "Housing & Utilities",
+          "value": 73.7
+        },
+        {
+          "date": "2011-07",
+          "series": "Housing & Utilities",
+          "value": 72.5
+        },
+        {
+          "date": "2011-08",
+          "series": "Housing & Utilities",
+          "value": 67.9
+        },
+        {
+          "date": "2011-09",
+          "series": "Housing & Utilities",
+          "value": 68.2
+        },
+        {
+          "date": "2011-10",
+          "series": "Housing & Utilities",
+          "value": 73.8
+        },
+        {
+          "date": "2011-11",
+          "series": "Housing & Utilities",
+          "value": 74.2
+        },
+        {
+          "date": "2011-12",
+          "series": "Housing & Utilities",
+          "value": 74.6
+        },
+        {
+          "date": "2012-01",
+          "series": "Housing & Utilities",
+          "value": 75.2
+        },
+        {
+          "date": "2012-02",
+          "series": "Housing & Utilities",
+          "value": 75.6
+        },
+        {
+          "date": "2012-03",
+          "series": "Housing & Utilities",
+          "value": 76.0
+        },
+        {
+          "date": "2012-04",
+          "series": "Housing & Utilities",
+          "value": 76.0
+        },
+        {
+          "date": "2012-05",
+          "series": "Housing & Utilities",
+          "value": 76.2
+        },
+        {
+          "date": "2012-06",
+          "series": "Housing & Utilities",
+          "value": 76.3
+        },
+        {
+          "date": "2012-07",
+          "series": "Housing & Utilities",
+          "value": 71.2
+        },
+        {
+          "date": "2012-08",
+          "series": "Housing & Utilities",
+          "value": 71.4
+        },
+        {
+          "date": "2012-09",
+          "series": "Housing & Utilities",
+          "value": 72.0
+        },
+        {
+          "date": "2012-10",
+          "series": "Housing & Utilities",
+          "value": 77.7
+        },
+        {
+          "date": "2012-11",
+          "series": "Housing & Utilities",
+          "value": 78.0
+        },
+        {
+          "date": "2012-12",
+          "series": "Housing & Utilities",
+          "value": 78.3
+        },
+        {
+          "date": "2013-01",
+          "series": "Housing & Utilities",
+          "value": 79.0
+        },
+        {
+          "date": "2013-02",
+          "series": "Housing & Utilities",
+          "value": 79.5
+        },
+        {
+          "date": "2013-03",
+          "series": "Housing & Utilities",
+          "value": 79.9
+        },
+        {
+          "date": "2013-04",
+          "series": "Housing & Utilities",
+          "value": 80.4
+        },
+        {
+          "date": "2013-05",
+          "series": "Housing & Utilities",
+          "value": 80.8
+        },
+        {
+          "date": "2013-06",
+          "series": "Housing & Utilities",
+          "value": 81.1
+        },
+        {
+          "date": "2013-07",
+          "series": "Housing & Utilities",
+          "value": 81.7
+        },
+        {
+          "date": "2013-08",
+          "series": "Housing & Utilities",
+          "value": 76.4
+        },
+        {
+          "date": "2013-09",
+          "series": "Housing & Utilities",
+          "value": 76.7
+        },
+        {
+          "date": "2013-10",
+          "series": "Housing & Utilities",
+          "value": 82.6
+        },
+        {
+          "date": "2013-11",
+          "series": "Housing & Utilities",
+          "value": 82.8
+        },
+        {
+          "date": "2013-12",
+          "series": "Housing & Utilities",
+          "value": 83.0
+        },
+        {
+          "date": "2014-01",
+          "series": "Housing & Utilities",
+          "value": 83.6
+        },
+        {
+          "date": "2014-02",
+          "series": "Housing & Utilities",
+          "value": 83.9
+        },
+        {
+          "date": "2014-03",
+          "series": "Housing & Utilities",
+          "value": 84.3
+        },
+        {
+          "date": "2014-04",
+          "series": "Housing & Utilities",
+          "value": 84.5
+        },
+        {
+          "date": "2014-05",
+          "series": "Housing & Utilities",
+          "value": 84.8
+        },
+        {
+          "date": "2014-06",
+          "series": "Housing & Utilities",
+          "value": 84.9
+        },
+        {
+          "date": "2014-07",
+          "series": "Housing & Utilities",
+          "value": 86.6
+        },
+        {
+          "date": "2014-08",
+          "series": "Housing & Utilities",
+          "value": 81.3
+        },
+        {
+          "date": "2014-09",
+          "series": "Housing & Utilities",
+          "value": 87.8
+        },
+        {
+          "date": "2014-10",
+          "series": "Housing & Utilities",
+          "value": 90.5
+        },
+        {
+          "date": "2014-11",
+          "series": "Housing & Utilities",
+          "value": 90.7
+        },
+        {
+          "date": "2014-12",
+          "series": "Housing & Utilities",
+          "value": 90.8
+        },
+        {
+          "date": "2015-01",
+          "series": "Housing & Utilities",
+          "value": 91.2
+        },
+        {
+          "date": "2015-02",
+          "series": "Housing & Utilities",
+          "value": 91.4
+        },
+        {
+          "date": "2015-03",
+          "series": "Housing & Utilities",
+          "value": 91.6
+        },
+        {
+          "date": "2015-04",
+          "series": "Housing & Utilities",
+          "value": 89.1
+        },
+        {
+          "date": "2015-05",
+          "series": "Housing & Utilities",
+          "value": 89.4
+        },
+        {
+          "date": "2015-06",
+          "series": "Housing & Utilities",
+          "value": 89.8
+        },
+        {
+          "date": "2015-07",
+          "series": "Housing & Utilities",
+          "value": 90.1
+        },
+        {
+          "date": "2015-08",
+          "series": "Housing & Utilities",
+          "value": 85.8
+        },
+        {
+          "date": "2015-09",
+          "series": "Housing & Utilities",
+          "value": 90.1
+        },
+        {
+          "date": "2015-10",
+          "series": "Housing & Utilities",
+          "value": 93.6
+        },
+        {
+          "date": "2015-11",
+          "series": "Housing & Utilities",
+          "value": 94.2
+        },
+        {
+          "date": "2015-12",
+          "series": "Housing & Utilities",
+          "value": 94.4
+        },
+        {
+          "date": "2016-01",
+          "series": "Housing & Utilities",
+          "value": 94.6
+        },
+        {
+          "date": "2016-02",
+          "series": "Housing & Utilities",
+          "value": 94.8
+        },
+        {
+          "date": "2016-03",
+          "series": "Housing & Utilities",
+          "value": 95.0
+        },
+        {
+          "date": "2016-04",
+          "series": "Housing & Utilities",
+          "value": 93.0
+        },
+        {
+          "date": "2016-05",
+          "series": "Housing & Utilities",
+          "value": 93.2
+        },
+        {
+          "date": "2016-06",
+          "series": "Housing & Utilities",
+          "value": 93.3
+        },
+        {
+          "date": "2016-07",
+          "series": "Housing & Utilities",
+          "value": 93.5
+        },
+        {
+          "date": "2016-08",
+          "series": "Housing & Utilities",
+          "value": 93.6
+        },
+        {
+          "date": "2016-09",
+          "series": "Housing & Utilities",
+          "value": 94.2
+        },
+        {
+          "date": "2016-10",
+          "series": "Housing & Utilities",
+          "value": 94.3
+        },
+        {
+          "date": "2016-11",
+          "series": "Housing & Utilities",
+          "value": 94.5
+        },
+        {
+          "date": "2016-12",
+          "series": "Housing & Utilities",
+          "value": 94.6
+        },
+        {
+          "date": "2017-01",
+          "series": "Housing & Utilities",
+          "value": 94.3
+        },
+        {
+          "date": "2017-02",
+          "series": "Housing & Utilities",
+          "value": 94.5
+        },
+        {
+          "date": "2017-03",
+          "series": "Housing & Utilities",
+          "value": 95.1
+        },
+        {
+          "date": "2017-04",
+          "series": "Housing & Utilities",
+          "value": 95.3
+        },
+        {
+          "date": "2017-05",
+          "series": "Housing & Utilities",
+          "value": 95.5
+        },
+        {
+          "date": "2017-06",
+          "series": "Housing & Utilities",
+          "value": 95.6
+        },
+        {
+          "date": "2017-07",
+          "series": "Housing & Utilities",
+          "value": 95.8
+        },
+        {
+          "date": "2017-08",
+          "series": "Housing & Utilities",
+          "value": 96.1
+        },
+        {
+          "date": "2017-09",
+          "series": "Housing & Utilities",
+          "value": 96.2
+        },
+        {
+          "date": "2017-10",
+          "series": "Housing & Utilities",
+          "value": 96.4
+        },
+        {
+          "date": "2017-11",
+          "series": "Housing & Utilities",
+          "value": 96.6
+        },
+        {
+          "date": "2017-12",
+          "series": "Housing & Utilities",
+          "value": 96.8
+        },
+        {
+          "date": "2018-01",
+          "series": "Housing & Utilities",
+          "value": 97.1
+        },
+        {
+          "date": "2018-02",
+          "series": "Housing & Utilities",
+          "value": 97.4
+        },
+        {
+          "date": "2018-03",
+          "series": "Housing & Utilities",
+          "value": 97.7
+        },
+        {
+          "date": "2018-04",
+          "series": "Housing & Utilities",
+          "value": 97.2
+        },
+        {
+          "date": "2018-05",
+          "series": "Housing & Utilities",
+          "value": 97.5
+        },
+        {
+          "date": "2018-06",
+          "series": "Housing & Utilities",
+          "value": 97.8
+        },
+        {
+          "date": "2018-07",
+          "series": "Housing & Utilities",
+          "value": 98.1
+        },
+        {
+          "date": "2018-08",
+          "series": "Housing & Utilities",
+          "value": 98.4
+        },
+        {
+          "date": "2018-09",
+          "series": "Housing & Utilities",
+          "value": 99.1
+        },
+        {
+          "date": "2018-10",
+          "series": "Housing & Utilities",
+          "value": 99.4
+        },
+        {
+          "date": "2018-11",
+          "series": "Housing & Utilities",
+          "value": 99.6
+        },
+        {
+          "date": "2018-12",
+          "series": "Housing & Utilities",
+          "value": 99.7
+        },
+        {
+          "date": "2019-01",
+          "series": "Housing & Utilities",
+          "value": 99.5
+        },
+        {
+          "date": "2019-02",
+          "series": "Housing & Utilities",
+          "value": 99.8
+        },
+        {
+          "date": "2019-03",
+          "series": "Housing & Utilities",
+          "value": 100.0
+        },
+        {
+          "date": "2019-04",
+          "series": "Housing & Utilities",
+          "value": 100.8
+        },
+        {
+          "date": "2019-05",
+          "series": "Housing & Utilities",
+          "value": 101.0
+        },
+        {
+          "date": "2019-06",
+          "series": "Housing & Utilities",
+          "value": 101.1
+        },
+        {
+          "date": "2019-07",
+          "series": "Housing & Utilities",
+          "value": 101.3
+        },
+        {
+          "date": "2019-08",
+          "series": "Housing & Utilities",
+          "value": 101.6
+        },
+        {
+          "date": "2019-09",
+          "series": "Housing & Utilities",
+          "value": 101.7
+        },
+        {
+          "date": "2019-10",
+          "series": "Housing & Utilities",
+          "value": 102.2
+        },
+        {
+          "date": "2019-11",
+          "series": "Housing & Utilities",
+          "value": 102.3
+        },
+        {
+          "date": "2019-12",
+          "series": "Housing & Utilities",
+          "value": 102.4
+        },
+        {
+          "date": "2020-01",
+          "series": "Housing & Utilities",
+          "value": 95.7
+        },
+        {
+          "date": "2020-02",
+          "series": "Housing & Utilities",
+          "value": 101.1
+        },
+        {
+          "date": "2020-03",
+          "series": "Housing & Utilities",
+          "value": 101.2
+        },
+        {
+          "date": "2020-04",
+          "series": "Housing & Utilities",
+          "value": 101.2
+        },
+        {
+          "date": "2020-05",
+          "series": "Housing & Utilities",
+          "value": 101.1
+        },
+        {
+          "date": "2020-06",
+          "series": "Housing & Utilities",
+          "value": 101.1
+        },
+        {
+          "date": "2020-07",
+          "series": "Housing & Utilities",
+          "value": 95.6
+        },
+        {
+          "date": "2020-08",
+          "series": "Housing & Utilities",
+          "value": 100.8
+        },
+        {
+          "date": "2020-09",
+          "series": "Housing & Utilities",
+          "value": 95.4
+        },
+        {
+          "date": "2020-10",
+          "series": "Housing & Utilities",
+          "value": 100.7
+        },
+        {
+          "date": "2020-11",
+          "series": "Housing & Utilities",
+          "value": 100.8
+        },
+        {
+          "date": "2020-12",
+          "series": "Housing & Utilities",
+          "value": 99.9
+        },
+        {
+          "date": "2021-01",
+          "series": "Housing & Utilities",
+          "value": 102.6
+        },
+        {
+          "date": "2021-02",
+          "series": "Housing & Utilities",
+          "value": 102.5
+        },
+        {
+          "date": "2021-03",
+          "series": "Housing & Utilities",
+          "value": 102.4
+        },
+        {
+          "date": "2021-04",
+          "series": "Housing & Utilities",
+          "value": 102.3
+        },
+        {
+          "date": "2021-05",
+          "series": "Housing & Utilities",
+          "value": 102.4
+        },
+        {
+          "date": "2021-06",
+          "series": "Housing & Utilities",
+          "value": 101.4
+        },
+        {
+          "date": "2021-07",
+          "series": "Housing & Utilities",
+          "value": 101.3
+        },
+        {
+          "date": "2021-08",
+          "series": "Housing & Utilities",
+          "value": 101.3
+        },
+        {
+          "date": "2021-09",
+          "series": "Housing & Utilities",
+          "value": 95.5
+        },
+        {
+          "date": "2021-10",
+          "series": "Housing & Utilities",
+          "value": 101.8
+        },
+        {
+          "date": "2021-11",
+          "series": "Housing & Utilities",
+          "value": 102.1
+        },
+        {
+          "date": "2021-12",
+          "series": "Housing & Utilities",
+          "value": 102.1
+        },
+        {
+          "date": "2022-01",
+          "series": "Housing & Utilities",
+          "value": 102.0
+        },
+        {
+          "date": "2022-02",
+          "series": "Housing & Utilities",
+          "value": 102.0
+        },
+        {
+          "date": "2022-03",
+          "series": "Housing & Utilities",
+          "value": 102.1
+        },
+        {
+          "date": "2022-04",
+          "series": "Housing & Utilities",
+          "value": 101.7
+        },
+        {
+          "date": "2022-05",
+          "series": "Housing & Utilities",
+          "value": 101.4
+        },
+        {
+          "date": "2022-06",
+          "series": "Housing & Utilities",
+          "value": 101.9
+        },
+        {
+          "date": "2022-07",
+          "series": "Housing & Utilities",
+          "value": 102.0
+        },
+        {
+          "date": "2022-08",
+          "series": "Housing & Utilities",
+          "value": 102.1
+        },
+        {
+          "date": "2022-09",
+          "series": "Housing & Utilities",
+          "value": 102.2
+        },
+        {
+          "date": "2022-10",
+          "series": "Housing & Utilities",
+          "value": 102.9
+        },
+        {
+          "date": "2022-11",
+          "series": "Housing & Utilities",
+          "value": 103.0
+        },
+        {
+          "date": "2022-12",
+          "series": "Housing & Utilities",
+          "value": 103.2
+        },
+        {
+          "date": "2023-01",
+          "series": "Housing & Utilities",
+          "value": 103.5
+        },
+        {
+          "date": "2023-02",
+          "series": "Housing & Utilities",
+          "value": 103.5
+        },
+        {
+          "date": "2023-03",
+          "series": "Housing & Utilities",
+          "value": 103.5
+        },
+        {
+          "date": "2023-04",
+          "series": "Housing & Utilities",
+          "value": 103.6
+        },
+        {
+          "date": "2023-05",
+          "series": "Housing & Utilities",
+          "value": 103.2
+        },
+        {
+          "date": "2023-06",
+          "series": "Housing & Utilities",
+          "value": 103.6
+        },
+        {
+          "date": "2023-07",
+          "series": "Housing & Utilities",
+          "value": 103.5
+        },
+        {
+          "date": "2023-08",
+          "series": "Housing & Utilities",
+          "value": 103.3
+        },
+        {
+          "date": "2023-09",
+          "series": "Housing & Utilities",
+          "value": 103.2
+        },
+        {
+          "date": "2023-10",
+          "series": "Housing & Utilities",
+          "value": 105.5
+        },
+        {
+          "date": "2023-11",
+          "series": "Housing & Utilities",
+          "value": 105.5
+        },
+        {
+          "date": "2023-12",
+          "series": "Housing & Utilities",
+          "value": 105.4
+        },
+        {
+          "date": "2024-01",
+          "series": "Housing & Utilities",
+          "value": 105.5
+        },
+        {
+          "date": "2024-02",
+          "series": "Housing & Utilities",
+          "value": 105.6
+        },
+        {
+          "date": "2024-03",
+          "series": "Housing & Utilities",
+          "value": 105.6
+        },
+        {
+          "date": "2024-04",
+          "series": "Housing & Utilities",
+          "value": 103.6
+        },
+        {
+          "date": "2024-05",
+          "series": "Housing & Utilities",
+          "value": 103.3
+        },
+        {
+          "date": "2024-06",
+          "series": "Housing & Utilities",
+          "value": 104.6
+        },
+        {
+          "date": "2024-07",
+          "series": "Housing & Utilities",
+          "value": 106.7
+        },
+        {
+          "date": "2024-08",
+          "series": "Housing & Utilities",
+          "value": 106.8
+        },
+        {
+          "date": "2024-09",
+          "series": "Housing & Utilities",
+          "value": 106.9
+        },
+        {
+          "date": "2024-10",
+          "series": "Housing & Utilities",
+          "value": 107.1
+        },
+        {
+          "date": "2024-11",
+          "series": "Housing & Utilities",
+          "value": 107.2
+        },
+        {
+          "date": "2024-12",
+          "series": "Housing & Utilities",
+          "value": 107.3
+        },
+        {
+          "date": "2025-01",
+          "series": "Housing & Utilities",
+          "value": 108.0
+        },
+        {
+          "date": "2025-02",
+          "series": "Housing & Utilities",
+          "value": 108.2
+        },
+        {
+          "date": "2025-03",
+          "series": "Housing & Utilities",
+          "value": 108.3
+        },
+        {
+          "date": "2025-04",
+          "series": "Housing & Utilities",
+          "value": 107.4
+        },
+        {
+          "date": "2025-05",
+          "series": "Housing & Utilities",
+          "value": 107.5
+        },
+        {
+          "date": "2025-06",
+          "series": "Housing & Utilities",
+          "value": 107.5
+        },
+        {
+          "date": "2025-07",
+          "series": "Housing & Utilities",
+          "value": 108.6
+        },
+        {
+          "date": "2025-08",
+          "series": "Housing & Utilities",
+          "value": 108.6
+        },
+        {
+          "date": "2025-09",
+          "series": "Housing & Utilities",
+          "value": 108.6
+        },
+        {
+          "date": "2025-10",
+          "series": "Housing & Utilities",
+          "value": 108.7
+        },
+        {
+          "date": "2025-11",
+          "series": "Housing & Utilities",
+          "value": 108.7
+        },
+        {
+          "date": "2025-12",
+          "series": "Housing & Utilities",
+          "value": 108.7
+        },
+        {
+          "date": "2026-01",
+          "series": "Housing & Utilities",
+          "value": 109.4
+        },
+        {
+          "date": "2026-02",
+          "series": "Housing & Utilities",
+          "value": 109.6
+        },
+        {
+          "date": "2026-03",
+          "series": "Housing & Utilities",
+          "value": 109.7
+        },
+        {
+          "date": "2026-04",
+          "series": "Housing & Utilities",
+          "value": 108.8
+        },
+        {
+          "date": "2026-05",
+          "series": "Housing & Utilities",
+          "value": 109.0
+        },
+        {
+          "date": "2026-06",
+          "series": "Housing & Utilities",
+          "value": 109.3
+        },
+        {
+          "date": "2005-01",
+          "series": "Transport",
+          "value": 78.4
+        },
+        {
+          "date": "2005-02",
+          "series": "Transport",
+          "value": 78.7
+        },
+        {
+          "date": "2005-03",
+          "series": "Transport",
+          "value": 78.7
+        },
+        {
+          "date": "2005-04",
+          "series": "Transport",
+          "value": 78.8
+        },
+        {
+          "date": "2005-05",
+          "series": "Transport",
+          "value": 78.9
+        },
+        {
+          "date": "2005-06",
+          "series": "Transport",
+          "value": 79.5
+        },
+        {
+          "date": "2005-07",
+          "series": "Transport",
+          "value": 80.4
+        },
+        {
+          "date": "2005-08",
+          "series": "Transport",
+          "value": 80.6
+        },
+        {
+          "date": "2005-09",
+          "series": "Transport",
+          "value": 79.9
+        },
+        {
+          "date": "2005-10",
+          "series": "Transport",
+          "value": 79.8
+        },
+        {
+          "date": "2005-11",
+          "series": "Transport",
+          "value": 79.7
+        },
+        {
+          "date": "2005-12",
+          "series": "Transport",
+          "value": 80.0
+        },
+        {
+          "date": "2006-01",
+          "series": "Transport",
+          "value": 80.3
+        },
+        {
+          "date": "2006-02",
+          "series": "Transport",
+          "value": 79.8
+        },
+        {
+          "date": "2006-03",
+          "series": "Transport",
+          "value": 79.8
+        },
+        {
+          "date": "2006-04",
+          "series": "Transport",
+          "value": 80.0
+        },
+        {
+          "date": "2006-05",
+          "series": "Transport",
+          "value": 80.0
+        },
+        {
+          "date": "2006-06",
+          "series": "Transport",
+          "value": 80.0
+        },
+        {
+          "date": "2006-07",
+          "series": "Transport",
+          "value": 80.8
+        },
+        {
+          "date": "2006-08",
+          "series": "Transport",
+          "value": 80.9
+        },
+        {
+          "date": "2006-09",
+          "series": "Transport",
+          "value": 79.9
+        },
+        {
+          "date": "2006-10",
+          "series": "Transport",
+          "value": 79.8
+        },
+        {
+          "date": "2006-11",
+          "series": "Transport",
+          "value": 79.7
+        },
+        {
+          "date": "2006-12",
+          "series": "Transport",
+          "value": 79.9
+        },
+        {
+          "date": "2007-01",
+          "series": "Transport",
+          "value": 79.6
+        },
+        {
+          "date": "2007-02",
+          "series": "Transport",
+          "value": 79.7
+        },
+        {
+          "date": "2007-03",
+          "series": "Transport",
+          "value": 79.1
+        },
+        {
+          "date": "2007-04",
+          "series": "Transport",
+          "value": 79.3
+        },
+        {
+          "date": "2007-05",
+          "series": "Transport",
+          "value": 79.6
+        },
+        {
+          "date": "2007-06",
+          "series": "Transport",
+          "value": 79.8
+        },
+        {
+          "date": "2007-07",
+          "series": "Transport",
+          "value": 80.6
+        },
+        {
+          "date": "2007-08",
+          "series": "Transport",
+          "value": 80.7
+        },
+        {
+          "date": "2007-09",
+          "series": "Transport",
+          "value": 80.1
+        },
+        {
+          "date": "2007-10",
+          "series": "Transport",
+          "value": 80.3
+        },
+        {
+          "date": "2007-11",
+          "series": "Transport",
+          "value": 80.5
+        },
+        {
+          "date": "2007-12",
+          "series": "Transport",
+          "value": 80.3
+        },
+        {
+          "date": "2008-01",
+          "series": "Transport",
+          "value": 80.2
+        },
+        {
+          "date": "2008-02",
+          "series": "Transport",
+          "value": 80.7
+        },
+        {
+          "date": "2008-03",
+          "series": "Transport",
+          "value": 80.8
+        },
+        {
+          "date": "2008-04",
+          "series": "Transport",
+          "value": 81.0
+        },
+        {
+          "date": "2008-05",
+          "series": "Transport",
+          "value": 81.3
+        },
+        {
+          "date": "2008-06",
+          "series": "Transport",
+          "value": 82.6
+        },
+        {
+          "date": "2008-07",
+          "series": "Transport",
+          "value": 83.8
+        },
+        {
+          "date": "2008-08",
+          "series": "Transport",
+          "value": 84.1
+        },
+        {
+          "date": "2008-09",
+          "series": "Transport",
+          "value": 83.4
+        },
+        {
+          "date": "2008-10",
+          "series": "Transport",
+          "value": 82.8
+        },
+        {
+          "date": "2008-11",
+          "series": "Transport",
+          "value": 82.1
+        },
+        {
+          "date": "2008-12",
+          "series": "Transport",
+          "value": 81.5
+        },
+        {
+          "date": "2009-01",
+          "series": "Transport",
+          "value": 81.6
+        },
+        {
+          "date": "2009-02",
+          "series": "Transport",
+          "value": 81.0
+        },
+        {
+          "date": "2009-03",
+          "series": "Transport",
+          "value": 80.9
+        },
+        {
+          "date": "2009-04",
+          "series": "Transport",
+          "value": 81.0
+        },
+        {
+          "date": "2009-05",
+          "series": "Transport",
+          "value": 80.9
+        },
+        {
+          "date": "2009-06",
+          "series": "Transport",
+          "value": 81.3
+        },
+        {
+          "date": "2009-07",
+          "series": "Transport",
+          "value": 81.9
+        },
+        {
+          "date": "2009-08",
+          "series": "Transport",
+          "value": 82.2
+        },
+        {
+          "date": "2009-09",
+          "series": "Transport",
+          "value": 81.5
+        },
+        {
+          "date": "2009-10",
+          "series": "Transport",
+          "value": 81.2
+        },
+        {
+          "date": "2009-11",
+          "series": "Transport",
+          "value": 81.3
+        },
+        {
+          "date": "2009-12",
+          "series": "Transport",
+          "value": 81.6
+        },
+        {
+          "date": "2010-01",
+          "series": "Transport",
+          "value": 81.8
+        },
+        {
+          "date": "2010-02",
+          "series": "Transport",
+          "value": 82.2
+        },
+        {
+          "date": "2010-03",
+          "series": "Transport",
+          "value": 82.2
+        },
+        {
+          "date": "2010-04",
+          "series": "Transport",
+          "value": 82.4
+        },
+        {
+          "date": "2010-05",
+          "series": "Transport",
+          "value": 82.3
+        },
+        {
+          "date": "2010-06",
+          "series": "Transport",
+          "value": 82.7
+        },
+        {
+          "date": "2010-07",
+          "series": "Transport",
+          "value": 83.7
+        },
+        {
+          "date": "2010-08",
+          "series": "Transport",
+          "value": 83.8
+        },
+        {
+          "date": "2010-09",
+          "series": "Transport",
+          "value": 83.3
+        },
+        {
+          "date": "2010-10",
+          "series": "Transport",
+          "value": 83.6
+        },
+        {
+          "date": "2010-11",
+          "series": "Transport",
+          "value": 83.8
+        },
+        {
+          "date": "2010-12",
+          "series": "Transport",
+          "value": 84.3
+        },
+        {
+          "date": "2011-01",
+          "series": "Transport",
+          "value": 84.7
+        },
+        {
+          "date": "2011-02",
+          "series": "Transport",
+          "value": 84.8
+        },
+        {
+          "date": "2011-03",
+          "series": "Transport",
+          "value": 84.9
+        },
+        {
+          "date": "2011-04",
+          "series": "Transport",
+          "value": 85.9
+        },
+        {
+          "date": "2011-05",
+          "series": "Transport",
+          "value": 86.3
+        },
+        {
+          "date": "2011-06",
+          "series": "Transport",
+          "value": 86.9
+        },
+        {
+          "date": "2011-07",
+          "series": "Transport",
+          "value": 87.8
+        },
+        {
+          "date": "2011-08",
+          "series": "Transport",
+          "value": 88.0
+        },
+        {
+          "date": "2011-09",
+          "series": "Transport",
+          "value": 87.8
+        },
+        {
+          "date": "2011-10",
+          "series": "Transport",
+          "value": 87.6
+        },
+        {
+          "date": "2011-11",
+          "series": "Transport",
+          "value": 87.6
+        },
+        {
+          "date": "2011-12",
+          "series": "Transport",
+          "value": 88.0
+        },
+        {
+          "date": "2012-01",
+          "series": "Transport",
+          "value": 88.7
+        },
+        {
+          "date": "2012-02",
+          "series": "Transport",
+          "value": 88.4
+        },
+        {
+          "date": "2012-03",
+          "series": "Transport",
+          "value": 88.6
+        },
+        {
+          "date": "2012-04",
+          "series": "Transport",
+          "value": 89.2
+        },
+        {
+          "date": "2012-05",
+          "series": "Transport",
+          "value": 89.1
+        },
+        {
+          "date": "2012-06",
+          "series": "Transport",
+          "value": 89.4
+        },
+        {
+          "date": "2012-07",
+          "series": "Transport",
+          "value": 89.8
+        },
+        {
+          "date": "2012-08",
+          "series": "Transport",
+          "value": 89.9
+        },
+        {
+          "date": "2012-09",
+          "series": "Transport",
+          "value": 89.6
+        },
+        {
+          "date": "2012-10",
+          "series": "Transport",
+          "value": 89.6
+        },
+        {
+          "date": "2012-11",
+          "series": "Transport",
+          "value": 89.5
+        },
+        {
+          "date": "2012-12",
+          "series": "Transport",
+          "value": 89.9
+        },
+        {
+          "date": "2013-01",
+          "series": "Transport",
+          "value": 89.9
+        },
+        {
+          "date": "2013-02",
+          "series": "Transport",
+          "value": 90.3
+        },
+        {
+          "date": "2013-03",
+          "series": "Transport",
+          "value": 90.7
+        },
+        {
+          "date": "2013-04",
+          "series": "Transport",
+          "value": 91.1
+        },
+        {
+          "date": "2013-05",
+          "series": "Transport",
+          "value": 91.2
+        },
+        {
+          "date": "2013-06",
+          "series": "Transport",
+          "value": 91.2
+        },
+        {
+          "date": "2013-07",
+          "series": "Transport",
+          "value": 92.3
+        },
+        {
+          "date": "2013-08",
+          "series": "Transport",
+          "value": 92.3
+        },
+        {
+          "date": "2013-09",
+          "series": "Transport",
+          "value": 92.3
+        },
+        {
+          "date": "2013-10",
+          "series": "Transport",
+          "value": 91.9
+        },
+        {
+          "date": "2013-11",
+          "series": "Transport",
+          "value": 91.7
+        },
+        {
+          "date": "2013-12",
+          "series": "Transport",
+          "value": 92.3
+        },
+        {
+          "date": "2014-01",
+          "series": "Transport",
+          "value": 92.7
+        },
+        {
+          "date": "2014-02",
+          "series": "Transport",
+          "value": 92.3
+        },
+        {
+          "date": "2014-03",
+          "series": "Transport",
+          "value": 92.1
+        },
+        {
+          "date": "2014-04",
+          "series": "Transport",
+          "value": 92.8
+        },
+        {
+          "date": "2014-05",
+          "series": "Transport",
+          "value": 93.1
+        },
+        {
+          "date": "2014-06",
+          "series": "Transport",
+          "value": 93.5
+        },
+        {
+          "date": "2014-07",
+          "series": "Transport",
+          "value": 94.5
+        },
+        {
+          "date": "2014-08",
+          "series": "Transport",
+          "value": 94.4
+        },
+        {
+          "date": "2014-09",
+          "series": "Transport",
+          "value": 94.0
+        },
+        {
+          "date": "2014-10",
+          "series": "Transport",
+          "value": 93.8
+        },
+        {
+          "date": "2014-11",
+          "series": "Transport",
+          "value": 93.5
+        },
+        {
+          "date": "2014-12",
+          "series": "Transport",
+          "value": 93.5
+        },
+        {
+          "date": "2015-01",
+          "series": "Transport",
+          "value": 92.7
+        },
+        {
+          "date": "2015-02",
+          "series": "Transport",
+          "value": 92.2
+        },
+        {
+          "date": "2015-03",
+          "series": "Transport",
+          "value": 92.3
+        },
+        {
+          "date": "2015-04",
+          "series": "Transport",
+          "value": 92.0
+        },
+        {
+          "date": "2015-05",
+          "series": "Transport",
+          "value": 93.0
+        },
+        {
+          "date": "2015-06",
+          "series": "Transport",
+          "value": 92.9
+        },
+        {
+          "date": "2015-07",
+          "series": "Transport",
+          "value": 93.8
+        },
+        {
+          "date": "2015-08",
+          "series": "Transport",
+          "value": 93.8
+        },
+        {
+          "date": "2015-09",
+          "series": "Transport",
+          "value": 93.9
+        },
+        {
+          "date": "2015-10",
+          "series": "Transport",
+          "value": 93.2
+        },
+        {
+          "date": "2015-11",
+          "series": "Transport",
+          "value": 93.2
+        },
+        {
+          "date": "2015-12",
+          "series": "Transport",
+          "value": 93.6
+        },
+        {
+          "date": "2016-01",
+          "series": "Transport",
+          "value": 93.7
+        },
+        {
+          "date": "2016-02",
+          "series": "Transport",
+          "value": 93.4
+        },
+        {
+          "date": "2016-03",
+          "series": "Transport",
+          "value": 93.3
+        },
+        {
+          "date": "2016-04",
+          "series": "Transport",
+          "value": 93.8
+        },
+        {
+          "date": "2016-05",
+          "series": "Transport",
+          "value": 94.2
+        },
+        {
+          "date": "2016-06",
+          "series": "Transport",
+          "value": 94.2
+        },
+        {
+          "date": "2016-07",
+          "series": "Transport",
+          "value": 94.3
+        },
+        {
+          "date": "2016-08",
+          "series": "Transport",
+          "value": 95.7
+        },
+        {
+          "date": "2016-09",
+          "series": "Transport",
+          "value": 95.6
+        },
+        {
+          "date": "2016-10",
+          "series": "Transport",
+          "value": 95.5
+        },
+        {
+          "date": "2016-11",
+          "series": "Transport",
+          "value": 94.9
+        },
+        {
+          "date": "2016-12",
+          "series": "Transport",
+          "value": 95.5
+        },
+        {
+          "date": "2017-01",
+          "series": "Transport",
+          "value": 96.0
+        },
+        {
+          "date": "2017-02",
+          "series": "Transport",
+          "value": 96.3
+        },
+        {
+          "date": "2017-03",
+          "series": "Transport",
+          "value": 96.2
+        },
+        {
+          "date": "2017-04",
+          "series": "Transport",
+          "value": 97.2
+        },
+        {
+          "date": "2017-05",
+          "series": "Transport",
+          "value": 96.8
+        },
+        {
+          "date": "2017-06",
+          "series": "Transport",
+          "value": 96.6
+        },
+        {
+          "date": "2017-07",
+          "series": "Transport",
+          "value": 97.3
+        },
+        {
+          "date": "2017-08",
+          "series": "Transport",
+          "value": 96.9
+        },
+        {
+          "date": "2017-09",
+          "series": "Transport",
+          "value": 97.3
+        },
+        {
+          "date": "2017-10",
+          "series": "Transport",
+          "value": 96.3
+        },
+        {
+          "date": "2017-11",
+          "series": "Transport",
+          "value": 96.5
+        },
+        {
+          "date": "2017-12",
+          "series": "Transport",
+          "value": 97.1
+        },
+        {
+          "date": "2018-01",
+          "series": "Transport",
+          "value": 97.5
+        },
+        {
+          "date": "2018-02",
+          "series": "Transport",
+          "value": 98.4
+        },
+        {
+          "date": "2018-03",
+          "series": "Transport",
+          "value": 97.8
+        },
+        {
+          "date": "2018-04",
+          "series": "Transport",
+          "value": 97.7
+        },
+        {
+          "date": "2018-05",
+          "series": "Transport",
+          "value": 98.1
+        },
+        {
+          "date": "2018-06",
+          "series": "Transport",
+          "value": 98.6
+        },
+        {
+          "date": "2018-07",
+          "series": "Transport",
+          "value": 99.5
+        },
+        {
+          "date": "2018-08",
+          "series": "Transport",
+          "value": 98.3
+        },
+        {
+          "date": "2018-09",
+          "series": "Transport",
+          "value": 98.6
+        },
+        {
+          "date": "2018-10",
+          "series": "Transport",
+          "value": 97.9
+        },
+        {
+          "date": "2018-11",
+          "series": "Transport",
+          "value": 98.1
+        },
+        {
+          "date": "2018-12",
+          "series": "Transport",
+          "value": 98.9
+        },
+        {
+          "date": "2019-01",
+          "series": "Transport",
+          "value": 99.8
+        },
+        {
+          "date": "2019-02",
+          "series": "Transport",
+          "value": 99.8
+        },
+        {
+          "date": "2019-03",
+          "series": "Transport",
+          "value": 99.8
+        },
+        {
+          "date": "2019-04",
+          "series": "Transport",
+          "value": 100.4
+        },
+        {
+          "date": "2019-05",
+          "series": "Transport",
+          "value": 99.6
+        },
+        {
+          "date": "2019-06",
+          "series": "Transport",
+          "value": 100.3
+        },
+        {
+          "date": "2019-07",
+          "series": "Transport",
+          "value": 101.4
+        },
+        {
+          "date": "2019-08",
+          "series": "Transport",
+          "value": 101.2
+        },
+        {
+          "date": "2019-09",
+          "series": "Transport",
+          "value": 100.7
+        },
+        {
+          "date": "2019-10",
+          "series": "Transport",
+          "value": 100.6
+        },
+        {
+          "date": "2019-11",
+          "series": "Transport",
+          "value": 100.7
+        },
+        {
+          "date": "2019-12",
+          "series": "Transport",
+          "value": 101.0
+        },
+        {
+          "date": "2020-01",
+          "series": "Transport",
+          "value": 101.5
+        },
+        {
+          "date": "2020-02",
+          "series": "Transport",
+          "value": 100.9
+        },
+        {
+          "date": "2020-03",
+          "series": "Transport",
+          "value": 100.9
+        },
+        {
+          "date": "2020-04",
+          "series": "Transport",
+          "value": 100.3
+        },
+        {
+          "date": "2020-05",
+          "series": "Transport",
+          "value": 100.1
+        },
+        {
+          "date": "2020-06",
+          "series": "Transport",
+          "value": 100.4
+        },
+        {
+          "date": "2020-07",
+          "series": "Transport",
+          "value": 97.5
+        },
+        {
+          "date": "2020-08",
+          "series": "Transport",
+          "value": 98.0
+        },
+        {
+          "date": "2020-09",
+          "series": "Transport",
+          "value": 98.1
+        },
+        {
+          "date": "2020-10",
+          "series": "Transport",
+          "value": 98.0
+        },
+        {
+          "date": "2020-11",
+          "series": "Transport",
+          "value": 97.9
+        },
+        {
+          "date": "2020-12",
+          "series": "Transport",
+          "value": 97.9
+        },
+        {
+          "date": "2021-01",
+          "series": "Transport",
+          "value": 98.0
+        },
+        {
+          "date": "2021-02",
+          "series": "Transport",
+          "value": 98.1
+        },
+        {
+          "date": "2021-03",
+          "series": "Transport",
+          "value": 98.3
+        },
+        {
+          "date": "2021-04",
+          "series": "Transport",
+          "value": 102.3
+        },
+        {
+          "date": "2021-05",
+          "series": "Transport",
+          "value": 102.7
+        },
+        {
+          "date": "2021-06",
+          "series": "Transport",
+          "value": 103.0
+        },
+        {
+          "date": "2021-07",
+          "series": "Transport",
+          "value": 103.8
+        },
+        {
+          "date": "2021-08",
+          "series": "Transport",
+          "value": 104.0
+        },
+        {
+          "date": "2021-09",
+          "series": "Transport",
+          "value": 103.6
+        },
+        {
+          "date": "2021-10",
+          "series": "Transport",
+          "value": 103.7
+        },
+        {
+          "date": "2021-11",
+          "series": "Transport",
+          "value": 103.0
+        },
+        {
+          "date": "2021-12",
+          "series": "Transport",
+          "value": 101.8
+        },
+        {
+          "date": "2022-01",
+          "series": "Transport",
+          "value": 104.2
+        },
+        {
+          "date": "2022-02",
+          "series": "Transport",
+          "value": 105.1
+        },
+        {
+          "date": "2022-03",
+          "series": "Transport",
+          "value": 103.2
+        },
+        {
+          "date": "2022-04",
+          "series": "Transport",
+          "value": 104.2
+        },
+        {
+          "date": "2022-05",
+          "series": "Transport",
+          "value": 104.2
+        },
+        {
+          "date": "2022-06",
+          "series": "Transport",
+          "value": 105.1
+        },
+        {
+          "date": "2022-07",
+          "series": "Transport",
+          "value": 105.3
+        },
+        {
+          "date": "2022-08",
+          "series": "Transport",
+          "value": 106.0
+        },
+        {
+          "date": "2022-09",
+          "series": "Transport",
+          "value": 105.8
+        },
+        {
+          "date": "2022-10",
+          "series": "Transport",
+          "value": 105.3
+        },
+        {
+          "date": "2022-11",
+          "series": "Transport",
+          "value": 104.8
+        },
+        {
+          "date": "2022-12",
+          "series": "Transport",
+          "value": 104.9
+        },
+        {
+          "date": "2023-01",
+          "series": "Transport",
+          "value": 105.4
+        },
+        {
+          "date": "2023-02",
+          "series": "Transport",
+          "value": 105.5
+        },
+        {
+          "date": "2023-03",
+          "series": "Transport",
+          "value": 106.1
+        },
+        {
+          "date": "2023-04",
+          "series": "Transport",
+          "value": 106.4
+        },
+        {
+          "date": "2023-05",
+          "series": "Transport",
+          "value": 105.8
+        },
+        {
+          "date": "2023-06",
+          "series": "Transport",
+          "value": 106.5
+        },
+        {
+          "date": "2023-07",
+          "series": "Transport",
+          "value": 107.5
+        },
+        {
+          "date": "2023-08",
+          "series": "Transport",
+          "value": 107.7
+        },
+        {
+          "date": "2023-09",
+          "series": "Transport",
+          "value": 108.3
+        },
+        {
+          "date": "2023-10",
+          "series": "Transport",
+          "value": 107.7
+        },
+        {
+          "date": "2023-11",
+          "series": "Transport",
+          "value": 107.3
+        },
+        {
+          "date": "2023-12",
+          "series": "Transport",
+          "value": 107.9
+        },
+        {
+          "date": "2024-01",
+          "series": "Transport",
+          "value": 107.3
+        },
+        {
+          "date": "2024-02",
+          "series": "Transport",
+          "value": 107.8
+        },
+        {
+          "date": "2024-03",
+          "series": "Transport",
+          "value": 108.4
+        },
+        {
+          "date": "2024-04",
+          "series": "Transport",
+          "value": 108.2
+        },
+        {
+          "date": "2024-05",
+          "series": "Transport",
+          "value": 108.2
+        },
+        {
+          "date": "2024-06",
+          "series": "Transport",
+          "value": 108.3
+        },
+        {
+          "date": "2024-07",
+          "series": "Transport",
+          "value": 110.4
+        },
+        {
+          "date": "2024-08",
+          "series": "Transport",
+          "value": 110.7
+        },
+        {
+          "date": "2024-09",
+          "series": "Transport",
+          "value": 109.4
+        },
+        {
+          "date": "2024-10",
+          "series": "Transport",
+          "value": 109.4
+        },
+        {
+          "date": "2024-11",
+          "series": "Transport",
+          "value": 108.9
+        },
+        {
+          "date": "2024-12",
+          "series": "Transport",
+          "value": 110.4
+        },
+        {
+          "date": "2025-01",
+          "series": "Transport",
+          "value": 111.8
+        },
+        {
+          "date": "2025-02",
+          "series": "Transport",
+          "value": 110.8
+        },
+        {
+          "date": "2025-03",
+          "series": "Transport",
+          "value": 110.4
+        },
+        {
+          "date": "2025-04",
+          "series": "Transport",
+          "value": 112.5
+        },
+        {
+          "date": "2025-05",
+          "series": "Transport",
+          "value": 110.8
+        },
+        {
+          "date": "2025-06",
+          "series": "Transport",
+          "value": 110.5
+        },
+        {
+          "date": "2025-07",
+          "series": "Transport",
+          "value": 112.0
+        },
+        {
+          "date": "2025-08",
+          "series": "Transport",
+          "value": 113.7
+        },
+        {
+          "date": "2025-09",
+          "series": "Transport",
+          "value": 111.9
+        },
+        {
+          "date": "2025-10",
+          "series": "Transport",
+          "value": 113.0
+        },
+        {
+          "date": "2025-11",
+          "series": "Transport",
+          "value": 112.7
+        },
+        {
+          "date": "2025-12",
+          "series": "Transport",
+          "value": 115.2
+        },
+        {
+          "date": "2026-01",
+          "series": "Transport",
+          "value": 113.2
+        },
+        {
+          "date": "2026-02",
+          "series": "Transport",
+          "value": 115.7
+        },
+        {
+          "date": "2026-03",
+          "series": "Transport",
+          "value": 114.8
+        },
+        {
+          "date": "2026-04",
+          "series": "Transport",
+          "value": 117.5
+        },
+        {
+          "date": "2026-05",
+          "series": "Transport",
+          "value": 116.6
+        },
+        {
+          "date": "2026-06",
+          "series": "Transport",
+          "value": 116.5
+        }
+      ],
+      "kpi_fehd": [
+        {
+          "latest": 17144,
+          "observation_date": "2026-07-31"
+        }
+      ],
+      "fehd_district_density": [
+        {
+          "district_name": "Yau Tsim",
+          "count": 1890
+        },
+        {
+          "district_name": "Central/Western",
+          "count": 1782
+        },
+        {
+          "district_name": "Wan Chai",
+          "count": 1762
+        },
+        {
+          "district_name": "Mong Kok",
+          "count": 1229
+        },
+        {
+          "district_name": "Kowloon City",
+          "count": 1024
+        },
+        {
+          "district_name": "Yuen Long",
+          "count": 1003
+        },
+        {
+          "district_name": "Sham Shui Po",
+          "count": 964
+        },
+        {
+          "district_name": "Sha Tin",
+          "count": 907
+        },
+        {
+          "district_name": "Eastern",
+          "count": 897
+        },
+        {
+          "district_name": "Kwun Tong",
+          "count": 877
+        },
+        {
+          "district_name": "Tsuen Wan",
+          "count": 766
+        },
+        {
+          "district_name": "Tuen Mun",
+          "count": 740
+        },
+        {
+          "district_name": "Sai Kung",
+          "count": 592
+        },
+        {
+          "district_name": "Kwai Tsing",
+          "count": 543
+        },
+        {
+          "district_name": "Islands",
+          "count": 513
+        },
+        {
+          "district_name": "Wong Tai Sin",
+          "count": 502
+        },
+        {
+          "district_name": "Tai Po",
+          "count": 440
+        },
+        {
+          "district_name": "North",
+          "count": 385
+        },
+        {
+          "district_name": "Southern",
+          "count": 328
+        }
+      ],
+      "fehd_opened_closed": [],
       "source_health": [
         {
           "source": "HKO Severe Weather Warnings & FRED Exchange Rate",
@@ -16089,7 +23024,7 @@
           "status": "Healthy",
           "latest_observation": "2026-07-01",
           "records": 961,
-          "freshness": "29d old",
+          "freshness": "31d old",
           "notes": "Monthly hours under Typhoon Signal 8+ & Red/Black Rainstorm warnings alongside HKD/RMB FX."
         },
         {
@@ -16099,7 +23034,7 @@
           "status": "Healthy",
           "latest_observation": "2026-07-28",
           "records": 2035,
-          "freshness": "2d old",
+          "freshness": "4d old",
           "notes": "Daily clearance across 17 control points for HK residents & Mainland visitors."
         },
         {
@@ -16109,7 +23044,7 @@
           "status": "Healthy",
           "latest_observation": "2026-07-27",
           "records": 2497,
-          "freshness": "3d old",
+          "freshness": "5d old",
           "notes": "Daily AM/PM benchmark fixing."
         },
         {
@@ -16117,7 +23052,7 @@
           "dataset": "AFCD Wholesale Food Prices",
           "type": "Measure",
           "status": "Healthy",
-          "latest_observation": "2026-07-30",
+          "latest_observation": "2026-08-01",
           "records": 31,
           "freshness": "Same-day snapshot",
           "notes": "31 commodities across 5 categories; averaged across same-day market readings."
@@ -16129,7 +23064,7 @@
           "status": "Healthy",
           "latest_observation": "2026-07-30",
           "records": 4015,
-          "freshness": "0d old",
+          "freshness": "2d old",
           "notes": "PE (TTM), PB, and market cap only; no dividend-yield indicator is available from this endpoint."
         },
         {
@@ -16139,7 +23074,7 @@
           "status": "Healthy",
           "latest_observation": "2026-05-01",
           "records": 6500,
-          "freshness": "90d old",
+          "freshness": "92d old",
           "notes": "25 outlet-type categories, monthly since 2004."
         },
         {
@@ -16149,7 +23084,7 @@
           "status": "Healthy",
           "latest_observation": "2026-03-31",
           "records": 516,
-          "freshness": "121d old",
+          "freshness": "123d old",
           "notes": "Sector-wide purchases only; per-type purchases are not published."
         },
         {
@@ -16181,7 +23116,7 @@
           "status": "Healthy",
           "latest_observation": "2026-07-01",
           "records": 961,
-          "freshness": "29d old",
+          "freshness": "31d old",
           "notes": "Monthly hours under Typhoon Signal 8+ & Red/Black Rainstorm warnings alongside HKD/RMB FX."
         },
         {
@@ -16191,7 +23126,7 @@
           "status": "Healthy",
           "latest_observation": "2026-07-28",
           "records": 2035,
-          "freshness": "2d old",
+          "freshness": "4d old",
           "notes": "Daily clearance across 17 control points for HK residents & Mainland visitors."
         },
         {
@@ -16201,7 +23136,7 @@
           "status": "Healthy",
           "latest_observation": "2026-07-27",
           "records": 2497,
-          "freshness": "3d old",
+          "freshness": "5d old",
           "notes": "Daily AM/PM benchmark fixing."
         },
         {
@@ -16209,7 +23144,7 @@
           "dataset": "AFCD Wholesale Food Prices",
           "type": "Measure",
           "status": "Healthy",
-          "latest_observation": "2026-07-30",
+          "latest_observation": "2026-08-01",
           "records": 31,
           "freshness": "Same-day snapshot",
           "notes": "31 commodities across 5 categories; averaged across same-day market readings."
@@ -16221,7 +23156,7 @@
           "status": "Healthy",
           "latest_observation": "2026-07-30",
           "records": 4015,
-          "freshness": "0d old",
+          "freshness": "2d old",
           "notes": "PE (TTM), PB, and market cap only; no dividend-yield indicator is available from this endpoint."
         },
         {
@@ -16231,7 +23166,7 @@
           "status": "Healthy",
           "latest_observation": "2026-05-01",
           "records": 6500,
-          "freshness": "90d old",
+          "freshness": "92d old",
           "notes": "25 outlet-type categories, monthly since 2004."
         },
         {
@@ -16241,7 +23176,7 @@
           "status": "Healthy",
           "latest_observation": "2026-03-31",
           "records": 516,
-          "freshness": "121d old",
+          "freshness": "123d old",
           "notes": "Sector-wide purchases only; per-type purchases are not published."
         },
         {
@@ -24903,7 +31838,7 @@
         "url": "https://oil-price.consumer.org.hk/en",
         "language": "JSON",
         "description": "Daily auto-fuel pump prices, walk-in discounts, and net prices across Caltex, PetroChina, Shell, Sinopec, and Esso.",
-        "executed_at": "2026-07-30T23:25:23.273856Z"
+        "executed_at": "2026-08-01T00:23:03.548101Z"
       }
     },
     {
@@ -24915,7 +31850,7 @@
         "url": "https://www.consumer.org.hk/node/32290/export-complaints/json?lang=en",
         "language": "JSON",
         "description": "Annual consumer complaints by category across Hong Kong consumer sectors.",
-        "executed_at": "2026-07-30T23:25:23.273856Z"
+        "executed_at": "2026-08-01T00:23:03.548101Z"
       }
     },
     {
@@ -24927,7 +31862,7 @@
         "url": "https://online-price-watch.consumer.org.hk/opw/opendata/pricewatch_en.csv",
         "language": "CSV / Parquet",
         "description": "Supermarket item prices and promotion offers. The dashboard currently reports only validated local archive coverage; it does not present an assortment-sensitive arithmetic mean as a price index.",
-        "executed_at": "2026-07-30T23:25:23.273856Z"
+        "executed_at": "2026-08-01T00:23:03.548101Z"
       }
     },
     {
@@ -24942,7 +31877,7 @@
         "metric_definitions": [
           "Each commodity's price is the mean of same-day readings across the wholesale markets/sources AFCD reports for it."
         ],
-        "executed_at": "2026-07-30T23:25:23.273856Z"
+        "executed_at": "2026-08-01T00:23:03.548101Z"
       }
     },
     {
@@ -24958,7 +31893,7 @@
           "Latest is the most recent published PM benchmark fixing.",
           "Day and year movements are latest divided by the prior trading day or the observation on/before one year earlier, minus one."
         ],
-        "executed_at": "2026-07-30T23:25:23.273856Z"
+        "executed_at": "2026-08-01T00:23:03.548101Z"
       }
     },
     {
@@ -24974,7 +31909,7 @@
           "PE (TTM), PB, and market cap (HKD bn) are each ticker's latest published daily value.",
           "No dividend-yield indicator exists on this endpoint; yield is not reported here."
         ],
-        "executed_at": "2026-07-30T23:25:23.273856Z"
+        "executed_at": "2026-08-01T00:23:03.548101Z"
       }
     },
     {
@@ -24990,7 +31925,7 @@
           "All retail outlet is the classification group's own published total across all outlet types.",
           "Month and year movements are latest divided by the prior month or the observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-07-30T23:25:23.273856Z"
+        "executed_at": "2026-08-01T00:23:03.548101Z"
       }
     },
     {
@@ -25006,7 +31941,39 @@
           "Purchases are only published sector-wide, not broken out by restaurant type.",
           "Quarter and year movements are latest divided by the prior quarter or the observation four quarters earlier, minus one."
         ],
-        "executed_at": "2026-07-30T23:25:23.273856Z"
+        "executed_at": "2026-08-01T00:23:03.548101Z"
+      }
+    },
+    {
+      "id": "fehd_licensed_premises",
+      "label": "FEHD Licensed Restaurant Directory",
+      "href": "https://www.fehd.gov.hk/english/licensing/license/text/LP_Restaurants_EN.XML",
+      "query": {
+        "engine": "official XML",
+        "url": "https://www.fehd.gov.hk/english/licensing/license/text/LP_Restaurants_EN.XML",
+        "language": "XML",
+        "description": "Daily-regenerated directory of all licensed restaurants (General/Light Refreshment/Marine) by district.",
+        "metric_definitions": [
+          "This is a current-state snapshot only -- the source has no issue-date or status-history field.",
+          "Opened/closed counts compare this run's licence numbers against the most recently stored prior snapshot, and are unavailable until at least two runs have been persisted."
+        ],
+        "executed_at": "2026-08-01T00:23:03.548101Z"
+      }
+    },
+    {
+      "id": "censtatd_cpi",
+      "label": "C&SD Composite Consumer Price Index",
+      "href": "https://www.censtatd.gov.hk/en/web_table.html?id=510-60001",
+      "query": {
+        "engine": "official CSV",
+        "url": "https://www.censtatd.gov.hk/data/MDT_54_510-60001_CC_CM_1920_Raw_1dp_idx_n.csv",
+        "language": "CSV",
+        "description": "Monthly headline Composite CPI (base 2019/20=100) since October 1974 (table 510-60001); COICOP category sub-indices from table 510-60003, monthly only since 2005.",
+        "metric_definitions": [
+          "Category sub-indices share the headline table's index basis but only start in 2005 -- thirty years shorter history.",
+          "Month and year movements are latest divided by the prior month or the observation twelve months earlier, minus one."
+        ],
+        "executed_at": "2026-08-01T00:23:03.548101Z"
       }
     },
     {
@@ -25023,7 +31990,7 @@
           "Southbound (南下) flow is daily Mainland visitor arrivals across all 17 control points, since Mainland visitors legitimately arrive by air, rail, and sea, not just by land.",
           "7-day moving averages (7d MA) smooth out day-of-week seasonality (weekend shopping spikes)."
         ],
-        "executed_at": "2026-07-30T23:25:23.273856Z"
+        "executed_at": "2026-08-01T00:23:03.548101Z"
       }
     },
     {
@@ -25040,7 +32007,7 @@
           "Red/Black Rainstorm hours measures total duration under Red or Black rainstorm warnings.",
           "RMB per 100 HKD is derived from FRED daily DEXCHUS and DEXHKUS rates."
         ],
-        "executed_at": "2026-07-30T23:25:23.273856Z"
+        "executed_at": "2026-08-01T00:23:03.548101Z"
       }
     },
     {
@@ -25055,7 +32022,7 @@
           "Total stores is each company's own latest snapshot count (not a cross-company-comparable unit -- a POP MART Roboshop and a Chow Tai Fook boutique are both counted as one location).",
           "This is a footprint snapshot, not a trend: most companies only have 1-2 dated snapshots so far, so month-over-month change is not yet meaningful."
         ],
-        "executed_at": "2026-07-30T23:25:23.273856Z"
+        "executed_at": "2026-08-01T00:23:03.548101Z"
       }
     },
     {
@@ -25069,13 +32036,13 @@
           "Validated live measure frames",
           "Declared future-source registry"
         ],
-        "executed_at": "2026-07-30T23:25:23.273856Z"
+        "executed_at": "2026-08-01T00:23:03.548101Z"
       }
     }
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-local-consumer/",
-    "snapshotId": "f5ed14a57bfdb989",
+    "snapshotId": "ea63ca8c0574327b",
     "dataAsOf": "2026-07-27"
   }
 }

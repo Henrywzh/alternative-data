@@ -19,6 +19,7 @@ from .sources.cnsd_retail import fetch_cnsd_retail_sales
 from .sources.censtatd_restaurant import fetch_censtatd_restaurant_survey
 from .sources.immigration_flow import fetch_immigration_flow
 from .sources.weather_demand_drivers import fetch_weather_demand_drivers
+from .sources.fehd_licensed_premises import fetch_fehd_licensed_premises
 from .storage import save_normalized_dataset, NORMALIZED_DIR
 
 
@@ -102,6 +103,11 @@ QUALITY_SPECS: Dict[str, Dict[str, Any]] = {
     "weather_warning_events": {
         "kind": "catalog",
         "required": ["signal_name", "start", "end", "duration_hours"],
+    },
+    "fehd_licensed_premises_daily": {
+        "kind": "catalog",
+        "required": ["generation_date", "licno", "type_name", "district_name"],
+        "min_unique": {"licno": 15000, "district_name": 15},
     },
 }
 
@@ -293,6 +299,13 @@ def run_stage_1_pipeline(run_id: str | None = None, *, _raise_on_failure: bool =
     except Exception as exc:
         logger.exception("Immigration Department daily passenger traffic ingestion failed")
         results["immigration_passenger_traffic_daily"] = _error_result(exc)
+
+    try:
+        logger.info("Ingesting FEHD licensed restaurant directory (daily snapshot)...")
+        _record_many(run_id, results, {"fehd_licensed_premises_daily": fetch_fehd_licensed_premises()})
+    except Exception as exc:
+        logger.exception("FEHD licensed premises ingestion failed")
+        results["fehd_licensed_premises_daily"] = _error_result(exc)
 
     try:
         logger.info("Ingesting HKO weather warnings & FRED FX demand drivers...")

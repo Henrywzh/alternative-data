@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 from pathlib import Path
 
 import pandas as pd
@@ -10,7 +11,39 @@ import pytest
 
 
 ROOT = Path(__file__).resolve().parents[1]
+APP = ROOT / "apps" / "asia-markets-dashboard"
 SCRIPTS = ROOT / "apps" / "asia-markets-dashboard" / "scripts"
+
+
+def test_labour_policy_approved_history_includes_qmas_selection_cases():
+    artifact_path = APP / ".generated" / "hk-labour-market-artifact.json"
+    artifact = json.loads(artifact_path.read_text(encoding="utf-8"))
+    datasets = artifact["snapshot"]["datasets"]
+
+    qmas_approved = [
+        row for row in datasets["talent_policy_approved_history"] if row["series"] == "QMAS"
+    ]
+    assert len(qmas_approved) == 10
+    assert {row["approval_basis"] for row in qmas_approved} == {"quota_allotted"}
+    assert {row["date"] for row in qmas_approved} == {
+        f"{year}-12-31" for year in range(2016, 2026)
+    }
+    assert next(row["value"] for row in qmas_approved if row["date"] == "2025-12-31") == 7101
+
+    latest = next(row for row in datasets["talent_policy_latest"] if row["series"] == "QMAS")
+    assert latest["applications_approved"] == 7101
+    assert latest["qmas_quota"] == 7101
+    assert datasets["kpi_talent_policy"][0]["applications_approved"] == 124460
+
+
+def test_local_consumer_cpi_category_legend_uses_mobile_safe_labels():
+    """The portable reader keeps a categorical legend on one row at 390px."""
+    artifact = json.loads(
+        (APP / ".generated" / "hk-local-consumer-artifact.json").read_text(encoding="utf-8")
+    )
+    rows = artifact["snapshot"]["datasets"]["censtatd_cpi_by_category_history"]
+    assert {row["series"] for row in rows} == {"Food", "Housing & Utilities", "Transport"}
+    assert max(len(row["series"]) for row in rows) <= 20
 
 
 def _load_builder(filename: str, module_name: str):
@@ -81,6 +114,29 @@ def test_china_airline_views_are_wired_into_transport_artifact():
     assert views["china_airline_load_factor_history"][0]["value"] == 75.0
     assert views["china_airline_region_split_history"][0]["region"] == "Domestic"
     assert views["china_airline_latest_snapshot"][0]["airline_code"] == "600029"
+
+
+def test_china_airline_snapshot_table_keeps_structured_columns():
+    """The latest airline lookup table must remain tabular, not a text log."""
+    artifact_path = APP / ".generated" / "hk-transport-artifact.json"
+    artifact = json.loads(artifact_path.read_text(encoding="utf-8"))
+    table = next(
+        table
+        for table in artifact["manifest"]["tables"]
+        if table["id"] == "china_airline_latest_snapshot_table"
+    )
+
+    assert table["dataset"] == "china_airline_latest_snapshot"
+    assert [column["field"] for column in table["columns"]] == [
+        "airline",
+        "region",
+        "passengers",
+        "ask",
+        "rpk",
+        "load_factor_pct",
+    ]
+    assert "summary" not in table["dataset"]
+    assert artifact["snapshot"]["datasets"][table["dataset"]][0]["airline"]
 
 
 def _regional_rows(metric: str, regions: dict[str, float]) -> list[dict]:
