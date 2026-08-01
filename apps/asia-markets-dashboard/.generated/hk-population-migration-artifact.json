@@ -6,9 +6,9 @@
     "title": "Hong Kong Population, Migration & Cross-Border Data Monitor",
     "description": "High-frequency passenger net flow, population estimates, MPF departure claims, Mainland student enrolment & GBA transport signals.",
     "sector": "hk-population-migration",
-    "generatedAt": "2026-08-01T00:40:07.905663Z",
-    "dataAsOf": "2026-07-30",
-    "liveSourcesCount": 6,
+    "generatedAt": "2026-08-01T08:34:39.901813Z",
+    "dataAsOf": "2026-07-31",
+    "liveSourcesCount": 5,
     "totalSourcesCount": 6,
     "cards": [
       {
@@ -210,7 +210,7 @@
       },
       {
         "id": "visitor_arrivals_chart",
-        "title": "Visitor Arrivals \u2014 Mainland vs. Rest of World",
+        "title": "Visitor Arrivals — Mainland vs. Rest of World",
         "subtitle": "Monthly visitor arrivals by region, collapsed to Mainland China vs. all other regions combined.",
         "type": "line",
         "intent": "comparison",
@@ -238,8 +238,8 @@
       },
       {
         "id": "td_cross_border_chart",
-        "title": "Transport Department \u2014 GBA Cross-Border Vehicle & Train Traffic",
-        "subtitle": "HZMB HK Vehicles ('Northbound Travel' \u6e2f\u8f66\u5317\u4e0a) and High-Speed Rail West Kowloon Passengers.",
+        "title": "Transport Department — GBA Cross-Border Vehicle & Train Traffic",
+        "subtitle": "HZMB HK Vehicles ('Northbound Travel' 港车北上) and High-Speed Rail West Kowloon Passengers.",
         "type": "line",
         "intent": "trend",
         "dataset": "td_cross_border_comparison_history",
@@ -324,7 +324,7 @@
           "url": "https://www.td.gov.hk/datagovhk_tis/mttd-csv/en/table81e_eng.csv",
           "language": "CSV",
           "sql": "SELECT month, hzmb_vehicular_traffic, hzmb_northbound_hk_vehicles, express_rail_passengers FROM td_cross_border_traffic;",
-          "description": "Monthly HZMB vehicular traffic (incl. Northbound Travel for HK Vehicles \u6e2f\u8f66\u5317\u4e0a) and cross-boundary passenger traffic incl. Express Rail West Kowloon."
+          "description": "Monthly HZMB vehicular traffic (incl. Northbound Travel for HK Vehicles 港车北上) and cross-boundary passenger traffic incl. Express Rail West Kowloon."
         }
       },
       {
@@ -344,7 +344,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**Data snapshot:** `95c0697d78b5718c` \u00b7 generated 2026-08-01T00:40:07.905663Z.  This is a published snapshot, not a live connection. Official ImmD, C&SD, MPFA, UGC and TD open data."
+        "body": "**Data snapshot:** `7a5d13f010c71849` · generated 2026-08-01T08:34:39.901813Z.  This is a published snapshot, not a live connection. Official ImmD, C&SD, MPFA, UGC and TD open data."
       },
       {
         "id": "kpi_grid",
@@ -378,18 +378,6 @@
         "chartId": "visitor_arrivals_chart"
       },
       {
-        "id": "mpfa_claims_chart_block",
-        "type": "chart",
-        "chartId": "mpfa_claims_chart",
-        "layout": "half"
-      },
-      {
-        "id": "mpfa_claims_count_chart_block",
-        "type": "chart",
-        "chartId": "mpfa_claims_count_chart",
-        "layout": "half"
-      },
-      {
         "id": "ugc_students_chart_block",
         "type": "chart",
         "chartId": "ugc_students_chart",
@@ -404,17 +392,10 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-08-01T00:40:07.905663Z",
-    "status": "ready",
+    "generatedAt": "2026-08-01T08:34:39.901813Z",
+    "status": "partial",
     "datasets": {
       "immd_daily_traffic": [
-        {
-          "date": "2025-07-31",
-          "hk_resident_net_flow": -4379.0,
-          "mainland_visitor_net_retention": -722.0,
-          "hk_resident_departures_7d_ma": 337705.9,
-          "mainland_visitor_arrivals_7d_ma": 133248.4
-        },
         {
           "date": "2025-08-01",
           "hk_resident_net_flow": -93827.0,
@@ -2962,19 +2943,16 @@
           "mainland_visitor_net_retention": 3089.0,
           "hk_resident_departures_7d_ma": 303323.1,
           "mainland_visitor_arrivals_7d_ma": 117918.3
+        },
+        {
+          "date": "2026-07-31",
+          "hk_resident_net_flow": -74079.0,
+          "mainland_visitor_net_retention": -9241.0,
+          "hk_resident_departures_7d_ma": 300055.9,
+          "mainland_visitor_arrivals_7d_ma": 116398.3
         }
       ],
       "immd_net_flow_history": [
-        {
-          "date": "2025-07-31",
-          "series": "HK Resident Net Flow",
-          "value": -4379.0
-        },
-        {
-          "date": "2025-07-31",
-          "series": "Mainland Visitor Net Retention",
-          "value": -722.0
-        },
         {
           "date": "2025-08-01",
           "series": "HK Resident Net Flow",
@@ -6614,6 +6592,16 @@
           "date": "2026-07-30",
           "series": "Mainland Visitor Net Retention",
           "value": 3089.0
+        },
+        {
+          "date": "2026-07-31",
+          "series": "HK Resident Net Flow",
+          "value": -74079.0
+        },
+        {
+          "date": "2026-07-31",
+          "series": "Mainland Visitor Net Retention",
+          "value": -9241.0
         }
       ],
       "csd_population": [
@@ -8690,78 +8678,7 @@
           "value": 7510.8
         }
       ],
-      "mpfa_claims": [
-        {
-          "quarter": "2022-Q4",
-          "claims_count": 7000,
-          "amount_mhkd": 1716.0
-        },
-        {
-          "quarter": "2023-Q1",
-          "claims_count": 6700,
-          "amount_mhkd": 1573.0
-        },
-        {
-          "quarter": "2023-Q2",
-          "claims_count": 7300,
-          "amount_mhkd": 1787.0
-        },
-        {
-          "quarter": "2023-Q3",
-          "claims_count": 8700,
-          "amount_mhkd": 2213.0
-        },
-        {
-          "quarter": "2023-Q4",
-          "claims_count": 7200,
-          "amount_mhkd": 1688.0
-        },
-        {
-          "quarter": "2024-Q1",
-          "claims_count": 6500,
-          "amount_mhkd": 1507.0
-        },
-        {
-          "quarter": "2024-Q2",
-          "claims_count": 7300,
-          "amount_mhkd": 1702.0
-        },
-        {
-          "quarter": "2024-Q3",
-          "claims_count": 7600,
-          "amount_mhkd": 1815.0
-        },
-        {
-          "quarter": "2024-Q4",
-          "claims_count": 6600,
-          "amount_mhkd": 1572.0
-        },
-        {
-          "quarter": "2025-Q1",
-          "claims_count": 6700,
-          "amount_mhkd": 1626.0
-        },
-        {
-          "quarter": "2025-Q2",
-          "claims_count": 6400,
-          "amount_mhkd": 1575.0
-        },
-        {
-          "quarter": "2025-Q3",
-          "claims_count": 6900,
-          "amount_mhkd": 1661.0
-        },
-        {
-          "quarter": "2025-Q4",
-          "claims_count": 4200,
-          "amount_mhkd": 1024.0
-        },
-        {
-          "quarter": "2026-Q1",
-          "claims_count": 5000,
-          "amount_mhkd": 1188.0
-        }
-      ],
+      "mpfa_claims": [],
       "ugc_students": [
         {
           "academic_year": "2010/11",
@@ -18111,7 +18028,7 @@
         {
           "latest_pop": 7510.8,
           "latest_net_mov": 29.1,
-          "latest_mpfa": 1188.0,
+          "latest_mpfa": null,
           "latest_ugc": 23961,
           "latest_visitors": 4464840.0
         }
@@ -18176,7 +18093,7 @@
         "url": "https://www.td.gov.hk/datagovhk_tis/mttd-csv/en/table81e_eng.csv",
         "language": "CSV",
         "sql": "SELECT month, hzmb_vehicular_traffic, hzmb_northbound_hk_vehicles, express_rail_passengers FROM td_cross_border_traffic;",
-        "description": "Monthly HZMB vehicular traffic (incl. Northbound Travel for HK Vehicles \u6e2f\u8f66\u5317\u4e0a) and cross-boundary passenger traffic incl. Express Rail West Kowloon."
+        "description": "Monthly HZMB vehicular traffic (incl. Northbound Travel for HK Vehicles 港车北上) and cross-boundary passenger traffic incl. Express Rail West Kowloon."
       }
     },
     {
@@ -18198,7 +18115,7 @@
       "label": "Immigration Department Daily Passenger Traffic",
       "status": "success",
       "records": 365,
-      "latest_observation": "2026-07-30",
+      "latest_observation": "2026-07-31",
       "freshness": "dated",
       "notes": "Daily passenger clearance by control point, direction and residency, used to derive HK-resident net flow and Mainland-visitor net retention."
     },
@@ -18214,10 +18131,10 @@
     {
       "id": "mpfa",
       "label": "MPFA Statistical Digest",
-      "status": "success",
-      "records": 14,
-      "latest_observation": "2026-Q1",
-      "freshness": "dated",
+      "status": "degraded",
+      "records": 0,
+      "latest_observation": "—",
+      "freshness": "unavailable",
       "notes": "Quarterly MPF claims for permanent departure from Hong Kong (count and amount), parsed from the official Statistical Digest."
     },
     {
@@ -18236,7 +18153,7 @@
       "records": 92,
       "latest_observation": "2026-05",
       "freshness": "dated",
-      "notes": "Monthly HZMB vehicular traffic (incl. Northbound Travel for HK Vehicles \u6e2f\u8f66\u5317\u4e0a) and cross-boundary passenger traffic incl. Express Rail West Kowloon."
+      "notes": "Monthly HZMB vehicular traffic (incl. Northbound Travel for HK Vehicles 港车北上) and cross-boundary passenger traffic incl. Express Rail West Kowloon."
     },
     {
       "id": "visitor_arrivals",
@@ -18252,8 +18169,8 @@
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-population-migration/",
     "sector_id": "hk-population-migration",
     "sector_name": "Hong Kong Population, Migration & Cross-Border Data Monitor",
-    "snapshotId": "95c0697d78b5718c",
-    "generatedAt": "2026-08-01T00:40:07.905663Z",
-    "dataAsOf": "2026-07-30"
+    "snapshotId": "7a5d13f010c71849",
+    "generatedAt": "2026-08-01T08:34:39.901813Z",
+    "dataAsOf": "2026-07-31"
   }
 }
