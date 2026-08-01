@@ -6,7 +6,7 @@
     "title": "HK Transport & Aviation Sector Monitor",
     "description": "MTR Corporation monthly rail patronage, CAD HKIA airport traffic, Cathay Pacific Group operating statistics, China listed-airline operating data, TD public-transport and private-car series, C&SD cross-boundary movements, EV registrations and capacity-covered real-time car-park occupancy.",
     "sector": "hk-transport",
-    "generatedAt": "2026-07-31T22:59:05.782596Z",
+    "generatedAt": "2026-08-01T08:34:40.187544Z",
     "cards": [
       {
         "id": "mtr_card",
@@ -538,40 +538,15 @@
         "id": "china_airline_latest_snapshot_table",
         "title": "China Listed Airlines Latest Operating Snapshot",
         "subtitle": "Latest available month, split by carrier and operating region.",
-        "dataset": "china_airline_latest_snapshot",
+        "dataset": "china_airline_latest_snapshot_summary",
         "sourceId": "china_airline_traffic",
         "density": "dense",
         "layout": "full",
         "columns": [
           {
-            "field": "airline",
-            "label": "Airline",
+            "field": "summary",
+            "label": "Airline Operating Summary",
             "type": "text"
-          },
-          {
-            "field": "region",
-            "label": "Region",
-            "type": "text"
-          },
-          {
-            "field": "passengers",
-            "label": "Passengers ('000s)",
-            "format": "number"
-          },
-          {
-            "field": "ask",
-            "label": "ASK ('000s)",
-            "format": "number"
-          },
-          {
-            "field": "rpk",
-            "label": "RPK ('000s)",
-            "format": "number"
-          },
-          {
-            "field": "load_factor_pct",
-            "label": "Load factor (%)",
-            "format": "number"
           }
         ]
       }
@@ -728,14 +703,14 @@
       },
       {
         "id": "td_carpark_occupancy",
-        "label": "Transport Department Metered Parking-Space Occupancy",
-        "href": "https://portal.csdi.gov.hk/geoportal/?datasetId=td_rcd_1638930345315_81787",
+        "label": "Transport Department Car-Park Occupancy Signal",
+        "href": "https://api.data.gov.hk/v1/carpark-info-vacancy",
         "path": "sources/td_carpark_occupancy.sql",
         "query": {
-          "engine": "official TD CSDI metered-space GeoJSON inventory + live occupancy-status CSV",
-          "url": "https://portal.csdi.gov.hk/csdi-webpage/file-api?dataset_id=td_rcd_1638930345315_81787&format=geojson&layer_name=parkingspaces ; https://resource.data.one.gov.hk/td/psiparkingspaces/occupancystatus/occupancystatus.csv",
-          "language": "GeoJSON + CSV",
-          "description": "Observed occupancy rate for sensor-backed metered/on-street parking spaces. The static inventory supplies the listed-space denominator and the live CSV marks each observed space occupied or vacant; sample_size and listed_spaces remain visible because a small number of status rows may be unmatched."
+          "engine": "official TD live vacancy JSON joined to Digital Policy Office One-Stop static capacity JSON",
+          "url": "https://resource.data.one.gov.hk/td/carpark/vacancy_all.json ; https://resource.data.one.gov.hk/td/carpark/basic_info_all.json ; https://api.data.gov.hk/v1/carpark-info-vacancy",
+          "language": "JSON",
+          "description": "Capacity-weighted private-car occupancy rate from exact hourly vacancy counts. The denominator is available only for a capacity-covered subset of TD car parks; sample_size and coverage are retained, and the signal is not presented as all-park occupancy."
         }
       }
     ],
@@ -848,7 +823,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-31T22:59:05.782596Z",
+    "generatedAt": "2026-08-01T08:34:40.187544Z",
     "status": "ready",
     "datasets": {
       "kpi_mtr": [
@@ -6296,116 +6271,6 @@
           "cathay_passenger_load_factor_pct": 21.7
         },
         {
-          "date": "2020-05-01 00:00:00",
-          "month": "2020-05",
-          "hkia_passengers": 37423.0,
-          "hkia_aircraft_movements": 11363.0,
-          "hkia_freight_tonnes": 374433.0,
-          "cathay_passengers": 18473.0,
-          "cathay_rpk_thousands": 100133.0,
-          "cathay_ask_thousands": 338027.0,
-          "cathay_passenger_load_factor_pct": 29.6
-        },
-        {
-          "date": "2020-06-01 00:00:00",
-          "month": "2020-06",
-          "hkia_passengers": 59199.0,
-          "hkia_aircraft_movements": 9963.0,
-          "hkia_freight_tonnes": 354367.0,
-          "cathay_passengers": 27106.0,
-          "cathay_rpk_thousands": 145713.0,
-          "cathay_ask_thousands": 533147.0,
-          "cathay_passenger_load_factor_pct": 27.3
-        },
-        {
-          "date": "2020-07-01 00:00:00",
-          "month": "2020-07",
-          "hkia_passengers": 96028.0,
-          "hkia_aircraft_movements": 9873.0,
-          "hkia_freight_tonnes": 369477.0,
-          "cathay_passengers": 42984.0,
-          "cathay_rpk_thousands": 242927.0,
-          "cathay_ask_thousands": 1036254.0,
-          "cathay_passenger_load_factor_pct": 23.4
-        },
-        {
-          "date": "2020-08-01 00:00:00",
-          "month": "2020-08",
-          "hkia_passengers": 83807.0,
-          "hkia_aircraft_movements": 10005.0,
-          "hkia_freight_tonnes": 368087.0,
-          "cathay_passengers": 35773.0,
-          "cathay_rpk_thousands": 222544.0,
-          "cathay_ask_thousands": 1119756.0,
-          "cathay_passenger_load_factor_pct": 19.9
-        },
-        {
-          "date": "2020-09-01 00:00:00",
-          "month": "2020-09",
-          "hkia_passengers": 99805.0,
-          "hkia_aircraft_movements": 10544.0,
-          "hkia_freight_tonnes": 382049.0,
-          "cathay_passengers": 47061.0,
-          "cathay_rpk_thousands": 301698.0,
-          "cathay_ask_thousands": 1213977.0,
-          "cathay_passenger_load_factor_pct": 24.9
-        },
-        {
-          "date": "2020-10-01 00:00:00",
-          "month": "2020-10",
-          "hkia_passengers": 79360.0,
-          "hkia_aircraft_movements": 10877.0,
-          "hkia_freight_tonnes": 399316.0,
-          "cathay_passengers": 38541.0,
-          "cathay_rpk_thousands": 210168.0,
-          "cathay_ask_thousands": 1153938.0,
-          "cathay_passenger_load_factor_pct": 18.2
-        },
-        {
-          "date": "2020-11-01 00:00:00",
-          "month": "2020-11",
-          "hkia_passengers": 81001.0,
-          "hkia_aircraft_movements": 12559.0,
-          "hkia_freight_tonnes": 430145.0,
-          "cathay_passengers": 37815.0,
-          "cathay_rpk_thousands": 210103.0,
-          "cathay_ask_thousands": 1133508.0,
-          "cathay_passenger_load_factor_pct": 18.5
-        },
-        {
-          "date": "2020-12-01 00:00:00",
-          "month": "2020-12",
-          "hkia_passengers": 90531.0,
-          "hkia_aircraft_movements": 12659.0,
-          "hkia_freight_tonnes": 435327.0,
-          "cathay_passengers": 39989.0,
-          "cathay_rpk_thousands": 223781.0,
-          "cathay_ask_thousands": 1219512.0,
-          "cathay_passenger_load_factor_pct": 18.4
-        },
-        {
-          "date": "2021-01-01 00:00:00",
-          "month": "2021-01",
-          "hkia_passengers": 71094.0,
-          "hkia_aircraft_movements": 11380.0,
-          "hkia_freight_tonnes": 406499.0,
-          "cathay_passengers": 30410.0,
-          "cathay_rpk_thousands": 152055.0,
-          "cathay_ask_thousands": 1144614.0,
-          "cathay_passenger_load_factor_pct": 13.3
-        },
-        {
-          "date": "2021-02-01 00:00:00",
-          "month": "2021-02",
-          "hkia_passengers": 47729.0,
-          "hkia_aircraft_movements": 8492.0,
-          "hkia_freight_tonnes": 307315.0,
-          "cathay_passengers": 21134.0,
-          "cathay_rpk_thousands": 94156.0,
-          "cathay_ask_thousands": 679186.0,
-          "cathay_passenger_load_factor_pct": 13.9
-        },
-        {
           "date": "2021-03-01 00:00:00",
           "month": "2021-03",
           "hkia_passengers": 58245.0,
@@ -11450,126 +11315,6 @@
           "month": "2020-04",
           "series": "RPK ('000)",
           "value": 79799.0
-        },
-        {
-          "date": "2020-05-01",
-          "month": "2020-05",
-          "series": "ASK ('000)",
-          "value": 338027.0
-        },
-        {
-          "date": "2020-05-01",
-          "month": "2020-05",
-          "series": "RPK ('000)",
-          "value": 100133.0
-        },
-        {
-          "date": "2020-06-01",
-          "month": "2020-06",
-          "series": "ASK ('000)",
-          "value": 533147.0
-        },
-        {
-          "date": "2020-06-01",
-          "month": "2020-06",
-          "series": "RPK ('000)",
-          "value": 145713.0
-        },
-        {
-          "date": "2020-07-01",
-          "month": "2020-07",
-          "series": "ASK ('000)",
-          "value": 1036254.0
-        },
-        {
-          "date": "2020-07-01",
-          "month": "2020-07",
-          "series": "RPK ('000)",
-          "value": 242927.0
-        },
-        {
-          "date": "2020-08-01",
-          "month": "2020-08",
-          "series": "ASK ('000)",
-          "value": 1119756.0
-        },
-        {
-          "date": "2020-08-01",
-          "month": "2020-08",
-          "series": "RPK ('000)",
-          "value": 222544.0
-        },
-        {
-          "date": "2020-09-01",
-          "month": "2020-09",
-          "series": "ASK ('000)",
-          "value": 1213977.0
-        },
-        {
-          "date": "2020-09-01",
-          "month": "2020-09",
-          "series": "RPK ('000)",
-          "value": 301698.0
-        },
-        {
-          "date": "2020-10-01",
-          "month": "2020-10",
-          "series": "ASK ('000)",
-          "value": 1153938.0
-        },
-        {
-          "date": "2020-10-01",
-          "month": "2020-10",
-          "series": "RPK ('000)",
-          "value": 210168.0
-        },
-        {
-          "date": "2020-11-01",
-          "month": "2020-11",
-          "series": "ASK ('000)",
-          "value": 1133508.0
-        },
-        {
-          "date": "2020-11-01",
-          "month": "2020-11",
-          "series": "RPK ('000)",
-          "value": 210103.0
-        },
-        {
-          "date": "2020-12-01",
-          "month": "2020-12",
-          "series": "ASK ('000)",
-          "value": 1219512.0
-        },
-        {
-          "date": "2020-12-01",
-          "month": "2020-12",
-          "series": "RPK ('000)",
-          "value": 223781.0
-        },
-        {
-          "date": "2021-01-01",
-          "month": "2021-01",
-          "series": "ASK ('000)",
-          "value": 1144614.0
-        },
-        {
-          "date": "2021-01-01",
-          "month": "2021-01",
-          "series": "RPK ('000)",
-          "value": 152055.0
-        },
-        {
-          "date": "2021-02-01",
-          "month": "2021-02",
-          "series": "ASK ('000)",
-          "value": 679186.0
-        },
-        {
-          "date": "2021-02-01",
-          "month": "2021-02",
-          "series": "RPK ('000)",
-          "value": 94156.0
         },
         {
           "date": "2021-03-01",
@@ -31274,6 +31019,47 @@
           "observation_date": "2026-06-01"
         }
       ],
+      "china_airline_latest_snapshot_summary": [
+        {
+          "summary": "Air China / Domestic: passengers 10,051.2; ASK 18,356.2; RPK 15,418.5; load factor 84%"
+        },
+        {
+          "summary": "Air China / International: passengers 1,519; ASK 8,588.1; RPK 7,221.2; load factor 84.1%"
+        },
+        {
+          "summary": "Air China / Regional: passengers 366.4; ASK 701.5; RPK 561.9; load factor 80.1%"
+        },
+        {
+          "summary": "China Eastern / Domestic: passengers 9,114.3; ASK 15,547.1; RPK 13,414.5; load factor 86.3%"
+        },
+        {
+          "summary": "China Eastern / International: passengers 1,661.8; ASK 8,424.1; RPK 7,349; load factor 87.2%"
+        },
+        {
+          "summary": "China Eastern / Regional: passengers 303.3; ASK 475.9; RPK 411.3; load factor 86.4%"
+        },
+        {
+          "summary": "China Southern / Domestic: passengers 10,985.8; ASK 21,345.7; RPK 18,000; load factor 84.3%"
+        },
+        {
+          "summary": "China Southern / International: passengers 1,740.7; ASK 8,532.1; RPK 7,119.3; load factor 83.4%"
+        },
+        {
+          "summary": "China Southern / Regional: passengers 153.1; ASK 292.7; RPK 231.8; load factor 79.2%"
+        },
+        {
+          "summary": "China Southern / Total: passengers 12,879.5; ASK 30,170.5; RPK 25,351; load factor 84%"
+        },
+        {
+          "summary": "Spring Airlines / Domestic: passengers 2,446.6; ASK 4,681.9; RPK 4,300.7; load factor 91.9%"
+        },
+        {
+          "summary": "Spring Airlines / International: passengers 408.1; ASK 879; RPK 807.9; load factor 91.9%"
+        },
+        {
+          "summary": "Spring Airlines / Regional: passengers 22.3; ASK 34.1; RPK 31.1; load factor 91.3%"
+        }
+      ],
       "kpi_journeys": [
         {
           "kmb_k": 77507.732,
@@ -33189,20 +32975,20 @@
     },
     {
       "id": "td_carpark_occupancy",
-      "label": "Transport Department Metered Parking-Space Occupancy",
-      "href": "https://portal.csdi.gov.hk/geoportal/?datasetId=td_rcd_1638930345315_81787",
+      "label": "Transport Department Car-Park Occupancy Signal",
+      "href": "https://api.data.gov.hk/v1/carpark-info-vacancy",
       "path": "sources/td_carpark_occupancy.sql",
       "query": {
-        "engine": "official TD CSDI metered-space GeoJSON inventory + live occupancy-status CSV",
-        "url": "https://portal.csdi.gov.hk/csdi-webpage/file-api?dataset_id=td_rcd_1638930345315_81787&format=geojson&layer_name=parkingspaces ; https://resource.data.one.gov.hk/td/psiparkingspaces/occupancystatus/occupancystatus.csv",
-        "language": "GeoJSON + CSV",
-        "description": "Observed occupancy rate for sensor-backed metered/on-street parking spaces. The static inventory supplies the listed-space denominator and the live CSV marks each observed space occupied or vacant; sample_size and listed_spaces remain visible because a small number of status rows may be unmatched."
+        "engine": "official TD live vacancy JSON joined to Digital Policy Office One-Stop static capacity JSON",
+        "url": "https://resource.data.one.gov.hk/td/carpark/vacancy_all.json ; https://resource.data.one.gov.hk/td/carpark/basic_info_all.json ; https://api.data.gov.hk/v1/carpark-info-vacancy",
+        "language": "JSON",
+        "description": "Capacity-weighted private-car occupancy rate from exact hourly vacancy counts. The denominator is available only for a capacity-covered subset of TD car parks; sample_size and coverage are retained, and the signal is not presented as all-park occupancy."
       }
     }
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-transport/",
-    "snapshotId": "cab30ee1e8cf58fe",
+    "snapshotId": "5edbf584f1827831",
     "dataAsOf": "2026-06-01"
   }
 }
