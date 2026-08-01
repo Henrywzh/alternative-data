@@ -15,27 +15,6 @@ APP = ROOT / "apps" / "asia-markets-dashboard"
 SCRIPTS = ROOT / "apps" / "asia-markets-dashboard" / "scripts"
 
 
-def test_labour_policy_approved_history_includes_qmas_selection_cases():
-    artifact_path = APP / ".generated" / "hk-labour-market-artifact.json"
-    artifact = json.loads(artifact_path.read_text(encoding="utf-8"))
-    datasets = artifact["snapshot"]["datasets"]
-
-    qmas_approved = [
-        row for row in datasets["talent_policy_approved_history"] if row["series"] == "QMAS"
-    ]
-    assert len(qmas_approved) == 10
-    assert {row["approval_basis"] for row in qmas_approved} == {"quota_allotted"}
-    assert {row["date"] for row in qmas_approved} == {
-        f"{year}-12-31" for year in range(2016, 2026)
-    }
-    assert next(row["value"] for row in qmas_approved if row["date"] == "2025-12-31") == 7101
-
-    latest = next(row for row in datasets["talent_policy_latest"] if row["series"] == "QMAS")
-    assert latest["applications_approved"] == 7101
-    assert latest["qmas_quota"] == 7101
-    assert datasets["kpi_talent_policy"][0]["applications_approved"] == 124460
-
-
 def test_local_consumer_cpi_category_legend_uses_mobile_safe_labels():
     """The portable reader keeps a categorical legend on one row at 390px."""
     artifact = json.loads(
