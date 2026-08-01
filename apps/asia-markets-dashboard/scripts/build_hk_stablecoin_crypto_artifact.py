@@ -36,9 +36,13 @@ from src.hk_stablecoin_crypto.sources.defillama_stablecoins import (
     fetch_dex_volume_history,
 )
 from src.hk_stablecoin_crypto.sources.hkex_etf_aum import fetch_all_etf_aum
+from src.hk_stablecoin_crypto.sources.hkexnews_announcements import fetch_hkexnews_announcements
+from src.hk_stablecoin_crypto.sources.hkma_news import fetch_hkma_news
 from src.hk_stablecoin_crypto.sources.hkma_register import fetch_licensed_issuers
 from src.hk_stablecoin_crypto.sources.polymarket_events import fetch_all_polymarket_catalysts
+from src.hk_stablecoin_crypto.sources.sfc_news import fetch_sfc_news
 from src.hk_stablecoin_crypto.sources.sfc_vatp_register import fetch_vatp_register
+from src.hk_stablecoin_crypto.sources.watchlist_price import fetch_watchlist_spot_quotes
 from history_policy import DEFAULT_HISTORY_YEARS, history_window
 
 PUBLIC_SOURCES = {
@@ -131,6 +135,58 @@ PUBLIC_SOURCES = {
             "language": "JSON",
             "sql": "SELECT title, probability, end_date FROM polymarket_events;",
             "description": "Tag-filtered real-time prediction market probability for crypto and monetary policy regulatory catalysts.",
+        },
+    },
+    "sfc_news": {
+        "id": "sfc_news",
+        "label": "SFC News & Announcements (Crypto-Filtered)",
+        "href": "https://apps.sfc.hk/edistributionWeb/gateway/EN/news-and-announcements/news/",
+        "path": "sources/sfc_news.sql",
+        "query": {
+            "engine": "SFC news-search JSON API",
+            "url": "https://apps.sfc.hk/edistributionWeb/api/news/search",
+            "language": "JSON",
+            "sql": "SELECT news_ref_no, issue_date, title, news_type FROM sfc_news WHERE source = 'sfc';",
+            "description": "SFC news and announcements over the trailing ~13 months, filtered to stablecoin/virtual-asset/crypto relevance by keyword.",
+        },
+    },
+    "hkma_news": {
+        "id": "hkma_news",
+        "label": "HKMA Press Releases (Crypto-Filtered)",
+        "href": "https://www.hkma.gov.hk/eng/news-and-media/press-releases/",
+        "path": "sources/hkma_news.sql",
+        "query": {
+            "engine": "HKMA Open API for press releases",
+            "url": "https://api.hkma.gov.hk/public/press-releases",
+            "language": "JSON",
+            "sql": "SELECT news_ref_no, issue_date, title, news_type FROM hkma_news WHERE source = 'hkma';",
+            "description": "HKMA official press releases over the trailing ~13 months, filtered to stablecoin/virtual-asset/crypto relevance by keyword.",
+        },
+    },
+    "hkexnews_announcements": {
+        "id": "hkexnews_announcements",
+        "label": "HKEXnews Company Announcements (Watchlist Tickers)",
+        "href": "https://www1.hkexnews.hk/search/titlesearch.xhtml",
+        "path": "sources/hkexnews_announcements.sql",
+        "query": {
+            "engine": "HKEXnews title-search servlet, resolved per-ticker via the prefix autocomplete endpoint",
+            "url": "https://www1.hkexnews.hk/search/titleSearchServlet.do",
+            "language": "JSON",
+            "sql": "SELECT ticker, stock_name, title, date_time, file_link FROM hkexnews_announcements;",
+            "description": "Company-filed announcements and disclosures for every HK Stablecoin & Crypto watchlist ticker over the trailing 90 days.",
+        },
+    },
+    "watchlist_price": {
+        "id": "watchlist_price",
+        "label": "HK Watchlist Live Stock Quotes",
+        "href": "https://www1.hkexnews.hk/",
+        "path": "sources/watchlist_price.sql",
+        "query": {
+            "engine": "akshare stock_hk_spot_em bulk HK spot-quote snapshot",
+            "url": "https://www1.hkexnews.hk/",
+            "language": "JSON",
+            "sql": "SELECT ticker, latest_price_hkd, change_pct, volume, turnover_hkd FROM watchlist_price;",
+            "description": "Latest live spot price, day change, and turnover for every HK Stablecoin & Crypto watchlist ticker.",
         },
     },
 }
@@ -355,7 +411,74 @@ def build_artifact(now: datetime | None = None) -> tuple[dict[str, Any], dict[st
     except Exception as e:
         print(f"Warning: Polymarket fetch failed - {e}")
 
-    # 7. Structured Watchlist (Tiers 1-4)
+    # 7. Regulatory News Feed (SFC + HKMA, crypto-filtered, merged)
+    # Each regulator keeps its own top-N by date before merging, so a
+    # higher-frequency source (SFC) cannot crowd the other one out entirely.
+    regulatory_news_rows = []
+    sfc_news_count = 0
+    hkma_news_count = 0
+    PER_SOURCE_NEWS_CAP = 20
+    try:
+        sfc_news_df = fetch_sfc_news()
+        hkma_news_df = fetch_hkma_news()
+        sfc_news_count = len(sfc_news_df)
+        hkma_news_count = len(hkma_news_df)
+        news_frames = [df for df in (sfc_news_df, hkma_news_df) if not df.empty]
+        if news_frames:
+            live_count += 1
+            capped_frames = []
+            for df in news_frames:
+                df = df.copy()
+                df["issue_date"] = pd.to_datetime(df["issue_date"], errors="coerce")
+                df = df.dropna(subset=["issue_date"]).sort_values("issue_date", ascending=False)
+                capped_frames.append(df.head(PER_SOURCE_NEWS_CAP))
+            news_df = pd.concat(capped_frames, ignore_index=True).sort_values("issue_date", ascending=False)
+            for _, row in news_df.iterrows():
+                regulatory_news_rows.append({
+                    "issue_date": row["issue_date"].strftime("%Y-%m-%d"),
+                    "title": row["title"],
+                    "news_type": row.get("news_type") or "",
+                    "source": str(row["source"]).upper(),
+                })
+    except Exception as e:
+        print(f"Warning: Regulatory news fetch failed - {e}")
+
+    # 8. HKEXnews Company Announcements (watchlist tickers)
+    hkexnews_rows = []
+    try:
+        hkexnews_df = fetch_hkexnews_announcements()
+        if not hkexnews_df.empty:
+            live_count += 1
+            hkexnews_df["date_time"] = pd.to_datetime(
+                hkexnews_df["date_time"], format="%d/%m/%Y %H:%M", errors="coerce"
+            )
+            hkexnews_df = hkexnews_df.dropna(subset=["date_time"]).sort_values("date_time", ascending=False)
+            for _, row in hkexnews_df.head(30).iterrows():
+                hkexnews_rows.append({
+                    "date_time": row["date_time"].strftime("%Y-%m-%d %H:%M"),
+                    "ticker": row["ticker"],
+                    "stock_name": row.get("stock_name", ""),
+                    "title": row["title"],
+                    "file_link": row.get("file_link", ""),
+                })
+    except Exception as e:
+        print(f"Warning: HKEXnews announcements fetch failed - {e}")
+
+    # 9. Watchlist live spot quotes (keyed by bare akshare code for merge into section 10)
+    watchlist_price_by_code: dict[str, dict] = {}
+    try:
+        price_df = fetch_watchlist_spot_quotes()
+        if not price_df.empty:
+            live_count += 1
+            for _, row in price_df.iterrows():
+                watchlist_price_by_code[str(row["ticker"])] = {
+                    "latest_price_hkd": float(row["latest_price_hkd"]) if pd.notna(row.get("latest_price_hkd")) else None,
+                    "change_pct": float(row["change_pct"]) if pd.notna(row.get("change_pct")) else None,
+                }
+    except Exception as e:
+        print(f"Warning: Watchlist price fetch failed - {e}")
+
+    # 10. Structured Watchlist (Tiers 1-4), enriched with live spot quotes
     watchlist_rows = []
     for tier_key, tier_name in [
         ("TIER_1", "Tier 1: Licensed Infrastructure"),
@@ -364,12 +487,17 @@ def build_artifact(now: datetime | None = None) -> tuple[dict[str, Any], dict[st
         ("TIER_4", "Tier 4: Treasury Plays"),
     ]:
         for item in WATCHLIST[tier_key]:
+            ticker = f"{item['ticker']}.HK" if not item['ticker'].endswith(".HK") else item['ticker']
+            bare_code = ticker.replace(".HK", "").strip().zfill(5)
+            price_info = watchlist_price_by_code.get(bare_code, {})
             watchlist_rows.append({
                 "tier": tier_name,
-                "ticker": f"{item['ticker']}.HK" if not item['ticker'].endswith(".HK") else item['ticker'],
+                "ticker": ticker,
                 "company_en": item["name_en"],
                 "company_zh": item["name_zh"],
                 "regulatory_note": item.get("regulatory_note", ""),
+                "latest_price_hkd": price_info.get("latest_price_hkd"),
+                "change_pct": price_info.get("change_pct"),
             })
 
     # Datasets dictionary for snapshot
@@ -386,6 +514,8 @@ def build_artifact(now: datetime | None = None) -> tuple[dict[str, Any], dict[st
         "btc_price_history": btc_history_rows,
         "polymarket_catalysts": poly_rows,
         "crypto_watchlist": watchlist_rows,
+        "regulatory_news": regulatory_news_rows,
+        "hkexnews_announcements": hkexnews_rows,
         "market_kpi_summary": [{
             "hkma_count": hkma_count,
             "sfc_licensed_count": sfc_licensed_count,
@@ -396,6 +526,8 @@ def build_artifact(now: datetime | None = None) -> tuple[dict[str, Any], dict[st
             "cb_premium_bps": round(cb_premium_bps, 2) if cb_premium_bps else None,
             "fear_greed_val": fng_val,
             "fear_greed_class": fng_class,
+            "regulatory_news_count": len(regulatory_news_rows),
+            "hkexnews_announcements_count": len(hkexnews_rows),
         }],
     }
 
@@ -431,6 +563,16 @@ def build_artifact(now: datetime | None = None) -> tuple[dict[str, Any], dict[st
             "metrics": [
                 {"label": "HKEX ETF AUM ($M USD)", "field": "total_etf_aum_m", "format": "number"},
                 {"label": "Global Stablecoin Supply ($B USD)", "field": "total_supply_bn", "format": "number"},
+            ],
+        },
+        {
+            "id": "news_pulse_card",
+            "description": "Crypto-relevant regulatory news items (SFC + HKMA, trailing ~13 months) and watchlist company announcements (trailing 90 days).",
+            "dataset": "market_kpi_summary",
+            "sourceId": "sfc_news",
+            "metrics": [
+                {"label": "Regulatory News Items", "field": "regulatory_news_count", "format": "number"},
+                {"label": "Watchlist Company Announcements", "field": "hkexnews_announcements_count", "format": "number"},
             ],
         },
     ]
@@ -603,9 +745,9 @@ def build_artifact(now: datetime | None = None) -> tuple[dict[str, Any], dict[st
         {
             "id": "crypto_watchlist_table",
             "title": "HK-Listed Crypto & Stablecoin Sector Watchlist (Tiers 1–4)",
-            "subtitle": "Tier 1 infrastructure, Tier 2 banking/adjacent, Tier 3 concept pivots, Tier 4 treasury plays.",
+            "subtitle": "Tier 1 infrastructure, Tier 2 banking/adjacent, Tier 3 concept pivots, Tier 4 treasury plays. Live price and day change where available.",
             "dataset": "crypto_watchlist",
-            "sourceId": "hkma_register",
+            "sourceId": "watchlist_price",
             "density": "dense",
             "layout": "full",
             "columns": [
@@ -613,7 +755,39 @@ def build_artifact(now: datetime | None = None) -> tuple[dict[str, Any], dict[st
                 {"field": "ticker", "label": "Ticker", "type": "text"},
                 {"field": "company_en", "label": "Company (EN)", "type": "text"},
                 {"field": "company_zh", "label": "Company (ZH)", "type": "text"},
+                {"field": "latest_price_hkd", "label": "Price (HKD)", "format": "number"},
+                {"field": "change_pct", "label": "Day Change (%)", "format": "number"},
                 {"field": "regulatory_note", "label": "Regulatory Note / Status", "type": "text"},
+            ],
+        },
+        {
+            "id": "regulatory_news_table",
+            "title": "SFC & HKMA Regulatory News (Crypto-Filtered)",
+            "subtitle": "Most recent 30 crypto/stablecoin/virtual-asset-relevant SFC and HKMA news items, trailing ~13 months.",
+            "dataset": "regulatory_news",
+            "sourceId": "sfc_news",
+            "density": "dense",
+            "layout": "full",
+            "columns": [
+                {"field": "issue_date", "label": "Date", "type": "text"},
+                {"field": "source", "label": "Regulator", "type": "text"},
+                {"field": "title", "label": "Headline", "type": "text"},
+                {"field": "news_type", "label": "Type", "type": "text"},
+            ],
+        },
+        {
+            "id": "hkexnews_announcements_table",
+            "title": "Watchlist Company Announcements (HKEXnews)",
+            "subtitle": "Most recent 30 company announcements/disclosures across the full HK Stablecoin & Crypto watchlist, trailing 90 days.",
+            "dataset": "hkexnews_announcements",
+            "sourceId": "hkexnews_announcements",
+            "density": "dense",
+            "layout": "full",
+            "columns": [
+                {"field": "date_time", "label": "Date/Time", "type": "text"},
+                {"field": "ticker", "label": "Ticker", "type": "text"},
+                {"field": "stock_name", "label": "Company", "type": "text"},
+                {"field": "title", "label": "Announcement", "type": "text"},
             ],
         },
     ]
@@ -655,6 +829,26 @@ def build_artifact(now: datetime | None = None) -> tuple[dict[str, Any], dict[st
             "status": "success" if len(poly_rows) > 0 else "degraded",
             "records": len(poly_rows),
             "freshness": "live" if len(poly_rows) > 0 else "unavailable",
+        },
+        "sfc_news": {
+            "status": "success" if sfc_news_count > 0 else "degraded",
+            "records": sfc_news_count,
+            "freshness": "live" if sfc_news_count > 0 else "unavailable",
+        },
+        "hkma_news": {
+            "status": "success" if hkma_news_count > 0 else "degraded",
+            "records": hkma_news_count,
+            "freshness": "live" if hkma_news_count > 0 else "unavailable",
+        },
+        "hkexnews_announcements": {
+            "status": "success" if len(hkexnews_rows) > 0 else "degraded",
+            "records": len(hkexnews_rows),
+            "freshness": "live" if len(hkexnews_rows) > 0 else "unavailable",
+        },
+        "watchlist_price": {
+            "status": "success" if watchlist_price_by_code else "degraded",
+            "records": len(watchlist_price_by_code),
+            "freshness": "live" if watchlist_price_by_code else "unavailable",
         },
     }
 
@@ -719,8 +913,14 @@ def build_artifact(now: datetime | None = None) -> tuple[dict[str, Any], dict[st
     if poly_rows:
         blocks.append({"id": "polymarket_table_block", "type": "table", "tableId": "polymarket_table"})
 
-    blocks.extend([
-        {"id": "watchlist_table_block", "type": "table", "tableId": "crypto_watchlist_table"},
+    blocks.append({"id": "watchlist_table_block", "type": "table", "tableId": "crypto_watchlist_table"})
+
+    if regulatory_news_rows:
+        blocks.append({"id": "regulatory_news_table_block", "type": "table", "tableId": "regulatory_news_table"})
+    if hkexnews_rows:
+        blocks.append({"id": "hkexnews_announcements_table_block", "type": "table", "tableId": "hkexnews_announcements_table"})
+
+    blocks.append(
         {
             "id": "methodology",
             "type": "markdown",
@@ -732,10 +932,12 @@ def build_artifact(now: datetime | None = None) -> tuple[dict[str, Any], dict[st
                 "operators; Anchorpoint (HKD-pegged HKDAP) is distinct from AnchorX (Jinyong Investment 01328.HK, AxCNH). "
                 "This monitor tracks regulatory registers, HKEX ETF AUM time series, global stablecoin circulating supply trends, "
                 "blockchain chain distribution, global DEX trading volume, long-run Crypto Fear & Greed Index (Alternative.me), "
-                "long-run BTC price trends, and tag-filtered Polymarket regulatory catalysts. No investment recommendation is produced."
+                "long-run BTC price trends, tag-filtered Polymarket regulatory catalysts, live watchlist stock quotes, and "
+                "forward-looking regulatory news and company announcements (SFC, HKMA, HKEXnews) so upcoming catalysts are "
+                "visible alongside historical snapshots. No investment recommendation is produced."
             ),
-        },
-    ])
+        }
+    )
 
     artifact = {
         "surface": "dashboard",

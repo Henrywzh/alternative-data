@@ -1696,6 +1696,7 @@ const HK_STABLECOIN_CRYPTO_ZH = {
     regulatory_licensing_card: { description: "金管局稳定币沙盒持牌发行人及证监会持牌交易平台。", metricLabels: ["金管局稳定币发行人", "SFC 持牌 VATP", "SFC 申请中 VATP"] },
     crypto_signals_card: { description: "比特币现货价格、Coinbase 溢价价差及情绪指数。", metricLabels: ["比特币价格 (美元)", "Coinbase 溢价 (bps)", "加密情绪指数"] },
     etf_aum_card: { description: "港交所加密现货 ETF 资产规模及全球稳定币总市值。", metricLabels: ["港交所 ETF AUM (百万美元)", "全球稳定币市值 (十亿美元)"] },
+    news_pulse_card: { description: "证监会与金管局加密相关监管新闻（近约 13 个月）及观察名单公司公告（近 90 天）。", metricLabels: ["监管新闻条数", "观察名单公司公告数"] },
   },
   charts: {
     etf_aum_history_chart: ["港交所加密现货 ETF 月度 AUM (百万美元)", "香港上市比特币及以太币现货 ETF 基金规模历史。", "月份", "AUM (百万美元)", "代码"],
@@ -1733,8 +1734,18 @@ const HK_STABLECOIN_CRYPTO_ZH = {
     },
     crypto_watchlist_table: {
       title: "香港上市加密与稳定币观察名单 (Tiers 1–4)",
-      subtitle: "Tier 1 持牌基础设施、Tier 2 大型机构、Tier 3 概念转型、Tier 4 储备配置。",
-      columns: { tier: "分层", ticker: "股票代码", company_en: "英文名称", company_zh: "中文名称", regulatory_note: "监管状态 / 备注" },
+      subtitle: "Tier 1 持牌基础设施、Tier 2 大型机构、Tier 3 概念转型、Tier 4 储备配置；如有数据则显示实时股价及日涨跌幅。",
+      columns: { tier: "分层", ticker: "股票代码", company_en: "英文名称", company_zh: "中文名称", latest_price_hkd: "股价 (港元)", change_pct: "日涨跌幅 (%)", regulatory_note: "监管状态 / 备注" },
+    },
+    regulatory_news_table: {
+      title: "证监会与金管局监管新闻（加密相关筛选）",
+      subtitle: "近约 13 个月内与加密/虚拟资产/稳定币相关的证监会及金管局最新 30 条新闻。",
+      columns: { issue_date: "日期", source: "监管机构", title: "标题", news_type: "类型" },
+    },
+    hkexnews_announcements_table: {
+      title: "观察名单公司公告 (香港交易所披露易)",
+      subtitle: "近 90 天内香港稳定币与加密观察名单全部公司的最新 30 条公告/披露。",
+      columns: { date_time: "日期/时间", ticker: "股票代码", stock_name: "公司名称", title: "公告标题" },
     },
   },
   sources: {
@@ -1745,11 +1756,15 @@ const HK_STABLECOIN_CRYPTO_ZH = {
     coinbase_binance: "Coinbase & Binance 公开行情",
     fear_greed: "加密货币恐慌与贪婪指数 (Alternative.me)",
     polymarket: "Polymarket 预测市场 API (Gamma API)",
+    sfc_news: "香港证监会新闻及公告（加密相关筛选）",
+    hkma_news: "香港金管局新闻稿（加密相关筛选）",
+    hkexnews_announcements: "香港交易所披露易公司公告（观察名单）",
+    watchlist_price: "香港观察名单实时股票行情",
   },
   snapshotBody: (artifact) =>
     `**数据快照：** \`${artifact.package_info.snapshotId}\` · 生成于 ${artifact.manifest.generatedAt}。`,
   methodologyBody:
-    "## 如何阅读本 dashboard\n\n香港加密生态由官方监管登记册锚定：金管局稳定币发行人沙盒（Anchorpoint FRS01、汇丰 FRS02）及证监会持牌 VATP 交易平台（OSL、HashKey）。券商（如国泰君安国际 01788.HK）仅具备虚拟资产交易服务许可，非 VATP 交易所运营商；Anchorpoint（Anchorpoint Financial，港元锚定 HKDAP）与 AnchorX（金涌投资 01328.HK，AxCNH）为不同主体。本 dashboard 跟踪监管登记册、港交所 ETF AUM 时间序列、全球稳定币供应走势、主要公链分布、DEX 交易量、加密情绪指数、BTC 价格长期走势及标签筛选的 Polymarket 催化剂。本界面不提供投资建议。",
+    "## 如何阅读本 dashboard\n\n香港加密生态由官方监管登记册锚定：金管局稳定币发行人沙盒（Anchorpoint FRS01、汇丰 FRS02）及证监会持牌 VATP 交易平台（OSL、HashKey）。券商（如国泰君安国际 01788.HK）仅具备虚拟资产交易服务许可，非 VATP 交易所运营商；Anchorpoint（Anchorpoint Financial，港元锚定 HKDAP）与 AnchorX（金涌投资 01328.HK，AxCNH）为不同主体。本 dashboard 跟踪监管登记册、港交所 ETF AUM 时间序列、全球稳定币供应走势、主要公链分布、DEX 交易量、加密情绪指数、BTC 价格长期走势、标签筛选的 Polymarket 催化剂、观察名单实时股价，以及前瞻性的监管新闻与公司公告（证监会、金管局、披露易），让即将发生的催化事件与历史快照并列呈现。本界面不提供投资建议。",
 };
 
 const HK_POPULATION_MIGRATION_ZH = {

@@ -11,9 +11,13 @@ import pandas as pd
 from .sources.crypto_tickers import fetch_all_crypto_signals
 from .sources.defillama_stablecoins import fetch_stablecoin_supply
 from .sources.hkex_etf_aum import fetch_all_etf_aum
+from .sources.hkexnews_announcements import fetch_hkexnews_announcements
+from .sources.hkma_news import fetch_hkma_news
 from .sources.hkma_register import fetch_licensed_issuers
 from .sources.polymarket_events import fetch_all_polymarket_catalysts
+from .sources.sfc_news import fetch_sfc_news
 from .sources.sfc_vatp_register import fetch_vatp_register
+from .sources.watchlist_price import fetch_watchlist_spot_quotes
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +51,26 @@ QUALITY_SPECS = {
         "kind": "event_feed",
         "required": ["title", "fetched_at"],
         "max_age_days": 1,
+    },
+    "sfc_news": {
+        "kind": "event_feed",
+        "required": ["news_ref_no", "issue_date", "title", "source", "fetched_at"],
+        "max_age_days": 1,
+    },
+    "hkma_news": {
+        "kind": "event_feed",
+        "required": ["news_ref_no", "issue_date", "title", "source", "fetched_at"],
+        "max_age_days": 1,
+    },
+    "hkexnews_announcements": {
+        "kind": "event_feed",
+        "required": ["ticker", "date_time", "title", "news_id", "fetched_at"],
+        "max_age_days": 1,
+    },
+    "watchlist_price": {
+        "kind": "measure",
+        "required": ["ticker", "date", "latest_price_hkd", "fetched_at"],
+        "max_age_days": 3,
     },
 }
 
@@ -122,5 +146,33 @@ def run_stage_1_pipeline() -> dict[str, Any]:
     except Exception as exc:
         logger.exception("Polymarket ingestion failed")
         results["polymarket_catalysts"] = {"error": str(exc)}
+
+    try:
+        logger.info("Ingesting SFC news...")
+        results["sfc_news"] = fetch_sfc_news()
+    except Exception as exc:
+        logger.exception("SFC news ingestion failed")
+        results["sfc_news"] = {"error": str(exc)}
+
+    try:
+        logger.info("Ingesting HKMA news...")
+        results["hkma_news"] = fetch_hkma_news()
+    except Exception as exc:
+        logger.exception("HKMA news ingestion failed")
+        results["hkma_news"] = {"error": str(exc)}
+
+    try:
+        logger.info("Ingesting HKEXnews company announcements...")
+        results["hkexnews_announcements"] = fetch_hkexnews_announcements()
+    except Exception as exc:
+        logger.exception("HKEXnews announcements ingestion failed")
+        results["hkexnews_announcements"] = {"error": str(exc)}
+
+    try:
+        logger.info("Ingesting watchlist spot quotes...")
+        results["watchlist_price"] = fetch_watchlist_spot_quotes()
+    except Exception as exc:
+        logger.exception("Watchlist price ingestion failed")
+        results["watchlist_price"] = {"error": str(exc)}
 
     return results
