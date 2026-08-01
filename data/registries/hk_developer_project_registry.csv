@@ -1,6 +1,7 @@
 stock_code,listed_company_en,listed_company_zh,subsidiary_spv_name,project_name_en,project_name_zh,project_aliases,district,asset_type,ownership_pct,source_document,last_verified_date,effective_from,effective_to
 0016,Sun Hung Kai Properties,新鴻基地產,Sun Hung Kai Real Estate Agency Ltd,YOHO WEST,YOHO WEST,YOHO WEST Phase 1|天水圍YOHO|天水圍市地段,Tin Shui Wai,residential_dev,100.0,SHKP Annual Report 2024/25,2026-07-23,2023-01-01,
 0016,Sun Hung Kai Properties,新鴻基地產,Sun Hung Kai Real Estate Agency Ltd,NOVO LAND,NOVO LAND,NOVO LAND Phase 1A|屯門NOVO|屯門市地段,Tuen Mun,residential_dev,100.0,SHKP Annual Report 2024/25,2026-07-23,2022-01-01,
+0016,Sun Hung Kai Properties,新鴻基地產,Sun Hung Kai Real Estate Agency Ltd,PARK YOHO NAPOLI,PARK YOHO NAPOLI,PARK YOHO NAPOLI|PARK YOHO|PARK VISTA DEVELOPMENT|峻巒,Tam Mei,residential_dev,100.0,SHKP Annual Report 2015/16; official SHKP PARK YOHO materials,2026-08-01,2018-01-01,
 0016,Sun Hung Kai Properties,新鴻基地產,Sun Hung Kai Real Estate Agency Ltd,Towneria,帝景灣,帝景灣|Towneria,Tseung Kwan O,residential_dev,100.0,SHKP Annual Report 2024/25,2026-07-23,2020-01-01,
 0016,Sun Hung Kai Properties,新鴻基地產,Sun Hung Kai Real Estate Agency Ltd,International Finance Centre,國際金融中心,IFC|中環IFC|国金融中心|Finance Street,Central,office_investment,50.0,SHKP Annual Report 2024/25,2026-07-23,1998-01-01,
 0012,Henderson Land,恒基兆業地產,Henderson Real Estate Agency Ltd,The Henley,The Henley,The Henley I|啟德The Henley|Kai Tak Area 1I,Kai Tak,residential_dev,100.0,Henderson Annual Report 2024,2026-07-23,2021-01-01,

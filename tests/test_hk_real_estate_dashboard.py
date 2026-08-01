@@ -134,6 +134,84 @@ def test_stage1_new_series_are_wired_into_separated_regime_and_commercial_views(
     assert "rebased_chart" not in block_ids
 
 
+def test_srpe_project_sales_views_are_wired_and_attributable():
+    srpe = pd.DataFrame(
+        [
+            {
+                "development_id": "10045",
+                "development_name": "NOVO LAND",
+                "phase_name": "NOVO LAND",
+                "period": "2026-06-01",
+                "sales_units_gross": 10,
+                "sales_value_gross_hkd": 100_000_000,
+                "cancelled_units": 0,
+                "cumulative_gross_units": 10,
+                "cumulative_cancelled_units": 0,
+                "cumulative_event_net_units": 10,
+                "cumulative_unique_active_units": 10,
+                "cumulative_net_units": 10,
+                "total_residential_properties": 100,
+                "cumulative_net_sell_through_pct": 10.0,
+                "median_transaction_price_hkd": 10_000_000,
+                "weighted_avg_transaction_price_hkd": 10_000_000,
+                "days_since_first_pasp": 0,
+                "project_id": "novo-land-phase-3b",
+                "stock_code": "0016",
+                "ownership_pct": 100.0,
+                "srpe_development_id": "38009",
+                "sales_value_attributable_hkd": 100_000_000,
+            },
+            {
+                "development_id": "7405",
+                "development_name": "GRAND VICTORIA",
+                "phase_name": "GRAND VICTORIA I",
+                "period": "2026-06-01",
+                "sales_units_gross": 4,
+                "sales_value_gross_hkd": 20_000_000,
+                "cancelled_units": 0,
+                "cumulative_gross_units": 4,
+                "cumulative_cancelled_units": 0,
+                "cumulative_event_net_units": 4,
+                "cumulative_unique_active_units": 4,
+                "cumulative_net_units": 4,
+                "total_residential_properties": 100,
+                "cumulative_net_sell_through_pct": 4.0,
+                "median_transaction_price_hkd": 5_000_000,
+                "weighted_avg_transaction_price_hkd": 5_000_000,
+                "days_since_first_pasp": 0,
+                "project_id": "grand-victoria-phase-1",
+                "stock_code": "0083",
+                "ownership_pct": 22.5,
+                "srpe_development_id": "61337",
+                "sales_value_attributable_hkd": 4_500_000,
+            },
+        ]
+    )
+    artifact, _ = dashboard_export.build_artifact(
+        _frames(),
+        raw_hkma=_hkma_frame(),
+        raw_cnsd=_cnsd_frame(),
+        raw_epi_eri=pd.DataFrame(),
+        raw_new_projects=pd.DataFrame(),
+        raw_landreg=(pd.DataFrame(), pd.DataFrame()),
+        raw_bd_monthly_stats=pd.DataFrame(),
+        raw_bd_supply=pd.DataFrame(),
+        raw_bd_supply_history=pd.DataFrame(),
+        raw_unified_tx=pd.DataFrame(),
+        raw_srpe_signals=srpe,
+        now=NOW,
+    )
+    datasets = artifact["snapshot"]["datasets"]
+    assert datasets["kpi_srpe_attributable_sales"][0]["latest"] == pytest.approx(104.5)
+    assert datasets["kpi_srpe_projects"][0]["latest"] == 2
+    assert {row["developer"] for row in datasets["srpe_developer_monthly_sales"]} == {
+        "Sun Hung Kai Properties",
+        "Sino Land",
+    }
+    assert next(chart for chart in artifact["manifest"]["charts"] if chart["id"] == "srpe_project_sell_through_chart")
+    assert next(table for table in artifact["manifest"]["tables"] if table["id"] == "srpe_latest_project_snapshot_table")
+
+
 def test_csi_weekly_history_keeps_distinct_week_dates_while_monthly_indices_stay_monthly():
     monthly_dates = ["2026-01-01", "2026-02-01"]
     weekly_dates = ["2026-01-05", "2026-01-12", "2026-01-19"]

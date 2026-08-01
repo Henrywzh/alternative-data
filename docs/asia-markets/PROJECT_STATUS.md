@@ -119,6 +119,21 @@ replacement for the operating manual or generated source-status JSON.
   local raw snapshot and explicit lineage type; Midland events remain
   `research_only` until matched to an HKMA, Government, Lands Department or
   HKEX primary source with publication/effective-time semantics.
+- The residential-developer SRPE bounded runner is implemented through
+  `run-srpe-pilot` with an explicit phase registry, PDF hash reuse, raw PDF and
+  manifest lineage, document audit, unit-level transaction/price rows and
+  project-month sales signals. The final 2026-08-01 core run produced 2,892
+  transaction events, 1,585 price-list unit rows, 196 project-month signals
+  and 18/18 successful document audits across six phases. Sell-through uses
+  active unit-level dedup while raw contract-event counts remain available;
+  this prevents PASP/ASP updates and re-sales from producing a false >100%
+  sell-through. The output is now wired into the HK real-estate dashboard as
+  four KPI cards, top-three developer/project monthly time series and a
+  six-phase latest-project table. The dashboard intentionally keeps broader
+  developer/project coverage as catalog-only until the registry and backfill
+  boundary is expanded. The optional Crawl4AI browser tool is installed
+  outside the project dependency graph for future dynamic issuer pages, not
+  for the SRPE API/PDF path.
 
 ## Open decisions / known limitations
 

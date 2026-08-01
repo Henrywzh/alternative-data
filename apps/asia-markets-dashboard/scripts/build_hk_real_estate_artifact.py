@@ -76,6 +76,35 @@ BD_HISTORY_SERIES_LABELS = {
     "Occupation Permits (OP) Issued": "Md56 Occupation",
 }
 
+# The SRPE pilot is phase-level, while stock-code attribution is company-level.
+# Keep these labels explicit so the dashboard does not infer an issuer from a
+# project name or accidentally merge a JV project into the wrong listed owner.
+SRPE_DEVELOPER_LABELS = {
+    "0012": "Henderson Land",
+    "0016": "Sun Hung Kai Properties",
+    "0017": "New World Development",
+    "0066": "MTR Corporation",
+    "0083": "Sino Land",
+}
+SRPE_PROJECT_LABELS = {
+    "grand-victoria-phase-1": "Grand Victoria — Phase 1",
+    "novo-land-phase-2a": "NOVO LAND — Phase 2A",
+    "novo-land-phase-3b": "NOVO LAND — Phase 3B",
+    "park-yoho-napoli": "PARK YOHO NAPOLI",
+    "the-henley-ii": "The Henley II",
+    "pavilia-farm-iii": "PAVILIA FARM III",
+    "the-southside-blue-coast": "Blue Coast",
+}
+SRPE_PROJECT_SHORT_LABELS = {
+    "grand-victoria-phase-1": "Grand Victoria",
+    "novo-land-phase-2a": "NOVO 2A",
+    "novo-land-phase-3b": "NOVO 3B",
+    "park-yoho-napoli": "PARK YOHO",
+    "the-henley-ii": "Henley II",
+    "pavilia-farm-iii": "PAVILIA III",
+    "the-southside-blue-coast": "Blue Coast",
+}
+
 
 PUBLIC_SOURCES = {
     "hkma_mortgage": {
@@ -340,6 +369,21 @@ PUBLIC_SOURCES = {
             "tables_used": ["Table 1.2", "Table 1.3", "Table 1.4", "Table 1.5", "Table 1.6", "Table 1.7"],
         },
     },
+    "srpe_sales": {
+        "id": "srpe_sales",
+        "label": "Sales of First-hand Residential Properties Electronic Platform (SRPE)",
+        "href": "https://www.srpe.gov.hk/opip/",
+        "query": {
+            "engine": "official SRPE JSON manifest + PDF registers / price lists",
+            "url": "https://www.srpe.gov.hk/opip/",
+            "language": "JSON + PDF",
+            "description": "Phase-level first-hand residential transaction registers and price lists parsed from official SRPE documents; attributable sales use the explicit project ownership registry.",
+            "metric_definitions": [
+                "Monthly attributable contract sales are gross transaction price multiplied by the listed-company ownership percentage in the phase registry.",
+                "Sell-through uses unique active units from the transaction-register history divided by the phase's published total residential properties.",
+            ],
+        },
+    },
     "source_registry": {
         "id": "source_registry",
         "label": "HK real-estate dashboard source registry",
@@ -355,14 +399,14 @@ PUBLIC_SOURCES = {
 
 PLANNED_COVERAGE = [
     {
-        "source": "SRPE",
-        "dataset": "First-hand residential project documents",
+        "source": "SRPE expansion",
+        "dataset": "Full developer / project coverage",
         "type": "Catalog",
         "status": "Catalog only",
         "latest_observation": "—",
         "records": 0,
         "freshness": "Content parser pending",
-        "notes": "Current discovery code does not yet extract sales, units, price lists, or absorption facts.",
+        "notes": "The dashboard currently covers six explicit pilot phases; broader developer and phase coverage still requires registry expansion and backfill.",
     },
 ]
 
@@ -633,6 +677,167 @@ def _new_source_health(
     }
 
 
+def _srpe_signal_views(frame: pd.DataFrame) -> tuple[
+    list[dict[str, Any]],
+    list[dict[str, Any]],
+    list[dict[str, Any]],
+    dict[str, Any] | None,
+    dict[str, Any] | None,
+    dict[str, Any] | None,
+    dict[str, Any] | None,
+]:
+    """Build compact dashboard views from the normalized SRPE signal table.
+
+    The normalized table remains the source of truth.  This function only
+    creates chart/table projections and deliberately excludes document paths,
+    hashes and other lineage-heavy fields from the portable artifact.
+    """
+    required = {
+        "period",
+        "project_id",
+        "stock_code",
+        "sales_units_gross",
+        "sales_value_attributable_hkd",
+        "cumulative_unique_active_units",
+        "total_residential_properties",
+        "cumulative_net_sell_through_pct",
+        "weighted_avg_transaction_price_hkd",
+    }
+    if frame.empty or not required.issubset(frame.columns):
+        return [], [], [], None, None, None, None
+
+    visible = frame.copy()
+    visible["period_date"] = pd.to_datetime(visible["period"], errors="coerce")
+    visible = visible[visible["period_date"].notna()].copy()
+    if visible.empty:
+        return [], [], [], None, None, None, None
+    visible["period"] = visible["period_date"].dt.strftime("%Y-%m")
+    visible["developer"] = visible["stock_code"].astype(str).str.zfill(4).map(SRPE_DEVELOPER_LABELS).fillna(
+        "Stock code " + visible["stock_code"].astype(str)
+    )
+    visible["project_name"] = visible["project_id"].map(SRPE_PROJECT_LABELS).fillna(
+        visible.get("phase_name", visible.get("development_name", visible["project_id"]))
+    )
+    visible["project_short_name"] = visible["project_id"].map(SRPE_PROJECT_SHORT_LABELS).fillna(visible["project_name"])
+
+    developer_monthly = (
+        visible.groupby(["period", "developer"], as_index=False)
+        .agg(
+            sales_value_attributable_hkd=("sales_value_attributable_hkd", "sum"),
+            sales_units_gross=("sales_units_gross", "sum"),
+        )
+        .sort_values(["period", "developer"])
+    )
+    # Keep the portable chart legends within the mobile renderer's tested
+    # three-series limit. The latest-project table still retains every phase;
+    # this chart focuses on the three developers with the largest cumulative
+    # attributable sales in the pilot window.
+    top_developers = (
+        visible.groupby("developer", as_index=False)["sales_value_attributable_hkd"]
+        .sum()
+        .sort_values("sales_value_attributable_hkd", ascending=False)
+        .head(3)["developer"]
+        .tolist()
+    )
+    developer_rows = [
+        {
+            "date": row["period"],
+            "developer": row["developer"],
+            "value": round(float(row["sales_value_attributable_hkd"]) / 1_000_000, 4),
+            "sales_units_gross": int(row["sales_units_gross"]),
+        }
+        for _, row in developer_monthly.iterrows()
+        if row["developer"] in top_developers
+    ]
+
+    top_project_ids = (
+        visible.groupby("project_id", as_index=False)["sales_value_attributable_hkd"]
+        .sum()
+        .sort_values("sales_value_attributable_hkd", ascending=False)
+        .head(3)["project_id"]
+        .tolist()
+    )
+    sell_through_rows = [
+        {
+            "date": row["period"],
+            "project_name": row["project_name"],
+            "project_short_name": row["project_short_name"],
+            "developer": row["developer"],
+            "value": round(float(row["cumulative_net_sell_through_pct"]), 4),
+        }
+        for _, row in visible.sort_values(["project_name", "period_date"]).iterrows()
+        if row["project_id"] in top_project_ids and pd.notna(row.get("cumulative_net_sell_through_pct"))
+    ]
+
+    # Latest available row per phase is more useful for monitoring than a
+    # 196-row raw dump.  Keep the period explicit because pilot phases have
+    # different document histories and therefore different latest months.
+    latest_rows = visible.sort_values("period_date").groupby("project_id", as_index=False).tail(1)
+    latest_rows = latest_rows.sort_values(["developer", "project_name"])
+    latest_project_rows = [
+        {
+            "developer": row["developer"],
+            "project_name": row["project_name"],
+            "latest_period": row["period"],
+            "sales_units_gross": int(row["sales_units_gross"]),
+            "cumulative_unique_active_units": int(row["cumulative_unique_active_units"]),
+            "total_residential_properties": float(row["total_residential_properties"]),
+            "sell_through_pct": round(float(row["cumulative_net_sell_through_pct"]), 4),
+            "weighted_avg_transaction_price_hkd": round(float(row["weighted_avg_transaction_price_hkd"]), 2)
+            if pd.notna(row.get("weighted_avg_transaction_price_hkd"))
+            else None,
+            "ownership_pct": float(row["ownership_pct"]) if pd.notna(row.get("ownership_pct")) else None,
+        }
+        for _, row in latest_rows.iterrows()
+    ]
+
+    aggregate = (
+        visible.groupby("period_date", as_index=False)
+        .agg(
+            sales_value_attributable_hkd=("sales_value_attributable_hkd", "sum"),
+            sales_units_gross=("sales_units_gross", "sum"),
+        )
+        .sort_values("period_date")
+    )
+    latest = aggregate.iloc[-1]
+    prior = aggregate.iloc[-2] if len(aggregate) > 1 else latest
+    year_cutoff = latest["period_date"] - pd.DateOffset(years=1)
+    yearly_candidates = aggregate[aggregate["period_date"] <= year_cutoff]
+    yearly = yearly_candidates.iloc[-1] if not yearly_candidates.empty else aggregate.iloc[0]
+    sales_kpi = {
+        "latest": round(float(latest["sales_value_attributable_hkd"]) / 1_000_000, 4),
+        "period_change": round(float(latest["sales_value_attributable_hkd"]) / float(prior["sales_value_attributable_hkd"]) - 1, 6)
+        if float(prior["sales_value_attributable_hkd"])
+        else None,
+        "year_change": round(float(latest["sales_value_attributable_hkd"]) / float(yearly["sales_value_attributable_hkd"]) - 1, 6)
+        if float(yearly["sales_value_attributable_hkd"])
+        else None,
+        "observation_date": latest["period_date"].strftime("%Y-%m"),
+    }
+    units_kpi = {
+        "latest": int(latest["sales_units_gross"]),
+        "period_change": round(float(latest["sales_units_gross"]) / float(prior["sales_units_gross"]) - 1, 6)
+        if float(prior["sales_units_gross"])
+        else None,
+        "year_change": round(float(latest["sales_units_gross"]) / float(yearly["sales_units_gross"]) - 1, 6)
+        if float(yearly["sales_units_gross"])
+        else None,
+        "observation_date": latest["period_date"].strftime("%Y-%m"),
+    }
+    inventory = pd.to_numeric(latest_rows["total_residential_properties"], errors="coerce").sum()
+    active = pd.to_numeric(latest_rows["cumulative_unique_active_units"], errors="coerce").sum()
+    sell_through_kpi = {
+        "latest": round(float(active / inventory * 100), 4) if inventory else None,
+        "projects": int(len(latest_rows)),
+        "observation_date": latest["period_date"].strftime("%Y-%m"),
+    }
+    projects_kpi = {
+        "latest": int(visible["project_id"].nunique()),
+        "observation_date": latest["period_date"].strftime("%Y-%m"),
+    }
+    return developer_rows, sell_through_rows, latest_project_rows, sales_kpi, units_kpi, sell_through_kpi, projects_kpi
+
+
 def _stamp_sources(generated_at: str) -> list[dict[str, Any]]:
     result = []
     for source in PUBLIC_SOURCES.values():
@@ -655,6 +860,7 @@ def build_artifact(
     raw_unified_tx: pd.DataFrame | None = None,
     raw_new_series: dict[str, pd.DataFrame] | None = None,
     raw_land_disposals: pd.DataFrame | None = None,
+    raw_srpe_signals: pd.DataFrame | None = None,
     *,
     now: datetime | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
@@ -683,6 +889,7 @@ def build_artifact(
     df_csi = new_series.get("centaline_csi", pd.DataFrame())
     df_rvd_office = new_series.get("rvd_office", pd.DataFrame())
     df_rvd_retail = new_series.get("rvd_retail", pd.DataFrame())
+    df_srpe_signals = raw_srpe_signals if raw_srpe_signals is not None else pd.DataFrame()
 
     # New normalized tranches are deliberately kept optional.  A clean
     # checkout can still build the legacy artifact while a local or scheduled
@@ -696,6 +903,54 @@ def build_artifact(
     csi_rows = _index_history_rows(df_csi, metric="sentiment", date_format="%Y-%m-%d")
     rvd_office_rows = _commercial_history_rows(df_rvd_office, metric="rental_index")
     rvd_retail_rows = _commercial_history_rows(df_rvd_retail)
+    (
+        srpe_developer_monthly_rows,
+        srpe_sell_through_rows,
+        srpe_latest_project_rows,
+        srpe_sales_kpi,
+        srpe_units_kpi,
+        srpe_sell_through_kpi,
+        srpe_projects_kpi,
+    ) = _srpe_signal_views(df_srpe_signals)
+    srpe_signal_history_rows: list[dict[str, Any]] = []
+    if not df_srpe_signals.empty:
+        history_columns = [
+            "development_id",
+            "development_name",
+            "phase_name",
+            "period",
+            "sales_units_gross",
+            "sales_value_gross_hkd",
+            "cancelled_units",
+            "cumulative_gross_units",
+            "cumulative_cancelled_units",
+            "cumulative_event_net_units",
+            "cumulative_unique_active_units",
+            "cumulative_net_units",
+            "total_residential_properties",
+            "cumulative_net_sell_through_pct",
+            "median_transaction_price_hkd",
+            "weighted_avg_transaction_price_hkd",
+            "days_since_first_pasp",
+            "project_id",
+            "stock_code",
+            "ownership_pct",
+            "srpe_development_id",
+            "sales_value_attributable_hkd",
+        ]
+        present = [column for column in history_columns if column in df_srpe_signals.columns]
+        for row in df_srpe_signals[present].to_dict("records"):
+            clean = {}
+            for key, value in row.items():
+                if pd.isna(value):
+                    clean[key] = None
+                elif key in {"sales_units_gross", "cancelled_units", "cumulative_gross_units", "cumulative_cancelled_units", "cumulative_event_net_units", "cumulative_unique_active_units", "days_since_first_pasp"}:
+                    clean[key] = int(value)
+                elif key in {"sales_value_gross_hkd", "sales_value_attributable_hkd", "total_residential_properties", "cumulative_net_sell_through_pct", "median_transaction_price_hkd", "weighted_avg_transaction_price_hkd", "ownership_pct"}:
+                    clean[key] = float(value)
+                else:
+                    clean[key] = value
+            srpe_signal_history_rows.append(clean)
 
     df_hkma = raw_hkma if raw_hkma is not None else fetch_hkma_residential_mortgage_survey()
     df_cnsd = raw_cnsd if raw_cnsd is not None else fetch_cnsd_table("615-66001")
@@ -892,6 +1147,20 @@ def build_artifact(
     ):
         if health_row:
             health.append(health_row)
+    if srpe_developer_monthly_rows:
+        srpe_latest_date = max(row["date"] for row in srpe_developer_monthly_rows)
+        health.append(
+            {
+                "source": PUBLIC_SOURCES["srpe_sales"]["label"],
+                "dataset": "SRPE phase-level first-hand sales signals",
+                "type": "Measure",
+                "status": "Healthy",
+                "latest_observation": srpe_latest_date,
+                "records": int(len(df_srpe_signals)),
+                "freshness": "Published snapshot",
+                "notes": "Six explicitly registered phases; attributable sales use the ownership registry and sell-through uses unique active units.",
+            }
+        )
 
     # 28Hse new-project catalogue -> small supporting table.
     df_new_projects = (
@@ -1155,6 +1424,7 @@ def build_artifact(
         ("Land Registry", "Monthly facts + ASP series", landreg_asp_rows, "Land Registry Monthly Statistics (JSON)"),
         ("Buildings Department", "Monthly digest + project lifecycle", bd_monthly_stats_rows + bd_supply_table_rows, "Buildings Department Monthly Digest / Project Lifecycle"),
         ("Buildings Department history", "Md52-Md56 stage aggregates", bd_supply_history_rows, "Buildings Department Monthly Digest PDF archive (Section 1 aggregate tables)"),
+        ("SRPE pilot", "Phase-level first-hand sales signals", srpe_developer_monthly_rows, "Sales of First-hand Residential Properties Electronic Platform (SRPE)"),
     ):
         record_count = len(rows_or_frame)
         if not record_count:
@@ -1175,9 +1445,9 @@ def build_artifact(
                 "dataset": dataset_label,
                 "type": "Measure",
                 "status": coverage_status,
-                "latest_observation": "—",
+                "latest_observation": max((row["date"] for row in rows_or_frame), default="—") if label == "SRPE pilot" else "—",
                 "records": record_count,
-                "freshness": "Live at build time" if record_count else "Fetch returned no rows",
+                "freshness": "Published snapshot" if label == "SRPE pilot" and record_count else ("Live at build time" if record_count else "Fetch returned no rows"),
                 "notes": coverage_notes,
             }
         )
@@ -1193,6 +1463,10 @@ def build_artifact(
         "kpi_mhpi": [kpis["mhpi"]],
         "kpi_rvd_price": [kpis["rvd_price"]],
         "kpi_rvd_rent": [kpis["rvd_rent"]],
+        "kpi_srpe_attributable_sales": [srpe_sales_kpi] if srpe_sales_kpi else [],
+        "kpi_srpe_sales_units": [srpe_units_kpi] if srpe_units_kpi else [],
+        "kpi_srpe_sell_through": [srpe_sell_through_kpi] if srpe_sell_through_kpi else [],
+        "kpi_srpe_projects": [srpe_projects_kpi] if srpe_projects_kpi else [],
         "ccl_history": _series_records(frames["ccl"], "ccl_index"),
         "mhpi_history": _series_records(frames["mhpi"], "mhpi_overall"),
         "confidence_history": _series_records(frames["confidence"], "confidence_index"),
@@ -1235,6 +1509,10 @@ def build_artifact(
         "bd_supply_pipeline_history_counts": bd_supply_history_count_rows,
         "agency_transactions_pulse": transaction_pulse_rows,
         "midland_top_estates": midland_estate_rows,
+        "srpe_developer_monthly_sales": srpe_developer_monthly_rows,
+        "srpe_project_sell_through": srpe_sell_through_rows,
+        "srpe_latest_project_snapshot": srpe_latest_project_rows,
+        "srpe_project_signal_history": srpe_signal_history_rows,
         "source_health": health,
         "source_coverage": coverage,
     }
@@ -1276,6 +1554,58 @@ def build_artifact(
                     {"label": cadence, "field": "period_change", "format": "percent", "signed": True},
                     {"label": "YoY", "field": "year_change", "format": "percent", "signed": True},
                 ],
+            }
+        )
+
+    if srpe_sales_kpi:
+        cards.append(
+            {
+                "id": "srpe_attributable_sales_card",
+                "description": "Latest monthly contract sales attributable to the listed-company ownership share in the tracked phases; HK$ million.",
+                "dataset": "kpi_srpe_attributable_sales",
+                "sourceId": "srpe_sales",
+                "metrics": [
+                    {"label": "Attributable Sales (HK$m)", "field": "latest", "format": "number"},
+                    {"label": "MoM", "field": "period_change", "format": "percent", "signed": True},
+                    {"label": "YoY", "field": "year_change", "format": "percent", "signed": True},
+                ],
+            }
+        )
+    if srpe_units_kpi:
+        cards.append(
+            {
+                "id": "srpe_sales_units_card",
+                "description": "Gross units recorded in the latest SRPE transaction-register month across the tracked phases.",
+                "dataset": "kpi_srpe_sales_units",
+                "sourceId": "srpe_sales",
+                "metrics": [
+                    {"label": "Units Sold (gross)", "field": "latest", "format": "number"},
+                    {"label": "MoM", "field": "period_change", "format": "percent", "signed": True},
+                    {"label": "YoY", "field": "year_change", "format": "percent", "signed": True},
+                ],
+            }
+        )
+    if srpe_sell_through_kpi:
+        cards.append(
+            {
+                "id": "srpe_sell_through_card",
+                "description": "Weighted sell-through across the latest available snapshot for each tracked phase; active units divided by published phase inventory.",
+                "dataset": "kpi_srpe_sell_through",
+                "sourceId": "srpe_sales",
+                "metrics": [
+                    {"label": "Sell-through (%)", "field": "latest", "format": "number"},
+                    {"label": "Phases", "field": "projects", "format": "number"},
+                ],
+            }
+        )
+    if srpe_projects_kpi:
+        cards.append(
+            {
+                "id": "srpe_projects_card",
+                "description": "Explicit SRPE phase-level projects currently linked to listed-company ownership in the pilot registry.",
+                "dataset": "kpi_srpe_projects",
+                "sourceId": "srpe_sales",
+                "metrics": [{"label": "Tracked Phases", "field": "latest", "format": "number"}],
             }
         )
 
@@ -1781,6 +2111,47 @@ def build_artifact(
             }
         )
 
+    if srpe_developer_monthly_rows:
+        charts.append(
+            {
+                "id": "srpe_developer_sales_chart",
+                "title": "SRPE — Top Developers by Attributable First-hand Contract Sales",
+                "subtitle": "Monthly contract sales attributable to the listed-company ownership share; chart shows the three largest developers by cumulative pilot-window sales, in HK$ million.",
+                "type": "line",
+                "intent": "trend",
+                "dataset": "srpe_developer_monthly_sales",
+                "sourceId": "srpe_sales",
+                "encodings": {
+                    "x": {"field": "date", "type": "temporal", "label": "Month"},
+                    "y": {"field": "value", "type": "quantitative", "label": "Attributable sales (HK$m)"},
+                    "color": {"field": "developer", "type": "nominal", "label": "Developer"},
+                },
+                "valueFormat": "number",
+                "layout": "full",
+                "maxRows": 500,
+            }
+        )
+    if srpe_sell_through_rows:
+        charts.append(
+            {
+                "id": "srpe_project_sell_through_chart",
+                "title": "SRPE — Top Project Phases by Sell-through",
+                "subtitle": "Monthly cumulative sell-through based on unique active units; chart shows the three largest phases by cumulative attributable sales, while the table retains all registered phases.",
+                "type": "line",
+                "intent": "trend",
+                "dataset": "srpe_project_sell_through",
+                "sourceId": "srpe_sales",
+                "encodings": {
+                    "x": {"field": "date", "type": "temporal", "label": "Month"},
+                    "y": {"field": "value", "type": "quantitative", "label": "Sell-through (%)"},
+                    "color": {"field": "project_short_name", "type": "nominal", "label": "Project phase"},
+                },
+                "valueFormat": "number",
+                "layout": "full",
+                "maxRows": 500,
+            }
+        )
+
     tables = [
         {
             "id": "source_health_table",
@@ -1951,6 +2322,31 @@ def build_artifact(
             }
         )
 
+    if srpe_latest_project_rows:
+        tables.append(
+            {
+                "id": "srpe_latest_project_snapshot_table",
+                "title": "SRPE — Latest Project Sales Snapshot",
+                "subtitle": "Latest available observation for each explicitly registered phase; ownership-adjusted sales are shown in the KPI and developer chart above.",
+                "dataset": "srpe_latest_project_snapshot",
+                "sourceId": "srpe_sales",
+                "defaultSort": {"field": "sell_through_pct", "direction": "desc"},
+                "density": "dense",
+                "layout": "full",
+                "columns": [
+                    {"field": "developer", "label": "Developer", "type": "text"},
+                    {"field": "project_name", "label": "Project phase", "type": "text"},
+                    {"field": "latest_period", "label": "Latest month", "type": "date"},
+                    {"field": "sales_units_gross", "label": "Gross units (month)", "format": "number"},
+                    {"field": "cumulative_unique_active_units", "label": "Active sold units", "format": "number"},
+                    {"field": "total_residential_properties", "label": "Published inventory", "format": "number"},
+                    {"field": "sell_through_pct", "label": "Sell-through (%)", "format": "number"},
+                    {"field": "weighted_avg_transaction_price_hkd", "label": "Weighted avg price (HK$)", "format": "number"},
+                    {"field": "ownership_pct", "label": "Ownership (%)", "format": "number"},
+                ],
+            }
+        )
+
     blocks = [
         {
             "id": "snapshot_context",
@@ -2030,12 +2426,31 @@ def build_artifact(
         blocks.append({"id": "bd_supply_history_counts_chart_block", "type": "chart", "chartId": "bd_supply_history_counts_chart"})
     if bd_supply_table_rows:
         blocks.append({"id": "bd_supply_detail_block", "type": "table", "tableId": "bd_supply_detail_table"})
-    if new_project_rows:
-        blocks.append({"id": "hse28_new_projects_block", "type": "table", "tableId": "hse28_new_projects_table", "layout": "half"})
+    # The 28Hse catalogue remains in the snapshot as a source-backed lookup
+    # table, but is not rendered on the monitoring page: it is a wide,
+    # non-time-series catalogue and causes the portable mobile layout to grow
+    # horizontally. The charts above and the SRPE project snapshot are the
+    # actionable views for this surface.
     if midland_estate_rows:
         blocks.append({"id": "midland_top_estates_block", "type": "table", "tableId": "midland_top_estates_table", "layout": "half"})
-    if bd_monthly_stats_rows:
-        blocks.append({"id": "bd_monthly_stats_block", "type": "table", "tableId": "bd_monthly_stats_table"})
+    # Keep the raw Buildings Department digest rows in the snapshot for audit,
+    # but do not render this wide scratch table in the portable page. The
+    # project-lifecycle and archive-backed history charts above are the useful
+    # monitoring views; the raw table's long comma-separated values create a
+    # horizontal overflow on the 390px mobile layout.
+
+    if srpe_developer_monthly_rows:
+        blocks.append(
+            {
+                "id": "srpe_developer_signals_section",
+                "type": "markdown",
+                "body": "## Residential developer sales signals\n\nSRPE phase-level transaction registers are linked to listed developers through the explicit ownership registry. These are contract-sales signals, not booked revenue or cash receipts.",
+            }
+        )
+        blocks.append({"id": "srpe_developer_sales_chart_block", "type": "chart", "chartId": "srpe_developer_sales_chart"})
+        blocks.append({"id": "srpe_project_sell_through_chart_block", "type": "chart", "chartId": "srpe_project_sell_through_chart"})
+    if srpe_latest_project_rows:
+        blocks.append({"id": "srpe_latest_project_snapshot_block", "type": "table", "tableId": "srpe_latest_project_snapshot_table"})
 
     blocks.extend([
         {"id": "source_health_table", "type": "table", "tableId": "source_health_table"},
@@ -2048,7 +2463,7 @@ def build_artifact(
             "version": 1,
             "surface": "dashboard",
             "title": "Hong Kong Real Estate Monitor",
-            "description": "A source-backed snapshot of residential price, rent, and market confidence measures.",
+            "description": "A source-backed snapshot of residential price, rent, market confidence, supply, financing, and first-hand developer sales signals.",
             "generatedAt": generated_at,
             "cards": cards,
             "charts": charts,
@@ -2113,6 +2528,16 @@ def _load_midland_fallback_from_committed_artifact(dataset_key: str, value_colum
     return pd.DataFrame({"date": [r["date"] for r in rows], value_column: [r["value"] for r in rows]})
 
 
+def _load_dataset_from_committed_artifact(dataset_key: str) -> pd.DataFrame:
+    """Load an optional dataset from the last committed English artifact."""
+    try:
+        data = json.loads(_COMMITTED_ARTIFACT_PATH.read_text(encoding="utf-8"))
+        rows = data["snapshot"]["datasets"][dataset_key]
+    except (FileNotFoundError, json.JSONDecodeError, KeyError, TypeError):
+        return pd.DataFrame()
+    return pd.DataFrame(rows) if isinstance(rows, list) else pd.DataFrame()
+
+
 def _load_normalized_or_fetch(dataset_name: str, label: str, fetch_fn) -> pd.DataFrame:
     """Prefer durable normalized output, with a bounded live-fetch fallback."""
     normalized = load_latest_normalized(dataset_name)
@@ -2163,6 +2588,13 @@ def fetch_live_frames() -> dict[str, pd.DataFrame]:
         if not frame.empty:
             agency_frames.append(frame)
     unified_tx = deduplicate_agency_transactions(agency_frames) if agency_frames else pd.DataFrame()
+    srpe_signals = load_latest_normalized("srpe_pilot_developer_monthly_signals")
+    if srpe_signals.empty:
+        # The daily dashboard workflow intentionally does not re-download the
+        # bounded SRPE PDF pilot. Preserve the last validated signal dataset
+        # through the committed artifact until the separate SRPE ingestion job
+        # writes a newer normalized snapshot.
+        srpe_signals = _load_dataset_from_committed_artifact("srpe_project_signal_history")
     return {
         "ccl": fetch_centaline_ccl(),
         "mhpi": mhpi,
@@ -2177,6 +2609,7 @@ def fetch_live_frames() -> dict[str, pd.DataFrame]:
         "rvd_retail": rvd_retail,
         "midland_estates": estates,
         "unified_tx": unified_tx,
+        "srpe_signals": srpe_signals,
         "bd_supply_history": load_latest_normalized("bd_supply_pipeline_history"),
     }
 
@@ -2190,6 +2623,7 @@ def main() -> int:
     live_frames = fetch_live_frames()
     unified_tx = live_frames.pop("unified_tx", pd.DataFrame())
     bd_supply_history = live_frames.pop("bd_supply_history", pd.DataFrame())
+    srpe_signals = live_frames.pop("srpe_signals", pd.DataFrame())
     new_series = {
         key: live_frames.pop(key, pd.DataFrame())
         for key in ("centaline_cci", "centaline_cri", "centaline_cri_yield", "centaline_csi", "rvd_office", "rvd_retail")
@@ -2199,6 +2633,7 @@ def main() -> int:
         raw_unified_tx=unified_tx,
         raw_bd_supply_history=bd_supply_history,
         raw_new_series=new_series,
+        raw_srpe_signals=srpe_signals,
     )
     _atomic_json(args.output, artifact)
     _atomic_json(args.status_output, status)

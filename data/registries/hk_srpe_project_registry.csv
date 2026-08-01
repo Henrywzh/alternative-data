@@ -1,0 +1,8 @@
+project_id,stock_code,ownership_pct,srpe_dev_id,srpe_development_id,development_name,phase_name,phase_no,development_address,pilot_group,source_document,last_verified_date
+grand-victoria-phase-1,0083,22.5,7405,61337,GRAND VICTORIA,GRAND VICTORIA I,1,6 LAI YING STREET,core_pilot,Sino Land Annual Report 2024; SRPE manifest,2026-08-01
+novo-land-phase-2a,0016,100.0,9146,11358,NOVO LAND,NOVO LAND,PHASE 2A,8 YAN PO ROAD,core_pilot,SHKP Annual Report 2024/25; SRPE manifest,2026-08-01
+novo-land-phase-3b,0016,100.0,10045,38009,NOVO LAND,NOVO LAND,PHASE 3B,8 YAN PO ROAD,core_pilot,SHKP Annual Report 2024/25; SRPE manifest,2026-08-01
+park-yoho-napoli,0016,100.0,5505,48150,PARK VISTA DEVELOPMENT,PARK YOHO NAPOLI,PHASE 2B,18 CASTLE PEAK ROAD TAM MI,core_pilot,SHKP Annual Report 2015/16; SRPE manifest,2026-08-01
+the-henley-ii,0012,100.0,8325,14476,THE HENLEY,THE HENLEY II,PHASE 2 OF THE HENLEY,7 MUK TAI STREET,core_pilot,Henderson Annual Report 2024; SRPE manifest,2026-08-01
+pavilia-farm-iii,0017,50.0,7705,7705,THE PAVILIA FARM,THE PAVILIA FARM III,3,18 CHE KUNG MIU ROAD,core_pilot,New World Annual Report 2024; SRPE manifest,2026-08-01
+the-southside-blue-coast,0066,100.0,9827,9827,THE SOUTHSIDE,BLUE COAST,3B,11 HEUNG YIP ROAD,optional_mtr_control,MTR Annual Report 2024; SRPE manifest,2026-08-01

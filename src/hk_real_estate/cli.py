@@ -1,6 +1,7 @@
 import argparse
 import json
 import sys
+from pathlib import Path
 
 from .pipeline import (
     run_group_a_pipeline,
@@ -16,6 +17,7 @@ from .pipeline import (
     run_midland_snapshot_pipeline,
     run_policy_event_research_pipeline,
 )
+from .srpe_pilot import run_srpe_pilot, SRPE_PROJECT_REGISTRY_PATH
 
 def main():
     parser = argparse.ArgumentParser(description="HK Real Estate Alternative Data Pipeline CLI")
@@ -33,6 +35,26 @@ def main():
     subparsers.add_parser("run-rvd-commercial", help="Run Tranche 3 RVD office/retail ingestion only")
     subparsers.add_parser("run-midland-snapshots", help="Run Tranche 4 Midland snapshot ingestion only")
     subparsers.add_parser("run-policy-events", help="Run Tranche 5 policy-source and registry research contracts")
+    srpe_parser = subparsers.add_parser(
+        "run-srpe-pilot",
+        help="Run bounded SRPE first-hand residential sales/price-list backfill",
+    )
+    srpe_parser.add_argument(
+        "--projects",
+        nargs="+",
+        help="Stable project_id values; omit to use the registry's core_pilot group",
+    )
+    srpe_parser.add_argument(
+        "--pilot-group",
+        default="core_pilot",
+        help="Registry pilot_group used when --projects is omitted",
+    )
+    srpe_parser.add_argument("--registry-path", type=Path, default=SRPE_PROJECT_REGISTRY_PATH)
+    srpe_parser.add_argument("--since", help="Minimum PASP/price-list date, YYYY-MM-DD")
+    srpe_parser.add_argument("--until", help="Maximum PASP/price-list date, YYYY-MM-DD")
+    srpe_parser.add_argument("--price-selection", choices=("first_latest", "all"), default="first_latest")
+    srpe_parser.add_argument("--max-price-documents", type=int, default=0)
+    srpe_parser.add_argument("--request-delay", type=float, default=0.2)
 
     args = parser.parse_args()
 
@@ -73,6 +95,18 @@ def main():
         elif args.command == "run-policy-events":
             results = run_policy_event_research_pipeline()
             print("\nPolicy/event Tranche 5 ingestion completed:\n" + json.dumps(results, indent=2))
+        elif args.command == "run-srpe-pilot":
+            results = run_srpe_pilot(
+                registry_path=args.registry_path,
+                projects=args.projects,
+                pilot_group=args.pilot_group,
+                since=args.since,
+                until=args.until,
+                price_selection=args.price_selection,
+                max_price_documents=args.max_price_documents,
+                request_delay=args.request_delay,
+            )
+            print("\nSRPE bounded pilot completed:\n" + json.dumps(results, indent=2, default=str))
         else:
             parser.print_help()
     except Exception as e:
