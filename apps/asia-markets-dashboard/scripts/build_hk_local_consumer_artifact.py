@@ -36,6 +36,12 @@ from src.hk_local_consumer.sources.sge_gold import fetch_sge_gold_benchmark
 from src.hk_local_consumer.sources.hk_valuation import fetch_hk_consumer_valuations
 from src.hk_local_consumer.sources.cnsd_retail import fetch_cnsd_retail_sales
 from src.hk_local_consumer.sources.censtatd_restaurant import fetch_censtatd_restaurant_survey
+from src.hk_local_consumer.sources.censtatd_cpi import fetch_cpi_by_category, fetch_cpi_headline
+from src.hk_local_consumer.sources.fehd_licensed_premises import (
+    compute_density_by_district,
+    diff_against_previous_snapshot,
+    fetch_fehd_licensed_premises,
+)
 from src.hk_local_consumer.sources.immigration_flow import fetch_immigration_flow
 from src.hk_local_consumer.sources.weather_demand_drivers import fetch_weather_demand_drivers
 from src.hk_local_consumer.sources.consumer_council_oilprice import (
@@ -71,6 +77,14 @@ def _load_latest_normalized(dataset: str) -> pd.DataFrame:
     candidates = sorted((NORMALIZED_DIR / dataset).glob(f"*/{dataset}.parquet"), key=lambda path: path.stat().st_mtime)
     if not candidates:
         raise FileNotFoundError(f"No local normalized cache exists for {dataset}; run HK Local Consumer ingestion first.")
+    return pd.read_parquet(candidates[-1])
+
+
+def _load_latest_normalized_optional(dataset: str) -> pd.DataFrame | None:
+    """Same as _load_latest_normalized, but None (not an exception) when no prior run exists yet."""
+    candidates = sorted((NORMALIZED_DIR / dataset).glob(f"*/{dataset}.parquet"), key=lambda path: path.stat().st_mtime)
+    if not candidates:
+        return None
     return pd.read_parquet(candidates[-1])
 
 
@@ -183,6 +197,36 @@ PUBLIC_SOURCES = {
             "metric_definitions": [
                 "Purchases are only published sector-wide, not broken out by restaurant type.",
                 "Quarter and year movements are latest divided by the prior quarter or the observation four quarters earlier, minus one.",
+            ],
+        },
+    },
+    "fehd_licensed_premises": {
+        "id": "fehd_licensed_premises",
+        "label": "FEHD Licensed Restaurant Directory",
+        "href": "https://www.fehd.gov.hk/english/licensing/license/text/LP_Restaurants_EN.XML",
+        "query": {
+            "engine": "official XML",
+            "url": "https://www.fehd.gov.hk/english/licensing/license/text/LP_Restaurants_EN.XML",
+            "language": "XML",
+            "description": "Daily-regenerated directory of all licensed restaurants (General/Light Refreshment/Marine) by district.",
+            "metric_definitions": [
+                "This is a current-state snapshot only -- the source has no issue-date or status-history field.",
+                "Opened/closed counts compare this run's licence numbers against the most recently stored prior snapshot, and are unavailable until at least two runs have been persisted.",
+            ],
+        },
+    },
+    "censtatd_cpi": {
+        "id": "censtatd_cpi",
+        "label": "C&SD Composite Consumer Price Index",
+        "href": "https://www.censtatd.gov.hk/en/web_table.html?id=510-60001",
+        "query": {
+            "engine": "official CSV",
+            "url": "https://www.censtatd.gov.hk/data/MDT_54_510-60001_CC_CM_1920_Raw_1dp_idx_n.csv",
+            "language": "CSV",
+            "description": "Monthly headline Composite CPI (base 2019/20=100) since October 1974 (table 510-60001); COICOP category sub-indices from table 510-60003, monthly only since 2005.",
+            "metric_definitions": [
+                "Category sub-indices share the headline table's index basis but only start in 2005 -- thirty years shorter history.",
+                "Month and year movements are latest divided by the prior month or the observation twelve months earlier, minus one.",
             ],
         },
     },
@@ -714,6 +758,9 @@ def build_artifact(
     raw_store_footprint: pd.DataFrame | None = None,
     raw_pricewatch_summary: pd.DataFrame | None = None,
     raw_pricewatch_index: pd.DataFrame | None = None,
+    raw_cpi_headline: pd.DataFrame | None = None,
+    raw_cpi_category: pd.DataFrame | None = None,
+    raw_fehd: pd.DataFrame | None = None,
     *,
     now: datetime | None = None,
     afcd_history_path: Path = AFCD_CATEGORY_HISTORY_PATH,
@@ -728,6 +775,12 @@ def build_artifact(
         raw_weather = fetch_weather_demand_drivers()
     if raw_store_footprint is None:
         raw_store_footprint = fetch_store_footprint_snapshot()
+    if raw_cpi_headline is None:
+        raw_cpi_headline = fetch_cpi_headline()
+    if raw_cpi_category is None:
+        raw_cpi_category = fetch_cpi_by_category()
+    if raw_fehd is None:
+        raw_fehd = fetch_fehd_licensed_premises()
 
     gold = _validate_gold(raw_gold, now)
     afcd = _validate_afcd(raw_afcd)
@@ -760,6 +813,62 @@ def build_artifact(
     # `date` keeps every tick year-unambiguous.
     retail_total["month"] = retail_total["date"].dt.strftime("%Y-%m")
     retail_kpi = _comparison_row(retail_total, "sales_value_index", now)
+
+    cpi_headline_rows: list[dict[str, Any]] = []
+    cpi_category_rows: list[dict[str, Any]] = []
+    cpi_kpi: dict[str, Any] | None = None
+    if not raw_cpi_headline.empty:
+        cpi_headline = raw_cpi_headline.copy()
+        cpi_headline["date"] = pd.to_datetime(cpi_headline["date"])
+        cpi_headline["month"] = cpi_headline["date"].dt.strftime("%Y-%m")
+        cpi_kpi = _comparison_row(cpi_headline, "value", now)
+        cpi_headline_rows = [
+            {"date": row["month"], "value": float(row["value"]), "is_provisional": bool(row["is_provisional"])}
+            for _, row in cpi_headline.iterrows()
+        ]
+    # Chart only the three COICOP categories most relevant alongside this
+    # sector's existing retail-sales/restaurant/food-price data -- the full
+    # 13-category breakdown is a lot more than the mobile-viewport chart
+    # series budget (confirmed elsewhere in this project's builders) can
+    # take in one chart; these three are also the headline categories most
+    # commonly quoted alongside CPI itself.
+    # Short display labels for the legend -- confirmed by direct portable-
+    # packaging testing that the full COICOP name ("Housing, water,
+    # electricity, gas and other fuels", 50 chars) alone reproduces the
+    # mobile-viewport horizontal_overflow failure at 390px (isolated from
+    # every other chart on this page, which all pass on their own); this is
+    # a legend-label-length variant of the same class of bug as the
+    # >3-series cap, not a series-count issue here. Same fix pattern this
+    # project already uses for AFCD's category_short labels.
+    _CPI_CHART_CATEGORIES = {
+        "Food and non-alcoholic beverages": "Food",
+        "Housing, water, electricity, gas and other fuels": "Housing & Utilities",
+        "Transport": "Transport",
+    }
+    if not raw_cpi_category.empty:
+        cpi_category = raw_cpi_category[raw_cpi_category["category"].isin(_CPI_CHART_CATEGORIES)].copy()
+        cpi_category["month"] = pd.to_datetime(cpi_category["date"]).dt.strftime("%Y-%m")
+        cpi_category["series_label"] = cpi_category["category"].map(_CPI_CHART_CATEGORIES)
+        cpi_category_rows = [
+            {"date": row["month"], "series": row["series_label"], "value": float(row["value"])}
+            for _, row in cpi_category.sort_values(["category", "date"]).iterrows()
+        ]
+
+    fehd_district_rows: list[dict[str, Any]] = []
+    fehd_kpi: dict[str, Any] | None = None
+    fehd_diff_rows: list[dict[str, Any]] = []
+    if not raw_fehd.empty:
+        fehd_density = compute_density_by_district(raw_fehd)
+        district_totals = fehd_density.groupby("district_name", as_index=False)["count"].sum()
+        district_totals = district_totals.sort_values("count", ascending=False).reset_index(drop=True)
+        fehd_district_rows = _records(district_totals, ["district_name", "count"])
+        fehd_kpi = {
+            "latest": int(raw_fehd["licno"].nunique()),
+            "observation_date": str(raw_fehd["generation_date"].iloc[0]),
+        }
+        previous_fehd = _load_latest_normalized_optional("fehd_licensed_premises_daily")
+        fehd_diff = diff_against_previous_snapshot(raw_fehd, previous_fehd)
+        fehd_diff_rows = _records(fehd_diff, list(fehd_diff.columns)) if not fehd_diff.empty else []
     retail_latest_by_category = retail.sort_values("date").groupby("category", as_index=False).tail(1)
     retail_category_snapshot = retail_latest_by_category[
         retail_latest_by_category["category"].isin(TOP_LEVEL_RETAIL_CATEGORIES + ["All retail outlet"])
@@ -1107,6 +1216,12 @@ def build_artifact(
         "store_footprint_chart": _records(store_footprint, ["company", "total_stores"]),
         "consumer_council_pricewatch_archive": pricewatch_archive,
         "consumer_council_pricewatch_matched_index": pricewatch_index_rows,
+        "kpi_cpi": [cpi_kpi] if cpi_kpi is not None else [],
+        "censtatd_cpi_headline_history": cpi_headline_rows,
+        "censtatd_cpi_by_category_history": cpi_category_rows,
+        "kpi_fehd": [fehd_kpi] if fehd_kpi is not None else [],
+        "fehd_district_density": fehd_district_rows,
+        "fehd_opened_closed": fehd_diff_rows,
         "source_health": health,
         "source_coverage_active": coverage_active,
         "source_coverage_planned": coverage_planned,
@@ -1207,6 +1322,30 @@ def build_artifact(
             ],
         }
     )
+    if cpi_kpi is not None:
+        cards.append(
+            {
+                "id": "cpi_card",
+                "description": "Headline Composite CPI (base 2019/20=100); month and year-on-year movements.",
+                "dataset": "kpi_cpi",
+                "sourceId": "censtatd_cpi",
+                "metrics": [
+                    {"label": "Composite CPI", "field": "latest", "format": "number"},
+                    {"label": "MoM", "field": "period_change", "format": "percent", "signed": True},
+                    {"label": "YoY", "field": "year_change", "format": "percent", "signed": True},
+                ],
+            }
+        )
+    if fehd_kpi is not None:
+        cards.append(
+            {
+                "id": "fehd_card",
+                "description": "Total licensed restaurants (General/Light Refreshment/Marine) territory-wide, as of today's FEHD directory snapshot.",
+                "dataset": "kpi_fehd",
+                "sourceId": "fehd_licensed_premises",
+                "metrics": [{"label": "Licensed restaurants", "field": "latest", "format": "number"}],
+            }
+        )
     cards.append(
         {
             "id": "restaurant_card",
@@ -1425,6 +1564,52 @@ def build_artifact(
                 "y": {"field": "yoy_change", "type": "quantitative", "label": "YoY change"},
             },
             "valueFormat": "percent",
+            "layout": "half",
+        },
+        {
+            "id": "cpi_trend",
+            "title": "Composite Consumer Price Index",
+            "subtitle": "Monthly headline CPI (base 2019/20=100), full published history since October 1974.",
+            "type": "line",
+            "intent": "trend",
+            "dataset": "censtatd_cpi_headline_history",
+            "sourceId": "censtatd_cpi",
+            "encodings": {
+                "x": {"field": "date", "type": "temporal", "label": "Month"},
+                "y": {"field": "value", "type": "quantitative", "label": "Index (2019/20=100)"},
+            },
+            "valueFormat": "number",
+            "layout": "half",
+        },
+        {
+            "id": "cpi_by_category_chart",
+            "title": "CPI by category — Food, Housing & Transport",
+            "subtitle": "Monthly sub-indices since 2005 (shorter history than the headline CPI table).",
+            "type": "line",
+            "intent": "trend",
+            "dataset": "censtatd_cpi_by_category_history",
+            "sourceId": "censtatd_cpi",
+            "encodings": {
+                "x": {"field": "date", "type": "temporal", "label": "Month"},
+                "y": {"field": "value", "type": "quantitative", "label": "Index (2019/20=100)"},
+                "color": {"field": "series", "type": "nominal", "label": "Category"},
+            },
+            "valueFormat": "number",
+            "layout": "half",
+        },
+        {
+            "id": "fehd_district_chart",
+            "title": "Licensed restaurants by district",
+            "subtitle": "Today's FEHD directory snapshot; all licence types combined.",
+            "type": "horizontalBar",
+            "intent": "comparison",
+            "dataset": "fehd_district_density",
+            "sourceId": "fehd_licensed_premises",
+            "encodings": {
+                "x": {"field": "district_name", "type": "nominal", "label": "District"},
+                "y": {"field": "count", "type": "quantitative", "label": "Licensed restaurants"},
+            },
+            "valueFormat": "number",
             "layout": "half",
         },
         {
@@ -1986,6 +2171,8 @@ def build_artifact(
                 )},
                 {"id": "market_pulse_3", "type": "metric-strip", "cardIds": (
                     ["retail_card", "restaurant_card"]
+                    + (["cpi_card"] if cpi_kpi is not None else [])
+                    + (["fehd_card"] if fehd_kpi is not None else [])
                     + (["store_footprint_card"] if not store_footprint.empty else [])
                 )},
                 {"id": "immigration_chart", "type": "chart", "chartId": "immigration_trend"},
@@ -2040,6 +2227,23 @@ def build_artifact(
                 ),
                 {"id": "afcd_table", "type": "table", "tableId": "afcd_commodity_table"},
                 {"id": "valuation_table_block", "type": "table", "tableId": "valuation_table"},
+                *(
+                    [
+                        {"id": "cpi_trend_chart_block", "type": "chart", "chartId": "cpi_trend", "layout": "half"},
+                        {"id": "cpi_by_category_chart_block", "type": "chart", "chartId": "cpi_by_category_chart", "layout": "half"},
+                    ]
+                    if cpi_kpi is not None
+                    else []
+                ),
+                # No block for fehd_opened_closed yet: it's a real, correctly
+                # wired dataset, but is empty until a second pipeline run has
+                # been persisted (see diff_against_previous_snapshot's
+                # docstring) -- nothing to render on day one specifically.
+                *(
+                    [{"id": "fehd_district_chart_block", "type": "chart", "chartId": "fehd_district_chart"}]
+                    if fehd_district_rows
+                    else []
+                ),
                 {"id": "retail_trend_chart", "type": "chart", "chartId": "retail_trend"},
                 {"id": "retail_category_chart_block", "type": "chart", "chartId": "retail_category_chart", "layout": "half"},
                 {"id": "restaurant_chart_block", "type": "chart", "chartId": "restaurant_chart", "layout": "half"},

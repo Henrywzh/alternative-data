@@ -206,6 +206,30 @@ const BD_PROPERTY_CATEGORY_ZH = {
   "Non-domestic": "非住宅",
   Unknown: "未分类（来源未提供用途）",
 };
+// hk-local-consumer: fehd_district_density's district_name (FEHD's own
+// 19-district code list, per LP_Restaurants_EN.XML's <DIST_CODE> table).
+const FEHD_DISTRICT_ZH = {
+  Eastern: "東區",
+  "Wan Chai": "灣仔",
+  Southern: "南區",
+  Islands: "離島",
+  "Central/Western": "中西區",
+  "Food Truck": "美食車",
+  "Kwun Tong": "觀塘",
+  "Kowloon City": "九龍城",
+  "Wong Tai Sin": "黃大仙",
+  "Yau Tsim": "油尖",
+  "Mong Kok": "旺角",
+  "Sham Shui Po": "深水埗",
+  "Kwai Tsing": "葵青",
+  "Tsuen Wan": "荃灣",
+  "Tuen Mun": "屯門",
+  "Yuen Long": "元朗",
+  "Tai Po": "大埔",
+  North: "北區",
+  "Sha Tin": "沙田",
+  "Sai Kung": "西貢",
+};
 // hk-real-estate: agency_transactions_pulse_table's primary_source_agency.
 const AGENCY_NAME_ZH = {
   "Centaline Property Agency": "中原地产",
@@ -507,6 +531,7 @@ const HK_LOCAL_CONSUMER_ZH = {
     median_pe_card: { description: "本地消费观察名单各公司历史市盈率的中位数。", metricLabels: ["市盈率中位数 (TTM)"] },
     retail_card: { description: "政府统计处零售销售价值指数（全部零售店铺）；月环比与同比变动。", metricLabels: ["零售销售指数", "月环比", "同比"] },
     cpi_card: { description: "综合消费物价指数（2019/20年基期＝100）；月环比与同比变动。", metricLabels: ["综合消费物价指数", "月环比", "同比"] },
+    fehd_card: { description: "食物环境卫生署最新食肆牌照名录快照：全港持牌食肆（普通食肆／小食食肆／海上食肆）总数。", metricLabels: ["持牌食肆总数"] },
     restaurant_card: { description: "全行业季度餐饮收益（百万港元）；季环比与同比变动。", metricLabels: ["餐饮收益 (百万港元)", "季环比", "同比"] },
     store_footprint_card: { description: "11家香港上市零售、珠宝、餐饮及消费品公司的门店/网点数量追踪总数。", metricLabels: ["已追踪网点总数"] },
   },
@@ -520,6 +545,7 @@ const HK_LOCAL_CONSUMER_ZH = {
     retail_trend: ["零售销售价值指数（全部店铺）", "政府统计处月度价值指数，完整已发布历史。", "月份", "价值指数"],
     cpi_trend: ["综合消费物价指数", "月度综合消费物价指数（2019/20年基期＝100），1974年10月至今完整已发布历史。", "月份", "指数 (2019/20＝100)"],
     cpi_by_category_chart: ["消费物价指数按类别 — 食品、房屋与交通", "2005年至今的月度分类指数（历史长度较综合指数短）。", "月份", "指数 (2019/20＝100)", "类别"],
+    fehd_district_chart: ["各区持牌食肆数目", "食环署今日食肆牌照名录快照；已合并全部牌照类型。", "地区", "持牌食肆数目"],
     retail_category_chart: ["零售销售价值指数按类别", "最新发布月份，按零售店铺类型划分。", "类别", "价值指数"],
     restaurant_trend: ["餐饮收益（全部食肆）", "季度全行业收益，百万港元，完整已发布历史。", "季度", "百万港元"],
     restaurant_chart: ["餐饮收益按类型", "最新发布季度，百万港元。", "食肆类型", "百万港元"],
@@ -620,6 +646,7 @@ const HK_LOCAL_CONSUMER_ZH = {
     hk_valuation: "百度股市通香港股票估值",
     cnsd_retail: "政府统计处零售销售价值/销量指数",
     censtatd_cpi: "政府统计处综合消费物价指数",
+    fehd_licensed_premises: "食物环境卫生署持牌食肆名录",
     censtatd_restaurant: "政府统计处季度餐饮收益及采购调查",
     immigration_flow: "入境事务处每日出入境旅客流量统计",
     weather_demand_drivers: "香港天文台警告数据库 & FRED 汇率",
@@ -650,9 +677,12 @@ const HK_LOCAL_CONSUMER_ZH = {
       series: {
         "Food and non-alcoholic beverages": "食品及非酒精饮品",
         "Housing, water, electricity, gas and other fuels": "房屋、水电煤及其他燃料",
+        Food: "食品及非酒精饮品",
+        "Housing & Utilities": "房屋、水电煤及其他燃料",
         "Transport": "交通",
       },
     },
+    fehd_district_density: { district_name: FEHD_DISTRICT_ZH },
   },
 };
 
@@ -1556,6 +1586,7 @@ const HK_POPULATION_MIGRATION_ZH = {
     kpi_net_mov: { description: "最新半年度净人口移动（单程证持有人及其他）。", metricLabels: ["净人口移动 (千人)"] },
     kpi_mpfa_claims: { description: "最新季度因永久离开香港而提取的强积金金额。", metricLabels: ["季度强积金永久离港申索金额 (百万港元)"] },
     kpi_ugc_students: { description: "最新学年教资会资助课程内地学生人数。", metricLabels: ["在港大学内地学生人数"] },
+    kpi_visitor_arrivals: { description: "最新发布月份，全部地区访客抵港人次总和。", metricLabels: ["访客抵港总人次"] },
   },
   charts: {
     immd_net_flow_chart: ["入境处高频出入境净流量 (日度)", "香港居民净流出/返回 vs 内地访客净留存。", "日期", "净人数"],
@@ -1564,6 +1595,7 @@ const HK_POPULATION_MIGRATION_ZH = {
     mpfa_claims_count_chart: ["积金局季度永久离港申索宗数", "永久离港强积金申索宗数，与提取金额分开显示。", "季度", "宗数"],
     ugc_students_chart: ["香港大学内地及其他非本地学生人数", "教资会资助课程的学年度在读学生人数。", "学年度", "学生人数"],
     td_cross_border_chart: ["运输署大湾区跨境车流与高铁客运量", "港珠澳大桥“港车北上”通关车辆数与高铁西九龙站客运量。", "月份", "人次 / 车辆数"],
+    visitor_arrivals_chart: ["访客抵港人次 — 内地 vs 世界其他地区", "按地区划分的月度访客抵港人次，归纳为内地与其他地区合计两个系列。", "月份", "访客人次", "地区"],
   },
   tables: {},
   dataLabels: {
@@ -1579,6 +1611,9 @@ const HK_POPULATION_MIGRATION_ZH = {
     td_cross_border_comparison_history: {
       series: { "Northbound HK Vehicles": "港车北上车辆", "Express Rail Passengers": "高铁西九龙客运量" },
     },
+    visitor_arrivals_mainland_vs_row: {
+      series: { "Mainland China": "中国内地", "Rest of World": "世界其他地区" },
+    },
   },
   sources: {
     immd: "香港入境事务处每日出入境旅客流量",
@@ -1586,6 +1621,7 @@ const HK_POPULATION_MIGRATION_ZH = {
     mpfa: "积金局季度统计数字",
     ugc: "大学教育资助委员会非本地生统计",
     td: "运输署月度交通统计 Digest",
+    visitor_arrivals: "政府统计处访客抵港人次统计（按地区）",
   },
   snapshotBody: (artifact) =>
     `**数据快照：** \`${artifact.package_info.snapshotId}\` · 生成于 ${artifact.manifest.generatedAt}。这是已发布快照，不是实时连接。`,
