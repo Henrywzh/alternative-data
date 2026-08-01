@@ -28,9 +28,11 @@ from semiconductor_memory_data.sources.config import AI_DEMAND_PPI_WEIGHTS
 from dashboard.theme import (ACCENT, BG, SIDEBAR, CARD, BORDER, TEXT, MUTED, GREEN, RED, YELLOW, GRID, TICK, MODEL_COLORS)
 from dashboard.components import (format_metric, _empty_dataset_frame, _styler_applymap_compat, WEEKLY_MONTHLY_OTHER_PROVIDERS, DAILY_OTHER_PROVIDERS, US_PROVIDER_ORDER, CHINA_PROVIDER_ORDER, order_provider_columns, regroup_provider_pivot_for_display, render_dataset_guard, format_scraped_at_display, dataframe_for_display, make_stacked_bar, make_stacked_area_chart, make_line_chart, kpi_card_html, kpi_grid_html, _top_n_with_others)
 from openrouter_derived_data.metrics import compute_legacy_original_price_series
+from openrouter_derived_data.identity import load_capability_map
 
 
 REVENUE_CACHE_VERSION = "2026-07-01-pricing-perf-v1"
+OPENROUTER_COMPARISON_CACHE_VERSION = "2026-08-02-model-activity-test-run-filter-v1"
 CHANGE_DISPLAY_MIN_PCT = -100.0
 CHANGE_DISPLAY_MAX_PCT = 300.0
 
@@ -117,6 +119,16 @@ def _macro_color(macro_category: str) -> str:
 
 
 _MODEL_DATE_SUFFIX_RE = re.compile(r"-(202[0-9]{5}|\d{4}-\d{2}-\d{2}|\d{2}-\d{2})(?=:|$)")
+
+# These two historical runs were local test scrapes of category-only model
+# activity.  They carry request counts but are not production observations;
+# when merged with the provider fallback they create false April
+# tokens/request spikes.  Keep the guard here until the normalized remote
+# parquet is regenerated, so local and Streamlit Cloud reads behave identically.
+OPENROUTER_MODEL_ACTIVITY_TEST_RUN_IDS = frozenset({
+    "20260416T134419Z-9c52eb4a",
+    "20260424T163607Z-e27b0c04",
+})
 
 
 def _short_model_name(model_slug: str) -> str:
@@ -419,17 +431,28 @@ def compute_openrouter_views(
     result = datasets.get("market_share")
     if result and not result.frame.empty:
         frame = result.frame.copy()
-        frame["week_start_date"] = frame["week_start_date"].astype(str)
         # Company-level displays merge Meta's direct and Llama routes into one
         # origin company while preserving the raw ranking dataset unchanged.
-        frame["entity_id"] = frame["entity_id"].map(canonical_provider_slug)
+        # Sunday and Monday snapshots can represent the same aligned week; use
+        # the canonical snapshot selector so a malformed later copy cannot
+        # create a false near-zero step in the provider chart.
+        canonical_rows = _comparison_weekly_rankings(
+            frame,
+            date_column="week_start_date",
+            entity_column="entity_id",
+            value_column="metric_value",
+            entity_mapper=canonical_provider_slug,
+            sunday_alignment=True,
+            exclude_other_entities=False,
+        )
+        canonical_rows["week_start_date"] = canonical_rows["period_start"].dt.strftime("%Y-%m-%d")
         pivot = (
-            frame.pivot_table(index="week_start_date", columns="entity_id", values="metric_value", aggfunc="sum")
+            canonical_rows.pivot_table(index="week_start_date", columns="entity_id", values="value", aggfunc="sum")
             .fillna(0)
             .sort_index()
         )
         views["market_share"] = {
-            "weeks": sorted(frame["week_start_date"].unique(), reverse=True),
+            "weeks": sorted(canonical_rows["week_start_date"].unique(), reverse=True),
             "pivot_pct_top": _top_n_with_others(pivot, top_n_count=15, exclude_others_named=True, pct=True),
         }
     else:
@@ -501,6 +524,7 @@ def _market_share_weekly_totals(frame: pd.DataFrame) -> pd.Series:
     market["original_week_start_date"] = original_dates.dt.normalize()
     market["week_start_date"] = _align_rankings_week_to_monday(market["week_start_date"].astype(str))
     market["metric_value"] = pd.to_numeric(market["metric_value"], errors="coerce")
+    market["_is_sunday_snapshot"] = market["original_week_start_date"].dt.weekday.eq(6).astype(int)
     market = market.dropna(subset=["original_week_start_date", "week_start_date", "metric_value"])
     if market.empty:
         return pd.Series(dtype="float64", name="market_share")
@@ -526,6 +550,7 @@ def _market_share_weekly_totals(frame: pd.DataFrame) -> pd.Series:
             .agg(
                 metric_value=("metric_value", "sum"),
                 snapshot_rows=("metric_value", "size"),
+                snapshot_sunday_rows=("_is_sunday_snapshot", "sum"),
                 snapshot_at=("_snapshot_at", "max"),
             )
         )
@@ -533,11 +558,12 @@ def _market_share_weekly_totals(frame: pd.DataFrame) -> pd.Series:
             snapshot_dates.groupby(["week_start_date", "_snapshot_id"], as_index=False)
             .agg(
                 snapshot_rows=("snapshot_rows", "sum"),
+                snapshot_sunday_rows=("snapshot_sunday_rows", "sum"),
                 snapshot_at=("snapshot_at", "max"),
             )
             .sort_values(
-                ["week_start_date", "snapshot_rows", "snapshot_at", "_snapshot_id"],
-                ascending=[True, False, False, False],
+                ["week_start_date", "snapshot_rows", "snapshot_sunday_rows", "snapshot_at", "_snapshot_id"],
+                ascending=[True, False, False, False, False],
             )
             .drop_duplicates("week_start_date", keep="first")
         )
@@ -1360,6 +1386,14 @@ def _normalize_explorer_activity(frame: pd.DataFrame, aliases: dict[str, str]) -
     return activity
 
 
+def _drop_known_model_activity_test_rows(frame: pd.DataFrame) -> pd.DataFrame:
+    """Remove the two historical test runs without touching valid category history."""
+    if frame.empty or "source_run_id" not in frame.columns:
+        return frame
+    run_ids = frame["source_run_id"].astype("string")
+    return frame.loc[~run_ids.isin(OPENROUTER_MODEL_ACTIVITY_TEST_RUN_IDS)].copy()
+
+
 def _combine_explorer_activity(provider_activity: pd.DataFrame, model_activity: pd.DataFrame) -> pd.DataFrame:
     """Prefer complete model totals and use provider rows for missing model-days.
 
@@ -1473,7 +1507,10 @@ def build_openrouter_explorer_views(datasets: dict[str, DatasetLoadResult]) -> d
         return result.frame.copy() if result and not result.frame.empty else pd.DataFrame()
 
     provider_activity = _normalize_explorer_activity(dataset_frame("provider_daily_activity"), aliases)
-    model_activity = _normalize_explorer_activity(dataset_frame("openrouter_model_activity"), aliases)
+    model_activity = _normalize_explorer_activity(
+        _drop_known_model_activity_test_rows(dataset_frame("openrouter_model_activity")),
+        aliases,
+    )
     combined_activity = _combine_explorer_activity(provider_activity, model_activity)
     economics = dataset_frame("daily_provider_economics")
     if not economics.empty:
@@ -1930,6 +1967,625 @@ def model_explorer_state(views: dict[str, object], model_id: str) -> dict[str, o
         "apps": apps,
         "total_tokens": float(token_rows["total_tokens"].sum()) if not token_rows.empty else 0.0,
         "total_requests": float(detail_rows["request_count"].sum()) if not detail_rows.empty else 0.0,
+    }
+
+
+# --- OpenRouter comparison view -------------------------------------------------
+# The comparison tab deliberately builds compact long-form frames from the same
+# reconciled inputs as the explorer.  It does not create another stored dataset.
+COMPARISON_METRICS = (
+    "Tokens",
+    "Requests",
+    "Estimated revenue",
+    "Tokens / request",
+    "Realized price",
+)
+COMPARISON_WINDOWS = ("Daily", "7-day avg", "Weekly", "Monthly")
+COMPARISON_REQUEST_INTERPOLATION_CUTOFF = pd.Timestamp("2026-01-01")
+# Model-level provider activity begins mid-week on Jan 16, 2026.  The first
+# comparison bucket is therefore the Jan 12 week; older top-model ranking rows
+# are useful for the catalog history but are not a comparable model-detail
+# series and should not appear in this chart.
+MODEL_DETAIL_WEEKLY_START = pd.Timestamp("2026-01-12")
+
+
+def _comparison_period_start(values: pd.Series, window: str) -> pd.Series:
+    dates = pd.to_datetime(values, errors="coerce").dt.normalize()
+    if window == "Daily":
+        return dates
+    if window == "Monthly":
+        return dates.dt.to_period("M").dt.to_timestamp()
+    return dates - pd.to_timedelta(dates.dt.weekday, unit="D")
+
+
+def _comparison_rolling_7d_frame(frame: pd.DataFrame) -> pd.DataFrame:
+    """Build calendar-day trailing seven-day averages from the daily company frame.
+
+    Volume and revenue metrics use a trailing daily mean. Tokens/request uses
+    the ratio of trailing token and request sums, which keeps it request-weighted
+    instead of averaging noisy daily ratios. Realized price is the trailing mean
+    of the displayed daily realized-price observations.
+    """
+    columns = [
+        "period_start", "entity_id", "Tokens", "Requests", "Estimated revenue",
+        "Tokens / request", "Realized price",
+    ]
+    if frame.empty or not {"period_start", "entity_id"}.issubset(frame.columns):
+        return pd.DataFrame(columns=columns)
+    prepared = frame.copy()
+    prepared["period_start"] = pd.to_datetime(prepared["period_start"], errors="coerce").dt.normalize()
+    prepared["entity_id"] = prepared["entity_id"].astype("string")
+    prepared = prepared.dropna(subset=["period_start", "entity_id"])
+    if prepared.empty:
+        return pd.DataFrame(columns=columns)
+
+    rows: list[pd.DataFrame] = []
+    metric_columns = ["Tokens", "Requests", "Estimated revenue", "Realized price"]
+    for entity_id, group in prepared.groupby("entity_id", sort=False):
+        indexed = (
+            group.sort_values("period_start")
+            .drop_duplicates("period_start", keep="last")
+            .set_index("period_start")
+        )
+        full_index = pd.date_range(indexed.index.min(), indexed.index.max(), freq="D")
+        indexed = indexed.reindex(full_index)
+        rolling = pd.DataFrame(index=full_index)
+        for column in metric_columns:
+            if column in indexed.columns:
+                rolling[column] = pd.to_numeric(indexed[column], errors="coerce").rolling(7, min_periods=1).mean()
+            else:
+                rolling[column] = np.nan
+        token_values = pd.to_numeric(
+            indexed.get("Tokens", pd.Series(np.nan, index=indexed.index)), errors="coerce"
+        )
+        request_values = pd.to_numeric(
+            indexed.get("Requests", pd.Series(np.nan, index=indexed.index)), errors="coerce"
+        )
+        # Tokens and requests do not necessarily start on the same day.  Do
+        # not let token-only days inflate the numerator while the denominator
+        # is still sparse (for example, provider tokens begin before daily
+        # request coverage).  The ratio is valid only on overlapping,
+        # positive-request observations.
+        valid_ratio_days = token_values.notna() & request_values.notna() & request_values.gt(0)
+        token_sum = token_values.where(valid_ratio_days).rolling(7, min_periods=1).sum()
+        request_sum = request_values.where(valid_ratio_days).rolling(7, min_periods=1).sum()
+        rolling["Tokens / request"] = token_sum.div(request_sum.where(request_sum.gt(0)))
+        rolling["period_start"] = full_index
+        rolling["entity_id"] = entity_id
+        rows.append(rolling.reset_index(drop=True))
+    if not rows:
+        return pd.DataFrame(columns=columns)
+    return pd.concat(rows, ignore_index=True).reindex(columns=columns)
+
+
+def _comparison_empty_rows(value_name: str = "value") -> pd.DataFrame:
+    return pd.DataFrame(columns=["period_start", "entity_id", value_name])
+
+
+def _comparison_first_week_coverage(
+    frame: pd.DataFrame,
+    *,
+    date_column: str,
+) -> tuple[pd.Timestamp | None, pd.Timestamp | None, int]:
+    """Return the first observed week, first complete week, and observed days."""
+    if frame.empty or date_column not in frame.columns:
+        return None, None, 0
+    dates = pd.to_datetime(frame[date_column], errors="coerce").dt.normalize().dropna()
+    if dates.empty:
+        return None, None, 0
+    first_date = dates.min()
+    first_week = first_date - pd.Timedelta(days=int(first_date.weekday()))
+    observed_days = int(dates[dates < first_week + pd.Timedelta(days=7)].nunique())
+    first_complete_week = first_week if observed_days >= 7 else first_week + pd.Timedelta(days=7)
+    return first_week, first_complete_week, observed_days
+
+
+def _comparison_periodize(
+    frame: pd.DataFrame,
+    *,
+    date_column: str,
+    entity_column: str = "entity_id",
+    value_column: str = "value",
+    window: str,
+    output_column: str = "value",
+) -> pd.DataFrame:
+    if frame.empty or not {date_column, entity_column, value_column}.issubset(frame.columns):
+        return _comparison_empty_rows(output_column)
+    prepared = frame[[date_column, entity_column, value_column]].copy()
+    prepared["period_start"] = _comparison_period_start(prepared[date_column], window)
+    prepared["entity_id"] = prepared[entity_column].astype("string")
+    prepared[output_column] = pd.to_numeric(prepared[value_column], errors="coerce")
+    prepared = prepared.dropna(subset=["period_start", "entity_id", output_column])
+    if prepared.empty:
+        return _comparison_empty_rows(output_column)
+    return (
+        prepared.groupby(["period_start", "entity_id"], as_index=False)[output_column]
+        .sum(min_count=1)
+        .sort_values(["period_start", "entity_id"])
+    )
+
+
+def _comparison_weekly_rankings(
+    frame: pd.DataFrame,
+    *,
+    date_column: str,
+    entity_column: str,
+    value_column: str,
+    entity_mapper,
+    sunday_alignment: bool = False,
+    exclude_other_entities: bool = True,
+) -> pd.DataFrame:
+    """Select one coherent weekly ranking snapshot per week before aggregating.
+
+    Rankings histories can contain a Sunday and Monday copy of the same bucket,
+    or several scraper runs for one week.  Selecting the most complete/latest
+    snapshot first prevents the comparison from multiplying old token or request
+    history when sources overlap.
+    """
+    if frame.empty or not {date_column, entity_column, value_column}.issubset(frame.columns):
+        return _comparison_empty_rows()
+    work = frame.copy()
+    original = pd.to_datetime(work[date_column], errors="coerce").dt.normalize()
+    work["_original_date"] = original
+    if sunday_alignment:
+        work["period_start"] = pd.to_datetime(
+            _align_rankings_week_to_monday(work[date_column].astype("string")), errors="coerce"
+        )
+    else:
+        work["period_start"] = original - pd.to_timedelta(original.dt.weekday, unit="D")
+    work["entity_id"] = work[entity_column].map(entity_mapper).astype("string")
+    work["value"] = pd.to_numeric(work[value_column], errors="coerce")
+    work = work.dropna(subset=["period_start", "entity_id", "value"])
+    if exclude_other_entities:
+        work = work[~work["entity_id"].str.casefold().isin({"others", "other", "nan", "none"})]
+    if work.empty:
+        return _comparison_empty_rows()
+
+    if "source_run_id" in work.columns:
+        work["_snapshot_id"] = work["source_run_id"].astype("string").fillna("")
+        work["_snapshot_at"] = pd.to_datetime(work.get("scraped_at"), errors="coerce")
+        work["_is_sunday_snapshot"] = work["_original_date"].dt.weekday.eq(6).astype(int)
+        choices = (
+            work.groupby(["period_start", "_snapshot_id"], as_index=False)
+            .agg(
+                _snapshot_rows=("value", "size"),
+                _snapshot_sunday_rows=("_is_sunday_snapshot", "sum"),
+                _snapshot_at=("_snapshot_at", "max"),
+            )
+            .sort_values(
+                ["period_start", "_snapshot_rows", "_snapshot_sunday_rows", "_snapshot_at", "_snapshot_id"],
+                ascending=[True, False, False, False, False],
+            )
+            .drop_duplicates("period_start", keep="first")
+        )
+        work = work.merge(choices[["period_start", "_snapshot_id"]],
+                          on=["period_start", "_snapshot_id"], how="inner")
+
+    if sunday_alignment and not work.empty:
+        work["_is_aligned_monday"] = (
+            work["_original_date"].dt.strftime("%Y-%m-%d")
+            == work["period_start"].dt.strftime("%Y-%m-%d")
+        )
+        preferred_dates = (
+            work.sort_values(["period_start", "_is_aligned_monday", "_original_date"],
+                             ascending=[True, False, False])
+            .drop_duplicates("period_start", keep="first")
+            [["period_start", "_original_date"]]
+        )
+        work = work.merge(preferred_dates, on=["period_start", "_original_date"], how="inner")
+
+    return (
+        work.groupby(["period_start", "entity_id"], as_index=False)["value"]
+        .sum(min_count=1)
+        .sort_values(["period_start", "entity_id"])
+    )
+
+
+def _comparison_merge_sources(
+    legacy: pd.DataFrame,
+    modern: pd.DataFrame,
+    *,
+    prefer_modern: bool,
+) -> pd.DataFrame:
+    """Union two already-aggregated series without adding overlapping rows."""
+    parts: list[pd.DataFrame] = []
+    if not legacy.empty:
+        left = legacy[["period_start", "entity_id", "value"]].copy()
+        left["_priority"] = 1 if not prefer_modern else 0
+        parts.append(left)
+    if not modern.empty:
+        right = modern[["period_start", "entity_id", "value"]].copy()
+        right["_priority"] = 0 if not prefer_modern else 1
+        parts.append(right)
+    if not parts:
+        return _comparison_empty_rows()
+    combined = pd.concat(parts, ignore_index=True)
+    return (
+        combined.sort_values(["period_start", "entity_id", "_priority"])
+        .drop_duplicates(["period_start", "entity_id"], keep="last")
+        .drop(columns="_priority")
+        .sort_values(["period_start", "entity_id"])
+        .reset_index(drop=True)
+    )
+
+
+def _comparison_interpolate_internal_weekly_request_gaps(
+    frame: pd.DataFrame,
+    *,
+    cutoff: pd.Timestamp = COMPARISON_REQUEST_INTERPOLATION_CUTOFF,
+) -> tuple[pd.DataFrame, list[dict[str, object]]]:
+    """Fill only isolated, pre-2026 gaps in the legacy request ranking feed.
+
+    ``provider_weekly_requests`` is a top-10 ranking, so an absent provider is
+    normally a real *coverage* limitation rather than a zero.  The one-week
+    holes below are the narrow exception: when a provider is observed in the
+    adjacent weeks, a midpoint is a useful display estimate.  We keep this
+    transformation in the derived comparison view (the source parquet remains
+    untouched), never extrapolate leading/trailing or multi-week gaps, and
+    return metadata so the UI can label the estimates explicitly.
+    """
+    if frame.empty or not {"period_start", "entity_id", "value"}.issubset(frame.columns):
+        return frame.copy(), []
+
+    prepared = frame[["period_start", "entity_id", "value"]].copy()
+    prepared["period_start"] = pd.to_datetime(prepared["period_start"], errors="coerce").dt.normalize()
+    prepared["entity_id"] = prepared["entity_id"].astype("string")
+    prepared["value"] = pd.to_numeric(prepared["value"], errors="coerce")
+    prepared = prepared.dropna(subset=["period_start", "entity_id", "value"])
+    if prepared.empty:
+        return prepared, []
+
+    additions: list[dict[str, object]] = []
+    for entity_id, group in prepared.groupby("entity_id", sort=False):
+        values = (
+            group.groupby("period_start", as_index=True)["value"]
+            .sum(min_count=1)
+            .sort_index()
+        )
+        if len(values) < 2:
+            continue
+        full_weeks = pd.date_range(values.index.min(), values.index.max(), freq="7D")
+        for period_start in full_weeks.difference(values.index):
+            if period_start >= cutoff:
+                continue
+            previous = period_start - pd.Timedelta(days=7)
+            following = period_start + pd.Timedelta(days=7)
+            # Immediate neighbours are required.  This deliberately excludes
+            # two-or-more-week runs of missing source observations.
+            if previous not in values.index or following not in values.index:
+                continue
+            previous_value = float(values.loc[previous])
+            following_value = float(values.loc[following])
+            estimate = (previous_value + following_value) / 2.0
+            additions.append({
+                "period_start": period_start,
+                "entity_id": entity_id,
+                "value": estimate,
+            })
+
+    if not additions:
+        return prepared.sort_values(["period_start", "entity_id"]).reset_index(drop=True), []
+
+    interpolated = pd.concat([prepared, pd.DataFrame(additions)], ignore_index=True)
+    interpolated = (
+        interpolated.drop_duplicates(["period_start", "entity_id"], keep="first")
+        .sort_values(["period_start", "entity_id"])
+        .reset_index(drop=True)
+    )
+    notes = [
+        {
+            **row,
+            "previous_period": row["period_start"] - pd.Timedelta(days=7),
+            "following_period": row["period_start"] + pd.Timedelta(days=7),
+        }
+        for row in additions
+    ]
+    return interpolated, notes
+
+
+def _comparison_model_activity_requests(model_activity: pd.DataFrame) -> pd.DataFrame:
+    """Return daily request totals, preferring complete `all` rows per model/day."""
+    if model_activity.empty:
+        return _comparison_empty_rows()
+    detail = _drop_identical_route_alias_rows(model_activity.copy())
+    required = {"usage_date_dt", "model_id", "category_slug", "request_count"}
+    if not required.issubset(detail.columns):
+        return _comparison_empty_rows()
+    detail["request_count"] = pd.to_numeric(detail["request_count"], errors="coerce")
+    detail = detail.dropna(subset=["usage_date_dt", "model_id", "request_count"])
+    if detail.empty:
+        return _comparison_empty_rows()
+    detail["_is_complete"] = detail["category_slug"].astype("string").str.casefold().eq("all")
+    keys = detail.loc[detail["_is_complete"], ["usage_date_dt", "model_id"]].drop_duplicates()
+    keys["_has_complete"] = True
+    detail = detail.merge(keys, on=["usage_date_dt", "model_id"], how="left")
+    has_complete = detail["_has_complete"].astype("boolean").fillna(False).astype(bool)
+    selected = detail[(has_complete & detail["_is_complete"]) | ~has_complete].copy()
+    return (
+        selected.groupby(["usage_date_dt", "model_id"], as_index=False)["request_count"]
+        .sum(min_count=1)
+        .rename(columns={"usage_date_dt": "date", "model_id": "entity_id", "request_count": "value"})
+    )
+
+
+def _comparison_score_lookup(datasets: dict[str, DatasetLoadResult], catalog: pd.DataFrame) -> dict[str, dict[str, object]]:
+    result = datasets.get("artificial_analysis_models_daily")
+    if not result or result.frame.empty or catalog.empty:
+        return {}
+    scores = result.frame.copy()
+    scores["as_of_date"] = pd.to_datetime(scores.get("as_of_date"), errors="coerce")
+    scores["intelligence_index"] = pd.to_numeric(scores.get("intelligence_index"), errors="coerce")
+    scores = scores.dropna(subset=["as_of_date", "model_id", "intelligence_index"])
+    if scores.empty:
+        return {}
+    latest_date = scores["as_of_date"].max()
+    latest = scores[scores["as_of_date"].eq(latest_date)].copy()
+    by_aa_id = latest.set_index(latest["model_id"].astype("string"))
+    route_to_aa: dict[str, str] = {}
+    try:
+        capability_map = load_capability_map(Path(__file__).resolve().parents[2])
+        for entry in capability_map.entries:
+            for route in entry.openrouter_routes:
+                route_to_aa[route.model_id] = entry.aa_model_id
+    except (OSError, ValueError):
+        route_to_aa = {}
+
+    lookup: dict[str, dict[str, object]] = {}
+    for model_id in catalog["model_id"].dropna().astype(str).unique():
+        candidates = [model_id, model_id.replace(":free", ""), model_id.replace(":thinking", "")]
+        aa_id = next((route_to_aa.get(candidate) for candidate in candidates if route_to_aa.get(candidate)), None)
+        row = by_aa_id.loc[aa_id] if aa_id is not None and aa_id in by_aa_id.index else None
+        if row is None:
+            continue
+        if isinstance(row, pd.DataFrame):
+            row = row.sort_values("intelligence_index", ascending=False).iloc[0]
+        lookup[model_id] = {
+            "score": float(row["intelligence_index"]),
+            "as_of_date": pd.Timestamp(latest_date),
+            "model_name": str(row.get("model_name", "")),
+            "match_status": "exact curated route",
+        }
+    return lookup
+
+
+def _comparison_metric_frame(
+    tokens: pd.DataFrame,
+    requests: pd.DataFrame,
+    economics: pd.DataFrame,
+) -> pd.DataFrame:
+    columns = ["period_start", "entity_id", "Tokens", "Requests", "Estimated revenue", "Tokens / request", "Realized price"]
+    parts: list[pd.DataFrame] = []
+    for frame, column in ((tokens, "Tokens"), (requests, "Requests")):
+        if not frame.empty:
+            parts.append(frame.rename(columns={"value": column})[["period_start", "entity_id", column]])
+    if not economics.empty:
+        econ = economics.rename(columns={"revenue": "Estimated revenue", "priced_tokens": "_priced_tokens"})
+        parts.append(econ[["period_start", "entity_id", "Estimated revenue", "_priced_tokens"]])
+    if not parts:
+        return pd.DataFrame(columns=columns)
+    merged = parts[0]
+    for part in parts[1:]:
+        merged = merged.merge(part, on=["period_start", "entity_id"], how="outer")
+    if "_priced_tokens" not in merged:
+        merged["_priced_tokens"] = np.nan
+    merged["Tokens / request"] = merged["Tokens"].div(merged["Requests"].where(merged["Requests"].gt(0)))
+    merged["Realized price"] = merged["Estimated revenue"].div(
+        merged["_priced_tokens"].where(merged["_priced_tokens"].gt(0))
+    ).mul(1_000_000)
+    return merged.reindex(columns=columns).sort_values(["period_start", "entity_id"]).reset_index(drop=True)
+
+
+@st.cache_data(ttl=3600, max_entries=8)
+def build_openrouter_comparison_views(
+    datasets: dict[str, DatasetLoadResult],
+    *,
+    cache_version: str = OPENROUTER_COMPARISON_CACHE_VERSION,
+) -> dict[str, object]:
+    """Build compact company/model comparison frames with old/new source precedence."""
+    _ = cache_version
+    explorer = build_openrouter_explorer_views(datasets)
+    aliases = explorer.get("aliases", {})
+
+    def normalize_model(value: object) -> str | None:
+        if value is None or pd.isna(value):
+            return None
+        raw = str(value).strip()
+        mapped = aliases.get(raw)
+        if mapped:
+            return str(mapped)
+        base = re.sub(r":(?:free|thinking|beta|online)$", "", raw)
+        return str(aliases.get(base, raw))
+
+    activity = explorer.get("combined_activity", pd.DataFrame()).copy()
+    if not activity.empty:
+        activity["usage_date_dt"] = pd.to_datetime(activity["usage_date_dt"], errors="coerce").dt.normalize()
+        activity["model_id"] = activity["model_id"].map(normalize_model)
+        activity["company_id"] = activity["model_id"].map(_model_origin_slug)
+        activity["total_tokens"] = pd.to_numeric(activity["total_tokens"], errors="coerce")
+        activity = activity.dropna(subset=["usage_date_dt", "model_id", "total_tokens"])
+
+    provider_activity = explorer.get("provider_activity", pd.DataFrame())
+    provider_first_week, provider_complete_week, provider_first_week_days = _comparison_first_week_coverage(
+        provider_activity,
+        date_column="usage_date_dt",
+    )
+    model_activity = explorer.get("model_activity", pd.DataFrame())
+    complete_model_activity = (
+        model_activity[
+            model_activity.get("category_slug", pd.Series(pd.NA, index=model_activity.index))
+            .astype("string").str.casefold().eq("all")
+        ]
+        if not model_activity.empty else pd.DataFrame()
+    )
+    complete_model_first_date = (
+        pd.to_datetime(complete_model_activity["usage_date_dt"], errors="coerce").dt.normalize().min()
+        if not complete_model_activity.empty else None
+    )
+    complete_model_week = (
+        complete_model_first_date - pd.Timedelta(days=int(complete_model_first_date.weekday()))
+        if complete_model_first_date is not None and pd.notna(complete_model_first_date) else None
+    )
+
+    modern_model_tokens = (
+        activity.groupby(["usage_date_dt", "model_id"], as_index=False)["total_tokens"].sum()
+        .rename(columns={"usage_date_dt": "date", "model_id": "entity_id", "total_tokens": "value"})
+        if not activity.empty else _comparison_empty_rows()
+    )
+    modern_company_tokens = modern_model_tokens.copy()
+    if not modern_company_tokens.empty:
+        modern_company_tokens["entity_id"] = modern_company_tokens["entity_id"].map(_model_origin_slug)
+        modern_company_tokens = modern_company_tokens.groupby(["date", "entity_id"], as_index=False)["value"].sum()
+
+    model_requests_daily = _comparison_model_activity_requests(explorer.get("model_activity", pd.DataFrame()))
+    if not model_requests_daily.empty:
+        model_requests_daily["entity_id"] = model_requests_daily["entity_id"].map(normalize_model)
+        model_requests_daily = model_requests_daily.dropna(subset=["entity_id"])
+    company_requests_daily = model_requests_daily.copy()
+    if not company_requests_daily.empty:
+        company_requests_daily["entity_id"] = company_requests_daily["entity_id"].map(_model_origin_slug)
+        company_requests_daily = company_requests_daily.groupby(["date", "entity_id"], as_index=False)["value"].sum()
+
+    market = datasets.get("market_share")
+    market_frame = market.frame.copy() if market and not market.frame.empty else pd.DataFrame()
+    legacy_company_tokens = _comparison_weekly_rankings(
+        market_frame, date_column="week_start_date", entity_column="entity_id", value_column="metric_value",
+        entity_mapper=lambda value: canonical_provider_slug(value), sunday_alignment=True,
+    )
+    top_models = datasets.get("top_models")
+    top_frame = top_models.frame.copy() if top_models and not top_models.frame.empty else pd.DataFrame()
+    legacy_model_tokens = _comparison_weekly_rankings(
+        top_frame, date_column="week_start_date", entity_column="entity_id", value_column="metric_value",
+        entity_mapper=normalize_model, sunday_alignment=False,
+    )
+    requests = datasets.get("provider_weekly_requests")
+    request_frame = requests.frame.copy() if requests and not requests.frame.empty else pd.DataFrame()
+    legacy_company_requests = _comparison_weekly_rankings(
+        request_frame, date_column="week_start_date", entity_column="entity_id", value_column="metric_value",
+        entity_mapper=lambda value: canonical_provider_slug(value), sunday_alignment=False,
+    )
+
+    economics = explorer.get("economics", pd.DataFrame()).copy()
+    if not economics.empty:
+        economics["date"] = pd.to_datetime(economics.get("usage_date_dt"), errors="coerce").dt.normalize()
+        economics["model_id"] = economics.get("model_permaslug", pd.Series(pd.NA, index=economics.index)).map(normalize_model)
+        economics["company_id"] = economics.get("provider_slug", pd.Series(pd.NA, index=economics.index)).map(canonical_provider_slug)
+        economics["company_id"] = economics["company_id"].fillna(economics["model_id"].map(_model_origin_slug))
+        economics["total_tokens"] = pd.to_numeric(economics.get("total_tokens"), errors="coerce").fillna(0.0)
+        economics["revenue"] = pd.to_numeric(economics.get("estimated_revenue"), errors="coerce")
+        economics["priced_tokens"] = economics["total_tokens"].where(economics["revenue"].notna(), 0.0)
+        economics = economics.dropna(subset=["date", "revenue"])
+    model_econ_daily = (
+        economics.groupby(["date", "model_id"], as_index=False).agg(
+            revenue=("revenue", "sum"), priced_tokens=("priced_tokens", "sum")
+        ).rename(columns={"date": "period_start", "model_id": "entity_id"})
+        if not economics.empty else pd.DataFrame()
+    )
+    company_econ_daily = (
+        economics.groupby(["date", "company_id"], as_index=False).agg(
+            revenue=("revenue", "sum"), priced_tokens=("priced_tokens", "sum")
+        ).rename(columns={"date": "period_start", "company_id": "entity_id"})
+        if not economics.empty else pd.DataFrame()
+    )
+
+    series: dict[str, dict[str, pd.DataFrame]] = {"Companies": {}, "Models": {}}
+    request_interpolations: list[dict[str, object]] = []
+    for entity_type, modern_tokens, legacy_tokens, modern_requests, legacy_requests, econ_daily in (
+        ("Companies", modern_company_tokens, legacy_company_tokens, company_requests_daily, legacy_company_requests, company_econ_daily),
+        ("Models", modern_model_tokens, legacy_model_tokens, model_requests_daily, _comparison_empty_rows(), model_econ_daily),
+    ):
+        _, token_complete_week, _ = _comparison_first_week_coverage(modern_tokens, date_column="date")
+        _, request_complete_week, _ = _comparison_first_week_coverage(modern_requests, date_column="date")
+        _, economics_complete_week, _ = _comparison_first_week_coverage(econ_daily, date_column="period_start")
+        weekly_modern_tokens = _comparison_periodize(modern_tokens, date_column="date", window="Weekly")
+        weekly_modern_requests = _comparison_periodize(modern_requests, date_column="date", window="Weekly")
+        if token_complete_week is not None:
+            weekly_modern_tokens = weekly_modern_tokens[weekly_modern_tokens["period_start"] >= token_complete_week]
+        if request_complete_week is not None:
+            weekly_modern_requests = weekly_modern_requests[weekly_modern_requests["period_start"] >= request_complete_week]
+        weekly_tokens = _comparison_merge_sources(legacy_tokens, weekly_modern_tokens, prefer_modern=True)
+        if entity_type == "Models" and not weekly_tokens.empty:
+            weekly_tokens = weekly_tokens[weekly_tokens["period_start"] >= MODEL_DETAIL_WEEKLY_START].copy()
+        # The legacy company request feed is the longer, stable weekly series;
+        # use newer model-detail requests only after it stops publishing.
+        weekly_requests = _comparison_merge_sources(legacy_requests, weekly_modern_requests, prefer_modern=False)
+        if entity_type == "Companies":
+            weekly_requests, estimates = _comparison_interpolate_internal_weekly_request_gaps(weekly_requests)
+            request_interpolations.extend(estimates)
+        weekly_econ = _comparison_periodize(econ_daily, date_column="period_start", window="Weekly", value_column="revenue", output_column="revenue") if not econ_daily.empty else pd.DataFrame()
+        if not econ_daily.empty:
+            econ_weekly = _comparison_periodize(econ_daily, date_column="period_start", window="Weekly", value_column="revenue", output_column="revenue")
+            priced_weekly = _comparison_periodize(econ_daily, date_column="period_start", window="Weekly", value_column="priced_tokens", output_column="priced_tokens")
+            weekly_econ = econ_weekly.merge(priced_weekly, on=["period_start", "entity_id"], how="outer")
+            if economics_complete_week is not None:
+                weekly_econ = weekly_econ[weekly_econ["period_start"] >= economics_complete_week]
+        else:
+            weekly_econ = pd.DataFrame()
+        daily_tokens = _comparison_periodize(modern_tokens, date_column="date", window="Daily")
+        daily_requests = _comparison_periodize(modern_requests, date_column="date", window="Daily")
+        daily_econ = econ_daily.rename(columns={"date": "period_start"}) if not econ_daily.empty else pd.DataFrame()
+        monthly_tokens = _comparison_periodize(weekly_tokens, date_column="period_start", window="Monthly")
+        monthly_requests = _comparison_periodize(weekly_requests, date_column="period_start", window="Monthly")
+        monthly_econ = _comparison_periodize(weekly_econ, date_column="period_start", window="Monthly", value_column="revenue", output_column="revenue") if not weekly_econ.empty else pd.DataFrame()
+        if not weekly_econ.empty:
+            monthly_priced = _comparison_periodize(weekly_econ, date_column="period_start", window="Monthly", value_column="priced_tokens", output_column="priced_tokens")
+            monthly_econ = monthly_econ.merge(monthly_priced, on=["period_start", "entity_id"], how="outer")
+        series[entity_type]["Weekly"] = _comparison_metric_frame(weekly_tokens, weekly_requests, weekly_econ)
+        series[entity_type]["Daily"] = _comparison_metric_frame(daily_tokens, daily_requests, daily_econ)
+        series[entity_type]["Monthly"] = _comparison_metric_frame(monthly_tokens, monthly_requests, monthly_econ)
+
+    catalog = explorer.get("catalog", pd.DataFrame()).copy()
+    model_ids: set[str] = set(catalog.get("model_id", pd.Series(dtype="string")).dropna().astype(str))
+    for frame in (modern_model_tokens, legacy_model_tokens, model_requests_daily, model_econ_daily):
+        if not frame.empty:
+            model_ids.update(frame["entity_id"].dropna().astype(str))
+    model_ids = {value for value in model_ids if value.casefold() not in {"others", "other"}}
+    catalog_labels = catalog.set_index("model_id")["model_name"].to_dict() if not catalog.empty else {}
+    catalog_companies = catalog.set_index("model_id")["company"].to_dict() if not catalog.empty else {}
+    model_options = pd.DataFrame({"entity_id": sorted(model_ids)})
+    if not model_options.empty:
+        model_options["label"] = model_options["entity_id"].map(catalog_labels).fillna(model_options["entity_id"].map(_short_model_name))
+        model_options["company"] = model_options["entity_id"].map(catalog_companies).fillna(model_options["entity_id"].map(lambda value: _derive_provider_name(value, None)))
+        model_options = model_options.sort_values(["label", "entity_id"]).reset_index(drop=True)
+
+    company_ids: set[str] = set()
+    for frame in (modern_company_tokens, legacy_company_tokens, company_requests_daily, legacy_company_requests, company_econ_daily):
+        if not frame.empty:
+            company_ids.update(frame["entity_id"].dropna().astype(str))
+    company_ids = {value for value in company_ids if value.casefold() not in {"others", "other"}}
+    company_options = pd.DataFrame({"entity_id": sorted(company_ids)})
+    if not company_options.empty:
+        company_options["label"] = company_options["entity_id"].map(lambda value: OPENROUTER_PROVIDER_MAP.get(value, value.replace("-", " ").title()))
+        company_options = company_options.sort_values("label").reset_index(drop=True)
+
+    return {
+        "series": series,
+        "company_options": company_options,
+        "model_options": model_options,
+        "model_scores": _comparison_score_lookup(datasets, catalog),
+        "transition_markers": [
+            marker for marker in [
+                {
+                    "date": provider_first_week,
+                    "label": (
+                        f"Jan 16: provider daily activity starts; this week has {provider_first_week_days}/7 observed days "
+                        "and keeps the complete legacy weekly bucket"
+                    ),
+                    "short_label": "Provider daily starts",
+                } if provider_first_week is not None else None,
+                {
+                    "date": complete_model_week,
+                    "label": "Jun 17: complete model-activity totals begin; earlier model detail is category-level",
+                    "short_label": "Complete model totals",
+                } if complete_model_week is not None else None,
+            ] if marker is not None
+        ],
+        "coverage": {
+            "company_tokens_start": modern_company_tokens["date"].min() if not modern_company_tokens.empty else None,
+            "company_requests_start": company_requests_daily["date"].min() if not company_requests_daily.empty else None,
+            "model_tokens_start": modern_model_tokens["date"].min() if not modern_model_tokens.empty else None,
+            "model_requests_start": model_requests_daily["date"].min() if not model_requests_daily.empty else None,
+        },
+        "request_interpolations": request_interpolations,
     }
 
 
@@ -3246,6 +3902,31 @@ def _context_length_frame(datasets: dict[str, DatasetLoadResult]) -> pd.DataFram
     return frame[frame["context_length_bucket"].isin(CONTEXT_LENGTH_BUCKET_LABELS)].copy()
 
 
+def _context_length_bucket_pivot(frame: pd.DataFrame) -> pd.DataFrame:
+    """Aggregate request volume across models into context-length buckets."""
+    required = {"week_start_date", "context_length_bucket", "metric_value"}
+    if frame.empty or not required.issubset(frame.columns):
+        return pd.DataFrame()
+    work = frame[["week_start_date", "context_length_bucket", "metric_value"]].copy()
+    work["week_start_date"] = pd.to_datetime(work["week_start_date"], errors="coerce").dt.normalize()
+    work["context_length_bucket"] = work["context_length_bucket"].astype(str)
+    work["metric_value"] = pd.to_numeric(work["metric_value"], errors="coerce")
+    work = work.dropna(subset=["week_start_date", "context_length_bucket", "metric_value"])
+    if work.empty:
+        return pd.DataFrame()
+    pivot = work.pivot_table(
+        index="week_start_date",
+        columns="context_length_bucket",
+        values="metric_value",
+        aggfunc="sum",
+        fill_value=0.0,
+    ).sort_index()
+    ordered_columns = [
+        bucket for bucket in CONTEXT_LENGTH_BUCKET_LABELS if bucket in pivot.columns
+    ]
+    return pivot.reindex(columns=ordered_columns)
+
+
 def render_context_length_section(datasets: dict[str, DatasetLoadResult]) -> None:
     """Render the OpenRouter Rankings context-length request tracker.
 
@@ -3263,6 +3944,53 @@ def render_context_length_section(datasets: dict[str, DatasetLoadResult]) -> Non
         st.info("No context-length request data is available yet. The weekly rankings scrape will populate it.")
         return
 
+    st.markdown("#### Requests by context length")
+    st.markdown(
+        '<div class="section-subtitle">Total weekly requests grouped by prompt + completion length bucket across all models.</div>',
+        unsafe_allow_html=True,
+    )
+    mix_view_options = ["Raw requests", "Share (%)"]
+    if hasattr(st, "segmented_control"):
+        mix_view = st.segmented_control(
+            "Overall view",
+            mix_view_options,
+            default="Raw requests",
+            key="openrouter_context_length_mix_view",
+        )
+    else:
+        mix_view = st.radio(
+            "Overall view",
+            mix_view_options,
+            horizontal=True,
+            key="openrouter_context_length_mix_view",
+        )
+    mix_view = str(mix_view or "Raw requests")
+    bucket_pivot = _context_length_bucket_pivot(frame)
+    if bucket_pivot.empty:
+        st.info("No context-length bucket totals are available yet.")
+    else:
+        mix_chart_pivot = bucket_pivot.copy()
+        if mix_view == "Share (%)":
+            totals = mix_chart_pivot.sum(axis=1).replace(0, np.nan)
+            mix_chart_pivot = mix_chart_pivot.div(totals, axis=0).fillna(0.0) * 100.0
+        st.plotly_chart(
+            make_stacked_area_chart(
+                mix_chart_pivot,
+                list(mix_chart_pivot.index.astype(str)),
+                MODEL_COLORS,
+                x_title="Usage Week (Starting)",
+                y_title="Request Share (%)" if mix_view == "Share (%)" else "Requests",
+                value_format=",.1f" if mix_view == "Share (%)" else ",.0f",
+                hover_suffix="%" if mix_view == "Share (%)" else "requests",
+            ),
+            width="stretch",
+            theme=None,
+        )
+        st.caption(
+            "Raw values are total requests in each bucket; percentage values are each bucket's share of all requests for that week."
+        )
+
+    st.markdown("#### Model breakdown within a context-length bucket")
     controls = st.columns([1, 1])
     with controls[0]:
         bucket = st.selectbox(
@@ -4513,6 +5241,303 @@ def _render_explorer_source_note() -> None:
         "Entries beginning with `~` are OpenRouter latest-routing aliases grouped under the underlying company. "
         "Company means model origin; serving routes such as Amazon, Google, or Anthropic are not treated as model companies.",
         icon="ℹ️",
+    )
+
+
+def _comparison_format_value(metric: str, value: object) -> str:
+    if value is None or pd.isna(value):
+        return "—"
+    number = float(value)
+    if metric == "Estimated revenue":
+        return f"${number:,.0f}"
+    if metric == "Realized price":
+        return f"${number:,.3f}"
+    if metric == "Tokens / request":
+        return f"{number:,.0f}"
+    return format_metric(number)
+
+
+def _format_token_axis_label(value: object) -> str:
+    """Format token chart ticks with dashboard units (B/T), not SI ``G``."""
+    if value is None or pd.isna(value):
+        return "—"
+    number = float(value)
+    absolute = abs(number)
+    if absolute >= 1_000_000_000_000:
+        return f"{number / 1_000_000_000_000:.1f}T"
+    if absolute >= 1_000_000_000:
+        return f"{number / 1_000_000_000:.0f}B"
+    if absolute >= 1_000_000:
+        return f"{number / 1_000_000:.0f}M"
+    return f"{number:,.0f}"
+
+
+def _comparison_latest_metric(frame: pd.DataFrame, entity_id: str, metric: str) -> tuple[float | None, float | None, pd.Timestamp | None]:
+    if frame.empty or metric not in frame.columns:
+        return None, None, None
+    rows = frame[frame["entity_id"].astype("string").eq(str(entity_id))].sort_values("period_start")
+    rows = rows.dropna(subset=[metric])
+    if rows.empty:
+        return None, None, None
+    latest = float(rows.iloc[-1][metric])
+    previous = float(rows.iloc[-2][metric]) if len(rows) > 1 else None
+    return latest, previous, pd.Timestamp(rows.iloc[-1]["period_start"])
+
+
+def _comparison_chart(
+    frame: pd.DataFrame,
+    *,
+    entity_ids: tuple[str, ...],
+    entity_labels: dict[str, str],
+    metric: str,
+    window: str,
+    normalized: bool,
+    transition_markers: list[dict[str, object]] | None = None,
+) -> go.Figure:
+    selected = frame[frame["entity_id"].astype("string").isin(entity_ids)][["period_start", "entity_id", metric]].copy()
+    selected["period_start"] = pd.to_datetime(selected["period_start"], errors="coerce")
+    selected[metric] = pd.to_numeric(selected[metric], errors="coerce")
+    selected = selected.dropna(subset=["period_start"])
+    pivot = selected.pivot_table(index="period_start", columns="entity_id", values=metric, aggfunc="last").sort_index()
+    pivot = pivot.reindex(columns=list(entity_ids))
+    if not pivot.empty:
+        frequency = {"Daily": "D", "7-day avg": "D", "Weekly": "7D", "Monthly": "MS"}[window]
+        full_index = pd.date_range(pivot.index.min(), pivot.index.max(), freq=frequency)
+        pivot = pivot.reindex(full_index)
+    y_title = metric
+    if normalized and not pivot.empty:
+        if metric in {"Tokens", "Requests", "Estimated revenue"}:
+            total = pivot.sum(axis=1, min_count=1)
+            pivot = pivot.div(total.where(total.gt(0)), axis=0).mul(100)
+            y_title = f"{metric} share (%)"
+        else:
+            for column in pivot.columns:
+                valid = pivot[column].dropna()
+                if not valid.empty and float(valid.iloc[0]) != 0:
+                    pivot[column] = pivot[column].div(float(valid.iloc[0])).mul(100)
+            y_title = f"{metric} index (first observation = 100)"
+
+    figure = go.Figure()
+    # Keep comparison colors aligned with the OpenRouter Intelligence palette.
+    # The shared palette has distinct colors for the first five series; the
+    # previous local list reused the first blue for the fifth company.
+    colors = MODEL_COLORS
+    raw_token_axis = metric == "Tokens" and not normalized
+    for index, entity_id in enumerate(entity_ids):
+        if entity_id not in pivot.columns:
+            continue
+        customdata = None
+        if raw_token_axis:
+            customdata = [_format_token_axis_label(value) for value in pivot[entity_id]]
+        figure.add_trace(go.Scatter(
+            x=pivot.index,
+            y=pivot[entity_id],
+            name=entity_labels.get(entity_id, entity_id),
+            mode="lines+markers",
+            connectgaps=False,
+            line=dict(color=colors[index % len(colors)], width=3),
+            marker=dict(size=5),
+            customdata=customdata,
+            hovertemplate=(
+                "<b>%{fullData.name}</b><br>%{customdata}<extra></extra>"
+                if raw_token_axis
+                else "<b>%{fullData.name}</b><br>%{y:,.2f}<extra></extra>"
+                if metric in {"Realized price", "Tokens / request"}
+                else "<b>%{fullData.name}</b><br>%{y:,.0f}<extra></extra>"
+            ),
+        ))
+    figure.update_layout(
+        template="plotly_white",
+        height=460,
+        hovermode="x unified",
+        margin=dict(l=0, r=0, t=20, b=45),
+        xaxis=dict(
+            title=(
+                "Usage date (7-day rolling average)"
+                if window == "7-day avg"
+                else "Usage date"
+                if window == "Daily"
+                else "Usage week/month"
+            ),
+            showgrid=False,
+        ),
+        legend=dict(orientation="h", y=1.08),
+    )
+    if raw_token_axis and not pivot.empty:
+        maximum = float(np.nanmax(pivot.to_numpy(dtype=float)))
+        if np.isfinite(maximum) and maximum > 0:
+            tick_values = np.linspace(0.0, maximum, 6)
+            figure.update_yaxes(
+                title=y_title,
+                gridcolor=GRID,
+                tickmode="array",
+                tickvals=tick_values.tolist(),
+                ticktext=[_format_token_axis_label(value) for value in tick_values],
+            )
+        else:
+            figure.update_yaxes(title=y_title, gridcolor=GRID)
+    else:
+        figure.update_yaxes(
+            title=y_title,
+            gridcolor=GRID,
+            tickformat=",.2f" if metric in {"Realized price", "Tokens / request"} else (".1f" if normalized else "~s"),
+        )
+    for marker in transition_markers or []:
+        marker_date = pd.to_datetime(marker.get("date"), errors="coerce")
+        if pd.isna(marker_date) or pivot.empty or marker_date < pivot.index.min() or marker_date > pivot.index.max():
+            continue
+        figure.add_vline(
+            x=marker_date,
+            line=dict(color="#64748B", width=1.5, dash="dash"),
+            opacity=0.75,
+        )
+        figure.add_annotation(
+            x=marker_date,
+            y=0.98,
+            xref="x",
+            yref="paper",
+            text=str(marker.get("short_label", "Method change")),
+            showarrow=False,
+            textangle=-90,
+            font=dict(size=10, color="#334155"),
+            bgcolor="rgba(255,255,255,0.86)",
+            bordercolor="rgba(100,116,139,0.45)",
+            borderwidth=1,
+            xanchor="left",
+            yanchor="top",
+        )
+    return figure
+
+
+def render_compare(domain_states, datasets) -> None:
+    """Render a scalable company-only OpenRouter comparison."""
+    _ = domain_states
+    st.markdown('<div class="section-title">OpenRouter Compare</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-subtitle">Compare up to five model-origin companies across usage, economics, workload intensity, and realized price.</div>',
+        unsafe_allow_html=True,
+    )
+    views = build_openrouter_comparison_views(
+        datasets,
+        cache_version=OPENROUTER_COMPARISON_CACHE_VERSION,
+    )
+
+    options = views.get("company_options", pd.DataFrame())
+    if options.empty:
+        st.info("No companies with stored activity are available for comparison yet.")
+        return
+    ids = options["entity_id"].astype(str).tolist()
+    labels = dict(zip(options["entity_id"].astype(str), options["label"].astype(str)))
+    preferred = [company for company in ("openai", "anthropic") if company in ids]
+    if len(preferred) < 2:
+        preferred = ids[: min(2, len(ids))]
+    selected_companies = st.multiselect(
+        "Companies (select up to 5)",
+        ids,
+        default=preferred,
+        max_selections=5,
+        format_func=lambda value: labels.get(value, value),
+        key="openrouter_compare_companies",
+        help="Choose one to five companies. The chart and latest-comparison table update together.",
+    )
+    if not selected_companies:
+        st.info("Select at least one company to compare.")
+        return
+    company_ids = tuple(str(company) for company in selected_companies)
+    with st.container():
+        window = st.segmented_control(
+            "Window", list(COMPARISON_WINDOWS), default="7-day avg", key="openrouter_compare_window",
+        ) if hasattr(st, "segmented_control") else st.radio(
+            "Window", list(COMPARISON_WINDOWS), horizontal=True, index=1, key="openrouter_compare_window",
+        )
+
+    source_window = "Daily" if str(window) == "7-day avg" else str(window)
+    frame = views["series"]["Companies"].get(source_window, pd.DataFrame()).copy()
+    if str(window) == "7-day avg":
+        frame = _comparison_rolling_7d_frame(frame)
+    metric_control, normalize_control = st.columns([1.5, 1.0])
+    with metric_control:
+        metric = st.selectbox("Metric", list(COMPARISON_METRICS), key="openrouter_compare_metric")
+    with normalize_control:
+        normalized = st.toggle("Share / index view", value=False, key="openrouter_compare_normalized")
+
+    if frame.empty or metric not in frame.columns:
+        st.info(f"No {str(window).casefold()} {metric.casefold()} history is available for this comparison yet.")
+        return
+    frame["period_start"] = pd.to_datetime(frame["period_start"], errors="coerce")
+    frame = frame.dropna(subset=["period_start"])
+    available = frame[frame["entity_id"].astype("string").isin(company_ids)]
+    if available.empty or available[metric].notna().sum() == 0:
+        st.info(f"No {str(window).casefold()} {metric.casefold()} history is available for the selected companies yet.")
+        return
+
+    min_date = available["period_start"].min().date()
+    max_date = available["period_start"].max().date()
+    date_filter = st.date_input(
+        "Date range", value=(min_date, max_date), min_value=min_date, max_value=max_date,
+        key="openrouter_compare_date_range",
+    )
+    date_range = None
+    if isinstance(date_filter, (tuple, list)) and len(date_filter) == 2:
+        start_date, end_date = pd.Timestamp(date_filter[0]), pd.Timestamp(date_filter[1])
+        date_range = (start_date, end_date)
+        frame = frame[(frame["period_start"] >= start_date) & (frame["period_start"] <= end_date)]
+
+    labels_for_chart = {company_id: labels.get(company_id, company_id) for company_id in company_ids}
+    st.plotly_chart(
+        _comparison_chart(frame, entity_ids=company_ids, entity_labels=labels_for_chart,
+                          metric=metric, window=str(window), normalized=bool(normalized),
+                          transition_markers=views.get("transition_markers", [])),
+        width="stretch", theme=None,
+    )
+
+    st.markdown("#### Latest comparison")
+    rows: list[dict[str, object]] = []
+    for metric_name in COMPARISON_METRICS:
+        row: dict[str, object] = {"Metric": metric_name}
+        latest_dates: list[pd.Timestamp] = []
+        for company_id in company_ids:
+            value, _, date = _comparison_latest_metric(frame, company_id, metric_name)
+            row[labels_for_chart[company_id]] = _comparison_format_value(metric_name, value)
+            if date is not None:
+                latest_dates.append(date)
+        row["Latest period"] = max(latest_dates).strftime("%Y-%m-%d") if latest_dates else "—"
+        rows.append(row)
+    st.dataframe(pd.DataFrame(rows), hide_index=True, width="stretch")
+
+    coverage = views.get("coverage", {})
+    if str(window) == "7-day avg":
+        st.caption(
+            "7-day avg is a trailing calendar-day mean of the daily company series. "
+            "Tokens/request uses the ratio of trailing token and request sums on overlapping days only; "
+            "the first six observations are partial windows."
+        )
+    st.caption(
+        "Company totals retain the longer legacy rankings history and use reconciled model/provider activity for newer periods. "
+        "Weekly requests retain the legacy provider request history and use model-detail requests after that feed ends. "
+        f"Modern daily token coverage starts {coverage.get('company_tokens_start') or 'when available'}; daily request coverage starts {coverage.get('company_requests_start') or 'when available'}."
+    )
+    markers = views.get("transition_markers", [])
+    if markers:
+        st.caption("Method changes marked on the chart: " + " · ".join(str(marker.get("label")) for marker in markers))
+    request_interpolations = views.get("request_interpolations", [])
+    if request_interpolations:
+        estimate_labels = []
+        for estimate in request_interpolations:
+            entity_id = str(estimate.get("entity_id", ""))
+            entity_label = OPENROUTER_PROVIDER_MAP.get(entity_id, entity_id.replace("-", " ").title())
+            period = pd.to_datetime(estimate.get("period_start"), errors="coerce")
+            if pd.notna(period):
+                estimate_labels.append(f"{entity_label} ({period.strftime('%b %-d, %Y')})")
+        if estimate_labels:
+            st.caption(
+                "Request estimates (not source observations): " + ", ".join(estimate_labels) + ". "
+                "Each is a linear midpoint between the adjacent observed weekly totals; the source is a top-10 provider ranking. "
+                "Longer or unbounded gaps remain blank rather than being treated as zero."
+            )
+    st.caption(
+        "Missing observations remain gaps. Estimated revenue and realized price use priced economics only; free/unpriced tokens are excluded from the realized-price denominator. "
+        "The newest week or month may be partial."
     )
 
 
