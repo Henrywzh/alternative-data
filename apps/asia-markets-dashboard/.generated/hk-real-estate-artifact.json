@@ -5,7 +5,7 @@
     "surface": "dashboard",
     "title": "Hong Kong Real Estate Monitor",
     "description": "A source-backed snapshot of residential price, rent, and market confidence measures.",
-    "generatedAt": "2026-07-31T09:17:24.803872Z",
+    "generatedAt": "2026-08-01T08:35:12.964687Z",
     "cards": [
       {
         "id": "ccl_card",
@@ -1201,7 +1201,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**Data snapshot:** `b187a737e3f58cca` · generated 2026-07-31T09:17:24.803872Z.  This is a published snapshot, not a live connection. RVD observations marked provisional may be revised."
+        "body": "**Data snapshot:** `a0b416b52b102809` · generated 2026-08-01T08:35:12.964687Z.  This is a published snapshot, not a live connection. RVD observations marked provisional may be revised."
       },
       {
         "id": "market_regime_intro",
@@ -1400,7 +1400,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-31T09:17:24.803872Z",
+    "generatedAt": "2026-08-01T08:35:12.964687Z",
     "status": "ready",
     "datasets": {
       "kpi_ccl": [
@@ -40525,16 +40525,6 @@
           "value": 100.0
         },
         {
-          "date": "2021-08",
-          "series": "RVD Price",
-          "value": 100.0
-        },
-        {
-          "date": "2021-08",
-          "series": "RVD Rent",
-          "value": 100.0
-        },
-        {
           "date": "2021-09",
           "series": "CCL",
           "value": 99.9262
@@ -40547,12 +40537,12 @@
         {
           "date": "2021-09",
           "series": "RVD Price",
-          "value": 100.1509
+          "value": 100.0
         },
         {
           "date": "2021-09",
           "series": "RVD Rent",
-          "value": 100.9858
+          "value": 100.0
         },
         {
           "date": "2021-10",
@@ -40567,12 +40557,12 @@
         {
           "date": "2021-10",
           "series": "RVD Price",
-          "value": 99.6226
+          "value": 99.4725
         },
         {
           "date": "2021-10",
           "series": "RVD Rent",
-          "value": 100.931
+          "value": 99.9458
         },
         {
           "date": "2021-11",
@@ -40587,12 +40577,12 @@
         {
           "date": "2021-11",
           "series": "RVD Price",
-          "value": 99.0189
+          "value": 98.8696
         },
         {
           "date": "2021-11",
           "series": "RVD Rent",
-          "value": 100.1643
+          "value": 99.1866
         },
         {
           "date": "2021-12",
@@ -40607,12 +40597,12 @@
         {
           "date": "2021-12",
           "series": "RVD Price",
-          "value": 99.0943
+          "value": 98.945
         },
         {
           "date": "2021-12",
           "series": "RVD Rent",
-          "value": 100.0548
+          "value": 99.0781
         },
         {
           "date": "2022-01",
@@ -40627,12 +40617,12 @@
         {
           "date": "2022-01",
           "series": "RVD Price",
-          "value": 98.3145
+          "value": 98.1663
         },
         {
           "date": "2022-01",
           "series": "RVD Rent",
-          "value": 99.1785
+          "value": 98.2104
         },
         {
           "date": "2022-02",
@@ -40647,12 +40637,12 @@
         {
           "date": "2022-02",
           "series": "RVD Price",
-          "value": 96.5031
+          "value": 96.3577
         },
         {
           "date": "2022-02",
           "series": "RVD Rent",
-          "value": 98.6857
+          "value": 97.7223
         },
         {
           "date": "2022-03",
@@ -40667,12 +40657,12 @@
         {
           "date": "2022-03",
           "series": "RVD Price",
-          "value": 95.9497
+          "value": 95.8051
         },
         {
           "date": "2022-03",
           "series": "RVD Rent",
-          "value": 97.7547
+          "value": 96.8004
         },
         {
           "date": "2022-04",
@@ -40687,12 +40677,12 @@
         {
           "date": "2022-04",
           "series": "RVD Price",
-          "value": 96.8553
+          "value": 96.7094
         },
         {
           "date": "2022-04",
           "series": "RVD Rent",
-          "value": 97.0975
+          "value": 96.1497
         },
         {
           "date": "2022-05",
@@ -40707,12 +40697,12 @@
         {
           "date": "2022-05",
           "series": "RVD Price",
-          "value": 96.9811
+          "value": 96.835
         },
         {
           "date": "2022-05",
           "series": "RVD Rent",
-          "value": 97.4261
+          "value": 96.4751
         },
         {
           "date": "2022-06",
@@ -40727,12 +40717,12 @@
         {
           "date": "2022-06",
           "series": "RVD Price",
-          "value": 96.0503
+          "value": 95.9056
         },
         {
           "date": "2022-06",
           "series": "RVD Rent",
-          "value": 97.4808
+          "value": 96.5293
         },
         {
           "date": "2022-07",
@@ -40747,12 +40737,12 @@
         {
           "date": "2022-07",
           "series": "RVD Price",
-          "value": 94.717
+          "value": 94.5742
         },
         {
           "date": "2022-07",
           "series": "RVD Rent",
-          "value": 97.5356
+          "value": 96.5835
         },
         {
           "date": "2022-08",
@@ -40767,12 +40757,12 @@
         {
           "date": "2022-08",
           "series": "RVD Price",
-          "value": 92.6289
+          "value": 92.4893
         },
         {
           "date": "2022-08",
           "series": "RVD Rent",
-          "value": 98.2475
+          "value": 97.2885
         },
         {
           "date": "2022-09",
@@ -40787,12 +40777,12 @@
         {
           "date": "2022-09",
           "series": "RVD Price",
-          "value": 90.6415
+          "value": 90.5049
         },
         {
           "date": "2022-09",
           "series": "RVD Rent",
-          "value": 98.0285
+          "value": 97.0716
         },
         {
           "date": "2022-10",
@@ -40807,12 +40797,12 @@
         {
           "date": "2022-10",
           "series": "RVD Price",
-          "value": 88.1006
+          "value": 87.9678
         },
         {
           "date": "2022-10",
           "series": "RVD Rent",
-          "value": 97.4808
+          "value": 96.5293
         },
         {
           "date": "2022-11",
@@ -40827,12 +40817,12 @@
         {
           "date": "2022-11",
           "series": "RVD Price",
-          "value": 85.0818
+          "value": 84.9535
         },
         {
           "date": "2022-11",
           "series": "RVD Rent",
-          "value": 96.6046
+          "value": 95.6616
         },
         {
           "date": "2022-12",
@@ -40847,12 +40837,12 @@
         {
           "date": "2022-12",
           "series": "RVD Price",
-          "value": 84.2013
+          "value": 84.0744
         },
         {
           "date": "2022-12",
           "series": "RVD Rent",
-          "value": 96.1117
+          "value": 95.1735
         },
         {
           "date": "2023-01",
@@ -40867,12 +40857,12 @@
         {
           "date": "2023-01",
           "series": "RVD Price",
-          "value": 85.1069
+          "value": 84.9786
         },
         {
           "date": "2023-01",
           "series": "RVD Rent",
-          "value": 95.0712
+          "value": 94.1432
         },
         {
           "date": "2023-02",
@@ -40887,12 +40877,12 @@
         {
           "date": "2023-02",
           "series": "RVD Price",
-          "value": 87.2453
+          "value": 87.1138
         },
         {
           "date": "2023-02",
           "series": "RVD Rent",
-          "value": 95.8927
+          "value": 94.9566
         },
         {
           "date": "2023-03",
@@ -40907,12 +40897,12 @@
         {
           "date": "2023-03",
           "series": "RVD Price",
-          "value": 88.6289
+          "value": 88.4954
         },
         {
           "date": "2023-03",
           "series": "RVD Rent",
-          "value": 96.4951
+          "value": 95.5531
         },
         {
           "date": "2023-04",
@@ -40927,12 +40917,12 @@
         {
           "date": "2023-04",
           "series": "RVD Price",
-          "value": 89.1069
+          "value": 88.9726
         },
         {
           "date": "2023-04",
           "series": "RVD Rent",
-          "value": 97.8642
+          "value": 96.9089
         },
         {
           "date": "2023-05",
@@ -40947,12 +40937,12 @@
         {
           "date": "2023-05",
           "series": "RVD Price",
-          "value": 88.1509
+          "value": 88.0181
         },
         {
           "date": "2023-05",
           "series": "RVD Rent",
-          "value": 98.5214
+          "value": 97.5597
         },
         {
           "date": "2023-06",
@@ -40967,12 +40957,12 @@
         {
           "date": "2023-06",
           "series": "RVD Price",
-          "value": 87.3711
+          "value": 87.2394
         },
         {
           "date": "2023-06",
           "series": "RVD Rent",
-          "value": 99.069
+          "value": 98.102
         },
         {
           "date": "2023-07",
@@ -40987,12 +40977,12 @@
         {
           "date": "2023-07",
           "series": "RVD Price",
-          "value": 86.5409
+          "value": 86.4104
         },
         {
           "date": "2023-07",
           "series": "RVD Rent",
-          "value": 99.6714
+          "value": 98.6985
         },
         {
           "date": "2023-08",
@@ -41007,12 +40997,12 @@
         {
           "date": "2023-08",
           "series": "RVD Price",
-          "value": 84.7799
+          "value": 84.6521
         },
         {
           "date": "2023-08",
           "series": "RVD Rent",
-          "value": 101.2596
+          "value": 100.2711
         },
         {
           "date": "2023-09",
@@ -41027,12 +41017,12 @@
         {
           "date": "2023-09",
           "series": "RVD Price",
-          "value": 82.7925
+          "value": 82.6677
         },
         {
           "date": "2023-09",
           "series": "RVD Rent",
-          "value": 101.4239
+          "value": 100.4338
         },
         {
           "date": "2023-10",
@@ -41047,12 +41037,12 @@
         {
           "date": "2023-10",
           "series": "RVD Price",
-          "value": 81.0063
+          "value": 80.8842
         },
         {
           "date": "2023-10",
           "series": "RVD Rent",
-          "value": 101.5334
+          "value": 100.5423
         },
         {
           "date": "2023-11",
@@ -41067,12 +41057,12 @@
         {
           "date": "2023-11",
           "series": "RVD Price",
-          "value": 79.3962
+          "value": 79.2766
         },
         {
           "date": "2023-11",
           "series": "RVD Rent",
-          "value": 101.5882
+          "value": 100.5965
         },
         {
           "date": "2023-12",
@@ -41087,12 +41077,12 @@
         {
           "date": "2023-12",
           "series": "RVD Price",
-          "value": 78.3145
+          "value": 78.1964
         },
         {
           "date": "2023-12",
           "series": "RVD Rent",
-          "value": 101.862
+          "value": 100.8677
         },
         {
           "date": "2024-01",
@@ -41107,12 +41097,12 @@
         {
           "date": "2024-01",
           "series": "RVD Price",
-          "value": 77.3082
+          "value": 77.1917
         },
         {
           "date": "2024-01",
           "series": "RVD Rent",
-          "value": 101.5882
+          "value": 100.5965
         },
         {
           "date": "2024-02",
@@ -41127,12 +41117,12 @@
         {
           "date": "2024-02",
           "series": "RVD Price",
-          "value": 76.0755
+          "value": 75.9608
         },
         {
           "date": "2024-02",
           "series": "RVD Rent",
-          "value": 100.9858
+          "value": 100.0
         },
         {
           "date": "2024-03",
@@ -41147,12 +41137,12 @@
         {
           "date": "2024-03",
           "series": "RVD Price",
-          "value": 77.5094
+          "value": 77.3926
         },
         {
           "date": "2024-03",
           "series": "RVD Rent",
-          "value": 101.2596
+          "value": 100.2711
         },
         {
           "date": "2024-04",
@@ -41167,12 +41157,12 @@
         {
           "date": "2024-04",
           "series": "RVD Price",
-          "value": 77.8868
+          "value": 77.7694
         },
         {
           "date": "2024-04",
           "series": "RVD Rent",
-          "value": 102.3549
+          "value": 101.3557
         },
         {
           "date": "2024-05",
@@ -41187,12 +41177,12 @@
         {
           "date": "2024-05",
           "series": "RVD Price",
-          "value": 76.8553
+          "value": 76.7395
         },
         {
           "date": "2024-05",
           "series": "RVD Rent",
-          "value": 104.0526
+          "value": 103.0369
         },
         {
           "date": "2024-06",
@@ -41207,12 +41197,12 @@
         {
           "date": "2024-06",
           "series": "RVD Price",
-          "value": 76.1006
+          "value": 75.9859
         },
         {
           "date": "2024-06",
           "series": "RVD Rent",
-          "value": 105.4217
+          "value": 104.3926
         },
         {
           "date": "2024-07",
@@ -41227,12 +41217,12 @@
         {
           "date": "2024-07",
           "series": "RVD Price",
-          "value": 74.8679
+          "value": 74.7551
         },
         {
           "date": "2024-07",
           "series": "RVD Rent",
-          "value": 106.1336
+          "value": 105.0976
         },
         {
           "date": "2024-08",
@@ -41247,12 +41237,12 @@
         {
           "date": "2024-08",
           "series": "RVD Price",
-          "value": 73.4591
+          "value": 73.3484
         },
         {
           "date": "2024-08",
           "series": "RVD Rent",
-          "value": 106.8456
+          "value": 105.8026
         },
         {
           "date": "2024-09",
@@ -41267,12 +41257,12 @@
         {
           "date": "2024-09",
           "series": "RVD Price",
-          "value": 72.4277
+          "value": 72.3185
         },
         {
           "date": "2024-09",
           "series": "RVD Rent",
-          "value": 106.9551
+          "value": 105.9111
         },
         {
           "date": "2024-10",
@@ -41287,12 +41277,12 @@
         {
           "date": "2024-10",
           "series": "RVD Price",
-          "value": 73.2075
+          "value": 73.0972
         },
         {
           "date": "2024-10",
           "series": "RVD Rent",
-          "value": 105.5312
+          "value": 104.5011
         },
         {
           "date": "2024-11",
@@ -41307,12 +41297,12 @@
         {
           "date": "2024-11",
           "series": "RVD Price",
-          "value": 73.3333
+          "value": 73.2228
         },
         {
           "date": "2024-11",
           "series": "RVD Rent",
-          "value": 105.0931
+          "value": 104.0672
         },
         {
           "date": "2024-12",
@@ -41327,12 +41317,12 @@
         {
           "date": "2024-12",
           "series": "RVD Price",
-          "value": 72.7547
+          "value": 72.6451
         },
         {
           "date": "2024-12",
           "series": "RVD Rent",
-          "value": 105.4217
+          "value": 104.3926
         },
         {
           "date": "2025-01",
@@ -41347,12 +41337,12 @@
         {
           "date": "2025-01",
           "series": "RVD Price",
-          "value": 72.2516
+          "value": 72.1427
         },
         {
           "date": "2025-01",
           "series": "RVD Rent",
-          "value": 105.586
+          "value": 104.5553
         },
         {
           "date": "2025-02",
@@ -41367,12 +41357,12 @@
         {
           "date": "2025-02",
           "series": "RVD Price",
-          "value": 71.8491
+          "value": 71.7408
         },
         {
           "date": "2025-02",
           "series": "RVD Rent",
-          "value": 105.6955
+          "value": 104.6638
         },
         {
           "date": "2025-03",
@@ -41387,12 +41377,12 @@
         {
           "date": "2025-03",
           "series": "RVD Price",
-          "value": 71.673
+          "value": 71.5649
         },
         {
           "date": "2025-03",
           "series": "RVD Rent",
-          "value": 105.7503
+          "value": 104.718
         },
         {
           "date": "2025-04",
@@ -41407,12 +41397,12 @@
         {
           "date": "2025-04",
           "series": "RVD Price",
-          "value": 72.0755
+          "value": 71.9668
         },
         {
           "date": "2025-04",
           "series": "RVD Rent",
-          "value": 106.1884
+          "value": 105.1518
         },
         {
           "date": "2025-05",
@@ -41427,12 +41417,12 @@
         {
           "date": "2025-05",
           "series": "RVD Price",
-          "value": 72.0755
+          "value": 71.9668
         },
         {
           "date": "2025-05",
           "series": "RVD Rent",
-          "value": 106.3527
+          "value": 105.3145
         },
         {
           "date": "2025-06",
@@ -41447,12 +41437,12 @@
         {
           "date": "2025-06",
           "series": "RVD Price",
-          "value": 72.1258
+          "value": 72.0171
         },
         {
           "date": "2025-06",
           "series": "RVD Rent",
-          "value": 107.2837
+          "value": 106.2364
         },
         {
           "date": "2025-07",
@@ -41467,12 +41457,12 @@
         {
           "date": "2025-07",
           "series": "RVD Price",
-          "value": 72.478
+          "value": 72.3688
         },
         {
           "date": "2025-07",
           "series": "RVD Rent",
-          "value": 108.1051
+          "value": 107.0499
         },
         {
           "date": "2025-08",
@@ -41487,12 +41477,12 @@
         {
           "date": "2025-08",
           "series": "RVD Price",
-          "value": 72.6541
+          "value": 72.5446
         },
         {
           "date": "2025-08",
           "series": "RVD Rent",
-          "value": 109.4195
+          "value": 108.3514
         },
         {
           "date": "2025-09",
@@ -41507,12 +41497,12 @@
         {
           "date": "2025-09",
           "series": "RVD Price",
-          "value": 73.8113
+          "value": 73.7001
         },
         {
           "date": "2025-09",
           "series": "RVD Rent",
-          "value": 109.4743
+          "value": 108.4056
         },
         {
           "date": "2025-10",
@@ -41527,12 +41517,12 @@
         {
           "date": "2025-10",
           "series": "RVD Price",
-          "value": 74.1887
+          "value": 74.0769
         },
         {
           "date": "2025-10",
           "series": "RVD Rent",
-          "value": 109.4743
+          "value": 108.4056
         },
         {
           "date": "2025-11",
@@ -41547,12 +41537,12 @@
         {
           "date": "2025-11",
           "series": "RVD Price",
-          "value": 75.1447
+          "value": 75.0314
         },
         {
           "date": "2025-11",
           "series": "RVD Rent",
-          "value": 109.7481
+          "value": 108.6768
         },
         {
           "date": "2025-12",
@@ -41567,12 +41557,12 @@
         {
           "date": "2025-12",
           "series": "RVD Price",
-          "value": 75.3711
+          "value": 75.2575
         },
         {
           "date": "2025-12",
           "series": "RVD Rent",
-          "value": 109.8028
+          "value": 108.731
         },
         {
           "date": "2026-01",
@@ -41587,12 +41577,12 @@
         {
           "date": "2026-01",
           "series": "RVD Price",
-          "value": 76.1761
+          "value": 76.0613
         },
         {
           "date": "2026-01",
           "series": "RVD Rent",
-          "value": 109.9671
+          "value": 108.8937
         },
         {
           "date": "2026-02",
@@ -41607,12 +41597,12 @@
         {
           "date": "2026-02",
           "series": "RVD Price",
-          "value": 77.5849
+          "value": 77.468
         },
         {
           "date": "2026-02",
           "series": "RVD Rent",
-          "value": 110.1314
+          "value": 109.0564
         },
         {
           "date": "2026-03",
@@ -41627,12 +41617,12 @@
         {
           "date": "2026-03",
           "series": "RVD Price",
-          "value": 78.9937
+          "value": 78.8747
         },
         {
           "date": "2026-03",
           "series": "RVD Rent",
-          "value": 110.5696
+          "value": 109.4902
         },
         {
           "date": "2026-04",
@@ -41647,12 +41637,12 @@
         {
           "date": "2026-04",
           "series": "RVD Price",
-          "value": 79.8742
+          "value": 79.7538
         },
         {
           "date": "2026-04",
           "series": "RVD Rent",
-          "value": 111.0624
+          "value": 109.9783
         },
         {
           "date": "2026-05",
@@ -41667,12 +41657,12 @@
         {
           "date": "2026-05",
           "series": "RVD Price",
-          "value": 81.0566
+          "value": 80.9344
         },
         {
           "date": "2026-05",
           "series": "RVD Rent",
-          "value": 111.6648
+          "value": 110.5748
         },
         {
           "date": "2026-06",
@@ -41687,12 +41677,12 @@
         {
           "date": "2026-06",
           "series": "RVD Price",
-          "value": 81.3082
+          "value": 81.1856
         },
         {
           "date": "2026-06",
           "series": "RVD Rent",
-          "value": 112.7054
+          "value": 111.6052
         },
         {
           "date": "2026-07",
@@ -42609,299 +42599,294 @@
       ],
       "residential_rent_rebased": [
         {
-          "date": "2021-08",
+          "date": "2021-09",
           "series": "CRI",
           "value": 100.0
         },
         {
-          "date": "2021-09",
-          "series": "CRI",
-          "value": 99.7502
-        },
-        {
           "date": "2021-10",
           "series": "CRI",
-          "value": 100.6718
+          "value": 100.9238
         },
         {
           "date": "2021-11",
           "series": "CRI",
-          "value": 99.7158
+          "value": 99.9655
         },
         {
           "date": "2021-12",
           "series": "CRI",
-          "value": 99.6124
+          "value": 99.8619
         },
         {
           "date": "2022-01",
           "series": "CRI",
-          "value": 98.2517
+          "value": 98.4977
         },
         {
           "date": "2022-02",
           "series": "CRI",
-          "value": 97.9674
+          "value": 98.2127
         },
         {
           "date": "2022-03",
           "series": "CRI",
-          "value": 96.3655
+          "value": 96.6068
         },
         {
           "date": "2022-04",
           "series": "CRI",
-          "value": 96.3827
+          "value": 96.6241
         },
         {
           "date": "2022-05",
           "series": "CRI",
-          "value": 96.1244
+          "value": 96.365
         },
         {
           "date": "2022-06",
           "series": "CRI",
-          "value": 96.5464
+          "value": 96.7881
         },
         {
           "date": "2022-07",
           "series": "CRI",
-          "value": 96.6067
+          "value": 96.8486
         },
         {
           "date": "2022-08",
           "series": "CRI",
-          "value": 97.1148
+          "value": 97.358
         },
         {
           "date": "2022-09",
           "series": "CRI",
-          "value": 96.8392
+          "value": 97.0817
         },
         {
           "date": "2022-10",
           "series": "CRI",
-          "value": 96.0382
+          "value": 96.2787
         },
         {
           "date": "2022-11",
           "series": "CRI",
-          "value": 95.2373
+          "value": 95.4757
         },
         {
           "date": "2022-12",
           "series": "CRI",
-          "value": 93.5234
+          "value": 93.7576
         },
         {
           "date": "2023-01",
           "series": "CRI",
-          "value": 93.1272
+          "value": 93.3604
         },
         {
           "date": "2023-02",
           "series": "CRI",
-          "value": 93.8334
+          "value": 94.0684
         },
         {
           "date": "2023-03",
           "series": "CRI",
-          "value": 94.6947
+          "value": 94.9318
         },
         {
           "date": "2023-04",
           "series": "CRI",
-          "value": 95.7885
+          "value": 96.0283
         },
         {
           "date": "2023-05",
           "series": "CRI",
-          "value": 97.132
+          "value": 97.3752
         },
         {
           "date": "2023-06",
           "series": "CRI",
-          "value": 97.0804
+          "value": 97.3234
         },
         {
           "date": "2023-07",
           "series": "CRI",
-          "value": 98.2
+          "value": 98.4459
         },
         {
           "date": "2023-08",
           "series": "CRI",
-          "value": 100.2412
+          "value": 100.4921
         },
         {
           "date": "2023-09",
           "series": "CRI",
-          "value": 100.9302
+          "value": 101.1829
         },
         {
           "date": "2023-10",
           "series": "CRI",
-          "value": 100.7493
+          "value": 101.0016
         },
         {
           "date": "2023-11",
           "series": "CRI",
-          "value": 101.111
+          "value": 101.3642
         },
         {
           "date": "2023-12",
           "series": "CRI",
-          "value": 100.4134
+          "value": 100.6648
         },
         {
           "date": "2024-01",
           "series": "CRI",
-          "value": 100.0775
+          "value": 100.3281
         },
         {
           "date": "2024-02",
           "series": "CRI",
-          "value": 99.8191
+          "value": 100.0691
         },
         {
           "date": "2024-03",
           "series": "CRI",
-          "value": 100.3703
+          "value": 100.6217
         },
         {
           "date": "2024-04",
           "series": "CRI",
-          "value": 100.844
+          "value": 101.0965
         },
         {
           "date": "2024-05",
           "series": "CRI",
-          "value": 101.3952
+          "value": 101.6491
         },
         {
           "date": "2024-06",
           "series": "CRI",
-          "value": 103.5914
+          "value": 103.8508
         },
         {
           "date": "2024-07",
           "series": "CRI",
-          "value": 105.2536
+          "value": 105.5172
         },
         {
           "date": "2024-08",
           "series": "CRI",
-          "value": 106.7436
+          "value": 107.0109
         },
         {
           "date": "2024-09",
           "series": "CRI",
-          "value": 106.7436
+          "value": 107.0109
         },
         {
           "date": "2024-10",
           "series": "CRI",
-          "value": 106.4422
+          "value": 106.7087
         },
         {
           "date": "2024-11",
           "series": "CRI",
-          "value": 106.1235
+          "value": 106.3892
         },
         {
           "date": "2024-12",
           "series": "CRI",
-          "value": 106.0804
+          "value": 106.3461
         },
         {
           "date": "2025-01",
           "series": "CRI",
-          "value": 106.2785
+          "value": 106.5446
         },
         {
           "date": "2025-02",
           "series": "CRI",
-          "value": 106.7694
+          "value": 107.0368
         },
         {
           "date": "2025-03",
           "series": "CRI",
-          "value": 106.6833
+          "value": 106.9504
         },
         {
           "date": "2025-04",
           "series": "CRI",
-          "value": 106.58
+          "value": 106.8468
         },
         {
           "date": "2025-05",
           "series": "CRI",
-          "value": 107.9838
+          "value": 108.2542
         },
         {
           "date": "2025-06",
           "series": "CRI",
-          "value": 109.0259
+          "value": 109.2989
         },
         {
           "date": "2025-07",
           "series": "CRI",
-          "value": 110.3609
+          "value": 110.6372
         },
         {
           "date": "2025-08",
           "series": "CRI",
-          "value": 111.5925
+          "value": 111.8719
         },
         {
           "date": "2025-09",
           "series": "CRI",
-          "value": 111.4891
+          "value": 111.7683
         },
         {
           "date": "2025-10",
           "series": "CRI",
-          "value": 112.0403
+          "value": 112.3208
         },
         {
           "date": "2025-11",
           "series": "CRI",
-          "value": 111.2135
+          "value": 111.492
         },
         {
           "date": "2025-12",
           "series": "CRI",
-          "value": 111.6097
+          "value": 111.8891
         },
         {
           "date": "2026-01",
           "series": "CRI",
-          "value": 112.0231
+          "value": 112.3036
         },
         {
           "date": "2026-02",
           "series": "CRI",
-          "value": 112.1523
+          "value": 112.4331
         },
         {
           "date": "2026-03",
           "series": "CRI",
-          "value": 113.0566
+          "value": 113.3397
         },
         {
           "date": "2026-04",
           "series": "CRI",
-          "value": 113.3494
+          "value": 113.6332
         },
         {
           "date": "2026-05",
           "series": "CRI",
-          "value": 114.7791
+          "value": 115.0665
         },
         {
           "date": "2026-06",
           "series": "CRI",
-          "value": 115.9332
+          "value": 116.2235
         }
       ],
       "hkma_mortgage_rate_mix": [
@@ -61568,606 +61553,93 @@
       "bd_supply_pipeline_history_counts": [],
       "agency_transactions_pulse": [
         {
-          "transaction_date": "2026-07-31",
-          "estate_name": "尚悅",
-          "saleable_area_sqft": 660.0,
-          "price_hkd": 6220000.0,
-          "unit_price_hkd_sqft": 9424.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "3期",
-          "saleable_area_sqft": 463.0,
-          "price_hkd": 6850000.0,
-          "unit_price_hkd_sqft": 14795.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "1期",
-          "saleable_area_sqft": 974.0,
-          "price_hkd": 12180000.0,
-          "unit_price_hkd_sqft": 12505.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "2期",
-          "saleable_area_sqft": 266.0,
-          "price_hkd": 3620000.0,
-          "unit_price_hkd_sqft": 13609.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "瑧樺",
-          "saleable_area_sqft": 272.0,
-          "price_hkd": 5000000.0,
-          "unit_price_hkd_sqft": 18382.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "1期",
-          "saleable_area_sqft": 298.0,
-          "price_hkd": 8600000.0,
-          "unit_price_hkd_sqft": 28859.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "1期",
-          "saleable_area_sqft": 393.0,
-          "price_hkd": 6550000.0,
+          "transaction_date": "2026-08-01",
+          "estate_name": "Capri",
+          "saleable_area_sqft": 360.0,
+          "price_hkd": 6000000.0,
           "unit_price_hkd_sqft": 16667.0,
           "primary_source_agency": "Centaline Property Agency",
           "matched_agency_count": 1
         },
         {
-          "transaction_date": "2026-07-31",
+          "transaction_date": "2026-08-01",
           "estate_name": "3期",
-          "saleable_area_sqft": 748.0,
-          "price_hkd": 9200000.0,
-          "unit_price_hkd_sqft": 12299.0,
+          "saleable_area_sqft": 633.0,
+          "price_hkd": 9350000.0,
+          "unit_price_hkd_sqft": 14771.0,
+          "primary_source_agency": "Centaline Property Agency",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-08-01",
+          "estate_name": "高雅閣",
+          "saleable_area_sqft": 311.0,
+          "price_hkd": 5460000.0,
+          "unit_price_hkd_sqft": 17556.0,
           "primary_source_agency": "Centaline Property Agency",
           "matched_agency_count": 1
         },
         {
           "transaction_date": "2026-07-31",
-          "estate_name": "2期 帝柏海灣",
-          "saleable_area_sqft": 476.0,
-          "price_hkd": 9980000.0,
-          "unit_price_hkd_sqft": 20966.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "朗屏8號",
-          "saleable_area_sqft": 481.0,
-          "price_hkd": 6200000.0,
-          "unit_price_hkd_sqft": 12890.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "香島",
-          "saleable_area_sqft": 845.0,
-          "price_hkd": 14680000.0,
-          "unit_price_hkd_sqft": 17373.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "1期",
-          "saleable_area_sqft": 424.0,
-          "price_hkd": 6380000.0,
-          "unit_price_hkd_sqft": 15047.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "君匯港",
-          "saleable_area_sqft": 541.0,
-          "price_hkd": 12400000.0,
-          "unit_price_hkd_sqft": 22921.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "1期",
-          "saleable_area_sqft": 302.0,
-          "price_hkd": 4390000.0,
-          "unit_price_hkd_sqft": 14536.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "富康花園",
-          "saleable_area_sqft": 484.0,
-          "price_hkd": 4350000.0,
-          "unit_price_hkd_sqft": 8988.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "環宇海灣",
-          "saleable_area_sqft": 759.0,
-          "price_hkd": 11600000.0,
-          "unit_price_hkd_sqft": 15283.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "朗天峰",
-          "saleable_area_sqft": 285.0,
-          "price_hkd": 4400000.0,
-          "unit_price_hkd_sqft": 15439.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "協威園",
-          "saleable_area_sqft": 589.0,
-          "price_hkd": 5180000.0,
-          "unit_price_hkd_sqft": 8795.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "3期",
+          "estate_name": "維景灣畔",
           "saleable_area_sqft": 603.0,
           "price_hkd": 10100000.0,
           "unit_price_hkd_sqft": 16750.0,
-          "primary_source_agency": "Centaline Property Agency",
+          "primary_source_agency": "28Hse",
           "matched_agency_count": 1
         },
         {
           "transaction_date": "2026-07-31",
-          "estate_name": "2期",
+          "estate_name": "美孚新邨",
           "saleable_area_sqft": 638.0,
           "price_hkd": 6300000.0,
           "unit_price_hkd_sqft": 9875.0,
-          "primary_source_agency": "Centaline Property Agency",
+          "primary_source_agency": "28Hse",
           "matched_agency_count": 1
         },
         {
           "transaction_date": "2026-07-31",
-          "estate_name": "碧海藍天",
-          "saleable_area_sqft": 501.0,
-          "price_hkd": 7980000.0,
-          "unit_price_hkd_sqft": 15928.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "II",
-          "saleable_area_sqft": 799.0,
-          "price_hkd": 17190000.0,
-          "unit_price_hkd_sqft": 21514.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "嘉熙",
-          "saleable_area_sqft": 257.0,
-          "price_hkd": 4380000.0,
-          "unit_price_hkd_sqft": 17043.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "映日灣",
-          "saleable_area_sqft": 219.0,
-          "price_hkd": 4180000.0,
-          "unit_price_hkd_sqft": 19087.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "3A期",
-          "saleable_area_sqft": 298.0,
-          "price_hkd": 4450000.0,
-          "unit_price_hkd_sqft": 14933.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "M段第三街",
-          "saleable_area_sqft": 848.0,
-          "price_hkd": 11500000.0,
-          "unit_price_hkd_sqft": 13561.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "1期",
-          "saleable_area_sqft": 806.0,
-          "price_hkd": 9500000.0,
-          "unit_price_hkd_sqft": 11787.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "嘉熙",
-          "saleable_area_sqft": 439.0,
-          "price_hkd": 6500000.0,
-          "unit_price_hkd_sqft": 14806.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "煜康臺",
-          "saleable_area_sqft": 1001.0,
-          "price_hkd": 18680000.0,
-          "unit_price_hkd_sqft": 18661.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "3期",
-          "saleable_area_sqft": 325.0,
-          "price_hkd": 4500000.0,
-          "unit_price_hkd_sqft": 13846.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "海濱花園",
-          "saleable_area_sqft": 700.0,
-          "price_hkd": 7080000.0,
-          "unit_price_hkd_sqft": 10114.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "龍譽",
-          "saleable_area_sqft": 523.0,
-          "price_hkd": 10800000.0,
-          "unit_price_hkd_sqft": 20650.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "3期",
-          "saleable_area_sqft": 392.0,
-          "price_hkd": 4580000.0,
-          "unit_price_hkd_sqft": 11684.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "啟德樓",
-          "saleable_area_sqft": 1045.0,
-          "price_hkd": 7488000.0,
-          "unit_price_hkd_sqft": 7166.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "3期",
-          "saleable_area_sqft": 600.0,
-          "price_hkd": 9900000.0,
-          "unit_price_hkd_sqft": 16500.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "順欣花園",
-          "saleable_area_sqft": 583.0,
-          "price_hkd": 4790000.0,
-          "unit_price_hkd_sqft": 8216.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "壹鑾",
-          "saleable_area_sqft": 534.0,
-          "price_hkd": 12800000.0,
-          "unit_price_hkd_sqft": 23970.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "薈蕎",
-          "saleable_area_sqft": 389.0,
-          "price_hkd": 5650000.0,
-          "unit_price_hkd_sqft": 14524.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "翠濤閣",
-          "saleable_area_sqft": 477.0,
-          "price_hkd": 5040000.0,
-          "unit_price_hkd_sqft": 10566.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "5期",
-          "saleable_area_sqft": 284.0,
-          "price_hkd": 4380000.0,
-          "unit_price_hkd_sqft": 15423.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "寶御",
-          "saleable_area_sqft": 410.0,
-          "price_hkd": 6800000.0,
-          "unit_price_hkd_sqft": 16585.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "3期",
-          "saleable_area_sqft": 285.0,
-          "price_hkd": 4280000.0,
-          "unit_price_hkd_sqft": 15018.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "彩興苑",
-          "saleable_area_sqft": 385.0,
-          "price_hkd": 4190000.0,
-          "unit_price_hkd_sqft": 10883.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "俊民苑",
-          "saleable_area_sqft": 485.0,
-          "price_hkd": 5080000.0,
-          "unit_price_hkd_sqft": 10474.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "悅雅",
-          "saleable_area_sqft": 238.0,
-          "price_hkd": 4180000.0,
-          "unit_price_hkd_sqft": 17563.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "新興花園",
-          "saleable_area_sqft": 591.0,
-          "price_hkd": 5950000.0,
-          "unit_price_hkd_sqft": 10068.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "寶德大廈",
-          "saleable_area_sqft": 344.0,
-          "price_hkd": 4880000.0,
-          "unit_price_hkd_sqft": 14186.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "百福花園",
-          "saleable_area_sqft": 597.0,
-          "price_hkd": 7100000.0,
-          "unit_price_hkd_sqft": 11893.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "優雅閣",
-          "saleable_area_sqft": 1794.0,
-          "price_hkd": 33000000.0,
-          "unit_price_hkd_sqft": 18395.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "星堤",
-          "saleable_area_sqft": 918.0,
-          "price_hkd": 7430000.0,
-          "unit_price_hkd_sqft": 8094.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "5期 尚悅‧嶺",
-          "saleable_area_sqft": 279.0,
-          "price_hkd": 3950000.0,
-          "unit_price_hkd_sqft": 14158.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "Finnie",
-          "saleable_area_sqft": 270.0,
-          "price_hkd": 7280000.0,
-          "unit_price_hkd_sqft": 26963.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "冠園",
-          "saleable_area_sqft": 1878.0,
-          "price_hkd": 53000000.0,
-          "unit_price_hkd_sqft": 28222.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "1期",
-          "saleable_area_sqft": 463.0,
-          "price_hkd": 5700000.0,
-          "unit_price_hkd_sqft": 12311.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "藍澄灣",
-          "saleable_area_sqft": 488.0,
-          "price_hkd": 5320000.0,
-          "unit_price_hkd_sqft": 10902.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "1期",
-          "saleable_area_sqft": 438.0,
-          "price_hkd": 11800000.0,
-          "unit_price_hkd_sqft": 26941.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "新城樓",
-          "saleable_area_sqft": 385.0,
-          "price_hkd": 3600000.0,
-          "unit_price_hkd_sqft": 9351.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "德福花園",
-          "saleable_area_sqft": 517.0,
-          "price_hkd": 6180000.0,
-          "unit_price_hkd_sqft": 11954.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "3期",
-          "saleable_area_sqft": 792.0,
-          "price_hkd": 5980000.0,
-          "unit_price_hkd_sqft": 7551.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "3期",
-          "saleable_area_sqft": 717.0,
-          "price_hkd": 8330000.0,
-          "unit_price_hkd_sqft": 11618.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "翹翠峰",
-          "saleable_area_sqft": 822.0,
-          "price_hkd": 8180000.0,
-          "unit_price_hkd_sqft": 9951.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "3期",
+          "estate_name": "美孚新邨",
           "saleable_area_sqft": 982.0,
           "price_hkd": 10400000.0,
           "unit_price_hkd_sqft": 10591.0,
-          "primary_source_agency": "Centaline Property Agency",
+          "primary_source_agency": "28Hse",
           "matched_agency_count": 1
         },
         {
           "transaction_date": "2026-07-31",
-          "estate_name": "嘉熙",
-          "saleable_area_sqft": 453.0,
-          "price_hkd": 6950000.0,
-          "unit_price_hkd_sqft": 15342.0,
-          "primary_source_agency": "Centaline Property Agency",
+          "estate_name": "沙田第一城",
+          "saleable_area_sqft": 284.0,
+          "price_hkd": 4380000.0,
+          "unit_price_hkd_sqft": 15423.0,
+          "primary_source_agency": "28Hse",
           "matched_agency_count": 1
         },
         {
           "transaction_date": "2026-07-31",
-          "estate_name": "豪苑",
-          "saleable_area_sqft": 333.0,
-          "price_hkd": 3490000.0,
-          "unit_price_hkd_sqft": 10480.0,
-          "primary_source_agency": "Centaline Property Agency",
+          "estate_name": "美孚新邨",
+          "saleable_area_sqft": 717.0,
+          "price_hkd": 8330000.0,
+          "unit_price_hkd_sqft": 11618.0,
+          "primary_source_agency": "28Hse",
           "matched_agency_count": 1
         },
         {
           "transaction_date": "2026-07-31",
-          "estate_name": "好順意大廈",
-          "saleable_area_sqft": 283.0,
-          "price_hkd": 3295000.0,
-          "unit_price_hkd_sqft": 11643.0,
-          "primary_source_agency": "Centaline Property Agency",
+          "estate_name": "維景灣畔",
+          "saleable_area_sqft": 600.0,
+          "price_hkd": 9900000.0,
+          "unit_price_hkd_sqft": 16500.0,
+          "primary_source_agency": "28Hse",
           "matched_agency_count": 1
         },
         {
           "transaction_date": "2026-07-31",
-          "estate_name": "環宇海灣",
-          "saleable_area_sqft": 660.0,
-          "price_hkd": 8700000.0,
-          "unit_price_hkd_sqft": 13182.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-31",
-          "estate_name": "1期",
-          "saleable_area_sqft": 379.0,
-          "price_hkd": 5800000.0,
-          "unit_price_hkd_sqft": 15303.0,
-          "primary_source_agency": "Centaline Property Agency",
+          "estate_name": "維景灣畔",
+          "saleable_area_sqft": 463.0,
+          "price_hkd": 6850000.0,
+          "unit_price_hkd_sqft": 14795.0,
+          "primary_source_agency": "28Hse",
           "matched_agency_count": 1
         },
         {
@@ -62181,29 +61653,11 @@
         },
         {
           "transaction_date": "2026-07-30",
-          "estate_name": "禮頓山",
-          "saleable_area_sqft": 1461.0,
-          "price_hkd": 63800000.0,
-          "unit_price_hkd_sqft": 43669.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-30",
-          "estate_name": "帝庭豪園",
-          "saleable_area_sqft": 773.0,
-          "price_hkd": 13800000.0,
-          "unit_price_hkd_sqft": 17853.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-30",
-          "estate_name": "德田邨",
-          "saleable_area_sqft": null,
-          "price_hkd": 2480000.0,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "Centaline Property Agency",
+          "estate_name": "映灣園",
+          "saleable_area_sqft": 563.0,
+          "price_hkd": 5990000.0,
+          "unit_price_hkd_sqft": 10639.0,
+          "primary_source_agency": "28Hse",
           "matched_agency_count": 1
         },
         {
@@ -62217,56 +61671,11 @@
         },
         {
           "transaction_date": "2026-07-30",
-          "estate_name": "明雅苑",
-          "saleable_area_sqft": 438.0,
-          "price_hkd": 4950000.0,
-          "unit_price_hkd_sqft": 11301.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-30",
           "estate_name": "嘉湖山莊",
           "saleable_area_sqft": 633.0,
           "price_hkd": 5200000.0,
           "unit_price_hkd_sqft": 8215.0,
           "primary_source_agency": "28Hse",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-30",
-          "estate_name": "2B期",
-          "saleable_area_sqft": 306.0,
-          "price_hkd": 4500000.0,
-          "unit_price_hkd_sqft": 14706.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-30",
-          "estate_name": "海堤灣畔",
-          "saleable_area_sqft": 541.0,
-          "price_hkd": 7380000.0,
-          "unit_price_hkd_sqft": 13641.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-30",
-          "estate_name": "1期",
-          "saleable_area_sqft": 297.0,
-          "price_hkd": 8800000.0,
-          "unit_price_hkd_sqft": 29630.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-30",
-          "estate_name": "2期",
-          "saleable_area_sqft": 352.0,
-          "price_hkd": 5500000.0,
-          "unit_price_hkd_sqft": 15625.0,
-          "primary_source_agency": "Centaline Property Agency",
           "matched_agency_count": 1
         },
         {
@@ -62280,47 +61689,11 @@
         },
         {
           "transaction_date": "2026-07-30",
-          "estate_name": "1期",
-          "saleable_area_sqft": 1039.0,
-          "price_hkd": 9900000.0,
-          "unit_price_hkd_sqft": 9528.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-30",
           "estate_name": "維景灣畔",
           "saleable_area_sqft": 603.0,
           "price_hkd": 9880000.0,
           "unit_price_hkd_sqft": 16385.0,
           "primary_source_agency": "28Hse",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-30",
-          "estate_name": "1期 意嵐",
-          "saleable_area_sqft": 236.0,
-          "price_hkd": 2800000.0,
-          "unit_price_hkd_sqft": 11864.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-30",
-          "estate_name": "2期 賞湖居",
-          "saleable_area_sqft": 636.0,
-          "price_hkd": 5250000.0,
-          "unit_price_hkd_sqft": 8255.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-30",
-          "estate_name": "東港城",
-          "saleable_area_sqft": 623.0,
-          "price_hkd": 9200000.0,
-          "unit_price_hkd_sqft": 14767.0,
-          "primary_source_agency": "Centaline Property Agency",
           "matched_agency_count": 1
         },
         {
@@ -62334,56 +61707,11 @@
         },
         {
           "transaction_date": "2026-07-30",
-          "estate_name": "綠楊新邨",
-          "saleable_area_sqft": 582.0,
-          "price_hkd": 8000000.0,
-          "unit_price_hkd_sqft": 13746.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-30",
-          "estate_name": "The Parkside",
-          "saleable_area_sqft": 399.0,
-          "price_hkd": 7680000.0,
-          "unit_price_hkd_sqft": 19248.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-30",
-          "estate_name": "加多利軒",
-          "saleable_area_sqft": 389.0,
-          "price_hkd": 7500000.0,
-          "unit_price_hkd_sqft": 19280.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-30",
-          "estate_name": "置富花園",
-          "saleable_area_sqft": 439.0,
-          "price_hkd": 5700000.0,
-          "unit_price_hkd_sqft": 12984.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-30",
-          "estate_name": "天平邨",
-          "saleable_area_sqft": 381.0,
-          "price_hkd": 1980000.0,
-          "unit_price_hkd_sqft": 5197.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-30",
-          "estate_name": "浩景臺",
-          "saleable_area_sqft": 630.0,
-          "price_hkd": 5800000.0,
-          "unit_price_hkd_sqft": 9206.0,
-          "primary_source_agency": "Centaline Property Agency",
+          "estate_name": "匯璽",
+          "saleable_area_sqft": 1368.0,
+          "price_hkd": 37180000.0,
+          "unit_price_hkd_sqft": 27178.0,
+          "primary_source_agency": "28Hse",
           "matched_agency_count": 1
         },
         {
@@ -62397,33 +61725,6 @@
         },
         {
           "transaction_date": "2026-07-30",
-          "estate_name": "君頤峰",
-          "saleable_area_sqft": 1321.0,
-          "price_hkd": 26380000.0,
-          "unit_price_hkd_sqft": 19970.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-30",
-          "estate_name": "好運中心",
-          "saleable_area_sqft": 505.0,
-          "price_hkd": 6420000.0,
-          "unit_price_hkd_sqft": 12713.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-30",
-          "estate_name": "海日灣II",
-          "saleable_area_sqft": 243.0,
-          "price_hkd": 3950000.0,
-          "unit_price_hkd_sqft": 16255.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-30",
           "estate_name": "沙田第一城",
           "saleable_area_sqft": 478.0,
           "price_hkd": 3000000.0,
@@ -62433,29 +61734,11 @@
         },
         {
           "transaction_date": "2026-07-30",
-          "estate_name": "1期",
-          "saleable_area_sqft": 498.0,
-          "price_hkd": 5820000.0,
-          "unit_price_hkd_sqft": 11687.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-30",
           "estate_name": "嘉湖山莊",
           "saleable_area_sqft": 448.0,
           "price_hkd": 4000000.0,
           "unit_price_hkd_sqft": 8929.0,
           "primary_source_agency": "28Hse",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-30",
-          "estate_name": "嘉順苑",
-          "saleable_area_sqft": 449.0,
-          "price_hkd": 4950000.0,
-          "unit_price_hkd_sqft": 11024.0,
-          "primary_source_agency": "Centaline Property Agency",
           "matched_agency_count": 1
         },
         {
@@ -62469,33 +61752,6 @@
         },
         {
           "transaction_date": "2026-07-29",
-          "estate_name": "天寰",
-          "saleable_area_sqft": 1190.0,
-          "price_hkd": 27000000.0,
-          "unit_price_hkd_sqft": 22689.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-29",
-          "estate_name": "疊茵庭",
-          "saleable_area_sqft": 381.0,
-          "price_hkd": 4650000.0,
-          "unit_price_hkd_sqft": 12205.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-29",
-          "estate_name": "8期 Sea To Sky",
-          "saleable_area_sqft": 473.0,
-          "price_hkd": 7480000.0,
-          "unit_price_hkd_sqft": 15814.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-29",
           "estate_name": "海之戀",
           "saleable_area_sqft": 791.0,
           "price_hkd": 16000000.0,
@@ -62505,47 +61761,20 @@
         },
         {
           "transaction_date": "2026-07-29",
-          "estate_name": "青怡花園",
-          "saleable_area_sqft": 547.0,
-          "price_hkd": 6850000.0,
-          "unit_price_hkd_sqft": 12523.0,
-          "primary_source_agency": "Centaline Property Agency",
+          "estate_name": "匯璽",
+          "saleable_area_sqft": 1327.0,
+          "price_hkd": 32800000.0,
+          "unit_price_hkd_sqft": 24717.0,
+          "primary_source_agency": "28Hse",
           "matched_agency_count": 1
         },
         {
           "transaction_date": "2026-07-29",
-          "estate_name": "山翠苑",
-          "saleable_area_sqft": 374.0,
-          "price_hkd": 3730000.0,
-          "unit_price_hkd_sqft": 9973.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-29",
-          "estate_name": "錦駿苑",
-          "saleable_area_sqft": 426.0,
-          "price_hkd": 4160000.0,
-          "unit_price_hkd_sqft": 9765.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-29",
-          "estate_name": "新葵芳花園",
-          "saleable_area_sqft": 415.0,
-          "price_hkd": 5225000.0,
-          "unit_price_hkd_sqft": 12590.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-29",
-          "estate_name": "青雅苑",
-          "saleable_area_sqft": 489.0,
-          "price_hkd": 3900000.0,
-          "unit_price_hkd_sqft": 7975.0,
-          "primary_source_agency": "Centaline Property Agency",
+          "estate_name": "匯璽",
+          "saleable_area_sqft": 461.0,
+          "price_hkd": 13130000.0,
+          "unit_price_hkd_sqft": 28482.0,
+          "primary_source_agency": "28Hse",
           "matched_agency_count": 1
         },
         {
@@ -62559,92 +61788,11 @@
         },
         {
           "transaction_date": "2026-07-29",
-          "estate_name": "Skypark",
-          "saleable_area_sqft": 309.0,
-          "price_hkd": 4900000.0,
-          "unit_price_hkd_sqft": 15858.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-29",
-          "estate_name": "珠城大廈",
-          "saleable_area_sqft": 493.0,
-          "price_hkd": 5950000.0,
-          "unit_price_hkd_sqft": 12069.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-29",
-          "estate_name": "溱柏",
-          "saleable_area_sqft": 598.0,
-          "price_hkd": 5980000.0,
-          "unit_price_hkd_sqft": 10000.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-29",
           "estate_name": "太古城",
           "saleable_area_sqft": 582.0,
           "price_hkd": 8800000.0,
           "unit_price_hkd_sqft": 15120.0,
           "primary_source_agency": "28Hse",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-29",
-          "estate_name": "2期",
-          "saleable_area_sqft": 588.0,
-          "price_hkd": 6500000.0,
-          "unit_price_hkd_sqft": 11054.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-29",
-          "estate_name": "3B期 Blue Coast",
-          "saleable_area_sqft": 538.0,
-          "price_hkd": 15850000.0,
-          "unit_price_hkd_sqft": 29461.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-29",
-          "estate_name": "2A期",
-          "saleable_area_sqft": 391.0,
-          "price_hkd": 5300000.0,
-          "unit_price_hkd_sqft": 13555.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-29",
-          "estate_name": "2期",
-          "saleable_area_sqft": 607.0,
-          "price_hkd": 6680000.0,
-          "unit_price_hkd_sqft": 11005.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-29",
-          "estate_name": "德昇大廈",
-          "saleable_area_sqft": 285.0,
-          "price_hkd": 2700000.0,
-          "unit_price_hkd_sqft": 9474.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-29",
-          "estate_name": "翠擁華庭",
-          "saleable_area_sqft": 696.0,
-          "price_hkd": 8770000.0,
-          "unit_price_hkd_sqft": 12601.0,
-          "primary_source_agency": "Centaline Property Agency",
           "matched_agency_count": 1
         },
         {
@@ -62730,6 +61878,15 @@
         },
         {
           "transaction_date": "2026-07-28",
+          "estate_name": "嘉湖山莊",
+          "saleable_area_sqft": 543.0,
+          "price_hkd": 4700000.0,
+          "unit_price_hkd_sqft": 8656.0,
+          "primary_source_agency": "28Hse",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-07-28",
           "estate_name": "太古城",
           "saleable_area_sqft": 760.0,
           "price_hkd": 16500000.0,
@@ -62752,6 +61909,15 @@
           "saleable_area_sqft": 406.0,
           "price_hkd": 2623000.0,
           "unit_price_hkd_sqft": 6461.0,
+          "primary_source_agency": "28Hse",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-07-28",
+          "estate_name": "匯璽",
+          "saleable_area_sqft": 379.0,
+          "price_hkd": 8400000.0,
+          "unit_price_hkd_sqft": 22164.0,
           "primary_source_agency": "28Hse",
           "matched_agency_count": 1
         },
@@ -62892,24 +62058,6 @@
         },
         {
           "transaction_date": "2026-07-27",
-          "estate_name": "新都城",
-          "saleable_area_sqft": 363.0,
-          "price_hkd": 5880000.0,
-          "unit_price_hkd_sqft": 16198.0,
-          "primary_source_agency": "28Hse",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-27",
-          "estate_name": "新都城",
-          "saleable_area_sqft": 526.0,
-          "price_hkd": 7990000.0,
-          "unit_price_hkd_sqft": 15190.0,
-          "primary_source_agency": "28Hse",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-27",
           "estate_name": "黃埔花園",
           "saleable_area_sqft": 729.0,
           "price_hkd": 9880000.0,
@@ -62946,19 +62094,19 @@
         },
         {
           "transaction_date": "2026-07-24",
-          "estate_name": "新都城",
-          "saleable_area_sqft": 526.0,
-          "price_hkd": 8420000.0,
-          "unit_price_hkd_sqft": 16008.0,
+          "estate_name": "嘉湖山莊",
+          "saleable_area_sqft": 449.0,
+          "price_hkd": 4260000.0,
+          "unit_price_hkd_sqft": 9488.0,
           "primary_source_agency": "28Hse",
           "matched_agency_count": 1
         },
         {
           "transaction_date": "2026-07-24",
-          "estate_name": "嘉湖山莊",
-          "saleable_area_sqft": 449.0,
-          "price_hkd": 4260000.0,
-          "unit_price_hkd_sqft": 9488.0,
+          "estate_name": "匯璽",
+          "saleable_area_sqft": 379.0,
+          "price_hkd": 8530000.0,
+          "unit_price_hkd_sqft": 22507.0,
           "primary_source_agency": "28Hse",
           "matched_agency_count": 1
         },
@@ -62982,15 +62130,6 @@
         },
         {
           "transaction_date": "2026-07-24",
-          "estate_name": "百福花園",
-          "saleable_area_sqft": null,
-          "price_hkd": 6200000.0,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-24",
           "estate_name": "映灣園",
           "saleable_area_sqft": 563.0,
           "price_hkd": 6350000.0,
@@ -63004,15 +62143,6 @@
           "saleable_area_sqft": 723.0,
           "price_hkd": 16300000.0,
           "unit_price_hkd_sqft": 22545.0,
-          "primary_source_agency": "28Hse",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-24",
-          "estate_name": "新都城",
-          "saleable_area_sqft": 364.0,
-          "price_hkd": 3000000.0,
-          "unit_price_hkd_sqft": 8242.0,
           "primary_source_agency": "28Hse",
           "matched_agency_count": 1
         },
@@ -63099,15 +62229,6 @@
         },
         {
           "transaction_date": "2026-07-23",
-          "estate_name": "祥興大廈",
-          "saleable_area_sqft": 454.0,
-          "price_hkd": 3000000.0,
-          "unit_price_hkd_sqft": 6608.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-23",
           "estate_name": "黃埔花園",
           "saleable_area_sqft": 466.0,
           "price_hkd": 7150000.0,
@@ -63149,24 +62270,6 @@
           "price_hkd": 14400000.0,
           "unit_price_hkd_sqft": 18629.0,
           "primary_source_agency": "28Hse",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-22",
-          "estate_name": "海濱花園",
-          "saleable_area_sqft": null,
-          "price_hkd": 920000.0,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-22",
-          "estate_name": "華都花園",
-          "saleable_area_sqft": 414.0,
-          "price_hkd": 4150000.0,
-          "unit_price_hkd_sqft": 10024.0,
-          "primary_source_agency": "Centaline Property Agency",
           "matched_agency_count": 1
         },
         {
@@ -63216,15 +62319,6 @@
         },
         {
           "transaction_date": "2026-07-22",
-          "estate_name": "美孚新邨",
-          "saleable_area_sqft": 597.0,
-          "price_hkd": 7038000.0,
-          "unit_price_hkd_sqft": 11789.0,
-          "primary_source_agency": "28Hse",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-22",
           "estate_name": "柏傲莊",
           "saleable_area_sqft": 991.0,
           "price_hkd": 24280000.0,
@@ -63252,10 +62346,19 @@
         },
         {
           "transaction_date": "2026-07-22",
-          "estate_name": "嘉湖山莊",
-          "saleable_area_sqft": 446.0,
-          "price_hkd": 4180000.0,
-          "unit_price_hkd_sqft": 9372.0,
+          "estate_name": "匯璽",
+          "saleable_area_sqft": 529.0,
+          "price_hkd": 13980000.0,
+          "unit_price_hkd_sqft": 26427.0,
+          "primary_source_agency": "28Hse",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-07-22",
+          "estate_name": "匯璽",
+          "saleable_area_sqft": 350.0,
+          "price_hkd": 8320000.0,
+          "unit_price_hkd_sqft": 23771.0,
           "primary_source_agency": "28Hse",
           "matched_agency_count": 1
         },
@@ -63279,24 +62382,6 @@
         },
         {
           "transaction_date": "2026-07-21",
-          "estate_name": "新都城",
-          "saleable_area_sqft": 470.0,
-          "price_hkd": 7270000.0,
-          "unit_price_hkd_sqft": 15468.0,
-          "primary_source_agency": "28Hse",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-21",
-          "estate_name": "4期 御峰豪園",
-          "saleable_area_sqft": 870.0,
-          "price_hkd": 8680000.0,
-          "unit_price_hkd_sqft": 9977.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-21",
           "estate_name": "維景灣畔",
           "saleable_area_sqft": 639.0,
           "price_hkd": 11000000.0,
@@ -63315,38 +62400,11 @@
         },
         {
           "transaction_date": "2026-07-21",
-          "estate_name": "新都城",
-          "saleable_area_sqft": 526.0,
-          "price_hkd": 7650000.0,
-          "unit_price_hkd_sqft": 14544.0,
-          "primary_source_agency": "28Hse",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-21",
           "estate_name": "港島南岸",
           "saleable_area_sqft": 386.0,
           "price_hkd": 9000000.0,
           "unit_price_hkd_sqft": 23316.0,
           "primary_source_agency": "28Hse",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-21",
-          "estate_name": "美孚新邨",
-          "saleable_area_sqft": 918.0,
-          "price_hkd": 10280000.0,
-          "unit_price_hkd_sqft": 11198.0,
-          "primary_source_agency": "28Hse",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-21",
-          "estate_name": "君匯港",
-          "saleable_area_sqft": 482.0,
-          "price_hkd": 9143800.0,
-          "unit_price_hkd_sqft": 18971.0,
-          "primary_source_agency": "Centaline Property Agency",
           "matched_agency_count": 1
         },
         {
@@ -63360,19 +62418,10 @@
         },
         {
           "transaction_date": "2026-07-21",
-          "estate_name": "2A期",
+          "estate_name": "匯璽",
           "saleable_area_sqft": 1327.0,
           "price_hkd": 32800000.0,
           "unit_price_hkd_sqft": 24717.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-21",
-          "estate_name": "美孚新邨",
-          "saleable_area_sqft": 670.0,
-          "price_hkd": 6380000.0,
-          "unit_price_hkd_sqft": 9522.0,
           "primary_source_agency": "28Hse",
           "matched_agency_count": 1
         },
@@ -63423,37 +62472,28 @@
         },
         {
           "transaction_date": "2026-07-20",
-          "estate_name": "新都城",
-          "saleable_area_sqft": 441.0,
-          "price_hkd": 6650000.0,
-          "unit_price_hkd_sqft": 15079.0,
-          "primary_source_agency": "28Hse",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-20",
-          "estate_name": "新都城",
-          "saleable_area_sqft": 363.0,
-          "price_hkd": 4800000.0,
-          "unit_price_hkd_sqft": 13223.0,
-          "primary_source_agency": "28Hse",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-20",
-          "estate_name": "新都城",
-          "saleable_area_sqft": 364.0,
-          "price_hkd": 6120000.0,
-          "unit_price_hkd_sqft": 16813.0,
-          "primary_source_agency": "28Hse",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-20",
           "estate_name": "天晉",
           "saleable_area_sqft": 549.0,
           "price_hkd": 10200000.0,
           "unit_price_hkd_sqft": 18579.0,
+          "primary_source_agency": "28Hse",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-07-19",
+          "estate_name": "沙田第一城",
+          "saleable_area_sqft": 284.0,
+          "price_hkd": 4580000.0,
+          "unit_price_hkd_sqft": 16127.0,
+          "primary_source_agency": "28Hse",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-07-18",
+          "estate_name": "沙田第一城",
+          "saleable_area_sqft": 304.0,
+          "price_hkd": 4580000.0,
+          "unit_price_hkd_sqft": 15066.0,
           "primary_source_agency": "28Hse",
           "matched_agency_count": 1
         },
@@ -63477,46 +62517,10 @@
         },
         {
           "transaction_date": "2026-07-17",
-          "estate_name": "2期",
-          "saleable_area_sqft": 1032.0,
-          "price_hkd": 11450000.0,
-          "unit_price_hkd_sqft": 11095.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-17",
-          "estate_name": "維景灣畔",
-          "saleable_area_sqft": 405.0,
-          "price_hkd": 7260000.0,
-          "unit_price_hkd_sqft": 17926.0,
-          "primary_source_agency": "28Hse",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-17",
-          "estate_name": "沙田第一城",
-          "saleable_area_sqft": 451.0,
-          "price_hkd": 6140000.0,
-          "unit_price_hkd_sqft": 13614.0,
-          "primary_source_agency": "28Hse",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-17",
-          "estate_name": "雲向",
-          "saleable_area_sqft": 220.0,
-          "price_hkd": 3399000.0,
-          "unit_price_hkd_sqft": 15450.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-17",
-          "estate_name": "新都城",
-          "saleable_area_sqft": 538.0,
-          "price_hkd": 7800000.0,
-          "unit_price_hkd_sqft": 14498.0,
+          "estate_name": "匯璽",
+          "saleable_area_sqft": 1509.0,
+          "price_hkd": 41280000.0,
+          "unit_price_hkd_sqft": 27356.0,
           "primary_source_agency": "28Hse",
           "matched_agency_count": 1
         },
@@ -63549,24 +62553,6 @@
         },
         {
           "transaction_date": "2026-07-17",
-          "estate_name": "3期A 海之戀．愛炫美",
-          "saleable_area_sqft": 791.0,
-          "price_hkd": 16000000.0,
-          "unit_price_hkd_sqft": 20228.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-17",
-          "estate_name": "利德昌大廈",
-          "saleable_area_sqft": 375.0,
-          "price_hkd": 3850000.0,
-          "unit_price_hkd_sqft": 10267.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-17",
           "estate_name": "維景灣畔",
           "saleable_area_sqft": 551.0,
           "price_hkd": 7800000.0,
@@ -63576,19 +62562,10 @@
         },
         {
           "transaction_date": "2026-07-17",
-          "estate_name": "映灣園",
-          "saleable_area_sqft": 749.0,
-          "price_hkd": 6000000.0,
-          "unit_price_hkd_sqft": 8011.0,
-          "primary_source_agency": "28Hse",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-17",
-          "estate_name": "沙田第一城",
-          "saleable_area_sqft": 688.0,
-          "price_hkd": 8750000.0,
-          "unit_price_hkd_sqft": 12718.0,
+          "estate_name": "維景灣畔",
+          "saleable_area_sqft": 499.0,
+          "price_hkd": 8150000.0,
+          "unit_price_hkd_sqft": 16333.0,
           "primary_source_agency": "28Hse",
           "matched_agency_count": 1
         },
@@ -63603,38 +62580,11 @@
         },
         {
           "transaction_date": "2026-07-17",
-          "estate_name": "維景灣畔",
-          "saleable_area_sqft": 527.0,
-          "price_hkd": 9600000.0,
-          "unit_price_hkd_sqft": 18216.0,
+          "estate_name": "匯璽",
+          "saleable_area_sqft": 1320.0,
+          "price_hkd": 32100000.0,
+          "unit_price_hkd_sqft": 24318.0,
           "primary_source_agency": "28Hse",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-17",
-          "estate_name": "興旺大廈",
-          "saleable_area_sqft": 508.0,
-          "price_hkd": 3000000.0,
-          "unit_price_hkd_sqft": 5906.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-17",
-          "estate_name": "沙田第一城",
-          "saleable_area_sqft": 284.0,
-          "price_hkd": 4600000.0,
-          "unit_price_hkd_sqft": 16197.0,
-          "primary_source_agency": "28Hse",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-16",
-          "estate_name": "黃金大廈",
-          "saleable_area_sqft": null,
-          "price_hkd": 3880000.0,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "Centaline Property Agency",
           "matched_agency_count": 1
         },
         {
@@ -63648,28 +62598,10 @@
         },
         {
           "transaction_date": "2026-07-15",
-          "estate_name": "仁光大廈",
-          "saleable_area_sqft": 212.0,
-          "price_hkd": 3000000.0,
-          "unit_price_hkd_sqft": 14151.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-15",
           "estate_name": "柏傲莊",
           "saleable_area_sqft": 452.0,
           "price_hkd": 10550000.0,
           "unit_price_hkd_sqft": 23341.0,
-          "primary_source_agency": "28Hse",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-15",
-          "estate_name": "維景灣畔",
-          "saleable_area_sqft": 484.0,
-          "price_hkd": 8250000.0,
-          "unit_price_hkd_sqft": 17045.0,
           "primary_source_agency": "28Hse",
           "matched_agency_count": 1
         },
@@ -63715,15 +62647,6 @@
           "saleable_area_sqft": 699.0,
           "price_hkd": 13760000.0,
           "unit_price_hkd_sqft": 19685.0,
-          "primary_source_agency": "28Hse",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-15",
-          "estate_name": "維景灣畔",
-          "saleable_area_sqft": 757.0,
-          "price_hkd": 14500000.0,
-          "unit_price_hkd_sqft": 19155.0,
           "primary_source_agency": "28Hse",
           "matched_agency_count": 1
         },
@@ -63792,47 +62715,11 @@
         },
         {
           "transaction_date": "2026-07-13",
-          "estate_name": "1期 意嵐",
-          "saleable_area_sqft": null,
-          "price_hkd": 3920000.0,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-13",
-          "estate_name": "慶華大樓",
-          "saleable_area_sqft": null,
-          "price_hkd": 2650000.0,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-13",
           "estate_name": "將軍澳中心",
           "saleable_area_sqft": 636.0,
           "price_hkd": 9380000.0,
           "unit_price_hkd_sqft": 14748.0,
           "primary_source_agency": "28Hse",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-13",
-          "estate_name": "1期",
-          "saleable_area_sqft": 485.0,
-          "price_hkd": 6250000.0,
-          "unit_price_hkd_sqft": 12887.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-11",
-          "estate_name": "兆麟苑",
-          "saleable_area_sqft": 554.0,
-          "price_hkd": 4000000.0,
-          "unit_price_hkd_sqft": 7220.0,
-          "primary_source_agency": "Centaline Property Agency",
           "matched_agency_count": 1
         },
         {
@@ -63846,38 +62733,11 @@
         },
         {
           "transaction_date": "2026-07-10",
-          "estate_name": "The Campton",
-          "saleable_area_sqft": 287.0,
-          "price_hkd": 5500000.0,
-          "unit_price_hkd_sqft": 19164.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-10",
           "estate_name": "將軍澳中心",
           "saleable_area_sqft": 384.0,
           "price_hkd": 5650000.0,
           "unit_price_hkd_sqft": 14714.0,
           "primary_source_agency": "28Hse",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-10",
-          "estate_name": "I-Home",
-          "saleable_area_sqft": 392.0,
-          "price_hkd": 5100000.0,
-          "unit_price_hkd_sqft": 13010.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-10",
-          "estate_name": "1期",
-          "saleable_area_sqft": 694.0,
-          "price_hkd": 8080000.0,
-          "unit_price_hkd_sqft": 11643.0,
-          "primary_source_agency": "Centaline Property Agency",
           "matched_agency_count": 1
         },
         {
@@ -63900,24 +62760,6 @@
         },
         {
           "transaction_date": "2026-07-10",
-          "estate_name": "錦柏苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 1463100.0,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-10",
-          "estate_name": "新填地街314號",
-          "saleable_area_sqft": null,
-          "price_hkd": 2500000.0,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-10",
           "estate_name": "LP6",
           "saleable_area_sqft": 422.0,
           "price_hkd": 6500000.0,
@@ -63932,78 +62774,6 @@
           "price_hkd": 20300000.0,
           "unit_price_hkd_sqft": 20239.0,
           "primary_source_agency": "28Hse",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-09",
-          "estate_name": "東蔚苑",
-          "saleable_area_sqft": 316.0,
-          "price_hkd": 3980000.0,
-          "unit_price_hkd_sqft": 12595.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-09",
-          "estate_name": "翠景花園",
-          "saleable_area_sqft": 607.0,
-          "price_hkd": 7200000.0,
-          "unit_price_hkd_sqft": 11862.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-09",
-          "estate_name": "錦柏苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 1402500.0,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-09",
-          "estate_name": "嘉鳴閣",
-          "saleable_area_sqft": 1152.0,
-          "price_hkd": 12400000.0,
-          "unit_price_hkd_sqft": 10764.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-09",
-          "estate_name": "東港城",
-          "saleable_area_sqft": 466.0,
-          "price_hkd": 7000000.0,
-          "unit_price_hkd_sqft": 15021.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-09",
-          "estate_name": "寶明苑",
-          "saleable_area_sqft": 539.0,
-          "price_hkd": 4500000.0,
-          "unit_price_hkd_sqft": 8349.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-09",
-          "estate_name": "僑裕大廈",
-          "saleable_area_sqft": 544.0,
-          "price_hkd": 6000000.0,
-          "unit_price_hkd_sqft": 11029.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-09",
-          "estate_name": "濱景花園",
-          "saleable_area_sqft": null,
-          "price_hkd": 6800000.0,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "Centaline Property Agency",
           "matched_agency_count": 1
         },
         {
@@ -64026,74 +62796,11 @@
         },
         {
           "transaction_date": "2026-07-09",
-          "estate_name": "恆福花園",
-          "saleable_area_sqft": null,
-          "price_hkd": 3000000.0,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-09",
           "estate_name": "名城",
           "saleable_area_sqft": 678.0,
           "price_hkd": 12200000.0,
           "unit_price_hkd_sqft": 17994.0,
           "primary_source_agency": "28Hse",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-09",
-          "estate_name": "裕興苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 3174100.0,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-09",
-          "estate_name": "康德花園",
-          "saleable_area_sqft": null,
-          "price_hkd": 3000000.0,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-08",
-          "estate_name": "4期",
-          "saleable_area_sqft": 341.0,
-          "price_hkd": 7324500.0,
-          "unit_price_hkd_sqft": 21479.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-08",
-          "estate_name": "裕興苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 3353900.0,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-08",
-          "estate_name": "寶暉大廈",
-          "saleable_area_sqft": null,
-          "price_hkd": 3500000.0,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-08",
-          "estate_name": "裕興苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 3217300.0,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "Centaline Property Agency",
           "matched_agency_count": 1
         },
         {
@@ -64106,165 +62813,120 @@
           "matched_agency_count": 1
         },
         {
-          "transaction_date": "2026-07-08",
-          "estate_name": "裕興苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 3049000.0,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-08",
-          "estate_name": "錦柏苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 1444300.0,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-08",
-          "estate_name": "錦柏苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 1489400.0,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-08",
-          "estate_name": "錦柏苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 1750900.0,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-08",
-          "estate_name": "2期 柏蔚森II",
-          "saleable_area_sqft": 383.0,
-          "price_hkd": 8106000.0,
-          "unit_price_hkd_sqft": 21164.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-08",
-          "estate_name": "裕興苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 3290800.0,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-08",
-          "estate_name": "裕興苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 3418800.0,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-08",
-          "estate_name": "錦柏苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 1790000.0,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-08",
-          "estate_name": "裕興苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 2404200.0,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-08",
-          "estate_name": "帝堡城",
-          "saleable_area_sqft": 556.0,
-          "price_hkd": 6800000.0,
-          "unit_price_hkd_sqft": 12230.0,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-08",
-          "estate_name": "裕興苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 2807900.0,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
-          "transaction_date": "2026-07-08",
-          "estate_name": "裕興苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 3221400.0,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "Centaline Property Agency",
-          "matched_agency_count": 1
-        },
-        {
           "transaction_date": "2026-07-07",
-          "estate_name": "錦柏苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 1827000.0,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "Centaline Property Agency",
+          "estate_name": "LP6",
+          "saleable_area_sqft": 729.0,
+          "price_hkd": 12000000.0,
+          "unit_price_hkd_sqft": 16461.0,
+          "primary_source_agency": "28Hse",
           "matched_agency_count": 1
         },
         {
-          "transaction_date": "2026-07-07",
-          "estate_name": "裕興苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 2892800.0,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "Centaline Property Agency",
+          "transaction_date": "2026-07-06",
+          "estate_name": "海之戀",
+          "saleable_area_sqft": 791.0,
+          "price_hkd": 16000000.0,
+          "unit_price_hkd_sqft": 20228.0,
+          "primary_source_agency": "28Hse",
           "matched_agency_count": 1
         },
         {
-          "transaction_date": "2026-07-07",
-          "estate_name": "錦柏苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 1489400.0,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "Centaline Property Agency",
+          "transaction_date": "2026-07-06",
+          "estate_name": "海之戀",
+          "saleable_area_sqft": 797.0,
+          "price_hkd": 16500000.0,
+          "unit_price_hkd_sqft": 20703.0,
+          "primary_source_agency": "28Hse",
           "matched_agency_count": 1
         },
         {
-          "transaction_date": "2026-07-07",
-          "estate_name": "錦柏苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 1793400.0,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "Centaline Property Agency",
+          "transaction_date": "2026-07-06",
+          "estate_name": "海之戀",
+          "saleable_area_sqft": 1138.0,
+          "price_hkd": 23000000.0,
+          "unit_price_hkd_sqft": 20211.0,
+          "primary_source_agency": "28Hse",
           "matched_agency_count": 1
         },
         {
-          "transaction_date": "2026-07-07",
-          "estate_name": "裕興苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 2595700.0,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "Centaline Property Agency",
+          "transaction_date": "2026-07-06",
+          "estate_name": "港島南岸",
+          "saleable_area_sqft": 1285.0,
+          "price_hkd": 55000000.0,
+          "unit_price_hkd_sqft": 42802.0,
+          "primary_source_agency": "28Hse",
           "matched_agency_count": 1
         },
         {
-          "transaction_date": "2026-07-07",
-          "estate_name": "錦柏苑",
-          "saleable_area_sqft": null,
-          "price_hkd": 1817700.0,
-          "unit_price_hkd_sqft": null,
-          "primary_source_agency": "Centaline Property Agency",
+          "transaction_date": "2026-07-03",
+          "estate_name": "名城",
+          "saleable_area_sqft": 738.0,
+          "price_hkd": 14200000.0,
+          "unit_price_hkd_sqft": 19241.0,
+          "primary_source_agency": "28Hse",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-07-02",
+          "estate_name": "LP6",
+          "saleable_area_sqft": 495.0,
+          "price_hkd": 7290000.0,
+          "unit_price_hkd_sqft": 14727.0,
+          "primary_source_agency": "28Hse",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-06-29",
+          "estate_name": "港島南岸",
+          "saleable_area_sqft": 464.0,
+          "price_hkd": 11650000.0,
+          "unit_price_hkd_sqft": 25108.0,
+          "primary_source_agency": "28Hse",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-06-29",
+          "estate_name": "港島南岸",
+          "saleable_area_sqft": 485.0,
+          "price_hkd": 12400000.0,
+          "unit_price_hkd_sqft": 25567.0,
+          "primary_source_agency": "28Hse",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-06-27",
+          "estate_name": "LP6",
+          "saleable_area_sqft": 307.0,
+          "price_hkd": 4950000.0,
+          "unit_price_hkd_sqft": 16124.0,
+          "primary_source_agency": "28Hse",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-06-24",
+          "estate_name": "LP6",
+          "saleable_area_sqft": 504.0,
+          "price_hkd": 7350000.0,
+          "unit_price_hkd_sqft": 14583.0,
+          "primary_source_agency": "28Hse",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-06-18",
+          "estate_name": "LP6",
+          "saleable_area_sqft": 429.0,
+          "price_hkd": 7200000.0,
+          "unit_price_hkd_sqft": 16783.0,
+          "primary_source_agency": "28Hse",
+          "matched_agency_count": 1
+        },
+        {
+          "transaction_date": "2026-06-17",
+          "estate_name": "LP6",
+          "saleable_area_sqft": 307.0,
+          "price_hkd": 4728000.0,
+          "unit_price_hkd_sqft": 15401.0,
+          "primary_source_agency": "28Hse",
           "matched_agency_count": 1
         }
       ],
@@ -64277,7 +62939,7 @@
           "status": "Healthy",
           "latest_observation": "2026-07-26",
           "records": 1700,
-          "freshness": "5d old",
+          "freshness": "6d old",
           "notes": "Latest observation is published without a provisional flag."
         },
         {
@@ -64287,7 +62949,7 @@
           "status": "Healthy",
           "latest_observation": "2026-07-27",
           "records": 542,
-          "freshness": "4d old",
+          "freshness": "5d old",
           "notes": "Latest observation is published without a provisional flag."
         },
         {
@@ -64297,7 +62959,7 @@
           "status": "Healthy",
           "latest_observation": "2026-07-27",
           "records": 444,
-          "freshness": "4d old",
+          "freshness": "5d old",
           "notes": "Latest observation is published without a provisional flag."
         },
         {
@@ -64307,7 +62969,7 @@
           "status": "Healthy",
           "latest_observation": "2026-06-01",
           "records": 402,
-          "freshness": "60d old",
+          "freshness": "61d old",
           "notes": "Latest observation is provisional."
         },
         {
@@ -64317,7 +62979,7 @@
           "status": "Healthy",
           "latest_observation": "2026-06-01",
           "records": 402,
-          "freshness": "60d old",
+          "freshness": "61d old",
           "notes": "Latest observation is provisional."
         },
         {
@@ -64327,7 +62989,7 @@
           "status": "Healthy",
           "latest_observation": "2026-05-01",
           "records": 389,
-          "freshness": "91d old",
+          "freshness": "92d old",
           "notes": "Normalized residential price index; CCI is not a sentiment measure."
         },
         {
@@ -64337,7 +62999,7 @@
           "status": "Healthy",
           "latest_observation": "2026-06-01",
           "records": 707,
-          "freshness": "60d old",
+          "freshness": "61d old",
           "notes": "Normalized residential rental index; rental-yield history is a companion dataset."
         },
         {
@@ -64347,7 +63009,7 @@
           "status": "Healthy",
           "latest_observation": "2026-07-27",
           "records": 1116,
-          "freshness": "4d old",
+          "freshness": "5d old",
           "notes": "Normalized sentiment history; not a transaction or price series."
         },
         {
@@ -64357,7 +63019,7 @@
           "status": "Healthy",
           "latest_observation": "2026-05-01",
           "records": 1604,
-          "freshness": "91d old",
+          "freshness": "92d old",
           "notes": "Official grade-level rental index; provisional flags are retained."
         },
         {
@@ -64367,7 +63029,7 @@
           "status": "Healthy",
           "latest_observation": "2026-05-01",
           "records": 802,
-          "freshness": "91d old",
+          "freshness": "92d old",
           "notes": "Official retail rental/price indices; provisional flags are retained."
         }
       ],
@@ -64379,7 +63041,7 @@
           "status": "Healthy",
           "latest_observation": "2026-07-26",
           "records": 1700,
-          "freshness": "5d old",
+          "freshness": "6d old",
           "notes": "Latest observation is published without a provisional flag."
         },
         {
@@ -64389,7 +63051,7 @@
           "status": "Healthy",
           "latest_observation": "2026-07-27",
           "records": 542,
-          "freshness": "4d old",
+          "freshness": "5d old",
           "notes": "Latest observation is published without a provisional flag."
         },
         {
@@ -64399,7 +63061,7 @@
           "status": "Healthy",
           "latest_observation": "2026-07-27",
           "records": 444,
-          "freshness": "4d old",
+          "freshness": "5d old",
           "notes": "Latest observation is published without a provisional flag."
         },
         {
@@ -64409,7 +63071,7 @@
           "status": "Healthy",
           "latest_observation": "2026-06-01",
           "records": 402,
-          "freshness": "60d old",
+          "freshness": "61d old",
           "notes": "Latest observation is provisional."
         },
         {
@@ -64419,7 +63081,7 @@
           "status": "Healthy",
           "latest_observation": "2026-06-01",
           "records": 402,
-          "freshness": "60d old",
+          "freshness": "61d old",
           "notes": "Latest observation is provisional."
         },
         {
@@ -64429,7 +63091,7 @@
           "status": "Healthy",
           "latest_observation": "2026-05-01",
           "records": 389,
-          "freshness": "91d old",
+          "freshness": "92d old",
           "notes": "Normalized residential price index; CCI is not a sentiment measure."
         },
         {
@@ -64439,7 +63101,7 @@
           "status": "Healthy",
           "latest_observation": "2026-06-01",
           "records": 707,
-          "freshness": "60d old",
+          "freshness": "61d old",
           "notes": "Normalized residential rental index; rental-yield history is a companion dataset."
         },
         {
@@ -64449,7 +63111,7 @@
           "status": "Healthy",
           "latest_observation": "2026-07-27",
           "records": 1116,
-          "freshness": "4d old",
+          "freshness": "5d old",
           "notes": "Normalized sentiment history; not a transaction or price series."
         },
         {
@@ -64459,7 +63121,7 @@
           "status": "Healthy",
           "latest_observation": "2026-05-01",
           "records": 1604,
-          "freshness": "91d old",
+          "freshness": "92d old",
           "notes": "Official grade-level rental index; provisional flags are retained."
         },
         {
@@ -64469,7 +63131,7 @@
           "status": "Healthy",
           "latest_observation": "2026-05-01",
           "records": 802,
-          "freshness": "91d old",
+          "freshness": "92d old",
           "notes": "Official retail rental/price indices; provisional flags are retained."
         },
         {
@@ -64488,7 +63150,7 @@
           "type": "Measure",
           "status": "Healthy",
           "latest_observation": "—",
-          "records": 300,
+          "records": 153,
           "freshness": "Live at build time",
           "notes": "Deduplicated agency transaction feeds; see the chart/table above."
         },
@@ -64545,7 +63207,7 @@
         "url": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/banking/residential-mortgage-survey",
         "language": "JSON",
         "description": "Monthly mortgage loan approvals, LTV ratio, interest rate plan mix (HIBOR vs BLR), and delinquency rates.",
-        "executed_at": "2026-07-31T09:17:24.803872Z"
+        "executed_at": "2026-08-01T08:35:12.964687Z"
       }
     },
     {
@@ -64557,7 +63219,7 @@
         "url": "https://www.censtatd.gov.hk/api/get.php?id=615-66001&lang=en&full_series=1",
         "language": "JSON",
         "description": "Quarterly gross value of construction works performed by main contractors.",
-        "executed_at": "2026-07-31T09:17:24.803872Z"
+        "executed_at": "2026-08-01T08:35:12.964687Z"
       }
     },
     {
@@ -64573,7 +63235,7 @@
           "CCL latest is the most recent published weekly Centaline City Leading Index observation.",
           "Weekly and yearly movements are latest divided by the prior observation or latest observation on/before one year earlier, minus one."
         ],
-        "executed_at": "2026-07-31T09:17:24.803872Z"
+        "executed_at": "2026-08-01T08:35:12.964687Z"
       }
     },
     {
@@ -64585,7 +63247,7 @@
         "url": "https://hk.centanet.com/CCI/api/Index/CCI",
         "language": "JSON",
         "description": "Monthly CCI history from the normalized Centaline index contract.",
-        "executed_at": "2026-07-31T09:17:24.803872Z"
+        "executed_at": "2026-08-01T08:35:12.964687Z"
       }
     },
     {
@@ -64597,7 +63259,7 @@
         "url": "https://hk.centanet.com/CCI/api/Index/CRI",
         "language": "JSON",
         "description": "Monthly residential rental index and rental-yield history from the normalized Centaline contract.",
-        "executed_at": "2026-07-31T09:17:24.803872Z"
+        "executed_at": "2026-08-01T08:35:12.964687Z"
       }
     },
     {
@@ -64609,7 +63271,7 @@
         "url": "https://hk.centanet.com/CCI/api/Index/CSI",
         "language": "JSON",
         "description": "Weekly Centaline sentiment observations; not a transaction or price index.",
-        "executed_at": "2026-07-31T09:17:24.803872Z"
+        "executed_at": "2026-08-01T08:35:12.964687Z"
       }
     },
     {
@@ -64625,7 +63287,7 @@
           "MHPI latest is the most recent published overall weekly Midland Hong Kong Property Price Index observation.",
           "Weekly and yearly movements are latest divided by the prior observation or latest observation on/before one year earlier, minus one."
         ],
-        "executed_at": "2026-07-31T09:17:24.803872Z"
+        "executed_at": "2026-08-01T08:35:12.964687Z"
       }
     },
     {
@@ -64640,7 +63302,7 @@
         "metric_definitions": [
           "The confidence series is a supporting market-sentiment measure published by Midland Realty."
         ],
-        "executed_at": "2026-07-31T09:17:24.803872Z"
+        "executed_at": "2026-08-01T08:35:12.964687Z"
       }
     },
     {
@@ -64656,7 +63318,7 @@
           "RVD price latest is the All Classes monthly private domestic price index.",
           "Monthly and yearly movements are latest divided by the prior month or observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-07-31T09:17:24.803872Z"
+        "executed_at": "2026-08-01T08:35:12.964687Z"
       }
     },
     {
@@ -64672,7 +63334,7 @@
           "RVD rent latest is the All Classes monthly private domestic rental index.",
           "Monthly and yearly movements are latest divided by the prior month or observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-07-31T09:17:24.803872Z"
+        "executed_at": "2026-08-01T08:35:12.964687Z"
       }
     },
     {
@@ -64684,7 +63346,7 @@
         "url": "https://www.rvd.gov.hk/datagovhk/2.3M.csv",
         "language": "CSV",
         "description": "Monthly private office rental indices by grade, including official provisional flags.",
-        "executed_at": "2026-07-31T09:17:24.803872Z"
+        "executed_at": "2026-08-01T08:35:12.964687Z"
       }
     },
     {
@@ -64696,7 +63358,7 @@
         "url": "https://www.rvd.gov.hk/datagovhk/3.2M.csv",
         "language": "CSV",
         "description": "Monthly private retail rental and price indices with official provisional flags.",
-        "executed_at": "2026-07-31T09:17:24.803872Z"
+        "executed_at": "2026-08-01T08:35:12.964687Z"
       }
     },
     {
@@ -64715,7 +63377,7 @@
           "RVD 1.4M.csv",
           "RVD 1.3M.csv"
         ],
-        "executed_at": "2026-07-31T09:17:24.803872Z"
+        "executed_at": "2026-08-01T08:35:12.964687Z"
       }
     },
     {
@@ -64727,7 +63389,7 @@
         "url": "https://www.28hse.com/epi/historical_data/doaction",
         "language": "HTML (embedded in a JSON envelope)",
         "description": "Weekly all-HK Estate Price Index (EPI) and Estate Rental Index (ERI) history, 2016-present.",
-        "executed_at": "2026-07-31T09:17:24.803872Z"
+        "executed_at": "2026-08-01T08:35:12.964687Z"
       }
     },
     {
@@ -64739,7 +63401,7 @@
         "url": "https://www.28hse.com/new-properties",
         "language": "HTML",
         "description": "Catalogue of newly launched residential projects with district and estimated unit count.",
-        "executed_at": "2026-07-31T09:17:24.803872Z"
+        "executed_at": "2026-08-01T08:35:12.964687Z"
       }
     },
     {
@@ -64754,7 +63416,7 @@
           "Midland data.midland.com.hk/info/v1/transactions/buildings",
           "Centaline hk.centanet.com/findproperty/api/Transaction/Search"
         ],
-        "executed_at": "2026-07-31T09:17:24.803872Z"
+        "executed_at": "2026-08-01T08:35:12.964687Z"
       }
     },
     {
@@ -64766,7 +63428,7 @@
         "url": "https://www.landreg.gov.hk/json/monthly_stat/monthly/t1.json",
         "language": "JSON",
         "description": "Monthly deeds-received-for-registration counts (Agreements for Sale & Purchase, Assignments, Mortgages) and the Agreements-for-Sale-and-Purchase (ASP) series.",
-        "executed_at": "2026-07-31T09:17:24.803872Z"
+        "executed_at": "2026-08-01T08:35:12.964687Z"
       }
     },
     {
@@ -64778,7 +63440,7 @@
         "url": "https://www.bd.gov.hk/doc/en/whats-new/monthly-digests/Md11.xls",
         "language": "XLS",
         "description": "Scratch extraction of Buildings Department's monthly digest section-1 statistical tables (Md11-Md17).",
-        "executed_at": "2026-07-31T09:17:24.803872Z"
+        "executed_at": "2026-08-01T08:35:12.964687Z"
       }
     },
     {
@@ -64797,7 +63459,7 @@
           "Md55.xls",
           "Md56.xls"
         ],
-        "executed_at": "2026-07-31T09:17:24.803872Z"
+        "executed_at": "2026-08-01T08:35:12.964687Z"
       }
     },
     {
@@ -64817,7 +63479,7 @@
           "Table 1.6",
           "Table 1.7"
         ],
-        "executed_at": "2026-07-31T09:17:24.803872Z"
+        "executed_at": "2026-08-01T08:35:12.964687Z"
       }
     },
     {
@@ -64831,13 +63493,13 @@
           "Validated core measure frames",
           "Declared future-source registry"
         ],
-        "executed_at": "2026-07-31T09:17:24.803872Z"
+        "executed_at": "2026-08-01T08:35:12.964687Z"
       }
     }
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-real-estate/",
-    "snapshotId": "b187a737e3f58cca",
+    "snapshotId": "a0b416b52b102809",
     "dataAsOf": "2026-07-27"
   }
 }
