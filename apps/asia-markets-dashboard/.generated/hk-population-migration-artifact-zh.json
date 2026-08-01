@@ -6,9 +6,9 @@
     "title": "香港人口、迁移与跨境数据监测",
     "description": "入境处高频每日出入境净流量、政府统计处人口估算与净移动、积金局永久离港强积金申索、教资会内地生入学人数及大湾区跨境车流/高铁客流。",
     "sector": "hk-population-migration",
-    "generatedAt": "2026-08-01T00:40:07.905663Z",
-    "dataAsOf": "2026-07-30",
-    "liveSourcesCount": 6,
+    "generatedAt": "2026-08-01T08:34:39.901813Z",
+    "dataAsOf": "2026-07-31",
+    "liveSourcesCount": 5,
     "totalSourcesCount": 6,
     "cards": [
       {
@@ -344,7 +344,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**数据快照：** `95c0697d78b5718c` · 生成于 2026-08-01T00:40:07.905663Z。这是已发布快照，不是实时连接。"
+        "body": "**数据快照：** `7a5d13f010c71849` · 生成于 2026-08-01T08:34:39.901813Z。这是已发布快照，不是实时连接。"
       },
       {
         "id": "kpi_grid",
@@ -378,18 +378,6 @@
         "chartId": "visitor_arrivals_chart"
       },
       {
-        "id": "mpfa_claims_chart_block",
-        "type": "chart",
-        "chartId": "mpfa_claims_chart",
-        "layout": "half"
-      },
-      {
-        "id": "mpfa_claims_count_chart_block",
-        "type": "chart",
-        "chartId": "mpfa_claims_count_chart",
-        "layout": "half"
-      },
-      {
         "id": "ugc_students_chart_block",
         "type": "chart",
         "chartId": "ugc_students_chart",
@@ -404,17 +392,10 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-08-01T00:40:07.905663Z",
-    "status": "ready",
+    "generatedAt": "2026-08-01T08:34:39.901813Z",
+    "status": "partial",
     "datasets": {
       "immd_daily_traffic": [
-        {
-          "date": "2025-07-31",
-          "hk_resident_net_flow": -4379,
-          "mainland_visitor_net_retention": -722,
-          "hk_resident_departures_7d_ma": 337705.9,
-          "mainland_visitor_arrivals_7d_ma": 133248.4
-        },
         {
           "date": "2025-08-01",
           "hk_resident_net_flow": -93827,
@@ -2962,19 +2943,16 @@
           "mainland_visitor_net_retention": 3089,
           "hk_resident_departures_7d_ma": 303323.1,
           "mainland_visitor_arrivals_7d_ma": 117918.3
+        },
+        {
+          "date": "2026-07-31",
+          "hk_resident_net_flow": -74079,
+          "mainland_visitor_net_retention": -9241,
+          "hk_resident_departures_7d_ma": 300055.9,
+          "mainland_visitor_arrivals_7d_ma": 116398.3
         }
       ],
       "immd_net_flow_history": [
-        {
-          "date": "2025-07-31",
-          "series": "香港居民净流量",
-          "value": -4379
-        },
-        {
-          "date": "2025-07-31",
-          "series": "内地访客净留存",
-          "value": -722
-        },
         {
           "date": "2025-08-01",
           "series": "香港居民净流量",
@@ -6614,6 +6592,16 @@
           "date": "2026-07-30",
           "series": "内地访客净留存",
           "value": 3089
+        },
+        {
+          "date": "2026-07-31",
+          "series": "香港居民净流量",
+          "value": -74079
+        },
+        {
+          "date": "2026-07-31",
+          "series": "内地访客净留存",
+          "value": -9241
         }
       ],
       "csd_population": [
@@ -8690,78 +8678,7 @@
           "value": 7510.8
         }
       ],
-      "mpfa_claims": [
-        {
-          "quarter": "2022-Q4",
-          "claims_count": 7000,
-          "amount_mhkd": 1716
-        },
-        {
-          "quarter": "2023-Q1",
-          "claims_count": 6700,
-          "amount_mhkd": 1573
-        },
-        {
-          "quarter": "2023-Q2",
-          "claims_count": 7300,
-          "amount_mhkd": 1787
-        },
-        {
-          "quarter": "2023-Q3",
-          "claims_count": 8700,
-          "amount_mhkd": 2213
-        },
-        {
-          "quarter": "2023-Q4",
-          "claims_count": 7200,
-          "amount_mhkd": 1688
-        },
-        {
-          "quarter": "2024-Q1",
-          "claims_count": 6500,
-          "amount_mhkd": 1507
-        },
-        {
-          "quarter": "2024-Q2",
-          "claims_count": 7300,
-          "amount_mhkd": 1702
-        },
-        {
-          "quarter": "2024-Q3",
-          "claims_count": 7600,
-          "amount_mhkd": 1815
-        },
-        {
-          "quarter": "2024-Q4",
-          "claims_count": 6600,
-          "amount_mhkd": 1572
-        },
-        {
-          "quarter": "2025-Q1",
-          "claims_count": 6700,
-          "amount_mhkd": 1626
-        },
-        {
-          "quarter": "2025-Q2",
-          "claims_count": 6400,
-          "amount_mhkd": 1575
-        },
-        {
-          "quarter": "2025-Q3",
-          "claims_count": 6900,
-          "amount_mhkd": 1661
-        },
-        {
-          "quarter": "2025-Q4",
-          "claims_count": 4200,
-          "amount_mhkd": 1024
-        },
-        {
-          "quarter": "2026-Q1",
-          "claims_count": 5000,
-          "amount_mhkd": 1188
-        }
-      ],
+      "mpfa_claims": [],
       "ugc_students": [
         {
           "academic_year": "2010/11",
@@ -10501,6437 +10418,6437 @@
       "visitor_arrivals_by_region": [
         {
           "date": "2016-09",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 11850
         },
         {
           "date": "2016-10",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 14033
         },
         {
           "date": "2016-11",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 11715
         },
         {
           "date": "2016-12",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 14934
         },
         {
           "date": "2017-01",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 9525
         },
         {
           "date": "2017-02",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 6809
         },
         {
           "date": "2017-03",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 11724
         },
         {
           "date": "2017-04",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 15623
         },
         {
           "date": "2017-05",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 10892
         },
         {
           "date": "2017-06",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 8556
         },
         {
           "date": "2017-07",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 11005
         },
         {
           "date": "2017-08",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 9577
         },
         {
           "date": "2017-09",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 10951
         },
         {
           "date": "2017-10",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 12961
         },
         {
           "date": "2017-11",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 10366
         },
         {
           "date": "2017-12",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 14007
         },
         {
           "date": "2018-01",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 10661
         },
         {
           "date": "2018-02",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 5408
         },
         {
           "date": "2018-03",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 11098
         },
         {
           "date": "2018-04",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 15477
         },
         {
           "date": "2018-05",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 9246
         },
         {
           "date": "2018-06",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 8651
         },
         {
           "date": "2018-07",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 11262
         },
         {
           "date": "2018-08",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 9879
         },
         {
           "date": "2018-09",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 11224
         },
         {
           "date": "2018-10",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 12639
         },
         {
           "date": "2018-11",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 10377
         },
         {
           "date": "2018-12",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 14491
         },
         {
           "date": "2019-01",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 10096
         },
         {
           "date": "2019-02",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 5629
         },
         {
           "date": "2019-03",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 11960
         },
         {
           "date": "2019-04",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 14819
         },
         {
           "date": "2019-05",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 8656
         },
         {
           "date": "2019-06",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 9973
         },
         {
           "date": "2019-07",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 9979
         },
         {
           "date": "2019-08",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 8601
         },
         {
           "date": "2019-09",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 9436
         },
         {
           "date": "2019-10",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 10084
         },
         {
           "date": "2019-11",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 7778
         },
         {
           "date": "2019-12",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 9656
         },
         {
           "date": "2020-01",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 6761
         },
         {
           "date": "2020-02",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 1168
         },
         {
           "date": "2020-03",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 461
         },
         {
           "date": "2020-04",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 7
         },
         {
           "date": "2020-05",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 11
         },
         {
           "date": "2020-06",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 65
         },
         {
           "date": "2020-07",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 89
         },
         {
           "date": "2020-08",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 26
         },
         {
           "date": "2020-09",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 67
         },
         {
           "date": "2020-10",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 25
         },
         {
           "date": "2020-11",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 41
         },
         {
           "date": "2020-12",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 57
         },
         {
           "date": "2021-01",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 11
         },
         {
           "date": "2021-02",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 27
         },
         {
           "date": "2021-03",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 34
         },
         {
           "date": "2021-04",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 30
         },
         {
           "date": "2021-05",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 29
         },
         {
           "date": "2021-06",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 51
         },
         {
           "date": "2021-07",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 71
         },
         {
           "date": "2021-08",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 39
         },
         {
           "date": "2021-09",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 49
         },
         {
           "date": "2021-10",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 34
         },
         {
           "date": "2021-11",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 37
         },
         {
           "date": "2021-12",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 39
         },
         {
           "date": "2022-01",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 18
         },
         {
           "date": "2022-02",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 15
         },
         {
           "date": "2022-03",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 5
         },
         {
           "date": "2022-04",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 25
         },
         {
           "date": "2022-05",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 69
         },
         {
           "date": "2022-06",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 55
         },
         {
           "date": "2022-07",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 89
         },
         {
           "date": "2022-08",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 169
         },
         {
           "date": "2022-09",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 207
         },
         {
           "date": "2022-10",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 456
         },
         {
           "date": "2022-11",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 616
         },
         {
           "date": "2022-12",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 840
         },
         {
           "date": "2023-01",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 1540
         },
         {
           "date": "2023-02",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 1545
         },
         {
           "date": "2023-03",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 2296
         },
         {
           "date": "2023-04",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 3171
         },
         {
           "date": "2023-05",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 2886
         },
         {
           "date": "2023-06",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 2837
         },
         {
           "date": "2023-07",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 3340
         },
         {
           "date": "2023-08",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 3910
         },
         {
           "date": "2023-09",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 4473
         },
         {
           "date": "2023-10",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 5657
         },
         {
           "date": "2023-11",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 4707
         },
         {
           "date": "2023-12",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 5857
         },
         {
           "date": "2024-01",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 4565
         },
         {
           "date": "2024-02",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 3701
         },
         {
           "date": "2024-03",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 4925
         },
         {
           "date": "2024-04",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 7655
         },
         {
           "date": "2024-05",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 5055
         },
         {
           "date": "2024-06",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 4378
         },
         {
           "date": "2024-07",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 5040
         },
         {
           "date": "2024-08",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 5140
         },
         {
           "date": "2024-09",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 5886
         },
         {
           "date": "2024-10",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 7832
         },
         {
           "date": "2024-11",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 5734
         },
         {
           "date": "2024-12",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 7091
         },
         {
           "date": "2025-01",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 5393
         },
         {
           "date": "2025-02",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 3835
         },
         {
           "date": "2025-03",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 5452
         },
         {
           "date": "2025-04",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 8113
         },
         {
           "date": "2025-05",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 6053
         },
         {
           "date": "2025-06",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 5239
         },
         {
           "date": "2025-07",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 6623
         },
         {
           "date": "2025-08",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 6597
         },
         {
           "date": "2025-09",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 6972
         },
         {
           "date": "2025-10",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 9826
         },
         {
           "date": "2025-11",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 7796
         },
         {
           "date": "2025-12",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 10583
         },
         {
           "date": "2026-01",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 7934
         },
         {
           "date": "2026-02",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 4726
         },
         {
           "date": "2026-03",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 5200
         },
         {
           "date": "2026-04",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 9809
         },
         {
           "date": "2026-05",
-          "region": "Africa",
+          "region": "非洲",
           "visitors": 8102
         },
         {
           "date": "2016-09",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 62755
         },
         {
           "date": "2016-10",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 69566
         },
         {
           "date": "2016-11",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 56926
         },
         {
           "date": "2016-12",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 64906
         },
         {
           "date": "2017-01",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 61409
         },
         {
           "date": "2017-02",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 39593
         },
         {
           "date": "2017-03",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 55353
         },
         {
           "date": "2017-04",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 77150
         },
         {
           "date": "2017-05",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 51593
         },
         {
           "date": "2017-06",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 58351
         },
         {
           "date": "2017-07",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 57310
         },
         {
           "date": "2017-08",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 45342
         },
         {
           "date": "2017-09",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 66410
         },
         {
           "date": "2017-10",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 67313
         },
         {
           "date": "2017-11",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 61627
         },
         {
           "date": "2017-12",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 68668
         },
         {
           "date": "2018-01",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 72922
         },
         {
           "date": "2018-02",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 32520
         },
         {
           "date": "2018-03",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 58856
         },
         {
           "date": "2018-04",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 73099
         },
         {
           "date": "2018-05",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 54096
         },
         {
           "date": "2018-06",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 54497
         },
         {
           "date": "2018-07",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 60626
         },
         {
           "date": "2018-08",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 51385
         },
         {
           "date": "2018-09",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 62168
         },
         {
           "date": "2018-10",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 68678
         },
         {
           "date": "2018-11",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 59080
         },
         {
           "date": "2018-12",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 74300
         },
         {
           "date": "2019-01",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 75286
         },
         {
           "date": "2019-02",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 37143
         },
         {
           "date": "2019-03",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 58868
         },
         {
           "date": "2019-04",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 78854
         },
         {
           "date": "2019-05",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 56882
         },
         {
           "date": "2019-06",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 54019
         },
         {
           "date": "2019-07",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 52575
         },
         {
           "date": "2019-08",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 38247
         },
         {
           "date": "2019-09",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 44423
         },
         {
           "date": "2019-10",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 45714
         },
         {
           "date": "2019-11",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 34393
         },
         {
           "date": "2019-12",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 47631
         },
         {
           "date": "2020-01",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 49002
         },
         {
           "date": "2020-02",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 6782
         },
         {
           "date": "2020-03",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 2269
         },
         {
           "date": "2020-04",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 42
         },
         {
           "date": "2020-05",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 110
         },
         {
           "date": "2020-06",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 169
         },
         {
           "date": "2020-07",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 127
         },
         {
           "date": "2020-08",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 45
         },
         {
           "date": "2020-09",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 41
         },
         {
           "date": "2020-10",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 69
         },
         {
           "date": "2020-11",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 73
         },
         {
           "date": "2020-12",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 53
         },
         {
           "date": "2021-01",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 42
         },
         {
           "date": "2021-02",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 26
         },
         {
           "date": "2021-03",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 36
         },
         {
           "date": "2021-04",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 25
         },
         {
           "date": "2021-05",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 45
         },
         {
           "date": "2021-06",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 41
         },
         {
           "date": "2021-07",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 74
         },
         {
           "date": "2021-08",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 87
         },
         {
           "date": "2021-09",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 99
         },
         {
           "date": "2021-10",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 92
         },
         {
           "date": "2021-11",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 119
         },
         {
           "date": "2021-12",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 136
         },
         {
           "date": "2022-01",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 27
         },
         {
           "date": "2022-02",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 22
         },
         {
           "date": "2022-03",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 20
         },
         {
           "date": "2022-04",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 29
         },
         {
           "date": "2022-05",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 195
         },
         {
           "date": "2022-06",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 284
         },
         {
           "date": "2022-07",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 331
         },
         {
           "date": "2022-08",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 511
         },
         {
           "date": "2022-09",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 766
         },
         {
           "date": "2022-10",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 2214
         },
         {
           "date": "2022-11",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 3882
         },
         {
           "date": "2022-12",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 6487
         },
         {
           "date": "2023-01",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 9315
         },
         {
           "date": "2023-02",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 10379
         },
         {
           "date": "2023-03",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 16831
         },
         {
           "date": "2023-04",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 23803
         },
         {
           "date": "2023-05",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 20600
         },
         {
           "date": "2023-06",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 22437
         },
         {
           "date": "2023-07",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 21278
         },
         {
           "date": "2023-08",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 20083
         },
         {
           "date": "2023-09",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 31806
         },
         {
           "date": "2023-10",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 33806
         },
         {
           "date": "2023-11",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 34444
         },
         {
           "date": "2023-12",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 46130
         },
         {
           "date": "2024-01",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 49379
         },
         {
           "date": "2024-02",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 23467
         },
         {
           "date": "2024-03",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 36020
         },
         {
           "date": "2024-04",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 41511
         },
         {
           "date": "2024-05",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 25865
         },
         {
           "date": "2024-06",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 26994
         },
         {
           "date": "2024-07",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 27393
         },
         {
           "date": "2024-08",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 23108
         },
         {
           "date": "2024-09",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 42315
         },
         {
           "date": "2024-10",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 47595
         },
         {
           "date": "2024-11",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 45068
         },
         {
           "date": "2024-12",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 62760
         },
         {
           "date": "2025-01",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 63388
         },
         {
           "date": "2025-02",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 32923
         },
         {
           "date": "2025-03",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 47009
         },
         {
           "date": "2025-04",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 56192
         },
         {
           "date": "2025-05",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 36268
         },
         {
           "date": "2025-06",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 34290
         },
         {
           "date": "2025-07",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 35954
         },
         {
           "date": "2025-08",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 26888
         },
         {
           "date": "2025-09",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 45252
         },
         {
           "date": "2025-10",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 56572
         },
         {
           "date": "2025-11",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 52904
         },
         {
           "date": "2025-12",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 80904
         },
         {
           "date": "2026-01",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 83413
         },
         {
           "date": "2026-02",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 33336
         },
         {
           "date": "2026-03",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 52070
         },
         {
           "date": "2026-04",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 66119
         },
         {
           "date": "2026-05",
-          "region": "Australia, New Zealand and South Pacific",
+          "region": "澳纽及南太平洋",
           "visitors": 43537
         },
         {
           "date": "2016-09",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 3316227
         },
         {
           "date": "2016-10",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 3698301
         },
         {
           "date": "2016-11",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 3375070
         },
         {
           "date": "2016-12",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 3928584
         },
         {
           "date": "2017-01",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 4328327
         },
         {
           "date": "2017-02",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 3119324
         },
         {
           "date": "2017-03",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 3315455
         },
         {
           "date": "2017-04",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 3499426
         },
         {
           "date": "2017-05",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 3430689
         },
         {
           "date": "2017-06",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 3081708
         },
         {
           "date": "2017-07",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 4055415
         },
         {
           "date": "2017-08",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 3936326
         },
         {
           "date": "2017-09",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 3555836
         },
         {
           "date": "2017-10",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 4006921
         },
         {
           "date": "2017-11",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 3659694
         },
         {
           "date": "2017-12",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 4205819
         },
         {
           "date": "2018-01",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 4094994
         },
         {
           "date": "2018-02",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 4377990
         },
         {
           "date": "2018-03",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 3651676
         },
         {
           "date": "2018-04",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 4032387
         },
         {
           "date": "2018-05",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 3803977
         },
         {
           "date": "2018-06",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 3616705
         },
         {
           "date": "2018-07",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 4383980
         },
         {
           "date": "2018-08",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 4803626
         },
         {
           "date": "2018-09",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 3693871
         },
         {
           "date": "2018-10",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 4628552
         },
         {
           "date": "2018-11",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 4613103
         },
         {
           "date": "2018-12",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 5102464
         },
         {
           "date": "2019-01",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 5524443
         },
         {
           "date": "2019-02",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 4540646
         },
         {
           "date": "2019-03",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 4462586
         },
         {
           "date": "2019-04",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 4256683
         },
         {
           "date": "2019-05",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 4700039
         },
         {
           "date": "2019-06",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 3986242
         },
         {
           "date": "2019-07",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 4148998
         },
         {
           "date": "2019-08",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 2771480
         },
         {
           "date": "2019-09",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 2401471
         },
         {
           "date": "2019-10",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 2503210
         },
         {
           "date": "2019-11",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 1921951
         },
         {
           "date": "2019-12",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 2389309
         },
         {
           "date": "2020-01",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 2520594
         },
         {
           "date": "2020-02",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 96716
         },
         {
           "date": "2020-03",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 27525
         },
         {
           "date": "2020-04",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 2945
         },
         {
           "date": "2020-05",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 5623
         },
         {
           "date": "2020-06",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 6633
         },
         {
           "date": "2020-07",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 5709
         },
         {
           "date": "2020-08",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 2323
         },
         {
           "date": "2020-09",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 6211
         },
         {
           "date": "2020-10",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 4849
         },
         {
           "date": "2020-11",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 3555
         },
         {
           "date": "2020-12",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 2425
         },
         {
           "date": "2021-01",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 2874
         },
         {
           "date": "2021-02",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 3799
         },
         {
           "date": "2021-03",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 4916
         },
         {
           "date": "2021-04",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 4120
         },
         {
           "date": "2021-05",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 3896
         },
         {
           "date": "2021-06",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 4647
         },
         {
           "date": "2021-07",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 6302
         },
         {
           "date": "2021-08",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 8523
         },
         {
           "date": "2021-09",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 6955
         },
         {
           "date": "2021-10",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 6680
         },
         {
           "date": "2021-11",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 6444
         },
         {
           "date": "2021-12",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 6475
         },
         {
           "date": "2022-01",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 5755
         },
         {
           "date": "2022-02",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 1810
         },
         {
           "date": "2022-03",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 996
         },
         {
           "date": "2022-04",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 3593
         },
         {
           "date": "2022-05",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 14419
         },
         {
           "date": "2022-06",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 35359
         },
         {
           "date": "2022-07",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 40091
         },
         {
           "date": "2022-08",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 48295
         },
         {
           "date": "2022-09",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 51282
         },
         {
           "date": "2022-10",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 47658
         },
         {
           "date": "2022-11",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 58699
         },
         {
           "date": "2022-12",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 67258
         },
         {
           "date": "2023-01",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 279717
         },
         {
           "date": "2023-02",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 1108653
         },
         {
           "date": "2023-03",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 1967602
         },
         {
           "date": "2023-04",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 2303943
         },
         {
           "date": "2023-05",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 2287811
         },
         {
           "date": "2023-06",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 2156627
         },
         {
           "date": "2023-07",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 2975902
         },
         {
           "date": "2023-08",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 3434202
         },
         {
           "date": "2023-09",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 2163378
         },
         {
           "date": "2023-10",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 2700141
         },
         {
           "date": "2023-11",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 2429531
         },
         {
           "date": "2023-12",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 2948056
         },
         {
           "date": "2024-01",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 2984761
         },
         {
           "date": "2024-02",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 3245911
         },
         {
           "date": "2024-03",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 2467491
         },
         {
           "date": "2024-04",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 2483291
         },
         {
           "date": "2024-05",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 2627401
         },
         {
           "date": "2024-06",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 2341637
         },
         {
           "date": "2024-07",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 3140563
         },
         {
           "date": "2024-08",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 3659538
         },
         {
           "date": "2024-09",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 2295568
         },
         {
           "date": "2024-10",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 3138319
         },
         {
           "date": "2024-11",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 2557894
         },
         {
           "date": "2024-12",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 3100753
         },
         {
           "date": "2025-01",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 3726236
         },
         {
           "date": "2025-02",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 2769404
         },
         {
           "date": "2025-03",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 2749719
         },
         {
           "date": "2025-04",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 2813526
         },
         {
           "date": "2025-05",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 3123593
         },
         {
           "date": "2025-06",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 2611276
         },
         {
           "date": "2025-07",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 3510343
         },
         {
           "date": "2025-08",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 4223347
         },
         {
           "date": "2025-09",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 2458439
         },
         {
           "date": "2025-10",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 3452168
         },
         {
           "date": "2025-11",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 3041327
         },
         {
           "date": "2025-12",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 3354406
         },
         {
           "date": "2026-01",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 3645646
         },
         {
           "date": "2026-02",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 4248174
         },
         {
           "date": "2026-03",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 3186639
         },
         {
           "date": "2026-04",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 3104167
         },
         {
           "date": "2026-05",
-          "region": "Chinese Mainland",
+          "region": "中国内地",
           "visitors": 3485728
         },
         {
           "date": "2016-09",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 138201
         },
         {
           "date": "2016-10",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 214089
         },
         {
           "date": "2016-11",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 195159
         },
         {
           "date": "2016-12",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 158161
         },
         {
           "date": "2017-01",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 153135
         },
         {
           "date": "2017-02",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 141753
         },
         {
           "date": "2017-03",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 188894
         },
         {
           "date": "2017-04",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 206032
         },
         {
           "date": "2017-05",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 142898
         },
         {
           "date": "2017-06",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 120111
         },
         {
           "date": "2017-07",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 136313
         },
         {
           "date": "2017-08",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 137014
         },
         {
           "date": "2017-09",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 136778
         },
         {
           "date": "2017-10",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 202004
         },
         {
           "date": "2017-11",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 198704
         },
         {
           "date": "2017-12",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 159498
         },
         {
           "date": "2018-01",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 165238
         },
         {
           "date": "2018-02",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 126994
         },
         {
           "date": "2018-03",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 204500
         },
         {
           "date": "2018-04",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 205690
         },
         {
           "date": "2018-05",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 149578
         },
         {
           "date": "2018-06",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 122470
         },
         {
           "date": "2018-07",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 137977
         },
         {
           "date": "2018-08",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 144865
         },
         {
           "date": "2018-09",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 132582
         },
         {
           "date": "2018-10",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 204774
         },
         {
           "date": "2018-11",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 199821
         },
         {
           "date": "2018-12",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 159289
         },
         {
           "date": "2019-01",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 159550
         },
         {
           "date": "2019-02",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 133759
         },
         {
           "date": "2019-03",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 196032
         },
         {
           "date": "2019-04",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 209467
         },
         {
           "date": "2019-05",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 145273
         },
         {
           "date": "2019-06",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 113959
         },
         {
           "date": "2019-07",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 132468
         },
         {
           "date": "2019-08",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 120627
         },
         {
           "date": "2019-09",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 108339
         },
         {
           "date": "2019-10",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 160768
         },
         {
           "date": "2019-11",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 139570
         },
         {
           "date": "2019-12",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 121210
         },
         {
           "date": "2020-01",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 114477
         },
         {
           "date": "2020-02",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 22507
         },
         {
           "date": "2020-03",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 9261
         },
         {
           "date": "2020-04",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 262
         },
         {
           "date": "2020-05",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 960
         },
         {
           "date": "2020-06",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 3608
         },
         {
           "date": "2020-07",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 6260
         },
         {
           "date": "2020-08",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 538
         },
         {
           "date": "2020-09",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 644
         },
         {
           "date": "2020-10",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 564
         },
         {
           "date": "2020-11",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 533
         },
         {
           "date": "2020-12",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 598
         },
         {
           "date": "2021-01",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 350
         },
         {
           "date": "2021-02",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 372
         },
         {
           "date": "2021-03",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 503
         },
         {
           "date": "2021-04",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 445
         },
         {
           "date": "2021-05",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 547
         },
         {
           "date": "2021-06",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 466
         },
         {
           "date": "2021-07",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 617
         },
         {
           "date": "2021-08",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 650
         },
         {
           "date": "2021-09",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 663
         },
         {
           "date": "2021-10",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 745
         },
         {
           "date": "2021-11",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 686
         },
         {
           "date": "2021-12",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 545
         },
         {
           "date": "2022-01",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 279
         },
         {
           "date": "2022-02",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 170
         },
         {
           "date": "2022-03",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 138
         },
         {
           "date": "2022-04",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 219
         },
         {
           "date": "2022-05",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 882
         },
         {
           "date": "2022-06",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 1221
         },
         {
           "date": "2022-07",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 1618
         },
         {
           "date": "2022-08",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 2053
         },
         {
           "date": "2022-09",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 2447
         },
         {
           "date": "2022-10",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 6296
         },
         {
           "date": "2022-11",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 11347
         },
         {
           "date": "2022-12",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 12797
         },
         {
           "date": "2023-01",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 22996
         },
         {
           "date": "2023-02",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 35399
         },
         {
           "date": "2023-03",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 64596
         },
         {
           "date": "2023-04",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 79869
         },
         {
           "date": "2023-05",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 56431
         },
         {
           "date": "2023-06",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 49647
         },
         {
           "date": "2023-07",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 58191
         },
         {
           "date": "2023-08",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 61533
         },
         {
           "date": "2023-09",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 62518
         },
         {
           "date": "2023-10",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 99885
         },
         {
           "date": "2023-11",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 101077
         },
         {
           "date": "2023-12",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 83596
         },
         {
           "date": "2024-01",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 93244
         },
         {
           "date": "2024-02",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 85496
         },
         {
           "date": "2024-03",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 131794
         },
         {
           "date": "2024-04",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 134492
         },
         {
           "date": "2024-05",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 86209
         },
         {
           "date": "2024-06",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 67537
         },
         {
           "date": "2024-07",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 79813
         },
         {
           "date": "2024-08",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 88786
         },
         {
           "date": "2024-09",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 84861
         },
         {
           "date": "2024-10",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 136938
         },
         {
           "date": "2024-11",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 132901
         },
         {
           "date": "2024-12",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 110457
         },
         {
           "date": "2025-01",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 111321
         },
         {
           "date": "2025-02",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 101232
         },
         {
           "date": "2025-03",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 147660
         },
         {
           "date": "2025-04",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 155237
         },
         {
           "date": "2025-05",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 104704
         },
         {
           "date": "2025-06",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 79825
         },
         {
           "date": "2025-07",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 98593
         },
         {
           "date": "2025-08",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 112111
         },
         {
           "date": "2025-09",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 99124
         },
         {
           "date": "2025-10",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 165792
         },
         {
           "date": "2025-11",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 173360
         },
         {
           "date": "2025-12",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 152805
         },
         {
           "date": "2026-01",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 161632
         },
         {
           "date": "2026-02",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 121492
         },
         {
           "date": "2026-03",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 178565
         },
         {
           "date": "2026-04",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 188588
         },
         {
           "date": "2026-05",
-          "region": "Europe",
+          "region": "欧洲",
           "visitors": 135144
         },
         {
           "date": "2016-09",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 72268
         },
         {
           "date": "2016-10",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 75864
         },
         {
           "date": "2016-11",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 72033
         },
         {
           "date": "2016-12",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 112341
         },
         {
           "date": "2017-01",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 80474
         },
         {
           "date": "2017-02",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 71767
         },
         {
           "date": "2017-03",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 70799
         },
         {
           "date": "2017-04",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 80498
         },
         {
           "date": "2017-05",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 73885
         },
         {
           "date": "2017-06",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 70673
         },
         {
           "date": "2017-07",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 92478
         },
         {
           "date": "2017-08",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 90941
         },
         {
           "date": "2017-09",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 73958
         },
         {
           "date": "2017-10",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 77452
         },
         {
           "date": "2017-11",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 78042
         },
         {
           "date": "2017-12",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 111216
         },
         {
           "date": "2018-01",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 72462
         },
         {
           "date": "2018-02",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 71719
         },
         {
           "date": "2018-03",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 81986
         },
         {
           "date": "2018-04",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 71182
         },
         {
           "date": "2018-05",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 74417
         },
         {
           "date": "2018-06",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 71433
         },
         {
           "date": "2018-07",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 88904
         },
         {
           "date": "2018-08",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 96393
         },
         {
           "date": "2018-09",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 68590
         },
         {
           "date": "2018-10",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 86271
         },
         {
           "date": "2018-11",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 116256
         },
         {
           "date": "2018-12",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 161023
         },
         {
           "date": "2019-01",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 110712
         },
         {
           "date": "2019-02",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 115413
         },
         {
           "date": "2019-03",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 112730
         },
         {
           "date": "2019-04",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 114434
         },
         {
           "date": "2019-05",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 112692
         },
         {
           "date": "2019-06",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 110963
         },
         {
           "date": "2019-07",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 119518
         },
         {
           "date": "2019-08",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 104969
         },
         {
           "date": "2019-09",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 73389
         },
         {
           "date": "2019-10",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 65521
         },
         {
           "date": "2019-11",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 64527
         },
         {
           "date": "2019-12",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 101092
         },
         {
           "date": "2020-01",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 78621
         },
         {
           "date": "2020-02",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 18027
         },
         {
           "date": "2020-03",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 15073
         },
         {
           "date": "2020-04",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 46
         },
         {
           "date": "2020-05",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 100
         },
         {
           "date": "2020-06",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 114
         },
         {
           "date": "2020-07",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 144
         },
         {
           "date": "2020-08",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 136
         },
         {
           "date": "2020-09",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 90
         },
         {
           "date": "2020-10",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 135
         },
         {
           "date": "2020-11",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 110
         },
         {
           "date": "2020-12",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 91
         },
         {
           "date": "2021-01",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 75
         },
         {
           "date": "2021-02",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 53
         },
         {
           "date": "2021-03",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 65
         },
         {
           "date": "2021-04",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 86
         },
         {
           "date": "2021-05",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 75
         },
         {
           "date": "2021-06",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 111
         },
         {
           "date": "2021-07",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 119
         },
         {
           "date": "2021-08",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 169
         },
         {
           "date": "2021-09",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 255
         },
         {
           "date": "2021-10",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 138
         },
         {
           "date": "2021-11",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 309
         },
         {
           "date": "2021-12",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 452
         },
         {
           "date": "2022-01",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 266
         },
         {
           "date": "2022-02",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 161
         },
         {
           "date": "2022-03",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 67
         },
         {
           "date": "2022-04",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 136
         },
         {
           "date": "2022-05",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 281
         },
         {
           "date": "2022-06",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 425
         },
         {
           "date": "2022-07",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 817
         },
         {
           "date": "2022-08",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 731
         },
         {
           "date": "2022-09",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 858
         },
         {
           "date": "2022-10",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 950
         },
         {
           "date": "2022-11",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 1091
         },
         {
           "date": "2022-12",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 4213
         },
         {
           "date": "2023-01",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 72665
         },
         {
           "date": "2023-02",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 98553
         },
         {
           "date": "2023-03",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 103162
         },
         {
           "date": "2023-04",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 109620
         },
         {
           "date": "2023-05",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 91529
         },
         {
           "date": "2023-06",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 84643
         },
         {
           "date": "2023-07",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 112408
         },
         {
           "date": "2023-08",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 135597
         },
         {
           "date": "2023-09",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 77388
         },
         {
           "date": "2023-10",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 92449
         },
         {
           "date": "2023-11",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 91348
         },
         {
           "date": "2023-12",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 137322
         },
         {
           "date": "2024-01",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 90568
         },
         {
           "date": "2024-02",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 102063
         },
         {
           "date": "2024-03",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 94954
         },
         {
           "date": "2024-04",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 80463
         },
         {
           "date": "2024-05",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 83740
         },
         {
           "date": "2024-06",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 86225
         },
         {
           "date": "2024-07",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 111349
         },
         {
           "date": "2024-08",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 129499
         },
         {
           "date": "2024-09",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 79678
         },
         {
           "date": "2024-10",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 88507
         },
         {
           "date": "2024-11",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 87763
         },
         {
           "date": "2024-12",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 128791
         },
         {
           "date": "2025-01",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 97801
         },
         {
           "date": "2025-02",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 89898
         },
         {
           "date": "2025-03",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 87651
         },
         {
           "date": "2025-04",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 92504
         },
         {
           "date": "2025-05",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 96001
         },
         {
           "date": "2025-06",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 85363
         },
         {
           "date": "2025-07",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 111905
         },
         {
           "date": "2025-08",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 141968
         },
         {
           "date": "2025-09",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 73198
         },
         {
           "date": "2025-10",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 93573
         },
         {
           "date": "2025-11",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 92349
         },
         {
           "date": "2025-12",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 122571
         },
         {
           "date": "2026-01",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 92273
         },
         {
           "date": "2026-02",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 99143
         },
         {
           "date": "2026-03",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 91383
         },
         {
           "date": "2026-04",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 90216
         },
         {
           "date": "2026-05",
-          "region": "Macao",
+          "region": "澳门",
           "visitors": 93231
         },
         {
           "date": "2016-09",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 16070
         },
         {
           "date": "2016-10",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 15826
         },
         {
           "date": "2016-11",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 13010
         },
         {
           "date": "2016-12",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 12551
         },
         {
           "date": "2017-01",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 12079
         },
         {
           "date": "2017-02",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 10296
         },
         {
           "date": "2017-03",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 15167
         },
         {
           "date": "2017-04",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 16763
         },
         {
           "date": "2017-05",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 11054
         },
         {
           "date": "2017-06",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 9924
         },
         {
           "date": "2017-07",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 12956
         },
         {
           "date": "2017-08",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 14569
         },
         {
           "date": "2017-09",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 13405
         },
         {
           "date": "2017-10",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 16250
         },
         {
           "date": "2017-11",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 13409
         },
         {
           "date": "2017-12",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 13966
         },
         {
           "date": "2018-01",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 15184
         },
         {
           "date": "2018-02",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 9270
         },
         {
           "date": "2018-03",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 14748
         },
         {
           "date": "2018-04",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 15805
         },
         {
           "date": "2018-05",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 9658
         },
         {
           "date": "2018-06",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 9757
         },
         {
           "date": "2018-07",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 13024
         },
         {
           "date": "2018-08",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 14741
         },
         {
           "date": "2018-09",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 12389
         },
         {
           "date": "2018-10",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 14689
         },
         {
           "date": "2018-11",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 12226
         },
         {
           "date": "2018-12",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 12908
         },
         {
           "date": "2019-01",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 11936
         },
         {
           "date": "2019-02",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 9030
         },
         {
           "date": "2019-03",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 12575
         },
         {
           "date": "2019-04",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 15278
         },
         {
           "date": "2019-05",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 8697
         },
         {
           "date": "2019-06",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 9471
         },
         {
           "date": "2019-07",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 12313
         },
         {
           "date": "2019-08",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 11853
         },
         {
           "date": "2019-09",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 9520
         },
         {
           "date": "2019-10",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 12498
         },
         {
           "date": "2019-11",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 9072
         },
         {
           "date": "2019-12",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 8845
         },
         {
           "date": "2020-01",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 8419
         },
         {
           "date": "2020-02",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 814
         },
         {
           "date": "2020-03",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 371
         },
         {
           "date": "2020-04",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 2
         },
         {
           "date": "2020-05",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 3
         },
         {
           "date": "2020-06",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 269
         },
         {
           "date": "2020-07",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 540
         },
         {
           "date": "2020-08",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 55
         },
         {
           "date": "2020-09",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 53
         },
         {
           "date": "2020-10",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 13
         },
         {
           "date": "2020-11",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 14
         },
         {
           "date": "2020-12",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 21
         },
         {
           "date": "2021-01",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 27
         },
         {
           "date": "2021-02",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 20
         },
         {
           "date": "2021-03",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 10
         },
         {
           "date": "2021-04",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 43
         },
         {
           "date": "2021-05",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 7
         },
         {
           "date": "2021-06",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 15
         },
         {
           "date": "2021-07",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 19
         },
         {
           "date": "2021-08",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 21
         },
         {
           "date": "2021-09",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 13
         },
         {
           "date": "2021-10",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 42
         },
         {
           "date": "2021-11",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 76
         },
         {
           "date": "2021-12",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 32
         },
         {
           "date": "2022-01",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 15
         },
         {
           "date": "2022-02",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 5
         },
         {
           "date": "2022-03",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 5
         },
         {
           "date": "2022-04",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 7
         },
         {
           "date": "2022-05",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 59
         },
         {
           "date": "2022-06",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 60
         },
         {
           "date": "2022-07",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 74
         },
         {
           "date": "2022-08",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 148
         },
         {
           "date": "2022-09",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 273
         },
         {
           "date": "2022-10",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 472
         },
         {
           "date": "2022-11",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 722
         },
         {
           "date": "2022-12",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 843
         },
         {
           "date": "2023-01",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 1532
         },
         {
           "date": "2023-02",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 3021
         },
         {
           "date": "2023-03",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 3743
         },
         {
           "date": "2023-04",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 5570
         },
         {
           "date": "2023-05",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 3897
         },
         {
           "date": "2023-06",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 4500
         },
         {
           "date": "2023-07",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 4672
         },
         {
           "date": "2023-08",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 5059
         },
         {
           "date": "2023-09",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 6007
         },
         {
           "date": "2023-10",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 6099
         },
         {
           "date": "2023-11",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 4312
         },
         {
           "date": "2023-12",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 4220
         },
         {
           "date": "2024-01",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 4390
         },
         {
           "date": "2024-02",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 4430
         },
         {
           "date": "2024-03",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 4456
         },
         {
           "date": "2024-04",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 6618
         },
         {
           "date": "2024-05",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 4760
         },
         {
           "date": "2024-06",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 5051
         },
         {
           "date": "2024-07",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 4543
         },
         {
           "date": "2024-08",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 4572
         },
         {
           "date": "2024-09",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 6076
         },
         {
           "date": "2024-10",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 7784
         },
         {
           "date": "2024-11",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 7352
         },
         {
           "date": "2024-12",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 6847
         },
         {
           "date": "2025-01",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 5446
         },
         {
           "date": "2025-02",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 5019
         },
         {
           "date": "2025-03",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 6688
         },
         {
           "date": "2025-04",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 9026
         },
         {
           "date": "2025-05",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 5644
         },
         {
           "date": "2025-06",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 6471
         },
         {
           "date": "2025-07",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 6913
         },
         {
           "date": "2025-08",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 8624
         },
         {
           "date": "2025-09",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 7551
         },
         {
           "date": "2025-10",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 9772
         },
         {
           "date": "2025-11",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 10650
         },
         {
           "date": "2025-12",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 9933
         },
         {
           "date": "2026-01",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 9673
         },
         {
           "date": "2026-02",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 5000
         },
         {
           "date": "2026-03",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 5290
         },
         {
           "date": "2026-04",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 7913
         },
         {
           "date": "2026-05",
-          "region": "Middle East",
+          "region": "中东",
           "visitors": 8001
         },
         {
           "date": "2016-09",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 222867
         },
         {
           "date": "2016-10",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 208275
         },
         {
           "date": "2016-11",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 241826
         },
         {
           "date": "2016-12",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 253066
         },
         {
           "date": "2017-01",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 243757
         },
         {
           "date": "2017-02",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 260958
         },
         {
           "date": "2017-03",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 259632
         },
         {
           "date": "2017-04",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 199681
         },
         {
           "date": "2017-05",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 221583
         },
         {
           "date": "2017-06",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 205091
         },
         {
           "date": "2017-07",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 205351
         },
         {
           "date": "2017-08",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 250270
         },
         {
           "date": "2017-09",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 227893
         },
         {
           "date": "2017-10",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 242989
         },
         {
           "date": "2017-11",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 256327
         },
         {
           "date": "2017-12",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 253361
         },
         {
           "date": "2018-01",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 282749
         },
         {
           "date": "2018-02",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 206696
         },
         {
           "date": "2018-03",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 280132
         },
         {
           "date": "2018-04",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 205845
         },
         {
           "date": "2018-05",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 223367
         },
         {
           "date": "2018-06",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 198258
         },
         {
           "date": "2018-07",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 193718
         },
         {
           "date": "2018-08",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 240674
         },
         {
           "date": "2018-09",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 215034
         },
         {
           "date": "2018-10",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 225060
         },
         {
           "date": "2018-11",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 265069
         },
         {
           "date": "2018-12",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 271509
         },
         {
           "date": "2019-01",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 281091
         },
         {
           "date": "2019-02",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 243822
         },
         {
           "date": "2019-03",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 297883
         },
         {
           "date": "2019-04",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 210562
         },
         {
           "date": "2019-05",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 228985
         },
         {
           "date": "2019-06",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 193628
         },
         {
           "date": "2019-07",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 172929
         },
         {
           "date": "2019-08",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 165755
         },
         {
           "date": "2019-09",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 109293
         },
         {
           "date": "2019-10",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 108723
         },
         {
           "date": "2019-11",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 90381
         },
         {
           "date": "2019-12",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 88136
         },
         {
           "date": "2020-01",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 83304
         },
         {
           "date": "2020-02",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 10319
         },
         {
           "date": "2020-03",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 1546
         },
         {
           "date": "2020-04",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 40
         },
         {
           "date": "2020-05",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 76
         },
         {
           "date": "2020-06",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 136
         },
         {
           "date": "2020-07",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 158
         },
         {
           "date": "2020-08",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 44
         },
         {
           "date": "2020-09",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 62
         },
         {
           "date": "2020-10",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 65
         },
         {
           "date": "2020-11",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 72
         },
         {
           "date": "2020-12",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 50
         },
         {
           "date": "2021-01",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 35
         },
         {
           "date": "2021-02",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 36
         },
         {
           "date": "2021-03",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 19
         },
         {
           "date": "2021-04",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 30
         },
         {
           "date": "2021-05",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 59
         },
         {
           "date": "2021-06",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 37
         },
         {
           "date": "2021-07",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 31
         },
         {
           "date": "2021-08",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 91
         },
         {
           "date": "2021-09",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 140
         },
         {
           "date": "2021-10",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 186
         },
         {
           "date": "2021-11",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 212
         },
         {
           "date": "2021-12",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 97
         },
         {
           "date": "2022-01",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 32
         },
         {
           "date": "2022-02",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 29
         },
         {
           "date": "2022-03",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 7
         },
         {
           "date": "2022-04",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 42
         },
         {
           "date": "2022-05",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 268
         },
         {
           "date": "2022-06",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 290
         },
         {
           "date": "2022-07",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 368
         },
         {
           "date": "2022-08",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 629
         },
         {
           "date": "2022-09",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 892
         },
         {
           "date": "2022-10",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 2420
         },
         {
           "date": "2022-11",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 4176
         },
         {
           "date": "2022-12",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 6477
         },
         {
           "date": "2023-01",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 12135
         },
         {
           "date": "2023-02",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 26511
         },
         {
           "date": "2023-03",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 40000
         },
         {
           "date": "2023-04",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 43175
         },
         {
           "date": "2023-05",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 52778
         },
         {
           "date": "2023-06",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 49292
         },
         {
           "date": "2023-07",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 56170
         },
         {
           "date": "2023-08",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 73533
         },
         {
           "date": "2023-09",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 83152
         },
         {
           "date": "2023-10",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 85712
         },
         {
           "date": "2023-11",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 113481
         },
         {
           "date": "2023-12",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 118067
         },
         {
           "date": "2024-01",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 144389
         },
         {
           "date": "2024-02",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 131893
         },
         {
           "date": "2024-03",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 129995
         },
         {
           "date": "2024-04",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 102717
         },
         {
           "date": "2024-05",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 98963
         },
         {
           "date": "2024-06",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 80651
         },
         {
           "date": "2024-07",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 79720
         },
         {
           "date": "2024-08",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 109392
         },
         {
           "date": "2024-09",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 118551
         },
         {
           "date": "2024-10",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 125186
         },
         {
           "date": "2024-11",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 139418
         },
         {
           "date": "2024-12",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 154167
         },
         {
           "date": "2025-01",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 178790
         },
         {
           "date": "2025-02",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 187967
         },
         {
           "date": "2025-03",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 178220
         },
         {
           "date": "2025-04",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 104407
         },
         {
           "date": "2025-05",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 129560
         },
         {
           "date": "2025-06",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 95826
         },
         {
           "date": "2025-07",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 97491
         },
         {
           "date": "2025-08",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 132183
         },
         {
           "date": "2025-09",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 115717
         },
         {
           "date": "2025-10",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 155080
         },
         {
           "date": "2025-11",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 171496
         },
         {
           "date": "2025-12",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 158739
         },
         {
           "date": "2026-01",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 186951
         },
         {
           "date": "2026-02",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 139657
         },
         {
           "date": "2026-03",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 169278
         },
         {
           "date": "2026-04",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 112201
         },
         {
           "date": "2026-05",
-          "region": "North Asia",
+          "region": "北亚",
           "visitors": 118756
         },
         {
           "date": "2016-09",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 12
         },
         {
           "date": "2016-10",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 6
         },
         {
           "date": "2016-11",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 16
         },
         {
           "date": "2016-12",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 20
         },
         {
           "date": "2017-01",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 6
         },
         {
           "date": "2017-02",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 4
         },
         {
           "date": "2017-03",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 6
         },
         {
           "date": "2017-04",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 5
         },
         {
           "date": "2017-05",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 12
         },
         {
           "date": "2017-06",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 7
         },
         {
           "date": "2017-07",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 6
         },
         {
           "date": "2017-08",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 4
         },
         {
           "date": "2017-09",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 5
         },
         {
           "date": "2017-10",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 14
         },
         {
           "date": "2017-11",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 11
         },
         {
           "date": "2017-12",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 10
         },
         {
           "date": "2018-01",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 26
         },
         {
           "date": "2018-02",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 8
         },
         {
           "date": "2018-03",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 22
         },
         {
           "date": "2018-04",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 10
         },
         {
           "date": "2018-05",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 11
         },
         {
           "date": "2018-06",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 3
         },
         {
           "date": "2018-07",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 7
         },
         {
           "date": "2018-08",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 11
         },
         {
           "date": "2018-09",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 7
         },
         {
           "date": "2018-10",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 20
         },
         {
           "date": "2018-11",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 9
         },
         {
           "date": "2018-12",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 5
         },
         {
           "date": "2019-01",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 6
         },
         {
           "date": "2019-02",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 7
         },
         {
           "date": "2019-03",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 4
         },
         {
           "date": "2019-04",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 8
         },
         {
           "date": "2019-05",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 8
         },
         {
           "date": "2019-06",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 13
         },
         {
           "date": "2019-07",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 11
         },
         {
           "date": "2019-08",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 0
         },
         {
           "date": "2019-09",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 5
         },
         {
           "date": "2019-10",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 1
         },
         {
           "date": "2019-11",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 6
         },
         {
           "date": "2019-12",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 2
         },
         {
           "date": "2020-01",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 5
         },
         {
           "date": "2020-02",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 0
         },
         {
           "date": "2020-03",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 1
         },
         {
           "date": "2020-04",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 0
         },
         {
           "date": "2020-05",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 0
         },
         {
           "date": "2020-06",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 0
         },
         {
           "date": "2020-07",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 0
         },
         {
           "date": "2020-08",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 0
         },
         {
           "date": "2020-09",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 0
         },
         {
           "date": "2020-10",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 0
         },
         {
           "date": "2020-11",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 0
         },
         {
           "date": "2020-12",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 0
         },
         {
           "date": "2021-01",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 0
         },
         {
           "date": "2021-02",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 0
         },
         {
           "date": "2021-03",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 0
         },
         {
           "date": "2021-04",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 0
         },
         {
           "date": "2021-05",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 0
         },
         {
           "date": "2021-06",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 0
         },
         {
           "date": "2021-07",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 0
         },
         {
           "date": "2021-08",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 0
         },
         {
           "date": "2021-09",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 0
         },
         {
           "date": "2021-10",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 0
         },
         {
           "date": "2021-11",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 0
         },
         {
           "date": "2021-12",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 0
         },
         {
           "date": "2022-01",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 1
         },
         {
           "date": "2022-02",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 0
         },
         {
           "date": "2022-03",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 0
         },
         {
           "date": "2022-04",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 0
         },
         {
           "date": "2022-05",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 0
         },
         {
           "date": "2022-06",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 0
         },
         {
           "date": "2022-07",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 0
         },
         {
           "date": "2022-08",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 1
         },
         {
           "date": "2022-09",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 0
         },
         {
           "date": "2022-10",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 1
         },
         {
           "date": "2022-11",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 0
         },
         {
           "date": "2022-12",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 2
         },
         {
           "date": "2023-01",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 4
         },
         {
           "date": "2023-02",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 2
         },
         {
           "date": "2023-03",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 8
         },
         {
           "date": "2023-04",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 7
         },
         {
           "date": "2023-05",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 8
         },
         {
           "date": "2023-06",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 9
         },
         {
           "date": "2023-07",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 4
         },
         {
           "date": "2023-08",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 14
         },
         {
           "date": "2023-09",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 9
         },
         {
           "date": "2023-10",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 13
         },
         {
           "date": "2023-11",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 15
         },
         {
           "date": "2023-12",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 18
         },
         {
           "date": "2024-01",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 11
         },
         {
           "date": "2024-02",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 12
         },
         {
           "date": "2024-03",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 12
         },
         {
           "date": "2024-04",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 7
         },
         {
           "date": "2024-05",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 8
         },
         {
           "date": "2024-06",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 12
         },
         {
           "date": "2024-07",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 12
         },
         {
           "date": "2024-08",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 24
         },
         {
           "date": "2024-09",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 9
         },
         {
           "date": "2024-10",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 18
         },
         {
           "date": "2024-11",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 11
         },
         {
           "date": "2024-12",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 6
         },
         {
           "date": "2025-01",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 7
         },
         {
           "date": "2025-02",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 6
         },
         {
           "date": "2025-03",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 10
         },
         {
           "date": "2025-04",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 10
         },
         {
           "date": "2025-05",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 11
         },
         {
           "date": "2025-06",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 6
         },
         {
           "date": "2025-07",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 7
         },
         {
           "date": "2025-08",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 8
         },
         {
           "date": "2025-09",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 12
         },
         {
           "date": "2025-10",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 11
         },
         {
           "date": "2025-11",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 21
         },
         {
           "date": "2025-12",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 13
         },
         {
           "date": "2026-01",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 9
         },
         {
           "date": "2026-02",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 5
         },
         {
           "date": "2026-03",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 10
         },
         {
           "date": "2026-04",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 10
         },
         {
           "date": "2026-05",
-          "region": "Not identified",
+          "region": "未能识别",
           "visitors": 10
         },
         {
           "date": "2016-09",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 272247
         },
         {
           "date": "2016-10",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 308038
         },
         {
           "date": "2016-11",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 343317
         },
         {
           "date": "2016-12",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 440880
         },
         {
           "date": "2017-01",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 268231
         },
         {
           "date": "2017-02",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 237639
         },
         {
           "date": "2017-03",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 331953
         },
         {
           "date": "2017-04",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 330009
         },
         {
           "date": "2017-05",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 325920
         },
         {
           "date": "2017-06",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 335496
         },
         {
           "date": "2017-07",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 266014
         },
         {
           "date": "2017-08",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 230800
         },
         {
           "date": "2017-09",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 258508
         },
         {
           "date": "2017-10",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 297991
         },
         {
           "date": "2017-11",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 344523
         },
         {
           "date": "2017-12",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 412349
         },
         {
           "date": "2018-01",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 304308
         },
         {
           "date": "2018-02",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 176512
         },
         {
           "date": "2018-03",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 338377
         },
         {
           "date": "2018-04",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 314091
         },
         {
           "date": "2018-05",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 319104
         },
         {
           "date": "2018-06",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 337834
         },
         {
           "date": "2018-07",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 240865
         },
         {
           "date": "2018-08",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 226806
         },
         {
           "date": "2018-09",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 236218
         },
         {
           "date": "2018-10",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 293650
         },
         {
           "date": "2018-11",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 362585
         },
         {
           "date": "2018-12",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 434339
         },
         {
           "date": "2019-01",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 289212
         },
         {
           "date": "2019-02",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 228967
         },
         {
           "date": "2019-03",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 358200
         },
         {
           "date": "2019-04",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 325757
         },
         {
           "date": "2019-05",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 347121
         },
         {
           "date": "2019-06",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 359946
         },
         {
           "date": "2019-07",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 242182
         },
         {
           "date": "2019-08",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 157320
         },
         {
           "date": "2019-09",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 157064
         },
         {
           "date": "2019-10",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 178379
         },
         {
           "date": "2019-11",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 181203
         },
         {
           "date": "2019-12",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 229114
         },
         {
           "date": "2020-01",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 149432
         },
         {
           "date": "2020-02",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 19247
         },
         {
           "date": "2020-03",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 11245
         },
         {
           "date": "2020-04",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 366
         },
         {
           "date": "2020-05",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 394
         },
         {
           "date": "2020-06",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 2393
         },
         {
           "date": "2020-07",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 6249
         },
         {
           "date": "2020-08",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 779
         },
         {
           "date": "2020-09",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 1305
         },
         {
           "date": "2020-10",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 1452
         },
         {
           "date": "2020-11",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 998
         },
         {
           "date": "2020-12",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 1006
         },
         {
           "date": "2021-01",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 560
         },
         {
           "date": "2021-02",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 818
         },
         {
           "date": "2021-03",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 669
         },
         {
           "date": "2021-04",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 546
         },
         {
           "date": "2021-05",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 361
         },
         {
           "date": "2021-06",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 586
         },
         {
           "date": "2021-07",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 1101
         },
         {
           "date": "2021-08",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 757
         },
         {
           "date": "2021-09",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 1253
         },
         {
           "date": "2021-10",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 867
         },
         {
           "date": "2021-11",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 1004
         },
         {
           "date": "2021-12",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 1006
         },
         {
           "date": "2022-01",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 224
         },
         {
           "date": "2022-02",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 175
         },
         {
           "date": "2022-03",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 392
         },
         {
           "date": "2022-04",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 369
         },
         {
           "date": "2022-05",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 1334
         },
         {
           "date": "2022-06",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 1514
         },
         {
           "date": "2022-07",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 1935
         },
         {
           "date": "2022-08",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 3069
         },
         {
           "date": "2022-09",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 4103
         },
         {
           "date": "2022-10",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 10305
         },
         {
           "date": "2022-11",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 17296
         },
         {
           "date": "2022-12",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 36492
         },
         {
           "date": "2023-01",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 48035
         },
         {
           "date": "2023-02",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 106191
         },
         {
           "date": "2023-03",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 145987
         },
         {
           "date": "2023-04",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 191531
         },
         {
           "date": "2023-05",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 183157
         },
         {
           "date": "2023-06",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 222423
         },
         {
           "date": "2023-07",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 189973
         },
         {
           "date": "2023-08",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 177721
         },
         {
           "date": "2023-09",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 188804
         },
         {
           "date": "2023-10",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 242304
         },
         {
           "date": "2023-11",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 310426
         },
         {
           "date": "2023-12",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 391589
         },
         {
           "date": "2024-01",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 262896
         },
         {
           "date": "2024-02",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 215194
         },
         {
           "date": "2024-03",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 313160
         },
         {
           "date": "2024-04",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 306127
         },
         {
           "date": "2024-05",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 272902
         },
         {
           "date": "2024-06",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 294016
         },
         {
           "date": "2024-07",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 242681
         },
         {
           "date": "2024-08",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 223333
         },
         {
           "date": "2024-09",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 240412
         },
         {
           "date": "2024-10",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 296174
         },
         {
           "date": "2024-11",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 348027
         },
         {
           "date": "2024-12",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 441786
         },
         {
           "date": "2025-01",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 299884
         },
         {
           "date": "2025-02",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 256361
         },
         {
           "date": "2025-03",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 337286
         },
         {
           "date": "2025-04",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 343729
         },
         {
           "date": "2025-05",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 338482
         },
         {
           "date": "2025-06",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 309604
         },
         {
           "date": "2025-07",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 247436
         },
         {
           "date": "2025-08",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 238622
         },
         {
           "date": "2025-09",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 260115
         },
         {
           "date": "2025-10",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 324811
         },
         {
           "date": "2025-11",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 346341
         },
         {
           "date": "2025-12",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 463918
         },
         {
           "date": "2026-01",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 354561
         },
         {
           "date": "2026-02",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 224979
         },
         {
           "date": "2026-03",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 363272
         },
         {
           "date": "2026-04",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 325735
         },
         {
           "date": "2026-05",
-          "region": "South and Southeast Asia",
+          "region": "南亚及东南亚",
           "visitors": 316270
         },
         {
           "date": "2016-09",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 172979
         },
         {
           "date": "2016-10",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 168426
         },
         {
           "date": "2016-11",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 157904
         },
         {
           "date": "2016-12",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 187147
         },
         {
           "date": "2017-01",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 171745
         },
         {
           "date": "2017-02",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 170626
         },
         {
           "date": "2017-03",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 164759
         },
         {
           "date": "2017-04",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 173439
         },
         {
           "date": "2017-05",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 172407
         },
         {
           "date": "2017-06",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 168775
         },
         {
           "date": "2017-07",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 188216
         },
         {
           "date": "2017-08",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 184171
         },
         {
           "date": "2017-09",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 163174
         },
         {
           "date": "2017-10",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 182317
         },
         {
           "date": "2017-11",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 165574
         },
         {
           "date": "2017-12",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 182864
         },
         {
           "date": "2018-01",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 162142
         },
         {
           "date": "2018-02",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 154569
         },
         {
           "date": "2018-03",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 162753
         },
         {
           "date": "2018-04",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 180108
         },
         {
           "date": "2018-05",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 156411
         },
         {
           "date": "2018-06",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 170433
         },
         {
           "date": "2018-07",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 179562
         },
         {
           "date": "2018-08",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 175455
         },
         {
           "date": "2018-09",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 158089
         },
         {
           "date": "2018-10",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 164252
         },
         {
           "date": "2018-11",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 158295
         },
         {
           "date": "2018-12",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 185455
         },
         {
           "date": "2019-01",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 167835
         },
         {
           "date": "2019-02",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 154400
         },
         {
           "date": "2019-03",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 162626
         },
         {
           "date": "2019-04",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 163919
         },
         {
           "date": "2019-05",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 152922
         },
         {
           "date": "2019-06",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 161124
         },
         {
           "date": "2019-07",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 158541
         },
         {
           "date": "2019-08",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 112614
         },
         {
           "date": "2019-09",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 99718
         },
         {
           "date": "2019-10",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 104610
         },
         {
           "date": "2019-11",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 82069
         },
         {
           "date": "2019-12",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 87037
         },
         {
           "date": "2020-01",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 93864
         },
         {
           "date": "2020-02",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 8778
         },
         {
           "date": "2020-03",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 9288
         },
         {
           "date": "2020-04",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 211
         },
         {
           "date": "2020-05",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 480
         },
         {
           "date": "2020-06",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 495
         },
         {
           "date": "2020-07",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 552
         },
         {
           "date": "2020-08",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 269
         },
         {
           "date": "2020-09",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 402
         },
         {
           "date": "2020-10",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 412
         },
         {
           "date": "2020-11",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 355
         },
         {
           "date": "2020-12",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 341
         },
         {
           "date": "2021-01",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 232
         },
         {
           "date": "2021-02",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 229
         },
         {
           "date": "2021-03",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 302
         },
         {
           "date": "2021-04",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 283
         },
         {
           "date": "2021-05",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 170
         },
         {
           "date": "2021-06",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 51
         },
         {
           "date": "2021-07",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 98
         },
         {
           "date": "2021-08",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 146
         },
         {
           "date": "2021-09",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 156
         },
         {
           "date": "2021-10",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 228
         },
         {
           "date": "2021-11",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 238
         },
         {
           "date": "2021-12",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 428
         },
         {
           "date": "2022-01",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 329
         },
         {
           "date": "2022-02",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 178
         },
         {
           "date": "2022-03",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 113
         },
         {
           "date": "2022-04",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 152
         },
         {
           "date": "2022-05",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 399
         },
         {
           "date": "2022-06",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 422
         },
         {
           "date": "2022-07",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 1058
         },
         {
           "date": "2022-08",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 1237
         },
         {
           "date": "2022-09",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 1487
         },
         {
           "date": "2022-10",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 3345
         },
         {
           "date": "2022-11",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 5707
         },
         {
           "date": "2022-12",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 9997
         },
         {
           "date": "2023-01",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 28890
         },
         {
           "date": "2023-02",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 41581
         },
         {
           "date": "2023-03",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 58716
         },
         {
           "date": "2023-04",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 62478
         },
         {
           "date": "2023-05",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 58944
         },
         {
           "date": "2023-06",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 73464
         },
         {
           "date": "2023-07",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 78606
         },
         {
           "date": "2023-08",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 80476
         },
         {
           "date": "2023-09",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 74823
         },
         {
           "date": "2023-10",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 80534
         },
         {
           "date": "2023-11",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 80380
         },
         {
           "date": "2023-12",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 90400
         },
         {
           "date": "2024-01",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 93916
         },
         {
           "date": "2024-02",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 99726
         },
         {
           "date": "2024-03",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 91534
         },
         {
           "date": "2024-04",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 101924
         },
         {
           "date": "2024-05",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 93048
         },
         {
           "date": "2024-06",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 112192
         },
         {
           "date": "2024-07",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 112633
         },
         {
           "date": "2024-08",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 113214
         },
         {
           "date": "2024-09",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 102359
         },
         {
           "date": "2024-10",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 108366
         },
         {
           "date": "2024-11",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 102291
         },
         {
           "date": "2024-12",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 113407
         },
         {
           "date": "2025-01",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 139003
         },
         {
           "date": "2025-02",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 118849
         },
         {
           "date": "2025-03",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 112569
         },
         {
           "date": "2025-04",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 124218
         },
         {
           "date": "2025-05",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 123435
         },
         {
           "date": "2025-06",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 125246
         },
         {
           "date": "2025-07",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 140392
         },
         {
           "date": "2025-08",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 148511
         },
         {
           "date": "2025-09",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 128829
         },
         {
           "date": "2025-10",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 157831
         },
         {
           "date": "2025-11",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 127113
         },
         {
           "date": "2025-12",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 132498
         },
         {
           "date": "2026-01",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 135401
         },
         {
           "date": "2026-02",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 150588
         },
         {
           "date": "2026-03",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 133497
         },
         {
           "date": "2026-04",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 137869
         },
         {
           "date": "2026-05",
-          "region": "Taiwan",
+          "region": "台湾",
           "visitors": 118724
         },
         {
           "date": "2016-09",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 136965
         },
         {
           "date": "2016-10",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 181281
         },
         {
           "date": "2016-11",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 179962
         },
         {
           "date": "2016-12",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 163437
         },
         {
           "date": "2017-01",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 146488
         },
         {
           "date": "2017-02",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 122648
         },
         {
           "date": "2017-03",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 172444
         },
         {
           "date": "2017-04",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 177208
         },
         {
           "date": "2017-05",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 146081
         },
         {
           "date": "2017-06",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 144564
         },
         {
           "date": "2017-07",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 142636
         },
         {
           "date": "2017-08",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 124419
         },
         {
           "date": "2017-09",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 128243
         },
         {
           "date": "2017-10",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 172465
         },
         {
           "date": "2017-11",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 182842
         },
         {
           "date": "2017-12",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 165426
         },
         {
           "date": "2018-01",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 152876
         },
         {
           "date": "2018-02",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 119285
         },
         {
           "date": "2018-03",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 190974
         },
         {
           "date": "2018-04",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 187908
         },
         {
           "date": "2018-05",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 153138
         },
         {
           "date": "2018-06",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 151738
         },
         {
           "date": "2018-07",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 151297
         },
         {
           "date": "2018-08",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 132116
         },
         {
           "date": "2018-09",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 128364
         },
         {
           "date": "2018-10",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 185927
         },
         {
           "date": "2018-11",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 198206
         },
         {
           "date": "2018-12",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 170485
         },
         {
           "date": "2019-01",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 154239
         },
         {
           "date": "2019-02",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 120812
         },
         {
           "date": "2019-03",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 186882
         },
         {
           "date": "2019-04",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 187420
         },
         {
           "date": "2019-05",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 155266
         },
         {
           "date": "2019-06",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 144396
         },
         {
           "date": "2019-07",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 147455
         },
         {
           "date": "2019-08",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 99105
         },
         {
           "date": "2019-09",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 91391
         },
         {
           "date": "2019-10",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 122063
         },
         {
           "date": "2019-11",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 115177
         },
         {
           "date": "2019-12",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 109434
         },
         {
           "date": "2020-01",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 103323
         },
         {
           "date": "2020-02",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 14765
         },
         {
           "date": "2020-03",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 5245
         },
         {
           "date": "2020-04",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 204
         },
         {
           "date": "2020-05",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 382
         },
         {
           "date": "2020-06",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 724
         },
         {
           "date": "2020-07",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 740
         },
         {
           "date": "2020-08",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 234
         },
         {
           "date": "2020-09",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 257
         },
         {
           "date": "2020-10",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 233
         },
         {
           "date": "2020-11",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 211
         },
         {
           "date": "2020-12",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 225
         },
         {
           "date": "2021-01",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 162
         },
         {
           "date": "2021-02",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 115
         },
         {
           "date": "2021-03",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 121
         },
         {
           "date": "2021-04",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 98
         },
         {
           "date": "2021-05",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 116
         },
         {
           "date": "2021-06",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 195
         },
         {
           "date": "2021-07",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 234
         },
         {
           "date": "2021-08",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 328
         },
         {
           "date": "2021-09",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 296
         },
         {
           "date": "2021-10",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 341
         },
         {
           "date": "2021-11",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 367
         },
         {
           "date": "2021-12",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 238
         },
         {
           "date": "2022-01",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 118
         },
         {
           "date": "2022-02",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 61
         },
         {
           "date": "2022-03",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 57
         },
         {
           "date": "2022-04",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 120
         },
         {
           "date": "2022-05",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 804
         },
         {
           "date": "2022-06",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 1482
         },
         {
           "date": "2022-07",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 1667
         },
         {
           "date": "2022-08",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 2767
         },
         {
           "date": "2022-09",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 3722
         },
         {
           "date": "2022-10",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 6407
         },
         {
           "date": "2022-11",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 10227
         },
         {
           "date": "2022-12",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 15172
         },
         {
           "date": "2023-01",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 21860
         },
         {
           "date": "2023-02",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 30134
         },
         {
           "date": "2023-03",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 51152
         },
         {
           "date": "2023-04",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 69089
         },
         {
           "date": "2023-05",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 70343
         },
         {
           "date": "2023-06",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 82609
         },
         {
           "date": "2023-07",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 87986
         },
         {
           "date": "2023-08",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 85618
         },
         {
           "date": "2023-09",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 79468
         },
         {
           "date": "2023-10",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 112178
         },
         {
           "date": "2023-11",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 119194
         },
         {
           "date": "2023-12",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 104731
         },
         {
           "date": "2024-01",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 97498
         },
         {
           "date": "2024-02",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 89297
         },
         {
           "date": "2024-03",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 127650
         },
         {
           "date": "2024-04",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 126576
         },
         {
           "date": "2024-05",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 100507
         },
         {
           "date": "2024-06",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 113905
         },
         {
           "date": "2024-07",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 117883
         },
         {
           "date": "2024-08",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 97271
         },
         {
           "date": "2024-09",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 86288
         },
         {
           "date": "2024-10",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 133335
         },
         {
           "date": "2024-11",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 141978
         },
         {
           "date": "2024-12",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 129486
         },
         {
           "date": "2025-01",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 114797
         },
         {
           "date": "2025-02",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 102177
         },
         {
           "date": "2025-03",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 146248
         },
         {
           "date": "2025-04",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 140972
         },
         {
           "date": "2025-05",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 115187
         },
         {
           "date": "2025-06",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 127833
         },
         {
           "date": "2025-07",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 134857
         },
         {
           "date": "2025-08",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 113978
         },
         {
           "date": "2025-09",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 96988
         },
         {
           "date": "2025-10",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 163079
         },
         {
           "date": "2025-11",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 165915
         },
         {
           "date": "2025-12",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 159027
         },
         {
           "date": "2026-01",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 134207
         },
         {
           "date": "2026-02",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 114614
         },
         {
           "date": "2026-03",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 169025
         },
         {
           "date": "2026-04",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 174684
         },
         {
           "date": "2026-05",
-          "region": "The Americas",
+          "region": "美洲",
           "visitors": 137337
         }
       ],
@@ -18111,7 +18028,7 @@
         {
           "latest_pop": 7510.8,
           "latest_net_mov": 29.1,
-          "latest_mpfa": 1188,
+          "latest_mpfa": null,
           "latest_ugc": 23961,
           "latest_visitors": 4464840
         }
@@ -18198,7 +18115,7 @@
       "label": "Immigration Department Daily Passenger Traffic",
       "status": "success",
       "records": 365,
-      "latest_observation": "2026-07-30",
+      "latest_observation": "2026-07-31",
       "freshness": "dated",
       "notes": "Daily passenger clearance by control point, direction and residency, used to derive HK-resident net flow and Mainland-visitor net retention."
     },
@@ -18214,10 +18131,10 @@
     {
       "id": "mpfa",
       "label": "MPFA Statistical Digest",
-      "status": "success",
-      "records": 14,
-      "latest_observation": "2026-Q1",
-      "freshness": "dated",
+      "status": "degraded",
+      "records": 0,
+      "latest_observation": "—",
+      "freshness": "unavailable",
       "notes": "Quarterly MPF claims for permanent departure from Hong Kong (count and amount), parsed from the official Statistical Digest."
     },
     {
@@ -18252,8 +18169,8 @@
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-population-migration/",
     "sector_id": "hk-population-migration",
     "sector_name": "Hong Kong Population, Migration & Cross-Border Data Monitor",
-    "snapshotId": "95c0697d78b5718c",
-    "generatedAt": "2026-08-01T00:40:07.905663Z",
-    "dataAsOf": "2026-07-30"
+    "snapshotId": "7a5d13f010c71849",
+    "generatedAt": "2026-08-01T08:34:39.901813Z",
+    "dataAsOf": "2026-07-31"
   }
 }
