@@ -860,6 +860,8 @@ def _compute_revenue_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, 
     market_share_res = datasets.get("market_share")
     pricing_res = datasets.get("raw_openrouter_models")
     macro_res = datasets.get("top_models")
+    economics_mart_res = datasets.get("daily_provider_economics")
+    revenue_estimates_mart_res = datasets.get("daily_provider_revenue_estimates")
 
     provider_activity = provider_res.frame.copy() if provider_res and not provider_res.frame.empty else pd.DataFrame()
     model_activity = (
@@ -867,11 +869,20 @@ def _compute_revenue_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, 
     )
     pricing = pricing_res.frame.copy() if pricing_res and not pricing_res.frame.empty else pd.DataFrame()
 
-    economics = build_conservative_provider_economics(
-        provider_activity,
-        pricing,
-        model_activity=model_activity,
-    )
+    # Both revenue estimates below are precomputed daily by
+    # openrouter-provider-activity-daily.yml (research_data.cli build-mart)
+    # from the same provider_activity/pricing inputs used here. Reading the
+    # marts avoids redoing the ~2s revenue estimation pass live on every
+    # dashboard cache miss; only fall back to a live recompute if a mart is
+    # unavailable (e.g. local dev without the committed parquet files).
+    if economics_mart_res is not None and not economics_mart_res.frame.empty:
+        economics = economics_mart_res.frame.copy()
+    else:
+        economics = build_conservative_provider_economics(
+            provider_activity,
+            pricing,
+            model_activity=model_activity,
+        )
     pivot_rev_daily = pd.DataFrame()
     pivot_rev_weekly = pd.DataFrame()
     pivot_rev_monthly = pd.DataFrame()
@@ -962,7 +973,10 @@ def _compute_revenue_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, 
     modern_pivot_monthly = pd.DataFrame()
     estimator_coverage = _estimator_coverage_summary(pd.DataFrame())
     if not provider_activity.empty:
-        modern_with_price = build_provider_revenue_estimates(provider_activity, pricing)
+        if revenue_estimates_mart_res is not None and not revenue_estimates_mart_res.frame.empty:
+            modern_with_price = revenue_estimates_mart_res.frame.copy()
+        else:
+            modern_with_price = build_provider_revenue_estimates(provider_activity, pricing)
         estimator_coverage = _estimator_coverage_summary(modern_with_price)
         if "estimated_revenue" in modern_with_price.columns:
             modern_with_price = modern_with_price[modern_with_price["estimated_revenue"].notna()].copy()

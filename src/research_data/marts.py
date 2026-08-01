@@ -5,7 +5,11 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from openrouter_revenue import CONSERVATIVE_ECONOMICS_COLUMNS, build_conservative_provider_economics
+from openrouter_revenue import (
+    CONSERVATIVE_ECONOMICS_COLUMNS,
+    build_conservative_provider_economics,
+    build_provider_revenue_estimates,
+)
 from supplement_pricing import supplement_pricing_df
 from .clean import clean_model_id, mean_of_available, percentile_rank, to_datetime
 from .joins import latest_huggingface_snapshot, latest_pricing_snapshot
@@ -21,6 +25,12 @@ MART_REGISTRY: dict[str, dict[str, str | None]] = {
     },
     "daily_provider_economics": {
         "label": "Daily Provider Economics",
+        "domain": "research",
+        "primary_date_column": "usage_date",
+        "metric_column": "estimated_revenue",
+    },
+    "daily_provider_revenue_estimates": {
+        "label": "Daily Provider Revenue Estimates",
         "domain": "research",
         "primary_date_column": "usage_date",
         "metric_column": "estimated_revenue",
@@ -125,6 +135,37 @@ def compute_daily_provider_economics(
         model_activity=model_activity,
     )
     return output
+
+
+DAILY_PROVIDER_REVENUE_ESTIMATES_COLUMNS = [
+    "usage_date",
+    "provider_slug",
+    "model_permaslug",
+    "total_tokens",
+    "estimated_revenue",
+    "pricing_join_status",
+]
+
+
+def compute_daily_provider_revenue_estimates(
+    base_dir: str | Path | None = None,
+) -> pd.DataFrame:
+    """Provider-fallback revenue estimate mart, mirroring the dashboard's primary revenue chart.
+
+    Unlike ``daily_provider_economics`` (which leaves rows with no exact price
+    match unpriced), this uses provider/global median fallbacks so it prices
+    the full activity volume. It is the precomputed twin of
+    ``build_provider_revenue_estimates(provider_activity, pricing)``.
+    """
+    activity = load_dataset("provider_daily_activity", base_dir=base_dir)
+    pricing = load_dataset("raw_openrouter_models", base_dir=base_dir)
+    if activity.empty:
+        return pd.DataFrame(columns=DAILY_PROVIDER_REVENUE_ESTIMATES_COLUMNS)
+
+    output = build_provider_revenue_estimates(activity, pricing)
+    if output.empty:
+        return pd.DataFrame(columns=DAILY_PROVIDER_REVENUE_ESTIMATES_COLUMNS)
+    return output[DAILY_PROVIDER_REVENUE_ESTIMATES_COLUMNS].reset_index(drop=True)
 
 
 def compute_frontier_model_registry(base_dir: str | Path | None = None) -> pd.DataFrame:
@@ -248,9 +289,22 @@ def build_frontier_model_registry(base_dir: str | Path | None = None, refresh: b
     return write_mart("frontier_model_registry", compute_frontier_model_registry(base_dir=base_dir), base_dir=base_dir)
 
 
+def build_daily_provider_revenue_estimates(
+    base_dir: str | Path | None = None,
+    refresh: bool = False,
+) -> pd.DataFrame:
+    if not refresh:
+        existing = read_mart("daily_provider_revenue_estimates", base_dir=base_dir)
+        if not existing.empty:
+            return existing
+    computed = compute_daily_provider_revenue_estimates(base_dir=base_dir)
+    return write_mart("daily_provider_revenue_estimates", computed, base_dir=base_dir)
+
+
 def build_all_marts(base_dir: str | Path | None = None, refresh: bool = False) -> dict[str, pd.DataFrame]:
     return {
         "weekly_openrouter_usage": build_weekly_openrouter_usage(base_dir=base_dir, refresh=refresh),
         "daily_provider_economics": build_daily_provider_economics(base_dir=base_dir, refresh=refresh),
+        "daily_provider_revenue_estimates": build_daily_provider_revenue_estimates(base_dir=base_dir, refresh=refresh),
         "frontier_model_registry": build_frontier_model_registry(base_dir=base_dir, refresh=refresh),
     }
