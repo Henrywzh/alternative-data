@@ -45,11 +45,16 @@ jobs:
         run: |
           python -m research_data.cli --base-dir . build-mart daily_provider_economics --refresh
 
+      - name: Rebuild daily provider revenue estimates
+        run: |
+          python -m research_data.cli --base-dir . build-mart daily_provider_revenue_estimates --refresh
+
       - name: Commit normalized datasets
         run: |
           if git diff --quiet -- \
             data/normalized/openrouter/provider_daily_activity.parquet \
-            data/normalized/marts/daily_provider_economics.parquet; then
+            data/normalized/marts/daily_provider_economics.parquet \
+            data/normalized/marts/daily_provider_revenue_estimates.parquet; then
             echo "No provider activity or economics changes to commit"
             exit 0
           fi
@@ -58,6 +63,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/normalized/openrouter/provider_daily_activity.parquet
           git add data/normalized/marts/daily_provider_economics.parquet
+          git add data/normalized/marts/daily_provider_revenue_estimates.parquet
           git commit -m "chore: update provider activity and economics data [$(date -u +%Y-%m-%d)]"
 
           for attempt in 1 2 3; do
@@ -77,4 +83,5 @@ jobs:
           path: |
             data/normalized/openrouter/provider_daily_activity.parquet
             data/normalized/marts/daily_provider_economics.parquet
+            data/normalized/marts/daily_provider_revenue_estimates.parquet
           if-no-files-found: warn

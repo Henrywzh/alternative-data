@@ -798,7 +798,26 @@ DATASET_REGISTRY: dict[str, dict[str, object]] = {
             "estimated_revenue",
             "pricing_join_status",
             "has_pricing",
+            "has_split_tokens",
             "revenue_method",
+        ],
+    },
+    "daily_provider_revenue_estimates": {
+        "label": "Daily Provider Revenue Estimates",
+        "domain": "openrouter_derived",
+        # Compact mart derived from already-provenanced provider activity;
+        # stores no per-row source metadata (see daily_provider_economics).
+        "requires_core_provenance": False,
+        "natural_keys": ["usage_date", "provider_slug", "model_permaslug"],
+        "primary_date_column": "usage_date",
+        "metric_column": "estimated_revenue",
+        "required_columns": [
+            "usage_date",
+            "provider_slug",
+            "model_permaslug",
+            "total_tokens",
+            "estimated_revenue",
+            "pricing_join_status",
         ],
     },
     "openrouter_workload_intensity_models": {
@@ -874,6 +893,7 @@ DOMAIN_ORDER = {
     "openrouter_derived": [
         "openrouter_usage_economics_daily",
         "daily_provider_economics",
+        "daily_provider_revenue_estimates",
         "openrouter_workload_intensity_models",
     ],
     "openrouter_workloads": [
@@ -893,6 +913,7 @@ DOMAIN_ORDER = {
     # the explorer.
     "openrouter_model_explorer": [
         "top_models",
+        "market_share",
         "provider_weekly_requests",
         "openrouter_model_activity",
         "provider_daily_activity",
@@ -1432,7 +1453,16 @@ OPENROUTER_LOAD_COLUMNS: dict[str, list[str]] = {
         "estimated_revenue",
         "pricing_join_status",
         "has_pricing",
+        "has_split_tokens",
         "revenue_method",
+    ],
+    "daily_provider_revenue_estimates": [
+        "usage_date",
+        "provider_slug",
+        "model_permaslug",
+        "total_tokens",
+        "estimated_revenue",
+        "pricing_join_status",
     ],
     "openrouter_workload_intensity_models": [
         "window_start_date",

@@ -4,7 +4,14 @@ import argparse
 from pathlib import Path
 
 from .api import catalog
-from .marts import MART_REGISTRY, build_all_marts, build_daily_provider_economics, build_frontier_model_registry, build_weekly_openrouter_usage
+from .marts import (
+    MART_REGISTRY,
+    build_all_marts,
+    build_daily_provider_economics,
+    build_daily_provider_revenue_estimates,
+    build_frontier_model_registry,
+    build_weekly_openrouter_usage,
+)
 
 
 def _build_single_mart(name: str, base_dir: Path, refresh: bool) -> int:
@@ -12,6 +19,8 @@ def _build_single_mart(name: str, base_dir: Path, refresh: bool) -> int:
         frame = build_weekly_openrouter_usage(base_dir=base_dir, refresh=refresh)
     elif name == "daily_provider_economics":
         frame = build_daily_provider_economics(base_dir=base_dir, refresh=refresh)
+    elif name == "daily_provider_revenue_estimates":
+        frame = build_daily_provider_revenue_estimates(base_dir=base_dir, refresh=refresh)
     elif name == "frontier_model_registry":
         frame = build_frontier_model_registry(base_dir=base_dir, refresh=refresh)
     else:
