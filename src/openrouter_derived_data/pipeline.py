@@ -132,7 +132,7 @@ class OpenRouterDerivedPipeline:
             path = self.base_dir / relative_path
             if not path.exists():
                 raise FileNotFoundError(path)
-            loaded[dataset_id] = pd.read_parquet(path)
+            loaded[dataset_id] = _read_parquet_serial(path)
         return loaded
 
     def _validate_inputs(
@@ -289,7 +289,7 @@ class OpenRouterDerivedPipeline:
                 temporary = destination.with_suffix(".parquet.tmp")
                 temporary_files[dataset_id] = temporary
                 outputs[dataset_id].to_parquet(temporary, index=False)
-                verified = pd.read_parquet(temporary)
+                verified = _read_parquet_serial(temporary)
                 if (
                     list(verified.columns) != list(outputs[dataset_id].columns)
                     or len(verified) != len(outputs[dataset_id])
@@ -316,3 +316,15 @@ class OpenRouterDerivedPipeline:
                 temporary.unlink(missing_ok=True)
             for backup in backups.values():
                 backup.unlink(missing_ok=True)
+
+
+def _read_parquet_serial(path: Path) -> pd.DataFrame:
+    """Read a compact pipeline input without spawning Arrow worker threads.
+
+    PyArrow's threaded dataset reader can leave asynchronous work alive during
+    CPython shutdown on Linux, producing ``terminate called without an active
+    exception`` / exit 134 after an otherwise successful build.  These marts
+    are small, so deterministic single-threaded reads are a better reliability
+    tradeoff than parallel I/O.
+    """
+    return pd.read_parquet(path, engine="pyarrow", use_threads=False)
