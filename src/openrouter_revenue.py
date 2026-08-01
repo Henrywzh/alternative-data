@@ -337,6 +337,42 @@ def _price_contexts_by_cutoff(pricing_with_dates: pd.DataFrame) -> dict[pd.Times
                     alias_priority[alias] = priority
         alias_by_cutoff[pricing_date] = dict(alias_to_model_key)
 
+    # provider_lookup/global_stats ("median of qualifying models' own medians",
+    # per cutoff) is itself just a groupby/median - the same shape of problem
+    # as model_stats above, just one level up. Compute it for every cutoff at
+    # once instead of once per cutoff: filter to the same "qualifies as a
+    # fallback price" rows _provider_and_global_stats would use
+    # (pricing_blended > 0), then group by (cutoff, provider) and by cutoff.
+    qualifying = merged[merged["_cummax_ts"].notna() & (merged["_exp_blended"] > 0)]
+    provider_medians = (
+        qualifying.groupby(["_pricing_date", "_first_provider"], as_index=False)
+        .agg(
+            pricing_prompt=("_exp_prompt", "median"),
+            pricing_completion=("_exp_completion", "median"),
+            pricing_blended=("_exp_blended", "median"),
+        )
+        .dropna(subset=["pricing_blended"])
+    )
+    provider_lookup_by_cutoff: dict[pd.Timestamp, dict[str, dict[str, float]]] = {d: {} for d in distinct_dates}
+    for row in provider_medians.itertuples(index=False):
+        provider_lookup_by_cutoff[row[0]][row[1]] = {
+            "pricing_prompt": float(row.pricing_prompt) if pd.notna(row.pricing_prompt) else np.nan,
+            "pricing_completion": float(row.pricing_completion) if pd.notna(row.pricing_completion) else np.nan,
+            "pricing_blended": float(row.pricing_blended),
+        }
+    global_medians = qualifying.groupby("_pricing_date", as_index=False).agg(
+        pricing_prompt=("_exp_prompt", "median"),
+        pricing_completion=("_exp_completion", "median"),
+        pricing_blended=("_exp_blended", "median"),
+    )
+    global_stats_by_cutoff: dict[pd.Timestamp, dict[str, float] | None] = {d: None for d in distinct_dates}
+    for row in global_medians.itertuples(index=False):
+        global_stats_by_cutoff[row[0]] = {
+            "pricing_prompt": float(row.pricing_prompt) if pd.notna(row.pricing_prompt) else np.nan,
+            "pricing_completion": float(row.pricing_completion) if pd.notna(row.pricing_completion) else np.nan,
+            "pricing_blended": float(row.pricing_blended),
+        }
+
     contexts: dict[pd.Timestamp, PriceContext] = {}
     for cutoff in distinct_dates:
         sub = merged[(merged["_pricing_date"] == cutoff) & merged["_cummax_ts"].notna()]
@@ -349,13 +385,12 @@ def _price_contexts_by_cutoff(pricing_with_dates: pd.DataFrame) -> dict[pd.Times
                 "_exp_blended": "pricing_blended",
             }
         )[_MODEL_STATS_COLUMNS].sort_values(["provider_prefix", "canonical_model_key"], na_position="last").reset_index(drop=True)
-        provider_lookup, global_stats = _provider_and_global_stats(model_stats)
         latest_snapshot_ts = model_stats["pricing_snapshot_ts"].max() if not model_stats.empty else None
         contexts[cutoff] = PriceContext(
             model_stats=model_stats,
             alias_to_model_key=alias_by_cutoff[cutoff],
-            provider_lookup=provider_lookup,
-            global_stats=global_stats,
+            provider_lookup=provider_lookup_by_cutoff[cutoff],
+            global_stats=global_stats_by_cutoff[cutoff],
             latest_snapshot_ts=latest_snapshot_ts,
         )
     return contexts
@@ -551,10 +586,24 @@ def estimate_usage_revenue(
         context_cache[cutoff] = context
         return context
 
+    # Many usage dates share the same as-of cutoff (that's the entire point of
+    # the bucketing above), so grouping by the cutoff itself - rather than by
+    # the raw usage date - collapses those into one _estimate_with_context
+    # call instead of redundantly repeating it once per usage date that maps
+    # to the same context.
+    # _cutoff_for's `None` result (missing usage_date) must not travel through
+    # Series.map() as a bare None: pandas' result-dtype inference can coerce a
+    # lone/uniform None into float NaN, which then fails `is/== None` lookups
+    # against context_cache. Use an explicit string sentinel instead, the same
+    # way "__earliest__"/"__empty__" already sidestep this.
+    _NO_USAGE_DATE_KEY = "__no_usage_date__"
+    estimated["_cutoff_key"] = estimated["_usage_date"].map(
+        lambda usage_date: _NO_USAGE_DATE_KEY if pd.isna(usage_date) else _cutoff_for(usage_date)
+    )
     resolved_frames: list[pd.DataFrame] = []
-    for usage_date, group in estimated.groupby("_usage_date", dropna=False, sort=False):
-        context = _context_for_cutoff(_cutoff_for(usage_date))
-        group = group.drop(columns="_usage_date")
+    for cutoff_key, group in estimated.groupby("_cutoff_key", dropna=False, sort=False):
+        context = _context_for_cutoff(None if cutoff_key == _NO_USAGE_DATE_KEY else cutoff_key)
+        group = group.drop(columns=["_usage_date", "_cutoff_key"])
         resolved_frames.append(
             _estimate_with_context(
                 group,
@@ -564,7 +613,11 @@ def estimate_usage_revenue(
             )
         )
 
-    return pd.concat(resolved_frames, ignore_index=True) if resolved_frames else estimated.drop(columns="_usage_date")
+    return (
+        pd.concat(resolved_frames, ignore_index=True)
+        if resolved_frames
+        else estimated.drop(columns=["_usage_date", "_cutoff_key"])
+    )
 
 
 def xiaomi_mimo_backpricing_hazard(frame: pd.DataFrame) -> pd.Series:
