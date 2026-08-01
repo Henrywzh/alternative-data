@@ -1,17 +1,16 @@
 name: HK Transport Sector Data Refresh Monthly
 
 # Unlike hk-real-estate / hk-local-consumer (refreshed daily by
-# asia-markets-dashboard-refresh-daily.yml), HK Transport's underlying
-# sources are all monthly-cadence bulletins: MTR patronage, Cathay/HKIA
-# traffic figures, and the 4 China-listed-airline Cninfo operating-data
-# PDFs. There is nothing to gain from polling daily, so this runs monthly
-# instead -- mirroring hk-retail-stores-monthly.yml's reasoning.
+# asia-markets-dashboard-refresh-daily.yml), most HK Transport sources are
+# monthly-cadence bulletins: MTR patronage, Cathay/HKIA traffic figures,
+# vehicle-registration tables, MTTD Table 2.3 and C&SD E705. The parking
+# snapshot is included in the same scheduled run as a current mobility poll;
+# repeated runs are what create its high-frequency history.
 #
-# Two steps are required (not just the artifact builder) because the China
-# airline series is not fetched live by build_hk_transport_artifact.py --
-# it reads data/processed/airline_traffic/china_airlines_monthly.parquet,
-# which scripts/scrape_cn_airline_traffic.py owns. That scraper must run
-# first so the builder picks up any newly-published month.
+# The source scrapers run before the artifact builder because the builder reads
+# committed processed parquet snapshots rather than fetching these endpoints
+# during packaging. Each independent source is allowed to fail while the last
+# good processed snapshot remains available.
 #
 # This workflow does NOT run scripts/build-static-hub.mjs or
 # scripts/package-dashboard.mjs, same limitation documented in
@@ -64,6 +63,21 @@ jobs:
         # the daily refresh workflow's --tolerate-errors flag.
         run: python3 scripts/scrape_cn_airline_traffic.py || echo "::warning::airline scraper failed, continuing with existing parquet"
 
+      - name: Refresh TD passenger and vehicle datasets
+        run: |
+          python3 scripts/scrape_hk_passenger_journeys.py || echo "::warning::TD Table 2.1 scraper failed"
+          python3 scripts/scrape_hk_mttd_passenger_journeys.py || echo "::warning::TD MTTD Table 2.3 scraper failed"
+          python3 scripts/scrape_hk_vehicle_stock.py || echo "::warning::TD Table 4.1(a) scraper failed"
+          python3 scripts/scrape_hk_private_car_net_growth.py || echo "::warning::TD Table 4.1(c) scraper failed"
+          python3 scripts/scrape_hk_private_car_first_reg.py || echo "::warning::TD Table 4.1(e) scraper failed"
+          python3 scripts/scrape_hk_first_registered_vehicle_details.py || echo "::warning::TD vehicle make/model detail scraper failed"
+
+      - name: Refresh TD parking and C&SD mobility datasets
+        run: |
+          python3 scripts/scrape_hk_parking_vacancy.py || echo "::warning::TD parking-vacancy scraper failed"
+          python3 scripts/scrape_hk_carpark_occupancy.py || echo "::warning::TD car-park occupancy scraper failed"
+          python3 scripts/scrape_hk_boundary_movements.py || echo "::warning::C&SD E705 scraper failed"
+
       - name: Build HK Transport artifact
         working-directory: apps/asia-markets-dashboard
         run: |
@@ -78,6 +92,7 @@ jobs:
 
           git add \
             data/processed/airline_traffic/china_airlines_monthly.parquet \
+            data/processed/transport/ \
             apps/asia-markets-dashboard/.generated/hk-transport-artifact.json \
             apps/asia-markets-dashboard/src/data/dashboard-status-hk-transport.json
 

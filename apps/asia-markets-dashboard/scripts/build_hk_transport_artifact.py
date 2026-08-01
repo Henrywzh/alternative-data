@@ -76,7 +76,7 @@ PARKING_VACANCY_COLUMNS = [
 ]
 CARPARK_OCCUPANCY_COLUMNS = [
     "snapshot_at", "district", "occupancy_rate", "sample_size", "capacity_spaces",
-    "vacant_spaces", "exact_vacancy_parks", "participating_parks",
+    "occupied_spaces", "vacant_spaces", "listed_spaces",
 ]
 CHINA_AIRLINE_NAMES = {
     "601111": "Air China",
@@ -246,14 +246,14 @@ PUBLIC_SOURCES = {
     },
     "td_carpark_occupancy": {
         "id": "td_carpark_occupancy",
-        "label": "Transport Department Car-Park Occupancy Signal",
-        "href": "https://api.data.gov.hk/v1/carpark-info-vacancy",
+        "label": "Transport Department Metered Parking-Space Occupancy",
+        "href": "https://portal.csdi.gov.hk/geoportal/?datasetId=td_rcd_1638930345315_81787",
         "path": "sources/td_carpark_occupancy.sql",
         "query": {
-            "engine": "official TD live vacancy JSON joined to Digital Policy Office One-Stop static capacity JSON",
-            "url": "https://resource.data.one.gov.hk/td/carpark/vacancy_all.json ; https://resource.data.one.gov.hk/td/carpark/basic_info_all.json ; https://api.data.gov.hk/v1/carpark-info-vacancy",
-            "language": "JSON",
-            "description": "Capacity-weighted private-car occupancy rate from exact hourly vacancy counts. The denominator is available only for a capacity-covered subset of TD car parks; sample_size and coverage are retained, and the signal is not presented as all-park occupancy.",
+            "engine": "official TD CSDI metered-space GeoJSON inventory + live occupancy-status CSV",
+            "url": "https://portal.csdi.gov.hk/csdi-webpage/file-api?dataset_id=td_rcd_1638930345315_81787&format=geojson&layer_name=parkingspaces ; https://resource.data.one.gov.hk/td/psiparkingspaces/occupancystatus/occupancystatus.csv",
+            "language": "GeoJSON + CSV",
+            "description": "Observed occupancy rate for sensor-backed metered/on-street parking spaces. The static inventory supplies the listed-space denominator and the live CSV marks each observed space occupied or vacant; sample_size and listed_spaces remain visible because a small number of status rows may be unmatched.",
         },
     },
 }
@@ -644,7 +644,7 @@ def load_carpark_occupancy(path: Path = CARPARK_OCCUPANCY_DATA_PATH) -> pd.DataF
     result["snapshot_at"] = pd.to_datetime(result["snapshot_at"], errors="coerce")
     for column in ("occupancy_rate", "capacity_spaces", "vacant_spaces"):
         result[column] = pd.to_numeric(result[column], errors="coerce")
-    for column in ("sample_size", "exact_vacancy_parks", "participating_parks"):
+    for column in ("sample_size", "capacity_spaces", "occupied_spaces", "vacant_spaces", "listed_spaces"):
         result[column] = pd.to_numeric(result[column], errors="coerce")
     if result["snapshot_at"].isna().any() or result["occupancy_rate"].isna().any():
         raise ValueError("TD car-park occupancy history contains invalid values")
@@ -989,13 +989,12 @@ def build_boundary_movement_views(frame: pd.DataFrame) -> dict[str, list[dict[st
         if selected.empty:
             continue
         rows = _series_history(selected, label, "value")
-        estimate_by_date = {
-            row["date"]: bool(estimate)
-            for row, estimate in zip(
-                rows,
-                selected.sort_values("date")["is_estimate"].tolist(),
-            )
-        }
+        estimate_by_date = (
+            selected.assign(date_key=selected["date"].dt.strftime("%Y-%m-%d"))
+            .groupby("date_key")["is_estimate"]
+            .any()
+            .to_dict()
+        )
         for row in rows:
             row["is_estimate"] = estimate_by_date.get(row["date"], False)
         history.extend(rows)
@@ -1053,7 +1052,7 @@ def build_carpark_occupancy_views(frame: pd.DataFrame) -> dict[str, list[dict[st
         {
             "summary": (
                 f"{row['district']}: {float(row['occupancy_rate']) * 100:.1f}% occupied "
-                f"({int(row['sample_size'])} capacity-covered parks)"
+                f"({int(row['sample_size'])} observed metered spaces)"
             )
         }
         for _, row in latest_district.head(18).iterrows()
@@ -1094,17 +1093,6 @@ def build_artifact(
     cathay = raw_cathay if raw_cathay is not None else fetch_cathay_traffic()
     china_airline = raw_china_airline if raw_china_airline is not None else load_china_airline_traffic()
     china_airline_views = build_china_airline_views(china_airline)
-    china_airline_snapshot_summary = [
-        {
-            "summary": (
-                f"{row.get('airline', row.get('airline_code', 'n/a'))} / {row.get('region', 'n/a')}: "
-                f"passengers {_display_number(row.get('passengers'))}; "
-                f"ASK {_display_number(row.get('ask'))}; RPK {_display_number(row.get('rpk'))}; "
-                f"load factor {_display_number(row.get('load_factor_pct'))}%"
-            )
-        }
-        for row in china_airline_views["china_airline_latest_snapshot"]
-    ]
     passenger_journeys = raw_passenger_journeys if raw_passenger_journeys is not None else load_passenger_journeys()
     passenger_journeys_views = build_passenger_journeys_views(passenger_journeys)
     mttd_passenger_journeys = (
@@ -1284,7 +1272,6 @@ def build_artifact(
         "mtr_service_breakdown_history": mtr_service_breakdown_history,
         "cathay_capacity_demand_history": cathay_capacity_demand_history,
         **china_airline_views,
-        "china_airline_latest_snapshot_summary": china_airline_snapshot_summary,
         **({"kpi_journeys": [journeys_kpi]} if journeys_kpi else {}),
         **({"kpi_fleet": [fleet_kpi]} if fleet_kpi else {}),
         **({"kpi_net_growth": [net_growth_kpi]} if net_growth_kpi else {}),
@@ -1401,13 +1388,13 @@ def build_artifact(
         cards.append(
             {
                 "id": "carpark_occupancy_card",
-                "description": "Capacity-weighted occupancy for the exact-vacancy, capacity-covered subset of TD private-car hourly car parks; not an all-park estimate.",
+                "description": "Observed occupancy for TD sensor-backed metered/on-street parking spaces; the listed-space denominator is explicit and unmatched sensor rows remain excluded.",
                 "dataset": "kpi_carpark_occupancy",
                 "sourceId": "td_carpark_occupancy",
                 "metrics": [
                     {"label": "Occupancy", "field": "occupancy_pct", "format": "number"},
-                    {"label": "Capacity-Covered Parks", "field": "sample_size", "format": "number"},
-                    {"label": "Capacity Spaces", "field": "capacity_spaces", "format": "number"},
+                    {"label": "Observed Spaces", "field": "sample_size", "format": "number"},
+                    {"label": "Listed Spaces", "field": "listed_spaces", "format": "number"},
                 ],
             }
         )
@@ -1782,8 +1769,8 @@ def build_artifact(
         charts.append(
             {
                 "id": "td_carpark_occupancy_chart",
-                "title": "TD Capacity-Covered Car-Park Occupancy",
-                "subtitle": "Weighted occupancy rate across private-car hourly parks with both exact vacancy and published capacity. The chart remains hidden until repeated polls create a genuine time series; it is not an all-park estimate.",
+                "title": "TD Metered Parking-Space Occupancy",
+                "subtitle": "Observed occupancy rate across sensor-backed metered/on-street parking spaces. The chart remains hidden until repeated polls create a genuine time series; unmatched status rows are excluded from the denominator.",
                 "type": "line",
                 "intent": "trend",
                 "dataset": "td_carpark_occupancy_history",
@@ -1805,11 +1792,18 @@ def build_artifact(
                 "id": "china_airline_latest_snapshot_table",
                 "title": "China Listed Airlines Latest Operating Snapshot",
                 "subtitle": "Latest available month, split by carrier and operating region.",
-                "dataset": "china_airline_latest_snapshot_summary",
+                "dataset": "china_airline_latest_snapshot",
                 "sourceId": "china_airline_traffic",
                 "density": "dense",
                 "layout": "full",
-                "columns": [{"field": "summary", "label": "Airline Operating Summary", "type": "text"}],
+                "columns": [
+                    {"field": "airline", "label": "Airline", "type": "text"},
+                    {"field": "region", "label": "Region", "type": "text"},
+                    {"field": "passengers", "label": "Passengers ('000s)", "format": "number"},
+                    {"field": "ask", "label": "ASK ('000s)", "format": "number"},
+                    {"field": "rpk", "label": "RPK ('000s)", "format": "number"},
+                    {"field": "load_factor_pct", "label": "Load factor (%)", "format": "number"},
+                ],
             }
         )
     if private_car_model_views["hk_private_car_ev_model_latest"]:
@@ -1868,8 +1862,8 @@ def build_artifact(
         tables.append(
             {
                 "id": "td_carpark_occupancy_latest_district_table",
-                "title": "Capacity-Covered Car-Park Occupancy by District",
-                "subtitle": "Latest weighted occupancy by district for the capacity-covered subset only.",
+                "title": "Metered Parking-Space Occupancy by District",
+                "subtitle": "Latest observed occupancy by district for TD sensor-backed metered/on-street spaces.",
                 "dataset": "td_carpark_occupancy_latest_district",
                 "sourceId": "td_carpark_occupancy",
                 "density": "dense",
@@ -1890,7 +1884,7 @@ def build_artifact(
             "version": 1,
             "surface": "dashboard",
             "title": "HK Transport & Aviation Sector Monitor",
-            "description": "MTR Corporation monthly rail patronage, CAD HKIA airport traffic, Cathay Pacific Group operating statistics, China listed-airline operating data, TD public-transport and private-car series, C&SD cross-boundary movements, EV registrations and capacity-covered real-time car-park occupancy.",
+            "description": "MTR Corporation monthly rail patronage, CAD HKIA airport traffic, Cathay Pacific Group operating statistics, China listed-airline operating data, TD public-transport and private-car series, C&SD cross-boundary movements, EV registrations and metered-space parking occupancy.",
             "sector": "hk-transport",
             "generatedAt": generated_at,
             "cards": cards,
@@ -2044,7 +2038,7 @@ def build_artifact(
         age_days = max(0, (now.replace(tzinfo=None).date() - pd.Timestamp(latest_observations["hk_private_car_first_reg_details"]).date()).days)
         freshness["hk_private_car_first_reg_details"] = f"{age_days}d old"
     freshness["td_parking_vacancy"] = "Live snapshot at build time" if record_counts["td_parking_vacancy"] else "Endpoint returns no data"
-    freshness["td_carpark_occupancy"] = "Live snapshot at build time" if record_counts["td_carpark_occupancy"] else "Capacity-covered subset unavailable"
+    freshness["td_carpark_occupancy"] = "Live snapshot at build time" if record_counts["td_carpark_occupancy"] else "Metered-space status unavailable"
     source_status = {
         source_id: "Healthy" if record_counts[source_id] > 0 else "Degraded"
         for source_id in PUBLIC_SOURCES

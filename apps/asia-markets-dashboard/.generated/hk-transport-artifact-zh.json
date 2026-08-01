@@ -4,9 +4,9 @@
     "version": 1,
     "surface": "dashboard",
     "title": "香港交通与航空监测",
-    "description": "港铁月度客运量（本地/跨境/高铁）、国泰航空及香港国际机场流量、中国上市航空公司运营数据、运输署公共交通/私家车/电动车登记、C&SD跨境移动及容量覆盖停车场占用率数据。",
+    "description": "港铁月度客运量（本地/跨境/高铁）、国泰航空及香港国际机场流量、中国上市航空公司运营数据、运输署公共交通/私家车/电动车登记、C&SD跨境移动及传感器停车位占用率数据。",
     "sector": "hk-transport",
-    "generatedAt": "2026-07-31T22:47:36.754107Z",
+    "generatedAt": "2026-08-01T10:10:16.928863Z",
     "cards": [
       {
         "id": "mtr_card",
@@ -129,6 +129,75 @@
           {
             "label": "首次登记净额",
             "field": "net_first_registrations",
+            "format": "number"
+          }
+        ]
+      },
+      {
+        "id": "private_car_first_reg_card",
+        "description": "按厂名及燃料类型划分的私家车月度首次登记；电动车占比是当月流量占比，不是累计车队占比。",
+        "dataset": "kpi_private_car_first_reg",
+        "sourceId": "hk_private_car_first_reg",
+        "metrics": [
+          {
+            "label": "私家车首次登记",
+            "field": "total_first_reg",
+            "format": "number"
+          },
+          {
+            "label": "电动车首次登记",
+            "field": "electric_first_reg",
+            "format": "number"
+          },
+          {
+            "label": "当月电动车占比",
+            "field": "ev_share_pct",
+            "format": "number"
+          }
+        ]
+      },
+      {
+        "id": "parking_card",
+        "description": "运输署实时停车场空置快照；只把能提供确切数字的车场计入空置车位总数。",
+        "dataset": "kpi_parking",
+        "sourceId": "td_parking_vacancy",
+        "metrics": [
+          {
+            "label": "确切空置车位",
+            "field": "available_spaces",
+            "format": "number"
+          },
+          {
+            "label": "有确切数字的车场",
+            "field": "parks_reporting_exact",
+            "format": "number"
+          },
+          {
+            "label": "数据源车场数",
+            "field": "participating_parks",
+            "format": "number"
+          }
+        ]
+      },
+      {
+        "id": "carpark_occupancy_card",
+        "description": "对运输署传感器计量停车位计算的观测占用率；底层列示空间清单作为分母，无法匹配状态的空间不会计入。",
+        "dataset": "kpi_carpark_occupancy",
+        "sourceId": "td_carpark_occupancy",
+        "metrics": [
+          {
+            "label": "占用率",
+            "field": "occupancy_pct",
+            "format": "number"
+          },
+          {
+            "label": "有状态空间",
+            "field": "sample_size",
+            "format": "number"
+          },
+          {
+            "label": "列出空间",
+            "field": "listed_spaces",
             "format": "number"
           }
         ]
@@ -531,6 +600,136 @@
         },
         "valueFormat": "number",
         "layout": "half"
+      },
+      {
+        "id": "hk_private_car_ev_make_chart",
+        "title": "香港私家车电动车首次登记按厂名走势",
+        "subtitle": "月度电动车私家车首次登记：比亚迪、Tesla 及其他电动车厂名合计；这是登记流量，不是累计车队存量。",
+        "type": "line",
+        "intent": "trend",
+        "dataset": "hk_private_car_ev_make_history",
+        "sourceId": "hk_private_car_first_reg",
+        "encodings": {
+          "x": {
+            "field": "month",
+            "type": "temporal",
+            "label": "月份"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "label": "首次登记数"
+          },
+          "color": {
+            "field": "series",
+            "type": "nominal",
+            "label": "序列"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "half"
+      },
+      {
+        "id": "hk_private_car_ev_share_chart",
+        "title": "每月私家车首次登记中的电动车占比",
+        "subtitle": "每月电动车首次登记数除以全部私家车首次登记数；与上方累计登记车队中的电动车占比不同。",
+        "type": "line",
+        "intent": "trend",
+        "dataset": "hk_private_car_ev_share_history",
+        "sourceId": "hk_private_car_first_reg",
+        "encodings": {
+          "x": {
+            "field": "month",
+            "type": "temporal",
+            "label": "月份"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "label": "电动车占比 (%)"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "half"
+      },
+      {
+        "id": "mttd_passenger_journeys_chart",
+        "title": "运输署月报表 2.3 乘客人次 (千人次)",
+        "subtitle": "运输署月报表中的港铁本地、港铁机场/轻铁/接驳及专营巴士月度乘客人次；表 2.3 是对上方表 2.1 综合模式总量的另一组营运商/地区拆解。",
+        "type": "line",
+        "dataset": "mttd_passenger_journeys_history",
+        "sourceId": "mttd_passenger_journeys",
+        "encodings": {
+          "x": {
+            "field": "month",
+            "type": "temporal",
+            "label": "月份"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "label": "千人次"
+          },
+          "color": {
+            "field": "series",
+            "type": "nominal",
+            "label": "序列"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "full"
+      },
+      {
+        "id": "censtatd_boundary_movements_chart",
+        "title": "香港跨境移动——C&SD 表 E705",
+        "subtitle": "月度飞机、客运车辆及货运车辆进出境架/辆次；最新 C&SD 单元可能是临时估计，完整 E705 数据另保留船只及客运火车。",
+        "type": "line",
+        "dataset": "censtatd_boundary_movements_history",
+        "sourceId": "censtatd_boundary_movements",
+        "encodings": {
+          "x": {
+            "field": "month",
+            "type": "temporal",
+            "label": "月份"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "label": "移动次数"
+          },
+          "color": {
+            "field": "series",
+            "type": "nominal",
+            "label": "序列"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "full",
+        "maxRows": 500
+      },
+      {
+        "id": "td_carpark_occupancy_chart",
+        "title": "运输署传感器停车位占用率",
+        "subtitle": "仅使用运输署传感器计量停车位的占用状态及空间清单计算观测占用率；重复轮询后才显示历史，未匹配的状态不会计入分母。",
+        "type": "line",
+        "intent": "trend",
+        "dataset": "td_carpark_occupancy_history",
+        "sourceId": "td_carpark_occupancy",
+        "encodings": {
+          "x": {
+            "field": "date",
+            "type": "temporal",
+            "label": "时间"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "label": "占用率 (%)"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "full",
+        "maxRows": 2000
       }
     ],
     "tables": [
@@ -538,14 +737,119 @@
         "id": "china_airline_latest_snapshot_table",
         "title": "中国上市航空公司最新运营数据",
         "subtitle": "最新可得月份数据，按航空公司及运营地区拆分。",
-        "dataset": "china_airline_latest_snapshot_summary",
+        "dataset": "china_airline_latest_snapshot",
         "sourceId": "china_airline_traffic",
         "density": "dense",
         "layout": "full",
         "columns": [
           {
+            "field": "airline",
+            "label": "航空公司",
+            "type": "text"
+          },
+          {
+            "field": "region",
+            "label": "运营地区",
+            "type": "text"
+          },
+          {
+            "field": "passengers",
+            "label": "乘客人次（千）",
+            "format": "number"
+          },
+          {
+            "field": "ask",
+            "label": "可用座位公里（千）",
+            "format": "number"
+          },
+          {
+            "field": "rpk",
+            "label": "收入乘客公里（千）",
+            "format": "number"
+          },
+          {
+            "field": "load_factor_pct",
+            "label": "载客率 (%)",
+            "format": "number"
+          }
+        ]
+      },
+      {
+        "id": "hk_private_car_ev_model_table",
+        "title": "最新电动车私家车厂名/型号快照",
+        "subtitle": "最新可得月度详情文件中的电动车私家车厂名/型号组合；月度时间序列使用另一个运输署表 4.1(e)来源。",
+        "dataset": "hk_private_car_ev_model_latest",
+        "sourceId": "hk_private_car_first_reg_details",
+        "density": "dense",
+        "layout": "full",
+        "columns": [
+          {
             "field": "summary",
-            "label": "航空公司运营摘要",
+            "label": "厂名／型号摘要",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "id": "hk_parking_current_district_table",
+        "title": "当前各区确切停车位空置",
+        "subtitle": "按地区汇总当前私家车小时停车场空置；B/C 空置类型及负数不会当作确切空置车位。",
+        "dataset": "hk_parking_current_district",
+        "sourceId": "td_parking_vacancy",
+        "density": "dense",
+        "layout": "full",
+        "columns": [
+          {
+            "field": "summary",
+            "label": "地区摘要",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "id": "mttd_passenger_journeys_latest_table",
+        "title": "运输署表 2.3 最新乘客人次摘要",
+        "subtitle": "按图表使用的简化分组列示最新可用月份；底层快照仍保留原始地区及营办商维度。",
+        "dataset": "mttd_passenger_journeys_latest",
+        "sourceId": "mttd_passenger_journeys",
+        "density": "dense",
+        "layout": "full",
+        "columns": [
+          {
+            "field": "summary",
+            "label": "乘客人次摘要",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "id": "censtatd_boundary_movements_latest_table",
+        "title": "C&SD 表 E705 最新跨境移动摘要",
+        "subtitle": "最新月度飞机、车辆及其他主要移动总量；来源为临时估计的单元会在摘要中标示。",
+        "dataset": "censtatd_boundary_movements_latest",
+        "sourceId": "censtatd_boundary_movements",
+        "density": "dense",
+        "layout": "full",
+        "columns": [
+          {
+            "field": "summary",
+            "label": "移动摘要",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "id": "td_carpark_occupancy_latest_district_table",
+        "title": "传感器停车位按区占用率",
+        "subtitle": "列示运输署传感器计量停车位的最新按区观测占用率。",
+        "dataset": "td_carpark_occupancy_latest_district",
+        "sourceId": "td_carpark_occupancy",
+        "density": "dense",
+        "layout": "full",
+        "columns": [
+          {
+            "field": "summary",
+            "label": "地区占用率",
             "type": "text"
           }
         ]
@@ -703,14 +1007,14 @@
       },
       {
         "id": "td_carpark_occupancy",
-        "label": "运输署实时停车场空置数据及政府一站式停车场容量资料",
-        "href": "https://api.data.gov.hk/v1/carpark-info-vacancy",
+        "label": "运输署传感器计量停车位及实时占用状态",
+        "href": "https://portal.csdi.gov.hk/geoportal/?datasetId=td_rcd_1638930345315_81787",
         "path": "sources/td_carpark_occupancy.sql",
         "query": {
-          "engine": "official TD live vacancy JSON joined to Digital Policy Office One-Stop static capacity JSON",
-          "url": "https://resource.data.one.gov.hk/td/carpark/vacancy_all.json ; https://resource.data.one.gov.hk/td/carpark/basic_info_all.json ; https://api.data.gov.hk/v1/carpark-info-vacancy",
-          "language": "JSON",
-          "description": "构建时从公开来源读取并校验 运输署实时停车场空置数据及政府一站式停车场容量资料。"
+          "engine": "official TD CSDI metered-space GeoJSON inventory + live occupancy-status CSV",
+          "url": "https://portal.csdi.gov.hk/csdi-webpage/file-api?dataset_id=td_rcd_1638930345315_81787&format=geojson&layer_name=parkingspaces ; https://resource.data.one.gov.hk/td/psiparkingspaces/occupancystatus/occupancystatus.csv",
+          "language": "GeoJSON + CSV",
+          "description": "构建时从公开来源读取并校验 运输署传感器计量停车位及实时占用状态。"
         }
       }
     ],
@@ -723,7 +1027,10 @@
           "cathay_card",
           "journeys_card",
           "fleet_card",
-          "net_growth_card"
+          "net_growth_card",
+          "private_car_first_reg_card",
+          "parking_card",
+          "carpark_occupancy_card"
         ]
       },
       {
@@ -818,12 +1125,64 @@
         "type": "chart",
         "chartId": "hk_private_car_net_growth_chart",
         "layout": "half"
+      },
+      {
+        "id": "hk_private_car_ev_make_chart_block",
+        "type": "chart",
+        "chartId": "hk_private_car_ev_make_chart",
+        "layout": "half"
+      },
+      {
+        "id": "hk_private_car_ev_share_chart_block",
+        "type": "chart",
+        "chartId": "hk_private_car_ev_share_chart",
+        "layout": "half"
+      },
+      {
+        "id": "mttd_passenger_journeys_chart_block",
+        "type": "chart",
+        "chartId": "mttd_passenger_journeys_chart"
+      },
+      {
+        "id": "censtatd_boundary_movements_chart_block",
+        "type": "chart",
+        "chartId": "censtatd_boundary_movements_chart"
+      },
+      {
+        "id": "td_carpark_occupancy_chart_block",
+        "type": "chart",
+        "chartId": "td_carpark_occupancy_chart"
+      },
+      {
+        "id": "hk_private_car_ev_model_table_block",
+        "type": "table",
+        "tableId": "hk_private_car_ev_model_table"
+      },
+      {
+        "id": "hk_parking_current_district_table_block",
+        "type": "table",
+        "tableId": "hk_parking_current_district_table"
+      },
+      {
+        "id": "mttd_passenger_journeys_latest_table_block",
+        "type": "table",
+        "tableId": "mttd_passenger_journeys_latest_table"
+      },
+      {
+        "id": "censtatd_boundary_movements_latest_table_block",
+        "type": "table",
+        "tableId": "censtatd_boundary_movements_latest_table"
+      },
+      {
+        "id": "td_carpark_occupancy_latest_district_table_block",
+        "type": "table",
+        "tableId": "td_carpark_occupancy_latest_district_table"
       }
     ]
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-07-31T22:47:36.754107Z",
+    "generatedAt": "2026-08-01T10:10:16.928863Z",
     "status": "ready",
     "datasets": {
       "kpi_mtr": [
@@ -31249,47 +31608,6 @@
           "observation_date": "2026-06-01"
         }
       ],
-      "china_airline_latest_snapshot_summary": [
-        {
-          "summary": "Air China / Domestic: passengers 10,051.2; ASK 18,356.2; RPK 15,418.5; load factor 84%"
-        },
-        {
-          "summary": "Air China / International: passengers 1,519; ASK 8,588.1; RPK 7,221.2; load factor 84.1%"
-        },
-        {
-          "summary": "Air China / Regional: passengers 366.4; ASK 701.5; RPK 561.9; load factor 80.1%"
-        },
-        {
-          "summary": "China Eastern / Domestic: passengers 9,114.3; ASK 15,547.1; RPK 13,414.5; load factor 86.3%"
-        },
-        {
-          "summary": "China Eastern / International: passengers 1,661.8; ASK 8,424.1; RPK 7,349; load factor 87.2%"
-        },
-        {
-          "summary": "China Eastern / Regional: passengers 303.3; ASK 475.9; RPK 411.3; load factor 86.4%"
-        },
-        {
-          "summary": "China Southern / Domestic: passengers 10,985.8; ASK 21,345.7; RPK 18,000; load factor 84.3%"
-        },
-        {
-          "summary": "China Southern / International: passengers 1,740.7; ASK 8,532.1; RPK 7,119.3; load factor 83.4%"
-        },
-        {
-          "summary": "China Southern / Regional: passengers 153.1; ASK 292.7; RPK 231.8; load factor 79.2%"
-        },
-        {
-          "summary": "China Southern / Total: passengers 12,879.5; ASK 30,170.5; RPK 25,351; load factor 84%"
-        },
-        {
-          "summary": "Spring Airlines / Domestic: passengers 2,446.6; ASK 4,681.9; RPK 4,300.7; load factor 91.9%"
-        },
-        {
-          "summary": "Spring Airlines / International: passengers 408.1; ASK 879; RPK 807.9; load factor 91.9%"
-        },
-        {
-          "summary": "Spring Airlines / Regional: passengers 22.3; ASK 34.1; RPK 31.1; load factor 91.3%"
-        }
-      ],
       "kpi_journeys": [
         {
           "kmb_k": 77507.732,
@@ -32400,10 +32718,3791 @@
           "value": 3369.07
         }
       ],
-      "mttd_passenger_journeys_history": [],
-      "mttd_passenger_journeys_latest": [],
-      "censtatd_boundary_movements_history": [],
-      "censtatd_boundary_movements_latest": [],
+      "mttd_passenger_journeys_history": [
+        {
+          "date": "2013-01-01",
+          "month": "2013-01",
+          "series": "专营巴士",
+          "value": 121684.02
+        },
+        {
+          "date": "2013-01-01",
+          "month": "2013-01",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 19471.681
+        },
+        {
+          "date": "2013-01-01",
+          "month": "2013-01",
+          "series": "港铁本地",
+          "value": 135857.719
+        },
+        {
+          "date": "2013-02-01",
+          "month": "2013-02",
+          "series": "专营巴士",
+          "value": 109123.815
+        },
+        {
+          "date": "2013-02-01",
+          "month": "2013-02",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 17043.784
+        },
+        {
+          "date": "2013-02-01",
+          "month": "2013-02",
+          "series": "港铁本地",
+          "value": 118165.092
+        },
+        {
+          "date": "2013-03-01",
+          "month": "2013-03",
+          "series": "专营巴士",
+          "value": 120167.707
+        },
+        {
+          "date": "2013-03-01",
+          "month": "2013-03",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 19277.378
+        },
+        {
+          "date": "2013-03-01",
+          "month": "2013-03",
+          "series": "港铁本地",
+          "value": 132018.522
+        },
+        {
+          "date": "2013-04-01",
+          "month": "2013-04",
+          "series": "专营巴士",
+          "value": 114598.464
+        },
+        {
+          "date": "2013-04-01",
+          "month": "2013-04",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 18623.154
+        },
+        {
+          "date": "2013-04-01",
+          "month": "2013-04",
+          "series": "港铁本地",
+          "value": 126089.38
+        },
+        {
+          "date": "2013-05-01",
+          "month": "2013-05",
+          "series": "专营巴士",
+          "value": 119465.935
+        },
+        {
+          "date": "2013-05-01",
+          "month": "2013-05",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 19585.107
+        },
+        {
+          "date": "2013-05-01",
+          "month": "2013-05",
+          "series": "港铁本地",
+          "value": 130834.684
+        },
+        {
+          "date": "2013-06-01",
+          "month": "2013-06",
+          "series": "专营巴士",
+          "value": 115294.45
+        },
+        {
+          "date": "2013-06-01",
+          "month": "2013-06",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 19286.884
+        },
+        {
+          "date": "2013-06-01",
+          "month": "2013-06",
+          "series": "港铁本地",
+          "value": 126830.212
+        },
+        {
+          "date": "2013-07-01",
+          "month": "2013-07",
+          "series": "专营巴士",
+          "value": 120809.246
+        },
+        {
+          "date": "2013-07-01",
+          "month": "2013-07",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 19935.839
+        },
+        {
+          "date": "2013-07-01",
+          "month": "2013-07",
+          "series": "港铁本地",
+          "value": 136620.484
+        },
+        {
+          "date": "2013-08-01",
+          "month": "2013-08",
+          "series": "专营巴士",
+          "value": 119201.14
+        },
+        {
+          "date": "2013-08-01",
+          "month": "2013-08",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 19335.055
+        },
+        {
+          "date": "2013-08-01",
+          "month": "2013-08",
+          "series": "港铁本地",
+          "value": 136189.501
+        },
+        {
+          "date": "2013-09-01",
+          "month": "2013-09",
+          "series": "专营巴士",
+          "value": 117836.767
+        },
+        {
+          "date": "2013-09-01",
+          "month": "2013-09",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 19991.36
+        },
+        {
+          "date": "2013-09-01",
+          "month": "2013-09",
+          "series": "港铁本地",
+          "value": 131670.736
+        },
+        {
+          "date": "2013-10-01",
+          "month": "2013-10",
+          "series": "专营巴士",
+          "value": 124928.16
+        },
+        {
+          "date": "2013-10-01",
+          "month": "2013-10",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 20577.419
+        },
+        {
+          "date": "2013-10-01",
+          "month": "2013-10",
+          "series": "港铁本地",
+          "value": 138175.964
+        },
+        {
+          "date": "2013-11-01",
+          "month": "2013-11",
+          "series": "专营巴士",
+          "value": 121634.497
+        },
+        {
+          "date": "2013-11-01",
+          "month": "2013-11",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 19939.721
+        },
+        {
+          "date": "2013-11-01",
+          "month": "2013-11",
+          "series": "港铁本地",
+          "value": 137087.983
+        },
+        {
+          "date": "2013-12-01",
+          "month": "2013-12",
+          "series": "专营巴士",
+          "value": 121681.778
+        },
+        {
+          "date": "2013-12-01",
+          "month": "2013-12",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 19987.834
+        },
+        {
+          "date": "2013-12-01",
+          "month": "2013-12",
+          "series": "港铁本地",
+          "value": 140791.963
+        },
+        {
+          "date": "2014-01-01",
+          "month": "2014-01",
+          "series": "专营巴士",
+          "value": 124533.735
+        },
+        {
+          "date": "2014-01-01",
+          "month": "2014-01",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 20214.481
+        },
+        {
+          "date": "2014-01-01",
+          "month": "2014-01",
+          "series": "港铁本地",
+          "value": 141350.194
+        },
+        {
+          "date": "2014-02-01",
+          "month": "2014-02",
+          "series": "专营巴士",
+          "value": 108588.154
+        },
+        {
+          "date": "2014-02-01",
+          "month": "2014-02",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 17299.589
+        },
+        {
+          "date": "2014-02-01",
+          "month": "2014-02",
+          "series": "港铁本地",
+          "value": 121512.355
+        },
+        {
+          "date": "2014-03-01",
+          "month": "2014-03",
+          "series": "专营巴士",
+          "value": 123156.488
+        },
+        {
+          "date": "2014-03-01",
+          "month": "2014-03",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 20023.213
+        },
+        {
+          "date": "2014-03-01",
+          "month": "2014-03",
+          "series": "港铁本地",
+          "value": 137666.188
+        },
+        {
+          "date": "2014-04-01",
+          "month": "2014-04",
+          "series": "专营巴士",
+          "value": 117770.165
+        },
+        {
+          "date": "2014-04-01",
+          "month": "2014-04",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 18978.043
+        },
+        {
+          "date": "2014-04-01",
+          "month": "2014-04",
+          "series": "港铁本地",
+          "value": 129104.401
+        },
+        {
+          "date": "2014-05-01",
+          "month": "2014-05",
+          "series": "专营巴士",
+          "value": 121401.055
+        },
+        {
+          "date": "2014-05-01",
+          "month": "2014-05",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 20070.602
+        },
+        {
+          "date": "2014-05-01",
+          "month": "2014-05",
+          "series": "港铁本地",
+          "value": 133637.949
+        },
+        {
+          "date": "2014-06-01",
+          "month": "2014-06",
+          "series": "专营巴士",
+          "value": 118401.483
+        },
+        {
+          "date": "2014-06-01",
+          "month": "2014-06",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 19690.94
+        },
+        {
+          "date": "2014-06-01",
+          "month": "2014-06",
+          "series": "港铁本地",
+          "value": 129886.189
+        },
+        {
+          "date": "2014-07-01",
+          "month": "2014-07",
+          "series": "专营巴士",
+          "value": 123515.125
+        },
+        {
+          "date": "2014-07-01",
+          "month": "2014-07",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 20088.224
+        },
+        {
+          "date": "2014-07-01",
+          "month": "2014-07",
+          "series": "港铁本地",
+          "value": 139931.125
+        },
+        {
+          "date": "2014-08-01",
+          "month": "2014-08",
+          "series": "专营巴士",
+          "value": 124264.837
+        },
+        {
+          "date": "2014-08-01",
+          "month": "2014-08",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 19984.381
+        },
+        {
+          "date": "2014-08-01",
+          "month": "2014-08",
+          "series": "港铁本地",
+          "value": 142128.551
+        },
+        {
+          "date": "2014-09-01",
+          "month": "2014-09",
+          "series": "专营巴士",
+          "value": 119378.828
+        },
+        {
+          "date": "2014-09-01",
+          "month": "2014-09",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 20641.982
+        },
+        {
+          "date": "2014-09-01",
+          "month": "2014-09",
+          "series": "港铁本地",
+          "value": 138614.101
+        },
+        {
+          "date": "2014-10-01",
+          "month": "2014-10",
+          "series": "专营巴士",
+          "value": 112368.086
+        },
+        {
+          "date": "2014-10-01",
+          "month": "2014-10",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 21450.912
+        },
+        {
+          "date": "2014-10-01",
+          "month": "2014-10",
+          "series": "港铁本地",
+          "value": 154967.37
+        },
+        {
+          "date": "2014-11-01",
+          "month": "2014-11",
+          "series": "专营巴士",
+          "value": 115376.115
+        },
+        {
+          "date": "2014-11-01",
+          "month": "2014-11",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 20531.356
+        },
+        {
+          "date": "2014-11-01",
+          "month": "2014-11",
+          "series": "港铁本地",
+          "value": 148007.603
+        },
+        {
+          "date": "2014-12-01",
+          "month": "2014-12",
+          "series": "专营巴士",
+          "value": 119855.328
+        },
+        {
+          "date": "2014-12-01",
+          "month": "2014-12",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 20510.299
+        },
+        {
+          "date": "2014-12-01",
+          "month": "2014-12",
+          "series": "港铁本地",
+          "value": 148347.322
+        },
+        {
+          "date": "2015-01-01",
+          "month": "2015-01",
+          "series": "专营巴士",
+          "value": 120621.239
+        },
+        {
+          "date": "2015-01-01",
+          "month": "2015-01",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 20446.263
+        },
+        {
+          "date": "2015-01-01",
+          "month": "2015-01",
+          "series": "港铁本地",
+          "value": 146183.963
+        },
+        {
+          "date": "2015-02-01",
+          "month": "2015-02",
+          "series": "专营巴士",
+          "value": 108132.949
+        },
+        {
+          "date": "2015-02-01",
+          "month": "2015-02",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 17918.509
+        },
+        {
+          "date": "2015-02-01",
+          "month": "2015-02",
+          "series": "港铁本地",
+          "value": 131256.082
+        },
+        {
+          "date": "2015-03-01",
+          "month": "2015-03",
+          "series": "专营巴士",
+          "value": 122376.105
+        },
+        {
+          "date": "2015-03-01",
+          "month": "2015-03",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 20506.556
+        },
+        {
+          "date": "2015-03-01",
+          "month": "2015-03",
+          "series": "港铁本地",
+          "value": 143526.699
+        },
+        {
+          "date": "2015-04-01",
+          "month": "2015-04",
+          "series": "专营巴士",
+          "value": 115055.261
+        },
+        {
+          "date": "2015-04-01",
+          "month": "2015-04",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 19263.414
+        },
+        {
+          "date": "2015-04-01",
+          "month": "2015-04",
+          "series": "港铁本地",
+          "value": 133937.013
+        },
+        {
+          "date": "2015-05-01",
+          "month": "2015-05",
+          "series": "专营巴士",
+          "value": 117948.079
+        },
+        {
+          "date": "2015-05-01",
+          "month": "2015-05",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 20338.416
+        },
+        {
+          "date": "2015-05-01",
+          "month": "2015-05",
+          "series": "港铁本地",
+          "value": 138434.668
+        },
+        {
+          "date": "2015-06-01",
+          "month": "2015-06",
+          "series": "专营巴士",
+          "value": 116954.176
+        },
+        {
+          "date": "2015-06-01",
+          "month": "2015-06",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 20176.817
+        },
+        {
+          "date": "2015-06-01",
+          "month": "2015-06",
+          "series": "港铁本地",
+          "value": 137450.643
+        },
+        {
+          "date": "2015-07-01",
+          "month": "2015-07",
+          "series": "专营巴士",
+          "value": 118990.621
+        },
+        {
+          "date": "2015-07-01",
+          "month": "2015-07",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 20344.869
+        },
+        {
+          "date": "2015-07-01",
+          "month": "2015-07",
+          "series": "港铁本地",
+          "value": 142841.334
+        },
+        {
+          "date": "2015-08-01",
+          "month": "2015-08",
+          "series": "专营巴士",
+          "value": 120713.28
+        },
+        {
+          "date": "2015-08-01",
+          "month": "2015-08",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 20071.782
+        },
+        {
+          "date": "2015-08-01",
+          "month": "2015-08",
+          "series": "港铁本地",
+          "value": 144155.336
+        },
+        {
+          "date": "2015-09-01",
+          "month": "2015-09",
+          "series": "专营巴士",
+          "value": 120095.62
+        },
+        {
+          "date": "2015-09-01",
+          "month": "2015-09",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 20866.766
+        },
+        {
+          "date": "2015-09-01",
+          "month": "2015-09",
+          "series": "港铁本地",
+          "value": 140547.916
+        },
+        {
+          "date": "2015-10-01",
+          "month": "2015-10",
+          "series": "专营巴士",
+          "value": 122909.831
+        },
+        {
+          "date": "2015-10-01",
+          "month": "2015-10",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 21127.159
+        },
+        {
+          "date": "2015-10-01",
+          "month": "2015-10",
+          "series": "港铁本地",
+          "value": 145108.901
+        },
+        {
+          "date": "2015-11-01",
+          "month": "2015-11",
+          "series": "专营巴士",
+          "value": 121901.312
+        },
+        {
+          "date": "2015-11-01",
+          "month": "2015-11",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 20563.505
+        },
+        {
+          "date": "2015-11-01",
+          "month": "2015-11",
+          "series": "港铁本地",
+          "value": 143426.521
+        },
+        {
+          "date": "2015-12-01",
+          "month": "2015-12",
+          "series": "专营巴士",
+          "value": 123438.144
+        },
+        {
+          "date": "2015-12-01",
+          "month": "2015-12",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 20786.908
+        },
+        {
+          "date": "2015-12-01",
+          "month": "2015-12",
+          "series": "港铁本地",
+          "value": 148908.512
+        },
+        {
+          "date": "2016-01-01",
+          "month": "2016-01",
+          "series": "专营巴士",
+          "value": 119895.808
+        },
+        {
+          "date": "2016-01-01",
+          "month": "2016-01",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 20502.139
+        },
+        {
+          "date": "2016-01-01",
+          "month": "2016-01",
+          "series": "港铁本地",
+          "value": 144951.876
+        },
+        {
+          "date": "2016-02-01",
+          "month": "2016-02",
+          "series": "专营巴士",
+          "value": 111437.305
+        },
+        {
+          "date": "2016-02-01",
+          "month": "2016-02",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 18546.104
+        },
+        {
+          "date": "2016-02-01",
+          "month": "2016-02",
+          "series": "港铁本地",
+          "value": 131146.01
+        },
+        {
+          "date": "2016-03-01",
+          "month": "2016-03",
+          "series": "专营巴士",
+          "value": 119638.485
+        },
+        {
+          "date": "2016-03-01",
+          "month": "2016-03",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 20099.616
+        },
+        {
+          "date": "2016-03-01",
+          "month": "2016-03",
+          "series": "港铁本地",
+          "value": 140857.112
+        },
+        {
+          "date": "2016-04-01",
+          "month": "2016-04",
+          "series": "专营巴士",
+          "value": 118333.015
+        },
+        {
+          "date": "2016-04-01",
+          "month": "2016-04",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 19998.859
+        },
+        {
+          "date": "2016-04-01",
+          "month": "2016-04",
+          "series": "港铁本地",
+          "value": 137682.718
+        },
+        {
+          "date": "2016-05-01",
+          "month": "2016-05",
+          "series": "专营巴士",
+          "value": 122528.163
+        },
+        {
+          "date": "2016-05-01",
+          "month": "2016-05",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 20668.471
+        },
+        {
+          "date": "2016-05-01",
+          "month": "2016-05",
+          "series": "港铁本地",
+          "value": 140509.32
+        },
+        {
+          "date": "2016-06-01",
+          "month": "2016-06",
+          "series": "专营巴士",
+          "value": 118195.089
+        },
+        {
+          "date": "2016-06-01",
+          "month": "2016-06",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 20458.318
+        },
+        {
+          "date": "2016-06-01",
+          "month": "2016-06",
+          "series": "港铁本地",
+          "value": 136647.001
+        },
+        {
+          "date": "2016-07-01",
+          "month": "2016-07",
+          "series": "专营巴士",
+          "value": 122894.735
+        },
+        {
+          "date": "2016-07-01",
+          "month": "2016-07",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 20809.03
+        },
+        {
+          "date": "2016-07-01",
+          "month": "2016-07",
+          "series": "港铁本地",
+          "value": 142511.909
+        },
+        {
+          "date": "2016-08-01",
+          "month": "2016-08",
+          "series": "专营巴士",
+          "value": 121665.387
+        },
+        {
+          "date": "2016-08-01",
+          "month": "2016-08",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 20142.724
+        },
+        {
+          "date": "2016-08-01",
+          "month": "2016-08",
+          "series": "港铁本地",
+          "value": 143071.047
+        },
+        {
+          "date": "2016-09-01",
+          "month": "2016-09",
+          "series": "专营巴士",
+          "value": 123306.087
+        },
+        {
+          "date": "2016-09-01",
+          "month": "2016-09",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 21223.671
+        },
+        {
+          "date": "2016-09-01",
+          "month": "2016-09",
+          "series": "港铁本地",
+          "value": 142821.001
+        },
+        {
+          "date": "2016-10-01",
+          "month": "2016-10",
+          "series": "专营巴士",
+          "value": 122115.693
+        },
+        {
+          "date": "2016-10-01",
+          "month": "2016-10",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 21009.851
+        },
+        {
+          "date": "2016-10-01",
+          "month": "2016-10",
+          "series": "港铁本地",
+          "value": 143598.474
+        },
+        {
+          "date": "2016-11-01",
+          "month": "2016-11",
+          "series": "专营巴士",
+          "value": 123282.725
+        },
+        {
+          "date": "2016-11-01",
+          "month": "2016-11",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 20819.578
+        },
+        {
+          "date": "2016-11-01",
+          "month": "2016-11",
+          "series": "港铁本地",
+          "value": 147909.894
+        },
+        {
+          "date": "2016-12-01",
+          "month": "2016-12",
+          "series": "专营巴士",
+          "value": 126241.523
+        },
+        {
+          "date": "2016-12-01",
+          "month": "2016-12",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 20977.126
+        },
+        {
+          "date": "2016-12-01",
+          "month": "2016-12",
+          "series": "港铁本地",
+          "value": 151829.405
+        },
+        {
+          "date": "2017-01-01",
+          "month": "2017-01",
+          "series": "专营巴士",
+          "value": 122382.821
+        },
+        {
+          "date": "2017-01-01",
+          "month": "2017-01",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 20614.559
+        },
+        {
+          "date": "2017-01-01",
+          "month": "2017-01",
+          "series": "港铁本地",
+          "value": 148930.764
+        },
+        {
+          "date": "2017-02-01",
+          "month": "2017-02",
+          "series": "专营巴士",
+          "value": 110546.48
+        },
+        {
+          "date": "2017-02-01",
+          "month": "2017-02",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 18555.237
+        },
+        {
+          "date": "2017-02-01",
+          "month": "2017-02",
+          "series": "港铁本地",
+          "value": 134214.986
+        },
+        {
+          "date": "2017-03-01",
+          "month": "2017-03",
+          "series": "专营巴士",
+          "value": 123934.421
+        },
+        {
+          "date": "2017-03-01",
+          "month": "2017-03",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 20881.817
+        },
+        {
+          "date": "2017-03-01",
+          "month": "2017-03",
+          "series": "港铁本地",
+          "value": 150446.252
+        },
+        {
+          "date": "2017-04-01",
+          "month": "2017-04",
+          "series": "专营巴士",
+          "value": 116998.384
+        },
+        {
+          "date": "2017-04-01",
+          "month": "2017-04",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 19474.671
+        },
+        {
+          "date": "2017-04-01",
+          "month": "2017-04",
+          "series": "港铁本地",
+          "value": 137370.141
+        },
+        {
+          "date": "2017-05-01",
+          "month": "2017-05",
+          "series": "专营巴士",
+          "value": 122819.369
+        },
+        {
+          "date": "2017-05-01",
+          "month": "2017-05",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 20615.37
+        },
+        {
+          "date": "2017-05-01",
+          "month": "2017-05",
+          "series": "港铁本地",
+          "value": 142881.037
+        },
+        {
+          "date": "2017-06-01",
+          "month": "2017-06",
+          "series": "专营巴士",
+          "value": 117803.676
+        },
+        {
+          "date": "2017-06-01",
+          "month": "2017-06",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 20322.139
+        },
+        {
+          "date": "2017-06-01",
+          "month": "2017-06",
+          "series": "港铁本地",
+          "value": 141118.595
+        },
+        {
+          "date": "2017-07-01",
+          "month": "2017-07",
+          "series": "专营巴士",
+          "value": 120590.781
+        },
+        {
+          "date": "2017-07-01",
+          "month": "2017-07",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 20413.641
+        },
+        {
+          "date": "2017-07-01",
+          "month": "2017-07",
+          "series": "港铁本地",
+          "value": 147154.342
+        },
+        {
+          "date": "2017-08-01",
+          "month": "2017-08",
+          "series": "专营巴士",
+          "value": 117693.18
+        },
+        {
+          "date": "2017-08-01",
+          "month": "2017-08",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 19862.2
+        },
+        {
+          "date": "2017-08-01",
+          "month": "2017-08",
+          "series": "港铁本地",
+          "value": 144451.052
+        },
+        {
+          "date": "2017-09-01",
+          "month": "2017-09",
+          "series": "专营巴士",
+          "value": 122841.342
+        },
+        {
+          "date": "2017-09-01",
+          "month": "2017-09",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 21413.502
+        },
+        {
+          "date": "2017-09-01",
+          "month": "2017-09",
+          "series": "港铁本地",
+          "value": 148732.963
+        },
+        {
+          "date": "2017-10-01",
+          "month": "2017-10",
+          "series": "专营巴士",
+          "value": 122924.282
+        },
+        {
+          "date": "2017-10-01",
+          "month": "2017-10",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 21614.855
+        },
+        {
+          "date": "2017-10-01",
+          "month": "2017-10",
+          "series": "港铁本地",
+          "value": 151429.613
+        },
+        {
+          "date": "2017-11-01",
+          "month": "2017-11",
+          "series": "专营巴士",
+          "value": 124007.303
+        },
+        {
+          "date": "2017-11-01",
+          "month": "2017-11",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 21043.065
+        },
+        {
+          "date": "2017-11-01",
+          "month": "2017-11",
+          "series": "港铁本地",
+          "value": 152251.341
+        },
+        {
+          "date": "2017-12-01",
+          "month": "2017-12",
+          "series": "专营巴士",
+          "value": 125240.921
+        },
+        {
+          "date": "2017-12-01",
+          "month": "2017-12",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 21056.47
+        },
+        {
+          "date": "2017-12-01",
+          "month": "2017-12",
+          "series": "港铁本地",
+          "value": 155180.748
+        },
+        {
+          "date": "2018-01-01",
+          "month": "2018-01",
+          "series": "专营巴士",
+          "value": 123566.525
+        },
+        {
+          "date": "2018-01-01",
+          "month": "2018-01",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 20918.985
+        },
+        {
+          "date": "2018-01-01",
+          "month": "2018-01",
+          "series": "港铁本地",
+          "value": 152730.268
+        },
+        {
+          "date": "2018-02-01",
+          "month": "2018-02",
+          "series": "专营巴士",
+          "value": 108850.522
+        },
+        {
+          "date": "2018-02-01",
+          "month": "2018-02",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 17958.187
+        },
+        {
+          "date": "2018-02-01",
+          "month": "2018-02",
+          "series": "港铁本地",
+          "value": 135161.021
+        },
+        {
+          "date": "2018-03-01",
+          "month": "2018-03",
+          "series": "专营巴士",
+          "value": 126206.033
+        },
+        {
+          "date": "2018-03-01",
+          "month": "2018-03",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 20927.408
+        },
+        {
+          "date": "2018-03-01",
+          "month": "2018-03",
+          "series": "港铁本地",
+          "value": 152739.446
+        },
+        {
+          "date": "2018-04-01",
+          "month": "2018-04",
+          "series": "专营巴士",
+          "value": 119854.664
+        },
+        {
+          "date": "2018-04-01",
+          "month": "2018-04",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 20035.548
+        },
+        {
+          "date": "2018-04-01",
+          "month": "2018-04",
+          "series": "港铁本地",
+          "value": 143278.211
+        },
+        {
+          "date": "2018-05-01",
+          "month": "2018-05",
+          "series": "专营巴士",
+          "value": 125909.596
+        },
+        {
+          "date": "2018-05-01",
+          "month": "2018-05",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 21281.1
+        },
+        {
+          "date": "2018-05-01",
+          "month": "2018-05",
+          "series": "港铁本地",
+          "value": 148801.344
+        },
+        {
+          "date": "2018-06-01",
+          "month": "2018-06",
+          "series": "专营巴士",
+          "value": 120225.749
+        },
+        {
+          "date": "2018-06-01",
+          "month": "2018-06",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 20621.411
+        },
+        {
+          "date": "2018-06-01",
+          "month": "2018-06",
+          "series": "港铁本地",
+          "value": 143394.784
+        },
+        {
+          "date": "2018-07-01",
+          "month": "2018-07",
+          "series": "专营巴士",
+          "value": 124705.711
+        },
+        {
+          "date": "2018-07-01",
+          "month": "2018-07",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 20842.791
+        },
+        {
+          "date": "2018-07-01",
+          "month": "2018-07",
+          "series": "港铁本地",
+          "value": 149799.344
+        },
+        {
+          "date": "2018-08-01",
+          "month": "2018-08",
+          "series": "专营巴士",
+          "value": 124757.815
+        },
+        {
+          "date": "2018-08-01",
+          "month": "2018-08",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 20346.254
+        },
+        {
+          "date": "2018-08-01",
+          "month": "2018-08",
+          "series": "港铁本地",
+          "value": 152479.541
+        },
+        {
+          "date": "2018-09-01",
+          "month": "2018-09",
+          "series": "专营巴士",
+          "value": 117065.944
+        },
+        {
+          "date": "2018-09-01",
+          "month": "2018-09",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 20636.2
+        },
+        {
+          "date": "2018-09-01",
+          "month": "2018-09",
+          "series": "港铁本地",
+          "value": 145406.921
+        },
+        {
+          "date": "2018-10-01",
+          "month": "2018-10",
+          "series": "专营巴士",
+          "value": 131009.747
+        },
+        {
+          "date": "2018-10-01",
+          "month": "2018-10",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 21907.309
+        },
+        {
+          "date": "2018-10-01",
+          "month": "2018-10",
+          "series": "港铁本地",
+          "value": 157299.021
+        },
+        {
+          "date": "2018-11-01",
+          "month": "2018-11",
+          "series": "专营巴士",
+          "value": 128857.075
+        },
+        {
+          "date": "2018-11-01",
+          "month": "2018-11",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 21417.154
+        },
+        {
+          "date": "2018-11-01",
+          "month": "2018-11",
+          "series": "港铁本地",
+          "value": 156660.076
+        },
+        {
+          "date": "2018-12-01",
+          "month": "2018-12",
+          "series": "专营巴士",
+          "value": 128808.528
+        },
+        {
+          "date": "2018-12-01",
+          "month": "2018-12",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 21253.782
+        },
+        {
+          "date": "2018-12-01",
+          "month": "2018-12",
+          "series": "港铁本地",
+          "value": 158233.954
+        },
+        {
+          "date": "2019-01-01",
+          "month": "2019-01",
+          "series": "专营巴士",
+          "value": 132367.375
+        },
+        {
+          "date": "2019-01-01",
+          "month": "2019-01",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 21630.65
+        },
+        {
+          "date": "2019-01-01",
+          "month": "2019-01",
+          "series": "港铁本地",
+          "value": 160578.811
+        },
+        {
+          "date": "2019-02-01",
+          "month": "2019-02",
+          "series": "专营巴士",
+          "value": 114545.16
+        },
+        {
+          "date": "2019-02-01",
+          "month": "2019-02",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 18395.153
+        },
+        {
+          "date": "2019-02-01",
+          "month": "2019-02",
+          "series": "港铁本地",
+          "value": 136608.237
+        },
+        {
+          "date": "2019-03-01",
+          "month": "2019-03",
+          "series": "专营巴士",
+          "value": 130830.544
+        },
+        {
+          "date": "2019-03-01",
+          "month": "2019-03",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 21413.592
+        },
+        {
+          "date": "2019-03-01",
+          "month": "2019-03",
+          "series": "港铁本地",
+          "value": 156354.188
+        },
+        {
+          "date": "2019-04-01",
+          "month": "2019-04",
+          "series": "专营巴士",
+          "value": 122484.215
+        },
+        {
+          "date": "2019-04-01",
+          "month": "2019-04",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 19881.189
+        },
+        {
+          "date": "2019-04-01",
+          "month": "2019-04",
+          "series": "港铁本地",
+          "value": 144261.236
+        },
+        {
+          "date": "2019-05-01",
+          "month": "2019-05",
+          "series": "专营巴士",
+          "value": 129592.56
+        },
+        {
+          "date": "2019-05-01",
+          "month": "2019-05",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 21361.846
+        },
+        {
+          "date": "2019-05-01",
+          "month": "2019-05",
+          "series": "港铁本地",
+          "value": 154253.102
+        },
+        {
+          "date": "2019-06-01",
+          "month": "2019-06",
+          "series": "专营巴士",
+          "value": 123628.74
+        },
+        {
+          "date": "2019-06-01",
+          "month": "2019-06",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 20695.954
+        },
+        {
+          "date": "2019-06-01",
+          "month": "2019-06",
+          "series": "港铁本地",
+          "value": 146991.523
+        },
+        {
+          "date": "2019-07-01",
+          "month": "2019-07",
+          "series": "专营巴士",
+          "value": 125941.599
+        },
+        {
+          "date": "2019-07-01",
+          "month": "2019-07",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 20274.421
+        },
+        {
+          "date": "2019-07-01",
+          "month": "2019-07",
+          "series": "港铁本地",
+          "value": 149182.482
+        },
+        {
+          "date": "2019-08-01",
+          "month": "2019-08",
+          "series": "专营巴士",
+          "value": 120975.808
+        },
+        {
+          "date": "2019-08-01",
+          "month": "2019-08",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 19707.833
+        },
+        {
+          "date": "2019-08-01",
+          "month": "2019-08",
+          "series": "港铁本地",
+          "value": 140180.737
+        },
+        {
+          "date": "2019-09-01",
+          "month": "2019-09",
+          "series": "专营巴士",
+          "value": 128068.811
+        },
+        {
+          "date": "2019-09-01",
+          "month": "2019-09",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 19305.039
+        },
+        {
+          "date": "2019-09-01",
+          "month": "2019-09",
+          "series": "港铁本地",
+          "value": 136004.981
+        },
+        {
+          "date": "2019-10-01",
+          "month": "2019-10",
+          "series": "专营巴士",
+          "value": 132205.736
+        },
+        {
+          "date": "2019-10-01",
+          "month": "2019-10",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 13233.688
+        },
+        {
+          "date": "2019-10-01",
+          "month": "2019-10",
+          "series": "港铁本地",
+          "value": 116804.579
+        },
+        {
+          "date": "2019-11-01",
+          "month": "2019-11",
+          "series": "专营巴士",
+          "value": 108460.844
+        },
+        {
+          "date": "2019-11-01",
+          "month": "2019-11",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 12267.568
+        },
+        {
+          "date": "2019-11-01",
+          "month": "2019-11",
+          "series": "港铁本地",
+          "value": 117303.563
+        },
+        {
+          "date": "2019-12-01",
+          "month": "2019-12",
+          "series": "专营巴士",
+          "value": 125181.195
+        },
+        {
+          "date": "2019-12-01",
+          "month": "2019-12",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 14965.4
+        },
+        {
+          "date": "2019-12-01",
+          "month": "2019-12",
+          "series": "港铁本地",
+          "value": 132658.556
+        },
+        {
+          "date": "2020-01-01",
+          "month": "2020-01",
+          "series": "专营巴士",
+          "value": 119633.586
+        },
+        {
+          "date": "2020-01-01",
+          "month": "2020-01",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 15522.792
+        },
+        {
+          "date": "2020-01-01",
+          "month": "2020-01",
+          "series": "港铁本地",
+          "value": 124729.862
+        },
+        {
+          "date": "2020-02-01",
+          "month": "2020-02",
+          "series": "专营巴士",
+          "value": 73687.517
+        },
+        {
+          "date": "2020-02-01",
+          "month": "2020-02",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 9765.247
+        },
+        {
+          "date": "2020-02-01",
+          "month": "2020-02",
+          "series": "港铁本地",
+          "value": 71594.104
+        },
+        {
+          "date": "2020-03-01",
+          "month": "2020-03",
+          "series": "专营巴士",
+          "value": 82061.384
+        },
+        {
+          "date": "2020-03-01",
+          "month": "2020-03",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 11268.088
+        },
+        {
+          "date": "2020-03-01",
+          "month": "2020-03",
+          "series": "港铁本地",
+          "value": 84083.822
+        },
+        {
+          "date": "2020-04-01",
+          "month": "2020-04",
+          "series": "专营巴士",
+          "value": 74655.705
+        },
+        {
+          "date": "2020-04-01",
+          "month": "2020-04",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 10528.601
+        },
+        {
+          "date": "2020-04-01",
+          "month": "2020-04",
+          "series": "港铁本地",
+          "value": 74579.901
+        },
+        {
+          "date": "2020-05-01",
+          "month": "2020-05",
+          "series": "专营巴士",
+          "value": 94298.413
+        },
+        {
+          "date": "2020-05-01",
+          "month": "2020-05",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 13024.363
+        },
+        {
+          "date": "2020-05-01",
+          "month": "2020-05",
+          "series": "港铁本地",
+          "value": 97036.015
+        },
+        {
+          "date": "2020-06-01",
+          "month": "2020-06",
+          "series": "专营巴士",
+          "value": 104919.522
+        },
+        {
+          "date": "2020-06-01",
+          "month": "2020-06",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 15008.454
+        },
+        {
+          "date": "2020-06-01",
+          "month": "2020-06",
+          "series": "港铁本地",
+          "value": 110105.314
+        },
+        {
+          "date": "2020-07-01",
+          "month": "2020-07",
+          "series": "专营巴士",
+          "value": 88706.346
+        },
+        {
+          "date": "2020-07-01",
+          "month": "2020-07",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 12790.378
+        },
+        {
+          "date": "2020-07-01",
+          "month": "2020-07",
+          "series": "港铁本地",
+          "value": 91140.247
+        },
+        {
+          "date": "2020-08-01",
+          "month": "2020-08",
+          "series": "专营巴士",
+          "value": 76840.183
+        },
+        {
+          "date": "2020-08-01",
+          "month": "2020-08",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 11077.96
+        },
+        {
+          "date": "2020-08-01",
+          "month": "2020-08",
+          "series": "港铁本地",
+          "value": 78553.393
+        },
+        {
+          "date": "2020-09-01",
+          "month": "2020-09",
+          "series": "专营巴士",
+          "value": 94382.926
+        },
+        {
+          "date": "2020-09-01",
+          "month": "2020-09",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 13613.096
+        },
+        {
+          "date": "2020-09-01",
+          "month": "2020-09",
+          "series": "港铁本地",
+          "value": 100988.483
+        },
+        {
+          "date": "2020-10-01",
+          "month": "2020-10",
+          "series": "专营巴士",
+          "value": 106463.593
+        },
+        {
+          "date": "2020-10-01",
+          "month": "2020-10",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 15738.396
+        },
+        {
+          "date": "2020-10-01",
+          "month": "2020-10",
+          "series": "港铁本地",
+          "value": 113607.639
+        },
+        {
+          "date": "2020-11-01",
+          "month": "2020-11",
+          "series": "专营巴士",
+          "value": 106846.153
+        },
+        {
+          "date": "2020-11-01",
+          "month": "2020-11",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 15667.07
+        },
+        {
+          "date": "2020-11-01",
+          "month": "2020-11",
+          "series": "港铁本地",
+          "value": 114395.723
+        },
+        {
+          "date": "2020-12-01",
+          "month": "2020-12",
+          "series": "专营巴士",
+          "value": 88776.055
+        },
+        {
+          "date": "2020-12-01",
+          "month": "2020-12",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 13007.58
+        },
+        {
+          "date": "2020-12-01",
+          "month": "2020-12",
+          "series": "港铁本地",
+          "value": 93022.073
+        },
+        {
+          "date": "2021-01-01",
+          "month": "2021-01",
+          "series": "专营巴士",
+          "value": 88286.856
+        },
+        {
+          "date": "2021-01-01",
+          "month": "2021-01",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 12944.494
+        },
+        {
+          "date": "2021-01-01",
+          "month": "2021-01",
+          "series": "港铁本地",
+          "value": 93269.57
+        },
+        {
+          "date": "2021-02-01",
+          "month": "2021-02",
+          "series": "专营巴士",
+          "value": 85489.21
+        },
+        {
+          "date": "2021-02-01",
+          "month": "2021-02",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 12556.137
+        },
+        {
+          "date": "2021-02-01",
+          "month": "2021-02",
+          "series": "港铁本地",
+          "value": 91442.775
+        },
+        {
+          "date": "2021-03-01",
+          "month": "2021-03",
+          "series": "专营巴士",
+          "value": 105060.504
+        },
+        {
+          "date": "2021-03-01",
+          "month": "2021-03",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 15597.952
+        },
+        {
+          "date": "2021-03-01",
+          "month": "2021-03",
+          "series": "港铁本地",
+          "value": 114528.264
+        },
+        {
+          "date": "2021-04-01",
+          "month": "2021-04",
+          "series": "专营巴士",
+          "value": 104673.272
+        },
+        {
+          "date": "2021-04-01",
+          "month": "2021-04",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 15185.111
+        },
+        {
+          "date": "2021-04-01",
+          "month": "2021-04",
+          "series": "港铁本地",
+          "value": 111126.717
+        },
+        {
+          "date": "2021-05-01",
+          "month": "2021-05",
+          "series": "专营巴士",
+          "value": 110158.825
+        },
+        {
+          "date": "2021-05-01",
+          "month": "2021-05",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 16737.078
+        },
+        {
+          "date": "2021-05-01",
+          "month": "2021-05",
+          "series": "港铁本地",
+          "value": 117796.422
+        },
+        {
+          "date": "2021-06-01",
+          "month": "2021-06",
+          "series": "专营巴士",
+          "value": 107750.632
+        },
+        {
+          "date": "2021-06-01",
+          "month": "2021-06",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 16534.985
+        },
+        {
+          "date": "2021-06-01",
+          "month": "2021-06",
+          "series": "港铁本地",
+          "value": 118193.848
+        },
+        {
+          "date": "2021-07-01",
+          "month": "2021-07",
+          "series": "专营巴士",
+          "value": 109234.837
+        },
+        {
+          "date": "2021-07-01",
+          "month": "2021-07",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 17052.235
+        },
+        {
+          "date": "2021-07-01",
+          "month": "2021-07",
+          "series": "港铁本地",
+          "value": 125706.559
+        },
+        {
+          "date": "2021-08-01",
+          "month": "2021-08",
+          "series": "专营巴士",
+          "value": 110067.95
+        },
+        {
+          "date": "2021-08-01",
+          "month": "2021-08",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 17004.027
+        },
+        {
+          "date": "2021-08-01",
+          "month": "2021-08",
+          "series": "港铁本地",
+          "value": 127736.233
+        },
+        {
+          "date": "2021-09-01",
+          "month": "2021-09",
+          "series": "专营巴士",
+          "value": 112871.376
+        },
+        {
+          "date": "2021-09-01",
+          "month": "2021-09",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 17984.433
+        },
+        {
+          "date": "2021-09-01",
+          "month": "2021-09",
+          "series": "港铁本地",
+          "value": 129635.898
+        },
+        {
+          "date": "2021-10-01",
+          "month": "2021-10",
+          "series": "专营巴士",
+          "value": 105694.539
+        },
+        {
+          "date": "2021-10-01",
+          "month": "2021-10",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 17042.668
+        },
+        {
+          "date": "2021-10-01",
+          "month": "2021-10",
+          "series": "港铁本地",
+          "value": 124994.91
+        },
+        {
+          "date": "2021-11-01",
+          "month": "2021-11",
+          "series": "专营巴士",
+          "value": 114078.519
+        },
+        {
+          "date": "2021-11-01",
+          "month": "2021-11",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 17692.23
+        },
+        {
+          "date": "2021-11-01",
+          "month": "2021-11",
+          "series": "港铁本地",
+          "value": 131640.707
+        },
+        {
+          "date": "2021-12-01",
+          "month": "2021-12",
+          "series": "专营巴士",
+          "value": 113673.351
+        },
+        {
+          "date": "2021-12-01",
+          "month": "2021-12",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 17780.84
+        },
+        {
+          "date": "2021-12-01",
+          "month": "2021-12",
+          "series": "港铁本地",
+          "value": 136151.045
+        },
+        {
+          "date": "2022-01-01",
+          "month": "2022-01",
+          "series": "专营巴士",
+          "value": 97936.213
+        },
+        {
+          "date": "2022-01-01",
+          "month": "2022-01",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 15031.476
+        },
+        {
+          "date": "2022-01-01",
+          "month": "2022-01",
+          "series": "港铁本地",
+          "value": 110237.545
+        },
+        {
+          "date": "2022-02-01",
+          "month": "2022-02",
+          "series": "专营巴士",
+          "value": 58044.886
+        },
+        {
+          "date": "2022-02-01",
+          "month": "2022-02",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 9032.887
+        },
+        {
+          "date": "2022-02-01",
+          "month": "2022-02",
+          "series": "港铁本地",
+          "value": 62817.016
+        },
+        {
+          "date": "2022-03-01",
+          "month": "2022-03",
+          "series": "专营巴士",
+          "value": 57666.497
+        },
+        {
+          "date": "2022-03-01",
+          "month": "2022-03",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 9259.76
+        },
+        {
+          "date": "2022-03-01",
+          "month": "2022-03",
+          "series": "港铁本地",
+          "value": 65279.108
+        },
+        {
+          "date": "2022-04-01",
+          "month": "2022-04",
+          "series": "专营巴士",
+          "value": 80733.115
+        },
+        {
+          "date": "2022-04-01",
+          "month": "2022-04",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 12338.839
+        },
+        {
+          "date": "2022-04-01",
+          "month": "2022-04",
+          "series": "港铁本地",
+          "value": 91071.958
+        },
+        {
+          "date": "2022-05-01",
+          "month": "2022-05",
+          "series": "专营巴士",
+          "value": 100167.619
+        },
+        {
+          "date": "2022-05-01",
+          "month": "2022-05",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 16306.34
+        },
+        {
+          "date": "2022-05-01",
+          "month": "2022-05",
+          "series": "港铁本地",
+          "value": 119681.982
+        },
+        {
+          "date": "2022-06-01",
+          "month": "2022-06",
+          "series": "专营巴士",
+          "value": 101557.78
+        },
+        {
+          "date": "2022-06-01",
+          "month": "2022-06",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 16702.245
+        },
+        {
+          "date": "2022-06-01",
+          "month": "2022-06",
+          "series": "港铁本地",
+          "value": 121669.057
+        },
+        {
+          "date": "2022-07-01",
+          "month": "2022-07",
+          "series": "专营巴士",
+          "value": 102004.47
+        },
+        {
+          "date": "2022-07-01",
+          "month": "2022-07",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 16851.712
+        },
+        {
+          "date": "2022-07-01",
+          "month": "2022-07",
+          "series": "港铁本地",
+          "value": 122911.806
+        },
+        {
+          "date": "2022-08-01",
+          "month": "2022-08",
+          "series": "专营巴士",
+          "value": 103775.271
+        },
+        {
+          "date": "2022-08-01",
+          "month": "2022-08",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 16781.346
+        },
+        {
+          "date": "2022-08-01",
+          "month": "2022-08",
+          "series": "港铁本地",
+          "value": 126947.824
+        },
+        {
+          "date": "2022-09-01",
+          "month": "2022-09",
+          "series": "专营巴士",
+          "value": 106729.413
+        },
+        {
+          "date": "2022-09-01",
+          "month": "2022-09",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 17608.151
+        },
+        {
+          "date": "2022-09-01",
+          "month": "2022-09",
+          "series": "港铁本地",
+          "value": 126956.934
+        },
+        {
+          "date": "2022-10-01",
+          "month": "2022-10",
+          "series": "专营巴士",
+          "value": 111642.836
+        },
+        {
+          "date": "2022-10-01",
+          "month": "2022-10",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 18246.527
+        },
+        {
+          "date": "2022-10-01",
+          "month": "2022-10",
+          "series": "港铁本地",
+          "value": 131467.549
+        },
+        {
+          "date": "2022-11-01",
+          "month": "2022-11",
+          "series": "专营巴士",
+          "value": 106518.992
+        },
+        {
+          "date": "2022-11-01",
+          "month": "2022-11",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 17447.05
+        },
+        {
+          "date": "2022-11-01",
+          "month": "2022-11",
+          "series": "港铁本地",
+          "value": 126856.117
+        },
+        {
+          "date": "2022-12-01",
+          "month": "2022-12",
+          "series": "专营巴士",
+          "value": 106721.57
+        },
+        {
+          "date": "2022-12-01",
+          "month": "2022-12",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 17440.312
+        },
+        {
+          "date": "2022-12-01",
+          "month": "2022-12",
+          "series": "港铁本地",
+          "value": 129122.892
+        },
+        {
+          "date": "2023-01-01",
+          "month": "2023-01",
+          "series": "专营巴士",
+          "value": 106006.879
+        },
+        {
+          "date": "2023-01-01",
+          "month": "2023-01",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 17424.741
+        },
+        {
+          "date": "2023-01-01",
+          "month": "2023-01",
+          "series": "港铁本地",
+          "value": 126779.414
+        },
+        {
+          "date": "2023-02-01",
+          "month": "2023-02",
+          "series": "专营巴士",
+          "value": 105564.373
+        },
+        {
+          "date": "2023-02-01",
+          "month": "2023-02",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 16977.607
+        },
+        {
+          "date": "2023-02-01",
+          "month": "2023-02",
+          "series": "港铁本地",
+          "value": 130407.141
+        },
+        {
+          "date": "2023-03-01",
+          "month": "2023-03",
+          "series": "专营巴士",
+          "value": 117751.011
+        },
+        {
+          "date": "2023-03-01",
+          "month": "2023-03",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 18872.852
+        },
+        {
+          "date": "2023-03-01",
+          "month": "2023-03",
+          "series": "港铁本地",
+          "value": 146397.828
+        },
+        {
+          "date": "2023-04-01",
+          "month": "2023-04",
+          "series": "专营巴士",
+          "value": 106743.862
+        },
+        {
+          "date": "2023-04-01",
+          "month": "2023-04",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 17134.943
+        },
+        {
+          "date": "2023-04-01",
+          "month": "2023-04",
+          "series": "港铁本地",
+          "value": 132522.047
+        },
+        {
+          "date": "2023-05-01",
+          "month": "2023-05",
+          "series": "专营巴士",
+          "value": 112991.239
+        },
+        {
+          "date": "2023-05-01",
+          "month": "2023-05",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 18478.467
+        },
+        {
+          "date": "2023-05-01",
+          "month": "2023-05",
+          "series": "港铁本地",
+          "value": 139560.148
+        },
+        {
+          "date": "2023-06-01",
+          "month": "2023-06",
+          "series": "专营巴士",
+          "value": 110988.356
+        },
+        {
+          "date": "2023-06-01",
+          "month": "2023-06",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 18277.321
+        },
+        {
+          "date": "2023-06-01",
+          "month": "2023-06",
+          "series": "港铁本地",
+          "value": 137209.891
+        },
+        {
+          "date": "2023-07-01",
+          "month": "2023-07",
+          "series": "专营巴士",
+          "value": 111344.713
+        },
+        {
+          "date": "2023-07-01",
+          "month": "2023-07",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 18357.768
+        },
+        {
+          "date": "2023-07-01",
+          "month": "2023-07",
+          "series": "港铁本地",
+          "value": 142279.473
+        },
+        {
+          "date": "2023-08-01",
+          "month": "2023-08",
+          "series": "专营巴士",
+          "value": 114501.084
+        },
+        {
+          "date": "2023-08-01",
+          "month": "2023-08",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 18300.015
+        },
+        {
+          "date": "2023-08-01",
+          "month": "2023-08",
+          "series": "港铁本地",
+          "value": 147593.298
+        },
+        {
+          "date": "2023-09-01",
+          "month": "2023-09",
+          "series": "专营巴士",
+          "value": 104890.888
+        },
+        {
+          "date": "2023-09-01",
+          "month": "2023-09",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 18119.513
+        },
+        {
+          "date": "2023-09-01",
+          "month": "2023-09",
+          "series": "港铁本地",
+          "value": 134427.133
+        },
+        {
+          "date": "2023-10-01",
+          "month": "2023-10",
+          "series": "专营巴士",
+          "value": 113730.469
+        },
+        {
+          "date": "2023-10-01",
+          "month": "2023-10",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 18868.357
+        },
+        {
+          "date": "2023-10-01",
+          "month": "2023-10",
+          "series": "港铁本地",
+          "value": 144766.629
+        },
+        {
+          "date": "2023-11-01",
+          "month": "2023-11",
+          "series": "专营巴士",
+          "value": 118025.317
+        },
+        {
+          "date": "2023-11-01",
+          "month": "2023-11",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 19059.363
+        },
+        {
+          "date": "2023-11-01",
+          "month": "2023-11",
+          "series": "港铁本地",
+          "value": 147535.212
+        },
+        {
+          "date": "2023-12-01",
+          "month": "2023-12",
+          "series": "专营巴士",
+          "value": 115745.498
+        },
+        {
+          "date": "2023-12-01",
+          "month": "2023-12",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 18667.534
+        },
+        {
+          "date": "2023-12-01",
+          "month": "2023-12",
+          "series": "港铁本地",
+          "value": 148785.789
+        },
+        {
+          "date": "2024-01-01",
+          "month": "2024-01",
+          "series": "专营巴士",
+          "value": 118905.681
+        },
+        {
+          "date": "2024-01-01",
+          "month": "2024-01",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 19322.178
+        },
+        {
+          "date": "2024-01-01",
+          "month": "2024-01",
+          "series": "港铁本地",
+          "value": 150194.147
+        },
+        {
+          "date": "2024-02-01",
+          "month": "2024-02",
+          "series": "专营巴士",
+          "value": 107273.093
+        },
+        {
+          "date": "2024-02-01",
+          "month": "2024-02",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 17006.715
+        },
+        {
+          "date": "2024-02-01",
+          "month": "2024-02",
+          "series": "港铁本地",
+          "value": 136274.512
+        },
+        {
+          "date": "2024-03-01",
+          "month": "2024-03",
+          "series": "专营巴士",
+          "value": 115755.763
+        },
+        {
+          "date": "2024-03-01",
+          "month": "2024-03",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 18682.817
+        },
+        {
+          "date": "2024-03-01",
+          "month": "2024-03",
+          "series": "港铁本地",
+          "value": 144288.83
+        },
+        {
+          "date": "2024-04-01",
+          "month": "2024-04",
+          "series": "专营巴士",
+          "value": 110641.437
+        },
+        {
+          "date": "2024-04-01",
+          "month": "2024-04",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 18037.758
+        },
+        {
+          "date": "2024-04-01",
+          "month": "2024-04",
+          "series": "港铁本地",
+          "value": 136495.585
+        },
+        {
+          "date": "2024-05-01",
+          "month": "2024-05",
+          "series": "专营巴士",
+          "value": 115795.984
+        },
+        {
+          "date": "2024-05-01",
+          "month": "2024-05",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 19140.698
+        },
+        {
+          "date": "2024-05-01",
+          "month": "2024-05",
+          "series": "港铁本地",
+          "value": 142588.795
+        },
+        {
+          "date": "2024-06-01",
+          "month": "2024-06",
+          "series": "专营巴士",
+          "value": 111212.798
+        },
+        {
+          "date": "2024-06-01",
+          "month": "2024-06",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 18570.641
+        },
+        {
+          "date": "2024-06-01",
+          "month": "2024-06",
+          "series": "港铁本地",
+          "value": 136817.834
+        },
+        {
+          "date": "2024-07-01",
+          "month": "2024-07",
+          "series": "专营巴士",
+          "value": 115498.485
+        },
+        {
+          "date": "2024-07-01",
+          "month": "2024-07",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 19082.73
+        },
+        {
+          "date": "2024-07-01",
+          "month": "2024-07",
+          "series": "港铁本地",
+          "value": 144716.23
+        },
+        {
+          "date": "2024-08-01",
+          "month": "2024-08",
+          "series": "专营巴士",
+          "value": 115876.209
+        },
+        {
+          "date": "2024-08-01",
+          "month": "2024-08",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 18670.531
+        },
+        {
+          "date": "2024-08-01",
+          "month": "2024-08",
+          "series": "港铁本地",
+          "value": 146779.195
+        },
+        {
+          "date": "2024-09-01",
+          "month": "2024-09",
+          "series": "专营巴士",
+          "value": 113460.95
+        },
+        {
+          "date": "2024-09-01",
+          "month": "2024-09",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 19303.826
+        },
+        {
+          "date": "2024-09-01",
+          "month": "2024-09",
+          "series": "港铁本地",
+          "value": 141269.148
+        },
+        {
+          "date": "2024-10-01",
+          "month": "2024-10",
+          "series": "专营巴士",
+          "value": 122298.36
+        },
+        {
+          "date": "2024-10-01",
+          "month": "2024-10",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 20144.967
+        },
+        {
+          "date": "2024-10-01",
+          "month": "2024-10",
+          "series": "港铁本地",
+          "value": 150650.47
+        },
+        {
+          "date": "2024-11-01",
+          "month": "2024-11",
+          "series": "专营巴士",
+          "value": 116678.756
+        },
+        {
+          "date": "2024-11-01",
+          "month": "2024-11",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 19393.513
+        },
+        {
+          "date": "2024-11-01",
+          "month": "2024-11",
+          "series": "港铁本地",
+          "value": 146511.799
+        },
+        {
+          "date": "2024-12-01",
+          "month": "2024-12",
+          "series": "专营巴士",
+          "value": 118309.486
+        },
+        {
+          "date": "2024-12-01",
+          "month": "2024-12",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 19302.203
+        },
+        {
+          "date": "2024-12-01",
+          "month": "2024-12",
+          "series": "港铁本地",
+          "value": 150219.165
+        },
+        {
+          "date": "2025-01-01",
+          "month": "2025-01",
+          "series": "专营巴士",
+          "value": 117545.593
+        },
+        {
+          "date": "2025-01-01",
+          "month": "2025-01",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 19260.065
+        },
+        {
+          "date": "2025-01-01",
+          "month": "2025-01",
+          "series": "港铁本地",
+          "value": 148057.098
+        },
+        {
+          "date": "2025-02-01",
+          "month": "2025-02",
+          "series": "专营巴士",
+          "value": 106096.104
+        },
+        {
+          "date": "2025-02-01",
+          "month": "2025-02",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 17093.616
+        },
+        {
+          "date": "2025-02-01",
+          "month": "2025-02",
+          "series": "港铁本地",
+          "value": 134679.777
+        },
+        {
+          "date": "2025-03-01",
+          "month": "2025-03",
+          "series": "专营巴士",
+          "value": 118790.059
+        },
+        {
+          "date": "2025-03-01",
+          "month": "2025-03",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 19493.159
+        },
+        {
+          "date": "2025-03-01",
+          "month": "2025-03",
+          "series": "港铁本地",
+          "value": 148963.99
+        },
+        {
+          "date": "2025-04-01",
+          "month": "2025-04",
+          "series": "专营巴士",
+          "value": 109492.041
+        },
+        {
+          "date": "2025-04-01",
+          "month": "2025-04",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 17822.585
+        },
+        {
+          "date": "2025-04-01",
+          "month": "2025-04",
+          "series": "港铁本地",
+          "value": 136444.96
+        },
+        {
+          "date": "2025-05-01",
+          "month": "2025-05",
+          "series": "专营巴士",
+          "value": 117221.456
+        },
+        {
+          "date": "2025-05-01",
+          "month": "2025-05",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 19413.533
+        },
+        {
+          "date": "2025-05-01",
+          "month": "2025-05",
+          "series": "港铁本地",
+          "value": 144041.474
+        },
+        {
+          "date": "2025-06-01",
+          "month": "2025-06",
+          "series": "专营巴士",
+          "value": 112860.388
+        },
+        {
+          "date": "2025-06-01",
+          "month": "2025-06",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 18760.119
+        },
+        {
+          "date": "2025-06-01",
+          "month": "2025-06",
+          "series": "港铁本地",
+          "value": 139711.121
+        },
+        {
+          "date": "2025-07-01",
+          "month": "2025-07",
+          "series": "专营巴士",
+          "value": 111937.717
+        },
+        {
+          "date": "2025-07-01",
+          "month": "2025-07",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 18654.188
+        },
+        {
+          "date": "2025-07-01",
+          "month": "2025-07",
+          "series": "港铁本地",
+          "value": 144136.053
+        },
+        {
+          "date": "2025-08-01",
+          "month": "2025-08",
+          "series": "专营巴士",
+          "value": 111296.638
+        },
+        {
+          "date": "2025-08-01",
+          "month": "2025-08",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 18314.336
+        },
+        {
+          "date": "2025-08-01",
+          "month": "2025-08",
+          "series": "港铁本地",
+          "value": 145922.81
+        },
+        {
+          "date": "2025-09-01",
+          "month": "2025-09",
+          "series": "专营巴士",
+          "value": 108512.319
+        },
+        {
+          "date": "2025-09-01",
+          "month": "2025-09",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 18576.59
+        },
+        {
+          "date": "2025-09-01",
+          "month": "2025-09",
+          "series": "港铁本地",
+          "value": 138508.159
+        },
+        {
+          "date": "2025-10-01",
+          "month": "2025-10",
+          "series": "专营巴士",
+          "value": 119953.476
+        },
+        {
+          "date": "2025-10-01",
+          "month": "2025-10",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 20187.45
+        },
+        {
+          "date": "2025-10-01",
+          "month": "2025-10",
+          "series": "港铁本地",
+          "value": 152247.49
+        },
+        {
+          "date": "2025-11-01",
+          "month": "2025-11",
+          "series": "专营巴士",
+          "value": 117506.209
+        },
+        {
+          "date": "2025-11-01",
+          "month": "2025-11",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 19436.4
+        },
+        {
+          "date": "2025-11-01",
+          "month": "2025-11",
+          "series": "港铁本地",
+          "value": 148928.648
+        },
+        {
+          "date": "2025-12-01",
+          "month": "2025-12",
+          "series": "专营巴士",
+          "value": 117985.697
+        },
+        {
+          "date": "2025-12-01",
+          "month": "2025-12",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 19313.183
+        },
+        {
+          "date": "2025-12-01",
+          "month": "2025-12",
+          "series": "港铁本地",
+          "value": 150533.273
+        },
+        {
+          "date": "2026-01-01",
+          "month": "2026-01",
+          "series": "专营巴士",
+          "value": 119734.804
+        },
+        {
+          "date": "2026-01-01",
+          "month": "2026-01",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 19792.604
+        },
+        {
+          "date": "2026-01-01",
+          "month": "2026-01",
+          "series": "港铁本地",
+          "value": 153223.482
+        },
+        {
+          "date": "2026-02-01",
+          "month": "2026-02",
+          "series": "专营巴士",
+          "value": 105450.957
+        },
+        {
+          "date": "2026-02-01",
+          "month": "2026-02",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 17053.554
+        },
+        {
+          "date": "2026-02-01",
+          "month": "2026-02",
+          "series": "港铁本地",
+          "value": 135128.688
+        },
+        {
+          "date": "2026-03-01",
+          "month": "2026-03",
+          "series": "专营巴士",
+          "value": 120968.635
+        },
+        {
+          "date": "2026-03-01",
+          "month": "2026-03",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 19958.748
+        },
+        {
+          "date": "2026-03-01",
+          "month": "2026-03",
+          "series": "港铁本地",
+          "value": 152144.994
+        },
+        {
+          "date": "2026-04-01",
+          "month": "2026-04",
+          "series": "专营巴士",
+          "value": 110708.604
+        },
+        {
+          "date": "2026-04-01",
+          "month": "2026-04",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 18336.583
+        },
+        {
+          "date": "2026-04-01",
+          "month": "2026-04",
+          "series": "港铁本地",
+          "value": 137677.726
+        },
+        {
+          "date": "2026-05-01",
+          "month": "2026-05",
+          "series": "专营巴士",
+          "value": 115832.157
+        },
+        {
+          "date": "2026-05-01",
+          "month": "2026-05",
+          "series": "港铁机场／轻铁／接驳",
+          "value": 19606.759
+        },
+        {
+          "date": "2026-05-01",
+          "month": "2026-05",
+          "series": "港铁本地",
+          "value": 144147.013
+        }
+      ],
+      "mttd_passenger_journeys_latest": [
+        {
+          "summary": "港铁本地：144,147.0 千人次（2026-05）"
+        },
+        {
+          "summary": "港铁机场／轻铁／接驳：19,606.8 千人次（2026-05）"
+        },
+        {
+          "summary": "专营巴士：115,832.2 千人次（2026-05）"
+        }
+      ],
+      "censtatd_boundary_movements_history": [
+        {
+          "date": "2023-01-01",
+          "month": "2023-01",
+          "series": "飞机",
+          "value": 16220,
+          "is_estimate": false
+        },
+        {
+          "date": "2023-01-01",
+          "month": "2023-01",
+          "series": "货运车辆",
+          "value": 213272,
+          "is_estimate": false
+        },
+        {
+          "date": "2023-01-01",
+          "month": "2023-01",
+          "series": "客运车辆",
+          "value": 64659,
+          "is_estimate": false
+        },
+        {
+          "date": "2023-02-01",
+          "month": "2023-02",
+          "series": "飞机",
+          "value": 16316,
+          "is_estimate": false
+        },
+        {
+          "date": "2023-02-01",
+          "month": "2023-02",
+          "series": "货运车辆",
+          "value": 253413,
+          "is_estimate": false
+        },
+        {
+          "date": "2023-02-01",
+          "month": "2023-02",
+          "series": "客运车辆",
+          "value": 221919,
+          "is_estimate": false
+        },
+        {
+          "date": "2023-03-01",
+          "month": "2023-03",
+          "series": "飞机",
+          "value": 20133,
+          "is_estimate": false
+        },
+        {
+          "date": "2023-03-01",
+          "month": "2023-03",
+          "series": "货运车辆",
+          "value": 339411,
+          "is_estimate": false
+        },
+        {
+          "date": "2023-03-01",
+          "month": "2023-03",
+          "series": "客运车辆",
+          "value": 378105,
+          "is_estimate": false
+        },
+        {
+          "date": "2023-04-01",
+          "month": "2023-04",
+          "series": "飞机",
+          "value": 21574,
+          "is_estimate": false
+        },
+        {
+          "date": "2023-04-01",
+          "month": "2023-04",
+          "series": "货运车辆",
+          "value": 311596,
+          "is_estimate": false
+        },
+        {
+          "date": "2023-04-01",
+          "month": "2023-04",
+          "series": "客运车辆",
+          "value": 452860,
+          "is_estimate": false
+        },
+        {
+          "date": "2023-05-01",
+          "month": "2023-05",
+          "series": "飞机",
+          "value": 22200,
+          "is_estimate": false
+        },
+        {
+          "date": "2023-05-01",
+          "month": "2023-05",
+          "series": "货运车辆",
+          "value": 336016,
+          "is_estimate": false
+        },
+        {
+          "date": "2023-05-01",
+          "month": "2023-05",
+          "series": "客运车辆",
+          "value": 498270,
+          "is_estimate": false
+        },
+        {
+          "date": "2023-06-01",
+          "month": "2023-06",
+          "series": "飞机",
+          "value": 22372,
+          "is_estimate": false
+        },
+        {
+          "date": "2023-06-01",
+          "month": "2023-06",
+          "series": "货运车辆",
+          "value": 344599,
+          "is_estimate": false
+        },
+        {
+          "date": "2023-06-01",
+          "month": "2023-06",
+          "series": "客运车辆",
+          "value": 523211,
+          "is_estimate": false
+        },
+        {
+          "date": "2023-07-01",
+          "month": "2023-07",
+          "series": "飞机",
+          "value": 24044,
+          "is_estimate": false
+        },
+        {
+          "date": "2023-07-01",
+          "month": "2023-07",
+          "series": "货运车辆",
+          "value": 350105,
+          "is_estimate": false
+        },
+        {
+          "date": "2023-07-01",
+          "month": "2023-07",
+          "series": "客运车辆",
+          "value": 586728,
+          "is_estimate": false
+        },
+        {
+          "date": "2023-08-01",
+          "month": "2023-08",
+          "series": "飞机",
+          "value": 25070,
+          "is_estimate": false
+        },
+        {
+          "date": "2023-08-01",
+          "month": "2023-08",
+          "series": "货运车辆",
+          "value": 369432,
+          "is_estimate": false
+        },
+        {
+          "date": "2023-08-01",
+          "month": "2023-08",
+          "series": "客运车辆",
+          "value": 663470,
+          "is_estimate": false
+        },
+        {
+          "date": "2023-09-01",
+          "month": "2023-09",
+          "series": "飞机",
+          "value": 24201,
+          "is_estimate": false
+        },
+        {
+          "date": "2023-09-01",
+          "month": "2023-09",
+          "series": "货运车辆",
+          "value": 353723,
+          "is_estimate": false
+        },
+        {
+          "date": "2023-09-01",
+          "month": "2023-09",
+          "series": "客运车辆",
+          "value": 608779,
+          "is_estimate": false
+        },
+        {
+          "date": "2023-10-01",
+          "month": "2023-10",
+          "series": "飞机",
+          "value": 26282,
+          "is_estimate": false
+        },
+        {
+          "date": "2023-10-01",
+          "month": "2023-10",
+          "series": "货运车辆",
+          "value": 346852,
+          "is_estimate": false
+        },
+        {
+          "date": "2023-10-01",
+          "month": "2023-10",
+          "series": "客运车辆",
+          "value": 715552,
+          "is_estimate": false
+        },
+        {
+          "date": "2023-11-01",
+          "month": "2023-11",
+          "series": "飞机",
+          "value": 27865,
+          "is_estimate": false
+        },
+        {
+          "date": "2023-11-01",
+          "month": "2023-11",
+          "series": "货运车辆",
+          "value": 391954,
+          "is_estimate": false
+        },
+        {
+          "date": "2023-11-01",
+          "month": "2023-11",
+          "series": "客运车辆",
+          "value": 720030,
+          "is_estimate": false
+        },
+        {
+          "date": "2023-12-01",
+          "month": "2023-12",
+          "series": "飞机",
+          "value": 29833,
+          "is_estimate": false
+        },
+        {
+          "date": "2023-12-01",
+          "month": "2023-12",
+          "series": "货运车辆",
+          "value": 379103,
+          "is_estimate": false
+        },
+        {
+          "date": "2023-12-01",
+          "month": "2023-12",
+          "series": "客运车辆",
+          "value": 832635,
+          "is_estimate": false
+        },
+        {
+          "date": "2024-01-01",
+          "month": "2024-01",
+          "series": "飞机",
+          "value": 28773,
+          "is_estimate": false
+        },
+        {
+          "date": "2024-01-01",
+          "month": "2024-01",
+          "series": "货运车辆",
+          "value": 411242,
+          "is_estimate": false
+        },
+        {
+          "date": "2024-01-01",
+          "month": "2024-01",
+          "series": "客运车辆",
+          "value": 833310,
+          "is_estimate": false
+        },
+        {
+          "date": "2024-02-01",
+          "month": "2024-02",
+          "series": "飞机",
+          "value": 27632,
+          "is_estimate": false
+        },
+        {
+          "date": "2024-02-01",
+          "month": "2024-02",
+          "series": "货运车辆",
+          "value": 250496,
+          "is_estimate": false
+        },
+        {
+          "date": "2024-02-01",
+          "month": "2024-02",
+          "series": "客运车辆",
+          "value": 789145,
+          "is_estimate": false
+        },
+        {
+          "date": "2024-03-01",
+          "month": "2024-03",
+          "series": "飞机",
+          "value": 29825,
+          "is_estimate": false
+        },
+        {
+          "date": "2024-03-01",
+          "month": "2024-03",
+          "series": "货运车辆",
+          "value": 381725,
+          "is_estimate": false
+        },
+        {
+          "date": "2024-03-01",
+          "month": "2024-03",
+          "series": "客运车辆",
+          "value": 865870,
+          "is_estimate": false
+        },
+        {
+          "date": "2024-04-01",
+          "month": "2024-04",
+          "series": "飞机",
+          "value": 29056,
+          "is_estimate": false
+        },
+        {
+          "date": "2024-04-01",
+          "month": "2024-04",
+          "series": "货运车辆",
+          "value": 376941,
+          "is_estimate": false
+        },
+        {
+          "date": "2024-04-01",
+          "month": "2024-04",
+          "series": "客运车辆",
+          "value": 870265,
+          "is_estimate": false
+        },
+        {
+          "date": "2024-05-01",
+          "month": "2024-05",
+          "series": "飞机",
+          "value": 29856,
+          "is_estimate": false
+        },
+        {
+          "date": "2024-05-01",
+          "month": "2024-05",
+          "series": "货运车辆",
+          "value": 383323,
+          "is_estimate": false
+        },
+        {
+          "date": "2024-05-01",
+          "month": "2024-05",
+          "series": "客运车辆",
+          "value": 878779,
+          "is_estimate": false
+        },
+        {
+          "date": "2024-06-01",
+          "month": "2024-06",
+          "series": "飞机",
+          "value": 29587,
+          "is_estimate": false
+        },
+        {
+          "date": "2024-06-01",
+          "month": "2024-06",
+          "series": "货运车辆",
+          "value": 371996,
+          "is_estimate": false
+        },
+        {
+          "date": "2024-06-01",
+          "month": "2024-06",
+          "series": "客运车辆",
+          "value": 874443,
+          "is_estimate": false
+        },
+        {
+          "date": "2024-07-01",
+          "month": "2024-07",
+          "series": "飞机",
+          "value": 31098,
+          "is_estimate": false
+        },
+        {
+          "date": "2024-07-01",
+          "month": "2024-07",
+          "series": "货运车辆",
+          "value": 394971,
+          "is_estimate": false
+        },
+        {
+          "date": "2024-07-01",
+          "month": "2024-07",
+          "series": "客运车辆",
+          "value": 928499,
+          "is_estimate": false
+        },
+        {
+          "date": "2024-08-01",
+          "month": "2024-08",
+          "series": "飞机",
+          "value": 31603,
+          "is_estimate": false
+        },
+        {
+          "date": "2024-08-01",
+          "month": "2024-08",
+          "series": "货运车辆",
+          "value": 396833,
+          "is_estimate": false
+        },
+        {
+          "date": "2024-08-01",
+          "month": "2024-08",
+          "series": "客运车辆",
+          "value": 979752,
+          "is_estimate": false
+        },
+        {
+          "date": "2024-09-01",
+          "month": "2024-09",
+          "series": "飞机",
+          "value": 29596,
+          "is_estimate": false
+        },
+        {
+          "date": "2024-09-01",
+          "month": "2024-09",
+          "series": "货运车辆",
+          "value": 385254,
+          "is_estimate": false
+        },
+        {
+          "date": "2024-09-01",
+          "month": "2024-09",
+          "series": "客运车辆",
+          "value": 892371,
+          "is_estimate": false
+        },
+        {
+          "date": "2024-10-01",
+          "month": "2024-10",
+          "series": "飞机",
+          "value": 31602,
+          "is_estimate": false
+        },
+        {
+          "date": "2024-10-01",
+          "month": "2024-10",
+          "series": "货运车辆",
+          "value": 384911,
+          "is_estimate": false
+        },
+        {
+          "date": "2024-10-01",
+          "month": "2024-10",
+          "series": "客运车辆",
+          "value": 999462,
+          "is_estimate": false
+        },
+        {
+          "date": "2024-11-01",
+          "month": "2024-11",
+          "series": "飞机",
+          "value": 31100,
+          "is_estimate": false
+        },
+        {
+          "date": "2024-11-01",
+          "month": "2024-11",
+          "series": "货运车辆",
+          "value": 414159,
+          "is_estimate": false
+        },
+        {
+          "date": "2024-11-01",
+          "month": "2024-11",
+          "series": "客运车辆",
+          "value": 942927,
+          "is_estimate": false
+        },
+        {
+          "date": "2024-12-01",
+          "month": "2024-12",
+          "series": "飞机",
+          "value": 33527,
+          "is_estimate": false
+        },
+        {
+          "date": "2024-12-01",
+          "month": "2024-12",
+          "series": "货运车辆",
+          "value": 418317,
+          "is_estimate": false
+        },
+        {
+          "date": "2024-12-01",
+          "month": "2024-12",
+          "series": "客运车辆",
+          "value": 1019680,
+          "is_estimate": false
+        },
+        {
+          "date": "2025-01-01",
+          "month": "2025-01",
+          "series": "飞机",
+          "value": 33645,
+          "is_estimate": false
+        },
+        {
+          "date": "2025-01-01",
+          "month": "2025-01",
+          "series": "货运车辆",
+          "value": 383900,
+          "is_estimate": false
+        },
+        {
+          "date": "2025-01-01",
+          "month": "2025-01",
+          "series": "客运车辆",
+          "value": 1035274,
+          "is_estimate": false
+        },
+        {
+          "date": "2025-02-01",
+          "month": "2025-02",
+          "series": "飞机",
+          "value": 29044,
+          "is_estimate": false
+        },
+        {
+          "date": "2025-02-01",
+          "month": "2025-02",
+          "series": "货运车辆",
+          "value": 304934,
+          "is_estimate": false
+        },
+        {
+          "date": "2025-02-01",
+          "month": "2025-02",
+          "series": "客运车辆",
+          "value": 922197,
+          "is_estimate": false
+        },
+        {
+          "date": "2025-03-01",
+          "month": "2025-03",
+          "series": "飞机",
+          "value": 33214,
+          "is_estimate": false
+        },
+        {
+          "date": "2025-03-01",
+          "month": "2025-03",
+          "series": "货运车辆",
+          "value": 418567,
+          "is_estimate": false
+        },
+        {
+          "date": "2025-03-01",
+          "month": "2025-03",
+          "series": "客运车辆",
+          "value": 1048089,
+          "is_estimate": false
+        },
+        {
+          "date": "2025-04-01",
+          "month": "2025-04",
+          "series": "飞机",
+          "value": 32655,
+          "is_estimate": false
+        },
+        {
+          "date": "2025-04-01",
+          "month": "2025-04",
+          "series": "货运车辆",
+          "value": 401369,
+          "is_estimate": false
+        },
+        {
+          "date": "2025-04-01",
+          "month": "2025-04",
+          "series": "客运车辆",
+          "value": 1088732,
+          "is_estimate": false
+        },
+        {
+          "date": "2025-05-01",
+          "month": "2025-05",
+          "series": "飞机",
+          "value": 32478,
+          "is_estimate": false
+        },
+        {
+          "date": "2025-05-01",
+          "month": "2025-05",
+          "series": "货运车辆",
+          "value": 396145,
+          "is_estimate": false
+        },
+        {
+          "date": "2025-05-01",
+          "month": "2025-05",
+          "series": "客运车辆",
+          "value": 1106936,
+          "is_estimate": false
+        },
+        {
+          "date": "2025-06-01",
+          "month": "2025-06",
+          "series": "飞机",
+          "value": 31228,
+          "is_estimate": false
+        },
+        {
+          "date": "2025-06-01",
+          "month": "2025-06",
+          "series": "货运车辆",
+          "value": 402407,
+          "is_estimate": false
+        },
+        {
+          "date": "2025-06-01",
+          "month": "2025-06",
+          "series": "客运车辆",
+          "value": 1078794,
+          "is_estimate": false
+        },
+        {
+          "date": "2025-07-01",
+          "month": "2025-07",
+          "series": "飞机",
+          "value": 33668,
+          "is_estimate": false
+        },
+        {
+          "date": "2025-07-01",
+          "month": "2025-07",
+          "series": "货运车辆",
+          "value": 420336,
+          "is_estimate": false
+        },
+        {
+          "date": "2025-07-01",
+          "month": "2025-07",
+          "series": "客运车辆",
+          "value": 1115947,
+          "is_estimate": false
+        },
+        {
+          "date": "2025-08-01",
+          "month": "2025-08",
+          "series": "飞机",
+          "value": 34816,
+          "is_estimate": false
+        },
+        {
+          "date": "2025-08-01",
+          "month": "2025-08",
+          "series": "货运车辆",
+          "value": 414116,
+          "is_estimate": false
+        },
+        {
+          "date": "2025-08-01",
+          "month": "2025-08",
+          "series": "客运车辆",
+          "value": 1196496,
+          "is_estimate": false
+        },
+        {
+          "date": "2025-09-01",
+          "month": "2025-09",
+          "series": "飞机",
+          "value": 30080,
+          "is_estimate": false
+        },
+        {
+          "date": "2025-09-01",
+          "month": "2025-09",
+          "series": "货运车辆",
+          "value": 415911,
+          "is_estimate": false
+        },
+        {
+          "date": "2025-09-01",
+          "month": "2025-09",
+          "series": "客运车辆",
+          "value": 1064684,
+          "is_estimate": false
+        },
+        {
+          "date": "2025-10-01",
+          "month": "2025-10",
+          "series": "飞机",
+          "value": 34463,
+          "is_estimate": false
+        },
+        {
+          "date": "2025-10-01",
+          "month": "2025-10",
+          "series": "货运车辆",
+          "value": 396381,
+          "is_estimate": false
+        },
+        {
+          "date": "2025-10-01",
+          "month": "2025-10",
+          "series": "客运车辆",
+          "value": 1232972,
+          "is_estimate": false
+        },
+        {
+          "date": "2025-11-01",
+          "month": "2025-11",
+          "series": "飞机",
+          "value": 33493,
+          "is_estimate": false
+        },
+        {
+          "date": "2025-11-01",
+          "month": "2025-11",
+          "series": "货运车辆",
+          "value": 425600,
+          "is_estimate": false
+        },
+        {
+          "date": "2025-11-01",
+          "month": "2025-11",
+          "series": "客运车辆",
+          "value": 1163705,
+          "is_estimate": false
+        },
+        {
+          "date": "2025-12-01",
+          "month": "2025-12",
+          "series": "飞机",
+          "value": 35915,
+          "is_estimate": false
+        },
+        {
+          "date": "2025-12-01",
+          "month": "2025-12",
+          "series": "货运车辆",
+          "value": 442197,
+          "is_estimate": false
+        },
+        {
+          "date": "2025-12-01",
+          "month": "2025-12",
+          "series": "客运车辆",
+          "value": 1247976,
+          "is_estimate": false
+        },
+        {
+          "date": "2026-01-01",
+          "month": "2026-01",
+          "series": "飞机",
+          "value": 34445,
+          "is_estimate": false
+        },
+        {
+          "date": "2026-01-01",
+          "month": "2026-01",
+          "series": "货运车辆",
+          "value": 433269,
+          "is_estimate": false
+        },
+        {
+          "date": "2026-01-01",
+          "month": "2026-01",
+          "series": "客运车辆",
+          "value": 1258396,
+          "is_estimate": false
+        },
+        {
+          "date": "2026-02-01",
+          "month": "2026-02",
+          "series": "飞机",
+          "value": 32100,
+          "is_estimate": false
+        },
+        {
+          "date": "2026-02-01",
+          "month": "2026-02",
+          "series": "货运车辆",
+          "value": 294804,
+          "is_estimate": false
+        },
+        {
+          "date": "2026-02-01",
+          "month": "2026-02",
+          "series": "客运车辆",
+          "value": 1183025,
+          "is_estimate": false
+        },
+        {
+          "date": "2026-03-01",
+          "month": "2026-03",
+          "series": "飞机",
+          "value": 34100,
+          "is_estimate": false
+        },
+        {
+          "date": "2026-03-01",
+          "month": "2026-03",
+          "series": "货运车辆",
+          "value": 419094,
+          "is_estimate": false
+        },
+        {
+          "date": "2026-03-01",
+          "month": "2026-03",
+          "series": "客运车辆",
+          "value": 1274380,
+          "is_estimate": false
+        },
+        {
+          "date": "2026-04-01",
+          "month": "2026-04",
+          "series": "飞机",
+          "value": 34445,
+          "is_estimate": false
+        },
+        {
+          "date": "2026-04-01",
+          "month": "2026-04",
+          "series": "货运车辆",
+          "value": 402833,
+          "is_estimate": false
+        },
+        {
+          "date": "2026-04-01",
+          "month": "2026-04",
+          "series": "客运车辆",
+          "value": 1314962,
+          "is_estimate": false
+        },
+        {
+          "date": "2026-05-01",
+          "month": "2026-05",
+          "series": "飞机",
+          "value": 33655,
+          "is_estimate": false
+        },
+        {
+          "date": "2026-05-01",
+          "month": "2026-05",
+          "series": "货运车辆",
+          "value": 391734,
+          "is_estimate": false
+        },
+        {
+          "date": "2026-05-01",
+          "month": "2026-05",
+          "series": "客运车辆",
+          "value": 1347682,
+          "is_estimate": false
+        }
+      ],
+      "censtatd_boundary_movements_latest": [
+        {
+          "summary": "飞机：33,655.0 移动次数（2026-05）"
+        },
+        {
+          "summary": "客运车辆：1,347,682.0 移动次数（2026-05）"
+        },
+        {
+          "summary": "货运车辆：391,734.0 移动次数（2026-05）"
+        }
+      ],
       "hk_private_car_fleet_by_fuel_history": [
         {
           "date": "2025-01-01",
@@ -33040,17 +37139,2664 @@
           "value": 2591
         }
       ],
-      "kpi_private_car_first_reg": [],
-      "hk_private_car_ev_make_history": [],
-      "hk_private_car_ev_share_history": [],
-      "hk_private_car_ev_make_latest": [],
-      "hk_private_car_ev_model_latest": [],
-      "kpi_parking": [],
-      "hk_parking_vacancy_history": [],
-      "hk_parking_current_district": [],
-      "kpi_carpark_occupancy": [],
-      "td_carpark_occupancy_history": [],
-      "td_carpark_occupancy_latest_district": []
+      "kpi_private_car_first_reg": [
+        {
+          "total_first_reg": 5529,
+          "electric_first_reg": 4311,
+          "ev_share_pct": 77.9707,
+          "ev_share_change_pp": -8.983000000000004,
+          "observation_date": "2026-05-01"
+        }
+      ],
+      "hk_private_car_ev_make_history": [
+        {
+          "date": "2016-05-01",
+          "month": "2016-05",
+          "series": "比亚迪",
+          "value": 1
+        },
+        {
+          "date": "2016-05-01",
+          "month": "2016-05",
+          "series": "其他电动车厂名",
+          "value": 9
+        },
+        {
+          "date": "2016-05-01",
+          "month": "2016-05",
+          "series": "Tesla",
+          "value": 71
+        },
+        {
+          "date": "2016-06-01",
+          "month": "2016-06",
+          "series": "其他电动车厂名",
+          "value": 18
+        },
+        {
+          "date": "2016-06-01",
+          "month": "2016-06",
+          "series": "Tesla",
+          "value": 185
+        },
+        {
+          "date": "2016-07-01",
+          "month": "2016-07",
+          "series": "其他电动车厂名",
+          "value": 14
+        },
+        {
+          "date": "2016-07-01",
+          "month": "2016-07",
+          "series": "Tesla",
+          "value": 283
+        },
+        {
+          "date": "2016-08-01",
+          "month": "2016-08",
+          "series": "其他电动车厂名",
+          "value": 27
+        },
+        {
+          "date": "2016-08-01",
+          "month": "2016-08",
+          "series": "Tesla",
+          "value": 262
+        },
+        {
+          "date": "2016-09-01",
+          "month": "2016-09",
+          "series": "其他电动车厂名",
+          "value": 31
+        },
+        {
+          "date": "2016-09-01",
+          "month": "2016-09",
+          "series": "Tesla",
+          "value": 497
+        },
+        {
+          "date": "2016-10-01",
+          "month": "2016-10",
+          "series": "其他电动车厂名",
+          "value": 22
+        },
+        {
+          "date": "2016-10-01",
+          "month": "2016-10",
+          "series": "Tesla",
+          "value": 140
+        },
+        {
+          "date": "2016-11-01",
+          "month": "2016-11",
+          "series": "比亚迪",
+          "value": 1
+        },
+        {
+          "date": "2016-11-01",
+          "month": "2016-11",
+          "series": "其他电动车厂名",
+          "value": 9
+        },
+        {
+          "date": "2016-11-01",
+          "month": "2016-11",
+          "series": "Tesla",
+          "value": 156
+        },
+        {
+          "date": "2016-12-01",
+          "month": "2016-12",
+          "series": "其他电动车厂名",
+          "value": 37
+        },
+        {
+          "date": "2016-12-01",
+          "month": "2016-12",
+          "series": "Tesla",
+          "value": 168
+        },
+        {
+          "date": "2017-01-01",
+          "month": "2017-01",
+          "series": "其他电动车厂名",
+          "value": 28
+        },
+        {
+          "date": "2017-01-01",
+          "month": "2017-01",
+          "series": "Tesla",
+          "value": 168
+        },
+        {
+          "date": "2017-02-01",
+          "month": "2017-02",
+          "series": "比亚迪",
+          "value": 1
+        },
+        {
+          "date": "2017-02-01",
+          "month": "2017-02",
+          "series": "其他电动车厂名",
+          "value": 10
+        },
+        {
+          "date": "2017-02-01",
+          "month": "2017-02",
+          "series": "Tesla",
+          "value": 590
+        },
+        {
+          "date": "2017-03-01",
+          "month": "2017-03",
+          "series": "比亚迪",
+          "value": 1
+        },
+        {
+          "date": "2017-03-01",
+          "month": "2017-03",
+          "series": "其他电动车厂名",
+          "value": 24
+        },
+        {
+          "date": "2017-03-01",
+          "month": "2017-03",
+          "series": "Tesla",
+          "value": 2939
+        },
+        {
+          "date": "2017-04-01",
+          "month": "2017-04",
+          "series": "其他电动车厂名",
+          "value": 0
+        },
+        {
+          "date": "2017-05-01",
+          "month": "2017-05",
+          "series": "其他电动车厂名",
+          "value": 5
+        },
+        {
+          "date": "2017-06-01",
+          "month": "2017-06",
+          "series": "其他电动车厂名",
+          "value": 4
+        },
+        {
+          "date": "2017-06-01",
+          "month": "2017-06",
+          "series": "Tesla",
+          "value": 4
+        },
+        {
+          "date": "2017-07-01",
+          "month": "2017-07",
+          "series": "其他电动车厂名",
+          "value": 1
+        },
+        {
+          "date": "2017-07-01",
+          "month": "2017-07",
+          "series": "Tesla",
+          "value": 2
+        },
+        {
+          "date": "2017-08-01",
+          "month": "2017-08",
+          "series": "其他电动车厂名",
+          "value": 14
+        },
+        {
+          "date": "2017-09-01",
+          "month": "2017-09",
+          "series": "比亚迪",
+          "value": 1
+        },
+        {
+          "date": "2017-09-01",
+          "month": "2017-09",
+          "series": "其他电动车厂名",
+          "value": 7
+        },
+        {
+          "date": "2017-09-01",
+          "month": "2017-09",
+          "series": "Tesla",
+          "value": 5
+        },
+        {
+          "date": "2017-10-01",
+          "month": "2017-10",
+          "series": "其他电动车厂名",
+          "value": 2
+        },
+        {
+          "date": "2017-10-01",
+          "month": "2017-10",
+          "series": "Tesla",
+          "value": 4
+        },
+        {
+          "date": "2017-11-01",
+          "month": "2017-11",
+          "series": "其他电动车厂名",
+          "value": 23
+        },
+        {
+          "date": "2017-11-01",
+          "month": "2017-11",
+          "series": "Tesla",
+          "value": 9
+        },
+        {
+          "date": "2017-12-01",
+          "month": "2017-12",
+          "series": "其他电动车厂名",
+          "value": 10
+        },
+        {
+          "date": "2017-12-01",
+          "month": "2017-12",
+          "series": "Tesla",
+          "value": 8
+        },
+        {
+          "date": "2018-01-01",
+          "month": "2018-01",
+          "series": "其他电动车厂名",
+          "value": 6
+        },
+        {
+          "date": "2018-01-01",
+          "month": "2018-01",
+          "series": "Tesla",
+          "value": 5
+        },
+        {
+          "date": "2018-02-01",
+          "month": "2018-02",
+          "series": "其他电动车厂名",
+          "value": 3
+        },
+        {
+          "date": "2018-02-01",
+          "month": "2018-02",
+          "series": "Tesla",
+          "value": 3
+        },
+        {
+          "date": "2018-03-01",
+          "month": "2018-03",
+          "series": "比亚迪",
+          "value": 1
+        },
+        {
+          "date": "2018-03-01",
+          "month": "2018-03",
+          "series": "其他电动车厂名",
+          "value": 9
+        },
+        {
+          "date": "2018-03-01",
+          "month": "2018-03",
+          "series": "Tesla",
+          "value": 10
+        },
+        {
+          "date": "2018-04-01",
+          "month": "2018-04",
+          "series": "其他电动车厂名",
+          "value": 23
+        },
+        {
+          "date": "2018-04-01",
+          "month": "2018-04",
+          "series": "Tesla",
+          "value": 14
+        },
+        {
+          "date": "2018-05-01",
+          "month": "2018-05",
+          "series": "其他电动车厂名",
+          "value": 8
+        },
+        {
+          "date": "2018-05-01",
+          "month": "2018-05",
+          "series": "Tesla",
+          "value": 10
+        },
+        {
+          "date": "2018-06-01",
+          "month": "2018-06",
+          "series": "其他电动车厂名",
+          "value": 18
+        },
+        {
+          "date": "2018-06-01",
+          "month": "2018-06",
+          "series": "Tesla",
+          "value": 24
+        },
+        {
+          "date": "2018-07-01",
+          "month": "2018-07",
+          "series": "其他电动车厂名",
+          "value": 15
+        },
+        {
+          "date": "2018-07-01",
+          "month": "2018-07",
+          "series": "Tesla",
+          "value": 7
+        },
+        {
+          "date": "2018-08-01",
+          "month": "2018-08",
+          "series": "其他电动车厂名",
+          "value": 34
+        },
+        {
+          "date": "2018-08-01",
+          "month": "2018-08",
+          "series": "Tesla",
+          "value": 11
+        },
+        {
+          "date": "2018-09-01",
+          "month": "2018-09",
+          "series": "比亚迪",
+          "value": 1
+        },
+        {
+          "date": "2018-09-01",
+          "month": "2018-09",
+          "series": "其他电动车厂名",
+          "value": 52
+        },
+        {
+          "date": "2018-09-01",
+          "month": "2018-09",
+          "series": "Tesla",
+          "value": 20
+        },
+        {
+          "date": "2018-10-01",
+          "month": "2018-10",
+          "series": "比亚迪",
+          "value": 1
+        },
+        {
+          "date": "2018-10-01",
+          "month": "2018-10",
+          "series": "其他电动车厂名",
+          "value": 38
+        },
+        {
+          "date": "2018-10-01",
+          "month": "2018-10",
+          "series": "Tesla",
+          "value": 4
+        },
+        {
+          "date": "2018-11-01",
+          "month": "2018-11",
+          "series": "其他电动车厂名",
+          "value": 70
+        },
+        {
+          "date": "2018-11-01",
+          "month": "2018-11",
+          "series": "Tesla",
+          "value": 8
+        },
+        {
+          "date": "2018-12-01",
+          "month": "2018-12",
+          "series": "其他电动车厂名",
+          "value": 72
+        },
+        {
+          "date": "2018-12-01",
+          "month": "2018-12",
+          "series": "Tesla",
+          "value": 4
+        },
+        {
+          "date": "2019-01-01",
+          "month": "2019-01",
+          "series": "其他电动车厂名",
+          "value": 51
+        },
+        {
+          "date": "2019-02-01",
+          "month": "2019-02",
+          "series": "其他电动车厂名",
+          "value": 36
+        },
+        {
+          "date": "2019-02-01",
+          "month": "2019-02",
+          "series": "Tesla",
+          "value": 1
+        },
+        {
+          "date": "2019-03-01",
+          "month": "2019-03",
+          "series": "其他电动车厂名",
+          "value": 62
+        },
+        {
+          "date": "2019-03-01",
+          "month": "2019-03",
+          "series": "Tesla",
+          "value": 18
+        },
+        {
+          "date": "2019-04-01",
+          "month": "2019-04",
+          "series": "其他电动车厂名",
+          "value": 40
+        },
+        {
+          "date": "2019-04-01",
+          "month": "2019-04",
+          "series": "Tesla",
+          "value": 4
+        },
+        {
+          "date": "2019-05-01",
+          "month": "2019-05",
+          "series": "其他电动车厂名",
+          "value": 153
+        },
+        {
+          "date": "2019-05-01",
+          "month": "2019-05",
+          "series": "Tesla",
+          "value": 5
+        },
+        {
+          "date": "2019-06-01",
+          "month": "2019-06",
+          "series": "其他电动车厂名",
+          "value": 90
+        },
+        {
+          "date": "2019-06-01",
+          "month": "2019-06",
+          "series": "Tesla",
+          "value": 4
+        },
+        {
+          "date": "2019-07-01",
+          "month": "2019-07",
+          "series": "其他电动车厂名",
+          "value": 104
+        },
+        {
+          "date": "2019-07-01",
+          "month": "2019-07",
+          "series": "Tesla",
+          "value": 2
+        },
+        {
+          "date": "2019-08-01",
+          "month": "2019-08",
+          "series": "其他电动车厂名",
+          "value": 152
+        },
+        {
+          "date": "2019-08-01",
+          "month": "2019-08",
+          "series": "Tesla",
+          "value": 3
+        },
+        {
+          "date": "2019-09-01",
+          "month": "2019-09",
+          "series": "其他电动车厂名",
+          "value": 107
+        },
+        {
+          "date": "2019-09-01",
+          "month": "2019-09",
+          "series": "Tesla",
+          "value": 464
+        },
+        {
+          "date": "2019-10-01",
+          "month": "2019-10",
+          "series": "其他电动车厂名",
+          "value": 102
+        },
+        {
+          "date": "2019-10-01",
+          "month": "2019-10",
+          "series": "Tesla",
+          "value": 212
+        },
+        {
+          "date": "2019-11-01",
+          "month": "2019-11",
+          "series": "其他电动车厂名",
+          "value": 66
+        },
+        {
+          "date": "2019-11-01",
+          "month": "2019-11",
+          "series": "Tesla",
+          "value": 358
+        },
+        {
+          "date": "2019-12-01",
+          "month": "2019-12",
+          "series": "其他电动车厂名",
+          "value": 65
+        },
+        {
+          "date": "2019-12-01",
+          "month": "2019-12",
+          "series": "Tesla",
+          "value": 324
+        },
+        {
+          "date": "2020-01-01",
+          "month": "2020-01",
+          "series": "其他电动车厂名",
+          "value": 70
+        },
+        {
+          "date": "2020-01-01",
+          "month": "2020-01",
+          "series": "Tesla",
+          "value": 45
+        },
+        {
+          "date": "2020-02-01",
+          "month": "2020-02",
+          "series": "其他电动车厂名",
+          "value": 56
+        },
+        {
+          "date": "2020-02-01",
+          "month": "2020-02",
+          "series": "Tesla",
+          "value": 136
+        },
+        {
+          "date": "2020-03-01",
+          "month": "2020-03",
+          "series": "其他电动车厂名",
+          "value": 86
+        },
+        {
+          "date": "2020-03-01",
+          "month": "2020-03",
+          "series": "Tesla",
+          "value": 503
+        },
+        {
+          "date": "2020-04-01",
+          "month": "2020-04",
+          "series": "其他电动车厂名",
+          "value": 67
+        },
+        {
+          "date": "2020-04-01",
+          "month": "2020-04",
+          "series": "Tesla",
+          "value": 111
+        },
+        {
+          "date": "2020-05-01",
+          "month": "2020-05",
+          "series": "其他电动车厂名",
+          "value": 121
+        },
+        {
+          "date": "2020-05-01",
+          "month": "2020-05",
+          "series": "Tesla",
+          "value": 35
+        },
+        {
+          "date": "2020-06-01",
+          "month": "2020-06",
+          "series": "其他电动车厂名",
+          "value": 123
+        },
+        {
+          "date": "2020-06-01",
+          "month": "2020-06",
+          "series": "Tesla",
+          "value": 21
+        },
+        {
+          "date": "2020-07-01",
+          "month": "2020-07",
+          "series": "其他电动车厂名",
+          "value": 95
+        },
+        {
+          "date": "2020-07-01",
+          "month": "2020-07",
+          "series": "Tesla",
+          "value": 7
+        },
+        {
+          "date": "2020-08-01",
+          "month": "2020-08",
+          "series": "其他电动车厂名",
+          "value": 75
+        },
+        {
+          "date": "2020-08-01",
+          "month": "2020-08",
+          "series": "Tesla",
+          "value": 912
+        },
+        {
+          "date": "2020-09-01",
+          "month": "2020-09",
+          "series": "其他电动车厂名",
+          "value": 100
+        },
+        {
+          "date": "2020-09-01",
+          "month": "2020-09",
+          "series": "Tesla",
+          "value": 346
+        },
+        {
+          "date": "2020-10-01",
+          "month": "2020-10",
+          "series": "其他电动车厂名",
+          "value": 87
+        },
+        {
+          "date": "2020-10-01",
+          "month": "2020-10",
+          "series": "Tesla",
+          "value": 6
+        },
+        {
+          "date": "2020-11-01",
+          "month": "2020-11",
+          "series": "其他电动车厂名",
+          "value": 120
+        },
+        {
+          "date": "2020-11-01",
+          "month": "2020-11",
+          "series": "Tesla",
+          "value": 656
+        },
+        {
+          "date": "2020-12-01",
+          "month": "2020-12",
+          "series": "其他电动车厂名",
+          "value": 118
+        },
+        {
+          "date": "2020-12-01",
+          "month": "2020-12",
+          "series": "Tesla",
+          "value": 699
+        },
+        {
+          "date": "2021-01-01",
+          "month": "2021-01",
+          "series": "其他电动车厂名",
+          "value": 90
+        },
+        {
+          "date": "2021-01-01",
+          "month": "2021-01",
+          "series": "Tesla",
+          "value": 131
+        },
+        {
+          "date": "2021-02-01",
+          "month": "2021-02",
+          "series": "其他电动车厂名",
+          "value": 70
+        },
+        {
+          "date": "2021-02-01",
+          "month": "2021-02",
+          "series": "Tesla",
+          "value": 409
+        },
+        {
+          "date": "2021-03-01",
+          "month": "2021-03",
+          "series": "其他电动车厂名",
+          "value": 120
+        },
+        {
+          "date": "2021-03-01",
+          "month": "2021-03",
+          "series": "Tesla",
+          "value": 425
+        },
+        {
+          "date": "2021-04-01",
+          "month": "2021-04",
+          "series": "其他电动车厂名",
+          "value": 88
+        },
+        {
+          "date": "2021-04-01",
+          "month": "2021-04",
+          "series": "Tesla",
+          "value": 534
+        },
+        {
+          "date": "2021-05-01",
+          "month": "2021-05",
+          "series": "其他电动车厂名",
+          "value": 87
+        },
+        {
+          "date": "2021-05-01",
+          "month": "2021-05",
+          "series": "Tesla",
+          "value": 867
+        },
+        {
+          "date": "2021-06-01",
+          "month": "2021-06",
+          "series": "其他电动车厂名",
+          "value": 81
+        },
+        {
+          "date": "2021-06-01",
+          "month": "2021-06",
+          "series": "Tesla",
+          "value": 500
+        },
+        {
+          "date": "2021-07-01",
+          "month": "2021-07",
+          "series": "其他电动车厂名",
+          "value": 79
+        },
+        {
+          "date": "2021-07-01",
+          "month": "2021-07",
+          "series": "Tesla",
+          "value": 806
+        },
+        {
+          "date": "2021-08-01",
+          "month": "2021-08",
+          "series": "其他电动车厂名",
+          "value": 64
+        },
+        {
+          "date": "2021-08-01",
+          "month": "2021-08",
+          "series": "Tesla",
+          "value": 623
+        },
+        {
+          "date": "2021-09-01",
+          "month": "2021-09",
+          "series": "其他电动车厂名",
+          "value": 178
+        },
+        {
+          "date": "2021-09-01",
+          "month": "2021-09",
+          "series": "Tesla",
+          "value": 816
+        },
+        {
+          "date": "2021-10-01",
+          "month": "2021-10",
+          "series": "其他电动车厂名",
+          "value": 126
+        },
+        {
+          "date": "2021-10-01",
+          "month": "2021-10",
+          "series": "Tesla",
+          "value": 704
+        },
+        {
+          "date": "2021-11-01",
+          "month": "2021-11",
+          "series": "其他电动车厂名",
+          "value": 219
+        },
+        {
+          "date": "2021-11-01",
+          "month": "2021-11",
+          "series": "Tesla",
+          "value": 1437
+        },
+        {
+          "date": "2021-12-01",
+          "month": "2021-12",
+          "series": "比亚迪",
+          "value": 1
+        },
+        {
+          "date": "2021-12-01",
+          "month": "2021-12",
+          "series": "其他电动车厂名",
+          "value": 393
+        },
+        {
+          "date": "2021-12-01",
+          "month": "2021-12",
+          "series": "Tesla",
+          "value": 735
+        },
+        {
+          "date": "2022-01-01",
+          "month": "2022-01",
+          "series": "比亚迪",
+          "value": 3
+        },
+        {
+          "date": "2022-01-01",
+          "month": "2022-01",
+          "series": "其他电动车厂名",
+          "value": 240
+        },
+        {
+          "date": "2022-01-01",
+          "month": "2022-01",
+          "series": "Tesla",
+          "value": 268
+        },
+        {
+          "date": "2022-02-01",
+          "month": "2022-02",
+          "series": "其他电动车厂名",
+          "value": 64
+        },
+        {
+          "date": "2022-02-01",
+          "month": "2022-02",
+          "series": "Tesla",
+          "value": 830
+        },
+        {
+          "date": "2022-03-01",
+          "month": "2022-03",
+          "series": "比亚迪",
+          "value": 2
+        },
+        {
+          "date": "2022-03-01",
+          "month": "2022-03",
+          "series": "其他电动车厂名",
+          "value": 217
+        },
+        {
+          "date": "2022-03-01",
+          "month": "2022-03",
+          "series": "Tesla",
+          "value": 1610
+        },
+        {
+          "date": "2022-04-01",
+          "month": "2022-04",
+          "series": "其他电动车厂名",
+          "value": 269
+        },
+        {
+          "date": "2022-04-01",
+          "month": "2022-04",
+          "series": "Tesla",
+          "value": 138
+        },
+        {
+          "date": "2022-05-01",
+          "month": "2022-05",
+          "series": "其他电动车厂名",
+          "value": 353
+        },
+        {
+          "date": "2022-05-01",
+          "month": "2022-05",
+          "series": "Tesla",
+          "value": 4
+        },
+        {
+          "date": "2022-06-01",
+          "month": "2022-06",
+          "series": "比亚迪",
+          "value": 3
+        },
+        {
+          "date": "2022-06-01",
+          "month": "2022-06",
+          "series": "其他电动车厂名",
+          "value": 462
+        },
+        {
+          "date": "2022-06-01",
+          "month": "2022-06",
+          "series": "Tesla",
+          "value": 863
+        },
+        {
+          "date": "2022-07-01",
+          "month": "2022-07",
+          "series": "比亚迪",
+          "value": 7
+        },
+        {
+          "date": "2022-07-01",
+          "month": "2022-07",
+          "series": "其他电动车厂名",
+          "value": 573
+        },
+        {
+          "date": "2022-07-01",
+          "month": "2022-07",
+          "series": "Tesla",
+          "value": 412
+        },
+        {
+          "date": "2022-08-01",
+          "month": "2022-08",
+          "series": "比亚迪",
+          "value": 6
+        },
+        {
+          "date": "2022-08-01",
+          "month": "2022-08",
+          "series": "其他电动车厂名",
+          "value": 823
+        },
+        {
+          "date": "2022-08-01",
+          "month": "2022-08",
+          "series": "Tesla",
+          "value": 1439
+        },
+        {
+          "date": "2022-09-01",
+          "month": "2022-09",
+          "series": "比亚迪",
+          "value": 26
+        },
+        {
+          "date": "2022-09-01",
+          "month": "2022-09",
+          "series": "其他电动车厂名",
+          "value": 940
+        },
+        {
+          "date": "2022-09-01",
+          "month": "2022-09",
+          "series": "Tesla",
+          "value": 1813
+        },
+        {
+          "date": "2022-10-01",
+          "month": "2022-10",
+          "series": "比亚迪",
+          "value": 139
+        },
+        {
+          "date": "2022-10-01",
+          "month": "2022-10",
+          "series": "其他电动车厂名",
+          "value": 1117
+        },
+        {
+          "date": "2022-10-01",
+          "month": "2022-10",
+          "series": "Tesla",
+          "value": 1699
+        },
+        {
+          "date": "2022-11-01",
+          "month": "2022-11",
+          "series": "比亚迪",
+          "value": 125
+        },
+        {
+          "date": "2022-11-01",
+          "month": "2022-11",
+          "series": "其他电动车厂名",
+          "value": 974
+        },
+        {
+          "date": "2022-11-01",
+          "month": "2022-11",
+          "series": "Tesla",
+          "value": 1724
+        },
+        {
+          "date": "2022-12-01",
+          "month": "2022-12",
+          "series": "比亚迪",
+          "value": 180
+        },
+        {
+          "date": "2022-12-01",
+          "month": "2022-12",
+          "series": "其他电动车厂名",
+          "value": 914
+        },
+        {
+          "date": "2022-12-01",
+          "month": "2022-12",
+          "series": "Tesla",
+          "value": 1558
+        },
+        {
+          "date": "2023-01-01",
+          "month": "2023-01",
+          "series": "比亚迪",
+          "value": 344
+        },
+        {
+          "date": "2023-01-01",
+          "month": "2023-01",
+          "series": "其他电动车厂名",
+          "value": 861
+        },
+        {
+          "date": "2023-01-01",
+          "month": "2023-01",
+          "series": "Tesla",
+          "value": 316
+        },
+        {
+          "date": "2023-02-01",
+          "month": "2023-02",
+          "series": "比亚迪",
+          "value": 87
+        },
+        {
+          "date": "2023-02-01",
+          "month": "2023-02",
+          "series": "其他电动车厂名",
+          "value": 1105
+        },
+        {
+          "date": "2023-02-01",
+          "month": "2023-02",
+          "series": "Tesla",
+          "value": 1421
+        },
+        {
+          "date": "2023-03-01",
+          "month": "2023-03",
+          "series": "比亚迪",
+          "value": 216
+        },
+        {
+          "date": "2023-03-01",
+          "month": "2023-03",
+          "series": "其他电动车厂名",
+          "value": 984
+        },
+        {
+          "date": "2023-03-01",
+          "month": "2023-03",
+          "series": "Tesla",
+          "value": 1051
+        },
+        {
+          "date": "2023-04-01",
+          "month": "2023-04",
+          "series": "比亚迪",
+          "value": 260
+        },
+        {
+          "date": "2023-04-01",
+          "month": "2023-04",
+          "series": "其他电动车厂名",
+          "value": 806
+        },
+        {
+          "date": "2023-04-01",
+          "month": "2023-04",
+          "series": "Tesla",
+          "value": 634
+        },
+        {
+          "date": "2023-05-01",
+          "month": "2023-05",
+          "series": "比亚迪",
+          "value": 338
+        },
+        {
+          "date": "2023-05-01",
+          "month": "2023-05",
+          "series": "其他电动车厂名",
+          "value": 1552
+        },
+        {
+          "date": "2023-05-01",
+          "month": "2023-05",
+          "series": "Tesla",
+          "value": 785
+        },
+        {
+          "date": "2023-06-01",
+          "month": "2023-06",
+          "series": "比亚迪",
+          "value": 306
+        },
+        {
+          "date": "2023-06-01",
+          "month": "2023-06",
+          "series": "其他电动车厂名",
+          "value": 1560
+        },
+        {
+          "date": "2023-06-01",
+          "month": "2023-06",
+          "series": "Tesla",
+          "value": 678
+        },
+        {
+          "date": "2023-07-01",
+          "month": "2023-07",
+          "series": "比亚迪",
+          "value": 243
+        },
+        {
+          "date": "2023-07-01",
+          "month": "2023-07",
+          "series": "其他电动车厂名",
+          "value": 1386
+        },
+        {
+          "date": "2023-07-01",
+          "month": "2023-07",
+          "series": "Tesla",
+          "value": 647
+        },
+        {
+          "date": "2023-08-01",
+          "month": "2023-08",
+          "series": "比亚迪",
+          "value": 293
+        },
+        {
+          "date": "2023-08-01",
+          "month": "2023-08",
+          "series": "其他电动车厂名",
+          "value": 1571
+        },
+        {
+          "date": "2023-08-01",
+          "month": "2023-08",
+          "series": "Tesla",
+          "value": 883
+        },
+        {
+          "date": "2023-09-01",
+          "month": "2023-09",
+          "series": "比亚迪",
+          "value": 293
+        },
+        {
+          "date": "2023-09-01",
+          "month": "2023-09",
+          "series": "其他电动车厂名",
+          "value": 1219
+        },
+        {
+          "date": "2023-09-01",
+          "month": "2023-09",
+          "series": "Tesla",
+          "value": 743
+        },
+        {
+          "date": "2023-10-01",
+          "month": "2023-10",
+          "series": "比亚迪",
+          "value": 342
+        },
+        {
+          "date": "2023-10-01",
+          "month": "2023-10",
+          "series": "其他电动车厂名",
+          "value": 1331
+        },
+        {
+          "date": "2023-10-01",
+          "month": "2023-10",
+          "series": "Tesla",
+          "value": 715
+        },
+        {
+          "date": "2023-11-01",
+          "month": "2023-11",
+          "series": "比亚迪",
+          "value": 509
+        },
+        {
+          "date": "2023-11-01",
+          "month": "2023-11",
+          "series": "其他电动车厂名",
+          "value": 1356
+        },
+        {
+          "date": "2023-11-01",
+          "month": "2023-11",
+          "series": "Tesla",
+          "value": 673
+        },
+        {
+          "date": "2023-12-01",
+          "month": "2023-12",
+          "series": "比亚迪",
+          "value": 489
+        },
+        {
+          "date": "2023-12-01",
+          "month": "2023-12",
+          "series": "其他电动车厂名",
+          "value": 1451
+        },
+        {
+          "date": "2023-12-01",
+          "month": "2023-12",
+          "series": "Tesla",
+          "value": 1093
+        },
+        {
+          "date": "2024-01-01",
+          "month": "2024-01",
+          "series": "比亚迪",
+          "value": 900
+        },
+        {
+          "date": "2024-01-01",
+          "month": "2024-01",
+          "series": "其他电动车厂名",
+          "value": 1287
+        },
+        {
+          "date": "2024-01-01",
+          "month": "2024-01",
+          "series": "Tesla",
+          "value": 953
+        },
+        {
+          "date": "2024-02-01",
+          "month": "2024-02",
+          "series": "比亚迪",
+          "value": 658
+        },
+        {
+          "date": "2024-02-01",
+          "month": "2024-02",
+          "series": "其他电动车厂名",
+          "value": 1293
+        },
+        {
+          "date": "2024-02-01",
+          "month": "2024-02",
+          "series": "Tesla",
+          "value": 1520
+        },
+        {
+          "date": "2024-03-01",
+          "month": "2024-03",
+          "series": "比亚迪",
+          "value": 812
+        },
+        {
+          "date": "2024-03-01",
+          "month": "2024-03",
+          "series": "其他电动车厂名",
+          "value": 3222
+        },
+        {
+          "date": "2024-03-01",
+          "month": "2024-03",
+          "series": "Tesla",
+          "value": 862
+        },
+        {
+          "date": "2024-04-01",
+          "month": "2024-04",
+          "series": "比亚迪",
+          "value": 501
+        },
+        {
+          "date": "2024-04-01",
+          "month": "2024-04",
+          "series": "其他电动车厂名",
+          "value": 4359
+        },
+        {
+          "date": "2024-04-01",
+          "month": "2024-04",
+          "series": "Tesla",
+          "value": 523
+        },
+        {
+          "date": "2024-05-01",
+          "month": "2024-05",
+          "series": "比亚迪",
+          "value": 548
+        },
+        {
+          "date": "2024-05-01",
+          "month": "2024-05",
+          "series": "其他电动车厂名",
+          "value": 485
+        },
+        {
+          "date": "2024-05-01",
+          "month": "2024-05",
+          "series": "Tesla",
+          "value": 616
+        },
+        {
+          "date": "2024-06-01",
+          "month": "2024-06",
+          "series": "比亚迪",
+          "value": 408
+        },
+        {
+          "date": "2024-06-01",
+          "month": "2024-06",
+          "series": "其他电动车厂名",
+          "value": 496
+        },
+        {
+          "date": "2024-06-01",
+          "month": "2024-06",
+          "series": "Tesla",
+          "value": 609
+        },
+        {
+          "date": "2024-07-01",
+          "month": "2024-07",
+          "series": "比亚迪",
+          "value": 373
+        },
+        {
+          "date": "2024-07-01",
+          "month": "2024-07",
+          "series": "其他电动车厂名",
+          "value": 680
+        },
+        {
+          "date": "2024-07-01",
+          "month": "2024-07",
+          "series": "Tesla",
+          "value": 642
+        },
+        {
+          "date": "2024-08-01",
+          "month": "2024-08",
+          "series": "比亚迪",
+          "value": 379
+        },
+        {
+          "date": "2024-08-01",
+          "month": "2024-08",
+          "series": "其他电动车厂名",
+          "value": 776
+        },
+        {
+          "date": "2024-08-01",
+          "month": "2024-08",
+          "series": "Tesla",
+          "value": 914
+        },
+        {
+          "date": "2024-09-01",
+          "month": "2024-09",
+          "series": "比亚迪",
+          "value": 304
+        },
+        {
+          "date": "2024-09-01",
+          "month": "2024-09",
+          "series": "其他电动车厂名",
+          "value": 827
+        },
+        {
+          "date": "2024-09-01",
+          "month": "2024-09",
+          "series": "Tesla",
+          "value": 687
+        },
+        {
+          "date": "2024-10-01",
+          "month": "2024-10",
+          "series": "比亚迪",
+          "value": 290
+        },
+        {
+          "date": "2024-10-01",
+          "month": "2024-10",
+          "series": "其他电动车厂名",
+          "value": 1453
+        },
+        {
+          "date": "2024-10-01",
+          "month": "2024-10",
+          "series": "Tesla",
+          "value": 875
+        },
+        {
+          "date": "2024-11-01",
+          "month": "2024-11",
+          "series": "比亚迪",
+          "value": 317
+        },
+        {
+          "date": "2024-11-01",
+          "month": "2024-11",
+          "series": "其他电动车厂名",
+          "value": 1516
+        },
+        {
+          "date": "2024-11-01",
+          "month": "2024-11",
+          "series": "Tesla",
+          "value": 645
+        },
+        {
+          "date": "2024-12-01",
+          "month": "2024-12",
+          "series": "比亚迪",
+          "value": 329
+        },
+        {
+          "date": "2024-12-01",
+          "month": "2024-12",
+          "series": "其他电动车厂名",
+          "value": 1437
+        },
+        {
+          "date": "2024-12-01",
+          "month": "2024-12",
+          "series": "Tesla",
+          "value": 710
+        },
+        {
+          "date": "2025-01-01",
+          "month": "2025-01",
+          "series": "比亚迪",
+          "value": 848
+        },
+        {
+          "date": "2025-01-01",
+          "month": "2025-01",
+          "series": "其他电动车厂名",
+          "value": 868
+        },
+        {
+          "date": "2025-01-01",
+          "month": "2025-01",
+          "series": "Tesla",
+          "value": 202
+        },
+        {
+          "date": "2025-02-01",
+          "month": "2025-02",
+          "series": "比亚迪",
+          "value": 821
+        },
+        {
+          "date": "2025-02-01",
+          "month": "2025-02",
+          "series": "其他电动车厂名",
+          "value": 861
+        },
+        {
+          "date": "2025-02-01",
+          "month": "2025-02",
+          "series": "Tesla",
+          "value": 753
+        },
+        {
+          "date": "2025-03-01",
+          "month": "2025-03",
+          "series": "比亚迪",
+          "value": 802
+        },
+        {
+          "date": "2025-03-01",
+          "month": "2025-03",
+          "series": "其他电动车厂名",
+          "value": 1188
+        },
+        {
+          "date": "2025-03-01",
+          "month": "2025-03",
+          "series": "Tesla",
+          "value": 475
+        },
+        {
+          "date": "2025-04-01",
+          "month": "2025-04",
+          "series": "比亚迪",
+          "value": 729
+        },
+        {
+          "date": "2025-04-01",
+          "month": "2025-04",
+          "series": "其他电动车厂名",
+          "value": 1051
+        },
+        {
+          "date": "2025-04-01",
+          "month": "2025-04",
+          "series": "Tesla",
+          "value": 318
+        },
+        {
+          "date": "2025-05-01",
+          "month": "2025-05",
+          "series": "比亚迪",
+          "value": 769
+        },
+        {
+          "date": "2025-05-01",
+          "month": "2025-05",
+          "series": "其他电动车厂名",
+          "value": 1188
+        },
+        {
+          "date": "2025-05-01",
+          "month": "2025-05",
+          "series": "Tesla",
+          "value": 1319
+        },
+        {
+          "date": "2025-06-01",
+          "month": "2025-06",
+          "series": "比亚迪",
+          "value": 938
+        },
+        {
+          "date": "2025-06-01",
+          "month": "2025-06",
+          "series": "其他电动车厂名",
+          "value": 1459
+        },
+        {
+          "date": "2025-06-01",
+          "month": "2025-06",
+          "series": "Tesla",
+          "value": 822
+        },
+        {
+          "date": "2025-07-01",
+          "month": "2025-07",
+          "series": "比亚迪",
+          "value": 647
+        },
+        {
+          "date": "2025-07-01",
+          "month": "2025-07",
+          "series": "其他电动车厂名",
+          "value": 1359
+        },
+        {
+          "date": "2025-07-01",
+          "month": "2025-07",
+          "series": "Tesla",
+          "value": 678
+        },
+        {
+          "date": "2025-08-01",
+          "month": "2025-08",
+          "series": "比亚迪",
+          "value": 413
+        },
+        {
+          "date": "2025-08-01",
+          "month": "2025-08",
+          "series": "其他电动车厂名",
+          "value": 1505
+        },
+        {
+          "date": "2025-08-01",
+          "month": "2025-08",
+          "series": "Tesla",
+          "value": 981
+        },
+        {
+          "date": "2025-09-01",
+          "month": "2025-09",
+          "series": "比亚迪",
+          "value": 920
+        },
+        {
+          "date": "2025-09-01",
+          "month": "2025-09",
+          "series": "其他电动车厂名",
+          "value": 1769
+        },
+        {
+          "date": "2025-09-01",
+          "month": "2025-09",
+          "series": "Tesla",
+          "value": 853
+        },
+        {
+          "date": "2025-10-01",
+          "month": "2025-10",
+          "series": "比亚迪",
+          "value": 934
+        },
+        {
+          "date": "2025-10-01",
+          "month": "2025-10",
+          "series": "其他电动车厂名",
+          "value": 2654
+        },
+        {
+          "date": "2025-10-01",
+          "month": "2025-10",
+          "series": "Tesla",
+          "value": 386
+        },
+        {
+          "date": "2025-11-01",
+          "month": "2025-11",
+          "series": "比亚迪",
+          "value": 719
+        },
+        {
+          "date": "2025-11-01",
+          "month": "2025-11",
+          "series": "其他电动车厂名",
+          "value": 1936
+        },
+        {
+          "date": "2025-11-01",
+          "month": "2025-11",
+          "series": "Tesla",
+          "value": 1146
+        },
+        {
+          "date": "2025-12-01",
+          "month": "2025-12",
+          "series": "比亚迪",
+          "value": 1219
+        },
+        {
+          "date": "2025-12-01",
+          "month": "2025-12",
+          "series": "其他电动车厂名",
+          "value": 2677
+        },
+        {
+          "date": "2025-12-01",
+          "month": "2025-12",
+          "series": "Tesla",
+          "value": 1260
+        },
+        {
+          "date": "2026-01-01",
+          "month": "2026-01",
+          "series": "比亚迪",
+          "value": 607
+        },
+        {
+          "date": "2026-01-01",
+          "month": "2026-01",
+          "series": "其他电动车厂名",
+          "value": 2730
+        },
+        {
+          "date": "2026-01-01",
+          "month": "2026-01",
+          "series": "Tesla",
+          "value": 367
+        },
+        {
+          "date": "2026-02-01",
+          "month": "2026-02",
+          "series": "比亚迪",
+          "value": 722
+        },
+        {
+          "date": "2026-02-01",
+          "month": "2026-02",
+          "series": "其他电动车厂名",
+          "value": 2183
+        },
+        {
+          "date": "2026-02-01",
+          "month": "2026-02",
+          "series": "Tesla",
+          "value": 1001
+        },
+        {
+          "date": "2026-03-01",
+          "month": "2026-03",
+          "series": "比亚迪",
+          "value": 1765
+        },
+        {
+          "date": "2026-03-01",
+          "month": "2026-03",
+          "series": "其他电动车厂名",
+          "value": 5710
+        },
+        {
+          "date": "2026-03-01",
+          "month": "2026-03",
+          "series": "Tesla",
+          "value": 1675
+        },
+        {
+          "date": "2026-04-01",
+          "month": "2026-04",
+          "series": "比亚迪",
+          "value": 871
+        },
+        {
+          "date": "2026-04-01",
+          "month": "2026-04",
+          "series": "其他电动车厂名",
+          "value": 5818
+        },
+        {
+          "date": "2026-04-01",
+          "month": "2026-04",
+          "series": "Tesla",
+          "value": 1389
+        },
+        {
+          "date": "2026-05-01",
+          "month": "2026-05",
+          "series": "比亚迪",
+          "value": 801
+        },
+        {
+          "date": "2026-05-01",
+          "month": "2026-05",
+          "series": "其他电动车厂名",
+          "value": 2118
+        },
+        {
+          "date": "2026-05-01",
+          "month": "2026-05",
+          "series": "Tesla",
+          "value": 1392
+        }
+      ],
+      "hk_private_car_ev_share_history": [
+        {
+          "date": "2016-05-01",
+          "month": "2016-05",
+          "value": 2.5265
+        },
+        {
+          "date": "2016-06-01",
+          "month": "2016-06",
+          "value": 6.0327
+        },
+        {
+          "date": "2016-07-01",
+          "month": "2016-07",
+          "value": 9.0219
+        },
+        {
+          "date": "2016-08-01",
+          "month": "2016-08",
+          "value": 8.3987
+        },
+        {
+          "date": "2016-09-01",
+          "month": "2016-09",
+          "value": 13.2331
+        },
+        {
+          "date": "2016-10-01",
+          "month": "2016-10",
+          "value": 4.5763
+        },
+        {
+          "date": "2016-11-01",
+          "month": "2016-11",
+          "value": 4.4877
+        },
+        {
+          "date": "2016-12-01",
+          "month": "2016-12",
+          "value": 5.5996
+        },
+        {
+          "date": "2017-01-01",
+          "month": "2017-01",
+          "value": 6.2821
+        },
+        {
+          "date": "2017-02-01",
+          "month": "2017-02",
+          "value": 18.3961
+        },
+        {
+          "date": "2017-03-01",
+          "month": "2017-03",
+          "value": 46.3705
+        },
+        {
+          "date": "2017-04-01",
+          "month": "2017-04",
+          "value": 0
+        },
+        {
+          "date": "2017-05-01",
+          "month": "2017-05",
+          "value": 0.1378
+        },
+        {
+          "date": "2017-06-01",
+          "month": "2017-06",
+          "value": 0.2267
+        },
+        {
+          "date": "2017-07-01",
+          "month": "2017-07",
+          "value": 0.0917
+        },
+        {
+          "date": "2017-08-01",
+          "month": "2017-08",
+          "value": 0.3688
+        },
+        {
+          "date": "2017-09-01",
+          "month": "2017-09",
+          "value": 0.3025
+        },
+        {
+          "date": "2017-10-01",
+          "month": "2017-10",
+          "value": 0.1948
+        },
+        {
+          "date": "2017-11-01",
+          "month": "2017-11",
+          "value": 0.9462
+        },
+        {
+          "date": "2017-12-01",
+          "month": "2017-12",
+          "value": 0.5982
+        },
+        {
+          "date": "2018-01-01",
+          "month": "2018-01",
+          "value": 0.3361
+        },
+        {
+          "date": "2018-02-01",
+          "month": "2018-02",
+          "value": 0.1873
+        },
+        {
+          "date": "2018-03-01",
+          "month": "2018-03",
+          "value": 0.6272
+        },
+        {
+          "date": "2018-04-01",
+          "month": "2018-04",
+          "value": 1.1388
+        },
+        {
+          "date": "2018-05-01",
+          "month": "2018-05",
+          "value": 0.4823
+        },
+        {
+          "date": "2018-06-01",
+          "month": "2018-06",
+          "value": 1.1454
+        },
+        {
+          "date": "2018-07-01",
+          "month": "2018-07",
+          "value": 0.6499
+        },
+        {
+          "date": "2018-08-01",
+          "month": "2018-08",
+          "value": 1.158
+        },
+        {
+          "date": "2018-09-01",
+          "month": "2018-09",
+          "value": 2.3278
+        },
+        {
+          "date": "2018-10-01",
+          "month": "2018-10",
+          "value": 1.0837
+        },
+        {
+          "date": "2018-11-01",
+          "month": "2018-11",
+          "value": 2.0499
+        },
+        {
+          "date": "2018-12-01",
+          "month": "2018-12",
+          "value": 2.0032
+        },
+        {
+          "date": "2019-01-01",
+          "month": "2019-01",
+          "value": 1.4664
+        },
+        {
+          "date": "2019-02-01",
+          "month": "2019-02",
+          "value": 1.463
+        },
+        {
+          "date": "2019-03-01",
+          "month": "2019-03",
+          "value": 2.414
+        },
+        {
+          "date": "2019-04-01",
+          "month": "2019-04",
+          "value": 1.483
+        },
+        {
+          "date": "2019-05-01",
+          "month": "2019-05",
+          "value": 4.4283
+        },
+        {
+          "date": "2019-06-01",
+          "month": "2019-06",
+          "value": 2.7712
+        },
+        {
+          "date": "2019-07-01",
+          "month": "2019-07",
+          "value": 3.1149
+        },
+        {
+          "date": "2019-08-01",
+          "month": "2019-08",
+          "value": 4.759
+        },
+        {
+          "date": "2019-09-01",
+          "month": "2019-09",
+          "value": 18.3248
+        },
+        {
+          "date": "2019-10-01",
+          "month": "2019-10",
+          "value": 10.8538
+        },
+        {
+          "date": "2019-11-01",
+          "month": "2019-11",
+          "value": 13.6774
+        },
+        {
+          "date": "2019-12-01",
+          "month": "2019-12",
+          "value": 11.8165
+        },
+        {
+          "date": "2020-01-01",
+          "month": "2020-01",
+          "value": 4.9505
+        },
+        {
+          "date": "2020-02-01",
+          "month": "2020-02",
+          "value": 9.9482
+        },
+        {
+          "date": "2020-03-01",
+          "month": "2020-03",
+          "value": 20.423
+        },
+        {
+          "date": "2020-04-01",
+          "month": "2020-04",
+          "value": 7.7628
+        },
+        {
+          "date": "2020-05-01",
+          "month": "2020-05",
+          "value": 5.493
+        },
+        {
+          "date": "2020-06-01",
+          "month": "2020-06",
+          "value": 5.3039
+        },
+        {
+          "date": "2020-07-01",
+          "month": "2020-07",
+          "value": 3.3052
+        },
+        {
+          "date": "2020-08-01",
+          "month": "2020-08",
+          "value": 27.8028
+        },
+        {
+          "date": "2020-09-01",
+          "month": "2020-09",
+          "value": 11.6176
+        },
+        {
+          "date": "2020-10-01",
+          "month": "2020-10",
+          "value": 2.6894
+        },
+        {
+          "date": "2020-11-01",
+          "month": "2020-11",
+          "value": 18.6853
+        },
+        {
+          "date": "2020-12-01",
+          "month": "2020-12",
+          "value": 20.6053
+        },
+        {
+          "date": "2021-01-01",
+          "month": "2021-01",
+          "value": 8.4287
+        },
+        {
+          "date": "2021-02-01",
+          "month": "2021-02",
+          "value": 19.0306
+        },
+        {
+          "date": "2021-03-01",
+          "month": "2021-03",
+          "value": 15.4918
+        },
+        {
+          "date": "2021-04-01",
+          "month": "2021-04",
+          "value": 20.1229
+        },
+        {
+          "date": "2021-05-01",
+          "month": "2021-05",
+          "value": 26.3463
+        },
+        {
+          "date": "2021-06-01",
+          "month": "2021-06",
+          "value": 15.3258
+        },
+        {
+          "date": "2021-07-01",
+          "month": "2021-07",
+          "value": 24.8805
+        },
+        {
+          "date": "2021-08-01",
+          "month": "2021-08",
+          "value": 22.407
+        },
+        {
+          "date": "2021-09-01",
+          "month": "2021-09",
+          "value": 27.9685
+        },
+        {
+          "date": "2021-10-01",
+          "month": "2021-10",
+          "value": 30.4364
+        },
+        {
+          "date": "2021-11-01",
+          "month": "2021-11",
+          "value": 42.2341
+        },
+        {
+          "date": "2021-12-01",
+          "month": "2021-12",
+          "value": 33.9651
+        },
+        {
+          "date": "2022-01-01",
+          "month": "2022-01",
+          "value": 24.7099
+        },
+        {
+          "date": "2022-02-01",
+          "month": "2022-02",
+          "value": 46.0587
+        },
+        {
+          "date": "2022-03-01",
+          "month": "2022-03",
+          "value": 61.1093
+        },
+        {
+          "date": "2022-04-01",
+          "month": "2022-04",
+          "value": 21.099
+        },
+        {
+          "date": "2022-05-01",
+          "month": "2022-05",
+          "value": 16.6047
+        },
+        {
+          "date": "2022-06-01",
+          "month": "2022-06",
+          "value": 44.1196
+        },
+        {
+          "date": "2022-07-01",
+          "month": "2022-07",
+          "value": 38.841
+        },
+        {
+          "date": "2022-08-01",
+          "month": "2022-08",
+          "value": 58.1389
+        },
+        {
+          "date": "2022-09-01",
+          "month": "2022-09",
+          "value": 62.4916
+        },
+        {
+          "date": "2022-10-01",
+          "month": "2022-10",
+          "value": 67.1133
+        },
+        {
+          "date": "2022-11-01",
+          "month": "2022-11",
+          "value": 66.864
+        },
+        {
+          "date": "2022-12-01",
+          "month": "2022-12",
+          "value": 68.7047
+        },
+        {
+          "date": "2023-01-01",
+          "month": "2023-01",
+          "value": 60.1186
+        },
+        {
+          "date": "2023-02-01",
+          "month": "2023-02",
+          "value": 67.155
+        },
+        {
+          "date": "2023-03-01",
+          "month": "2023-03",
+          "value": 61.2017
+        },
+        {
+          "date": "2023-04-01",
+          "month": "2023-04",
+          "value": 59.3783
+        },
+        {
+          "date": "2023-05-01",
+          "month": "2023-05",
+          "value": 66.875
+        },
+        {
+          "date": "2023-06-01",
+          "month": "2023-06",
+          "value": 64.3399
+        },
+        {
+          "date": "2023-07-01",
+          "month": "2023-07",
+          "value": 63.8608
+        },
+        {
+          "date": "2023-08-01",
+          "month": "2023-08",
+          "value": 68.2146
+        },
+        {
+          "date": "2023-09-01",
+          "month": "2023-09",
+          "value": 64.4838
+        },
+        {
+          "date": "2023-10-01",
+          "month": "2023-10",
+          "value": 64.073
+        },
+        {
+          "date": "2023-11-01",
+          "month": "2023-11",
+          "value": 62.3281
+        },
+        {
+          "date": "2023-12-01",
+          "month": "2023-12",
+          "value": 69.4686
+        },
+        {
+          "date": "2024-01-01",
+          "month": "2024-01",
+          "value": 71.2988
+        },
+        {
+          "date": "2024-02-01",
+          "month": "2024-02",
+          "value": 78.3521
+        },
+        {
+          "date": "2024-03-01",
+          "month": "2024-03",
+          "value": 82.7307
+        },
+        {
+          "date": "2024-04-01",
+          "month": "2024-04",
+          "value": 83.6519
+        },
+        {
+          "date": "2024-05-01",
+          "month": "2024-05",
+          "value": 57.88
+        },
+        {
+          "date": "2024-06-01",
+          "month": "2024-06",
+          "value": 58.282
+        },
+        {
+          "date": "2024-07-01",
+          "month": "2024-07",
+          "value": 56.9939
+        },
+        {
+          "date": "2024-08-01",
+          "month": "2024-08",
+          "value": 64.8793
+        },
+        {
+          "date": "2024-09-01",
+          "month": "2024-09",
+          "value": 61.8367
+        },
+        {
+          "date": "2024-10-01",
+          "month": "2024-10",
+          "value": 68.3729
+        },
+        {
+          "date": "2024-11-01",
+          "month": "2024-11",
+          "value": 69.5872
+        },
+        {
+          "date": "2024-12-01",
+          "month": "2024-12",
+          "value": 69.0848
+        },
+        {
+          "date": "2025-01-01",
+          "month": "2025-01",
+          "value": 64.2977
+        },
+        {
+          "date": "2025-02-01",
+          "month": "2025-02",
+          "value": 73.0135
+        },
+        {
+          "date": "2025-03-01",
+          "month": "2025-03",
+          "value": 68.0563
+        },
+        {
+          "date": "2025-04-01",
+          "month": "2025-04",
+          "value": 67.0716
+        },
+        {
+          "date": "2025-05-01",
+          "month": "2025-05",
+          "value": 74.4376
+        },
+        {
+          "date": "2025-06-01",
+          "month": "2025-06",
+          "value": 73.2757
+        },
+        {
+          "date": "2025-07-01",
+          "month": "2025-07",
+          "value": 68.9443
+        },
+        {
+          "date": "2025-08-01",
+          "month": "2025-08",
+          "value": 70.5868
+        },
+        {
+          "date": "2025-09-01",
+          "month": "2025-09",
+          "value": 75.7161
+        },
+        {
+          "date": "2025-10-01",
+          "month": "2025-10",
+          "value": 76.5556
+        },
+        {
+          "date": "2025-11-01",
+          "month": "2025-11",
+          "value": 76.5251
+        },
+        {
+          "date": "2025-12-01",
+          "month": "2025-12",
+          "value": 81.3634
+        },
+        {
+          "date": "2026-01-01",
+          "month": "2026-01",
+          "value": 74.2136
+        },
+        {
+          "date": "2026-02-01",
+          "month": "2026-02",
+          "value": 81.2734
+        },
+        {
+          "date": "2026-03-01",
+          "month": "2026-03",
+          "value": 87.5933
+        },
+        {
+          "date": "2026-04-01",
+          "month": "2026-04",
+          "value": 86.9537
+        },
+        {
+          "date": "2026-05-01",
+          "month": "2026-05",
+          "value": 77.9707
+        }
+      ],
+      "hk_private_car_ev_make_latest": [
+        {
+          "summary": "TESLA: 1,392 electric first registrations (2026-05-01)"
+        },
+        {
+          "summary": "BYD: 801 electric first registrations (2026-05-01)"
+        },
+        {
+          "summary": "DENZA: 649 electric first registrations (2026-05-01)"
+        },
+        {
+          "summary": "ZEEKR: 300 electric first registrations (2026-05-01)"
+        },
+        {
+          "summary": "XPENG: 212 electric first registrations (2026-05-01)"
+        },
+        {
+          "summary": "SMART: 149 electric first registrations (2026-05-01)"
+        },
+        {
+          "summary": "AVATR: 146 electric first registrations (2026-05-01)"
+        },
+        {
+          "summary": "GAC AION: 142 electric first registrations (2026-05-01)"
+        },
+        {
+          "summary": "MG: 135 electric first registrations (2026-05-01)"
+        },
+        {
+          "summary": "TOYOTA: 52 electric first registrations (2026-05-01)"
+        },
+        {
+          "summary": "WULING: 49 electric first registrations (2026-05-01)"
+        },
+        {
+          "summary": "GEELY: 49 electric first registrations (2026-05-01)"
+        }
+      ],
+      "hk_private_car_ev_model_latest": [
+        {
+          "summary": "WULING DARION EV: 159 first registrations (2026-06)"
+        },
+        {
+          "summary": "BYD BYD SEALION 7: 145 first registrations (2026-06)"
+        },
+        {
+          "summary": "TESLA MODEL Y L: 137 first registrations (2026-06)"
+        },
+        {
+          "summary": "DONGFENG NAMMI VIGO PRO: 128 first registrations (2026-06)"
+        },
+        {
+          "summary": "ICAUR V23 SPORT: 93 first registrations (2026-06)"
+        },
+        {
+          "summary": "ICAUR V23: 90 first registrations (2026-06)"
+        },
+        {
+          "summary": "GEELY EX5 MAX PLUS: 58 first registrations (2026-06)"
+        },
+        {
+          "summary": "AVATR 07: 52 first registrations (2026-06)"
+        },
+        {
+          "summary": "ZEEKR 009: 41 first registrations (2026-06)"
+        },
+        {
+          "summary": "BYD BYD SEAL 6 EV: 39 first registrations (2026-06)"
+        },
+        {
+          "summary": "MAXUS MIFA 7 ELITE: 36 first registrations (2026-06)"
+        },
+        {
+          "summary": "BYD BYD M6: 32 first registrations (2026-06)"
+        },
+        {
+          "summary": "AVATR 07 ULTRA: 28 first registrations (2026-06)"
+        },
+        {
+          "summary": "XPENG X9 STANDARD RANGE FWD (H93AER): 26 first registrations (2026-06)"
+        },
+        {
+          "summary": "SUBARU SOLTERRA XT: 25 first registrations (2026-06)"
+        },
+        {
+          "summary": "XPENG G6 STANDARD RANGE RWD (F30BR): 23 first registrations (2026-06)"
+        },
+        {
+          "summary": "TESLA MODEL Y RWD: 20 first registrations (2026-06)"
+        },
+        {
+          "summary": "ZEEKR 7X PLATINUM: 19 first registrations (2026-06)"
+        },
+        {
+          "summary": "TESLA MODEL Y PREMIUM REAR-WHEEL DRIVE: 15 first registrations (2026-06)"
+        },
+        {
+          "summary": "ZEEKR 009 DELUXE: 15 first registrations (2026-06)"
+        }
+      ],
+      "kpi_parking": [
+        {
+          "available_spaces": 20758,
+          "parks_reporting_exact": 424,
+          "parks_with_unknown_count": 112,
+          "participating_parks": 536,
+          "snapshot_at": "2026-07-31 22:16",
+          "observation_date": "2026-07-31"
+        }
+      ],
+      "hk_parking_vacancy_history": [
+        {
+          "date": "2026-07-31 22:16",
+          "month": "2026-07",
+          "value": 20758,
+          "parks_reporting_exact": 424,
+          "participating_parks": 536
+        }
+      ],
+      "hk_parking_current_district": [
+        {
+          "summary": "沙田区：2,632 个确切空置车位（共 44 个停车场）"
+        },
+        {
+          "summary": "离岛区：1,872 个确切空置车位（共 13 个停车场）"
+        },
+        {
+          "summary": "中西区：1,673 个确切空置车位（共 10 个停车场）"
+        },
+        {
+          "summary": "观塘区：1,602 个确切空置车位（共 63 个停车场）"
+        },
+        {
+          "summary": "西贡区：1,460 个确切空置车位（共 33 个停车场）"
+        },
+        {
+          "summary": "油尖旺区：1,343 个确切空置车位（共 9 个停车场）"
+        },
+        {
+          "summary": "元朗区：1,229 个确切空置车位（共 27 个停车场）"
+        },
+        {
+          "summary": "九龙城区：1,127 个确切空置车位（共 16 个停车场）"
+        },
+        {
+          "summary": "北区：1,036 个确切空置车位（共 19 个停车场）"
+        },
+        {
+          "summary": "黄大仙区：1,006 个确切空置车位（共 32 个停车场）"
+        },
+        {
+          "summary": "葵青区：971 个确切空置车位（共 32 个停车场）"
+        },
+        {
+          "summary": "大埔区：956 个确切空置车位（共 22 个停车场）"
+        },
+        {
+          "summary": "湾仔区：947 个确切空置车位（共 10 个停车场）"
+        },
+        {
+          "summary": "南区：881 个确切空置车位（共 11 个停车场）"
+        },
+        {
+          "summary": "东区：742 个确切空置车位（共 27 个停车场）"
+        },
+        {
+          "summary": "屯门区：656 个确切空置车位（共 22 个停车场）"
+        },
+        {
+          "summary": "荃湾区：355 个确切空置车位（共 10 个停车场）"
+        },
+        {
+          "summary": "深水埗区：270 个确切空置车位（共 24 个停车场）"
+        }
+      ],
+      "kpi_carpark_occupancy": [
+        {
+          "occupancy_pct": 75.9407,
+          "capacity_spaces": 20649,
+          "vacant_spaces": 4968,
+          "sample_size": 20649,
+          "observation_date": "2026-07-31 23:12"
+        }
+      ],
+      "td_carpark_occupancy_history": [
+        {
+          "date": "2026-07-31 22:54",
+          "month": "2026-07",
+          "value": 76.3863,
+          "sample_size": 20649,
+          "capacity_spaces": 20649,
+          "vacant_spaces": 4876
+        },
+        {
+          "date": "2026-07-31 23:12",
+          "month": "2026-07",
+          "value": 75.9407,
+          "sample_size": 20649,
+          "capacity_spaces": 20649,
+          "vacant_spaces": 4968
+        }
+      ],
+      "td_carpark_occupancy_latest_district": [
+        {
+          "summary": "黄大仙区：95.5% 占用（419 个已观测计量车位）"
+        },
+        {
+          "summary": "观塘区：87.9% 占用（651 个已观测计量车位）"
+        },
+        {
+          "summary": "油尖旺区：84.8% 占用（1956 个已观测计量车位）"
+        },
+        {
+          "summary": "葵青区：83.8% 占用（637 个已观测计量车位）"
+        },
+        {
+          "summary": "东区：83.7% 占用（589 个已观测计量车位）"
+        },
+        {
+          "summary": "沙田区：83.2% 占用（1705 个已观测计量车位）"
+        },
+        {
+          "summary": "深水埗区：83.2% 占用（1415 个已观测计量车位）"
+        },
+        {
+          "summary": "荃湾区：80.5% 占用（698 个已观测计量车位）"
+        },
+        {
+          "summary": "屯门区：79.5% 占用（1335 个已观测计量车位）"
+        },
+        {
+          "summary": "北区：78.6% 占用（1119 个已观测计量车位）"
+        },
+        {
+          "summary": "元朗区：76.3% 占用（1232 个已观测计量车位）"
+        },
+        {
+          "summary": "九龙城区：75.3% 占用（2639 个已观测计量车位）"
+        },
+        {
+          "summary": "大埔区：71.5% 占用（1633 个已观测计量车位）"
+        },
+        {
+          "summary": "中西区：70.3% 占用（600 个已观测计量车位）"
+        },
+        {
+          "summary": "湾仔区：69.4% 占用（1032 个已观测计量车位）"
+        },
+        {
+          "summary": "离岛区：60.1% 占用（338 个已观测计量车位）"
+        },
+        {
+          "summary": "西贡区：57.3% 占用（1973 个已观测计量车位）"
+        },
+        {
+          "summary": "南区：52.7% 占用（678 个已观测计量车位）"
+        }
+      ]
     }
   },
   "sources": [
@@ -33205,20 +39951,20 @@
     },
     {
       "id": "td_carpark_occupancy",
-      "label": "运输署实时停车场空置数据及政府一站式停车场容量资料",
-      "href": "https://api.data.gov.hk/v1/carpark-info-vacancy",
+      "label": "运输署传感器计量停车位及实时占用状态",
+      "href": "https://portal.csdi.gov.hk/geoportal/?datasetId=td_rcd_1638930345315_81787",
       "path": "sources/td_carpark_occupancy.sql",
       "query": {
-        "engine": "official TD live vacancy JSON joined to Digital Policy Office One-Stop static capacity JSON",
-        "url": "https://resource.data.one.gov.hk/td/carpark/vacancy_all.json ; https://resource.data.one.gov.hk/td/carpark/basic_info_all.json ; https://api.data.gov.hk/v1/carpark-info-vacancy",
-        "language": "JSON",
-        "description": "构建时从公开来源读取并校验 运输署实时停车场空置数据及政府一站式停车场容量资料。"
+        "engine": "official TD CSDI metered-space GeoJSON inventory + live occupancy-status CSV",
+        "url": "https://portal.csdi.gov.hk/csdi-webpage/file-api?dataset_id=td_rcd_1638930345315_81787&format=geojson&layer_name=parkingspaces ; https://resource.data.one.gov.hk/td/psiparkingspaces/occupancystatus/occupancystatus.csv",
+        "language": "GeoJSON + CSV",
+        "description": "构建时从公开来源读取并校验 运输署传感器计量停车位及实时占用状态。"
       }
     }
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-transport/",
-    "snapshotId": "a3e5a800b34be4bb",
-    "dataAsOf": "2026-06-01"
+    "snapshotId": "d832e1e939cd3a96",
+    "dataAsOf": "2026-07-31"
   }
 }

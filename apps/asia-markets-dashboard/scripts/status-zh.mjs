@@ -10,6 +10,7 @@
 export const STATUS_ZH = {
   type: {
     Measure: "指标",
+    Event: "事件",
     Catalog: "目录",
     Snapshot: "快照",
     Context: "背景",

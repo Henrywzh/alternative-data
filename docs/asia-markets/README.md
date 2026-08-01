@@ -30,6 +30,7 @@ This is the canonical documentation area for the Asia Markets research and dashb
 - [Financials, insurance and energy](asia-markets-hk-financials-energy-insurance.md)
 - [China alternative-data sources](asia-markets-china-alt-data-sources.md)
 - [AI and semiconductor deep dive](asia-markets-ai-semi-deepdive.md)
+- [Korean semiconductor alternative data](asia-markets-korean-semiconductor-alt-data.md)
 - [AkShare audit](data-source-audits/akshare-audit.md)
 - [Financial data-source comparison](data-source-audits/financial-data-sources.md)
 

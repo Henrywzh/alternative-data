@@ -32,6 +32,12 @@ TD_PRIVATE_CAR_NET_REGISTRATION_URL = "https://www.td.gov.hk/filemanager/en/cont
 
 # Transport Department Monthly Traffic and Transport Digest Table 2.3.
 MTTD_PASSENGER_JOURNEYS_URL = "https://www.td.gov.hk/datagovhk_tis/mttd-csv/en/table23_eng.csv"
+CENSTATD_BOUNDARY_REPORT_INDEX_URL = (
+    "https://www.censtatd.gov.hk/en/data/stat_report/subject/340/report_index.json"
+)
+CENSTATD_BOUNDARY_PRODUCT_URL = (
+    "https://www.censtatd.gov.hk/en/data/stat_report/product/D7000005/att/{filename}"
+)
 
 # Transport Department's latest per-vehicle first-registration detail feed.
 # The month is substituted as a lowercase English abbreviation (for example,
@@ -52,11 +58,17 @@ TD_FIRST_REGISTERED_VEHICLE_INDEX_URL = (
 # accumulate.
 TD_PARKING_VACANCY_URL = "https://resource.data.one.gov.hk/td/carpark/vacancy_all.json"
 TD_PARKING_BASIC_INFO_URL = "https://resource.data.one.gov.hk/td/carpark/basic_info_all.json"
-# The TD vacancy feed has no capacity field. This Digital Policy Office
-# One-Stop feed supplies static private-car capacities for the subset of TD
-# car parks where that metadata is published; occupancy is computed only for
-# that explicit capacity-covered subset.
-TD_PARKING_CAPACITY_URL = "https://api.data.gov.hk/v1/carpark-info-vacancy"
+# TD metered/on-street parking-space inventory and live sensor status. Unlike
+# the 548-car-park vacancy feed above, this pair exposes a real denominator:
+# the inventory is the listed space universe and the status CSV marks each
+# observed space occupied (O) or vacant (V).
+TD_METERED_PARKING_SPACES_URL = (
+    "https://portal.csdi.gov.hk/csdi-webpage/file-api?"
+    "dataset_id=td_rcd_1638930345315_81787&format=geojson&layer_name=parkingspaces"
+)
+TD_METERED_PARKING_OCCUPANCY_URL = (
+    "https://resource.data.one.gov.hk/td/psiparkingspaces/occupancystatus/occupancystatus.csv"
+)
 
 # Data Storage directories
 ROOT_DIR = Path(__file__).resolve().parents[2]
