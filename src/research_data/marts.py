@@ -139,6 +139,7 @@ def compute_daily_provider_economics(
 
 DAILY_PROVIDER_REVENUE_ESTIMATES_COLUMNS = [
     "usage_date",
+    "entity_id",
     "provider_slug",
     "model_permaslug",
     "total_tokens",

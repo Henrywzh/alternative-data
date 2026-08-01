@@ -808,11 +808,17 @@ DATASET_REGISTRY: dict[str, dict[str, object]] = {
         # Compact mart derived from already-provenanced provider activity;
         # stores no per-row source metadata (see daily_provider_economics).
         "requires_core_provenance": False,
-        "natural_keys": ["usage_date", "provider_slug", "model_permaslug"],
+        # provider_slug alone doesn't disambiguate rows: it's derived from
+        # model_permaslug's prefix, which is null for the synthetic "Others"
+        # bucket every provider page emits. entity_id (the source page) is
+        # what actually makes the row unique, matching provider_daily_activity's
+        # own natural key.
+        "natural_keys": ["usage_date", "entity_id", "model_permaslug"],
         "primary_date_column": "usage_date",
         "metric_column": "estimated_revenue",
         "required_columns": [
             "usage_date",
+            "entity_id",
             "provider_slug",
             "model_permaslug",
             "total_tokens",
@@ -1458,6 +1464,7 @@ OPENROUTER_LOAD_COLUMNS: dict[str, list[str]] = {
     ],
     "daily_provider_revenue_estimates": [
         "usage_date",
+        "entity_id",
         "provider_slug",
         "model_permaslug",
         "total_tokens",
