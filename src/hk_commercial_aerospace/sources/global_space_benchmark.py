@@ -13,7 +13,7 @@ from ..storage import save_raw_snapshot
 
 logger = logging.getLogger(__name__)
 
-SCHEMA_COLUMNS = ["entity", "code", "year", "objects_launched", "fetched_at"]
+SCHEMA_COLUMNS = ["entity", "code", "year", "year_label", "objects_launched", "fetched_at"]
 
 
 def fetch_global_objects_launched() -> pd.DataFrame:
@@ -34,9 +34,20 @@ def fetch_global_objects_launched() -> pd.DataFrame:
         frame = frame.rename(columns={"Entity": "entity", "Code": "code", "Year": "year", value_column[0]: "objects_launched"})
         frame = frame[frame["entity"].isin(["World", "China", "United States"])].copy()
         frame["year"] = pd.to_numeric(frame["year"], errors="coerce").astype("Int64")
+        frame["year_label"] = frame["year"].astype(str)
         frame["objects_launched"] = pd.to_numeric(frame["objects_launched"], errors="coerce")
         frame["fetched_at"] = fetched_at
-        return frame[SCHEMA_COLUMNS].dropna(subset=["year", "objects_launched"]).reset_index(drop=True)
+        result = (
+            frame[SCHEMA_COLUMNS]
+            .dropna(subset=["year", "objects_launched"])
+            .sort_values(["year", "entity"], kind="stable")
+            .reset_index(drop=True)
+        )
+        # Keep `year` numeric for the data contract and use a separate textual
+        # field for chart labels. This avoids the portable reader formatting a
+        # nominal year such as 1957 as 1.96K without contaminating the year
+        # value with an invisible character.
+        return result
     except Exception as exc:
         logger.warning("Failed to fetch global space benchmark: %s", exc)
         return pd.DataFrame(columns=SCHEMA_COLUMNS)

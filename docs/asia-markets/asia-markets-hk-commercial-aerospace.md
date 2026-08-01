@@ -232,7 +232,11 @@ into the artifact builder:
 - CelesTrak Qianfan and Jilin-1 counts are appended to
   `data/normalized/hk_commercial_aerospace/celestrak_constellation_history.jsonl`.
   The count means tracked/catalogued objects, not confirmed operational
-  satellites. Guowang remains a documented gap.
+  satellites. The short six-day snapshot run is retained for audit/Data
+  Explorer but is not published as a production history chart until at least
+  8 distinct observations accumulate; the current inventory bar remains the
+  visible signal. The threshold is observation-count based, not a daily-fetch
+  requirement. Guowang remains a documented gap.
 - SZSE's public `/api/ras/projectrends/query` endpoint is filtered to the
   broad industry classification `铁路、船舶、航空航天和其他运输设备制造业`.
   This is an aerospace-adjacent IPO feed, not a pure commercial-space list;
@@ -248,6 +252,39 @@ into the artifact builder:
 - The UNOOSA-derived Our World in Data series contributes annual World,
   China and US objects-launched benchmarks. It counts objects/payloads, not
   rocket launches.
+- The direct UNOOSA Online Index object-level route was tested for a higher-
+  frequency rebuild but is currently unavailable: UNOOSA says the Online
+  Index and related export functionality are temporarily offline during
+  mandatory UN IT infrastructure changes. The annual OWID series therefore
+  remains the authoritative benchmark until the index is restored.
+- CelesTrak's public SATCAT CSV is now a separate higher-frequency candidate.
+  It provides one current catalogue row per known object with a launch date;
+  the dashboard aggregates the latest ten years to launch-month × object type
+  (`Payload`, `Rocket body`, `Debris`, `Unknown`). Payload counts are close to
+  the OWID annual benchmark in recent years but are not identical or
+  interchangeable: SATCAT is a tracking catalogue, includes non-payload
+  objects, and can be revised. The full raw snapshot is retained locally and
+  the compact monthly contract is written to
+  `data/normalized/hk_commercial_aerospace/global_cataloged_objects_monthly.jsonl`.
+  If a live SATCAT request fails, the builder now serves that normalized
+  monthly cache as stale rather than dropping the chart from the artifact.
+- The annual global objects benchmark keeps numeric `year` values in the data
+  contract and a separate textual `year_label` for chart axes. The benchmark
+  remains annual object/payload activity and is not a rocket-launch cadence
+  series.
+- Wikimedia Wikipedia Pageviews is now a separate public-attention signal. The
+  production basket contains nine explicit English Wikipedia pages (SpaceX,
+  Starlink, Rocket Lab, Falcon 9, New Glenn, Long March, Chinese space
+  program, Satellite constellation and Commercial spaceflight) and preserves
+  monthly `user`, `spider`, `automated` and `all-agents` rows from 2015-07
+  onward in `data/normalized/hk_commercial_aerospace/wikimedia_aerospace_pageviews_monthly.jsonl`.
+  The artifact publishes aggregated agent history, user views by page and a
+  latest-page/agent table. The fetcher uses a 0.75-second throttle, retries
+  HTTP 429 responses and falls back to the normalized snapshot as cache; a
+  partial/cache result is reported as degraded/stale. Pageviews count page
+  loads, not unique people, search volume or mainland-China domestic demand.
+  Massviews remains the discovery/maintenance path for candidate pages, not a
+  changing production category.
 
 Google Patents remains a degraded, non-core source until the direct Google
 Patents request shape, assignee normalization and patent-family deduplication
