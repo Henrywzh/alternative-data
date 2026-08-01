@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
 import { createHash } from "node:crypto";
-import { spawn } from "node:child_process";
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -307,6 +306,10 @@ const HK_REAL_ESTATE_ZH = {
     mhpi_card: { description: "最新发布指数；周环比与同比变动。", metricLabels: ["MHPI", "周环比", "同比"] },
     rvd_price_card: { description: "官方月度指数；月环比与同比变动。", metricLabels: ["RVD 价格", "月环比", "同比"] },
     rvd_rent_card: { description: "官方月度指数；月环比与同比变动。", metricLabels: ["RVD 租金", "月环比", "同比"] },
+    srpe_attributable_sales_card: { description: "已追踪项目中，按上市公司持股比例计算的最新月度合约销售额；单位为百万港元。", metricLabels: ["可归属销售 (百万港元)", "月环比", "同比"] },
+    srpe_sales_units_card: { description: "已追踪项目在 SRPE 交易登记册最新月份记录的成交单位总数。", metricLabels: ["成交单位（总数）", "月环比", "同比"] },
+    srpe_sell_through_card: { description: "各已追踪项目最新可用快照的加权销售率；有效单位除以项目公布总单位数。", metricLabels: ["销售率 (%)", "项目阶段"] },
+    srpe_projects_card: { description: "通过试点登记表连接到上市公司持股比例的 SRPE 项目阶段数。", metricLabels: ["已追踪项目阶段"] },
   },
   charts: {
     ccl_trend: ["中原城市领先指数（CCL）", "发布方周度指数；最新点可能早于构建日期。", "周", "指数"],
@@ -336,12 +339,15 @@ const HK_REAL_ESTATE_ZH = {
     csi_trend: ["中原 CSI — 市场情绪", "周度市场情绪历史；目前历史 payload 仅提供住宅价格／租金情绪字段。", "周", "情绪指数", "指标"],
     rvd_office_trend: ["商业地产 — RVD 写字楼租金", "按等级划分的私人写字楼月度租金指数；数据集保留 provisional 标记。", "月份", "租金指数", "等级"],
     rvd_retail_trend: ["商业地产 — RVD 零售租金／价格", "私人零售月度租金及价格指数；数据集保留 provisional 标记。", "月份", "指数", "指标／分类"],
+    srpe_developer_sales_chart: ["SRPE — 可归属一手住宅合约销售额最高的开发商", "按上市公司持股比例计算的每月可归属合约销售额；图表显示试点观察期累计销售额最高的三家开发商，单位为百万港元。", "月份", "可归属销售 (百万港元)", "", "开发商"],
+    srpe_project_sell_through_chart: ["SRPE — 销售率最高的项目阶段", "根据唯一有效成交单位计算每月累计销售率；图表显示试点观察期累计可归属销售额最高的三个阶段，表格仍保留全部登记阶段。", "月份", "销售率 (%)", "", "项目阶段"],
   },
   blocks: {
     market_regime_intro: "## 市场周期总览\n\n以时间序列为主：比较住宅价格、租金、活动、信贷、供应及商业地产，不把单一快照当成趋势。",
     residential_sources_section: "## 住宅来源历史\n\n原始发布方水平与上方重设基准走势分开，方便核对来源定义。",
     activity_financing_section: "## 成交活动与融资\n\n成交、按揭申请、贷款金额及信贷质素使用相容的独立时间序列。",
     supply_commercial_section: "## 供应与商业地产\n\n供应历史及官方写字楼／零售租金序列与住宅价格、租金分开。",
+    srpe_developer_signals_section: "## 住宅开发商销售信号\n\nSRPE 项目阶段交易登记册通过明确的持股登记表连接到上市开发商。这里是合约销售指标，不等同于会计确认收入或现金回款。",
   },
   tables: {
     source_health_table: {
@@ -407,6 +413,21 @@ const HK_REAL_ESTATE_ZH = {
       subtitle: "月报第一节表格的原始摘录；行标签及数值保持原文。",
       columns: { date: "月份", table_id: "表格", row_label: "行", values: "数值" },
     },
+    srpe_latest_project_snapshot_table: {
+      title: "SRPE — 最新项目销售快照",
+      subtitle: "每个已明确登记阶段的最新可用观测；上方 KPI 与开发商图表已按持股比例调整销售额。",
+      columns: {
+        developer: "开发商",
+        project_name: "项目阶段",
+        latest_period: "最新月份",
+        sales_units_gross: "当月成交单位（总数）",
+        cumulative_unique_active_units: "有效累计已售单位",
+        total_residential_properties: "已公布总单位数",
+        sell_through_pct: "销售率 (%)",
+        weighted_avg_transaction_price_hkd: "加权平均成交价 (港元)",
+        ownership_pct: "持股比例 (%)",
+      },
+    },
   },
   sources: {
     centaline_ccl: "中原城市领先指数（CCL）",
@@ -430,6 +451,7 @@ const HK_REAL_ESTATE_ZH = {
     agency_transactions: "代理行成交（28Hse／美联／中原）",
     hse28_new_projects: "28Hse 新盘目录",
     bd_monthly_digest: "屋宇署月报摘要",
+    srpe_sales: "一手住宅物业销售资讯电子平台（SRPE）",
   },
   snapshotBody: (artifact) =>
     `**数据快照：** \`${artifact.package_info.snapshotId}\` · 生成于 ${artifact.manifest.generatedAt}。这是已发布快照，不是实时连接；RVD 标记为 provisional 的观测可能会修订。`,
@@ -496,6 +518,78 @@ const HK_REAL_ESTATE_ZH = {
     },
     censtatd_land_disposals_area: {
       series: { "Public Auction/Tender": "公开拍卖／招标", "Private Treaty Grant": "私人协约方式批地" },
+    },
+    source_health: {
+      source: {
+        "Sales of First-hand Residential Properties Electronic Platform (SRPE)": "一手住宅物业销售资讯电子平台（SRPE）",
+      },
+      dataset: {
+        "SRPE phase-level first-hand sales signals": "SRPE 项目阶段一手住宅销售信号",
+      },
+      notes: {
+        "Six explicitly registered phases; attributable sales use the ownership registry and sell-through uses unique active units.": "覆盖六个明确登记的项目阶段；可归属销售额使用持股登记表，销售率使用唯一有效成交单位。",
+      },
+    },
+    source_coverage: {
+      source: { "SRPE pilot": "SRPE 试点" },
+      dataset: {
+        "Phase-level first-hand sales signals": "项目阶段一手住宅销售信号",
+        "Full developer / project coverage": "完整开发商／项目覆盖",
+      },
+      notes: {
+        "Sales of First-hand Residential Properties Electronic Platform (SRPE); see the chart/table above.": "一手住宅物业销售资讯电子平台（SRPE）；详见上方图表及表格。",
+        "The dashboard currently covers six explicit pilot phases; broader developer and phase coverage still requires registry expansion and backfill.": "目前 dashboard 覆盖六个明确登记的试点阶段；更广泛的开发商及项目阶段覆盖仍需扩展登记表和历史回补。",
+      },
+    },
+    srpe_developer_monthly_sales: {
+      developer: {
+        "Henderson Land": "恒基兆业地产",
+        "Sun Hung Kai Properties": "新鸿基地产",
+        "New World Development": "新世界发展",
+        "MTR Corporation": "香港铁路",
+        "Sino Land": "信和置业",
+      },
+    },
+    srpe_project_sell_through: {
+      developer: {
+        "Henderson Land": "恒基兆业地产",
+        "Sun Hung Kai Properties": "新鸿基地产",
+        "New World Development": "新世界发展",
+        "MTR Corporation": "香港铁路",
+        "Sino Land": "信和置业",
+      },
+      project_name: {
+        "Grand Victoria — Phase 1": "维港滙 — 第一期",
+        "NOVO LAND — Phase 2A": "NOVO LAND — 第2A期",
+        "NOVO LAND — Phase 3B": "NOVO LAND — 第3B期",
+        "PARK YOHO NAPOLI": "峻峦 Napoli",
+        "The Henley II": "The Henley II",
+        "PAVILIA FARM III": "柏傲庄 III",
+        "Blue Coast": "扬海 Blue Coast",
+      },
+      project_short_name: {
+        "NOVO 2A": "NOVO 第2A期",
+        "NOVO 3B": "NOVO 第3B期",
+        "PARK YOHO": "峻峦",
+      },
+    },
+    srpe_latest_project_snapshot: {
+      developer: {
+        "Henderson Land": "恒基兆业地产",
+        "Sun Hung Kai Properties": "新鸿基地产",
+        "New World Development": "新世界发展",
+        "MTR Corporation": "香港铁路",
+        "Sino Land": "信和置业",
+      },
+      project_name: {
+        "Grand Victoria — Phase 1": "维港滙 — 第一期",
+        "NOVO LAND — Phase 2A": "NOVO LAND — 第2A期",
+        "NOVO LAND — Phase 3B": "NOVO LAND — 第3B期",
+        "PARK YOHO NAPOLI": "峻峦 Napoli",
+        "The Henley II": "The Henley II",
+        "PAVILIA FARM III": "柏傲庄 III",
+        "Blue Coast": "扬海 Blue Coast",
+      },
     },
   },
 };
@@ -1281,7 +1375,8 @@ function localizeArtifact(input, zh) {
       if (chart.encodings?.x) chart.encodings.x.label = copy[2];
       if (chart.encodings?.y) chart.encodings.y.label = copy[3];
       if (chart.encodings?.tooltip?.[0]) chart.encodings.tooltip[0].label = copy[4] || chart.encodings.tooltip[0].label;
-      if (chart.encodings?.color) chart.encodings.color.label = "序列";
+      if (chart.encodings?.series) chart.encodings.series.label = copy[5] || copy[4] || chart.encodings.series.label;
+      if (chart.encodings?.color) chart.encodings.color.label = copy[5] || "序列";
       if (chart.comparisonContext?.normalization) chart.comparisonContext.normalization = "首个可用月份 = 100";
     });
   }
@@ -1330,19 +1425,21 @@ function localizeArtifact(input, zh) {
   return artifact;
 }
 
-function addYearAwareStaticChartTicks(html, artifact) {
+function addYearAwareStaticChartTicks(html, artifact, { locale = "en" } = {}) {
   const charts = new Map((artifact.manifest?.charts || []).map((chart) => [chart.id, chart]));
-  const monthNames = [
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-  ];
+  const chinese = locale === "zh";
+  const monthNames = chinese
+    ? ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"]
+    : ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   const parseDate = (value) => {
     const match = /^(\d{4})[-/](\d{1,2})(?:[-/](\d{1,2}))?/.exec(String(value ?? ""));
     if (!match) return null;
     const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3] || 1)));
     return Number.isFinite(date.getTime()) ? date : null;
   };
-  const formatMonthYear = (date) => `${monthNames[date.getUTCMonth()]} ${date.getUTCFullYear()}`;
+  const formatMonthYear = (date) => chinese
+    ? `${date.getUTCFullYear()}年${monthNames[date.getUTCMonth()]}`
+    : `${monthNames[date.getUTCMonth()]} ${date.getUTCFullYear()}`;
   const figurePattern = /(<figure\b[^>]*data-chart-id="([^"]+)"[\s\S]*?<\/figure>)/g;
   const patchedHtml = html.replace(figurePattern, (figure, _ignored, chartId) => {
     const chart = charts.get(chartId);
@@ -1420,7 +1517,7 @@ function addYearAwareStaticChartTicks(html, artifact) {
     '<script data-dashboard-year-aware-axis="true">',
     '(()=>{const charts=',
     JSON.stringify(chartMetadata),
-    ',formatDate=(date,monthGranular)=>new Intl.DateTimeFormat("en-US",monthGranular?{month:"short",year:"numeric",timeZone:"UTC"}:{day:"numeric",month:"short",year:"numeric",timeZone:"UTC"}).format(date),patch=()=>{Object.entries(charts).forEach(([chartId,meta])=>{if(!meta||meta.xType!=="temporal"||!(meta.maxTime>meta.minTime))return;const roots=[document.getElementById(chartId),...document.querySelectorAll("figure[data-chart-id=\\"" + chartId + "\\"]")].filter(Boolean);roots.forEach((figure)=>{const ticks=[...figure.querySelectorAll(".recharts-xAxis-tick-labels .recharts-cartesian-axis-tick-value")];const positions=ticks.map((tick)=>Number(tick.getAttribute("x"))).filter(Number.isFinite);if(positions.length<2)return;const left=Math.min(...positions),right=Math.max(...positions);if(!(right>left))return;ticks.forEach((tick)=>{if(tick.dataset.dashboardYearAware==="true")return;const x=Number(tick.getAttribute("x"));if(!Number.isFinite(x))return;const date=new Date(meta.minTime+Math.max(0,Math.min(1,(x-left)/(right-left)))*(meta.maxTime-meta.minTime));tick.textContent=formatDate(date,meta.monthGranular);tick.dataset.dashboardYearAware="true"})})})};const schedule=()=>{patch();requestAnimationFrame(()=>patch())};document.addEventListener("data-analytics-portable-reader-ready",schedule);window.addEventListener("data-analytics-portable-reader-ready",schedule);new MutationObserver(()=>patch()).observe(document.documentElement,{childList:true,subtree:true});schedule()})();',
+    `,formatDate=(date,monthGranular)=>new Intl.DateTimeFormat(${JSON.stringify(chinese ? "zh-CN" : "en-US")},monthGranular?{month:"short",year:"numeric",timeZone:"UTC"}:{day:"numeric",month:"short",year:"numeric",timeZone:"UTC"}).format(date),patch=()=>{Object.entries(charts).forEach(([chartId,meta])=>{if(!meta||meta.xType!=="temporal"||!(meta.maxTime>meta.minTime))return;const roots=[document.getElementById(chartId),...document.querySelectorAll("figure[data-chart-id=\\"" + chartId + "\\"]")].filter(Boolean);roots.forEach((figure)=>{const ticks=[...figure.querySelectorAll(".recharts-xAxis-tick-labels .recharts-cartesian-axis-tick-value")];const positions=ticks.map((tick)=>Number(tick.getAttribute("x"))).filter(Number.isFinite);if(positions.length<2)return;const left=Math.min(...positions),right=Math.max(...positions);if(!(right>left))return;ticks.forEach((tick)=>{if(tick.dataset.dashboardYearAware==="true")return;const x=Number(tick.getAttribute("x"));if(!Number.isFinite(x))return;const date=new Date(meta.minTime+Math.max(0,Math.min(1,(x-left)/(right-left)))*(meta.maxTime-meta.minTime));tick.textContent=formatDate(date,meta.monthGranular);tick.dataset.dashboardYearAware="true"})})})};const schedule=()=>{patch();requestAnimationFrame(()=>patch())};document.addEventListener("data-analytics-portable-reader-ready",schedule);window.addEventListener("data-analytics-portable-reader-ready",schedule);new MutationObserver(()=>patch()).observe(document.documentElement,{childList:true,subtree:true});schedule()})();`,
     '</script>',
   ].join("");
   const cleanHtml = patchedHtml.replace(
@@ -1488,49 +1585,61 @@ function addNavigation(html, { locale, homeEn, homeZh, routeEn, routeZh }) {
     btn.addEventListener('click', function(){ apply(current() === 'dark' ? 'light' : 'dark'); });
   })();</script>`;
   const nav = `<nav class="am-dashboard-nav" aria-label="Dashboard navigation"><a href="${home}">${backLabel}</a><a href="${languageHref}">${languageLabel}</a><button type="button" class="am-theme-toggle" id="am-theme-toggle" aria-label="Toggle dark mode">☾</button></nav>`;
-  return html
+  const localizedHtml = chinese ? html.replace('<html lang="en"', '<html lang="zh-CN"') : html;
+  return localizedHtml
     .replace("<head>", `<head>${themeInit}`)
     .replace("</head>", `${css}</head>`)
     .replace("<body>", `<body>${nav}`)
     .replace("</body>", `${themeToggleScript}</body>`);
 }
 
-function spawnDelivery(deliveryScript, args) {
-  return new Promise((resolvePromise) => {
-    const child = spawn(process.execPath, [deliveryScript, ...args], {
-      cwd: projectRoot,
-      stdio: ["ignore", "pipe", "pipe"],
-    });
-    let stdout = "";
-    let stderr = "";
-    child.stdout.on("data", (chunk) => { stdout += chunk; });
-    child.stderr.on("data", (chunk) => { stderr += chunk; });
-    child.on("close", (code) => resolvePromise({ status: code, stdout, stderr }));
-    child.on("error", (error) => resolvePromise({ status: 1, stdout, stderr: `${stderr}\n${error.message}` }));
-  });
+// The portable reader's chart legend is a flex item whose intrinsic width can
+// exceed its mobile chart frame when a series name is long.  The frame itself
+// is responsive, but the unbounded legend becomes a page-level horizontal
+// overflow (rather than an intentional table scroller).  Apply this shared
+// constraint before the portable verifier runs, so the check exercises the
+// actual mobile layout and every sector benefits from the same fix.
+function addResponsivePortableStyles(html) {
+  const css = `<style data-dashboard-responsive-overflow="true">
+@media screen and (max-width:600px){
+  .chart-frame,.chart-body-measure,.chart-legend-wrap,.chart-legend{min-width:0!important;max-width:100%!important}
+  .chart-legend{width:100%!important;box-sizing:border-box!important}
+  .chart-legend-item,.chart-legend-button{min-width:0!important;max-width:100%!important}
+  .chart-legend-button{overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+}
+</style>`;
+  return html
+    .replace(/<style data-dashboard-responsive-overflow="true">[\s\S]*?<\/style>/g, "")
+    .replace("</head>", `${css}</head>`);
 }
 
-async function deliverPortable({ deliveryScript, artifactFile, portableFile, locale }) {
+async function deliverPortable({ deliverPortableArtifact, buildPortableArtifact, artifactFile, portableFile, locale }) {
   const failureScreenshot = join(generatedDir, `portable-verification-failure-${locale}.png`);
   const maxAttempts = Math.max(1, Number(process.env.PORTABLE_DELIVERY_RETRIES || 2));
-  let lastDelivery = null;
+  let lastError = null;
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-    const delivery = await spawnDelivery(deliveryScript, [
-      "--input", artifactFile,
-      "--output", portableFile,
-      "--screenshot", failureScreenshot,
-      "--ready-timeout-ms", process.env.PORTABLE_READY_TIMEOUT_MS || "30000",
-      "--action-timeout-ms", process.env.PORTABLE_ACTION_TIMEOUT_MS || "10000",
-      "--timeout-ms", process.env.PORTABLE_VERIFY_TIMEOUT_MS || "60000",
-    ]);
-    lastDelivery = delivery;
-    if (delivery.status === 0) {
-      const receipt = JSON.parse(delivery.stdout.trim());
-      if (receipt.ok && receipt.stages?.verification === "passed") return receipt;
+    try {
+      return await deliverPortableArtifact({
+        inputPath: artifactFile,
+        outputPath: portableFile,
+        screenshotPath: failureScreenshot,
+        readyTimeoutMs: Number(process.env.PORTABLE_READY_TIMEOUT_MS || "30000"),
+        actionTimeoutMs: Number(process.env.PORTABLE_ACTION_TIMEOUT_MS || "10000"),
+        timeoutMs: Number(process.env.PORTABLE_VERIFY_TIMEOUT_MS || "60000"),
+      }, {
+        build: (artifact, options) => addResponsivePortableStyles(
+          buildPortableArtifact(artifact, options),
+        ),
+      });
+    } catch (error) {
+      lastError = error;
     }
   }
-  process.stderr.write(lastDelivery?.stdout || "");
-  process.stderr.write(lastDelivery?.stderr || "");
+  if (lastError?.deliveryResult) {
+    process.stderr.write(`${JSON.stringify(lastError.deliveryResult)}\n`);
+  } else if (lastError) {
+    process.stderr.write(`${lastError.stack || lastError}\n`);
+  }
   throw new Error(`Portable dashboard delivery failed (${locale}) after ${maxAttempts} attempt(s).`);
 }
 
@@ -1740,11 +1849,18 @@ if (!existsSync(distDir)) {
 
 mkdirSync(generatedDir, { recursive: true });
 let deliveryScript = null;
-let verifyPortableArtifactStructure = null;
+let deliverPortableArtifact = null;
+let buildPortableArtifact = null;
+let verifyPortableArtifact = null;
 try {
   deliveryScript = findPortableBuilder();
-  const verifyModule = await import(`file://${join(dirname(deliveryScript), "verify_portable_artifact.mjs")}`);
-  verifyPortableArtifactStructure = verifyModule.verifyPortableArtifactStructure;
+  const moduleDir = dirname(deliveryScript);
+  const deliveryModule = await import(`file://${deliveryScript}`);
+  const builderModule = await import(`file://${join(moduleDir, "build_portable_artifact.mjs")}`);
+  const verifyModule = await import(`file://${join(moduleDir, "verify_portable_artifact.mjs")}`);
+  deliverPortableArtifact = deliveryModule.deliverPortableArtifact;
+  buildPortableArtifact = builderModule.buildPortableArtifact;
+  verifyPortableArtifact = verifyModule.verifyPortableArtifact;
 } catch (error) {
   process.stdout.write(`[package-dashboard] Portable builder unavailable (${error.message}); skipping dashboard packaging.\n`);
   process.exit(0);
@@ -1780,18 +1896,18 @@ for (const sector of SECTORS) {
   const zhPortableFile = join(sectorDistZh, "index.html");
 
   process.stdout.write(`[package-dashboard] Delivering ${sector.id} (EN)...\n`);
-  await deliverPortable({ deliveryScript, artifactFile, portableFile: enPortableFile, locale: "en" });
+  await deliverPortable({ deliverPortableArtifact, buildPortableArtifact, artifactFile, portableFile: enPortableFile, locale: "en" });
 
   process.stdout.write(`[package-dashboard] Delivering ${sector.id} (ZH)...\n`);
-  await deliverPortable({ deliveryScript, artifactFile: zhArtifactFile, portableFile: zhPortableFile, locale: "zh" });
+  await deliverPortable({ deliverPortableArtifact, buildPortableArtifact, artifactFile: zhArtifactFile, portableFile: zhPortableFile, locale: "zh" });
 
   const routeEn = `/sectors/${sectorSlug}/`;
   const routeZh = `/zh/sectors/${sectorSlug}/`;
   const homeEn = "/";
   const homeZh = "/zh/";
 
-  const enHtml = addCopyTitleControls(addYearAwareStaticChartTicks(readFileSync(enPortableFile, "utf8"), rawArtifact), rawArtifact, { locale: "en" });
-  const zhHtml = addCopyTitleControls(addYearAwareStaticChartTicks(readFileSync(zhPortableFile, "utf8"), zhArtifact), zhArtifact, { locale: "zh" });
+  const enHtml = addCopyTitleControls(addYearAwareStaticChartTicks(readFileSync(enPortableFile, "utf8"), rawArtifact, { locale: "en" }), rawArtifact, { locale: "en" });
+  const zhHtml = addCopyTitleControls(addYearAwareStaticChartTicks(readFileSync(zhPortableFile, "utf8"), zhArtifact, { locale: "zh" }), zhArtifact, { locale: "zh" });
   writeFileSync(
     enPortableFile,
     addNavigation(enHtml, { locale: "en", homeEn, homeZh, routeEn, routeZh })
@@ -1800,6 +1916,23 @@ for (const sector of SECTORS) {
     zhPortableFile,
     addNavigation(zhHtml, { locale: "zh", homeEn, homeZh, routeEn, routeZh })
   );
+
+  // The delivery helper verifies the responsive HTML before these repo-local
+  // additions. Verify the final files too, so navigation, title-copy controls
+  // and year-aware axis patches cannot introduce an undetected overflow.
+  for (const [portableFile, finalArtifactFile, locale] of [
+    [enPortableFile, artifactFile, "en"],
+    [zhPortableFile, zhArtifactFile, "zh"],
+  ]) {
+    await verifyPortableArtifact({
+      artifactPath: finalArtifactFile,
+      htmlPath: portableFile,
+      screenshotPath: join(generatedDir, `portable-verification-failure-${locale}.png`),
+      readyTimeoutMs: Number(process.env.PORTABLE_READY_TIMEOUT_MS || "30000"),
+      actionTimeoutMs: Number(process.env.PORTABLE_ACTION_TIMEOUT_MS || "10000"),
+      timeoutMs: Number(process.env.PORTABLE_VERIFY_TIMEOUT_MS || "60000"),
+    });
+  }
 
   const exportsDir = join(distDir, "exports");
   mkdirSync(exportsDir, { recursive: true });

@@ -32,6 +32,78 @@ SRPE_UPLOAD_LIST_KEYS = {
     "devListSaleBrochure": "sales_brochure",
 }
 
+
+class SRPEDocumentDownloadError(RuntimeError):
+    """Raised when an SRPE document manifest entry cannot be downloaded."""
+
+
+def download_srpe_document(
+    document_category: str,
+    document_id: str | int,
+    development_id: str | int,
+    *,
+    seq: str | int | None = None,
+    session: requests.Session | None = None,
+    timeout: float = 30,
+    max_attempts: int = 2,
+) -> bytes:
+    """Download one manifest PDF and validate that the response is a PDF.
+
+    SRPE occasionally leaves a manifest row whose download endpoint returns
+    404 (observed for one NOVO LAND transaction row).  The error includes the
+    exact identifiers so the caller can retain an auditable failure record
+    instead of silently treating the missing file as a zero-transaction PDF.
+    """
+    if document_category not in SRPE_DOWNLOAD_ACTIONS:
+        raise ValueError(f"unsupported SRPE document category: {document_category}")
+    client = session or requests.Session()
+    client.headers.update(
+        {
+            **DEFAULT_HEADERS,
+            "Accept": "application/pdf,application/octet-stream,*/*",
+            "Content-Type": "application/json",
+            "Origin": "https://www.srpe.gov.hk",
+            "Referer": SRPE_OPIP_URL,
+        }
+    )
+    endpoint = f"{SRPE_API_BASE}/download/{SRPE_DOWNLOAD_ACTIONS[document_category]}"
+    payload = {"id": str(document_id), "seq": "" if seq is None else str(seq), "devId": str(development_id)}
+    attempts = max(1, int(max_attempts))
+    last_error: str | None = None
+    for attempt in range(1, attempts + 1):
+        try:
+            response = client.post(endpoint, json=payload, timeout=timeout)
+        except requests.RequestException as exc:
+            last_error = f"request error: {exc}"
+            if attempt < attempts:
+                time.sleep(0.5 * attempt)
+                continue
+            break
+        if response.status_code == 404:
+            last_error = "HTTP 404 (manifest row may be stale or file may have been replaced)"
+            if attempt < attempts:
+                time.sleep(0.5 * attempt)
+                continue
+            break
+        if response.status_code >= 500 and attempt < attempts:
+            last_error = f"HTTP {response.status_code}"
+            time.sleep(0.5 * attempt)
+            continue
+        try:
+            response.raise_for_status()
+        except requests.RequestException as exc:
+            last_error = str(exc)
+            break
+        content = response.content
+        if not content.startswith(b"%PDF"):
+            last_error = f"HTTP {response.status_code} returned non-PDF content ({len(content)} bytes)"
+            break
+        return content
+    raise SRPEDocumentDownloadError(
+        f"failed to download SRPE {document_category}: document_id={document_id}, "
+        f"development_id={development_id}, endpoint={endpoint}; {last_error or 'unknown error'}"
+    )
+
 def fetch_srpe_project_documents() -> pd.DataFrame:
     """
     Fetch SRPE OPIP portal and parse available project document search modules.
@@ -193,6 +265,7 @@ def fetch_srpe_firsthand_sales_digest() -> pd.DataFrame:
         dev = dev_info.get("dev") or dev_meta.get(dev_id, {})
         dev_name = dev.get("engName")
         dev_phase = dev.get("engPhaseName")
+        dev_phase_no = dev.get("engPhaseNo")
         dev_address = None
         addresses = dev.get("addresses") or []
         if addresses:
@@ -211,6 +284,7 @@ def fetch_srpe_firsthand_sales_digest() -> pd.DataFrame:
                     "development_id": dev_id,
                     "development_name": dev_name,
                     "development_phase": dev_phase,
+                    "development_phase_no": dev_phase_no,
                     "development_address": dev_address,
                     "document_id": doc.get("id"),
                     "serial_no": doc.get("serialNo"),

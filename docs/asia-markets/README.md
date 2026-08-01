@@ -16,6 +16,7 @@ This is the canonical documentation area for the Asia Markets research and dashb
 ## HK theme research
 
 - [HK real estate](asia-markets-hk-real-estate.md)
+- [HK real estate signals TODO](REAL_ESTATE_SIGNALS_TODO.md) — residential developer project-to-stock signal plan and later agency workstream
 - [HK local consumer](asia-markets-hk-local-consumer.md)
 - [Consumer trend stocks](asia-markets-hk-consumer-trend-stocks.md)
 - [Stablecoin and crypto](asia-markets-hk-stablecoin-crypto.md)

@@ -29,6 +29,8 @@ export const STATUS_ZH = {
     "Snapshot (irregular updates)": "快照（不定期更新）",
     "stale/unreachable": "过期/无法访问",
     "Content parser pending": "内容解析待完成",
+    "Published snapshot": "已发布快照",
+    "Fetch returned no rows": "抓取未返回数据",
     "Endpoint returns no data": "接口未返回数据",
     "Footprint snapshot (most brands: 1-2 dated snapshots so far, not yet a trend)":
       "足迹快照（大部分品牌目前仅有1-2个存有日期的快照，尚未构成趋势）",
@@ -58,6 +60,31 @@ export const STATUS_ZH = {
       dataset: "差饷物业估价署住宅租金指数",
       source: "差饷物业估价署 — 私人住宅租金指数",
       notes: "最新观察值为临时值。",
+    },
+    "Centaline CCI monthly": {
+      dataset: "中原 CCI 月度数据",
+      source: "中原 CCI — 住宅价格指数",
+      notes: "标准化的月度住宅价格指数历史。",
+    },
+    "Centaline CRI monthly": {
+      dataset: "中原 CRI 月度数据",
+      source: "中原 CRI — 住宅租金指数",
+      notes: "标准化的月度住宅租金指数历史。",
+    },
+    "Centaline CSI weekly": {
+      dataset: "中原 CSI 周度数据",
+      source: "中原 CSI — 市场情绪",
+      notes: "周度市场情绪历史，不是成交或价格指数。",
+    },
+    "RVD office rental monthly": {
+      dataset: "差饷物业估价署写字楼租金月度数据",
+      source: "差饷物业估价署 — 写字楼租金指数",
+      notes: "按等级划分的官方写字楼月度租金指数。",
+    },
+    "RVD retail rental monthly": {
+      dataset: "差饷物业估价署零售租金月度数据",
+      source: "差饷物业估价署 — 零售租金／价格指数",
+      notes: "官方零售月度租金及价格指数。",
     },
     "EPI / ERI": {
       dataset: "EPI / ERI",
