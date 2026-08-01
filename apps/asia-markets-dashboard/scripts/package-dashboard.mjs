@@ -209,26 +209,26 @@ const BD_PROPERTY_CATEGORY_ZH = {
 // hk-local-consumer: fehd_district_density's district_name (FEHD's own
 // 19-district code list, per LP_Restaurants_EN.XML's <DIST_CODE> table).
 const FEHD_DISTRICT_ZH = {
-  Eastern: "東區",
-  "Wan Chai": "灣仔",
-  Southern: "南區",
-  Islands: "離島",
-  "Central/Western": "中西區",
-  "Food Truck": "美食車",
-  "Kwun Tong": "觀塘",
-  "Kowloon City": "九龍城",
-  "Wong Tai Sin": "黃大仙",
+  Eastern: "东区",
+  "Wan Chai": "湾仔",
+  Southern: "南区",
+  Islands: "离岛",
+  "Central/Western": "中西区",
+  "Food Truck": "美食车",
+  "Kwun Tong": "观塘",
+  "Kowloon City": "九龙城",
+  "Wong Tai Sin": "黄大仙",
   "Yau Tsim": "油尖",
   "Mong Kok": "旺角",
   "Sham Shui Po": "深水埗",
   "Kwai Tsing": "葵青",
-  "Tsuen Wan": "荃灣",
-  "Tuen Mun": "屯門",
+  "Tsuen Wan": "荃湾",
+  "Tuen Mun": "屯门",
   "Yuen Long": "元朗",
   "Tai Po": "大埔",
-  North: "北區",
+  North: "北区",
   "Sha Tin": "沙田",
-  "Sai Kung": "西貢",
+  "Sai Kung": "西贡",
 };
 // hk-real-estate: agency_transactions_pulse_table's primary_source_agency.
 const AGENCY_NAME_ZH = {
@@ -757,9 +757,65 @@ const HK_UTILITIES_ZH = {
   },
 };
 
+const TRANSPORT_DISTRICT_ZH = {
+  "CENTRAL & WESTERN": "中西区",
+  EASTERN: "东区",
+  ISLANDS: "离岛区",
+  "KOWLOON CITY": "九龙城区",
+  "KWAI TSING": "葵青区",
+  "KWUN TONG": "观塘区",
+  NORTH: "北区",
+  "SAI KUNG": "西贡区",
+  "SHA TIN": "沙田区",
+  "SHAM SHUI PO": "深水埗区",
+  SOUTHERN: "南区",
+  "TAI PO": "大埔区",
+  "TSUEN WAN": "荃湾区",
+  "TUEN MUN": "屯门区",
+  "WAN CHAI": "湾仔区",
+  "WONG TAI SIN": "黄大仙区",
+  "YAU TSIM MONG": "油尖旺区",
+  "YUEN LONG": "元朗区",
+};
+const TRANSPORT_SUMMARY_ZH = {
+  "MTR Local": "港铁本地",
+  "MTR Airport / LRT / feeder": "港铁机场／轻铁／接驳",
+  "Franchised buses": "专营巴士",
+  Aircraft: "飞机",
+  "Passenger vehicles": "客运车辆",
+  "Goods vehicles": "货运车辆",
+};
+// TRANSPORT_DISTRICT_ZH's keys are upper-case, but upstream Python sources
+// disagree on district-name casing (e.g. td_carpark_occupancy_latest_district
+// emits "SHA TIN" while hk_parking_current_district emits "Sha Tin") -- a
+// case-insensitive lookup keeps both working instead of only whichever
+// dataset happens to match the dict's literal casing.
+function districtZh(name) {
+  return TRANSPORT_DISTRICT_ZH[String(name).toUpperCase()] || name;
+}
+function translateTransportLatestSummary(value) {
+  if (typeof value !== "string") return value;
+  let match = /^(.*?): ([\d,.]+) thousand journeys \((\d{4}-\d{2})\)$/.exec(value);
+  if (match) return `${TRANSPORT_SUMMARY_ZH[match[1]] || match[1]}：${match[2]} 千人次（${match[3]}）`;
+  match = /^(.*?): ([\d,.]+) movements \((\d{4}-\d{2})\)(; provisional estimate)?$/.exec(value);
+  if (match) {
+    const estimate = match[4] ? "；临时估计" : "";
+    return `${TRANSPORT_SUMMARY_ZH[match[1]] || match[1]}：${match[2]} 移动次数（${match[3]}）${estimate}`;
+  }
+  match = /^(.*?): ([\d.]+)% occupied \((\d+) observed metered spaces\)$/.exec(value);
+  if (match) {
+    return `${districtZh(match[1])}：${match[2]}% 占用（${match[3]} 个已观测计量车位）`;
+  }
+  match = /^(.*?): ([\d,]+) exact vacant spaces across (\d+) car parks$/.exec(value);
+  if (match) {
+    return `${districtZh(match[1])}：${match[2]} 个确切空置车位（共 ${match[3]} 个停车场）`;
+  }
+  return value;
+}
+
 const HK_TRANSPORT_ZH = {
   title: "香港交通与航空监测",
-  description: "港铁月度客运量（本地/跨境/高铁）、国泰航空及香港国际机场流量、中国上市航空公司运营数据、运输署公共交通/私家车/电动车登记、C&SD跨境移动及容量覆盖停车场占用率数据。",
+  description: "港铁月度客运量（本地/跨境/高铁）、国泰航空及香港国际机场流量、中国上市航空公司运营数据、运输署公共交通/私家车/电动车登记、C&SD跨境移动及传感器停车位占用率数据。",
   cards: {
     mtr_card: { description: "港铁月度总客运量，按本地及跨境服务拆解，并附对比 2019 年月均水平的复苏率。", metricLabels: ["总客运量 (千人次)", "本地 (千人次)", "跨境 (千人次)", "较 2019 年均值"] },
     cathay_card: { description: "国泰集团月度载客人数、载客率及香港国际机场客运量，并附对比 2019 年月均水平的复苏率。", metricLabels: ["国泰乘客人数", "载客率 (%)", "机场乘客人数", "较 2019 年均值"] },
@@ -768,7 +824,7 @@ const HK_TRANSPORT_ZH = {
     net_growth_card: { description: "私家车月度首次登记净额：首次登记总数减运输署报告的累计取消登记数。", metricLabels: ["首次登记总数", "取消登记数", "首次登记净额"] },
     private_car_first_reg_card: { description: "按厂名及燃料类型划分的私家车月度首次登记；电动车占比是当月流量占比，不是累计车队占比。", metricLabels: ["私家车首次登记", "电动车首次登记", "当月电动车占比"] },
     parking_card: { description: "运输署实时停车场空置快照；只把能提供确切数字的车场计入空置车位总数。", metricLabels: ["确切空置车位", "有确切数字的车场", "数据源车场数"] },
-    carpark_occupancy_card: { description: "对同时有确切空置数及容量资料的运输署私家车小时停车场子集计算的容量加权占用率，不代表全部停车场。", metricLabels: ["占用率", "有容量资料的车场", "车位容量"] },
+    carpark_occupancy_card: { description: "对运输署传感器计量停车位计算的观测占用率；底层列示空间清单作为分母，无法匹配状态的空间不会计入。", metricLabels: ["占用率", "有状态空间", "列出空间"] },
   },
   charts: {
     mtr_total_patronage_chart: ["港铁总客运量走势 (2000年至今，千人次)", "26 年月度港铁总客运量数据，完整呈现 2003 年沙士（SARS）冲击（2003 年 4 月低点约 4,880 万人次）及更深、更持久的 2019-22 新冠疫情冲击（2022 年 2 月低点约 7,190 万人次），其后复苏至接近 2019 年疫情前月均水平。", "月份", "千人次"],
@@ -792,13 +848,20 @@ const HK_TRANSPORT_ZH = {
     hk_parking_vacancy_history_chart: ["实时停车位空置——确切空置车位", "按参与的私家车小时停车场数据汇总；只有重复采集形成历史后才显示，无法提供确切数字的空置类型不会计入总数。", "时间", "确切空置车位"],
     mttd_passenger_journeys_chart: ["运输署月报表 2.3 乘客人次 (千人次)", "运输署月报表中的港铁本地、港铁机场/轻铁/接驳及专营巴士月度乘客人次；表 2.3 是对上方表 2.1 综合模式总量的另一组营运商/地区拆解。", "月份", "千人次"],
     censtatd_boundary_movements_chart: ["香港跨境移动——C&SD 表 E705", "月度飞机、客运车辆及货运车辆进出境架/辆次；最新 C&SD 单元可能是临时估计，完整 E705 数据另保留船只及客运火车。", "月份", "移动次数"],
-    td_carpark_occupancy_chart: ["运输署容量覆盖停车场占用率", "仅使用同时有确切空置数及公开容量的私家车小时停车场计算加权占用率；重复轮询后才显示历史，不代表全部停车场。", "时间", "占用率 (%)"],
+    td_carpark_occupancy_chart: ["运输署传感器停车位占用率", "仅使用运输署传感器计量停车位的占用状态及空间清单计算观测占用率；重复轮询后才显示历史，未匹配的状态不会计入分母。", "时间", "占用率 (%)"],
   },
   tables: {
     china_airline_latest_snapshot_table: {
       title: "中国上市航空公司最新运营数据",
       subtitle: "最新可得月份数据，按航空公司及运营地区拆分。",
-      columns: { summary: "航空公司运营摘要" },
+      columns: {
+        airline: "航空公司",
+        region: "运营地区",
+        passengers: "乘客人次（千）",
+        ask: "可用座位公里（千）",
+        rpk: "收入乘客公里（千）",
+        load_factor_pct: "载客率 (%)",
+      },
     },
     hk_private_car_ev_model_table: {
       title: "最新电动车私家车厂名/型号快照",
@@ -821,8 +884,8 @@ const HK_TRANSPORT_ZH = {
       columns: { summary: "移动摘要" },
     },
     td_carpark_occupancy_latest_district_table: {
-      title: "容量覆盖停车场按区占用率",
-      subtitle: "仅列示有容量资料子集的最新按区加权占用率。",
+      title: "传感器停车位按区占用率",
+      subtitle: "列示运输署传感器计量停车位的最新按区观测占用率。",
       columns: { summary: "地区占用率" },
     },
   },
@@ -838,10 +901,10 @@ const HK_TRANSPORT_ZH = {
     hk_private_car_first_reg: "运输署月报表 4.1(e) 私家车按厂名/燃料类型首次登记",
     hk_private_car_first_reg_details: "运输署最新私家车首次登记厂名/型号详情",
     td_parking_vacancy: "运输署实时停车场空置数据",
-    td_carpark_occupancy: "运输署实时停车场空置数据及政府一站式停车场容量资料",
+    td_carpark_occupancy: "运输署传感器计量停车位及实时占用状态",
   },
   snapshotBody: (artifact) => `**数据快照：** \`${artifact.package_info.snapshotId}\` · 生成于 ${artifact.manifest.generatedAt}。`,
-  methodologyBody: "## 如何阅读本 dashboard\n\n港铁客运量按服务类型拆解（本地重铁、跨境及高铁）；机场与国泰数据反映国际与区域航空客货运复苏进度。私家车累计车队电动车占比与每月首次登记电动车占比是两个不同指标。停车位空置数据是运输署当前快照；重复运行采集器后才会形成五分钟级历史，不应把无法提供确切数字的停车场当作零空置。容量覆盖停车场占用率只使用同时有公开容量的子集，不代表全部车场。",
+  methodologyBody: "## 如何阅读本 dashboard\n\n港铁客运量按服务类型拆解（本地重铁、跨境及高铁）；机场与国泰数据反映国际与区域航空客货运复苏进度。私家车累计车队电动车占比与每月首次登记电动车占比是两个不同指标。停车位空置数据是运输署当前快照；重复运行采集器后才会形成五分钟级历史，不应把无法提供确切数字的停车场当作零空置。传感器停车位占用率来自另一组运输署计量车位数据，使用状态已知的空间作为分母，不代表所有停车场。",
   dataLabels: {
     // Cathay's ASK/RPK series are industry-standard aviation acronyms kept
     // in English even in the zh chart title above -- not translated here,
@@ -869,6 +932,15 @@ const HK_TRANSPORT_ZH = {
     },
     china_airline_region_split_history: {
       series: { Domestic: "国内", International: "国际", Regional: "地区" },
+    },
+    china_airline_latest_snapshot: {
+      airline: {
+        "Air China": "中国国航",
+        "China Southern": "南方航空",
+        "China Eastern": "东方航空",
+        "Spring Airlines": "春秋航空",
+      },
+      region: { Domestic: "国内", International: "国际", Regional: "地区", Total: "合计" },
     },
     china_airline_latest_snapshot: {
       airline: { "Air China": "中国国航", "China Eastern": "东方航空", "China Southern": "南方航空", "Spring Airlines": "春秋航空" },
@@ -912,7 +984,10 @@ const HK_TRANSPORT_ZH = {
         "Goods vehicles": "货运车辆",
       },
     },
-    hk_parking_current_district: {},
+    mttd_passenger_journeys_latest: { summary: translateTransportLatestSummary },
+    censtatd_boundary_movements_latest: { summary: translateTransportLatestSummary },
+    td_carpark_occupancy_latest_district: { summary: translateTransportLatestSummary },
+    hk_parking_current_district: { summary: translateTransportLatestSummary },
   },
 };
 
@@ -1613,6 +1688,21 @@ const HK_POPULATION_MIGRATION_ZH = {
     },
     visitor_arrivals_mainland_vs_row: {
       series: { "Mainland China": "中国内地", "Rest of World": "世界其他地区" },
+    },
+    visitor_arrivals_by_region: {
+      region: {
+        "Chinese Mainland": "中国内地",
+        Taiwan: "台湾",
+        Macao: "澳门",
+        "North Asia": "北亚",
+        "South and Southeast Asia": "南亚及东南亚",
+        "Middle East": "中东",
+        Europe: "欧洲",
+        Africa: "非洲",
+        "The Americas": "美洲",
+        "Australia, New Zealand and South Pacific": "澳纽及南太平洋",
+        "Not identified": "未能识别",
+      },
     },
   },
   sources: {
