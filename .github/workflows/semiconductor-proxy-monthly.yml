@@ -1,8 +1,11 @@
-name: Semiconductor Proxy Monthly
+name: Semiconductor Proxy Weekly
 
 on:
   schedule:
-    - cron: "0 10 12-16 * *"
+    # Official Hong Kong and Japan releases do not land on a fixed day each
+    # month. A weekly check avoids missing late-month releases while keeping
+    # the official-source request volume negligible.
+    - cron: "0 10 * * 1"
   workflow_dispatch:
     inputs:
       command:
@@ -155,6 +158,37 @@ jobs:
             fi
             semiconductor-proxy-data --base-dir . $ARGS validate --fail-on-issues
           fi
+
+      - name: Warn on stale official country series
+        if: github.event_name == 'schedule' || github.event.inputs.command == 'update-latest' || github.event.inputs.command == 'backfill' || github.event.inputs.command == 'compare-backup' || github.event.inputs.command == 'validate'
+        run: |
+          python - <<'PY'
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          import pandas as pd
+
+          path = Path("data/normalized/semiconductor_proxies/semiconductor_official_monthly.parquet")
+          frame = pd.read_parquet(path)
+          exports = frame.loc[
+              frame["metric_type"].eq("exports")
+              & frame["partner_scope"].eq("world")
+          ].copy()
+          today = datetime.now(timezone.utc).date()
+          for region in ("hongkong", "japan", "korea"):
+              periods = exports.loc[exports["source_region"].eq(region), "period"].dropna()
+              if periods.empty:
+                  print(f"::warning::No official export observations stored for {region}")
+                  continue
+              latest = pd.Period(str(periods.astype(str).max()), freq="M").end_time.date()
+              age_days = (today - latest).days
+              print(f"official_freshness[{region}]=period:{latest:%Y-%m},age_days:{age_days}")
+              if age_days > 45:
+                  print(
+                      f"::warning::Official {region} export series is {age_days} days stale "
+                      f"(latest period {latest:%Y-%m})"
+                  )
+          PY
 
       - name: Commit dataset changes
         if: github.event_name == 'schedule' || github.event.inputs.command == 'update-latest' || github.event.inputs.command == 'backfill' || github.event.inputs.command == 'compare-backup'
