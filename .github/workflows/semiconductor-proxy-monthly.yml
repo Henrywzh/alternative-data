@@ -86,11 +86,28 @@ jobs:
             exit 1
           fi
 
-      - name: Run scheduled latest update
+      - name: Run scheduled recent-month backfill
         if: github.event_name == 'schedule'
         run: |
           set -euo pipefail
-          semiconductor-proxy-data --base-dir . --sources official --regions japan,korea,hongkong update-latest
+          read -r start_month end_month <<EOF
+          $(python - <<'PY'
+          from datetime import date
+
+          def shift_month(month: date, delta: int) -> date:
+              index = month.year * 12 + month.month - 1 + delta
+              return date(index // 12, index % 12 + 1, 1)
+
+          current_month = date.today().replace(day=1)
+          end = shift_month(current_month, -1)
+          start = shift_month(current_month, -3)
+          print(start.strftime("%Y-%m"), end.strftime("%Y-%m"))
+          PY
+          )
+          EOF
+          echo "Refreshing official semiconductor observations from ${start_month} through ${end_month}"
+          semiconductor-proxy-data --base-dir . --sources official --regions japan,korea,hongkong backfill \
+            --start-month "${start_month}" --end-month "${end_month}"
 
       - name: Run manual latest update
         if: github.event_name == 'workflow_dispatch' && github.event.inputs.command == 'update-latest'
