@@ -90,6 +90,14 @@ CHINESE_LAUNCH_AGENCY_IDS = {
     "Space Pioneer": 1049,
 }
 
+# Launch Library 2 provider IDs used only to enrich the first-party national
+# baseline. They are intentionally separate from CHINESE_LAUNCH_AGENCY_IDS so
+# the existing commercial-provider series keeps its original meaning.
+STATE_LAUNCH_PROVIDER_IDS = {
+    "China Aerospace Science and Technology Corporation": 88,
+    "China Rocket Co. Ltd.": 272,
+}
+
 SEC_SPACE_COMPANIES = {
     "RKLB": {"cik": "0001819994", "name": "Rocket Lab"},
     "ASTS": {"cik": "0001780312", "name": "AST SpaceMobile"},
