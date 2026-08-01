@@ -28,6 +28,7 @@ SSE_SOAQUERY_URL = "https://query.sse.com.cn/commonSoaQuery.do"
 SSE_REFERER = "https://www.sse.com.cn/"
 
 CELESTRAK_URL = "https://celestrak.org/NORAD/elements/gp.php"
+CELESTRAK_SATCAT_URL = "https://celestrak.org/pub/satcat.csv"
 GOOGLE_PATENTS_URL = "https://patents.google.com/xhr/query"
 SZSE_PROJECT_API_URL = "https://listing.szse.cn/api/ras/projectrends/query"
 FAA_COMMERCIAL_SPACE_NUMBERS_URL = "https://www.faa.gov/node/52196"
@@ -36,6 +37,29 @@ OWID_OBJECTS_LAUNCHED_URL = (
     "https://ourworldindata.org/grapher/"
     "yearly-number-of-objects-launched-into-outer-space.csv"
     "?v=1&csvType=full&useColumnShortNames=false"
+)
+WIKIMEDIA_PAGEVIEWS_API_BASE = (
+    "https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article"
+)
+WIKIMEDIA_PAGEVIEWS_START_DATE = "20150701"
+WIKIMEDIA_PAGEVIEWS_AGENTS = ("user", "spider", "automated", "all-agents")
+WIKIMEDIA_PAGEVIEWS_PROJECT = "en.wikipedia.org"
+WIKIMEDIA_PAGEVIEWS_REQUEST_DELAY_SECONDS = 0.75
+
+# Keep the first aerospace attention basket small and explicit. Massviews is
+# used for discovery, but a curated page list is the stable production
+# contract: Wikipedia categories mix companies, laws, missions and unrelated
+# historical pages.
+WIKIMEDIA_AEROSPACE_PAGES = (
+    {"page_id": "spacex", "title": "SpaceX", "label": "SpaceX", "topic_group": "Company"},
+    {"page_id": "starlink", "title": "Starlink", "label": "Starlink", "topic_group": "Constellation"},
+    {"page_id": "rocket_lab", "title": "Rocket Lab", "label": "Rocket Lab", "topic_group": "Company"},
+    {"page_id": "falcon_9", "title": "Falcon 9", "label": "Falcon 9", "topic_group": "Rocket"},
+    {"page_id": "new_glenn", "title": "New Glenn", "label": "New Glenn", "topic_group": "Rocket"},
+    {"page_id": "long_march", "title": "Long March (rocket family)", "label": "Long March", "topic_group": "Rocket"},
+    {"page_id": "chinese_space_program", "title": "Chinese space program", "label": "Chinese space program", "topic_group": "China"},
+    {"page_id": "satellite_constellation", "title": "Satellite constellation", "label": "Satellite constellation", "topic_group": "Constellation"},
+    {"page_id": "commercial_spaceflight", "title": "Commercial spaceflight", "label": "Commercial spaceflight", "topic_group": "Industry"},
 )
 SEC_SUBMISSIONS_URL = "https://data.sec.gov/submissions/CIK{cik}.json"
 SEC_USER_AGENT = os.getenv("SEC_USER_AGENT", "AsiaMarketsData/1.0")

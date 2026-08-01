@@ -899,7 +899,7 @@ function translateTransportLatestSummary(value) {
 
 const HK_TRANSPORT_ZH = {
   title: "香港交通与航空监测",
-  description: "港铁月度客运量（本地/跨境/高铁）、国泰航空及香港国际机场流量、中国上市航空公司运营数据、运输署公共交通/私家车/电动车登记、C&SD跨境移动及传感器停车位占用率数据。",
+  description: "港铁月度客运量（本地/跨境/高铁）、国泰航空及香港国际机场流量、六家中国上市航空公司客运与货运运营数据、运输署公共交通/私家车/电动车登记、C&SD跨境移动及传感器停车位占用率数据。",
   cards: {
     mtr_card: { description: "港铁月度总客运量，按本地及跨境服务拆解，并附对比 2019 年月均水平的复苏率。", metricLabels: ["总客运量 (千人次)", "本地 (千人次)", "跨境 (千人次)", "较 2019 年均值"] },
     cathay_card: { description: "国泰集团月度载客人数、载客率及香港国际机场客运量，并附对比 2019 年月均水平的复苏率。", metricLabels: ["国泰乘客人数", "载客率 (%)", "机场乘客人数", "较 2019 年均值"] },
@@ -917,11 +917,17 @@ const HK_TRANSPORT_ZH = {
     cathay_load_factor_chart: ["国泰集团载客率走势 (%)", "月度载客率——相较于原始载客人数，更能反映国泰自身运力利用率与定价能力，因其已扣除国泰当时投放的运力规模。", "月份", "载客率 (%)"],
     cathay_capacity_demand_chart: ["国泰集团运力与需求对比 (ASK 对比 RPK，千单位)", "可用座位公里（投放运力）与收益乘客公里（实际填补需求）对比——两线差距与旁边载客率图表互为镜像。", "月份", "千单位"],
     hkia_passengers_chart: ["香港国际机场总客运量走势", "香港国际机场（民航处数据）全部航空公司合计的月度总客运量，较国泰专属图表更能反映航空需求的整体水平。", "月份", "乘客人数"],
-    china_airline_passengers_chart: ["中国上市航空公司客运量走势", "中国国航、南方航空、东方航空及春秋航空月度载客人次。", "月份", "乘客人数"],
+    china_airline_passengers_chart: ["六家中国上市航空公司客运量走势", "中国国航、南方航空、东方航空、春秋航空、海航控股及吉祥航空月度载客人次。数据按各公司公告披露的集团/合并运营口径。", "月份", "乘客人数"],
     china_airline_ask_chart: ["中国上市航空公司可用座位公里 (ASK)", "各航空公司月度可用座位公里（投放运力）。", "月份", "千单位"],
     china_airline_rpk_chart: ["中国上市航空公司收入乘客公里 (RPK)", "各航空公司月度收入乘客公里（实际填补需求）。", "月份", "千单位"],
     china_airline_load_factor_chart: ["中国上市航空公司载客率走势", "各航空公司月度载客率，按公司整体运营口径计算。", "月份", "%"],
-    china_airline_region_split_chart: ["中国上市航空公司客运量按地区拆分", "四家航空公司合计客运量，按国内、国际及地区航线拆分；各公司分项数值见下方最新运营数据表。", "月份", "乘客人数"],
+    china_airline_region_split_chart: ["中国上市航空公司客运量按地区拆分", "六家航空公司合计客运量，按国内、国际及地区航线拆分；各公司分项数值见下方最新运营数据表。", "月份", "乘客人数"],
+    china_airline_region_by_carrier_chart: ["中国上市航空公司客运量按航空公司及地区拆分", "按航空公司查看最近九年的月度国内、国际及地区航线客运量；来源留空保持缺失，明确横线则保留为零。", "月份", "乘客人数"],
+    china_airline_cargo_chart: ["中国上市航空公司货邮运量走势", "六家上市航空公司月度货物及邮件数量，统一换算为吨；不同公司公告的货运合并口径可能略有差异。", "月份", "吨"],
+    china_airline_freight_load_factor_chart: ["中国上市航空公司货邮载运率走势", "各公司月度货邮载运率；若官方公告同时披露 RFTK/AFTK，则优先使用公告合计值，否则按统一单位计算。官方源数据超过 100% 的观测保留并视为异常，不作截断。", "月份", "%"],
+    china_airline_fleet_total_chart: ["中国上市航空公司机队规模", "月度运营数据公告明确披露的机队总数；没有披露的月份不使用插值填补。", "月份", "架"],
+    china_airline_fleet_net_change_chart: ["中国上市航空公司机队月度净变化", "公告披露的引进飞机数减退出／退租飞机数；没有事件公告的月份不自动填零。", "月份", "净增飞机"],
+    china_airline_new_route_chart: ["中国上市航空公司新航线事件", "从官方月度公告正文识别的新航线事件月度数量；具体航线文字保留在下方最新事件表。", "月份", "航线事件数"],
     hk_total_transport_journeys_chart: ["香港公共交通乘客人次——全部交通模式 (千人次)", "全港月度乘客人次，涵盖专营巴士、港铁（重铁、机场快线、轻铁）、香港电车、公共小巴、渡轮及的士。", "月份", "千人次"],
     hk_modal_split_chart: ["香港公共交通乘客人次按交通模式拆分 (千人次)", "专营巴士、铁路（港铁重铁 + 机场快线 + 轻铁 + 电车合计）、公共小巴、渡轮及的士。", "月份", "千人次"],
     hk_franchised_bus_operator_chart: ["香港专营巴士乘客人次按营办商拆分 (千人次)", "九巴（运输国际，00062.HK）、城巴、龙运及新大屿山巴士。新巴并入城巴申报后不再单独列示。", "月份", "千人次"],
@@ -937,14 +943,39 @@ const HK_TRANSPORT_ZH = {
   tables: {
     china_airline_latest_snapshot_table: {
       title: "中国上市航空公司最新运营数据",
-      subtitle: "最新可得月份数据，按航空公司及运营地区拆分。",
+      subtitle: "最新可得月份数据，按航空公司及运营地区拆分；“口径”说明公告是集团合并或公司及子公司口径。",
       columns: {
         airline: "航空公司",
+        reporting_scope: "披露口径",
         region: "运营地区",
         passengers: "乘客人次（千）",
         ask: "可用座位公里（千）",
         rpk: "收入乘客公里（千）",
         load_factor_pct: "载客率 (%)",
+      },
+    },
+    china_airline_cargo_latest_snapshot_table: {
+      title: "中国上市航空公司最新货运数据",
+      subtitle: "最新可得月份的货邮量、货运运力/周转量及载运率；单位已按公司公告换算并保留来源异常值。",
+      columns: {
+        airline: "航空公司",
+        reporting_scope: "披露口径",
+        cargo_tonnes: "货物／邮件（吨）",
+        aftk: "AFTK（百万吨公里）",
+        rftk: "RFTK（百万吨公里）",
+        freight_load_factor_pct: "货邮载运率 (%)",
+        overall_load_factor_pct: "综合载运率 (%)",
+      },
+    },
+    china_airline_operating_events_latest_table: {
+      title: "中国上市航空公司最新机队／航线事件",
+      subtitle: "最新月度公告中识别出的机队及新航线事件；保留来源摘要，不将事件误读为连续运营序列。",
+      columns: {
+        airline: "航空公司",
+        reporting_scope: "披露口径",
+        event_type: "事件类型",
+        value: "数值",
+        detail: "来源摘要",
       },
     },
     hk_private_car_ev_model_table: {
@@ -976,7 +1007,7 @@ const HK_TRANSPORT_ZH = {
   sources: {
     mtr_patronage: "港铁公司投资者关系月度客运量",
     cathay_hkia_traffic: "民航处香港国际机场月度流量 & 国泰航空数据",
-    china_airline_traffic: "中国国航、南方航空、东方航空及春秋航空月度运营数据公告",
+    china_airline_traffic: "六家中国上市航空公司月度运营数据公告（巨潮资讯）",
     hk_passenger_journeys: "运输署《公共交通及运输月报》表 2.1",
     mttd_passenger_journeys: "运输署《公共交通及运输月报》表 2.3",
     censtatd_boundary_movements: "政府统计处表 E705 跨境飞机、船只、车辆及火车移动",
@@ -988,7 +1019,7 @@ const HK_TRANSPORT_ZH = {
     td_carpark_occupancy: "运输署传感器计量停车位及实时占用状态",
   },
   snapshotBody: (artifact) => `**数据快照：** \`${artifact.package_info.snapshotId}\` · 生成于 ${artifact.manifest.generatedAt}。`,
-  methodologyBody: "## 如何阅读本 dashboard\n\n港铁客运量按服务类型拆解（本地重铁、跨境及高铁）；机场与国泰数据反映国际与区域航空客货运复苏进度。私家车累计车队电动车占比与每月首次登记电动车占比是两个不同指标。停车位空置数据是运输署当前快照；重复运行采集器后才会形成五分钟级历史，不应把无法提供确切数字的停车场当作零空置。传感器停车位占用率来自另一组运输署计量车位数据，使用状态已知的空间作为分母，不代表所有停车场。",
+  methodologyBody: "## 如何阅读本 dashboard\n\n港铁客运量按服务类型拆解（本地重铁、跨境及高铁）；机场与国泰数据反映国际与区域航空客货运复苏进度。中国上市航司按公告披露的集团／合并口径展示客运、货运及稀疏的机队／新航线事件；事件层没有公告的月份不自动补零。海航为集团合并且包括八家运营航司，吉祥含九元航空。私家车累计车队电动车占比与每月首次登记电动车占比是两个不同指标。停车位空置数据是运输署当前快照；重复运行采集器后才会形成五分钟级历史，不应把无法提供确切数字的停车场当作零空置。传感器停车位占用率来自另一组运输署计量车位数据，使用状态已知的空间作为分母，不代表所有停车场。",
   dataLabels: {
     // Cathay's ASK/RPK series are industry-standard aviation acronyms kept
     // in English even in the zh chart title above -- not translated here,
@@ -1003,19 +1034,59 @@ const HK_TRANSPORT_ZH = {
       },
     },
     china_airline_passengers_history: {
-      series: { CS: "南方航空", AC: "中国国航", CE: "东方航空", Spring: "春秋航空" },
+      series: { CS: "南方航空", AC: "中国国航", CE: "东方航空", Spring: "春秋航空", Hainan: "海航控股", Juneyao: "吉祥航空" },
     },
     china_airline_load_factor_history: {
-      series: { CS: "南方航空", AC: "中国国航", CE: "东方航空", Spring: "春秋航空" },
+      series: { CS: "南方航空", AC: "中国国航", CE: "东方航空", Spring: "春秋航空", Hainan: "海航控股", Juneyao: "吉祥航空" },
     },
     china_airline_ask_history: {
-      series: { CS: "南方航空", AC: "中国国航", CE: "东方航空", Spring: "春秋航空" },
+      series: { CS: "南方航空", AC: "中国国航", CE: "东方航空", Spring: "春秋航空", Hainan: "海航控股", Juneyao: "吉祥航空" },
     },
     china_airline_rpk_history: {
-      series: { CS: "南方航空", AC: "中国国航", CE: "东方航空", Spring: "春秋航空" },
+      series: { CS: "南方航空", AC: "中国国航", CE: "东方航空", Spring: "春秋航空", Hainan: "海航控股", Juneyao: "吉祥航空" },
     },
     china_airline_region_split_history: {
       series: { Domestic: "国内", International: "国际", Regional: "地区" },
+    },
+    china_airline_region_by_carrier_history: {
+      series: {
+        "AC · Domestic": "中国国航 · 国内", "AC · International": "中国国航 · 国际", "AC · Regional": "中国国航 · 地区",
+        "CS · Domestic": "南方航空 · 国内", "CS · International": "南方航空 · 国际", "CS · Regional": "南方航空 · 地区",
+        "CE · Domestic": "东方航空 · 国内", "CE · International": "东方航空 · 国际", "CE · Regional": "东方航空 · 地区",
+        "Spring · Domestic": "春秋航空 · 国内", "Spring · International": "春秋航空 · 国际", "Spring · Regional": "春秋航空 · 地区",
+        "Hainan · Domestic": "海航控股 · 国内", "Hainan · International": "海航控股 · 国际", "Hainan · Regional": "海航控股 · 地区",
+        "Juneyao · Domestic": "吉祥航空 · 国内", "Juneyao · International": "吉祥航空 · 国际", "Juneyao · Regional": "吉祥航空 · 地区",
+      },
+    },
+    china_airline_cargo_history: {
+      series: {
+        AC: "中国国航", CS: "南方航空", CE: "东方航空", Spring: "春秋航空",
+        Hainan: "海航控股", Juneyao: "吉祥航空",
+      },
+    },
+    china_airline_freight_load_factor_history: {
+      series: {
+        AC: "中国国航", CS: "南方航空", CE: "东方航空", Spring: "春秋航空",
+        Hainan: "海航控股", Juneyao: "吉祥航空",
+      },
+    },
+    china_airline_fleet_total_history: {
+      series: {
+        AC: "中国国航", CS: "南方航空", CE: "东方航空", Spring: "春秋航空",
+        Hainan: "海航控股", Juneyao: "吉祥航空",
+      },
+    },
+    china_airline_fleet_net_change_history: {
+      series: {
+        AC: "中国国航", CS: "南方航空", CE: "东方航空", Spring: "春秋航空",
+        Hainan: "海航控股", Juneyao: "吉祥航空",
+      },
+    },
+    china_airline_new_route_history: {
+      series: {
+        AC: "中国国航", CS: "南方航空", CE: "东方航空", Spring: "春秋航空",
+        Hainan: "海航控股", Juneyao: "吉祥航空",
+      },
     },
     china_airline_latest_snapshot: {
       airline: {
@@ -1023,12 +1094,59 @@ const HK_TRANSPORT_ZH = {
         "China Southern": "南方航空",
         "China Eastern": "东方航空",
         "Spring Airlines": "春秋航空",
+        "Hainan Airlines Holdings": "海航控股",
+        "Juneyao Airlines": "吉祥航空",
+      },
+      reporting_scope: {
+        "Group-consolidated operating data": "集团合并运营数据",
+        "Company and subsidiaries": "公司及子公司",
+        "Hainan group consolidated; includes eight operating carriers": "海航集团合并；包括八家运营航司",
+        "Company and Jiuyuan Airlines consolidated": "公司及九元航空合并",
       },
       region: { Domestic: "国内", International: "国际", Regional: "地区", Total: "合计" },
     },
     china_airline_latest_snapshot: {
-      airline: { "Air China": "中国国航", "China Eastern": "东方航空", "China Southern": "南方航空", "Spring Airlines": "春秋航空" },
+      airline: {
+        "Air China": "中国国航", "China Eastern": "东方航空", "China Southern": "南方航空",
+        "Spring Airlines": "春秋航空", "Hainan Airlines Holdings": "海航控股", "Juneyao Airlines": "吉祥航空",
+      },
+      reporting_scope: {
+        "Group-consolidated operating data": "集团合并运营数据",
+        "Company and subsidiaries": "公司及子公司",
+        "Hainan group consolidated; includes eight operating carriers": "海航集团合并；包括八家运营航司",
+        "Company and Jiuyuan Airlines consolidated": "公司及九元航空合并",
+      },
       region: { Domestic: "国内", International: "国际", Regional: "地区", Total: "合计" },
+    },
+    china_airline_cargo_latest_snapshot: {
+      airline: {
+        "Air China": "中国国航", "China Eastern": "东方航空", "China Southern": "南方航空",
+        "Spring Airlines": "春秋航空", "Hainan Airlines Holdings": "海航控股", "Juneyao Airlines": "吉祥航空",
+      },
+      reporting_scope: {
+        "Group-consolidated operating data": "集团合并运营数据",
+        "Company and subsidiaries": "公司及子公司",
+        "Hainan group consolidated; includes eight operating carriers": "海航集团合并；包括八家运营航司",
+        "Company and Jiuyuan Airlines consolidated": "公司及九元航空合并",
+      },
+    },
+    china_airline_operating_events_latest: {
+      airline: {
+        "Air China": "中国国航", "China Eastern": "东方航空", "China Southern": "南方航空",
+        "Spring Airlines": "春秋航空", "Hainan Airlines Holdings": "海航控股", "Juneyao Airlines": "吉祥航空",
+      },
+      reporting_scope: {
+        "Group-consolidated operating data": "集团合并运营数据",
+        "Company and subsidiaries": "公司及子公司",
+        "Hainan group consolidated; includes eight operating carriers": "海航集团合并；包括八家运营航司",
+        "Company and Jiuyuan Airlines consolidated": "公司及九元航空合并",
+      },
+      event_type: {
+        fleet_added_aircraft: "引进飞机",
+        fleet_retired_aircraft: "退出／退租飞机",
+        fleet_total_aircraft: "机队总数",
+        new_route_event_count: "新航线事件数",
+      },
     },
     hk_total_transport_journeys_history: {
       series: { Total: "总计" },
@@ -1645,7 +1763,7 @@ async function deliverPortable({ deliverPortableArtifact, buildPortableArtifact,
 
 const HK_COMMERCIAL_AEROSPACE_ZH = {
   title: "香港商业航天监测",
-  description: "上交所科创板 IPO 审核状态、Launch Library 2 发射频次、Celestrak 低轨卫星星座数量及商业航天企业专利申请统计。",
+  description: "上交所科创板 IPO 审核状态、Launch Library 2 发射频次、Celestrak 低轨卫星星座数量、商业航天企业专利申请及 Wikipedia 关注度。",
   cards: {
     ipo_race_card: { description: "头部商业火箭企业上交所科创板 IPO 审核状态。", metricLabels: ["蓝箭航天状态", "蓝箭审核号", "中科宇航状态", "中科宇航审核号"] },
     constellations_card: { description: "Celestrak 低轨卫星星座在轨卫星追踪数量。", metricLabels: ["千帆星座 (在轨数)", "吉林一号 (在轨数)", "商业发射总次数"] },
@@ -1659,6 +1777,10 @@ const HK_COMMERCIAL_AEROSPACE_ZH = {
     china_launch_family_chart: ["按火箭系列统计的已核验发射次数", "按标准化火箭系列统计逐次发射；统计的是火箭发射次数，不是卫星或有效载荷数量。", "火箭系列", "发射次数", "项目类别"],
     satellite_history_chart: ["中国商业卫星星座追踪历史", "Celestrak 每日快照；当前历史仍是较短的已收集序列，追踪目标不一定等同于正在运行的卫星。", "日期", "追踪目标数", "星座"],
     global_space_benchmark_chart: ["全球进入太空的物体数量", "基于 UNOOSA 的年度全球总量，并列显示中国和美国；统计的是物体/有效载荷，不是火箭发射次数。", "年份", "物体数量", "地区"],
+    global_object_catalog_monthly_chart: ["全球已编目空间物体发射（月度）", "Celestrak SATCAT 按发射日期统计的最新十年月度序列；Payload 最接近 UNOOSA 基准，火箭体、碎片和未知物体单独列出，不能与 UNOOSA 注册物体直接等同。", "月份", "已编目物体数", "物体类型"],
+    wikipedia_attention_agent_weekly_chart: ["航天 Wikipedia 关注度：按周", "从每日访问量汇总的完整周一至周日数据；显示最近 500 个完整周，精选英文 Wikipedia 航天页面篮子按用户、搜索引擎爬虫、自动化程序及全部代理流量分开显示，当前未完成周不纳入。", "周起始日", "页面访问量", "流量代理"],
+    wikipedia_attention_agent_monthly_chart: ["航天 Wikipedia 关注度：按流量代理", "按精选英文 Wikipedia 航天页面篮子汇总的月度访问量；用户、搜索引擎爬虫、自动化程序及全部代理流量分开显示。", "月份", "页面访问量", "流量代理"],
+    wikipedia_user_attention_monthly_chart: ["航天 Wikipedia 用户访问量：按页面", "精选英文 Wikipedia 航天页面篮子的月度用户访问量；展示可用历史中的最近十年。", "月份", "用户页面访问量", "Wikipedia 页面"],
   },
   tables: {
     ipo_race_table: {
@@ -1706,6 +1828,11 @@ const HK_COMMERCIAL_AEROSPACE_ZH = {
       subtitle: "官方证券披露事件流；目前仅使用 filing metadata，不推断订单或融资金额。",
       columns: { ticker: "代码", company_name: "公司", form: "表格类型", filing_date: "提交日期", primary_doc_description: "文件说明", filing_url: "披露文件" },
     },
+    wikipedia_attention_latest_table: {
+      title: "最新 Wikipedia 航天关注度：按页面及流量代理",
+      subtitle: "精选英文 Wikipedia 页面篮子的最新完整月份及过去 12 个月访问量；用户及自动化访问量不是独立人数。",
+      columns: { page_label: "Wikipedia 页面", topic_group: "主题类别", agent: "流量代理", latest_month: "最新月份", latest_views: "最新访问量", trailing_12m_views: "过去 12 个月访问量" },
+    },
   },
   dataLabels: {
     launch_cadence: {
@@ -1737,6 +1864,44 @@ const HK_COMMERCIAL_AEROSPACE_ZH = {
     global_space_benchmark: {
       entity: { World: "全球", China: "中国", "United States": "美国" },
     },
+    global_object_catalog_monthly: {
+      object_type: { Payload: "有效载荷", "Rocket body": "火箭体", Debris: "碎片", Unknown: "未知" },
+    },
+    wikipedia_attention_agent_monthly: {
+      agent: { user: "用户", spider: "搜索引擎爬虫", automated: "自动化程序", "all-agents": "全部代理" },
+    },
+    wikipedia_attention_agent_weekly: {
+      agent: { user: "用户", spider: "搜索引擎爬虫", automated: "自动化程序", "all-agents": "全部代理" },
+    },
+    wikipedia_user_attention_monthly: {
+      topic_group: { Company: "公司", Constellation: "星座", Rocket: "火箭", China: "中国", Industry: "行业" },
+      page_label: {
+        SpaceX: "SpaceX",
+        Starlink: "星链",
+        "Rocket Lab": "火箭实验室",
+        "Falcon 9": "猎鹰9号",
+        "New Glenn": "新格伦",
+        "Long March": "长征系列运载火箭",
+        "Chinese space program": "中国航天计划",
+        "Satellite constellation": "卫星星座",
+        "Commercial spaceflight": "商业航天",
+      },
+    },
+    wikipedia_attention_latest: {
+      agent: { user: "用户", spider: "搜索引擎爬虫", automated: "自动化程序", "all-agents": "全部代理" },
+      topic_group: { Company: "公司", Constellation: "星座", Rocket: "火箭", China: "中国", Industry: "行业" },
+      page_label: {
+        SpaceX: "SpaceX",
+        Starlink: "星链",
+        "Rocket Lab": "火箭实验室",
+        "Falcon 9": "猎鹰9号",
+        "New Glenn": "新格伦",
+        "Long March": "长征系列运载火箭",
+        "Chinese space program": "中国航天计划",
+        "Satellite constellation": "卫星星座",
+        "Commercial spaceflight": "商业航天",
+      },
+    },
   },
   sources: {
     sse_star_market_ipo: "上交所科创板 IPO 审核状态",
@@ -1750,6 +1915,8 @@ const HK_COMMERCIAL_AEROSPACE_ZH = {
     usaspending_contracts: "美国联邦合同支出数据库",
     sec_space_company_filings: "美国证券交易委员会公司披露",
     global_space_benchmark: "UNOOSA / Our World in Data 全球太空活动基准",
+    global_object_catalog: "Celestrak SATCAT 全球空间物体编目",
+    wikimedia_pageviews: "Wikimedia Wikipedia 页面访问量",
   },
   snapshotBody: (artifact) =>
     `**数据快照：** \`${artifact.package_info.snapshotId}\` · 生成于 ${artifact.manifest.generatedAt}。`,

@@ -1,0 +1,31 @@
+{
+  "dataset": "wikimedia_aerospace_pageviews_weekly",
+  "source": "Wikimedia Pageviews API",
+  "source_url": "https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article",
+  "project": "en.wikipedia.org",
+  "pages": [
+    "SpaceX",
+    "Starlink",
+    "Rocket Lab",
+    "Falcon 9",
+    "New Glenn",
+    "Long March (rocket family)",
+    "Chinese space program",
+    "Satellite constellation",
+    "Commercial spaceflight"
+  ],
+  "agents": [
+    "user",
+    "spider",
+    "automated",
+    "all-agents"
+  ],
+  "grain": "Curated Wikipedia aerospace page basket × agent × complete Monday-Sunday week",
+  "history_start": "2015-06-29",
+  "history_end": "2026-07-20",
+  "records": 2312,
+  "source_status": "live",
+  "source_granularity": "daily",
+  "caveat": "Weekly totals are derived from daily page loads; they are not unique people or domestic mainland-China demand.",
+  "fetched_at": "2026-08-01T20:55:40.765464+00:00"
+}

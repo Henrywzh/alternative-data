@@ -39,6 +39,19 @@ from src.hk_commercial_aerospace.sources.szse_ipo_status import fetch_aerospace_
 from src.hk_commercial_aerospace.sources.faa_commercial_space import fetch_faa_commercial_space_kpis
 from src.hk_commercial_aerospace.sources.usaspending import fetch_commercial_space_contracts
 from src.hk_commercial_aerospace.sources.global_space_benchmark import fetch_global_objects_launched
+from src.hk_commercial_aerospace.sources.global_object_catalog import (
+    build_monthly_catalog_summary,
+    fetch_celestrak_satcat,
+    persist_monthly_summary,
+)
+from src.hk_commercial_aerospace.sources.wikimedia_pageviews import (
+    build_agent_monthly_summary,
+    build_agent_weekly_summary,
+    build_latest_page_agent_summary,
+    build_user_page_monthly_summary,
+    fetch_wikipedia_aerospace_pageviews,
+    fetch_wikipedia_aerospace_pageviews_daily,
+)
 from src.hk_commercial_aerospace.sources.sec_space_companies import fetch_sec_space_company_filings
 from src.hk_commercial_aerospace.config import (
     HK_AEROSPACE_WATCHLIST,
@@ -46,6 +59,8 @@ from src.hk_commercial_aerospace.config import (
     IPO_RACE_COMPANIES,
     CHINESE_LAUNCH_AGENCIES,
 )
+
+WIKIMEDIA_WEEKLY_ARTIFACT_WEEKS = 500
 
 PUBLIC_SOURCES = {
     "sse_star_market_ipo": {
@@ -189,6 +204,32 @@ PUBLIC_SOURCES = {
             "language": "CSV",
             "sql": "SELECT entity, year, objects_launched FROM global_space_benchmark;",
             "description": "Annual objects launched for World, China and the United States. This is payload/object activity, not rocket launch count.",
+        },
+    },
+    "global_object_catalog": {
+        "id": "global_object_catalog",
+        "label": "CelesTrak SATCAT Global Object Launch Catalog",
+        "href": "https://celestrak.org/satcat/",
+        "path": "sources/global_object_catalog.sql",
+        "query": {
+            "engine": "CelesTrak SATCAT CSV",
+            "url": "https://celestrak.org/pub/satcat.csv",
+            "language": "CSV",
+            "sql": "SELECT launch_month, object_type, object_count FROM global_object_catalog_monthly;",
+            "description": "Monthly counts derived from catalogued objects with known launch dates; payloads are closest to the UNOOSA object definition, while rocket bodies, debris and unknown objects remain separate.",
+        },
+    },
+    "wikimedia_pageviews": {
+        "id": "wikimedia_pageviews",
+        "label": "Wikimedia Wikipedia Pageviews",
+        "href": "https://pageviews.wmcloud.org/",
+        "path": "sources/wikimedia_pageviews.sql",
+        "query": {
+            "engine": "Wikimedia Analytics Pageviews REST API",
+            "url": "https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article",
+            "language": "REST",
+            "sql": "SELECT page_id, agent, date, views FROM wikimedia_aerospace_pageviews_daily;",
+            "description": "Daily English Wikipedia pageviews for a curated aerospace page basket, aggregated into monthly and complete Monday-Sunday weekly views; user, search-engine spider, automated and all-agent traffic remain separate.",
         },
     },
 }
@@ -534,6 +575,12 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
     contracts_df = empty_source_frame
     sec_filings_df = empty_source_frame
     global_benchmark_df = empty_source_frame
+    global_object_catalog_df = empty_source_frame
+    global_object_catalog_source = "unavailable"
+    wikipedia_pageviews_df = empty_source_frame
+    wikipedia_pageviews_source = "unavailable"
+    wikipedia_pageviews_daily_df = empty_source_frame
+    wikipedia_pageviews_daily_source = "unavailable"
     try:
         faa_df = fetch_faa_commercial_space_kpis()
     except Exception as e:
@@ -550,6 +597,41 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
         global_benchmark_df = fetch_global_objects_launched()
     except Exception as e:
         print(f"Warning: Global benchmark fetch failed - {e}")
+    try:
+        satcat_objects_df = fetch_celestrak_satcat()
+        global_object_catalog_source = satcat_objects_df.attrs.get("source", "unavailable")
+        if not satcat_objects_df.empty:
+            global_object_catalog_df = build_monthly_catalog_summary(satcat_objects_df, lookback_months=120)
+            persist_monthly_summary(
+                global_object_catalog_df,
+                fetched_at=satcat_objects_df.attrs.get("fetched_at"),
+            )
+    except Exception as e:
+        print(f"Warning: Global object catalog fetch failed - {e}")
+    try:
+        wikipedia_pageviews_df = fetch_wikipedia_aerospace_pageviews()
+        wikipedia_pageviews_source = wikipedia_pageviews_df.attrs.get("source", "unavailable")
+    except Exception as e:
+        print(f"Warning: Wikimedia pageviews fetch failed - {e}")
+    try:
+        wikipedia_pageviews_daily_df = fetch_wikipedia_aerospace_pageviews_daily()
+        wikipedia_pageviews_daily_source = wikipedia_pageviews_daily_df.attrs.get("source", "unavailable")
+    except Exception as e:
+        print(f"Warning: Wikimedia daily pageviews fetch failed - {e}")
+
+    wikipedia_agent_monthly_df = build_agent_monthly_summary(wikipedia_pageviews_df)
+    wikipedia_user_page_monthly_df = build_user_page_monthly_summary(wikipedia_pageviews_df)
+    wikipedia_latest_page_agent_df = build_latest_page_agent_summary(wikipedia_pageviews_df)
+    wikipedia_agent_weekly_df = wikipedia_pageviews_daily_df.attrs.get("weekly_summary")
+    if not isinstance(wikipedia_agent_weekly_df, pd.DataFrame):
+        wikipedia_agent_weekly_df = build_agent_weekly_summary(wikipedia_pageviews_daily_df)
+    if not wikipedia_agent_weekly_df.empty:
+        weekly_periods = sorted(wikipedia_agent_weekly_df["week"].dropna().unique())
+        if len(weekly_periods) > WIKIMEDIA_WEEKLY_ARTIFACT_WEEKS:
+            first_display_week = weekly_periods[-WIKIMEDIA_WEEKLY_ARTIFACT_WEEKS]
+            wikipedia_agent_weekly_df = wikipedia_agent_weekly_df[
+                wikipedia_agent_weekly_df["week"].ge(first_display_week)
+            ].reset_index(drop=True)
     # 6. HK-listed Watchlist
     watchlist_rows = []
     for ticker, desc in HK_AEROSPACE_WATCHLIST.items():
@@ -591,6 +673,11 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
         "usaspending_contracts": contracts_df.to_dict(orient="records") if not contracts_df.empty else [],
         "sec_space_filings": sec_filings_df.to_dict(orient="records") if not sec_filings_df.empty else [],
         "global_space_benchmark": global_benchmark_df.to_dict(orient="records") if not global_benchmark_df.empty else [],
+        "global_object_catalog_monthly": global_object_catalog_df.to_dict(orient="records") if not global_object_catalog_df.empty else [],
+        "wikipedia_attention_agent_monthly": wikipedia_agent_monthly_df.to_dict(orient="records") if not wikipedia_agent_monthly_df.empty else [],
+        "wikipedia_attention_agent_weekly": wikipedia_agent_weekly_df.to_dict(orient="records") if not wikipedia_agent_weekly_df.empty else [],
+        "wikipedia_user_attention_monthly": wikipedia_user_page_monthly_df.to_dict(orient="records") if not wikipedia_user_page_monthly_df.empty else [],
+        "wikipedia_attention_latest": wikipedia_latest_page_agent_df.to_dict(orient="records") if not wikipedia_latest_page_agent_df.empty else [],
         "aerospace_watchlist": watchlist_rows,
         "policy_milestones": policy_rows,
         "kpi_summary": [{
@@ -743,9 +830,70 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
             "dataset": "global_space_benchmark",
             "sourceId": "global_space_benchmark",
             "encodings": {
-                "x": {"field": "year", "type": "ordinal", "label": "Year"},
+                "x": {"field": "year", "type": "nominal", "label": "Year"},
                 "y": {"field": "objects_launched", "type": "quantitative", "label": "Objects"},
                 "color": {"field": "entity", "type": "nominal", "label": "Entity"},
+            },
+            "valueFormat": "number",
+            "layout": "full",
+        },
+        {
+            "id": "global_object_catalog_monthly_chart",
+            "title": "Global Cataloged Objects Launched by Month",
+            "subtitle": "CelesTrak SATCAT launch-date counts, shown for the latest ten years. Payloads are closest to the UNOOSA benchmark; rocket bodies, debris and unknown objects are separate catalogue classes and are not equivalent to registered objects.",
+            "type": "line",
+            "dataset": "global_object_catalog_monthly",
+            "sourceId": "global_object_catalog",
+            "encodings": {
+                "x": {"field": "month", "type": "temporal", "label": "Month"},
+                "y": {"field": "object_count", "type": "quantitative", "label": "Cataloged Objects"},
+                "color": {"field": "object_type", "type": "nominal", "label": "Object Type"},
+            },
+            "valueFormat": "number",
+            "layout": "full",
+        },
+        {
+            "id": "wikipedia_attention_agent_weekly_chart",
+            "title": "Aerospace Wikipedia Attention by Week",
+            "subtitle": "Latest 500 complete Monday-Sunday weeks derived from daily views across the curated English Wikipedia aerospace page basket; the current partial week is excluded. The monthly chart retains the longer history.",
+            "type": "line",
+            "dataset": "wikipedia_attention_agent_weekly",
+            "sourceId": "wikimedia_pageviews",
+            "encodings": {
+                "x": {"field": "week", "type": "temporal", "label": "Week starting"},
+                "y": {"field": "views", "type": "quantitative", "label": "Pageviews"},
+                "color": {"field": "agent", "type": "nominal", "label": "Traffic Agent"},
+            },
+            "valueFormat": "number",
+            "layout": "full",
+            "maxRows": 2500,
+        },
+        {
+            "id": "wikipedia_attention_agent_monthly_chart",
+            "title": "Aerospace Wikipedia Attention by Traffic Agent",
+            "subtitle": "Monthly views summed across the curated English Wikipedia aerospace page basket; user, search-engine spider, automated and all-agent traffic remain separate.",
+            "type": "line",
+            "dataset": "wikipedia_attention_agent_monthly",
+            "sourceId": "wikimedia_pageviews",
+            "encodings": {
+                "x": {"field": "month", "type": "temporal", "label": "Month"},
+                "y": {"field": "views", "type": "quantitative", "label": "Pageviews"},
+                "color": {"field": "agent", "type": "nominal", "label": "Traffic Agent"},
+            },
+            "valueFormat": "number",
+            "layout": "full",
+        },
+        {
+            "id": "wikipedia_user_attention_monthly_chart",
+            "title": "Aerospace Wikipedia User Views by Page",
+            "subtitle": "Monthly user pageviews for the curated English Wikipedia aerospace basket; latest-ten-year history where available.",
+            "type": "line",
+            "dataset": "wikipedia_user_attention_monthly",
+            "sourceId": "wikimedia_pageviews",
+            "encodings": {
+                "x": {"field": "month", "type": "temporal", "label": "Month"},
+                "y": {"field": "views", "type": "quantitative", "label": "User Pageviews"},
+                "color": {"field": "page_label", "type": "nominal", "label": "Wikipedia Page"},
             },
             "valueFormat": "number",
             "layout": "full",
@@ -901,6 +1049,23 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
                 {"field": "filing_url", "label": "Filing", "type": "text"},
             ],
         },
+        {
+            "id": "wikipedia_attention_latest_table",
+            "title": "Latest Wikipedia Aerospace Attention by Page and Agent",
+            "subtitle": "Latest complete month and trailing-12-month pageviews for the curated English Wikipedia basket; user and automated traffic are not unique people.",
+            "dataset": "wikipedia_attention_latest",
+            "sourceId": "wikimedia_pageviews",
+            "density": "dense",
+            "layout": "full",
+            "columns": [
+                {"field": "page_label", "label": "Wikipedia Page", "type": "text"},
+                {"field": "topic_group", "label": "Topic Group", "type": "text"},
+                {"field": "agent", "label": "Traffic Agent", "type": "text"},
+                {"field": "latest_month", "label": "Latest Month", "type": "text"},
+                {"field": "latest_views", "label": "Latest Views", "type": "number"},
+                {"field": "trailing_12m_views", "label": "Trailing 12M Views", "type": "number"},
+            ],
+        },
     ]
 
     manifest_sources = list(PUBLIC_SOURCES.values())
@@ -1002,6 +1167,35 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
             "freshness": "live" if not global_benchmark_df.empty else "unavailable",
             "latest_observation": _latest_observation(global_benchmark_df.to_dict(orient="records"), "year", data_as_of if not global_benchmark_df.empty else None),
         },
+        "global_object_catalog": {
+            "status": "success" if not global_object_catalog_df.empty else "degraded",
+            "records": len(global_object_catalog_df),
+            "freshness": "live" if global_object_catalog_source == "live" else "unavailable",
+            "latest_observation": _latest_observation(
+                global_object_catalog_df.to_dict(orient="records") if not global_object_catalog_df.empty else [],
+                "month",
+                data_as_of if not global_object_catalog_df.empty else None,
+            ),
+        },
+        "wikimedia_pageviews": {
+            "status": "success" if wikipedia_pageviews_source == "live" and wikipedia_pageviews_daily_source == "live" else "degraded",
+            "records": len(wikipedia_pageviews_df) + len(wikipedia_pageviews_daily_df),
+            "freshness": (
+                "live" if wikipedia_pageviews_source == "live" and wikipedia_pageviews_daily_source == "live"
+                else "stale" if wikipedia_pageviews_source in {"partial", "cache"} or wikipedia_pageviews_daily_source in {"partial", "cache"}
+                else "unavailable"
+            ),
+            "latest_observation": max(
+                _latest_observation(
+                    wikipedia_pageviews_df.to_dict(orient="records") if not wikipedia_pageviews_df.empty else [],
+                    "month",
+                ) or "",
+                _latest_observation(
+                    wikipedia_pageviews_daily_df.to_dict(orient="records") if not wikipedia_pageviews_daily_df.empty else [],
+                    "date",
+                ) or "",
+            ) or None,
+        },
     }
 
     status_entries = [
@@ -1062,8 +1256,9 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
                 "The launch comparison uses first-party Long March/Jielong records as the inclusion baseline and keeps "
                 "the existing exact-provider commercial series separate; Launch Library 2 only enriches matched official events. "
                 "Guowang (SatNet) Celestrak identifiers remain unresolved and are tracked as a documented data gap. "
-                "This monitor tracks regulatory filings, launch cadence, constellation counts, and HK-listed "
-                "supply-chain tickers. No stock recommendation is produced."
+                "This monitor tracks regulatory filings, launch cadence, constellation counts, HK-listed "
+                "supply-chain tickers and Wikipedia pageview attention. Wikipedia views are page loads, not "
+                "unique people or domestic mainland-China demand. No stock recommendation is produced."
             ),
         },
     ])
@@ -1081,6 +1276,15 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
         blocks.append({"id": "sec_space_filings_table_block", "type": "table", "tableId": "sec_space_filings_table"})
     if not global_benchmark_df.empty:
         blocks.append({"id": "global_space_benchmark_chart_block", "type": "chart", "chartId": "global_space_benchmark_chart"})
+    if not global_object_catalog_df.empty:
+        blocks.append({"id": "global_object_catalog_monthly_chart_block", "type": "chart", "chartId": "global_object_catalog_monthly_chart"})
+    if not wikipedia_pageviews_df.empty or not wikipedia_agent_weekly_df.empty:
+        blocks.extend([
+            {"id": "wikipedia_attention_agent_weekly_chart_block", "type": "chart", "chartId": "wikipedia_attention_agent_weekly_chart"},
+            {"id": "wikipedia_attention_agent_monthly_chart_block", "type": "chart", "chartId": "wikipedia_attention_agent_monthly_chart"},
+            {"id": "wikipedia_user_attention_monthly_chart_block", "type": "chart", "chartId": "wikipedia_user_attention_monthly_chart"},
+            {"id": "wikipedia_attention_latest_table_block", "type": "table", "tableId": "wikipedia_attention_latest_table"},
+        ])
 
     artifact = {
         "surface": "dashboard",
@@ -1088,7 +1292,7 @@ def build_artifact(*, now: datetime | None = None) -> tuple[dict[str, Any], dict
             "version": 1,
             "surface": "dashboard",
             "title": "Hong Kong Commercial Aerospace Sector Monitor",
-            "description": "Official Chinese Long March/Jielong launch baseline, Launch Library 2 commercial and enrichment data, Celestrak satellite counts, IPO status, and broader commercial-space indicators.",
+            "description": "Official Chinese Long March/Jielong launch baseline, Launch Library 2 commercial and enrichment data, Celestrak satellite counts, Wikimedia Wikipedia attention, IPO status, and broader commercial-space indicators.",
             "sector": "hk-commercial-aerospace",
             "generatedAt": generated_at,
             "dataAsOf": data_as_of,

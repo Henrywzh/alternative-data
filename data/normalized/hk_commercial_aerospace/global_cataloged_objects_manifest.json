@@ -1,0 +1,10 @@
+{
+  "dataset": "global_cataloged_objects_monthly",
+  "source": "CelesTrak SATCAT",
+  "source_url": "https://celestrak.org/pub/satcat.csv",
+  "fetched_at": "2026-08-01T20:55:03.666357+00:00",
+  "grain": "launch-month × CelesTrak object type",
+  "lookback_months": 120,
+  "caveat": "Cataloged objects with known launch dates; not equivalent to UNOOSA registered objects and includes rocket bodies, debris and unknown objects.",
+  "records": 480
+}
