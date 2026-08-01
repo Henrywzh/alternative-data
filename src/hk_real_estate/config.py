@@ -55,6 +55,13 @@ BD_HISTORY_FIRST_YEAR = 2005
 HKMA_RMS_API_URL = "https://vapi.hkma.gov.hk/v1/market-data-and-statistics/monthly-statistical-bulletin/banking/residential-mortgage-survey"
 HKEX_NEWS_SEARCH_URL = "https://www1.hkexnews.hk/search/titlesearch.xhtml"
 
+# C&SD (Census and Statistics Department) -- supply-side signals.
+# CENSTATD_DATA_BASE_URL backs the standard MDT_<theme_id>_<table_id>_
+# <stat_var>_<stat_pres>.csv "web table" static-file pattern (see
+# src/hk_local_consumer/sources/_censtatd_common.py for the same pattern's
+# original discovery notes).
+CENSTATD_DATA_BASE_URL = "https://www.censtatd.gov.hk/data"
+
 # Request Headers
 DEFAULT_HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, impervious/1.0) Chrome/120.0.0.0 Safari/537.36',
