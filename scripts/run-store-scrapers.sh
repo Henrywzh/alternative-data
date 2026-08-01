@@ -8,6 +8,10 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
 cd "$PROJECT_ROOT"
 
+# Use the interpreter provided by PATH (for example by actions/setup-python),
+# rather than assuming the developer's local pyenv shim layout.
+PYTHON_BIN="${PYTHON_BIN:-python3}"
+
 echo "Running HK retail store-count scrapers for $(date +%Y-%m-%d)"
 echo "=========================================="
 
@@ -29,7 +33,7 @@ for scraper in \
 
     echo ""
     echo "$name"
-    ~/.pyenv/shims/python3 "scripts/$script"
+    "$PYTHON_BIN" "scripts/$script"
 done
 
 echo ""
