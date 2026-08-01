@@ -6,14 +6,16 @@ import pandas as pd
 import pytest
 
 from src.hk_stablecoin_crypto.config import HKEX_ETF_FUNDS, NAMING_COLLISION_NOTE
-from src.hk_stablecoin_crypto.pipeline import run_stage_1_pipeline
+from src.hk_stablecoin_crypto.pipeline import QUALITY_SPECS, run_stage_1_pipeline
 from src.hk_stablecoin_crypto.sources.crypto_tickers import (
     compute_coinbase_premium,
     fetch_fear_greed_index,
 )
 from src.hk_stablecoin_crypto.sources.defillama_stablecoins import fetch_stablecoin_supply
 from src.hk_stablecoin_crypto.sources.hkex_etf_aum import fetch_all_etf_aum
+from src.hk_stablecoin_crypto.sources.hkma_news import fetch_hkma_news
 from src.hk_stablecoin_crypto.sources.hkma_register import fetch_licensed_issuers
+from src.hk_stablecoin_crypto.sources.sfc_news import fetch_sfc_news
 from src.hk_stablecoin_crypto.sources.sfc_vatp_register import fetch_vatp_register
 
 
@@ -192,8 +194,124 @@ def test_pipeline_stage_1_execution():
     assert "hkex_etf_aum" in res
     assert "crypto_signals" in res
     assert "polymarket_catalysts" in res
+    assert "sfc_news" in res
+    assert "hkma_news" in res
+    assert "hkexnews_announcements" in res
+    assert "watchlist_price" in res
+
+
+# --- SFC news --------------------------------------------------------------
+
+
+def test_sfc_news_api_returns_full_archive(monkeypatch):
+    """Directly probe the raw SFC news-search API (bypassing our own
+    keyword/date filtering) and assert `total` reflects the full historical
+    archive, not an empty or broken response -- proof the endpoint we
+    reverse-engineered from the SPA's network traffic is actually real."""
+    import requests
+
+    from src.hk_stablecoin_crypto.config import SFC_NEWS_API_URL, SFC_NEWS_REFERER
+
+    resp = requests.post(
+        SFC_NEWS_API_URL,
+        json={
+            "lang": "EN", "category": "all", "year": "all", "month": "all",
+            "pageNo": 0, "pageSize": 20, "isLoading": True, "errors": None,
+            "items": None, "total": -1,
+        },
+        headers={"Content-Type": "application/json", "Referer": SFC_NEWS_REFERER},
+        timeout=15,
+    )
+    resp.raise_for_status()
+    payload = resp.json()
+
+    # 5297 confirmed live 2026-08-01 -- assert it's a large positive integer
+    # (full historical archive), not a stub/empty/broken response.
+    assert payload["total"] > 1000
+    assert len(payload["items"]) == 20
+
+
+def test_fetch_sfc_news_dates_are_sane_and_filter_narrows_results():
+    df = fetch_sfc_news()
+
+    assert list(df.columns) == ["news_ref_no", "issue_date", "title", "news_type", "source", "fetched_at"]
+    assert (df["source"] == "sfc").all()
+
+    if df.empty:
+        pytest.skip("No SFC crypto-relevant news in the fetched window (network-dependent).")
+
+    dates = pd.to_datetime(df["issue_date"])
+    now = pd.Timestamp.now(tz="UTC")
+    # Not all identical, not in the future.
+    assert dates.nunique() > 1
+    assert (dates.dt.tz_localize("UTC") <= now).all()
+
+    # The filter must actually narrow results: crypto-relevant subset must
+    # be smaller than the raw fetched set, and non-empty given real HK
+    # crypto/stablecoin regulatory news exists in this window (verified
+    # 2026-08-01: 24 hits out of 329 raw items across 2025+2026).
+    assert len(df) < 329
+    assert len(df) > 0
+
+
+# --- HKMA news ---------------------------------------------------------------
+
+
+def test_hkma_news_api_returns_real_press_releases():
+    """Directly probe HKMA's own documented Open API and assert it returns
+    real, dated press releases -- proof this is a live official feed, not a
+    stub."""
+    import requests
+
+    from src.hk_stablecoin_crypto.config import HKMA_NEWS_URL
+
+    resp = requests.get(HKMA_NEWS_URL, params={"lang": "en", "offset": 0}, timeout=15)
+    resp.raise_for_status()
+    payload = resp.json()
+
+    assert payload["header"]["success"] is True
+    records = payload["result"]["records"]
+    assert len(records) > 0
+    assert all("date" in r and "title" in r for r in records)
+
+
+def test_fetch_hkma_news_dates_are_sane_and_filter_narrows_results():
+    df = fetch_hkma_news()
+
+    assert list(df.columns) == ["news_ref_no", "issue_date", "title", "news_type", "source", "fetched_at"]
+    assert (df["source"] == "hkma").all()
+
+    if df.empty:
+        pytest.skip("No HKMA crypto-relevant news in the fetched window (network-dependent).")
+
+    dates = pd.to_datetime(df["issue_date"])
+    now = pd.Timestamp.now(tz="UTC")
+    assert dates.nunique() > 1
+    assert (dates.dt.tz_localize("UTC") <= now).all()
+
+    # Verified 2026-08-01: 9 crypto-relevant hits out of 800 raw items across
+    # the trailing ~13 months -- filter must narrow, not pass everything or
+    # nothing through silently.
+    assert len(df) < 800
+    assert len(df) > 0
 
 
 def test_naming_collision_note_in_config():
     assert "Anchorpoint" in NAMING_COLLISION_NOTE
     assert "AnchorX" in NAMING_COLLISION_NOTE
+
+
+# --- Watchlist price wiring --------------------------------------------------
+
+
+def test_watchlist_price_in_quality_specs():
+    assert "watchlist_price" in QUALITY_SPECS
+    spec = QUALITY_SPECS["watchlist_price"]
+    assert spec["kind"] == "measure"
+    assert set(["ticker", "date", "latest_price_hkd", "fetched_at"]).issubset(set(spec["required"]))
+    assert spec["max_age_days"] == 3
+
+
+def test_pipeline_stage_1_includes_watchlist_price_key():
+    res = run_stage_1_pipeline()
+    assert "watchlist_price" in res

@@ -20,6 +20,45 @@ NORMALIZED_DIR.mkdir(parents=True, exist_ok=True)
 
 HKMA_REGISTER_URL = "https://www.hkma.gov.hk/eng/regulatory-resources/registers/register-of-licensed-stablecoin-issuers/"
 SFC_VATP_URL = "https://www.sfc.hk/en/Welcome-to-the-Fintech-Contact-Point/Virtual-assets/Virtual-asset-trading-platforms-operators/Lists-of-virtual-asset-trading-platforms"
+
+# SFC news search API — confirmed live via browser network inspection of the
+# React SPA at https://apps.sfc.hk/edistributionWeb/gateway/EN/news-and-announcements/news/.
+# POST body shape mirrors the SPA's own state object (see sources/sfc_news.py).
+SFC_NEWS_API_URL = "https://apps.sfc.hk/edistributionWeb/api/news/search"
+SFC_NEWS_REFERER = "https://apps.sfc.hk/edistributionWeb/gateway/EN/news-and-announcements/news/"
+
+# HKMA official Open API for press releases — documented at
+# https://apidocs.hkma.gov.hk/documentation/press-releases/. Plain GET, JSON,
+# no auth, paginated via offset (100 records/page).
+HKMA_NEWS_URL = "https://api.hkma.gov.hk/public/press-releases"
+
+# Keyword filter shared by both news sources to narrow the all-of-finance /
+# all-of-banking firehose down to stablecoin/virtual-asset/crypto relevance.
+CRYPTO_NEWS_KEYWORDS = [
+    "stablecoin",
+    "virtual asset",
+    "vatp",
+    "crypto",
+    "digital asset",
+    "web3",
+    "virtual currency",
+    "tokeni",  # matches tokenise/tokenize/tokenisation/tokenization
+    "blockchain",
+]
+
+# HKEXnews title search (company announcements/disclosures).
+# IMPORTANT: titleSearchServlet.do's `stockId` param does NOT accept the plain
+# numeric stock code -- it silently ignores it and returns an unrelated
+# company's announcements (confirmed: stockId=700 returned data for
+# STOCK_CODE 00362 "C ZENITH CHEM", not Tencent). The servlet needs the
+# internal numeric stockId that prefix.do resolves a stock code to. Always
+# resolve via HKEXNEWS_PREFIX_URL first, then call HKEXNEWS_TITLE_SEARCH_URL
+# with the resolved id, and verify the returned STOCK_CODE matches what was
+# requested before trusting any row.
+HKEXNEWS_TITLE_SEARCH_URL = "https://www1.hkexnews.hk/search/titleSearchServlet.do"
+HKEXNEWS_PREFIX_URL = "https://www1.hkexnews.hk/search/prefix.do"
+HKEXNEWS_SEARCH_REFERER = "https://www1.hkexnews.hk/search/titlesearch.xhtml"
+
 DEFILLAMA_URL = "https://stablecoins.llama.fi/stablecoins?includePrices=true"
 HKEX_ETF_API_BASE = "https://ifp.hkex.com.hk/ifp/api/v1/fund/getFundSizeList"
 

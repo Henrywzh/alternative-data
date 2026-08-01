@@ -6,10 +6,10 @@
     "title": "香港稳定币与加密资产基础设施监测",
     "description": "金管局持牌稳定币发行人沙盒名单、证监会持牌 VATP 虚拟资产交易平台、港交所加密 ETF 规模时间序列、全球稳定币市值与公链分布、DEX 交易量、加密情绪指数与 BTC 价格长期走势。",
     "sector": "hk-stablecoin-crypto",
-    "generatedAt": "2026-08-01T08:34:40Z",
+    "generatedAt": "2026-08-01T14:39:47Z",
     "dataAsOf": "2026-08-01",
-    "liveSourcesCount": 6,
-    "totalSourcesCount": 7,
+    "liveSourcesCount": 8,
+    "totalSourcesCount": 11,
     "cards": [
       {
         "id": "regulatory_licensing_card",
@@ -71,6 +71,24 @@
           {
             "label": "全球稳定币市值 (十亿美元)",
             "field": "total_supply_bn",
+            "format": "number"
+          }
+        ]
+      },
+      {
+        "id": "news_pulse_card",
+        "description": "证监会与金管局加密相关监管新闻（近约 13 个月）及观察名单公司公告（近 90 天）。",
+        "dataset": "market_kpi_summary",
+        "sourceId": "sfc_news",
+        "metrics": [
+          {
+            "label": "监管新闻条数",
+            "field": "regulatory_news_count",
+            "format": "number"
+          },
+          {
+            "label": "观察名单公司公告数",
+            "field": "hkexnews_announcements_count",
             "format": "number"
           }
         ]
@@ -369,9 +387,9 @@
       {
         "id": "crypto_watchlist_table",
         "title": "香港上市加密与稳定币观察名单 (Tiers 1–4)",
-        "subtitle": "Tier 1 持牌基础设施、Tier 2 大型机构、Tier 3 概念转型、Tier 4 储备配置。",
+        "subtitle": "Tier 1 持牌基础设施、Tier 2 大型机构、Tier 3 概念转型、Tier 4 储备配置；如有数据则显示实时股价及日涨跌幅。",
         "dataset": "crypto_watchlist",
-        "sourceId": "hkma_register",
+        "sourceId": "watchlist_price",
         "density": "dense",
         "layout": "full",
         "columns": [
@@ -396,8 +414,80 @@
             "type": "text"
           },
           {
+            "field": "latest_price_hkd",
+            "label": "股价 (港元)",
+            "format": "number"
+          },
+          {
+            "field": "change_pct",
+            "label": "日涨跌幅 (%)",
+            "format": "number"
+          },
+          {
             "field": "regulatory_note",
             "label": "监管状态 / 备注",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "id": "regulatory_news_table",
+        "title": "证监会与金管局监管新闻（加密相关筛选）",
+        "subtitle": "近约 13 个月内与加密/虚拟资产/稳定币相关的证监会及金管局最新 30 条新闻。",
+        "dataset": "regulatory_news",
+        "sourceId": "sfc_news",
+        "density": "dense",
+        "layout": "full",
+        "columns": [
+          {
+            "field": "issue_date",
+            "label": "日期",
+            "type": "text"
+          },
+          {
+            "field": "source",
+            "label": "监管机构",
+            "type": "text"
+          },
+          {
+            "field": "title",
+            "label": "标题",
+            "type": "text"
+          },
+          {
+            "field": "news_type",
+            "label": "类型",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "id": "hkexnews_announcements_table",
+        "title": "观察名单公司公告 (香港交易所披露易)",
+        "subtitle": "近 90 天内香港稳定币与加密观察名单全部公司的最新 30 条公告/披露。",
+        "dataset": "hkexnews_announcements",
+        "sourceId": "hkexnews_announcements",
+        "density": "dense",
+        "layout": "full",
+        "columns": [
+          {
+            "field": "date_time",
+            "label": "日期/时间",
+            "type": "text"
+          },
+          {
+            "field": "ticker",
+            "label": "股票代码",
+            "type": "text"
+          },
+          {
+            "field": "stock_name",
+            "label": "公司名称",
+            "type": "text"
+          },
+          {
+            "field": "title",
+            "label": "公告标题",
             "type": "text"
           }
         ]
@@ -494,13 +584,65 @@
           "sql": "SELECT title, probability, end_date FROM polymarket_events;",
           "description": "构建时从公开来源读取并校验 Polymarket 预测市场 API (Gamma API)。"
         }
+      },
+      {
+        "id": "sfc_news",
+        "label": "香港证监会新闻及公告（加密相关筛选）",
+        "href": "https://apps.sfc.hk/edistributionWeb/gateway/EN/news-and-announcements/news/",
+        "path": "sources/sfc_news.sql",
+        "query": {
+          "engine": "SFC news-search JSON API",
+          "url": "https://apps.sfc.hk/edistributionWeb/api/news/search",
+          "language": "JSON",
+          "sql": "SELECT news_ref_no, issue_date, title, news_type FROM sfc_news WHERE source = 'sfc';",
+          "description": "构建时从公开来源读取并校验 香港证监会新闻及公告（加密相关筛选）。"
+        }
+      },
+      {
+        "id": "hkma_news",
+        "label": "香港金管局新闻稿（加密相关筛选）",
+        "href": "https://www.hkma.gov.hk/eng/news-and-media/press-releases/",
+        "path": "sources/hkma_news.sql",
+        "query": {
+          "engine": "HKMA Open API for press releases",
+          "url": "https://api.hkma.gov.hk/public/press-releases",
+          "language": "JSON",
+          "sql": "SELECT news_ref_no, issue_date, title, news_type FROM hkma_news WHERE source = 'hkma';",
+          "description": "构建时从公开来源读取并校验 香港金管局新闻稿（加密相关筛选）。"
+        }
+      },
+      {
+        "id": "hkexnews_announcements",
+        "label": "香港交易所披露易公司公告（观察名单）",
+        "href": "https://www1.hkexnews.hk/search/titlesearch.xhtml",
+        "path": "sources/hkexnews_announcements.sql",
+        "query": {
+          "engine": "HKEXnews title-search servlet, resolved per-ticker via the prefix autocomplete endpoint",
+          "url": "https://www1.hkexnews.hk/search/titleSearchServlet.do",
+          "language": "JSON",
+          "sql": "SELECT ticker, stock_name, title, date_time, file_link FROM hkexnews_announcements;",
+          "description": "构建时从公开来源读取并校验 香港交易所披露易公司公告（观察名单）。"
+        }
+      },
+      {
+        "id": "watchlist_price",
+        "label": "香港观察名单实时股票行情",
+        "href": "https://www1.hkexnews.hk/",
+        "path": "sources/watchlist_price.sql",
+        "query": {
+          "engine": "akshare stock_hk_spot_em bulk HK spot-quote snapshot",
+          "url": "https://www1.hkexnews.hk/",
+          "language": "JSON",
+          "sql": "SELECT ticker, latest_price_hkd, change_pct, volume, turnover_hkd FROM watchlist_price;",
+          "description": "构建时从公开来源读取并校验 香港观察名单实时股票行情。"
+        }
       }
     ],
     "blocks": [
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**数据快照：** `722981e68867c29a` · 生成于 2026-08-01T08:34:40Z。"
+        "body": "**数据快照：** `fee11ec6868e8387` · 生成于 2026-08-01T14:39:47Z。"
       },
       {
         "id": "kpi_grid",
@@ -508,7 +650,8 @@
         "cardIds": [
           "regulatory_licensing_card",
           "crypto_signals_card",
-          "etf_aum_card"
+          "etf_aum_card",
+          "news_pulse_card"
         ]
       },
       {
@@ -557,7 +700,13 @@
         "id": "fear_greed_chart_block",
         "type": "chart",
         "chartId": "fear_greed_history_chart",
-        "layout": "full"
+        "layout": "half"
+      },
+      {
+        "id": "btc_price_chart_block",
+        "type": "chart",
+        "chartId": "btc_price_history_chart",
+        "layout": "half"
       },
       {
         "id": "polymarket_table_block",
@@ -570,15 +719,25 @@
         "tableId": "crypto_watchlist_table"
       },
       {
+        "id": "regulatory_news_table_block",
+        "type": "table",
+        "tableId": "regulatory_news_table"
+      },
+      {
+        "id": "hkexnews_announcements_table_block",
+        "type": "table",
+        "tableId": "hkexnews_announcements_table"
+      },
+      {
         "id": "methodology",
         "type": "markdown",
-        "body": "## 如何阅读本 dashboard\n\n香港加密生态由官方监管登记册锚定：金管局稳定币发行人沙盒（Anchorpoint FRS01、汇丰 FRS02）及证监会持牌 VATP 交易平台（OSL、HashKey）。券商（如国泰君安国际 01788.HK）仅具备虚拟资产交易服务许可，非 VATP 交易所运营商；Anchorpoint（Anchorpoint Financial，港元锚定 HKDAP）与 AnchorX（金涌投资 01328.HK，AxCNH）为不同主体。本 dashboard 跟踪监管登记册、港交所 ETF AUM 时间序列、全球稳定币供应走势、主要公链分布、DEX 交易量、加密情绪指数、BTC 价格长期走势及标签筛选的 Polymarket 催化剂。本界面不提供投资建议。"
+        "body": "## 如何阅读本 dashboard\n\n香港加密生态由官方监管登记册锚定：金管局稳定币发行人沙盒（Anchorpoint FRS01、汇丰 FRS02）及证监会持牌 VATP 交易平台（OSL、HashKey）。券商（如国泰君安国际 01788.HK）仅具备虚拟资产交易服务许可，非 VATP 交易所运营商；Anchorpoint（Anchorpoint Financial，港元锚定 HKDAP）与 AnchorX（金涌投资 01328.HK，AxCNH）为不同主体。本 dashboard 跟踪监管登记册、港交所 ETF AUM 时间序列、全球稳定币供应走势、主要公链分布、DEX 交易量、加密情绪指数、BTC 价格长期走势、标签筛选的 Polymarket 催化剂、观察名单实时股价，以及前瞻性的监管新闻与公司公告（证监会、金管局、披露易），让即将发生的催化事件与历史快照并列呈现。本界面不提供投资建议。"
       }
     ]
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-08-01T08:34:40Z",
+    "generatedAt": "2026-08-01T14:39:47Z",
     "status": "ready",
     "datasets": {
       "hkma_issuers": [
@@ -782,7 +941,7 @@
           "name": "Tether",
           "symbol": "USDT",
           "circulating_usd_bn": 183.22,
-          "market_share_pct": 59.72
+          "market_share_pct": 59.73
         },
         {
           "name": "USD Coin",
@@ -811,7 +970,7 @@
         {
           "name": "Ethena USDe",
           "symbol": "USDe",
-          "circulating_usd_bn": 3.87,
+          "circulating_usd_bn": 3.88,
           "market_share_pct": 1.26
         },
         {
@@ -1374,11 +1533,11 @@
       "stablecoin_chains": [
         {
           "chain": "Ethereum",
-          "circulating_usd_bn": 148.19
+          "circulating_usd_bn": 148.22
         },
         {
           "chain": "Tron",
-          "circulating_usd_bn": 91.2
+          "circulating_usd_bn": 91.21
         },
         {
           "chain": "BSC",
@@ -1386,7 +1545,7 @@
         },
         {
           "chain": "Solana",
-          "circulating_usd_bn": 16.27
+          "circulating_usd_bn": 16.26
         },
         {
           "chain": "Hyperliquid L1",
@@ -1398,11 +1557,11 @@
         },
         {
           "chain": "Arbitrum",
-          "circulating_usd_bn": 3.79
+          "circulating_usd_bn": 3.78
         },
         {
           "chain": "Polygon",
-          "circulating_usd_bn": 3.62
+          "circulating_usd_bn": 3.61
         },
         {
           "chain": "X Layer",
@@ -2012,12 +2171,12 @@
         {
           "date": "2026-07-01",
           "month": "2026-07",
-          "dex_volume_usd_bn": 6.56
+          "dex_volume_usd_bn": 6.57
         },
         {
           "date": "2026-08-01",
           "month": "2026-08",
-          "dex_volume_usd_bn": 6.44
+          "dex_volume_usd_bn": 6.15
         }
       ],
       "hkex_etf_summary": [
@@ -3076,21 +3235,567 @@
           "score": 27
         }
       ],
-      "btc_price_history": [],
-      "polymarket_catalysts": [
+      "btc_price_history": [
         {
-          "title": "How high will 10-year Treasury yield go before 2027?",
-          "probability_pct": 100,
-          "end_date": "2026-12-31"
+          "date": "2017-08-31",
+          "month": "2017-08",
+          "btc_price_usd": 4724.89
         },
+        {
+          "date": "2017-09-30",
+          "month": "2017-09",
+          "btc_price_usd": 4378.51
+        },
+        {
+          "date": "2017-10-31",
+          "month": "2017-10",
+          "btc_price_usd": 6463
+        },
+        {
+          "date": "2017-11-30",
+          "month": "2017-11",
+          "btc_price_usd": 9838.96
+        },
+        {
+          "date": "2017-12-31",
+          "month": "2017-12",
+          "btc_price_usd": 13716.36
+        },
+        {
+          "date": "2018-01-31",
+          "month": "2018-01",
+          "btc_price_usd": 10285.1
+        },
+        {
+          "date": "2018-02-28",
+          "month": "2018-02",
+          "btc_price_usd": 10326.76
+        },
+        {
+          "date": "2018-03-31",
+          "month": "2018-03",
+          "btc_price_usd": 6923.91
+        },
+        {
+          "date": "2018-04-30",
+          "month": "2018-04",
+          "btc_price_usd": 9246.01
+        },
+        {
+          "date": "2018-05-31",
+          "month": "2018-05",
+          "btc_price_usd": 7485.01
+        },
+        {
+          "date": "2018-06-30",
+          "month": "2018-06",
+          "btc_price_usd": 6390.07
+        },
+        {
+          "date": "2018-07-31",
+          "month": "2018-07",
+          "btc_price_usd": 7730.93
+        },
+        {
+          "date": "2018-08-31",
+          "month": "2018-08",
+          "btc_price_usd": 7011.21
+        },
+        {
+          "date": "2018-09-30",
+          "month": "2018-09",
+          "btc_price_usd": 6626.57
+        },
+        {
+          "date": "2018-10-31",
+          "month": "2018-10",
+          "btc_price_usd": 6371.93
+        },
+        {
+          "date": "2018-11-30",
+          "month": "2018-11",
+          "btc_price_usd": 4041.32
+        },
+        {
+          "date": "2018-12-31",
+          "month": "2018-12",
+          "btc_price_usd": 3702.9
+        },
+        {
+          "date": "2019-01-31",
+          "month": "2019-01",
+          "btc_price_usd": 3434.1
+        },
+        {
+          "date": "2019-02-28",
+          "month": "2019-02",
+          "btc_price_usd": 3813.69
+        },
+        {
+          "date": "2019-03-31",
+          "month": "2019-03",
+          "btc_price_usd": 4103.95
+        },
+        {
+          "date": "2019-04-30",
+          "month": "2019-04",
+          "btc_price_usd": 5320.81
+        },
+        {
+          "date": "2019-05-31",
+          "month": "2019-05",
+          "btc_price_usd": 8555
+        },
+        {
+          "date": "2019-06-30",
+          "month": "2019-06",
+          "btc_price_usd": 10854.1
+        },
+        {
+          "date": "2019-07-31",
+          "month": "2019-07",
+          "btc_price_usd": 10080.53
+        },
+        {
+          "date": "2019-08-31",
+          "month": "2019-08",
+          "btc_price_usd": 9587.47
+        },
+        {
+          "date": "2019-09-30",
+          "month": "2019-09",
+          "btc_price_usd": 8289.34
+        },
+        {
+          "date": "2019-10-31",
+          "month": "2019-10",
+          "btc_price_usd": 9140.85
+        },
+        {
+          "date": "2019-11-30",
+          "month": "2019-11",
+          "btc_price_usd": 7541.89
+        },
+        {
+          "date": "2019-12-31",
+          "month": "2019-12",
+          "btc_price_usd": 7195.23
+        },
+        {
+          "date": "2020-01-31",
+          "month": "2020-01",
+          "btc_price_usd": 9352.89
+        },
+        {
+          "date": "2020-02-29",
+          "month": "2020-02",
+          "btc_price_usd": 8523.61
+        },
+        {
+          "date": "2020-03-31",
+          "month": "2020-03",
+          "btc_price_usd": 6410.44
+        },
+        {
+          "date": "2020-04-30",
+          "month": "2020-04",
+          "btc_price_usd": 8620
+        },
+        {
+          "date": "2020-05-31",
+          "month": "2020-05",
+          "btc_price_usd": 9448.27
+        },
+        {
+          "date": "2020-06-30",
+          "month": "2020-06",
+          "btc_price_usd": 9138.55
+        },
+        {
+          "date": "2020-07-31",
+          "month": "2020-07",
+          "btc_price_usd": 11335.46
+        },
+        {
+          "date": "2020-08-31",
+          "month": "2020-08",
+          "btc_price_usd": 11649.51
+        },
+        {
+          "date": "2020-09-30",
+          "month": "2020-09",
+          "btc_price_usd": 10776.59
+        },
+        {
+          "date": "2020-10-31",
+          "month": "2020-10",
+          "btc_price_usd": 13791
+        },
+        {
+          "date": "2020-11-30",
+          "month": "2020-11",
+          "btc_price_usd": 19695.87
+        },
+        {
+          "date": "2020-12-31",
+          "month": "2020-12",
+          "btc_price_usd": 28923.63
+        },
+        {
+          "date": "2021-01-31",
+          "month": "2021-01",
+          "btc_price_usd": 33092.98
+        },
+        {
+          "date": "2021-02-28",
+          "month": "2021-02",
+          "btc_price_usd": 45135.66
+        },
+        {
+          "date": "2021-03-31",
+          "month": "2021-03",
+          "btc_price_usd": 58740.55
+        },
+        {
+          "date": "2021-04-30",
+          "month": "2021-04",
+          "btc_price_usd": 57694.27
+        },
+        {
+          "date": "2021-05-31",
+          "month": "2021-05",
+          "btc_price_usd": 37253.81
+        },
+        {
+          "date": "2021-06-30",
+          "month": "2021-06",
+          "btc_price_usd": 35045
+        },
+        {
+          "date": "2021-07-31",
+          "month": "2021-07",
+          "btc_price_usd": 41461.83
+        },
+        {
+          "date": "2021-08-31",
+          "month": "2021-08",
+          "btc_price_usd": 47100.89
+        },
+        {
+          "date": "2021-09-30",
+          "month": "2021-09",
+          "btc_price_usd": 43824.1
+        },
+        {
+          "date": "2021-10-31",
+          "month": "2021-10",
+          "btc_price_usd": 61299.8
+        },
+        {
+          "date": "2021-11-30",
+          "month": "2021-11",
+          "btc_price_usd": 56950.56
+        },
+        {
+          "date": "2021-12-31",
+          "month": "2021-12",
+          "btc_price_usd": 46216.93
+        },
+        {
+          "date": "2022-01-31",
+          "month": "2022-01",
+          "btc_price_usd": 38466.9
+        },
+        {
+          "date": "2022-02-28",
+          "month": "2022-02",
+          "btc_price_usd": 43160
+        },
+        {
+          "date": "2022-03-31",
+          "month": "2022-03",
+          "btc_price_usd": 45510.34
+        },
+        {
+          "date": "2022-04-30",
+          "month": "2022-04",
+          "btc_price_usd": 37630.8
+        },
+        {
+          "date": "2022-05-31",
+          "month": "2022-05",
+          "btc_price_usd": 31801.04
+        },
+        {
+          "date": "2022-06-30",
+          "month": "2022-06",
+          "btc_price_usd": 19942.21
+        },
+        {
+          "date": "2022-07-31",
+          "month": "2022-07",
+          "btc_price_usd": 23293.32
+        },
+        {
+          "date": "2022-08-31",
+          "month": "2022-08",
+          "btc_price_usd": 20050.02
+        },
+        {
+          "date": "2022-09-30",
+          "month": "2022-09",
+          "btc_price_usd": 19422.61
+        },
+        {
+          "date": "2022-10-31",
+          "month": "2022-10",
+          "btc_price_usd": 20490.74
+        },
+        {
+          "date": "2022-11-30",
+          "month": "2022-11",
+          "btc_price_usd": 17163.64
+        },
+        {
+          "date": "2022-12-31",
+          "month": "2022-12",
+          "btc_price_usd": 16542.4
+        },
+        {
+          "date": "2023-01-31",
+          "month": "2023-01",
+          "btc_price_usd": 23125.13
+        },
+        {
+          "date": "2023-02-28",
+          "month": "2023-02",
+          "btc_price_usd": 23141.57
+        },
+        {
+          "date": "2023-03-31",
+          "month": "2023-03",
+          "btc_price_usd": 28465.36
+        },
+        {
+          "date": "2023-04-30",
+          "month": "2023-04",
+          "btc_price_usd": 29233.21
+        },
+        {
+          "date": "2023-05-31",
+          "month": "2023-05",
+          "btc_price_usd": 27210.35
+        },
+        {
+          "date": "2023-06-30",
+          "month": "2023-06",
+          "btc_price_usd": 30472
+        },
+        {
+          "date": "2023-07-31",
+          "month": "2023-07",
+          "btc_price_usd": 29232.25
+        },
+        {
+          "date": "2023-08-31",
+          "month": "2023-08",
+          "btc_price_usd": 25940.78
+        },
+        {
+          "date": "2023-09-30",
+          "month": "2023-09",
+          "btc_price_usd": 26962.56
+        },
+        {
+          "date": "2023-10-31",
+          "month": "2023-10",
+          "btc_price_usd": 34639.77
+        },
+        {
+          "date": "2023-11-30",
+          "month": "2023-11",
+          "btc_price_usd": 37723.96
+        },
+        {
+          "date": "2023-12-31",
+          "month": "2023-12",
+          "btc_price_usd": 42283.58
+        },
+        {
+          "date": "2024-01-31",
+          "month": "2024-01",
+          "btc_price_usd": 42580
+        },
+        {
+          "date": "2024-02-29",
+          "month": "2024-02",
+          "btc_price_usd": 61130.98
+        },
+        {
+          "date": "2024-03-31",
+          "month": "2024-03",
+          "btc_price_usd": 71280.01
+        },
+        {
+          "date": "2024-04-30",
+          "month": "2024-04",
+          "btc_price_usd": 60672
+        },
+        {
+          "date": "2024-05-31",
+          "month": "2024-05",
+          "btc_price_usd": 67540.01
+        },
+        {
+          "date": "2024-06-30",
+          "month": "2024-06",
+          "btc_price_usd": 62772.01
+        },
+        {
+          "date": "2024-07-31",
+          "month": "2024-07",
+          "btc_price_usd": 64628
+        },
+        {
+          "date": "2024-08-31",
+          "month": "2024-08",
+          "btc_price_usd": 58973.99
+        },
+        {
+          "date": "2024-09-30",
+          "month": "2024-09",
+          "btc_price_usd": 63327.59
+        },
+        {
+          "date": "2024-10-31",
+          "month": "2024-10",
+          "btc_price_usd": 70292.01
+        },
+        {
+          "date": "2024-11-30",
+          "month": "2024-11",
+          "btc_price_usd": 96407.99
+        },
+        {
+          "date": "2024-12-31",
+          "month": "2024-12",
+          "btc_price_usd": 93576
+        },
+        {
+          "date": "2025-01-31",
+          "month": "2025-01",
+          "btc_price_usd": 102429.56
+        },
+        {
+          "date": "2025-02-28",
+          "month": "2025-02",
+          "btc_price_usd": 84349.94
+        },
+        {
+          "date": "2025-03-31",
+          "month": "2025-03",
+          "btc_price_usd": 82550.01
+        },
+        {
+          "date": "2025-04-30",
+          "month": "2025-04",
+          "btc_price_usd": 94172
+        },
+        {
+          "date": "2025-05-31",
+          "month": "2025-05",
+          "btc_price_usd": 104591.88
+        },
+        {
+          "date": "2025-06-30",
+          "month": "2025-06",
+          "btc_price_usd": 107146.5
+        },
+        {
+          "date": "2025-07-31",
+          "month": "2025-07",
+          "btc_price_usd": 115764.08
+        },
+        {
+          "date": "2025-08-31",
+          "month": "2025-08",
+          "btc_price_usd": 108246.35
+        },
+        {
+          "date": "2025-09-30",
+          "month": "2025-09",
+          "btc_price_usd": 114048.93
+        },
+        {
+          "date": "2025-10-31",
+          "month": "2025-10",
+          "btc_price_usd": 109608.01
+        },
+        {
+          "date": "2025-11-30",
+          "month": "2025-11",
+          "btc_price_usd": 90360
+        },
+        {
+          "date": "2025-12-31",
+          "month": "2025-12",
+          "btc_price_usd": 87648.22
+        },
+        {
+          "date": "2026-01-31",
+          "month": "2026-01",
+          "btc_price_usd": 78741.09
+        },
+        {
+          "date": "2026-02-28",
+          "month": "2026-02",
+          "btc_price_usd": 66973.26
+        },
+        {
+          "date": "2026-03-31",
+          "month": "2026-03",
+          "btc_price_usd": 68284.48
+        },
+        {
+          "date": "2026-04-30",
+          "month": "2026-04",
+          "btc_price_usd": 76346.57
+        },
+        {
+          "date": "2026-05-31",
+          "month": "2026-05",
+          "btc_price_usd": 73674.39
+        },
+        {
+          "date": "2026-06-30",
+          "month": "2026-06",
+          "btc_price_usd": 58624.71
+        },
+        {
+          "date": "2026-07-31",
+          "month": "2026-07",
+          "btc_price_usd": 62887.88
+        },
+        {
+          "date": "2026-08-01",
+          "month": "2026-08",
+          "btc_price_usd": 63094.95
+        }
+      ],
+      "polymarket_catalysts": [
         {
           "title": "How low will 10-year Treasury yield get before 2027?",
           "probability_pct": 100,
           "end_date": "2026-12-31"
         },
         {
+          "title": "How high will 10-year Treasury yield go before 2027?",
+          "probability_pct": 100,
+          "end_date": "2026-12-31"
+        },
+        {
           "title": "How many Fed rate cuts in 2026?",
-          "probability_pct": 88.3,
+          "probability_pct": 88.4,
           "end_date": "2026-12-31"
         },
         {
@@ -3100,17 +3805,17 @@
         },
         {
           "title": "Fed rate hike in 2026?",
-          "probability_pct": 66.5,
+          "probability_pct": 67.5,
           "end_date": "2026-12-09"
         },
         {
           "title": "Largest Company end of December 2026?",
-          "probability_pct": 56.5,
+          "probability_pct": 57.5,
           "end_date": "2026-12-31"
         },
         {
           "title": "Will Base launch a token by ___ ?",
-          "probability_pct": 51,
+          "probability_pct": 53.5,
           "end_date": "2027-07-01"
         },
         {
@@ -3124,9 +3829,9 @@
           "end_date": "2026-08-03"
         },
         {
-          "title": "Bitcoin ETF Flows on August 3?",
+          "title": "Ethereum ETF Flows on August 4?",
           "probability_pct": 50,
-          "end_date": "2026-08-03"
+          "end_date": "2026-08-04"
         }
       ],
       "crypto_watchlist": [
@@ -3135,154 +3840,556 @@
           "ticker": "00863.HK",
           "company_en": "OSL Group",
           "company_zh": "OSL集团",
-          "regulatory_note": "SFC VATP-licensed exchange operator since 15/12/2020"
+          "regulatory_note": "SFC VATP-licensed exchange operator since 15/12/2020",
+          "latest_price_hkd": null,
+          "change_pct": null
         },
         {
           "tier": "Tier 1: Licensed Infrastructure",
           "ticker": "03887.HK",
           "company_en": "HashKey Holdings",
           "company_zh": "HashKey",
-          "regulatory_note": "SFC VATP-licensed exchange operator since 09/11/2022"
+          "regulatory_note": "SFC VATP-licensed exchange operator since 09/11/2022",
+          "latest_price_hkd": null,
+          "change_pct": null
         },
         {
           "tier": "Tier 1: Licensed Infrastructure",
           "ticker": "01788.HK",
           "company_en": "Guotai Junan International",
           "company_zh": "国泰君安国际",
-          "regulatory_note": "Licensed to deal in virtual assets — NOT a VATP exchange operator (different, lesser regulatory status)"
+          "regulatory_note": "Licensed to deal in virtual assets — NOT a VATP exchange operator (different, lesser regulatory status)",
+          "latest_price_hkd": null,
+          "change_pct": null
         },
         {
           "tier": "Tier 1: Licensed Infrastructure",
           "ticker": "08540.HK",
           "company_en": "Victory Securities",
           "company_zh": "胜利证券",
-          "regulatory_note": "Licensed to deal in virtual assets — NOT a VATP exchange operator (different, lesser regulatory status)"
+          "regulatory_note": "Licensed to deal in virtual assets — NOT a VATP exchange operator (different, lesser regulatory status)",
+          "latest_price_hkd": null,
+          "change_pct": null
         },
         {
           "tier": "Tier 1: Licensed Infrastructure",
           "ticker": "01499.HK",
           "company_en": "OKG Technology",
           "company_zh": "欧科云链",
-          "regulatory_note": "Infrastructure/data; linked to OKX, but OKX withdrew its HK VATP application in May 2024"
+          "regulatory_note": "Infrastructure/data; linked to OKX, but OKX withdrew its HK VATP application in May 2024",
+          "latest_price_hkd": null,
+          "change_pct": null
         },
         {
           "tier": "Tier 1: Licensed Infrastructure",
           "ticker": "01611.HK",
           "company_en": "Sinohope",
           "company_zh": "新火集团",
-          "regulatory_note": "Asset management and tech solutions (SFO Type 1/4/9 licensed)"
+          "regulatory_note": "Asset management and tech solutions (SFO Type 1/4/9 licensed)",
+          "latest_price_hkd": null,
+          "change_pct": null
         },
         {
           "tier": "Tier 2: Big-Name / Adjacent",
           "ticker": "00005.HK",
           "company_en": "HSBC Holdings",
           "company_zh": "汇丰控股",
-          "regulatory_note": "HKMA stablecoin issuer licence FRS02 effective 10/04/2026"
+          "regulatory_note": "HKMA stablecoin issuer licence FRS02 effective 10/04/2026",
+          "latest_price_hkd": null,
+          "change_pct": null
         },
         {
           "tier": "Tier 2: Big-Name / Adjacent",
           "ticker": "02888.HK",
           "company_en": "Standard Chartered",
           "company_zh": "渣打集团",
-          "regulatory_note": "HKMA stablecoin issuer licence FRS01 effective 10/04/2026 via Anchorpoint Financial JV"
+          "regulatory_note": "HKMA stablecoin issuer licence FRS01 effective 10/04/2026 via Anchorpoint Financial JV",
+          "latest_price_hkd": null,
+          "change_pct": null
         },
         {
           "tier": "Tier 2: Big-Name / Adjacent",
           "ticker": "06823.HK",
           "company_en": "HKT",
           "company_zh": "香港电讯",
-          "regulatory_note": "Partner in Anchorpoint Financial JV (FRS01)"
+          "regulatory_note": "Partner in Anchorpoint Financial JV (FRS01)",
+          "latest_price_hkd": null,
+          "change_pct": null
         },
         {
           "tier": "Tier 2: Big-Name / Adjacent",
           "ticker": "02388.HK",
           "company_en": "BOC Hong Kong",
           "company_zh": "中银香港",
-          "regulatory_note": "Linked to HKMA stablecoin issuer sandbox"
+          "regulatory_note": "Linked to HKMA stablecoin issuer sandbox",
+          "latest_price_hkd": null,
+          "change_pct": null
         },
         {
           "tier": "Tier 2: Big-Name / Adjacent",
           "ticker": "09988.HK",
           "company_en": "Alibaba",
           "company_zh": "阿里巴巴",
-          "regulatory_note": "Ant International reportedly pursuing stablecoin initiatives"
+          "regulatory_note": "Ant International reportedly pursuing stablecoin initiatives",
+          "latest_price_hkd": null,
+          "change_pct": null
         },
         {
           "tier": "Tier 2: Big-Name / Adjacent",
           "ticker": "09618.HK",
           "company_en": "JD.com",
           "company_zh": "京东集团",
-          "regulatory_note": "Pursuing stablecoin initiatives"
+          "regulatory_note": "Pursuing stablecoin initiatives",
+          "latest_price_hkd": null,
+          "change_pct": null
         },
         {
           "tier": "Tier 3: Concept Pivots",
           "ticker": "01328.HK",
           "company_en": "Jinyong Investment",
           "company_zh": "金涌投资",
-          "regulatory_note": "Partnered with AnchorX for AxCNH stablecoin (DO NOT CONFLATE WITH ANCHORPOINT)"
+          "regulatory_note": "Partnered with AnchorX for AxCNH stablecoin (DO NOT CONFLATE WITH ANCHORPOINT)",
+          "latest_price_hkd": null,
+          "change_pct": null
         },
         {
           "tier": "Tier 3: Concept Pivots",
           "ticker": "08087.HK",
           "company_en": "China 33 Group",
           "company_zh": "中国三三传媒",
-          "regulatory_note": "Announced plans to apply for a HK stablecoin license"
+          "regulatory_note": "Announced plans to apply for a HK stablecoin license",
+          "latest_price_hkd": null,
+          "change_pct": null
         },
         {
           "tier": "Tier 3: Concept Pivots",
           "ticker": "02477.HK",
           "company_en": "Jingwei Tiandi",
           "company_zh": "经纬天地",
-          "regulatory_note": "Launched Fopay stablecoin payment app"
+          "regulatory_note": "Launched Fopay stablecoin payment app",
+          "latest_price_hkd": null,
+          "change_pct": null
         },
         {
           "tier": "Tier 3: Concept Pivots",
           "ticker": "00290.HK",
           "company_en": "Guofu Quantum",
           "company_zh": "国富创新",
-          "regulatory_note": "Investing in RWA tokenization platforms"
+          "regulatory_note": "Investing in RWA tokenization platforms",
+          "latest_price_hkd": null,
+          "change_pct": null
         },
         {
           "tier": "Tier 3: Concept Pivots",
           "ticker": "00399.HK",
           "company_en": "Starcoin Group",
           "company_zh": "星太链集团",
-          "regulatory_note": "Gold RWA-tokenization framework agreement, token airdrop MOU"
+          "regulatory_note": "Gold RWA-tokenization framework agreement, token airdrop MOU",
+          "latest_price_hkd": null,
+          "change_pct": null
         },
         {
           "tier": "Tier 3: Concept Pivots",
           "ticker": "01647.HK",
           "company_en": "Xiongan Technology",
           "company_zh": "雄岸科技",
-          "regulatory_note": "Partnership with Lion Group for crypto trading platform"
+          "regulatory_note": "Partnership with Lion Group for crypto trading platform",
+          "latest_price_hkd": null,
+          "change_pct": null
         },
         {
           "tier": "Tier 3: Concept Pivots",
           "ticker": "00736.HK",
           "company_en": "China Properties Investment",
           "company_zh": "中国置业投资",
-          "regulatory_note": "TokenMarket tie-up, purchasing digital assets"
+          "regulatory_note": "TokenMarket tie-up, purchasing digital assets",
+          "latest_price_hkd": null,
+          "change_pct": null
         },
         {
           "tier": "Tier 4: Treasury Plays",
           "ticker": "00434.HK",
           "company_en": "Boyaa Interactive",
           "company_zh": "博雅互动",
-          "regulatory_note": "BTC/ETH treasury play"
+          "regulatory_note": "BTC/ETH treasury play",
+          "latest_price_hkd": null,
+          "change_pct": null
         },
         {
           "tier": "Tier 4: Treasury Plays",
           "ticker": "08267.HK",
           "company_en": "Lion Rock",
           "company_zh": "蓝港互动",
-          "regulatory_note": "BTC/ETH/SOL treasury play and staking"
+          "regulatory_note": "BTC/ETH/SOL treasury play and staking",
+          "latest_price_hkd": null,
+          "change_pct": null
         },
         {
           "tier": "Tier 4: Treasury Plays",
           "ticker": "02440.HK",
           "company_en": "MemeStrategy",
           "company_zh": "迷策略",
-          "regulatory_note": "Solana treasury play, Moonit trading system"
+          "regulatory_note": "Solana treasury play, Moonit trading system",
+          "latest_price_hkd": null,
+          "change_pct": null
+        }
+      ],
+      "regulatory_news": [
+        {
+          "issue_date": "2026-07-09",
+          "title": "SFC mandates phishing-resistant authentication methods for internet brokers and VATPs to protect client accounts",
+          "news_type": "GN",
+          "source": "SFC"
+        },
+        {
+          "issue_date": "2026-06-10",
+          "title": "HKMA demonstrates potential of tokenisation to corporate treasury community",
+          "news_type": "",
+          "source": "HKMA"
+        },
+        {
+          "issue_date": "2026-06-05",
+          "title": "HKMA establishes Tokenised Bond Expert Group",
+          "news_type": "",
+          "source": "HKMA"
+        },
+        {
+          "issue_date": "2026-05-26",
+          "title": "FSTB and SFC conclude consultations on virtual asset advisory and management regimes",
+          "news_type": "GN",
+          "source": "SFC"
+        },
+        {
+          "issue_date": "2026-04-28",
+          "title": "Beware of tokens purported to be associated with licensed stablecoin issuers",
+          "news_type": "",
+          "source": "HKMA"
+        },
+        {
+          "issue_date": "2026-04-20",
+          "title": "SFC unveils new regulatory framework to allow secondary trading of tokenised SFC-authorised investment products",
+          "news_type": "GN",
+          "source": "SFC"
+        },
+        {
+          "issue_date": "2026-04-20",
+          "title": "New speech by Eric Yip: Keynote address at Hong Kong Web3 Festival 2026",
+          "news_type": "GN",
+          "source": "SFC"
+        },
+        {
+          "issue_date": "2026-04-10",
+          "title": "Granting of stablecoin issuer licences",
+          "news_type": "",
+          "source": "HKMA"
+        },
+        {
+          "issue_date": "2026-03-19",
+          "title": "Strategic innovation drives growth of Hong Kong’s listing and digital asset markets: SFC Quarterly Report",
+          "news_type": "GN",
+          "source": "SFC"
+        },
+        {
+          "issue_date": "2026-03-02",
+          "title": "Hong Kong Monetary Authority, Shanghai Data Bureau, and National Technology Innovation Center for Blockchain sign MoU to strengthen Shanghai-Hong Kong cooperation in digitised cargo trade and finance",
+          "news_type": "",
+          "source": "HKMA"
+        },
+        {
+          "issue_date": "2026-02-11",
+          "title": "SFC launches trading initiatives to boost digital asset market vibrancy in Hong Kong",
+          "news_type": "GN",
+          "source": "SFC"
+        },
+        {
+          "issue_date": "2026-02-06",
+          "title": "SFC convenes third Digital Asset Consultative Panel meeting",
+          "news_type": "GN",
+          "source": "SFC"
+        },
+        {
+          "issue_date": "2026-01-27",
+          "title": "SFC and UAE’s Capital Market Authority sign milestone MoU to strengthen cross-border digital asset collaboration",
+          "news_type": "GN",
+          "source": "SFC"
+        },
+        {
+          "issue_date": "2026-01-06",
+          "title": "SFC reprimands and fines Saxo Capital Markets HK Limited $4 million for regulatory breaches over distribution of virtual asset-related products",
+          "news_type": "EF",
+          "source": "SFC"
+        },
+        {
+          "issue_date": "2025-12-24",
+          "title": "FSTB and SFC conclude consultations on virtual asset dealer and custodian regimes, further consult on two new regimes",
+          "news_type": "GN",
+          "source": "SFC"
+        },
+        {
+          "issue_date": "2025-11-13",
+          "title": "HKMA announces the new phase of Project Ensemble to support real-value transactions in tokenised deposits and digital assets",
+          "news_type": "",
+          "source": "HKMA"
+        },
+        {
+          "issue_date": "2025-11-03",
+          "title": "SFC issues new guidance for licensed virtual asset trading platforms to tap global liquidity and diversify offerings",
+          "news_type": "GN",
+          "source": "SFC"
+        },
+        {
+          "issue_date": "2025-10-20",
+          "title": "SFC supports market’s initiatives on regulatory compliance for digital asset funds and tokenised funds",
+          "news_type": "GN",
+          "source": "SFC"
+        },
+        {
+          "issue_date": "2025-08-15",
+          "title": "SFC elaborates on robust custody standards for virtual asset trading platforms to safeguard client virtual assets",
+          "news_type": "GN",
+          "source": "SFC"
+        },
+        {
+          "issue_date": "2025-08-14",
+          "title": "Joint statement by the SFC and the HKMA on stablecoin-related market movements",
+          "news_type": "GN",
+          "source": "SFC"
+        },
+        {
+          "issue_date": "2025-08-14",
+          "title": "Joint Statement by the HKMA and the SFC on Stablecoin-related Market Movements",
+          "news_type": "",
+          "source": "HKMA"
+        },
+        {
+          "issue_date": "2025-07-29",
+          "title": "Implementation of regulatory regime for stablecoin issuers",
+          "news_type": "",
+          "source": "HKMA"
+        },
+        {
+          "issue_date": "2025-07-07",
+          "title": "SFC convenes second Digital Asset Consultative Panel meeting",
+          "news_type": "GN",
+          "source": "SFC"
+        },
+        {
+          "issue_date": "2025-06-27",
+          "title": "FSTB and SFC consult on proposed regimes to regulate virtual asset dealers and custodians",
+          "news_type": "GN",
+          "source": "SFC"
+        }
+      ],
+      "hkexnews_announcements": [
+        {
+          "date_time": "2026-07-31 19:11",
+          "ticker": "00736.HK",
+          "stock_name": "CHINA PPT INV",
+          "title": "Environmental, Social and Governance Report 2025&#x2f;26",
+          "file_link": "/listedco/listconews/sehk/2026/0731/2026073101547.pdf"
+        },
+        {
+          "date_time": "2026-07-31 19:07",
+          "ticker": "00736.HK",
+          "stock_name": "CHINA PPT INV",
+          "title": "Notification Letter and Request Form to Registered Holders",
+          "file_link": "/listedco/listconews/sehk/2026/0731/2026073101531.pdf"
+        },
+        {
+          "date_time": "2026-07-31 19:04",
+          "ticker": "00736.HK",
+          "stock_name": "CHINA PPT INV",
+          "title": "Notification Letter and Request Form to Non-Registered Holders",
+          "file_link": "/listedco/listconews/sehk/2026/0731/2026073101521.pdf"
+        },
+        {
+          "date_time": "2026-07-31 19:01",
+          "ticker": "00736.HK",
+          "stock_name": "CHINA PPT INV",
+          "title": "ANNUAL REPORT 2026",
+          "file_link": "/listedco/listconews/sehk/2026/0731/2026073101501.pdf"
+        },
+        {
+          "date_time": "2026-07-31 18:09",
+          "ticker": "00399.HK",
+          "stock_name": "STARCOIN GROUP",
+          "title": "CHANGE OF ADDRESS OF REGISTERED OFFICE, PRINCIPAL SHARE REGISTRAR AND TRANSFER OFFICE IN BERMUDA",
+          "file_link": "/listedco/listconews/sehk/2026/0731/2026073101191.pdf"
+        },
+        {
+          "date_time": "2026-07-31 18:00",
+          "ticker": "09618.HK",
+          "stock_name": "JD-SW<br/>JD-SWR",
+          "title": "DATE OF BOARD MEETING",
+          "file_link": "/listedco/listconews/sehk/2026/0731/2026073101121.pdf"
+        },
+        {
+          "date_time": "2026-07-31 16:51",
+          "ticker": "02888.HK",
+          "stock_name": "STANCHART",
+          "title": "Next Day Disclosure Return",
+          "file_link": "/listedco/listconews/sehk/2026/0731/2026073100608.pdf"
+        },
+        {
+          "date_time": "2026-07-31 06:15",
+          "ticker": "00005.HK",
+          "stock_name": "HSBC HOLDINGS",
+          "title": "NOTICE OF REDEMPTION",
+          "file_link": "/listedco/listconews/sehk/2026/0731/2026073100035.pdf"
+        },
+        {
+          "date_time": "2026-07-31 06:15",
+          "ticker": "00005.HK",
+          "stock_name": "HSBC HOLDINGS",
+          "title": "HSBC TO SELL ITS AUD36 BILLION AUSTRALIAN HOME AND PERSONAL LOAN PORTFOLIO TO BLACKSTONE",
+          "file_link": "/listedco/listconews/sehk/2026/0731/2026073100031.pdf"
+        },
+        {
+          "date_time": "2026-07-30 19:02",
+          "ticker": "01647.HK",
+          "stock_name": "GRANDSHORES",
+          "title": "NOTIFICATION LETTER AND REQUEST FORM TO NON-REGISTERED SHAREHOLDERS",
+          "file_link": "/listedco/listconews/sehk/2026/0730/2026073001577.pdf"
+        },
+        {
+          "date_time": "2026-07-30 19:01",
+          "ticker": "01647.HK",
+          "stock_name": "GRANDSHORES",
+          "title": "NOTIFICATION LETTER AND CHANGE REQUEST FORM TO REGISTERED SHAREHOLDERS",
+          "file_link": "/listedco/listconews/sehk/2026/0730/2026073001571.pdf"
+        },
+        {
+          "date_time": "2026-07-30 18:59",
+          "ticker": "01647.HK",
+          "stock_name": "GRANDSHORES",
+          "title": "PROXY FORM",
+          "file_link": "/listedco/listconews/sehk/2026/0730/2026073001557.pdf"
+        },
+        {
+          "date_time": "2026-07-30 18:57",
+          "ticker": "01647.HK",
+          "stock_name": "GRANDSHORES",
+          "title": "NOTICE OF THE ANNUAL GENERAL MEETING",
+          "file_link": "/listedco/listconews/sehk/2026/0730/2026073001549.pdf"
+        },
+        {
+          "date_time": "2026-07-30 18:55",
+          "ticker": "01647.HK",
+          "stock_name": "GRANDSHORES",
+          "title": "(1) PROPOSED GRANTING OF GENERAL MANDATES TO ISSUE NEW SHARES AND REPURCHASE SHARES&#x3b; (2) PROPOSED RE-ELECTION OF DIRECTORS&#x3b; (3) PROPOSED RE-APPOINTMENT OF AUDITOR&#x3b; AND (4) NOTICE OF THE ANNUAL GENERAL MEETING",
+          "file_link": "/listedco/listconews/sehk/2026/0730/2026073001535.pdf"
+        },
+        {
+          "date_time": "2026-07-30 18:53",
+          "ticker": "01647.HK",
+          "stock_name": "GRANDSHORES",
+          "title": "Annual Report 2026",
+          "file_link": "/listedco/listconews/sehk/2026/0730/2026073001515.pdf"
+        },
+        {
+          "date_time": "2026-07-30 17:44",
+          "ticker": "01328.HK",
+          "stock_name": "GOLDSTREAM INV",
+          "title": "INSIDE INFORMATION - POSITIVE PROFIT ALERT",
+          "file_link": "/listedco/listconews/sehk/2026/0730/2026073001104.pdf"
+        },
+        {
+          "date_time": "2026-07-30 16:30",
+          "ticker": "00005.HK",
+          "stock_name": "HSBC HOLDINGS",
+          "title": "CHANGES IN COMPOSITION OF THE BOARD COMMITTEES",
+          "file_link": "/listedco/listconews/sehk/2026/0730/2026073000358.pdf"
+        },
+        {
+          "date_time": "2026-07-30 16:30",
+          "ticker": "00005.HK",
+          "stock_name": "HSBC HOLDINGS",
+          "title": "LIST OF DIRECTORS AND THEIR ROLE AND FUNCTION",
+          "file_link": "/listedco/listconews/sehk/2026/0730/2026073000392.pdf"
+        },
+        {
+          "date_time": "2026-07-30 12:08",
+          "ticker": "01499.HK",
+          "stock_name": "OKG TECH",
+          "title": "Notification Letter to Non-Registered Shareholders",
+          "file_link": "/listedco/listconews/sehk/2026/0730/2026073000233.pdf"
+        },
+        {
+          "date_time": "2026-07-30 12:06",
+          "ticker": "01499.HK",
+          "stock_name": "OKG TECH",
+          "title": "Notification Letter to Registered Shareholders and Reply Form",
+          "file_link": "/listedco/listconews/sehk/2026/0730/2026073000227.pdf"
+        },
+        {
+          "date_time": "2026-07-30 12:04",
+          "ticker": "01499.HK",
+          "stock_name": "OKG TECH",
+          "title": "FORM OF PROXY FOR ANNUAL GENERAL MEETING",
+          "file_link": "/listedco/listconews/sehk/2026/0730/2026073000219.pdf"
+        },
+        {
+          "date_time": "2026-07-30 12:03",
+          "ticker": "01499.HK",
+          "stock_name": "OKG TECH",
+          "title": "NOTICE OF ANNUAL GENERAL MEETING",
+          "file_link": "/listedco/listconews/sehk/2026/0730/2026073000211.pdf"
+        },
+        {
+          "date_time": "2026-07-30 12:02",
+          "ticker": "01499.HK",
+          "stock_name": "OKG TECH",
+          "title": "PROPOSALS FOR\n(1) GENERAL MANDATES TO ISSUE AND BUY BACK SHARES&#x3b;\n(2) RE-APPOINTMENT OF AUDITOR&#x3b;\n(3) RE-ELECTION OF RETIRING DIRECTORS&#x3b;\nAND\n(4) NOTICE OF ANNUAL GENERAL MEETING",
+          "file_link": "/listedco/listconews/sehk/2026/0730/2026073000207.pdf"
+        },
+        {
+          "date_time": "2026-07-30 12:01",
+          "ticker": "01499.HK",
+          "stock_name": "OKG TECH",
+          "title": "ANNUAL REPORT 2026",
+          "file_link": "/listedco/listconews/sehk/2026/0730/2026073000201.pdf"
+        },
+        {
+          "date_time": "2026-07-29 19:24",
+          "ticker": "08540.HK",
+          "stock_name": "VICTORY SEC",
+          "title": "ANNOUNCEMENT PURSUANT TO RULE 17.50(2)(u) AND RULES 5.01 AND 5.02 OF THE GEM LISTING RULES",
+          "file_link": "/listedco/listconews/gem/2026/0729/2026072901263.pdf"
+        },
+        {
+          "date_time": "2026-07-29 17:57",
+          "ticker": "02888.HK",
+          "stock_name": "STANCHART",
+          "title": "2026 Half Year Report",
+          "file_link": "/listedco/listconews/sehk/2026/0729/2026072901018.pdf"
+        },
+        {
+          "date_time": "2026-07-29 17:55",
+          "ticker": "06823.HK",
+          "stock_name": "HKT-SS",
+          "title": "Interim Results Announcement for the six months ended 30 June 2026",
+          "file_link": "/listedco/listconews/sehk/2026/0729/2026072900430.pdf"
+        },
+        {
+          "date_time": "2026-07-29 17:28",
+          "ticker": "02888.HK",
+          "stock_name": "STANCHART",
+          "title": "Share Buy-back",
+          "file_link": "/listedco/listconews/sehk/2026/0729/2026072900866.pdf"
+        },
+        {
+          "date_time": "2026-07-29 17:25",
+          "ticker": "02888.HK",
+          "stock_name": "STANCHART",
+          "title": "Publication of Supplementary Prospectus",
+          "file_link": "/listedco/listconews/sehk/2026/0729/2026072900848.pdf"
+        },
+        {
+          "date_time": "2026-07-29 16:45",
+          "ticker": "00736.HK",
+          "stock_name": "CHINA PPT INV",
+          "title": "CHANGE OF THE ADDRESS OF REGISTERED OFFICE,\nPRINCIPAL SHARE REGISTRAR AND TRANSFER AGENT IN BERMUDA",
+          "file_link": "/listedco/listconews/sehk/2026/0729/2026072900514.pdf"
         }
       ],
       "market_kpi_summary": [
@@ -3290,12 +4397,14 @@
           "hkma_count": 2,
           "sfc_licensed_count": 13,
           "sfc_pending_count": 6,
-          "total_supply_bn": 306.77,
+          "total_supply_bn": 306.75,
           "total_etf_aum_m": 253.12,
-          "btc_price": null,
-          "cb_premium_bps": null,
+          "btc_price": 63038.68,
+          "cb_premium_bps": -8.92,
           "fear_greed_val": 27,
-          "fear_greed_class": "Fear"
+          "fear_greed_class": "Fear",
+          "regulatory_news_count": 24,
+          "hkexnews_announcements_count": 30
         }
       ]
     }
@@ -3391,6 +4500,58 @@
         "sql": "SELECT title, probability, end_date FROM polymarket_events;",
         "description": "构建时从公开来源读取并校验 Polymarket 预测市场 API (Gamma API)。"
       }
+    },
+    {
+      "id": "sfc_news",
+      "label": "香港证监会新闻及公告（加密相关筛选）",
+      "href": "https://apps.sfc.hk/edistributionWeb/gateway/EN/news-and-announcements/news/",
+      "path": "sources/sfc_news.sql",
+      "query": {
+        "engine": "SFC news-search JSON API",
+        "url": "https://apps.sfc.hk/edistributionWeb/api/news/search",
+        "language": "JSON",
+        "sql": "SELECT news_ref_no, issue_date, title, news_type FROM sfc_news WHERE source = 'sfc';",
+        "description": "构建时从公开来源读取并校验 香港证监会新闻及公告（加密相关筛选）。"
+      }
+    },
+    {
+      "id": "hkma_news",
+      "label": "香港金管局新闻稿（加密相关筛选）",
+      "href": "https://www.hkma.gov.hk/eng/news-and-media/press-releases/",
+      "path": "sources/hkma_news.sql",
+      "query": {
+        "engine": "HKMA Open API for press releases",
+        "url": "https://api.hkma.gov.hk/public/press-releases",
+        "language": "JSON",
+        "sql": "SELECT news_ref_no, issue_date, title, news_type FROM hkma_news WHERE source = 'hkma';",
+        "description": "构建时从公开来源读取并校验 香港金管局新闻稿（加密相关筛选）。"
+      }
+    },
+    {
+      "id": "hkexnews_announcements",
+      "label": "香港交易所披露易公司公告（观察名单）",
+      "href": "https://www1.hkexnews.hk/search/titlesearch.xhtml",
+      "path": "sources/hkexnews_announcements.sql",
+      "query": {
+        "engine": "HKEXnews title-search servlet, resolved per-ticker via the prefix autocomplete endpoint",
+        "url": "https://www1.hkexnews.hk/search/titleSearchServlet.do",
+        "language": "JSON",
+        "sql": "SELECT ticker, stock_name, title, date_time, file_link FROM hkexnews_announcements;",
+        "description": "构建时从公开来源读取并校验 香港交易所披露易公司公告（观察名单）。"
+      }
+    },
+    {
+      "id": "watchlist_price",
+      "label": "香港观察名单实时股票行情",
+      "href": "https://www1.hkexnews.hk/",
+      "path": "sources/watchlist_price.sql",
+      "query": {
+        "engine": "akshare stock_hk_spot_em bulk HK spot-quote snapshot",
+        "url": "https://www1.hkexnews.hk/",
+        "language": "JSON",
+        "sql": "SELECT ticker, latest_price_hkd, change_pct, volume, turnover_hkd FROM watchlist_price;",
+        "description": "构建时从公开来源读取并校验 香港观察名单实时股票行情。"
+      }
     }
   ],
   "source_health": [
@@ -3429,9 +4590,9 @@
     {
       "id": "coinbase_binance",
       "label": "Coinbase & Binance Public Tickers",
-      "status": "degraded",
-      "records": 0,
-      "freshness": "unavailable",
+      "status": "success",
+      "records": 1,
+      "freshness": "live",
       "notes": "Real-time BTC spot price, long-run price history, and Coinbase Premium spread."
     },
     {
@@ -3449,14 +4610,46 @@
       "records": 10,
       "freshness": "live",
       "notes": "Tag-filtered real-time prediction market probability for crypto and monetary policy regulatory catalysts."
+    },
+    {
+      "id": "sfc_news",
+      "label": "SFC News & Announcements (Crypto-Filtered)",
+      "status": "success",
+      "records": 16,
+      "freshness": "live",
+      "notes": "SFC news and announcements over the trailing ~13 months, filtered to stablecoin/virtual-asset/crypto relevance by keyword."
+    },
+    {
+      "id": "hkma_news",
+      "label": "HKMA Press Releases (Crypto-Filtered)",
+      "status": "success",
+      "records": 8,
+      "freshness": "live",
+      "notes": "HKMA official press releases over the trailing ~13 months, filtered to stablecoin/virtual-asset/crypto relevance by keyword."
+    },
+    {
+      "id": "hkexnews_announcements",
+      "label": "HKEXnews Company Announcements (Watchlist Tickers)",
+      "status": "success",
+      "records": 30,
+      "freshness": "live",
+      "notes": "Company-filed announcements and disclosures for every HK Stablecoin & Crypto watchlist ticker over the trailing 90 days."
+    },
+    {
+      "id": "watchlist_price",
+      "label": "HK Watchlist Live Stock Quotes",
+      "status": "degraded",
+      "records": 0,
+      "freshness": "unavailable",
+      "notes": "Latest live spot price, day change, and turnover for every HK Stablecoin & Crypto watchlist ticker."
     }
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-stablecoin-crypto/",
     "sector_id": "hk-stablecoin-crypto",
     "sector_name": "Hong Kong Stablecoin & Crypto Infrastructure Monitor",
-    "snapshotId": "722981e68867c29a",
-    "generatedAt": "2026-08-01T08:34:40Z",
+    "snapshotId": "fee11ec6868e8387",
+    "generatedAt": "2026-08-01T14:39:47Z",
     "dataAsOf": "2026-08-01"
   }
 }
