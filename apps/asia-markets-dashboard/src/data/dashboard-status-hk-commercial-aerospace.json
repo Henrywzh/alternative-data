@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-08-01T17:39:10.842105Z",
-  "snapshot_id": "69c18ab49f74e558",
+  "generated_at": "2026-08-01T20:54:41.721772Z",
+  "snapshot_id": "5bef9e04df3f05d2",
   "data_as_of": "2026-08-01",
   "overall_status": "Degraded",
-  "live_sources": 9,
+  "live_sources": 11,
   "planned_sources": 0,
   "sources": [
     {
@@ -11,7 +11,7 @@
       "dataset": "sse_star_market_ipo",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-06-29",
+      "latest_observation": "nan",
       "records": 5,
       "freshness": "Live",
       "notes": "Filing status, numeric audit numbers (stockAuditNum), and update dates for Chinese commercial launch companies."
@@ -111,10 +111,30 @@
       "dataset": "global_space_benchmark",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2025",
+      "latest_observation": "2025\u200b",
       "records": 187,
       "freshness": "Live",
       "notes": "Annual objects launched for World, China and the United States. This is payload/object activity, not rocket launch count."
+    },
+    {
+      "source": "CelesTrak SATCAT Global Object Launch Catalog",
+      "dataset": "global_object_catalog",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2026-07",
+      "records": 480,
+      "freshness": "Live",
+      "notes": "Monthly counts derived from catalogued objects with known launch dates; payloads are closest to the UNOOSA object definition, while rocket bodies, debris and unknown objects remain separate."
+    },
+    {
+      "source": "Wikimedia Wikipedia Pageviews",
+      "dataset": "wikimedia_pageviews",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2026-07-31",
+      "records": 5668,
+      "freshness": "Live",
+      "notes": "Daily English Wikipedia pageviews for a curated aerospace page basket, aggregated into monthly and complete Monday-Sunday weekly views; user, search-engine spider, automated and all-agent traffic remain separate."
     }
   ],
   "attachment_filename": "hk-commercial-aerospace-dashboard-2026-08-01.html"

@@ -2,7 +2,8 @@ name: HK Commercial Aerospace Sector Data Refresh Weekly
 
 # HK Commercial Aerospace data sources: SSE/SZSE IPO status, Launch Library 2,
 # Celestrak NORAD orbit data, FAA commercial-space KPIs, USAspending contracts,
-# SEC company filings, the global benchmark, and Google Patents search.
+# SEC company filings, the global benchmark, Google Patents search, and daily
+# Wikimedia Pageviews aggregated to complete weekly attention totals.
 # Weekly cadence (Mondays 02:00 UTC) ensures Launch Library 2 15-req/hour limit
 # is respected while keeping status, satellite counts, contracts, filings, and
 # the persistent launch/constellation histories fresh.
@@ -56,7 +57,11 @@ jobs:
             apps/asia-markets-dashboard/.generated/hk-commercial-aerospace-artifact.json \
             apps/asia-markets-dashboard/src/data/dashboard-status-hk-commercial-aerospace.json \
             data/normalized/hk_commercial_aerospace/celestrak_constellation_history.jsonl \
-            data/normalized/hk_commercial_aerospace/launch_events_history.jsonl
+            data/normalized/hk_commercial_aerospace/launch_events_history.jsonl \
+            data/normalized/hk_commercial_aerospace/wikimedia_aerospace_pageviews_monthly.jsonl \
+            data/normalized/hk_commercial_aerospace/wikimedia_aerospace_pageviews_manifest.json \
+            data/normalized/hk_commercial_aerospace/wikimedia_aerospace_pageviews_weekly.jsonl \
+            data/normalized/hk_commercial_aerospace/wikimedia_aerospace_pageviews_weekly_manifest.json
 
           if git diff --staged --quiet; then
             echo "No HK commercial aerospace data changes to commit"

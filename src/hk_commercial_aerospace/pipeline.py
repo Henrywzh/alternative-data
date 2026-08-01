@@ -14,6 +14,7 @@ from .sources.faa_commercial_space import fetch_faa_commercial_space_kpis
 from .sources.usaspending import fetch_commercial_space_contracts
 from .sources.global_space_benchmark import fetch_global_objects_launched
 from .sources.sec_space_companies import fetch_sec_space_company_filings
+from .sources.wikimedia_pageviews import fetch_wikipedia_aerospace_pageviews
 
 logger = logging.getLogger(__name__)
 
@@ -67,6 +68,11 @@ QUALITY_SPECS = {
         "kind": "event_feed",
         "required": ["ticker", "form", "filing_date", "fetched_at"],
         "max_age_days": 14,
+    },
+    "wikipedia_pageviews": {
+        "kind": "measure",
+        "required": ["page_id", "agent", "month", "views", "fetched_at"],
+        "max_age_days": 45,
     },
 }
 
@@ -162,6 +168,7 @@ def run_stage_2_pipeline() -> dict[str, Any]:
         "usaspending_contracts": fetch_commercial_space_contracts,
         "global_space_benchmark": fetch_global_objects_launched,
         "sec_space_filings": fetch_sec_space_company_filings,
+        "wikipedia_pageviews": fetch_wikipedia_aerospace_pageviews,
     }
     for key, fetcher in fetchers.items():
         try:

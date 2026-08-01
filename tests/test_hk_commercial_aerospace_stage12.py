@@ -6,6 +6,10 @@ import pandas as pd
 
 from src.hk_commercial_aerospace.sources.faa_commercial_space import fetch_faa_commercial_space_kpis
 from src.hk_commercial_aerospace.sources.global_space_benchmark import fetch_global_objects_launched
+from src.hk_commercial_aerospace.sources.global_object_catalog import (
+    build_monthly_catalog_summary,
+    fetch_celestrak_satcat,
+)
 from src.hk_commercial_aerospace.sources.launch_library import (
     SCHEMA_COLUMNS as LL2_SCHEMA,
     _append_launch_history,
@@ -26,6 +30,14 @@ from src.hk_commercial_aerospace.sources.china_launch_records import (
 )
 from src.hk_commercial_aerospace.sources.usaspending import fetch_commercial_space_contracts
 from src.hk_commercial_aerospace.sources.celestrak_satellites import fetch_all_constellations
+from src.hk_commercial_aerospace.sources.wikimedia_pageviews import (
+    build_agent_monthly_summary,
+    build_agent_weekly_summary,
+    build_latest_page_agent_summary,
+    build_user_page_monthly_summary,
+    fetch_wikipedia_aerospace_pageviews,
+    fetch_wikipedia_aerospace_pageviews_daily,
+)
 
 
 def test_launch_parser_uses_id_and_exact_provider_guard():
@@ -206,6 +218,113 @@ def test_global_benchmark_keeps_world_china_us_only():
         frame = fetch_global_objects_launched()
     assert set(frame["entity"]) == {"World", "China", "United States"}
     assert int(frame.loc[frame["entity"] == "World", "objects_launched"].iloc[0]) == 2849
+
+
+def test_celestrak_catalog_builds_monthly_object_type_counts():
+    csv = (
+        "OBJECT_NAME,OBJECT_ID,NORAD_CAT_ID,OBJECT_TYPE,OPS_STATUS_CODE,OWNER,LAUNCH_DATE,LAUNCH_SITE,DECAY_DATE\n"
+        "PAYLOAD A,2024-001A,1,PAY,D,USA,2024-01-02,AFETR,2024-02-01\n"
+        "PAYLOAD B,2024-001B,2,PAY,D,USA,2024-01-02,AFETR,\n"
+        "ROCKET A,2024-001C,3,R/B,D,USA,2024-01-02,AFETR,\n"
+        "DEBRIS A,2024-002A,4,DEB,D,USA,2024-03-05,AFETR,\n"
+    )
+    response = Mock(status_code=200, content=csv.encode(), url="https://celestrak.org/pub/satcat.csv")
+    response.raise_for_status.return_value = None
+    with patch("src.hk_commercial_aerospace.sources.global_object_catalog.requests.get", return_value=response):
+        frame = fetch_celestrak_satcat()
+
+    summary = build_monthly_catalog_summary(frame, lookback_months=None)
+    jan = summary[summary["month"] == "2024-01"].set_index("object_type")["object_count"]
+    feb = summary[summary["month"] == "2024-02"].set_index("object_type")["object_count"]
+    mar = summary[summary["month"] == "2024-03"].set_index("object_type")["object_count"]
+    assert frame.attrs["source"] == "live"
+    assert int(jan["Payload"]) == 2
+    assert int(jan["Rocket body"]) == 1
+    assert int(jan["Debris"]) == 0
+    assert int(feb["Payload"]) == 0
+    assert int(mar["Debris"]) == 1
+    assert summary["month"].nunique() == 3
+    assert set(summary["object_type"]) == {"Payload", "Rocket body", "Debris", "Unknown"}
+
+
+def test_wikimedia_pageviews_keeps_agents_and_builds_compact_summaries(tmp_path):
+    import src.hk_commercial_aerospace.sources.wikimedia_pageviews as pageviews
+
+    def fake_get(url, **kwargs):
+        response = Mock(status_code=200, url=url)
+        response.raise_for_status.return_value = None
+        agent = next(value for value in ("user", "spider", "automated", "all-agents") if f"/{value}/" in url)
+        response.json.return_value = {
+            "items": [
+                {"project": "en.wikipedia", "article": "SpaceX", "granularity": "monthly", "timestamp": "2025010100", "access": "all-access", "agent": agent, "views": 10},
+                {"project": "en.wikipedia", "article": "SpaceX", "granularity": "monthly", "timestamp": "2025020100", "access": "all-access", "agent": agent, "views": 20},
+            ]
+        }
+        return response
+
+    with (
+        patch.object(pageviews, "NORMALIZED_PATH", tmp_path / "pageviews.jsonl"),
+        patch.object(pageviews, "MANIFEST_PATH", tmp_path / "manifest.json"),
+        patch.object(pageviews, "WIKIMEDIA_PAGEVIEWS_REQUEST_DELAY_SECONDS", 0),
+        patch.object(pageviews, "save_raw_snapshot"),
+        patch.object(pageviews.requests, "get", side_effect=fake_get),
+    ):
+        frame = fetch_wikipedia_aerospace_pageviews(start_date="20250101", end_date="20250301")
+
+    assert frame.attrs["source"] == "live"
+    assert set(frame["agent"]) == {"user", "spider", "automated", "all-agents"}
+    assert len(frame) == 9 * 4 * 2
+    agent_summary = build_agent_monthly_summary(frame, lookback_months=2)
+    assert agent_summary.shape == (2 * 4, 4)
+    assert int(agent_summary.loc[(agent_summary["month"] == "2025-02") & (agent_summary["agent"] == "user"), "views"].iloc[0]) == 9 * 20
+    user_summary = build_user_page_monthly_summary(frame, lookback_months=2)
+    assert len(user_summary) == 2 * 9
+    latest = build_latest_page_agent_summary(frame)
+    assert len(latest) == 9 * 4
+    assert set(latest["latest_month"]) == {"2025-02"}
+    assert int(latest.loc[(latest["page_id"] == "spacex") & (latest["agent"] == "automated"), "trailing_12m_views"].iloc[0]) == 30
+
+
+def test_wikimedia_daily_pageviews_builds_complete_monday_sunday_weeks(tmp_path):
+    import src.hk_commercial_aerospace.sources.wikimedia_pageviews as pageviews
+
+    def fake_get(url, **kwargs):
+        response = Mock(status_code=200, url=url)
+        response.raise_for_status.return_value = None
+        agent = next(value for value in ("user", "spider", "automated", "all-agents") if f"/{value}/" in url)
+        dates = ["2025122900", "2025123000", "2025123100", "2026010100", "2026010200", "2026010300", "2026010400"]
+        response.json.return_value = {
+            "items": [
+                {
+                    "project": "en.wikipedia",
+                    "article": "SpaceX",
+                    "granularity": "daily",
+                    "timestamp": timestamp,
+                    "access": "all-access",
+                    "agent": agent,
+                    "views": index + 1,
+                }
+                for index, timestamp in enumerate(dates)
+            ]
+        }
+        return response
+
+    with (
+        patch.object(pageviews, "WEEKLY_NORMALIZED_PATH", tmp_path / "weekly.jsonl"),
+        patch.object(pageviews, "WEEKLY_MANIFEST_PATH", tmp_path / "weekly-manifest.json"),
+        patch.object(pageviews, "WIKIMEDIA_PAGEVIEWS_REQUEST_DELAY_SECONDS", 0),
+        patch.object(pageviews, "save_raw_snapshot"),
+        patch.object(pageviews.requests, "get", side_effect=fake_get),
+    ):
+        frame = fetch_wikipedia_aerospace_pageviews_daily(start_date="20251229", end_date="20260104")
+
+    assert frame.attrs["source"] == "live"
+    assert len(frame) == 9 * 4 * 7
+    weekly = frame.attrs["weekly_summary"]
+    assert weekly.shape == (4, 4)
+    assert set(weekly["week"]) == {"2025-12-29"}
+    assert int(weekly.loc[weekly["agent"] == "user", "views"].iloc[0]) == 9 * sum(range(1, 8))
+    assert build_agent_weekly_summary(frame, lookback_weeks=1).equals(weekly)
 
 
 def test_usaspending_drops_non_space_keyword_matches():
