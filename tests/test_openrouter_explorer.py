@@ -9,6 +9,17 @@ from dashboard.sections.openrouter import (
     _catalog_alias_map,
     _clean_provider_request_frame,
     _combine_explorer_activity,
+    _comparison_merge_sources,
+    _comparison_interpolate_internal_weekly_request_gaps,
+    _comparison_metric_frame,
+    _comparison_first_week_coverage,
+    _comparison_weekly_rankings,
+    _comparison_chart,
+    _comparison_rolling_7d_frame,
+    _context_length_bucket_pivot,
+    _drop_known_model_activity_test_rows,
+    _format_token_axis_label,
+    _market_share_weekly_totals,
     _drop_identical_route_alias_rows,
     _format_price_per_m,
     build_openrouter_explorer_views,
@@ -19,6 +30,7 @@ from dashboard.sections.openrouter import (
 )
 from openrouter_data.models import DatasetRecord
 from openrouter_data.storage import StorageManager
+from dashboard.theme import MODEL_COLORS
 
 
 def _dataset_result(dataset_id: str, frame: pd.DataFrame) -> DatasetLoadResult:
@@ -605,3 +617,233 @@ def test_model_activity_archive_upserts_without_duplicates(tmp_path: Path) -> No
     assert len(archived) == 1
     assert float(archived.iloc[0]["total_tokens"]) == 150.0
     assert archived.iloc[0]["source_run_id"] == "run-2"
+
+
+def test_comparison_source_merge_does_not_add_overlapping_periods() -> None:
+    legacy = pd.DataFrame([
+        {"period_start": "2026-07-06", "entity_id": "openai", "value": 100.0},
+        {"period_start": "2026-07-13", "entity_id": "openai", "value": 110.0},
+    ])
+    modern = pd.DataFrame([
+        {"period_start": "2026-07-13", "entity_id": "openai", "value": 40.0},
+        {"period_start": "2026-07-20", "entity_id": "openai", "value": 50.0},
+    ])
+
+    prefer_modern = _comparison_merge_sources(legacy, modern, prefer_modern=True)
+    prefer_legacy = _comparison_merge_sources(legacy, modern, prefer_modern=False)
+
+    assert prefer_modern.set_index("period_start").loc["2026-07-13", "value"] == 40.0
+    assert prefer_legacy.set_index("period_start").loc["2026-07-13", "value"] == 110.0
+    assert len(prefer_modern) == 3
+
+
+def test_comparison_interpolates_only_isolated_pre_2026_request_gaps() -> None:
+    frame = pd.DataFrame([
+        {"period_start": "2025-12-22", "entity_id": "anthropic", "value": 34_724_923.0},
+        {"period_start": "2026-01-05", "entity_id": "anthropic", "value": 48_960_735.0},
+        {"period_start": "2025-08-11", "entity_id": "z-ai", "value": 6_795_814.0},
+        {"period_start": "2025-08-25", "entity_id": "z-ai", "value": 6_492_824.0},
+        {"period_start": "2025-10-06", "entity_id": "deepseek", "value": 10.0},
+        {"period_start": "2025-10-27", "entity_id": "deepseek", "value": 20.0},
+    ])
+
+    result, notes = _comparison_interpolate_internal_weekly_request_gaps(frame)
+
+    estimates = result.set_index(["entity_id", "period_start"])["value"]
+    assert estimates.loc["anthropic", pd.Timestamp("2025-12-29")] == (34_724_923.0 + 48_960_735.0) / 2
+    assert estimates.loc["z-ai", pd.Timestamp("2025-08-18")] == (6_795_814.0 + 6_492_824.0) / 2
+    assert "deepseek" not in {str(note["entity_id"]) for note in notes}
+    assert {(str(note["entity_id"]), note["period_start"]) for note in notes} == {
+        ("anthropic", pd.Timestamp("2025-12-29")),
+        ("z-ai", pd.Timestamp("2025-08-18")),
+    }
+
+
+def test_comparison_does_not_interpolate_multi_week_or_post_cutoff_gaps() -> None:
+    frame = pd.DataFrame([
+        {"period_start": "2025-08-04", "entity_id": "provider", "value": 10.0},
+        {"period_start": "2025-09-01", "entity_id": "provider", "value": 20.0},
+        {"period_start": "2026-01-05", "entity_id": "provider", "value": 30.0},
+        {"period_start": "2026-01-19", "entity_id": "provider", "value": 50.0},
+    ])
+
+    result, notes = _comparison_interpolate_internal_weekly_request_gaps(frame)
+
+    assert len(result) == len(frame)
+    assert notes == []
+
+
+def test_comparison_rankings_select_one_coherent_snapshot() -> None:
+    frame = pd.DataFrame([
+        {"week_start_date": "2026-07-05", "entity_id": "openai", "metric_value": 10.0, "source_run_id": "partial", "scraped_at": "2026-07-06"},
+        {"week_start_date": "2026-07-06", "entity_id": "openai", "metric_value": 100.0, "source_run_id": "complete", "scraped_at": "2026-07-07"},
+        {"week_start_date": "2026-07-06", "entity_id": "anthropic", "metric_value": 200.0, "source_run_id": "complete", "scraped_at": "2026-07-07"},
+    ])
+
+    result = _comparison_weekly_rankings(
+        frame,
+        date_column="week_start_date",
+        entity_column="entity_id",
+        value_column="metric_value",
+        entity_mapper=lambda value: str(value),
+        sunday_alignment=True,
+    )
+
+    assert result["value"].sum() == 300.0
+    assert result["period_start"].nunique() == 1
+
+
+def test_duplicate_aligned_market_snapshots_prefer_complete_sunday_snapshot() -> None:
+    rows = []
+    for index in range(10):
+        entity = f"provider-{index}"
+        rows.append({
+            "week_start_date": "2025-07-27",
+            "entity_id": entity,
+            "metric_value": 100.0,
+            "source_run_id": "sunday-complete",
+            "scraped_at": "2026-04-04T12:00:00Z",
+        })
+        rows.append({
+            "week_start_date": "2025-07-28",
+            "entity_id": entity,
+            "metric_value": 1.0,
+            "source_run_id": "monday-malformed",
+            "scraped_at": "2026-07-06T09:00:00Z",
+        })
+    frame = pd.DataFrame(rows)
+
+    weekly = _comparison_weekly_rankings(
+        frame,
+        date_column="week_start_date",
+        entity_column="entity_id",
+        value_column="metric_value",
+        entity_mapper=lambda value: str(value),
+        sunday_alignment=True,
+    )
+    totals = _market_share_weekly_totals(frame)
+
+    assert weekly["value"].sum() == 1_000.0
+    assert totals.loc["2025-07-28"] == 1_000.0
+
+
+def test_comparison_metric_frame_uses_priced_tokens_for_realized_price() -> None:
+    tokens = pd.DataFrame([{"period_start": pd.Timestamp("2026-07-06"), "entity_id": "openai", "value": 1_000_000.0}])
+    requests = pd.DataFrame([{"period_start": pd.Timestamp("2026-07-06"), "entity_id": "openai", "value": 100.0}])
+    economics = pd.DataFrame([
+        {"period_start": pd.Timestamp("2026-07-06"), "entity_id": "openai", "revenue": 2.5, "priced_tokens": 500_000.0}
+    ])
+
+    result = _comparison_metric_frame(tokens, requests, economics).iloc[0]
+
+    assert result["Tokens / request"] == 10_000.0
+    assert result["Realized price"] == 5.0
+
+
+def test_token_axis_uses_dashboard_billion_and_trillion_units() -> None:
+    assert _format_token_axis_label(800_000_000_000) == "800B"
+    assert _format_token_axis_label(1_200_000_000_000) == "1.2T"
+
+
+def test_known_model_activity_test_runs_are_removed_but_other_category_rows_remain() -> None:
+    frame = pd.DataFrame([
+        {"source_run_id": "20260416T134419Z-9c52eb4a", "model_permaslug": "openai/test", "request_count": 1},
+        {"source_run_id": "20260424T163607Z-e27b0c04", "model_permaslug": "openai/test", "request_count": 2},
+        {"source_run_id": "20260718T042655Z-85d677c5", "model_permaslug": "openai/live", "request_count": 3},
+    ])
+
+    cleaned = _drop_known_model_activity_test_rows(frame)
+
+    assert cleaned["source_run_id"].tolist() == ["20260718T042655Z-85d677c5"]
+
+
+def test_comparison_chart_supports_up_to_five_companies() -> None:
+    frame = pd.DataFrame([
+        {"period_start": "2026-07-01", "entity_id": company, "Tokens": value}
+        for company, value in zip(("openai", "anthropic", "google", "deepseek", "qwen"), (10, 20, 30, 40, 50))
+    ])
+
+    figure = _comparison_chart(
+        frame,
+        entity_ids=("openai", "anthropic", "google", "deepseek", "qwen"),
+        entity_labels={company: company.title() for company in frame["entity_id"]},
+        metric="Tokens",
+        window="Daily",
+        normalized=False,
+    )
+
+    assert len(figure.data) == 5
+    assert [trace.line.color for trace in figure.data] == MODEL_COLORS[:5]
+    assert len({trace.line.color for trace in figure.data}) == 5
+
+
+def test_comparison_rolling_7d_frame_uses_request_weighted_intensity() -> None:
+    frame = pd.DataFrame([
+        {
+            "period_start": date,
+            "entity_id": "openai",
+            "Tokens": float(index + 1),
+            "Requests": 1.0,
+            "Estimated revenue": 2.0,
+            "Realized price": 2.0,
+        }
+        for index, date in enumerate(pd.date_range("2026-07-01", periods=8, freq="D"))
+    ])
+
+    rolling = _comparison_rolling_7d_frame(frame)
+    last = rolling.iloc[-1]
+
+    assert last["Tokens"] == 5.0
+    assert last["Requests"] == 1.0
+    assert last["Tokens / request"] == 5.0
+    assert last["Estimated revenue"] == 2.0
+
+
+def test_comparison_rolling_7d_ratio_excludes_token_only_days() -> None:
+    frame = pd.DataFrame([
+        {
+            "period_start": date,
+            "entity_id": "anthropic",
+            "Tokens": tokens,
+            "Requests": requests,
+        }
+        for date, tokens, requests in (
+            ("2026-06-15", 1_000_000.0, None),
+            ("2026-06-16", 1_100_000.0, None),
+            ("2026-06-17", 500_000.0, 100.0),
+        )
+    ])
+
+    rolling = _comparison_rolling_7d_frame(frame)
+    first_valid = rolling.dropna(subset=["Tokens / request"]).iloc[0]
+
+    assert first_valid["period_start"] == pd.Timestamp("2026-06-17")
+    assert first_valid["Tokens / request"] == 5_000.0
+
+
+def test_context_length_bucket_pivot_aggregates_models_in_fixed_bucket_order() -> None:
+    frame = pd.DataFrame([
+        {"week_start_date": "2026-07-06", "context_length_bucket": "10K-100K", "entity_id": "a", "metric_value": 30},
+        {"week_start_date": "2026-07-06", "context_length_bucket": "10K-100K", "entity_id": "b", "metric_value": 20},
+        {"week_start_date": "2026-07-06", "context_length_bucket": "1K-10K", "entity_id": "a", "metric_value": 50},
+        {"week_start_date": "2026-07-13", "context_length_bucket": "1K-10K", "entity_id": "a", "metric_value": 60},
+    ])
+
+    pivot = _context_length_bucket_pivot(frame)
+
+    assert list(pivot.columns) == ["1K-10K", "10K-100K"]
+    assert pivot.loc[pd.Timestamp("2026-07-06"), "10K-100K"] == 50
+    assert pivot.loc[pd.Timestamp("2026-07-06"), "1K-10K"] == 50
+
+
+def test_first_week_coverage_marks_midweek_source_start_as_partial() -> None:
+    frame = pd.DataFrame({"date": pd.to_datetime(["2026-01-16", "2026-01-17", "2026-01-18"])})
+
+    first_week, first_complete_week, observed_days = _comparison_first_week_coverage(
+        frame,
+        date_column="date",
+    )
+
+    assert first_week == pd.Timestamp("2026-01-12")
+    assert first_complete_week == pd.Timestamp("2026-01-19")
+    assert observed_days == 3

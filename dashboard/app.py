@@ -82,6 +82,7 @@ MAIN_SECTIONS = (
     "Overview",
     "OpenRouter Intelligence",
     "OpenRouter Models",
+    "OpenRouter Compare",
     "OpenRouter Workloads",
     "Vercel AI",
     "Ramp",
@@ -99,6 +100,7 @@ SECTION_DESCRIPTIONS = {
     "Overview": "Cross-market pulse across AI usage, enterprise adoption, developer activity, model quality, and infrastructure.",
     "OpenRouter Intelligence": "Tracks model and provider usage, estimated revenue, task leaders, market coverage, and catalog economics.",
     "OpenRouter Models": "Explore OpenRouter companies and models by activity, pricing, context window, release date, capabilities, and public-app usage.",
+    "OpenRouter Compare": "Compare up to five model-origin companies across usage, requests, revenue, workload intensity, and realized price.",
     "OpenRouter Workloads": "Tracks request context lengths, modality mix, and the public apps generating OpenRouter traffic.",
     "Vercel AI": "Tracks model and lab usage share across Vercel AI Gateway, with modality and metric-level rankings.",
     "Ramp": "Tracks business AI adoption, spend intensity, vendor mix, model mix, company segments, and employment signals.",
@@ -116,6 +118,7 @@ SECTION_DOMAIN_MAP = {
     "Overview": ("overview",),
     "OpenRouter Intelligence": ("openrouter_intelligence", "compute_availability", "openrouter_official_market", "openrouter_derived"),
     "OpenRouter Models": ("openrouter_model_explorer", "openrouter_catalog", "openrouter_derived"),
+    "OpenRouter Compare": ("openrouter_model_explorer", "openrouter_catalog", "openrouter_derived", "artificial_analysis"),
     "OpenRouter Workloads": ("openrouter_workloads", "apps"),
     "Vercel AI": ("vercel_ai",),
     "Ramp": ("ramp",),
@@ -201,7 +204,7 @@ def select_main_section() -> str:
         )
         nav_button("Overview")
         st.markdown('<div class="sidebar-group-label">AI Usage</div>', unsafe_allow_html=True)
-        for label in ("OpenRouter Intelligence", "OpenRouter Models", "OpenRouter Workloads", "Vercel AI"):
+        for label in ("OpenRouter Intelligence", "OpenRouter Models", "OpenRouter Compare", "OpenRouter Workloads", "Vercel AI"):
             nav_button(label)
         st.markdown('<div class="sidebar-group-label">Adoption</div>', unsafe_allow_html=True)
         for label in ("Ramp", "Provider Adoption", "AI Hiring Demand"):
@@ -282,6 +285,7 @@ SECTION_RENDERERS = {
     # Keep startup compatible with a Streamlit process that has briefly
     # retained the pre-explorer module during a rolling redeploy.
     "OpenRouter Models": getattr(openrouter, "render_models", openrouter.render),
+    "OpenRouter Compare": getattr(openrouter, "render_compare", openrouter.render),
     "OpenRouter Workloads": getattr(openrouter, "render_workloads", openrouter.render),
     "Vercel AI": vercel_ai.render,
     "Ramp": ramp.render,
