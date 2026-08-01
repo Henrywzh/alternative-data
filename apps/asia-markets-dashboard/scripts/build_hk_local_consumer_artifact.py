@@ -57,21 +57,6 @@ from src.hk_local_consumer.config import NORMALIZED_DIR
 from history_policy import DEFAULT_HISTORY_YEARS, history_window
 
 
-# AFCD's wholesale-prices CSV was verified (live fetch + a scan of the
-# afcd.gov.hk price page) to expose only that morning's readings -- no
-# archive, no date-parameterized endpoint. There is therefore no real
-# "AFCD category prices over time" series available from the upstream
-# source itself. Rather than fabricate one, each pipeline run appends the
-# real same-day category averages it just computed to this small
-# append-only local file, so the "over time" chart genuinely accumulates
-# one real row per (date, category) each time the pipeline runs -- see
-# _update_afcd_category_history(). It is intentionally whitelisted in
-# .gitignore (unlike the rest of data/normalized/hk_local_consumer, which
-# is disposable per-run scratch output) so the history survives across CI
-# runs instead of resetting on every fresh checkout.
-AFCD_CATEGORY_HISTORY_PATH = NORMALIZED_DIR / "afcd_category_history.csv"
-
-
 def _load_latest_normalized(dataset: str) -> pd.DataFrame:
     """Load the latest successfully materialised source run; never fetch here."""
     candidates = sorted((NORMALIZED_DIR / dataset).glob(f"*/{dataset}.parquet"), key=lambda path: path.stat().st_mtime)
@@ -124,20 +109,6 @@ PUBLIC_SOURCES = {
                 "reports only validated local archive coverage; it does not present an "
                 "assortment-sensitive arithmetic mean as a price index."
             ),
-        },
-    },
-    "afcd_wholesale": {
-        "id": "afcd_wholesale",
-        "label": "AFCD Fresh Food Wholesale Prices",
-        "href": "https://www.afcd.gov.hk/english/agriculture/agr_fresh/agr_fresh_pri/agr_fresh_pri.html",
-        "query": {
-            "engine": "official CSV",
-            "url": "https://www.afcd.gov.hk/english/agriculture/agr_fresh/files/Wholesale_Prices.csv",
-            "language": "CSV",
-            "description": "Loads that morning's average wholesale price per commodity across Hong Kong's fresh-food wholesale markets; prices are converted from the published HKD/catty unit to HKD/kg.",
-            "metric_definitions": [
-                "Each commodity's price is the mean of same-day readings across the wholesale markets/sources AFCD reports for it.",
-            ],
         },
     },
     "sge_gold": {
@@ -292,30 +263,6 @@ PUBLIC_SOURCES = {
         },
     },
 }
-
-# The portable dashboard renderer lays out a chart's color legend as a
-# single-row flex box that does not actually reflow onto multiple lines at
-# mobile width (a limitation of the vendored report runtime, not something
-# this repo's code controls) -- so a multi-series legend must fit on one
-# ~340px-wide line at the 390px mobile viewport the portable-artifact
-# verifier checks, or the whole page overflows horizontally and the build
-# fails. HK REIT's charts already work around this by coloring by short
-# ticker codes rather than full REIT names (see build_hk_reit_artifact.py);
-# AFCD's five wholesale-price categories have no natural short code, so
-# this map supplies one just for the chart legend -- the full category
-# name is still used everywhere else (bar chart x-axis, tables).
-AFCD_CATEGORY_SHORT_LABELS = {
-    "Eggs": "Eggs",
-    "Freshwater fish": "FW fish",
-    "Livestock / Poultry": "Meat/Poultry",
-    "Marine fish": "Marine",
-    "Vegetables": "Veg",
-}
-
-
-def _afcd_category_short_label(category: str) -> str:
-    return AFCD_CATEGORY_SHORT_LABELS.get(category, category[:10])
-
 
 # The classification variable's top-level breakdown (ccg "1" in CenStatD's
 # table_620-67002_lang.json); the finer ~14-row "1.1" breakdown is fetched
@@ -710,43 +657,6 @@ def _stamp_sources(generated_at: str) -> list[dict[str, Any]]:
     return result
 
 
-def _update_afcd_category_history(
-    category_summary: pd.DataFrame, now: datetime, history_path: Path = AFCD_CATEGORY_HISTORY_PATH
-) -> pd.DataFrame:
-    """Append today's real AFCD category averages to the running local
-    history file and return the full accumulated history.
-
-    This is a genuine build-forward accumulation, not a backfill: AFCD
-    itself only ever publishes today's readings (see
-    AFCD_CATEGORY_HISTORY_PATH's comment above), so the only honest way to
-    build an "over time" series is to keep every day's real snapshot that
-    this pipeline actually captures. The history therefore starts as thin
-    as a single day and grows by one row per category each time the
-    pipeline runs (daily, per the GitHub Actions schedule). Re-running on
-    the same UTC date replaces that date's rows instead of duplicating
-    them, so the file stays idempotent under repeated manual runs.
-    """
-    today = now.date().isoformat()
-    today_rows = category_summary.loc[:, ["category", "avg_price_hkd_per_kg", "commodities"]].copy()
-    today_rows.insert(0, "date", today)
-
-    if history_path.exists():
-        existing = pd.read_csv(history_path, dtype={"date": str})
-    else:
-        existing = pd.DataFrame(columns=["date", "category", "avg_price_hkd_per_kg", "commodities"])
-
-    existing = existing[existing["date"] != today]
-    combined = today_rows if existing.empty else pd.concat([existing, today_rows], ignore_index=True)
-    combined["date"] = combined["date"].astype(str)
-    combined["avg_price_hkd_per_kg"] = pd.to_numeric(combined["avg_price_hkd_per_kg"], errors="coerce")
-    combined["commodities"] = pd.to_numeric(combined["commodities"], errors="coerce").astype("Int64")
-    combined = combined.sort_values(["date", "category"]).reset_index(drop=True)
-
-    history_path.parent.mkdir(parents=True, exist_ok=True)
-    combined.to_csv(history_path, index=False)
-    return combined
-
-
 def build_artifact(
     raw_gold: pd.DataFrame,
     raw_afcd: pd.DataFrame,
@@ -763,7 +673,6 @@ def build_artifact(
     raw_fehd: pd.DataFrame | None = None,
     *,
     now: datetime | None = None,
-    afcd_history_path: Path = AFCD_CATEGORY_HISTORY_PATH,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     now = now or _utc_now()
     if now.tzinfo is None:
@@ -838,8 +747,7 @@ def build_artifact(
     # mobile-viewport horizontal_overflow failure at 390px (isolated from
     # every other chart on this page, which all pass on their own); this is
     # a legend-label-length variant of the same class of bug as the
-    # >3-series cap, not a series-count issue here. Same fix pattern this
-    # project already uses for AFCD's category_short labels.
+    # >3-series cap, not a series-count issue here.
     _CPI_CHART_CATEGORIES = {
         "Food and non-alcoholic beverages": "Food",
         "Housing, water, electricity, gas and other fuels": "Housing & Utilities",
@@ -984,15 +892,6 @@ def build_artifact(
     else:
         weather_daily = pd.DataFrame(columns=["date", "month", "warning_type", "hours"])
 
-    category_summary = (
-        afcd.groupby("category", as_index=False)
-        .agg(avg_price_hkd_per_kg=("avg_price_hkd_per_kg", "mean"), commodities=("commodity_name", "size"))
-    )
-    category_summary["avg_price_hkd_per_kg"] = category_summary["avg_price_hkd_per_kg"].round(2)
-    category_summary = category_summary.sort_values("avg_price_hkd_per_kg", ascending=False).reset_index(drop=True)
-
-    afcd_category_history = _update_afcd_category_history(category_summary, now, afcd_history_path)
-
     valuation_chart_rows = valuation_latest.dropna(subset=["pe_ttm"])
     valuation_chart_rows = valuation_chart_rows[valuation_chart_rows["pe_ttm"] > 0]
 
@@ -1026,16 +925,6 @@ def build_artifact(
             "records": int(len(gold)),
             "freshness": f"{(now.replace(tzinfo=None) - gold['date'].iloc[-1]).days}d old",
             "notes": "Daily AM/PM benchmark fixing.",
-        },
-        {
-            "source": PUBLIC_SOURCES["afcd_wholesale"]["label"],
-            "dataset": "AFCD Wholesale Food Prices",
-            "type": "Measure",
-            "status": "Healthy",
-            "latest_observation": now.date().isoformat(),
-            "records": int(len(afcd)),
-            "freshness": "Same-day snapshot",
-            "notes": f"{len(afcd)} commodities across {afcd['category'].nunique()} categories; averaged across same-day market readings.",
         },
         {
             "source": PUBLIC_SOURCES["hk_valuation"]["label"],
@@ -1153,16 +1042,6 @@ def build_artifact(
         "kpi_gold": [gold_kpi],
         "kpi_median_pe": [{"latest": round(median_pe_latest, 2)}] if median_pe_latest is not None else [],
         "gold_history": _records(gold_chart_window, ["month", "value"]),
-        "afcd_category_summary": _records(category_summary, ["category", "avg_price_hkd_per_kg", "commodities"]),
-        "afcd_category_trend_history": _records(
-            history_window(afcd_category_history, "date", years=DEFAULT_HISTORY_YEARS).assign(
-                category_short=lambda frame: frame["category"].map(_afcd_category_short_label)
-            ),
-            ["date", "category", "category_short", "avg_price_hkd_per_kg", "commodities"],
-        ),
-        "afcd_commodity_table": _records(
-            afcd, ["category", "commodity_name", "avg_price_hkd_per_kg", "num_readings"]
-        ),
         "valuation_table": _records(
             valuation_latest, ["ticker", "company_name", "pe_ttm", "pb_ratio", "market_cap_hkd_b", "date"]
         ),
@@ -1451,44 +1330,12 @@ def build_artifact(
             else []
         ),
         {
-            "id": "afcd_category_chart",
-            "title": "AFCD wholesale prices by category",
-            "subtitle": "Today's average wholesale price per kg, averaged across commodities in each category.",
-            "type": "bar",
-            "intent": "comparison",
-            "dataset": "afcd_category_summary",
-            "sourceId": "afcd_wholesale",
-            "encodings": {
-                "x": {"field": "category", "type": "nominal", "label": "Category"},
-                "y": {"field": "avg_price_hkd_per_kg", "type": "quantitative", "label": "HKD / kg"},
-            },
-            "valueFormat": "number",
-            "layout": "half",
-        },
-        {
-            "id": "afcd_category_trend",
-            "title": "AFCD wholesale prices by category, over time",
-            "subtitle": "Daily snapshots accumulated per pipeline run (AFCD only publishes today's readings). Legend: FW fish = Freshwater fish, Meat/Poultry = Livestock/Poultry, Marine = Marine fish, Veg = Vegetables.",
-            "type": "line",
-            "intent": "trend",
-            "dataset": "afcd_category_trend_history",
-            "sourceId": "afcd_wholesale",
-            "encodings": {
-                "x": {"field": "date", "type": "temporal", "label": "Date"},
-                "y": {"field": "avg_price_hkd_per_kg", "type": "quantitative", "label": "HKD / kg"},
-                "color": {"field": "category_short", "type": "nominal", "label": "Category"},
-            },
-            "valueFormat": "number",
-            "layout": "half",
-            "maxRows": 2000,
-        },
-        {
             "id": "gold_trend",
             "title": "Shanghai Gold Exchange PM benchmark (margin-cost reference)",
             "subtitle": (
                 "Monthly average of the daily PM fixing in RMB per gram; latest ten years of available history or all "
                 "available history when shorter. It is a secondary reference for "
-                "HK gold-jewellery input costs, shown alongside AFCD wholesale food costs for margin context -- see "
+                "HK gold-jewellery input costs -- see "
                 "the cross-border passenger traffic chart above for the featured consumer-demand signal."
             ),
             "type": "line",
@@ -1678,22 +1525,6 @@ def build_artifact(
                 {"field": "start", "label": "Start Time (HKT)", "type": "text"},
                 {"field": "end", "label": "End Time (HKT)", "type": "text"},
                 {"field": "duration_hours", "label": "Duration (Hours)", "format": "number"},
-            ],
-        },
-        {
-            "id": "afcd_commodity_table",
-            "title": "AFCD wholesale price snapshot",
-            "subtitle": "Same-day average price per commodity, HKD/kg (converted from the published HKD/catty rate).",
-            "dataset": "afcd_commodity_table",
-            "sourceId": "afcd_wholesale",
-            "defaultSort": {"field": "avg_price_hkd_per_kg", "direction": "desc"},
-            "density": "dense",
-            "layout": "full",
-            "columns": [
-                {"field": "category", "label": "Category", "type": "text"},
-                {"field": "commodity_name", "label": "Commodity", "type": "text"},
-                {"field": "avg_price_hkd_per_kg", "label": "HKD/kg", "format": "number"},
-                {"field": "num_readings", "label": "Readings", "format": "number"},
             ],
         },
         {
@@ -1978,8 +1809,7 @@ def build_artifact(
             }
         )
 
-    # Build complaints table and chart data
-    complaint_table_rows: list[dict[str, Any]] = []
+    # Build complaints chart data
     complaint_chart_rows: list[dict[str, Any]] = []
     complaint_history_chart_rows: list[dict[str, Any]] = []
     if complaint_rows:
@@ -1987,7 +1817,6 @@ def build_artifact(
         latest_period = latest_periods[0] if latest_periods else ""
         period_rows = [r for r in complaint_rows if r["period"] == latest_period]
         period_rows.sort(key=lambda r: r["amount"], reverse=True)
-        complaint_table_rows = period_rows
         # Top 10 categories for chart
         top10 = period_rows[:10]
         top10.reverse()  # horizontalBar renders bottom-to-top, so reverse for largest at top
@@ -2010,22 +1839,11 @@ def build_artifact(
             for row in complaint_rows
             if row["category"] in latest_top_categories
         ]
-        # Add table
-        tables.append({
-            "id": "consumer_council_complaints_table",
-            "title": "Consumer Council Complaints by Category (Latest Period)",
-            "subtitle": f"All complaint categories during {latest_period}, sorted by number of complaints.",
-            "dataset": "consumer_council_complaints_table",
-            "sourceId": "consumer_council_complaints",
-            "defaultSort": {"field": "amount", "direction": "desc"},
-            "density": "dense",
-            "layout": "full",
-            "columns": [
-                {"field": "period", "label": "Period", "type": "text"},
-                {"field": "category", "label": "Category", "type": "text"},
-                {"field": "amount", "label": "Complaints", "format": "number"},
-            ],
-        })
+        # A "latest period" snapshot table used to be rendered here, but it's
+        # a strict subset of consumer_council_complaints_history_table below
+        # (same columns, just filtered to one period) -- removed as
+        # redundant. complaint_table_rows is still computed above; it now
+        # only feeds the top-10 bar chart's ranking.
         # Add chart
         charts.append({
             "id": "consumer_council_complaints_chart",
@@ -2138,7 +1956,6 @@ def build_artifact(
     datasets["consumer_council_oilprice_history_premium"] = oil_history_rows.get("premium-unleaded-gasoline", [])
     datasets["consumer_council_oilprice_wow"] = oil_wow_rows
     datasets["consumer_council_complaints"] = complaint_rows
-    datasets["consumer_council_complaints_table"] = complaint_table_rows
     datasets["consumer_council_complaints_chart"] = complaint_chart_rows
     datasets["consumer_council_complaints_history_chart"] = complaint_history_chart_rows
     datasets["immigration_checkpoint_snapshot"] = checkpoint_rows
@@ -2200,8 +2017,6 @@ def build_artifact(
                     else []
                 ),
                 {"id": "weather_log_table", "type": "table", "tableId": "severe_weather_log_table"},
-                {"id": "afcd_trend_chart", "type": "chart", "chartId": "afcd_category_chart", "layout": "half"},
-                {"id": "afcd_category_trend_block", "type": "chart", "chartId": "afcd_category_trend", "layout": "half"},
                 {"id": "gold_chart", "type": "chart", "chartId": "gold_trend", "layout": "half"},
                 {"id": "valuation_chart", "type": "chart", "chartId": "valuation_pe_chart", "layout": "half"},
                 {"id": "valuation_market_cap_chart", "type": "chart", "chartId": "valuation_market_cap_trend"},
@@ -2212,7 +2027,6 @@ def build_artifact(
                 {"id": "oilprice_wow_table_block", "type": "table", "tableId": "consumer_council_oilprice_wow_table"},
                 {"id": "complaints_chart_block", "type": "chart", "chartId": "consumer_council_complaints_chart", "layout": "half"},
                 {"id": "complaints_history_chart_block", "type": "chart", "chartId": "consumer_council_complaints_history_chart"},
-                {"id": "complaints_table_block", "type": "table", "tableId": "consumer_council_complaints_table"},
                 {"id": "complaints_history_table_block", "type": "table", "tableId": "consumer_council_complaints_history_table"},
                 *(
                     [
@@ -2225,7 +2039,6 @@ def build_artifact(
                     if checkpoint_rows
                     else []
                 ),
-                {"id": "afcd_table", "type": "table", "tableId": "afcd_commodity_table"},
                 {"id": "valuation_table_block", "type": "table", "tableId": "valuation_table"},
                 *(
                     [
@@ -2283,12 +2096,10 @@ def build_artifact(
                     "body": (
                         "## Reading the dashboard\n\n"
                         "Cross-border passenger traffic (northbound/southbound) is the featured consumer-demand signal. "
-                        "Gold is a secondary proxy for jewellery-sector input costs, not a stock-price forecast, and is shown "
-                        "alongside AFCD wholesale food costs for margin context rather than as a standalone headline chart. "
-                        "Wholesale food prices are a single-day snapshot, averaged across the markets AFCD samples that day; "
-                        "the AFCD category trend chart accumulates one real observation per pipeline run (no historical "
-                        "backfill exists for this feed), so it starts thin and grows over time. "
+                        "Gold is a secondary proxy for jewellery-sector input costs, not a stock-price forecast. "
                         "Retail sales and restaurant receipts are official monthly/quarterly government indices, not real-time. "
+                        "The Composite CPI's category sub-indices only start in 2005, thirty years shorter than the headline "
+                        "series. FEHD's licensed-restaurant count by district is a same-day snapshot, not a trend. "
                         "Online Price Watch uses a product-code matched, chain-linked supermarket indicator rather than "
                         "an assortment-sensitive average listed price; promotions and pack-size changes are not adjusted. "
                         "Active data signals lists sources already backing a live measure above; the coverage table tracks "

@@ -5,7 +5,7 @@
     "surface": "dashboard",
     "title": "香港本地消费监测",
     "description": "极端天气干扰时长、港元/人民币汇率、跨境出入境人流（北上/南下）、黄金原料成本、零售销售、餐饮收益及消费股估值的来源快照。",
-    "generatedAt": "2026-08-01T00:23:03.548101Z",
+    "generatedAt": "2026-08-01T11:03:50.540187Z",
     "cards": [
       {
         "id": "northbound_card",
@@ -294,58 +294,6 @@
         "valueFormat": "number",
         "layout": "full",
         "maxRows": 180
-      },
-      {
-        "id": "afcd_category_chart",
-        "title": "农渔护理署批发价按类别",
-        "subtitle": "今日各类别商品的平均批发价（每公斤）。",
-        "type": "bar",
-        "intent": "comparison",
-        "dataset": "afcd_category_summary",
-        "sourceId": "afcd_wholesale",
-        "encodings": {
-          "x": {
-            "field": "category",
-            "type": "nominal",
-            "label": "类别"
-          },
-          "y": {
-            "field": "avg_price_hkd_per_kg",
-            "type": "quantitative",
-            "label": "港元 / 公斤"
-          }
-        },
-        "valueFormat": "number",
-        "layout": "half"
-      },
-      {
-        "id": "afcd_category_trend",
-        "title": "农渔护理署批发价按类别走势（逐日累积）",
-        "subtitle": "由每次流水线运行时抓取的真实同日快照逐日累积而成——农渔护理署的批发价数据源只公布当日读数（未发现历史存档），因此本序列不作回填，初期数据量很薄（可能仅有一天），并会随每次运行新增真实观测值而增长。图例为适配窄屏使用缩写：FW fish=淡水鱼，Meat/Poultry=家畜/家禽，Marine=海鱼，Veg=蔬菜（完整类别名称见上方快照图与表格）。",
-        "type": "line",
-        "intent": "trend",
-        "dataset": "afcd_category_trend_history",
-        "sourceId": "afcd_wholesale",
-        "encodings": {
-          "x": {
-            "field": "date",
-            "type": "temporal",
-            "label": "日期"
-          },
-          "y": {
-            "field": "avg_price_hkd_per_kg",
-            "type": "quantitative",
-            "label": "港元 / 公斤"
-          },
-          "color": {
-            "field": "category_short",
-            "type": "nominal",
-            "label": "序列"
-          }
-        },
-        "valueFormat": "number",
-        "layout": "half",
-        "maxRows": 2000
       },
       {
         "id": "gold_trend",
@@ -805,41 +753,6 @@
         ]
       },
       {
-        "id": "afcd_commodity_table",
-        "title": "农渔护理署批发价快照",
-        "subtitle": "同日各商品平均价格，港元/公斤（由官方公布的港元/斤换算）。",
-        "dataset": "afcd_commodity_table",
-        "sourceId": "afcd_wholesale",
-        "defaultSort": {
-          "field": "avg_price_hkd_per_kg",
-          "direction": "desc"
-        },
-        "density": "dense",
-        "layout": "full",
-        "columns": [
-          {
-            "field": "category",
-            "label": "类别",
-            "type": "text"
-          },
-          {
-            "field": "commodity_name",
-            "label": "商品",
-            "type": "text"
-          },
-          {
-            "field": "avg_price_hkd_per_kg",
-            "label": "港元 / 公斤",
-            "format": "number"
-          },
-          {
-            "field": "num_readings",
-            "label": "读数个数",
-            "format": "number"
-          }
-        ]
-      },
-      {
         "id": "valuation_table",
         "title": "消费观察名单估值快照",
         "subtitle": "各公司最新历史市盈率、市净率及市值。",
@@ -1197,8 +1110,8 @@
       },
       {
         "id": "consumer_council_oilprice_wow_table",
-        "title": "Auto fuel net price — latest 7-day movement",
-        "subtitle": "Daily net price after walk-in discount, excluding fuel duty; compared with seven calendar days earlier.",
+        "title": "汽车燃油实际油价 — 近7日变动",
+        "subtitle": "扣除现金折扣及不含燃油税的每日实际油价，与七个日历日前比较。",
         "dataset": "consumer_council_oilprice_wow",
         "sourceId": "consumer_council_oilprice",
         "defaultSort": {
@@ -1210,37 +1123,37 @@
         "columns": [
           {
             "field": "company",
-            "label": "Oil Major",
+            "label": "油公司",
             "type": "text"
           },
           {
             "field": "fuel_type",
-            "label": "Fuel Type",
+            "label": "油品",
             "type": "text"
           },
           {
             "field": "net_price_ex_duty_hkd",
-            "label": "Net price (HK$/L, ex-duty)",
+            "label": "实际油价 (港元/升，不含燃油税)",
             "format": "number"
           },
           {
             "field": "wow_change",
-            "label": "7-day change",
+            "label": "7日变动 (%)",
             "format": "percent",
             "signed": true
           },
           {
             "field": "date",
-            "label": "As of",
+            "label": "数据日期",
             "type": "date"
           }
         ]
       },
       {
-        "id": "consumer_council_complaints_table",
-        "title": "消费者委员会投诉类别（最新一期）",
-        "subtitle": "最新一期全部投诉类别，按投诉宗数排序。",
-        "dataset": "consumer_council_complaints_table",
+        "id": "consumer_council_complaints_history_table",
+        "title": "消费者委员会投诉类别 — 全部可得期间",
+        "subtitle": "官方 API 提供的每个类别及期间数据；2026年数据不视为全年总数。",
+        "dataset": "consumer_council_complaints",
         "sourceId": "consumer_council_complaints",
         "defaultSort": {
           "field": "amount",
@@ -1248,6 +1161,7 @@
         },
         "density": "dense",
         "layout": "full",
+        "maxRows": 160,
         "columns": [
           {
             "field": "period",
@@ -1262,37 +1176,6 @@
           {
             "field": "amount",
             "label": "投诉宗数",
-            "format": "number"
-          }
-        ]
-      },
-      {
-        "id": "consumer_council_complaints_history_table",
-        "title": "Consumer Council complaints by category — all available periods",
-        "subtitle": "Every category and period supplied by the official API; 2026 is not assumed to be a full-year total.",
-        "dataset": "consumer_council_complaints",
-        "sourceId": "consumer_council_complaints",
-        "defaultSort": {
-          "field": "amount",
-          "direction": "desc"
-        },
-        "density": "dense",
-        "layout": "full",
-        "maxRows": 160,
-        "columns": [
-          {
-            "field": "period",
-            "label": "Published period",
-            "type": "text"
-          },
-          {
-            "field": "category",
-            "label": "Category",
-            "type": "text"
-          },
-          {
-            "field": "amount",
-            "label": "Complaints",
             "format": "number"
           }
         ]
@@ -1363,12 +1246,6 @@
         "path": "sources/consumer_council_pricewatch.sql"
       },
       {
-        "id": "afcd_wholesale",
-        "label": "农渔护理署新鲜食品批发价格",
-        "href": "https://www.afcd.gov.hk/english/agriculture/agr_fresh/agr_fresh_pri/agr_fresh_pri.html",
-        "path": "sources/afcd_wholesale.sql"
-      },
-      {
         "id": "sge_gold",
         "label": "上海黄金交易所 AM/PM 基准价",
         "href": "https://www.sge.com.cn/",
@@ -1432,7 +1309,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**数据快照：** `ea63ca8c0574327b` · 生成于 2026-08-01T00:23:03.548101Z。"
+        "body": "**数据快照：** `e186c861fc950ada` · 生成于 2026-08-01T11:03:50.540187Z。"
       },
       {
         "id": "market_pulse_1",
@@ -1477,18 +1354,6 @@
         "id": "weather_log_table",
         "type": "table",
         "tableId": "severe_weather_log_table"
-      },
-      {
-        "id": "afcd_trend_chart",
-        "type": "chart",
-        "chartId": "afcd_category_chart",
-        "layout": "half"
-      },
-      {
-        "id": "afcd_category_trend_block",
-        "type": "chart",
-        "chartId": "afcd_category_trend",
-        "layout": "half"
       },
       {
         "id": "gold_chart",
@@ -1546,19 +1411,9 @@
         "chartId": "consumer_council_complaints_history_chart"
       },
       {
-        "id": "complaints_table_block",
-        "type": "table",
-        "tableId": "consumer_council_complaints_table"
-      },
-      {
         "id": "complaints_history_table_block",
         "type": "table",
         "tableId": "consumer_council_complaints_history_table"
-      },
-      {
-        "id": "afcd_table",
-        "type": "table",
-        "tableId": "afcd_commodity_table"
       },
       {
         "id": "valuation_table_block",
@@ -1652,13 +1507,13 @@
       {
         "id": "methodology",
         "type": "markdown",
-        "body": "## 如何阅读本 dashboard\n\n跨境人流（北上/南下）为本 dashboard 主打的消费需求信号。黄金为金饰原料成本的辅助参考，与农渔护理署批发食品成本并列展示以供毛利分析，而非独立的主打图表。农渔护理署批发价按类别走势图逐日累积真实观测值（该数据源无历史存档），因此初期数据量很薄，会随时间增长。本界面整合物理天气干扰、汇率环境、出入境流量、零售金价溢价、零售销售、餐饮收益与消费股估值等代理指标，以评估香港本地零售与餐饮业的宏观受压情况。「已跟踪数据信号」列出已有实时数据支撑的来源；「覆盖范围与下一步采集目标」追踪端点仍存在问题或未经验证的来源。"
+        "body": "## 如何阅读本 dashboard\n\n跨境人流（北上/南下）为本 dashboard 主打的消费需求信号。黄金为金饰原料成本的辅助参考。本界面整合物理天气干扰、汇率环境、出入境流量、零售金价溢价、零售销售、餐饮收益、综合消费物价指数与消费股估值等代理指标，以评估香港本地零售与餐饮业的宏观受压情况。「已跟踪数据信号」列出已有实时数据支撑的来源；「覆盖范围与下一步采集目标」追踪端点仍存在问题或未经验证的来源。"
       }
     ]
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-08-01T00:23:03.548101Z",
+    "generatedAt": "2026-08-01T11:03:50.540187Z",
     "status": "ready",
     "datasets": {
       "kpi_weather": [
@@ -3714,503 +3569,6 @@
         {
           "month": "2026-07",
           "value": 890.02
-        }
-      ],
-      "afcd_category_summary": [
-        {
-          "category": "海鱼",
-          "avg_price_hkd_per_kg": 92.88,
-          "commodities": 10
-        },
-        {
-          "category": "家畜/家禽",
-          "avg_price_hkd_per_kg": 47.32,
-          "commodities": 3
-        },
-        {
-          "category": "淡水鱼",
-          "avg_price_hkd_per_kg": 34.11,
-          "commodities": 3
-        },
-        {
-          "category": "蔬菜",
-          "avg_price_hkd_per_kg": 7.74,
-          "commodities": 13
-        },
-        {
-          "category": "蛋类",
-          "avg_price_hkd_per_kg": 1.62,
-          "commodities": 2
-        }
-      ],
-      "afcd_category_trend_history": [
-        {
-          "date": "2026-07-25",
-          "category": "Eggs",
-          "category_short": "蛋类",
-          "avg_price_hkd_per_kg": 1.62,
-          "commodities": 2
-        },
-        {
-          "date": "2026-07-25",
-          "category": "Freshwater fish",
-          "category_short": "淡水鱼",
-          "avg_price_hkd_per_kg": 34.11,
-          "commodities": 3
-        },
-        {
-          "date": "2026-07-25",
-          "category": "Livestock / Poultry",
-          "category_short": "畜禽",
-          "avg_price_hkd_per_kg": 47.32,
-          "commodities": 3
-        },
-        {
-          "date": "2026-07-25",
-          "category": "Marine fish",
-          "category_short": "海鱼",
-          "avg_price_hkd_per_kg": 92.88,
-          "commodities": 10
-        },
-        {
-          "date": "2026-07-25",
-          "category": "Vegetables",
-          "category_short": "蔬菜",
-          "avg_price_hkd_per_kg": 7.74,
-          "commodities": 13
-        },
-        {
-          "date": "2026-07-26",
-          "category": "Eggs",
-          "category_short": "蛋类",
-          "avg_price_hkd_per_kg": 1.62,
-          "commodities": 2
-        },
-        {
-          "date": "2026-07-26",
-          "category": "Freshwater fish",
-          "category_short": "淡水鱼",
-          "avg_price_hkd_per_kg": 34.11,
-          "commodities": 3
-        },
-        {
-          "date": "2026-07-26",
-          "category": "Livestock / Poultry",
-          "category_short": "畜禽",
-          "avg_price_hkd_per_kg": 47.32,
-          "commodities": 3
-        },
-        {
-          "date": "2026-07-26",
-          "category": "Marine fish",
-          "category_short": "海鱼",
-          "avg_price_hkd_per_kg": 92.88,
-          "commodities": 10
-        },
-        {
-          "date": "2026-07-26",
-          "category": "Vegetables",
-          "category_short": "蔬菜",
-          "avg_price_hkd_per_kg": 7.74,
-          "commodities": 13
-        },
-        {
-          "date": "2026-07-27",
-          "category": "Eggs",
-          "category_short": "蛋类",
-          "avg_price_hkd_per_kg": 1.62,
-          "commodities": 2
-        },
-        {
-          "date": "2026-07-27",
-          "category": "Freshwater fish",
-          "category_short": "淡水鱼",
-          "avg_price_hkd_per_kg": 34.11,
-          "commodities": 3
-        },
-        {
-          "date": "2026-07-27",
-          "category": "Livestock / Poultry",
-          "category_short": "畜禽",
-          "avg_price_hkd_per_kg": 47.32,
-          "commodities": 3
-        },
-        {
-          "date": "2026-07-27",
-          "category": "Marine fish",
-          "category_short": "海鱼",
-          "avg_price_hkd_per_kg": 92.88,
-          "commodities": 10
-        },
-        {
-          "date": "2026-07-27",
-          "category": "Vegetables",
-          "category_short": "蔬菜",
-          "avg_price_hkd_per_kg": 7.74,
-          "commodities": 13
-        },
-        {
-          "date": "2026-07-28",
-          "category": "Eggs",
-          "category_short": "蛋类",
-          "avg_price_hkd_per_kg": 1.62,
-          "commodities": 2
-        },
-        {
-          "date": "2026-07-28",
-          "category": "Freshwater fish",
-          "category_short": "淡水鱼",
-          "avg_price_hkd_per_kg": 34.11,
-          "commodities": 3
-        },
-        {
-          "date": "2026-07-28",
-          "category": "Livestock / Poultry",
-          "category_short": "畜禽",
-          "avg_price_hkd_per_kg": 47.32,
-          "commodities": 3
-        },
-        {
-          "date": "2026-07-28",
-          "category": "Marine fish",
-          "category_short": "海鱼",
-          "avg_price_hkd_per_kg": 92.88,
-          "commodities": 10
-        },
-        {
-          "date": "2026-07-28",
-          "category": "Vegetables",
-          "category_short": "蔬菜",
-          "avg_price_hkd_per_kg": 7.74,
-          "commodities": 13
-        },
-        {
-          "date": "2026-07-29",
-          "category": "Eggs",
-          "category_short": "蛋类",
-          "avg_price_hkd_per_kg": 1.62,
-          "commodities": 2
-        },
-        {
-          "date": "2026-07-29",
-          "category": "Freshwater fish",
-          "category_short": "淡水鱼",
-          "avg_price_hkd_per_kg": 34.11,
-          "commodities": 3
-        },
-        {
-          "date": "2026-07-29",
-          "category": "Livestock / Poultry",
-          "category_short": "畜禽",
-          "avg_price_hkd_per_kg": 47.32,
-          "commodities": 3
-        },
-        {
-          "date": "2026-07-29",
-          "category": "Marine fish",
-          "category_short": "海鱼",
-          "avg_price_hkd_per_kg": 92.88,
-          "commodities": 10
-        },
-        {
-          "date": "2026-07-29",
-          "category": "Vegetables",
-          "category_short": "蔬菜",
-          "avg_price_hkd_per_kg": 7.74,
-          "commodities": 13
-        },
-        {
-          "date": "2026-07-30",
-          "category": "Eggs",
-          "category_short": "蛋类",
-          "avg_price_hkd_per_kg": 1.62,
-          "commodities": 2
-        },
-        {
-          "date": "2026-07-30",
-          "category": "Freshwater fish",
-          "category_short": "淡水鱼",
-          "avg_price_hkd_per_kg": 34.11,
-          "commodities": 3
-        },
-        {
-          "date": "2026-07-30",
-          "category": "Livestock / Poultry",
-          "category_short": "畜禽",
-          "avg_price_hkd_per_kg": 47.32,
-          "commodities": 3
-        },
-        {
-          "date": "2026-07-30",
-          "category": "Marine fish",
-          "category_short": "海鱼",
-          "avg_price_hkd_per_kg": 92.88,
-          "commodities": 10
-        },
-        {
-          "date": "2026-07-30",
-          "category": "Vegetables",
-          "category_short": "蔬菜",
-          "avg_price_hkd_per_kg": 7.74,
-          "commodities": 13
-        },
-        {
-          "date": "2026-07-31",
-          "category": "Eggs",
-          "category_short": "蛋类",
-          "avg_price_hkd_per_kg": 1.62,
-          "commodities": 2
-        },
-        {
-          "date": "2026-07-31",
-          "category": "Freshwater fish",
-          "category_short": "淡水鱼",
-          "avg_price_hkd_per_kg": 34.11,
-          "commodities": 3
-        },
-        {
-          "date": "2026-07-31",
-          "category": "Livestock / Poultry",
-          "category_short": "畜禽",
-          "avg_price_hkd_per_kg": 47.32,
-          "commodities": 3
-        },
-        {
-          "date": "2026-07-31",
-          "category": "Marine fish",
-          "category_short": "海鱼",
-          "avg_price_hkd_per_kg": 92.88,
-          "commodities": 10
-        },
-        {
-          "date": "2026-07-31",
-          "category": "Vegetables",
-          "category_short": "蔬菜",
-          "avg_price_hkd_per_kg": 7.74,
-          "commodities": 13
-        },
-        {
-          "date": "2026-08-01",
-          "category": "Eggs",
-          "category_short": "蛋类",
-          "avg_price_hkd_per_kg": 1.62,
-          "commodities": 2
-        },
-        {
-          "date": "2026-08-01",
-          "category": "Freshwater fish",
-          "category_short": "淡水鱼",
-          "avg_price_hkd_per_kg": 34.11,
-          "commodities": 3
-        },
-        {
-          "date": "2026-08-01",
-          "category": "Livestock / Poultry",
-          "category_short": "畜禽",
-          "avg_price_hkd_per_kg": 47.32,
-          "commodities": 3
-        },
-        {
-          "date": "2026-08-01",
-          "category": "Marine fish",
-          "category_short": "海鱼",
-          "avg_price_hkd_per_kg": 92.88,
-          "commodities": 10
-        },
-        {
-          "date": "2026-08-01",
-          "category": "Vegetables",
-          "category_short": "蔬菜",
-          "avg_price_hkd_per_kg": 7.74,
-          "commodities": 13
-        }
-      ],
-      "afcd_commodity_table": [
-        {
-          "category": "蛋类",
-          "commodity_name": "Brown-shelled egg (medium) USA",
-          "avg_price_hkd_per_kg": 1.83,
-          "num_readings": 14
-        },
-        {
-          "category": "蛋类",
-          "commodity_name": "Brown-shelled egg (medium) Mainland",
-          "avg_price_hkd_per_kg": 1.41,
-          "num_readings": 14
-        },
-        {
-          "category": "淡水鱼",
-          "commodity_name": "Mud carp",
-          "avg_price_hkd_per_kg": 38.03,
-          "num_readings": 14
-        },
-        {
-          "category": "淡水鱼",
-          "commodity_name": "Big head",
-          "avg_price_hkd_per_kg": 33.06,
-          "num_readings": 14
-        },
-        {
-          "category": "淡水鱼",
-          "commodity_name": "Grass carp",
-          "avg_price_hkd_per_kg": 31.25,
-          "num_readings": 14
-        },
-        {
-          "category": "家畜/家禽",
-          "commodity_name": "Live cattle",
-          "avg_price_hkd_per_kg": 81.89,
-          "num_readings": 13
-        },
-        {
-          "category": "家畜/家禽",
-          "commodity_name": "Live chicken",
-          "avg_price_hkd_per_kg": 42.22,
-          "num_readings": 28
-        },
-        {
-          "category": "家畜/家禽",
-          "commodity_name": "Live pig",
-          "avg_price_hkd_per_kg": 17.84,
-          "num_readings": 14
-        },
-        {
-          "category": "海鱼",
-          "commodity_name": "Yellow croaker",
-          "avg_price_hkd_per_kg": 146.21,
-          "num_readings": 14
-        },
-        {
-          "category": "海鱼",
-          "commodity_name": "Big eyes",
-          "avg_price_hkd_per_kg": 143.97,
-          "num_readings": 14
-        },
-        {
-          "category": "海鱼",
-          "commodity_name": "Golden thread",
-          "avg_price_hkd_per_kg": 139.72,
-          "num_readings": 14
-        },
-        {
-          "category": "海鱼",
-          "commodity_name": "Mackerel",
-          "avg_price_hkd_per_kg": 99.09,
-          "num_readings": 14
-        },
-        {
-          "category": "海鱼",
-          "commodity_name": "Hairtail",
-          "avg_price_hkd_per_kg": 90.94,
-          "num_readings": 14
-        },
-        {
-          "category": "海鱼",
-          "commodity_name": "Breams",
-          "avg_price_hkd_per_kg": 88.58,
-          "num_readings": 14
-        },
-        {
-          "category": "海鱼",
-          "commodity_name": "Filefish",
-          "avg_price_hkd_per_kg": 79.13,
-          "num_readings": 14
-        },
-        {
-          "category": "海鱼",
-          "commodity_name": "Horse head",
-          "avg_price_hkd_per_kg": 78.07,
-          "num_readings": 14
-        },
-        {
-          "category": "海鱼",
-          "commodity_name": "Croakers",
-          "avg_price_hkd_per_kg": 31.65,
-          "num_readings": 14
-        },
-        {
-          "category": "海鱼",
-          "commodity_name": "Scads",
-          "avg_price_hkd_per_kg": 31.42,
-          "num_readings": 14
-        },
-        {
-          "category": "蔬菜",
-          "commodity_name": "Yard-long bean, white",
-          "avg_price_hkd_per_kg": 11.95,
-          "num_readings": 14
-        },
-        {
-          "category": "蔬菜",
-          "commodity_name": "Spinach",
-          "avg_price_hkd_per_kg": 10.35,
-          "num_readings": 14
-        },
-        {
-          "category": "蔬菜",
-          "commodity_name": "Chinese Spinach",
-          "avg_price_hkd_per_kg": 10.25,
-          "num_readings": 14
-        },
-        {
-          "category": "蔬菜",
-          "commodity_name": "Flowering Cabbage",
-          "avg_price_hkd_per_kg": 9.64,
-          "num_readings": 14
-        },
-        {
-          "category": "蔬菜",
-          "commodity_name": "European Celery",
-          "avg_price_hkd_per_kg": 8.82,
-          "num_readings": 14
-        },
-        {
-          "category": "蔬菜",
-          "commodity_name": "Broccoli",
-          "avg_price_hkd_per_kg": 8.69,
-          "num_readings": 14
-        },
-        {
-          "category": "蔬菜",
-          "commodity_name": "Chinese Kale",
-          "avg_price_hkd_per_kg": 8,
-          "num_readings": 14
-        },
-        {
-          "category": "蔬菜",
-          "commodity_name": "Tomato",
-          "avg_price_hkd_per_kg": 7.06,
-          "num_readings": 14
-        },
-        {
-          "category": "蔬菜",
-          "commodity_name": "Water Spinach",
-          "avg_price_hkd_per_kg": 6.45,
-          "num_readings": 14
-        },
-        {
-          "category": "蔬菜",
-          "commodity_name": "Potato",
-          "avg_price_hkd_per_kg": 5.56,
-          "num_readings": 14
-        },
-        {
-          "category": "蔬菜",
-          "commodity_name": "Chinese Lettuce",
-          "avg_price_hkd_per_kg": 5.07,
-          "num_readings": 14
-        },
-        {
-          "category": "蔬菜",
-          "commodity_name": "Green Cabbage",
-          "avg_price_hkd_per_kg": 5.05,
-          "num_readings": 14
-        },
-        {
-          "category": "蔬菜",
-          "commodity_name": "White Cabbage",
-          "avg_price_hkd_per_kg": 3.79,
-          "num_readings": 14
         }
       ],
       "valuation_table": [
@@ -14093,8 +13451,8 @@
       ],
       "kpi_store_footprint": [
         {
-          "latest": 10788,
-          "observation_date": "2026-07-26"
+          "latest": 10747,
+          "observation_date": "2026-08-01"
         }
       ],
       "store_footprint_snapshot": [
@@ -14102,33 +13460,33 @@
           "company": "Chow Tai Fook",
           "stock_code": "01929.HK",
           "sector": "Jewellery",
-          "total_stores": 5408,
+          "total_stores": 5407,
           "regions_tracked": 376,
-          "snapshot_date": "2026-07-26"
+          "snapshot_date": "2026-08-01"
         },
         {
           "company": "Luk Fook",
           "stock_code": "00590.HK",
           "sector": "Jewellery",
-          "total_stores": 2505,
-          "regions_tracked": 43,
-          "snapshot_date": "2026-07-26"
+          "total_stores": 2459,
+          "regions_tracked": 42,
+          "snapshot_date": "2026-08-01"
         },
         {
           "company": "Chow Sang Sang",
           "stock_code": "00116.HK",
           "sector": "Jewellery",
-          "total_stores": 782,
+          "total_stores": 780,
           "regions_tracked": 2,
-          "snapshot_date": "2026-07-26"
+          "snapshot_date": "2026-08-01"
         },
         {
           "company": "POP MART",
           "stock_code": "09992.HK",
           "sector": "Trendy Toys",
-          "total_stores": 768,
-          "regions_tracked": 20,
-          "snapshot_date": "2026-07-26"
+          "total_stores": 778,
+          "regions_tracked": 21,
+          "snapshot_date": "2026-08-01"
         },
         {
           "company": "Giordano",
@@ -14136,15 +13494,15 @@
           "sector": "Apparel",
           "total_stores": 711,
           "regions_tracked": 10,
-          "snapshot_date": "2026-07-26"
+          "snapshot_date": "2026-08-01"
         },
         {
           "company": "Tai Hing Group",
           "stock_code": "06811.HK",
           "sector": "F&B",
-          "total_stores": 231,
+          "total_stores": 228,
           "regions_tracked": 32,
-          "snapshot_date": "2026-07-26"
+          "snapshot_date": "2026-08-01"
         },
         {
           "company": "Fairwood",
@@ -14152,15 +13510,15 @@
           "sector": "F&B",
           "total_stores": 151,
           "regions_tracked": 4,
-          "snapshot_date": "2026-07-26"
+          "snapshot_date": "2026-08-01"
         },
         {
           "company": "Sa Sa",
           "stock_code": "00178.HK",
           "sector": "Cosmetics",
-          "total_stores": 86,
+          "total_stores": 87,
           "regions_tracked": 4,
-          "snapshot_date": "2026-07-26"
+          "snapshot_date": "2026-08-01"
         },
         {
           "company": "Café de Coral",
@@ -14168,7 +13526,7 @@
           "sector": "F&B",
           "total_stores": 83,
           "regions_tracked": 3,
-          "snapshot_date": "2026-07-26"
+          "snapshot_date": "2026-08-01"
         },
         {
           "company": "Lao Pu Gold",
@@ -14176,7 +13534,7 @@
           "sector": "Jewellery",
           "total_stores": 37,
           "regions_tracked": 16,
-          "snapshot_date": "2026-07-26"
+          "snapshot_date": "2026-08-01"
         },
         {
           "company": "Bossini",
@@ -14184,25 +13542,25 @@
           "sector": "Apparel",
           "total_stores": 26,
           "regions_tracked": 5,
-          "snapshot_date": "2026-07-26"
+          "snapshot_date": "2026-08-01"
         }
       ],
       "store_footprint_chart": [
         {
           "company": "Chow Tai Fook",
-          "total_stores": 5408
+          "total_stores": 5407
         },
         {
           "company": "Luk Fook",
-          "total_stores": 2505
+          "total_stores": 2459
         },
         {
           "company": "Chow Sang Sang",
-          "total_stores": 782
+          "total_stores": 780
         },
         {
           "company": "POP MART",
-          "total_stores": 768
+          "total_stores": 778
         },
         {
           "company": "Giordano",
@@ -14210,7 +13568,7 @@
         },
         {
           "company": "Tai Hing Group",
-          "total_stores": 231
+          "total_stores": 228
         },
         {
           "company": "Fairwood",
@@ -14218,7 +13576,7 @@
         },
         {
           "company": "Sa Sa",
-          "total_stores": 86
+          "total_stores": 87
         },
         {
           "company": "Café de Coral",
@@ -22933,26 +22291,26 @@
       ],
       "kpi_fehd": [
         {
-          "latest": 17144,
-          "observation_date": "2026-07-31"
+          "latest": 17140,
+          "observation_date": "2026-08-01"
         }
       ],
       "fehd_district_density": [
         {
           "district_name": "油尖",
-          "count": 1890
+          "count": 1888
         },
         {
           "district_name": "中西区",
-          "count": 1782
+          "count": 1785
         },
         {
           "district_name": "湾仔",
-          "count": 1762
+          "count": 1763
         },
         {
           "district_name": "旺角",
-          "count": 1229
+          "count": 1228
         },
         {
           "district_name": "九龙城",
@@ -22960,11 +22318,11 @@
         },
         {
           "district_name": "元朗",
-          "count": 1003
+          "count": 1001
         },
         {
           "district_name": "深水埗",
-          "count": 964
+          "count": 962
         },
         {
           "district_name": "沙田",
@@ -22972,11 +22330,11 @@
         },
         {
           "district_name": "东区",
-          "count": 897
+          "count": 898
         },
         {
           "district_name": "观塘",
-          "count": 877
+          "count": 879
         },
         {
           "district_name": "荃湾",
@@ -22992,15 +22350,15 @@
         },
         {
           "district_name": "葵青",
-          "count": 543
+          "count": 541
         },
         {
           "district_name": "离岛",
-          "count": 513
+          "count": 514
         },
         {
           "district_name": "黄大仙",
-          "count": 502
+          "count": 501
         },
         {
           "district_name": "大埔",
@@ -23008,11 +22366,11 @@
         },
         {
           "district_name": "北区",
-          "count": 385
+          "count": 384
         },
         {
           "district_name": "南区",
-          "count": 328
+          "count": 327
         }
       ],
       "fehd_opened_closed": [],
@@ -23046,16 +22404,6 @@
           "records": 2497,
           "freshness": "5 天前",
           "notes": "每日上午/下午基准价。"
-        },
-        {
-          "source": "农渔护理署鲜活食品批发价格",
-          "dataset": "农渔护理署食品批发价格",
-          "type": "指标",
-          "status": "健康",
-          "latest_observation": "2026-08-01",
-          "records": 31,
-          "freshness": "当日快照",
-          "notes": "5类31种商品；按同日市场读数取平均。"
         },
         {
           "source": "百度股市通港股估值",
@@ -23092,7 +22440,7 @@
           "dataset": "香港零售/餐饮店铺数量",
           "type": "快照",
           "status": "健康",
-          "latest_observation": "2026-07-26",
+          "latest_observation": "2026-08-01",
           "records": 11,
           "freshness": "足迹快照（大部分品牌目前仅有1-2个存有日期的快照，尚未构成趋势）",
           "notes": "11家公司共计10,788个跟踪地点。"
@@ -23140,16 +22488,6 @@
           "notes": "每日上午/下午基准价。"
         },
         {
-          "source": "农渔护理署鲜活食品批发价格",
-          "dataset": "农渔护理署食品批发价格",
-          "type": "指标",
-          "status": "健康",
-          "latest_observation": "2026-08-01",
-          "records": 31,
-          "freshness": "当日快照",
-          "notes": "5类31种商品；按同日市场读数取平均。"
-        },
-        {
           "source": "百度股市通港股估值",
           "dataset": "香港消费股估值",
           "type": "指标",
@@ -23184,7 +22522,7 @@
           "dataset": "香港零售/餐饮店铺数量",
           "type": "快照",
           "status": "健康",
-          "latest_observation": "2026-07-26",
+          "latest_observation": "2026-08-01",
           "records": 11,
           "freshness": "足迹快照（大部分品牌目前仅有1-2个存有日期的快照，尚未构成趋势）",
           "notes": "11家公司共计10,788个跟踪地点。"
@@ -30622,934 +29960,566 @@
       "consumer_council_complaints": [
         {
           "period": "2024 1-12",
-          "category": "Cars & Car Services",
+          "category": "汽车及汽车服务",
           "amount": 458,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Foods & Drinks",
+          "category": "食品及饮料",
           "amount": 1289,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Fuel",
+          "category": "燃油",
           "amount": 45,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Furniture & Fixtures",
+          "category": "家具及装置",
           "amount": 779,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Jewellery & Watches",
+          "category": "珠宝及钟表",
           "amount": 554,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Medicine & Health Foods",
+          "category": "药物及保健食品",
           "amount": 1373,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Optical Products/Services",
+          "category": "眼镜产品／服务",
           "amount": 136,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Pets & Pet Services",
+          "category": "宠物及宠物服务",
           "amount": 206,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Photographic Equipment",
+          "category": "摄影器材",
           "amount": 298,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Transportation Services",
+          "category": "交通服务",
           "amount": 289,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Baby Products",
+          "category": "婴儿用品",
           "amount": 613,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Public Utilities",
+          "category": "公用事业",
           "amount": 61,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Publishing / Educational Materials",
+          "category": "出版／教育材料",
           "amount": 124,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Sporting Goods",
+          "category": "体育用品",
           "amount": 496,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Travel Matters",
+          "category": "旅游事务",
           "amount": 2966,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Telecommunication Equipment",
+          "category": "电讯器材",
           "amount": 707,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Medical & Health Devices",
+          "category": "医疗及保健仪器",
           "amount": 212,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Online Services & eCommerce Platforms",
+          "category": "网上服务及电子商贸平台",
           "amount": 407,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Shopping Mall, Chain Store and Reward Program",
+          "category": "商场、连锁店及奖赏计划",
           "amount": 508,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Clothing & Apparel",
+          "category": "服装",
           "amount": 1590,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Computer Products",
+          "category": "电脑产品",
           "amount": 797,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Bank and Financial Services",
+          "category": "银行及金融服务",
           "amount": 923,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Agency Services",
+          "category": "代理服务",
           "amount": 221,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Insurance",
+          "category": "保险",
           "amount": 323,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Lawyer & Legal Services",
+          "category": "律师及法律服务",
           "amount": 34,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Photo Taking/Finishing",
+          "category": "摄影及晒相服务",
           "amount": 59,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Telecommunication Services",
+          "category": "电讯服务",
           "amount": 3106,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Broadcasting Services",
+          "category": "广播服务",
           "amount": 167,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Medical Services",
+          "category": "医疗服务",
           "amount": 537,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Personal Care Products",
+          "category": "个人护理产品",
           "amount": 1443,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Education Matters",
+          "category": "教育事务",
           "amount": 690,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Beauty Services",
+          "category": "美容服务",
           "amount": 3028,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Elderly Care",
+          "category": "长者护理",
           "amount": 33,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Food & Entertainment Services",
+          "category": "饮食及娱乐服务",
           "amount": 5640,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Local Accommodation",
+          "category": "本地住宿",
           "amount": 840,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Storage, Postal & Courier Services",
+          "category": "仓储、邮政及速递服务",
           "amount": 598,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Decoration/Renovation Services",
+          "category": "装修服务",
           "amount": 400,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Recreation & Health Clubs",
+          "category": "康乐及健身会所",
           "amount": 4936,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Funeral Services",
+          "category": "殡仪服务",
           "amount": 14,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Household Products/Services",
+          "category": "家居用品／服务",
           "amount": 649,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Wedding Services",
+          "category": "婚嫁服务",
           "amount": 87,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Electrical Appliances",
+          "category": "电器",
           "amount": 2467,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Properties",
+          "category": "物业",
           "amount": 203,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Time Sharing",
+          "category": "分时使用（度假村）",
           "amount": 25,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Toys",
+          "category": "玩具",
           "amount": 138,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Miscellaneous Services",
+          "category": "其他服务",
           "amount": 122,
           "data_source": "live"
         },
         {
           "period": "2024 1-12",
-          "category": "Miscellaneous Goods",
+          "category": "其他货品",
           "amount": 248,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Cars & Car Services",
+          "category": "汽车及汽车服务",
           "amount": 541,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Foods & Drinks",
+          "category": "食品及饮料",
           "amount": 1202,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Fuel",
+          "category": "燃油",
           "amount": 36,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Furniture & Fixtures",
+          "category": "家具及装置",
           "amount": 656,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Jewellery & Watches",
+          "category": "珠宝及钟表",
           "amount": 631,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Medicine & Health Foods",
+          "category": "药物及保健食品",
           "amount": 1562,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Optical Products/Services",
+          "category": "眼镜产品／服务",
           "amount": 93,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Pets & Pet Services",
+          "category": "宠物及宠物服务",
           "amount": 197,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Photographic Equipment",
+          "category": "摄影器材",
           "amount": 272,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Transportation Services",
+          "category": "交通服务",
           "amount": 358,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Baby Products",
+          "category": "婴儿用品",
           "amount": 411,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Public Utilities",
+          "category": "公用事业",
           "amount": 80,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Publishing / Educational Materials",
+          "category": "出版／教育材料",
           "amount": 98,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Sporting Goods",
+          "category": "体育用品",
           "amount": 488,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Travel Matters",
+          "category": "旅游事务",
           "amount": 3262,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Telecommunication Equipment",
+          "category": "电讯器材",
           "amount": 816,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Medical & Health Devices",
+          "category": "医疗及保健仪器",
           "amount": 180,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Online Services & eCommerce Platforms",
+          "category": "网上服务及电子商贸平台",
           "amount": 461,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Shopping Mall, Chain Store and Reward Program",
+          "category": "商场、连锁店及奖赏计划",
           "amount": 657,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Clothing & Apparel",
+          "category": "服装",
           "amount": 1448,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Computer Products",
+          "category": "电脑产品",
           "amount": 1040,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Bank and Financial Services",
+          "category": "银行及金融服务",
           "amount": 970,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Agency Services",
+          "category": "代理服务",
           "amount": 262,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Insurance",
+          "category": "保险",
           "amount": 312,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Lawyer & Legal Services",
+          "category": "律师及法律服务",
           "amount": 27,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Photo Taking/Finishing",
+          "category": "摄影及晒相服务",
           "amount": 52,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Telecommunication Services",
+          "category": "电讯服务",
           "amount": 2661,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Broadcasting Services",
+          "category": "广播服务",
           "amount": 184,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Medical Services",
+          "category": "医疗服务",
           "amount": 1872,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Personal Care Products",
+          "category": "个人护理产品",
           "amount": 1182,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Education Matters",
+          "category": "教育事务",
           "amount": 710,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Beauty Services",
+          "category": "美容服务",
           "amount": 1509,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Elderly Care",
+          "category": "长者护理",
           "amount": 21,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Food & Entertainment Services",
+          "category": "饮食及娱乐服务",
           "amount": 6689,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Local Accommodation",
+          "category": "本地住宿",
           "amount": 1101,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Storage, Postal & Courier Services",
+          "category": "仓储、邮政及速递服务",
           "amount": 697,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Decoration/Renovation Services",
+          "category": "装修服务",
           "amount": 347,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Recreation & Health Clubs",
+          "category": "康乐及健身会所",
           "amount": 588,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Funeral Services",
+          "category": "殡仪服务",
           "amount": 7,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Household Products/Services",
+          "category": "家居用品／服务",
           "amount": 612,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Wedding Services",
+          "category": "婚嫁服务",
           "amount": 170,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Electrical Appliances",
+          "category": "电器",
           "amount": 2176,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Properties",
+          "category": "物业",
           "amount": 329,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Time Sharing",
+          "category": "分时使用（度假村）",
           "amount": 19,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Toys",
+          "category": "玩具",
           "amount": 445,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Miscellaneous Services",
+          "category": "其他服务",
           "amount": 310,
           "data_source": "live"
         },
         {
           "period": "2025 1-12",
-          "category": "Miscellaneous Goods",
+          "category": "其他货品",
           "amount": 446,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Cars & Car Services",
-          "amount": 281,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Foods & Drinks",
-          "amount": 466,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Fuel",
-          "amount": 44,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Furniture & Fixtures",
-          "amount": 312,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Jewellery & Watches",
-          "amount": 224,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Medicine & Health Foods",
-          "amount": 904,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Optical Products/Services",
-          "amount": 45,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Pets & Pet Services",
-          "amount": 100,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Photographic Equipment",
-          "amount": 93,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Transportation Services",
-          "amount": 149,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Baby Products",
-          "amount": 192,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Public Utilities",
-          "amount": 25,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Publishing / Educational Materials",
-          "amount": 26,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Sporting Goods",
-          "amount": 146,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Travel Matters",
-          "amount": 1563,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Telecommunication Equipment",
-          "amount": 265,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Medical & Health Devices",
-          "amount": 73,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Online Services & eCommerce Platforms",
-          "amount": 319,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Shopping Mall, Chain Store and Reward Program",
-          "amount": 209,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Clothing & Apparel",
-          "amount": 639,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Computer Products",
-          "amount": 406,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Bank and Financial Services",
-          "amount": 429,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Agency Services",
-          "amount": 175,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Insurance",
-          "amount": 91,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Lawyer & Legal Services",
-          "amount": 8,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Photo Taking/Finishing",
-          "amount": 23,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Telecommunication Services",
-          "amount": 1026,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Broadcasting Services",
-          "amount": 88,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Medical Services",
-          "amount": 256,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Personal Care Products",
-          "amount": 469,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Education Matters",
-          "amount": 231,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Beauty Services",
-          "amount": 696,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Elderly Care",
-          "amount": 11,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Food & Entertainment Services",
-          "amount": 2175,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Local Accommodation",
-          "amount": 495,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Storage, Postal & Courier Services",
-          "amount": 172,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Decoration/Renovation Services",
-          "amount": 168,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Recreation & Health Clubs",
-          "amount": 242,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Funeral Services",
-          "amount": 7,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Household Products/Services",
-          "amount": 257,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Wedding Services",
-          "amount": 36,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Electrical Appliances",
-          "amount": 983,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Properties",
-          "amount": 99,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Time Sharing",
-          "amount": 9,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Toys",
-          "amount": 169,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Miscellaneous Services",
-          "amount": 100,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Miscellaneous Goods",
-          "amount": 269,
-          "data_source": "live"
-        }
-      ],
-      "consumer_council_complaints_table": [
-        {
-          "period": "2026",
-          "category": "饮食及娱乐服务",
-          "amount": 2175,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "旅游事务",
-          "amount": 1563,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "电讯服务",
-          "amount": 1026,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "电器",
-          "amount": 983,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "药物及保健食品",
-          "amount": 904,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "美容服务",
-          "amount": 696,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "服装",
-          "amount": 639,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "本地住宿",
-          "amount": 495,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "个人护理产品",
-          "amount": 469,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "食品及饮料",
-          "amount": 466,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "银行及金融服务",
-          "amount": 429,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "电脑产品",
-          "amount": 406,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "网上服务及电子商贸平台",
-          "amount": 319,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "家具及装置",
-          "amount": 312,
           "data_source": "live"
         },
         {
@@ -31560,140 +30530,8 @@
         },
         {
           "period": "2026",
-          "category": "其他货品",
-          "amount": 269,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "电讯器材",
-          "amount": 265,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "家居用品／服务",
-          "amount": 257,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "医疗服务",
-          "amount": 256,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "康乐及健身会所",
-          "amount": 242,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "教育事务",
-          "amount": 231,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "珠宝及钟表",
-          "amount": 224,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "商场、连锁店及奖赏计划",
-          "amount": 209,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "婴儿用品",
-          "amount": 192,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "代理服务",
-          "amount": 175,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "仓储、邮政及速递服务",
-          "amount": 172,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "玩具",
-          "amount": 169,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "装修服务",
-          "amount": 168,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "交通服务",
-          "amount": 149,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "体育用品",
-          "amount": 146,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "宠物及宠物服务",
-          "amount": 100,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "其他服务",
-          "amount": 100,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "物业",
-          "amount": 99,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "摄影器材",
-          "amount": 93,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "保险",
-          "amount": 91,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "广播服务",
-          "amount": 88,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "医疗及保健仪器",
-          "amount": 73,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "眼镜产品／服务",
-          "amount": 45,
+          "category": "食品及饮料",
+          "amount": 466,
           "data_source": "live"
         },
         {
@@ -31704,14 +30542,50 @@
         },
         {
           "period": "2026",
-          "category": "婚嫁服务",
-          "amount": 36,
+          "category": "家具及装置",
+          "amount": 312,
           "data_source": "live"
         },
         {
           "period": "2026",
-          "category": "出版／教育材料",
-          "amount": 26,
+          "category": "珠宝及钟表",
+          "amount": 224,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "药物及保健食品",
+          "amount": 904,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "眼镜产品／服务",
+          "amount": 45,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "宠物及宠物服务",
+          "amount": 100,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "摄影器材",
+          "amount": 93,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "交通服务",
+          "amount": 149,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "婴儿用品",
+          "amount": 192,
           "data_source": "live"
         },
         {
@@ -31722,20 +30596,74 @@
         },
         {
           "period": "2026",
-          "category": "摄影及晒相服务",
-          "amount": 23,
+          "category": "出版／教育材料",
+          "amount": 26,
           "data_source": "live"
         },
         {
           "period": "2026",
-          "category": "长者护理",
-          "amount": 11,
+          "category": "体育用品",
+          "amount": 146,
           "data_source": "live"
         },
         {
           "period": "2026",
-          "category": "分时使用（度假村）",
-          "amount": 9,
+          "category": "旅游事务",
+          "amount": 1563,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "电讯器材",
+          "amount": 265,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "医疗及保健仪器",
+          "amount": 73,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "网上服务及电子商贸平台",
+          "amount": 319,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "商场、连锁店及奖赏计划",
+          "amount": 209,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "服装",
+          "amount": 639,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "电脑产品",
+          "amount": 406,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "银行及金融服务",
+          "amount": 429,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "代理服务",
+          "amount": 175,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "保险",
+          "amount": 91,
           "data_source": "live"
         },
         {
@@ -31746,8 +30674,134 @@
         },
         {
           "period": "2026",
+          "category": "摄影及晒相服务",
+          "amount": 23,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "电讯服务",
+          "amount": 1026,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "广播服务",
+          "amount": 88,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "医疗服务",
+          "amount": 256,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "个人护理产品",
+          "amount": 469,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "教育事务",
+          "amount": 231,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "美容服务",
+          "amount": 696,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "长者护理",
+          "amount": 11,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "饮食及娱乐服务",
+          "amount": 2175,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "本地住宿",
+          "amount": 495,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "仓储、邮政及速递服务",
+          "amount": 172,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "装修服务",
+          "amount": 168,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "康乐及健身会所",
+          "amount": 242,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
           "category": "殡仪服务",
           "amount": 7,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "家居用品／服务",
+          "amount": 257,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "婚嫁服务",
+          "amount": 36,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "电器",
+          "amount": 983,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "物业",
+          "amount": 99,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "分时使用（度假村）",
+          "amount": 9,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "玩具",
+          "amount": 169,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "其他服务",
+          "amount": 100,
+          "data_source": "live"
+        },
+        {
+          "period": "2026",
+          "category": "其他货品",
+          "amount": 269,
           "data_source": "live"
         }
       ],
@@ -31796,32 +30850,32 @@
       "consumer_council_complaints_history_chart": [
         {
           "period": "2024 1-12",
-          "category": "Travel Matters",
+          "category": "旅游事务",
           "amount": 2966
         },
         {
           "period": "2024 1-12",
-          "category": "Food & Entertainment Services",
+          "category": "饮食及娱乐服务",
           "amount": 5640
         },
         {
           "period": "2025 1-12",
-          "category": "Travel Matters",
+          "category": "旅游事务",
           "amount": 3262
         },
         {
           "period": "2025 1-12",
-          "category": "Food & Entertainment Services",
+          "category": "饮食及娱乐服务",
           "amount": 6689
         },
         {
           "period": "2026",
-          "category": "Travel Matters",
+          "category": "旅游事务",
           "amount": 1563
         },
         {
           "period": "2026",
-          "category": "Food & Entertainment Services",
+          "category": "饮食及娱乐服务",
           "amount": 2175
         }
       ],
@@ -31838,7 +30892,7 @@
         "url": "https://oil-price.consumer.org.hk/en",
         "language": "JSON",
         "description": "构建时从公开来源读取并校验 消费者委员会油价计算机。",
-        "executed_at": "2026-08-01T00:23:03.548101Z"
+        "executed_at": "2026-08-01T11:03:50.540187Z"
       }
     },
     {
@@ -31850,7 +30904,7 @@
         "url": "https://www.consumer.org.hk/node/32290/export-complaints/json?lang=en",
         "language": "JSON",
         "description": "构建时从公开来源读取并校验 消费者委员会投诉数据接口。",
-        "executed_at": "2026-08-01T00:23:03.548101Z"
+        "executed_at": "2026-08-01T11:03:50.540187Z"
       }
     },
     {
@@ -31862,22 +30916,7 @@
         "url": "https://online-price-watch.consumer.org.hk/opw/opendata/pricewatch_en.csv",
         "language": "CSV / Parquet",
         "description": "构建时从公开来源读取并校验 Consumer Council Online Price Watch。",
-        "executed_at": "2026-08-01T00:23:03.548101Z"
-      }
-    },
-    {
-      "id": "afcd_wholesale",
-      "label": "农渔护理署新鲜食品批发价格",
-      "href": "https://www.afcd.gov.hk/english/agriculture/agr_fresh/agr_fresh_pri/agr_fresh_pri.html",
-      "query": {
-        "engine": "official CSV",
-        "url": "https://www.afcd.gov.hk/english/agriculture/agr_fresh/files/Wholesale_Prices.csv",
-        "language": "CSV",
-        "description": "构建时从公开来源读取并校验 农渔护理署新鲜食品批发价格。",
-        "metric_definitions": [
-          "Each commodity's price is the mean of same-day readings across the wholesale markets/sources AFCD reports for it."
-        ],
-        "executed_at": "2026-08-01T00:23:03.548101Z"
+        "executed_at": "2026-08-01T11:03:50.540187Z"
       }
     },
     {
@@ -31893,7 +30932,7 @@
           "Latest is the most recent published PM benchmark fixing.",
           "Day and year movements are latest divided by the prior trading day or the observation on/before one year earlier, minus one."
         ],
-        "executed_at": "2026-08-01T00:23:03.548101Z"
+        "executed_at": "2026-08-01T11:03:50.540187Z"
       }
     },
     {
@@ -31909,7 +30948,7 @@
           "PE (TTM), PB, and market cap (HKD bn) are each ticker's latest published daily value.",
           "No dividend-yield indicator exists on this endpoint; yield is not reported here."
         ],
-        "executed_at": "2026-08-01T00:23:03.548101Z"
+        "executed_at": "2026-08-01T11:03:50.540187Z"
       }
     },
     {
@@ -31925,7 +30964,7 @@
           "All retail outlet is the classification group's own published total across all outlet types.",
           "Month and year movements are latest divided by the prior month or the observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-08-01T00:23:03.548101Z"
+        "executed_at": "2026-08-01T11:03:50.540187Z"
       }
     },
     {
@@ -31941,7 +30980,7 @@
           "Purchases are only published sector-wide, not broken out by restaurant type.",
           "Quarter and year movements are latest divided by the prior quarter or the observation four quarters earlier, minus one."
         ],
-        "executed_at": "2026-08-01T00:23:03.548101Z"
+        "executed_at": "2026-08-01T11:03:50.540187Z"
       }
     },
     {
@@ -31957,7 +30996,7 @@
           "This is a current-state snapshot only -- the source has no issue-date or status-history field.",
           "Opened/closed counts compare this run's licence numbers against the most recently stored prior snapshot, and are unavailable until at least two runs have been persisted."
         ],
-        "executed_at": "2026-08-01T00:23:03.548101Z"
+        "executed_at": "2026-08-01T11:03:50.540187Z"
       }
     },
     {
@@ -31973,7 +31012,7 @@
           "Category sub-indices share the headline table's index basis but only start in 2005 -- thirty years shorter history.",
           "Month and year movements are latest divided by the prior month or the observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-08-01T00:23:03.548101Z"
+        "executed_at": "2026-08-01T11:03:50.540187Z"
       }
     },
     {
@@ -31990,7 +31029,7 @@
           "Southbound (南下) flow is daily Mainland visitor arrivals across all 17 control points, since Mainland visitors legitimately arrive by air, rail, and sea, not just by land.",
           "7-day moving averages (7d MA) smooth out day-of-week seasonality (weekend shopping spikes)."
         ],
-        "executed_at": "2026-08-01T00:23:03.548101Z"
+        "executed_at": "2026-08-01T11:03:50.540187Z"
       }
     },
     {
@@ -32007,7 +31046,7 @@
           "Red/Black Rainstorm hours measures total duration under Red or Black rainstorm warnings.",
           "RMB per 100 HKD is derived from FRED daily DEXCHUS and DEXHKUS rates."
         ],
-        "executed_at": "2026-08-01T00:23:03.548101Z"
+        "executed_at": "2026-08-01T11:03:50.540187Z"
       }
     },
     {
@@ -32022,7 +31061,7 @@
           "Total stores is each company's own latest snapshot count (not a cross-company-comparable unit -- a POP MART Roboshop and a Chow Tai Fook boutique are both counted as one location).",
           "This is a footprint snapshot, not a trend: most companies only have 1-2 dated snapshots so far, so month-over-month change is not yet meaningful."
         ],
-        "executed_at": "2026-08-01T00:23:03.548101Z"
+        "executed_at": "2026-08-01T11:03:50.540187Z"
       }
     },
     {
@@ -32036,13 +31075,13 @@
           "Validated live measure frames",
           "Declared future-source registry"
         ],
-        "executed_at": "2026-08-01T00:23:03.548101Z"
+        "executed_at": "2026-08-01T11:03:50.540187Z"
       }
     }
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-local-consumer/",
-    "snapshotId": "ea63ca8c0574327b",
+    "snapshotId": "e186c861fc950ada",
     "dataAsOf": "2026-07-27"
   }
 }

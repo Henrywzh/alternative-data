@@ -5,7 +5,7 @@
     "surface": "dashboard",
     "title": "Hong Kong Local Consumer Monitor",
     "description": "A source-backed snapshot of cross-border passenger traffic, fresh-food wholesale prices, gold input costs, auto fuel pricing, and watchlist valuations for HK local-consumer names.",
-    "generatedAt": "2026-08-01T00:23:03.548101Z",
+    "generatedAt": "2026-08-01T11:03:50.540187Z",
     "cards": [
       {
         "id": "northbound_card",
@@ -296,61 +296,9 @@
         "maxRows": 180
       },
       {
-        "id": "afcd_category_chart",
-        "title": "AFCD wholesale prices by category",
-        "subtitle": "Today's average wholesale price per kg, averaged across commodities in each category.",
-        "type": "bar",
-        "intent": "comparison",
-        "dataset": "afcd_category_summary",
-        "sourceId": "afcd_wholesale",
-        "encodings": {
-          "x": {
-            "field": "category",
-            "type": "nominal",
-            "label": "Category"
-          },
-          "y": {
-            "field": "avg_price_hkd_per_kg",
-            "type": "quantitative",
-            "label": "HKD / kg"
-          }
-        },
-        "valueFormat": "number",
-        "layout": "half"
-      },
-      {
-        "id": "afcd_category_trend",
-        "title": "AFCD wholesale prices by category, over time",
-        "subtitle": "Daily snapshots accumulated per pipeline run (AFCD only publishes today's readings). Legend: FW fish = Freshwater fish, Meat/Poultry = Livestock/Poultry, Marine = Marine fish, Veg = Vegetables.",
-        "type": "line",
-        "intent": "trend",
-        "dataset": "afcd_category_trend_history",
-        "sourceId": "afcd_wholesale",
-        "encodings": {
-          "x": {
-            "field": "date",
-            "type": "temporal",
-            "label": "Date"
-          },
-          "y": {
-            "field": "avg_price_hkd_per_kg",
-            "type": "quantitative",
-            "label": "HKD / kg"
-          },
-          "color": {
-            "field": "category_short",
-            "type": "nominal",
-            "label": "Category"
-          }
-        },
-        "valueFormat": "number",
-        "layout": "half",
-        "maxRows": 2000
-      },
-      {
         "id": "gold_trend",
         "title": "Shanghai Gold Exchange PM benchmark (margin-cost reference)",
-        "subtitle": "Monthly average of the daily PM fixing in RMB per gram; latest ten years of available history or all available history when shorter. It is a secondary reference for HK gold-jewellery input costs, shown alongside AFCD wholesale food costs for margin context -- see the cross-border passenger traffic chart above for the featured consumer-demand signal.",
+        "subtitle": "Monthly average of the daily PM fixing in RMB per gram; latest ten years of available history or all available history when shorter. It is a secondary reference for HK gold-jewellery input costs -- see the cross-border passenger traffic chart above for the featured consumer-demand signal.",
         "type": "line",
         "intent": "trend",
         "dataset": "gold_history",
@@ -805,41 +753,6 @@
         ]
       },
       {
-        "id": "afcd_commodity_table",
-        "title": "AFCD wholesale price snapshot",
-        "subtitle": "Same-day average price per commodity, HKD/kg (converted from the published HKD/catty rate).",
-        "dataset": "afcd_commodity_table",
-        "sourceId": "afcd_wholesale",
-        "defaultSort": {
-          "field": "avg_price_hkd_per_kg",
-          "direction": "desc"
-        },
-        "density": "dense",
-        "layout": "full",
-        "columns": [
-          {
-            "field": "category",
-            "label": "Category",
-            "type": "text"
-          },
-          {
-            "field": "commodity_name",
-            "label": "Commodity",
-            "type": "text"
-          },
-          {
-            "field": "avg_price_hkd_per_kg",
-            "label": "HKD/kg",
-            "format": "number"
-          },
-          {
-            "field": "num_readings",
-            "label": "Readings",
-            "format": "number"
-          }
-        ]
-      },
-      {
         "id": "valuation_table",
         "title": "Consumer watchlist valuation snapshot",
         "subtitle": "Latest trailing PE, PB, and market cap per company.",
@@ -1237,36 +1150,6 @@
         ]
       },
       {
-        "id": "consumer_council_complaints_table",
-        "title": "Consumer Council Complaints by Category (Latest Period)",
-        "subtitle": "All complaint categories during 2026, sorted by number of complaints.",
-        "dataset": "consumer_council_complaints_table",
-        "sourceId": "consumer_council_complaints",
-        "defaultSort": {
-          "field": "amount",
-          "direction": "desc"
-        },
-        "density": "dense",
-        "layout": "full",
-        "columns": [
-          {
-            "field": "period",
-            "label": "Period",
-            "type": "text"
-          },
-          {
-            "field": "category",
-            "label": "Category",
-            "type": "text"
-          },
-          {
-            "field": "amount",
-            "label": "Complaints",
-            "format": "number"
-          }
-        ]
-      },
-      {
         "id": "consumer_council_complaints_history_table",
         "title": "Consumer Council complaints by category — all available periods",
         "subtitle": "Every category and period supplied by the official API; 2026 is not assumed to be a full-year total.",
@@ -1363,12 +1246,6 @@
         "path": "sources/consumer_council_pricewatch.sql"
       },
       {
-        "id": "afcd_wholesale",
-        "label": "AFCD Fresh Food Wholesale Prices",
-        "href": "https://www.afcd.gov.hk/english/agriculture/agr_fresh/agr_fresh_pri/agr_fresh_pri.html",
-        "path": "sources/afcd_wholesale.sql"
-      },
-      {
         "id": "sge_gold",
         "label": "Shanghai Gold Exchange AM/PM Benchmark",
         "href": "https://www.sge.com.cn/",
@@ -1432,7 +1309,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**Data snapshot:** `ea63ca8c0574327b` · generated 2026-08-01T00:23:03.548101Z.  This is a published snapshot, not a live connection. Includes official Consumer Council auto fuel calculator pricing."
+        "body": "**Data snapshot:** `e186c861fc950ada` · generated 2026-08-01T11:03:50.540187Z.  This is a published snapshot, not a live connection. Includes official Consumer Council auto fuel calculator pricing."
       },
       {
         "id": "market_pulse_1",
@@ -1477,18 +1354,6 @@
         "id": "weather_log_table",
         "type": "table",
         "tableId": "severe_weather_log_table"
-      },
-      {
-        "id": "afcd_trend_chart",
-        "type": "chart",
-        "chartId": "afcd_category_chart",
-        "layout": "half"
-      },
-      {
-        "id": "afcd_category_trend_block",
-        "type": "chart",
-        "chartId": "afcd_category_trend",
-        "layout": "half"
       },
       {
         "id": "gold_chart",
@@ -1546,19 +1411,9 @@
         "chartId": "consumer_council_complaints_history_chart"
       },
       {
-        "id": "complaints_table_block",
-        "type": "table",
-        "tableId": "consumer_council_complaints_table"
-      },
-      {
         "id": "complaints_history_table_block",
         "type": "table",
         "tableId": "consumer_council_complaints_history_table"
-      },
-      {
-        "id": "afcd_table",
-        "type": "table",
-        "tableId": "afcd_commodity_table"
       },
       {
         "id": "valuation_table_block",
@@ -1652,13 +1507,13 @@
       {
         "id": "methodology",
         "type": "markdown",
-        "body": "## Reading the dashboard\n\nCross-border passenger traffic (northbound/southbound) is the featured consumer-demand signal. Gold is a secondary proxy for jewellery-sector input costs, not a stock-price forecast, and is shown alongside AFCD wholesale food costs for margin context rather than as a standalone headline chart. Wholesale food prices are a single-day snapshot, averaged across the markets AFCD samples that day; the AFCD category trend chart accumulates one real observation per pipeline run (no historical backfill exists for this feed), so it starts thin and grows over time. Retail sales and restaurant receipts are official monthly/quarterly government indices, not real-time. Online Price Watch uses a product-code matched, chain-linked supermarket indicator rather than an assortment-sensitive average listed price; promotions and pack-size changes are not adjusted. Active data signals lists sources already backing a live measure above; the coverage table tracks sources whose endpoints are still broken or unverified. No stock ranking, forecast, or investment recommendation is produced."
+        "body": "## Reading the dashboard\n\nCross-border passenger traffic (northbound/southbound) is the featured consumer-demand signal. Gold is a secondary proxy for jewellery-sector input costs, not a stock-price forecast. Retail sales and restaurant receipts are official monthly/quarterly government indices, not real-time. The Composite CPI's category sub-indices only start in 2005, thirty years shorter than the headline series. FEHD's licensed-restaurant count by district is a same-day snapshot, not a trend. Online Price Watch uses a product-code matched, chain-linked supermarket indicator rather than an assortment-sensitive average listed price; promotions and pack-size changes are not adjusted. Active data signals lists sources already backing a live measure above; the coverage table tracks sources whose endpoints are still broken or unverified. No stock ranking, forecast, or investment recommendation is produced."
       }
     ]
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-08-01T00:23:03.548101Z",
+    "generatedAt": "2026-08-01T11:03:50.540187Z",
     "status": "ready",
     "datasets": {
       "kpi_weather": [
@@ -3714,503 +3569,6 @@
         {
           "month": "2026-07",
           "value": 890.02
-        }
-      ],
-      "afcd_category_summary": [
-        {
-          "category": "Marine fish",
-          "avg_price_hkd_per_kg": 92.88,
-          "commodities": 10
-        },
-        {
-          "category": "Livestock / Poultry",
-          "avg_price_hkd_per_kg": 47.32,
-          "commodities": 3
-        },
-        {
-          "category": "Freshwater fish",
-          "avg_price_hkd_per_kg": 34.11,
-          "commodities": 3
-        },
-        {
-          "category": "Vegetables",
-          "avg_price_hkd_per_kg": 7.74,
-          "commodities": 13
-        },
-        {
-          "category": "Eggs",
-          "avg_price_hkd_per_kg": 1.62,
-          "commodities": 2
-        }
-      ],
-      "afcd_category_trend_history": [
-        {
-          "date": "2026-07-25",
-          "category": "Eggs",
-          "category_short": "Eggs",
-          "avg_price_hkd_per_kg": 1.62,
-          "commodities": 2
-        },
-        {
-          "date": "2026-07-25",
-          "category": "Freshwater fish",
-          "category_short": "FW fish",
-          "avg_price_hkd_per_kg": 34.11,
-          "commodities": 3
-        },
-        {
-          "date": "2026-07-25",
-          "category": "Livestock / Poultry",
-          "category_short": "Meat/Poultry",
-          "avg_price_hkd_per_kg": 47.32,
-          "commodities": 3
-        },
-        {
-          "date": "2026-07-25",
-          "category": "Marine fish",
-          "category_short": "Marine",
-          "avg_price_hkd_per_kg": 92.88,
-          "commodities": 10
-        },
-        {
-          "date": "2026-07-25",
-          "category": "Vegetables",
-          "category_short": "Veg",
-          "avg_price_hkd_per_kg": 7.74,
-          "commodities": 13
-        },
-        {
-          "date": "2026-07-26",
-          "category": "Eggs",
-          "category_short": "Eggs",
-          "avg_price_hkd_per_kg": 1.62,
-          "commodities": 2
-        },
-        {
-          "date": "2026-07-26",
-          "category": "Freshwater fish",
-          "category_short": "FW fish",
-          "avg_price_hkd_per_kg": 34.11,
-          "commodities": 3
-        },
-        {
-          "date": "2026-07-26",
-          "category": "Livestock / Poultry",
-          "category_short": "Meat/Poultry",
-          "avg_price_hkd_per_kg": 47.32,
-          "commodities": 3
-        },
-        {
-          "date": "2026-07-26",
-          "category": "Marine fish",
-          "category_short": "Marine",
-          "avg_price_hkd_per_kg": 92.88,
-          "commodities": 10
-        },
-        {
-          "date": "2026-07-26",
-          "category": "Vegetables",
-          "category_short": "Veg",
-          "avg_price_hkd_per_kg": 7.74,
-          "commodities": 13
-        },
-        {
-          "date": "2026-07-27",
-          "category": "Eggs",
-          "category_short": "Eggs",
-          "avg_price_hkd_per_kg": 1.62,
-          "commodities": 2
-        },
-        {
-          "date": "2026-07-27",
-          "category": "Freshwater fish",
-          "category_short": "FW fish",
-          "avg_price_hkd_per_kg": 34.11,
-          "commodities": 3
-        },
-        {
-          "date": "2026-07-27",
-          "category": "Livestock / Poultry",
-          "category_short": "Meat/Poultry",
-          "avg_price_hkd_per_kg": 47.32,
-          "commodities": 3
-        },
-        {
-          "date": "2026-07-27",
-          "category": "Marine fish",
-          "category_short": "Marine",
-          "avg_price_hkd_per_kg": 92.88,
-          "commodities": 10
-        },
-        {
-          "date": "2026-07-27",
-          "category": "Vegetables",
-          "category_short": "Veg",
-          "avg_price_hkd_per_kg": 7.74,
-          "commodities": 13
-        },
-        {
-          "date": "2026-07-28",
-          "category": "Eggs",
-          "category_short": "Eggs",
-          "avg_price_hkd_per_kg": 1.62,
-          "commodities": 2
-        },
-        {
-          "date": "2026-07-28",
-          "category": "Freshwater fish",
-          "category_short": "FW fish",
-          "avg_price_hkd_per_kg": 34.11,
-          "commodities": 3
-        },
-        {
-          "date": "2026-07-28",
-          "category": "Livestock / Poultry",
-          "category_short": "Meat/Poultry",
-          "avg_price_hkd_per_kg": 47.32,
-          "commodities": 3
-        },
-        {
-          "date": "2026-07-28",
-          "category": "Marine fish",
-          "category_short": "Marine",
-          "avg_price_hkd_per_kg": 92.88,
-          "commodities": 10
-        },
-        {
-          "date": "2026-07-28",
-          "category": "Vegetables",
-          "category_short": "Veg",
-          "avg_price_hkd_per_kg": 7.74,
-          "commodities": 13
-        },
-        {
-          "date": "2026-07-29",
-          "category": "Eggs",
-          "category_short": "Eggs",
-          "avg_price_hkd_per_kg": 1.62,
-          "commodities": 2
-        },
-        {
-          "date": "2026-07-29",
-          "category": "Freshwater fish",
-          "category_short": "FW fish",
-          "avg_price_hkd_per_kg": 34.11,
-          "commodities": 3
-        },
-        {
-          "date": "2026-07-29",
-          "category": "Livestock / Poultry",
-          "category_short": "Meat/Poultry",
-          "avg_price_hkd_per_kg": 47.32,
-          "commodities": 3
-        },
-        {
-          "date": "2026-07-29",
-          "category": "Marine fish",
-          "category_short": "Marine",
-          "avg_price_hkd_per_kg": 92.88,
-          "commodities": 10
-        },
-        {
-          "date": "2026-07-29",
-          "category": "Vegetables",
-          "category_short": "Veg",
-          "avg_price_hkd_per_kg": 7.74,
-          "commodities": 13
-        },
-        {
-          "date": "2026-07-30",
-          "category": "Eggs",
-          "category_short": "Eggs",
-          "avg_price_hkd_per_kg": 1.62,
-          "commodities": 2
-        },
-        {
-          "date": "2026-07-30",
-          "category": "Freshwater fish",
-          "category_short": "FW fish",
-          "avg_price_hkd_per_kg": 34.11,
-          "commodities": 3
-        },
-        {
-          "date": "2026-07-30",
-          "category": "Livestock / Poultry",
-          "category_short": "Meat/Poultry",
-          "avg_price_hkd_per_kg": 47.32,
-          "commodities": 3
-        },
-        {
-          "date": "2026-07-30",
-          "category": "Marine fish",
-          "category_short": "Marine",
-          "avg_price_hkd_per_kg": 92.88,
-          "commodities": 10
-        },
-        {
-          "date": "2026-07-30",
-          "category": "Vegetables",
-          "category_short": "Veg",
-          "avg_price_hkd_per_kg": 7.74,
-          "commodities": 13
-        },
-        {
-          "date": "2026-07-31",
-          "category": "Eggs",
-          "category_short": "Eggs",
-          "avg_price_hkd_per_kg": 1.62,
-          "commodities": 2
-        },
-        {
-          "date": "2026-07-31",
-          "category": "Freshwater fish",
-          "category_short": "FW fish",
-          "avg_price_hkd_per_kg": 34.11,
-          "commodities": 3
-        },
-        {
-          "date": "2026-07-31",
-          "category": "Livestock / Poultry",
-          "category_short": "Meat/Poultry",
-          "avg_price_hkd_per_kg": 47.32,
-          "commodities": 3
-        },
-        {
-          "date": "2026-07-31",
-          "category": "Marine fish",
-          "category_short": "Marine",
-          "avg_price_hkd_per_kg": 92.88,
-          "commodities": 10
-        },
-        {
-          "date": "2026-07-31",
-          "category": "Vegetables",
-          "category_short": "Veg",
-          "avg_price_hkd_per_kg": 7.74,
-          "commodities": 13
-        },
-        {
-          "date": "2026-08-01",
-          "category": "Eggs",
-          "category_short": "Eggs",
-          "avg_price_hkd_per_kg": 1.62,
-          "commodities": 2
-        },
-        {
-          "date": "2026-08-01",
-          "category": "Freshwater fish",
-          "category_short": "FW fish",
-          "avg_price_hkd_per_kg": 34.11,
-          "commodities": 3
-        },
-        {
-          "date": "2026-08-01",
-          "category": "Livestock / Poultry",
-          "category_short": "Meat/Poultry",
-          "avg_price_hkd_per_kg": 47.32,
-          "commodities": 3
-        },
-        {
-          "date": "2026-08-01",
-          "category": "Marine fish",
-          "category_short": "Marine",
-          "avg_price_hkd_per_kg": 92.88,
-          "commodities": 10
-        },
-        {
-          "date": "2026-08-01",
-          "category": "Vegetables",
-          "category_short": "Veg",
-          "avg_price_hkd_per_kg": 7.74,
-          "commodities": 13
-        }
-      ],
-      "afcd_commodity_table": [
-        {
-          "category": "Eggs",
-          "commodity_name": "Brown-shelled egg (medium) USA",
-          "avg_price_hkd_per_kg": 1.83,
-          "num_readings": 14
-        },
-        {
-          "category": "Eggs",
-          "commodity_name": "Brown-shelled egg (medium) Mainland",
-          "avg_price_hkd_per_kg": 1.41,
-          "num_readings": 14
-        },
-        {
-          "category": "Freshwater fish",
-          "commodity_name": "Mud carp",
-          "avg_price_hkd_per_kg": 38.03,
-          "num_readings": 14
-        },
-        {
-          "category": "Freshwater fish",
-          "commodity_name": "Big head",
-          "avg_price_hkd_per_kg": 33.06,
-          "num_readings": 14
-        },
-        {
-          "category": "Freshwater fish",
-          "commodity_name": "Grass carp",
-          "avg_price_hkd_per_kg": 31.25,
-          "num_readings": 14
-        },
-        {
-          "category": "Livestock / Poultry",
-          "commodity_name": "Live cattle",
-          "avg_price_hkd_per_kg": 81.89,
-          "num_readings": 13
-        },
-        {
-          "category": "Livestock / Poultry",
-          "commodity_name": "Live chicken",
-          "avg_price_hkd_per_kg": 42.22,
-          "num_readings": 28
-        },
-        {
-          "category": "Livestock / Poultry",
-          "commodity_name": "Live pig",
-          "avg_price_hkd_per_kg": 17.84,
-          "num_readings": 14
-        },
-        {
-          "category": "Marine fish",
-          "commodity_name": "Yellow croaker",
-          "avg_price_hkd_per_kg": 146.21,
-          "num_readings": 14
-        },
-        {
-          "category": "Marine fish",
-          "commodity_name": "Big eyes",
-          "avg_price_hkd_per_kg": 143.97,
-          "num_readings": 14
-        },
-        {
-          "category": "Marine fish",
-          "commodity_name": "Golden thread",
-          "avg_price_hkd_per_kg": 139.72,
-          "num_readings": 14
-        },
-        {
-          "category": "Marine fish",
-          "commodity_name": "Mackerel",
-          "avg_price_hkd_per_kg": 99.09,
-          "num_readings": 14
-        },
-        {
-          "category": "Marine fish",
-          "commodity_name": "Hairtail",
-          "avg_price_hkd_per_kg": 90.94,
-          "num_readings": 14
-        },
-        {
-          "category": "Marine fish",
-          "commodity_name": "Breams",
-          "avg_price_hkd_per_kg": 88.58,
-          "num_readings": 14
-        },
-        {
-          "category": "Marine fish",
-          "commodity_name": "Filefish",
-          "avg_price_hkd_per_kg": 79.13,
-          "num_readings": 14
-        },
-        {
-          "category": "Marine fish",
-          "commodity_name": "Horse head",
-          "avg_price_hkd_per_kg": 78.07,
-          "num_readings": 14
-        },
-        {
-          "category": "Marine fish",
-          "commodity_name": "Croakers",
-          "avg_price_hkd_per_kg": 31.65,
-          "num_readings": 14
-        },
-        {
-          "category": "Marine fish",
-          "commodity_name": "Scads",
-          "avg_price_hkd_per_kg": 31.42,
-          "num_readings": 14
-        },
-        {
-          "category": "Vegetables",
-          "commodity_name": "Yard-long bean, white",
-          "avg_price_hkd_per_kg": 11.95,
-          "num_readings": 14
-        },
-        {
-          "category": "Vegetables",
-          "commodity_name": "Spinach",
-          "avg_price_hkd_per_kg": 10.35,
-          "num_readings": 14
-        },
-        {
-          "category": "Vegetables",
-          "commodity_name": "Chinese Spinach",
-          "avg_price_hkd_per_kg": 10.25,
-          "num_readings": 14
-        },
-        {
-          "category": "Vegetables",
-          "commodity_name": "Flowering Cabbage",
-          "avg_price_hkd_per_kg": 9.64,
-          "num_readings": 14
-        },
-        {
-          "category": "Vegetables",
-          "commodity_name": "European Celery",
-          "avg_price_hkd_per_kg": 8.82,
-          "num_readings": 14
-        },
-        {
-          "category": "Vegetables",
-          "commodity_name": "Broccoli",
-          "avg_price_hkd_per_kg": 8.69,
-          "num_readings": 14
-        },
-        {
-          "category": "Vegetables",
-          "commodity_name": "Chinese Kale",
-          "avg_price_hkd_per_kg": 8.0,
-          "num_readings": 14
-        },
-        {
-          "category": "Vegetables",
-          "commodity_name": "Tomato",
-          "avg_price_hkd_per_kg": 7.06,
-          "num_readings": 14
-        },
-        {
-          "category": "Vegetables",
-          "commodity_name": "Water Spinach",
-          "avg_price_hkd_per_kg": 6.45,
-          "num_readings": 14
-        },
-        {
-          "category": "Vegetables",
-          "commodity_name": "Potato",
-          "avg_price_hkd_per_kg": 5.56,
-          "num_readings": 14
-        },
-        {
-          "category": "Vegetables",
-          "commodity_name": "Chinese Lettuce",
-          "avg_price_hkd_per_kg": 5.07,
-          "num_readings": 14
-        },
-        {
-          "category": "Vegetables",
-          "commodity_name": "Green Cabbage",
-          "avg_price_hkd_per_kg": 5.05,
-          "num_readings": 14
-        },
-        {
-          "category": "Vegetables",
-          "commodity_name": "White Cabbage",
-          "avg_price_hkd_per_kg": 3.79,
-          "num_readings": 14
         }
       ],
       "valuation_table": [
@@ -14093,8 +13451,8 @@
       ],
       "kpi_store_footprint": [
         {
-          "latest": 10788,
-          "observation_date": "2026-07-26"
+          "latest": 10747,
+          "observation_date": "2026-08-01"
         }
       ],
       "store_footprint_snapshot": [
@@ -14102,33 +13460,33 @@
           "company": "Chow Tai Fook",
           "stock_code": "01929.HK",
           "sector": "Jewellery",
-          "total_stores": 5408.0,
+          "total_stores": 5407.0,
           "regions_tracked": 376,
-          "snapshot_date": "2026-07-26"
+          "snapshot_date": "2026-08-01"
         },
         {
           "company": "Luk Fook",
           "stock_code": "00590.HK",
           "sector": "Jewellery",
-          "total_stores": 2505.0,
-          "regions_tracked": 43,
-          "snapshot_date": "2026-07-26"
+          "total_stores": 2459.0,
+          "regions_tracked": 42,
+          "snapshot_date": "2026-08-01"
         },
         {
           "company": "Chow Sang Sang",
           "stock_code": "00116.HK",
           "sector": "Jewellery",
-          "total_stores": 782.0,
+          "total_stores": 780.0,
           "regions_tracked": 2,
-          "snapshot_date": "2026-07-26"
+          "snapshot_date": "2026-08-01"
         },
         {
           "company": "POP MART",
           "stock_code": "09992.HK",
           "sector": "Trendy Toys",
-          "total_stores": 768.0,
-          "regions_tracked": 20,
-          "snapshot_date": "2026-07-26"
+          "total_stores": 778.0,
+          "regions_tracked": 21,
+          "snapshot_date": "2026-08-01"
         },
         {
           "company": "Giordano",
@@ -14136,15 +13494,15 @@
           "sector": "Apparel",
           "total_stores": 711.0,
           "regions_tracked": 10,
-          "snapshot_date": "2026-07-26"
+          "snapshot_date": "2026-08-01"
         },
         {
           "company": "Tai Hing Group",
           "stock_code": "06811.HK",
           "sector": "F&B",
-          "total_stores": 231.0,
+          "total_stores": 228.0,
           "regions_tracked": 32,
-          "snapshot_date": "2026-07-26"
+          "snapshot_date": "2026-08-01"
         },
         {
           "company": "Fairwood",
@@ -14152,15 +13510,15 @@
           "sector": "F&B",
           "total_stores": 151.0,
           "regions_tracked": 4,
-          "snapshot_date": "2026-07-26"
+          "snapshot_date": "2026-08-01"
         },
         {
           "company": "Sa Sa",
           "stock_code": "00178.HK",
           "sector": "Cosmetics",
-          "total_stores": 86.0,
+          "total_stores": 87.0,
           "regions_tracked": 4,
-          "snapshot_date": "2026-07-26"
+          "snapshot_date": "2026-08-01"
         },
         {
           "company": "Café de Coral",
@@ -14168,7 +13526,7 @@
           "sector": "F&B",
           "total_stores": 83.0,
           "regions_tracked": 3,
-          "snapshot_date": "2026-07-26"
+          "snapshot_date": "2026-08-01"
         },
         {
           "company": "Lao Pu Gold",
@@ -14176,7 +13534,7 @@
           "sector": "Jewellery",
           "total_stores": 37.0,
           "regions_tracked": 16,
-          "snapshot_date": "2026-07-26"
+          "snapshot_date": "2026-08-01"
         },
         {
           "company": "Bossini",
@@ -14184,25 +13542,25 @@
           "sector": "Apparel",
           "total_stores": 26.0,
           "regions_tracked": 5,
-          "snapshot_date": "2026-07-26"
+          "snapshot_date": "2026-08-01"
         }
       ],
       "store_footprint_chart": [
         {
           "company": "Chow Tai Fook",
-          "total_stores": 5408.0
+          "total_stores": 5407.0
         },
         {
           "company": "Luk Fook",
-          "total_stores": 2505.0
+          "total_stores": 2459.0
         },
         {
           "company": "Chow Sang Sang",
-          "total_stores": 782.0
+          "total_stores": 780.0
         },
         {
           "company": "POP MART",
-          "total_stores": 768.0
+          "total_stores": 778.0
         },
         {
           "company": "Giordano",
@@ -14210,7 +13568,7 @@
         },
         {
           "company": "Tai Hing Group",
-          "total_stores": 231.0
+          "total_stores": 228.0
         },
         {
           "company": "Fairwood",
@@ -14218,7 +13576,7 @@
         },
         {
           "company": "Sa Sa",
-          "total_stores": 86.0
+          "total_stores": 87.0
         },
         {
           "company": "Café de Coral",
@@ -22933,26 +22291,26 @@
       ],
       "kpi_fehd": [
         {
-          "latest": 17144,
-          "observation_date": "2026-07-31"
+          "latest": 17140,
+          "observation_date": "2026-08-01"
         }
       ],
       "fehd_district_density": [
         {
           "district_name": "Yau Tsim",
-          "count": 1890
+          "count": 1888
         },
         {
           "district_name": "Central/Western",
-          "count": 1782
+          "count": 1785
         },
         {
           "district_name": "Wan Chai",
-          "count": 1762
+          "count": 1763
         },
         {
           "district_name": "Mong Kok",
-          "count": 1229
+          "count": 1228
         },
         {
           "district_name": "Kowloon City",
@@ -22960,11 +22318,11 @@
         },
         {
           "district_name": "Yuen Long",
-          "count": 1003
+          "count": 1001
         },
         {
           "district_name": "Sham Shui Po",
-          "count": 964
+          "count": 962
         },
         {
           "district_name": "Sha Tin",
@@ -22972,11 +22330,11 @@
         },
         {
           "district_name": "Eastern",
-          "count": 897
+          "count": 898
         },
         {
           "district_name": "Kwun Tong",
-          "count": 877
+          "count": 879
         },
         {
           "district_name": "Tsuen Wan",
@@ -22992,15 +22350,15 @@
         },
         {
           "district_name": "Kwai Tsing",
-          "count": 543
+          "count": 541
         },
         {
           "district_name": "Islands",
-          "count": 513
+          "count": 514
         },
         {
           "district_name": "Wong Tai Sin",
-          "count": 502
+          "count": 501
         },
         {
           "district_name": "Tai Po",
@@ -23008,11 +22366,11 @@
         },
         {
           "district_name": "North",
-          "count": 385
+          "count": 384
         },
         {
           "district_name": "Southern",
-          "count": 328
+          "count": 327
         }
       ],
       "fehd_opened_closed": [],
@@ -23046,16 +22404,6 @@
           "records": 2497,
           "freshness": "5d old",
           "notes": "Daily AM/PM benchmark fixing."
-        },
-        {
-          "source": "AFCD Fresh Food Wholesale Prices",
-          "dataset": "AFCD Wholesale Food Prices",
-          "type": "Measure",
-          "status": "Healthy",
-          "latest_observation": "2026-08-01",
-          "records": 31,
-          "freshness": "Same-day snapshot",
-          "notes": "31 commodities across 5 categories; averaged across same-day market readings."
         },
         {
           "source": "Baidu Gushitong HK Equity Valuation",
@@ -23092,10 +22440,10 @@
           "dataset": "HK Retail/F&B Store Counts",
           "type": "Snapshot",
           "status": "Healthy",
-          "latest_observation": "2026-07-26",
+          "latest_observation": "2026-08-01",
           "records": 11,
           "freshness": "Footprint snapshot (most brands: 1-2 dated snapshots so far, not yet a trend)",
-          "notes": "10,788 total tracked locations across 11 companies."
+          "notes": "10,747 total tracked locations across 11 companies."
         },
         {
           "source": "Consumer Council Online Price Watch",
@@ -23140,16 +22488,6 @@
           "notes": "Daily AM/PM benchmark fixing."
         },
         {
-          "source": "AFCD Fresh Food Wholesale Prices",
-          "dataset": "AFCD Wholesale Food Prices",
-          "type": "Measure",
-          "status": "Healthy",
-          "latest_observation": "2026-08-01",
-          "records": 31,
-          "freshness": "Same-day snapshot",
-          "notes": "31 commodities across 5 categories; averaged across same-day market readings."
-        },
-        {
           "source": "Baidu Gushitong HK Equity Valuation",
           "dataset": "HK Consumer Ticker Valuations",
           "type": "Measure",
@@ -23184,10 +22522,10 @@
           "dataset": "HK Retail/F&B Store Counts",
           "type": "Snapshot",
           "status": "Healthy",
-          "latest_observation": "2026-07-26",
+          "latest_observation": "2026-08-01",
           "records": 11,
           "freshness": "Footprint snapshot (most brands: 1-2 dated snapshots so far, not yet a trend)",
-          "notes": "10,788 total tracked locations across 11 companies."
+          "notes": "10,747 total tracked locations across 11 companies."
         },
         {
           "source": "Consumer Council Online Price Watch",
@@ -31467,290 +30805,6 @@
           "data_source": "live"
         }
       ],
-      "consumer_council_complaints_table": [
-        {
-          "period": "2026",
-          "category": "Food & Entertainment Services",
-          "amount": 2175,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Travel Matters",
-          "amount": 1563,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Telecommunication Services",
-          "amount": 1026,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Electrical Appliances",
-          "amount": 983,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Medicine & Health Foods",
-          "amount": 904,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Beauty Services",
-          "amount": 696,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Clothing & Apparel",
-          "amount": 639,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Local Accommodation",
-          "amount": 495,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Personal Care Products",
-          "amount": 469,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Foods & Drinks",
-          "amount": 466,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Bank and Financial Services",
-          "amount": 429,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Computer Products",
-          "amount": 406,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Online Services & eCommerce Platforms",
-          "amount": 319,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Furniture & Fixtures",
-          "amount": 312,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Cars & Car Services",
-          "amount": 281,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Miscellaneous Goods",
-          "amount": 269,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Telecommunication Equipment",
-          "amount": 265,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Household Products/Services",
-          "amount": 257,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Medical Services",
-          "amount": 256,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Recreation & Health Clubs",
-          "amount": 242,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Education Matters",
-          "amount": 231,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Jewellery & Watches",
-          "amount": 224,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Shopping Mall, Chain Store and Reward Program",
-          "amount": 209,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Baby Products",
-          "amount": 192,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Agency Services",
-          "amount": 175,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Storage, Postal & Courier Services",
-          "amount": 172,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Toys",
-          "amount": 169,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Decoration/Renovation Services",
-          "amount": 168,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Transportation Services",
-          "amount": 149,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Sporting Goods",
-          "amount": 146,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Pets & Pet Services",
-          "amount": 100,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Miscellaneous Services",
-          "amount": 100,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Properties",
-          "amount": 99,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Photographic Equipment",
-          "amount": 93,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Insurance",
-          "amount": 91,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Broadcasting Services",
-          "amount": 88,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Medical & Health Devices",
-          "amount": 73,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Optical Products/Services",
-          "amount": 45,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Fuel",
-          "amount": 44,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Wedding Services",
-          "amount": 36,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Publishing / Educational Materials",
-          "amount": 26,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Public Utilities",
-          "amount": 25,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Photo Taking/Finishing",
-          "amount": 23,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Elderly Care",
-          "amount": 11,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Time Sharing",
-          "amount": 9,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Lawyer & Legal Services",
-          "amount": 8,
-          "data_source": "live"
-        },
-        {
-          "period": "2026",
-          "category": "Funeral Services",
-          "amount": 7,
-          "data_source": "live"
-        }
-      ],
       "consumer_council_complaints_chart": [
         {
           "category": "Foods & Drinks",
@@ -31838,7 +30892,7 @@
         "url": "https://oil-price.consumer.org.hk/en",
         "language": "JSON",
         "description": "Daily auto-fuel pump prices, walk-in discounts, and net prices across Caltex, PetroChina, Shell, Sinopec, and Esso.",
-        "executed_at": "2026-08-01T00:23:03.548101Z"
+        "executed_at": "2026-08-01T11:03:50.540187Z"
       }
     },
     {
@@ -31850,7 +30904,7 @@
         "url": "https://www.consumer.org.hk/node/32290/export-complaints/json?lang=en",
         "language": "JSON",
         "description": "Annual consumer complaints by category across Hong Kong consumer sectors.",
-        "executed_at": "2026-08-01T00:23:03.548101Z"
+        "executed_at": "2026-08-01T11:03:50.540187Z"
       }
     },
     {
@@ -31862,22 +30916,7 @@
         "url": "https://online-price-watch.consumer.org.hk/opw/opendata/pricewatch_en.csv",
         "language": "CSV / Parquet",
         "description": "Supermarket item prices and promotion offers. The dashboard currently reports only validated local archive coverage; it does not present an assortment-sensitive arithmetic mean as a price index.",
-        "executed_at": "2026-08-01T00:23:03.548101Z"
-      }
-    },
-    {
-      "id": "afcd_wholesale",
-      "label": "AFCD Fresh Food Wholesale Prices",
-      "href": "https://www.afcd.gov.hk/english/agriculture/agr_fresh/agr_fresh_pri/agr_fresh_pri.html",
-      "query": {
-        "engine": "official CSV",
-        "url": "https://www.afcd.gov.hk/english/agriculture/agr_fresh/files/Wholesale_Prices.csv",
-        "language": "CSV",
-        "description": "Loads that morning's average wholesale price per commodity across Hong Kong's fresh-food wholesale markets; prices are converted from the published HKD/catty unit to HKD/kg.",
-        "metric_definitions": [
-          "Each commodity's price is the mean of same-day readings across the wholesale markets/sources AFCD reports for it."
-        ],
-        "executed_at": "2026-08-01T00:23:03.548101Z"
+        "executed_at": "2026-08-01T11:03:50.540187Z"
       }
     },
     {
@@ -31893,7 +30932,7 @@
           "Latest is the most recent published PM benchmark fixing.",
           "Day and year movements are latest divided by the prior trading day or the observation on/before one year earlier, minus one."
         ],
-        "executed_at": "2026-08-01T00:23:03.548101Z"
+        "executed_at": "2026-08-01T11:03:50.540187Z"
       }
     },
     {
@@ -31909,7 +30948,7 @@
           "PE (TTM), PB, and market cap (HKD bn) are each ticker's latest published daily value.",
           "No dividend-yield indicator exists on this endpoint; yield is not reported here."
         ],
-        "executed_at": "2026-08-01T00:23:03.548101Z"
+        "executed_at": "2026-08-01T11:03:50.540187Z"
       }
     },
     {
@@ -31925,7 +30964,7 @@
           "All retail outlet is the classification group's own published total across all outlet types.",
           "Month and year movements are latest divided by the prior month or the observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-08-01T00:23:03.548101Z"
+        "executed_at": "2026-08-01T11:03:50.540187Z"
       }
     },
     {
@@ -31941,7 +30980,7 @@
           "Purchases are only published sector-wide, not broken out by restaurant type.",
           "Quarter and year movements are latest divided by the prior quarter or the observation four quarters earlier, minus one."
         ],
-        "executed_at": "2026-08-01T00:23:03.548101Z"
+        "executed_at": "2026-08-01T11:03:50.540187Z"
       }
     },
     {
@@ -31957,7 +30996,7 @@
           "This is a current-state snapshot only -- the source has no issue-date or status-history field.",
           "Opened/closed counts compare this run's licence numbers against the most recently stored prior snapshot, and are unavailable until at least two runs have been persisted."
         ],
-        "executed_at": "2026-08-01T00:23:03.548101Z"
+        "executed_at": "2026-08-01T11:03:50.540187Z"
       }
     },
     {
@@ -31973,7 +31012,7 @@
           "Category sub-indices share the headline table's index basis but only start in 2005 -- thirty years shorter history.",
           "Month and year movements are latest divided by the prior month or the observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-08-01T00:23:03.548101Z"
+        "executed_at": "2026-08-01T11:03:50.540187Z"
       }
     },
     {
@@ -31990,7 +31029,7 @@
           "Southbound (南下) flow is daily Mainland visitor arrivals across all 17 control points, since Mainland visitors legitimately arrive by air, rail, and sea, not just by land.",
           "7-day moving averages (7d MA) smooth out day-of-week seasonality (weekend shopping spikes)."
         ],
-        "executed_at": "2026-08-01T00:23:03.548101Z"
+        "executed_at": "2026-08-01T11:03:50.540187Z"
       }
     },
     {
@@ -32007,7 +31046,7 @@
           "Red/Black Rainstorm hours measures total duration under Red or Black rainstorm warnings.",
           "RMB per 100 HKD is derived from FRED daily DEXCHUS and DEXHKUS rates."
         ],
-        "executed_at": "2026-08-01T00:23:03.548101Z"
+        "executed_at": "2026-08-01T11:03:50.540187Z"
       }
     },
     {
@@ -32022,7 +31061,7 @@
           "Total stores is each company's own latest snapshot count (not a cross-company-comparable unit -- a POP MART Roboshop and a Chow Tai Fook boutique are both counted as one location).",
           "This is a footprint snapshot, not a trend: most companies only have 1-2 dated snapshots so far, so month-over-month change is not yet meaningful."
         ],
-        "executed_at": "2026-08-01T00:23:03.548101Z"
+        "executed_at": "2026-08-01T11:03:50.540187Z"
       }
     },
     {
@@ -32036,13 +31075,13 @@
           "Validated live measure frames",
           "Declared future-source registry"
         ],
-        "executed_at": "2026-08-01T00:23:03.548101Z"
+        "executed_at": "2026-08-01T11:03:50.540187Z"
       }
     }
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-local-consumer/",
-    "snapshotId": "ea63ca8c0574327b",
+    "snapshotId": "e186c861fc950ada",
     "dataAsOf": "2026-07-27"
   }
 }
