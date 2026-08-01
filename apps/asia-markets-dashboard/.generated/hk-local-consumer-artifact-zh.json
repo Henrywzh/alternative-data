@@ -5,7 +5,7 @@
     "surface": "dashboard",
     "title": "香港本地消费监测",
     "description": "极端天气干扰时长、港元/人民币汇率、跨境出入境人流（北上/南下）、黄金原料成本、零售销售、餐饮收益及消费股估值的来源快照。",
-    "generatedAt": "2026-08-01T11:03:50.540187Z",
+    "generatedAt": "2026-08-01T11:13:50.178166Z",
     "cards": [
       {
         "id": "northbound_card",
@@ -1309,7 +1309,12 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**数据快照：** `e186c861fc950ada` · 生成于 2026-08-01T11:03:50.540187Z。"
+        "body": "**数据快照：** `e186c861fc950ada` · 生成于 2026-08-01T11:13:50.178166Z。"
+      },
+      {
+        "id": "demand_signals_section",
+        "type": "markdown",
+        "body": "## 消费需求信号\n\n跨境旅客流量为主打需求信号；天气为影响人流的控制变量。"
       },
       {
         "id": "market_pulse_1",
@@ -1356,21 +1361,27 @@
         "tableId": "severe_weather_log_table"
       },
       {
+        "id": "prices_inflation_section",
+        "type": "markdown",
+        "body": "## 物价与通胀\n\n综合消费物价指数（总体及分类）、汽车燃油、黄金及超市价格监察指数。"
+      },
+      {
+        "id": "cpi_trend_chart_block",
+        "type": "chart",
+        "chartId": "cpi_trend",
+        "layout": "half"
+      },
+      {
+        "id": "cpi_by_category_chart_block",
+        "type": "chart",
+        "chartId": "cpi_by_category_chart",
+        "layout": "half"
+      },
+      {
         "id": "gold_chart",
         "type": "chart",
         "chartId": "gold_trend",
         "layout": "half"
-      },
-      {
-        "id": "valuation_chart",
-        "type": "chart",
-        "chartId": "valuation_pe_chart",
-        "layout": "half"
-      },
-      {
-        "id": "valuation_market_cap_chart",
-        "type": "chart",
-        "chartId": "valuation_market_cap_trend"
       },
       {
         "id": "oilprice_chart_block",
@@ -1400,42 +1411,19 @@
         "tableId": "consumer_council_oilprice_wow_table"
       },
       {
-        "id": "complaints_chart_block",
+        "id": "consumer_council_pricewatch_matched_index_block",
         "type": "chart",
-        "chartId": "consumer_council_complaints_chart",
-        "layout": "half"
+        "chartId": "consumer_council_pricewatch_matched_index_chart"
       },
       {
-        "id": "complaints_history_chart_block",
-        "type": "chart",
-        "chartId": "consumer_council_complaints_history_chart"
-      },
-      {
-        "id": "complaints_history_table_block",
+        "id": "consumer_council_pricewatch_archive_block",
         "type": "table",
-        "tableId": "consumer_council_complaints_history_table"
+        "tableId": "consumer_council_pricewatch_archive_table"
       },
       {
-        "id": "valuation_table_block",
-        "type": "table",
-        "tableId": "valuation_table"
-      },
-      {
-        "id": "cpi_trend_chart_block",
-        "type": "chart",
-        "chartId": "cpi_trend",
-        "layout": "half"
-      },
-      {
-        "id": "cpi_by_category_chart_block",
-        "type": "chart",
-        "chartId": "cpi_by_category_chart",
-        "layout": "half"
-      },
-      {
-        "id": "fehd_district_chart_block",
-        "type": "chart",
-        "chartId": "fehd_district_chart"
+        "id": "retail_fnb_section",
+        "type": "markdown",
+        "body": "## 零售与餐饮活动\n\n官方零售销售及餐饮收益数据、各区持牌食肆密度及店铺足迹追踪。"
       },
       {
         "id": "retail_trend_chart",
@@ -1470,6 +1458,11 @@
         "tableId": "restaurant_snapshot_table"
       },
       {
+        "id": "fehd_district_chart_block",
+        "type": "chart",
+        "chartId": "fehd_district_chart"
+      },
+      {
         "id": "store_footprint_chart_block",
         "type": "chart",
         "chartId": "store_footprint_chart"
@@ -1480,14 +1473,51 @@
         "tableId": "store_footprint_table"
       },
       {
-        "id": "consumer_council_pricewatch_matched_index_block",
-        "type": "chart",
-        "chartId": "consumer_council_pricewatch_matched_index_chart"
+        "id": "complaints_section",
+        "type": "markdown",
+        "body": "## 消费者投诉\n\n消费者委员会各类别投诉宗数。"
       },
       {
-        "id": "consumer_council_pricewatch_archive_block",
+        "id": "complaints_chart_block",
+        "type": "chart",
+        "chartId": "consumer_council_complaints_chart",
+        "layout": "half"
+      },
+      {
+        "id": "complaints_history_chart_block",
+        "type": "chart",
+        "chartId": "consumer_council_complaints_history_chart"
+      },
+      {
+        "id": "complaints_history_table_block",
         "type": "table",
-        "tableId": "consumer_council_pricewatch_archive_table"
+        "tableId": "consumer_council_complaints_history_table"
+      },
+      {
+        "id": "valuations_section",
+        "type": "markdown",
+        "body": "## 消费股估值\n\n消费观察名单市盈率、市净率及市值——仅供参考，不构成股票排名或投资建议。"
+      },
+      {
+        "id": "valuation_chart",
+        "type": "chart",
+        "chartId": "valuation_pe_chart",
+        "layout": "half"
+      },
+      {
+        "id": "valuation_market_cap_chart",
+        "type": "chart",
+        "chartId": "valuation_market_cap_trend"
+      },
+      {
+        "id": "valuation_table_block",
+        "type": "table",
+        "tableId": "valuation_table"
+      },
+      {
+        "id": "sources_methodology_section",
+        "type": "markdown",
+        "body": "## 数据来源与方法"
       },
       {
         "id": "source_health",
@@ -1513,7 +1543,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-08-01T11:03:50.540187Z",
+    "generatedAt": "2026-08-01T11:13:50.178166Z",
     "status": "ready",
     "datasets": {
       "kpi_weather": [
@@ -30892,7 +30922,7 @@
         "url": "https://oil-price.consumer.org.hk/en",
         "language": "JSON",
         "description": "构建时从公开来源读取并校验 消费者委员会油价计算机。",
-        "executed_at": "2026-08-01T11:03:50.540187Z"
+        "executed_at": "2026-08-01T11:13:50.178166Z"
       }
     },
     {
@@ -30904,7 +30934,7 @@
         "url": "https://www.consumer.org.hk/node/32290/export-complaints/json?lang=en",
         "language": "JSON",
         "description": "构建时从公开来源读取并校验 消费者委员会投诉数据接口。",
-        "executed_at": "2026-08-01T11:03:50.540187Z"
+        "executed_at": "2026-08-01T11:13:50.178166Z"
       }
     },
     {
@@ -30916,7 +30946,7 @@
         "url": "https://online-price-watch.consumer.org.hk/opw/opendata/pricewatch_en.csv",
         "language": "CSV / Parquet",
         "description": "构建时从公开来源读取并校验 Consumer Council Online Price Watch。",
-        "executed_at": "2026-08-01T11:03:50.540187Z"
+        "executed_at": "2026-08-01T11:13:50.178166Z"
       }
     },
     {
@@ -30932,7 +30962,7 @@
           "Latest is the most recent published PM benchmark fixing.",
           "Day and year movements are latest divided by the prior trading day or the observation on/before one year earlier, minus one."
         ],
-        "executed_at": "2026-08-01T11:03:50.540187Z"
+        "executed_at": "2026-08-01T11:13:50.178166Z"
       }
     },
     {
@@ -30948,7 +30978,7 @@
           "PE (TTM), PB, and market cap (HKD bn) are each ticker's latest published daily value.",
           "No dividend-yield indicator exists on this endpoint; yield is not reported here."
         ],
-        "executed_at": "2026-08-01T11:03:50.540187Z"
+        "executed_at": "2026-08-01T11:13:50.178166Z"
       }
     },
     {
@@ -30964,7 +30994,7 @@
           "All retail outlet is the classification group's own published total across all outlet types.",
           "Month and year movements are latest divided by the prior month or the observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-08-01T11:03:50.540187Z"
+        "executed_at": "2026-08-01T11:13:50.178166Z"
       }
     },
     {
@@ -30980,7 +31010,7 @@
           "Purchases are only published sector-wide, not broken out by restaurant type.",
           "Quarter and year movements are latest divided by the prior quarter or the observation four quarters earlier, minus one."
         ],
-        "executed_at": "2026-08-01T11:03:50.540187Z"
+        "executed_at": "2026-08-01T11:13:50.178166Z"
       }
     },
     {
@@ -30996,7 +31026,7 @@
           "This is a current-state snapshot only -- the source has no issue-date or status-history field.",
           "Opened/closed counts compare this run's licence numbers against the most recently stored prior snapshot, and are unavailable until at least two runs have been persisted."
         ],
-        "executed_at": "2026-08-01T11:03:50.540187Z"
+        "executed_at": "2026-08-01T11:13:50.178166Z"
       }
     },
     {
@@ -31012,7 +31042,7 @@
           "Category sub-indices share the headline table's index basis but only start in 2005 -- thirty years shorter history.",
           "Month and year movements are latest divided by the prior month or the observation twelve months earlier, minus one."
         ],
-        "executed_at": "2026-08-01T11:03:50.540187Z"
+        "executed_at": "2026-08-01T11:13:50.178166Z"
       }
     },
     {
@@ -31029,7 +31059,7 @@
           "Southbound (南下) flow is daily Mainland visitor arrivals across all 17 control points, since Mainland visitors legitimately arrive by air, rail, and sea, not just by land.",
           "7-day moving averages (7d MA) smooth out day-of-week seasonality (weekend shopping spikes)."
         ],
-        "executed_at": "2026-08-01T11:03:50.540187Z"
+        "executed_at": "2026-08-01T11:13:50.178166Z"
       }
     },
     {
@@ -31046,7 +31076,7 @@
           "Red/Black Rainstorm hours measures total duration under Red or Black rainstorm warnings.",
           "RMB per 100 HKD is derived from FRED daily DEXCHUS and DEXHKUS rates."
         ],
-        "executed_at": "2026-08-01T11:03:50.540187Z"
+        "executed_at": "2026-08-01T11:13:50.178166Z"
       }
     },
     {
@@ -31061,7 +31091,7 @@
           "Total stores is each company's own latest snapshot count (not a cross-company-comparable unit -- a POP MART Roboshop and a Chow Tai Fook boutique are both counted as one location).",
           "This is a footprint snapshot, not a trend: most companies only have 1-2 dated snapshots so far, so month-over-month change is not yet meaningful."
         ],
-        "executed_at": "2026-08-01T11:03:50.540187Z"
+        "executed_at": "2026-08-01T11:13:50.178166Z"
       }
     },
     {
@@ -31075,7 +31105,7 @@
           "Validated live measure frames",
           "Declared future-source registry"
         ],
-        "executed_at": "2026-08-01T11:03:50.540187Z"
+        "executed_at": "2026-08-01T11:13:50.178166Z"
       }
     }
   ],
