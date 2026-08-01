@@ -12,6 +12,7 @@ from src.hk_transport.sources.cathay_traffic import (
     _find_metric_tables,
     fetch_cathay_traffic,
 )
+from src.hk_transport.sources.cathay_fleet import _parse_fleet_profile
 from src.hk_transport.sources.mtr_patronage import fetch_mtr_patronage
 
 
@@ -31,6 +32,15 @@ def test_fetch_cathay_traffic():
     assert "hkia_passengers" in df.columns
     assert "cathay_passengers" in df.columns
     assert "cathay_passenger_load_factor_pct" in df.columns
+    for field in (
+        "cathay_cargo_tonnes",
+        "cathay_aftk_thousands",
+        "cathay_rftk_thousands",
+        "cathay_cargo_load_factor_pct",
+        "cathay_flight_sectors",
+    ):
+        assert field in df.columns
+        assert df[field].notna().sum() >= 100
     # Real archive-crawl discovery recovers Cathay traffic figures back to
     # Dec 2012 (filed Jan 2013) -- a ~10x improvement over the old
     # deterministic-URL-pattern floor of ~18 months. Threshold is set well
@@ -76,6 +86,7 @@ def test_cathay_discover_traffic_pdfs_real_archive():
     [
         "CATHAY PACIFIC /\nDRAGONAIR COMBINED\nTRAFFIC",
         "CATHAY PACIFIC",
+        "CATHAY CARGO",
         "AIRLINES COMBINED\nTRAFFIC",
         "AIRLINES COMBINED\nCAPACITY",
     ],
@@ -134,6 +145,34 @@ def test_extract_metrics_2025_consolidated_layout():
     }
 
 
+def test_extract_metrics_cargo_and_flight_fields():
+    tables = [
+        [
+            ["CATHAY PACIFIC", "MAY 2026", "% Change"],
+            ["Revenue Passenger Kilometres (000)", "10,988,053", "13.1%"],
+            ["Number of passenger flight sectors", "10,645", "12.4%"],
+        ],
+        [
+            ["CATHAY CARGO", "MAY 2026", "% Change"],
+            ["Available Freight Tonne Kilometres (000)", "1,310,668", "6.1%"],
+            ["Revenue Freight Tonne Kilometres (000)", "783,148", "6.7%"],
+            ["Number of freighter flight sectors", "1,272", "0.6%"],
+            ["Cargo carried (000kg)", "150,089", "10.5%"],
+            ["Cargo load factor", "59.8%", "0.3%pt"],
+        ],
+    ]
+    metrics = _extract_metrics_from_tables(tables)
+    assert metrics == {
+        "cathay_rpk_thousands": 10988053.0,
+        "cathay_aftk_thousands": 1310668.0,
+        "cathay_rftk_thousands": 783148.0,
+        "cathay_passenger_flight_sectors": 10645.0,
+        "cathay_freighter_flight_sectors": 1272.0,
+        "cathay_cargo_tonnes": 150089.0,
+        "cathay_cargo_load_factor_pct": 59.8,
+    }
+
+
 def test_extract_metrics_missing_fields_returns_partial_dict():
     """When a table is missing rows, extraction should return only what it
     found -- callers (_parse_cathay_pdf) are responsible for treating an
@@ -144,3 +183,43 @@ def test_extract_metrics_missing_fields_returns_partial_dict():
     ]
     metrics = _extract_metrics_from_tables([table])
     assert metrics == {"cathay_passengers": 1000.0}
+
+
+def test_parse_fleet_profile_preserves_published_dash_columns():
+    """Fleet Profile rows use dashes for zero owned/leased aircraft; dashes
+    must not shift the fourth (total fleet) column left."""
+    import src.hk_transport.sources.cathay_fleet as fleet_source
+
+    class FakePage:
+        def extract_text(self):
+            return "\n".join(
+                [
+                    "FLEET PROFILE",
+                    "The Company (Passenger aircraft):",
+                    "Total of the",
+                    "Company 133 24 23 180 11.8",
+                    "HK Express:",
+                    "Total 10 7 24 41 7.1",
+                    "Air Hong Kong:",
+                    "Total - - 15 15 14.1",
+                    "Grand total 143 31 62 236 11.1",
+                ]
+            )
+
+    class FakePdf:
+        pages = [FakePage()]
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return None
+
+    monkeypatch = pytest.MonkeyPatch()
+    monkeypatch.setattr(fleet_source.pdfplumber, "open", lambda _: FakePdf())
+    try:
+        parsed = _parse_fleet_profile(b"%PDF-fake", "2024-12-31", "annual", "https://example.test/report.pdf")
+    finally:
+        monkeypatch.undo()
+    values = dict(zip(parsed["scope"], parsed["fleet_total_aircraft"]))
+    assert values == {"Company": 180.0, "HK Express": 41.0, "Air Hong Kong": 15.0, "Grand total": 236.0}

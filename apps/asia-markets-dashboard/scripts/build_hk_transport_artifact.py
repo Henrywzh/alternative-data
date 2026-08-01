@@ -20,11 +20,13 @@ if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
 from src.hk_transport.sources.cathay_traffic import fetch_cathay_traffic
+from src.hk_transport.sources.cathay_fleet import fetch_cathay_fleet_history
 from src.hk_transport.sources.mtr_patronage import fetch_mtr_patronage
 from history_policy import DEFAULT_HISTORY_YEARS, history_window
 
 
 CHINA_AIRLINE_DATA_PATH = ROOT / "data" / "processed" / "airline_traffic" / "china_airlines_monthly.parquet"
+CHINA_AIRLINE_EVENT_DATA_PATH = ROOT / "data" / "processed" / "airline_traffic" / "china_airlines_operating_events.parquet"
 TRANSPORT_DATA_DIR = ROOT / "data" / "processed" / "transport"
 PASSENGER_JOURNEYS_DATA_PATH = TRANSPORT_DATA_DIR / "hk_passenger_journeys_monthly.parquet"
 MTTD_PASSENGER_JOURNEYS_DATA_PATH = TRANSPORT_DATA_DIR / "mttd_passenger_journeys_monthly.parquet"
@@ -83,15 +85,37 @@ CHINA_AIRLINE_NAMES = {
     "600029": "China Southern",
     "600115": "China Eastern",
     "601021": "Spring Airlines",
+    "600221": "Hainan Airlines Holdings",
+    "603885": "Juneyao Airlines",
 }
 CHINA_AIRLINE_SHORT_NAMES = {
     "Air China": "AC",
     "China Southern": "CS",
     "China Eastern": "CE",
     "Spring Airlines": "Spring",
+    "Hainan Airlines Holdings": "Hainan",
+    "Juneyao Airlines": "Juneyao",
 }
-CHINA_AIRLINE_METRICS = {"passengers", "ask", "rpk", "passenger_load_factor_pct"}
-CHINA_AIRLINE_COLUMNS = ["month", "date", "airline_code", "airline", "region", "metric", "value"]
+CHINA_AIRLINE_REPORTING_SCOPE = {
+    "Air China": "Group-consolidated operating data",
+    "China Southern": "Group-consolidated operating data",
+    "China Eastern": "Group-consolidated operating data",
+    "Spring Airlines": "Company and subsidiaries",
+    "Hainan Airlines Holdings": "Hainan group consolidated; includes eight operating carriers",
+    "Juneyao Airlines": "Company and Jiuyuan Airlines consolidated",
+}
+CHINA_AIRLINE_METRICS = {
+    "passengers", "ask", "rpk", "passenger_load_factor_pct",
+    "atk", "rtk", "aftk", "rftk", "cargo_tonnes",
+    "freight_load_factor_pct", "overall_load_factor_pct",
+}
+CHINA_AIRLINE_COLUMNS = [
+    "month", "date", "airline_code", "airline", "region", "metric", "value", "reporting_scope",
+]
+CHINA_AIRLINE_EVENT_COLUMNS = ["month", "date", "airline_code", "event_type", "value", "detail"]
+CHINA_AIRLINE_EVENT_TYPES = {
+    "fleet_added_aircraft", "fleet_retired_aircraft", "fleet_total_aircraft", "new_route_event_count",
+}
 
 
 PUBLIC_SOURCES = {
@@ -116,7 +140,19 @@ PUBLIC_SOURCES = {
             "engine": "official CAD Excel workbook + Cathay Pacific IR monthly traffic-figures PDF",
             "url": "https://www.cad.gov.hk/english/pdf/Stat%20Webpage.xlsx ; https://www.cathaypacific.com/content/dam/cx/about-us/investor-relations/announcements/en/<YYYYMM>_cx_traffic_en.pdf",
             "language": "XLSX + PDF",
-            "description": "HKIA airport monthly aircraft movements, passenger volume, and freight tonnage alongside Cathay Pacific passengers, RPK, ASK, and Passenger Load Factor (%), fetched directly from Cathay's own investor-relations traffic-figures PDF (deterministic per-month URL).",
+            "description": "HKIA airport monthly aircraft movements, passenger volume, and freight tonnage alongside Cathay Pacific passengers, RPK, ASK, passenger/cargo load factors, cargo tonnage, AFTK/RFTK and reported flight sectors, fetched directly from Cathay's own investor-relations traffic-figures PDFs discovered through the official archive.",
+        },
+    },
+    "cathay_fleet": {
+        "id": "cathay_fleet",
+        "label": "Cathay Pacific Group Official Fleet Profile (annual/interim reports)",
+        "href": "https://www.cathaypacific.com/cx/en_HK/about-us/investor-relations/interim-annual-reports.html",
+        "path": "sources/cathay_fleet.sql",
+        "query": {
+            "engine": "official Cathay annual and interim report Fleet Profile tables",
+            "url": "https://www.cathaypacific.com/content/dam/cx/about-us/investor-relations/interim-annual-reports/en/<year>_cx_<annual_report|interim_report>_en.pdf",
+            "language": "PDF",
+            "description": "Fleet totals at each official report period end for the Company, HK Express, Air Hong Kong and Group grand total. This is a semiannual/annual series, not a monthly traffic-announcement field.",
         },
     },
     "china_airline_traffic": {
@@ -128,7 +164,7 @@ PUBLIC_SOURCES = {
             "engine": "repository parquet built from official Cninfo operating-data announcements",
             "url": "https://www.cninfo.com.cn/",
             "language": "Parquet",
-            "description": "Monthly passengers, ASK, RPK and passenger load factor for Air China, China Southern, China Eastern and Spring Airlines, split by domestic, international and regional operations.",
+            "description": "Monthly passenger and cargo operating data for six China-listed airline groups, plus sparse PDF-derived fleet additions/retirements, fleet totals and new-route events; passenger fields are split by domestic, international and regional operations.",
         },
     },
     "hk_passenger_journeys": {
@@ -318,6 +354,7 @@ def load_china_airline_traffic(path: Path = CHINA_AIRLINE_DATA_PATH) -> pd.DataF
     result["month"] = result["date"].dt.strftime("%Y-%m")
     result["airline_code"] = result["airline_code"].astype(str).str.replace(r"\.0$", "", regex=True)
     result["airline"] = result["airline_code"].map(CHINA_AIRLINE_NAMES)
+    result["reporting_scope"] = result["airline"].map(CHINA_AIRLINE_REPORTING_SCOPE)
     result["metric"] = result["metric"].astype(str)
     result["region"] = result["region"].astype(str)
     result["value"] = pd.to_numeric(result["value"], errors="coerce")
@@ -327,6 +364,9 @@ def load_china_airline_traffic(path: Path = CHINA_AIRLINE_DATA_PATH) -> pd.DataF
     if result["airline"].isna().any():
         unknown = sorted(result.loc[result["airline"].isna(), "airline_code"].unique())
         raise ValueError(f"China airline traffic contains unknown carriers: {unknown}")
+    if result["reporting_scope"].isna().any():
+        unknown = sorted(result.loc[result["reporting_scope"].isna(), "airline"].unique())
+        raise ValueError(f"China airline traffic contains unknown reporting scopes: {unknown}")
     unknown_metrics = sorted(set(result["metric"]) - CHINA_AIRLINE_METRICS)
     if unknown_metrics:
         raise ValueError(f"China airline traffic contains unknown metrics: {unknown_metrics}")
@@ -336,7 +376,102 @@ def load_china_airline_traffic(path: Path = CHINA_AIRLINE_DATA_PATH) -> pd.DataF
     ).reset_index(drop=True)
 
 
-def build_china_airline_views(frame: pd.DataFrame) -> dict[str, list[dict[str, Any]]]:
+def load_china_airline_operating_events(path: Path = CHINA_AIRLINE_EVENT_DATA_PATH) -> pd.DataFrame:
+    """Load the separate fleet/route event layer built from official PDFs."""
+    if not path.exists():
+        return pd.DataFrame(columns=CHINA_AIRLINE_EVENT_COLUMNS)
+    frame = pd.read_parquet(path)
+    missing = sorted(set(CHINA_AIRLINE_EVENT_COLUMNS).difference(frame.columns))
+    if missing:
+        raise ValueError(f"China airline operating events are missing columns: {missing}")
+    result = frame.loc[:, CHINA_AIRLINE_EVENT_COLUMNS].copy()
+    result["date"] = pd.to_datetime(result["date"], errors="coerce")
+    result["month"] = result["date"].dt.strftime("%Y-%m")
+    result["airline_code"] = result["airline_code"].astype(str).str.replace(r"\.0$", "", regex=True)
+    result["event_type"] = result["event_type"].astype(str)
+    result["value"] = pd.to_numeric(result["value"], errors="coerce")
+    result["detail"] = result["detail"].fillna("").astype(str)
+    if result["date"].isna().any() or result["value"].isna().any():
+        raise ValueError("China airline operating events contain invalid dates or values")
+    unknown_codes = sorted(set(result["airline_code"]) - set(CHINA_AIRLINE_NAMES))
+    if unknown_codes:
+        raise ValueError(f"China airline operating events contain unknown carriers: {unknown_codes}")
+    unknown_types = sorted(set(result["event_type"]) - CHINA_AIRLINE_EVENT_TYPES)
+    if unknown_types:
+        raise ValueError(f"China airline operating events contain unknown event types: {unknown_types}")
+    if (result["value"] < 0).any():
+        raise ValueError("China airline operating events contain negative values")
+    return result.sort_values(["date", "airline_code", "event_type"]).reset_index(drop=True)
+
+
+def build_china_airline_event_views(events: pd.DataFrame) -> dict[str, list[dict[str, Any]]]:
+    """Build sparse fleet/route signals without filling absent events as zero."""
+    empty = {
+        "china_airline_fleet_total_history": [],
+        "china_airline_fleet_net_change_history": [],
+        "china_airline_new_route_history": [],
+        "china_airline_operating_events_latest": [],
+    }
+    if events.empty:
+        return empty
+
+    data = events.copy()
+    data["date"] = pd.to_datetime(data["date"], errors="coerce")
+    data["month"] = data["date"].dt.strftime("%Y-%m")
+    data["airline_code"] = data["airline_code"].astype(str)
+    data["airline"] = data["airline_code"].map(CHINA_AIRLINE_NAMES)
+    data["reporting_scope"] = data["airline"].map(CHINA_AIRLINE_REPORTING_SCOPE)
+    data["series"] = data["airline"].map(CHINA_AIRLINE_SHORT_NAMES)
+
+    def history(selected: pd.DataFrame) -> list[dict[str, Any]]:
+        return [
+            {
+                "date": row["date"].strftime("%Y-%m-%d"),
+                "month": row["month"],
+                "series": row["series"],
+                "airline": row["airline"],
+                "value": round(float(row["value"]), 4),
+            }
+            for _, row in selected.sort_values(["date", "series"]).iterrows()
+        ]
+
+    fleet_total = data[data["event_type"].eq("fleet_total_aircraft")]
+    fleet_total_history = history(fleet_total)
+
+    fleet_changes = data[data["event_type"].isin({"fleet_added_aircraft", "fleet_retired_aircraft"})]
+    if fleet_changes.empty:
+        fleet_net_history = []
+    else:
+        keys = ["date", "month", "airline_code", "airline", "series"]
+        pivot = fleet_changes.pivot_table(
+            index=keys, columns="event_type", values="value", aggfunc="sum", fill_value=0
+        ).reset_index()
+        for column in ("fleet_added_aircraft", "fleet_retired_aircraft"):
+            if column not in pivot.columns:
+                pivot[column] = 0
+        pivot["value"] = pivot["fleet_added_aircraft"] - pivot["fleet_retired_aircraft"]
+        fleet_net_history = history(pivot)
+
+    route_history = history(data[data["event_type"].eq("new_route_event_count")])
+
+    latest_date = data["date"].max()
+    latest = data[data["date"].eq(latest_date)].copy()
+    latest["observation_date"] = latest_date.strftime("%Y-%m-%d")
+    latest = latest[
+        ["airline_code", "airline", "reporting_scope", "event_type", "value", "detail", "observation_date"]
+    ].sort_values(["airline", "event_type"])
+    return {
+        "china_airline_fleet_total_history": fleet_total_history,
+        "china_airline_fleet_net_change_history": fleet_net_history,
+        "china_airline_new_route_history": route_history,
+        "china_airline_operating_events_latest": json.loads(latest.to_json(orient="records", date_format="iso")),
+    }
+
+
+def build_china_airline_views(
+    frame: pd.DataFrame,
+    events: pd.DataFrame | None = None,
+) -> dict[str, list[dict[str, Any]]]:
     """Build compact chart/table datasets from the normalized airline frame."""
     empty = {
         "china_airline_passengers_history": [],
@@ -344,17 +479,86 @@ def build_china_airline_views(frame: pd.DataFrame) -> dict[str, list[dict[str, A
         "china_airline_rpk_history": [],
         "china_airline_load_factor_history": [],
         "china_airline_region_split_history": [],
+        "china_airline_region_by_carrier_history": [],
         "china_airline_latest_snapshot": [],
+        "china_airline_cargo_history": [],
+        "china_airline_freight_load_factor_history": [],
+        "china_airline_overall_load_factor_history": [],
+        "china_airline_cargo_latest_snapshot": [],
+        "china_airline_fleet_total_history": [],
+        "china_airline_fleet_net_change_history": [],
+        "china_airline_new_route_history": [],
+        "china_airline_operating_events_latest": [],
     }
     if frame.empty:
-        return empty
+        return {**empty, **build_china_airline_event_views(events if events is not None else pd.DataFrame())}
 
     data = frame.copy()
     data["date"] = pd.to_datetime(data["date"], errors="coerce")
     if "airline" not in data.columns:
         data["airline_code"] = data["airline_code"].astype(str)
         data["airline"] = data["airline_code"].map(CHINA_AIRLINE_NAMES)
+    if "reporting_scope" not in data.columns:
+        data["reporting_scope"] = data["airline"].map(CHINA_AIRLINE_REPORTING_SCOPE)
     data["month"] = data["date"].dt.strftime("%Y-%m")
+
+    def total_metric(metric: str) -> pd.DataFrame:
+        """Return one all-operation value per carrier/month for a metric.
+
+        Some issuers print a dedicated Total row while others only print
+        Domestic/International/Regional rows. Additive cargo and tonne-km
+        metrics can safely use the same complete-three-region derivation as
+        passengers/ASK/RPK; reported totals always win when both are present.
+        Load factors are derived from their numerator/denominator rather than
+        averaging percentages.
+        """
+        keys = ["date", "month", "airline_code", "airline"]
+        reported = data[
+            data["region"].eq("Total") & data["metric"].eq(metric)
+        ][keys + ["value"]].copy()
+        additive = {"cargo_tonnes", "aftk", "rftk", "atk", "rtk"}
+        if metric in additive:
+            regional = data[
+                data["region"].ne("Total") & data["metric"].eq(metric)
+            ]
+            if not regional.empty:
+                counts = regional.groupby(keys)["region"].nunique().reset_index(name="region_count")
+                derived = regional.groupby(keys, as_index=False)["value"].sum().merge(
+                    counts, on=keys
+                )
+                derived = derived[derived["region_count"] >= 3].drop(columns="region_count")
+                result = pd.concat([derived, reported], ignore_index=True)
+            else:
+                result = reported
+        elif metric == "freight_load_factor_pct":
+            numerator = total_metric("rftk")
+            denominator = total_metric("aftk")
+            derived = numerator.merge(
+                denominator,
+                on=keys,
+                suffixes=("_rftk", "_aftk"),
+            )
+            derived = derived[derived["value_aftk"] > 0].copy()
+            derived["value"] = derived["value_rftk"] / derived["value_aftk"] * 100
+            derived = derived[keys + ["value"]]
+            result = pd.concat([derived, reported], ignore_index=True)
+        elif metric == "overall_load_factor_pct":
+            numerator = total_metric("rtk")
+            denominator = total_metric("atk")
+            derived = numerator.merge(
+                denominator,
+                on=keys,
+                suffixes=("_rtk", "_atk"),
+            )
+            derived = derived[derived["value_atk"] > 0].copy()
+            derived["value"] = derived["value_rtk"] / derived["value_atk"] * 100
+            derived = derived[keys + ["value"]]
+            result = pd.concat([derived, reported], ignore_index=True)
+        else:
+            result = reported
+        if result.empty:
+            return result
+        return result.drop_duplicates(subset=keys, keep="last").sort_values(keys).reset_index(drop=True)
 
     # Only China Southern's disclosed PDF table includes an explicit "合计"
     # (Total) row -- Air China, China Eastern, and Spring Airlines only ever
@@ -455,8 +659,8 @@ def build_china_airline_views(frame: pd.DataFrame) -> dict[str, list[dict[str, A
         ]
 
     # Two charts (ASK by carrier, RPK by carrier), not one combined ASK+RPK
-    # chart -- with all 4 carriers now included (see the derivation above),
-    # a single chart would need an 8-item legend (4 carriers x 2 metrics),
+    # chart -- with all 6 carriers now included (see the derivation above),
+    # a single chart would need a 12-item legend (6 carriers x 2 metrics),
     # which overflows the portable renderer's single-row legend at mobile
     # width (see the same constraint noted in
     # build_hk_local_consumer_artifact.py's AFCD_CATEGORY_SHORT_LABELS).
@@ -468,11 +672,106 @@ def build_china_airline_views(frame: pd.DataFrame) -> dict[str, list[dict[str, A
         row["series"] = CHINA_AIRLINE_SHORT_NAMES[row["airline"]]
 
     region_rows = history("passengers", regional=True)
+
+    # Keep the carrier-level drill-down within the portable artifact's
+    # per-dataset row limit (18 carrier/region series x roughly 9 years),
+    # while the combined region chart above retains the full available
+    # history.  This still covers the full 2021-2025 interval under review.
+    regional_cutoff = data["date"].max() - pd.DateOffset(years=9)
+    regional_by_carrier = data[
+        data["region"].ne("Total")
+        & data["metric"].eq("passengers")
+        & data["date"].ge(regional_cutoff)
+    ]
+    if regional_by_carrier.empty:
+        regional_by_carrier_rows: list[dict[str, Any]] = []
+    else:
+        regional_by_carrier = (
+            regional_by_carrier.groupby(
+                ["date", "month", "airline_code", "airline", "region"],
+                as_index=False,
+            )["value"]
+            .sum()
+        )
+        regional_by_carrier["series"] = (
+            regional_by_carrier["airline"].map(CHINA_AIRLINE_SHORT_NAMES)
+            + " · "
+            + regional_by_carrier["region"]
+        )
+        regional_by_carrier_rows = [
+            {
+                "date": row["date"].strftime("%Y-%m-%d"),
+                "month": row["month"],
+                "series": row["series"],
+                "airline": row["airline"],
+                "region": row["region"],
+                "value": round(float(row["value"]), 4),
+            }
+            for _, row in regional_by_carrier.sort_values(["date", "series"]).iterrows()
+        ]
     latest_date = data["date"].max()
+
+    def auxiliary_history(metric: str) -> list[dict[str, Any]]:
+        selected = total_metric(metric)
+        if selected.empty:
+            return []
+        selected = selected.copy()
+        selected["series"] = selected["airline"].map(CHINA_AIRLINE_SHORT_NAMES)
+        return [
+            {
+                "date": row["date"].strftime("%Y-%m-%d"),
+                "month": row["month"],
+                "series": row["series"],
+                "airline": row["airline"],
+                "value": round(float(row["value"]), 4),
+            }
+            for _, row in selected.sort_values(["date", "series"]).iterrows()
+        ]
+
+    cargo_history = auxiliary_history("cargo_tonnes")
+    freight_load_factor_history = auxiliary_history("freight_load_factor_pct")
+    overall_load_factor_history = auxiliary_history("overall_load_factor_pct")
+
+    cargo_metrics = ["cargo_tonnes", "aftk", "rftk", "freight_load_factor_pct", "overall_load_factor_pct"]
+    cargo_latest = []
+    for metric in cargo_metrics:
+        values = total_metric(metric)
+        if values.empty:
+            continue
+        values = values[values["date"].eq(latest_date)].copy()
+        if values.empty:
+            continue
+        values["metric"] = metric
+        cargo_latest.append(values)
+    if cargo_latest:
+        cargo_latest_frame = pd.concat(cargo_latest, ignore_index=True)
+        cargo_snapshot = (
+            cargo_latest_frame.pivot_table(
+                index=["airline_code", "airline"],
+                columns="metric",
+                values="value",
+                aggfunc="last",
+            )
+            .reset_index()
+        )
+        for column in cargo_metrics:
+            if column not in cargo_snapshot.columns:
+                cargo_snapshot[column] = None
+        cargo_snapshot["reporting_scope"] = cargo_snapshot["airline"].map(CHINA_AIRLINE_REPORTING_SCOPE)
+        cargo_snapshot["observation_date"] = latest_date.strftime("%Y-%m-%d")
+        cargo_snapshot = cargo_snapshot[
+            [
+                "airline_code", "airline", "reporting_scope", "cargo_tonnes", "aftk", "rftk",
+                "freight_load_factor_pct", "overall_load_factor_pct", "observation_date",
+            ]
+        ].sort_values("airline")
+    else:
+        cargo_snapshot = pd.DataFrame()
+
     latest = data[data["date"].eq(latest_date)]
     snapshot = (
         latest.pivot_table(
-            index=["airline_code", "airline", "region"],
+            index=["airline_code", "airline", "reporting_scope", "region"],
             columns="metric",
             values="value",
             aggfunc="last",
@@ -485,7 +784,10 @@ def build_china_airline_views(frame: pd.DataFrame) -> dict[str, list[dict[str, A
             snapshot[column] = None
     snapshot["observation_date"] = latest_date.strftime("%Y-%m-%d")
     snapshot = snapshot[
-        ["airline_code", "airline", "region", "passengers", "ask", "rpk", "load_factor_pct", "observation_date"]
+        [
+            "airline_code", "airline", "reporting_scope", "region", "passengers", "ask", "rpk",
+            "load_factor_pct", "observation_date",
+        ]
     ].sort_values(["airline", "region"])
 
     return {
@@ -494,7 +796,13 @@ def build_china_airline_views(frame: pd.DataFrame) -> dict[str, list[dict[str, A
         "china_airline_rpk_history": rpk_history,
         "china_airline_load_factor_history": history("passenger_load_factor_pct"),
         "china_airline_region_split_history": region_rows,
+        "china_airline_region_by_carrier_history": regional_by_carrier_rows,
         "china_airline_latest_snapshot": json.loads(snapshot.to_json(orient="records", date_format="iso")),
+        "china_airline_cargo_history": cargo_history,
+        "china_airline_freight_load_factor_history": freight_load_factor_history,
+        "china_airline_overall_load_factor_history": overall_load_factor_history,
+        "china_airline_cargo_latest_snapshot": json.loads(cargo_snapshot.to_json(orient="records", date_format="iso")) if not cargo_snapshot.empty else [],
+        **build_china_airline_event_views(events if events is not None else pd.DataFrame()),
     }
 
 
@@ -1074,7 +1382,9 @@ def build_carpark_occupancy_views(frame: pd.DataFrame) -> dict[str, list[dict[st
 def build_artifact(
     raw_mtr: pd.DataFrame | None = None,
     raw_cathay: pd.DataFrame | None = None,
+    raw_cathay_fleet: pd.DataFrame | None = None,
     raw_china_airline: pd.DataFrame | None = None,
+    raw_china_airline_events: pd.DataFrame | None = None,
     raw_passenger_journeys: pd.DataFrame | None = None,
     raw_mttd_passenger_journeys: pd.DataFrame | None = None,
     raw_boundary_movements: pd.DataFrame | None = None,
@@ -1091,8 +1401,14 @@ def build_artifact(
 
     mtr = raw_mtr if raw_mtr is not None else fetch_mtr_patronage()
     cathay = raw_cathay if raw_cathay is not None else fetch_cathay_traffic()
+    cathay_fleet = raw_cathay_fleet if raw_cathay_fleet is not None else fetch_cathay_fleet_history()
     china_airline = raw_china_airline if raw_china_airline is not None else load_china_airline_traffic()
-    china_airline_views = build_china_airline_views(china_airline)
+    china_airline_events = (
+        raw_china_airline_events
+        if raw_china_airline_events is not None
+        else load_china_airline_operating_events()
+    )
+    china_airline_views = build_china_airline_views(china_airline, china_airline_events)
     passenger_journeys = raw_passenger_journeys if raw_passenger_journeys is not None else load_passenger_journeys()
     passenger_journeys_views = build_passenger_journeys_views(passenger_journeys)
     mttd_passenger_journeys = (
@@ -1264,6 +1580,23 @@ def build_artifact(
     cathay_capacity_demand_history.extend(_series_history(cathay, "RPK ('000)", "cathay_rpk_thousands"))
     cathay_capacity_demand_history.sort(key=lambda row: (row["date"], row["series"]))
 
+    cathay_cargo_capacity_demand_history: list[dict[str, Any]] = []
+    cathay_cargo_capacity_demand_history.extend(_series_history(cathay, "AFTK ('000)", "cathay_aftk_thousands"))
+    cathay_cargo_capacity_demand_history.extend(_series_history(cathay, "RFTK ('000)", "cathay_rftk_thousands"))
+    cathay_cargo_capacity_demand_history.sort(key=lambda row: (row["date"], row["series"]))
+
+    cathay_fleet_total_history: list[dict[str, Any]] = []
+    if not cathay_fleet.empty:
+        fleet = cathay_fleet.copy()
+        fleet["date"] = pd.to_datetime(fleet["date"], errors="coerce")
+        fleet["fleet_total_aircraft"] = pd.to_numeric(fleet["fleet_total_aircraft"], errors="coerce")
+        fleet = fleet.dropna(subset=["date", "fleet_total_aircraft"])
+        for scope, scope_frame in fleet.groupby("scope", sort=True):
+            cathay_fleet_total_history.extend(
+                _series_history(scope_frame, str(scope), "fleet_total_aircraft")
+            )
+        cathay_fleet_total_history.sort(key=lambda row: (row["date"], row["series"]))
+
     datasets = {
         "kpi_mtr": [mtr_kpi],
         "kpi_cathay": [cathay_kpi],
@@ -1271,6 +1604,8 @@ def build_artifact(
         "cathay_history": cathay.to_dict(orient="records"),
         "mtr_service_breakdown_history": mtr_service_breakdown_history,
         "cathay_capacity_demand_history": cathay_capacity_demand_history,
+        "cathay_cargo_capacity_demand_history": cathay_cargo_capacity_demand_history,
+        "cathay_fleet_total_history": cathay_fleet_total_history,
         **china_airline_views,
         **({"kpi_journeys": [journeys_kpi]} if journeys_kpi else {}),
         **({"kpi_fleet": [fleet_kpi]} if fleet_kpi else {}),
@@ -1473,6 +1808,63 @@ def build_artifact(
             "layout": "half",
         },
         {
+            "id": "cathay_cargo_tonnage_chart",
+            "title": "Cathay Cargo Tonnage Carried",
+            "subtitle": "Monthly Cathay Cargo tonnage carried, sourced from Cathay's traffic-figures PDFs; the airport-wide HKIA freight series remains separate.",
+            "type": "line",
+            "dataset": "cathay_history",
+            "sourceId": "cathay_hkia_traffic",
+            "encodings": {
+                "x": {"field": "month", "type": "temporal", "label": "Month"},
+                "y": {"field": "cathay_cargo_tonnes", "type": "quantitative", "label": "Tonnes"},
+            },
+            "valueFormat": "number",
+            "layout": "half",
+        },
+        {
+            "id": "cathay_freight_load_factor_chart",
+            "title": "Cathay Cargo Load Factor",
+            "subtitle": "Monthly cargo load factor from Cathay's disclosed cargo/freight tonne-kilometre measures.",
+            "type": "line",
+            "dataset": "cathay_history",
+            "sourceId": "cathay_hkia_traffic",
+            "encodings": {
+                "x": {"field": "month", "type": "temporal", "label": "Month"},
+                "y": {"field": "cathay_cargo_load_factor_pct", "type": "quantitative", "label": "Load Factor (%)"},
+            },
+            "valueFormat": "number",
+            "layout": "half",
+        },
+        {
+            "id": "cathay_cargo_capacity_demand_chart",
+            "title": "Cathay Cargo Capacity vs. Demand (AFTK vs. RFTK, '000s)",
+            "subtitle": "Available Freight Tonne Kilometres (AFTK) versus Revenue Freight Tonne Kilometres (RFTK); older PDFs use cargo/mail wording for the same concepts.",
+            "type": "line",
+            "dataset": "cathay_cargo_capacity_demand_history",
+            "sourceId": "cathay_hkia_traffic",
+            "encodings": {
+                "x": {"field": "month", "type": "temporal", "label": "Month"},
+                "y": {"field": "value", "type": "quantitative", "label": "000s"},
+                "color": {"field": "series", "type": "nominal", "label": "Metric"},
+            },
+            "valueFormat": "number",
+            "layout": "half",
+        },
+        {
+            "id": "cathay_flight_sectors_chart",
+            "title": "Cathay Reported Flight Sectors",
+            "subtitle": "Monthly reported passenger/cargo flight sectors. Older disclosures use a combined 'number of flights' field; newer PDFs split passenger and freighter sectors and are summed when both are available.",
+            "type": "line",
+            "dataset": "cathay_history",
+            "sourceId": "cathay_hkia_traffic",
+            "encodings": {
+                "x": {"field": "month", "type": "temporal", "label": "Month"},
+                "y": {"field": "cathay_flight_sectors", "type": "quantitative", "label": "Flight sectors"},
+            },
+            "valueFormat": "number",
+            "layout": "full",
+        },
+        {
             "id": "hkia_passengers_chart",
             "title": "HKIA Total Airport Passenger Traffic",
             "subtitle": "Hong Kong International Airport's total monthly passenger volume across all airlines (CAD data), a broader gauge of aviation demand than the Cathay-specific charts above.",
@@ -1488,13 +1880,32 @@ def build_artifact(
         },
     ]
 
+    if cathay_fleet_total_history:
+        charts.append(
+            {
+                "id": "cathay_fleet_total_chart",
+                "title": "Cathay Group Fleet Profile",
+                "subtitle": "Official Fleet Profile totals at each annual/interim report period end. The Company, HK Express, Air Hong Kong and Group grand total are reported at semiannual/annual cadence; no monthly interpolation is applied.",
+                "type": "line",
+                "dataset": "cathay_fleet_total_history",
+                "sourceId": "cathay_fleet",
+                "encodings": {
+                    "x": {"field": "month", "type": "temporal", "label": "Report period"},
+                    "y": {"field": "value", "type": "quantitative", "label": "Aircraft"},
+                    "color": {"field": "series", "type": "nominal", "label": "Scope"},
+                },
+                "valueFormat": "number",
+                "layout": "full",
+            }
+        )
+
     if china_airline_views["china_airline_passengers_history"]:
         charts.extend(
             [
                 {
                     "id": "china_airline_passengers_chart",
                     "title": "China Listed Airlines Passenger Traffic",
-                    "subtitle": "Monthly total passengers carried by Air China, China Southern, China Eastern and Spring Airlines.",
+                    "subtitle": "Monthly total passengers carried by six China-listed airline groups: Air China, China Southern, China Eastern, Spring, Hainan and Juneyao.",
                     "type": "line",
                     "dataset": "china_airline_passengers_history",
                     "sourceId": "china_airline_traffic",
@@ -1507,9 +1918,9 @@ def build_artifact(
                     "layout": "full",
                 },
                 {
-                    # Two charts (ASK, RPK), not one combined chart -- with all 4
-                    # carriers now included, one chart would need an 8-item
-                    # legend (4 carriers x 2 metrics), which overflows the
+                    # Two charts (ASK, RPK), not one combined chart -- with all 6
+                    # carriers now included, one chart would need a 12-item
+                    # legend (6 carriers x 2 metrics), which overflows the
                     # portable renderer's single-row legend at mobile width.
                     "id": "china_airline_ask_chart",
                     "title": "China Listed Airlines Available Seat Kilometres (ASK)",
@@ -1558,7 +1969,7 @@ def build_artifact(
                 {
                     "id": "china_airline_region_split_chart",
                     "title": "China Listed Airlines Passenger Traffic by Region",
-                    "subtitle": "Combined passenger traffic across the four carriers, split into domestic, international and regional operations; use the latest-snapshot table for carrier-level values.",
+                    "subtitle": "Combined passenger traffic across the six carriers, split into domestic, international and regional operations; use the latest-snapshot table for carrier-level values.",
                     "type": "line",
                     "dataset": "china_airline_region_split_history",
                     "sourceId": "china_airline_traffic",
@@ -1566,6 +1977,103 @@ def build_artifact(
                         "x": {"field": "month", "type": "temporal", "label": "Month"},
                         "y": {"field": "value", "type": "quantitative", "label": "Passengers"},
                         "color": {"field": "series", "type": "nominal", "label": "Airline / Region"},
+                    },
+                    "valueFormat": "number",
+                    "layout": "half",
+                },
+                {
+                    "id": "china_airline_region_by_carrier_chart",
+                    "title": "China Listed Airlines Passenger Traffic by Carrier and Region",
+                    "subtitle": "Carrier-level monthly passenger traffic over the latest nine years, split into domestic, international and regional operations; source blanks remain missing and explicit dashes are retained as zero.",
+                    "type": "line",
+                    "dataset": "china_airline_region_by_carrier_history",
+                    "sourceId": "china_airline_traffic",
+                    "encodings": {
+                        "x": {"field": "month", "type": "temporal", "label": "Month"},
+                        "y": {"field": "value", "type": "quantitative", "label": "Passengers"},
+                        "color": {"field": "series", "type": "nominal", "label": "Carrier / Region"},
+                    },
+                    "valueFormat": "number",
+                    "layout": "full",
+                    "maxRows": 3000,
+                },
+                {
+                    "id": "china_airline_cargo_chart",
+                    "title": "China Listed Airlines Cargo Tonnage",
+                    "subtitle": "Monthly cargo and mail tonnage disclosed by the six listed airline groups; values are normalized to tonnes.",
+                    "type": "line",
+                    "dataset": "china_airline_cargo_history",
+                    "sourceId": "china_airline_traffic",
+                    "encodings": {
+                        "x": {"field": "month", "type": "temporal", "label": "Month"},
+                        "y": {"field": "value", "type": "quantitative", "label": "Tonnes"},
+                        "color": {"field": "series", "type": "nominal", "label": "Airline"},
+                    },
+                    "valueFormat": "number",
+                    "layout": "half",
+                },
+                {
+                    "id": "china_airline_freight_load_factor_chart",
+                    "title": "China Listed Airlines Freight Load Factor",
+                    "subtitle": "Monthly freight/mail load factor by carrier, using each issuer's disclosed total or the normalized RFTK/AFTK ratio.",
+                    "type": "line",
+                    "dataset": "china_airline_freight_load_factor_history",
+                    "sourceId": "china_airline_traffic",
+                    "encodings": {
+                        "x": {"field": "month", "type": "temporal", "label": "Month"},
+                        "y": {"field": "value", "type": "quantitative", "label": "%"},
+                        "color": {"field": "series", "type": "nominal", "label": "Airline"},
+                    },
+                    "valueFormat": "number",
+                    "layout": "half",
+                },
+            ]
+        )
+
+    if china_airline_views["china_airline_fleet_total_history"]:
+        charts.extend(
+            [
+                {
+                    "id": "china_airline_fleet_total_chart",
+                    "title": "China Listed Airlines Fleet Size",
+                    "subtitle": "Monthly aircraft fleet totals explicitly disclosed in operating-data announcements; missing months are not filled by interpolation.",
+                    "type": "line",
+                    "dataset": "china_airline_fleet_total_history",
+                    "sourceId": "china_airline_traffic",
+                    "encodings": {
+                        "x": {"field": "month", "type": "temporal", "label": "Month"},
+                        "y": {"field": "value", "type": "quantitative", "label": "Aircraft"},
+                        "color": {"field": "series", "type": "nominal", "label": "Airline"},
+                    },
+                    "valueFormat": "number",
+                    "layout": "full",
+                },
+                {
+                    "id": "china_airline_fleet_net_change_chart",
+                    "title": "China Listed Airlines Monthly Fleet Net Change",
+                    "subtitle": "Aircraft introduced minus aircraft retired/returned in months where an event was disclosed; zero is not imputed for absent announcements.",
+                    "type": "line",
+                    "dataset": "china_airline_fleet_net_change_history",
+                    "sourceId": "china_airline_traffic",
+                    "encodings": {
+                        "x": {"field": "month", "type": "temporal", "label": "Month"},
+                        "y": {"field": "value", "type": "quantitative", "label": "Net aircraft"},
+                        "color": {"field": "series", "type": "nominal", "label": "Airline"},
+                    },
+                    "valueFormat": "number",
+                    "layout": "half",
+                },
+                {
+                    "id": "china_airline_new_route_chart",
+                    "title": "China Listed Airlines New-Route Events",
+                    "subtitle": "Sparse monthly count of new-route phrases found in official announcements; route text remains available in the latest-events table.",
+                    "type": "line",
+                    "dataset": "china_airline_new_route_history",
+                    "sourceId": "china_airline_traffic",
+                    "encodings": {
+                        "x": {"field": "month", "type": "temporal", "label": "Month"},
+                        "y": {"field": "value", "type": "quantitative", "label": "Route events"},
+                        "color": {"field": "series", "type": "nominal", "label": "Airline"},
                     },
                     "valueFormat": "number",
                     "layout": "half",
@@ -1798,11 +2306,52 @@ def build_artifact(
                 "layout": "full",
                 "columns": [
                     {"field": "airline", "label": "Airline", "type": "text"},
+                    {"field": "reporting_scope", "label": "Reporting scope", "type": "text"},
                     {"field": "region", "label": "Region", "type": "text"},
                     {"field": "passengers", "label": "Passengers ('000s)", "format": "number"},
                     {"field": "ask", "label": "ASK ('000s)", "format": "number"},
                     {"field": "rpk", "label": "RPK ('000s)", "format": "number"},
                     {"field": "load_factor_pct", "label": "Load factor (%)", "format": "number"},
+                ],
+            }
+        )
+    if china_airline_views["china_airline_cargo_latest_snapshot"]:
+        tables.append(
+            {
+                "id": "china_airline_cargo_latest_snapshot_table",
+                "title": "China Listed Airlines Latest Cargo Snapshot",
+                "subtitle": "Latest available month, using reported all-operation totals where available and normalized units across issuers.",
+                "dataset": "china_airline_cargo_latest_snapshot",
+                "sourceId": "china_airline_traffic",
+                "density": "dense",
+                "layout": "full",
+                "columns": [
+                    {"field": "airline", "label": "Airline", "type": "text"},
+                    {"field": "reporting_scope", "label": "Reporting scope", "type": "text"},
+                    {"field": "cargo_tonnes", "label": "Cargo / mail (tonnes)", "format": "number"},
+                    {"field": "aftk", "label": "AFTK (million tonne-km)", "format": "number"},
+                    {"field": "rftk", "label": "RFTK (million tonne-km)", "format": "number"},
+                    {"field": "freight_load_factor_pct", "label": "Freight load factor (%)", "format": "number"},
+                    {"field": "overall_load_factor_pct", "label": "Overall load factor (%)", "format": "number"},
+                ],
+            }
+        )
+    if china_airline_views["china_airline_operating_events_latest"]:
+        tables.append(
+            {
+                "id": "china_airline_operating_events_latest_table",
+                "title": "China Listed Airlines Latest Fleet / Route Events",
+                "subtitle": "Latest event rows found in the official monthly announcement; event details retain the extracted source phrase and are not a continuous operating series.",
+                "dataset": "china_airline_operating_events_latest",
+                "sourceId": "china_airline_traffic",
+                "density": "dense",
+                "layout": "full",
+                "columns": [
+                    {"field": "airline", "label": "Airline", "type": "text"},
+                    {"field": "reporting_scope", "label": "Reporting scope", "type": "text"},
+                    {"field": "event_type", "label": "Event type", "type": "text"},
+                    {"field": "value", "label": "Value", "format": "number"},
+                    {"field": "detail", "label": "Source detail", "type": "text"},
                 ],
             }
         )
@@ -1898,13 +2447,39 @@ def build_artifact(
                 {"id": "cathay_passengers_chart_block", "type": "chart", "chartId": "cathay_passengers_chart"},
                 {"id": "cathay_load_factor_chart_block", "type": "chart", "chartId": "cathay_load_factor_chart", "layout": "half"},
                 {"id": "cathay_capacity_demand_chart_block", "type": "chart", "chartId": "cathay_capacity_demand_chart", "layout": "half"},
+                {"id": "cathay_cargo_tonnage_chart_block", "type": "chart", "chartId": "cathay_cargo_tonnage_chart", "layout": "half"},
+                {"id": "cathay_freight_load_factor_chart_block", "type": "chart", "chartId": "cathay_freight_load_factor_chart", "layout": "half"},
+                {"id": "cathay_cargo_capacity_demand_chart_block", "type": "chart", "chartId": "cathay_cargo_capacity_demand_chart", "layout": "half"},
+                {"id": "cathay_flight_sectors_chart_block", "type": "chart", "chartId": "cathay_flight_sectors_chart"},
+                *(
+                    [{"id": "cathay_fleet_total_chart_block", "type": "chart", "chartId": "cathay_fleet_total_chart"}]
+                    if cathay_fleet_total_history
+                    else []
+                ),
                 {"id": "hkia_passengers_chart_block", "type": "chart", "chartId": "hkia_passengers_chart"},
                 {"id": "china_airline_passengers_chart_block", "type": "chart", "chartId": "china_airline_passengers_chart"},
                 {"id": "china_airline_ask_chart_block", "type": "chart", "chartId": "china_airline_ask_chart", "layout": "half"},
                 {"id": "china_airline_rpk_chart_block", "type": "chart", "chartId": "china_airline_rpk_chart", "layout": "half"},
                 {"id": "china_airline_load_factor_chart_block", "type": "chart", "chartId": "china_airline_load_factor_chart", "layout": "half"},
                 {"id": "china_airline_region_split_chart_block", "type": "chart", "chartId": "china_airline_region_split_chart", "layout": "half"},
+                {"id": "china_airline_cargo_chart_block", "type": "chart", "chartId": "china_airline_cargo_chart", "layout": "half"},
+                {"id": "china_airline_freight_load_factor_chart_block", "type": "chart", "chartId": "china_airline_freight_load_factor_chart", "layout": "half"},
                 {"id": "china_airline_snapshot_table_block", "type": "table", "tableId": "china_airline_latest_snapshot_table"},
+                {"id": "china_airline_cargo_snapshot_table_block", "type": "table", "tableId": "china_airline_cargo_latest_snapshot_table"},
+                *(
+                    [
+                        {"id": "china_airline_fleet_total_chart_block", "type": "chart", "chartId": "china_airline_fleet_total_chart"},
+                        {"id": "china_airline_fleet_net_change_chart_block", "type": "chart", "chartId": "china_airline_fleet_net_change_chart", "layout": "half"},
+                        {"id": "china_airline_new_route_chart_block", "type": "chart", "chartId": "china_airline_new_route_chart", "layout": "half"},
+                    ]
+                    if china_airline_views["china_airline_fleet_total_history"]
+                    else []
+                ),
+                *(
+                    [{"id": "china_airline_operating_events_latest_table_block", "type": "table", "tableId": "china_airline_operating_events_latest_table"}]
+                    if china_airline_views["china_airline_operating_events_latest"]
+                    else []
+                ),
                 *(
                     [
                         {"id": "hk_total_transport_journeys_chart_block", "type": "chart", "chartId": "hk_total_transport_journeys_chart"},
@@ -1987,6 +2562,7 @@ def build_artifact(
             "dataAsOf": max(
                 mtr_kpi["observation_date"],
                 cathay_kpi["observation_date"],
+                cathay_fleet["date"].max().strftime("%Y-%m-%d") if not cathay_fleet.empty else "1900-01-01",
                 china_airline["date"].max().strftime("%Y-%m-%d") if not china_airline.empty else "1900-01-01",
                 passenger_journeys["date"].max().strftime("%Y-%m-%d") if not passenger_journeys.empty else "1900-01-01",
                 mttd_passenger_journeys["date"].max().strftime("%Y-%m-%d") if not mttd_passenger_journeys.empty else "1900-01-01",
@@ -2003,7 +2579,8 @@ def build_artifact(
     record_counts = {
         "mtr_patronage": len(mtr),
         "cathay_hkia_traffic": len(cathay),
-        "china_airline_traffic": len(china_airline),
+        "cathay_fleet": len(cathay_fleet),
+        "china_airline_traffic": len(china_airline) + len(china_airline_events),
         "hk_passenger_journeys": len(passenger_journeys),
         "mttd_passenger_journeys": len(mttd_passenger_journeys),
         "censtatd_boundary_movements": len(boundary_movements),
@@ -2017,6 +2594,7 @@ def build_artifact(
     latest_observations = {
         "mtr_patronage": mtr_kpi["observation_date"],
         "cathay_hkia_traffic": cathay_kpi["observation_date"],
+        "cathay_fleet": cathay_fleet["date"].max().strftime("%Y-%m-%d") if not cathay_fleet.empty else "—",
         "china_airline_traffic": china_airline["date"].max().strftime("%Y-%m-%d") if not china_airline.empty else "—",
         "hk_passenger_journeys": passenger_journeys["date"].max().strftime("%Y-%m-%d") if not passenger_journeys.empty else "—",
         "mttd_passenger_journeys": mttd_passenger_journeys["date"].max().strftime("%Y-%m-%d") if not mttd_passenger_journeys.empty else "—",

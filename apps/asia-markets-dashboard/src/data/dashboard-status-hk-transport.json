@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-08-01T10:10:16.928863Z",
-  "snapshot_id": "d832e1e939cd3a96",
+  "generated_at": "2026-08-01T21:18:24.841686Z",
+  "snapshot_id": "06a9964a7f07e0e2",
   "data_as_of": "2026-07-31",
   "overall_status": "Healthy",
-  "live_sources": 12,
+  "live_sources": 13,
   "planned_sources": 0,
   "sources": [
     {
@@ -24,7 +24,17 @@
       "latest_observation": "2026-06-01",
       "records": 133,
       "freshness": "Live",
-      "notes": "HKIA airport monthly aircraft movements, passenger volume, and freight tonnage alongside Cathay Pacific passengers, RPK, ASK, and Passenger Load Factor (%), fetched directly from Cathay's own investor-relations traffic-figures PDF (deterministic per-month URL)."
+      "notes": "HKIA airport monthly aircraft movements, passenger volume, and freight tonnage alongside Cathay Pacific passengers, RPK, ASK, passenger/cargo load factors, cargo tonnage, AFTK/RFTK and reported flight sectors, fetched directly from Cathay's own investor-relations traffic-figures PDFs discovered through the official archive."
+    },
+    {
+      "source": "Cathay Pacific Group Official Fleet Profile (annual/interim reports)",
+      "dataset": "cathay_fleet",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2025-12-31",
+      "records": 64,
+      "freshness": "Live",
+      "notes": "Fleet totals at each official report period end for the Company, HK Express, Air Hong Kong and Group grand total. This is a semiannual/annual series, not a monthly traffic-announcement field."
     },
     {
       "source": "China Listed Airlines Monthly Operating Data",
@@ -32,9 +42,9 @@
       "type": "Measure",
       "status": "Healthy",
       "latest_observation": "2026-06-01",
-      "records": 6460,
+      "records": 32737,
       "freshness": "Live",
-      "notes": "Monthly passengers, ASK, RPK and passenger load factor for Air China, China Southern, China Eastern and Spring Airlines, split by domestic, international and regional operations."
+      "notes": "Monthly passenger and cargo operating data for six China-listed airline groups, plus sparse PDF-derived fleet additions/retirements, fleet totals and new-route events; passenger fields are split by domestic, international and regional operations."
     },
     {
       "source": "Transport Department Monthly Traffic and Transport Digest \u2014 Table 2.1",
