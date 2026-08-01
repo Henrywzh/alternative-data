@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from .sources.cathay_traffic import fetch_cathay_traffic
+from .sources.cathay_fleet import fetch_cathay_fleet_history
 from .sources.censtatd_boundary_movements import fetch_censtatd_boundary_movements
 from .sources.mttd_passenger_journeys import fetch_mttd_passenger_journeys
 from .sources.td_carpark_occupancy import fetch_td_carpark_occupancy
@@ -29,6 +30,11 @@ QUALITY_SPECS = {
         "kind": "measure",
         "required": ["date", "month", "hkia_passengers", "cathay_passengers"],
         "max_age_days": 400,
+    },
+    "cathay_fleet_profile_history": {
+        "kind": "measure",
+        "required": ["date", "scope", "fleet_total_aircraft"],
+        "max_age_days": 800,
     },
     "td_private_car_first_reg_monthly": {
         "kind": "measure",
@@ -91,6 +97,13 @@ def run_stage_1_pipeline() -> dict[str, Any]:
     except Exception as exc:
         logger.exception("Cathay & HKIA traffic ingestion failed")
         results["cathay_hkia_traffic_monthly"] = {"error": str(exc)}
+
+    try:
+        logger.info("Ingesting Cathay Group official fleet profiles...")
+        results["cathay_fleet_profile_history"] = fetch_cathay_fleet_history()
+    except Exception as exc:
+        logger.exception("Cathay fleet-profile ingestion failed")
+        results["cathay_fleet_profile_history"] = {"error": str(exc)}
 
     try:
         logger.info("Ingesting TD monthly private-car first registrations by make/fuel...")

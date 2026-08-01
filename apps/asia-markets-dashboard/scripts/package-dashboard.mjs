@@ -916,6 +916,11 @@ const HK_TRANSPORT_ZH = {
     cathay_passengers_chart: ["国泰集团载客人数走势 (2012年至今)", "13 年月度国泰集团载客人数，呈现新冠疫情期间近乎归零的冲击（由 2018 年 8 月约 328 万人次高点跌至 2020 年 4 月约 1.37 万人次低点，跌幅逾 99.5%）及其后的多年复苏。", "月份", "乘客人数"],
     cathay_load_factor_chart: ["国泰集团载客率走势 (%)", "月度载客率——相较于原始载客人数，更能反映国泰自身运力利用率与定价能力，因其已扣除国泰当时投放的运力规模。", "月份", "载客率 (%)"],
     cathay_capacity_demand_chart: ["国泰集团运力与需求对比 (ASK 对比 RPK，千单位)", "可用座位公里（投放运力）与收益乘客公里（实际填补需求）对比——两线差距与旁边载客率图表互为镜像。", "月份", "千单位"],
+    cathay_cargo_tonnage_chart: ["国泰货运量走势", "国泰航空月度货物载运量，来自国泰交通数据公告；香港国际机场全港货运量仍是另一条独立序列。", "月份", "吨"],
+    cathay_freight_load_factor_chart: ["国泰货运载运率走势", "国泰航空月度货运载运率；旧报告中的 cargo/mail 字段已按同一概念标准化。", "月份", "货运载运率 (%)"],
+    cathay_cargo_capacity_demand_chart: ["国泰货运运力与需求对比 (AFTK 对比 RFTK，千单位)", "可用货运吨公里（AFTK）与收益货运吨公里（RFTK）对比；旧报告中的 cargo/mail 表述已保留为同一指标口径。", "月份", "千单位"],
+    cathay_flight_sectors_chart: ["国泰报告航班架次／航段", "国泰月度公告中的航班架次／航段；较早报告使用合计航班数，较新报告将客运与货运航段拆开后再合计，未进行月度补值。", "月份", "航班架次／航段"],
+    cathay_fleet_total_chart: ["国泰集团机队规模", "国泰年报及中期报告 Fleet Profile 的期末机队总数，按公司、香港快运、国泰航空货运（Air Hong Kong）及集团合计展示；这是半年／年度序列，不插值成月度数据。", "报告期", "架"],
     hkia_passengers_chart: ["香港国际机场总客运量走势", "香港国际机场（民航处数据）全部航空公司合计的月度总客运量，较国泰专属图表更能反映航空需求的整体水平。", "月份", "乘客人数"],
     china_airline_passengers_chart: ["六家中国上市航空公司客运量走势", "中国国航、南方航空、东方航空、春秋航空、海航控股及吉祥航空月度载客人次。数据按各公司公告披露的集团/合并运营口径。", "月份", "乘客人数"],
     china_airline_ask_chart: ["中国上市航空公司可用座位公里 (ASK)", "各航空公司月度可用座位公里（投放运力）。", "月份", "千单位"],
@@ -1006,7 +1011,8 @@ const HK_TRANSPORT_ZH = {
   },
   sources: {
     mtr_patronage: "港铁公司投资者关系月度客运量",
-    cathay_hkia_traffic: "民航处香港国际机场月度流量 & 国泰航空数据",
+    cathay_hkia_traffic: "民航处香港国际机场月度流量 & 国泰航空月度交通数据",
+    cathay_fleet: "国泰航空公司年报／中期报告 Fleet Profile",
     china_airline_traffic: "六家中国上市航空公司月度运营数据公告（巨潮资讯）",
     hk_passenger_journeys: "运输署《公共交通及运输月报》表 2.1",
     mttd_passenger_journeys: "运输署《公共交通及运输月报》表 2.3",
@@ -1032,6 +1038,12 @@ const HK_TRANSPORT_ZH = {
         "LR & Bus": "轻铁巴士",
         "X-Boundary": "跨境",
       },
+    },
+    cathay_cargo_capacity_demand_history: {
+      series: { "AFTK ('000)": "AFTK（千单位）", "RFTK ('000)": "RFTK（千单位）" },
+    },
+    cathay_fleet_total_history: {
+      series: { Company: "国泰航空公司", "HK Express": "香港快运", "Air Hong Kong": "国泰航空货运（Air Hong Kong）", "Grand total": "集团合计" },
     },
     china_airline_passengers_history: {
       series: { CS: "南方航空", AC: "中国国航", CE: "东方航空", Spring: "春秋航空", Hainan: "海航控股", Juneyao: "吉祥航空" },

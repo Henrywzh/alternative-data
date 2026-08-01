@@ -4,7 +4,9 @@ Ingests CAD HKIA Monthly Airport Traffic Excel workbook (Stat Webpage.xlsx) and
 Cathay Pacific Group monthly traffic figures announcements (PDF, discovered via
 Cathay's own investor-relations announcements archive):
 - HKIA Aircraft Movements, Passenger Volume, Freight Tonnage
-- Cathay Pacific Passengers carried, ASK ('000), RPK ('000), Passenger Load Factor (%)
+- Cathay Pacific Group passengers carried, ASK/RPK ('000), passenger load
+  factor, cargo/mail tonnes, AFTK/RFTK ('000), cargo load factor, ATK and
+  reported passenger/freighter/combined flight sectors where disclosed
 
 Cathay traffic source -- archive discovery, not URL guessing:
 Cathay's IR announcements page (https://www.cathaypacific.com/cx/en_HK/
@@ -89,6 +91,14 @@ SCHEMA_COLUMNS = [
     "cathay_rpk_thousands",
     "cathay_ask_thousands",
     "cathay_passenger_load_factor_pct",
+    "cathay_cargo_tonnes",
+    "cathay_aftk_thousands",
+    "cathay_rftk_thousands",
+    "cathay_cargo_load_factor_pct",
+    "cathay_atk_thousands",
+    "cathay_flight_sectors",
+    "cathay_passenger_flight_sectors",
+    "cathay_freighter_flight_sectors",
 ]
 
 MONTH_MAP = {
@@ -244,12 +254,13 @@ def _get_cathay_pdf_bytes(session: requests.Session, url: str) -> bytes | None:
 
 def _find_metric_tables(tables: list[list[list[str | None]]]) -> list[list[list[str | None]]]:
     """Return every table on a page whose header cell identifies it as a
-    Cathay Pacific traffic/capacity metrics table. Three real header
+    Cathay Pacific traffic/capacity metrics table. Real header
     variants were found across the 2013-2026 archive (verified against
     actual downloaded PDFs, not assumed):
     - "CATHAY PACIFIC ... TRAFFIC" / "... CAPACITY" (most of 2013-2024,
       region-by-region breakdown ending in Total rows).
     - "CATHAY PACIFIC" alone (2025 onward, single consolidated table).
+    - "CATHAY CARGO" (the newer separate cargo table).
     - "AIRLINES COMBINED TRAFFIC" / "... CAPACITY" -- a COVID-era layout
       quirk (real PDFs, Feb-Dec 2021 data) where pdfplumber's table
       extraction splits the "CATHAY PACIFIC / CATHAY DRAGON" line off the
@@ -261,7 +272,7 @@ def _find_metric_tables(tables: list[list[list[str | None]]]) -> list[list[list[
         if not table or not table[0] or not table[0][0]:
             continue
         header = str(table[0][0]).upper()
-        if header.startswith("CATHAY PACIFIC") or (
+        if header.startswith("CATHAY PACIFIC") or header.startswith("CATHAY CARGO") or (
             "AIRLINES COMBINED" in header and ("TRAFFIC" in header or "CAPACITY" in header)
         ):
             matches.append(table)
@@ -269,7 +280,7 @@ def _find_metric_tables(tables: list[list[list[str | None]]]) -> list[list[list[
 
 
 def _extract_metrics_from_tables(tables: list[list[list[str | None]]]) -> dict[str, float]:
-    """Pull the 4 tracked metrics out of a set of already-identified Cathay
+    """Pull the tracked passenger, cargo and flight-operation metrics out of a set of already-identified Cathay
     metric tables (as returned by `_find_metric_tables`). Split out from
     `_parse_cathay_pdf` so the label-matching logic can be unit tested
     against synthetic tables without needing a real PDF fixture per era."""
@@ -291,6 +302,22 @@ def _extract_metrics_from_tables(tables: list[list[list[str | None]]]) -> dict[s
                 metrics["cathay_passengers"] = _clean_number(value)
             elif "passenger load factor" in label:
                 metrics["cathay_passenger_load_factor_pct"] = _clean_number(value)
+            elif "available" in label and ("cargo" in label or "freight" in label) and "tonne" in label:
+                metrics["cathay_aftk_thousands"] = _clean_number(value)
+            elif "revenue" in label and ("cargo" in label or "freight" in label) and "tonne" in label:
+                metrics["cathay_rftk_thousands"] = _clean_number(value)
+            elif "cargo" in label and "carried" in label:
+                metrics["cathay_cargo_tonnes"] = _clean_number(value)
+            elif "cargo" in label and "load factor" in label:
+                metrics["cathay_cargo_load_factor_pct"] = _clean_number(value)
+            elif label.startswith("atk") or "available tonne kilometres" in label:
+                metrics["cathay_atk_thousands"] = _clean_number(value)
+            elif "number of passenger flight" in label:
+                metrics["cathay_passenger_flight_sectors"] = _clean_number(value)
+            elif "number of freighter flight" in label:
+                metrics["cathay_freighter_flight_sectors"] = _clean_number(value)
+            elif "number of flight sectors" in label or "number of flights" in label:
+                metrics["cathay_flight_sectors"] = _clean_number(value)
     return metrics
 
 
@@ -336,6 +363,12 @@ def _fetch_cathay_monthly() -> pd.DataFrame:
         metrics = _parse_cathay_pdf(content, entry["month"])
         if metrics is None:
             continue
+
+        if "cathay_flight_sectors" not in metrics:
+            passenger_flights = metrics.get("cathay_passenger_flight_sectors")
+            freighter_flights = metrics.get("cathay_freighter_flight_sectors")
+            if passenger_flights is not None and freighter_flights is not None:
+                metrics["cathay_flight_sectors"] = passenger_flights + freighter_flights
 
         rows.append({"month": entry["month"], "source_pdf_url": entry["url"], **metrics})
 
@@ -427,11 +460,27 @@ def fetch_cathay_traffic() -> pd.DataFrame:
 
     merged = hkia_df.merge(c_df, on="month", how="left")
 
-    for col in ("cathay_passengers", "cathay_rpk_thousands", "cathay_ask_thousands", "cathay_passenger_load_factor_pct"):
+    required_cathay_fields = (
+        "cathay_passengers",
+        "cathay_rpk_thousands",
+        "cathay_ask_thousands",
+        "cathay_passenger_load_factor_pct",
+    )
+    for col in required_cathay_fields:
         if col not in merged.columns:
             merged[col] = 0.0
         else:
             merged[col] = merged[col].fillna(0.0)
+
+    optional_cathay_fields = set(SCHEMA_COLUMNS) - {
+        "date", "month", "hkia_passengers", "hkia_aircraft_movements", "hkia_freight_tonnes",
+        *required_cathay_fields,
+    }
+    for col in optional_cathay_fields:
+        if col not in merged.columns:
+            merged[col] = None
+        else:
+            merged[col] = merged[col].astype(object).where(merged[col].notna(), None)
 
     # Keep only months where we have both HKIA and Cathay data so the trend chart
     # doesn't show fabricated/zero Cathay figures for months we never fetched.

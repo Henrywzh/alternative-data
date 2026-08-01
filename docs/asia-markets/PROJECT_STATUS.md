@@ -7,8 +7,8 @@ replacement for the operating manual or generated source-status JSON.
 
 - Production surface: Cloudflare Pages, non-Streamlit dashboard.
 - Private research surface: `apps/asia-markets-streamlit/app.py`; V1 currently
-  connects only Hong Kong labour-market/talent-policy and population/migration
-  artifacts.
+  connects Hong Kong labour-market/talent-policy, population/migration and
+  transport artifacts.
 - Canonical financial-data sibling: `/Users/henrywzh/Desktop/Quant/financial-data`;
   see `REPO_BRIDGE.md` for the shared contract.
 - Live sector roster: 10 sectors; see `apps/asia-markets-dashboard/sectors.json`.
@@ -26,17 +26,36 @@ replacement for the operating manual or generated source-status JSON.
 
 ## Recent completed work
 
-- China listed airline monthly operating data is wired into transport: passenger
-  traffic, ASK, RPK, load factor and regional split.
-- Hong Kong transport now includes TD monthly private-car first-registration
+- China listed airline monthly operating data is wired into transport for six
+  listed groups: Air China, China Southern, China Eastern, Spring Airlines,
+  Hainan Airlines Holdings and Juneyao Airlines. The artifact includes
+  passenger traffic, ASK, RPK, passenger load factor, cargo/mail tonnage,
+  RFTK/AFTK, freight load factor, overall load factor and regional split. The
+  latest snapshot shows each issuer's reporting scope; Hainan is an eight-
+  operating-carrier group consolidation and Juneyao includes Jiuyuan Airlines.
+  Hainan history starts in 2016-06 and Juneyao history starts in 2016-01;
+  source PDFs remain monthly, preliminary and unaudited. A small number of
+  issuer-reported freight load factors exceed 100% (mostly Spring Airlines),
+  and are retained as explicit source anomalies rather than clipped. A
+  separate operating-events parquet now carries sparse fleet additions,
+  retirements, disclosed fleet totals and new-route counts, with source-detail
+  text retained in the latest-events table rather than treating prose events as
+  a continuous zero-filled series.
+- Hong Kong transport now includes Cathay Cargo and official report-period
+  fleet signals in addition to TD monthly private-car first-registration
   make/fuel history (with BYD/Tesla/other-EV time series), latest make/model
   detail, and two distinct parking signals: the TD real-time car-park vacancy
   snapshot plus metered/on-street sensor-space occupancy. Group 1 also adds TD
   private-car fleet stock and net first-registration history, MTTD Table 2.3
-  passenger journeys, and C&SD E705 boundary movements. Parking histories are
-  append-only; the metered occupancy chart is a genuine time series only after
-  repeated collector runs, and the dashboard does not infer historical values
-  from a current feed.
+  passenger journeys, and C&SD E705 boundary movements. Cathay's monthly
+  traffic archive runs from 2012-12 through 2026-06 for the passenger series;
+  cargo tonnage/AFTK/cargo load factor are available across the recovered
+  monthly archive, while RFTK and flight-sector wording vary by report era.
+  The official Fleet Profile series currently runs from 2015-06 through
+  2025-12 at annual/interim cadence and is not interpolated to monthly data.
+  Parking histories are append-only; the metered occupancy chart is a genuine
+  time series only after repeated collector runs, and the dashboard does not
+  infer historical values from a current feed.
 - Hong Kong utilities now includes DSD daily sewage flow/final-effluent
   laboratory observations and WSD temporary water-suspension event notices.
   The public artifact preserves a treatment-works flow chart, latest lab table
