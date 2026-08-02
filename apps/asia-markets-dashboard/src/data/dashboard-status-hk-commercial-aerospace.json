@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-08-01T23:39:50.734326Z",
-  "snapshot_id": "ca1687bcdc063cc5",
-  "data_as_of": "2026-08-01",
+  "generated_at": "2026-08-02T10:13:05.661097Z",
+  "snapshot_id": "55293aaa76806fef",
+  "data_as_of": "2026-08-02",
   "overall_status": "Degraded",
-  "live_sources": 11,
+  "live_sources": 10,
   "planned_sources": 0,
   "sources": [
     {
@@ -11,7 +11,7 @@
       "dataset": "sse_star_market_ipo",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-06-29",
+      "latest_observation": "nan",
       "records": 5,
       "freshness": "Live",
       "notes": "Filing status, numeric audit numbers (stockAuditNum), and update dates for Chinese commercial launch companies."
@@ -20,10 +20,10 @@
       "source": "Launch Library 2 (The Space Devs)",
       "dataset": "launch_library_2",
       "type": "Measure",
-      "status": "Degraded",
+      "status": "Healthy",
       "latest_observation": "2026-07-23",
       "records": 70,
-      "freshness": "Stale",
+      "freshness": "Live",
       "notes": "Launch history for Chinese commercial launch providers (LandSpace, CAS Space, Galactic Energy, Space Pioneer, etc.)."
     },
     {
@@ -43,7 +43,7 @@
       "status": "Healthy",
       "latest_observation": "2026-07-30",
       "records": 112,
-      "freshness": "Stale",
+      "freshness": "Live",
       "notes": "Structured fields for matching official Long March/Jielong events; LL2-only rows are never counted as official launches."
     },
     {
@@ -51,7 +51,7 @@
       "dataset": "celestrak",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-08-01",
+      "latest_observation": "2026-08-02",
       "records": 2,
       "freshness": "Live",
       "notes": "Active satellite counts for Qianfan (G60) and Jilin-1 constellations."
@@ -61,7 +61,7 @@
       "dataset": "google_patents",
       "type": "Measure",
       "status": "Degraded",
-      "latest_observation": "2026-08-01",
+      "latest_observation": "2026-08-02",
       "records": 0,
       "freshness": "Unavailable",
       "notes": "Estimated patent filing counts for Chinese commercial space companies."
@@ -70,10 +70,10 @@
       "source": "SZSE ChiNext Aerospace-Industry IPO Projects",
       "dataset": "szse_aerospace_ipo",
       "type": "Measure",
-      "status": "Healthy",
-      "latest_observation": "2026-07-20",
-      "records": 25,
-      "freshness": "Live",
+      "status": "Degraded",
+      "latest_observation": "2026-08-02",
+      "records": 0,
+      "freshness": "Unavailable",
       "notes": "Current IPO projects classified by SZSE under rail, ship, aviation, aerospace and other transport equipment manufacturing."
     },
     {
@@ -81,7 +81,7 @@
       "dataset": "faa_commercial_space",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-08-01",
+      "latest_observation": "2026-08-02",
       "records": 6,
       "freshness": "Live",
       "notes": "Cumulative licensed launches, reentries, spaceport licenses, experimental launches, safety approvals and active launch licenses."
@@ -91,7 +91,7 @@
       "dataset": "usaspending_contracts",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-08-01",
+      "latest_observation": "2026-08-02",
       "records": 123,
       "freshness": "Live",
       "notes": "Recent federal awards discovered using commercial-space, commercial-satellite and launch-services keywords."
@@ -130,12 +130,12 @@
       "source": "Wikimedia Wikipedia Pageviews",
       "dataset": "wikimedia_pageviews",
       "type": "Measure",
-      "status": "Healthy",
-      "latest_observation": "2026-07-31",
-      "records": 5668,
-      "freshness": "Live",
+      "status": "Degraded",
+      "latest_observation": "2026-08-01",
+      "records": 5627,
+      "freshness": "Stale",
       "notes": "Daily English Wikipedia pageviews for a curated aerospace page basket, aggregated into monthly and complete Monday-Sunday weekly views; user, search-engine spider, automated and all-agent traffic remain separate."
     }
   ],
-  "attachment_filename": "hk-commercial-aerospace-dashboard-2026-08-01.html"
+  "attachment_filename": "hk-commercial-aerospace-dashboard-2026-08-02.html"
 }
