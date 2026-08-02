@@ -1018,6 +1018,7 @@ def test_openrouter_derived_registry_uses_compact_mart_projection() -> None:
     assert DOMAIN_ORDER["openrouter_derived"] == [
         "openrouter_usage_economics_daily",
         "daily_provider_economics",
+        "daily_provider_revenue_estimates",
         "openrouter_workload_intensity_models",
     ]
     assert len(OPENROUTER_LOAD_COLUMNS["openrouter_usage_economics_daily"]) < 30
@@ -1083,7 +1084,17 @@ def test_openrouter_derived_marts_load_only_compact_projected_schemas(
             "estimated_revenue": 0.0042,
             "pricing_join_status": "as_recorded_pricing",
             "has_pricing": True,
+            "has_split_tokens": True,
             "revenue_method": "model_split_inferred",
+        },
+        "daily_provider_revenue_estimates": {
+            "usage_date": "2026-07-17",
+            "entity_id": "provider:openai",
+            "provider_slug": "openai",
+            "model_permaslug": "openai/gpt-test",
+            "total_tokens": 1200.0,
+            "estimated_revenue": 0.0042,
+            "pricing_join_status": "as_recorded_pricing",
         },
     }
     remote_payloads: dict[str, bytes] = {}
@@ -1123,6 +1134,7 @@ def test_openrouter_derived_marts_load_only_compact_projected_schemas(
     assert set(fetched_paths) == {
         "data/normalized/marts/openrouter_usage_economics_daily.parquet",
         "data/normalized/marts/daily_provider_economics.parquet",
+        "data/normalized/marts/daily_provider_revenue_estimates.parquet",
         "data/normalized/marts/openrouter_workload_intensity_models.parquet",
     }
     assert all("data/raw/" not in path for path in fetched_paths)

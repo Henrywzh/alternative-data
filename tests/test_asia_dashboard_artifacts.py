@@ -59,6 +59,7 @@ def test_load_china_airline_traffic_normalizes_clean_parquet(tmp_path):
         "region",
         "metric",
         "value",
+        "reporting_scope",
     ]
     assert result.iloc[0]["airline"] == "China Southern"
     assert result.iloc[0]["value"] == 123.4
@@ -84,7 +85,16 @@ def test_china_airline_views_are_wired_into_transport_artifact():
         "china_airline_rpk_history",
         "china_airline_load_factor_history",
         "china_airline_region_split_history",
+        "china_airline_region_by_carrier_history",
         "china_airline_latest_snapshot",
+        "china_airline_cargo_history",
+        "china_airline_freight_load_factor_history",
+        "china_airline_overall_load_factor_history",
+        "china_airline_cargo_latest_snapshot",
+        "china_airline_fleet_total_history",
+        "china_airline_fleet_net_change_history",
+        "china_airline_new_route_history",
+        "china_airline_operating_events_latest",
     }
     assert views["china_airline_passengers_history"][0]["airline"] == "China Southern"
     assert views["china_airline_ask_history"][0]["value"] == 200.0
@@ -108,6 +118,7 @@ def test_china_airline_snapshot_table_keeps_structured_columns():
     assert table["dataset"] == "china_airline_latest_snapshot"
     assert [column["field"] for column in table["columns"]] == [
         "airline",
+        "reporting_scope",
         "region",
         "passengers",
         "ask",
