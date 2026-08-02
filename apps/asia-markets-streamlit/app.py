@@ -1046,6 +1046,93 @@ def render_line_chart(
     st.plotly_chart(fig, width="stretch", config={"displaylogo": False, "responsive": True})
 
 
+def render_fear_greed_daily_chart(
+    artifact: dict[str, Any],
+    language: str,
+    history_window_name: str,
+) -> None:
+    """Render the raw daily Fear & Greed score and its trailing seven-day mean."""
+    frame = frame_for_dataset(artifact, "fear_greed_daily")
+    frame, coverage = history_window(frame, "date", history_window_name)
+    if frame.empty:
+        st.info(tr(language, "Daily Fear & Greed data is not available in this artifact yet.", "这个数据快照暂时没有日度恐惧与贪婪数据。"))
+        return
+
+    frame["score"] = pd.to_numeric(frame["score"], errors="coerce")
+    frame["score_7d_avg"] = pd.to_numeric(frame["score_7d_avg"], errors="coerce")
+    frame = frame.dropna(subset=["_date", "score"]).sort_values("_date")
+    if frame.empty:
+        st.info(tr(language, "Daily Fear & Greed data is not available in this artifact yet.", "这个数据快照暂时没有日度恐惧与贪婪数据。"))
+        return
+
+    options = ["Both", "Daily score", "7-day rolling average"]
+    view = st.radio(
+        tr(language, "Metric", "指标"),
+        options,
+        horizontal=True,
+        key="fear_greed_daily_metric_view",
+        format_func=lambda item: {
+            "Both": tr(language, "Both", "两者"),
+            "Daily score": tr(language, "Daily score", "日度分数"),
+            "7-day rolling average": tr(language, "7-day rolling average", "7日滚动平均"),
+        }[item],
+    )
+    fields = {
+        "Daily score": ["score"],
+        "7-day rolling average": ["score_7d_avg"],
+        "Both": ["score", "score_7d_avg"],
+    }[view]
+    plot = frame[["_date", *fields]].melt(
+        id_vars=["_date"],
+        var_name="series",
+        value_name="_value",
+    ).dropna(subset=["_value"])
+    series_labels = {
+        "score": tr(language, "Daily score", "日度分数"),
+        "score_7d_avg": tr(language, "7-day rolling average", "7日滚动平均"),
+    }
+    plot["series"] = plot["series"].map(series_labels)
+
+    st.markdown(
+        f'<div class="am-chart-title">{tr(language, "Crypto Fear & Greed: daily signal", "加密恐惧与贪婪：日度信号")}</div>',
+        unsafe_allow_html=True,
+    )
+    st.caption(
+        " · ".join(
+            [
+                tr(
+                    language,
+                    "Daily Alternative.me observations; the rolling average is derived from the trailing seven calendar days.",
+                    "Alternative.me 日度观察值；滚动平均由最近七个日历日派生。",
+                ),
+                localize_coverage(coverage, language),
+            ]
+        )
+    )
+    fig = px.line(
+        plot,
+        x="_date",
+        y="_value",
+        color="series",
+        color_discrete_map={
+            series_labels["score"]: PALETTE[0],
+            series_labels["score_7d_avg"]: PALETTE[1],
+        },
+    )
+    fig.update_yaxes(title=tr(language, "Score", "分数"), range=[0, 100])
+    fig.update_xaxes(title=None, tickformat="%d %b %Y")
+    span = plot["_date"].max() - plot["_date"].min()
+    if span > pd.Timedelta(days=365 * 7):
+        fig.update_xaxes(dtick="M12")
+    elif span > pd.Timedelta(days=365 * 3):
+        fig.update_xaxes(dtick="M6")
+    for trace in fig.data:
+        trace.line.width = 1.4 if trace.name == series_labels["score"] else 3.0
+    apply_line_hover(fig, plot, "number")
+    fig = chart_theme(fig, "number", date_axis=True, height=430)
+    st.plotly_chart(fig, width="stretch", config={"displaylogo": False, "responsive": True})
+
+
 def render_bar_chart(
     artifact: dict[str, Any],
     labels: dict[str, Any],
@@ -1478,6 +1565,23 @@ def latest_period_signal(
     else:
         change = (latest_value / prior_value - 1) * 100
     return {"value": latest_value, "change": change, "date": latest_date}
+
+
+def latest_daily_signal(frame: pd.DataFrame, value_field: str) -> dict[str, Any]:
+    """Return the latest daily value without applying a monthly comparison."""
+    if frame.empty or value_field not in frame.columns or "date" not in frame.columns:
+        return {"value": None, "date": None, "classification": None}
+    output = add_date_column(frame, "date")
+    output["_signal_value"] = pd.to_numeric(output[value_field], errors="coerce")
+    output = output.dropna(subset=["_signal_value"]).sort_values("_date")
+    if output.empty:
+        return {"value": None, "date": None, "classification": None}
+    row = output.iloc[-1]
+    return {
+        "value": float(row["_signal_value"]),
+        "date": row["_date"],
+        "classification": row.get("classification"),
+    }
 
 
 def transport_metric_delta(signal: dict[str, Any], change_mode: str = "pct") -> str | None:
@@ -2623,17 +2727,22 @@ def render_crypto(artifact: dict[str, Any], labels: dict[str, Any], language: st
     stablecoin = frame_for_dataset(artifact, "stablecoin_history")
     dex_volume = frame_for_dataset(artifact, "dex_volume_history")
     fear_greed = frame_for_dataset(artifact, "fear_greed_history")
+    fear_greed_daily = frame_for_dataset(artifact, "fear_greed_daily")
 
     section_heading(
         language,
         "Global market pulse",
         "全球市场脉搏",
-        "All three series are stored at monthly grain for readable long-history comparison; the sidebar still controls the displayed history window.",
-        "三条序列均以月度粒度储存，方便比较长期走势；侧边栏仍可控制显示历史范围。",
+        "Stablecoin supply and DEX volume remain monthly long-history series; Fear & Greed also has a daily research view below.",
+        "稳定币供应量及 DEX 交易量保留月度长期序列；下方另提供恐惧与贪婪的日度研究视图。",
     )
     stablecoin_signal = latest_period_signal(stablecoin, "date", "circulating_usd_bn", aggregation="mean")
     dex_signal = latest_period_signal(dex_volume, "date", "dex_volume_usd_bn", aggregation="mean")
     fear_greed_signal = latest_period_signal(fear_greed, "date", "score", aggregation="mean")
+    daily_fear_greed_signal = latest_daily_signal(fear_greed_daily, "score")
+    rolling_fear_greed_signal = latest_daily_signal(fear_greed_daily, "score_7d_avg")
+    if daily_fear_greed_signal["value"] is None:
+        daily_fear_greed_signal = fear_greed_signal
     cards = [
         (
             tr(language, "Stablecoin supply ($B)", "稳定币供应量（十亿美元）"),
@@ -2650,10 +2759,17 @@ def render_crypto(artifact: dict[str, Any], labels: dict[str, Any], language: st
             True,
         ),
         (
-            tr(language, "Fear & Greed monthly avg", "恐惧与贪婪（月均）"),
-            fear_greed_signal,
+            tr(language, "Fear & Greed daily", "恐惧与贪婪（日度）"),
+            daily_fear_greed_signal,
             "number",
-            tr(language, "Monthly average score from 0 (fear) to 100 (greed)", "月均分数，0 代表恐惧，100 代表贪婪"),
+            tr(language, "Daily score from 0 (fear) to 100 (greed)", "日度分数，0 代表恐惧，100 代表贪婪"),
+            False,
+        ),
+        (
+            tr(language, "Fear & Greed 7-day avg", "恐惧与贪婪（7日均值）"),
+            rolling_fear_greed_signal,
+            "number",
+            tr(language, "Trailing seven-calendar-day average", "最近七个日历日的滚动平均"),
             False,
         ),
     ]
@@ -2689,6 +2805,8 @@ def render_crypto(artifact: dict[str, Any], labels: dict[str, Any], language: st
             periods_per_year=12,
             height=430,
         )
+    with st.container(border=True):
+        render_fear_greed_daily_chart(artifact, language, window)
     with st.container(border=True):
         st.caption(
             tr(

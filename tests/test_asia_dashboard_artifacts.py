@@ -33,6 +33,28 @@ def _load_builder(filename: str, module_name: str):
     return module
 
 
+def test_fear_greed_daily_history_keeps_raw_score_and_calendar_rolling_mean():
+    builder = _load_builder(
+        "build_hk_stablecoin_crypto_artifact.py",
+        "stablecoin_builder_fear_greed_daily_test",
+    )
+    source = pd.DataFrame(
+        {
+            "date": pd.date_range("2026-01-01", periods=8, freq="D").strftime("%Y-%m-%d"),
+            "score": list(range(20, 28)),
+            "classification": ["Fear"] * 8,
+        }
+    )
+
+    result = builder.build_fear_greed_daily_history(source)
+
+    assert list(result.columns) == ["date", "score", "classification", "score_7d_avg"]
+    assert len(result) == 8
+    assert pd.isna(result.iloc[3]["score_7d_avg"])
+    assert result.iloc[4]["score_7d_avg"] == 22.0
+    assert result.iloc[-1]["score_7d_avg"] == 24.0
+
+
 def test_load_china_airline_traffic_normalizes_clean_parquet(tmp_path):
     builder = _load_builder("build_hk_transport_artifact.py", "transport_builder_loader_test")
     path = tmp_path / "china_airlines_monthly.parquet"

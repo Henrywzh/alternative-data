@@ -212,6 +212,30 @@ def _monthly_history(frame: pd.DataFrame, value_column: str, *, method: str = "m
     return compact[["date", "month", value_column]].sort_values("month").reset_index(drop=True)
 
 
+def build_fear_greed_daily_history(frame: pd.DataFrame) -> pd.DataFrame:
+    """Keep daily Fear & Greed observations plus a trailing seven-day mean.
+
+    The portable Cloudflare chart continues to use ``fear_greed_history`` at
+    monthly grain. This separate dataset is consumed by Streamlit, where the
+    daily signal and its smoother research view are useful.
+    """
+    columns = ["date", "score", "classification", "score_7d_avg"]
+    if frame.empty or not {"date", "score"}.issubset(frame.columns):
+        return pd.DataFrame(columns=columns)
+
+    daily = history_window(frame, "date", years=DEFAULT_HISTORY_YEARS).copy()
+    daily["date"] = pd.to_datetime(daily["date"], errors="coerce")
+    daily["score"] = pd.to_numeric(daily["score"], errors="coerce")
+    daily = daily.dropna(subset=["date", "score"]).sort_values("date")
+    daily = daily.drop_duplicates(subset=["date"], keep="last").set_index("date")
+    daily["score_7d_avg"] = daily["score"].rolling("7D", min_periods=5).mean().round(1)
+    daily = daily.reset_index()
+    daily["date"] = daily["date"].dt.strftime("%Y-%m-%d")
+    if "classification" not in daily.columns:
+        daily["classification"] = None
+    return daily.reindex(columns=columns)
+
+
 def build_artifact(now: datetime | None = None) -> tuple[dict[str, Any], dict[str, Any]]:
     now = now or _utc_now()
     generated_at = now.strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -356,6 +380,7 @@ def build_artifact(now: datetime | None = None) -> tuple[dict[str, Any], dict[st
     fng_val = None
     fng_class = None
     fng_history_rows = []
+    fng_daily_rows = []
     btc_history_rows = []
     try:
         signals = fetch_all_crypto_signals()
@@ -370,6 +395,24 @@ def build_artifact(now: datetime | None = None) -> tuple[dict[str, Any], dict[st
             
         fng_df = fetch_fear_greed_history(0)  # full backfill
         if not fng_df.empty:
+            fng_daily_df = build_fear_greed_daily_history(fng_df)
+            for _, row in fng_daily_df.iterrows():
+                fng_daily_rows.append(
+                    {
+                        "date": row["date"],
+                        "score": int(row["score"]),
+                        "classification": (
+                            None
+                            if pd.isna(row.get("classification"))
+                            else row.get("classification")
+                        ),
+                        "score_7d_avg": (
+                            None
+                            if pd.isna(row.get("score_7d_avg"))
+                            else float(row["score_7d_avg"])
+                        ),
+                    }
+                )
             recent_fng = _monthly_history(fng_df, "score")
             recent_fng["score"] = recent_fng["score"].round(1)
             for _, r in recent_fng.iterrows():
@@ -511,6 +554,7 @@ def build_artifact(now: datetime | None = None) -> tuple[dict[str, Any], dict[st
         "hkex_etf_summary": etf_summary_rows,
         "hkex_etf_aum_history": etf_aum_history,
         "fear_greed_history": fng_history_rows,
+        "fear_greed_daily": fng_daily_rows,
         "btc_price_history": btc_history_rows,
         "polymarket_catalysts": poly_rows,
         "crypto_watchlist": watchlist_rows,
