@@ -96,18 +96,20 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # Globs, not a per-sector list: an enumerated list silently drops a
-          # new sector's outputs from the daily commit (this happened once
-          # already -- see "fix CI git-add gap" in 922673a). The roster now
-          # lives in apps/asia-markets-dashboard/sectors.json and adding a
-          # sector must not require editing this workflow. The -zh.json
-          # artifacts are matched too but stay unchanged here, since this job
-          # deliberately does not run package-dashboard.mjs (see header).
+          # Stage the complete set of durable outputs that the artifact
+          # builders can update. The dashboard builders are intentionally
+          # allowed to refresh append-only source histories as well as the
+          # published artifact/status files. Staging only artifact globs leaves
+          # those source histories unstaged, so the retrying git pull --rebase
+          # below fails with "You have unstaged changes" after the commit.
+          # Keep disposable per-run caches ignored; these paths are the
+          # committed dashboard outputs and durable source histories.
           git add \
-            'apps/asia-markets-dashboard/.generated/*-artifact.json' \
-            'apps/asia-markets-dashboard/.generated/*-artifact-zh.json' \
-            'apps/asia-markets-dashboard/src/data/dashboard-status*.json' \
-            data/normalized/hk_local_consumer/afcd_category_history.csv
+            apps/asia-markets-dashboard/.generated/ \
+            apps/asia-markets-dashboard/src/data/ \
+            data/normalized/hk_commercial_aerospace/ \
+            data/normalized/hk_local_consumer/afcd_category_history.csv \
+            data/normalized/hk_local_consumer/consumer_council_oilprice_history.csv
 
           if git diff --staged --quiet; then
             echo "No dashboard data changes to commit"
