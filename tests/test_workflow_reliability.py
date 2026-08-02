@@ -42,6 +42,20 @@ def test_model_activity_workflow_stages_archive_only_when_it_exists() -> None:
     assert "git add data/normalized/openrouter_archive" in workflow
 
 
+def test_asia_markets_refresh_stages_all_durable_builder_outputs() -> None:
+    workflow = (WORKFLOWS / "asia-markets-dashboard-refresh-daily.yml").read_text(encoding="utf-8")
+    commit_section = workflow.split("git add \\\n", 1)[1].split("if git diff --staged --quiet; then", 1)[0]
+
+    for path in (
+        "apps/asia-markets-dashboard/.generated/",
+        "apps/asia-markets-dashboard/src/data/",
+        "data/normalized/hk_commercial_aerospace/",
+        "data/normalized/hk_local_consumer/afcd_category_history.csv",
+        "data/normalized/hk_local_consumer/consumer_council_oilprice_history.csv",
+    ):
+        assert path in commit_section
+
+
 @pytest.mark.parametrize(
     "workflow_name",
     [
