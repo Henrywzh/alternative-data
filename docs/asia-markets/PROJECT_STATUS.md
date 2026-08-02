@@ -89,7 +89,9 @@ replacement for the operating manual or generated source-status JSON.
   Overview, scrollable sector pages with Plotly charts and Level/MoM/YoY-style
   controls, a read-only Data Explorer and Source Health. It intentionally does
   not connect the other Hong Kong sectors, company explorer or cross-market
-  pages yet.
+  pages yet. The crypto page keeps the long-run monthly Fear & Greed context
+  plus the daily score and a derived trailing seven-calendar-day average for
+  interactive research views.
 - Store-footprint, Google Trends and other planned integrations remain separate
   until their source history and data flow are validated.
 - Real-estate dashboard work includes agency transaction pulse, 28Hse EPI/ERI,
