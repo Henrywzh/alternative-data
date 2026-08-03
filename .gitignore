@@ -264,6 +264,18 @@ data/normalized/**/*.csv
 !data/normalized/hk_commercial_aerospace/
 !data/normalized/hk_commercial_aerospace/*.jsonl
 
+# hk_population_migration: retain the MPFA departure-claims cache so the
+# artifact builder has a durable fallback when the quarterly PDF endpoint or
+# its parser is unavailable in CI. Other population/migration run caches stay
+# disposable and ignored.
+!data/normalized/hk_population_migration/
+data/normalized/hk_population_migration/*
+!data/normalized/hk_population_migration/mpfa_departure_claims/
+data/normalized/hk_population_migration/mpfa_departure_claims/*
+!data/normalized/hk_population_migration/mpfa_departure_claims/20260801_mpfa_cached_v2/
+!data/normalized/hk_population_migration/mpfa_departure_claims/20260801_mpfa_cached_v2/*.parquet
+!data/normalized/hk_population_migration/mpfa_departure_claims/20260801_mpfa_cached_v2/*.json
+
 # Secrets and environment
 .env
 .env.*
