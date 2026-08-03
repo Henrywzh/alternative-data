@@ -6,8 +6,8 @@
     "title": "Hong Kong Stablecoin & Crypto Infrastructure Monitor",
     "description": "HKMA licensed stablecoin issuers, SFC licensed VATP exchanges, HKEX crypto ETF AUM, stablecoin market cap & chain tracking, DEX volume, and market sentiment indicators.",
     "sector": "hk-stablecoin-crypto",
-    "generatedAt": "2026-08-02T10:13:05Z",
-    "dataAsOf": "2026-08-02",
+    "generatedAt": "2026-08-03T05:58:23Z",
+    "dataAsOf": "2026-08-03",
     "liveSourcesCount": 8,
     "totalSourcesCount": 11,
     "cards": [
@@ -642,7 +642,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**Data snapshot:** `8cf16e0acfca27a7` · generated 2026-08-02T10:13:05Z.  Official HKMA & SFC regulatory registers and market tracking data."
+        "body": "**Data snapshot:** `e0b9c20b20420d91` · generated 2026-08-03T05:58:23Z.  Official HKMA & SFC regulatory registers and market tracking data."
       },
       {
         "id": "kpi_grid",
@@ -731,7 +731,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-08-02T10:13:05Z",
+    "generatedAt": "2026-08-03T05:58:23Z",
     "status": "ready",
     "datasets": {
       "hkma_issuers": [
@@ -934,19 +934,19 @@
         {
           "name": "Tether",
           "symbol": "USDT",
-          "circulating_usd_bn": 183.21,
-          "market_share_pct": 59.71
+          "circulating_usd_bn": 183.15,
+          "market_share_pct": 59.72
         },
         {
           "name": "USD Coin",
           "symbol": "USDC",
-          "circulating_usd_bn": 72.05,
-          "market_share_pct": 23.48
+          "circulating_usd_bn": 72.06,
+          "market_share_pct": 23.5
         },
         {
           "name": "Sky Dollar",
           "symbol": "USDS",
-          "circulating_usd_bn": 6.57,
+          "circulating_usd_bn": 6.56,
           "market_share_pct": 2.14
         },
         {
@@ -982,7 +982,7 @@
         {
           "name": "PayPal USD",
           "symbol": "PYUSD",
-          "circulating_usd_bn": 2.7,
+          "circulating_usd_bn": 2.69,
           "market_share_pct": 0.88
         },
         {
@@ -1521,41 +1521,41 @@
         {
           "date": "2026-08-01",
           "month": "2026-08",
-          "circulating_usd_bn": 303.74
+          "circulating_usd_bn": 303.69
         }
       ],
       "stablecoin_chains": [
         {
           "chain": "Ethereum",
-          "circulating_usd_bn": 148.32
+          "circulating_usd_bn": 148.22
         },
         {
           "chain": "Tron",
-          "circulating_usd_bn": 91.2
+          "circulating_usd_bn": 91.15
         },
         {
           "chain": "BSC",
-          "circulating_usd_bn": 17.98
+          "circulating_usd_bn": 17.97
         },
         {
           "chain": "Solana",
-          "circulating_usd_bn": 16.23
+          "circulating_usd_bn": 16.26
         },
         {
           "chain": "Hyperliquid L1",
-          "circulating_usd_bn": 6.24
+          "circulating_usd_bn": 6.25
         },
         {
           "chain": "Base",
-          "circulating_usd_bn": 4.76
+          "circulating_usd_bn": 4.77
         },
         {
           "chain": "Arbitrum",
-          "circulating_usd_bn": 3.78
+          "circulating_usd_bn": 3.79
         },
         {
           "chain": "Polygon",
-          "circulating_usd_bn": 3.61
+          "circulating_usd_bn": 3.6
         },
         {
           "chain": "X Layer",
@@ -1563,7 +1563,7 @@
         },
         {
           "chain": "Avalanche",
-          "circulating_usd_bn": 1.63
+          "circulating_usd_bn": 1.62
         }
       ],
       "dex_volume_history": [
@@ -2165,12 +2165,12 @@
         {
           "date": "2026-07-01",
           "month": "2026-07",
-          "dex_volume_usd_bn": 6.57
+          "dex_volume_usd_bn": 6.56
         },
         {
           "date": "2026-08-01",
           "month": "2026-08",
-          "dex_volume_usd_bn": 4.69
+          "dex_volume_usd_bn": 4.7
         }
       ],
       "hkex_etf_summary": [
@@ -3226,633 +3226,7 @@
         {
           "date": "2026-08-01",
           "month": "2026-08",
-          "score": 27.0
-        }
-      ],
-      "btc_price_history": [],
-      "polymarket_catalysts": [
-        {
-          "title": "How high will 10-year Treasury yield go before 2027?",
-          "probability_pct": 100.0,
-          "end_date": "2026-12-31"
-        },
-        {
-          "title": "How low will 10-year Treasury yield get before 2027?",
-          "probability_pct": 100.0,
-          "end_date": "2026-12-31"
-        },
-        {
-          "title": "How many Fed rate cuts in 2026?",
-          "probability_pct": 88.3,
-          "end_date": "2026-12-31"
-        },
-        {
-          "title": "What will be the next Fed rate change?",
-          "probability_pct": 70.0,
-          "end_date": "2028-12-31"
-        },
-        {
-          "title": "Fed rate hike in 2026?",
-          "probability_pct": 66.5,
-          "end_date": "2026-12-09"
-        },
-        {
-          "title": "Largest Company end of December 2026?",
-          "probability_pct": 54.5,
-          "end_date": "2026-12-31"
-        },
-        {
-          "title": "Bitcoin ETF Flows on August 4?",
-          "probability_pct": 50.0,
-          "end_date": "2026-08-04"
-        },
-        {
-          "title": "Bitcoin ETF Flows on August 3?",
-          "probability_pct": 50.0,
-          "end_date": "2026-08-03"
-        },
-        {
-          "title": "Ethereum ETF Flows on August 4?",
-          "probability_pct": 50.0,
-          "end_date": "2026-08-04"
-        },
-        {
-          "title": "Ethereum ETF Flows on August 3?",
-          "probability_pct": 50.0,
-          "end_date": "2026-08-03"
-        }
-      ],
-      "crypto_watchlist": [
-        {
-          "tier": "Tier 1: Licensed Infrastructure",
-          "ticker": "00863.HK",
-          "company_en": "OSL Group",
-          "company_zh": "OSL集团",
-          "regulatory_note": "SFC VATP-licensed exchange operator since 15/12/2020",
-          "latest_price_hkd": null,
-          "change_pct": null
-        },
-        {
-          "tier": "Tier 1: Licensed Infrastructure",
-          "ticker": "03887.HK",
-          "company_en": "HashKey Holdings",
-          "company_zh": "HashKey",
-          "regulatory_note": "SFC VATP-licensed exchange operator since 09/11/2022",
-          "latest_price_hkd": null,
-          "change_pct": null
-        },
-        {
-          "tier": "Tier 1: Licensed Infrastructure",
-          "ticker": "01788.HK",
-          "company_en": "Guotai Junan International",
-          "company_zh": "国泰君安国际",
-          "regulatory_note": "Licensed to deal in virtual assets — NOT a VATP exchange operator (different, lesser regulatory status)",
-          "latest_price_hkd": null,
-          "change_pct": null
-        },
-        {
-          "tier": "Tier 1: Licensed Infrastructure",
-          "ticker": "08540.HK",
-          "company_en": "Victory Securities",
-          "company_zh": "胜利证券",
-          "regulatory_note": "Licensed to deal in virtual assets — NOT a VATP exchange operator (different, lesser regulatory status)",
-          "latest_price_hkd": null,
-          "change_pct": null
-        },
-        {
-          "tier": "Tier 1: Licensed Infrastructure",
-          "ticker": "01499.HK",
-          "company_en": "OKG Technology",
-          "company_zh": "欧科云链",
-          "regulatory_note": "Infrastructure/data; linked to OKX, but OKX withdrew its HK VATP application in May 2024",
-          "latest_price_hkd": null,
-          "change_pct": null
-        },
-        {
-          "tier": "Tier 1: Licensed Infrastructure",
-          "ticker": "01611.HK",
-          "company_en": "Sinohope",
-          "company_zh": "新火集团",
-          "regulatory_note": "Asset management and tech solutions (SFO Type 1/4/9 licensed)",
-          "latest_price_hkd": null,
-          "change_pct": null
-        },
-        {
-          "tier": "Tier 2: Big-Name / Adjacent",
-          "ticker": "00005.HK",
-          "company_en": "HSBC Holdings",
-          "company_zh": "汇丰控股",
-          "regulatory_note": "HKMA stablecoin issuer licence FRS02 effective 10/04/2026",
-          "latest_price_hkd": null,
-          "change_pct": null
-        },
-        {
-          "tier": "Tier 2: Big-Name / Adjacent",
-          "ticker": "02888.HK",
-          "company_en": "Standard Chartered",
-          "company_zh": "渣打集团",
-          "regulatory_note": "HKMA stablecoin issuer licence FRS01 effective 10/04/2026 via Anchorpoint Financial JV",
-          "latest_price_hkd": null,
-          "change_pct": null
-        },
-        {
-          "tier": "Tier 2: Big-Name / Adjacent",
-          "ticker": "06823.HK",
-          "company_en": "HKT",
-          "company_zh": "香港电讯",
-          "regulatory_note": "Partner in Anchorpoint Financial JV (FRS01)",
-          "latest_price_hkd": null,
-          "change_pct": null
-        },
-        {
-          "tier": "Tier 2: Big-Name / Adjacent",
-          "ticker": "02388.HK",
-          "company_en": "BOC Hong Kong",
-          "company_zh": "中银香港",
-          "regulatory_note": "Linked to HKMA stablecoin issuer sandbox",
-          "latest_price_hkd": null,
-          "change_pct": null
-        },
-        {
-          "tier": "Tier 2: Big-Name / Adjacent",
-          "ticker": "09988.HK",
-          "company_en": "Alibaba",
-          "company_zh": "阿里巴巴",
-          "regulatory_note": "Ant International reportedly pursuing stablecoin initiatives",
-          "latest_price_hkd": null,
-          "change_pct": null
-        },
-        {
-          "tier": "Tier 2: Big-Name / Adjacent",
-          "ticker": "09618.HK",
-          "company_en": "JD.com",
-          "company_zh": "京东集团",
-          "regulatory_note": "Pursuing stablecoin initiatives",
-          "latest_price_hkd": null,
-          "change_pct": null
-        },
-        {
-          "tier": "Tier 3: Concept Pivots",
-          "ticker": "01328.HK",
-          "company_en": "Jinyong Investment",
-          "company_zh": "金涌投资",
-          "regulatory_note": "Partnered with AnchorX for AxCNH stablecoin (DO NOT CONFLATE WITH ANCHORPOINT)",
-          "latest_price_hkd": null,
-          "change_pct": null
-        },
-        {
-          "tier": "Tier 3: Concept Pivots",
-          "ticker": "08087.HK",
-          "company_en": "China 33 Group",
-          "company_zh": "中国三三传媒",
-          "regulatory_note": "Announced plans to apply for a HK stablecoin license",
-          "latest_price_hkd": null,
-          "change_pct": null
-        },
-        {
-          "tier": "Tier 3: Concept Pivots",
-          "ticker": "02477.HK",
-          "company_en": "Jingwei Tiandi",
-          "company_zh": "经纬天地",
-          "regulatory_note": "Launched Fopay stablecoin payment app",
-          "latest_price_hkd": null,
-          "change_pct": null
-        },
-        {
-          "tier": "Tier 3: Concept Pivots",
-          "ticker": "00290.HK",
-          "company_en": "Guofu Quantum",
-          "company_zh": "国富创新",
-          "regulatory_note": "Investing in RWA tokenization platforms",
-          "latest_price_hkd": null,
-          "change_pct": null
-        },
-        {
-          "tier": "Tier 3: Concept Pivots",
-          "ticker": "00399.HK",
-          "company_en": "Starcoin Group",
-          "company_zh": "星太链集团",
-          "regulatory_note": "Gold RWA-tokenization framework agreement, token airdrop MOU",
-          "latest_price_hkd": null,
-          "change_pct": null
-        },
-        {
-          "tier": "Tier 3: Concept Pivots",
-          "ticker": "01647.HK",
-          "company_en": "Xiongan Technology",
-          "company_zh": "雄岸科技",
-          "regulatory_note": "Partnership with Lion Group for crypto trading platform",
-          "latest_price_hkd": null,
-          "change_pct": null
-        },
-        {
-          "tier": "Tier 3: Concept Pivots",
-          "ticker": "00736.HK",
-          "company_en": "China Properties Investment",
-          "company_zh": "中国置业投资",
-          "regulatory_note": "TokenMarket tie-up, purchasing digital assets",
-          "latest_price_hkd": null,
-          "change_pct": null
-        },
-        {
-          "tier": "Tier 4: Treasury Plays",
-          "ticker": "00434.HK",
-          "company_en": "Boyaa Interactive",
-          "company_zh": "博雅互动",
-          "regulatory_note": "BTC/ETH treasury play",
-          "latest_price_hkd": null,
-          "change_pct": null
-        },
-        {
-          "tier": "Tier 4: Treasury Plays",
-          "ticker": "08267.HK",
-          "company_en": "Lion Rock",
-          "company_zh": "蓝港互动",
-          "regulatory_note": "BTC/ETH/SOL treasury play and staking",
-          "latest_price_hkd": null,
-          "change_pct": null
-        },
-        {
-          "tier": "Tier 4: Treasury Plays",
-          "ticker": "02440.HK",
-          "company_en": "MemeStrategy",
-          "company_zh": "迷策略",
-          "regulatory_note": "Solana treasury play, Moonit trading system",
-          "latest_price_hkd": null,
-          "change_pct": null
-        }
-      ],
-      "regulatory_news": [
-        {
-          "issue_date": "2026-07-09",
-          "title": "SFC mandates phishing-resistant authentication methods for internet brokers and VATPs to protect client accounts",
-          "news_type": "GN",
-          "source": "SFC"
-        },
-        {
-          "issue_date": "2026-06-10",
-          "title": "HKMA demonstrates potential of tokenisation to corporate treasury community",
-          "news_type": "",
-          "source": "HKMA"
-        },
-        {
-          "issue_date": "2026-06-05",
-          "title": "HKMA establishes Tokenised Bond Expert Group",
-          "news_type": "",
-          "source": "HKMA"
-        },
-        {
-          "issue_date": "2026-05-26",
-          "title": "FSTB and SFC conclude consultations on virtual asset advisory and management regimes",
-          "news_type": "GN",
-          "source": "SFC"
-        },
-        {
-          "issue_date": "2026-04-28",
-          "title": "Beware of tokens purported to be associated with licensed stablecoin issuers",
-          "news_type": "",
-          "source": "HKMA"
-        },
-        {
-          "issue_date": "2026-04-20",
-          "title": "SFC unveils new regulatory framework to allow secondary trading of tokenised SFC-authorised investment products",
-          "news_type": "GN",
-          "source": "SFC"
-        },
-        {
-          "issue_date": "2026-04-20",
-          "title": "New speech by Eric Yip: Keynote address at Hong Kong Web3 Festival 2026",
-          "news_type": "GN",
-          "source": "SFC"
-        },
-        {
-          "issue_date": "2026-04-10",
-          "title": "Granting of stablecoin issuer licences",
-          "news_type": "",
-          "source": "HKMA"
-        },
-        {
-          "issue_date": "2026-03-19",
-          "title": "Strategic innovation drives growth of Hong Kong’s listing and digital asset markets: SFC Quarterly Report",
-          "news_type": "GN",
-          "source": "SFC"
-        },
-        {
-          "issue_date": "2026-03-02",
-          "title": "Hong Kong Monetary Authority, Shanghai Data Bureau, and National Technology Innovation Center for Blockchain sign MoU to strengthen Shanghai-Hong Kong cooperation in digitised cargo trade and finance",
-          "news_type": "",
-          "source": "HKMA"
-        },
-        {
-          "issue_date": "2026-02-11",
-          "title": "SFC launches trading initiatives to boost digital asset market vibrancy in Hong Kong",
-          "news_type": "GN",
-          "source": "SFC"
-        },
-        {
-          "issue_date": "2026-02-06",
-          "title": "SFC convenes third Digital Asset Consultative Panel meeting",
-          "news_type": "GN",
-          "source": "SFC"
-        },
-        {
-          "issue_date": "2026-01-27",
-          "title": "SFC and UAE’s Capital Market Authority sign milestone MoU to strengthen cross-border digital asset collaboration",
-          "news_type": "GN",
-          "source": "SFC"
-        },
-        {
-          "issue_date": "2026-01-06",
-          "title": "SFC reprimands and fines Saxo Capital Markets HK Limited $4 million for regulatory breaches over distribution of virtual asset-related products",
-          "news_type": "EF",
-          "source": "SFC"
-        },
-        {
-          "issue_date": "2025-12-24",
-          "title": "FSTB and SFC conclude consultations on virtual asset dealer and custodian regimes, further consult on two new regimes",
-          "news_type": "GN",
-          "source": "SFC"
-        },
-        {
-          "issue_date": "2025-11-13",
-          "title": "HKMA announces the new phase of Project Ensemble to support real-value transactions in tokenised deposits and digital assets",
-          "news_type": "",
-          "source": "HKMA"
-        },
-        {
-          "issue_date": "2025-11-03",
-          "title": "SFC issues new guidance for licensed virtual asset trading platforms to tap global liquidity and diversify offerings",
-          "news_type": "GN",
-          "source": "SFC"
-        },
-        {
-          "issue_date": "2025-10-20",
-          "title": "SFC supports market’s initiatives on regulatory compliance for digital asset funds and tokenised funds",
-          "news_type": "GN",
-          "source": "SFC"
-        },
-        {
-          "issue_date": "2025-08-15",
-          "title": "SFC elaborates on robust custody standards for virtual asset trading platforms to safeguard client virtual assets",
-          "news_type": "GN",
-          "source": "SFC"
-        },
-        {
-          "issue_date": "2025-08-14",
-          "title": "Joint statement by the SFC and the HKMA on stablecoin-related market movements",
-          "news_type": "GN",
-          "source": "SFC"
-        },
-        {
-          "issue_date": "2025-08-14",
-          "title": "Joint Statement by the HKMA and the SFC on Stablecoin-related Market Movements",
-          "news_type": "",
-          "source": "HKMA"
-        },
-        {
-          "issue_date": "2025-07-29",
-          "title": "Implementation of regulatory regime for stablecoin issuers",
-          "news_type": "",
-          "source": "HKMA"
-        },
-        {
-          "issue_date": "2025-07-07",
-          "title": "SFC convenes second Digital Asset Consultative Panel meeting",
-          "news_type": "GN",
-          "source": "SFC"
-        },
-        {
-          "issue_date": "2025-06-27",
-          "title": "FSTB and SFC consult on proposed regimes to regulate virtual asset dealers and custodians",
-          "news_type": "GN",
-          "source": "SFC"
-        }
-      ],
-      "hkexnews_announcements": [
-        {
-          "date_time": "2026-07-31 19:11",
-          "ticker": "00736.HK",
-          "stock_name": "CHINA PPT INV",
-          "title": "Environmental, Social and Governance Report 2025&#x2f;26",
-          "file_link": "/listedco/listconews/sehk/2026/0731/2026073101547.pdf"
-        },
-        {
-          "date_time": "2026-07-31 19:07",
-          "ticker": "00736.HK",
-          "stock_name": "CHINA PPT INV",
-          "title": "Notification Letter and Request Form to Registered Holders",
-          "file_link": "/listedco/listconews/sehk/2026/0731/2026073101531.pdf"
-        },
-        {
-          "date_time": "2026-07-31 19:04",
-          "ticker": "00736.HK",
-          "stock_name": "CHINA PPT INV",
-          "title": "Notification Letter and Request Form to Non-Registered Holders",
-          "file_link": "/listedco/listconews/sehk/2026/0731/2026073101521.pdf"
-        },
-        {
-          "date_time": "2026-07-31 19:01",
-          "ticker": "00736.HK",
-          "stock_name": "CHINA PPT INV",
-          "title": "ANNUAL REPORT 2026",
-          "file_link": "/listedco/listconews/sehk/2026/0731/2026073101501.pdf"
-        },
-        {
-          "date_time": "2026-07-31 18:09",
-          "ticker": "00399.HK",
-          "stock_name": "STARCOIN GROUP",
-          "title": "CHANGE OF ADDRESS OF REGISTERED OFFICE, PRINCIPAL SHARE REGISTRAR AND TRANSFER OFFICE IN BERMUDA",
-          "file_link": "/listedco/listconews/sehk/2026/0731/2026073101191.pdf"
-        },
-        {
-          "date_time": "2026-07-31 18:00",
-          "ticker": "09618.HK",
-          "stock_name": "JD-SW<br/>JD-SWR",
-          "title": "DATE OF BOARD MEETING",
-          "file_link": "/listedco/listconews/sehk/2026/0731/2026073101121.pdf"
-        },
-        {
-          "date_time": "2026-07-31 16:51",
-          "ticker": "02888.HK",
-          "stock_name": "STANCHART",
-          "title": "Next Day Disclosure Return",
-          "file_link": "/listedco/listconews/sehk/2026/0731/2026073100608.pdf"
-        },
-        {
-          "date_time": "2026-07-31 06:15",
-          "ticker": "00005.HK",
-          "stock_name": "HSBC HOLDINGS",
-          "title": "NOTICE OF REDEMPTION",
-          "file_link": "/listedco/listconews/sehk/2026/0731/2026073100035.pdf"
-        },
-        {
-          "date_time": "2026-07-31 06:15",
-          "ticker": "00005.HK",
-          "stock_name": "HSBC HOLDINGS",
-          "title": "HSBC TO SELL ITS AUD36 BILLION AUSTRALIAN HOME AND PERSONAL LOAN PORTFOLIO TO BLACKSTONE",
-          "file_link": "/listedco/listconews/sehk/2026/0731/2026073100031.pdf"
-        },
-        {
-          "date_time": "2026-07-30 19:02",
-          "ticker": "01647.HK",
-          "stock_name": "GRANDSHORES",
-          "title": "NOTIFICATION LETTER AND REQUEST FORM TO NON-REGISTERED SHAREHOLDERS",
-          "file_link": "/listedco/listconews/sehk/2026/0730/2026073001577.pdf"
-        },
-        {
-          "date_time": "2026-07-30 19:01",
-          "ticker": "01647.HK",
-          "stock_name": "GRANDSHORES",
-          "title": "NOTIFICATION LETTER AND CHANGE REQUEST FORM TO REGISTERED SHAREHOLDERS",
-          "file_link": "/listedco/listconews/sehk/2026/0730/2026073001571.pdf"
-        },
-        {
-          "date_time": "2026-07-30 18:59",
-          "ticker": "01647.HK",
-          "stock_name": "GRANDSHORES",
-          "title": "PROXY FORM",
-          "file_link": "/listedco/listconews/sehk/2026/0730/2026073001557.pdf"
-        },
-        {
-          "date_time": "2026-07-30 18:57",
-          "ticker": "01647.HK",
-          "stock_name": "GRANDSHORES",
-          "title": "NOTICE OF THE ANNUAL GENERAL MEETING",
-          "file_link": "/listedco/listconews/sehk/2026/0730/2026073001549.pdf"
-        },
-        {
-          "date_time": "2026-07-30 18:55",
-          "ticker": "01647.HK",
-          "stock_name": "GRANDSHORES",
-          "title": "(1) PROPOSED GRANTING OF GENERAL MANDATES TO ISSUE NEW SHARES AND REPURCHASE SHARES&#x3b; (2) PROPOSED RE-ELECTION OF DIRECTORS&#x3b; (3) PROPOSED RE-APPOINTMENT OF AUDITOR&#x3b; AND (4) NOTICE OF THE ANNUAL GENERAL MEETING",
-          "file_link": "/listedco/listconews/sehk/2026/0730/2026073001535.pdf"
-        },
-        {
-          "date_time": "2026-07-30 18:53",
-          "ticker": "01647.HK",
-          "stock_name": "GRANDSHORES",
-          "title": "Annual Report 2026",
-          "file_link": "/listedco/listconews/sehk/2026/0730/2026073001515.pdf"
-        },
-        {
-          "date_time": "2026-07-30 17:44",
-          "ticker": "01328.HK",
-          "stock_name": "GOLDSTREAM INV",
-          "title": "INSIDE INFORMATION - POSITIVE PROFIT ALERT",
-          "file_link": "/listedco/listconews/sehk/2026/0730/2026073001104.pdf"
-        },
-        {
-          "date_time": "2026-07-30 16:30",
-          "ticker": "00005.HK",
-          "stock_name": "HSBC HOLDINGS",
-          "title": "CHANGES IN COMPOSITION OF THE BOARD COMMITTEES",
-          "file_link": "/listedco/listconews/sehk/2026/0730/2026073000358.pdf"
-        },
-        {
-          "date_time": "2026-07-30 16:30",
-          "ticker": "00005.HK",
-          "stock_name": "HSBC HOLDINGS",
-          "title": "LIST OF DIRECTORS AND THEIR ROLE AND FUNCTION",
-          "file_link": "/listedco/listconews/sehk/2026/0730/2026073000392.pdf"
-        },
-        {
-          "date_time": "2026-07-30 12:08",
-          "ticker": "01499.HK",
-          "stock_name": "OKG TECH",
-          "title": "Notification Letter to Non-Registered Shareholders",
-          "file_link": "/listedco/listconews/sehk/2026/0730/2026073000233.pdf"
-        },
-        {
-          "date_time": "2026-07-30 12:06",
-          "ticker": "01499.HK",
-          "stock_name": "OKG TECH",
-          "title": "Notification Letter to Registered Shareholders and Reply Form",
-          "file_link": "/listedco/listconews/sehk/2026/0730/2026073000227.pdf"
-        },
-        {
-          "date_time": "2026-07-30 12:04",
-          "ticker": "01499.HK",
-          "stock_name": "OKG TECH",
-          "title": "FORM OF PROXY FOR ANNUAL GENERAL MEETING",
-          "file_link": "/listedco/listconews/sehk/2026/0730/2026073000219.pdf"
-        },
-        {
-          "date_time": "2026-07-30 12:03",
-          "ticker": "01499.HK",
-          "stock_name": "OKG TECH",
-          "title": "NOTICE OF ANNUAL GENERAL MEETING",
-          "file_link": "/listedco/listconews/sehk/2026/0730/2026073000211.pdf"
-        },
-        {
-          "date_time": "2026-07-30 12:02",
-          "ticker": "01499.HK",
-          "stock_name": "OKG TECH",
-          "title": "PROPOSALS FOR\n(1) GENERAL MANDATES TO ISSUE AND BUY BACK SHARES&#x3b;\n(2) RE-APPOINTMENT OF AUDITOR&#x3b;\n(3) RE-ELECTION OF RETIRING DIRECTORS&#x3b;\nAND\n(4) NOTICE OF ANNUAL GENERAL MEETING",
-          "file_link": "/listedco/listconews/sehk/2026/0730/2026073000207.pdf"
-        },
-        {
-          "date_time": "2026-07-30 12:01",
-          "ticker": "01499.HK",
-          "stock_name": "OKG TECH",
-          "title": "ANNUAL REPORT 2026",
-          "file_link": "/listedco/listconews/sehk/2026/0730/2026073000201.pdf"
-        },
-        {
-          "date_time": "2026-07-29 19:24",
-          "ticker": "08540.HK",
-          "stock_name": "VICTORY SEC",
-          "title": "ANNOUNCEMENT PURSUANT TO RULE 17.50(2)(u) AND RULES 5.01 AND 5.02 OF THE GEM LISTING RULES",
-          "file_link": "/listedco/listconews/gem/2026/0729/2026072901263.pdf"
-        },
-        {
-          "date_time": "2026-07-29 17:57",
-          "ticker": "02888.HK",
-          "stock_name": "STANCHART",
-          "title": "2026 Half Year Report",
-          "file_link": "/listedco/listconews/sehk/2026/0729/2026072901018.pdf"
-        },
-        {
-          "date_time": "2026-07-29 17:55",
-          "ticker": "06823.HK",
-          "stock_name": "HKT-SS",
-          "title": "Interim Results Announcement for the six months ended 30 June 2026",
-          "file_link": "/listedco/listconews/sehk/2026/0729/2026072900430.pdf"
-        },
-        {
-          "date_time": "2026-07-29 17:28",
-          "ticker": "02888.HK",
-          "stock_name": "STANCHART",
-          "title": "Share Buy-back",
-          "file_link": "/listedco/listconews/sehk/2026/0729/2026072900866.pdf"
-        },
-        {
-          "date_time": "2026-07-29 17:25",
-          "ticker": "02888.HK",
-          "stock_name": "STANCHART",
-          "title": "Publication of Supplementary Prospectus",
-          "file_link": "/listedco/listconews/sehk/2026/0729/2026072900848.pdf"
-        },
-        {
-          "date_time": "2026-07-29 16:45",
-          "ticker": "00736.HK",
-          "stock_name": "CHINA PPT INV",
-          "title": "CHANGE OF THE ADDRESS OF REGISTERED OFFICE,\nPRINCIPAL SHARE REGISTRAR AND TRANSFER AGENT IN BERMUDA",
-          "file_link": "/listedco/listconews/sehk/2026/0729/2026072900514.pdf"
-        }
-      ],
-      "market_kpi_summary": [
-        {
-          "hkma_count": 2,
-          "sfc_licensed_count": 13,
-          "sfc_pending_count": 6,
-          "total_supply_bn": 306.82,
-          "total_etf_aum_m": 253.12,
-          "btc_price": null,
-          "cb_premium_bps": null,
-          "fear_greed_val": 27,
-          "fear_greed_class": "Fear",
-          "regulatory_news_count": 24,
-          "hkexnews_announcements_count": 30
+          "score": 27.3
         }
       ],
       "fear_greed_daily": [
@@ -22455,6 +21829,644 @@
           "score": 27,
           "classification": "Fear",
           "score_7d_avg": 27.7
+        },
+        {
+          "date": "2026-08-02",
+          "score": 27,
+          "classification": "Fear",
+          "score_7d_avg": 27.9
+        },
+        {
+          "date": "2026-08-03",
+          "score": 28,
+          "classification": "Fear",
+          "score_7d_avg": 27.6
+        }
+      ],
+      "btc_price_history": [],
+      "polymarket_catalysts": [
+        {
+          "title": "How high will 10-year Treasury yield go before 2027?",
+          "probability_pct": 100.0,
+          "end_date": "2026-12-31"
+        },
+        {
+          "title": "How low will 10-year Treasury yield get before 2027?",
+          "probability_pct": 100.0,
+          "end_date": "2026-12-31"
+        },
+        {
+          "title": "How many Fed rate cuts in 2026?",
+          "probability_pct": 88.8,
+          "end_date": "2026-12-31"
+        },
+        {
+          "title": "Fed rate hike in 2026?",
+          "probability_pct": 67.5,
+          "end_date": "2026-12-09"
+        },
+        {
+          "title": "What will be the next Fed rate change?",
+          "probability_pct": 58.0,
+          "end_date": "2028-12-31"
+        },
+        {
+          "title": "Largest Company end of December 2026?",
+          "probability_pct": 54.5,
+          "end_date": "2026-12-31"
+        },
+        {
+          "title": "Ethereum ETF Flows on August 4?",
+          "probability_pct": 50.0,
+          "end_date": "2026-08-04"
+        },
+        {
+          "title": "Bitcoin ETF Flows on August 4?",
+          "probability_pct": 50.0,
+          "end_date": "2026-08-04"
+        },
+        {
+          "title": "Will Axiom launch a token by ___ ?",
+          "probability_pct": 44.0,
+          "end_date": "2028-01-01"
+        },
+        {
+          "title": "Will Base launch a token by ___ ?",
+          "probability_pct": 41.5,
+          "end_date": "2027-07-01"
+        }
+      ],
+      "crypto_watchlist": [
+        {
+          "tier": "Tier 1: Licensed Infrastructure",
+          "ticker": "00863.HK",
+          "company_en": "OSL Group",
+          "company_zh": "OSL集团",
+          "regulatory_note": "SFC VATP-licensed exchange operator since 15/12/2020",
+          "latest_price_hkd": null,
+          "change_pct": null
+        },
+        {
+          "tier": "Tier 1: Licensed Infrastructure",
+          "ticker": "03887.HK",
+          "company_en": "HashKey Holdings",
+          "company_zh": "HashKey",
+          "regulatory_note": "SFC VATP-licensed exchange operator since 09/11/2022",
+          "latest_price_hkd": null,
+          "change_pct": null
+        },
+        {
+          "tier": "Tier 1: Licensed Infrastructure",
+          "ticker": "01788.HK",
+          "company_en": "Guotai Junan International",
+          "company_zh": "国泰君安国际",
+          "regulatory_note": "Licensed to deal in virtual assets — NOT a VATP exchange operator (different, lesser regulatory status)",
+          "latest_price_hkd": null,
+          "change_pct": null
+        },
+        {
+          "tier": "Tier 1: Licensed Infrastructure",
+          "ticker": "08540.HK",
+          "company_en": "Victory Securities",
+          "company_zh": "胜利证券",
+          "regulatory_note": "Licensed to deal in virtual assets — NOT a VATP exchange operator (different, lesser regulatory status)",
+          "latest_price_hkd": null,
+          "change_pct": null
+        },
+        {
+          "tier": "Tier 1: Licensed Infrastructure",
+          "ticker": "01499.HK",
+          "company_en": "OKG Technology",
+          "company_zh": "欧科云链",
+          "regulatory_note": "Infrastructure/data; linked to OKX, but OKX withdrew its HK VATP application in May 2024",
+          "latest_price_hkd": null,
+          "change_pct": null
+        },
+        {
+          "tier": "Tier 1: Licensed Infrastructure",
+          "ticker": "01611.HK",
+          "company_en": "Sinohope",
+          "company_zh": "新火集团",
+          "regulatory_note": "Asset management and tech solutions (SFO Type 1/4/9 licensed)",
+          "latest_price_hkd": null,
+          "change_pct": null
+        },
+        {
+          "tier": "Tier 2: Big-Name / Adjacent",
+          "ticker": "00005.HK",
+          "company_en": "HSBC Holdings",
+          "company_zh": "汇丰控股",
+          "regulatory_note": "HKMA stablecoin issuer licence FRS02 effective 10/04/2026",
+          "latest_price_hkd": null,
+          "change_pct": null
+        },
+        {
+          "tier": "Tier 2: Big-Name / Adjacent",
+          "ticker": "02888.HK",
+          "company_en": "Standard Chartered",
+          "company_zh": "渣打集团",
+          "regulatory_note": "HKMA stablecoin issuer licence FRS01 effective 10/04/2026 via Anchorpoint Financial JV",
+          "latest_price_hkd": null,
+          "change_pct": null
+        },
+        {
+          "tier": "Tier 2: Big-Name / Adjacent",
+          "ticker": "06823.HK",
+          "company_en": "HKT",
+          "company_zh": "香港电讯",
+          "regulatory_note": "Partner in Anchorpoint Financial JV (FRS01)",
+          "latest_price_hkd": null,
+          "change_pct": null
+        },
+        {
+          "tier": "Tier 2: Big-Name / Adjacent",
+          "ticker": "02388.HK",
+          "company_en": "BOC Hong Kong",
+          "company_zh": "中银香港",
+          "regulatory_note": "Linked to HKMA stablecoin issuer sandbox",
+          "latest_price_hkd": null,
+          "change_pct": null
+        },
+        {
+          "tier": "Tier 2: Big-Name / Adjacent",
+          "ticker": "09988.HK",
+          "company_en": "Alibaba",
+          "company_zh": "阿里巴巴",
+          "regulatory_note": "Ant International reportedly pursuing stablecoin initiatives",
+          "latest_price_hkd": null,
+          "change_pct": null
+        },
+        {
+          "tier": "Tier 2: Big-Name / Adjacent",
+          "ticker": "09618.HK",
+          "company_en": "JD.com",
+          "company_zh": "京东集团",
+          "regulatory_note": "Pursuing stablecoin initiatives",
+          "latest_price_hkd": null,
+          "change_pct": null
+        },
+        {
+          "tier": "Tier 3: Concept Pivots",
+          "ticker": "01328.HK",
+          "company_en": "Jinyong Investment",
+          "company_zh": "金涌投资",
+          "regulatory_note": "Partnered with AnchorX for AxCNH stablecoin (DO NOT CONFLATE WITH ANCHORPOINT)",
+          "latest_price_hkd": null,
+          "change_pct": null
+        },
+        {
+          "tier": "Tier 3: Concept Pivots",
+          "ticker": "08087.HK",
+          "company_en": "China 33 Group",
+          "company_zh": "中国三三传媒",
+          "regulatory_note": "Announced plans to apply for a HK stablecoin license",
+          "latest_price_hkd": null,
+          "change_pct": null
+        },
+        {
+          "tier": "Tier 3: Concept Pivots",
+          "ticker": "02477.HK",
+          "company_en": "Jingwei Tiandi",
+          "company_zh": "经纬天地",
+          "regulatory_note": "Launched Fopay stablecoin payment app",
+          "latest_price_hkd": null,
+          "change_pct": null
+        },
+        {
+          "tier": "Tier 3: Concept Pivots",
+          "ticker": "00290.HK",
+          "company_en": "Guofu Quantum",
+          "company_zh": "国富创新",
+          "regulatory_note": "Investing in RWA tokenization platforms",
+          "latest_price_hkd": null,
+          "change_pct": null
+        },
+        {
+          "tier": "Tier 3: Concept Pivots",
+          "ticker": "00399.HK",
+          "company_en": "Starcoin Group",
+          "company_zh": "星太链集团",
+          "regulatory_note": "Gold RWA-tokenization framework agreement, token airdrop MOU",
+          "latest_price_hkd": null,
+          "change_pct": null
+        },
+        {
+          "tier": "Tier 3: Concept Pivots",
+          "ticker": "01647.HK",
+          "company_en": "Xiongan Technology",
+          "company_zh": "雄岸科技",
+          "regulatory_note": "Partnership with Lion Group for crypto trading platform",
+          "latest_price_hkd": null,
+          "change_pct": null
+        },
+        {
+          "tier": "Tier 3: Concept Pivots",
+          "ticker": "00736.HK",
+          "company_en": "China Properties Investment",
+          "company_zh": "中国置业投资",
+          "regulatory_note": "TokenMarket tie-up, purchasing digital assets",
+          "latest_price_hkd": null,
+          "change_pct": null
+        },
+        {
+          "tier": "Tier 4: Treasury Plays",
+          "ticker": "00434.HK",
+          "company_en": "Boyaa Interactive",
+          "company_zh": "博雅互动",
+          "regulatory_note": "BTC/ETH treasury play",
+          "latest_price_hkd": null,
+          "change_pct": null
+        },
+        {
+          "tier": "Tier 4: Treasury Plays",
+          "ticker": "08267.HK",
+          "company_en": "Lion Rock",
+          "company_zh": "蓝港互动",
+          "regulatory_note": "BTC/ETH/SOL treasury play and staking",
+          "latest_price_hkd": null,
+          "change_pct": null
+        },
+        {
+          "tier": "Tier 4: Treasury Plays",
+          "ticker": "02440.HK",
+          "company_en": "MemeStrategy",
+          "company_zh": "迷策略",
+          "regulatory_note": "Solana treasury play, Moonit trading system",
+          "latest_price_hkd": null,
+          "change_pct": null
+        }
+      ],
+      "regulatory_news": [
+        {
+          "issue_date": "2026-07-09",
+          "title": "SFC mandates phishing-resistant authentication methods for internet brokers and VATPs to protect client accounts",
+          "news_type": "GN",
+          "source": "SFC"
+        },
+        {
+          "issue_date": "2026-06-10",
+          "title": "HKMA demonstrates potential of tokenisation to corporate treasury community",
+          "news_type": "",
+          "source": "HKMA"
+        },
+        {
+          "issue_date": "2026-06-05",
+          "title": "HKMA establishes Tokenised Bond Expert Group",
+          "news_type": "",
+          "source": "HKMA"
+        },
+        {
+          "issue_date": "2026-05-26",
+          "title": "FSTB and SFC conclude consultations on virtual asset advisory and management regimes",
+          "news_type": "GN",
+          "source": "SFC"
+        },
+        {
+          "issue_date": "2026-04-28",
+          "title": "Beware of tokens purported to be associated with licensed stablecoin issuers",
+          "news_type": "",
+          "source": "HKMA"
+        },
+        {
+          "issue_date": "2026-04-20",
+          "title": "SFC unveils new regulatory framework to allow secondary trading of tokenised SFC-authorised investment products",
+          "news_type": "GN",
+          "source": "SFC"
+        },
+        {
+          "issue_date": "2026-04-20",
+          "title": "New speech by Eric Yip: Keynote address at Hong Kong Web3 Festival 2026",
+          "news_type": "GN",
+          "source": "SFC"
+        },
+        {
+          "issue_date": "2026-04-10",
+          "title": "Granting of stablecoin issuer licences",
+          "news_type": "",
+          "source": "HKMA"
+        },
+        {
+          "issue_date": "2026-03-19",
+          "title": "Strategic innovation drives growth of Hong Kong’s listing and digital asset markets: SFC Quarterly Report",
+          "news_type": "GN",
+          "source": "SFC"
+        },
+        {
+          "issue_date": "2026-03-02",
+          "title": "Hong Kong Monetary Authority, Shanghai Data Bureau, and National Technology Innovation Center for Blockchain sign MoU to strengthen Shanghai-Hong Kong cooperation in digitised cargo trade and finance",
+          "news_type": "",
+          "source": "HKMA"
+        },
+        {
+          "issue_date": "2026-02-11",
+          "title": "SFC launches trading initiatives to boost digital asset market vibrancy in Hong Kong",
+          "news_type": "GN",
+          "source": "SFC"
+        },
+        {
+          "issue_date": "2026-02-06",
+          "title": "SFC convenes third Digital Asset Consultative Panel meeting",
+          "news_type": "GN",
+          "source": "SFC"
+        },
+        {
+          "issue_date": "2026-01-27",
+          "title": "SFC and UAE’s Capital Market Authority sign milestone MoU to strengthen cross-border digital asset collaboration",
+          "news_type": "GN",
+          "source": "SFC"
+        },
+        {
+          "issue_date": "2026-01-06",
+          "title": "SFC reprimands and fines Saxo Capital Markets HK Limited $4 million for regulatory breaches over distribution of virtual asset-related products",
+          "news_type": "EF",
+          "source": "SFC"
+        },
+        {
+          "issue_date": "2025-12-24",
+          "title": "FSTB and SFC conclude consultations on virtual asset dealer and custodian regimes, further consult on two new regimes",
+          "news_type": "GN",
+          "source": "SFC"
+        },
+        {
+          "issue_date": "2025-11-13",
+          "title": "HKMA announces the new phase of Project Ensemble to support real-value transactions in tokenised deposits and digital assets",
+          "news_type": "",
+          "source": "HKMA"
+        },
+        {
+          "issue_date": "2025-11-03",
+          "title": "SFC issues new guidance for licensed virtual asset trading platforms to tap global liquidity and diversify offerings",
+          "news_type": "GN",
+          "source": "SFC"
+        },
+        {
+          "issue_date": "2025-10-20",
+          "title": "SFC supports market’s initiatives on regulatory compliance for digital asset funds and tokenised funds",
+          "news_type": "GN",
+          "source": "SFC"
+        },
+        {
+          "issue_date": "2025-08-15",
+          "title": "SFC elaborates on robust custody standards for virtual asset trading platforms to safeguard client virtual assets",
+          "news_type": "GN",
+          "source": "SFC"
+        },
+        {
+          "issue_date": "2025-08-14",
+          "title": "Joint statement by the SFC and the HKMA on stablecoin-related market movements",
+          "news_type": "GN",
+          "source": "SFC"
+        },
+        {
+          "issue_date": "2025-08-14",
+          "title": "Joint Statement by the HKMA and the SFC on Stablecoin-related Market Movements",
+          "news_type": "",
+          "source": "HKMA"
+        },
+        {
+          "issue_date": "2025-07-29",
+          "title": "Implementation of regulatory regime for stablecoin issuers",
+          "news_type": "",
+          "source": "HKMA"
+        },
+        {
+          "issue_date": "2025-07-07",
+          "title": "SFC convenes second Digital Asset Consultative Panel meeting",
+          "news_type": "GN",
+          "source": "SFC"
+        },
+        {
+          "issue_date": "2025-06-27",
+          "title": "FSTB and SFC consult on proposed regimes to regulate virtual asset dealers and custodians",
+          "news_type": "GN",
+          "source": "SFC"
+        }
+      ],
+      "hkexnews_announcements": [
+        {
+          "date_time": "2026-08-03 12:36",
+          "ticker": "00399.HK",
+          "stock_name": "STARCOIN GROUP",
+          "title": "Monthly Return of Equity Issuer on Movements in Securities for the month ended 31 July 2026",
+          "file_link": "/listedco/listconews/sehk/2026/0803/2026080300735.pdf"
+        },
+        {
+          "date_time": "2026-08-03 10:12",
+          "ticker": "08540.HK",
+          "stock_name": "VICTORY SEC",
+          "title": "Monthly Return of Equity Issuer on Movements in Securities for the month ended 31 July 2026",
+          "file_link": "/listedco/listconews/gem/2026/0803/2026080300241.pdf"
+        },
+        {
+          "date_time": "2026-08-03 07:30",
+          "ticker": "00005.HK",
+          "stock_name": "HSBC HOLDINGS",
+          "title": "Voting Rights and Capital",
+          "file_link": "/listedco/listconews/sehk/2026/0803/2026080300013.pdf"
+        },
+        {
+          "date_time": "2026-07-31 19:11",
+          "ticker": "00736.HK",
+          "stock_name": "CHINA PPT INV",
+          "title": "Environmental, Social and Governance Report 2025&#x2f;26",
+          "file_link": "/listedco/listconews/sehk/2026/0731/2026073101547.pdf"
+        },
+        {
+          "date_time": "2026-07-31 19:07",
+          "ticker": "00736.HK",
+          "stock_name": "CHINA PPT INV",
+          "title": "Notification Letter and Request Form to Registered Holders",
+          "file_link": "/listedco/listconews/sehk/2026/0731/2026073101531.pdf"
+        },
+        {
+          "date_time": "2026-07-31 19:04",
+          "ticker": "00736.HK",
+          "stock_name": "CHINA PPT INV",
+          "title": "Notification Letter and Request Form to Non-Registered Holders",
+          "file_link": "/listedco/listconews/sehk/2026/0731/2026073101521.pdf"
+        },
+        {
+          "date_time": "2026-07-31 19:01",
+          "ticker": "00736.HK",
+          "stock_name": "CHINA PPT INV",
+          "title": "ANNUAL REPORT 2026",
+          "file_link": "/listedco/listconews/sehk/2026/0731/2026073101501.pdf"
+        },
+        {
+          "date_time": "2026-07-31 18:09",
+          "ticker": "00399.HK",
+          "stock_name": "STARCOIN GROUP",
+          "title": "CHANGE OF ADDRESS OF REGISTERED OFFICE, PRINCIPAL SHARE REGISTRAR AND TRANSFER OFFICE IN BERMUDA",
+          "file_link": "/listedco/listconews/sehk/2026/0731/2026073101191.pdf"
+        },
+        {
+          "date_time": "2026-07-31 18:00",
+          "ticker": "09618.HK",
+          "stock_name": "JD-SW<br/>JD-SWR",
+          "title": "DATE OF BOARD MEETING",
+          "file_link": "/listedco/listconews/sehk/2026/0731/2026073101121.pdf"
+        },
+        {
+          "date_time": "2026-07-31 16:51",
+          "ticker": "02888.HK",
+          "stock_name": "STANCHART",
+          "title": "Next Day Disclosure Return",
+          "file_link": "/listedco/listconews/sehk/2026/0731/2026073100608.pdf"
+        },
+        {
+          "date_time": "2026-07-31 06:15",
+          "ticker": "00005.HK",
+          "stock_name": "HSBC HOLDINGS",
+          "title": "NOTICE OF REDEMPTION",
+          "file_link": "/listedco/listconews/sehk/2026/0731/2026073100035.pdf"
+        },
+        {
+          "date_time": "2026-07-31 06:15",
+          "ticker": "00005.HK",
+          "stock_name": "HSBC HOLDINGS",
+          "title": "HSBC TO SELL ITS AUD36 BILLION AUSTRALIAN HOME AND PERSONAL LOAN PORTFOLIO TO BLACKSTONE",
+          "file_link": "/listedco/listconews/sehk/2026/0731/2026073100031.pdf"
+        },
+        {
+          "date_time": "2026-07-30 19:02",
+          "ticker": "01647.HK",
+          "stock_name": "GRANDSHORES",
+          "title": "NOTIFICATION LETTER AND REQUEST FORM TO NON-REGISTERED SHAREHOLDERS",
+          "file_link": "/listedco/listconews/sehk/2026/0730/2026073001577.pdf"
+        },
+        {
+          "date_time": "2026-07-30 19:01",
+          "ticker": "01647.HK",
+          "stock_name": "GRANDSHORES",
+          "title": "NOTIFICATION LETTER AND CHANGE REQUEST FORM TO REGISTERED SHAREHOLDERS",
+          "file_link": "/listedco/listconews/sehk/2026/0730/2026073001571.pdf"
+        },
+        {
+          "date_time": "2026-07-30 18:59",
+          "ticker": "01647.HK",
+          "stock_name": "GRANDSHORES",
+          "title": "PROXY FORM",
+          "file_link": "/listedco/listconews/sehk/2026/0730/2026073001557.pdf"
+        },
+        {
+          "date_time": "2026-07-30 18:57",
+          "ticker": "01647.HK",
+          "stock_name": "GRANDSHORES",
+          "title": "NOTICE OF THE ANNUAL GENERAL MEETING",
+          "file_link": "/listedco/listconews/sehk/2026/0730/2026073001549.pdf"
+        },
+        {
+          "date_time": "2026-07-30 18:55",
+          "ticker": "01647.HK",
+          "stock_name": "GRANDSHORES",
+          "title": "(1) PROPOSED GRANTING OF GENERAL MANDATES TO ISSUE NEW SHARES AND REPURCHASE SHARES&#x3b; (2) PROPOSED RE-ELECTION OF DIRECTORS&#x3b; (3) PROPOSED RE-APPOINTMENT OF AUDITOR&#x3b; AND (4) NOTICE OF THE ANNUAL GENERAL MEETING",
+          "file_link": "/listedco/listconews/sehk/2026/0730/2026073001535.pdf"
+        },
+        {
+          "date_time": "2026-07-30 18:53",
+          "ticker": "01647.HK",
+          "stock_name": "GRANDSHORES",
+          "title": "Annual Report 2026",
+          "file_link": "/listedco/listconews/sehk/2026/0730/2026073001515.pdf"
+        },
+        {
+          "date_time": "2026-07-30 17:44",
+          "ticker": "01328.HK",
+          "stock_name": "GOLDSTREAM INV",
+          "title": "INSIDE INFORMATION - POSITIVE PROFIT ALERT",
+          "file_link": "/listedco/listconews/sehk/2026/0730/2026073001104.pdf"
+        },
+        {
+          "date_time": "2026-07-30 16:30",
+          "ticker": "00005.HK",
+          "stock_name": "HSBC HOLDINGS",
+          "title": "CHANGES IN COMPOSITION OF THE BOARD COMMITTEES",
+          "file_link": "/listedco/listconews/sehk/2026/0730/2026073000358.pdf"
+        },
+        {
+          "date_time": "2026-07-30 16:30",
+          "ticker": "00005.HK",
+          "stock_name": "HSBC HOLDINGS",
+          "title": "LIST OF DIRECTORS AND THEIR ROLE AND FUNCTION",
+          "file_link": "/listedco/listconews/sehk/2026/0730/2026073000392.pdf"
+        },
+        {
+          "date_time": "2026-07-30 12:08",
+          "ticker": "01499.HK",
+          "stock_name": "OKG TECH",
+          "title": "Notification Letter to Non-Registered Shareholders",
+          "file_link": "/listedco/listconews/sehk/2026/0730/2026073000233.pdf"
+        },
+        {
+          "date_time": "2026-07-30 12:06",
+          "ticker": "01499.HK",
+          "stock_name": "OKG TECH",
+          "title": "Notification Letter to Registered Shareholders and Reply Form",
+          "file_link": "/listedco/listconews/sehk/2026/0730/2026073000227.pdf"
+        },
+        {
+          "date_time": "2026-07-30 12:04",
+          "ticker": "01499.HK",
+          "stock_name": "OKG TECH",
+          "title": "FORM OF PROXY FOR ANNUAL GENERAL MEETING",
+          "file_link": "/listedco/listconews/sehk/2026/0730/2026073000219.pdf"
+        },
+        {
+          "date_time": "2026-07-30 12:03",
+          "ticker": "01499.HK",
+          "stock_name": "OKG TECH",
+          "title": "NOTICE OF ANNUAL GENERAL MEETING",
+          "file_link": "/listedco/listconews/sehk/2026/0730/2026073000211.pdf"
+        },
+        {
+          "date_time": "2026-07-30 12:02",
+          "ticker": "01499.HK",
+          "stock_name": "OKG TECH",
+          "title": "PROPOSALS FOR\n(1) GENERAL MANDATES TO ISSUE AND BUY BACK SHARES&#x3b;\n(2) RE-APPOINTMENT OF AUDITOR&#x3b;\n(3) RE-ELECTION OF RETIRING DIRECTORS&#x3b;\nAND\n(4) NOTICE OF ANNUAL GENERAL MEETING",
+          "file_link": "/listedco/listconews/sehk/2026/0730/2026073000207.pdf"
+        },
+        {
+          "date_time": "2026-07-30 12:01",
+          "ticker": "01499.HK",
+          "stock_name": "OKG TECH",
+          "title": "ANNUAL REPORT 2026",
+          "file_link": "/listedco/listconews/sehk/2026/0730/2026073000201.pdf"
+        },
+        {
+          "date_time": "2026-07-29 19:24",
+          "ticker": "08540.HK",
+          "stock_name": "VICTORY SEC",
+          "title": "ANNOUNCEMENT PURSUANT TO RULE 17.50(2)(u) AND RULES 5.01 AND 5.02 OF THE GEM LISTING RULES",
+          "file_link": "/listedco/listconews/gem/2026/0729/2026072901263.pdf"
+        },
+        {
+          "date_time": "2026-07-29 17:57",
+          "ticker": "02888.HK",
+          "stock_name": "STANCHART",
+          "title": "2026 Half Year Report",
+          "file_link": "/listedco/listconews/sehk/2026/0729/2026072901018.pdf"
+        },
+        {
+          "date_time": "2026-07-29 17:55",
+          "ticker": "06823.HK",
+          "stock_name": "HKT-SS",
+          "title": "Interim Results Announcement for the six months ended 30 June 2026",
+          "file_link": "/listedco/listconews/sehk/2026/0729/2026072900430.pdf"
+        }
+      ],
+      "market_kpi_summary": [
+        {
+          "hkma_count": 2,
+          "sfc_licensed_count": 13,
+          "sfc_pending_count": 6,
+          "total_supply_bn": 306.7,
+          "total_etf_aum_m": 253.12,
+          "btc_price": null,
+          "cb_premium_bps": null,
+          "fear_greed_val": 28,
+          "fear_greed_class": "Fear",
+          "regulatory_news_count": 24,
+          "hkexnews_announcements_count": 30
         }
       ]
     }
@@ -22698,8 +22710,8 @@
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-stablecoin-crypto/",
     "sector_id": "hk-stablecoin-crypto",
     "sector_name": "Hong Kong Stablecoin & Crypto Infrastructure Monitor",
-    "snapshotId": "8cf16e0acfca27a7",
-    "generatedAt": "2026-08-02T10:13:05Z",
-    "dataAsOf": "2026-08-02"
+    "snapshotId": "e0b9c20b20420d91",
+    "generatedAt": "2026-08-03T05:58:23Z",
+    "dataAsOf": "2026-08-03"
   }
 }
