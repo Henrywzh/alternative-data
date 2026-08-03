@@ -6,7 +6,7 @@
     "title": "Hong Kong Stablecoin & Crypto Infrastructure Monitor",
     "description": "HKMA licensed stablecoin issuers, SFC licensed VATP exchanges, HKEX crypto ETF AUM, stablecoin market cap & chain tracking, DEX volume, and market sentiment indicators.",
     "sector": "hk-stablecoin-crypto",
-    "generatedAt": "2026-08-03T05:58:23Z",
+    "generatedAt": "2026-08-03T10:06:03Z",
     "dataAsOf": "2026-08-03",
     "liveSourcesCount": 8,
     "totalSourcesCount": 11,
@@ -642,7 +642,7 @@
       {
         "id": "snapshot_context",
         "type": "markdown",
-        "body": "**Data snapshot:** `e0b9c20b20420d91` · generated 2026-08-03T05:58:23Z.  Official HKMA & SFC regulatory registers and market tracking data."
+        "body": "**Data snapshot:** `3bfa625a26862e9d` · generated 2026-08-03T10:06:03Z.  Official HKMA & SFC regulatory registers and market tracking data."
       },
       {
         "id": "kpi_grid",
@@ -731,7 +731,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-08-03T05:58:23Z",
+    "generatedAt": "2026-08-03T10:06:03Z",
     "status": "ready",
     "datasets": {
       "hkma_issuers": [
@@ -934,14 +934,14 @@
         {
           "name": "Tether",
           "symbol": "USDT",
-          "circulating_usd_bn": 183.15,
-          "market_share_pct": 59.72
+          "circulating_usd_bn": 183.14,
+          "market_share_pct": 59.73
         },
         {
           "name": "USD Coin",
           "symbol": "USDC",
-          "circulating_usd_bn": 72.06,
-          "market_share_pct": 23.5
+          "circulating_usd_bn": 71.97,
+          "market_share_pct": 23.47
         },
         {
           "name": "Sky Dollar",
@@ -952,7 +952,7 @@
         {
           "name": "Dai",
           "symbol": "DAI",
-          "circulating_usd_bn": 4.8,
+          "circulating_usd_bn": 4.81,
           "market_share_pct": 1.57
         },
         {
@@ -964,13 +964,13 @@
         {
           "name": "Ethena USDe",
           "symbol": "USDe",
-          "circulating_usd_bn": 3.87,
+          "circulating_usd_bn": 3.86,
           "market_share_pct": 1.26
         },
         {
           "name": "Global Dollar",
           "symbol": "USDG",
-          "circulating_usd_bn": 3.36,
+          "circulating_usd_bn": 3.35,
           "market_share_pct": 1.09
         },
         {
@@ -980,16 +980,16 @@
           "market_share_pct": 0.98
         },
         {
-          "name": "PayPal USD",
-          "symbol": "PYUSD",
-          "circulating_usd_bn": 2.69,
-          "market_share_pct": 0.88
-        },
-        {
           "name": "BlackRock USD",
           "symbol": "BUIDL",
           "circulating_usd_bn": 2.69,
           "market_share_pct": 0.88
+        },
+        {
+          "name": "PayPal USD",
+          "symbol": "PYUSD",
+          "circulating_usd_bn": 2.68,
+          "market_share_pct": 0.87
         }
       ],
       "stablecoin_history": [
@@ -1527,7 +1527,7 @@
       "stablecoin_chains": [
         {
           "chain": "Ethereum",
-          "circulating_usd_bn": 148.22
+          "circulating_usd_bn": 148.23
         },
         {
           "chain": "Tron",
@@ -1539,15 +1539,15 @@
         },
         {
           "chain": "Solana",
-          "circulating_usd_bn": 16.26
+          "circulating_usd_bn": 16.24
         },
         {
           "chain": "Hyperliquid L1",
-          "circulating_usd_bn": 6.25
+          "circulating_usd_bn": 6.23
         },
         {
           "chain": "Base",
-          "circulating_usd_bn": 4.77
+          "circulating_usd_bn": 4.76
         },
         {
           "chain": "Arbitrum",
@@ -2170,7 +2170,7 @@
         {
           "date": "2026-08-01",
           "month": "2026-08",
-          "dex_volume_usd_bn": 4.7
+          "dex_volume_usd_bn": 4.72
         }
       ],
       "hkex_etf_summary": [
@@ -21892,7 +21892,7 @@
         },
         {
           "title": "Will Base launch a token by ___ ?",
-          "probability_pct": 41.5,
+          "probability_pct": 43.0,
           "end_date": "2027-07-01"
         }
       ],
@@ -22104,28 +22104,10 @@
           "source": "SFC"
         },
         {
-          "issue_date": "2026-06-10",
-          "title": "HKMA demonstrates potential of tokenisation to corporate treasury community",
-          "news_type": "",
-          "source": "HKMA"
-        },
-        {
-          "issue_date": "2026-06-05",
-          "title": "HKMA establishes Tokenised Bond Expert Group",
-          "news_type": "",
-          "source": "HKMA"
-        },
-        {
           "issue_date": "2026-05-26",
           "title": "FSTB and SFC conclude consultations on virtual asset advisory and management regimes",
           "news_type": "GN",
           "source": "SFC"
-        },
-        {
-          "issue_date": "2026-04-28",
-          "title": "Beware of tokens purported to be associated with licensed stablecoin issuers",
-          "news_type": "",
-          "source": "HKMA"
         },
         {
           "issue_date": "2026-04-20",
@@ -22140,22 +22122,10 @@
           "source": "SFC"
         },
         {
-          "issue_date": "2026-04-10",
-          "title": "Granting of stablecoin issuer licences",
-          "news_type": "",
-          "source": "HKMA"
-        },
-        {
           "issue_date": "2026-03-19",
           "title": "Strategic innovation drives growth of Hong Kong’s listing and digital asset markets: SFC Quarterly Report",
           "news_type": "GN",
           "source": "SFC"
-        },
-        {
-          "issue_date": "2026-03-02",
-          "title": "Hong Kong Monetary Authority, Shanghai Data Bureau, and National Technology Innovation Center for Blockchain sign MoU to strengthen Shanghai-Hong Kong cooperation in digitised cargo trade and finance",
-          "news_type": "",
-          "source": "HKMA"
         },
         {
           "issue_date": "2026-02-11",
@@ -22188,12 +22158,6 @@
           "source": "SFC"
         },
         {
-          "issue_date": "2025-11-13",
-          "title": "HKMA announces the new phase of Project Ensemble to support real-value transactions in tokenised deposits and digital assets",
-          "news_type": "",
-          "source": "HKMA"
-        },
-        {
           "issue_date": "2025-11-03",
           "title": "SFC issues new guidance for licensed virtual asset trading platforms to tap global liquidity and diversify offerings",
           "news_type": "GN",
@@ -22218,18 +22182,6 @@
           "source": "SFC"
         },
         {
-          "issue_date": "2025-08-14",
-          "title": "Joint Statement by the HKMA and the SFC on Stablecoin-related Market Movements",
-          "news_type": "",
-          "source": "HKMA"
-        },
-        {
-          "issue_date": "2025-07-29",
-          "title": "Implementation of regulatory regime for stablecoin issuers",
-          "news_type": "",
-          "source": "HKMA"
-        },
-        {
           "issue_date": "2025-07-07",
           "title": "SFC convenes second Digital Asset Consultative Panel meeting",
           "news_type": "GN",
@@ -22243,6 +22195,41 @@
         }
       ],
       "hkexnews_announcements": [
+        {
+          "date_time": "2026-08-03 17:39",
+          "ticker": "02888.HK",
+          "stock_name": "STANCHART",
+          "title": "Transaction in own shares",
+          "file_link": "/listedco/listconews/sehk/2026/0803/2026080302892.pdf"
+        },
+        {
+          "date_time": "2026-08-03 17:22",
+          "ticker": "02388.HK",
+          "stock_name": "BOC HONG KONG<br/>BOC HONG KONG-R",
+          "title": "Monthly Return of Equity Issuer on Movements in Securities for the month ended 31 July 2026",
+          "file_link": "/listedco/listconews/sehk/2026/0803/2026080302686.pdf"
+        },
+        {
+          "date_time": "2026-08-03 16:58",
+          "ticker": "00736.HK",
+          "stock_name": "CHINA PPT INV",
+          "title": "MONTHLY RETURN OF EQUITY ISSUER ON MOVEMENTS IN SECURITIES FOR THE MONTH ENDED 31 JULY 2026",
+          "file_link": "/listedco/listconews/sehk/2026/0803/2026080302194.pdf"
+        },
+        {
+          "date_time": "2026-08-03 16:51",
+          "ticker": "00290.HK",
+          "stock_name": "GOFINTECH QUANT",
+          "title": "Monthly Return of Equity Issuer on Movements in Securities for the Month Ended 31 July 2026",
+          "file_link": "/listedco/listconews/sehk/2026/0803/2026080301986.pdf"
+        },
+        {
+          "date_time": "2026-08-03 15:22",
+          "ticker": "02888.HK",
+          "stock_name": "STANCHART",
+          "title": "Transaction in own shares",
+          "file_link": "/listedco/listconews/sehk/2026/0803/2026080301053.pdf"
+        },
         {
           "date_time": "2026-08-03 12:36",
           "ticker": "00399.HK",
@@ -22380,15 +22367,15 @@
           "date_time": "2026-07-30 16:30",
           "ticker": "00005.HK",
           "stock_name": "HSBC HOLDINGS",
-          "title": "CHANGES IN COMPOSITION OF THE BOARD COMMITTEES",
-          "file_link": "/listedco/listconews/sehk/2026/0730/2026073000358.pdf"
+          "title": "LIST OF DIRECTORS AND THEIR ROLE AND FUNCTION",
+          "file_link": "/listedco/listconews/sehk/2026/0730/2026073000392.pdf"
         },
         {
           "date_time": "2026-07-30 16:30",
           "ticker": "00005.HK",
           "stock_name": "HSBC HOLDINGS",
-          "title": "LIST OF DIRECTORS AND THEIR ROLE AND FUNCTION",
-          "file_link": "/listedco/listconews/sehk/2026/0730/2026073000392.pdf"
+          "title": "CHANGES IN COMPOSITION OF THE BOARD COMMITTEES",
+          "file_link": "/listedco/listconews/sehk/2026/0730/2026073000358.pdf"
         },
         {
           "date_time": "2026-07-30 12:08",
@@ -22417,41 +22404,6 @@
           "stock_name": "OKG TECH",
           "title": "NOTICE OF ANNUAL GENERAL MEETING",
           "file_link": "/listedco/listconews/sehk/2026/0730/2026073000211.pdf"
-        },
-        {
-          "date_time": "2026-07-30 12:02",
-          "ticker": "01499.HK",
-          "stock_name": "OKG TECH",
-          "title": "PROPOSALS FOR\n(1) GENERAL MANDATES TO ISSUE AND BUY BACK SHARES&#x3b;\n(2) RE-APPOINTMENT OF AUDITOR&#x3b;\n(3) RE-ELECTION OF RETIRING DIRECTORS&#x3b;\nAND\n(4) NOTICE OF ANNUAL GENERAL MEETING",
-          "file_link": "/listedco/listconews/sehk/2026/0730/2026073000207.pdf"
-        },
-        {
-          "date_time": "2026-07-30 12:01",
-          "ticker": "01499.HK",
-          "stock_name": "OKG TECH",
-          "title": "ANNUAL REPORT 2026",
-          "file_link": "/listedco/listconews/sehk/2026/0730/2026073000201.pdf"
-        },
-        {
-          "date_time": "2026-07-29 19:24",
-          "ticker": "08540.HK",
-          "stock_name": "VICTORY SEC",
-          "title": "ANNOUNCEMENT PURSUANT TO RULE 17.50(2)(u) AND RULES 5.01 AND 5.02 OF THE GEM LISTING RULES",
-          "file_link": "/listedco/listconews/gem/2026/0729/2026072901263.pdf"
-        },
-        {
-          "date_time": "2026-07-29 17:57",
-          "ticker": "02888.HK",
-          "stock_name": "STANCHART",
-          "title": "2026 Half Year Report",
-          "file_link": "/listedco/listconews/sehk/2026/0729/2026072901018.pdf"
-        },
-        {
-          "date_time": "2026-07-29 17:55",
-          "ticker": "06823.HK",
-          "stock_name": "HKT-SS",
-          "title": "Interim Results Announcement for the six months ended 30 June 2026",
-          "file_link": "/listedco/listconews/sehk/2026/0729/2026072900430.pdf"
         }
       ],
       "market_kpi_summary": [
@@ -22459,13 +22411,13 @@
           "hkma_count": 2,
           "sfc_licensed_count": 13,
           "sfc_pending_count": 6,
-          "total_supply_bn": 306.7,
+          "total_supply_bn": 306.6,
           "total_etf_aum_m": 253.12,
           "btc_price": null,
           "cb_premium_bps": null,
           "fear_greed_val": 28,
           "fear_greed_class": "Fear",
-          "regulatory_news_count": 24,
+          "regulatory_news_count": 16,
           "hkexnews_announcements_count": 30
         }
       ]
@@ -22684,9 +22636,9 @@
     {
       "id": "hkma_news",
       "label": "HKMA Press Releases (Crypto-Filtered)",
-      "status": "success",
-      "records": 8,
-      "freshness": "live",
+      "status": "degraded",
+      "records": 0,
+      "freshness": "unavailable",
       "notes": "HKMA official press releases over the trailing ~13 months, filtered to stablecoin/virtual-asset/crypto relevance by keyword."
     },
     {
@@ -22710,8 +22662,8 @@
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-stablecoin-crypto/",
     "sector_id": "hk-stablecoin-crypto",
     "sector_name": "Hong Kong Stablecoin & Crypto Infrastructure Monitor",
-    "snapshotId": "e0b9c20b20420d91",
-    "generatedAt": "2026-08-03T05:58:23Z",
+    "snapshotId": "3bfa625a26862e9d",
+    "generatedAt": "2026-08-03T10:06:03Z",
     "dataAsOf": "2026-08-03"
   }
 }

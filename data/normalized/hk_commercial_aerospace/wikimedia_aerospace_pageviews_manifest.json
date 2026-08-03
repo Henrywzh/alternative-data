@@ -23,8 +23,8 @@
   "grain": "Wikipedia page × agent × month",
   "history_start": "2015-07",
   "history_end": "2026-08",
-  "records": 4763,
+  "records": 4768,
   "source_status": "partial",
   "caveat": "Wikipedia pageviews are page loads, not unique people or domestic mainland-China demand.",
-  "fetched_at": "2026-08-02T10:13:37.591338+00:00"
+  "fetched_at": "2026-08-03T10:07:58.424166+00:00"
 }

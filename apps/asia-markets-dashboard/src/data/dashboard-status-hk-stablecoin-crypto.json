@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-08-03T05:58:23Z",
-  "snapshot_id": "e0b9c20b20420d91",
+  "generated_at": "2026-08-03T10:06:03Z",
+  "snapshot_id": "3bfa625a26862e9d",
   "data_as_of": "2026-08-03",
   "overall_status": "Healthy",
   "live_sources": 11,
@@ -90,10 +90,10 @@
       "source": "HKMA Press Releases (Crypto-Filtered)",
       "dataset": "hkma_news",
       "type": "Monitor",
-      "status": "Healthy",
+      "status": "Degraded",
       "latest_observation": "2026-08-03",
-      "records": 8,
-      "freshness": "Live",
+      "records": 0,
+      "freshness": "Unavailable",
       "notes": "HKMA official press releases over the trailing ~13 months, filtered to stablecoin/virtual-asset/crypto relevance by keyword."
     },
     {
