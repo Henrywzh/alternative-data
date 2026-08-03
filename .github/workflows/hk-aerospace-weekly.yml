@@ -53,15 +53,14 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
+          # Builders also persist append-only launch history, SATCAT monthly
+          # summaries, and their manifests. Stage all tracked outputs in the
+          # aerospace data directory so an omitted generated file cannot leave
+          # the checkout dirty and make the subsequent pull --rebase fail.
           git add \
             apps/asia-markets-dashboard/.generated/hk-commercial-aerospace-artifact.json \
-            apps/asia-markets-dashboard/src/data/dashboard-status-hk-commercial-aerospace.json \
-            data/normalized/hk_commercial_aerospace/celestrak_constellation_history.jsonl \
-            data/normalized/hk_commercial_aerospace/launch_events_history.jsonl \
-            data/normalized/hk_commercial_aerospace/wikimedia_aerospace_pageviews_monthly.jsonl \
-            data/normalized/hk_commercial_aerospace/wikimedia_aerospace_pageviews_manifest.json \
-            data/normalized/hk_commercial_aerospace/wikimedia_aerospace_pageviews_weekly.jsonl \
-            data/normalized/hk_commercial_aerospace/wikimedia_aerospace_pageviews_weekly_manifest.json
+            apps/asia-markets-dashboard/src/data/dashboard-status-hk-commercial-aerospace.json
+          git add -u data/normalized/hk_commercial_aerospace/
 
           if git diff --staged --quiet; then
             echo "No HK commercial aerospace data changes to commit"
