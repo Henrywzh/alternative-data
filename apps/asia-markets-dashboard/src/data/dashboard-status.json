@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-08-02T10:13:38.106985Z",
-  "snapshot_id": "a60f07d08e64d0ea",
+  "generated_at": "2026-08-03T10:06:36.659303Z",
+  "snapshot_id": "86aac57a752a254a",
   "data_as_of": "2026-07-27",
   "overall_status": "Healthy",
   "live_sources": 11,
@@ -14,7 +14,7 @@
       "status": "Healthy",
       "latest_observation": "2026-07-26",
       "records": 1700,
-      "freshness": "7d old",
+      "freshness": "8d old",
       "notes": "Latest observation is published without a provisional flag."
     },
     {
@@ -24,7 +24,7 @@
       "status": "Healthy",
       "latest_observation": "2026-07-27",
       "records": 542,
-      "freshness": "6d old",
+      "freshness": "7d old",
       "notes": "Latest observation is published without a provisional flag."
     },
     {
@@ -34,7 +34,7 @@
       "status": "Healthy",
       "latest_observation": "2026-07-27",
       "records": 444,
-      "freshness": "6d old",
+      "freshness": "7d old",
       "notes": "Latest observation is published without a provisional flag."
     },
     {
@@ -44,7 +44,7 @@
       "status": "Healthy",
       "latest_observation": "2026-06-01",
       "records": 402,
-      "freshness": "62d old",
+      "freshness": "63d old",
       "notes": "Latest observation is provisional."
     },
     {
@@ -54,7 +54,7 @@
       "status": "Healthy",
       "latest_observation": "2026-06-01",
       "records": 402,
-      "freshness": "62d old",
+      "freshness": "63d old",
       "notes": "Latest observation is provisional."
     },
     {
@@ -64,7 +64,7 @@
       "status": "Healthy",
       "latest_observation": "2026-05-01",
       "records": 389,
-      "freshness": "93d old",
+      "freshness": "94d old",
       "notes": "Normalized residential price index; CCI is not a sentiment measure."
     },
     {
@@ -74,7 +74,7 @@
       "status": "Healthy",
       "latest_observation": "2026-06-01",
       "records": 707,
-      "freshness": "62d old",
+      "freshness": "63d old",
       "notes": "Normalized residential rental index; rental-yield history is a companion dataset."
     },
     {
@@ -84,7 +84,7 @@
       "status": "Healthy",
       "latest_observation": "2026-07-27",
       "records": 1116,
-      "freshness": "6d old",
+      "freshness": "7d old",
       "notes": "Normalized sentiment history; not a transaction or price series."
     },
     {
@@ -94,7 +94,7 @@
       "status": "Healthy",
       "latest_observation": "2026-05-01",
       "records": 1604,
-      "freshness": "93d old",
+      "freshness": "94d old",
       "notes": "Official grade-level rental index; provisional flags are retained."
     },
     {
@@ -104,7 +104,7 @@
       "status": "Healthy",
       "latest_observation": "2026-05-01",
       "records": 802,
-      "freshness": "93d old",
+      "freshness": "94d old",
       "notes": "Official retail rental/price indices; provisional flags are retained."
     },
     {
@@ -133,7 +133,7 @@
       "type": "Measure",
       "status": "Healthy",
       "latest_observation": "—",
-      "records": 153,
+      "records": 187,
       "freshness": "Live at build time",
       "notes": "Deduplicated agency transaction feeds; see the chart/table above."
     },
@@ -188,5 +188,5 @@
       "notes": "The dashboard currently covers six explicit pilot phases; broader developer and phase coverage still requires registry expansion and backfill."
     }
   ],
-  "attachment_filename": "hk-real-estate-dashboard-2026-08-02.html"
+  "attachment_filename": "hk-real-estate-dashboard-2026-08-03.html"
 }
