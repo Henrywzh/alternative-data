@@ -1,9 +1,9 @@
 {
   "generated_at": "2026-08-03T10:06:03Z",
-  "snapshot_id": "3bfa625a26862e9d",
+  "snapshot_id": "19e58d002afc2ef4",
   "data_as_of": "2026-08-03",
   "overall_status": "Healthy",
-  "live_sources": 11,
+  "live_sources": 12,
   "planned_sources": 0,
   "sources": [
     {
@@ -115,6 +115,16 @@
       "records": 0,
       "freshness": "Unavailable",
       "notes": "Latest live spot price, day change, and turnover for every HK Stablecoin & Crypto watchlist ticker."
+    },
+    {
+      "source": "Wikimedia Wikipedia Crypto Pageviews",
+      "dataset": "wikimedia_crypto_pageviews",
+      "type": "Monitor",
+      "status": "Healthy",
+      "latest_observation": "2026-08-01",
+      "records": 4912,
+      "freshness": "Live",
+      "notes": "Daily English Wikipedia pageviews for a curated crypto/DeFi page basket, aggregated into complete Monday-Sunday weekly agent totals and monthly user-by-page history. This measures page-load attention, not unique people, trading activity, or Hong Kong adoption."
     }
   ],
   "attachment_filename": "hk-stablecoin-crypto-dashboard-2026-08-03.html"

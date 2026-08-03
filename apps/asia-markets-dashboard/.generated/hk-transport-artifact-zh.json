@@ -467,6 +467,256 @@
         "layout": "full"
       },
       {
+        "id": "hk_total_transport_journeys_chart",
+        "title": "香港公共交通乘客人次——全部交通模式 (千人次)",
+        "subtitle": "全港月度乘客人次，涵盖专营巴士、港铁（重铁、机场快线、轻铁）、香港电车、公共小巴、渡轮及的士。",
+        "type": "line",
+        "dataset": "hk_total_transport_journeys_history",
+        "sourceId": "hk_passenger_journeys",
+        "encodings": {
+          "x": {
+            "field": "month",
+            "type": "temporal",
+            "label": "月份"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "label": "千人次"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "full"
+      },
+      {
+        "id": "hk_modal_split_chart",
+        "title": "香港公共交通乘客人次按交通模式拆分 (千人次)",
+        "subtitle": "专营巴士、铁路（港铁重铁 + 机场快线 + 轻铁 + 电车合计）、公共小巴、渡轮及的士。",
+        "type": "line",
+        "dataset": "hk_modal_split_history",
+        "sourceId": "hk_passenger_journeys",
+        "encodings": {
+          "x": {
+            "field": "month",
+            "type": "temporal",
+            "label": "月份"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "label": "千人次"
+          },
+          "color": {
+            "field": "series",
+            "type": "nominal",
+            "label": "序列"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "full"
+      },
+      {
+        "id": "hk_franchised_bus_operator_chart",
+        "title": "香港专营巴士乘客人次按营办商拆分 (千人次)",
+        "subtitle": "九巴（运输国际，00062.HK）、城巴、龙运及新大屿山巴士。新巴并入城巴申报后不再单独列示。",
+        "type": "line",
+        "dataset": "hk_franchised_bus_operator_history",
+        "sourceId": "hk_passenger_journeys",
+        "encodings": {
+          "x": {
+            "field": "month",
+            "type": "temporal",
+            "label": "月份"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "label": "千人次"
+          },
+          "color": {
+            "field": "series",
+            "type": "nominal",
+            "label": "序列"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "half"
+      },
+      {
+        "id": "hk_private_car_fleet_ev_share_chart",
+        "title": "香港私家车车队电动车占比",
+        "subtitle": "电动车占累计登记私家车车队的比例，是车队存量/采用率指标，与下方每月首次登记流量占比不同。",
+        "type": "line",
+        "dataset": "hk_private_car_fleet_ev_share_history",
+        "sourceId": "hk_vehicle_stock",
+        "encodings": {
+          "x": {
+            "field": "month",
+            "type": "temporal",
+            "label": "月份"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "label": "电动车占比 (%)"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "full"
+      },
+      {
+        "id": "hk_private_car_net_growth_chart",
+        "title": "香港私家车车队净增长",
+        "subtitle": "月度首次登记净额（首次登记总数减任何原因的取消登记数）——即车队每月净增加量。",
+        "type": "bar",
+        "dataset": "hk_private_car_net_growth_history",
+        "sourceId": "hk_private_car_net_growth",
+        "encodings": {
+          "x": {
+            "field": "month",
+            "type": "temporal",
+            "label": "月份"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "label": "净新登记数"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "half"
+      },
+      {
+        "id": "hk_private_car_ev_make_chart",
+        "title": "香港私家车电动车首次登记按厂名走势",
+        "subtitle": "月度电动车私家车首次登记：比亚迪、Tesla 及其他电动车厂名合计；这是登记流量，不是累计车队存量。",
+        "type": "line",
+        "intent": "trend",
+        "dataset": "hk_private_car_ev_make_history",
+        "sourceId": "hk_private_car_first_reg",
+        "encodings": {
+          "x": {
+            "field": "month",
+            "type": "temporal",
+            "label": "月份"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "label": "首次登记数"
+          },
+          "color": {
+            "field": "series",
+            "type": "nominal",
+            "label": "序列"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "half"
+      },
+      {
+        "id": "hk_private_car_ev_share_chart",
+        "title": "每月私家车首次登记中的电动车占比",
+        "subtitle": "每月电动车首次登记数除以全部私家车首次登记数；与上方累计登记车队中的电动车占比不同。",
+        "type": "line",
+        "intent": "trend",
+        "dataset": "hk_private_car_ev_share_history",
+        "sourceId": "hk_private_car_first_reg",
+        "encodings": {
+          "x": {
+            "field": "month",
+            "type": "temporal",
+            "label": "月份"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "label": "电动车占比 (%)"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "half"
+      },
+      {
+        "id": "mttd_passenger_journeys_chart",
+        "title": "运输署月报表 2.3 乘客人次 (千人次)",
+        "subtitle": "运输署月报表中的港铁本地、港铁机场/轻铁/接驳及专营巴士月度乘客人次；表 2.3 是对上方表 2.1 综合模式总量的另一组营运商/地区拆解。",
+        "type": "line",
+        "dataset": "mttd_passenger_journeys_history",
+        "sourceId": "mttd_passenger_journeys",
+        "encodings": {
+          "x": {
+            "field": "month",
+            "type": "temporal",
+            "label": "月份"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "label": "千人次"
+          },
+          "color": {
+            "field": "series",
+            "type": "nominal",
+            "label": "序列"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "full"
+      },
+      {
+        "id": "censtatd_boundary_movements_chart",
+        "title": "香港跨境移动——C&SD 表 E705",
+        "subtitle": "月度飞机、客运车辆及货运车辆进出境架/辆次；最新 C&SD 单元可能是临时估计，完整 E705 数据另保留船只及客运火车。",
+        "type": "line",
+        "dataset": "censtatd_boundary_movements_history",
+        "sourceId": "censtatd_boundary_movements",
+        "encodings": {
+          "x": {
+            "field": "month",
+            "type": "temporal",
+            "label": "月份"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "label": "移动次数"
+          },
+          "color": {
+            "field": "series",
+            "type": "nominal",
+            "label": "序列"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "full",
+        "maxRows": 500
+      },
+      {
+        "id": "td_carpark_occupancy_chart",
+        "title": "运输署传感器停车位占用率",
+        "subtitle": "仅使用运输署传感器计量停车位的占用状态及空间清单计算观测占用率；重复轮询后才显示历史，未匹配的状态不会计入分母。",
+        "type": "line",
+        "intent": "trend",
+        "dataset": "td_carpark_occupancy_history",
+        "sourceId": "td_carpark_occupancy",
+        "encodings": {
+          "x": {
+            "field": "date",
+            "type": "temporal",
+            "label": "时间"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "label": "占用率 (%)"
+          }
+        },
+        "valueFormat": "number",
+        "layout": "full",
+        "maxRows": 2000
+      },
+      {
         "id": "china_airline_passengers_chart",
         "title": "六家中国上市航空公司客运量走势",
         "subtitle": "中国国航、南方航空、东方航空、春秋航空、海航控股及吉祥航空月度载客人次。数据按各公司公告披露的集团/合并运营口径。",
@@ -763,259 +1013,89 @@
         },
         "valueFormat": "number",
         "layout": "half"
-      },
-      {
-        "id": "hk_total_transport_journeys_chart",
-        "title": "香港公共交通乘客人次——全部交通模式 (千人次)",
-        "subtitle": "全港月度乘客人次，涵盖专营巴士、港铁（重铁、机场快线、轻铁）、香港电车、公共小巴、渡轮及的士。",
-        "type": "line",
-        "dataset": "hk_total_transport_journeys_history",
-        "sourceId": "hk_passenger_journeys",
-        "encodings": {
-          "x": {
-            "field": "month",
-            "type": "temporal",
-            "label": "月份"
-          },
-          "y": {
-            "field": "value",
-            "type": "quantitative",
-            "label": "千人次"
-          }
-        },
-        "valueFormat": "number",
-        "layout": "full"
-      },
-      {
-        "id": "hk_modal_split_chart",
-        "title": "香港公共交通乘客人次按交通模式拆分 (千人次)",
-        "subtitle": "专营巴士、铁路（港铁重铁 + 机场快线 + 轻铁 + 电车合计）、公共小巴、渡轮及的士。",
-        "type": "line",
-        "dataset": "hk_modal_split_history",
-        "sourceId": "hk_passenger_journeys",
-        "encodings": {
-          "x": {
-            "field": "month",
-            "type": "temporal",
-            "label": "月份"
-          },
-          "y": {
-            "field": "value",
-            "type": "quantitative",
-            "label": "千人次"
-          },
-          "color": {
-            "field": "series",
-            "type": "nominal",
-            "label": "序列"
-          }
-        },
-        "valueFormat": "number",
-        "layout": "full"
-      },
-      {
-        "id": "hk_franchised_bus_operator_chart",
-        "title": "香港专营巴士乘客人次按营办商拆分 (千人次)",
-        "subtitle": "九巴（运输国际，00062.HK）、城巴、龙运及新大屿山巴士。新巴并入城巴申报后不再单独列示。",
-        "type": "line",
-        "dataset": "hk_franchised_bus_operator_history",
-        "sourceId": "hk_passenger_journeys",
-        "encodings": {
-          "x": {
-            "field": "month",
-            "type": "temporal",
-            "label": "月份"
-          },
-          "y": {
-            "field": "value",
-            "type": "quantitative",
-            "label": "千人次"
-          },
-          "color": {
-            "field": "series",
-            "type": "nominal",
-            "label": "序列"
-          }
-        },
-        "valueFormat": "number",
-        "layout": "half"
-      },
-      {
-        "id": "hk_private_car_fleet_ev_share_chart",
-        "title": "香港私家车车队电动车占比",
-        "subtitle": "电动车占累计登记私家车车队的比例，是车队存量/采用率指标，与下方每月首次登记流量占比不同。",
-        "type": "line",
-        "dataset": "hk_private_car_fleet_ev_share_history",
-        "sourceId": "hk_vehicle_stock",
-        "encodings": {
-          "x": {
-            "field": "month",
-            "type": "temporal",
-            "label": "月份"
-          },
-          "y": {
-            "field": "value",
-            "type": "quantitative",
-            "label": "电动车占比 (%)"
-          }
-        },
-        "valueFormat": "number",
-        "layout": "full"
-      },
-      {
-        "id": "hk_private_car_net_growth_chart",
-        "title": "香港私家车车队净增长",
-        "subtitle": "月度首次登记净额（首次登记总数减任何原因的取消登记数）——即车队每月净增加量。",
-        "type": "bar",
-        "dataset": "hk_private_car_net_growth_history",
-        "sourceId": "hk_private_car_net_growth",
-        "encodings": {
-          "x": {
-            "field": "month",
-            "type": "temporal",
-            "label": "月份"
-          },
-          "y": {
-            "field": "value",
-            "type": "quantitative",
-            "label": "净新登记数"
-          }
-        },
-        "valueFormat": "number",
-        "layout": "half"
-      },
-      {
-        "id": "hk_private_car_ev_make_chart",
-        "title": "香港私家车电动车首次登记按厂名走势",
-        "subtitle": "月度电动车私家车首次登记：比亚迪、Tesla 及其他电动车厂名合计；这是登记流量，不是累计车队存量。",
-        "type": "line",
-        "intent": "trend",
-        "dataset": "hk_private_car_ev_make_history",
-        "sourceId": "hk_private_car_first_reg",
-        "encodings": {
-          "x": {
-            "field": "month",
-            "type": "temporal",
-            "label": "月份"
-          },
-          "y": {
-            "field": "value",
-            "type": "quantitative",
-            "label": "首次登记数"
-          },
-          "color": {
-            "field": "series",
-            "type": "nominal",
-            "label": "序列"
-          }
-        },
-        "valueFormat": "number",
-        "layout": "half"
-      },
-      {
-        "id": "hk_private_car_ev_share_chart",
-        "title": "每月私家车首次登记中的电动车占比",
-        "subtitle": "每月电动车首次登记数除以全部私家车首次登记数；与上方累计登记车队中的电动车占比不同。",
-        "type": "line",
-        "intent": "trend",
-        "dataset": "hk_private_car_ev_share_history",
-        "sourceId": "hk_private_car_first_reg",
-        "encodings": {
-          "x": {
-            "field": "month",
-            "type": "temporal",
-            "label": "月份"
-          },
-          "y": {
-            "field": "value",
-            "type": "quantitative",
-            "label": "电动车占比 (%)"
-          }
-        },
-        "valueFormat": "number",
-        "layout": "half"
-      },
-      {
-        "id": "mttd_passenger_journeys_chart",
-        "title": "运输署月报表 2.3 乘客人次 (千人次)",
-        "subtitle": "运输署月报表中的港铁本地、港铁机场/轻铁/接驳及专营巴士月度乘客人次；表 2.3 是对上方表 2.1 综合模式总量的另一组营运商/地区拆解。",
-        "type": "line",
-        "dataset": "mttd_passenger_journeys_history",
-        "sourceId": "mttd_passenger_journeys",
-        "encodings": {
-          "x": {
-            "field": "month",
-            "type": "temporal",
-            "label": "月份"
-          },
-          "y": {
-            "field": "value",
-            "type": "quantitative",
-            "label": "千人次"
-          },
-          "color": {
-            "field": "series",
-            "type": "nominal",
-            "label": "序列"
-          }
-        },
-        "valueFormat": "number",
-        "layout": "full"
-      },
-      {
-        "id": "censtatd_boundary_movements_chart",
-        "title": "香港跨境移动——C&SD 表 E705",
-        "subtitle": "月度飞机、客运车辆及货运车辆进出境架/辆次；最新 C&SD 单元可能是临时估计，完整 E705 数据另保留船只及客运火车。",
-        "type": "line",
-        "dataset": "censtatd_boundary_movements_history",
-        "sourceId": "censtatd_boundary_movements",
-        "encodings": {
-          "x": {
-            "field": "month",
-            "type": "temporal",
-            "label": "月份"
-          },
-          "y": {
-            "field": "value",
-            "type": "quantitative",
-            "label": "移动次数"
-          },
-          "color": {
-            "field": "series",
-            "type": "nominal",
-            "label": "序列"
-          }
-        },
-        "valueFormat": "number",
-        "layout": "full",
-        "maxRows": 500
-      },
-      {
-        "id": "td_carpark_occupancy_chart",
-        "title": "运输署传感器停车位占用率",
-        "subtitle": "仅使用运输署传感器计量停车位的占用状态及空间清单计算观测占用率；重复轮询后才显示历史，未匹配的状态不会计入分母。",
-        "type": "line",
-        "intent": "trend",
-        "dataset": "td_carpark_occupancy_history",
-        "sourceId": "td_carpark_occupancy",
-        "encodings": {
-          "x": {
-            "field": "date",
-            "type": "temporal",
-            "label": "时间"
-          },
-          "y": {
-            "field": "value",
-            "type": "quantitative",
-            "label": "占用率 (%)"
-          }
-        },
-        "valueFormat": "number",
-        "layout": "full",
-        "maxRows": 2000
       }
     ],
     "tables": [
+      {
+        "id": "hk_private_car_ev_model_table",
+        "title": "最新电动车私家车厂名/型号快照",
+        "subtitle": "最新可得月度详情文件中的电动车私家车厂名/型号组合；月度时间序列使用另一个运输署表 4.1(e)来源。",
+        "dataset": "hk_private_car_ev_model_latest",
+        "sourceId": "hk_private_car_first_reg_details",
+        "density": "dense",
+        "layout": "full",
+        "columns": [
+          {
+            "field": "summary",
+            "label": "厂名／型号摘要",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "id": "hk_parking_current_district_table",
+        "title": "当前各区确切停车位空置",
+        "subtitle": "按地区汇总当前私家车小时停车场空置；B/C 空置类型及负数不会当作确切空置车位。",
+        "dataset": "hk_parking_current_district",
+        "sourceId": "td_parking_vacancy",
+        "density": "dense",
+        "layout": "full",
+        "columns": [
+          {
+            "field": "summary",
+            "label": "地区摘要",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "id": "mttd_passenger_journeys_latest_table",
+        "title": "运输署表 2.3 最新乘客人次摘要",
+        "subtitle": "按图表使用的简化分组列示最新可用月份；底层快照仍保留原始地区及营办商维度。",
+        "dataset": "mttd_passenger_journeys_latest",
+        "sourceId": "mttd_passenger_journeys",
+        "density": "dense",
+        "layout": "full",
+        "columns": [
+          {
+            "field": "summary",
+            "label": "乘客人次摘要",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "id": "censtatd_boundary_movements_latest_table",
+        "title": "C&SD 表 E705 最新跨境移动摘要",
+        "subtitle": "最新月度飞机、车辆及其他主要移动总量；来源为临时估计的单元会在摘要中标示。",
+        "dataset": "censtatd_boundary_movements_latest",
+        "sourceId": "censtatd_boundary_movements",
+        "density": "dense",
+        "layout": "full",
+        "columns": [
+          {
+            "field": "summary",
+            "label": "移动摘要",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "id": "td_carpark_occupancy_latest_district_table",
+        "title": "传感器停车位按区占用率",
+        "subtitle": "列示运输署传感器计量停车位的最新按区观测占用率。",
+        "dataset": "td_carpark_occupancy_latest_district",
+        "sourceId": "td_carpark_occupancy",
+        "density": "dense",
+        "layout": "full",
+        "columns": [
+          {
+            "field": "summary",
+            "label": "地区占用率",
+            "type": "text"
+          }
+        ]
+      },
       {
         "id": "china_airline_latest_snapshot_table",
         "title": "中国上市航空公司最新运营数据",
@@ -1143,86 +1223,6 @@
             "type": "text"
           }
         ]
-      },
-      {
-        "id": "hk_private_car_ev_model_table",
-        "title": "最新电动车私家车厂名/型号快照",
-        "subtitle": "最新可得月度详情文件中的电动车私家车厂名/型号组合；月度时间序列使用另一个运输署表 4.1(e)来源。",
-        "dataset": "hk_private_car_ev_model_latest",
-        "sourceId": "hk_private_car_first_reg_details",
-        "density": "dense",
-        "layout": "full",
-        "columns": [
-          {
-            "field": "summary",
-            "label": "厂名／型号摘要",
-            "type": "text"
-          }
-        ]
-      },
-      {
-        "id": "hk_parking_current_district_table",
-        "title": "当前各区确切停车位空置",
-        "subtitle": "按地区汇总当前私家车小时停车场空置；B/C 空置类型及负数不会当作确切空置车位。",
-        "dataset": "hk_parking_current_district",
-        "sourceId": "td_parking_vacancy",
-        "density": "dense",
-        "layout": "full",
-        "columns": [
-          {
-            "field": "summary",
-            "label": "地区摘要",
-            "type": "text"
-          }
-        ]
-      },
-      {
-        "id": "mttd_passenger_journeys_latest_table",
-        "title": "运输署表 2.3 最新乘客人次摘要",
-        "subtitle": "按图表使用的简化分组列示最新可用月份；底层快照仍保留原始地区及营办商维度。",
-        "dataset": "mttd_passenger_journeys_latest",
-        "sourceId": "mttd_passenger_journeys",
-        "density": "dense",
-        "layout": "full",
-        "columns": [
-          {
-            "field": "summary",
-            "label": "乘客人次摘要",
-            "type": "text"
-          }
-        ]
-      },
-      {
-        "id": "censtatd_boundary_movements_latest_table",
-        "title": "C&SD 表 E705 最新跨境移动摘要",
-        "subtitle": "最新月度飞机、车辆及其他主要移动总量；来源为临时估计的单元会在摘要中标示。",
-        "dataset": "censtatd_boundary_movements_latest",
-        "sourceId": "censtatd_boundary_movements",
-        "density": "dense",
-        "layout": "full",
-        "columns": [
-          {
-            "field": "summary",
-            "label": "移动摘要",
-            "type": "text"
-          }
-        ]
-      },
-      {
-        "id": "td_carpark_occupancy_latest_district_table",
-        "title": "传感器停车位按区占用率",
-        "subtitle": "列示运输署传感器计量停车位的最新按区观测占用率。",
-        "dataset": "td_carpark_occupancy_latest_district",
-        "sourceId": "td_carpark_occupancy",
-        "density": "dense",
-        "layout": "full",
-        "columns": [
-          {
-            "field": "summary",
-            "label": "地区占用率",
-            "type": "text"
-          }
-        ]
       }
     ],
     "sources": [
@@ -1260,18 +1260,6 @@
           "url": "https://www.cathaypacific.com/content/dam/cx/about-us/investor-relations/interim-annual-reports/en/<year>_cx_<annual_report|interim_report>_en.pdf",
           "language": "PDF",
           "description": "构建时从公开来源读取并校验 国泰航空公司年报／中期报告 Fleet Profile。"
-        }
-      },
-      {
-        "id": "china_airline_traffic",
-        "label": "六家中国上市航空公司月度运营数据公告（巨潮资讯）",
-        "href": "https://www.cninfo.com.cn/",
-        "path": "sources/china_airline_traffic.sql",
-        "query": {
-          "engine": "repository parquet built from official Cninfo operating-data announcements",
-          "url": "https://www.cninfo.com.cn/",
-          "language": "Parquet",
-          "description": "构建时从公开来源读取并校验 六家中国上市航空公司月度运营数据公告（巨潮资讯）。"
         }
       },
       {
@@ -1398,6 +1386,18 @@
           "language": "GeoJSON + CSV",
           "description": "构建时从公开来源读取并校验 运输署传感器计量停车位及实时占用状态。"
         }
+      },
+      {
+        "id": "china_airline_traffic",
+        "label": "六家中国上市航空公司月度运营数据公告（巨潮资讯）",
+        "href": "https://www.cninfo.com.cn/",
+        "path": "sources/china_airline_traffic.sql",
+        "query": {
+          "engine": "repository parquet built from official Cninfo operating-data announcements",
+          "url": "https://www.cninfo.com.cn/",
+          "language": "Parquet",
+          "description": "构建时从公开来源读取并校验 六家中国上市航空公司月度运营数据公告（巨潮资讯）。"
+        }
       }
     ],
     "blocks": [
@@ -1474,79 +1474,6 @@
         "id": "hkia_passengers_chart_block",
         "type": "chart",
         "chartId": "hkia_passengers_chart"
-      },
-      {
-        "id": "china_airline_passengers_chart_block",
-        "type": "chart",
-        "chartId": "china_airline_passengers_chart"
-      },
-      {
-        "id": "china_airline_ask_chart_block",
-        "type": "chart",
-        "chartId": "china_airline_ask_chart",
-        "layout": "half"
-      },
-      {
-        "id": "china_airline_rpk_chart_block",
-        "type": "chart",
-        "chartId": "china_airline_rpk_chart",
-        "layout": "half"
-      },
-      {
-        "id": "china_airline_load_factor_chart_block",
-        "type": "chart",
-        "chartId": "china_airline_load_factor_chart",
-        "layout": "half"
-      },
-      {
-        "id": "china_airline_region_split_chart_block",
-        "type": "chart",
-        "chartId": "china_airline_region_split_chart",
-        "layout": "half"
-      },
-      {
-        "id": "china_airline_cargo_chart_block",
-        "type": "chart",
-        "chartId": "china_airline_cargo_chart",
-        "layout": "half"
-      },
-      {
-        "id": "china_airline_freight_load_factor_chart_block",
-        "type": "chart",
-        "chartId": "china_airline_freight_load_factor_chart",
-        "layout": "half"
-      },
-      {
-        "id": "china_airline_snapshot_table_block",
-        "type": "table",
-        "tableId": "china_airline_latest_snapshot_table"
-      },
-      {
-        "id": "china_airline_cargo_snapshot_table_block",
-        "type": "table",
-        "tableId": "china_airline_cargo_latest_snapshot_table"
-      },
-      {
-        "id": "china_airline_fleet_total_chart_block",
-        "type": "chart",
-        "chartId": "china_airline_fleet_total_chart"
-      },
-      {
-        "id": "china_airline_fleet_net_change_chart_block",
-        "type": "chart",
-        "chartId": "china_airline_fleet_net_change_chart",
-        "layout": "half"
-      },
-      {
-        "id": "china_airline_new_route_chart_block",
-        "type": "chart",
-        "chartId": "china_airline_new_route_chart",
-        "layout": "half"
-      },
-      {
-        "id": "china_airline_operating_events_latest_table_block",
-        "type": "table",
-        "tableId": "china_airline_operating_events_latest_table"
       },
       {
         "id": "hk_total_transport_journeys_chart_block",
@@ -1626,6 +1553,79 @@
         "id": "td_carpark_occupancy_latest_district_table_block",
         "type": "table",
         "tableId": "td_carpark_occupancy_latest_district_table"
+      },
+      {
+        "id": "china_airline_passengers_chart_block",
+        "type": "chart",
+        "chartId": "china_airline_passengers_chart"
+      },
+      {
+        "id": "china_airline_ask_chart_block",
+        "type": "chart",
+        "chartId": "china_airline_ask_chart",
+        "layout": "half"
+      },
+      {
+        "id": "china_airline_rpk_chart_block",
+        "type": "chart",
+        "chartId": "china_airline_rpk_chart",
+        "layout": "half"
+      },
+      {
+        "id": "china_airline_load_factor_chart_block",
+        "type": "chart",
+        "chartId": "china_airline_load_factor_chart",
+        "layout": "half"
+      },
+      {
+        "id": "china_airline_region_split_chart_block",
+        "type": "chart",
+        "chartId": "china_airline_region_split_chart",
+        "layout": "half"
+      },
+      {
+        "id": "china_airline_cargo_chart_block",
+        "type": "chart",
+        "chartId": "china_airline_cargo_chart",
+        "layout": "half"
+      },
+      {
+        "id": "china_airline_freight_load_factor_chart_block",
+        "type": "chart",
+        "chartId": "china_airline_freight_load_factor_chart",
+        "layout": "half"
+      },
+      {
+        "id": "china_airline_snapshot_table_block",
+        "type": "table",
+        "tableId": "china_airline_latest_snapshot_table"
+      },
+      {
+        "id": "china_airline_cargo_snapshot_table_block",
+        "type": "table",
+        "tableId": "china_airline_cargo_latest_snapshot_table"
+      },
+      {
+        "id": "china_airline_fleet_total_chart_block",
+        "type": "chart",
+        "chartId": "china_airline_fleet_total_chart"
+      },
+      {
+        "id": "china_airline_fleet_net_change_chart_block",
+        "type": "chart",
+        "chartId": "china_airline_fleet_net_change_chart",
+        "layout": "half"
+      },
+      {
+        "id": "china_airline_new_route_chart_block",
+        "type": "chart",
+        "chartId": "china_airline_new_route_chart",
+        "layout": "half"
+      },
+      {
+        "id": "china_airline_operating_events_latest_table_block",
+        "type": "table",
+        "tableId": "china_airline_operating_events_latest_table"
       }
     ]
   },
@@ -95470,18 +95470,6 @@
       }
     },
     {
-      "id": "china_airline_traffic",
-      "label": "六家中国上市航空公司月度运营数据公告（巨潮资讯）",
-      "href": "https://www.cninfo.com.cn/",
-      "path": "sources/china_airline_traffic.sql",
-      "query": {
-        "engine": "repository parquet built from official Cninfo operating-data announcements",
-        "url": "https://www.cninfo.com.cn/",
-        "language": "Parquet",
-        "description": "构建时从公开来源读取并校验 六家中国上市航空公司月度运营数据公告（巨潮资讯）。"
-      }
-    },
-    {
       "id": "hk_passenger_journeys",
       "label": "运输署《公共交通及运输月报》表 2.1",
       "href": "https://www.td.gov.hk/en/transport_in_hong_kong/transport_figures/monthly_traffic_and_transport_digest/index.html",
@@ -95605,11 +95593,23 @@
         "language": "GeoJSON + CSV",
         "description": "构建时从公开来源读取并校验 运输署传感器计量停车位及实时占用状态。"
       }
+    },
+    {
+      "id": "china_airline_traffic",
+      "label": "六家中国上市航空公司月度运营数据公告（巨潮资讯）",
+      "href": "https://www.cninfo.com.cn/",
+      "path": "sources/china_airline_traffic.sql",
+      "query": {
+        "engine": "repository parquet built from official Cninfo operating-data announcements",
+        "url": "https://www.cninfo.com.cn/",
+        "language": "Parquet",
+        "description": "构建时从公开来源读取并校验 六家中国上市航空公司月度运营数据公告（巨潮资讯）。"
+      }
     }
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-transport/",
-    "snapshotId": "06a9964a7f07e0e2",
+    "snapshotId": "bd4206cd640e6766",
     "dataAsOf": "2026-07-31"
   }
 }

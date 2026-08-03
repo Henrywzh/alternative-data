@@ -3,10 +3,14 @@
 2. China Southern (中国南方航空, 600029.SH / 01055.HK)
 3. China Eastern (中国东方航空, 600115.SH / 00670.HK)
 4. Spring Airlines (春秋航空, 601021.SH - LCC Benchmark)
+5. Hainan Airlines Holdings (海南航空控股, 600221.SH / 900945.SH)
+6. Juneyao Airlines (吉祥航空, 603885.SH)
 
 Queries Cninfo API for monthly "运营数据" announcements, downloads PDFs,
 caches them locally in data/raw/airline_pdfs/, parses tables using pdfplumber,
 and outputs standardized time series to data/processed/airline_traffic/china_airlines_monthly.parquet.
+Fleet changes and route announcements are written separately to
+data/processed/airline_traffic/china_airlines_operating_events.parquet.
 """
 
 from __future__ import annotations
@@ -50,6 +54,12 @@ AIRLINES = [
     {"name": "China Southern", "name_cn": "中国南方航空", "code": "600029", "org_id": "gssh0600029", "searchkey": ("主要运营数据",)},
     {"name": "China Eastern", "name_cn": "中国东方航空", "code": "600115", "org_id": "gssh0600115", "searchkey": ("运营数据", "经营数据")},
     {"name": "Spring Airlines", "name_cn": "春秋航空", "code": "601021", "org_id": "9900023129", "searchkey": ("主要运营数据",)},
+    {"name": "Hainan Airlines Holdings", "name_cn": "海南航空控股", "code": "600221", "org_id": "gssh0600221", "searchkey": ("主要运营数据",)},
+    {"name": "Juneyao Airlines", "name_cn": "吉祥航空", "code": "603885", "org_id": "9900023633", "searchkey": ("主要运营数据",)},
+]
+
+AIRLINE_EVENT_COLUMNS = [
+    "month", "date", "airline_code", "event_type", "value", "detail",
 ]
 
 
@@ -144,15 +154,12 @@ def download_pdf(url: str, cache_dir: Path) -> bytes | None:
 
 
 # Every carrier's monthly PDF packs several distinct capacity/traffic metrics
-# into one table -- e.g. Air China's has ATK, ASK, AFTK (capacity) and RTK,
-# RPK, RFTK, passenger count, cargo tonnage, plus 2-3 load-factor variants
-# (traffic), all as sibling header rows. Only ASK / RPK / passengers /
-# passenger load factor are wanted here; the rest (ATK, AFTK, RTK, RFTK,
-# cargo tonnage, cargo/combined load factor, aircraft-type breakdown tables)
-# must never be mistaken for one of those four, since a wrong-but-confident
-# label is worse than a gap. Keywords below were verified directly against
-# live PDFs from all 4 carriers (2026-07), checked pairwise for substring
-# collisions between the target list and every ignore-worthy header seen.
+# into one table -- e.g. ATK, ASK, AFTK (capacity) and RTK, RPK, RFTK,
+# passenger count, cargo tonnage, plus 2-3 load-factor variants. The parser
+# keeps the original four passenger metrics and now also captures the stable
+# total/region cargo metrics needed for the airline dashboard. It still
+# ignores aircraft-type breakdowns and prose events (fleet additions and new
+# routes), which need a separate event schema rather than fake numeric rows.
 # "可利用客公里" is China Southern's own pre-2019-03 ASK header (座 seat ->
 # 客 passenger); it switched to "可利用座公里", matching every other carrier,
 # from March 2019 onward. Without it, every China Southern PDF before that
@@ -161,6 +168,26 @@ _ASK_KEYWORDS = ("可用座位公里", "可利用座公里", "可用座公里", 
 _RPK_KEYWORDS = ("收入客公里", "客运人公里", "旅客周转量")
 _PASSENGERS_KEYWORDS = ("乘客人数", "载客人数", "载运旅客人次", "总载运人次")
 _LOAD_FACTOR_KEYWORDS = ("客座利用率", "客座率")
+_AFTK_KEYWORDS = (
+    "可用货运吨公里", "可用货邮吨公里", "可用货邮吨公里数",
+    "可利用货邮吨公里", "可利用吨公里——货邮运", "可利用吨公里—货邮运",
+    "可利用吨公里-货邮运",
+)
+_RFTK_KEYWORDS = (
+    "收入货运吨公里", "收入货邮吨公里", "收入吨公里——货邮运",
+    "收入吨公里—货邮运", "收入吨公里-货邮运", "货邮载运吨公里", "货邮周转量",
+)
+_CARGO_TONNES_KEYWORDS = (
+    "货运及邮运量", "货物及邮件数量", "货物及邮件", "货邮载运量", "货邮载重量",
+)
+_FREIGHT_LOAD_FACTOR_KEYWORDS = ("货物及邮件载运率", "货邮载运率")
+_OVERALL_LOAD_FACTOR_KEYWORDS = ("综合载运率", "总体载运率")
+_ATK_KEYWORDS = ("可利用吨公里", "可用吨公里数", "可用吨公里")
+_RTK_KEYWORDS = ("收入吨公里", "运输周转量")
+_AUXILIARY_METRICS = {
+    "aftk", "rftk", "cargo_tonnes", "freight_load_factor_pct",
+    "overall_load_factor_pct", "atk", "rtk",
+}
 
 # Generic table column-header row repeated at the top of every page a table
 # spans (e.g. Spring Airlines' PDFs run 3 pages; pdfplumber yields a separate
@@ -171,6 +198,15 @@ _LOAD_FACTOR_KEYWORDS = ("客座利用率", "客座率")
 # International/Regional rows landed on the page after this repeat, right
 # after Domestic) silently loses its remaining rows.
 _TABLE_HEADER_REPEAT_MARKERS = ("指标",)
+
+# A few issuers split a metric header across a page boundary.  For example,
+# Juneyao's 2017-04 PDF puts "收入货运吨公里" and "(RFTK)(万吨公里)" on
+# consecutive pages.  The first row carries the value, while the second row
+# carries the unit; the parser must keep the header state long enough to join
+# them before applying a scale.
+_UNIT_CONTINUATION_RE = re.compile(
+    r"^[（(].*(?:百万|万座公里|万人公里|万吨公里|千吨|吨|公斤|千克|公里|％|%)"
+)
 
 _REGION_MAP = {
     "国内": "Domestic", "－国内航线": "Domestic", "国内航线": "Domestic",
@@ -188,14 +224,12 @@ _REGION_MAP = {
 # single lost label only drops that one row instead of cascading into the
 # rows after it (see the blank-first_cell handling in parse_airline_pdf).
 _REGION_ORDER = ("Domestic", "International", "Regional")
+_PASSENGER_HEADER_CONTINUATIONS = {"次）", "次)"}
+_EXPLICIT_ZERO_MARKERS = {"-", "—", "–", "－", "0", "0.0", "0.00"}
 
 
 def _classify_metric_header(first_cell: str) -> str | None:
-    """Return the target metric name if `first_cell` is one of the 4 wanted
-    metric headers, else None (including for real-but-unwanted headers like
-    ATK/AFTK/RTK/RFTK/cargo -- there is no "ignore" list to maintain because
-    anything not explicitly a target keyword is treated the same way: not a
-    reason to keep the current section active).
+    """Return a normalized metric name for a recognized operating-data header.
 
     Also checks the cell with internal spaces stripped: China Eastern's PDF
     wraps its passenger-count header across two lines exactly inside the
@@ -204,6 +238,23 @@ def _classify_metric_header(first_cell: str) -> str | None:
     keyword ("载运旅客人 次（千）") that breaks a plain substring check.
     """
     candidates = (first_cell, first_cell.replace(" ", ""))
+    # Check the freight-specific variants before generic ATK/RTK. Several
+    # issuers name AFTK/RFTK as "可利用吨公里—货邮运" / "收入吨公里—货邮运",
+    # which would otherwise be swallowed by the generic keyword.
+    if any(kw in cell for cell in candidates for kw in _AFTK_KEYWORDS):
+        return "aftk"
+    if any(kw in cell for cell in candidates for kw in _RFTK_KEYWORDS):
+        return "rftk"
+    if any(kw in cell for cell in candidates for kw in _FREIGHT_LOAD_FACTOR_KEYWORDS):
+        return "freight_load_factor_pct"
+    if any(kw in cell for cell in candidates for kw in _OVERALL_LOAD_FACTOR_KEYWORDS):
+        return "overall_load_factor_pct"
+    if any(kw in cell for cell in candidates for kw in _CARGO_TONNES_KEYWORDS):
+        return "cargo_tonnes"
+    if any(kw in cell for cell in candidates for kw in _ATK_KEYWORDS):
+        return "atk"
+    if any(kw in cell for cell in candidates for kw in _RTK_KEYWORDS):
+        return "rtk"
     if any(kw in cell for cell in candidates for kw in _ASK_KEYWORDS):
         return "ask"
     if any(kw in cell for cell in candidates for kw in _RPK_KEYWORDS):
@@ -213,6 +264,38 @@ def _classify_metric_header(first_cell: str) -> str | None:
     if any(kw in cell for cell in candidates for kw in _LOAD_FACTOR_KEYWORDS):
         return "passenger_load_factor_pct"
     return None
+
+
+def _metric_unit_scale(header_cell: str, metric: str) -> float:
+    """Convert an issuer's displayed unit into the normalized parquet unit.
+
+    ASK/RPK and tonne-kilometre metrics are stored in millions. Cargo weight
+    is stored in tonnes. The source PDFs mix millions, ten-thousands, thousand
+    tonnes and million kilograms, so the unit must be inferred from the
+    metric header rather than from the magnitude of the value.
+    """
+    candidates = (header_cell, header_cell.replace(" ", ""))
+    if metric in ("ask", "rpk"):
+        return _ask_rpk_unit_scale(header_cell)
+    if metric in {"aftk", "rftk", "atk", "rtk"}:
+        if any("百万" in cell for cell in candidates):
+            return 1.0
+        if any("万" in cell for cell in candidates):
+            return 0.01
+        return 1.0
+    if metric == "cargo_tonnes":
+        if any("千吨" in cell for cell in candidates):
+            return 1000.0
+        if any("百万" in cell and ("公斤" in cell or "千克" in cell) for cell in candidates):
+            return 1000.0
+        return 1.0
+    return 1.0
+
+
+def _is_unit_continuation(cell: str) -> bool:
+    """Return whether a cell is a wrapped metric-unit continuation row."""
+    compact = cell.replace(" ", "")
+    return bool(_UNIT_CONTINUATION_RE.match(compact))
 
 
 def _ask_rpk_unit_scale(header_cell: str) -> float:
@@ -249,6 +332,23 @@ def parse_airline_pdf(pdf_bytes: bytes, airline_code: str, month_key: str) -> li
     current_section = None
     current_scale = 1.0
     region_idx = 0  # position within _REGION_ORDER for the active section
+    pending_auxiliary_header: tuple[str, str, str] | None = None
+
+    def should_record(raw_value: str, value: float) -> bool:
+        """Keep positive observations and explicit source zero markers.
+
+        A dash in an issuer table means that the disclosed slice had no
+        activity.  It is different from an empty cell, which means the source
+        did not provide a usable observation.  The old ``value > 0`` gate
+        collapsed both cases into a missing row, hiding zero regional traffic
+        during COVID-era months.
+        """
+        marker = raw_value.replace(" ", "").strip()
+        return (
+            value > 0
+            or "load_factor" in (current_section or "")
+            or marker in _EXPLICIT_ZERO_MARKERS
+        )
 
     def record(region: str, value: float) -> None:
         # A metric's region breakdown should only ever appear once per PDF.
@@ -322,7 +422,7 @@ def parse_airline_pdf(pdf_bytes: bytes, airline_code: str, month_key: str) -> li
                         region = _REGION_MAP.get(orphan_region_label)
                         if region in _REGION_ORDER:
                             val = _clean_val(orphan_value_str) * current_scale
-                            if val > 0 or "load_factor" in current_section:
+                            if should_record(orphan_value_str, val):
                                 record(region, val)
                                 region_idx = _REGION_ORDER.index(region) + 1
 
@@ -351,11 +451,48 @@ def parse_airline_pdf(pdf_bytes: bytes, airline_code: str, month_key: str) -> li
                                 region = _REGION_ORDER[region_idx]
                                 region_idx += 1
                                 val = _clean_val(clean_row[1]) * current_scale
-                                if val > 0 or "load_factor" in current_section:
+                                if should_record(clean_row[1], val):
                                     record(region, val)
                             continue
 
+                        # Some PDFs put an auxiliary metric's unit on a
+                        # separate row/page immediately after the header row.
+                        # Resolve the deferred header value before treating the
+                        # continuation as an unrelated header; otherwise a
+                        # value stated in 万吨公里 is stored as if it were in
+                        # millions, creating a 100x RFTK spike.
+                        if pending_auxiliary_header and _is_unit_continuation(first_cell):
+                            pending_metric, pending_value, pending_header = pending_auxiliary_header
+                            current_scale = _metric_unit_scale(
+                                f"{pending_header} {first_cell}", pending_metric
+                            )
+                            header_value = _clean_val(pending_value) * current_scale
+                            if header_value > 0:
+                                record("Total", header_value)
+                            pending_auxiliary_header = None
+                            continue
+                        if pending_auxiliary_header:
+                            pending_metric, pending_value, pending_header = pending_auxiliary_header
+                            header_value = _clean_val(pending_value) * _metric_unit_scale(
+                                pending_header, pending_metric
+                            )
+                            if header_value > 0:
+                                record("Total", header_value)
+                            pending_auxiliary_header = None
+
                         if first_cell in _TABLE_HEADER_REPEAT_MARKERS:
+                            continue
+
+                        # Juneyao's 2023-04, 2023-07, 2024-04 and 2024-11
+                        # PDFs split ``乘客人数（千人/次）`` across a page
+                        # boundary.  The continuation cell is not a new
+                        # metric header; preserve the passenger section so
+                        # the Domestic/International/Regional rows that
+                        # follow it are still attached to passengers.
+                        if (
+                            current_section == "passengers"
+                            and first_cell in _PASSENGER_HEADER_CONTINUATIONS
+                        ):
                             continue
 
                         region = _REGION_MAP.get(first_cell)
@@ -414,16 +551,43 @@ def parse_airline_pdf(pdf_bytes: bytes, airline_code: str, month_key: str) -> li
                                 continue
 
                             current_section = metric
-                            current_scale = (
-                                _ask_rpk_unit_scale(first_cell) if metric in ("ask", "rpk") else 1.0
-                            )
+                            current_scale = _metric_unit_scale(first_cell, metric) if metric else 1.0
+                            # Air China, China Eastern, Spring Airlines and
+                            # Juneyao often put the month's all-operation
+                            # value on the metric-header row itself instead
+                            # of publishing a separate "合计" row. Capture
+                            # that value only for the auxiliary metrics; the
+                            # passenger metrics retain their long-standing
+                            # region-row behavior and derived-total logic.
+                            if metric in _AUXILIARY_METRICS and len(clean_row) > 1:
+                                header_value = _clean_val(clean_row[1]) * current_scale
+                                # Blank header cells are common when the
+                                # issuer prints a separate region/Total row;
+                                # do not turn that blank into a reported 0.0
+                                # and then block the real Total row via the
+                                # first-wins de-duplication rule. A genuine
+                                # zero load factor is not needed for these
+                                # operating tables and can be reconstructed
+                                # from the underlying numerator/denominator.
+                                if header_value > 0:
+                                    # If the header has no unit annotation,
+                                    # defer recording until the next row/page:
+                                    # it may be the wrapped unit continuation.
+                                    # A normal region row will flush this with
+                                    # the default scale on the next iteration.
+                                    if _metric_unit_scale(first_cell, metric) == 1.0:
+                                        pending_auxiliary_header = (
+                                            metric, clean_row[1], first_cell
+                                        )
+                                    else:
+                                        record("Total", header_value)
                             region_idx = 0
                             continue
 
                         if region and current_section and len(clean_row) > 1:
                             val_str = clean_row[1]
                             val = _clean_val(val_str) * current_scale
-                            if val > 0 or "load_factor" in current_section:
+                            if should_record(val_str, val):
                                 record(region, val)
     except Exception as exc:
         print(f"  Error parsing PDF for {airline_code} {month_key}: {exc}")
@@ -431,8 +595,190 @@ def parse_airline_pdf(pdf_bytes: bytes, airline_code: str, month_key: str) -> li
     return records
 
 
-def collect_airline_data(cache_dir: Path, start_year: str = "2015-01-01") -> pd.DataFrame:
-    """Scrape and parse monthly traffic data for all 4 airlines back to start_year."""
+def _pdf_text(pdf_bytes: bytes) -> str:
+    """Extract all visible text once for the prose-event parser."""
+    try:
+        with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
+            return "\n".join(page.extract_text() or "" for page in pdf.pages)
+    except Exception:
+        return ""
+
+
+def _aircraft_count(segment: str) -> int:
+    """Sum aircraft counts in a phrase such as ``3 架 A320、2 架 B737``."""
+    # Several issuers write both a headline total and a parenthetical model
+    # breakdown (e.g. "引进8架飞机（包含3架...）"). The breakdown is the
+    # auditable non-duplicated representation; do not add the headline to it.
+    breakdown = re.search(r"(?:包括|包含)(?P<body>.*)", segment, flags=re.S)
+    if breakdown:
+        segment = breakdown.group("body")
+    return int(sum(float(value) for value in re.findall(r"(\d+)\s*架", segment)))
+
+
+def parse_airline_event_text(text: str, airline_code: str, month_key: str) -> list[dict]:
+    """Parse auditable fleet/route events from an issuer's PDF prose.
+
+    The event layer is deliberately sparse: an absent event row means the
+    announcement did not expose a matching event, not that the value was
+    backfilled as zero. Fleet additions/retirements may contain several
+    aircraft types in one sentence, so their values are summed from every
+    ``N 架`` fragment in that sentence. Route events retain a short source
+    phrase for later review instead of pretending that a route count is a
+    continuous KPI.
+    """
+    if not text:
+        return []
+
+    # PDF extraction often wraps a single fleet sentence across several
+    # visual lines (especially inside the parenthetical model breakdown), so
+    # collapse all whitespace before applying punctuation-based boundaries.
+    normalized = re.sub(r"\s+", " ", text).strip()
+    normalized = re.sub(
+        r"(?<=[\u4e00-\u9fff])\s+(?=[\u4e00-\u9fff])", "", normalized
+    )
+    rows: list[dict] = []
+
+    def add_event(event_type: str, value: int, detail: str) -> None:
+        detail = re.split(r"(?:（[一二三四五六七八九十]+）|\([一二三四五六七八九十]+\))", detail, maxsplit=1)[0]
+        rows.append(
+            {
+                "month": month_key,
+                "date": f"{month_key}-01",
+                "airline_code": airline_code,
+                "event_type": event_type,
+                "value": int(value),
+                "detail": re.sub(r"\s+", " ", detail).strip(),
+            }
+        )
+
+    added_pattern = re.compile(
+        r"(?:引进|新增)(?P<body>.*?)(?=(?:退出|退役|退租|月末|截至|合计运营)|[。；\n]|$)",
+        flags=re.S,
+    )
+    for added_match in added_pattern.finditer(normalized):
+        body = added_match.group("body")
+        if "架" in body:
+            add_event("fleet_added_aircraft", _aircraft_count(body), f"{added_match.group(0)}")
+            break
+
+    retired_pattern = re.compile(
+        r"(?:退出|退役(?!的)|退租)(?P<body>.*?)(?=(?:月末|截至|合计运营)|[。；\n]|$)",
+        flags=re.S,
+    )
+    for retired_match in retired_pattern.finditer(normalized):
+        body = retired_match.group("body")
+        if "架" in body:
+            add_event("fleet_retired_aircraft", _aircraft_count(body), retired_match.group(0))
+            break
+
+    fleet_total: int | None = None
+    fleet_detail = ""
+    # Early China Eastern bulletins and several fleet tables disclose the
+    # total as a row rather than in the prose, e.g. "合 计 215 224 132
+    # 571".  Restrict these patterns to the fleet section and exclude
+    # "客机合计"/"货机合计" subtotals; the latter was the source of the
+    # spurious two-aircraft China Eastern observations.  This table-first
+    # order also preserves the consolidated Juneyao + Jiuyuan total (130)
+    # when the prose separately states the parent company's 93 aircraft.
+    fleet_markers = ("飞机机队", "机队情况", "机队规模", "机队具体情况", "运力情况")
+    marker_positions = [normalized.find(marker) for marker in fleet_markers if normalized.find(marker) >= 0]
+    fleet_section = normalized[min(marker_positions):] if marker_positions else ""
+    fleet_table_patterns = (
+        r"(?:客货(?:运)?飞机)合计\s+(?:[-\d,.]+\s+){3}(\d{1,4})",
+        r"(?<!客机)(?<!货机)(?<!飞机)合计\s+(?:[-\d,.]+\s+){3}(\d{1,4})",
+        r"(?<!客机)(?<!货机)(?<!飞机)合计\s*[—\-]+\s*(\d{1,4})",
+    )
+    for pattern in fleet_table_patterns:
+        match = re.search(pattern, fleet_section)
+        if match:
+            fleet_total = int(match.group(1))
+            fleet_detail = match.group(0)
+            break
+    if fleet_total is None:
+        total_patterns = (
+            r"(?:合计运营|合计运营飞机)\s*[:：]?\s*(\d{1,4})\s*架",
+            r"月末(?:合计)?\s*(\d{1,4})\s*架",
+            r"(?:公司|本公司|本集团)?(?:共)?运营\s*(\d{1,4})\s*架",
+        )
+        for pattern in total_patterns:
+            match = re.search(pattern, normalized)
+            if match:
+                fleet_total = int(match.group(1))
+                fleet_detail = match.group(0)
+                break
+    if fleet_total is not None:
+        add_event("fleet_total_aircraft", fleet_total, fleet_detail)
+
+    # Record an explicit no-new-route disclosure as zero.  This keeps the
+    # chart honest: zero means the issuer explicitly said none, while an
+    # absent row still means the bulletin did not disclose route activity.
+    no_route_match = re.search(
+        r"(?:未|无|暂无|没有|均未)(?:新增|新开|开通)(?:主要|定期)?航线", normalized
+    )
+
+    route_matches: list[str] = []
+    for route_pattern in (
+        # The route marker must appear close to the action verb. This avoids
+        # consuming headings such as “新开、复航、加密航线情况如下” and then
+        # counting the heading itself as an additional route.
+        r"(?:(?:新开|新增)(?!主要航线情况|以下定期航线)[^。；\n]{0,24}(?:=|＝|—|－|-)[^。；\n]{0,100})",
+    ):
+        route_matches.extend(re.findall(route_pattern, normalized))
+    route_matches.extend(
+        "新增" + body
+        for body in re.findall(
+            r"新增主要航线情况(?:如下)?\s*[:：](?P<body>[^。；]{0,240})",
+            normalized,
+        )
+    )
+    # The two patterns intentionally cover issuers that do or do not repeat
+    # the word 航线, so the same route can be found once in short form and
+    # once with its frequency suffix. Keep the longest overlapping phrase.
+    unique_routes: list[str] = []
+    for phrase in sorted(set(route_matches), key=len, reverse=True):
+        if not any(phrase in existing or existing in phrase for existing in unique_routes):
+            unique_routes.append(phrase)
+    route_matches = sorted(unique_routes)
+    route_matches = [
+        phrase.strip()
+        for phrase in route_matches
+        if any(token in phrase for token in ("=", "＝", "—", "－", "往返", "每周", "-"))
+    ]
+    numeric_route_matches = list(re.finditer(
+        r"(?:新开|新增)(?P<body>[^。；]{0,160}?)(?P<count>\d{1,2})\s*条[^。；]{0,20}?航线",
+        normalized,
+    ))
+    if route_matches or numeric_route_matches:
+        route_count = 0
+        for phrase in route_matches:
+            route_parts = re.split(r"[、，,]", phrase)
+            detailed_parts = [
+                part for part in route_parts
+                if any(token in part for token in ("=", "＝", "—", "－", "往返", "每周", "-"))
+            ]
+            route_count += max(1, len(detailed_parts))
+        route_count += sum(int(match.group("count")) for match in numeric_route_matches)
+        details = route_matches + [
+            f"{match.group(0)}" for match in numeric_route_matches
+        ]
+        add_event("new_route_event_count", route_count, "；".join(details))
+    elif no_route_match:
+        add_event("new_route_event_count", 0, no_route_match.group(0))
+
+    return rows
+
+
+def parse_airline_events(pdf_bytes: bytes, airline_code: str, month_key: str) -> list[dict]:
+    """Parse fleet/route event rows from a monthly operating-data PDF."""
+    return parse_airline_event_text(_pdf_text(pdf_bytes), airline_code, month_key)
+
+
+def collect_airline_data(
+    cache_dir: Path,
+    start_year: str = "2015-01-01",
+    events_out: list[dict] | None = None,
+) -> pd.DataFrame:
+    """Scrape and parse monthly operating data for all six airlines."""
     all_rows = []
 
     for info in AIRLINES:
@@ -459,6 +805,8 @@ def collect_airline_data(cache_dir: Path, start_year: str = "2015-01-01") -> pd.
             if pdf_bytes:
                 rows = parse_airline_pdf(pdf_bytes, code, month_key)
                 all_rows.extend(rows)
+                if events_out is not None:
+                    events_out.extend(parse_airline_events(pdf_bytes, code, month_key))
             if i % 20 == 0 or i == len(announcements):
                 print(f"    Processed {i}/{len(announcements)} PDFs...")
             time.sleep(0.02)
@@ -480,11 +828,13 @@ def main() -> None:
     data_dir = Path(args.data_dir)
     cache_dir = data_dir / "raw" / "airline_pdfs"
     out_path = data_dir / "processed" / "airline_traffic" / "china_airlines_monthly.parquet"
+    event_path = data_dir / "processed" / "airline_traffic" / "china_airlines_operating_events.parquet"
 
-    print("Scraping Full Historical Aviation Traffic Data (China Big 3 + Spring Airlines)")
+    print("Scraping Full Historical Aviation Traffic Data (six listed Chinese airlines)")
     print("=" * 65)
 
-    df = collect_airline_data(cache_dir, start_year=args.start_year)
+    event_rows: list[dict] = []
+    df = collect_airline_data(cache_dir, start_year=args.start_year, events_out=event_rows)
     if not df.empty:
         out_path.parent.mkdir(parents=True, exist_ok=True)
         df.to_parquet(out_path, index=False)
@@ -492,6 +842,16 @@ def main() -> None:
         print("\nSummary of extracted months by airline:")
         summary = df.groupby(["airline_code", "metric"])["month"].nunique().unstack(fill_value=0)
         print(summary)
+        if event_rows:
+            events = pd.DataFrame(event_rows)
+            events = events.drop_duplicates(subset=["month", "airline_code", "event_type"], keep="last")
+            events = events[AIRLINE_EVENT_COLUMNS].sort_values(
+                ["month", "airline_code", "event_type"]
+            ).reset_index(drop=True)
+            event_path.parent.mkdir(parents=True, exist_ok=True)
+            events.to_parquet(event_path, index=False)
+            print(f"\nSuccessfully wrote {event_path} ({len(events)} event rows)")
+            print(events.groupby(["airline_code", "event_type"]).size().unstack(fill_value=0))
     else:
         print("No traffic records extracted.")
 

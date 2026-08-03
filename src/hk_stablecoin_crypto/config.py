@@ -76,6 +76,26 @@ BINANCE_TICKER_URL = "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT
 FEAR_GREED_URL = "https://api.alternative.me/fng/?limit=3"
 POLYMARKET_SEARCH_URL = "https://gamma-api.polymarket.com/public-search"
 
+WIKIMEDIA_PAGEVIEWS_API_BASE = "https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article"
+WIKIMEDIA_PAGEVIEWS_PROJECT = "en.wikipedia.org"
+WIKIMEDIA_PAGEVIEWS_START_DATE = "20150701"
+WIKIMEDIA_PAGEVIEWS_AGENTS = ("user", "spider", "automated", "all-agents")
+WIKIMEDIA_PAGEVIEWS_REQUEST_DELAY_SECONDS = 0.75
+
+# A stable, topic-focused English Wikipedia basket for global crypto attention.
+# This is an attention proxy, not a measure of unique users, trading activity,
+# or Hong Kong adoption.
+WIKIMEDIA_CRYPTO_PAGES = (
+    {"page_id": "bitcoin", "title": "Bitcoin", "label": "Bitcoin", "topic_group": "Market"},
+    {"page_id": "ethereum", "title": "Ethereum", "label": "Ethereum", "topic_group": "Market"},
+    {"page_id": "cryptocurrency", "title": "Cryptocurrency", "label": "Cryptocurrency", "topic_group": "Market"},
+    {"page_id": "stablecoin", "title": "Stablecoin", "label": "Stablecoin", "topic_group": "Stablecoin"},
+    {"page_id": "tether", "title": "Tether (cryptocurrency)", "label": "Tether", "topic_group": "Stablecoin"},
+    {"page_id": "usd_coin", "title": "USD Coin", "label": "USD Coin", "topic_group": "Stablecoin"},
+    {"page_id": "decentralized_finance", "title": "Decentralized finance", "label": "Decentralized finance", "topic_group": "DeFi"},
+    {"page_id": "decentralized_exchange", "title": "Decentralized exchange", "label": "Decentralized exchange", "topic_group": "DeFi"},
+)
+
 HK_CHINA_STABLECOINS_TO_WATCH = ["AxCNH", "HKDAP"]
 
 NAMING_COLLISION_NOTE = "Anchorpoint Financial (HKMA licence FRS01, SCB+Animoca+HKT JV, HKD-pegged HKDAP) is DIFFERENT from AnchorX (Jinyong Investment/01328.HK, CNH-pegged AxCNH). Do NOT conflate."
