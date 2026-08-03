@@ -18,6 +18,7 @@ from .sources.polymarket_events import fetch_all_polymarket_catalysts
 from .sources.sfc_news import fetch_sfc_news
 from .sources.sfc_vatp_register import fetch_vatp_register
 from .sources.watchlist_price import fetch_watchlist_spot_quotes
+from .sources.wikimedia_pageviews import fetch_wikipedia_crypto_pageviews_daily
 
 logger = logging.getLogger(__name__)
 
@@ -72,6 +73,11 @@ QUALITY_SPECS = {
         "required": ["ticker", "date", "latest_price_hkd", "fetched_at"],
         "max_age_days": 3,
     },
+    "wikimedia_crypto_pageviews": {
+        "kind": "measure",
+        "required": ["page_id", "agent", "date", "views", "fetched_at"],
+        "max_age_days": 45,
+    },
 }
 
 
@@ -125,6 +131,13 @@ def run_stage_1_pipeline() -> dict[str, Any]:
     except Exception as exc:
         logger.exception("DefiLlama ingestion failed")
         results["stablecoin_supply"] = {"error": str(exc)}
+
+    try:
+        logger.info("Ingesting Wikimedia crypto attention...")
+        results["wikimedia_crypto_pageviews"] = fetch_wikipedia_crypto_pageviews_daily()
+    except Exception as exc:
+        logger.exception("Wikimedia crypto attention ingestion failed")
+        results["wikimedia_crypto_pageviews"] = {"error": str(exc)}
 
     try:
         logger.info("Ingesting HKEX ETF AUM...")

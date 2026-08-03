@@ -1,6 +1,6 @@
 {
   "generated_at": "2026-08-03T10:06:03.907780Z",
-  "snapshot_id": "e391d5598824ba1b",
+  "snapshot_id": "c88208c64ab47a9b",
   "data_as_of": "2026-07-31",
   "overall_status": "Healthy",
   "live_sources": 13,
@@ -37,17 +37,7 @@
       "notes": "Fleet totals at each official report period end for the Company, HK Express, Air Hong Kong and Group grand total. This is a semiannual/annual series, not a monthly traffic-announcement field."
     },
     {
-      "source": "China Listed Airlines Monthly Operating Data",
-      "dataset": "china_airline_traffic",
-      "type": "Measure",
-      "status": "Healthy",
-      "latest_observation": "2026-06-01",
-      "records": 6460,
-      "freshness": "Live",
-      "notes": "Monthly passenger and cargo operating data for six China-listed airline groups, plus sparse PDF-derived fleet additions/retirements, fleet totals and new-route events; passenger fields are split by domestic, international and regional operations."
-    },
-    {
-      "source": "Transport Department Monthly Traffic and Transport Digest \u2014 Table 2.1",
+      "source": "Transport Department Monthly Traffic and Transport Digest — Table 2.1",
       "dataset": "hk_passenger_journeys",
       "type": "Measure",
       "status": "Healthy",
@@ -57,7 +47,7 @@
       "notes": "Monthly public transport passenger journeys ('000s) by operator: KMB, Citybus, LWB, NLB (franchised buses), MTR heavy rail, Airport Express, Light Rail, Tramways, public light buses, ferries, taxis, and the territory-wide total."
     },
     {
-      "source": "Transport Department Monthly Traffic and Transport Digest \u2014 Table 2.3",
+      "source": "Transport Department Monthly Traffic and Transport Digest — Table 2.3",
       "dataset": "mttd_passenger_journeys",
       "type": "Measure",
       "status": "Healthy",
@@ -67,7 +57,7 @@
       "notes": "Monthly passenger journeys ('000s) for MTRC rail lines and franchised-bus operators, with HK Island, Kowloon/New Territories and cross-harbour geography where reported. Publication lags the current month by roughly two to three months."
     },
     {
-      "source": "C&SD Table E705 \u2014 Cross-Boundary Aircraft, Vessel, Vehicle and Train Movements",
+      "source": "C&SD Table E705 — Cross-Boundary Aircraft, Vessel, Vehicle and Train Movements",
       "dataset": "censtatd_boundary_movements",
       "type": "Measure",
       "status": "Healthy",
@@ -77,7 +67,7 @@
       "notes": "Monthly inward and outward movements of aircraft, ocean/river/cargo vessels, goods/passenger vehicles and passenger trains. Some latest-year cells may be provisional estimates or N.A.; monthly history begins in 2023 in the current workbook."
     },
     {
-      "source": "Transport Department Registration and Licensing of Vehicles \u2014 Table 4.1(a), Private Cars",
+      "source": "Transport Department Registration and Licensing of Vehicles — Table 4.1(a), Private Cars",
       "dataset": "hk_vehicle_stock",
       "type": "Measure",
       "status": "Healthy",
@@ -87,7 +77,7 @@
       "notes": "Monthly private car fleet stock (total registered and licensed) split by fuel type -- Petrol, Electric, Diesel, Other -- the basis for the EV road-fleet registered-share chart."
     },
     {
-      "source": "Transport Department Net First Registration of Private Cars \u2014 Table 4.1(c)",
+      "source": "Transport Department Net First Registration of Private Cars — Table 4.1(c)",
       "dataset": "hk_private_car_net_growth",
       "type": "Measure",
       "status": "Healthy",
@@ -135,6 +125,16 @@
       "records": 38,
       "freshness": "Live snapshot at build time",
       "notes": "Observed occupancy rate for sensor-backed metered/on-street parking spaces. The static inventory supplies the listed-space denominator and the live CSV marks each observed space occupied or vacant; sample_size and listed_spaces remain visible because a small number of status rows may be unmatched."
+    },
+    {
+      "source": "China Listed Airlines Monthly Operating Data",
+      "dataset": "china_airline_traffic",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2026-06-01",
+      "records": 32737,
+      "freshness": "Live",
+      "notes": "Monthly passenger and cargo operating data for six China-listed airline groups, plus sparse PDF-derived fleet additions/retirements, fleet totals and new-route events; passenger fields are split by domestic, international and regional operations."
     }
   ],
   "attachment_filename": "hk-transport-dashboard-2026-08-03.html"

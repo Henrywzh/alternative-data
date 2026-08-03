@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import pandas as pd
 import pytest
+from unittest.mock import Mock, patch
 
 from src.hk_stablecoin_crypto.config import HKEX_ETF_FUNDS, NAMING_COLLISION_NOTE
 from src.hk_stablecoin_crypto.pipeline import QUALITY_SPECS, run_stage_1_pipeline
@@ -17,6 +18,11 @@ from src.hk_stablecoin_crypto.sources.hkma_news import fetch_hkma_news
 from src.hk_stablecoin_crypto.sources.hkma_register import fetch_licensed_issuers
 from src.hk_stablecoin_crypto.sources.sfc_news import fetch_sfc_news
 from src.hk_stablecoin_crypto.sources.sfc_vatp_register import fetch_vatp_register
+from src.hk_stablecoin_crypto.sources.wikimedia_pageviews import (
+    build_agent_weekly_summary,
+    fetch_wikipedia_crypto_pageviews_daily,
+    load_user_page_monthly_summary,
+)
 
 
 def test_fetch_hkma_register():
@@ -73,6 +79,61 @@ def test_hk_china_stablecoins_not_yet_listed():
     symbols = df["symbol"].tolist()
     assert "AxCNH" not in symbols
     assert "HKDAP" not in symbols
+
+
+def test_wikimedia_crypto_pageviews_builds_cross_year_weekly_and_monthly_cache(tmp_path):
+    import src.hk_stablecoin_crypto.sources.wikimedia_pageviews as pageviews
+
+    def fake_get(url, **kwargs):
+        response = Mock(status_code=200, url=url)
+        response.raise_for_status.return_value = None
+        agent = next(value for value in ("user", "spider", "automated", "all-agents") if f"/{value}/" in url)
+        dates = [
+            "2025122900", "2025123000", "2025123100", "2026010100",
+            "2026010200", "2026010300", "2026010400",
+        ]
+        response.json.return_value = {
+            "items": [
+                {
+                    "project": "en.wikipedia",
+                    "article": "Bitcoin",
+                    "granularity": "daily",
+                    "timestamp": timestamp,
+                    "access": "all-access",
+                    "agent": agent,
+                    "views": index + 1,
+                }
+                for index, timestamp in enumerate(dates)
+            ]
+        }
+        return response
+
+    with (
+        patch.object(pageviews, "WEEKLY_NORMALIZED_PATH", tmp_path / "weekly.jsonl"),
+        patch.object(pageviews, "WEEKLY_MANIFEST_PATH", tmp_path / "weekly-manifest.json"),
+        patch.object(pageviews, "MONTHLY_NORMALIZED_PATH", tmp_path / "monthly.jsonl"),
+        patch.object(pageviews, "MONTHLY_MANIFEST_PATH", tmp_path / "monthly-manifest.json"),
+        patch.object(pageviews, "WIKIMEDIA_PAGEVIEWS_REQUEST_DELAY_SECONDS", 0),
+        patch.object(pageviews, "save_raw_snapshot"),
+        patch.object(pageviews.requests, "get", side_effect=fake_get),
+    ):
+        frame = fetch_wikipedia_crypto_pageviews_daily(start_date="20251229", end_date="20260104")
+        monthly = frame.attrs["user_monthly_summary"]
+        cached_monthly = load_user_page_monthly_summary()
+
+    assert frame.attrs["source"] == "live"
+    assert len(frame) == 8 * 4 * 7
+    assert set(frame["agent"]) == {"user", "spider", "automated", "all-agents"}
+    weekly = frame.attrs["weekly_summary"]
+    assert len(weekly) == 4
+    assert set(weekly["week"]) == {"2025-12-29"}
+    assert int(weekly.loc[weekly["agent"] == "user", "views"].iloc[0]) == 8 * sum(range(1, 8))
+    assert len(monthly) == 8
+    assert set(monthly["month"]) == {"2025-12"}
+    assert cached_monthly.equals(monthly)
+    assert build_agent_weekly_summary(frame, lookback_weeks=1).sort_values("agent").reset_index(drop=True).equals(
+        weekly.sort_values("agent").reset_index(drop=True)
+    )
 
 
 def test_fetch_etf_aum_known_funds():

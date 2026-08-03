@@ -43,7 +43,17 @@ from src.hk_stablecoin_crypto.sources.polymarket_events import fetch_all_polymar
 from src.hk_stablecoin_crypto.sources.sfc_news import fetch_sfc_news
 from src.hk_stablecoin_crypto.sources.sfc_vatp_register import fetch_vatp_register
 from src.hk_stablecoin_crypto.sources.watchlist_price import fetch_watchlist_spot_quotes
+from src.hk_stablecoin_crypto.sources.wikimedia_pageviews import (
+    build_agent_weekly_summary,
+    build_latest_page_summary,
+    build_user_page_monthly_summary,
+    fetch_wikipedia_crypto_pageviews_daily,
+    load_agent_weekly_summary,
+    load_user_page_monthly_summary,
+)
 from history_policy import DEFAULT_HISTORY_YEARS, history_window
+
+WIKIMEDIA_CRYPTO_WEEKLY_ARTIFACT_WEEKS = 500
 
 PUBLIC_SOURCES = {
     "hkma_register": {
@@ -189,6 +199,19 @@ PUBLIC_SOURCES = {
             "description": "Latest live spot price, day change, and turnover for every HK Stablecoin & Crypto watchlist ticker.",
         },
     },
+    "wikimedia_crypto_pageviews": {
+        "id": "wikimedia_crypto_pageviews",
+        "label": "Wikimedia Wikipedia Crypto Pageviews",
+        "href": "https://pageviews.wmcloud.org/",
+        "path": "sources/wikimedia_pageviews.sql",
+        "query": {
+            "engine": "Wikimedia Analytics Pageviews REST API",
+            "url": "https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article",
+            "language": "REST",
+            "sql": "SELECT page_id, agent, date, views FROM wikimedia_crypto_pageviews_daily;",
+            "description": "Daily English Wikipedia pageviews for a curated crypto/DeFi page basket, aggregated into complete Monday-Sunday weekly agent totals and monthly user-by-page history. This measures page-load attention, not unique people, trading activity, or Hong Kong adoption.",
+        },
+    },
 }
 
 
@@ -216,8 +239,8 @@ def build_fear_greed_daily_history(frame: pd.DataFrame) -> pd.DataFrame:
     """Keep daily Fear & Greed observations plus a trailing seven-day mean.
 
     The portable Cloudflare chart continues to use ``fear_greed_history`` at
-    monthly grain. This separate dataset is consumed by Streamlit, where the
-    daily signal and its smoother research view are useful.
+    monthly grain.  This separate compact dataset is consumed by Streamlit,
+    where the daily signal and its smoother research view are useful.
     """
     columns = ["date", "score", "classification", "score_7d_avg"]
     if frame.empty or not {"date", "score"}.issubset(frame.columns):
@@ -434,6 +457,36 @@ def build_artifact(now: datetime | None = None) -> tuple[dict[str, Any], dict[st
     except Exception as e:
         print(f"Warning: Crypto signals fetch failed - {e}")
 
+    # 6. Wikimedia crypto attention. Daily rows are the source grain; the
+    # compact weekly cache and monthly user-by-page dataset are used downstream.
+    wikipedia_crypto_daily_df = pd.DataFrame()
+    wikipedia_crypto_source = "unavailable"
+    try:
+        wikipedia_crypto_daily_df = fetch_wikipedia_crypto_pageviews_daily()
+        wikipedia_crypto_source = wikipedia_crypto_daily_df.attrs.get("source", "unavailable")
+        if wikipedia_crypto_source == "live":
+            live_count += 1
+    except Exception as e:
+        print(f"Warning: Wikimedia crypto Pageviews fetch failed - {e}")
+    wikipedia_crypto_weekly_df = wikipedia_crypto_daily_df.attrs.get("weekly_summary")
+    if not isinstance(wikipedia_crypto_weekly_df, pd.DataFrame):
+        wikipedia_crypto_weekly_df = load_agent_weekly_summary()
+    if not isinstance(wikipedia_crypto_weekly_df, pd.DataFrame):
+        wikipedia_crypto_weekly_df = build_agent_weekly_summary(wikipedia_crypto_daily_df)
+    if not wikipedia_crypto_weekly_df.empty:
+        weekly_periods = sorted(wikipedia_crypto_weekly_df["week"].dropna().unique())
+        if len(weekly_periods) > WIKIMEDIA_CRYPTO_WEEKLY_ARTIFACT_WEEKS:
+            first_display_week = weekly_periods[-WIKIMEDIA_CRYPTO_WEEKLY_ARTIFACT_WEEKS]
+            wikipedia_crypto_weekly_df = wikipedia_crypto_weekly_df[
+                wikipedia_crypto_weekly_df["week"].ge(first_display_week)
+            ].reset_index(drop=True)
+    wikipedia_crypto_user_monthly_df = wikipedia_crypto_daily_df.attrs.get("user_monthly_summary")
+    if not isinstance(wikipedia_crypto_user_monthly_df, pd.DataFrame):
+        wikipedia_crypto_user_monthly_df = load_user_page_monthly_summary()
+    if not isinstance(wikipedia_crypto_user_monthly_df, pd.DataFrame) or wikipedia_crypto_user_monthly_df.empty:
+        wikipedia_crypto_user_monthly_df = build_user_page_monthly_summary(wikipedia_crypto_daily_df)
+    wikipedia_crypto_latest_df = build_latest_page_summary(wikipedia_crypto_user_monthly_df)
+
     # 6. Polymarket Catalysts (Tag-filtered)
     poly_rows = []
     try:
@@ -556,6 +609,9 @@ def build_artifact(now: datetime | None = None) -> tuple[dict[str, Any], dict[st
         "fear_greed_history": fng_history_rows,
         "fear_greed_daily": fng_daily_rows,
         "btc_price_history": btc_history_rows,
+        "wikipedia_crypto_attention_agent_weekly": wikipedia_crypto_weekly_df.to_dict(orient="records") if not wikipedia_crypto_weekly_df.empty else [],
+        "wikipedia_crypto_user_attention_monthly": wikipedia_crypto_user_monthly_df.to_dict(orient="records") if not wikipedia_crypto_user_monthly_df.empty else [],
+        "wikipedia_crypto_attention_latest": wikipedia_crypto_latest_df.to_dict(orient="records") if not wikipedia_crypto_latest_df.empty else [],
         "polymarket_catalysts": poly_rows,
         "crypto_watchlist": watchlist_rows,
         "regulatory_news": regulatory_news_rows,
@@ -707,6 +763,37 @@ def build_artifact(now: datetime | None = None) -> tuple[dict[str, Any], dict[st
             },
             "valueFormat": "number",
             "layout": "half",
+        },
+        {
+            "id": "wikipedia_crypto_attention_agent_weekly_chart",
+            "title": "Crypto Wikipedia Attention by Traffic Agent",
+            "subtitle": "Latest 500 complete Monday-Sunday weeks derived from daily pageviews across the curated English crypto/DeFi basket; user, spider, automated and all-agent traffic remain separate. The normalized cache retains the longer history.",
+            "type": "line",
+            "dataset": "wikipedia_crypto_attention_agent_weekly",
+            "sourceId": "wikimedia_crypto_pageviews",
+            "encodings": {
+                "x": {"field": "week", "type": "temporal", "label": "Week starting"},
+                "y": {"field": "views", "type": "quantitative", "label": "Pageviews"},
+                "color": {"field": "agent", "type": "nominal", "label": "Traffic Agent"},
+            },
+            "valueFormat": "number",
+            "layout": "full",
+            "maxRows": 2000,
+        },
+        {
+            "id": "wikipedia_crypto_user_attention_monthly_chart",
+            "title": "Crypto Wikipedia User Attention by Page",
+            "subtitle": "Monthly user pageviews for the curated English crypto/DeFi basket; latest ten years where available.",
+            "type": "line",
+            "dataset": "wikipedia_crypto_user_attention_monthly",
+            "sourceId": "wikimedia_crypto_pageviews",
+            "encodings": {
+                "x": {"field": "month", "type": "temporal", "label": "Month"},
+                "y": {"field": "views", "type": "quantitative", "label": "User Pageviews"},
+                "color": {"field": "page_label", "type": "nominal", "label": "Wikipedia Page"},
+            },
+            "valueFormat": "number",
+            "layout": "full",
         },
     ]
 
@@ -893,6 +980,15 @@ def build_artifact(now: datetime | None = None) -> tuple[dict[str, Any], dict[st
             "status": "success" if watchlist_price_by_code else "degraded",
             "records": len(watchlist_price_by_code),
             "freshness": "live" if watchlist_price_by_code else "unavailable",
+        },
+        "wikimedia_crypto_pageviews": {
+            "status": "success" if wikipedia_crypto_source == "live" else "degraded",
+            "records": len(wikipedia_crypto_daily_df) + len(wikipedia_crypto_weekly_df) + len(wikipedia_crypto_user_monthly_df),
+            "freshness": (
+                "live" if wikipedia_crypto_source == "live"
+                else "stale" if wikipedia_crypto_source in {"partial", "cache"}
+                else "unavailable"
+            ),
         },
     }
 

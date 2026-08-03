@@ -91,7 +91,9 @@ replacement for the operating manual or generated source-status JSON.
   not connect the other Hong Kong sectors, company explorer or cross-market
   pages yet. The crypto page keeps the long-run monthly Fear & Greed context
   plus the daily score and a derived trailing seven-calendar-day average for
-  interactive research views.
+  interactive research views. It also exposes the curated Wikimedia crypto
+  attention basket as weekly traffic-agent totals and monthly user-by-page
+  history.
 - Store-footprint, Google Trends and other planned integrations remain separate
   until their source history and data flow are validated.
 - Real-estate dashboard work includes agency transaction pulse, 28Hse EPI/ERI,

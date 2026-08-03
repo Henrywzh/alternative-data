@@ -493,10 +493,17 @@ def artifact_mtime_ns(slug: str, language: str) -> int:
     return path.stat().st_mtime_ns if path.exists() else 0
 
 
-def manifest_item(artifact: dict[str, Any], kind: str, item_id: str) -> dict[str, Any]:
+def find_manifest_item(artifact: dict[str, Any], kind: str, item_id: str) -> dict[str, Any] | None:
     for item in artifact.get("manifest", {}).get(kind, []):
         if item.get("id") == item_id:
             return item
+    return None
+
+
+def manifest_item(artifact: dict[str, Any], kind: str, item_id: str) -> dict[str, Any]:
+    item = find_manifest_item(artifact, kind, item_id)
+    if item is not None:
+        return item
     raise KeyError(f"Missing {kind} item: {item_id}")
 
 
@@ -959,8 +966,11 @@ def render_line_chart(
     series_label_map: dict[str, str] | None = None,
     reference_bands: tuple[tuple[float, float, str], ...] = (),
 ) -> None:
-    spec = manifest_item(artifact, "charts", chart_id)
-    label_spec = manifest_item(labels, "charts", chart_id)
+    spec = find_manifest_item(artifact, "charts", chart_id)
+    if spec is None:
+        st.info(tr(language, "This chart is not available in the current artifact snapshot.", "当前数据快照未包含此图表。"))
+        return
+    label_spec = find_manifest_item(labels, "charts", chart_id) or spec
     x_field = spec["encodings"]["x"]["field"]
     y_field = spec["encodings"]["y"]["field"]
     series_field = spec.get("encodings", {}).get("color", {}).get("field")
@@ -1141,8 +1151,11 @@ def render_bar_chart(
     *,
     height: int | None = None,
 ) -> None:
-    spec = manifest_item(artifact, "charts", chart_id)
-    label_spec = manifest_item(labels, "charts", chart_id)
+    spec = find_manifest_item(artifact, "charts", chart_id)
+    if spec is None:
+        st.info(tr(language, "This chart is not available in the current artifact snapshot.", "当前数据快照未包含此图表。"))
+        return
+    label_spec = find_manifest_item(labels, "charts", chart_id) or spec
     x_field = spec["encodings"]["x"]["field"]
     y_field = spec["encodings"]["y"]["field"]
     color_field = spec.get("encodings", {}).get("color", {}).get("field")
@@ -1189,8 +1202,11 @@ def render_table(
     value_maps: dict[str, dict[str, str]] | None = None,
     max_rows: int | None = None,
 ) -> None:
-    spec = manifest_item(artifact, "tables", table_id)
-    label_spec = manifest_item(labels, "tables", table_id)
+    spec = find_manifest_item(artifact, "tables", table_id)
+    if spec is None:
+        st.info(tr(language, "This table is not available in the current artifact snapshot.", "当前数据快照未包含此表格。"))
+        return
+    label_spec = find_manifest_item(labels, "tables", table_id) or spec
     frame = frame_for_dataset(artifact, spec["dataset"])
     title = label_spec.get("title", spec["title"])
     subtitle = label_spec.get("subtitle", spec.get("subtitle", ""))
@@ -1228,7 +1244,9 @@ def series_options(
     default_count: int = 4,
     series_label_map: dict[str, str] | None = None,
 ) -> list[str]:
-    spec = manifest_item(artifact, "charts", chart_id)
+    spec = find_manifest_item(artifact, "charts", chart_id)
+    if spec is None:
+        return []
     frame = frame_for_dataset(artifact, spec["dataset"])
     field = spec.get("encodings", {}).get("color", {}).get("field")
     if not field or field not in frame.columns:
@@ -2808,6 +2826,13 @@ def render_crypto(artifact: dict[str, Any], labels: dict[str, Any], language: st
     with st.container(border=True):
         render_fear_greed_daily_chart(artifact, language, window)
     with st.container(border=True):
+        st.caption(
+            tr(
+                language,
+                "Long-run monthly average for context.",
+                "长期月度平均，用于长期背景比较。",
+            )
+        )
         st.caption(
             tr(
                 language,
