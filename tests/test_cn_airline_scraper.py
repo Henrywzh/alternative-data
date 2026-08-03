@@ -27,6 +27,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 PARQUET = ROOT / "data" / "processed" / "airline_traffic" / "china_airlines_monthly.parquet"
 EVENT_PARQUET = ROOT / "data" / "processed" / "airline_traffic" / "china_airlines_operating_events.parquet"
+PDF_FIXTURE_DIR = ROOT / "tests" / "fixtures" / "airline_pdfs" / "603885"
 CARRIERS = {
     "601111": "Air China",
     "600029": "China Southern",
@@ -230,7 +231,7 @@ def test_fleet_table_total_precedes_parent_company_subtotal() -> None:
 
 def test_rftk_unit_on_continuation_row_is_applied() -> None:
     scraper = _scraper()
-    pdf = ROOT / "data" / "raw" / "airline_pdfs" / "603885" / "1203519532.PDF"
+    pdf = PDF_FIXTURE_DIR / "1203519532.PDF"
     rows = scraper.parse_airline_pdf(pdf.read_bytes(), "603885", "2017-04")
     rftk_total = [
         row["value"]
@@ -254,7 +255,7 @@ def test_juneyao_split_passenger_header_preserves_region_rows(
 ) -> None:
     """A passenger header split across pages must not erase the next rows."""
     scraper = _scraper()
-    pdf = ROOT / "data" / "raw" / "airline_pdfs" / "603885" / filename
+    pdf = PDF_FIXTURE_DIR / filename
     rows = scraper.parse_airline_pdf(pdf.read_bytes(), "603885", month)
     passengers = [row for row in rows if row["metric"] == "passengers"]
     assert {row["region"] for row in passengers} == {
@@ -265,7 +266,7 @@ def test_juneyao_split_passenger_header_preserves_region_rows(
 def test_juneyao_explicit_zero_regional_passenger_is_retained() -> None:
     """A source dash means zero service, not an absent observation."""
     scraper = _scraper()
-    pdf = ROOT / "data" / "raw" / "airline_pdfs" / "603885" / "1212921911.PDF"
+    pdf = PDF_FIXTURE_DIR / "1212921911.PDF"
     rows = scraper.parse_airline_pdf(pdf.read_bytes(), "603885", "2022-03")
     regional = [
         row for row in rows
