@@ -1,4 +1,5 @@
 import importlib.util
+import json
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -159,3 +160,20 @@ def test_visitor_arrivals_detail_keeps_full_source_count_but_windows_artifact_ro
     assert len(detail) <= 2_000
     visitor_status = next(row for row in status["sources"] if row["dataset"] == "visitor_arrivals")
     assert visitor_status["records"] == len(visitor)
+
+
+def test_published_artifact_retains_mpfa_departure_claims():
+    """The production snapshot must not silently publish the MPFA series empty."""
+    artifact_path = (
+        Path(__file__).resolve().parents[1]
+        / "apps/asia-markets-dashboard/.generated/hk-population-migration-artifact.json"
+    )
+    artifact = json.loads(artifact_path.read_text(encoding="utf-8"))
+    rows = artifact["snapshot"]["datasets"]["mpfa_claims"]
+    assert len(rows) >= 1
+    assert rows[-1]["quarter"] == "2026-Q1"
+    assert rows[-1]["claims_count"] == 5000
+    assert rows[-1]["amount_mhkd"] == 1188.0
+    source = next(row for row in artifact["source_health"] if row["id"] == "mpfa")
+    assert source["status"] == "success"
+    assert source["records"] == len(rows)

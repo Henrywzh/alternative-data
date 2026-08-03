@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-08-03T10:06:03.632672Z",
-  "snapshot_id": "1f566a26fc5affec",
+  "generated_at": "2026-08-03T21:23:33.501283Z",
+  "snapshot_id": "0f1eaeeecba28792",
   "data_as_of": "2026-08-02",
-  "overall_status": "Degraded",
-  "live_sources": 5,
+  "overall_status": "Healthy",
+  "live_sources": 6,
   "planned_sources": 0,
   "sources": [
     {
@@ -30,10 +30,10 @@
       "source": "MPFA Statistical Digest",
       "dataset": "mpfa",
       "type": "Monitor",
-      "status": "Degraded",
-      "latest_observation": "—",
-      "records": 0,
-      "freshness": "Unavailable",
+      "status": "Healthy",
+      "latest_observation": "2026-Q1",
+      "records": 14,
+      "freshness": "Dated snapshot",
       "notes": "Quarterly MPF claims for permanent departure from Hong Kong (count and amount), parsed from the official Statistical Digest."
     },
     {
