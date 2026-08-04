@@ -66,6 +66,8 @@ ai-news-signal-data = "ai_news_signal_data.cli:main"
 hk-local-consumer-data = "hk_local_consumer.cli:main"
 hk-labour-market-data = "hk_labour_market.cli:main"
 hk-reit-data = "hk_reit.cli:main"
+opencode-data = "opencode_data.cli:main"
+replicate-data = "replicate_data.cli:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
