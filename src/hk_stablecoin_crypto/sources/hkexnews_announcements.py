@@ -38,6 +38,7 @@ from __future__ import annotations
 import json
 import logging
 import re
+import time
 from datetime import datetime, timedelta, timezone
 
 import pandas as pd
@@ -232,6 +233,18 @@ def fetch_ticker_announcements(ticker: str, *, lookback_days: int = LOOKBACK_DAY
         return pd.DataFrame(columns=SCHEMA_COLUMNS)
 
 
+# Each ticker costs up to two sequential 15s-timeout requests (prefix.do +
+# title search), and the watchlist runs ~22 tickers. A `timeout=` argument
+# only bounds a single socket read, not the whole request -- a site that
+# drips data slowly enough that every chunk arrives just under the timeout
+# can make one ticker's fetch run far longer than 15s despite it, so the
+# unbounded per-ticker loop has no real ceiling. This mirrors the same
+# fix already applied to the MPFA quarterly-digest fetcher: cap total wall
+# time and return whichever tickers were already fetched (honest partial
+# data, not fabricated) instead of blocking further.
+_FETCH_TIME_BUDGET_SECONDS = 90
+
+
 def fetch_hkexnews_announcements(
     tickers: list[str] | None = None,
     *,
@@ -245,7 +258,17 @@ def fetch_hkexnews_announcements(
         tickers = all_watchlist_tickers()
 
     frames = []
-    for ticker in tickers:
+    deadline = time.monotonic() + _FETCH_TIME_BUDGET_SECONDS
+    for processed, ticker in enumerate(tickers):
+        if time.monotonic() >= deadline:
+            logger.warning(
+                "hkexnews_announcements: exceeded its %ss time budget with %d/%d tickers remaining; "
+                "returning the tickers already fetched instead of blocking further.",
+                _FETCH_TIME_BUDGET_SECONDS,
+                len(tickers) - processed,
+                len(tickers),
+            )
+            break
         df = fetch_ticker_announcements(ticker, lookback_days=lookback_days)
         if not df.empty:
             frames.append(df)
