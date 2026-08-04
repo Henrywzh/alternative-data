@@ -6,6 +6,8 @@ from ..storage import save_raw_snapshot
 
 logger = logging.getLogger(__name__)
 
+SCHEMA_COLUMNS = ["period", "mid_year_population_thousands", "natural_growth_thousands", "net_movement_thousands"]
+
 
 def _fetch_table(url: str, dataset_name: str) -> list[dict]:
     response = requests.get(url, headers=DEFAULT_HEADERS, timeout=30)
@@ -24,8 +26,17 @@ def fetch_csd_population_estimates() -> pd.DataFrame:
     end-December each year, so `period` is "YYYY-06"/"YYYY-12" rather than
     a single yearly figure.
     """
-    pop_rows = _fetch_table(CSD_POPULATION_ESTIMATES_API_URL, "csd_population_estimates")
-    vital_rows = _fetch_table(CSD_VITAL_EVENTS_API_URL, "csd_vital_events")
+    try:
+        pop_rows = _fetch_table(CSD_POPULATION_ESTIMATES_API_URL, "csd_population_estimates")
+        vital_rows = _fetch_table(CSD_VITAL_EVENTS_API_URL, "csd_vital_events")
+    except Exception as exc:
+        # Matches the sibling C&SD fetchers (cnsd_mdt.py, cnsd_retail.py,
+        # censtatd_restaurant.py): an honest empty frame on network failure,
+        # never a fabricated/stale substitute.
+        logger.warning(f"Network fetch failed for C&SD population estimates ({exc}).")
+        df = pd.DataFrame(columns=SCHEMA_COLUMNS)
+        df.attrs.update(source_url=CSD_POPULATION_ESTIMATES_API_URL)
+        return df
 
     population: dict[str, float] = {}
     for item in pop_rows:
