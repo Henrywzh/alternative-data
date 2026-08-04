@@ -67,7 +67,7 @@ jobs:
       - name: Upload raw snapshots artifact
         if: always()
         continue-on-error: true
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: replicate-raw-snapshots
           path: ${{ runner.temp }}/replicate-raw.tar.gz
