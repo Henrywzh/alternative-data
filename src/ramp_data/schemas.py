@@ -234,13 +234,21 @@ CATEGORY_CHARTS_DATASETS: dict[str, dict] = {
         "natural_keys": ["category_slug", "quarter", "vendor_name"],
         "sort_keys": ["category_slug", "quarter", "vendor_name"],
         "numeric": ["spend_share"],
-        "min_rows": 100,
+        # "Share of Spend" is an optional secondary toggle chart Ramp only
+        # publishes for a handful of categories (2/33 as of 2026-08-04, ~78
+        # rows) -- unlike adoption_monthly, which every category has. The
+        # floor only needs to catch a wholesale empty/broken response, not
+        # approximate the true (small, category-count-dependent) ceiling.
+        "min_rows": 20,
     },
     "ramp_category_adoption_yoy_comparison": {
         "fields": ["category_slug", "vendor_name", "date_month", "adoption_rate"],
         "natural_keys": ["category_slug", "vendor_name", "date_month"],
         "sort_keys": ["category_slug", "vendor_name", "date_month"],
         "numeric": ["adoption_rate"],
-        "min_rows": 50,
+        # Same reasoning as spend_share_quarterly: an optional per-category
+        # toggle (4/33 categories, ~51 rows as of 2026-08-04). The previous
+        # min_rows=50 left only 1 row of margin against the real count.
+        "min_rows": 20,
     },
 }
