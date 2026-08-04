@@ -54,6 +54,8 @@ from dashboard.sections import (
     google_trends,
     provider_incidents,
     ai_hiring,
+    opencode,
+    replicate,
 )
 
 # Backward-compatible re-exports for tests/scratch that import from dashboard.app.
@@ -85,6 +87,8 @@ MAIN_SECTIONS = (
     "OpenRouter Compare",
     "OpenRouter Workloads",
     "Vercel AI",
+    "OpenCode Agents",
+    "Replicate Multimodal",
     "Ramp",
     "Artificial Analysis",
     "Provider Adoption",
@@ -103,6 +107,8 @@ SECTION_DESCRIPTIONS = {
     "OpenRouter Compare": "Compare up to five model-origin companies across usage, requests, revenue, workload intensity, and realized price.",
     "OpenRouter Workloads": "Tracks request context lengths, modality mix, and the public apps generating OpenRouter traffic.",
     "Vercel AI": "Tracks model and lab usage share across Vercel AI Gateway, with modality and metric-level rankings.",
+    "OpenCode Agents": "Tracks developer demand for AI coding agents — model market share, token volume, geographic adoption, and session economics.",
+    "Replicate Multimodal": "Tracks hosted model catalog and execution volume across image, video, audio, speech, and vision models on Replicate.",
     "Ramp": "Tracks business AI adoption, spend intensity, vendor mix, model mix, company segments, and employment signals.",
     "Artificial Analysis": "Compares frontier-model intelligence, coding and math quality, speed, pricing, context, and lab-level progress.",
     "Provider Adoption": "Tracks package downloads, GitHub implementation signals, Hugging Face activity, and provider momentum.",
@@ -121,6 +127,8 @@ SECTION_DOMAIN_MAP = {
     "OpenRouter Compare": ("openrouter_model_explorer", "openrouter_catalog", "openrouter_derived", "artificial_analysis"),
     "OpenRouter Workloads": ("openrouter_workloads", "apps"),
     "Vercel AI": ("vercel_ai",),
+    "OpenCode Agents": ("opencode",),
+    "Replicate Multimodal": ("replicate",),
     "Ramp": ("ramp",),
     "Artificial Analysis": ("artificial_analysis",),
     "Provider Adoption": ("provider_adoption",),
@@ -204,7 +212,7 @@ def select_main_section() -> str:
         )
         nav_button("Overview")
         st.markdown('<div class="sidebar-group-label">AI Usage</div>', unsafe_allow_html=True)
-        for label in ("OpenRouter Intelligence", "OpenRouter Models", "OpenRouter Compare", "OpenRouter Workloads", "Vercel AI"):
+        for label in ("OpenRouter Intelligence", "OpenRouter Models", "OpenRouter Compare", "OpenRouter Workloads", "Vercel AI", "OpenCode Agents", "Replicate Multimodal"):
             nav_button(label)
         st.markdown('<div class="sidebar-group-label">Adoption</div>', unsafe_allow_html=True)
         for label in ("Ramp", "Provider Adoption", "AI Hiring Demand"):
@@ -288,6 +296,8 @@ SECTION_RENDERERS = {
     "OpenRouter Compare": getattr(openrouter, "render_compare", openrouter.render),
     "OpenRouter Workloads": getattr(openrouter, "render_workloads", openrouter.render),
     "Vercel AI": vercel_ai.render,
+    "OpenCode Agents": opencode.render,
+    "Replicate Multimodal": replicate.render,
     "Ramp": ramp.render,
     "Artificial Analysis": artificial_analysis.render,
     "Provider Adoption": provider_adoption.render,

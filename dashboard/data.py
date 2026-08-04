@@ -750,6 +750,124 @@ DATASET_REGISTRY: dict[str, dict[str, object]] = {
         "metric_column": "row_count",
         "required_columns": ["source_id", "source_kind", "status", "row_count"],
     },
+    "opencode_market_share": {
+        "label": "OpenCode Market Share",
+        "domain": "opencode",
+        "requires_core_provenance": False,
+        "natural_keys": ["timeframe", "usage_date", "date_occurrence", "author"],
+        "primary_date_column": "usage_date",
+        "metric_column": "tokens_trillion",
+        "required_columns": [
+            "timeframe", "usage_date", "date_occurrence", "author",
+            "share_pct", "tokens_trillion", "total_tokens_trillion", "scraped_at",
+        ],
+    },
+    "opencode_usage_daily": {
+        "label": "OpenCode Usage Daily",
+        "domain": "opencode",
+        "requires_core_provenance": False,
+        "natural_keys": ["user_tier", "timeframe", "usage_date", "date_occurrence", "model_slug"],
+        "primary_date_column": "usage_date",
+        "metric_column": "token_value",
+        "required_columns": [
+            "user_tier", "timeframe", "usage_date", "date_occurrence", "model_slug", "token_value", "scraped_at",
+        ],
+    },
+    "opencode_users_daily": {
+        "label": "OpenCode Active Users Daily",
+        "domain": "opencode",
+        "requires_core_provenance": False,
+        "natural_keys": ["user_tier", "timeframe", "usage_date", "date_occurrence", "model_slug"],
+        "primary_date_column": "usage_date",
+        "metric_column": "active_users",
+        "required_columns": [
+            "user_tier", "timeframe", "usage_date", "date_occurrence", "model_slug", "active_users", "scraped_at",
+        ],
+    },
+    "opencode_leaderboard": {
+        "label": "OpenCode Leaderboard",
+        "domain": "opencode",
+        "requires_core_provenance": False,
+        "natural_keys": ["snapshot_date", "user_tier", "timeframe", "model_slug"],
+        "primary_date_column": "snapshot_date",
+        "metric_column": "tokens",
+        "required_columns": [
+            "snapshot_date", "user_tier", "timeframe", "rank", "model_slug",
+            "provider", "author", "tokens", "rank_change", "scraped_at",
+        ],
+    },
+    "opencode_country_usage": {
+        "label": "OpenCode Country Usage",
+        "domain": "opencode",
+        "requires_core_provenance": False,
+        "natural_keys": ["snapshot_date", "timeframe", "country_code"],
+        "primary_date_column": "snapshot_date",
+        "metric_column": "tokens_trillion",
+        "required_columns": [
+            "snapshot_date", "timeframe", "country_code", "continent", "tokens_trillion", "share_pct", "rank", "scraped_at",
+        ],
+    },
+    "opencode_model_catalog": {
+        "label": "OpenCode Model Catalog",
+        "domain": "opencode",
+        "requires_core_provenance": False,
+        "natural_keys": ["snapshot_date", "slug"],
+        "primary_date_column": "snapshot_date",
+        "metric_column": "input_cost_per_m",
+        "required_columns": [
+            "snapshot_date", "model_id", "lab", "slug", "name", "description", "family", "release_date",
+            "last_updated", "context_limit", "output_limit", "input_modalities", "output_modalities",
+            "open_weights", "reasoning", "tool_call", "attachment", "temperature",
+            "input_cost_per_m", "output_cost_per_m", "cache_read_cost_per_m", "cache_write_cost_per_m", "scraped_at",
+        ],
+    },
+    "opencode_benchmarks": {
+        "label": "OpenCode Benchmarks",
+        "domain": "opencode",
+        "requires_core_provenance": False,
+        "natural_keys": ["snapshot_date", "model_slug", "benchmark_name", "metric", "harness", "variant", "dataset", "version"],
+        "primary_date_column": "snapshot_date",
+        "metric_column": "score",
+        "required_columns": [
+            "snapshot_date", "model_id", "model_slug", "benchmark_name", "score", "metric",
+            "harness", "variant", "dataset", "version", "source_url", "scraped_at",
+        ],
+    },
+    "opencode_model_deepdives": {
+        "label": "OpenCode Model Deepdives",
+        "domain": "opencode",
+        "requires_core_provenance": False,
+        "natural_keys": ["snapshot_date", "model_slug"],
+        "primary_date_column": "snapshot_date",
+        "metric_column": "tokens_total",
+        "required_columns": [
+            "snapshot_date", "model_slug", "provider", "author", "rank", "previous_rank", "total_models",
+            "token_share_pct", "token_change", "sessions", "unique_users", "tokens_total", "cost_total_usd",
+            "tokens_per_session", "cost_per_session_usd", "cost_per_million_usd", "cache_ratio_pct",
+            "input_tokens", "output_tokens", "reasoning_tokens", "cached_tokens", "scraped_at",
+        ],
+    },
+    "replicate_model_catalog": {
+        "label": "Replicate Model Catalog",
+        "domain": "replicate",
+        "requires_core_provenance": False,
+        "natural_keys": ["snapshot_date", "slug"],
+        "primary_date_column": "snapshot_date",
+        "metric_column": "run_count",
+        "required_columns": [
+            "snapshot_date", "slug", "owner", "name", "collection", "run_count", "is_official",
+            "latest_version_created_at", "hardware", "price", "description", "url", "scraped_at",
+        ],
+    },
+    "replicate_collections_summary": {
+        "label": "Replicate Collections Summary",
+        "domain": "replicate",
+        "requires_core_provenance": False,
+        "natural_keys": ["snapshot_date", "collection_slug"],
+        "primary_date_column": "snapshot_date",
+        "metric_column": "total_models",
+        "required_columns": ["snapshot_date", "collection_slug", "total_models", "url", "scraped_at"],
+    },
     "openrouter_usage_economics_daily": {
         "label": "OpenRouter Usage Economics Daily",
         "domain": "openrouter_derived",
@@ -873,6 +991,20 @@ DOMAIN_ORDER = {
         "hiring_job_events",
         "hiring_demand_daily",
         "hiring_source_health",
+    ],
+    "opencode": [
+        "opencode_market_share",
+        "opencode_usage_daily",
+        "opencode_users_daily",
+        "opencode_leaderboard",
+        "opencode_country_usage",
+        "opencode_model_catalog",
+        "opencode_benchmarks",
+        "opencode_model_deepdives",
+    ],
+    "replicate": [
+        "replicate_model_catalog",
+        "replicate_collections_summary",
     ],
     "rankings": [
         "top_models",
@@ -1847,6 +1979,53 @@ AI_HIRING_LOAD_COLUMNS: dict[str, list[str]] = {
     ],
 }
 
+# opencode/replicate marts carry no dataset_id/source_url/source_run_id
+# provenance columns (see requires_core_provenance=False on their registry
+# entries), so unlike the dicts above these deliberately omit *CORE_COLUMNS.
+OPENCODE_LOAD_COLUMNS: dict[str, list[str]] = {
+    "opencode_market_share": [
+        "timeframe", "usage_date", "date_occurrence", "author",
+        "share_pct", "tokens_trillion", "total_tokens_trillion", "scraped_at",
+    ],
+    "opencode_usage_daily": [
+        "user_tier", "timeframe", "usage_date", "date_occurrence", "model_slug", "token_value", "scraped_at",
+    ],
+    "opencode_users_daily": [
+        "user_tier", "timeframe", "usage_date", "date_occurrence", "model_slug", "active_users", "scraped_at",
+    ],
+    "opencode_leaderboard": [
+        "snapshot_date", "user_tier", "timeframe", "rank", "model_slug",
+        "provider", "author", "tokens", "rank_change", "scraped_at",
+    ],
+    "opencode_country_usage": [
+        "snapshot_date", "timeframe", "country_code", "continent", "tokens_trillion", "share_pct", "rank", "scraped_at",
+    ],
+    "opencode_model_catalog": [
+        "snapshot_date", "model_id", "lab", "slug", "name", "description", "family", "release_date",
+        "last_updated", "context_limit", "output_limit", "input_modalities", "output_modalities",
+        "open_weights", "reasoning", "tool_call", "attachment", "temperature",
+        "input_cost_per_m", "output_cost_per_m", "cache_read_cost_per_m", "cache_write_cost_per_m", "scraped_at",
+    ],
+    "opencode_benchmarks": [
+        "snapshot_date", "model_id", "model_slug", "benchmark_name", "score", "metric",
+        "harness", "variant", "dataset", "version", "source_url", "scraped_at",
+    ],
+    "opencode_model_deepdives": [
+        "snapshot_date", "model_slug", "provider", "author", "rank", "previous_rank", "total_models",
+        "token_share_pct", "token_change", "sessions", "unique_users", "tokens_total", "cost_total_usd",
+        "tokens_per_session", "cost_per_session_usd", "cost_per_million_usd", "cache_ratio_pct",
+        "input_tokens", "output_tokens", "reasoning_tokens", "cached_tokens", "scraped_at",
+    ],
+}
+
+REPLICATE_LOAD_COLUMNS: dict[str, list[str]] = {
+    "replicate_model_catalog": [
+        "snapshot_date", "slug", "owner", "name", "collection", "run_count", "is_official",
+        "latest_version_created_at", "hardware", "price", "description", "url", "scraped_at",
+    ],
+    "replicate_collections_summary": ["snapshot_date", "collection_slug", "total_models", "url", "scraped_at"],
+}
+
 DATE_COLUMNS = [
     "pulse_date",
     "week_start_date",
@@ -2146,6 +2325,10 @@ def dataset_source_for_domain(domain: str) -> str:
         return "provider_incidents"
     if domain == "ai_hiring":
         return "ai_hiring"
+    if domain == "opencode":
+        return "opencode"
+    if domain == "replicate":
+        return "replicate"
     return "openrouter"
 
 
@@ -2165,6 +2348,8 @@ def load_dataset(
         or OVERVIEW_LOAD_COLUMNS.get(dataset_id)
         or PROVIDER_INCIDENT_LOAD_COLUMNS.get(dataset_id)
         or AI_HIRING_LOAD_COLUMNS.get(dataset_id)
+        or OPENCODE_LOAD_COLUMNS.get(dataset_id)
+        or REPLICATE_LOAD_COLUMNS.get(dataset_id)
     )
 
     source = dataset_source_for_domain(str(domain))
