@@ -36,10 +36,18 @@ MAINLAND_VS_ROW_COLUMNS = ["date", "series", "visitors"]
 
 def fetch_visitor_arrivals_by_region() -> pd.DataFrame:
     """Monthly visitor arrivals by region (excludes the source's own Total row)."""
-    response = requests.get(VISITOR_ARRIVALS_API_URL, headers=DEFAULT_HEADERS, timeout=20)
-    response.raise_for_status()
-    save_raw_snapshot("censtatd_visitor_arrivals", response.content, file_ext="json", source_url=VISITOR_ARRIVALS_API_URL)
-    rows = response.json().get("dataSet", [])
+    try:
+        response = requests.get(VISITOR_ARRIVALS_API_URL, headers=DEFAULT_HEADERS, timeout=20)
+        response.raise_for_status()
+        save_raw_snapshot("censtatd_visitor_arrivals", response.content, file_ext="json", source_url=VISITOR_ARRIVALS_API_URL)
+        rows = response.json().get("dataSet", [])
+    except Exception as exc:
+        # Honest empty frame on network failure, matching the other C&SD
+        # fetchers in this repo -- never a fabricated/stale substitute.
+        logger.warning(f"Network fetch failed for C&SD visitor arrivals ({exc}).")
+        df = pd.DataFrame(columns=BY_REGION_COLUMNS)
+        df.attrs.update(source_url=VISITOR_ARRIVALS_API_URL)
+        return df
 
     records = []
     for row in rows:

@@ -57,6 +57,13 @@ def _inputs():
                 "express_rail_passengers": [100_000, 110_000],
             }
         ),
+        "raw_visitor_arrivals": pd.DataFrame(
+            {
+                "date": ["2026-04", "2026-04", "2026-05", "2026-05"],
+                "region": ["Chinese Mainland", "Europe", "Chinese Mainland", "Europe"],
+                "visitors": [2_500_000, 300_000, 2_600_000, 320_000],
+            }
+        ),
     }
 
 
@@ -114,6 +121,7 @@ def test_builder_does_not_fetch_when_explicit_offline_inputs_are_supplied(monkey
     monkeypatch.setattr(dashboard_export, "fetch_mpfa_permanent_departure_claims", fail_fetch)
     monkeypatch.setattr(dashboard_export, "fetch_ugc_nonlocal_students", fail_fetch)
     monkeypatch.setattr(dashboard_export, "fetch_td_cross_border_traffic", fail_fetch)
+    monkeypatch.setattr(dashboard_export, "fetch_visitor_arrivals_by_region", fail_fetch)
     artifact, status = _build()
     assert artifact["snapshot"]["status"] == "ready"
     assert status["overall_status"] == "Healthy"
@@ -127,6 +135,7 @@ def test_builder_prefers_normalized_inputs_before_network_fetch(monkeypatch):
         "mpfa_departure_claims": normalized["raw_mpfa"],
         "ugc_nonlocal_students": normalized["raw_ugc"],
         "td_cross_border_traffic": normalized["raw_td"],
+        "censtatd_visitor_arrivals": normalized["raw_visitor_arrivals"],
     }
     monkeypatch.setattr(dashboard_export, "load_latest_normalized", lambda dataset: by_dataset.get(dataset, pd.DataFrame()))
     monkeypatch.setattr(dashboard_export, "fetch_immd_daily_traffic", lambda: (_ for _ in ()).throw(AssertionError("unexpected fetch")))
@@ -134,6 +143,7 @@ def test_builder_prefers_normalized_inputs_before_network_fetch(monkeypatch):
     monkeypatch.setattr(dashboard_export, "fetch_mpfa_permanent_departure_claims", lambda: (_ for _ in ()).throw(AssertionError("unexpected fetch")))
     monkeypatch.setattr(dashboard_export, "fetch_ugc_nonlocal_students", lambda: (_ for _ in ()).throw(AssertionError("unexpected fetch")))
     monkeypatch.setattr(dashboard_export, "fetch_td_cross_border_traffic", lambda: (_ for _ in ()).throw(AssertionError("unexpected fetch")))
+    monkeypatch.setattr(dashboard_export, "fetch_visitor_arrivals_by_region", lambda: (_ for _ in ()).throw(AssertionError("unexpected fetch")))
 
     artifact, status = dashboard_export.build_artifact(now=NOW)
     assert artifact["manifest"]["dataAsOf"] == "2026-07-29"
