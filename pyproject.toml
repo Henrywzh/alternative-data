@@ -33,6 +33,7 @@ dev = [
   "PyYAML>=6.0.2",
   "pytest>=8.2",
   "pytest-xdist>=3.6",
+  "pytest-timeout>=2.3",
 ]
 
 [project.scripts]
@@ -77,3 +78,11 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# Several tests hit live external sites with no offline fixture path and a
+# per-request `timeout=`. That bounds a single socket read, not the whole
+# call: a site that drips data slowly (each chunk arriving just under the
+# timeout) can make requests.get() run for minutes despite its timeout
+# argument, which has repeatedly stalled CI past its job timeout waiting on
+# one test. This caps every individual test at 4 minutes so one slow/degraded
+# external site can no longer block the whole run.
+timeout = 240
