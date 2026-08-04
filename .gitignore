@@ -223,6 +223,16 @@ data/raw/ai_news/**
 data/normalized/ai_news_signal/*
 !data/normalized/ai_news_signal/*.parquet
 
+# opencode: commit normalized parquet files only (CSVs are local-only scratch)
+!data/normalized/opencode/
+data/normalized/opencode/*
+!data/normalized/opencode/*.parquet
+
+# replicate: commit normalized parquet files only (CSVs are local-only scratch)
+!data/normalized/replicate/
+data/normalized/replicate/*
+!data/normalized/replicate/*.parquet
+
 # minerals: curated reference inputs (CSV-ified workbook sheets)
 !data/reference/
 data/reference/*
