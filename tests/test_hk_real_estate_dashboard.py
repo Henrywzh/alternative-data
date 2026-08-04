@@ -82,8 +82,28 @@ def _cnsd_frame(n=8):
 
 
 def test_build_artifact_is_source_backed_and_deterministic():
-    first, first_status = dashboard_export.build_artifact(_frames(), raw_hkma=_hkma_frame(), raw_cnsd=_cnsd_frame(), now=NOW)
-    second, second_status = dashboard_export.build_artifact(_frames(), raw_hkma=_hkma_frame(), raw_cnsd=_cnsd_frame(), now=NOW)
+    # build_artifact() falls through to a live network fetch for any of these
+    # six raw_* params left as None (raw_land_disposals, raw_epi_eri,
+    # raw_new_projects, raw_bd_supply, raw_landreg, raw_bd_monthly_stats) --
+    # pin them to fixed empty inputs so this test measures the *code's*
+    # determinism given fixed data, not a live site's. Without this, two
+    # consecutive live fetches within the same test can legitimately return
+    # different data and produce two different snapshot_id hashes with no
+    # actual code regression involved.
+    live_fetch_params = dict(
+        raw_land_disposals=pd.DataFrame(),
+        raw_epi_eri=pd.DataFrame(),
+        raw_new_projects=pd.DataFrame(),
+        raw_bd_supply=pd.DataFrame(),
+        raw_landreg=(pd.DataFrame(), pd.DataFrame()),
+        raw_bd_monthly_stats=pd.DataFrame(),
+    )
+    first, first_status = dashboard_export.build_artifact(
+        _frames(), raw_hkma=_hkma_frame(), raw_cnsd=_cnsd_frame(), now=NOW, **live_fetch_params
+    )
+    second, second_status = dashboard_export.build_artifact(
+        _frames(), raw_hkma=_hkma_frame(), raw_cnsd=_cnsd_frame(), now=NOW, **live_fetch_params
+    )
 
     assert first_status["snapshot_id"] == second_status["snapshot_id"]
     assert first_status["data_as_of"] == "2026-07-20"

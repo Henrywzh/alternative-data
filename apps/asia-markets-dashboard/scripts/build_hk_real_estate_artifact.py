@@ -1069,7 +1069,11 @@ def build_artifact(
             })
         cnsd_const_rows.sort(key=lambda row: row["date"])
 
-    df_land_disposals = raw_land_disposals if raw_land_disposals is not None else fetch_land_disposals()
+    df_land_disposals = (
+        raw_land_disposals
+        if raw_land_disposals is not None
+        else _safe_fetch("Land disposals (C&SD E704)", fetch_land_disposals)
+    )
     land_disposal_rows: list[dict[str, Any]] = []
     if not df_land_disposals.empty:
         # The raw table splits every method by district (Urban/New
