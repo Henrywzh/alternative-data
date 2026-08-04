@@ -2,6 +2,7 @@ import logging
 import re
 import subprocess
 import tempfile
+import time
 from pathlib import Path
 
 import pandas as pd
@@ -44,6 +45,15 @@ _MONTH_TO_QUARTER = {
 _PERMANENT_DEPARTURE_COLUMN_INDEX = 2  # 0-based, within the 9 data columns
 
 _QUARTER_ROW_RE = re.compile(r"^(Q[1-4])\s+(\d{4})\b")
+
+# _discover_pdf_urls() finds every quarter since 2020-Q2 (20+ PDFs), each
+# fetched sequentially at up to 60s. Under normal conditions this finishes in
+# well under a minute total; when MPFA's site is degraded, per-PDF downloads
+# have been observed to take 20s+ each, which without a cap turns a routine
+# call into a 15-20+ minute one and once stalled CI past its job timeout.
+# Stopping once the budget is spent and returning whatever quarters were
+# already parsed keeps this an honest partial result, not a fabricated one.
+_FETCH_TIME_BUDGET_SECONDS = 90
 
 _TABLE_II_2_2_MARKER_RE = re.compile(r"Table\s+II\.2\.2", re.IGNORECASE)
 _TABLE_II_2_3_MARKER_RE = re.compile(r"Table\s+II\.2\.3", re.IGNORECASE)
@@ -155,7 +165,17 @@ def fetch_mpfa_permanent_departure_claims() -> pd.DataFrame:
     quarter_urls = _discover_pdf_urls()
 
     merged: dict[str, dict[str, float | None]] = {}
+    deadline = time.monotonic() + _FETCH_TIME_BUDGET_SECONDS
     for quarter, pdf_url in quarter_urls:
+        if time.monotonic() >= deadline:
+            logger.warning(
+                "MPFA digest fetch exceeded its %ss time budget with %d/%d quarters remaining; "
+                "returning the quarters already fetched instead of blocking further.",
+                _FETCH_TIME_BUDGET_SECONDS,
+                len(quarter_urls) - len(merged),
+                len(quarter_urls),
+            )
+            break
         try:
             response = requests.get(pdf_url, headers=DEFAULT_HEADERS, timeout=60)
             response.raise_for_status()
