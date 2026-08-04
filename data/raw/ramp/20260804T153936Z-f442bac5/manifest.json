@@ -1,0 +1,63 @@
+{
+  "run_id": "20260804T153936Z-f442bac5",
+  "mode": "ai-index",
+  "scraped_at": "2026-08-04T15:39:36.014752Z",
+  "status": "success",
+  "datasets": [
+    {
+      "dataset_id": "ramp_ai_adoption_overall",
+      "status": "ok",
+      "rows": 42
+    },
+    {
+      "dataset_id": "ramp_ai_adoption_by_size",
+      "status": "ok",
+      "rows": 126
+    },
+    {
+      "dataset_id": "ramp_ai_adoption_by_sector",
+      "status": "ok",
+      "rows": 294
+    },
+    {
+      "dataset_id": "ramp_ai_adoption_by_state",
+      "status": "ok",
+      "rows": 2092
+    },
+    {
+      "dataset_id": "ramp_ai_adoption_by_vendor",
+      "status": "ok",
+      "rows": 210
+    },
+    {
+      "dataset_id": "ramp_ai_pepm_spend",
+      "status": "ok",
+      "rows": 36
+    },
+    {
+      "dataset_id": "ramp_ai_spend_share_by_category",
+      "status": "ok",
+      "rows": 144
+    },
+    {
+      "dataset_id": "ramp_ai_provider_model_share",
+      "status": "ok",
+      "rows": 417
+    },
+    {
+      "dataset_id": "ramp_ai_spend_breakdown",
+      "status": "ok",
+      "rows": 596
+    },
+    {
+      "dataset_id": "ramp_ai_model_breakdown",
+      "status": "ok",
+      "rows": 246
+    },
+    {
+      "dataset_id": "ramp_ai_pepm_spend_by_dimension",
+      "status": "ok",
+      "rows": 775
+    }
+  ]
+}
