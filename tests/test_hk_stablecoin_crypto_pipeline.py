@@ -247,7 +247,13 @@ def test_polymarket_tag_slug_param(monkeypatch):
     assert captured_kwargs["params"].get("tag_slug") == "crypto"
 
 
+@pytest.mark.timeout(480)
 def test_pipeline_stage_1_execution():
+    # This calls run_stage_1_pipeline(), which hits ~8 live external sites
+    # sequentially (SFC/HKMA news, HKEX ETF AUM, stablecoin supply, Polymarket,
+    # crypto tickers, and HKEXnews across the full ~22-ticker watchlist) --
+    # even at normal (non-degraded) latency that legitimately runs past the
+    # repo's default 240s per-test ceiling, so this test gets a longer one.
     res = run_stage_1_pipeline()
     assert "hkma_licensed_issuers" in res
     assert "sfc_vatp_register" in res
@@ -373,6 +379,7 @@ def test_watchlist_price_in_quality_specs():
     assert spec["max_age_days"] == 3
 
 
+@pytest.mark.timeout(480)
 def test_pipeline_stage_1_includes_watchlist_price_key():
     res = run_stage_1_pipeline()
     assert "watchlist_price" in res

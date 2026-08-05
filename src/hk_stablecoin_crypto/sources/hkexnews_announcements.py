@@ -39,6 +39,7 @@ import json
 import logging
 import re
 import time
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
 from datetime import datetime, timedelta, timezone
 
 import pandas as pd
@@ -73,6 +74,25 @@ LOOKBACK_DAYS = 90
 _SEARCH_HEADERS = {**DEFAULT_HEADERS, "Referer": HKEXNEWS_SEARCH_REFERER}
 
 
+def _get_with_hard_timeout(url: str, *, params: dict, headers: dict, timeout: int) -> requests.Response:
+    """requests' own `timeout=` only bounds the gap between socket reads, not
+    the call's total duration -- a server that drips a few bytes every
+    (timeout - epsilon) seconds can keep a single request alive indefinitely
+    despite a stated timeout (confirmed live against mpfa.org.hk elsewhere in
+    this repo). Running the request in a worker thread and bounding *that*
+    with a real wall-clock deadline is what actually enforces one. The
+    worker thread itself isn't killed if it exceeds the deadline (Python has
+    no safe way to do that), it's simply abandoned -- but the caller gets
+    control back on schedule instead of hanging past pytest-timeout/CI.
+    """
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        future = executor.submit(requests.get, url, params=params, headers=headers, timeout=timeout)
+        try:
+            return future.result(timeout=timeout + 5)
+        except FutureTimeoutError as exc:
+            raise TimeoutError(f"{url} did not respond within {timeout + 5}s (hard wall-clock deadline)") from exc
+
+
 def _normalize_code(code: str) -> str:
     """Strip a leading '.HK'/'HK' suffix and leading zeros -- e.g. '00863.HK' -> '863'."""
     bare = re.sub(r"\.HK$", "", str(code).strip(), flags=re.IGNORECASE)
@@ -101,7 +121,7 @@ def _resolve_stock_id(ticker: str) -> tuple[str, str] | None:
     bare_code = _normalize_code(ticker)
     padded_code = bare_code.zfill(5)
 
-    resp = requests.get(
+    resp = _get_with_hard_timeout(
         HKEXNEWS_PREFIX_URL,
         params={"callback": "callback", "lang": "EN", "type": "A", "name": padded_code, "market": "SEHK"},
         headers=_SEARCH_HEADERS,
@@ -169,7 +189,7 @@ def fetch_ticker_announcements(ticker: str, *, lookback_days: int = LOOKBACK_DAY
             "lang": "E",
         }
 
-        resp = requests.get(
+        resp = _get_with_hard_timeout(
             HKEXNEWS_TITLE_SEARCH_URL,
             params=params,
             headers=_SEARCH_HEADERS,
