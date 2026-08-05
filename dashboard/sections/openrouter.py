@@ -3710,6 +3710,8 @@ def render_weekly_usage_section(datasets: dict[str, DatasetLoadResult], openrout
         state = _weekly_usage_section_state(datasets, openrouter_views, metric, window=str(usage_window or "Weekly"))
 
     pivot = state["pivot"]
+    history_cutoff = render_history_range_control("openrouter_weekly_usage_history")
+    pivot = _filter_pivot_by_history_range(pivot, history_cutoff)
 
     if state.get("scraped_at"):
         st.markdown(
@@ -3846,7 +3848,9 @@ def render_weekly_usage_section(datasets: dict[str, DatasetLoadResult], openrout
         )
     elif metric == "Requests":
         request_chart = pivot.copy()
-        historical_request_pivot = state.get("historical_request_pivot", pd.DataFrame())
+        historical_request_pivot = _filter_pivot_by_history_range(
+            state.get("historical_request_pivot", pd.DataFrame()), history_cutoff
+        )
         if isinstance(historical_request_pivot, pd.DataFrame) and not historical_request_pivot.empty:
             request_chart = pd.concat([request_chart, historical_request_pivot], axis=1).sort_index()
         request_chart_fig = make_line_chart(
@@ -4273,6 +4277,41 @@ def _latest_provider_market_coverage(
     return float(provider_totals.loc[latest_date]) / official_total, latest_date, provider_count
 
 
+HISTORY_RANGE_OPTIONS = ["YTD", "1Y", "2Y", "5Y", "All"]
+
+
+def _history_range_cutoff(choice: str) -> pd.Timestamp | None:
+    today = pd.Timestamp(datetime.now().date())
+    if choice == "YTD":
+        return pd.Timestamp(year=today.year, month=1, day=1)
+    if choice == "1Y":
+        return today - pd.DateOffset(years=1)
+    if choice == "2Y":
+        return today - pd.DateOffset(years=2)
+    if choice == "5Y":
+        return today - pd.DateOffset(years=5)
+    return None
+
+
+def _filter_pivot_by_history_range(pivot_df: pd.DataFrame, cutoff: pd.Timestamp | None) -> pd.DataFrame:
+    if pivot_df.empty or cutoff is None:
+        return pivot_df
+    parsed = pd.to_datetime(pivot_df.index, errors="coerce")
+    keep = parsed.isna() | (parsed >= cutoff)
+    return pivot_df[keep]
+
+
+def render_history_range_control(key: str, *, default: str = "1Y") -> pd.Timestamp | None:
+    """Shared YTD/1Y/2Y/5Y/All control -- backfilled history now runs back to
+    2024/2025 in several sections, so daily/weekly charts default to a
+    readable window instead of plotting years of dense history at once."""
+    if hasattr(st, "segmented_control"):
+        choice = st.segmented_control("History", HISTORY_RANGE_OPTIONS, default=default, key=key)
+    else:
+        choice = st.radio("History", HISTORY_RANGE_OPTIONS, horizontal=True, index=HISTORY_RANGE_OPTIONS.index(default), key=key)
+    return _history_range_cutoff(str(choice or default))
+
+
 def render_revenue_token_section(datasets: dict[str, DatasetLoadResult], openrouter_views: dict[str, object]) -> None:
     """Unified provider revenue + token volume section with Metric/View toggles over shared Weekly/Monthly/Daily tabs."""
     rev_data = openrouter_views.get("revenue_estimator", {})
@@ -4381,36 +4420,10 @@ def render_revenue_token_section(datasets: dict[str, DatasetLoadResult], openrou
     # Backfilled history now runs back to mid-2024, so the Daily tab in
     # particular is unreadable without a range floor -- this trims all three
     # granularities to a shared window rather than only bounding one tab.
-    history_options = ["YTD", "1Y", "2Y", "5Y", "All"]
-    if hasattr(st, "segmented_control"):
-        history_choice = st.segmented_control("History", history_options, default="1Y", key="rev_tok_history")
-    else:
-        history_choice = st.radio("History", history_options, horizontal=True, index=1, key="rev_tok_history")
-    history_choice = str(history_choice or "1Y")
-
-    def _history_cutoff(choice: str) -> pd.Timestamp | None:
-        today = pd.Timestamp(datetime.now().date())
-        if choice == "YTD":
-            return pd.Timestamp(year=today.year, month=1, day=1)
-        if choice == "1Y":
-            return today - pd.DateOffset(years=1)
-        if choice == "2Y":
-            return today - pd.DateOffset(years=2)
-        if choice == "5Y":
-            return today - pd.DateOffset(years=5)
-        return None
-
-    def _filter_pivot_by_history(pivot_df: pd.DataFrame, cutoff: pd.Timestamp | None) -> pd.DataFrame:
-        if pivot_df.empty or cutoff is None:
-            return pivot_df
-        parsed = pd.to_datetime(pivot_df.index, errors="coerce")
-        keep = parsed.isna() | (parsed >= cutoff)
-        return pivot_df[keep]
-
-    history_cutoff = _history_cutoff(history_choice)
-    pivot_active_daily = _filter_pivot_by_history(pivot_active_daily, history_cutoff)
-    pivot_active_weekly = _filter_pivot_by_history(pivot_active_weekly, history_cutoff)
-    pivot_active_monthly = _filter_pivot_by_history(pivot_active_monthly, history_cutoff)
+    history_cutoff = render_history_range_control("rev_tok_history")
+    pivot_active_daily = _filter_pivot_by_history_range(pivot_active_daily, history_cutoff)
+    pivot_active_weekly = _filter_pivot_by_history_range(pivot_active_weekly, history_cutoff)
+    pivot_active_monthly = _filter_pivot_by_history_range(pivot_active_monthly, history_cutoff)
 
     def _render_chart(
         pivot_df: pd.DataFrame,
@@ -4997,8 +5010,9 @@ def _render_company_explorer(views: dict[str, object]) -> None:
         )
     chart_metric = str(chart_metric or "Tokens")
     chart_window = str(chart_window or "Weekly")
+    history_cutoff = render_history_range_control(f"openrouter_company_history_{provider_slug}")
     metric_pivots = state["weekly_metrics"] if chart_window == "Weekly" else state["daily_metrics"]
-    selected_pivot = metric_pivots.get(chart_metric, pd.DataFrame())
+    selected_pivot = _filter_pivot_by_history_range(metric_pivots.get(chart_metric, pd.DataFrame()), history_cutoff)
     if selected_pivot.empty:
         if chart_metric in {"Requests", "Tokens / Request"}:
             st.info(f"No daily {chart_metric.casefold()} observations are available for this company from Apr 16, 2026 yet.")
@@ -5010,6 +5024,7 @@ def _render_company_explorer(views: dict[str, object]) -> None:
         token_model_pivot = state["weekly_model_pivot"] if chart_window == "Weekly" else model_pivot
         if token_model_pivot.empty:
             token_model_pivot = selected_pivot
+        token_model_pivot = _filter_pivot_by_history_range(token_model_pivot, history_cutoff)
         chart = make_stacked_area_chart(
             token_model_pivot, list(token_model_pivot.index), MODEL_COLORS,
             x_title="Usage Week (Starting)" if chart_window == "Weekly" else "Usage Date (Daily)",
