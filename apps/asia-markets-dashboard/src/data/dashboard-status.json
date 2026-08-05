@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-08-05T09:06:18.760456Z",
-  "snapshot_id": "13e3eabf01217813",
-  "data_as_of": "2026-07-27",
+  "generated_at": "2026-08-05T18:05:42.222135Z",
+  "snapshot_id": "bb49c74f453b0ff3",
+  "data_as_of": "2026-08-03",
   "overall_status": "Healthy",
   "live_sources": 11,
   "planned_sources": 1,
@@ -22,9 +22,9 @@
       "dataset": "Midland MHPI",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-07-27",
-      "records": 542,
-      "freshness": "9d old",
+      "latest_observation": "2026-08-03",
+      "records": 543,
+      "freshness": "2d old",
       "notes": "Latest observation is published without a provisional flag."
     },
     {
@@ -32,9 +32,9 @@
       "dataset": "Midland Confidence Index",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-07-27",
-      "records": 444,
-      "freshness": "9d old",
+      "latest_observation": "2026-08-03",
+      "records": 445,
+      "freshness": "2d old",
       "notes": "Latest observation is published without a provisional flag."
     },
     {
@@ -73,7 +73,7 @@
       "type": "Measure",
       "status": "Healthy",
       "latest_observation": "2026-06-01",
-      "records": 707,
+      "records": 354,
       "freshness": "65d old",
       "notes": "Normalized residential rental index; rental-yield history is a companion dataset."
     },
@@ -113,7 +113,7 @@
       "type": "Measure",
       "status": "Healthy",
       "latest_observation": "2026-07",
-      "records": 196,
+      "records": 41,
       "freshness": "Published snapshot",
       "notes": "Six explicitly registered phases; attributable sales use the ownership registry and sell-through uses unique active units."
     },
@@ -133,7 +133,7 @@
       "type": "Measure",
       "status": "Healthy",
       "latest_observation": "—",
-      "records": 234,
+      "records": 300,
       "freshness": "Live at build time",
       "notes": "Deduplicated agency transaction feeds; see the chart/table above."
     },
@@ -161,11 +161,11 @@
       "source": "Buildings Department history",
       "dataset": "Md52-Md56 stage aggregates",
       "type": "Measure",
-      "status": "No data this run",
+      "status": "Healthy",
       "latest_observation": "—",
-      "records": 0,
-      "freshness": "Fetch returned no rows",
-      "notes": "Buildings Department Monthly Digest PDF archive (Section 1 aggregate tables); live fetch returned no usable rows this run."
+      "records": 1210,
+      "freshness": "Live at build time",
+      "notes": "Buildings Department Monthly Digest PDF archive (Section 1 aggregate tables); see the chart/table above."
     },
     {
       "source": "SRPE pilot",
@@ -173,7 +173,7 @@
       "type": "Measure",
       "status": "Healthy",
       "latest_observation": "2026-07",
-      "records": 161,
+      "records": 31,
       "freshness": "Published snapshot",
       "notes": "Sales of First-hand Residential Properties Electronic Platform (SRPE); see the chart/table above."
     },
