@@ -90,7 +90,15 @@ def main() -> int:
         try:
             body = client.fetch_capture(capture)
             snapshot = Snapshot(name="openrouter_models_wayback", source_url=capture.original, body=body)
-            scraped_at = f"{capture.capture_date}T00:00:00Z"
+            # Always include microseconds, even though they're meaningless at
+            # day-granularity here: the live pipeline's snapshot_ts always has
+            # them (via datetime.now().isoformat()), and pandas' to_datetime
+            # silently produces NaT for whichever format doesn't match its
+            # inferred format when a column mixes bare-second and
+            # fractional-second ISO strings -- which broke snapshot_ts-based
+            # as-of pricing joins for every live-scraped row once backfilled
+            # rows were mixed in.
+            scraped_at = f"{capture.capture_date}T00:00:00.000000Z"
             run_id = f"wayback-{capture.timestamp}-{uuid4().hex[:8]}"
             records = source.extract(snapshot, run_id, scraped_at)
             if not records:
