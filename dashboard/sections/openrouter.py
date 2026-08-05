@@ -1121,13 +1121,23 @@ def _compute_revenue_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, 
             combined.pivot_table(index="usage_week", columns="provider_label", values="final_revenue", aggfunc="sum")
             .fillna(0).sort_index()
         )
-        pivot_rev_weekly_legacy = pivot_rev_weekly_legacy[pivot_rev_weekly_legacy.index <= "2026-01-05"]
+        # Keep legacy weeks strictly before modern (provider-activity-priced) coverage
+        # begins, mirroring the token pivot's cutover a few lines up. This used to be
+        # a hardcoded "2026-01-05" because that was where modern coverage started at
+        # the time -- once modern coverage was backfilled deeper, the hardcoded date
+        # left a long stretch where both legacy and modern covered the same weeks,
+        # and concat+groupby(sum) below double-counted revenue for every one of them.
+        if not modern_pivot_weekly.empty:
+            first_modern_rev_week = modern_pivot_weekly.index.min()
+            pivot_rev_weekly_legacy = pivot_rev_weekly_legacy[pivot_rev_weekly_legacy.index < first_modern_rev_week]
 
         pivot_rev_monthly_legacy = (
             combined.pivot_table(index="usage_month", columns="provider_label", values="final_revenue", aggfunc="sum")
             .fillna(0).sort_index()
         )
-        pivot_rev_monthly_legacy = pivot_rev_monthly_legacy[pivot_rev_monthly_legacy.index <= "2026-01"]
+        if not modern_pivot_monthly.empty:
+            first_modern_rev_month = modern_pivot_monthly.index.min()
+            pivot_rev_monthly_legacy = pivot_rev_monthly_legacy[pivot_rev_monthly_legacy.index < first_modern_rev_month]
 
         pivot_rev_weekly = pd.concat([pivot_rev_weekly_legacy, modern_pivot_weekly]).fillna(0).sort_index()
         pivot_rev_weekly = pivot_rev_weekly.groupby(level=0).sum()
@@ -1172,6 +1182,7 @@ def _compute_revenue_views(datasets: dict[str, DatasetLoadResult]) -> dict[str, 
             "economics": economics,
             "coverage": coverage_summary,
             "strict_coverage": strict_coverage_summary,
+            "legacy_cutover_week": modern_pivot_weekly.index.min() if not modern_pivot_weekly.empty else None,
         },
         "token_volume": {
             "pivot_daily": pivot_tok_daily,
@@ -4367,6 +4378,40 @@ def render_revenue_token_section(datasets: dict[str, DatasetLoadResult], openrou
     pivot_active_weekly  = pivot_rev_weekly if is_revenue else pivot_tok_weekly
     pivot_active_monthly = pivot_rev_monthly if is_revenue else pivot_tok_monthly
 
+    # Backfilled history now runs back to mid-2024, so the Daily tab in
+    # particular is unreadable without a range floor -- this trims all three
+    # granularities to a shared window rather than only bounding one tab.
+    history_options = ["YTD", "1Y", "2Y", "5Y", "All"]
+    if hasattr(st, "segmented_control"):
+        history_choice = st.segmented_control("History", history_options, default="1Y", key="rev_tok_history")
+    else:
+        history_choice = st.radio("History", history_options, horizontal=True, index=1, key="rev_tok_history")
+    history_choice = str(history_choice or "1Y")
+
+    def _history_cutoff(choice: str) -> pd.Timestamp | None:
+        today = pd.Timestamp(datetime.now().date())
+        if choice == "YTD":
+            return pd.Timestamp(year=today.year, month=1, day=1)
+        if choice == "1Y":
+            return today - pd.DateOffset(years=1)
+        if choice == "2Y":
+            return today - pd.DateOffset(years=2)
+        if choice == "5Y":
+            return today - pd.DateOffset(years=5)
+        return None
+
+    def _filter_pivot_by_history(pivot_df: pd.DataFrame, cutoff: pd.Timestamp | None) -> pd.DataFrame:
+        if pivot_df.empty or cutoff is None:
+            return pivot_df
+        parsed = pd.to_datetime(pivot_df.index, errors="coerce")
+        keep = parsed.isna() | (parsed >= cutoff)
+        return pivot_df[keep]
+
+    history_cutoff = _history_cutoff(history_choice)
+    pivot_active_daily = _filter_pivot_by_history(pivot_active_daily, history_cutoff)
+    pivot_active_weekly = _filter_pivot_by_history(pivot_active_weekly, history_cutoff)
+    pivot_active_monthly = _filter_pivot_by_history(pivot_active_monthly, history_cutoff)
+
     def _render_chart(
         pivot_df: pd.DataFrame,
         date_title: str,
@@ -4457,11 +4502,16 @@ def render_revenue_token_section(datasets: dict[str, DatasetLoadResult], openrou
 
     tab_week, tab_month, tab_day = st.tabs(["Weekly", "Monthly", "Daily"])
     with tab_week:
-        week_caption = (
-            "Weekly revenue combines legacy Market Share plus Top Models fallback estimates before mid-January 2026, "
-            "then switches to observed provider activity with pricing fallbacks."
-            if is_revenue else None
-        )
+        week_caption = None
+        if is_revenue:
+            cutover_week = rev_data.get("legacy_cutover_week")
+            cutover_label = pd.Timestamp(cutover_week).strftime("%b %d, %Y") if cutover_week is not None else None
+            week_caption = (
+                f"Weekly revenue combines legacy Market Share plus Top Models fallback estimates before {cutover_label}, "
+                "then switches to observed provider activity with pricing fallbacks."
+                if cutover_label
+                else "Weekly revenue uses observed provider activity with pricing fallbacks throughout the plotted history."
+            )
         _render_chart(pivot_active_weekly, "Usage Week (Starting)", "weekly", extra_caption=week_caption)
     with tab_month:
         _render_chart(pivot_active_monthly, "Usage Month", "monthly")
