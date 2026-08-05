@@ -2445,10 +2445,30 @@ def test_dashboard_monthly_revenue_excludes_post_legacy_market_share_topups(tmp_
         ],
         columns=EXPECTED_COLUMNS,
     )
+    # Legacy market-share topups are only excluded for a period once *modern*
+    # (provider-activity-priced) coverage actually exists for that period --
+    # the cutover is derived from modern data's own earliest date, not a
+    # fixed one, so modern coverage of the same week (any provider) is what
+    # makes the dynamic cutover exclude Xiaomi's legacy topup here.
+    provider_daily_activity = pd.DataFrame(
+        [
+            {
+                **_base_row("provider_daily_activity"),
+                "usage_date": "2026-03-30",
+                "entity_id": "openai",
+                "entity_name": "OpenAI",
+                "category_slug": "openai",
+                "model_permaslug": "openai/gpt-5.6-sol",
+                "total_tokens": 100.0,
+            }
+        ],
+        columns=EXPECTED_COLUMNS,
+    )
 
     _write_dataset(tmp_path, "top_models", top_models)
     _write_dataset(tmp_path, "market_share", market_share)
     _write_dataset(tmp_path, "raw_openrouter_models", raw_openrouter_models)
+    _write_dataset(tmp_path, "provider_daily_activity", provider_daily_activity)
 
     datasets = load_all_datasets(base_dir=tmp_path)
     views = _compute_revenue_views(datasets)
@@ -3525,7 +3545,7 @@ def test_workload_weekly_splices_history_and_omits_unmatched_partial_weeks() -> 
     }
 
 
-def test_weekly_token_and_request_history_starts_august_4_2025() -> None:
+def test_weekly_request_history_starts_august_4_2025_but_tokens_use_full_backfill() -> None:
     views = {
         "top_models": {
             "pivot_total": pd.DataFrame(
@@ -3546,7 +3566,11 @@ def test_weekly_token_and_request_history_starts_august_4_2025() -> None:
     tokens = _weekly_usage_section_state({}, views, "Tokens")
     requests = _weekly_usage_section_state({}, views, "Requests")
 
-    assert tokens["pivot"].index.tolist() == ["2025-08-04"]
+    # Tokens (top_models/provider_daily_activity) are no longer clipped to
+    # WEEKLY_USAGE_START_DATE now that both have real backfilled history
+    # before it. Requests (provider_weekly_requests/openrouter_model_activity)
+    # were never backfilled, so that floor still applies there.
+    assert tokens["pivot"].index.tolist() == ["2025-07-28", "2025-08-04"]
     assert requests["pivot"].index.tolist() == ["2025-08-04"]
 
 
