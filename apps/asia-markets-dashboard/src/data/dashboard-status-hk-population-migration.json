@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-08-04T09:07:39.546051Z",
-  "snapshot_id": "8369ffb6481a6bce",
-  "data_as_of": "2026-08-03",
+  "generated_at": "2026-08-05T09:05:47.923396Z",
+  "snapshot_id": "b895260012d2db85",
+  "data_as_of": "2026-08-04",
   "overall_status": "Healthy",
   "live_sources": 6,
   "planned_sources": 0,
@@ -11,7 +11,7 @@
       "dataset": "immd",
       "type": "Monitor",
       "status": "Healthy",
-      "latest_observation": "2026-08-03",
+      "latest_observation": "2026-08-04",
       "records": 365,
       "freshness": "Dated snapshot",
       "notes": "Daily passenger clearance by control point, direction and residency, used to derive HK-resident net flow and Mainland-visitor net retention."
@@ -67,5 +67,5 @@
       "notes": "Monthly visitor arrivals by nationality/region since 2004, a geographic companion/cross-check to ImmD's cross-border passenger data."
     }
   ],
-  "attachment_filename": "hk-population-migration-dashboard-2026-08-04.html"
+  "attachment_filename": "hk-population-migration-dashboard-2026-08-05.html"
 }
