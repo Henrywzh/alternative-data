@@ -4,7 +4,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
-from dashboard.components import dataframe_for_display, format_metric, kpi_card_html, kpi_grid_html
+from dashboard.components import dataframe_for_display, format_metric, kpi_card_html, kpi_grid_html, make_stacked_area_chart
 from dashboard.data import DatasetLoadResult
 from dashboard.theme import CARD, GRID, MODEL_COLORS, MUTED, TEXT
 
@@ -17,6 +17,11 @@ DEEPDIVES_ID = "opencode_model_deepdives"
 DEFAULT_TIER = "All Users"
 DAILY_TIMEFRAME = "1D"
 MONTHLY_TIMEFRAME = "1M"
+
+# (timeframe code, display label) for the over-time chart's window selector.
+# Only day-granularity timeframes are listed here — "ALL"/"YTD" bucket by
+# month instead of day and aren't useful for a daily trend line.
+OVER_TIME_WINDOWS = [("1M", "30 days"), ("3M", "90 days")]
 
 
 def _frame(datasets: dict[str, DatasetLoadResult], dataset_id: str) -> pd.DataFrame:
@@ -113,6 +118,70 @@ def _render_market_share(market_share: pd.DataFrame) -> None:
         template="plotly_white", height=max(280, 28 * len(scoped)), margin=dict(l=0, r=30, t=12, b=30),
         paper_bgcolor=CARD, plot_bgcolor=CARD, font=dict(color=TEXT, size=12),
         xaxis=dict(gridcolor=GRID, title="Token share", ticksuffix="%"), yaxis=dict(showgrid=False),
+    )
+    st.plotly_chart(figure, width="stretch", config={"displayModeBar": False})
+
+
+def _parse_usage_date(usage_date: object, reference_year: int, reference_month: int) -> pd.Timestamp | None:
+    """Parse a source chart's "AUG 4"-style axis label into a real date.
+
+    opencode.ai's day-granularity timeframes never repeat a month label
+    within one window, so the label alone (plus the scrape's own year) is
+    enough — except right at a year boundary, where a label like "DEC 31"
+    scraped in early January actually belongs to the previous year.
+    """
+    if pd.isna(usage_date):
+        return None
+    try:
+        candidate = pd.to_datetime(f"{str(usage_date).strip()} {reference_year}", format="%b %d %Y")
+    except (ValueError, TypeError):
+        return None
+    if candidate.month - reference_month > 6:
+        candidate = candidate.replace(year=reference_year - 1)
+    return candidate
+
+
+def _render_usage_over_time(market_share: pd.DataFrame) -> None:
+    st.markdown('<div class="section-title">Token Volume Over Time</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-subtitle">Daily coding-agent token volume by model author. '
+        'opencode.ai publishes this history directly, so it\'s available from day one rather '
+        'than something we have to accumulate across our own daily scrapes.</div>',
+        unsafe_allow_html=True,
+    )
+    window_codes = [code for code, _ in OVER_TIME_WINDOWS]
+    window_labels = dict(OVER_TIME_WINDOWS)
+    window = st.radio(
+        "Window", window_codes, index=1, horizontal=True,
+        format_func=lambda code: window_labels[code], key="opencode_usage_over_time_window",
+    )
+
+    scoped = market_share[market_share["timeframe"] == window].copy()
+    if scoped.empty:
+        st.info("No historical market share data is available yet.")
+        return
+
+    reference = pd.to_datetime(scoped["scraped_at"], errors="coerce", utc=True).max()
+    if pd.isna(reference):
+        st.info("No historical market share data is available yet.")
+        return
+    scoped["date"] = scoped["usage_date"].apply(lambda v: _parse_usage_date(v, reference.year, reference.month))
+    scoped = scoped.dropna(subset=["date"])
+    if scoped.empty:
+        st.info("No historical market share data is available yet.")
+        return
+
+    pivot = scoped.pivot_table(index="date", columns="author", values="tokens_trillion", aggfunc="last").sort_index()
+    # Largest-author-first column order keeps stacking/legend order matching
+    # a natural reading of the latest day, and keeps colors stable day to day.
+    latest_row = pivot.iloc[-1].sort_values(ascending=False)
+    pivot = pivot[latest_row.index]
+    display_index = [d.strftime("%b %d") for d in pivot.index]
+
+    figure = make_stacked_area_chart(
+        pivot, display_index=display_index, colors=MODEL_COLORS,
+        x_title="Date", y_title="Trillion tokens", value_format=",.2f",
+        height=420,
     )
     st.plotly_chart(figure, width="stretch", config={"displayModeBar": False})
 
@@ -219,6 +288,7 @@ def render(domain_states, datasets: dict[str, DatasetLoadResult]) -> None:
     _render_kpis(leaderboard, country)
     _render_leaderboard(leaderboard)
     _render_market_share(market_share)
+    _render_usage_over_time(market_share)
     _render_country_usage(country)
     _render_model_economics(deepdives)
     st.caption("Source: opencode.ai/data (unofficial usage dashboard) · refreshed daily. History accumulates day over day; trend views will follow once enough daily snapshots exist.")
