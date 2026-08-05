@@ -281,10 +281,23 @@ def _render_openrouter_economics(signals: pd.DataFrame) -> None:
         full_value = float(full.loc[full["signal_date"].eq(common_date), "value"].iloc[-1])
         tracked_value = float(tracked.loc[tracked["signal_date"].eq(common_date), "value"].iloc[-1])
         share = tracked_value / full_value if full_value else 0.0
+        # The backcast/as-of split date isn't fixed -- it's wherever priced-model
+        # history actually starts, so derive the caption from the real data
+        # rather than hardcoding a date that goes stale as pricing history grows.
+        backcast_caption = "Solid revenue uses as-of pricing throughout the plotted history."
+        if not revenue.empty:
+            backcast_rows = revenue[revenue["detail_label"].astype(str).eq("backcast_earliest_pricing")]
+            as_of_rows = revenue[~revenue.index.isin(backcast_rows.index)]
+            if not backcast_rows.empty and not as_of_rows.empty:
+                pricing_start_label = as_of_rows["signal_date"].min().strftime("%b %d")
+                backcast_caption = (
+                    f"Dotted revenue before {pricing_start_label} uses the earliest known price snapshot as a "
+                    "backcast; solid revenue uses as-of pricing."
+                )
         st.caption(
             f"On {common_date:%b %d}, configured providers represented {share:.1%} of official full-market tokens. "
             "OpenRouter’s ‘Other’ bucket is the model long tail below the daily top 50, not an other-provider bucket. "
-            "Dotted revenue before Apr 15 uses the earliest known price snapshot as a backcast; solid revenue uses as-of pricing."
+            f"{backcast_caption}"
         )
 
 

@@ -1982,11 +1982,6 @@ COMPARISON_METRICS = (
 )
 COMPARISON_WINDOWS = ("Daily", "7-day avg", "Weekly", "Monthly")
 COMPARISON_REQUEST_INTERPOLATION_CUTOFF = pd.Timestamp("2026-01-01")
-# Model-level provider activity begins mid-week on Jan 16, 2026.  The first
-# comparison bucket is therefore the Jan 12 week; older top-model ranking rows
-# are useful for the catalog history but are not a comparable model-detail
-# series and should not appear in this chart.
-MODEL_DETAIL_WEEKLY_START = pd.Timestamp("2026-01-12")
 
 
 def _comparison_period_start(values: pd.Series, window: str) -> pd.Series:
@@ -2503,8 +2498,13 @@ def build_openrouter_comparison_views(
         if request_complete_week is not None:
             weekly_modern_requests = weekly_modern_requests[weekly_modern_requests["period_start"] >= request_complete_week]
         weekly_tokens = _comparison_merge_sources(legacy_tokens, weekly_modern_tokens, prefer_modern=True)
-        if entity_type == "Models" and not weekly_tokens.empty:
-            weekly_tokens = weekly_tokens[weekly_tokens["period_start"] >= MODEL_DETAIL_WEEKLY_START].copy()
+        # Model-detail rows come from provider_activity's per-model breakdown, so
+        # older top-model ranking rows before that series starts aren't a
+        # comparable model-detail series and shouldn't appear in this chart.
+        # provider_first_week is derived from the live data (not hardcoded) so
+        # this floor moves automatically if provider_activity's history changes.
+        if entity_type == "Models" and not weekly_tokens.empty and provider_first_week is not None:
+            weekly_tokens = weekly_tokens[weekly_tokens["period_start"] >= provider_first_week].copy()
         # The legacy company request feed is the longer, stable weekly series;
         # use newer model-detail requests only after it stops publishing.
         weekly_requests = _comparison_merge_sources(legacy_requests, weekly_modern_requests, prefer_modern=False)
@@ -2567,8 +2567,8 @@ def build_openrouter_comparison_views(
                 {
                     "date": provider_first_week,
                     "label": (
-                        f"Jan 16: provider daily activity starts; this week has {provider_first_week_days}/7 observed days "
-                        "and keeps the complete legacy weekly bucket"
+                        f"{provider_first_week.strftime('%b %d')}: provider daily activity starts; "
+                        f"this week has {provider_first_week_days}/7 observed days and keeps the complete legacy weekly bucket"
                     ),
                     "short_label": "Provider daily starts",
                 } if provider_first_week is not None else None,
@@ -3087,7 +3087,10 @@ def _workload_total_ratio_state(
                 else None
             )
 
-        token_pivot = _clip_weekly_usage_pivot(token_pivot)
+        # token_pivot is sourced from top_models/provider_daily_activity, both of
+        # which now have real backfilled history well before WEEKLY_USAGE_START_DATE;
+        # only request_pivot (openrouter_model_activity/provider_weekly_requests,
+        # neither backfilled) still needs that floor.
         request_pivot = _clip_weekly_usage_pivot(request_pivot)
 
     def _total_series(frame: pd.DataFrame, label: str) -> pd.Series:
@@ -3156,9 +3159,9 @@ def _workload_total_ratio_state(
         "source_status": (
             "Derived OpenRouter workload intensity · graph totals"
             + (
-                " · daily series starts 2026-06-17"
-                if requested_window == "Daily"
-                else " · weekly history starts 2025-08-04 · incomplete weeks omitted"
+                f" · {'daily' if requested_window == 'Daily' else 'weekly'} series starts "
+                f"{ratio.index.min() if not ratio.empty else 'n/a'}"
+                + ("" if requested_window == "Daily" else " · incomplete weeks omitted")
             )
         ),
         "request_source_by_week": {
@@ -3297,16 +3300,22 @@ def _daily_total_usage_pivot(
     if prepared.empty:
         return pd.DataFrame(columns=[f"Total {metric}" ]), requested_window, None
 
+    # WEEKLY_USAGE_START_DATE/DAILY_USAGE_START_DATE describe openrouter_model_activity's
+    # real limits (it keeps only a rolling window). provider_daily_activity has no such
+    # window, so the Tokens series shouldn't be clipped to a floor that belongs to a
+    # different dataset -- only apply it to the Requests series sourced from model_activity.
     if requested_window == "Weekly":
         prepared["period"] = prepared["usage_date_dt"] - pd.to_timedelta(
             prepared["usage_date_dt"].dt.weekday, unit="D"
         )
-        prepared = prepared.loc[prepared["period"].ge(WEEKLY_USAGE_START_DATE)].copy()
+        if metric != "Tokens":
+            prepared = prepared.loc[prepared["period"].ge(WEEKLY_USAGE_START_DATE)].copy()
         if prepared.empty:
             return pd.DataFrame(columns=[f"Total {metric}"]), requested_window, result.latest_scraped_at if result else None
     else:
         prepared["period"] = prepared["usage_date_dt"]
-        prepared = prepared.loc[prepared["period"].ge(DAILY_USAGE_START_DATE)].copy()
+        if metric != "Tokens":
+            prepared = prepared.loc[prepared["period"].ge(DAILY_USAGE_START_DATE)].copy()
         if prepared.empty:
             return pd.DataFrame(columns=[f"Total {metric}"]), requested_window, result.latest_scraped_at if result else None
     pivot = (
@@ -3534,8 +3543,10 @@ def _weekly_usage_section_state(
 
     top_view = openrouter_views.get("top_models", {})
     total_source = top_view.get("total_source", "top_models")
+    # pivot_total blends market_share/top_models/provider_daily_activity, all
+    # backfilled with real history before WEEKLY_USAGE_START_DATE -- that floor
+    # belongs to openrouter_model_activity and shouldn't clip this series.
     pivot_total = top_view.get("pivot_total", pd.DataFrame())
-    pivot_total = _clip_weekly_usage_pivot(pivot_total)
     latest_week = pivot_total.index.max() if not pivot_total.empty else "n/a"
     latest_source = top_view.get("source_by_week", {}).get(latest_week, total_source)
     result = datasets.get("market_share") if latest_source == "market_share" else datasets.get("top_models")
@@ -3602,7 +3613,10 @@ def _weekly_usage_section_state(
         "hover_suffix": "tokens",
         "empty_message": "No weekly token data is available yet.",
         "caption": "Completed weekly OpenRouter token-usage buckets. Uses Market Share totals when they remain directionally complete, and falls back to Top Models when the Market Share feed undercounts recent weeks.",
-        "source_status": f"Total source: {total_source} · History starts 2025-08-04 · Latest plotted week: {latest_week} · Latest-week source: {latest_source}",
+        "source_status": (
+            f"Total source: {total_source} · History starts {pivot_total.index.min() if not pivot_total.empty else 'n/a'} "
+            f"· Latest plotted week: {latest_week} · Latest-week source: {latest_source}"
+        ),
         "scraped_at": result.latest_scraped_at if result else None,
     }
 

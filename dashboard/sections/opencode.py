@@ -103,10 +103,16 @@ def _render_market_share(market_share: pd.DataFrame) -> None:
         '<div class="section-subtitle">Share of OpenCode coding-agent token volume by model author, latest day.</div>',
         unsafe_allow_html=True,
     )
-    scoped = market_share[market_share["timeframe"] == DAILY_TIMEFRAME]
+    scoped = market_share[market_share["timeframe"] == DAILY_TIMEFRAME].copy()
     if scoped.empty:
         st.info("No daily market share snapshot is available yet.")
         return
+    # opencode_market_share accumulates one "1D" row per author per scrape day
+    # (that history is what _render_usage_over_time charts). This bar chart is
+    # a latest-day snapshot, so keep only each author's most recent row --
+    # otherwise every prior day's bar keeps overlapping the current one.
+    scoped["scraped_at_dt"] = pd.to_datetime(scoped["scraped_at"], errors="coerce", utc=True)
+    scoped = scoped.sort_values("scraped_at_dt").groupby("author", as_index=False).tail(1)
     scoped = scoped.sort_values("share_pct", ascending=True)
     figure = go.Figure(go.Bar(
         x=scoped["share_pct"], y=scoped["author"], orientation="h",
