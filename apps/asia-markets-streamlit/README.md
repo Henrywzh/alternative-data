@@ -1,11 +1,12 @@
 # Asia Markets Streamlit V1
 
-Private research-terminal V1 for the five currently connected Hong Kong sectors:
+Private research-terminal V1 for the six currently connected Hong Kong sectors:
 
 - Hong Kong Labour Market & Talent Policy
 - Hong Kong Population & Migration
 - Hong Kong Transport & Aviation (separate Cathay, China-listed-airline and MTR tabs; airline passenger/cargo/fleet/route signals)
 - Hong Kong Commercial Aerospace (verified China launches, constellation inventory, SATCAT and Wikipedia attention)
+- Hong Kong Real Estate (separate Residential Market, Cross-Source & Sentiment, and Commercial & Land Supply tabs; sector-level signals only — company-level bottom-up analysis, e.g. individual developer deep dives, is tracked separately and deliberately has no tab here yet)
 - Global Crypto Market Context (stablecoin supply, DEX volume and Fear & Greed)
 
 The app reads the existing source-backed artifacts from

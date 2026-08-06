@@ -60,13 +60,24 @@ def save_normalized_dataset(
 
 
 def load_latest_normalized(dataset_name: str) -> pd.DataFrame:
-    """Load the latest normalized run for a dataset, or an empty frame."""
+    """Load the most recent normalized run for a dataset that actually has rows.
+
+    A run whose live fetch legitimately returned zero rows (upstream outage,
+    schema change) still gets a fresh timestamped directory. Picking by mtime
+    alone would let that empty run permanently shadow the last good snapshot,
+    so skip empty runs and fall back to the newest non-empty one instead.
+    """
     dataset_dir = NORMALIZED_DIR / dataset_name
     if not dataset_dir.is_dir():
         return pd.DataFrame()
     run_dirs = [path for path in dataset_dir.iterdir() if path.is_dir()]
     if not run_dirs:
         return pd.DataFrame()
-    latest_dir = max(run_dirs, key=lambda path: path.stat().st_mtime)
-    dataset_path = latest_dir / f"{dataset_name}.parquet"
-    return pd.read_parquet(dataset_path) if dataset_path.exists() else pd.DataFrame()
+    for candidate in sorted(run_dirs, key=lambda path: path.stat().st_mtime, reverse=True):
+        dataset_path = candidate / f"{dataset_name}.parquet"
+        if not dataset_path.exists():
+            continue
+        frame = pd.read_parquet(dataset_path)
+        if not frame.empty:
+            return frame
+    return pd.DataFrame()
