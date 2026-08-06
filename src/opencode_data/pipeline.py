@@ -33,10 +33,17 @@ def run_opencode_scrape(base_dir: Path, top_models_count: int = 15) -> dict[str,
     html = fetch_html(home_url)
 
     stats_home, catalog = extract_home_payload(html)
+    if catalog is None:
+        print(
+            "Warning: model catalog payload (models+labs metadata) was not found in the "
+            "home page hydration state -- opencode_model_catalog/opencode_benchmarks will "
+            "not be updated this run. stats_home-derived datasets are unaffected."
+        )
 
     # Save raw snapshots
     save_raw_snapshot(base_dir, "stats_home", stats_home, scraped_at)
-    save_raw_snapshot(base_dir, "model_catalog", catalog, scraped_at)
+    if catalog is not None:
+        save_raw_snapshot(base_dir, "model_catalog", catalog, scraped_at)
 
     # Extract primary datasets
     market_rows = extract_market_share(stats_home, scraped_at)
@@ -44,20 +51,20 @@ def run_opencode_scrape(base_dir: Path, top_models_count: int = 15) -> dict[str,
     users_rows = extract_users_daily(stats_home, scraped_at)
     leaderboard_rows = extract_leaderboard(stats_home, scraped_at)
     country_rows = extract_country_usage(stats_home, scraped_at)
-    catalog_rows = extract_model_catalog(catalog, scraped_at)
-    benchmark_rows = extract_benchmarks(catalog, scraped_at)
+    catalog_rows = extract_model_catalog(catalog, scraped_at) if catalog is not None else []
+    benchmark_rows = extract_benchmarks(catalog, scraped_at) if catalog is not None else []
 
     # A malformed/partial payload can still pass extract_home_payload's shape
     # check (it only requires the top-level keys to exist) while yielding
     # empty core datasets. Fail loudly here instead of upserting near-empty
-    # rows into the workflow's history.
+    # rows into the workflow's history. model_catalog is excluded: it's
+    # legitimately allowed to be empty right now (see extract_home_payload).
     empty_core_datasets = [
         dataset_name
         for dataset_name, dataset_rows in (
             ("market_share", market_rows),
             ("usage_daily", usage_rows),
             ("leaderboard", leaderboard_rows),
-            ("model_catalog", catalog_rows),
         )
         if not dataset_rows
     ]

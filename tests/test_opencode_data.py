@@ -127,6 +127,69 @@ def test_opencode_extraction():
     assert bench_rows[0]["benchmark_name"] == "SWE-Bench Verified"
 
 
+def test_opencode_extraction_handles_flat_schema_without_timeframe_tier_nesting():
+    """As of 2026-08-06, opencode.ai's home page stopped nesting market/usage/
+    users/leaderboard/country under {timeframe: [...]} (or {tier: {timeframe:
+    [...]}}) and returns a flat list directly instead -- the per-item shape
+    is unchanged. This should be treated as a "1W"/"All Users" bucket rather
+    than silently producing zero rows (see extract.py's _FLAT_SCHEMA_* comment).
+    """
+    scraped_at = "2026-08-06T12:00:00+00:00"
+
+    mock_stats_home = {
+        "updatedAt": "2026-08-06T11:52:17.000Z",
+        "market": [
+            {
+                "date": "AUG 4",
+                "total": 3.5,
+                "authors": [{"author": "DeepSeek", "share": 90.0, "tokens": 3.15}],
+            }
+        ],
+        "usage": [
+            {"date": "AUG 4", "segments": [{"model": "deepseek-v4-pro", "value": 18607}]}
+        ],
+        "users": [
+            {"date": "AUG 4", "segments": [{"model": "deepseek-v4-pro", "value": 18607}]}
+        ],
+        "leaderboard": [
+            {
+                "model": "deepseek-v4-pro",
+                "provider": "deepseek",
+                "author": "DeepSeek",
+                "tokens": 20233,
+                "change": 0,
+                "rank": 1,
+            }
+        ],
+        "country": [
+            {"country": "CN", "continent": "AS", "tokens": 1.08, "share": 31.1, "rank": 1}
+        ],
+    }
+
+    market_rows = extract_market_share(mock_stats_home, scraped_at)
+    assert len(market_rows) == 1
+    assert market_rows[0]["timeframe"] == "1W"
+
+    usage_rows = extract_usage_daily(mock_stats_home, scraped_at)
+    assert len(usage_rows) == 1
+    assert usage_rows[0]["timeframe"] == "1W"
+    assert usage_rows[0]["user_tier"] == "All Users"
+
+    users_rows = extract_users_daily(mock_stats_home, scraped_at)
+    assert len(users_rows) == 1
+    assert users_rows[0]["timeframe"] == "1W"
+    assert users_rows[0]["user_tier"] == "All Users"
+
+    lb_rows = extract_leaderboard(mock_stats_home, scraped_at)
+    assert len(lb_rows) == 1
+    assert lb_rows[0]["timeframe"] == "1W"
+    assert lb_rows[0]["user_tier"] == "All Users"
+
+    country_rows = extract_country_usage(mock_stats_home, scraped_at)
+    assert len(country_rows) == 1
+    assert country_rows[0]["timeframe"] == "1W"
+
+
 def test_opencode_storage():
     scraped_at = "2026-08-04T12:00:00+00:00"
     with tempfile.TemporaryDirectory() as tmpdir:
