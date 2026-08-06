@@ -3,11 +3,25 @@ from __future__ import annotations
 from collections import defaultdict
 from typing import Any
 
+# As of 2026-08-06, opencode.ai's home page stopped nesting market/usage/
+# users/leaderboard/country under {timeframe: [...]} (or {tier: {timeframe:
+# [...]}}) and started returning a single flat list directly -- the
+# per-item shape is unchanged, only the timeframe/tier grouping layer is
+# gone. This is weekly-bucketed (confirmed against the live page's own
+# JUN 12/JUN 19/... axis labels), not daily, so it's stored as a new "1W"
+# timeframe rather than mislabeled as "1D". Tier is similarly collapsed to
+# a single implicit "All Users" bucket, matching the dashboard's existing
+# DEFAULT_TIER for the old shape's all-users tier.
+_FLAT_SCHEMA_TIMEFRAME = "1W"
+_FLAT_SCHEMA_TIER = "All Users"
+
 
 def extract_market_share(stats_home: dict[str, Any], scraped_at: str) -> list[dict[str, Any]]:
     """Extract market share time series across all timeframes."""
     rows: list[dict[str, Any]] = []
     market_data = stats_home.get("market", {})
+    if isinstance(market_data, list):
+        market_data = {_FLAT_SCHEMA_TIMEFRAME: market_data}
     if not isinstance(market_data, dict):
         return rows
 
@@ -53,6 +67,8 @@ def extract_usage_daily(stats_home: dict[str, Any], scraped_at: str) -> list[dic
     """Extract model usage daily time series across user tiers."""
     rows: list[dict[str, Any]] = []
     usage_data = stats_home.get("usage", {})
+    if isinstance(usage_data, list):
+        usage_data = {_FLAT_SCHEMA_TIER: {_FLAT_SCHEMA_TIMEFRAME: usage_data}}
     if not isinstance(usage_data, dict):
         return rows
 
@@ -95,6 +111,8 @@ def extract_users_daily(stats_home: dict[str, Any], scraped_at: str) -> list[dic
     """Extract model daily active users time series across user tiers."""
     rows: list[dict[str, Any]] = []
     users_data = stats_home.get("users", {})
+    if isinstance(users_data, list):
+        users_data = {_FLAT_SCHEMA_TIER: {_FLAT_SCHEMA_TIMEFRAME: users_data}}
     if not isinstance(users_data, dict):
         return rows
 
@@ -137,6 +155,8 @@ def extract_leaderboard(stats_home: dict[str, Any], scraped_at: str) -> list[dic
     """Extract model leaderboard ranks and token volume across user tiers."""
     rows: list[dict[str, Any]] = []
     lb_data = stats_home.get("leaderboard", {})
+    if isinstance(lb_data, list):
+        lb_data = {_FLAT_SCHEMA_TIER: {_FLAT_SCHEMA_TIMEFRAME: lb_data}}
     if not isinstance(lb_data, dict):
         return rows
 
@@ -171,6 +191,8 @@ def extract_country_usage(stats_home: dict[str, Any], scraped_at: str) -> list[d
     """Extract country-level usage breakdown."""
     rows: list[dict[str, Any]] = []
     country_data = stats_home.get("country", {})
+    if isinstance(country_data, list):
+        country_data = {_FLAT_SCHEMA_TIMEFRAME: country_data}
     if not isinstance(country_data, dict):
         return rows
 

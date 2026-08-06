@@ -15,7 +15,12 @@ concurrency:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # hk_stablecoin_crypto's stage-1 pipeline tests legitimately need up to
+    # 480s each now (run_stage_1_pipeline() hits ~8 live external sites
+    # sequentially; see the HKEXnews hard-timeout fix). Whichever pytest-xdist
+    # worker lands those becomes the critical path, so 15 minutes was already
+    # tight even before that and started hard-cancelling the whole job.
+    timeout-minutes: 25
     steps:
       - name: Check out repository
         uses: actions/checkout@v7

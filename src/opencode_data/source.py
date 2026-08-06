@@ -88,8 +88,18 @@ console.log(JSON.stringify(extracted));
     return json.loads(res.stdout)
 
 
-def extract_home_payload(html: str) -> tuple[dict[str, Any], dict[str, Any]]:
-    """Extract (statsHome, catalog) from the home page HTML."""
+def extract_home_payload(html: str) -> tuple[dict[str, Any], dict[str, Any] | None]:
+    """Extract (statsHome, catalog) from the home page HTML.
+
+    catalog (models+labs metadata: limits, cost, modalities, benchmarks) is
+    no longer always present in this page's hydration state as of 2026-08-06
+    -- it appears to have moved off the home page entirely (not found in any
+    script tag, hydrated or not, confirmed live). stats_home (usage/market/
+    leaderboard/users/country -- everything the page visibly renders) is
+    unaffected. Treat catalog as optional so a genuine upstream removal of
+    one payload doesn't block the rest of the daily scrape; the caller
+    degrades the catalog/benchmark datasets specifically, not the whole run.
+    """
     extracted = parse_solid_hydration(html)
     stats_home = None
     catalog = None
@@ -102,8 +112,8 @@ def extract_home_payload(html: str) -> tuple[dict[str, Any], dict[str, Any]]:
             elif "models" in val and "labs" in val:
                 catalog = val
 
-    if not stats_home or not catalog:
-        raise ValueError("Could not find statsHome or catalog in hydrated HTML state.")
+    if not stats_home:
+        raise ValueError("Could not find statsHome in hydrated HTML state.")
 
     return stats_home, catalog
 
