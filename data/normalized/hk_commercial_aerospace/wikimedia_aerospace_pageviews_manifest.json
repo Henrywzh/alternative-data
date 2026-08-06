@@ -24,7 +24,7 @@
   "history_start": "2015-07",
   "history_end": "2026-08",
   "records": 4768,
-  "source_status": "partial",
+  "source_status": "live",
   "caveat": "Wikipedia pageviews are page loads, not unique people or domestic mainland-China demand.",
-  "fetched_at": "2026-08-05T09:06:43.492901+00:00"
+  "fetched_at": "2026-08-06T09:06:42.485076+00:00"
 }
