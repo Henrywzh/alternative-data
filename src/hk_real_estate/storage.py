@@ -10,11 +10,16 @@ from .config import RAW_DIR, NORMALIZED_DIR
 
 
 def load_latest_normalized(dataset_name: str) -> pd.DataFrame:
-    """Load the most recently written normalized snapshot for a dataset.
+    """Load the most recently written normalized snapshot for a dataset that
+    actually has rows.
 
     Used when a source is deliberately skipped in an environment where its
     live fetch can't succeed (see HK_RE_SKIP_MIDLAND) — falls back to the
-    last real data actually fetched, rather than fabricating a value.
+    last real data actually fetched, rather than fabricating a value. A run
+    whose live fetch legitimately returned zero rows (upstream outage, schema
+    change) still gets a fresh timestamped directory, so picking by mtime
+    alone would let that empty run permanently shadow the last good snapshot.
+    Skip empty runs and fall back to the newest non-empty one instead.
     """
     dataset_dir = NORMALIZED_DIR / dataset_name
     if not dataset_dir.is_dir():
@@ -22,11 +27,14 @@ def load_latest_normalized(dataset_name: str) -> pd.DataFrame:
     run_dirs = [d for d in dataset_dir.iterdir() if d.is_dir()]
     if not run_dirs:
         return pd.DataFrame()
-    latest_dir = max(run_dirs, key=lambda d: d.stat().st_mtime)
-    parquet_path = latest_dir / f"{dataset_name}.parquet"
-    if not parquet_path.exists():
-        return pd.DataFrame()
-    return pd.read_parquet(parquet_path)
+    for candidate in sorted(run_dirs, key=lambda d: d.stat().st_mtime, reverse=True):
+        parquet_path = candidate / f"{dataset_name}.parquet"
+        if not parquet_path.exists():
+            continue
+        frame = pd.read_parquet(parquet_path)
+        if not frame.empty:
+            return frame
+    return pd.DataFrame()
 
 def save_raw_snapshot(
     source_name: str,
