@@ -235,12 +235,24 @@ def _monthly_history(frame: pd.DataFrame, value_column: str, *, method: str = "m
     return compact[["date", "month", value_column]].sort_values("month").reset_index(drop=True)
 
 
+# The portable-dashboard packager enforces a 2,000-row cap per dataset in the
+# snapshot (independent of whether a chart references it). Daily Fear & Greed
+# history has run since Feb 2018 and already exceeds that on its own, so it
+# must be trimmed even though fear_greed_daily has no Cloudflare chart wired
+# to it. Keep the most recent slice -- with a safety margin below the
+# packager's cap -- rather than fail the whole build over a Streamlit-only
+# dataset that only ever needs its own "Default history window" selection
+# (max 10 years) anyway.
+FEAR_GREED_DAILY_MAX_ROWS = 1_900
+
+
 def build_fear_greed_daily_history(frame: pd.DataFrame) -> pd.DataFrame:
     """Keep daily Fear & Greed observations plus a trailing seven-day mean.
 
     The portable Cloudflare chart continues to use ``fear_greed_history`` at
     monthly grain.  This separate compact dataset is consumed by Streamlit,
-    where the daily signal and its smoother research view are useful.
+    where the daily signal and its smoother research view are useful. Capped
+    to FEAR_GREED_DAILY_MAX_ROWS most-recent rows -- see comment above.
     """
     columns = ["date", "score", "classification", "score_7d_avg"]
     if frame.empty or not {"date", "score"}.issubset(frame.columns):
@@ -256,6 +268,7 @@ def build_fear_greed_daily_history(frame: pd.DataFrame) -> pd.DataFrame:
     daily["date"] = daily["date"].dt.strftime("%Y-%m-%d")
     if "classification" not in daily.columns:
         daily["classification"] = None
+    daily = daily.tail(FEAR_GREED_DAILY_MAX_ROWS)
     return daily.reindex(columns=columns)
 
 
