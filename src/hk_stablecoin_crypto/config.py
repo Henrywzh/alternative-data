@@ -60,7 +60,12 @@ HKEXNEWS_PREFIX_URL = "https://www1.hkexnews.hk/search/prefix.do"
 HKEXNEWS_SEARCH_REFERER = "https://www1.hkexnews.hk/search/titlesearch.xhtml"
 
 DEFILLAMA_URL = "https://stablecoins.llama.fi/stablecoins?includePrices=true"
-HKEX_ETF_API_BASE = "https://ifp.hkex.com.hk/ifp/api/v1/fund/getFundSizeList"
+# HKEX relaunched the Integrated Fund Platform under a "Fund Repository" path
+# prefix (verified 2026-08-07); the bare /ifp/api/... path now 404s with a
+# plain nginx page (route gone, not a per-fund lookup failure). Fund IDs
+# themselves are unchanged -- confirmed BUU104/BUU163/BUU164/BUT244 all
+# resolve under the new prefix.
+HKEX_ETF_API_BASE = "https://ifp.hkex.com.hk/fund-repository/ifp/api/v1/fund/getFundSizeList"
 
 HKEX_ETF_FUNDS = [
     {"name": "Bosera HashKey Bitcoin ETF", "ticker": "3008.HK", "fund_id": "BUU104"},

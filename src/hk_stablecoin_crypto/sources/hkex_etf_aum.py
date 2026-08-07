@@ -1,7 +1,9 @@
 """HKEX Integrated Fund Platform ETF AUM Source.
 
-Verified live 2026-07-27. Monthly AUM data back to Sept 2024 inception. 
-Harvest Ether (3179.HK, BUT245 guessed and 404'd) is the only unresolved fundId.
+Verified live 2026-08-07. Monthly AUM data back to Sept 2024 inception.
+HKEX moved the site under a /fund-repository path prefix (config.py's
+HKEX_ETF_API_BASE); existing fund IDs were unaffected. Harvest Ether
+(3179.HK, BUT245 guessed and 404'd) is the only unresolved fundId.
 """
 
 from __future__ import annotations

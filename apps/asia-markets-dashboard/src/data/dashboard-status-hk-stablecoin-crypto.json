@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-08-07T07:41:30Z",
-  "snapshot_id": "c0150465bef4dbf0",
+  "generated_at": "2026-08-07T21:43:05Z",
+  "snapshot_id": "4c4b40a879ea7c7e",
   "data_as_of": "2026-08-07",
   "overall_status": "Healthy",
   "live_sources": 12,
@@ -50,10 +50,10 @@
       "source": "Coinbase & Binance Public Tickers",
       "dataset": "coinbase_binance",
       "type": "Monitor",
-      "status": "Degraded",
+      "status": "Healthy",
       "latest_observation": "2026-08-07",
-      "records": 0,
-      "freshness": "Unavailable",
+      "records": 1,
+      "freshness": "Live",
       "notes": "Real-time BTC spot price, long-run price history, and Coinbase Premium spread."
     },
     {
@@ -90,10 +90,10 @@
       "source": "HKMA Press Releases (Crypto-Filtered)",
       "dataset": "hkma_news",
       "type": "Monitor",
-      "status": "Degraded",
+      "status": "Healthy",
       "latest_observation": "2026-08-07",
-      "records": 0,
-      "freshness": "Unavailable",
+      "records": 8,
+      "freshness": "Live",
       "notes": "HKMA official press releases over the trailing ~13 months, filtered to stablecoin/virtual-asset/crypto relevance by keyword."
     },
     {
@@ -120,10 +120,10 @@
       "source": "Wikimedia Wikipedia Crypto Pageviews",
       "dataset": "wikimedia_crypto_pageviews",
       "type": "Monitor",
-      "status": "Degraded",
+      "status": "Healthy",
       "latest_observation": "2026-08-07",
-      "records": 103373,
-      "freshness": "Unavailable",
+      "records": 5104,
+      "freshness": "Live",
       "notes": "Daily English Wikipedia pageviews for a curated crypto/DeFi page basket, aggregated into complete Monday-Sunday weekly agent totals and monthly user-by-page history. This measures page-load attention, not unique people, trading activity, or Hong Kong adoption."
     }
   ],
