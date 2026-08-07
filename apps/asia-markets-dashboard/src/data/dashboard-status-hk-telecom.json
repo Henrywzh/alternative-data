@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-06T09:06:12.035720Z",
+  "generated_at": "2026-08-07T07:41:30.826114Z",
   "snapshot_id": "f0e6f40e11908723",
   "data_as_of": "2026-06-30",
   "overall_status": "Healthy",
@@ -47,5 +47,5 @@
       "notes": "Mobile number block allocations by operator, all 4 licensed MNOs plus MVNOs -- a capacity/footprint proxy, not a subscriber-count or time-series metric (see table caveat)."
     }
   ],
-  "attachment_filename": "hk-telecom-dashboard-2026-08-06.html"
+  "attachment_filename": "hk-telecom-dashboard-2026-08-07.html"
 }

@@ -1,480 +1,480 @@
-{"month": "2016-09", "object_type": "Debris", "object_count": 8, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2016-09", "object_type": "Payload", "object_count": 18, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2016-09", "object_type": "Rocket body", "object_count": 5, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2016-09", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2016-10", "object_type": "Debris", "object_count": 5, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2016-10", "object_type": "Payload", "object_count": 10, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2016-10", "object_type": "Rocket body", "object_count": 4, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2016-10", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2016-11", "object_type": "Debris", "object_count": 7, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2016-11", "object_type": "Payload", "object_count": 24, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2016-11", "object_type": "Rocket body", "object_count": 9, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2016-11", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2016-12", "object_type": "Debris", "object_count": 1, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2016-12", "object_type": "Payload", "object_count": 24, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2016-12", "object_type": "Rocket body", "object_count": 10, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2016-12", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2017-01", "object_type": "Debris", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2017-01", "object_type": "Payload", "object_count": 17, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2017-01", "object_type": "Rocket body", "object_count": 5, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2017-01", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2017-02", "object_type": "Debris", "object_count": 4, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2017-02", "object_type": "Payload", "object_count": 108, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2017-02", "object_type": "Rocket body", "object_count": 3, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2017-02", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2017-03", "object_type": "Debris", "object_count": 3, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2017-03", "object_type": "Payload", "object_count": 7, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2017-03", "object_type": "Rocket body", "object_count": 6, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2017-03", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2017-04", "object_type": "Debris", "object_count": 3, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2017-04", "object_type": "Payload", "object_count": 9, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2017-04", "object_type": "Rocket body", "object_count": 3, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2017-04", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2017-05", "object_type": "Debris", "object_count": 1, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2017-05", "object_type": "Payload", "object_count": 7, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2017-05", "object_type": "Rocket body", "object_count": 6, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2017-05", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2017-06", "object_type": "Debris", "object_count": 8, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2017-06", "object_type": "Payload", "object_count": 59, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2017-06", "object_type": "Rocket body", "object_count": 12, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2017-06", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2017-07", "object_type": "Debris", "object_count": 1, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2017-07", "object_type": "Payload", "object_count": 75, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2017-07", "object_type": "Rocket body", "object_count": 2, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2017-07", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2017-08", "object_type": "Debris", "object_count": 11, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2017-08", "object_type": "Payload", "object_count": 9, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2017-08", "object_type": "Rocket body", "object_count": 5, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2017-08", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2017-09", "object_type": "Debris", "object_count": 3, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2017-09", "object_type": "Payload", "object_count": 14, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2017-09", "object_type": "Rocket body", "object_count": 7, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2017-09", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2017-10", "object_type": "Debris", "object_count": 5, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2017-10", "object_type": "Payload", "object_count": 27, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2017-10", "object_type": "Rocket body", "object_count": 6, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2017-10", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2017-11", "object_type": "Debris", "object_count": 4, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2017-11", "object_type": "Payload", "object_count": 32, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2017-11", "object_type": "Rocket body", "object_count": 6, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2017-11", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2017-12", "object_type": "Debris", "object_count": 22, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2017-12", "object_type": "Payload", "object_count": 26, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2017-12", "object_type": "Rocket body", "object_count": 8, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2017-12", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2018-01", "object_type": "Debris", "object_count": 17, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2018-01", "object_type": "Payload", "object_count": 57, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2018-01", "object_type": "Rocket body", "object_count": 11, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2018-01", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2018-02", "object_type": "Debris", "object_count": 6, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2018-02", "object_type": "Payload", "object_count": 26, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2018-02", "object_type": "Rocket body", "object_count": 6, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2018-02", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2018-03", "object_type": "Debris", "object_count": 10, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2018-03", "object_type": "Payload", "object_count": 26, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2018-03", "object_type": "Rocket body", "object_count": 9, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2018-03", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2018-04", "object_type": "Debris", "object_count": 13, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2018-04", "object_type": "Payload", "object_count": 21, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2018-04", "object_type": "Rocket body", "object_count": 8, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2018-04", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2018-05", "object_type": "Debris", "object_count": 1, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2018-05", "object_type": "Payload", "object_count": 23, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2018-05", "object_type": "Rocket body", "object_count": 6, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2018-05", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2018-06", "object_type": "Debris", "object_count": 8, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2018-06", "object_type": "Payload", "object_count": 10, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2018-06", "object_type": "Rocket body", "object_count": 8, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2018-06", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2018-07", "object_type": "Debris", "object_count": 6, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2018-07", "object_type": "Payload", "object_count": 22, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2018-07", "object_type": "Rocket body", "object_count": 8, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2018-07", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2018-08", "object_type": "Debris", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2018-08", "object_type": "Payload", "object_count": 5, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2018-08", "object_type": "Rocket body", "object_count": 5, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2018-08", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2018-09", "object_type": "Debris", "object_count": 1, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2018-09", "object_type": "Payload", "object_count": 15, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2018-09", "object_type": "Rocket body", "object_count": 7, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2018-09", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2018-10", "object_type": "Debris", "object_count": 362, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2018-10", "object_type": "Payload", "object_count": 19, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2018-10", "object_type": "Rocket body", "object_count": 8, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2018-10", "object_type": "Unknown", "object_count": 4, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2018-11", "object_type": "Debris", "object_count": 3, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2018-11", "object_type": "Payload", "object_count": 61, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2018-11", "object_type": "Rocket body", "object_count": 11, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2018-11", "object_type": "Unknown", "object_count": 1, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2018-12", "object_type": "Debris", "object_count": 5, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2018-12", "object_type": "Payload", "object_count": 125, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2018-12", "object_type": "Rocket body", "object_count": 10, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2018-12", "object_type": "Unknown", "object_count": 19, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2019-01", "object_type": "Debris", "object_count": 130, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2019-01", "object_type": "Payload", "object_count": 26, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2019-01", "object_type": "Rocket body", "object_count": 3, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2019-01", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2019-02", "object_type": "Debris", "object_count": 2, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2019-02", "object_type": "Payload", "object_count": 12, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2019-02", "object_type": "Rocket body", "object_count": 2, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2019-02", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2019-03", "object_type": "Debris", "object_count": 1, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2019-03", "object_type": "Payload", "object_count": 7, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2019-03", "object_type": "Rocket body", "object_count": 5, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2019-03", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2019-04", "object_type": "Debris", "object_count": 4, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2019-04", "object_type": "Payload", "object_count": 51, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2019-04", "object_type": "Rocket body", "object_count": 6, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2019-04", "object_type": "Unknown", "object_count": 1, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2019-05", "object_type": "Debris", "object_count": 7, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2019-05", "object_type": "Payload", "object_count": 68, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2019-05", "object_type": "Rocket body", "object_count": 6, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2019-05", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2019-06", "object_type": "Debris", "object_count": 10, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2019-06", "object_type": "Payload", "object_count": 45, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2019-06", "object_type": "Rocket body", "object_count": 6, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2019-06", "object_type": "Unknown", "object_count": 1, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2019-07", "object_type": "Debris", "object_count": 29, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2019-07", "object_type": "Payload", "object_count": 43, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2019-07", "object_type": "Rocket body", "object_count": 7, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2019-07", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2019-08", "object_type": "Debris", "object_count": 2, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2019-08", "object_type": "Payload", "object_count": 19, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2019-08", "object_type": "Rocket body", "object_count": 10, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2019-08", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2019-09", "object_type": "Debris", "object_count": 41, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2019-09", "object_type": "Payload", "object_count": 14, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2019-09", "object_type": "Rocket body", "object_count": 7, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2019-09", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2019-10", "object_type": "Debris", "object_count": 2, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2019-10", "object_type": "Payload", "object_count": 6, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2019-10", "object_type": "Rocket body", "object_count": 6, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2019-10", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2019-11", "object_type": "Debris", "object_count": 6, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2019-11", "object_type": "Payload", "object_count": 109, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2019-11", "object_type": "Rocket body", "object_count": 13, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2019-11", "object_type": "Unknown", "object_count": 1, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2019-12", "object_type": "Debris", "object_count": 5, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2019-12", "object_type": "Payload", "object_count": 53, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2019-12", "object_type": "Rocket body", "object_count": 13, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2019-12", "object_type": "Unknown", "object_count": 4, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2020-01", "object_type": "Debris", "object_count": 13, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2020-01", "object_type": "Payload", "object_count": 129, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2020-01", "object_type": "Rocket body", "object_count": 5, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2020-01", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2020-02", "object_type": "Debris", "object_count": 6, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2020-02", "object_type": "Payload", "object_count": 105, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2020-02", "object_type": "Rocket body", "object_count": 7, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2020-02", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2020-03", "object_type": "Debris", "object_count": 6, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2020-03", "object_type": "Payload", "object_count": 102, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2020-03", "object_type": "Rocket body", "object_count": 4, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2020-03", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2020-04", "object_type": "Debris", "object_count": 4, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2020-04", "object_type": "Payload", "object_count": 63, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2020-04", "object_type": "Rocket body", "object_count": 3, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2020-04", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2020-05", "object_type": "Debris", "object_count": 7, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2020-05", "object_type": "Payload", "object_count": 14, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2020-05", "object_type": "Rocket body", "object_count": 3, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2020-05", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2020-06", "object_type": "Debris", "object_count": 14, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2020-06", "object_type": "Payload", "object_count": 132, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2020-06", "object_type": "Rocket body", "object_count": 4, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2020-06", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2020-07", "object_type": "Debris", "object_count": 31, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2020-07", "object_type": "Payload", "object_count": 19, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2020-07", "object_type": "Rocket body", "object_count": 11, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2020-07", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2020-08", "object_type": "Debris", "object_count": 11, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2020-08", "object_type": "Payload", "object_count": 135, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2020-08", "object_type": "Rocket body", "object_count": 2, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2020-08", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2020-09", "object_type": "Debris", "object_count": 16, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2020-09", "object_type": "Payload", "object_count": 159, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2020-09", "object_type": "Rocket body", "object_count": 5, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2020-09", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2020-10", "object_type": "Debris", "object_count": 13, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2020-10", "object_type": "Payload", "object_count": 198, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2020-10", "object_type": "Rocket body", "object_count": 9, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2020-10", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2020-11", "object_type": "Debris", "object_count": 5, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2020-11", "object_type": "Payload", "object_count": 121, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2020-11", "object_type": "Rocket body", "object_count": 9, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2020-11", "object_type": "Unknown", "object_count": 1, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2020-12", "object_type": "Debris", "object_count": 3, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2020-12", "object_type": "Payload", "object_count": 60, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2020-12", "object_type": "Rocket body", "object_count": 9, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2020-12", "object_type": "Unknown", "object_count": 1, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2021-01", "object_type": "Debris", "object_count": 6, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2021-01", "object_type": "Payload", "object_count": 217, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2021-01", "object_type": "Rocket body", "object_count": 6, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2021-01", "object_type": "Unknown", "object_count": 9, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2021-02", "object_type": "Debris", "object_count": 8, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2021-02", "object_type": "Payload", "object_count": 153, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2021-02", "object_type": "Rocket body", "object_count": 6, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2021-02", "object_type": "Unknown", "object_count": 3, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2021-03", "object_type": "Debris", "object_count": 17, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2021-03", "object_type": "Payload", "object_count": 321, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2021-03", "object_type": "Rocket body", "object_count": 5, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2021-03", "object_type": "Unknown", "object_count": 9, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2021-04", "object_type": "Debris", "object_count": 9, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2021-04", "object_type": "Payload", "object_count": 169, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2021-04", "object_type": "Rocket body", "object_count": 4, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2021-04", "object_type": "Unknown", "object_count": 12, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2021-05", "object_type": "Debris", "object_count": 23, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2021-05", "object_type": "Payload", "object_count": 279, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2021-05", "object_type": "Rocket body", "object_count": 3, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2021-05", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2021-06", "object_type": "Debris", "object_count": 7, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2021-06", "object_type": "Payload", "object_count": 115, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2021-06", "object_type": "Rocket body", "object_count": 9, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2021-06", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2021-07", "object_type": "Debris", "object_count": 1, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2021-07", "object_type": "Payload", "object_count": 57, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2021-07", "object_type": "Rocket body", "object_count": 8, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2021-07", "object_type": "Unknown", "object_count": 3, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2021-08", "object_type": "Debris", "object_count": 2, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2021-08", "object_type": "Payload", "object_count": 50, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2021-08", "object_type": "Rocket body", "object_count": 5, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2021-08", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2021-09", "object_type": "Debris", "object_count": 5, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2021-09", "object_type": "Payload", "object_count": 97, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2021-09", "object_type": "Rocket body", "object_count": 7, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2021-09", "object_type": "Unknown", "object_count": 1, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2021-10", "object_type": "Debris", "object_count": 5, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2021-10", "object_type": "Payload", "object_count": 57, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2021-10", "object_type": "Rocket body", "object_count": 9, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2021-10", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2021-11", "object_type": "Debris", "object_count": 8, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2021-11", "object_type": "Payload", "object_count": 84, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2021-11", "object_type": "Rocket body", "object_count": 13, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2021-11", "object_type": "Unknown", "object_count": 1, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2021-12", "object_type": "Debris", "object_count": 20, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2021-12", "object_type": "Payload", "object_count": 169, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2021-12", "object_type": "Rocket body", "object_count": 14, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2021-12", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2022-01", "object_type": "Debris", "object_count": 9, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2022-01", "object_type": "Payload", "object_count": 209, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2022-01", "object_type": "Rocket body", "object_count": 4, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2022-01", "object_type": "Unknown", "object_count": 7, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2022-02", "object_type": "Debris", "object_count": 16, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2022-02", "object_type": "Payload", "object_count": 180, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2022-02", "object_type": "Rocket body", "object_count": 6, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2022-02", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2022-03", "object_type": "Debris", "object_count": 12, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2022-03", "object_type": "Payload", "object_count": 187, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2022-03", "object_type": "Rocket body", "object_count": 7, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2022-03", "object_type": "Unknown", "object_count": 1, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2022-04", "object_type": "Debris", "object_count": 17, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2022-04", "object_type": "Payload", "object_count": 161, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2022-04", "object_type": "Rocket body", "object_count": 8, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2022-04", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2022-05", "object_type": "Debris", "object_count": 16, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2022-05", "object_type": "Payload", "object_count": 310, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2022-05", "object_type": "Rocket body", "object_count": 4, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2022-05", "object_type": "Unknown", "object_count": 4, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2022-06", "object_type": "Debris", "object_count": 15, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2022-06", "object_type": "Payload", "object_count": 92, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2022-06", "object_type": "Rocket body", "object_count": 12, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2022-06", "object_type": "Unknown", "object_count": 4, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2022-07", "object_type": "Debris", "object_count": 25, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2022-07", "object_type": "Payload", "object_count": 283, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2022-07", "object_type": "Rocket body", "object_count": 9, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2022-07", "object_type": "Unknown", "object_count": 3, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2022-08", "object_type": "Debris", "object_count": 27, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2022-08", "object_type": "Payload", "object_count": 301, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2022-08", "object_type": "Rocket body", "object_count": 8, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2022-08", "object_type": "Unknown", "object_count": 3, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2022-09", "object_type": "Debris", "object_count": 21, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2022-09", "object_type": "Payload", "object_count": 213, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2022-09", "object_type": "Rocket body", "object_count": 11, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2022-09", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2022-10", "object_type": "Debris", "object_count": 19, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2022-10", "object_type": "Payload", "object_count": 222, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2022-10", "object_type": "Rocket body", "object_count": 19, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2022-10", "object_type": "Unknown", "object_count": 3, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2022-11", "object_type": "Debris", "object_count": 815, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2022-11", "object_type": "Payload", "object_count": 53, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2022-11", "object_type": "Rocket body", "object_count": 17, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2022-11", "object_type": "Unknown", "object_count": 5, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2022-12", "object_type": "Debris", "object_count": 12, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2022-12", "object_type": "Payload", "object_count": 182, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2022-12", "object_type": "Rocket body", "object_count": 9, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2022-12", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2023-01", "object_type": "Debris", "object_count": 15, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2023-01", "object_type": "Payload", "object_count": 333, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2023-01", "object_type": "Rocket body", "object_count": 8, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2023-01", "object_type": "Unknown", "object_count": 1, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2023-02", "object_type": "Debris", "object_count": 20, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2023-02", "object_type": "Payload", "object_count": 190, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2023-02", "object_type": "Rocket body", "object_count": 9, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2023-02", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2023-03", "object_type": "Debris", "object_count": 25, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2023-03", "object_type": "Payload", "object_count": 317, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2023-03", "object_type": "Rocket body", "object_count": 14, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2023-03", "object_type": "Unknown", "object_count": 1, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2023-04", "object_type": "Debris", "object_count": 4, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2023-04", "object_type": "Payload", "object_count": 135, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2023-04", "object_type": "Rocket body", "object_count": 4, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2023-04", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2023-05", "object_type": "Debris", "object_count": 24, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2023-05", "object_type": "Payload", "object_count": 285, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2023-05", "object_type": "Rocket body", "object_count": 13, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2023-05", "object_type": "Unknown", "object_count": 1, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2023-06", "object_type": "Debris", "object_count": 14, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2023-06", "object_type": "Payload", "object_count": 361, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2023-06", "object_type": "Rocket body", "object_count": 4, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2023-06", "object_type": "Unknown", "object_count": 11, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2023-07", "object_type": "Debris", "object_count": 10, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2023-07", "object_type": "Payload", "object_count": 218, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2023-07", "object_type": "Rocket body", "object_count": 11, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2023-07", "object_type": "Unknown", "object_count": 2, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2023-08", "object_type": "Debris", "object_count": 5, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2023-08", "object_type": "Payload", "object_count": 151, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2023-08", "object_type": "Rocket body", "object_count": 13, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2023-08", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2023-09", "object_type": "Debris", "object_count": 9, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2023-09", "object_type": "Payload", "object_count": 229, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2023-09", "object_type": "Rocket body", "object_count": 11, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2023-09", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2023-10", "object_type": "Debris", "object_count": 3, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2023-10", "object_type": "Payload", "object_count": 202, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2023-10", "object_type": "Rocket body", "object_count": 8, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2023-10", "object_type": "Unknown", "object_count": 1, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2023-11", "object_type": "Debris", "object_count": 1, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2023-11", "object_type": "Payload", "object_count": 250, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2023-11", "object_type": "Rocket body", "object_count": 6, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2023-11", "object_type": "Unknown", "object_count": 5, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2023-12", "object_type": "Debris", "object_count": 8, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2023-12", "object_type": "Payload", "object_count": 196, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2023-12", "object_type": "Rocket body", "object_count": 20, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2023-12", "object_type": "Unknown", "object_count": 3, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2024-01", "object_type": "Debris", "object_count": 5, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2024-01", "object_type": "Payload", "object_count": 186, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2024-01", "object_type": "Rocket body", "object_count": 11, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2024-01", "object_type": "Unknown", "object_count": 5, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2024-02", "object_type": "Debris", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2024-02", "object_type": "Payload", "object_count": 171, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2024-02", "object_type": "Rocket body", "object_count": 11, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2024-02", "object_type": "Unknown", "object_count": 2, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2024-03", "object_type": "Debris", "object_count": 3, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2024-03", "object_type": "Payload", "object_count": 256, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2024-03", "object_type": "Rocket body", "object_count": 12, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2024-03", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2024-04", "object_type": "Debris", "object_count": 3, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2024-04", "object_type": "Payload", "object_count": 228, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2024-04", "object_type": "Rocket body", "object_count": 7, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2024-04", "object_type": "Unknown", "object_count": 2, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2024-05", "object_type": "Debris", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2024-05", "object_type": "Payload", "object_count": 287, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2024-05", "object_type": "Rocket body", "object_count": 8, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2024-05", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2024-06", "object_type": "Debris", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2024-06", "object_type": "Payload", "object_count": 206, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2024-06", "object_type": "Rocket body", "object_count": 8, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2024-06", "object_type": "Unknown", "object_count": 1, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2024-07", "object_type": "Debris", "object_count": 4, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2024-07", "object_type": "Payload", "object_count": 115, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2024-07", "object_type": "Rocket body", "object_count": 6, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2024-07", "object_type": "Unknown", "object_count": 2, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2024-08", "object_type": "Debris", "object_count": 705, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2024-08", "object_type": "Payload", "object_count": 333, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2024-08", "object_type": "Rocket body", "object_count": 13, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2024-08", "object_type": "Unknown", "object_count": 1, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2024-09", "object_type": "Debris", "object_count": 12, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2024-09", "object_type": "Payload", "object_count": 165, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2024-09", "object_type": "Rocket body", "object_count": 12, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2024-09", "object_type": "Unknown", "object_count": 4, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2024-10", "object_type": "Debris", "object_count": 3, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2024-10", "object_type": "Payload", "object_count": 218, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2024-10", "object_type": "Rocket body", "object_count": 9, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2024-10", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2024-11", "object_type": "Debris", "object_count": 4, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2024-11", "object_type": "Payload", "object_count": 364, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2024-11", "object_type": "Rocket body", "object_count": 16, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2024-11", "object_type": "Unknown", "object_count": 1, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2024-12", "object_type": "Debris", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2024-12", "object_type": "Payload", "object_count": 267, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2024-12", "object_type": "Rocket body", "object_count": 13, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2024-12", "object_type": "Unknown", "object_count": 1, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2025-01", "object_type": "Debris", "object_count": 2, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2025-01", "object_type": "Payload", "object_count": 359, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2025-01", "object_type": "Rocket body", "object_count": 9, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2025-01", "object_type": "Unknown", "object_count": 1, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2025-02", "object_type": "Debris", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2025-02", "object_type": "Payload", "object_count": 247, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2025-02", "object_type": "Rocket body", "object_count": 13, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2025-02", "object_type": "Unknown", "object_count": 1, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2025-03", "object_type": "Debris", "object_count": 1, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2025-03", "object_type": "Payload", "object_count": 282, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2025-03", "object_type": "Rocket body", "object_count": 12, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2025-03", "object_type": "Unknown", "object_count": 1, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2025-04", "object_type": "Debris", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2025-04", "object_type": "Payload", "object_count": 335, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2025-04", "object_type": "Rocket body", "object_count": 7, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2025-04", "object_type": "Unknown", "object_count": 1, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2025-05", "object_type": "Debris", "object_count": 5, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2025-05", "object_type": "Payload", "object_count": 436, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2025-05", "object_type": "Rocket body", "object_count": 10, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2025-05", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2025-06", "object_type": "Debris", "object_count": 4, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2025-06", "object_type": "Payload", "object_count": 423, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2025-06", "object_type": "Rocket body", "object_count": 12, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2025-06", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2025-07", "object_type": "Debris", "object_count": 3, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2025-07", "object_type": "Payload", "object_count": 290, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2025-07", "object_type": "Rocket body", "object_count": 9, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2025-07", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2025-08", "object_type": "Debris", "object_count": 2, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2025-08", "object_type": "Payload", "object_count": 337, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2025-08", "object_type": "Rocket body", "object_count": 12, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2025-08", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2025-09", "object_type": "Debris", "object_count": 3, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2025-09", "object_type": "Payload", "object_count": 396, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2025-09", "object_type": "Rocket body", "object_count": 13, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2025-09", "object_type": "Unknown", "object_count": 1, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2025-10", "object_type": "Debris", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2025-10", "object_type": "Payload", "object_count": 424, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2025-10", "object_type": "Rocket body", "object_count": 11, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2025-10", "object_type": "Unknown", "object_count": 1, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2025-11", "object_type": "Debris", "object_count": 1, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2025-11", "object_type": "Payload", "object_count": 477, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2025-11", "object_type": "Rocket body", "object_count": 16, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2025-11", "object_type": "Unknown", "object_count": 1, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2025-12", "object_type": "Debris", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2025-12", "object_type": "Payload", "object_count": 484, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2025-12", "object_type": "Rocket body", "object_count": 24, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2025-12", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2026-01", "object_type": "Debris", "object_count": 3, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2026-01", "object_type": "Payload", "object_count": 328, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2026-01", "object_type": "Rocket body", "object_count": 8, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2026-01", "object_type": "Unknown", "object_count": 1, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2026-02", "object_type": "Debris", "object_count": 9, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2026-02", "object_type": "Payload", "object_count": 347, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2026-02", "object_type": "Rocket body", "object_count": 5, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2026-02", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2026-03", "object_type": "Debris", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2026-03", "object_type": "Payload", "object_count": 508, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2026-03", "object_type": "Rocket body", "object_count": 15, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2026-03", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2026-04", "object_type": "Debris", "object_count": 3, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2026-04", "object_type": "Payload", "object_count": 397, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2026-04", "object_type": "Rocket body", "object_count": 11, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2026-04", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2026-05", "object_type": "Debris", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2026-05", "object_type": "Payload", "object_count": 360, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2026-05", "object_type": "Rocket body", "object_count": 9, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2026-05", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2026-06", "object_type": "Debris", "object_count": 7, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2026-06", "object_type": "Payload", "object_count": 379, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2026-06", "object_type": "Rocket body", "object_count": 13, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2026-06", "object_type": "Unknown", "object_count": 1, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2026-07", "object_type": "Debris", "object_count": 2, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2026-07", "object_type": "Payload", "object_count": 419, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2026-07", "object_type": "Rocket body", "object_count": 10, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2026-07", "object_type": "Unknown", "object_count": 1, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2026-08", "object_type": "Debris", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2026-08", "object_type": "Payload", "object_count": 36, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2026-08", "object_type": "Rocket body", "object_count": 2, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
-{"month": "2026-08", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-06T09:06:37.191424+00:00"}
+{"month": "2016-09", "object_type": "Debris", "object_count": 8, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2016-09", "object_type": "Payload", "object_count": 18, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2016-09", "object_type": "Rocket body", "object_count": 5, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2016-09", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2016-10", "object_type": "Debris", "object_count": 5, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2016-10", "object_type": "Payload", "object_count": 10, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2016-10", "object_type": "Rocket body", "object_count": 4, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2016-10", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2016-11", "object_type": "Debris", "object_count": 7, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2016-11", "object_type": "Payload", "object_count": 24, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2016-11", "object_type": "Rocket body", "object_count": 9, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2016-11", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2016-12", "object_type": "Debris", "object_count": 1, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2016-12", "object_type": "Payload", "object_count": 24, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2016-12", "object_type": "Rocket body", "object_count": 10, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2016-12", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2017-01", "object_type": "Debris", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2017-01", "object_type": "Payload", "object_count": 17, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2017-01", "object_type": "Rocket body", "object_count": 5, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2017-01", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2017-02", "object_type": "Debris", "object_count": 4, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2017-02", "object_type": "Payload", "object_count": 108, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2017-02", "object_type": "Rocket body", "object_count": 3, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2017-02", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2017-03", "object_type": "Debris", "object_count": 3, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2017-03", "object_type": "Payload", "object_count": 7, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2017-03", "object_type": "Rocket body", "object_count": 6, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2017-03", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2017-04", "object_type": "Debris", "object_count": 3, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2017-04", "object_type": "Payload", "object_count": 9, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2017-04", "object_type": "Rocket body", "object_count": 3, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2017-04", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2017-05", "object_type": "Debris", "object_count": 1, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2017-05", "object_type": "Payload", "object_count": 7, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2017-05", "object_type": "Rocket body", "object_count": 6, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2017-05", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2017-06", "object_type": "Debris", "object_count": 8, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2017-06", "object_type": "Payload", "object_count": 59, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2017-06", "object_type": "Rocket body", "object_count": 12, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2017-06", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2017-07", "object_type": "Debris", "object_count": 1, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2017-07", "object_type": "Payload", "object_count": 75, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2017-07", "object_type": "Rocket body", "object_count": 2, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2017-07", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2017-08", "object_type": "Debris", "object_count": 11, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2017-08", "object_type": "Payload", "object_count": 9, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2017-08", "object_type": "Rocket body", "object_count": 5, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2017-08", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2017-09", "object_type": "Debris", "object_count": 3, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2017-09", "object_type": "Payload", "object_count": 14, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2017-09", "object_type": "Rocket body", "object_count": 7, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2017-09", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2017-10", "object_type": "Debris", "object_count": 5, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2017-10", "object_type": "Payload", "object_count": 27, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2017-10", "object_type": "Rocket body", "object_count": 6, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2017-10", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2017-11", "object_type": "Debris", "object_count": 4, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2017-11", "object_type": "Payload", "object_count": 32, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2017-11", "object_type": "Rocket body", "object_count": 6, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2017-11", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2017-12", "object_type": "Debris", "object_count": 22, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2017-12", "object_type": "Payload", "object_count": 26, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2017-12", "object_type": "Rocket body", "object_count": 8, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2017-12", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2018-01", "object_type": "Debris", "object_count": 17, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2018-01", "object_type": "Payload", "object_count": 57, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2018-01", "object_type": "Rocket body", "object_count": 11, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2018-01", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2018-02", "object_type": "Debris", "object_count": 6, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2018-02", "object_type": "Payload", "object_count": 26, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2018-02", "object_type": "Rocket body", "object_count": 6, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2018-02", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2018-03", "object_type": "Debris", "object_count": 10, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2018-03", "object_type": "Payload", "object_count": 26, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2018-03", "object_type": "Rocket body", "object_count": 9, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2018-03", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2018-04", "object_type": "Debris", "object_count": 13, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2018-04", "object_type": "Payload", "object_count": 21, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2018-04", "object_type": "Rocket body", "object_count": 8, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2018-04", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2018-05", "object_type": "Debris", "object_count": 1, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2018-05", "object_type": "Payload", "object_count": 23, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2018-05", "object_type": "Rocket body", "object_count": 6, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2018-05", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2018-06", "object_type": "Debris", "object_count": 8, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2018-06", "object_type": "Payload", "object_count": 10, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2018-06", "object_type": "Rocket body", "object_count": 8, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2018-06", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2018-07", "object_type": "Debris", "object_count": 6, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2018-07", "object_type": "Payload", "object_count": 22, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2018-07", "object_type": "Rocket body", "object_count": 8, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2018-07", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2018-08", "object_type": "Debris", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2018-08", "object_type": "Payload", "object_count": 5, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2018-08", "object_type": "Rocket body", "object_count": 5, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2018-08", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2018-09", "object_type": "Debris", "object_count": 1, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2018-09", "object_type": "Payload", "object_count": 15, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2018-09", "object_type": "Rocket body", "object_count": 7, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2018-09", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2018-10", "object_type": "Debris", "object_count": 362, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2018-10", "object_type": "Payload", "object_count": 19, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2018-10", "object_type": "Rocket body", "object_count": 8, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2018-10", "object_type": "Unknown", "object_count": 4, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2018-11", "object_type": "Debris", "object_count": 3, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2018-11", "object_type": "Payload", "object_count": 61, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2018-11", "object_type": "Rocket body", "object_count": 11, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2018-11", "object_type": "Unknown", "object_count": 1, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2018-12", "object_type": "Debris", "object_count": 5, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2018-12", "object_type": "Payload", "object_count": 125, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2018-12", "object_type": "Rocket body", "object_count": 10, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2018-12", "object_type": "Unknown", "object_count": 19, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2019-01", "object_type": "Debris", "object_count": 130, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2019-01", "object_type": "Payload", "object_count": 26, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2019-01", "object_type": "Rocket body", "object_count": 3, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2019-01", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2019-02", "object_type": "Debris", "object_count": 2, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2019-02", "object_type": "Payload", "object_count": 12, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2019-02", "object_type": "Rocket body", "object_count": 2, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2019-02", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2019-03", "object_type": "Debris", "object_count": 1, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2019-03", "object_type": "Payload", "object_count": 7, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2019-03", "object_type": "Rocket body", "object_count": 5, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2019-03", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2019-04", "object_type": "Debris", "object_count": 4, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2019-04", "object_type": "Payload", "object_count": 51, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2019-04", "object_type": "Rocket body", "object_count": 6, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2019-04", "object_type": "Unknown", "object_count": 1, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2019-05", "object_type": "Debris", "object_count": 7, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2019-05", "object_type": "Payload", "object_count": 68, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2019-05", "object_type": "Rocket body", "object_count": 6, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2019-05", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2019-06", "object_type": "Debris", "object_count": 10, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2019-06", "object_type": "Payload", "object_count": 45, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2019-06", "object_type": "Rocket body", "object_count": 6, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2019-06", "object_type": "Unknown", "object_count": 1, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2019-07", "object_type": "Debris", "object_count": 29, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2019-07", "object_type": "Payload", "object_count": 43, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2019-07", "object_type": "Rocket body", "object_count": 7, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2019-07", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2019-08", "object_type": "Debris", "object_count": 2, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2019-08", "object_type": "Payload", "object_count": 19, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2019-08", "object_type": "Rocket body", "object_count": 10, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2019-08", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2019-09", "object_type": "Debris", "object_count": 41, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2019-09", "object_type": "Payload", "object_count": 14, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2019-09", "object_type": "Rocket body", "object_count": 7, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2019-09", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2019-10", "object_type": "Debris", "object_count": 2, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2019-10", "object_type": "Payload", "object_count": 6, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2019-10", "object_type": "Rocket body", "object_count": 6, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2019-10", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2019-11", "object_type": "Debris", "object_count": 6, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2019-11", "object_type": "Payload", "object_count": 109, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2019-11", "object_type": "Rocket body", "object_count": 13, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2019-11", "object_type": "Unknown", "object_count": 1, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2019-12", "object_type": "Debris", "object_count": 5, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2019-12", "object_type": "Payload", "object_count": 53, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2019-12", "object_type": "Rocket body", "object_count": 13, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2019-12", "object_type": "Unknown", "object_count": 4, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2020-01", "object_type": "Debris", "object_count": 13, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2020-01", "object_type": "Payload", "object_count": 129, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2020-01", "object_type": "Rocket body", "object_count": 5, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2020-01", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2020-02", "object_type": "Debris", "object_count": 6, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2020-02", "object_type": "Payload", "object_count": 105, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2020-02", "object_type": "Rocket body", "object_count": 7, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2020-02", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2020-03", "object_type": "Debris", "object_count": 6, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2020-03", "object_type": "Payload", "object_count": 102, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2020-03", "object_type": "Rocket body", "object_count": 4, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2020-03", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2020-04", "object_type": "Debris", "object_count": 4, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2020-04", "object_type": "Payload", "object_count": 63, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2020-04", "object_type": "Rocket body", "object_count": 3, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2020-04", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2020-05", "object_type": "Debris", "object_count": 7, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2020-05", "object_type": "Payload", "object_count": 14, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2020-05", "object_type": "Rocket body", "object_count": 3, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2020-05", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2020-06", "object_type": "Debris", "object_count": 14, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2020-06", "object_type": "Payload", "object_count": 132, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2020-06", "object_type": "Rocket body", "object_count": 4, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2020-06", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2020-07", "object_type": "Debris", "object_count": 31, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2020-07", "object_type": "Payload", "object_count": 19, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2020-07", "object_type": "Rocket body", "object_count": 11, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2020-07", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2020-08", "object_type": "Debris", "object_count": 11, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2020-08", "object_type": "Payload", "object_count": 135, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2020-08", "object_type": "Rocket body", "object_count": 2, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2020-08", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2020-09", "object_type": "Debris", "object_count": 16, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2020-09", "object_type": "Payload", "object_count": 159, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2020-09", "object_type": "Rocket body", "object_count": 5, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2020-09", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2020-10", "object_type": "Debris", "object_count": 13, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2020-10", "object_type": "Payload", "object_count": 198, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2020-10", "object_type": "Rocket body", "object_count": 9, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2020-10", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2020-11", "object_type": "Debris", "object_count": 5, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2020-11", "object_type": "Payload", "object_count": 121, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2020-11", "object_type": "Rocket body", "object_count": 9, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2020-11", "object_type": "Unknown", "object_count": 1, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2020-12", "object_type": "Debris", "object_count": 3, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2020-12", "object_type": "Payload", "object_count": 60, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2020-12", "object_type": "Rocket body", "object_count": 9, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2020-12", "object_type": "Unknown", "object_count": 1, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2021-01", "object_type": "Debris", "object_count": 6, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2021-01", "object_type": "Payload", "object_count": 217, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2021-01", "object_type": "Rocket body", "object_count": 6, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2021-01", "object_type": "Unknown", "object_count": 9, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2021-02", "object_type": "Debris", "object_count": 8, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2021-02", "object_type": "Payload", "object_count": 153, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2021-02", "object_type": "Rocket body", "object_count": 6, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2021-02", "object_type": "Unknown", "object_count": 3, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2021-03", "object_type": "Debris", "object_count": 17, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2021-03", "object_type": "Payload", "object_count": 321, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2021-03", "object_type": "Rocket body", "object_count": 5, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2021-03", "object_type": "Unknown", "object_count": 9, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2021-04", "object_type": "Debris", "object_count": 9, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2021-04", "object_type": "Payload", "object_count": 169, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2021-04", "object_type": "Rocket body", "object_count": 4, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2021-04", "object_type": "Unknown", "object_count": 12, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2021-05", "object_type": "Debris", "object_count": 23, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2021-05", "object_type": "Payload", "object_count": 279, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2021-05", "object_type": "Rocket body", "object_count": 3, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2021-05", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2021-06", "object_type": "Debris", "object_count": 7, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2021-06", "object_type": "Payload", "object_count": 115, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2021-06", "object_type": "Rocket body", "object_count": 9, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2021-06", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2021-07", "object_type": "Debris", "object_count": 1, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2021-07", "object_type": "Payload", "object_count": 57, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2021-07", "object_type": "Rocket body", "object_count": 8, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2021-07", "object_type": "Unknown", "object_count": 3, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2021-08", "object_type": "Debris", "object_count": 2, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2021-08", "object_type": "Payload", "object_count": 50, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2021-08", "object_type": "Rocket body", "object_count": 5, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2021-08", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2021-09", "object_type": "Debris", "object_count": 5, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2021-09", "object_type": "Payload", "object_count": 97, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2021-09", "object_type": "Rocket body", "object_count": 7, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2021-09", "object_type": "Unknown", "object_count": 1, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2021-10", "object_type": "Debris", "object_count": 5, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2021-10", "object_type": "Payload", "object_count": 57, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2021-10", "object_type": "Rocket body", "object_count": 9, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2021-10", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2021-11", "object_type": "Debris", "object_count": 8, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2021-11", "object_type": "Payload", "object_count": 84, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2021-11", "object_type": "Rocket body", "object_count": 13, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2021-11", "object_type": "Unknown", "object_count": 1, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2021-12", "object_type": "Debris", "object_count": 20, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2021-12", "object_type": "Payload", "object_count": 169, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2021-12", "object_type": "Rocket body", "object_count": 14, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2021-12", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2022-01", "object_type": "Debris", "object_count": 9, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2022-01", "object_type": "Payload", "object_count": 209, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2022-01", "object_type": "Rocket body", "object_count": 4, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2022-01", "object_type": "Unknown", "object_count": 7, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2022-02", "object_type": "Debris", "object_count": 16, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2022-02", "object_type": "Payload", "object_count": 180, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2022-02", "object_type": "Rocket body", "object_count": 6, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2022-02", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2022-03", "object_type": "Debris", "object_count": 12, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2022-03", "object_type": "Payload", "object_count": 187, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2022-03", "object_type": "Rocket body", "object_count": 7, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2022-03", "object_type": "Unknown", "object_count": 1, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2022-04", "object_type": "Debris", "object_count": 17, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2022-04", "object_type": "Payload", "object_count": 161, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2022-04", "object_type": "Rocket body", "object_count": 8, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2022-04", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2022-05", "object_type": "Debris", "object_count": 16, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2022-05", "object_type": "Payload", "object_count": 310, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2022-05", "object_type": "Rocket body", "object_count": 4, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2022-05", "object_type": "Unknown", "object_count": 4, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2022-06", "object_type": "Debris", "object_count": 15, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2022-06", "object_type": "Payload", "object_count": 92, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2022-06", "object_type": "Rocket body", "object_count": 12, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2022-06", "object_type": "Unknown", "object_count": 4, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2022-07", "object_type": "Debris", "object_count": 25, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2022-07", "object_type": "Payload", "object_count": 283, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2022-07", "object_type": "Rocket body", "object_count": 9, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2022-07", "object_type": "Unknown", "object_count": 3, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2022-08", "object_type": "Debris", "object_count": 27, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2022-08", "object_type": "Payload", "object_count": 301, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2022-08", "object_type": "Rocket body", "object_count": 8, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2022-08", "object_type": "Unknown", "object_count": 3, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2022-09", "object_type": "Debris", "object_count": 21, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2022-09", "object_type": "Payload", "object_count": 213, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2022-09", "object_type": "Rocket body", "object_count": 11, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2022-09", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2022-10", "object_type": "Debris", "object_count": 19, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2022-10", "object_type": "Payload", "object_count": 222, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2022-10", "object_type": "Rocket body", "object_count": 19, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2022-10", "object_type": "Unknown", "object_count": 3, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2022-11", "object_type": "Debris", "object_count": 815, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2022-11", "object_type": "Payload", "object_count": 53, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2022-11", "object_type": "Rocket body", "object_count": 17, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2022-11", "object_type": "Unknown", "object_count": 5, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2022-12", "object_type": "Debris", "object_count": 12, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2022-12", "object_type": "Payload", "object_count": 182, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2022-12", "object_type": "Rocket body", "object_count": 9, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2022-12", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2023-01", "object_type": "Debris", "object_count": 15, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2023-01", "object_type": "Payload", "object_count": 333, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2023-01", "object_type": "Rocket body", "object_count": 8, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2023-01", "object_type": "Unknown", "object_count": 1, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2023-02", "object_type": "Debris", "object_count": 20, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2023-02", "object_type": "Payload", "object_count": 190, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2023-02", "object_type": "Rocket body", "object_count": 9, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2023-02", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2023-03", "object_type": "Debris", "object_count": 25, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2023-03", "object_type": "Payload", "object_count": 317, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2023-03", "object_type": "Rocket body", "object_count": 14, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2023-03", "object_type": "Unknown", "object_count": 1, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2023-04", "object_type": "Debris", "object_count": 4, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2023-04", "object_type": "Payload", "object_count": 135, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2023-04", "object_type": "Rocket body", "object_count": 4, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2023-04", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2023-05", "object_type": "Debris", "object_count": 24, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2023-05", "object_type": "Payload", "object_count": 285, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2023-05", "object_type": "Rocket body", "object_count": 13, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2023-05", "object_type": "Unknown", "object_count": 1, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2023-06", "object_type": "Debris", "object_count": 14, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2023-06", "object_type": "Payload", "object_count": 361, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2023-06", "object_type": "Rocket body", "object_count": 4, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2023-06", "object_type": "Unknown", "object_count": 11, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2023-07", "object_type": "Debris", "object_count": 10, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2023-07", "object_type": "Payload", "object_count": 218, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2023-07", "object_type": "Rocket body", "object_count": 11, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2023-07", "object_type": "Unknown", "object_count": 2, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2023-08", "object_type": "Debris", "object_count": 5, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2023-08", "object_type": "Payload", "object_count": 151, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2023-08", "object_type": "Rocket body", "object_count": 13, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2023-08", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2023-09", "object_type": "Debris", "object_count": 9, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2023-09", "object_type": "Payload", "object_count": 229, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2023-09", "object_type": "Rocket body", "object_count": 11, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2023-09", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2023-10", "object_type": "Debris", "object_count": 3, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2023-10", "object_type": "Payload", "object_count": 202, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2023-10", "object_type": "Rocket body", "object_count": 8, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2023-10", "object_type": "Unknown", "object_count": 1, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2023-11", "object_type": "Debris", "object_count": 1, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2023-11", "object_type": "Payload", "object_count": 250, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2023-11", "object_type": "Rocket body", "object_count": 6, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2023-11", "object_type": "Unknown", "object_count": 5, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2023-12", "object_type": "Debris", "object_count": 8, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2023-12", "object_type": "Payload", "object_count": 196, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2023-12", "object_type": "Rocket body", "object_count": 20, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2023-12", "object_type": "Unknown", "object_count": 3, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2024-01", "object_type": "Debris", "object_count": 5, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2024-01", "object_type": "Payload", "object_count": 186, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2024-01", "object_type": "Rocket body", "object_count": 11, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2024-01", "object_type": "Unknown", "object_count": 5, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2024-02", "object_type": "Debris", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2024-02", "object_type": "Payload", "object_count": 171, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2024-02", "object_type": "Rocket body", "object_count": 11, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2024-02", "object_type": "Unknown", "object_count": 2, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2024-03", "object_type": "Debris", "object_count": 3, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2024-03", "object_type": "Payload", "object_count": 256, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2024-03", "object_type": "Rocket body", "object_count": 12, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2024-03", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2024-04", "object_type": "Debris", "object_count": 3, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2024-04", "object_type": "Payload", "object_count": 228, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2024-04", "object_type": "Rocket body", "object_count": 7, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2024-04", "object_type": "Unknown", "object_count": 2, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2024-05", "object_type": "Debris", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2024-05", "object_type": "Payload", "object_count": 287, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2024-05", "object_type": "Rocket body", "object_count": 8, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2024-05", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2024-06", "object_type": "Debris", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2024-06", "object_type": "Payload", "object_count": 206, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2024-06", "object_type": "Rocket body", "object_count": 8, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2024-06", "object_type": "Unknown", "object_count": 1, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2024-07", "object_type": "Debris", "object_count": 4, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2024-07", "object_type": "Payload", "object_count": 115, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2024-07", "object_type": "Rocket body", "object_count": 6, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2024-07", "object_type": "Unknown", "object_count": 2, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2024-08", "object_type": "Debris", "object_count": 705, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2024-08", "object_type": "Payload", "object_count": 333, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2024-08", "object_type": "Rocket body", "object_count": 13, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2024-08", "object_type": "Unknown", "object_count": 1, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2024-09", "object_type": "Debris", "object_count": 12, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2024-09", "object_type": "Payload", "object_count": 165, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2024-09", "object_type": "Rocket body", "object_count": 12, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2024-09", "object_type": "Unknown", "object_count": 4, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2024-10", "object_type": "Debris", "object_count": 3, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2024-10", "object_type": "Payload", "object_count": 218, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2024-10", "object_type": "Rocket body", "object_count": 9, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2024-10", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2024-11", "object_type": "Debris", "object_count": 4, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2024-11", "object_type": "Payload", "object_count": 364, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2024-11", "object_type": "Rocket body", "object_count": 16, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2024-11", "object_type": "Unknown", "object_count": 1, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2024-12", "object_type": "Debris", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2024-12", "object_type": "Payload", "object_count": 267, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2024-12", "object_type": "Rocket body", "object_count": 13, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2024-12", "object_type": "Unknown", "object_count": 1, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2025-01", "object_type": "Debris", "object_count": 2, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2025-01", "object_type": "Payload", "object_count": 359, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2025-01", "object_type": "Rocket body", "object_count": 9, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2025-01", "object_type": "Unknown", "object_count": 1, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2025-02", "object_type": "Debris", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2025-02", "object_type": "Payload", "object_count": 247, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2025-02", "object_type": "Rocket body", "object_count": 13, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2025-02", "object_type": "Unknown", "object_count": 1, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2025-03", "object_type": "Debris", "object_count": 1, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2025-03", "object_type": "Payload", "object_count": 282, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2025-03", "object_type": "Rocket body", "object_count": 12, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2025-03", "object_type": "Unknown", "object_count": 1, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2025-04", "object_type": "Debris", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2025-04", "object_type": "Payload", "object_count": 335, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2025-04", "object_type": "Rocket body", "object_count": 7, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2025-04", "object_type": "Unknown", "object_count": 1, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2025-05", "object_type": "Debris", "object_count": 5, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2025-05", "object_type": "Payload", "object_count": 436, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2025-05", "object_type": "Rocket body", "object_count": 10, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2025-05", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2025-06", "object_type": "Debris", "object_count": 4, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2025-06", "object_type": "Payload", "object_count": 423, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2025-06", "object_type": "Rocket body", "object_count": 12, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2025-06", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2025-07", "object_type": "Debris", "object_count": 3, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2025-07", "object_type": "Payload", "object_count": 290, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2025-07", "object_type": "Rocket body", "object_count": 9, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2025-07", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2025-08", "object_type": "Debris", "object_count": 2, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2025-08", "object_type": "Payload", "object_count": 337, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2025-08", "object_type": "Rocket body", "object_count": 12, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2025-08", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2025-09", "object_type": "Debris", "object_count": 3, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2025-09", "object_type": "Payload", "object_count": 396, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2025-09", "object_type": "Rocket body", "object_count": 13, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2025-09", "object_type": "Unknown", "object_count": 1, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2025-10", "object_type": "Debris", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2025-10", "object_type": "Payload", "object_count": 424, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2025-10", "object_type": "Rocket body", "object_count": 11, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2025-10", "object_type": "Unknown", "object_count": 1, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2025-11", "object_type": "Debris", "object_count": 1, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2025-11", "object_type": "Payload", "object_count": 477, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2025-11", "object_type": "Rocket body", "object_count": 16, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2025-11", "object_type": "Unknown", "object_count": 1, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2025-12", "object_type": "Debris", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2025-12", "object_type": "Payload", "object_count": 484, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2025-12", "object_type": "Rocket body", "object_count": 24, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2025-12", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2026-01", "object_type": "Debris", "object_count": 3, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2026-01", "object_type": "Payload", "object_count": 328, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2026-01", "object_type": "Rocket body", "object_count": 8, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2026-01", "object_type": "Unknown", "object_count": 1, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2026-02", "object_type": "Debris", "object_count": 9, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2026-02", "object_type": "Payload", "object_count": 347, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2026-02", "object_type": "Rocket body", "object_count": 5, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2026-02", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2026-03", "object_type": "Debris", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2026-03", "object_type": "Payload", "object_count": 508, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2026-03", "object_type": "Rocket body", "object_count": 15, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2026-03", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2026-04", "object_type": "Debris", "object_count": 3, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2026-04", "object_type": "Payload", "object_count": 397, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2026-04", "object_type": "Rocket body", "object_count": 11, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2026-04", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2026-05", "object_type": "Debris", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2026-05", "object_type": "Payload", "object_count": 360, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2026-05", "object_type": "Rocket body", "object_count": 9, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2026-05", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2026-06", "object_type": "Debris", "object_count": 7, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2026-06", "object_type": "Payload", "object_count": 379, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2026-06", "object_type": "Rocket body", "object_count": 13, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2026-06", "object_type": "Unknown", "object_count": 1, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2026-07", "object_type": "Debris", "object_count": 2, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2026-07", "object_type": "Payload", "object_count": 419, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2026-07", "object_type": "Rocket body", "object_count": 10, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2026-07", "object_type": "Unknown", "object_count": 1, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2026-08", "object_type": "Debris", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2026-08", "object_type": "Payload", "object_count": 36, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2026-08", "object_type": "Rocket body", "object_count": 2, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
+{"month": "2026-08", "object_type": "Unknown", "object_count": 0, "fetched_at": "2026-08-07T07:41:53.957018+00:00"}
