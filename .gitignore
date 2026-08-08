@@ -328,6 +328,17 @@ data/normalized/hk_local_consumer/*
 !data/normalized/hk_local_consumer/afcd_category_history.csv
 !data/normalized/hk_local_consumer/consumer_council_oilprice_history.csv
 
+# hk_transport airline pair-trading research pack: this pipeline's stages
+# emit CSV only (no parquet twin, unlike the daily-scrape datasets the
+# repo-size CSV ban above assumes), and its tests read those CSVs directly.
+# Without this override the files are never committed, so a clean CI
+# checkout is missing every stage's input and ~130 downstream tests fail
+# with FileNotFoundError.
+!data/normalized/hk_transport/
+data/normalized/hk_transport/*
+!data/normalized/hk_transport/*.csv
+!data/normalized/hk_transport/*.parquet
+
 # Local dashboard-verification by-products. Canonical dashboard artifacts
 # (hk-*-artifact*.json) live in both these .generated directories and are
 # still tracked; these patterns only match the packaging tool's own
