@@ -424,6 +424,41 @@ OVERVIEW_PULSE_CONFIG: dict[str, dict[str, Any]] = {
             "format": "number",
         },
     },
+    "real_estate": {
+        "metrics": (
+            {
+                "dataset": "kpi_ccl",
+                "field": "latest",
+                "format": "number",
+                "label_en": "Centaline CCL",
+                "label_zh": "中原城市领先指数（CCL）",
+            },
+            {
+                "dataset": "kpi_mhpi",
+                "field": "latest",
+                "format": "number",
+                "label_en": "Midland MHPI",
+                "label_zh": "美联物业价格指数（MHPI）",
+            },
+            {
+                "field": "Overall",
+                "format": "number",
+                "series": True,
+                "chart_id": "rvd_office_trend",
+                "label_en": "RVD office rental (Overall)",
+                "label_zh": "RVD 写字楼租金（整体）",
+            },
+        ),
+        "sparkline": {
+            "chart_id": "ccl_trend",
+            "series": None,
+            "title_en": "Centaline CCL history",
+            "title_zh": "中原城市领先指数历史",
+            "note_en": "Weekly publisher-level index",
+            "note_zh": "发布者周度指数",
+            "format": "number",
+        },
+    },
     "aerospace": {
         "metrics": (
             {
