@@ -12,8 +12,34 @@ DEFAULT_HEADERS = {
     )
 }
 
+# Keep the H-share code in the same four-digit display form across all
+# research layers.  Some upstream public pages historically emitted 00670.HK
+# for China Eastern; the canonical market/bridge key is 0670.HK.
+AIRLINE_TICKER_ALIASES = {
+    "00670.HK": "0670.HK",
+    "00670.HK / 600115.SH": "0670.HK / 600115.SH",
+}
+
 # MTR Corporation Investor Relations Patronage URL
 MTR_PATRONAGE_URL = "https://www.mtr.com.hk/en/corporate/investor/patronage.php"
+
+# EIA publishes the same spot-price workbook at daily and weekly frequency.
+# The workbook is free to download and includes WTI, Brent and U.S. Gulf Coast
+# kerosene-type jet fuel.  It is a transparent benchmark for airline cost
+# shocks; company accounting cost still requires fuel volume, hedging and lag
+# adjustments from issuer disclosures.
+EIA_SPOT_PRICES_URLS = {
+    "daily": "https://www.eia.gov/dnav/pet/xls/PET_PRI_SPT_S1_D.xls",
+    "weekly": "https://www.eia.gov/dnav/pet/xls/PET_PRI_SPT_S1_W.xls",
+}
+
+# ECB daily reference rates are free and cover the reporting currencies needed
+# to translate USD fuel benchmarks into CNY and HKD.  The parser derives the
+# cross rates from the same-day EUR reference observations.
+ECB_REFERENCE_RATES_URL = (
+    "https://data-api.ecb.europa.eu/service/data/EXR/"
+    "D.USD+CNY+HKD.EUR.SP00.A?format=csvdata"
+)
 
 # Civil Aviation Department (CAD) HKIA Monthly Airport Traffic Excel Workbook
 CAD_HKIA_XLSX_URL = "https://www.cad.gov.hk/english/pdf/Stat%20Webpage.xlsx"
@@ -74,5 +100,7 @@ TD_METERED_PARKING_OCCUPANCY_URL = (
 ROOT_DIR = Path(__file__).resolve().parents[2]
 RAW_DIR = ROOT_DIR / "data" / "raw" / "hk_transport"
 NORMALIZED_DIR = ROOT_DIR / "data" / "normalized" / "hk_transport"
+AIRLINE_REPORTS_DIR = ROOT_DIR / "data" / "raw" / "airline_reports"
 RAW_DIR.mkdir(parents=True, exist_ok=True)
 NORMALIZED_DIR.mkdir(parents=True, exist_ok=True)
+AIRLINE_REPORTS_DIR.mkdir(parents=True, exist_ok=True)

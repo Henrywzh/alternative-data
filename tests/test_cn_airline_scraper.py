@@ -300,6 +300,23 @@ def test_event_parser_deduplicates_headline_fleet_totals_and_supports_spring_for
     assert values["new_route_event_count"] == 2
 
 
+def test_cninfo_announcement_metadata_uses_china_local_publication_date() -> None:
+    scraper = _scraper()
+    metadata = scraper._announcement_metadata(
+        {
+            "announcement_id": "1225425218",
+            "announcement_time_epoch_ms": 1784044800000,
+            "title": "中国国际航空股份有限公司2026年6月主要运营数据公告",
+            "url": "http://static.cninfo.com.cn/finalpage/2026-07-15/1225425218.PDF",
+        },
+        retrieved_at="2026-08-06T00:00:00+00:00",
+    )
+    assert metadata["announcement_date"] == "2026-07-15"
+    assert metadata["announcement_time"].startswith("2026-07-15T00:00:00+08:00")
+    assert metadata["announcement_id"] == "1225425218"
+    assert metadata["source_quality"] == "issuer_cninfo_operating_release"
+
+
 def test_china_eastern_queries_both_title_variants() -> None:
     """Cninfo's server-side searchkey filter is narrower than the client-side
     title check (which already accepts both "运营数据" and "经营数据") --
@@ -333,9 +350,9 @@ def operating_events() -> pd.DataFrame:
 
 
 def test_operating_event_artifact_has_six_carrier_codes(operating_events: pd.DataFrame) -> None:
-    assert set(operating_events.columns) == {
-        "month", "date", "airline_code", "event_type", "value", "detail",
-    }
+    assert set(operating_events.columns) == set(
+        _scraper().AIRLINE_EVENT_COLUMNS + _scraper().PIT_METADATA_COLUMNS
+    )
     assert set(operating_events["airline_code"]) == set(CARRIERS)
     assert set(operating_events["event_type"]).issubset({
         "fleet_added_aircraft", "fleet_retired_aircraft", "fleet_total_aircraft",
