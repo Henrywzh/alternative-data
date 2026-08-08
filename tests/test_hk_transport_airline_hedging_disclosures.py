@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 from hk_transport.sources.airline_hedging_disclosures import build_airline_hedging_disclosures
 
@@ -41,6 +42,11 @@ def test_primary_report_hedging_layer_keeps_notional_fair_value_and_policy_separ
     assert southern["notional_native"].isna().all()
 
 
+@pytest.mark.skip(
+    reason="Depends on data/raw/airline_reports/*.PDF (12 cached issuer "
+    "filings, ~81MB), which is not committed. This pipeline is still being "
+    "tested out and isn't ready to gate CI on the raw cache decision yet."
+)
 def test_hedging_scan_does_not_turn_missing_anchors_into_zero_hedges() -> None:
     frame = build_airline_hedging_disclosures(retrieved_at="2026-08-07T00:00:00+00:00")
     scan_rows = frame.loc[frame["disclosure_type"].eq("scan_result")]
