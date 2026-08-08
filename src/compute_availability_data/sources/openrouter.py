@@ -1,35 +1,65 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
+import time
 from typing import Any
 
 import requests
 
 from compute_availability_data.models import DatasetRecord, Snapshot
+from compute_availability_data.storage import MINIMUM_PRODUCTION_CATALOG_MODELS
 from pricing_model_aliases import derive_provider_prefix
+
+logger = logging.getLogger(__name__)
 
 
 class OpenRouterSource:
     URL = "https://openrouter.ai/api/v1/models"
+    # Every genuinely healthy fetch on record has returned 336-524 models. In
+    # production this endpoint has intermittently -- reproducibly only in CI,
+    # not from a developer machine with the same real API key -- returned a
+    # 200 with a well-formed but badly truncated `data` array (as few as 1
+    # model), which sailed straight past the old, much lower validation floor
+    # for months. A short retry gives a likely-transient degraded response
+    # (CDN/network, not auth) a chance to recover before the caller has to
+    # treat it as a hard failure.
+    _MAX_FETCH_ATTEMPTS = 3
+    _RETRY_DELAY_SECONDS = 5.0
 
     def fetch_snapshot(self) -> Snapshot:
         headers = {"Accept": "application/json", "User-Agent": "alternative-data-dashboard/1.0"}
         api_key = os.environ.get("OPENROUTER_API_KEY", "").strip()
         if api_key:
             headers["Authorization"] = f"Bearer {api_key}"
-        response = requests.get(
-            self.URL,
-            params={"output_modalities": "all"},
-            headers=headers,
-            timeout=30,
-        )
-        response.raise_for_status()
-        return Snapshot(
-            name="openrouter_models",
-            source_url=self.URL,
-            body=response.text,
-        )
+
+        for attempt in range(1, self._MAX_FETCH_ATTEMPTS + 1):
+            response = requests.get(
+                self.URL,
+                params={"output_modalities": "all"},
+                headers=headers,
+                timeout=30,
+            )
+            response.raise_for_status()
+            body = response.text
+            try:
+                model_count = len(json.loads(body).get("data", []))
+            except (json.JSONDecodeError, AttributeError):
+                model_count = 0
+            if model_count >= MINIMUM_PRODUCTION_CATALOG_MODELS:
+                return Snapshot(name="openrouter_models", source_url=self.URL, body=body)
+            logger.warning(
+                "OpenRouter models fetch attempt %d/%d returned only %d models (expected >= %d); retrying",
+                attempt, self._MAX_FETCH_ATTEMPTS, model_count, MINIMUM_PRODUCTION_CATALOG_MODELS,
+            )
+            if attempt < self._MAX_FETCH_ATTEMPTS:
+                time.sleep(self._RETRY_DELAY_SECONDS)
+
+        # All attempts came back degraded -- return the last one anyway and
+        # let validate_current_catalog() reject it with a clear error rather
+        # than raising a different exception here for the same condition.
+        return Snapshot(name="openrouter_models", source_url=self.URL, body=body)
 
     def extract(self, snapshot: Snapshot, run_id: str, scraped_at: str) -> list[DatasetRecord]:
         data = json.loads(snapshot.body)

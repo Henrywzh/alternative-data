@@ -285,6 +285,12 @@
         {"model_id": "anthropic/claude-opus-5-20260723", "effective_from": "2026-07-24"},
         {"model_id": "anthropic/claude-opus-5-fast-20260723", "effective_from": "2026-07-26"}
       ]
+    },
+    {
+      "aa_model_id": "5e5b4ce7-bc54-47b2-b911-21b9cad8394c",
+      "family_id": "qwen/qwen3.8-max",
+      "effective_from": "2026-08-03",
+      "openrouter_routes": [{"model_id": "qwen/qwen3.8-max-20260803", "effective_from": "2026-08-04"}]
     }
   ]
 }

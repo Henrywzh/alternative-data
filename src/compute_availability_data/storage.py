@@ -98,7 +98,17 @@ OPENROUTER_CHANGE_COLUMNS = [
     }
 ]
 
-MINIMUM_PRODUCTION_CATALOG_MODELS = 100
+# The live catalog has run 336-524 models across every genuinely healthy
+# fetch on record. 100 (the original floor) was low enough that a badly
+# degraded-but-nonempty response -- observed in production between
+# 2026-04-17 and 2026-08-08, ranging 1-223 models per day, likely a CDN/
+# network issue specific to the CI runner's requests, not an auth problem
+# (reproduced healthy 524-model responses locally both with and without the
+# real API key) -- could still clear it and get written as if it were a
+# real catalog. 250 sits safely below every healthy count observed and
+# above every broken one, so it actually catches this failure mode instead
+# of just documenting it.
+MINIMUM_PRODUCTION_CATALOG_MODELS = 250
 MINIMUM_PRODUCTION_PROVIDER_PREFIXES = 10
 MINIMUM_PRIOR_CATALOG_RATIO = 0.60
 

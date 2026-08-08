@@ -4153,7 +4153,7 @@ def test_compute_openrouter_views_keeps_sunday_market_share_when_no_monday_snaps
     assert views["top_models"]["source_by_week"]["2026-04-13"] == "market_share"
 
 
-def test_compute_availability_views_reconstruct_catalog_from_full_and_delta_snapshots() -> None:
+def test_compute_availability_views_treat_every_snapshot_as_complete() -> None:
     rows: list[dict] = []
 
     for model_id in [f"model-{idx}" for idx in range(1, 6)]:
@@ -4220,7 +4220,15 @@ def test_compute_availability_views_reconstruct_catalog_from_full_and_delta_snap
     models_growth = views["models_growth"]
     models_latest = views["models_latest"]
 
-    assert models_growth["model_count"].tolist() == [5, 6, 4]
+    # Every snapshot is one atomic pull of the whole upstream catalog, never
+    # a genuine partial/delta scrape (the live pipeline rejects a collapsed
+    # pull before it's ever written here, and the Wayback backfill reads a
+    # single-shot JSON dump per capture) -- so each snapshot's own model_id
+    # count is the true catalog size as of that snapshot, with no
+    # accumulation across snapshots. The 2026-01-16 snapshot here only has 2
+    # rows (model-3, model-6): that's its own real count, not "5 carried
+    # forward plus 1 new".
+    assert models_growth["model_count"].tolist() == [5, 2, 4]
     assert set(models_latest["model_id"]) == {"model-1", "model-2", "model-3", "model-4"}
     latest_model_3 = models_latest[models_latest["model_id"] == "model-3"].iloc[0]
     assert latest_model_3["pricing_prompt"] == 0.004

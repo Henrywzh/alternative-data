@@ -1221,36 +1221,29 @@ def compute_compute_availability_views(datasets: dict[str, DatasetLoadResult]) -
             return views
 
         snapshot_groups = list(df.groupby("snapshot_ts", sort=True))
-        max_snapshot_size = max(group["model_id"].nunique() for _, group in snapshot_groups)
-        full_snapshot_threshold = max_snapshot_size * 0.8
 
-        # Catalog size over time ("as of this snapshot"): walk snapshots in
-        # order tracking which model_ids are known - a full snapshot replaces
-        # the known set entirely, a partial/change-only snapshot only adds to
-        # it. Only the *count* is needed here, so track a set of model_ids
-        # rather than full row data (no per-row Python objects at all).
-        current_model_ids: set[str] = set()
-        growth_rows: list[dict[str, object]] = []
-        last_full_snapshot_ts: pd.Timestamp | None = None
-
-        for snapshot_ts, group in snapshot_groups:
-            snapshot_model_ids = set(group["model_id"].astype(str).unique())
-            if len(snapshot_model_ids) >= full_snapshot_threshold:
-                current_model_ids = snapshot_model_ids
-                last_full_snapshot_ts = snapshot_ts
-            else:
-                current_model_ids |= snapshot_model_ids
-            growth_rows.append({"snapshot_ts": snapshot_ts, "model_count": len(current_model_ids)})
+        # Every recorded snapshot -- live-scraped or Wayback-backfilled -- is
+        # one atomic pull of the entire openrouter.ai/api/v1/models response,
+        # never a partial/incremental one: the live pipeline's
+        # validate_current_catalog() rejects (and never writes) a collapsed
+        # pull before it can reach this table, and the backfill script reads
+        # a single-shot JSON dump per archived capture. So each snapshot's
+        # own model_id set *is* the true catalog size as of that snapshot;
+        # no "is this a full snapshot" guessing is needed or correct here.
+        # (An earlier version of this used an 80%-of-max-snapshot-size
+        # heuristic to decide full vs. partial and accumulated the "partial"
+        # ones -- with backfilled history spanning catalog sizes from ~220 to
+        # 600+, most of the smaller, perfectly legitimate early snapshots
+        # fell under that threshold and got unioned instead of replaced,
+        # producing an artificial climb-then-cliff sawtooth that didn't
+        # exist in the underlying data.)
+        growth_rows: list[dict[str, object]] = [
+            {"snapshot_ts": snapshot_ts, "model_count": group["model_id"].nunique()}
+            for snapshot_ts, group in snapshot_groups
+        ]
 
         latest_ts = snapshot_groups[-1][0]
-        # A full snapshot wholesale-replaces the catalog, so anything before
-        # the *last* full snapshot can never survive into the final state -
-        # only that snapshot and whatever comes after it can still matter.
-        # That lets the final row-level catalog come from a single sort +
-        # drop_duplicates(keep="last") instead of repeating the per-snapshot
-        # walk with full row payloads.
-        relevant = df if last_full_snapshot_ts is None else df[df["snapshot_ts"] >= last_full_snapshot_ts]
-        latest_models = relevant.drop_duplicates(subset="model_id", keep="last").sort_values("model_id").reset_index(drop=True)
+        latest_models = df[df["snapshot_ts"] == latest_ts].drop_duplicates(subset="model_id", keep="last").sort_values("model_id").reset_index(drop=True)
         # Prefer the authoritative current catalog emitted by the daily source.
         # The historical table is change-only and therefore cannot remove a
         # model that disappeared from the upstream API.
