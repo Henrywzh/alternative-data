@@ -1,27 +1,56 @@
 """
-MTR Historical Half-Yearly Earnings Bridge (2010 H1 - 2025 H2)
-=============================================================
+MTR Historical Annual Earnings Bridge (FY2010 - FY2025)
+========================================================
 
 Purpose
 -------
-Reconstructs MTR's (66.HK) half-yearly income statement bridge across 32 half-years
-(2010 H1 through 2025 H2) from official MTR Annual and Interim financial results.
+Reconstructs MTR's (66.HK) annual income-statement bridge for the 16 fiscal
+years 2010-2025 from official MTR published results, so that every operational
+KPI (patronage, property handover, HIBOR, fares) can be mapped to the exact
+earnings line it drives.
 
-Accounting Architecture:
-  * Segment Revenue: HK Transport Operations, Station Commercial, Property Rental & Management,
-    Mainland China & International Subsidiaries, and Other.
-  * Segment EBIT: HK Transport, Station Commercial, Property Rental, International O&M.
-  * Recurrent EBIT: Sum of recurrent segment profits.
-  * HK Property Development Profit: Reported as a separate profit line (NOT full top-line revenue).
-  * Net Finance Costs, Share of Profit of Associates & JVs, Taxation.
-  * Underlying Business Profit: Recurrent EBIT + Property Profit - Net Finance - Tax + JV Share.
-  * IP Revaluation & One-offs: Investment property fair value adjustments and impairments.
-  * Reported NPAT, Underlying EPS, Reported EPS, and DPS.
+Every value in this module was hand-verified on 2026-08-09 against official
+MTR PDFs downloaded from mtr.com.hk:
+  * 2020-2025: full "Announcement of Audited Results" (Consolidated Statement
+    of Profit or Loss), e.g. e_Annual_Results_2025.pdf.
+  * 2010-2019: official analyst results presentations (e.g. mtr_2016_final_eng_web.pdf).
+Values are HK$ million except EPS / DPS (HK$).
+
+Accounting architecture (MTR-specific):
+  * Property development is NOT booked as top-line revenue; it appears as the
+    separate "Hong Kong property development profit" line (share of surplus /
+    income / interest in unsold properties).
+  * Recurrent businesses = HK transport operations + station commercial +
+    property rental & management + other + (Mainland & international
+    subsidiaries). Associates/JVs (e.g. Beijing lines) contribute only via
+    "Share of profit of associates and joint ventures".
+  * Reported NPAT = underlying businesses profit + investment-property fair
+    value movements (+ one-offs / impairments).
+
+Known source conventions / caveats:
+  * 2016-2018 decks disclose HK station commercial and HK property rental as a
+    MERGED revenue line (hk_station_plus_rental_rev); 2014/2015 and 2020+
+    disclose them separately.
+  * 2010-2013 decks disclose only total revenue and "revenue before Mainland
+    of China & international subsidiaries", so segment revenue rows are NULL.
+  * hk_pdp_pre_tax is the gross "share of surplus" profit; hk_pdp_post_tax is
+    profit attributable to shareholders (2016-2025 includes Mainland China
+    property development for 2016-2018 per official disclosure convention).
+  * recurrent_post_tax_profit is profit from recurrent businesses after tax
+  (attributable to shareholders); recurrent_op_profit is "operating profit arising from recurrent
+    businesses" BEFORE depreciation, amortisation and variable annual payment
+    for 2019-2025; for 2017-2018 it is "EBIT on recurrent businesses" AFTER
+    D&A / VAP per the decks.
+  * 2012 figures are restated under revised HKAS19 (as per the 2013 deck);
+    2011 reported NPAT uses the 2011 deck's own figure (14,716).
+  * 2014 DPS (1.05) is from public record (the 2015 deck does not print it).
 """
 
 from __future__ import annotations
 
 import os
+from typing import Any
+
 import pandas as pd
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -30,67 +59,116 @@ os.makedirs(OUT_DIR, exist_ok=True)
 
 CSV_PATH = os.path.join(OUT_DIR, "mtr_historical_earnings_bridge.csv")
 
-# Half-yearly financial statement bridge dataset (2010 H1 - 2025 H2)
-# Values in HK$ Million (except EPS / DPS in HK$)
-MTR_HALF_YEARLY_DATA = [
-    # 2010
-    {"period": "2010-H1", "year": 2010, "half": "H1", "hk_transport_rev": 5892.0, "station_comm_rev": 1276.0, "property_rental_rev": 1395.0, "mainland_intl_rev": 5440.0, "total_rev": 14197.0, "recurrent_ebit": 4320.0, "property_dev_profit": 2368.0, "underlying_profit": 4272.0, "ip_reval": 2360.0, "reported_npat": 6632.0, "underlying_eps": 0.74, "dps": 0.14},
-    {"period": "2010-H2", "year": 2010, "half": "H2", "hk_transport_rev": 6636.0, "station_comm_rev": 1424.0, "property_rental_rev": 1475.0, "mainland_intl_rev": 5802.0, "total_rev": 15337.0, "recurrent_ebit": 4810.0, "property_dev_profit": 1666.0, "underlying_profit": 4381.0, "ip_reval": 1056.0, "reported_npat": 5437.0, "underlying_eps": 0.76, "dps": 0.45},
-    # 2011
-    {"period": "2011-H1", "year": 2011, "half": "H1", "hk_transport_rev": 6432.0, "station_comm_rev": 1450.0, "property_rental_rev": 1548.0, "mainland_intl_rev": 6120.0, "total_rev": 15550.0, "recurrent_ebit": 4720.0, "property_dev_profit": 2980.0, "underlying_profit": 5260.0, "ip_reval": 1650.0, "reported_npat": 6910.0, "underlying_eps": 0.91, "dps": 0.25},
-    {"period": "2011-H2", "year": 2011, "half": "H2", "hk_transport_rev": 6994.0, "station_comm_rev": 1580.0, "property_rental_rev": 1622.0, "mainland_intl_rev": 7674.0, "total_rev": 17870.0, "recurrent_ebit": 5190.0, "property_dev_profit": 1954.0, "underlying_profit": 5208.0, "ip_reval": 2750.0, "reported_npat": 7958.0, "underlying_eps": 0.90, "dps": 0.51},
-    # 2012
-    {"period": "2012-H1", "year": 2012, "half": "H1", "hk_transport_rev": 7180.0, "station_comm_rev": 1620.0, "property_rental_rev": 1740.0, "mainland_intl_rev": 7180.0, "total_rev": 17720.0, "recurrent_ebit": 5110.0, "property_dev_profit": 1820.0, "underlying_profit": 4820.0, "ip_reval": 3430.0, "reported_npat": 8250.0, "underlying_eps": 0.83, "dps": 0.25},
-    {"period": "2012-H2", "year": 2012, "half": "H2", "hk_transport_rev": 7640.0, "station_comm_rev": 1780.0, "property_rental_rev": 1820.0, "mainland_intl_rev": 8780.0, "total_rev": 20020.0, "recurrent_ebit": 5580.0, "property_dev_profit": 1418.0, "underlying_profit": 4918.0, "ip_reval": 4372.0, "reported_npat": 9290.0, "underlying_eps": 0.85, "dps": 0.54},
-    # 2013
-    {"period": "2013-H1", "year": 2013, "half": "H1", "hk_transport_rev": 7562.0, "station_comm_rev": 1850.0, "property_rental_rev": 1920.0, "mainland_intl_rev": 7768.0, "total_rev": 19100.0, "recurrent_ebit": 5420.0, "property_dev_profit": 850.0, "underlying_profit": 4540.0, "ip_reval": 1820.0, "reported_npat": 6360.0, "underlying_eps": 0.78, "dps": 0.25},
-    {"period": "2013-H2", "year": 2013, "half": "H2", "hk_transport_rev": 8086.0, "station_comm_rev": 1980.0, "property_rental_rev": 1990.0, "mainland_intl_rev": 7534.0, "total_rev": 19590.0, "recurrent_ebit": 5790.0, "property_dev_profit": 546.0, "underlying_profit": 4062.0, "ip_reval": 2608.0, "reported_npat": 6670.0, "underlying_eps": 0.70, "dps": 0.67},
-    # 2014
-    {"period": "2014-H1", "year": 2014, "half": "H1", "hk_transport_rev": 8150.0, "station_comm_rev": 2210.0, "property_rental_rev": 2100.0, "mainland_intl_rev": 6620.0, "total_rev": 19080.0, "recurrent_ebit": 5730.0, "property_dev_profit": 2350.0, "underlying_profit": 5780.0, "ip_reval": 2130.0, "reported_npat": 7910.0, "underlying_eps": 0.99, "dps": 0.25},
-    {"period": "2014-H2", "year": 2014, "half": "H2", "hk_transport_rev": 8732.0, "station_comm_rev": 2420.0, "property_rental_rev": 2170.0, "mainland_intl_rev": 7808.0, "total_rev": 21130.0, "recurrent_ebit": 6220.0, "property_dev_profit": 1875.0, "underlying_profit": 5790.0, "ip_reval": 1900.0, "reported_npat": 7690.0, "underlying_eps": 0.99, "dps": 0.80},
-    # 2015
-    {"period": "2015-H1", "year": 2015, "half": "H1", "hk_transport_rev": 8660.0, "station_comm_rev": 2460.0, "property_rental_rev": 2250.0, "mainland_intl_rev": 6840.0, "total_rev": 20210.0, "recurrent_ebit": 6050.0, "property_dev_profit": 2280.0, "underlying_profit": 6120.0, "ip_reval": 2070.0, "reported_npat": 8190.0, "underlying_eps": 1.05, "dps": 0.25},
-    {"period": "2015-H2", "year": 2015, "half": "H2", "hk_transport_rev": 9242.0, "station_comm_rev": 2680.0, "property_rental_rev": 2300.0, "mainland_intl_rev": 7078.0, "total_rev": 21300.0, "recurrent_ebit": 6520.0, "property_dev_profit": 610.0, "underlying_profit": 4774.0, "ip_reval": 4030.0, "reported_npat": 8804.0, "underlying_eps": 0.81, "dps": 0.81},
-    # 2016
-    {"period": "2016-H1", "year": 2016, "half": "H1", "hk_transport_rev": 8840.0, "station_comm_rev": 2620.0, "property_rental_rev": 2360.0, "mainland_intl_rev": 7490.0, "total_rev": 21310.0, "recurrent_ebit": 6010.0, "property_dev_profit": 540.0, "underlying_profit": 4870.0, "ip_reval": 250.0, "reported_npat": 5120.0, "underlying_eps": 0.83, "dps": 0.25},
-    {"period": "2016-H2", "year": 2016, "half": "H2", "hk_transport_rev": 9585.0, "station_comm_rev": 2980.0, "property_rental_rev": 2380.0, "mainland_intl_rev": 8984.0, "total_rev": 23929.0, "recurrent_ebit": 6620.0, "property_dev_profit": 100.0, "underlying_profit": 4566.0, "ip_reval": 560.0, "reported_npat": 5126.0, "underlying_eps": 0.77, "dps": 0.82},
-    # 2017
-    {"period": "2017-H1", "year": 2017, "half": "H1", "hk_transport_rev": 9150.0, "station_comm_rev": 2780.0, "property_rental_rev": 2420.0, "mainland_intl_rev": 15650.0, "total_rev": 30000.0, "recurrent_ebit": 6250.0, "property_dev_profit": 800.0, "underlying_profit": 4650.0, "ip_reval": 2830.0, "reported_npat": 7480.0, "underlying_eps": 0.78, "dps": 0.25},
-    {"period": "2017-H2", "year": 2017, "half": "H2", "hk_transport_rev": 9703.0, "station_comm_rev": 3200.0, "property_rental_rev": 2470.0, "mainland_intl_rev": 10069.0, "total_rev": 25442.0, "recurrent_ebit": 6840.0, "property_dev_profit": 310.0, "underlying_profit": 5869.0, "ip_reval": 3480.0, "reported_npat": 9349.0, "underlying_eps": 0.98, "dps": 0.87},
-    # 2018
-    {"period": "2018-H1", "year": 2018, "half": "H1", "hk_transport_rev": 9740.0, "station_comm_rev": 3080.0, "property_rental_rev": 2510.0, "mainland_intl_rev": 11070.0, "total_rev": 26400.0, "recurrent_ebit": 6510.0, "property_dev_profit": 660.0, "underlying_profit": 5030.0, "ip_reval": 1650.0, "reported_npat": 6680.0, "underlying_eps": 0.83, "dps": 0.25},
-    {"period": "2018-H2", "year": 2018, "half": "H2", "hk_transport_rev": 10842.0, "station_comm_rev": 3390.0, "property_rental_rev": 2540.0, "mainland_intl_rev": 10767.0, "total_rev": 27539.0, "recurrent_ebit": 6880.0, "property_dev_profit": 1916.0, "underlying_profit": 6230.0, "ip_reval": 3090.0, "reported_npat": 9320.0, "underlying_eps": 1.03, "dps": 0.95},
-    # 2019
-    {"period": "2019-H1", "year": 2019, "half": "H1", "hk_transport_rev": 10690.0, "station_comm_rev": 3380.0, "property_rental_rev": 2580.0, "mainland_intl_rev": 11620.0, "total_rev": 28270.0, "recurrent_ebit": 6810.0, "property_dev_profit": 840.0, "underlying_profit": 5440.0, "ip_reval": 660.0, "reported_npat": 6100.0, "underlying_eps": 0.89, "dps": 0.25},
-    {"period": "2019-H2", "year": 2019, "half": "H2", "hk_transport_rev": 9248.0, "station_comm_rev": 3370.0, "property_rental_rev": 2570.0, "mainland_intl_rev": 21245.0, "total_rev": 36435.0, "recurrent_ebit": 4210.0, "property_dev_profit": 4740.0, "underlying_profit": 5120.0, "ip_reval": 710.0, "reported_npat": 5830.0, "underlying_eps": 0.83, "dps": 0.98},
-    # 2020
-    {"period": "2020-H1", "year": 2020, "half": "H1", "hk_transport_rev": 5580.0, "station_comm_rev": 1540.0, "property_rental_rev": 2500.0, "mainland_intl_rev": 11840.0, "total_rev": 21460.0, "recurrent_ebit": -680.0, "property_dev_profit": 5200.0, "underlying_profit": 4330.0, "ip_reval": -4660.0, "reported_npat": -334.0, "underlying_eps": 0.70, "dps": 0.25},
-    {"period": "2020-H2", "year": 2020, "half": "H2", "hk_transport_rev": 6316.0, "station_comm_rev": 1720.0, "property_rental_rev": 2510.0, "mainland_intl_rev": 13035.0, "total_rev": 23581.0, "recurrent_ebit": -440.0, "property_dev_profit": 3048.0, "underlying_profit": 80.0, "ip_reval": -4554.0, "reported_npat": -4474.0, "underlying_eps": 0.01, "dps": 0.98},
-    # 2021
-    {"period": "2021-H1", "year": 2021, "half": "H1", "hk_transport_rev": 6010.0, "station_comm_rev": 1550.0, "property_rental_rev": 2490.0, "mainland_intl_rev": 12210.0, "total_rev": 22260.0, "recurrent_ebit": -850.0, "property_dev_profit": 3100.0, "underlying_profit": 2670.0, "ip_reval": 0.0, "reported_npat": 2673.0, "underlying_eps": 0.43, "dps": 0.25},
-    {"period": "2021-H2", "year": 2021, "half": "H2", "hk_transport_rev": 7167.0, "station_comm_rev": 1660.0, "property_rental_rev": 2540.0, "mainland_intl_rev": 13612.0, "total_rev": 24979.0, "recurrent_ebit": -50.0, "property_dev_profit": 6223.0, "underlying_profit": 6688.0, "ip_reval": 190.0, "reported_npat": 6878.0, "underlying_eps": 1.08, "dps": 1.02},
-    # 2022
-    {"period": "2022-H1", "year": 2022, "half": "H1", "hk_transport_rev": 5810.0, "station_comm_rev": 1470.0, "property_rental_rev": 2430.0, "mainland_intl_rev": 13370.0, "total_rev": 23090.0, "recurrent_ebit": -670.0, "property_dev_profit": 7750.0, "underlying_profit": 5130.0, "ip_reval": -400.0, "reported_npat": 4730.0, "underlying_eps": 0.83, "dps": 0.42},
-    {"period": "2022-H2", "year": 2022, "half": "H2", "hk_transport_rev": 7594.0, "station_comm_rev": 1580.0, "property_rental_rev": 2350.0, "mainland_intl_rev": 13204.0, "total_rev": 24728.0, "recurrent_ebit": 820.0, "property_dev_profit": 2688.0, "underlying_profit": 5506.0, "ip_reval": 568.0, "reported_npat": 5074.0, "underlying_eps": 0.89, "dps": 0.89},
-    # 2023
-    {"period": "2023-H1", "year": 2023, "half": "H1", "hk_transport_rev": 9340.0, "station_comm_rev": 2420.0, "property_rental_rev": 2450.0, "mainland_intl_rev": 13370.0, "total_rev": 27580.0, "recurrent_ebit": 2420.0, "property_dev_profit": 730.0, "underlying_profit": 3480.0, "ip_reval": 870.0, "reported_npat": 4350.0, "underlying_eps": 0.56, "dps": 0.42},
-    {"period": "2023-H2", "year": 2023, "half": "H2", "hk_transport_rev": 10791.0, "station_comm_rev": 2650.0, "property_rental_rev": 2630.0, "mainland_intl_rev": 23287.0, "total_rev": 29358.0, "recurrent_ebit": 3710.0, "property_dev_profit": 1350.0, "underlying_profit": 2883.0, "ip_reval": 551.0, "reported_npat": 3434.0, "underlying_eps": 0.46, "dps": 0.89},
-    # 2024
-    {"period": "2024-H1", "year": 2024, "half": "H1", "hk_transport_rev": 11340.0, "station_comm_rev": 2610.0, "property_rental_rev": 2520.0, "mainland_intl_rev": 12810.0, "total_rev": 29280.0, "recurrent_ebit": 3780.0, "property_dev_profit": 1740.0, "underlying_profit": 4010.0, "ip_reval": 2140.0, "reported_npat": 6150.0, "underlying_eps": 0.65, "dps": 0.42},
-    {"period": "2024-H2", "year": 2024, "half": "H2", "hk_transport_rev": 11673.0, "station_comm_rev": 2735.0, "property_rental_rev": 2547.0, "mainland_intl_rev": 12657.0, "total_rev": 29612.0, "recurrent_ebit": 4020.0, "property_dev_profit": 9326.0, "underlying_profit": 11190.0, "ip_reval": 84.0, "reported_npat": 11274.0, "underlying_eps": 1.80, "dps": 0.89},
-    # 2025
-    {"period": "2025-H1", "year": 2025, "half": "H1", "hk_transport_rev": 11680.0, "station_comm_rev": 2640.0, "property_rental_rev": 2510.0, "mainland_intl_rev": 10420.0, "total_rev": 27250.0, "recurrent_ebit": 3950.0, "property_dev_profit": 5580.0, "underlying_profit": 6820.0, "ip_reval": -210.0, "reported_npat": 6610.0, "underlying_eps": 1.09, "dps": 0.42},
-    {"period": "2025-H2", "year": 2025, "half": "H2", "hk_transport_rev": 11915.0, "station_comm_rev": 2705.0, "property_rental_rev": 2557.0, "mainland_intl_rev": 10266.0, "total_rev": 27443.0, "recurrent_ebit": 4150.0, "property_dev_profit": 7632.0, "underlying_profit": 8780.0, "ip_reval": -350.0, "reported_npat": 8430.0, "underlying_eps": 1.41, "dps": 0.89},
+# ---------------------------------------------------------------------------
+# Hand-verified official data, FY2010 - FY2025 (HK$ million; EPS/DPS in HK$)
+# ---------------------------------------------------------------------------
+MTR_ANNUAL_DATA: list[dict[str, Any]] = [
+    dict(year=2010, recurrent_post_tax_profit=None, total_revenue=29518, hk_transport_rev=None, hk_station_commercial_rev=None,
+         hk_property_rental_mgmt_rev=None, hk_station_plus_rental_rev=None,
+         mainland_intl_subsidiaries_rev=None, other_rev=None, mainland_china_property_dev_rev=None,
+         recurrent_op_profit=None, hk_pdp_pre_tax=4034, hk_pdp_post_tax=None,
+         underlying_profit=8657, ip_fv_revaluation=None, reported_npat=12059, eps_basic=2.10,
+         dps=0.59, pbt=14762, finance_costs=None, tax=None),
+    dict(year=2011, recurrent_post_tax_profit=None, total_revenue=33423, hk_transport_rev=None, hk_station_commercial_rev=None,
+         hk_property_rental_mgmt_rev=None, hk_station_plus_rental_rev=None,
+         mainland_intl_subsidiaries_rev=None, other_rev=None, mainland_china_property_dev_rev=None,
+         recurrent_op_profit=None, hk_pdp_pre_tax=4934, hk_pdp_post_tax=None,
+         underlying_profit=10468, ip_fv_revaluation=None, reported_npat=14716, eps_basic=2.55,
+         dps=0.76, pbt=17669, finance_costs=None, tax=None),
+    dict(year=2012, recurrent_post_tax_profit=6914, total_revenue=35739, hk_transport_rev=None, hk_station_commercial_rev=None,
+         hk_property_rental_mgmt_rev=None, hk_station_plus_rental_rev=None,
+         mainland_intl_subsidiaries_rev=None, other_rev=None, mainland_china_property_dev_rev=None,
+         recurrent_op_profit=None, hk_pdp_pre_tax=3238, hk_pdp_post_tax=None,
+         underlying_profit=9618, ip_fv_revaluation=None, reported_npat=13375, eps_basic=2.31,
+         dps=0.79, pbt=15376, finance_costs=None, tax=None),
+    dict(year=2013, recurrent_post_tax_profit=7437, total_revenue=38707, hk_transport_rev=None, hk_station_commercial_rev=None,
+         hk_property_rental_mgmt_rev=None, hk_station_plus_rental_rev=None,
+         mainland_intl_subsidiaries_rev=None, other_rev=None, mainland_china_property_dev_rev=None,
+         recurrent_op_profit=None, hk_pdp_pre_tax=1396, hk_pdp_post_tax=None,
+         underlying_profit=8600, ip_fv_revaluation=None, reported_npat=13025, eps_basic=2.25,
+         dps=0.92, pbt=15027, finance_costs=None, tax=None),
+    dict(year=2014, recurrent_post_tax_profit=8024, total_revenue=40156, hk_transport_rev=16223, hk_station_commercial_rev=4963,
+         hk_property_rental_mgmt_rev=4190, hk_station_plus_rental_rev=None,
+         mainland_intl_subsidiaries_rev=12627, other_rev=2153, mainland_china_property_dev_rev=None,
+         recurrent_op_profit=15478, hk_pdp_pre_tax=4216, hk_pdp_post_tax=3547,
+         underlying_profit=11571, ip_fv_revaluation=4035, reported_npat=15606, eps_basic=2.69,
+         dps=1.05, pbt=18293, finance_costs=545, tax=2496),
+    dict(year=2015, recurrent_post_tax_profit=8565, total_revenue=41701, hk_transport_rev=16916, hk_station_commercial_rev=5380,
+         hk_property_rental_mgmt_rev=4533, hk_station_plus_rental_rev=None,
+         mainland_intl_subsidiaries_rev=12572, other_rev=2300, mainland_china_property_dev_rev=None,
+         recurrent_op_profit=16260, hk_pdp_pre_tax=2891, hk_pdp_post_tax=2329,
+         underlying_profit=10894, ip_fv_revaluation=2100, reported_npat=12994, eps_basic=2.22,
+         dps=1.06, pbt=15375, finance_costs=599, tax=2237),
+    dict(year=2016, recurrent_post_tax_profit=8916, total_revenue=45189, hk_transport_rev=16545, hk_station_commercial_rev=None,
+         hk_property_rental_mgmt_rev=None, hk_station_plus_rental_rev=None,
+         mainland_intl_subsidiaries_rev=None, other_rev=None, mainland_china_property_dev_rev=1348,
+         recurrent_op_profit=None, hk_pdp_pre_tax=None, hk_pdp_post_tax=530,
+         underlying_profit=9446, ip_fv_revaluation=808, reported_npat=10254, eps_basic=1.74,
+         dps=1.07, pbt=None, finance_costs=None, tax=None),
+    dict(year=2017, recurrent_post_tax_profit=8580, total_revenue=55440, hk_transport_rev=18201, hk_station_commercial_rev=None,
+         hk_property_rental_mgmt_rev=4900, hk_station_plus_rental_rev=10875,
+         mainland_intl_subsidiaries_rev=17194, other_rev=2174, mainland_china_property_dev_rev=6996,
+         recurrent_op_profit=11740, hk_pdp_pre_tax=None, hk_pdp_post_tax=1935,
+         underlying_profit=10515, ip_fv_revaluation=6314, reported_npat=16829, eps_basic=2.83,
+         dps=1.12, pbt=None, finance_costs=None, tax=None),
+    dict(year=2018, recurrent_post_tax_profit=9020, total_revenue=53930, hk_transport_rev=19490, hk_station_commercial_rev=None,
+         hk_property_rental_mgmt_rev=None, hk_station_plus_rental_rev=11513,
+         mainland_intl_subsidiaries_rev=20877, other_rev=1990, mainland_china_property_dev_rev=60,
+         recurrent_op_profit=12553, hk_pdp_pre_tax=2574, hk_pdp_post_tax=2243,
+         underlying_profit=11263, ip_fv_revaluation=4745, reported_npat=16008, eps_basic=2.64,
+         dps=1.20, pbt=None, finance_costs=None, tax=None),
+    dict(year=2019, recurrent_post_tax_profit=4980, total_revenue=54504, hk_transport_rev=19938, hk_station_commercial_rev=None,
+         hk_property_rental_mgmt_rev=None, hk_station_plus_rental_rev=11936,
+         mainland_intl_subsidiaries_rev=21085, other_rev=1545, mainland_china_property_dev_rev=0,
+         recurrent_op_profit=15351, hk_pdp_pre_tax=5707, hk_pdp_post_tax=5580,
+         underlying_profit=10560, ip_fv_revaluation=1372, reported_npat=11932, eps_basic=1.94,
+         dps=1.23, pbt=14014, finance_costs=859, tax=1922),
+    dict(year=2020, recurrent_post_tax_profit=-1126, total_revenue=42541, hk_transport_rev=11896, hk_station_commercial_rev=3269,
+         hk_property_rental_mgmt_rev=5054, hk_station_plus_rental_rev=None,
+         mainland_intl_subsidiaries_rev=21428, other_rev=894, mainland_china_property_dev_rev=0,
+         recurrent_op_profit=5194, hk_pdp_pre_tax=6491, hk_pdp_post_tax=5507,
+         underlying_profit=4381, ip_fv_revaluation=-9190, reported_npat=-4809, eps_basic=-0.78,
+         dps=1.23, pbt=-3520, finance_costs=1004, tax=1301),
+    dict(year=2021, recurrent_post_tax_profit=1808, total_revenue=47202, hk_transport_rev=13177, hk_station_commercial_rev=3208,
+         hk_property_rental_mgmt_rev=5036, hk_station_plus_rental_rev=None,
+         mainland_intl_subsidiaries_rev=25045, other_rev=383, mainland_china_property_dev_rev=353,
+         recurrent_op_profit=8019, hk_pdp_pre_tax=11097, hk_pdp_post_tax=9343,
+         underlying_profit=11151, ip_fv_revaluation=-1616, reported_npat=9552, eps_basic=1.55,
+         dps=1.27, pbt=11940, finance_costs=967, tax=2261),
+    dict(year=2022, recurrent_post_tax_profit=157, total_revenue=47812, hk_transport_rev=13404, hk_station_commercial_rev=3077,
+         hk_property_rental_mgmt_rev=4779, hk_station_plus_rental_rev=None,
+         mainland_intl_subsidiaries_rev=26016, other_rev=363, mainland_china_property_dev_rev=173,
+         recurrent_op_profit=7852, hk_pdp_pre_tax=11589, hk_pdp_post_tax=10480,
+         underlying_profit=10637, ip_fv_revaluation=-810, reported_npat=9827, eps_basic=1.59,
+         dps=1.31, pbt=11749, finance_costs=982, tax=1608),
+    dict(year=2023, recurrent_post_tax_profit=4281, total_revenue=56982, hk_transport_rev=20131, hk_station_commercial_rev=5117,
+         hk_property_rental_mgmt_rev=5079, hk_station_plus_rental_rev=None,
+         mainland_intl_subsidiaries_rev=25955, other_rev=700, mainland_china_property_dev_rev=0,
+         recurrent_op_profit=15323, hk_pdp_pre_tax=2329, hk_pdp_post_tax=2083,
+         underlying_profit=6364, ip_fv_revaluation=1386, reported_npat=7784, eps_basic=1.26,
+         dps=1.31, pbt=9663, finance_costs=1139, tax=1575),
+    dict(year=2024, recurrent_post_tax_profit=7210, total_revenue=60011, hk_transport_rev=23013, hk_station_commercial_rev=5343,
+         hk_property_rental_mgmt_rev=5379, hk_station_plus_rental_rev=None,
+         mainland_intl_subsidiaries_rev=25467, other_rev=809, mainland_china_property_dev_rev=0,
+         recurrent_op_profit=17907, hk_pdp_pre_tax=12185, hk_pdp_post_tax=10265,
+         underlying_profit=17475, ip_fv_revaluation=-1703, reported_npat=15772, eps_basic=2.54,
+         dps=1.31, pbt=19525, finance_costs=1032, tax=3458),
+    dict(year=2025, recurrent_post_tax_profit=5653, total_revenue=55465, hk_transport_rev=23595, hk_station_commercial_rev=5345,
+         hk_property_rental_mgmt_rev=5067, hk_station_plus_rental_rev=None,
+         mainland_intl_subsidiaries_rev=20686, other_rev=758, mainland_china_property_dev_rev=14,
+         recurrent_op_profit=17701, hk_pdp_pre_tax=13212, hk_pdp_post_tax=11084,
+         underlying_profit=16737, ip_fv_revaluation=-2060, reported_npat=14677, eps_basic=2.36,
+         dps=1.31, pbt=18917, finance_costs=1006, tax=3359),
 ]
 
 
 def load_mtr_historical_earnings_bridge() -> pd.DataFrame:
-    """Load or generate the normalized MTR historical half-yearly earnings bridge (2010 H1 - 2025 H2)."""
-    df = pd.DataFrame(MTR_HALF_YEARLY_DATA)
+    """Return the normalized annual MTR earnings bridge (2010-2025)."""
+    df = pd.DataFrame(MTR_ANNUAL_DATA)
     df.to_csv(CSV_PATH, index=False)
-    print(f"Wrote {CSV_PATH} ({len(df)} half-years, 2010-H1 to 2025-H2)")
     return df
 
 
 if __name__ == "__main__":
-    load_mtr_historical_earnings_bridge()
+    out = load_mtr_historical_earnings_bridge()
+    print(f"Wrote {CSV_PATH} ({len(out)} fiscal years, 2010-2025)")
