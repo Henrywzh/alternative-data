@@ -1,0 +1,9 @@
+project_id,srpe_development_id,phase_label,units_sold_registered,asp_median_hkd,asp_mean_hkd,first_transaction_date,last_transaction_date,source_pdf_document_id,source_pdf_hash,note
+the-southside-p1,7585,晉環 (SOUTHLAND),860,18224000.0,21026522.0,2021-05-01,2026-06-10,102821,,latest register PDF (cumulative to submission date)
+the-southside-p2,7787,揚海 (La Marina),641,19052000.0,25180201.0,2021-09-04,2026-07-08,103685,,latest register PDF (cumulative to submission date)
+the-southside-p4,9345,海盈山 (La Montagne),374,14198450.0,16560358.0,2023-07-15,2026-06-08,102758,,latest register PDF (cumulative to submission date)
+ho-man-tin-p2,8745,瑜一 (IN ONE),378,16405500.0,18467320.0,2023-05-21,2026-08-03,104636,,latest register PDF (cumulative to submission date)
+lohas-park-p11,8545,凱柏峰 I (Villa Garda),669,8215400.0,8314083.0,2022-06-30,2026-06-27,103277,,latest register PDF (cumulative to submission date)
+lohas-park-p4a,4745,晉海 (Wings at Sea),1047,7364400.0,8341898.0,2017-09-30,2023-05-09,71301,,latest register PDF (cumulative to submission date)
+lohas-park-p4b,4865,晉海II (Wings at Sea II),1142,8424100.0,8505845.0,2017-10-22,2023-08-08,71792,,latest register PDF (cumulative to submission date)
+tai-wai,7225,柏傲莊 I (Pavilia Farm I),810,10201000.0,11288285.0,2020-10-17,2026-05-29,102477,,latest register PDF (cumulative to submission date)

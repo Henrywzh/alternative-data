@@ -73,3 +73,36 @@ def test_recognition_years_are_official_disclosures():
     assert "2025" in str(df.loc["lohas-park-p12", "profit_recognition_year"])
     assert "2025" in str(df.loc["ho-man-tin-p2", "profit_recognition_year"])
     assert "2024" in str(df.loc["tung-chung-east-p1", "tender_year"])
+
+def test_srpe_transaction_stats_populated_for_mapped_phases():
+    """Mapped phases must carry registered-sale stats from the SRPE register PDFs."""
+    df = load_mtr_property_project_master()
+    mapped = df[df["srpe_development_id"].notna()]
+    assert len(mapped) == 8
+    for _, r in mapped.iterrows():
+        assert not pd.isna(r["units_sold_registered"])
+        assert r["units_sold_registered"] > 0
+        assert not pd.isna(r["asp_median_hkd"])
+        assert not pd.isna(r["first_transaction_date"])
+        assert not pd.isna(r["last_transaction_date"])
+
+
+@pytest.mark.parametrize(
+    "project_id,units,asp_median",
+    [
+        ("the-southside-p1", 860, 18224000.0),
+        ("the-southside-p2", 641, 19052000.0),
+        ("the-southside-p4", 374, 14198450.0),
+        ("ho-man-tin-p2", 378, 16405500.0),
+        ("lohas-park-p11", 669, 8215400.0),
+        ("lohas-park-p4a", 1047, 7364400.0),
+        ("lohas-park-p4b", 1142, 8424100.0),
+        ("tai-wai", 810, 10201000.0),
+    ],
+)
+def test_srpe_transaction_anchors(project_id, units, asp_median):
+    """Spot-check parsed register counts/medians (source: SRPE register PDFs)."""
+    df = load_mtr_property_project_master()
+    row = df[df["project_id"] == project_id].iloc[0]
+    assert row["units_sold_registered"] == units
+    assert row["asp_median_hkd"] == pytest.approx(asp_median, abs=1.0)

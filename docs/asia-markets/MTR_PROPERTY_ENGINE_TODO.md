@@ -15,16 +15,14 @@ official MTR railway-property packages with:
 ## Fields intentionally unpopulated (need new verified sources)
 
 ### 1. Units / GFA / sell-through (Magnitude Engine inputs)
-- NOT in current repo for non-SHKP phases (SRPE price lists are PDFs in
-  `data/raw/hk_real_estate/srpe_review_price_list/`; transaction scratch
-  data is SHKP-specific).
-- Options, in order of preference:
-  a. SRPE official transaction API for development ids 7585/7787/9345/8745/
-     8545/4745/4865/7225 -> count registered units + median ASP (network
-     call, verify schema first).
-  b. Parse `srpe_review_price_list` PDFs (costly; only covers SHKP phases).
-  c. Public phase websites / sales brochures as reference only (label as
-     non-PIT).
+- DONE (2026-08-09): `scripts/mtr_srpe_transactions.py` downloads each phase's
+  latest statutory register-of-transactions PDF and parses it with the shared
+  `srpe_pdf.py` parser -> 5,921 registered transactions across 8 phases,
+  stats written to `mtr_srpe_transactions_by_phase.csv` and into the master
+  table (units_sold_registered / asp_median / first-last transaction date).
+- STILL OPEN: total project units / GFA / sell-through % need a denominator.
+  Candidates: price-list PDF metadata (`total_residential_properties`),
+  sales brochures, or public project facts - all to be verified before use.
 
 ### 2. Occupancy Permit (OP) / handover timeline (Timing Engine inputs)
 - `bd_project_lifecycle_events` only contains a SHKP-filtered subset; the
