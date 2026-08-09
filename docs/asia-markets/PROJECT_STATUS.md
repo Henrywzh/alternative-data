@@ -79,6 +79,7 @@ replacement for the operating manual or generated source-status JSON.
 
 ## Recent completed work
 
+- MTR SRPE transaction probe is live: `scripts/mtr_srpe_transactions.py` downloads the latest statutory register-of-transactions PDF for each of the 8 name-confirmed MTR phases and parses 5,921 transactions (shared `srpe_pdf.py` parser). Per-phase stats feed the property master (units_sold_registered / asp_median / first-last transaction date): 晉環 860 @ HK$18.2m median, 揚海 641 @ 19.1m, 海盈山 374 @ 14.2m, 瑜一 378 @ 16.4m, 凱柏峰I 669 @ 8.2m, 晉海 1,047 @ 7.4m, 晉海II 1,142 @ 8.4m, 柏傲莊I 810 @ 10.2m. First transaction dates sit 1-3 weeks after each phase's first price list, consistent with presale mechanics. `units_sold_registered` is registered transactions, NOT total project units.
 - MTR Consensus Bridge (P0C skeleton) is live: `scripts/mtr_consensus_bridge.py` writes `mtr_consensus_bridge.csv` (our FY2026E revenue bridge vs Street) and `mtr_eps_sensitivity.csv`. Street EPS/revenue from yfinance 0066.HK (7 analysts; FY2026E EPS 2.52 avg, revenue 55.2bn). Our FY2026E transport revenue is derived from the farebox H1 nowcast (11,977) x FY25 H2/H1 seasonality (1.0201) = ~24.2bn; other segments are explicitly labelled ASSUMED. EPS sensitivity confirms research priority: one property package timing shift moves EPS ~+/-0.45 (17.7% of consensus) vs farebox +1% (+1.5%), HIBOR +100bp (-3.4%), Mainland +10% (+0.3%).
 - MTR Property Project Master (P0B skeleton) is live: `src/hk_transport/sources/mtr_property_project_master.py` and `data/normalized/hk_transport/mtr_property_project_master.csv` (19 project/package rows). Rows are official-disclosure-only: profit-recognition years from MTR annual results (2021: LOHAS Park P7-9; 2022: LP10, SOUTHLAND, La Marina; 2024: Villa Garda, SOUTHSIDE P1/2/4/5, Ho Man Tin P1; 2025: SOUTHSIDE P3/P5, LOHAS Park P12, Ho Man Tin P1/P2), tender years (THE SOUTHSIDE P5/P6 2021; Tung Chung East P1 2024; Tuen Mun A16 P1 2025), plus SHKP-verified LOHAS Park 4A/4B and YOHO WEST cross-references. Units/GFA/ASP/remaining profit stay unpopulated until verified - no fabricated economics. v2 adds an SRPE crosswalk (8/19 rows confirmed): THE SOUTHSIDE P1 晉環/SOUTHLAND (SRPE 7585, first price list 2021-04-19), P2 揚海/La Marina (7787, 2021-08-17), P4 海盈山/La Montagne (9345, 2023-06-27), Ho Man Tin P2 瑜一/IN ONE (8745, 2023-05-08), LOHAS Park P11 凱柏峰/Villa Garda (8545, 2022-06-20), LOHAS Park 4A/4B 晉海/晉海II (4745/4865, 2017), Tai Wai 柏傲莊 I (7225, 2020-10-06). Mappings require an official-name match or repo-verified SHKP data; ambiguous phases (THE SOUTHSIDE P3/P5/P6, Ho Man Tin P1, LOHAS Park P7-10/P12) stay unmapped with evidence_level=official_recognition_only.
 - MTR farebox revenue backtest is live: `scripts/mtr_farebox_revenue_backtest.py`
@@ -1358,3 +1359,58 @@ separately: normal-year operating margin is 23-28%, COVID years swung to
 pre-COVID norm. FY2011-2012 are absent (different segment-table layout in
 those annual reports). A revenue x normalised-margin treatment with
 bull/base/bear margin scenarios is the appropriate hotel module.
+
+### Whole-company earnings skeleton v0.1 (2026-08-09)
+
+`run-shkp-whole-company-model` builds the first whole-company earnings
+skeleton combining the frozen modules:
+
+* Residential development profit = FY2027 contract scenario
+  (`shkp_indicative_sales_model_forecast` numeric-stake base 32.5bn)
+  x latest-year development margin (24%, FY2025 property-sales
+  profit/revenue) with a mechanical recognition lag - deliberately
+  conservative versus the 36% five-year mean.
+* Commercial net rental income = FY2025 HK NRI run-rate (12,956) with a
+  +/-3% RVD sensitivity spread.
+* Hotel = FY2025 revenue x bull/base/bear margin (15%/12%/10%).
+* Other businesses = FY2025 run-rate (5,506).
+* Below-segment residual = FY2025 underlying minus the modelled FY2025 HK
+  segment (absorbs Mainland commercial/development profit plus
+  finance/tax/NCI), persisted as a single residual line.
+
+Base FY2027E output: modelled segment 26.9bn, below-segment -3.9bn,
+underlying profit 23.0bn, underlying EPS 7.95, reported EPS 7.06.
+Consensus comparison (strict underlying-EPS convention, flagged): model
+7.95 vs broker median 8.65 = -8%. The 3x3 material-driver matrix
+(residential bear/base/bull x commercial bear/base/bull) spans underlying
+EPS 6.4-9.6. The skeleton deliberately exposes where the model and the
+street disagree (conservative residential margin + mechanical lag) rather
+than forcing them to match.
+
+### Handover-lag analysis and consensus-gap decomposition (2026-08-09)
+
+`run-shkp-handover-lag` estimates the residential recognition lag from 21
+SHKP phases with both a launch date (SRPE earliest publication) and a
+handover confirmation (annual-report handover year): P(lag=0)=29%,
+P(lag=1)=48%, P(lag=2)=24%, mean 0.95 fiscal years, median 1.0. The old
+mechanical ~2-year shift was too conservative; the modal SHKP presale is
+handed over about one fiscal year after launch. The recognition schedule
+applies these weights to actual contract activity (FY2026) and the sales-
+model FY2027 forecast, giving FY2027E recognised residential revenue of
+HKD 33.1bn.
+
+Consensus-gap decomposition (model base 8.01 vs broker median 8.65
+underlying EPS, -7.3%):
+* Recognition timing contributes only +0.06 EPS (old mechanical 2y vs lag-
+  based schedule) - NOT the main disagreement.
+* The entire remaining -0.63 EPS gap is development margin: consensus
+  implies ~29.6% residential margin on the same recognised revenue vs the
+  model's 24% (FY2025 latest-year). Equivalent reading: consensus implies
+  ~HKD 40.8bn recognised revenue at 24% margin, ~23% above the model.
+* Rental/hotel/other/below-segment are run-rates in both, so they do not
+  drive the gap.
+
+Conclusion per the Tier-1 priority: project-mix development margin
+(②) is the next module - the market is paying for a margin recovery to
+~30% that the aggregate latest-year margin does not support without
+project-level evidence.
