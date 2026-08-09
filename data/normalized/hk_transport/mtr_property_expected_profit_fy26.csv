@@ -1,9 +1,9 @@
 project_id,phase_label,p_recognition_fy26,eligible_registered_value_hkdm,expected_profit_low_hkdm,expected_profit_base_hkdm,expected_profit_high_hkdm,p_basis,official_fy26_mention,data_status
 tai-wai,Tai Wai Station (柏傲莊),0.6,8808.0,793.0,1057.0,1321.0,official continued recognition; residual sales,FY25 outlook: continue to book,srpe_data
-the-southside-p5,THE SOUTHSIDE Package 5,0.8,6000.0,540.0,960.0,1500.0,official continued recognition; 5A presale launched 2025,FY25 outlook: continue to book,ASSUMED_SCENARIO
-lohas-park-p12,LOHAS Park Package 12,0.7,8000.0,630.0,1120.0,1750.0,"OP 2025-10 (1,985u); 2025 H2 booked, residual 2026",FY25 outlook: continue to book,ASSUMED_SCENARIO
-lohas-park-p13,LOHAS Park Package 13,0.5,6000.0,338.0,600.0,938.0,official new recognition FY26; SRPE 10486 (2025-01 price list) suspected,FY25 outlook: expect to book,ASSUMED_SCENARIO
+the-southside-p5,THE SOUTHSIDE Package 5,0.8,13975.0,1677.0,2236.0,2795.0,official continued recognition; 5A presale launched 2025,FY25 outlook: continue to book,srpe_data
+lohas-park-p12,LOHAS Park Package 12,0.7,8735.0,917.0,1223.0,1529.0,"OP 2025-10 (1,985u); 2025 H2 booked, residual 2026",FY25 outlook: continue to book,srpe_data
+lohas-park-p13,LOHAS Park Package 13,0.5,4157.0,312.0,416.0,520.0,official new recognition FY26; SRPE 10486 (2025-01 price list) suspected,FY25 outlook: expect to book,srpe_data
 the-southside-p6,THE SOUTHSIDE Package 6,0.5,5000.0,281.0,500.0,781.0,official new recognition FY26; presale consent in progress (1H25),FY25 outlook: expect to book,ASSUMED_SCENARIO
 yau-tong-vb,Yau Tong Ventilation Building,0.6,2000.0,135.0,240.0,375.0,presale consent obtained (1H25); small project,FY25 outlook: expect to book,ASSUMED_SCENARIO
-lohas-park-p11-ii-iii,凱柏峰 II/III (LP11 residual),0.4,8000.0,360.0,640.0,1000.0,OP 2024-12 shared with P11; residual recognition,not named; inferred residual,ASSUMED_SCENARIO
-ho-man-tin-p1,朗賢峯 (Ho Man Tin P1 residual),0.4,8000.0,360.0,640.0,1000.0,recognized 2025H1; residual 2026,not named; inferred residual,ASSUMED_SCENARIO
+lohas-park-p11-ii-iii,凱柏峰 II/III (LP11 residual),0.4,9312.0,559.0,745.0,931.0,OP 2024-12 shared with P11; residual recognition,not named; inferred residual,srpe_data
+ho-man-tin-p1,朗賢峯 (Ho Man Tin P1 residual),0.4,3136.0,188.0,251.0,314.0,recognized 2025H1; residual 2026,not named; inferred residual,srpe_data

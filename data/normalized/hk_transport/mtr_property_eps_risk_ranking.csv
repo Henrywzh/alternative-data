@@ -1,9 +1,9 @@
 project_id,phase_label,p_recognition_fy26,eligible_value_hkdm,eps_risk_hkd,data_status
-lohas-park-p12,LOHAS Park Package 12,0.7,8000.0,0.0901,assumed_scenario
+the-southside-p5,THE SOUTHSIDE Package 5,0.8,13975.0,0.1799,srpe_data
+lohas-park-p12,LOHAS Park Package 12,0.7,8735.0,0.0984,srpe_data
 tai-wai,Tai Wai Station (柏傲莊),0.6,8808.0,0.085,srpe_data
-the-southside-p5,THE SOUTHSIDE Package 5,0.8,6000.0,0.0772,assumed_scenario
-lohas-park-p11-ii-iii,凱柏峰 II/III (LP11 residual),0.4,8000.0,0.0515,assumed_scenario
-ho-man-tin-p1,朗賢峯 (Ho Man Tin P1 residual),0.4,8000.0,0.0515,assumed_scenario
-lohas-park-p13,LOHAS Park Package 13,0.5,6000.0,0.0483,assumed_scenario
+lohas-park-p11-ii-iii,凱柏峰 II/III (LP11 residual),0.4,9312.0,0.0599,srpe_data
 the-southside-p6,THE SOUTHSIDE Package 6,0.5,5000.0,0.0402,assumed_scenario
+lohas-park-p13,LOHAS Park Package 13,0.5,4157.0,0.0334,srpe_data
+ho-man-tin-p1,朗賢峯 (Ho Man Tin P1 residual),0.4,3136.0,0.0202,srpe_data
 yau-tong-vb,Yau Tong Ventilation Building,0.6,2000.0,0.0193,assumed_scenario
