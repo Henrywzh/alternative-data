@@ -5,7 +5,7 @@
     "surface": "dashboard",
     "title": "香港房地产市场监测",
     "description": "基于来源的住宅价格、租金和市场信心指标快照。",
-    "generatedAt": "2026-08-01T14:30:59.336476Z",
+    "generatedAt": "2026-08-09T13:36:08.172583Z",
     "cards": [
       {
         "id": "ccl_card",
@@ -1723,7 +1723,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-08-01T14:30:59.336476Z",
+    "generatedAt": "2026-08-09T13:36:08.172583Z",
     "status": "ready",
     "datasets": {
       "kpi_ccl": [
@@ -76491,6 +76491,16 @@
           "records": 196,
           "freshness": "已发布快照",
           "notes": "覆盖六个明确登记的项目阶段；可归属销售额使用持股登记表，销售率使用唯一有效成交单位。"
+        },
+        {
+          "source": "HKMA Residential Mortgage Survey",
+          "dataset": "HKMA residential mortgage survey",
+          "type": "Measure",
+          "status": "Healthy",
+          "latest_observation": "2026-05-01",
+          "records": 114,
+          "freshness": "69d old",
+          "notes": "Official monthly residential mortgage survey; the source may revise the latest month."
         }
       ],
       "source_coverage": [
@@ -76645,16 +76655,6 @@
           "notes": "屋宇署月度摘要 / 项目生命周期；详见上方图表/表格。"
         },
         {
-          "source": "Buildings Department history",
-          "dataset": "Md52-Md56 stage aggregates",
-          "type": "指标",
-          "status": "健康",
-          "latest_observation": "—",
-          "records": 1210,
-          "freshness": "构建时实时",
-          "notes": "Buildings Department Monthly Digest PDF archive (Section 1 aggregate tables); see the chart/table above."
-        },
-        {
           "source": "SRPE 试点",
           "dataset": "项目阶段一手住宅销售信号",
           "type": "指标",
@@ -76673,6 +76673,26 @@
           "records": 0,
           "freshness": "内容解析待完成",
           "notes": "目前 dashboard 覆盖六个明确登记的试点阶段；更广泛的开发商及项目阶段覆盖仍需扩展登记表和历史回补。"
+        },
+        {
+          "source": "Buildings Department history",
+          "dataset": "Md52-Md56 stage aggregates",
+          "type": "指标",
+          "status": "健康",
+          "latest_observation": "—",
+          "records": 1210,
+          "freshness": "构建时实时",
+          "notes": "Buildings Department Monthly Digest PDF archive (Section 1 aggregate tables); see the chart/table above."
+        },
+        {
+          "source": "HKMA Residential Mortgage Survey",
+          "dataset": "HKMA residential mortgage survey",
+          "type": "Measure",
+          "status": "Healthy",
+          "latest_observation": "2026-05-01",
+          "records": 114,
+          "freshness": "69d old",
+          "notes": "Official monthly residential mortgage survey; the source may revise the latest month."
         }
       ]
     }
@@ -77007,7 +77027,7 @@
   ],
   "package_info": {
     "originUrl": "https://asia-markets-dashboard.pages.dev/sectors/hk-real-estate/",
-    "snapshotId": "52ea617f5870f23b",
+    "snapshotId": "74401dd14509bb4c",
     "dataAsOf": "2026-07-27"
   }
 }

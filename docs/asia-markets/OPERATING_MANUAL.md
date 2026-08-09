@@ -149,6 +149,19 @@ Every dashboard measure must have:
 Do not infer a trend from a snapshot. A current-month cross-section is not a
 monthly time series and cannot support MoM or YoY without historical snapshots.
 
+### Refresh safety and empty snapshots
+
+An upstream fetch returning zero rows is not automatically a valid new
+snapshot. The artifact runner compares each refresh with the previous
+published artifact and restores the previous artifact/status for any dataset
+that was non-empty and becomes empty or disappears; other sectors continue to
+refresh. Core real-estate histories such as HKMA mortgage and Buildings Department
+pipeline data also use the latest normalized cache, then a committed-artifact
+fallback when the clean CI runner has no cache. Fallback data must be marked
+`Stale`/`Degraded` rather than presented as a fresh observation. A successful
+GitHub Action is therefore not sufficient evidence of fresh data: inspect the
+artifact row counts, manifest IDs and source-health status.
+
 Do not silently aggregate data to a month if doing so collapses distinct daily
 or weekly observations. Preserve the source grain, then format the axis
 separately.
