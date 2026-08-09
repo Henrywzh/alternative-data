@@ -4,6 +4,7 @@ import pytest
 
 from src.hk_transport.sources.airline_airport_traffic import (
     SOURCE_SPECS,
+    parse_bcia_layout,
     parse_shanghai_dual_airport,
     parse_szx_can_layout,
 )
@@ -137,3 +138,53 @@ def test_can_numbered_prefix_layout_normalizes_person_and_tonne_units() -> None:
     assert totals.loc["cargo_throughput", "unit"] == "10k tonnes"
     regional = result[result["scope"].eq("regional")].set_index("metric")
     assert regional.loc["aircraft_movements", "value"] == pytest.approx(448.0)
+
+
+def test_bcia_layout_parses_metrics_scopes_and_scales_units() -> None:
+    text = (
+        "实时发布 2026年6月9日\n"
+        "北京首都国际机场股份有限公司\n"
+        "5 月份营运数据快报\n"
+        "项目 本月实际 同比增长\n"
+        "一、飞机起降架次（单位：架次） 35,771 -5.0%\n"
+        "国内航线 29,153 -5.3%\n"
+        "其中，港澳台地区 1,296 -6.4%\n"
+        "国际航线 6,618 -3.7%\n"
+        "二、旅客吞吐量（单位：人次） 5,837,162 -3.0%\n"
+        "国内航线 4,554,606 -5.5%\n"
+        "其中，港澳台地区 235,642 8.2%\n"
+        "国际航线 1,282,556 7.1%\n"
+        "三、货邮吞吐量（单位：吨） 129,261 -4.5%\n"
+        "国内航线 66,163 -9.5%\n"
+        "其中，港澳台地区 7,853 15.9%\n"
+        "国际航线 63,098 1.3%\n"
+        "2026 年前五个月，首都机场累计飞机起降架次约 182,030 架次"
+    )
+    result = parse_bcia_layout(
+        b"",
+        spec=dict(_spec("bcia_202605")),
+        text=text,
+        retrieved_at="2026-08-09T00:00:00+00:00",
+    )
+
+    assert len(result) == 12
+    assert result["airport"].eq("PEK").all()
+    assert len(result["scope"].unique()) == 4
+    totals = result[result["scope"].eq("total")].set_index("metric")
+    # movements stay raw counts.
+    assert totals.loc["aircraft_movements", "value"] == pytest.approx(35_771.0)
+    # passengers/cargo scaled from raw 人次/吨 to 10k.
+    assert totals.loc["passenger_throughput", "value"] == pytest.approx(583.7162)
+    assert totals.loc["cargo_throughput", "value"] == pytest.approx(12.9261)
+    # the source release date is the spec fallback for the synthetic text.
+    assert result["source_release_date"].eq("2026-06-09").all()
+    assert result["unit"].unique().tolist() == [
+        "movements",
+        "10k persons",
+        "10k tonnes",
+    ]
+    assert result["yoy_pct"].isna().sum() == 0
+
+    hkmt = result[result["scope"].eq("hk_macao_taiwan")].set_index("metric")
+    assert hkmt.loc["aircraft_movements", "value"] == pytest.approx(1_296.0)
+    assert hkmt.loc["cargo_throughput", "value"] == pytest.approx(0.7853)

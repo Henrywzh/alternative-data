@@ -83,9 +83,14 @@ Shanghai International Airport, Shenzhen
 Airport and Guangzhou Baiyun Airport publish free monthly production
 bulletins on CNINFO; the parser handles both the Shanghai dual-airport layout
 and the Shenzhen/Guangzhou month-plus-cumulative layout, normalizing 人次/吨
-units to 万人次/万吨. Release dates come from the official announcement date,
-so model cutoffs exclude later bulletins. Airport throughput is hub context
-only and is not converted into company revenue.
+units to 万人次/万吨. Beijing Capital International Airport (00694.HK) is
+added through its investor-relations monthly operating-data fast reports
+(`BCIA_TRAFFIC_URLS` in `src/hk_transport/config.py`), which carry an
+explicit release date on the first line and the same movements/passengers/
+cargo scope rows (domestic / HK-Macao-Taiwan / international). Release dates
+come from the official announcement date, so model cutoffs exclude later
+bulletins. Airport throughput is hub context only and is not converted into
+company revenue.
 
 `airline_cargo_airport_bridge.csv` is the cargo validation layer built on top
 of the airport series. It compares H1-2026 hub cargo throughput with issuer

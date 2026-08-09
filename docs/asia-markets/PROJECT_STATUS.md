@@ -213,11 +213,12 @@ replacement for the operating manual or generated source-status JSON.
   19.0% level growth. v3 carries the latest admissible event as sector
   context only; it does not convert holiday points into monthly company RPK.
 - The issuer airport monthly traffic layer is now live in
-  `airline_airport_traffic.csv` with 288 rows across Shanghai Pudong/Hongqiao,
-  Shenzhen and Guangzhou Baiyun for 2026-01 through 2026-06. It parses official
-  CNINFO PDF bulletins with announcement dates, scope rows and month/cumulative
-  units, and v3 carries the latest release-date-safe hub observation as sector
-  context only.
+  `airline_airport_traffic.csv` with 360 rows across Shanghai Pudong/Hongqiao,
+  Shenzhen, Guangzhou Baiyun and Beijing Capital for 2026-01 through 2026-06.
+  It parses official CNINFO PDF bulletins (SHA/SZX/CAN) plus Beijing Capital's
+  investor-relations monthly fast reports (PEK), with announcement dates,
+  scope rows and month/cumulative units; v3 carries the latest
+  release-date-safe hub observation as sector context only.
 - The airport-cargo bridge validation layer is now live in
   `airline_cargo_airport_bridge.csv` (4 companies). For H1-2026 it compares
   hub airport cargo throughput with issuer cargo tonnage: Shanghai hubs grew
