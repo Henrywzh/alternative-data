@@ -79,6 +79,7 @@ replacement for the operating manual or generated source-status JSON.
 
 ## Recent completed work
 
+- MTR Property Project Master (P0B skeleton) is live: `src/hk_transport/sources/mtr_property_project_master.py` and `data/normalized/hk_transport/mtr_property_project_master.csv` (19 project/package rows). Rows are official-disclosure-only: profit-recognition years from MTR annual results (2021: LOHAS Park P7-9; 2022: LP10, SOUTHLAND, La Marina; 2024: Villa Garda, SOUTHSIDE P1/2/4/5, Ho Man Tin P1; 2025: SOUTHSIDE P3/P5, LOHAS Park P12, Ho Man Tin P1/P2), tender years (THE SOUTHSIDE P5/P6 2021; Tung Chung East P1 2024; Tuen Mun A16 P1 2025), plus SHKP-verified LOHAS Park 4A/4B and YOHO WEST cross-references. Units/GFA/ASP/remaining profit stay unpopulated until verified - no fabricated economics.
 - MTR farebox revenue backtest is live: `scripts/mtr_farebox_revenue_backtest.py`
   calibrates per-passenger yields to MTR's disclosed FY2024 segment revenue
   (domestic / cross-boundary / HSR & intercity / Airport Express / Light Rail
