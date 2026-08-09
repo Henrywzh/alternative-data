@@ -25,12 +25,21 @@ def test_expected_profit_has_measured_and_scenario_layers():
 
 def test_eps_bridge_math():
     """reported_eps = (recurrent + property + ip_reval) / shares (dynamic)."""
+    from scripts.mtr_property_eps_bridge import IP_REVAL_SCENARIOS
     recurrent = 5653.0 * 1.03
-    eps = (recurrent + PROPERTY_BASE - 1500.0) / SHARES_M
-    assert eps == pytest.approx(PROPERTY_BASE, rel=0.001) or True
-    # sanity: property expected profit now driven by real SRPE data (>=4bn base)
+    eps = (recurrent + PROPERTY_BASE + IP_REVAL_SCENARIOS["base"]) / SHARES_M
+    # base reported EPS lands ~2.36 with +2.5bn IP reval
+    assert eps == pytest.approx(2.36, abs=0.02)
+    # underlying (no IP reval) is ~1.96
+    underlying = (recurrent + PROPERTY_BASE) / SHARES_M
+    assert underlying == pytest.approx(1.96, abs=0.02)
     assert PROPERTY_BASE > 4000.0
     assert PROPERTY_LOW < PROPERTY_BASE < PROPERTY_HIGH
+    # reported eps ordering with scenario IP reval: bull > base > bear
+    reported = {s: (recurrent + {"bear": PROPERTY_LOW, "base": PROPERTY_BASE,
+                                 "bull": PROPERTY_HIGH}[s] + ip) / SHARES_M
+                for s, ip in IP_REVAL_SCENARIOS.items()}
+    assert reported["bear"] < reported["base"] < reported["bull"]
 
 
 def test_eps_bridge_csv_exists():
@@ -39,6 +48,10 @@ def test_eps_bridge_csv_exists():
     assert (df["reported_eps_est_hkd"] > 0).all()
     # ordering: bull > base > bear
     assert df["reported_eps_est_hkd"].is_monotonic_increasing
+    # base reported EPS ~2.36 after the IP-reval scenario update
+    base = df[df["scenario"] == "base"].iloc[0]
+    assert base["reported_eps_est_hkd"] == pytest.approx(2.36, abs=0.02)
+    assert base["underlying_eps_hkd"] == pytest.approx(1.96, abs=0.02)
 
 
 def test_pit_aligned_eligible_values():
