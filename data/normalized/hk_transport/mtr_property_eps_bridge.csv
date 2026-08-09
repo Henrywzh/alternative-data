@@ -1,0 +1,4 @@
+scenario,recurrent_post_tax_hkdm,property_profit_post_tax_hkdm,underlying_profit_hkdm,ip_fv_movement_post_tax_hkdm,reported_npat_est_hkdm,underlying_eps_hkd,reported_eps_est_hkd
+bear,5823.0,3436.0,9259.0,-1500.0,7759.0,1.49,1.25
+base,5823.0,5757.0,11580.0,-1500.0,10080.0,1.86,1.62
+bull,5823.0,8665.0,14488.0,-1500.0,12988.0,2.33,2.09
