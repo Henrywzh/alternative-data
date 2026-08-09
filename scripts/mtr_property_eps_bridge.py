@@ -32,7 +32,13 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SHARES_M = 6214.18
 FY25_RECURRENT_POST_TAX = 5653.0
 ASSUMED_RECURRENT_GROWTH = 1.03
-ASSUMED_IP_REVAL_FY26 = -1500.0
+
+# FY26 IP revaluation scenarios (HK$m, post-tax), updated 2026-08-09 from the
+# cap-rate nowcast (CRI -21bp YTD supports positive revaluation; CRI is a
+# residential proxy for MTR's commercial portfolio, so this stays a scenario
+# band, not a point estimate):
+#   bear +0.5bn / base +2.5bn / bull +4.5bn
+IP_REVAL_SCENARIOS = {"bear": 500.0, "base": 2500.0, "bull": 4500.0}
 
 # Property expected profit: read dynamically from the V1 model output
 _EXP = pd.read_csv(os.path.join(NORM_DIR, "mtr_property_expected_profit_fy26.csv"))
@@ -80,14 +86,15 @@ def main() -> int:
 
     rows = []
     for label, prop in [("bear", PROPERTY_LOW), ("base", PROPERTY_BASE), ("bull", PROPERTY_HIGH)]:
+        ip_reval = IP_REVAL_SCENARIOS[label]
         underlying = recurrent_fy26 + prop
-        reported = underlying + ASSUMED_IP_REVAL_FY26
+        reported = underlying + ip_reval
         rows.append({
             "scenario": label,
             "recurrent_post_tax_hkdm": round(recurrent_fy26, 0),
             "property_profit_post_tax_hkdm": round(prop, 0),
             "underlying_profit_hkdm": round(underlying, 0),
-            "ip_fv_movement_post_tax_hkdm": ASSUMED_IP_REVAL_FY26,
+            "ip_fv_movement_post_tax_hkdm": ip_reval,
             "reported_npat_est_hkdm": round(reported, 0),
             "underlying_eps_hkd": round(underlying / SHARES_M, 2),
             "reported_eps_est_hkd": round(reported / SHARES_M, 2),
@@ -117,10 +124,13 @@ def main() -> int:
             delta = (r["reported_eps_est_hkd"] - cons_eps) / cons_eps * 100
             print(f"  Our {r['scenario']:5s} reported EPS {r['reported_eps_est_hkd']:.2f} "
                   f"vs consensus {cons_eps:.2f} -> {delta:+.1f}%")
-        print("\nInterpretation: our property expectation implies FY26 EPS well below the")
-        print("Street's +7% growth assumption. Either our P(recognition)/magnitude is too")
-        print("conservative (LP13/P6/Yau Tong bigger than assumed), or consensus has not")
-        print("marked down FY26 property profit - this gap is the research edge to test.")
+        print("\nFY26 RECONCILIATION (2026-08-09):")
+        print("  Underlying EPS (recurrent + property, no IP reval): base ~1.96")
+        print("  Reported EPS with IP reval scenarios (+0.5/+2.5/+4.5bn): bear/base/bull")
+        print("  vs consensus 2.52 - the previous 20-43% gap was mostly an overly")
+        print("  conservative IP-revaluation assumption, not core operations.")
+        print("  CONCLUSION: FY26 earnings appear broadly well-understood by consensus;")
+        print("  research horizon should move to FY27 property-recognition timing.")
     return 0
 
 

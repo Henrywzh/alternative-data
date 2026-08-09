@@ -1,7 +1,7 @@
 kpi,our_low,our_base,our_high,consensus,basis
 HK transport revenue (HK$m),23469.0,24194.0,24920.0,23488.0,farebox H1 nowcast x FY25 seasonality; consensus = revenue cons x FY25 transport share
 "Property development profit (post-tax, HK$m)",4608.0,6330.0,8145.0,,Timing x Magnitude (P x eligible x 15/20/25%)
-Reported EPS (HK$),1.44,1.71,2.01,2.52417,our bridge vs yfinance 0y
+Reported EPS (HK$),1.76,2.36,2.97,2.52417,our bridge vs yfinance 0y
 
 # ---- implied consensus property profit (EPS back-out) ----
 ip_reval_assumption,implied_property_profit_hkdm
