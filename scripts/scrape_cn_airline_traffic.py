@@ -28,6 +28,7 @@ from pathlib import Path
 
 import pandas as pd
 import pdfplumber
+from zoneinfo import ZoneInfo
 
 CNINFO_QUERY_URL = "http://www.cninfo.com.cn/new/hisAnnouncement/query"
 HEADERS = {
@@ -61,6 +62,15 @@ AIRLINES = [
 AIRLINE_EVENT_COLUMNS = [
     "month", "date", "airline_code", "event_type", "value", "detail",
 ]
+PIT_METADATA_COLUMNS = [
+    "announcement_date", "announcement_time", "announcement_id",
+    "announcement_title", "source_pdf_url", "source_quality", "retrieved_at",
+]
+RELEASE_REGISTRY_COLUMNS = [
+    "month", "airline_code", "airline_name", "announcement_date", "announcement_time",
+    "announcement_id", "announcement_title", "source_pdf_url", "source_quality", "retrieved_at",
+]
+CN_TZ = ZoneInfo("Asia/Shanghai")
 
 
 def _clean_val(val: str) -> float:
@@ -120,6 +130,8 @@ def fetch_announcements(code: str, org_id: str, searchkey: str, start_year: str 
                                     "month": month_key,
                                     "title": title,
                                     "url": pdf_url,
+                                    "announcement_id": ann.get("announcementId"),
+                                    "announcement_time_epoch_ms": ann.get("announcementTime"),
                                 })
                 page += 1
                 time.sleep(0.05)
@@ -128,6 +140,31 @@ def fetch_announcements(code: str, org_id: str, searchkey: str, start_year: str 
             break
 
     return sorted(results, key=lambda x: x["month"])
+
+
+def _announcement_metadata(announcement: dict, *, retrieved_at: str) -> dict:
+    """Normalize Cninfo publication metadata into explicit local/PIT fields."""
+    epoch_ms = announcement.get("announcement_time_epoch_ms")
+    announcement_time = None
+    announcement_date = None
+    if epoch_ms not in (None, ""):
+        try:
+            local_time = dt.datetime.fromtimestamp(
+                float(epoch_ms) / 1000.0, tz=dt.timezone.utc
+            ).astimezone(CN_TZ)
+            announcement_time = local_time.isoformat()
+            announcement_date = local_time.date().isoformat()
+        except (TypeError, ValueError, OverflowError, OSError):
+            pass
+    return {
+        "announcement_date": announcement_date,
+        "announcement_time": announcement_time,
+        "announcement_id": announcement.get("announcement_id"),
+        "announcement_title": announcement.get("title"),
+        "source_pdf_url": announcement.get("url"),
+        "source_quality": "issuer_cninfo_operating_release",
+        "retrieved_at": retrieved_at,
+    }
 
 
 def download_pdf(url: str, cache_dir: Path) -> bytes | None:
@@ -777,9 +814,11 @@ def collect_airline_data(
     cache_dir: Path,
     start_year: str = "2015-01-01",
     events_out: list[dict] | None = None,
+    release_registry_out: list[dict] | None = None,
 ) -> pd.DataFrame:
     """Scrape and parse monthly operating data for all six airlines."""
     all_rows = []
+    retrieved_at = dt.datetime.now(dt.timezone.utc).isoformat()
 
     for info in AIRLINES:
         name = info["name"]
@@ -799,14 +838,29 @@ def collect_airline_data(
         announcements = sorted(by_month.values(), key=lambda a: a["month"])
         print(f"  Discovered {len(announcements)} monthly announcements back to {start_year[:4]}")
 
+        for ann in announcements:
+            if release_registry_out is not None:
+                release_registry_out.append({
+                    "month": ann["month"],
+                    "airline_code": code,
+                    "airline_name": name,
+                    **_announcement_metadata(ann, retrieved_at=retrieved_at),
+                })
+
         for i, ann in enumerate(announcements, 1):
             month_key = ann["month"]
             pdf_bytes = download_pdf(ann["url"], cache_dir / code)
             if pdf_bytes:
+                pit_metadata = _announcement_metadata(ann, retrieved_at=retrieved_at)
                 rows = parse_airline_pdf(pdf_bytes, code, month_key)
+                for row in rows:
+                    row.update(pit_metadata)
                 all_rows.extend(rows)
                 if events_out is not None:
-                    events_out.extend(parse_airline_events(pdf_bytes, code, month_key))
+                    event_rows = parse_airline_events(pdf_bytes, code, month_key)
+                    for row in event_rows:
+                        row.update(pit_metadata)
+                    events_out.extend(event_rows)
             if i % 20 == 0 or i == len(announcements):
                 print(f"    Processed {i}/{len(announcements)} PDFs...")
             time.sleep(0.02)
@@ -834,7 +888,13 @@ def main() -> None:
     print("=" * 65)
 
     event_rows: list[dict] = []
-    df = collect_airline_data(cache_dir, start_year=args.start_year, events_out=event_rows)
+    release_registry_rows: list[dict] = []
+    df = collect_airline_data(
+        cache_dir,
+        start_year=args.start_year,
+        events_out=event_rows,
+        release_registry_out=release_registry_rows,
+    )
     if not df.empty:
         out_path.parent.mkdir(parents=True, exist_ok=True)
         df.to_parquet(out_path, index=False)
@@ -845,13 +905,22 @@ def main() -> None:
         if event_rows:
             events = pd.DataFrame(event_rows)
             events = events.drop_duplicates(subset=["month", "airline_code", "event_type"], keep="last")
-            events = events[AIRLINE_EVENT_COLUMNS].sort_values(
+            events = events[AIRLINE_EVENT_COLUMNS + PIT_METADATA_COLUMNS].sort_values(
                 ["month", "airline_code", "event_type"]
             ).reset_index(drop=True)
             event_path.parent.mkdir(parents=True, exist_ok=True)
             events.to_parquet(event_path, index=False)
             print(f"\nSuccessfully wrote {event_path} ({len(events)} event rows)")
             print(events.groupby(["airline_code", "event_type"]).size().unstack(fill_value=0))
+        if release_registry_rows:
+            registry = pd.DataFrame(release_registry_rows)
+            registry = registry[RELEASE_REGISTRY_COLUMNS].drop_duplicates(
+                subset=["month", "airline_code"], keep="last"
+            ).sort_values(["month", "airline_code"]).reset_index(drop=True)
+            registry_path = data_dir / "normalized" / "hk_transport" / "airline_operating_release_registry.csv"
+            registry_path.parent.mkdir(parents=True, exist_ok=True)
+            registry.to_csv(registry_path, index=False)
+            print(f"\nSuccessfully wrote {registry_path} ({len(registry)} release rows)")
     else:
         print("No traffic records extracted.")
 
