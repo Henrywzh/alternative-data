@@ -26,7 +26,15 @@ from history_policy import DEFAULT_HISTORY_YEARS, history_window
 
 
 CHINA_AIRLINE_DATA_PATH = ROOT / "data" / "processed" / "airline_traffic" / "china_airlines_monthly.parquet"
+CHINA_AIRLINE_SOURCE_RECOVERED_DATA_PATH = ROOT / "data" / "normalized" / "hk_transport" / "airline_operating_kpi_source_recovered.parquet"
 CHINA_AIRLINE_EVENT_DATA_PATH = ROOT / "data" / "processed" / "airline_traffic" / "china_airlines_operating_events.parquet"
+AIRLINE_SOURCE_RECOVERY_AUDIT_PATH = ROOT / "data" / "normalized" / "hk_transport" / "airline_operating_kpi_source_recovery_audit.csv"
+AIRLINE_H1_BACKTEST_COMPARISON_PATH = ROOT / "data" / "normalized" / "hk_transport" / "airline_h1_kpi_backtest_raw_vs_imputed.csv"
+AIRLINE_H1_BACKTEST_SUMMARY_PATH = ROOT / "data" / "normalized" / "hk_transport" / "airline_h1_kpi_backtest_imputed_summary.csv"
+AIRLINE_PERIOD_BACKTEST_SUMMARY_PATH = ROOT / "data" / "normalized" / "hk_transport" / "airline_period_kpi_backtest_summary.csv"
+AIRLINE_PERIOD_BACKTEST_LOGICAL_SUMMARY_PATH = ROOT / "data" / "normalized" / "hk_transport" / "airline_period_kpi_backtest_logical_assumptions_summary.csv"
+AIRLINE_PERIOD_BACKTEST_COMPARISON_PATH = ROOT / "data" / "normalized" / "hk_transport" / "airline_period_kpi_backtest_model_comparison.csv"
+AIRLINE_SPRING_MAE_DIAGNOSTIC_PATH = ROOT / "data" / "normalized" / "hk_transport" / "airline_spring_mae_diagnostics.csv"
 TRANSPORT_DATA_DIR = ROOT / "data" / "processed" / "transport"
 PASSENGER_JOURNEYS_DATA_PATH = TRANSPORT_DATA_DIR / "hk_passenger_journeys_monthly.parquet"
 MTTD_PASSENGER_JOURNEYS_DATA_PATH = TRANSPORT_DATA_DIR / "mttd_passenger_journeys_monthly.parquet"
@@ -164,7 +172,46 @@ PUBLIC_SOURCES = {
             "engine": "repository parquet built from official Cninfo operating-data announcements",
             "url": "https://www.cninfo.com.cn/",
             "language": "Parquet",
-            "description": "Monthly passenger and cargo operating data for six China-listed airline groups, plus sparse PDF-derived fleet additions/retirements, fleet totals and new-route events; passenger fields are split by domestic, international and regional operations.",
+            "description": "Monthly passenger and cargo operating data for six China-listed airline groups, plus sparse PDF-derived fleet additions/retirements, fleet totals and new-route events; passenger fields are split by domestic, international and regional operations. The display layer prefers the verified source-recovered parquet when available, with raw processed data as fallback.",
+        },
+    },
+    "airline_kpi_source_recovery": {
+        "id": "airline_kpi_source_recovery",
+        "label": "China Listed Airlines Official-PDF KPI Recovery Audit",
+        "href": "https://www.cninfo.com.cn/",
+        "path": "data/normalized/hk_transport/airline_operating_kpi_source_recovery_audit.csv",
+        "query": {
+            "engine": "official Cninfo PDF recovery audit",
+            "url": "https://www.cninfo.com.cn/",
+            "language": "CSV + Parquet",
+            "sql": "SELECT status, airline_code, month, metric, region, value, recovery_method, reason, announcement_date, source_pdf_url, companion_parser_metrics, source_text_metric_present, source_text_keyword_matches, parser_metric_present, parser_metric_row_count, disclosure_check FROM airline_operating_kpi_source_recovery_audit",
+            "description": "Audit of monthly airline KPI rows restored from cached official Cninfo PDFs, separated from rows that the source PDF genuinely does not disclose. The source-recovered parquet is used for the dashboard's monthly airline charts; no research interpolation is included in that display layer.",
+        },
+    },
+    "airline_h1_kpi_backtest": {
+        "id": "airline_h1_kpi_backtest",
+        "label": "China Listed Airlines 1H KPI Calibration Backtest",
+        "href": "https://www.cninfo.com.cn/",
+        "path": "data/normalized/hk_transport/airline_h1_kpi_backtest_raw_vs_imputed.csv",
+        "query": {
+            "engine": "historical KPI-to-financial calibration bridge",
+            "url": "https://www.cninfo.com.cn/",
+            "language": "CSV",
+            "sql": "SELECT company, raw_revenue_flat_ask_mae_pct, imputed_revenue_flat_ask_mae_pct, raw_operating_cost_flat_ask_mae_pct, imputed_operating_cost_flat_ask_mae_pct, imputed_historical_evaluated_rows, imputed_kpi_future_imputation_historical_rows FROM airline_h1_kpi_backtest_raw_vs_imputed",
+            "description": "Historical calibration of flat-ASK revenue and operating-cost errors before and after official-PDF source recovery plus research-only short-gap interpolation. This is not a strict historical point-in-time trading backtest because older financial target rows do not retain issuer announcement dates.",
+        },
+    },
+    "airline_period_kpi_backtest": {
+        "id": "airline_period_kpi_backtest",
+        "label": "China Listed Airlines H1/H2/FY KPI Calibration",
+        "href": "https://www.cninfo.com.cn/",
+        "path": "data/normalized/hk_transport/airline_period_kpi_backtest_summary.csv",
+        "query": {
+            "engine": "historical H1/H2/FY KPI-to-financial calibration bridge",
+            "url": "https://www.cninfo.com.cn/",
+            "language": "CSV",
+            "sql": "SELECT company, period, historical_evaluated_rows, pit_safe_evaluated_rows, revenue_flat_rpk_mae_pct, revenue_spring_recovery_case_mae_pct, operating_cost_flat_ask_mae_pct FROM airline_period_kpi_backtest_summary",
+            "description": "Separate H1, H2 and FY calibration summaries. H2 financial actuals are derived as FY minus H1; the logical-assumption layer remains a coverage sensitivity and not a clean point-in-time observation.",
         },
     },
     "hk_passenger_journeys": {
@@ -338,8 +385,20 @@ def _display_number(value: Any) -> str:
     return str(value)
 
 
-def load_china_airline_traffic(path: Path = CHINA_AIRLINE_DATA_PATH) -> pd.DataFrame:
-    """Load and validate the existing Cninfo-backed airline parquet."""
+def load_china_airline_traffic(path: Path | None = None) -> pd.DataFrame:
+    """Load the Cninfo-backed airline parquet, preferring source recovery.
+
+    The source-recovered layer has the same normalized monthly keys as the
+    processed raw layer, with only verified official-PDF rows overlaid.  It is
+    therefore safe for the dashboard's observed operating charts while the
+    separate imputed layer remains research-only.
+    """
+    if path is None:
+        path = (
+            CHINA_AIRLINE_SOURCE_RECOVERED_DATA_PATH
+            if CHINA_AIRLINE_SOURCE_RECOVERED_DATA_PATH.exists()
+            else CHINA_AIRLINE_DATA_PATH
+        )
     columns = ["month", "date", "airline_code", "region", "metric", "value"]
     if not path.exists():
         return pd.DataFrame(columns=CHINA_AIRLINE_COLUMNS)
@@ -374,6 +433,336 @@ def load_china_airline_traffic(path: Path = CHINA_AIRLINE_DATA_PATH) -> pd.DataF
     return result[CHINA_AIRLINE_COLUMNS].sort_values(
         ["date", "airline_code", "region", "metric"]
     ).reset_index(drop=True)
+
+
+def _load_research_csv(path: Path, label: str) -> pd.DataFrame:
+    """Load a committed research CSV without turning an absent optional layer into an error."""
+    if not path.exists():
+        return pd.DataFrame()
+    frame = pd.read_csv(path)
+    if frame.empty:
+        return frame
+    frame.columns = [str(column).strip() for column in frame.columns]
+    return frame
+
+
+def load_airline_h1_backtest_inputs() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Load the H1 calibration, nowcast summary and source-recovery audit inputs."""
+    return (
+        _load_research_csv(AIRLINE_H1_BACKTEST_COMPARISON_PATH, "airline H1 backtest comparison"),
+        _load_research_csv(AIRLINE_H1_BACKTEST_SUMMARY_PATH, "airline H1 backtest summary"),
+        _load_research_csv(AIRLINE_SOURCE_RECOVERY_AUDIT_PATH, "airline source-recovery audit"),
+    )
+
+
+def build_airline_h1_backtest_views(
+    comparison: pd.DataFrame,
+    summary: pd.DataFrame,
+    recovery_audit: pd.DataFrame,
+) -> dict[str, list[dict[str, Any]]]:
+    """Build compact dashboard views for recovery coverage and H1 calibration.
+
+    The bar-chart datasets intentionally retain both raw and source-recovered
+    plus research-imputed layers. This makes the benefit and the sensitivity
+    cost of filling gaps visible rather than silently replacing the raw
+    history. The dashboard labels the result as calibration, not a strict
+    point-in-time trading backtest.
+    """
+    empty = {
+        "airline_h1_revenue_mae_comparison": [],
+        "airline_h1_cost_mae_comparison": [],
+        "airline_h1_backtest_coverage": [],
+        "airline_h1_backtest_summary": [],
+        "airline_h1_nowcast_comparison": [],
+        "airline_h1_revenue_nowcast_comparison": [],
+        "airline_h1_profit_nowcast_comparison": [],
+        "airline_source_recovery_summary": [],
+        "airline_source_recovery_audit": [],
+        "kpi_airline_source_recovery": [],
+    }
+    if comparison.empty:
+        return empty
+
+    views = dict(empty)
+    comparison = comparison.copy()
+    comparison["company"] = comparison.get("company", comparison.get("raw_company", "")).fillna("").astype(str)
+    comparison["ticker"] = comparison.get("raw_ticker", comparison.get("imputed_ticker", "")).fillna("").astype(str)
+
+    def carrier_name(value: str) -> str:
+        return CHINA_AIRLINE_SHORT_NAMES.get(value, value)
+
+    def metric_rows(raw_field: str, recovered_field: str) -> list[dict[str, Any]]:
+        rows: list[dict[str, Any]] = []
+        for _, row in comparison.sort_values("company").iterrows():
+            company = str(row["company"])
+            carrier = carrier_name(company)
+            for layer, field in (
+                ("Raw observed", raw_field),
+                ("Source recovered + imputed", recovered_field),
+            ):
+                value = pd.to_numeric(pd.Series([row.get(field)]), errors="coerce").iloc[0]
+                if pd.isna(value):
+                    continue
+                rows.append(
+                    {
+                        "company": company,
+                        "carrier": carrier,
+                        "ticker": str(row["ticker"]),
+                        "layer": layer,
+                        "value": round(float(value), 4),
+                    }
+                )
+        return rows
+
+    views["airline_h1_revenue_mae_comparison"] = metric_rows(
+        "raw_revenue_flat_ask_mae_pct", "imputed_revenue_flat_ask_mae_pct"
+    )
+    views["airline_h1_cost_mae_comparison"] = metric_rows(
+        "raw_operating_cost_flat_ask_mae_pct", "imputed_operating_cost_flat_ask_mae_pct"
+    )
+
+    summary_rows: list[dict[str, Any]] = []
+    summary_columns = {
+        "historical_rows": "imputed_historical_evaluated_rows",
+        "revenue_mae_pct": "imputed_revenue_flat_ask_mae_pct",
+        "cost_mae_pct": "imputed_operating_cost_flat_ask_mae_pct",
+        "profit_direction_accuracy": "imputed_profit_direction_accuracy",
+        "imputation_rows": "imputed_kpi_imputation_used_historical_rows",
+        "future_imputation_rows": "imputed_kpi_future_imputation_historical_rows",
+        "pit_safe_rows": "imputed_kpi_pit_safe_historical_rows",
+    }
+    for _, row in comparison.sort_values("company").iterrows():
+        company = str(row["company"])
+        summary_row: dict[str, Any] = {
+            "company": company,
+            "carrier": carrier_name(company),
+            "ticker": str(row["ticker"]),
+            "source_quality": str(row.get("source_quality", "")),
+        }
+        for output_field, input_field in summary_columns.items():
+            value = pd.to_numeric(pd.Series([row.get(input_field)]), errors="coerce").iloc[0]
+            summary_row[output_field] = None if pd.isna(value) else round(float(value), 4)
+        if summary_row["historical_rows"] is not None:
+            summary_row["historical_rows"] = int(summary_row["historical_rows"])
+        for field in ("imputation_rows", "future_imputation_rows", "pit_safe_rows"):
+            if summary_row[field] is not None:
+                summary_row[field] = int(summary_row[field])
+        summary_rows.append(summary_row)
+    views["airline_h1_backtest_summary"] = summary_rows
+
+    coverage_rows: list[dict[str, Any]] = []
+    for _, row in comparison.sort_values("company").iterrows():
+        company = str(row["company"])
+        carrier = carrier_name(company)
+        for layer, field in (
+            ("Raw observed", "raw_historical_evaluated_rows"),
+            ("Source recovered + imputed", "imputed_historical_evaluated_rows"),
+        ):
+            value = pd.to_numeric(pd.Series([row.get(field)]), errors="coerce").iloc[0]
+            if pd.isna(value):
+                continue
+            coverage_rows.append(
+                {
+                    "company": company,
+                    "carrier": carrier,
+                    "ticker": str(row["ticker"]),
+                    "layer": layer,
+                    "value": int(value),
+                }
+            )
+    views["airline_h1_backtest_coverage"] = coverage_rows
+
+    if not summary.empty:
+        summary = summary.copy()
+        summary["company"] = summary.get("company", "").fillna("").astype(str)
+        nowcast_rows: list[dict[str, Any]] = []
+        for _, row in summary.sort_values("company").iterrows():
+            company = str(row["company"])
+            carrier = carrier_name(company)
+            for measure, flat_field, analyst_field in (
+                ("Revenue", "flat_ask_revenue_pred_usd_mn", "analyst_h1_revenue_pred_usd_mn"),
+                ("Profit", "flat_ask_profit_pred_usd_mn", "analyst_h1_profit_pred_usd_mn"),
+            ):
+                for view_name, field in (("Flat ASK", flat_field), ("Analyst overlay", analyst_field)):
+                    value = pd.to_numeric(pd.Series([row.get(field)]), errors="coerce").iloc[0]
+                    if pd.isna(value):
+                        continue
+                    nowcast_rows.append(
+                        {
+                            "company": company,
+                            "carrier": carrier,
+                            "ticker": str(row.get("ticker", "")),
+                            "measure": measure,
+                            "view": view_name,
+                            "value_usd_mn": round(float(value), 4),
+                        }
+                    )
+        views["airline_h1_nowcast_comparison"] = nowcast_rows
+        views["airline_h1_revenue_nowcast_comparison"] = [
+            row for row in nowcast_rows if row["measure"] == "Revenue"
+        ]
+        views["airline_h1_profit_nowcast_comparison"] = [
+            row for row in nowcast_rows if row["measure"] == "Profit"
+        ]
+
+    if not recovery_audit.empty:
+        recovery_audit = recovery_audit.copy()
+        recovery_audit["status"] = recovery_audit.get("status", "").fillna("").astype(str)
+        status_labels = {
+            "recovered_from_cached_official_pdf": "Recovered from official PDF",
+            "not_disclosed_in_source_pdf": "Not disclosed in source PDF",
+        }
+        summary_rows = []
+        for status, count in recovery_audit["status"].value_counts().items():
+            summary_rows.append(
+                {
+                    "status": status,
+                    "status_label": status_labels.get(status, status),
+                    "value": int(count),
+                }
+            )
+        views["airline_source_recovery_summary"] = summary_rows
+        audit_columns = [
+            "status", "airline_code", "month", "metric", "region", "value",
+            "recovery_method", "reason", "announcement_date", "source_pdf_url",
+            "companion_parser_metrics", "source_text_metric_present",
+            "source_text_keyword_matches", "parser_metric_present",
+            "parser_metric_row_count", "parser_metric_regions", "disclosure_check",
+        ]
+        available = [column for column in audit_columns if column in recovery_audit.columns]
+        audit = recovery_audit[available].copy()
+        views["airline_source_recovery_audit"] = json.loads(
+            audit.to_json(orient="records", date_format="iso")
+        )
+        recovered = int(recovery_audit["status"].str.startswith("recovered").sum())
+        not_disclosed = int(recovery_audit["status"].eq("not_disclosed_in_source_pdf").sum())
+        views["kpi_airline_source_recovery"] = [
+            {
+                "recovered_rows": recovered,
+                "not_disclosed_rows": not_disclosed,
+                "audit_rows": int(len(recovery_audit)),
+            }
+        ]
+    return views
+
+
+def load_airline_period_backtest_inputs() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Load strict/logical H1-H2-FY summaries and Spring diagnostics."""
+    return (
+        _load_research_csv(AIRLINE_PERIOD_BACKTEST_SUMMARY_PATH, "airline period backtest summary"),
+        _load_research_csv(AIRLINE_PERIOD_BACKTEST_LOGICAL_SUMMARY_PATH, "airline logical-assumption period summary"),
+        _load_research_csv(AIRLINE_PERIOD_BACKTEST_COMPARISON_PATH, "airline period backtest model comparison"),
+        _load_research_csv(AIRLINE_SPRING_MAE_DIAGNOSTIC_PATH, "airline Spring MAE diagnostics"),
+    )
+
+
+def build_airline_period_backtest_views(
+    strict_summary: pd.DataFrame,
+    logical_summary: pd.DataFrame,
+    comparison: pd.DataFrame,
+    spring_diagnostics: pd.DataFrame,
+) -> dict[str, list[dict[str, Any]]]:
+    """Build compact H1/H2/FY and Spring model-risk dashboard views."""
+    empty = {
+        "airline_period_revenue_mae": [],
+        "airline_period_backtest_summary": [],
+        "airline_period_assumption_comparison": [],
+        "airline_spring_mae_diagnostics": [],
+    }
+    views = dict(empty)
+    if not strict_summary.empty:
+        strict = strict_summary.copy()
+        strict["company"] = strict.get("company", "").fillna("").astype(str)
+        strict["period"] = strict.get("period", "").fillna("").astype(str)
+        logical = logical_summary.copy()
+        logical_by_key = {}
+        if not logical.empty and {"company", "period"}.issubset(logical.columns):
+            logical["company"] = logical["company"].fillna("").astype(str)
+            logical["period"] = logical["period"].fillna("").astype(str)
+            logical_by_key = {
+                (str(row["company"]), str(row["period"])): row
+                for _, row in logical.iterrows()
+            }
+        for _, row in strict.sort_values(["period", "company"]).iterrows():
+            company = str(row["company"])
+            logical_row = logical_by_key.get((company, str(row["period"])))
+            views["airline_period_revenue_mae"].append(
+                {
+                    "company": company,
+                    "carrier": CHINA_AIRLINE_SHORT_NAMES.get(company, company),
+                    "ticker": f"{next((code for code, name in CHINA_AIRLINE_NAMES.items() if name == company), '')}.SH",
+                    "period": str(row["period"]),
+                    "evaluated_rows": int(row["historical_evaluated_rows"]),
+                    "flat_rpk_revenue_mae_pct": round(float(row["revenue_flat_rpk_mae_pct"]), 4),
+                    "recovery_case_revenue_mae_pct": round(float(row["revenue_spring_recovery_case_mae_pct"]), 4),
+                }
+            )
+            views["airline_period_backtest_summary"].append(
+                {
+                    "company": company,
+                    "carrier": CHINA_AIRLINE_SHORT_NAMES.get(company, company),
+                    "period": str(row["period"]),
+                    "historical_evaluated_rows": int(row["historical_evaluated_rows"]),
+                    "pit_safe_evaluated_rows": int(row["pit_safe_evaluated_rows"]),
+                    "logical_assumption_rows": int(
+                        logical_row["logical_assumption_rows"]
+                        if logical_row is not None
+                        else row["logical_assumption_rows"]
+                    ),
+                    "logical_historical_evaluated_rows": int(
+                        logical_row["historical_evaluated_rows"]
+                        if logical_row is not None
+                        else row["historical_evaluated_rows"]
+                    ),
+                    "flat_ask_revenue_mae_pct": round(float(row["revenue_flat_ask_mae_pct"]), 4),
+                    "flat_rpk_revenue_mae_pct": round(float(row["revenue_flat_rpk_mae_pct"]), 4),
+                    "recovery_case_revenue_mae_pct": round(float(row["revenue_spring_recovery_case_mae_pct"]), 4),
+                    "flat_ask_cost_mae_pct": round(float(row["operating_cost_flat_ask_mae_pct"]), 4),
+                    "logical_flat_rpk_revenue_mae_pct": round(
+                        float(
+                            logical_row["revenue_flat_rpk_mae_pct"]
+                            if logical_row is not None
+                            else row["revenue_flat_rpk_mae_pct"]
+                        ),
+                        4,
+                    ),
+                }
+            )
+    if not comparison.empty:
+        compare = comparison.copy()
+        for _, row in compare.sort_values(["period", "company"]).iterrows():
+            views["airline_period_assumption_comparison"].append(
+                {
+                    "company": str(row.get("company", "")),
+                    "carrier": CHINA_AIRLINE_SHORT_NAMES.get(str(row.get("company", "")), str(row.get("company", ""))),
+                    "period": str(row.get("period", "")),
+                    "strict_rows": int(row["strict_historical_evaluated_rows"]),
+                    "logical_rows": int(row["logical_historical_evaluated_rows"]),
+                    "coverage_delta": int(row["coverage_delta_logical_minus_strict"]),
+                    "strict_flat_rpk_mae_pct": round(float(row["strict_revenue_flat_rpk_mae_pct"]), 4),
+                    "logical_flat_rpk_mae_pct": round(float(row["logical_revenue_flat_rpk_mae_pct"]), 4),
+                }
+            )
+    if not spring_diagnostics.empty:
+        diagnostic = spring_diagnostics.copy()
+        for _, row in diagnostic.sort_values(["period", "target_year"]).iterrows():
+            views["airline_spring_mae_diagnostics"].append(
+                {
+                    "statement_period": str(row.get("statement_period", "")),
+                    "period": str(row.get("period", "")),
+                    "target_year": int(row["target_year"]),
+                    "regime": str(row.get("regime", "")),
+                    "ask_growth_pct": round(float(row["ask_growth_pct"]), 4),
+                    "rpk_growth_pct": round(float(row["rpk_growth_pct"]), 4),
+                    "rpk_minus_ask_gap_pp": round(float(row["rpk_minus_ask_growth_gap_pp"]), 4),
+                    "load_factor_change_pp": round(float(row["load_factor_change_pp"]), 4),
+                    "flat_ask_error_pct": round(float(row["revenue_error_flat_ask_pct"]), 4),
+                    "flat_rpk_error_pct": round(float(row["revenue_error_flat_rpk_pct"]), 4),
+                    "recovery_case_error_pct": round(float(row["revenue_error_spring_recovery_case_pct"]), 4),
+                    "kpi_pit_safe": bool(row["kpi_pit_safe"]),
+                }
+            )
+    return views
 
 
 def load_china_airline_operating_events(path: Path = CHINA_AIRLINE_EVENT_DATA_PATH) -> pd.DataFrame:
@@ -1409,6 +1798,19 @@ def build_artifact(
         else load_china_airline_operating_events()
     )
     china_airline_views = build_china_airline_views(china_airline, china_airline_events)
+    h1_backtest_comparison, h1_backtest_summary, source_recovery_audit = load_airline_h1_backtest_inputs()
+    airline_h1_backtest_views = build_airline_h1_backtest_views(
+        h1_backtest_comparison,
+        h1_backtest_summary,
+        source_recovery_audit,
+    )
+    period_backtest_summary, period_backtest_logical_summary, period_backtest_comparison, spring_mae_diagnostics = load_airline_period_backtest_inputs()
+    airline_period_backtest_views = build_airline_period_backtest_views(
+        period_backtest_summary,
+        period_backtest_logical_summary,
+        period_backtest_comparison,
+        spring_mae_diagnostics,
+    )
     passenger_journeys = raw_passenger_journeys if raw_passenger_journeys is not None else load_passenger_journeys()
     passenger_journeys_views = build_passenger_journeys_views(passenger_journeys)
     mttd_passenger_journeys = (
@@ -1607,6 +2009,8 @@ def build_artifact(
         "cathay_cargo_capacity_demand_history": cathay_cargo_capacity_demand_history,
         "cathay_fleet_total_history": cathay_fleet_total_history,
         **china_airline_views,
+        **airline_h1_backtest_views,
+        **airline_period_backtest_views,
         **({"kpi_journeys": [journeys_kpi]} if journeys_kpi else {}),
         **({"kpi_fleet": [fleet_kpi]} if fleet_kpi else {}),
         **({"kpi_net_growth": [net_growth_kpi]} if net_growth_kpi else {}),
@@ -1733,7 +2137,6 @@ def build_artifact(
                 ],
             }
         )
-
     charts = [
         {
             "id": "mtr_total_patronage_chart",
@@ -2081,6 +2484,112 @@ def build_artifact(
             ]
         )
 
+    if airline_h1_backtest_views["airline_h1_revenue_mae_comparison"]:
+        charts.extend(
+            [
+                {
+                    "id": "airline_h1_revenue_mae_chart",
+                    "title": "1H KPI Calibration — Revenue MAE",
+                    "subtitle": "Absolute revenue error of the flat-ASK calibration, before and after verified source recovery plus research-only short-gap interpolation. Lower is better.",
+                    "type": "bar",
+                    "dataset": "airline_h1_revenue_mae_comparison",
+                    "sourceId": "airline_h1_kpi_backtest",
+                    "encodings": {
+                        "x": {"field": "carrier", "type": "nominal", "label": "Airline"},
+                        "y": {"field": "value", "type": "quantitative", "label": "Revenue MAE (%)"},
+                        "color": {"field": "layer", "type": "nominal", "label": "Input layer"},
+                    },
+                    "valueFormat": "number",
+                    "layout": "half",
+                },
+                {
+                    "id": "airline_h1_cost_mae_chart",
+                    "title": "1H KPI Calibration — Operating Cost MAE",
+                    "subtitle": "Absolute operating-cost error of the flat-ASK calibration, before and after verified source recovery plus research-only short-gap interpolation. Lower is better.",
+                    "type": "bar",
+                    "dataset": "airline_h1_cost_mae_comparison",
+                    "sourceId": "airline_h1_kpi_backtest",
+                    "encodings": {
+                        "x": {"field": "carrier", "type": "nominal", "label": "Airline"},
+                        "y": {"field": "value", "type": "quantitative", "label": "Operating cost MAE (%)"},
+                        "color": {"field": "layer", "type": "nominal", "label": "Input layer"},
+                    },
+                    "valueFormat": "number",
+                    "layout": "half",
+                },
+            ]
+        )
+    if airline_period_backtest_views["airline_period_backtest_summary"]:
+        charts.append(
+            {
+                "id": "airline_period_revenue_mae_chart",
+                "title": "Airline H1 / H2 / FY KPI Calibration — Revenue MAE",
+                "subtitle": "Strict source-recovered flat-RPK revenue MAE by carrier and reporting period. H2 financial actuals are FY minus H1; lower is better.",
+                "type": "bar",
+                "dataset": "airline_period_backtest_summary",
+                "sourceId": "airline_period_kpi_backtest",
+                "encodings": {
+                    "x": {"field": "carrier", "type": "nominal", "label": "Airline"},
+                    "y": {"field": "flat_rpk_revenue_mae_pct", "type": "quantitative", "label": "Revenue MAE (%)"},
+                    "color": {"field": "period", "type": "nominal", "label": "Period"},
+                },
+                "valueFormat": "number",
+                "layout": "full",
+            }
+        )
+    if airline_h1_backtest_views["airline_source_recovery_summary"]:
+        charts.append(
+            {
+                "id": "airline_source_recovery_chart",
+                "title": "Airline KPI Source-Recovery Audit",
+                "subtitle": "Verified rows restored from cached official PDFs versus rows confirmed as not disclosed in the relevant source PDF.",
+                "type": "bar",
+                "dataset": "airline_source_recovery_summary",
+                "sourceId": "airline_kpi_source_recovery",
+                "encodings": {
+                    "x": {"field": "status_label", "type": "nominal", "label": "Audit status"},
+                    "y": {"field": "value", "type": "quantitative", "label": "Rows"},
+                },
+                "valueFormat": "number",
+                "layout": "half",
+            }
+        )
+    if airline_h1_backtest_views["airline_h1_revenue_nowcast_comparison"]:
+        charts.extend(
+            [
+                {
+                    "id": "airline_h1_revenue_nowcast_chart",
+                    "title": "H1 2026 Revenue Nowcast — Spring / Juneyao",
+                    "subtitle": "Current KPI-based flat-ASK baseline versus analyst yield/fuel/non-fuel overlay; USD million. This is a pre-report nowcast, not an actual result.",
+                    "type": "bar",
+                    "dataset": "airline_h1_revenue_nowcast_comparison",
+                    "sourceId": "airline_h1_kpi_backtest",
+                    "encodings": {
+                        "x": {"field": "carrier", "type": "nominal", "label": "Airline"},
+                        "y": {"field": "value_usd_mn", "type": "quantitative", "label": "Revenue (USD mn)"},
+                        "color": {"field": "view", "type": "nominal", "label": "Nowcast view"},
+                    },
+                    "valueFormat": "number",
+                    "layout": "half",
+                },
+                {
+                    "id": "airline_h1_profit_nowcast_chart",
+                    "title": "H1 2026 Profit Nowcast — Spring / Juneyao",
+                    "subtitle": "Current KPI-based flat-ASK baseline versus analyst overlay; USD million. Compare with the later formal interim result when released.",
+                    "type": "bar",
+                    "dataset": "airline_h1_profit_nowcast_comparison",
+                    "sourceId": "airline_h1_kpi_backtest",
+                    "encodings": {
+                        "x": {"field": "carrier", "type": "nominal", "label": "Airline"},
+                        "y": {"field": "value_usd_mn", "type": "quantitative", "label": "Profit (USD mn)"},
+                        "color": {"field": "view", "type": "nominal", "label": "Nowcast view"},
+                    },
+                    "valueFormat": "number",
+                    "layout": "half",
+                },
+            ]
+        )
+
     if passenger_journeys_views["hk_total_transport_journeys_history"]:
         charts.extend(
             [
@@ -2294,6 +2803,61 @@ def build_artifact(
         )
 
     tables: list[dict[str, Any]] = []
+    if airline_period_backtest_views["airline_period_backtest_summary"]:
+        tables.append(
+            {
+                "id": "airline_period_backtest_summary_table",
+                "title": "Airline H1 / H2 / FY KPI Calibration Summary",
+                "subtitle": "Strict source-recovered calibration, with logical-assumption coverage shown separately. H2 financial actuals are derived as FY minus H1; this is calibration evidence, not a strict point-in-time trading backtest.",
+                "dataset": "airline_period_backtest_summary",
+                "sourceId": "airline_period_kpi_backtest",
+                "density": "dense",
+                "layout": "full",
+                "columns": [
+                    {"field": "carrier", "label": "Airline", "type": "text"},
+                    {"field": "period", "label": "Period", "type": "text"},
+                    {"field": "historical_evaluated_rows", "label": "Strict rows", "format": "number"},
+                    {"field": "pit_safe_evaluated_rows", "label": "PIT-safe rows", "format": "number"},
+                    {"field": "logical_assumption_rows", "label": "Logical-assumption rows", "format": "number"},
+                    {"field": "flat_ask_revenue_mae_pct", "label": "Flat-ASK revenue MAE (%)", "format": "number"},
+                    {"field": "flat_rpk_revenue_mae_pct", "label": "Flat-RPK revenue MAE (%)", "format": "number"},
+                    {"field": "recovery_case_revenue_mae_pct", "label": "Spring recovery-case MAE (%)", "format": "number"},
+                    {"field": "flat_ask_cost_mae_pct", "label": "Flat-ASK cost MAE (%)", "format": "number"},
+                ],
+            }
+        )
+    if airline_h1_backtest_views["airline_source_recovery_audit"]:
+        tables.append(
+            {
+                "id": "airline_source_recovery_audit_table",
+                "title": "Airline KPI Source-Recovery Audit Detail",
+                "subtitle": "Official-PDF recoveries and verified non-disclosures. The monthly operating charts use the source-recovered layer; this table records the evidence behind the overlay.",
+                "dataset": "airline_source_recovery_audit",
+                "sourceId": "airline_kpi_source_recovery",
+                "density": "dense",
+                "layout": "full",
+                "maxRows": 200,
+                "columns": [
+                    {"field": "status", "label": "Status", "type": "text"},
+                    {"field": "airline_code", "label": "Airline code", "type": "text"},
+                    {"field": "month", "label": "Month", "type": "text"},
+                    {"field": "metric", "label": "Metric", "type": "text"},
+                    {"field": "region", "label": "Region", "type": "text"},
+                    {"field": "value", "label": "Value", "format": "number"},
+                    {"field": "recovery_method", "label": "Recovery method", "type": "text"},
+                    {"field": "reason", "label": "Reason", "type": "text"},
+                    {"field": "announcement_date", "label": "Announcement date", "type": "text"},
+                    {"field": "source_pdf_url", "label": "Official PDF", "type": "url"},
+                    {"field": "companion_parser_metrics", "label": "Companion parser metrics", "type": "text"},
+                    {"field": "source_text_metric_present", "label": "Metric in source text", "type": "text"},
+                    {"field": "source_text_keyword_matches", "label": "Source keyword matches", "type": "text"},
+                    {"field": "parser_metric_present", "label": "Metric parsed", "type": "text"},
+                    {"field": "parser_metric_row_count", "label": "Parsed row count", "format": "number"},
+                    {"field": "parser_metric_regions", "label": "Parsed regions", "type": "text"},
+                    {"field": "disclosure_check", "label": "Disclosure check", "type": "text"},
+                ],
+            }
+        )
     if china_airline_views["china_airline_latest_snapshot"]:
         tables.append(
             {
@@ -2421,7 +2985,35 @@ def build_artifact(
             }
         )
 
+    # Keep the portable artifact within the renderer's dataset budget. The
+    # research views above may produce helper datasets (for example a long
+    # nowcast table or an unrendered auxiliary series), but only datasets that
+    # are actually referenced by a card, chart or table belong in the public
+    # snapshot. The source CSV/parquet remains the canonical research layer.
+    referenced_dataset_ids = {
+        item.get("dataset")
+        for collection in (cards, charts, tables)
+        for item in collection
+        if item.get("dataset")
+    }
+    datasets = {
+        dataset_id: rows
+        for dataset_id, rows in datasets.items()
+        if dataset_id in referenced_dataset_ids
+    }
+
     sources = list(PUBLIC_SOURCES.values())
+
+    def _latest_csv_date(frame: pd.DataFrame, column: str) -> str:
+        if frame.empty or column not in frame.columns:
+            return "1900-01-01"
+        parsed = pd.to_datetime(frame[column], errors="coerce").dropna()
+        return parsed.max().strftime("%Y-%m-%d") if not parsed.empty else "1900-01-01"
+
+    source_recovery_as_of = _latest_csv_date(source_recovery_audit, "announcement_date")
+    h1_backtest_as_of = _latest_csv_date(h1_backtest_comparison, "imputed_current_kpi_cutoff")
+    period_year = pd.to_numeric(period_backtest_summary.get("historical_year_max"), errors="coerce").dropna()
+    period_backtest_as_of = f"{int(period_year.max())}-12-31" if not period_year.empty else "1900-01-01"
 
     snapshot_id = hashlib.sha256(
         json.dumps(datasets, sort_keys=True, default=str).encode("utf-8")
@@ -2478,6 +3070,42 @@ def build_artifact(
                 *(
                     [{"id": "china_airline_operating_events_latest_table_block", "type": "table", "tableId": "china_airline_operating_events_latest_table"}]
                     if china_airline_views["china_airline_operating_events_latest"]
+                    else []
+                ),
+                *(
+                    [
+                        {"id": "airline_h1_revenue_mae_chart_block", "type": "chart", "chartId": "airline_h1_revenue_mae_chart", "layout": "half"},
+                        {"id": "airline_h1_cost_mae_chart_block", "type": "chart", "chartId": "airline_h1_cost_mae_chart", "layout": "half"},
+                    ]
+                    if airline_h1_backtest_views["airline_h1_revenue_mae_comparison"]
+                    else []
+                ),
+                *(
+                    [{"id": "airline_source_recovery_chart_block", "type": "chart", "chartId": "airline_source_recovery_chart", "layout": "half"}]
+                    if airline_h1_backtest_views["airline_source_recovery_summary"]
+                    else []
+                ),
+                *(
+                    [{"id": "airline_period_revenue_mae_chart_block", "type": "chart", "chartId": "airline_period_revenue_mae_chart"}]
+                    if airline_period_backtest_views["airline_period_backtest_summary"]
+                    else []
+                ),
+                *(
+                    [
+                        {"id": "airline_h1_revenue_nowcast_chart_block", "type": "chart", "chartId": "airline_h1_revenue_nowcast_chart", "layout": "half"},
+                        {"id": "airline_h1_profit_nowcast_chart_block", "type": "chart", "chartId": "airline_h1_profit_nowcast_chart", "layout": "half"},
+                    ]
+                    if airline_h1_backtest_views["airline_h1_revenue_nowcast_comparison"]
+                    else []
+                ),
+                *(
+                    [{"id": "airline_period_backtest_summary_table_block", "type": "table", "tableId": "airline_period_backtest_summary_table"}]
+                    if airline_period_backtest_views["airline_period_backtest_summary"]
+                    else []
+                ),
+                *(
+                    [{"id": "airline_source_recovery_audit_table_block", "type": "table", "tableId": "airline_source_recovery_audit_table"}]
+                    if airline_h1_backtest_views["airline_source_recovery_audit"]
                     else []
                 ),
                 *(
@@ -2564,6 +3192,9 @@ def build_artifact(
                 cathay_kpi["observation_date"],
                 cathay_fleet["date"].max().strftime("%Y-%m-%d") if not cathay_fleet.empty else "1900-01-01",
                 china_airline["date"].max().strftime("%Y-%m-%d") if not china_airline.empty else "1900-01-01",
+                source_recovery_as_of,
+                h1_backtest_as_of,
+                period_backtest_as_of,
                 passenger_journeys["date"].max().strftime("%Y-%m-%d") if not passenger_journeys.empty else "1900-01-01",
                 mttd_passenger_journeys["date"].max().strftime("%Y-%m-%d") if not mttd_passenger_journeys.empty else "1900-01-01",
                 boundary_movements["date"].max().strftime("%Y-%m-%d") if not boundary_movements.empty else "1900-01-01",
@@ -2581,6 +3212,9 @@ def build_artifact(
         "cathay_hkia_traffic": len(cathay),
         "cathay_fleet": len(cathay_fleet),
         "china_airline_traffic": len(china_airline) + len(china_airline_events),
+        "airline_kpi_source_recovery": len(source_recovery_audit),
+        "airline_h1_kpi_backtest": len(h1_backtest_comparison),
+        "airline_period_kpi_backtest": len(period_backtest_summary),
         "hk_passenger_journeys": len(passenger_journeys),
         "mttd_passenger_journeys": len(mttd_passenger_journeys),
         "censtatd_boundary_movements": len(boundary_movements),
@@ -2596,6 +3230,9 @@ def build_artifact(
         "cathay_hkia_traffic": cathay_kpi["observation_date"],
         "cathay_fleet": cathay_fleet["date"].max().strftime("%Y-%m-%d") if not cathay_fleet.empty else "—",
         "china_airline_traffic": china_airline["date"].max().strftime("%Y-%m-%d") if not china_airline.empty else "—",
+        "airline_kpi_source_recovery": source_recovery_as_of if source_recovery_as_of != "1900-01-01" else "—",
+        "airline_h1_kpi_backtest": h1_backtest_as_of if h1_backtest_as_of != "1900-01-01" else "—",
+        "airline_period_kpi_backtest": period_backtest_as_of if period_backtest_as_of != "1900-01-01" else "—",
         "hk_passenger_journeys": passenger_journeys["date"].max().strftime("%Y-%m-%d") if not passenger_journeys.empty else "—",
         "mttd_passenger_journeys": mttd_passenger_journeys["date"].max().strftime("%Y-%m-%d") if not mttd_passenger_journeys.empty else "—",
         "censtatd_boundary_movements": boundary_movements["date"].max().strftime("%Y-%m-%d") if not boundary_movements.empty else "—",

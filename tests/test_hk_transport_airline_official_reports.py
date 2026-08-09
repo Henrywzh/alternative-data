@@ -5,9 +5,42 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
+from src.hk_transport.sources.airline_official_reports import _statement_value_from_line
+
 
 ROOT = Path(__file__).resolve().parents[1]
 TRANSPORT = ROOT / "data" / "normalized" / "hk_transport"
+
+
+def test_waterfall_statement_parser_skips_note_numbers_and_preserves_negative_cells() -> None:
+    assert _statement_value_from_line(
+        "财务费用 七（67） 158,967,460 108,403,569",
+        ("财务费用",),
+    ) == pytest.approx(158_967_460.0)
+    assert _statement_value_from_line(
+        "财务费用 42 4,853,956 6,766,999",
+        ("财务费用",),
+    ) == pytest.approx(4_853_956.0)
+    assert _statement_value_from_line(
+        "投资收益（损失以“－”号填列） 注释 68 3,744,822.54 -181,651.96",
+        ("投资收益",),
+    ) == pytest.approx(3_744_822.54)
+    assert _statement_value_from_line(
+        "信用减值损失 四 (51) - (21)",
+        ("信用减值损失",),
+    ) is None
+    assert _statement_value_from_line(
+        "二、营业亏损  (2,047,902)  (3,431,959)",
+        ("营业亏损",),
+    ) == pytest.approx(-2_047_902.0)
+    assert _statement_value_from_line(
+        "投资收益/(损失) 四 (49) 79 (599)",
+        ("投资收益",),
+    ) == pytest.approx(79.0)
+    assert _statement_value_from_line(
+        "公允价值变动收益 四 (50) 32 195",
+        ("公允价值变动收益",),
+    ) == pytest.approx(32.0)
 
 
 def test_curated_official_report_registry_is_primary_and_fully_parsed() -> None:

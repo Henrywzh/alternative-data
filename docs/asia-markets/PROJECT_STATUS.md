@@ -263,6 +263,20 @@ replacement for the operating manual or generated source-status JSON.
   USD64m; China Southern stays on the residual bridge because FY2025 was
   profitable, but its v3-versus-consensus gap remains the key open question
   for H1-2026.
+- China Southern's v3-versus-consensus gap (previously the key open question)
+  is now resolved with a share-based NCI forward leg
+  (`net_income_leg="share_based_nci_forward"`). Southern's FY2025 minority
+  interest was 68% of net income (1,828m on 2,685m), so carrying the
+  FY2025 *absolute* below-operating residual into a much larger forward
+  profit year overstates attributable net income (residual bridge 2,242m
+  USD base vs consensus 105m). The share-based leg prorates NCI at the
+  FY2025 NCI/net-income ratio and an effective tax rate, yielding a coherent
+  456m USD base (bear 252m / bull 608m), still a deliberate +335% variant
+  view above a consensus that straddles zero (A-share EV consensus averages
+  -1,447m RMBm on the negative set and +707m RMBm on the positive set). The
+  raw residual bridge remains available as a diagnostic column. Net-income
+  leg selection is centralised in `_select_net_income_leg` in
+  `src/hk_transport/sources/airline_earnings_model_v3.py`.
 - The cargo-bridge backtest is now live in `airline_cargo_bridge_backtest.csv`.
   The FY2025 revenue-per-tonne yield method applied to 1H2025 tonnage predicts
   reported 1H2025 cargo revenue within 4.0% at Southern, 4.0% at Air China and

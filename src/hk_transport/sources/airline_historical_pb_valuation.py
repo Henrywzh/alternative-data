@@ -3,8 +3,8 @@
 AkShare's public Baidu valuation endpoint exposes roughly one year of daily
 P/B observations for the target securities. This is a useful asset-value
 cross-check for capital-intensive airlines, but it is not a substitute for a
-long P/S/P/E history: the equity basis below is the latest available primary
-issuer equity row and must be refreshed after 1H2026 filings.
+long P/S/P/E history. Equity denominators are selected using the latest
+issuer report announced on or before the dated market observation.
 """
 
 from __future__ import annotations
@@ -18,10 +18,13 @@ from ..config import NORMALIZED_DIR
 
 WORKING_SET_PATH = NORMALIZED_DIR / "airline_pair_thesis_working_set.csv"
 DRIVERS_PATH = NORMALIZED_DIR / "airline_official_report_drivers.csv"
+CATHAY_EQUITY_BASIS_PATH = NORMALIZED_DIR / "airline_cathay_equity_basis.csv"
 PB_HISTORY_PATH = NORMALIZED_DIR / "airline_pb_history.csv"
+MARKET_SNAPSHOT_PATH = NORMALIZED_DIR / "airline_market_snapshot.csv"
 OUTPUT_PATH = NORMALIZED_DIR / "airline_historical_pb_valuation.csv"
 
 PB_CONFIG: dict[str, dict[str, str]] = {
+    "0293.HK": {"company": "Cathay Pacific", "function": "stock_hk_valuation_baidu", "symbol": "00293"},
     "01055.HK": {"company": "China Southern Airlines", "function": "stock_hk_valuation_baidu", "symbol": "01055"},
     "0670.HK": {"company": "China Eastern Airlines", "function": "stock_hk_valuation_baidu", "symbol": "00670"},
     "0753.HK": {"company": "Air China", "function": "stock_hk_valuation_baidu", "symbol": "00753"},
@@ -42,22 +45,74 @@ def _text(value: object) -> str:
     return str(value)
 
 
-def _asset_price_map(working: pd.DataFrame) -> dict[str, float | None]:
+def _asset_price_map(working: pd.DataFrame, market_snapshot: pd.DataFrame | None = None) -> dict[str, float | None]:
     result: dict[str, float | None] = {}
     for _, row in working.iterrows():
         result[_text(row.get("asset_a"))] = _num(row.get("current_price_a_native"))
         result[_text(row.get("asset_b"))] = _num(row.get("current_price_b_native"))
+    if market_snapshot is not None and not market_snapshot.empty:
+        for _, row in market_snapshot.iterrows():
+            asset = _text(row.get("ticker"))
+            if asset and result.get(asset) is None:
+                result[asset] = _num(row.get("latest_price_native"))
     return result
 
 
-def _equity_rows(drivers: pd.DataFrame) -> dict[str, pd.Series]:
-    result: dict[str, pd.Series] = {}
-    if drivers.empty:
-        return result
-    frame = drivers[drivers["metric"].eq("equity_attributable")].copy()
-    frame["period_end_parsed"] = pd.to_datetime(frame["period_end"], errors="coerce")
-    for company, group in frame.groupby("company"):
-        result[str(company)] = group.sort_values("period_end_parsed").iloc[-1]
+def _equity_frame(drivers: pd.DataFrame, cathay_basis: pd.DataFrame | None) -> pd.DataFrame:
+    """Combine legacy mainland equity rows with official Cathay anchors."""
+
+    frames: list[pd.DataFrame] = []
+    if not drivers.empty and {"company", "metric"}.issubset(drivers.columns):
+        frames.append(drivers.loc[drivers["metric"].eq("equity_attributable")].copy())
+    if cathay_basis is not None and not cathay_basis.empty and {"company", "metric"}.issubset(cathay_basis.columns):
+        frames.append(cathay_basis.loc[cathay_basis["metric"].eq("equity_attributable")].copy())
+    if not frames:
+        return pd.DataFrame()
+    result = pd.concat(frames, ignore_index=True, sort=False)
+    result["period_end_parsed"] = pd.to_datetime(result.get("period_end"), errors="coerce")
+    result["announced_at_parsed"] = pd.to_datetime(result.get("announced_at"), errors="coerce")
+    return result
+
+
+def _equity_row_as_of(equity: pd.DataFrame, company: str, as_of: pd.Timestamp) -> pd.Series:
+    if equity.empty or pd.isna(as_of):
+        return pd.Series(dtype=object)
+    frame = equity.loc[equity["company"].astype(str).eq(company)].copy()
+    frame = frame.loc[
+        frame["announced_at_parsed"].notna()
+        & frame["announced_at_parsed"].le(as_of)
+    ]
+    if frame.empty:
+        return pd.Series(dtype=object)
+    return frame.sort_values(["period_end_parsed", "announced_at_parsed"]).iloc[-1]
+
+
+def _annotate_pb_history(history: pd.DataFrame, equity: pd.DataFrame) -> pd.DataFrame:
+    """Attach the latest public equity anchor to each dated P/B observation."""
+
+    if history.empty or equity.empty:
+        return history
+    result = history.copy()
+    result["observation_date"] = pd.to_datetime(result["observation_date"], errors="coerce")
+    for column in (
+        "equity_basis_period",
+        "equity_basis_period_end",
+        "equity_basis_announced_at",
+        "equity_basis_usd_mn",
+        "equity_basis_pit_status",
+    ):
+        result[column] = None
+    for index, row in result.iterrows():
+        company = _text(row.get("company"))
+        selected = _equity_row_as_of(equity, company, row.get("observation_date"))
+        if selected.empty:
+            result.at[index, "equity_basis_pit_status"] = "no_announced_equity_basis_available"
+            continue
+        result.at[index, "equity_basis_period"] = _text(selected.get("statement_period"))
+        result.at[index, "equity_basis_period_end"] = _text(selected.get("period_end"))
+        result.at[index, "equity_basis_announced_at"] = _text(selected.get("announced_at"))
+        result.at[index, "equity_basis_usd_mn"] = _num(selected.get("value_usd"))
+        result.at[index, "equity_basis_pit_status"] = "announced_on_or_before_observation_date"
     return result
 
 
@@ -65,17 +120,25 @@ def build_airline_historical_pb_valuation(
     *,
     pb_history: pd.DataFrame | None = None,
     drivers: pd.DataFrame | None = None,
+    cathay_basis: pd.DataFrame | None = None,
     working: pd.DataFrame | None = None,
+    market_snapshot: pd.DataFrame | None = None,
     retrieved_at: str | None = None,
 ) -> pd.DataFrame:
     """Build one valuation-summary row per market leg in the priority set."""
 
     pb_history = pb_history if pb_history is not None else pd.read_csv(PB_HISTORY_PATH)
     drivers = drivers if drivers is not None else pd.read_csv(DRIVERS_PATH)
+    cathay_basis = (
+        cathay_basis
+        if cathay_basis is not None
+        else (pd.read_csv(CATHAY_EQUITY_BASIS_PATH) if CATHAY_EQUITY_BASIS_PATH.exists() else pd.DataFrame())
+    )
     working = working if working is not None else pd.read_csv(WORKING_SET_PATH)
     retrieved = retrieved_at or datetime.now(timezone.utc).isoformat()
-    prices = _asset_price_map(working)
-    equity = _equity_rows(drivers)
+    prices = _asset_price_map(working, market_snapshot)
+    working_assets = set(working.get("asset_a", pd.Series(dtype=str)).astype(str)) | set(working.get("asset_b", pd.Series(dtype=str)).astype(str))
+    equity = _equity_frame(drivers, cathay_basis)
     rows: list[dict[str, Any]] = []
 
     for asset, config in PB_CONFIG.items():
@@ -88,7 +151,7 @@ def build_airline_historical_pb_valuation(
         current_pb = _num(latest.get("pb"))
         price = prices.get(asset)
         company = config["company"]
-        equity_row = equity.get(company, pd.Series(dtype=object))
+        equity_row = _equity_row_as_of(equity, company, hist["observation_date"].max() if not hist.empty else pd.NaT)
         equity_usd = _num(equity_row.get("value_usd"))
         equity_period = _text(equity_row.get("statement_period"))
         equity_period_end = _text(equity_row.get("period_end"))
@@ -123,7 +186,7 @@ def build_airline_historical_pb_valuation(
                 "pb_max_1y": float(hist["pb"].max()) if not hist.empty else None,
                 "current_pb_percentile_1y": current_percentile,
                 "current_price_native": price,
-                "current_price_source": "airline_pair_thesis_working_set",
+                "current_price_source": "airline_pair_thesis_working_set" if asset in working_assets else "airline_market_snapshot",
                 "pb_target_return_p25_pct": target_returns["p25"],
                 "pb_target_return_median_pct": target_returns["median"],
                 "pb_target_return_p75_pct": target_returns["p75"],
@@ -131,11 +194,21 @@ def build_airline_historical_pb_valuation(
                 "equity_basis_period_end": equity_period_end,
                 "equity_basis_announced_at": equity_announced,
                 "equity_basis_usd_mn": equity_usd,
-                "valuation_status": "historical_1y_pb_diagnostic_using_latest_primary_equity_pending_1H2026_refresh" if current_pb is not None and equity_usd is not None else "missing_pb_or_equity_basis",
-                "point_in_time_status": "market_pb_history_is_dated; equity_basis_is_latest_available_primary_report_not_1H2026",
+                "valuation_status": (
+                    "historical_1y_pb_diagnostic_using_pit_primary_equity"
+                    if company == "Cathay Pacific" and current_pb is not None and equity_usd is not None
+                    else "historical_1y_pb_diagnostic_using_latest_primary_equity_pending_1H2026_refresh"
+                    if current_pb is not None and equity_usd is not None
+                    else "missing_pb_or_equity_basis"
+                ),
+                "point_in_time_status": (
+                    "market_pb_history_is_dated; equity_basis_announced_on_or_before_pb_observation_end"
+                    if not equity_row.empty
+                    else "market_pb_history_is_dated; no_announced_equity_basis_on_or_before_pb_observation_end"
+                ),
                 "source_quality": "akshare_baidu_pb_plus_primary_issuer_equity",
-                "source_url": f"akshare.{config['function']}(symbol={config['symbol']}, indicator=市净率);airline_official_report_drivers.csv",
-                "source_note": "P/B history is an approximately one-year public Baidu valuation series. Target returns are relative P/B diagnostics; they are not an approved fair value and do not establish P/S/P/E history.",
+                "source_url": f"akshare.{config['function']}(symbol={config['symbol']}, indicator=市净率);{DRIVERS_PATH.name};{CATHAY_EQUITY_BASIS_PATH.name}",
+                "source_note": "P/B history is an approximately one-year public Baidu valuation series. Equity basis is selected by announcement date; target returns are relative P/B diagnostics, not an approved fair value and not a substitute for historical P/S/P/E.",
                 "retrieved_at": retrieved,
             }
         )
@@ -148,6 +221,8 @@ def fetch_airline_historical_pb_valuation() -> pd.DataFrame:
     """Fetch the public P/B history and build the normalized diagnostic."""
 
     import akshare as ak
+
+    from .airline_cathay_equity_basis import fetch_airline_cathay_equity_basis
 
     retrieved = datetime.now(timezone.utc).isoformat()
     history_rows: list[dict[str, object]] = []
@@ -169,7 +244,17 @@ def fetch_airline_historical_pb_valuation() -> pd.DataFrame:
                 }
             )
     history = pd.DataFrame(history_rows)
+    drivers = pd.read_csv(DRIVERS_PATH)
+    cathay_basis = fetch_airline_cathay_equity_basis()
+    equity = _equity_frame(drivers, cathay_basis)
+    history = _annotate_pb_history(history, equity)
     history.to_csv(PB_HISTORY_PATH, index=False)
-    result = build_airline_historical_pb_valuation(retrieved_at=retrieved)
+    market_snapshot = pd.read_csv(MARKET_SNAPSHOT_PATH) if MARKET_SNAPSHOT_PATH.exists() else pd.DataFrame()
+    result = build_airline_historical_pb_valuation(
+        market_snapshot=market_snapshot,
+        drivers=drivers,
+        cathay_basis=cathay_basis,
+        retrieved_at=retrieved,
+    )
     result.to_csv(OUTPUT_PATH, index=False)
     return result

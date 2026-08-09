@@ -33,6 +33,95 @@ EIA_SPOT_PRICES_URLS = {
     "weekly": "https://www.eia.gov/dnav/pet/xls/PET_PRI_SPT_S1_W.xls",
 }
 
+# MOFCOM Data Center's open monthly goods-trade page exposes a free JSON
+# endpoint used as a broad cargo/trade-cycle proxy for airline research.  The
+# endpoint does not expose an announcement vintage, so the source module keeps
+# retrieval date and explicitly labels the data as a latest-snapshot series.
+MOFCOM_MONTHLY_TRADE_PAGE_URL = "https://data.mofcom.gov.cn/hwmy/imexmonth.shtml"
+MOFCOM_MONTHLY_TRADE_QUERY_URL = (
+    "https://data.mofcom.gov.cn/datamofcom/front/totalmonth/query"
+)
+
+# State Post Bureau official national postal/express operating-statistics
+# articles. These are cumulative and latest-month snapshots rather than an
+# airline cargo series; the source module preserves article dates and scope.
+SPB_STATS_INDEX_URL = "https://www.spb.gov.cn/gjyzj/c100276/common_list.shtml"
+SPB_2026_JAN_APR_URL = (
+    "https://www.spb.gov.cn/gjyzj/c100015/c100016/202605/"
+    "37b00bd92ee94f59b15a17f1d803eb84.shtml"
+)
+SPB_2026_H1_URL = (
+    "https://www.spb.gov.cn/gjyzj/c100015/c100016/202607/"
+    "a31abbec99be4e0d80188b1a25fe1fe6.shtml"
+)
+SPB_2025_H1_URL = (
+    "https://www.spb.gov.cn/gjyzj/c100015/c100016/202507/"
+    "433736ca3a9043b5a8b5e8bef1d9c4ed.shtml"
+)
+
+# Official holiday/travel demand control articles.  These are low-frequency
+# event observations, not monthly airline traffic.  Keep each URL as a dated
+# source so model cutoffs can exclude articles published later than the
+# as-of-date.
+MOT_2026_SPRING_TRANSPORT_URL = (
+    "https://www.mot.gov.cn/zhuanti/2026chunyun/gongzuobushu/202603/"
+    "t20260316_4201910.html"
+)
+MCT_2026_SPRING_TOURISM_URL = (
+    "https://mct.gov.cn/whzx/whyw/202602/t20260224_964790.htm"
+)
+MCT_2026_MAY_TOURISM_URL = (
+    "https://www.mct.gov.cn/whzx/whyw/202605/t20260506_965708.htm"
+)
+MCT_2026_DRAGON_BOAT_TOURISM_URL = (
+    "https://www.mct.gov.cn/wlbphone/wlbydd/xxfb/jiaodianxinwen/202606/"
+    "t20260622_966305.html"
+)
+MCT_2025_MAY_TOURISM_URL = (
+    "https://www.mct.gov.cn/whzx/whyw/202505/t20250506_959793.htm"
+)
+
+# CAAC's public monthly transport-statistics index and the linked PDF reports.
+# The index is used to discover the current month/announcement/PDF URL rather
+# than hard-coding one attachment ID in the model layer.
+CAAC_MONTHLY_KPI_INDEX_URL = (
+    "https://www.caac.gov.cn/PHONE/XXGK_17/XXGK/TJSJ/TJSJ_1/"
+)
+CAAC_ENGLISH_MONTHLY_KPI_INDEX_URL_TEMPLATE = (
+    "https://www.caac.gov.cn/English/Research/Data/KPIS/{year}year/"
+)
+CAAC_CHINESE_MONTHLY_KPI_LIST_URL = (
+    "https://www.caac.gov.cn/XXGK/XXGK/TJSJ/index_1215.html"
+)
+# CAAC public summer/autumn 2026 domestic route-licence table.  This is a
+# dated planned-supply event document, not an actual-flight or realized-ASK
+# feed.  Keep the URL in configuration so a later season can be added as a
+# separate vintage rather than overwriting this one.
+CAAC_2026_SUMMER_ROUTE_LICENCE_URL = (
+    "https://www.caac.gov.cn/XXGK/XXGK/TZTG/202603/"
+    "P020260323513975216641.pdf"
+)
+
+# Issuer monthly production-statistics bulletins on CNINFO. These are the
+# same primary-issuer PDFs used by the airport operators for monthly traffic
+# disclosure; keep announcement URLs in configuration so each month can be
+# added as a separate dated vintage.
+SHA_2026_06_TRAFFIC_URL = (
+    "https://static.cninfo.com.cn/finalpage/2026-07-15/1225422839.PDF"
+)
+SZX_2026_05_TRAFFIC_URL = (
+    "https://static.cninfo.com.cn/finalpage/2026-06-13/1225367315.PDF"
+)
+SZX_2026_06_TRAFFIC_URL = (
+    "https://static.cninfo.com.cn/finalpage/2026-07-10/1225416741.PDF"
+)
+CAN_2026_05_TRAFFIC_URL = (
+    "https://static.cninfo.com.cn/finalpage/2026-06-16/1225371938.PDF"
+)
+CAN_2026_06_TRAFFIC_URL = (
+    "https://static.cninfo.com.cn/finalpage/2026-07-15/1225423217.PDF"
+)
+
 # ECB daily reference rates are free and cover the reporting currencies needed
 # to translate USD fuel benchmarks into CNY and HKD.  The parser derives the
 # cross rates from the same-day EUR reference observations.

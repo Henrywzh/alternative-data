@@ -16,6 +16,20 @@ from .sources.td_private_car_net_registration import fetch_td_private_car_net_re
 from .sources.td_vehicle_fleet_stock import fetch_td_vehicle_fleet_stock
 from .sources.mtr_patronage import fetch_mtr_patronage
 from .sources.energy_prices import fetch_eia_airline_energy_prices
+from .sources.airline_cargo_demand import fetch_airline_cargo_demand_proxies
+from .sources.airline_postal_demand import fetch_airline_postal_demand_proxies
+from .sources.airline_travel_demand_events import fetch_airline_travel_demand_events
+from .sources.airline_airport_traffic import fetch_airline_airport_traffic
+from .sources.airline_cargo_airport_bridge import build_airline_cargo_airport_bridge
+from .sources.airline_cargo_yield_bridge import build_airline_cargo_yield_bridge
+from .sources.airline_forward_assumptions import build_airline_forward_assumptions
+from .sources.airline_h1_2026_validation_playbook import build_airline_h1_2026_validation_playbook
+from .sources.airline_cargo_bridge_backtest import build_airline_cargo_bridge_backtest
+from .sources.airline_caac_sector_monthly import fetch_caac_sector_monthly_kpis
+from .sources.airline_caac_sector_proxy_validation import fetch_airline_caac_sector_proxy_validation
+from .sources.airline_caac_route_licence import fetch_caac_route_licence_events
+from .sources.airline_earnings_model_v3 import fetch_airline_earnings_model_v3
+from .sources.airline_fuel_surcharge_recovery import build_airline_fuel_surcharge_recovery
 from .sources.fuel_surcharge import fetch_fuel_surcharge_snapshots
 from .sources.fx_rates import fetch_ecb_airline_fx_rates
 from .sources.airline_financials import fetch_a_share_airline_financial_layers
@@ -31,6 +45,7 @@ from .sources.airline_expectation_bridge import fetch_airline_expectation_bridge
 from .sources.airline_sell_side_revenue import fetch_sell_side_revenue_layers
 from .sources.cathay_annual_drivers import fetch_cathay_annual_drivers
 from .sources.cathay_interim_drivers import fetch_cathay_interim_drivers
+from .sources.airline_cathay_equity_basis import fetch_airline_cathay_equity_basis
 from .sources.airline_fuel_sensitivity import fetch_fuel_sensitivity_scenarios
 from .sources.airline_filing_calendar import fetch_airline_filing_calendar
 from .sources.airline_official_filing_watch import fetch_airline_official_filing_watch
@@ -61,6 +76,7 @@ from .sources.airline_guidance_coverage import fetch_airline_guidance_coverage
 from .sources.airline_sector_external_outlook import fetch_airline_sector_external_outlook
 from .sources.airline_pair_screening import fetch_airline_pair_screening_matrix
 from .sources.airline_factor_diagnostics import fetch_airline_pair_factor_diagnostics
+from .sources.airline_pair_factor_residual_test import fetch_airline_pair_factor_residual_test
 from .sources.airline_yahoo_analyst_snapshot import fetch_airline_yahoo_analyst_snapshot
 from .sources.airline_data_completeness import fetch_airline_data_completeness
 from .sources.airline_operating_freshness import fetch_airline_operating_freshness
@@ -81,6 +97,18 @@ from .sources.airline_pair_thesis_readiness import build_airline_pair_thesis_rea
 from .sources.airline_pre_h1_scenario_bridge import fetch_airline_pre_h1_scenario_bridge
 from .sources.airline_forecast_risk_framework import fetch_airline_forecast_risk_framework
 from .sources.airline_company_financial_forecast import fetch_airline_company_financial_forecast_bridge
+from .sources.airline_forecast_reconciliation import fetch_airline_forecast_reconciliation
+from .sources.airline_h1_kpi_backtest import (
+    fetch_airline_h1_kpi_backtest,
+    fetch_airline_h1_kpi_backtest_comparison,
+)
+from .sources.airline_period_kpi_backtest import fetch_airline_period_kpi_backtest
+from .sources.airline_walk_forward_model_v2 import fetch_airline_walk_forward_model_v2
+from .sources.airline_thesis_v2_inputs import fetch_airline_thesis_v2_inputs
+from .sources.airline_operating_kpi_imputation import fetch_airline_operating_kpi_imputed
+from scripts.recover_cn_airline_source_gaps import fetch_airline_operating_kpi_source_recovered
+from .sources.airline_independent_forecast import fetch_airline_independent_forecast_view
+from .sources.airline_pre_event_trade_candidate import fetch_airline_pre_event_trade_candidate
 from .sources.airline_h1_claim_validation import fetch_airline_h1_claim_validation_queue
 from .sources.airline_juneyao_9air_scope import fetch_airline_juneyao_9air_scope_reconciliation
 from .sources.airline_yield_fuel_hsr_framework import fetch_airline_yield_fuel_hsr_framework
@@ -90,6 +118,8 @@ from .sources.airline_pair_trade_thesis import fetch_airline_pair_trade_thesis_s
 from .sources.airline_pair_valuation_factor_review import fetch_airline_pair_valuation_factor_review
 from .sources.airline_valuation_peer_comparability import fetch_airline_valuation_peer_comparability
 from .sources.airline_historical_pb_valuation import fetch_airline_historical_pb_valuation
+from .sources.airline_free_valuation_history import fetch_airline_free_valuation_history
+from .sources.airline_historical_valuation_bands import fetch_airline_historical_valuation_bands
 from .sources.airline_pair_pb_trade_diagnostic import fetch_airline_pair_pb_trade_diagnostic
 from .sources.airline_pair_risk_budget_sizing import fetch_airline_pair_risk_budget_sizing
 from .sources.airline_pair_direction_decision import fetch_airline_pair_direction_decision
@@ -108,6 +138,66 @@ def main():
     subparsers.add_parser("run-mtr", help="Run MTR patronage ingestion")
     subparsers.add_parser("run-cathay", help="Run Cathay & HKIA traffic ingestion")
     subparsers.add_parser("run-energy-prices", help="Run free EIA daily/weekly crude and jet-fuel ingestion")
+    subparsers.add_parser(
+        "run-airline-cargo-demand",
+        help="Run free MOFCOM monthly goods-trade/cargo-demand proxy ingestion",
+    )
+    subparsers.add_parser(
+        "run-airline-postal-demand",
+        help="Run free State Post Bureau postal/express demand proxy ingestion",
+    )
+    subparsers.add_parser(
+        "run-airline-travel-demand-events",
+        help="Run free MOT/MCT holiday travel-demand event ingestion",
+    )
+    subparsers.add_parser(
+        "run-airline-airport-traffic",
+        help="Run free issuer airport monthly production-statistics ingestion",
+    )
+    subparsers.add_parser(
+        "run-airline-cargo-airport-bridge",
+        help="Build airport-cargo versus company-cargo bridge validation layer",
+    )
+    subparsers.add_parser(
+        "run-airline-cargo-yield-bridge",
+        help="Build forward cargo-revenue bridge from reported yield anchors and tonnage",
+    )
+    subparsers.add_parser(
+        "run-airline-forward-assumptions",
+        help="Build forward tax-rate and FX assumption table",
+    )
+    subparsers.add_parser(
+        "run-airline-h1-2026-validation-playbook",
+        help="Build the H1-2026 report validation reconciliation table",
+    )
+    subparsers.add_parser(
+        "run-airline-cargo-bridge-backtest",
+        help="Backtest the cargo-yield and airport-signal bridges",
+    )
+    subparsers.add_parser(
+        "run-airline-caac-sector",
+        help="Run free CAAC monthly civil-aviation sector KPI PDF ingestion",
+    )
+    subparsers.add_parser(
+        "run-airline-caac-sector-backfill",
+        help="Backfill the free CAAC English monthly sector KPI history for 2025",
+    )
+    subparsers.add_parser(
+        "run-airline-caac-route-licences",
+        help="Run free CAAC seasonal route-licence event ingestion",
+    )
+    subparsers.add_parser(
+        "run-airline-caac-proxy-validation",
+        help="Validate CAAC sector passenger/cargo proxies against issuer operating KPIs",
+    )
+    subparsers.add_parser(
+        "run-airline-earnings-model-v3",
+        help="Build v3 airline unit-economics model with external cargo-demand overlay and KPI coverage",
+    )
+    subparsers.add_parser(
+        "run-airline-fuel-surcharge-recovery",
+        help="Build dated fuel-surcharge-to-EIA-benchmark recovery proxy",
+    )
     subparsers.add_parser("run-fuel-surcharges", help="Run official Cathay and mainland fuel-surcharge ingestion")
     subparsers.add_parser("run-fx-rates", help="Run free ECB USD/CNY and USD/HKD reference-rate ingestion")
     subparsers.add_parser(
@@ -143,6 +233,46 @@ def main():
         help="Build non-directional FY2026 airline driver-to-earnings forecast bridge",
     )
     subparsers.add_parser(
+        "run-airline-forecast-reconciliation",
+        help="Reconcile the broad mechanical bridge with the Spring/Juneyao independent view",
+    )
+    subparsers.add_parser(
+        "run-airline-h1-kpi-backtest",
+        help="Backtest H1 ASK/RPK KPI-to-earnings bridge and build the current 1H2026 nowcast",
+    )
+    subparsers.add_parser(
+        "run-airline-kpi-source-recovery",
+        help="Recover known airline KPI gaps from cached official CNINFO PDFs without changing the raw archive",
+    )
+    subparsers.add_parser(
+        "run-airline-kpi-imputation",
+        help="Build the isolated, auditable research-imputed monthly airline KPI layer",
+    )
+    subparsers.add_parser(
+        "run-airline-h1-kpi-backtest-comparison",
+        help="Compare raw-only and research-imputed H1 KPI backtests",
+    )
+    subparsers.add_parser(
+        "run-airline-period-kpi-backtest",
+        help="Build separate H1/H2/FY KPI-to-earnings calibration with strict and logical-assumption layers",
+    )
+    subparsers.add_parser(
+        "run-airline-walk-forward-model-v2",
+        help="Build leakage-safe walk-forward yield/mix and fuel/non-fuel airline model v2",
+    )
+    subparsers.add_parser(
+        "run-airline-thesis-v2-inputs",
+        help="Join walk-forward forecasts to consensus, revisions, guidance and valuation bands",
+    )
+    subparsers.add_parser(
+        "run-airline-independent-forecast",
+        help="Build the pre-event analyst forecast view for the core Spring/Juneyao pair",
+    )
+    subparsers.add_parser(
+        "run-airline-pre-event-trade-candidate",
+        help="Build the controlled-risk pre-event candidate card for the airline earnings bet",
+    )
+    subparsers.add_parser(
         "run-airline-h1-claim-validation",
         help="Build the formal 1H2026 claim-validation queue for airline research",
     )
@@ -171,12 +301,24 @@ def main():
         help="Stress provisional pair directions for valuation premium, factor gaps and market-scope mismatch",
     )
     subparsers.add_parser(
+        "run-airline-pair-factor-residual-test",
+        help="Run the free-data market/size/value/momentum/low-vol residual test for airline pair spreads",
+    )
+    subparsers.add_parser(
         "run-airline-valuation-peer-comparability",
         help="Build the peer-comparability and historical-valuation evidence gate for priority airline pairs",
     )
     subparsers.add_parser(
         "run-airline-historical-pb-valuation",
         help="Fetch dated public airline P/B history and build asset-value target diagnostics",
+    )
+    subparsers.add_parser(
+        "run-airline-free-valuation-history",
+        help="Fetch free-only historical PE/PB/market-cap and current P/S coverage",
+    )
+    subparsers.add_parser(
+        "run-airline-historical-valuation-bands",
+        help="Build free-only constructed P/S history and PE/PB/P/S valuation bands",
     )
     subparsers.add_parser(
         "run-airline-pair-pb-trade-diagnostic",
@@ -237,6 +379,10 @@ def main():
     subparsers.add_parser(
         "run-cathay-interim-drivers",
         help="Run Cathay 1H2026 official interim-report driver extraction",
+    )
+    subparsers.add_parser(
+        "run-airline-cathay-equity-basis",
+        help="Build the point-in-time Cathay official equity/asset basis for P/B diagnostics",
     )
     subparsers.add_parser(
         "run-airline-fuel-sensitivity",
@@ -445,6 +591,58 @@ def main():
         elif args.command == "run-energy-prices":
             df = fetch_eia_airline_energy_prices()
             print(f"Fetched EIA airline energy prices: {len(df)} records\n", df.tail())
+        elif args.command == "run-airline-cargo-demand":
+            df = fetch_airline_cargo_demand_proxies()
+            print(f"Fetched MOFCOM airline cargo-demand proxies: {len(df)} records\n", df.tail())
+        elif args.command == "run-airline-postal-demand":
+            df = fetch_airline_postal_demand_proxies()
+            print(f"Fetched State Post Bureau postal/express demand proxies: {len(df)} records\n", df.tail())
+        elif args.command == "run-airline-travel-demand-events":
+            df = fetch_airline_travel_demand_events()
+            print(f"Fetched official MOT/MCT travel-demand events: {len(df)} records\n", df.tail(20))
+        elif args.command == "run-airline-airport-traffic":
+            df = fetch_airline_airport_traffic()
+            print(f"Fetched issuer airport monthly production statistics: {len(df)} records\n", df.tail(20))
+        elif args.command == "run-airline-cargo-airport-bridge":
+            df = build_airline_cargo_airport_bridge()
+            print(f"Built airline cargo-airport bridge validation layer: {len(df)} records\n", df)
+        elif args.command == "run-airline-cargo-yield-bridge":
+            df = build_airline_cargo_yield_bridge()
+            print(f"Built airline cargo-yield bridge: {len(df)} records\n", df)
+        elif args.command == "run-airline-forward-assumptions":
+            df = build_airline_forward_assumptions()
+            print(f"Built airline forward tax/FX assumptions: {len(df)} records\n", df)
+        elif args.command == "run-airline-h1-2026-validation-playbook":
+            df = build_airline_h1_2026_validation_playbook()
+            print(f"Built airline H1-2026 validation playbook: {len(df)} records\n", df)
+        elif args.command == "run-airline-cargo-bridge-backtest":
+            df = build_airline_cargo_bridge_backtest()
+            print(f"Built airline cargo-bridge backtest: {len(df)} records\n", df)
+        elif args.command == "run-airline-caac-sector":
+            df = fetch_caac_sector_monthly_kpis()
+            print(f"Fetched CAAC monthly sector KPIs: {len(df)} records\n", df.tail())
+        elif args.command == "run-airline-caac-sector-backfill":
+            df = fetch_caac_sector_monthly_kpis(years=(2025,))
+            print(f"Backfilled CAAC 2025 monthly sector KPIs: {len(df)} records\n", df.tail())
+        elif args.command == "run-airline-caac-route-licences":
+            df = fetch_caac_route_licence_events()
+            print(f"Fetched CAAC seasonal route-licence events: {len(df)} records\n", df.head(20))
+        elif args.command == "run-airline-caac-proxy-validation":
+            result, summary = fetch_airline_caac_sector_proxy_validation()
+            print(
+                f"Built CAAC sector proxy validation: observations={len(result)}, summary={len(summary)}\n",
+                summary.tail(20),
+            )
+        elif args.command == "run-airline-earnings-model-v3":
+            model, coverage = fetch_airline_earnings_model_v3()
+            print(
+                "Built airline earnings model v3: "
+                f"model={len(model)} rows, kpi_coverage={len(coverage)} rows\n",
+                model[["company", "scenario", "cargo_proxy_yoy_pct", "v3_revenue_usd_mn", "v3_net_profit_proxy_usd_mn"]].head(20),
+            )
+        elif args.command == "run-airline-fuel-surcharge-recovery":
+            df = build_airline_fuel_surcharge_recovery()
+            print(f"Built airline fuel-surcharge recovery proxy: {len(df)} records\n", df)
         elif args.command == "run-fuel-surcharges":
             df = fetch_fuel_surcharge_snapshots()
             print(f"Fetched airline fuel surcharges: {len(df)} records\n", df)
@@ -496,6 +694,12 @@ def main():
         elif args.command == "run-cathay-interim-drivers":
             df = fetch_cathay_interim_drivers()
             print(f"Fetched Cathay interim drivers: {len(df)} records\n", df)
+        elif args.command == "run-airline-cathay-equity-basis":
+            df = fetch_airline_cathay_equity_basis()
+            print(
+                f"Built Cathay PIT equity basis: {len(df)} records\n",
+                df[["statement_period", "metric", "value_usd", "announced_at", "source_page"]],
+            )
         elif args.command == "run-airline-fuel-sensitivity":
             df = fetch_fuel_sensitivity_scenarios()
             print(f"Built airline fuel sensitivity scenarios: {len(df)} records\n", df.head())
@@ -646,6 +850,65 @@ def main():
         elif args.command == "run-airline-company-financial-forecast":
             df = fetch_airline_company_financial_forecast_bridge()
             print(f"Built airline company financial forecast bridge: {len(df)} rows\n", df.head())
+        elif args.command == "run-airline-forecast-reconciliation":
+            df = fetch_airline_forecast_reconciliation()
+            print(f"Built airline forecast reconciliation: {len(df)} rows\n", df)
+        elif args.command == "run-airline-h1-kpi-backtest":
+            result, summary = fetch_airline_h1_kpi_backtest()
+            print(
+                f"Built airline H1 KPI backtest: observations={len(result)}, summary={len(summary)}\n",
+                summary,
+            )
+        elif args.command == "run-airline-kpi-source-recovery":
+            result = fetch_airline_operating_kpi_source_recovered()
+            print(f"Built source-recovered airline KPI layer: rows={len(result)}")
+        elif args.command == "run-airline-kpi-imputation":
+            result, audit = fetch_airline_operating_kpi_imputed()
+            print(
+                f"Built research-imputed airline KPI layer: rows={len(result)}, audit={len(audit)}\n",
+                audit.head(20),
+            )
+        elif args.command == "run-airline-h1-kpi-backtest-comparison":
+            raw, imputed, comparison = fetch_airline_h1_kpi_backtest_comparison()
+            print(
+                f"Built raw/imputed H1 KPI backtest comparison: raw={len(raw)}, imputed={len(imputed)}, comparison={len(comparison)}\n",
+                comparison,
+            )
+        elif args.command == "run-airline-period-kpi-backtest":
+            strict, logical, comparison, diagnostics = fetch_airline_period_kpi_backtest()
+            print(
+                "Built separate H1/H2/FY airline KPI calibration: "
+                f"strict={len(strict)}, logical={len(logical)}, "
+                f"model_comparison={len(comparison)}, spring_diagnostics={len(diagnostics)}\n",
+                comparison,
+            )
+        elif args.command == "run-airline-walk-forward-model-v2":
+            detail, summary, current, comparison = fetch_airline_walk_forward_model_v2()
+            print(
+                "Built airline walk-forward v2: "
+                f"detail={len(detail)}, summary={len(summary)}, "
+                f"current_forecast={len(current)}, comparison={len(comparison)}\n",
+                summary.head(30),
+            )
+        elif args.command == "run-airline-thesis-v2-inputs":
+            coverage, forecast, pairs = fetch_airline_thesis_v2_inputs()
+            print(
+                "Built airline thesis v2 inputs: "
+                f"coverage={len(coverage)}, forecast={len(forecast)}, pairs={len(pairs)}\n",
+                pairs[["pair_id", "direction_status", "pair_data_readiness_status", "blocking_items"]],
+            )
+        elif args.command == "run-airline-independent-forecast":
+            df = fetch_airline_independent_forecast_view()
+            print(
+                f"Built airline independent pre-event forecast view: {len(df)} rows\n",
+                df[["company", "scenario", "independent_profit_usd_mn", "profit_gap_vs_consensus_pct", "view_direction"]],
+            )
+        elif args.command == "run-airline-pre-event-trade-candidate":
+            df = fetch_airline_pre_event_trade_candidate()
+            print(
+                f"Built airline pre-event trade candidate card: {len(df)} rows\n",
+                df[["pair_id", "candidate_status", "direction", "independent_beta_hedged_payoff_pct", "valuation_payoff_low_pct", "diagnostic_gross_notional_pct_nav"]],
+            )
         elif args.command == "run-airline-h1-claim-validation":
             df = fetch_airline_h1_claim_validation_queue()
             print(f"Built airline H1 claim-validation queue: {len(df)} rows\n", df.head())
@@ -676,6 +939,12 @@ def main():
         elif args.command == "run-airline-pair-valuation-factor-review":
             df = fetch_airline_pair_valuation_factor_review()
             print(f"Built airline pair valuation/factor review: {len(df)} rows\n", df[["pair_id", "base_beta_hedged_payoff_pct", "long_multiple_compression_10pct_payoff_pct", "factor_risk_status", "trade_readiness_status"]])
+        elif args.command == "run-airline-pair-factor-residual-test":
+            df = fetch_airline_pair_factor_residual_test()
+            print(
+                f"Built airline pair factor residual test: {len(df)} rows\n",
+                df[["pair_id", "observations", "alpha_annualized_pct", "r_squared", "residual_max_drawdown_pct", "regression_status"]],
+            )
         elif args.command == "run-airline-valuation-peer-comparability":
             df = fetch_airline_valuation_peer_comparability()
             print(
@@ -687,6 +956,18 @@ def main():
             print(
                 f"Built airline historical P/B valuation diagnostics: {len(df)} rows\n",
                 df[["asset", "company", "current_pb", "pb_median_1y", "current_pb_percentile_1y", "valuation_status"]],
+            )
+        elif args.command == "run-airline-free-valuation-history":
+            df = fetch_airline_free_valuation_history()
+            print(
+                f"Built free-only airline valuation coverage matrix: {len(df)} rows\n",
+                df[["asset", "metric", "coverage_status", "observation_count", "observation_start_date", "observation_end_date"]],
+            )
+        elif args.command == "run-airline-historical-valuation-bands":
+            df = fetch_airline_historical_valuation_bands()
+            print(
+                f"Built free-only airline historical valuation bands: {len(df)} rows\n",
+                df[["asset", "metric", "window", "observation_count", "current_value", "current_percentile_positive"]].head(24),
             )
         elif args.command == "run-airline-pair-pb-trade-diagnostic":
             df = fetch_airline_pair_pb_trade_diagnostic()

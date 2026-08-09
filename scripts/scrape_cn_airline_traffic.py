@@ -83,6 +83,27 @@ def _clean_val(val: str) -> float:
         return 0.0
 
 
+def _first_value_cell(clean_row: list[str], start: int = 1) -> tuple[str, int]:
+    """Return the first usable value cell in a parsed table row.
+
+    Some issuers render a metric/region block with a leading empty column that
+    pdfplumber preserves, so the value lands in ``clean_row[2]`` instead of
+    ``clean_row[1]`` (confirmed on Juneyao 2020+ AFTK/RFTK and Spring 2016
+    freight load-factor blocks).  Scanning for the first cell whose numeric
+    parse is non-zero (or an explicit zero marker) recovers those values while
+    leaving ordinary rows where the value is already in ``clean_row[1]``
+    unchanged.
+    """
+    for index in range(start, len(clean_row)):
+        cell = clean_row[index]
+        if not cell:
+            continue
+        marker = cell.replace(" ", "").strip()
+        if marker in _EXPLICIT_ZERO_MARKERS or _clean_val(cell) != 0.0:
+            return cell, index
+    return "", -1
+
+
 def fetch_announcements(code: str, org_id: str, searchkey: str, start_year: str = "2015-01-01") -> list[dict]:
     """Fetch all monthly operating data announcements from Cninfo with full pagination."""
     ctx = ssl._create_unverified_context()
@@ -202,28 +223,31 @@ def download_pdf(url: str, cache_dir: Path) -> bytes | None:
 # from March 2019 onward. Without it, every China Southern PDF before that
 # date silently drops its whole ASK breakdown.
 _ASK_KEYWORDS = ("可用座位公里", "可利用座公里", "可用座公里", "可利用客公里")
-_RPK_KEYWORDS = ("收入客公里", "客运人公里", "旅客周转量")
+_RPK_KEYWORDS = ("收入客公里", "客运人公里", "旅客周转量", "客运人公里")
 _PASSENGERS_KEYWORDS = ("乘客人数", "载客人数", "载运旅客人次", "总载运人次")
 _LOAD_FACTOR_KEYWORDS = ("客座利用率", "客座率")
 _AFTK_KEYWORDS = (
     "可用货运吨公里", "可用货邮吨公里", "可用货邮吨公里数",
     "可利用货邮吨公里", "可利用吨公里——货邮运", "可利用吨公里—货邮运",
-    "可利用吨公里-货邮运",
+    "可利用吨公里-货邮运", "可用货邮吨公", "（AFTK）", "(AFTK)",
 )
 _RFTK_KEYWORDS = (
     "收入货运吨公里", "收入货邮吨公里", "收入吨公里——货邮运",
     "收入吨公里—货邮运", "收入吨公里-货邮运", "货邮载运吨公里", "货邮周转量",
+    "（RFTK）", "(RFTK)",
 )
 _CARGO_TONNES_KEYWORDS = (
     "货运及邮运量", "货物及邮件数量", "货物及邮件", "货邮载运量", "货邮载重量",
 )
-_FREIGHT_LOAD_FACTOR_KEYWORDS = ("货物及邮件载运率", "货邮载运率")
+_FREIGHT_LOAD_FACTOR_KEYWORDS = (
+    "货物及邮件载运率", "货物及邮件载运", "货邮载运率",
+)
 _OVERALL_LOAD_FACTOR_KEYWORDS = ("综合载运率", "总体载运率")
 _ATK_KEYWORDS = ("可利用吨公里", "可用吨公里数", "可用吨公里")
 _RTK_KEYWORDS = ("收入吨公里", "运输周转量")
 _AUXILIARY_METRICS = {
     "aftk", "rftk", "cargo_tonnes", "freight_load_factor_pct",
-    "overall_load_factor_pct", "atk", "rtk",
+    "overall_load_factor_pct", "atk", "rtk", "ask", "rpk",
 }
 
 # Generic table column-header row repeated at the top of every page a table
@@ -262,7 +286,26 @@ _REGION_MAP = {
 # rows after it (see the blank-first_cell handling in parse_airline_pdf).
 _REGION_ORDER = ("Domestic", "International", "Regional")
 _PASSENGER_HEADER_CONTINUATIONS = {"次）", "次)"}
+_ASK_RPK_HEADER_CONTINUATION_MARKERS = {
+    "里)", "里）", "公里)", "公里）",
+}
 _EXPLICIT_ZERO_MARKERS = {"-", "—", "–", "－", "0", "0.0", "0.00"}
+_NUMERIC_CELL_RE = re.compile(r"^[+-]?[\d,]+(?:\.\d+)?%?$")
+
+
+def _first_numeric_cell(cells: list[str], *, start: int = 1) -> tuple[int | None, str | None]:
+    """Return the first current-period numeric cell in a table row.
+
+    Several issuer PDFs leave the current-period column blank in the second
+    extracted cell after a page break, while the value is still present in the
+    third cell.  The first numeric cell is the current-period value in these
+    tables; later numeric cells are growth/cumulative columns.
+    """
+    for index, cell in enumerate(cells[start:], start=start):
+        compact = cell.replace(" ", "").strip()
+        if _NUMERIC_CELL_RE.fullmatch(compact) or compact in _EXPLICIT_ZERO_MARKERS:
+            return index, cell
+    return None, None
 
 
 def _classify_metric_header(first_cell: str) -> str | None:
@@ -335,6 +378,238 @@ def _is_unit_continuation(cell: str) -> bool:
     return bool(_UNIT_CONTINUATION_RE.match(compact))
 
 
+def _is_ask_rpk_header_continuation(cell: str, current_section: str | None) -> bool:
+    """Keep ASK/RPK active when an issuer splits only the unit onto a page.
+
+    Juneyao's 2019-12 ASK header ends page one with ``(万人公`` and starts
+    page two with ``里)``.  Its 2020-02 RPK header similarly leaves
+    ``(RPK)(万人公里)`` as the first row on the next page.  These rows are
+    header continuations, not new unknown sections; resetting the active
+    metric drops every region value that follows.
+    """
+    if current_section not in {"ask", "rpk"}:
+        return False
+    compact = cell.replace(" ", "")
+    if compact in _ASK_RPK_HEADER_CONTINUATION_MARKERS:
+        return True
+    return bool(
+        compact.startswith(("(", "（"))
+        and current_section.upper() in compact
+        and "公里" in compact
+        and not re.search(r"\d", compact)
+    )
+
+
+def _recover_southern_2019_06_shifted_rows(
+    pdf_bytes: bytes,
+    month_key: str,
+) -> list[dict]:
+    """Recover China Southern's 2019-06 page-break-shifted table blocks.
+
+    In this one cached issuer PDF, pdfplumber places the first value of each
+    block on the metric-header row and shifts the following labels one row
+    behind the values.  For example, the RPK block is extracted as:
+
+    ``header=15,453.20; 国内=314.09; 地区=6,995.79; 国际=22,763.08``.
+
+    The official table's arithmetic confirms the mapping is
+    ``Domestic=15,453.20, Regional=314.09, International=6,995.79,
+    Total=22,763.08``.  The repair is deliberately gated to this exact
+    carrier/month and to the arithmetic/label pattern; it never guesses a
+    generic row shift for another PDF.
+    """
+    recovered: list[dict] = []
+    current: dict | None = None
+
+    def flush() -> None:
+        nonlocal current
+        if not current:
+            return
+        metric = current["metric"]
+        entries = current["regions"]
+        labels = [label for label, _ in entries]
+        values = [value for _, value in entries]
+        note = (
+            "Recovered from the official CNINFO PDF table after validating the "
+            "page-break row shift and regional-sum identity; raw parser output "
+            "was incomplete or region-misaligned."
+        )
+
+        if (
+            current.get("header_value") is not None
+            and labels == ["Domestic", "Regional", "International"]
+            and len(values) == 3
+        ):
+            shifted_values = [current["header_value"], *values]
+            sum_tolerance = max(0.05, abs(shifted_values[3]) * 0.00001)
+            if metric == "cargo_tonnes":
+                # The issuer reports this block in thousand tonnes rounded to
+                # two decimals; converting each displayed slice to tonnes can
+                # leave a small sum mismatch even when the table is correct.
+                sum_tolerance = max(20.0, abs(shifted_values[3]) * 0.0002)
+            level_sum_matches = abs(
+                sum(shifted_values[:3]) - shifted_values[3]
+            ) <= sum_tolerance
+            ratio_values_are_valid = (
+                metric == "passenger_load_factor_pct"
+                and all(0 <= value <= 100 for value in shifted_values)
+            )
+            if level_sum_matches or ratio_values_are_valid:
+                mapped = {
+                    "Domestic": shifted_values[0],
+                    "Regional": shifted_values[1],
+                    "International": shifted_values[2],
+                    "Total": shifted_values[3],
+                }
+                for region, value in mapped.items():
+                    recovered.append(
+                        {
+                            "month": month_key,
+                            "date": f"{month_key}-01",
+                            "airline_code": "600029",
+                            "region": region,
+                            "metric": metric,
+                            "value": value,
+                            "recovery_method": "pdf_table_shift_recovery",
+                            "recovery_note": note,
+                        }
+                    )
+        elif (
+            current.get("header_value") is not None
+            and metric == "ask"
+            and labels == ["Domestic", "Regional"]
+            and len(values) == 2
+        ):
+            # The ASK block also crosses a page boundary in this PDF: the
+            # International value is the last extracted row on page three and
+            # the Total value is rendered as a bare page-four text line that
+            # pdfplumber does not place in the table.  The official Total is
+            # exactly the sum of the three disclosed region values, so derive
+            # it transparently instead of interpolating it.
+            mapped = {
+                "Domestic": current["header_value"],
+                "Regional": values[0],
+                "International": values[1],
+                "Total": current["header_value"] + values[0] + values[1],
+            }
+            for region, value in mapped.items():
+                recovered.append(
+                    {
+                        "month": month_key,
+                        "date": f"{month_key}-01",
+                        "airline_code": "600029",
+                        "region": region,
+                        "metric": metric,
+                        "value": value,
+                        "recovery_method": "pdf_table_shift_recovery_sum_total",
+                        "recovery_note": (
+                            "Recovered from the official CNINFO PDF; the page-break "
+                            "dropped the rendered Total table cell, which is the "
+                            "exact sum of the three disclosed regions."
+                        ),
+                    }
+                )
+        elif (
+            metric == "overall_load_factor_pct"
+            and current.get("blank_value") is not None
+            and labels == ["Domestic", "Regional", "International"]
+            and len(values) == 3
+        ):
+            mapped = {
+                "Total": current["blank_value"],
+                "Domestic": values[0],
+                "Regional": values[1],
+                "International": values[2],
+            }
+            for region, value in mapped.items():
+                recovered.append(
+                    {
+                        "month": month_key,
+                        "date": f"{month_key}-01",
+                        "airline_code": "600029",
+                        "region": region,
+                        "metric": metric,
+                        "value": value,
+                        "recovery_method": "pdf_table_shift_recovery",
+                        "recovery_note": note,
+                    }
+                )
+        current = None
+
+    try:
+        with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
+            for page in pdf.pages:
+                for table in page.extract_tables():
+                    for row in table:
+                        if not row or not any(row):
+                            continue
+                        clean_row = [
+                            str(cell).replace("\n", " ").strip() if cell else ""
+                            for cell in row
+                        ]
+                        first_cell = clean_row[0]
+                        second_cell = clean_row[1] if len(clean_row) > 1 else ""
+                        header_text = f"{first_cell} {second_cell}".strip()
+                        metric = _classify_metric_header(header_text)
+                        before_newline = (
+                            str(row[1]).split("\n", 1)[0]
+                            if len(row) > 1 and row[1]
+                            else ""
+                        )
+                        has_merged_annotation = bool(
+                            re.search(r"[^\d,.\-%\s]", before_newline)
+                        )
+
+                        if metric and (
+                            has_merged_annotation
+                            or (
+                                metric == "overall_load_factor_pct"
+                                and "总体载运率" in first_cell
+                            )
+                        ):
+                            flush()
+                            scale = _metric_unit_scale(header_text, metric)
+                            header_value = None
+                            if second_cell:
+                                candidate = _clean_val(second_cell) * scale
+                                if candidate > 0:
+                                    header_value = candidate
+                            current = {
+                                "metric": metric,
+                                "scale": scale,
+                                "header_value": header_value,
+                                "blank_value": None,
+                                "regions": [],
+                            }
+                            continue
+
+                        if current is None:
+                            continue
+                        if first_cell == "合计" and not second_cell:
+                            # In the Southern 2019-06 extraction artifact a
+                            # blank 合计 row terminates each shifted block.
+                            # Flush before the next ordinary metric header so
+                            # a later block's regional rows cannot be appended
+                            # to the preceding passenger/level block.
+                            flush()
+                            continue
+                        region = _REGION_MAP.get(first_cell)
+                        if region in _REGION_ORDER and second_cell:
+                            value = _clean_val(second_cell) * current["scale"]
+                            current["regions"].append((region, value))
+                        elif not first_cell and second_cell:
+                            value = _clean_val(second_cell) * current["scale"]
+                            if value > 0:
+                                current["blank_value"] = value
+        flush()
+    except Exception:
+        # The normal parser remains authoritative if a recovery probe cannot
+        # inspect the cached PDF.  Do not manufacture rows from a failed probe.
+        return []
+
+    return recovered
+
+
 def _ask_rpk_unit_scale(header_cell: str) -> float:
     """Return the multiplier that converts an ASK/RPK value in
     `header_cell`'s stated unit to a common "million" basis.
@@ -368,8 +643,11 @@ def parse_airline_pdf(pdf_bytes: bytes, airline_code: str, month_key: str) -> li
     seen: set[tuple[str, str]] = set()  # (metric, region) already recorded in this PDF
     current_section = None
     current_scale = 1.0
+    current_header_text = ""
+    recovery_sections: set[str] = set()
     region_idx = 0  # position within _REGION_ORDER for the active section
     pending_auxiliary_header: tuple[str, str, str] | None = None
+    pending_auxiliary_total_header: tuple[str, str] | None = None
 
     def should_record(raw_value: str, value: float) -> bool:
         """Keep positive observations and explicit source zero markers.
@@ -408,6 +686,16 @@ def parse_airline_pdf(pdf_bytes: bytes, airline_code: str, month_key: str) -> li
             "metric": current_section,
             "value": value,
         })
+        if current_section in recovery_sections:
+            records[-1].update(
+                {
+                    "recovery_method": "split_header_continuation",
+                    "recovery_note": (
+                        "Recovered after preserving the active metric across an "
+                        "issuer PDF page-break header continuation."
+                    ),
+                }
+            )
 
     # A region-breakdown row (Domestic/International/Regional) that happens to
     # fall as the very first line of text on a new page is sometimes dropped
@@ -471,6 +759,23 @@ def parse_airline_pdf(pdf_bytes: bytes, airline_code: str, month_key: str) -> li
                         first_cell = clean_row[0]
 
                         if not first_cell:
+                            # A few Juneyao tables put an auxiliary metric's
+                            # Total value on a blank-first-cell row after the
+                            # header (the current value is often cell[2]).
+                            # Preserve it as Total before using the same blank
+                            # cell as a positional region-label recovery.
+                            if pending_auxiliary_total_header:
+                                pending_metric, pending_header = pending_auxiliary_total_header
+                                _, value_cell = _first_numeric_cell(clean_row)
+                                if value_cell is not None:
+                                    scale = _metric_unit_scale(pending_header, pending_metric)
+                                    value = _clean_val(value_cell) * scale
+                                    if should_record(value_cell, value):
+                                        current_section = pending_metric
+                                        record("Total", value)
+                                    pending_auxiliary_total_header = None
+                                    region_idx = 0
+                                    continue
                             # Page-break artifact: pdfplumber sometimes fails
                             # to extract the leading region label for the row
                             # that opens a new page, even though its value
@@ -487,10 +792,20 @@ def parse_airline_pdf(pdf_bytes: bytes, airline_code: str, month_key: str) -> li
                             if current_section and region_idx < len(_REGION_ORDER) and len(clean_row) > 1:
                                 region = _REGION_ORDER[region_idx]
                                 region_idx += 1
-                                val = _clean_val(clean_row[1]) * current_scale
-                                if should_record(clean_row[1], val):
+                                _, value_cell = _first_numeric_cell(clean_row)
+                                if value_cell is None:
+                                    continue
+                                val = _clean_val(value_cell) * current_scale
+                                if should_record(value_cell, val):
                                     record(region, val)
                             continue
+
+                        # The blank-first-cell Total continuation must be
+                        # consumed immediately after the header.  If the
+                        # issuer goes straight to a labelled Domestic row,
+                        # there is no hidden Total to carry forward.
+                        if pending_auxiliary_total_header:
+                            pending_auxiliary_total_header = None
 
                         # Some PDFs put an auxiliary metric's unit on a
                         # separate row/page immediately after the header row.
@@ -516,6 +831,16 @@ def parse_airline_pdf(pdf_bytes: bytes, airline_code: str, month_key: str) -> li
                             if header_value > 0:
                                 record("Total", header_value)
                             pending_auxiliary_header = None
+                            # Juneyao's freight load-factor header wraps as
+                            # "货物及邮件载运" + a lone "率" continuation row
+                            # on the next page.  The Total is already recorded
+                            # above; the continuation row must not reset the
+                            # section or the following region rows are dropped.
+                            if (
+                                pending_metric == "freight_load_factor_pct"
+                                and first_cell.replace(" ", "") == "率"
+                            ):
+                                continue
 
                         if first_cell in _TABLE_HEADER_REPEAT_MARKERS:
                             continue
@@ -530,6 +855,20 @@ def parse_airline_pdf(pdf_bytes: bytes, airline_code: str, month_key: str) -> li
                             current_section == "passengers"
                             and first_cell in _PASSENGER_HEADER_CONTINUATIONS
                         ):
+                            continue
+
+                        # ASK/RPK headers can leave only their unit/code on
+                        # the next page.  Preserve the active section so the
+                        # following Domestic/International/Regional rows are
+                        # still attached to the correct metric.
+                        if _is_ask_rpk_header_continuation(
+                            first_cell, current_section
+                        ):
+                            recovery_sections.add(current_section)
+                            current_scale = _metric_unit_scale(
+                                f"{current_header_text} {first_cell}",
+                                current_section,
+                            )
                             continue
 
                         region = _REGION_MAP.get(first_cell)
@@ -588,6 +927,7 @@ def parse_airline_pdf(pdf_bytes: bytes, airline_code: str, month_key: str) -> li
                                 continue
 
                             current_section = metric
+                            current_header_text = first_cell
                             current_scale = _metric_unit_scale(first_cell, metric) if metric else 1.0
                             # Air China, China Eastern, Spring Airlines and
                             # Juneyao often put the month's all-operation
@@ -597,7 +937,12 @@ def parse_airline_pdf(pdf_bytes: bytes, airline_code: str, month_key: str) -> li
                             # passenger metrics retain their long-standing
                             # region-row behavior and derived-total logic.
                             if metric in _AUXILIARY_METRICS and len(clean_row) > 1:
-                                header_value = _clean_val(clean_row[1]) * current_scale
+                                _, header_raw_value = _first_numeric_cell(clean_row)
+                                header_value = (
+                                    _clean_val(header_raw_value) * current_scale
+                                    if header_raw_value is not None
+                                    else 0.0
+                                )
                                 # Blank header cells are common when the
                                 # issuer prints a separate region/Total row;
                                 # do not turn that blank into a reported 0.0
@@ -614,22 +959,138 @@ def parse_airline_pdf(pdf_bytes: bytes, airline_code: str, month_key: str) -> li
                                     # the default scale on the next iteration.
                                     if _metric_unit_scale(first_cell, metric) == 1.0:
                                         pending_auxiliary_header = (
-                                            metric, clean_row[1], first_cell
+                                            metric, header_raw_value, first_cell
                                         )
                                     else:
                                         record("Total", header_value)
+                                elif header_raw_value is None:
+                                    pending_auxiliary_total_header = (metric, first_cell)
                             region_idx = 0
                             continue
 
                         if region and current_section and len(clean_row) > 1:
-                            val_str = clean_row[1]
+                            _, val_str = _first_numeric_cell(clean_row)
+                            if val_str is None:
+                                continue
                             val = _clean_val(val_str) * current_scale
                             if should_record(val_str, val):
                                 record(region, val)
     except Exception as exc:
         print(f"  Error parsing PDF for {airline_code} {month_key}: {exc}")
 
-    return records
+    # China Southern's 2019-06 PDF has a separate, validated page-break row
+    # shift that cannot be repaired by simply preserving the current section.
+    # Append the official-PDF recovery rows after normal parsing so the
+    # caller's first-wins de-duplication can replace any misaligned rows from
+    # the generic parser without changing other months.
+    if airline_code == "600029" and month_key == "2019-06":
+        records.extend(
+            _recover_southern_2019_06_shifted_rows(pdf_bytes, month_key)
+        )
+
+    # Air China's 2023-10 modern-format PDF starts page 3 with the three
+    # regional RFTK rows, while the RFTK header/Total row is the last text line
+    # on page 2 and is omitted from the page-3 table structure.  The visible
+    # text is unambiguous, so recover this one known page-break pattern from
+    # the official text layer rather than leaving RFTK to interpolation.
+    if airline_code == "601111" and month_key == "2023-10":
+        text = _pdf_text(pdf_bytes)
+        lines = [re.sub(r"\s+", " ", line).strip() for line in text.splitlines()]
+        header_index = next(
+            (
+                index
+                for index, line in enumerate(lines)
+                if "收入货运吨公里(" in line and "按收入货运吨公里计" not in line
+            ),
+            None,
+        )
+        if header_index is not None:
+            header_match = re.search(
+                r"\)\d*\s+(-?[\d,]+(?:\.\d+)?)", lines[header_index]
+            )
+            regional_values: dict[str, float] = {}
+            for line in lines[header_index + 1 : header_index + 12]:
+                for label, region in (
+                    ("其中: 国内航线", "Domestic"),
+                    ("国内航线", "Domestic"),
+                    ("国际航线", "International"),
+                    ("地区航线", "Regional"),
+                ):
+                    if label in line and region not in regional_values:
+                        value_match = re.search(r"\s(-?[\d,]+(?:\.\d+)?)", line.split(label, 1)[1])
+                        if value_match:
+                            regional_values[region] = _clean_val(value_match.group(1))
+                        break
+            if header_match and len(regional_values) == 3:
+                mapping = {
+                    "Total": _clean_val(header_match.group(1)),
+                    **regional_values,
+                }
+                for region, value in mapping.items():
+                    records.append(
+                        {
+                            "month": month_key,
+                            "date": f"{month_key}-01",
+                            "airline_code": airline_code,
+                            "region": region,
+                            "metric": "rftk",
+                            "value": value,
+                            "recovery_method": "page_text_rftk_recovery",
+                            "recovery_note": (
+                                "Recovered from the official Air China PDF text layer; the page-break omitted the RFTK header/Total row from the table extraction."
+                            ),
+                        }
+                    )
+
+    # A small set of Air China modern-format pages exposes the metric rows in
+    # the text layer but pdfplumber produces no table at all.  Recover the
+    # current-period Total value from the stated unit/footnote pattern.  The
+    # scope is exact so this cannot turn an arbitrary prose number into KPI.
+    air_china_text_targets = {
+        "2021-08": (("可用座位公里(", "ask"),),
+        "2023-12": (("收入客公里(", "rpk"),),
+    }
+    if airline_code == "601111" and month_key in air_china_text_targets:
+        text = _pdf_text(pdf_bytes)
+        lines = [re.sub(r"\s+", " ", line).strip() for line in text.splitlines()]
+        for label_options in air_china_text_targets[month_key]:
+            label, metric = label_options
+            header_index = next(
+                (
+                    index
+                    for index, line in enumerate(lines)
+                    if label in line and "按" not in line
+                ),
+                None,
+            )
+            if header_index is None:
+                continue
+            match = re.search(r"\)\d*\s+(-?[\d,]+(?:\.\d+)?)", lines[header_index])
+            if not match:
+                continue
+            records.append(
+                {
+                    "month": month_key,
+                    "date": f"{month_key}-01",
+                    "airline_code": airline_code,
+                    "region": "Total",
+                    "metric": metric,
+                    "value": _clean_val(match.group(1)),
+                    "recovery_method": "page_text_modern_format_recovery",
+                    "recovery_note": (
+                        "Recovered from the official Air China PDF text layer; pdfplumber did not expose the modern-format metric table."
+                    ),
+                }
+            )
+
+    # The targeted recovery above intentionally comes after the generic
+    # parser.  Deduplicate here as well as in ``collect_airline_data`` so a
+    # direct parser call has the same last-wins semantics and cannot expose a
+    # stale misaligned row alongside the recovered official value.
+    deduped: dict[tuple[str, str], dict] = {}
+    for row in records:
+        deduped[(row["metric"], row["region"])] = row
+    return list(deduped.values())
 
 
 def _pdf_text(pdf_bytes: bytes) -> str:
@@ -855,6 +1316,10 @@ def collect_airline_data(
                 rows = parse_airline_pdf(pdf_bytes, code, month_key)
                 for row in rows:
                     row.update(pit_metadata)
+                    if row.get("recovery_method"):
+                        row["source_quality"] = (
+                            "issuer_cninfo_operating_release_recovered"
+                        )
                 all_rows.extend(rows)
                 if events_out is not None:
                     event_rows = parse_airline_events(pdf_bytes, code, month_key)

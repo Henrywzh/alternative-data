@@ -7,16 +7,31 @@ from src.hk_transport.sources.airline_valuation_peer_comparability import (
 )
 
 
-def test_priority_pairs_are_blocked_when_historical_market_series_is_missing() -> None:
+def test_priority_pairs_use_free_historical_valuation_bands_but_remain_scope_blocked() -> None:
     frame = build_airline_valuation_peer_comparability(retrieved_at="2026-08-08T00:00:00+00:00")
     assert len(frame) == 5
     assert frame.pair_id.is_unique
+    assert frame.historical_market_multiple_status_a.str.startswith("free_dated_").all()
+    assert frame.historical_market_multiple_status_b.str.startswith("free_dated_").all()
+    assert frame.valuation_method_status.eq("current_relative_ps_plus_free_historical_valuation_bands").all()
+    assert frame.valuation_target_readiness.eq("not_ready_business_model_not_like_for_like").all()
+    assert frame.historical_ps_annual_median_3y_a.notna().all()
+    assert frame.historical_ps_annual_median_3y_b.notna().all()
+    assert frame.historical_pb_status_a.eq("dated_1y_pb_history_available").all()
+    assert frame.historical_pb_status_b.eq("dated_1y_pb_history_available").all()
+
+
+def test_priority_pairs_fall_back_to_missing_gate_without_free_layer() -> None:
+    frame = build_airline_valuation_peer_comparability(
+        free_history=pd.DataFrame(),
+        free_current=pd.DataFrame(),
+        valuation_bands=pd.DataFrame(),
+        retrieved_at="2026-08-08T00:00:00+00:00",
+    )
     assert frame.historical_market_multiple_status_a.eq("missing_historical_price_market_cap_series").all()
     assert frame.historical_market_multiple_status_b.eq("missing_historical_price_market_cap_series").all()
     assert frame.valuation_method_status.eq("current_relative_ps_only_no_historical_multiple").all()
     assert frame.valuation_target_readiness.eq("not_ready_missing_historical_multiple_evidence").all()
-    assert frame.historical_pb_status_a.eq("dated_1y_pb_history_available").all()
-    assert frame.historical_pb_status_b.eq("dated_1y_pb_history_available").all()
 
 
 def test_business_model_classes_make_spring_pairs_explicitly_non_like_for_like() -> None:
@@ -51,7 +66,9 @@ def test_injected_same_model_market_series_can_clear_the_missing_history_gate() 
         ]
     )
     frame = build_airline_valuation_peer_comparability(
-        fundamentals=fundamentals, history=history, working=working, retrieved_at="2026-08-08T00:00:00+00:00"
+        fundamentals=fundamentals, history=history, working=working,
+        free_history=pd.DataFrame(), free_current=pd.DataFrame(), valuation_bands=pd.DataFrame(),
+        retrieved_at="2026-08-08T00:00:00+00:00"
     )
     row = frame.iloc[0]
     assert row.valuation_method_status == "current_relative_ps_with_historical_market_series_check_pending"

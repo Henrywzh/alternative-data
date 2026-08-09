@@ -19,6 +19,7 @@ def test_direction_gate_distinguishes_alignment_from_conflict() -> None:
     assert row.direction_concordance == "earnings_and_pb_direction_aligned"
     assert row.selected_direction == "long A Co / short B Co"
     assert row.selected_direction_status == "provisional_candidate_not_trade_ready"
+    assert row.pre_event_independent_view_status == "not_available_for_pair"
 
 
 def test_priority_set_has_only_two_direction_concordant_candidates() -> None:
@@ -31,3 +32,12 @@ def test_priority_set_has_only_two_direction_concordant_candidates() -> None:
     assert frame.selected_direction_status.eq("no_direction_due_revision_unconfirmed").sum() == 2
     assert frame.revision_confirmation_status.eq("not_confirmed_no_signal").sum() == 4
     assert frame.revision_confirmation_status.eq("not_confirmed_missing_leg_signal").sum() == 1
+
+
+def test_spring_juneyao_has_a_pre_event_view_even_though_trade_gate_is_open() -> None:
+    frame = build_airline_pair_direction_decision()
+    row = frame.loc[frame.pair_id.eq("601021.SH__603885.SH")].iloc[0]
+    assert row.pre_event_independent_view_status == "pre_event_view_defined"
+    assert row.pre_event_independent_direction == "long Spring Airlines / short Juneyao Airlines"
+    assert row.pre_event_independent_profit_gap_spread_pct > 30.0
+    assert row.selected_direction_status == "no_direction_due_valuation_conflict"

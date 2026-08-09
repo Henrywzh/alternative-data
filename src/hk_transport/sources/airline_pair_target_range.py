@@ -10,6 +10,7 @@ from ..config import NORMALIZED_DIR
 
 TRADE_PATH = NORMALIZED_DIR / "airline_pair_trade_thesis_scenarios.csv"
 PB_PATH = NORMALIZED_DIR / "airline_pair_pb_trade_diagnostic.csv"
+BANDS_PATH = NORMALIZED_DIR / "airline_historical_valuation_bands.csv"
 DIRECTION_PATH = NORMALIZED_DIR / "airline_pair_direction_decision.csv"
 OUTPUT_PATH = NORMALIZED_DIR / "airline_pair_target_range.csv"
 
@@ -122,13 +123,13 @@ def build_airline_pair_target_range(
                 "model_beta_hedged_pair_payoff_pct": model_pair,
                 "pb_beta_hedged_pair_payoff_pct": _num(pb_scenario.get("beta_hedged_pair_payoff_pct")),
                 "beta_hedge_ratio_long_to_short": beta,
-                "target_range_method": "min_max_of_independent_earnings_ps_and_historical_pb_diagnostics_not_confidence_interval",
+                "target_range_method": "min_max_of_model_plus_historical_annual_ps_and_historical_pb_diagnostics_not_confidence_interval",
                 "valuation_conflict_flag": decision["direction_concordance"],
                 "catalyst": t.get("catalyst_a", "") + "; " + t.get("catalyst_b", ""),
                 "invalidation_rule": "Invalidate if route-level demand/yield advantage reverses, post-result consensus revision confirms the opposite, or direction-aware spread breaches the risk budget.",
                 "risk_status": decision["risk_status_at_0_5pct_budget"],
                 "source_quality": "derived_earnings_pb_target_range_diagnostic",
-                "source_paths": f"{TRADE_PATH};{PB_PATH};{DIRECTION_PATH}",
+                "source_paths": f"{TRADE_PATH};{PB_PATH};{BANDS_PATH};{DIRECTION_PATH}",
                 "retrieved_at": retrieved,
             }
         )
