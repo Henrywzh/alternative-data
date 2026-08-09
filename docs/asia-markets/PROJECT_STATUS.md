@@ -215,6 +215,14 @@ replacement for the operating manual or generated source-status JSON.
   CNINFO PDF bulletins with announcement dates, scope rows and month/cumulative
   units, and v3 carries the latest release-date-safe hub observation as sector
   context only.
+- The fuel pass-through layer is upgraded from schedule-only to a dated
+  surcharge-to-fuel recovery proxy in `airline_fuel_surcharge_recovery.csv`
+  (7 observations). The 2026-07-05 mainland change cut the >800km surcharge
+  33% and the <=800km band 38% even as the EIA jet-fuel benchmark rose 18%,
+  producing a negative recovery ratio; Cathay's 2026-08-01 change raised
+  surcharges 20-41% against a 2.1% fuel move. These are policy/pass-through
+  context observations, not realized accounting recovery, and v3 carries them
+  as context only.
 - The CAAC 2026 summer/autumn route-licence PDF is now parsed into
   `airline_caac_route_licence_events.csv` with 53 dated event rows: 36 new
   domestic route licences, 13 cargo-licence renewals and 4 cancellations.
