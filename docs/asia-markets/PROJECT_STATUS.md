@@ -90,7 +90,7 @@ replacement for the operating manual or generated source-status JSON.
   year) tracks reported HK transport operations revenue with ~4.8% MAPE;
   COVID-era years under-estimate by 7-9% (journey-mix drift, not captured by
   FAM-only yield shifts), and the 2008 step is the MTR-KCR merger coverage
-  change, not a fare event. This gives MTR a monthly revenue nowcast leg ahead of annual results. It integrates ImmD daily control-point statistics (HSR West Kowloon vs Lo Wu/LMC Spur Line) and a regularized Ridge L2 residual model (2019-2023 holdout MAPE 4.06%), achieving +0.43% error on FY2025 live forward OOS validation (HK$23.70bn forecast vs HK$23.60bn reported). A 16-year half-yearly MTR earnings bridge (32 half-years, 2010-H1 to 2025-H2) is live in `src/hk_transport/sources/mtr_historical_earnings_bridge.py` and `data/normalized/hk_transport/mtr_historical_earnings_bridge.csv`.
+  change, not a fare event. This gives MTR a monthly revenue nowcast leg ahead of annual results. It integrates ImmD daily control-point statistics (HSR West Kowloon vs Lo Wu/LMC Spur Line) and a regularized Ridge L2 residual model (2019-2023 holdout MAPE 4.06%), achieving +0.43% error on FY2025 live forward OOS validation (HK$23.70bn forecast vs HK$23.60bn reported). A 16-fiscal-year MTR historical earnings bridge (annual, 2010-2025) is live in `src/hk_transport/sources/mtr_historical_earnings_bridge.py` and `data/normalized/hk_transport/mtr_historical_earnings_bridge.csv`; every value was hand-verified against official MTR results PDFs (full announcements for 2020-2025, analyst result decks for 2010-2019). It reconciles segment revenue, recurrent post-tax profit, HK property development post-tax profit, underlying profit, IP fair-value movements, reported NPAT, EPS and DPS; the underlying = recurrent + property development identity holds for all 12 years 2014-2025. 2016-2018 decks disclose station commercial + property rental as a merged revenue line; 2010-2013 decks disclose no segment revenue breakdown.
 - China listed airline monthly operating data is wired into transport for six
   listed groups: Air China, China Southern, China Eastern, Spring Airlines,
   Hainan Airlines Holdings and Juneyao Airlines. The artifact includes
@@ -1222,3 +1222,85 @@ Before starting a new task:
    record or research-only item.
 5. Update this file if the task changes the project state or resolves one of
    the limitations above.
+
+### SHKP Hong Kong commercial portfolio model (2026-08-09)
+
+New research module (`run-shkp-commercial-model`,
+`src/hk_real_estate/shkp_commercial_model.py`) implementing the
+user-directed portfolio-level design: the core engine is a log-difference
+distributed-lag bridge from RVD rental indices to SHKP HK rental revenue;
+asset-level GFA is used only for attribution, never for revenue prediction.
+
+Transmission estimates (FY2016-2025, log-difference):
+- Office: contemporaneous elasticity ~0.33 (R2 0.42), distributed-lag total
+  ~0.37 with a near-zero one-year lag term - office revenue tracks the index
+  in the same year (annual reversions), total elasticity ~0.35.
+- Retail: distributed-lag total ~0.63-0.69 (R2 0.49-0.53) with a strong
+  one-year lag component (beta_lag1 ~0.35 vs contemporaneous ~0.29) -
+  turnover rent and multi-year mall leases spread the pass-through.
+- Stability caveat: dropping FY2021 (COVID crash) cuts contemporaneous
+  betas from ~0.32 to ~0.15 (R2 0.11), so estimates are scenario-grade, not
+  point-precision; recorded on every row.
+
+Walk-forward OOS backtest (FY2020/21-FY2024/25, portfolio total):
+- contemporaneous MAPE mean 2.25%, distributed-lag 2.68%, naive-flat 2.54%.
+- The naive no-information baseline is nearly as good because SHKP HK rental
+  revenue is highly stable (annual moves of 1-3%); distinguishing RVD value
+  needs longer/wilder history or the office/retail split series (currently
+  only FY2023/24+).
+
+Attribution map (`shkp_commercial_attribution`, 82 rows): GFA-share
+allocation of the disclosed HK office (HKD 5,679m) and retail (HKD 9,085m)
+revenue across assets with disclosed GFA; 41 assets lack GFA and are
+explicitly flagged `gfa_not_disclosed` rather than counted as zero.
+Top office exposure by allocation: Mong Kok Lot 11273 (HKD 786m),
+International Gateway Centre (HKD 756m), Central Plaza (HKD 462m).
+
+### Commercial v0.2 - historical extension and freeze (2026-08-09)
+
+History extended from 11 to 16 fiscal years (FY2010/11-FY2024/25) by
+downloading the 2010/11-2012/13 annual reports and extracting the HK rental
+segment rows (subsidiary + combined series, both persisted:
+`SHKP_HK_RENTAL_REVENUE_HKD_M` and `SHKP_HK_RENTAL_REVENUE_SUBSIDIARY_HKD_M`).
+The FY2014/15 values were re-verified against the source PDFs after the
+first pass contained transcription errors (15,472/18,958 corrected to
+14,673/15,675); every year is now double-checked via the current-year and
+prior-year tables in adjacent annual reports.
+
+Office/retail revenue split could NOT be extended historically: SHKP only
+discloses the HK office/retail breakdown from FY2023/24 onward (3 years);
+earlier reports use narrative descriptions. The split remains a
+qualitative sanity check only (accounting bridge), not a statistical
+backtest, per the v0.2 design.
+
+The 16-year sample materially changes the transmission conclusions:
+
+| Metric | 10-year (2016-25) | 16-year (2011-25) |
+|---|---:|---:|
+| Office beta | 0.33 (R2 0.42) | **0.83 (R2 0.87)** |
+| Office ex-COVID beta | 0.15 (unstable) | **0.84 (stable)** |
+| Retail beta | 0.32 (R2 0.24) | **0.86 (R2 0.78)** |
+| Retail DL total elasticity | 0.63 | **1.02** |
+| Retail ex-COVID beta | 0.15 (unstable) | **0.80 (stable)** |
+
+The earlier "elasticity driven by COVID" concern was a small-sample
+artifact. With 15 observations the RVD -> SHKP rental-income transmission
+is stable and strong, with retail showing a clear one-year lag component
+(b0 ~0.59 + b1 ~0.43) versus office being largely contemporaneous
+(b1 ~0.17).
+
+Walk-forward OOS backtest (FY2016-2025, 10 years):
+
+| Method | MAPE mean |
+|---|---:|
+| naive flat | 3.85% |
+| RVD contemporaneous | 1.76% |
+| RVD distributed lag | **1.62%** |
+
+RVD information halves the OOS error versus naive, confirming incremental
+predictive power. Commercial v0.2 is now FROZEN: portfolio-level
+log-difference RVD bridge (office beta ~0.83 contemporaneous, retail
+~0.59+0.43 distributed lag), attribution-only asset map, and the honest
+3-year split limitation. The next step is the whole-company earnings
+nowcast that combines residential (SRPE model), commercial (this module),
+hotels and other businesses.
