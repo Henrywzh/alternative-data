@@ -9,15 +9,15 @@ from hk_transport.sources.airline_research_chain import build_airline_research_c
 def test_research_chain_covers_all_seven_companies_and_stages() -> None:
     result = build_airline_research_chain(retrieved_at="2026-08-07T00:00:00+00:00")
 
-    assert len(result) == 688
+    assert len(result) == 808
     assert result["company"].nunique() == 7
     assert set(result["chain_stage"]) == {"supply", "demand", "revenue", "cost", "earnings", "expectations", "catalyst", "risk", "forecast"}
     assert result["source_field"].notna().all()
     assert result["as_of_date"].notna().all()
     assert result["source_quality"].eq("derived_join_with_source_lineage").all()
     forecast = result.loc[result["chain_stage"].eq("forecast")]
-    assert len(forecast) == 60
-    assert set(forecast["company"]) == {"Spring Airlines", "Juneyao Airlines"}
+    assert len(forecast) == 180
+    assert set(forecast["company"]) == {"Spring Airlines", "Juneyao Airlines", "China Southern Airlines", "China Eastern Airlines", "Air China", "Hainan Airlines Holdings"}
     assert forecast["canonical_metric"].str.contains("base_forecast_revenue_usd_mn").any()
     assert forecast["source_field"].str.startswith("airline_company_financial_forecast_bridge.").all()
     public_rows = result.loc[result["canonical_metric"].eq("public_report_evidence_row_count")]
@@ -67,7 +67,7 @@ def test_research_chain_covers_all_seven_companies_and_stages() -> None:
     leverage_primary = result.loc[result["canonical_metric"].eq("latest_report_liabilities_to_assets_pct")]
     assert len(liabilities) == 5
     assert len(leverage_primary) == 5
-    assert leverage_primary["value_numeric"].between(0, 100).all()
+    assert leverage_primary["value_numeric".between(0, 100).all() if False else "value_numeric"].between(0, 100).all()
     debt = result.loc[result["canonical_metric"].eq("latest_report_interest_bearing_debt_native_mn")]
     capex = result.loc[result["canonical_metric"].eq("latest_report_capex_cash_paid_native_mn")]
     assert len(debt) == 3

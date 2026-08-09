@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-08-08T07:15:23.714165Z",
-  "snapshot_id": "c88208c64ab47a9b",
-  "data_as_of": "2026-07-31",
+  "generated_at": "2026-08-09T16:08:45.177300Z",
+  "snapshot_id": "07255c5f66de5c38",
+  "data_as_of": "2026-08-01",
   "overall_status": "Healthy",
-  "live_sources": 13,
+  "live_sources": 16,
   "planned_sources": 0,
   "sources": [
     {
@@ -22,7 +22,7 @@
       "type": "Measure",
       "status": "Healthy",
       "latest_observation": "2026-06-01",
-      "records": 123,
+      "records": 133,
       "freshness": "Live",
       "notes": "HKIA airport monthly aircraft movements, passenger volume, and freight tonnage alongside Cathay Pacific passengers, RPK, ASK, passenger/cargo load factors, cargo tonnage, AFTK/RFTK and reported flight sectors, fetched directly from Cathay's own investor-relations traffic-figures PDFs discovered through the official archive."
     },
@@ -42,9 +42,39 @@
       "type": "Measure",
       "status": "Healthy",
       "latest_observation": "2026-06-01",
-      "records": 32737,
+      "records": 34121,
       "freshness": "Live",
-      "notes": "Monthly passenger and cargo operating data for six China-listed airline groups, plus sparse PDF-derived fleet additions/retirements, fleet totals and new-route events; passenger fields are split by domestic, international and regional operations."
+      "notes": "Monthly passenger and cargo operating data for six China-listed airline groups, plus sparse PDF-derived fleet additions/retirements, fleet totals and new-route events; passenger fields are split by domestic, international and regional operations. The display layer prefers the verified source-recovered parquet when available, with raw processed data as fallback."
+    },
+    {
+      "source": "China Listed Airlines Official-PDF KPI Recovery Audit",
+      "dataset": "airline_kpi_source_recovery",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2025-08-16",
+      "records": 200,
+      "freshness": "Live",
+      "notes": "Audit of monthly airline KPI rows restored from cached official Cninfo PDFs, separated from rows that the source PDF genuinely does not disclose. The source-recovered parquet is used for the dashboard's monthly airline charts; no research interpolation is included in that display layer."
+    },
+    {
+      "source": "China Listed Airlines 1H KPI Calibration Backtest",
+      "dataset": "airline_h1_kpi_backtest",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2026-08-01",
+      "records": 6,
+      "freshness": "Live",
+      "notes": "Historical calibration of flat-ASK revenue and operating-cost errors before and after official-PDF source recovery plus research-only short-gap interpolation. This is not a strict historical point-in-time trading backtest because older financial target rows do not retain issuer announcement dates."
+    },
+    {
+      "source": "China Listed Airlines H1/H2/FY KPI Calibration",
+      "dataset": "airline_period_kpi_backtest",
+      "type": "Measure",
+      "status": "Healthy",
+      "latest_observation": "2025-12-31",
+      "records": 18,
+      "freshness": "Live",
+      "notes": "Separate H1, H2 and FY calibration summaries. H2 financial actuals are derived as FY minus H1; the logical-assumption layer remains a coverage sensitivity and not a clean point-in-time observation."
     },
     {
       "source": "Transport Department Monthly Traffic and Transport Digest \u2014 Table 2.1",
@@ -103,7 +133,7 @@
       "status": "Healthy",
       "latest_observation": "2026-05-01",
       "records": 19304,
-      "freshness": "99d old",
+      "freshness": "100d old",
       "notes": "Monthly first registrations of private cars by make, fuel type, first-registration status and body type; a genuine time series from May 2016 onward."
     },
     {
@@ -113,7 +143,7 @@
       "status": "Healthy",
       "latest_observation": "2026-06-01",
       "records": 357,
-      "freshness": "68d old",
+      "freshness": "69d old",
       "notes": "Latest available monthly private-car make/model detail; used as a bounded lookup snapshot, while the make/fuel history above supplies the time-series chart."
     },
     {
@@ -137,5 +167,5 @@
       "notes": "Observed occupancy rate for sensor-backed metered/on-street parking spaces. The static inventory supplies the listed-space denominator and the live CSV marks each observed space occupied or vacant; sample_size and listed_spaces remain visible because a small number of status rows may be unmatched."
     }
   ],
-  "attachment_filename": "hk-transport-dashboard-2026-08-08.html"
+  "attachment_filename": "hk-transport-dashboard-2026-08-09.html"
 }

@@ -18,6 +18,20 @@ from .sources.td_private_car_net_registration import fetch_td_private_car_net_re
 from .sources.td_vehicle_fleet_stock import fetch_td_vehicle_fleet_stock
 from .sources.mtr_patronage import fetch_mtr_patronage
 from .sources.energy_prices import fetch_eia_airline_energy_prices
+from .sources.airline_cargo_demand import fetch_airline_cargo_demand_proxies
+from .sources.airline_postal_demand import fetch_airline_postal_demand_proxies
+from .sources.airline_travel_demand_events import fetch_airline_travel_demand_events
+from .sources.airline_airport_traffic import fetch_airline_airport_traffic
+from .sources.airline_cargo_airport_bridge import build_airline_cargo_airport_bridge
+from .sources.airline_cargo_yield_bridge import build_airline_cargo_yield_bridge
+from .sources.airline_forward_assumptions import build_airline_forward_assumptions
+from .sources.airline_h1_2026_validation_playbook import build_airline_h1_2026_validation_playbook
+from .sources.airline_cargo_bridge_backtest import build_airline_cargo_bridge_backtest
+from .sources.airline_caac_sector_monthly import fetch_caac_sector_monthly_kpis
+from .sources.airline_caac_sector_proxy_validation import fetch_airline_caac_sector_proxy_validation
+from .sources.airline_caac_route_licence import fetch_caac_route_licence_events
+from .sources.airline_earnings_model_v3 import fetch_airline_earnings_model_v3
+from .sources.airline_fuel_surcharge_recovery import build_airline_fuel_surcharge_recovery
 from .sources.fuel_surcharge import fetch_fuel_surcharge_snapshots
 from .sources.fx_rates import fetch_ecb_airline_fx_rates
 
@@ -52,6 +66,222 @@ QUALITY_SPECS = {
         ],
         "max_age_days": 10,
     },
+    "airline_cargo_demand_proxies": {
+        "kind": "measure",
+        "required": [
+            "observation_month",
+            "period_end",
+            "total_trade_value_usd_100m",
+            "export_value_usd_100m",
+            "import_value_usd_100m",
+            "source_release_date_status",
+            "point_in_time_status",
+            "source_snapshot_date",
+            "retrieved_at",
+        ],
+        "max_age_days": 45,
+    },
+    "airline_postal_demand_proxies": {
+        "kind": "measure",
+        "required": [
+            "observation_period",
+            "period_type",
+            "observation_month",
+            "period_end",
+            "metric",
+            "value",
+            "unit",
+            "yoy_pct",
+            "source_release_date",
+            "point_in_time_status",
+            "source_quality",
+            "retrieved_at",
+        ],
+        "max_age_days": 60,
+    },
+    "airline_travel_demand_events": {
+        "kind": "event",
+        "required": [
+            "event_id",
+            "event_family",
+            "event_duration_days",
+            "metric",
+            "value",
+            "value_per_day",
+            "source_release_date",
+            "point_in_time_status",
+            "source_quality",
+            "retrieved_at",
+        ],
+        "max_age_days": 180,
+    },
+    "airline_airport_traffic": {
+        "kind": "measure",
+        "required": [
+            "observation_month",
+            "airport",
+            "metric",
+            "scope",
+            "value",
+            "unit",
+            "yoy_pct",
+            "source_release_date",
+            "point_in_time_status",
+            "source_quality",
+            "retrieved_at",
+        ],
+        "max_age_days": 45,
+    },
+    "airline_cargo_airport_bridge": {
+        "kind": "measure",
+        "required": [
+            "company",
+            "period",
+            "hub_airports",
+            "airport_cargo_tonnes",
+            "company_cargo_tonnes",
+            "bridge_status",
+            "source_note",
+            "retrieved_at",
+        ],
+        "max_age_days": 45,
+    },
+    "airline_cargo_yield_bridge": {
+        "kind": "measure",
+        "required": [
+            "company",
+            "period",
+            "revenue_anchor_period",
+            "h1_2025_cargo_revenue_native_mn",
+            "h1_2026_cargo_tonnes",
+            "h1_2026_cargo_revenue_bridge_native_mn",
+            "bridge_status",
+            "retrieved_at",
+        ],
+        "max_age_days": 45,
+    },
+    "airline_forward_assumptions": {
+        "kind": "measure",
+        "required": [
+            "company",
+            "fy2025_profit_before_tax_native_mn",
+            "fy2025_income_tax_expense_native_mn",
+            "tax_assumption_status",
+            "forward_fx_usd_cny",
+            "forward_fx_status",
+            "retrieved_at",
+        ],
+        "max_age_days": 60,
+    },
+    "airline_h1_2026_validation_playbook": {
+        "kind": "snapshot",
+        "required": [
+            "company",
+            "filing_scheduled_date",
+            "h1_2026_ask_yoy_pct",
+            "h1_2026_rpk_yoy_pct",
+            "fy2026_v3_base_net_profit_usd_mn",
+            "consensus_fy2026_profit_usd_mn",
+            "validation_status",
+            "retrieved_at",
+        ],
+        "max_age_days": 60,
+    },
+    "airline_cargo_bridge_backtest": {
+        "kind": "measure",
+        "required": [
+            "company",
+            "fy2025_cargo_revenue_native_mn",
+            "fy2025_revenue_per_tonne_native",
+            "predicted_h1_2025_cargo_revenue_native_mn",
+            "actual_h1_2025_cargo_revenue_native_mn",
+            "h1_2025_revenue_error_pct",
+            "backtest_status",
+            "retrieved_at",
+        ],
+        "max_age_days": 45,
+    },
+    "airline_caac_sector_monthly": {
+        "kind": "measure",
+        "required": [
+            "observation_month",
+            "period_type",
+            "scope",
+            "metric",
+            "value",
+            "yoy_pct",
+            "source_release_date",
+            "source_release_date_status",
+            "point_in_time_status",
+            "retrieved_at",
+        ],
+        "max_age_days": 45,
+    },
+    "airline_caac_route_licence_events": {
+        "kind": "event",
+        "required": [
+            "source_release_date",
+            "schedule_season",
+            "table_type",
+            "event_type",
+            "airline_short_name",
+            "route_text",
+            "point_in_time_status",
+            "source_quality",
+            "retrieved_at",
+        ],
+        "max_age_days": 180,
+    },
+    "airline_caac_sector_proxy_validation": {
+        "kind": "measure",
+        "required": [
+            "company",
+            "target_year",
+            "period",
+            "company_passenger_yoy_pct",
+            "caac_passenger_volume_yoy_pct",
+            "validation_status",
+            "retrieved_at",
+        ],
+        "max_age_days": 45,
+    },
+    "airline_caac_sector_proxy_validation_summary": {
+        "kind": "snapshot",
+        "required": [
+            "target_year",
+            "period",
+            "passenger_mae_pp",
+            "cargo_mae_pp",
+            "source_quality",
+            "retrieved_at",
+        ],
+        "max_age_days": 45,
+    },
+    "airline_earnings_model_v3": {
+        "kind": "measure",
+        "required": [
+            "company",
+            "scenario",
+            "v3_revenue_usd_mn",
+            "v3_operating_profit_usd_mn",
+            "v3_net_profit_proxy_usd_mn",
+            "cargo_proxy_status",
+            "point_in_time_status",
+            "retrieved_at",
+        ],
+        "max_age_days": 45,
+    },
+    "airline_earnings_model_v3_kpi_coverage": {
+        "kind": "snapshot",
+        "required": [
+            "kpi",
+            "coverage_status",
+            "current_source_or_method",
+            "research_caveat",
+            "retrieved_at",
+        ],
+        "max_age_days": 45,
+    },
     "airline_fx_rates": {
         "kind": "measure",
         "required": [
@@ -76,6 +306,20 @@ QUALITY_SPECS = {
             "retrieved_at",
         ],
         "max_age_days": 30,
+    },
+    "airline_fuel_surcharge_recovery": {
+        "kind": "measure",
+        "required": [
+            "carrier_scope",
+            "effective_from",
+            "previous_value",
+            "current_value",
+            "surcharge_change_pct",
+            "fuel_change_pct",
+            "recovery_proxy_status",
+            "retrieved_at",
+        ],
+        "max_age_days": 60,
     },
     "airline_fuel_sensitivity_scenarios": {
         "kind": "snapshot",
@@ -1077,6 +1321,83 @@ def run_stage_1_pipeline() -> dict[str, Any]:
         results["airline_energy_prices"] = {"error": str(exc)}
 
     try:
+        logger.info("Ingesting free MOFCOM monthly trade/cargo-demand proxy...")
+        results["airline_cargo_demand_proxies"] = fetch_airline_cargo_demand_proxies()
+    except Exception as exc:
+        logger.exception("MOFCOM monthly trade/cargo-demand ingestion failed")
+        results["airline_cargo_demand_proxies"] = {"error": str(exc)}
+
+    try:
+        logger.info("Ingesting State Post Bureau postal/express demand proxy...")
+        results["airline_postal_demand_proxies"] = fetch_airline_postal_demand_proxies()
+    except Exception as exc:
+        logger.exception("State Post Bureau postal/express ingestion failed")
+        results["airline_postal_demand_proxies"] = {"error": str(exc)}
+
+    try:
+        logger.info("Ingesting official MOT/MCT holiday travel-demand event controls...")
+        results["airline_travel_demand_events"] = fetch_airline_travel_demand_events()
+    except Exception as exc:
+        logger.exception("MOT/MCT holiday travel-demand ingestion failed")
+        results["airline_travel_demand_events"] = {"error": str(exc)}
+
+    try:
+        logger.info("Ingesting issuer airport monthly production statistics...")
+        results["airline_airport_traffic"] = fetch_airline_airport_traffic()
+    except Exception as exc:
+        logger.exception("Issuer airport monthly production-statistics ingestion failed")
+        results["airline_airport_traffic"] = {"error": str(exc)}
+
+    try:
+        logger.info("Building airport-cargo versus company-cargo bridge layer...")
+        results["airline_cargo_airport_bridge"] = build_airline_cargo_airport_bridge()
+    except Exception as exc:
+        logger.exception("Airline cargo-airport bridge build failed")
+        results["airline_cargo_airport_bridge"] = {"error": str(exc)}
+
+    try:
+        logger.info("Building forward cargo-revenue yield bridge...")
+        results["airline_cargo_yield_bridge"] = build_airline_cargo_yield_bridge()
+    except Exception as exc:
+        logger.exception("Airline cargo-yield bridge build failed")
+        results["airline_cargo_yield_bridge"] = {"error": str(exc)}
+
+    try:
+        logger.info("Building forward tax/FX assumption table...")
+        results["airline_forward_assumptions"] = build_airline_forward_assumptions()
+    except Exception as exc:
+        logger.exception("Airline forward-assumptions build failed")
+        results["airline_forward_assumptions"] = {"error": str(exc)}
+
+    try:
+        logger.info("Building H1-2026 validation playbook...")
+        results["airline_h1_2026_validation_playbook"] = build_airline_h1_2026_validation_playbook()
+    except Exception as exc:
+        logger.exception("Airline H1-2026 validation playbook build failed")
+        results["airline_h1_2026_validation_playbook"] = {"error": str(exc)}
+
+    try:
+        logger.info("Building cargo-bridge backtest...")
+        results["airline_cargo_bridge_backtest"] = build_airline_cargo_bridge_backtest()
+    except Exception as exc:
+        logger.exception("Airline cargo-bridge backtest build failed")
+        results["airline_cargo_bridge_backtest"] = {"error": str(exc)}
+
+    try:
+        logger.info("Ingesting CAAC monthly civil-aviation sector KPIs...")
+        results["airline_caac_sector_monthly"] = fetch_caac_sector_monthly_kpis()
+    except Exception as exc:
+        logger.exception("CAAC monthly sector-KPI ingestion failed")
+        results["airline_caac_sector_monthly"] = {"error": str(exc)}
+
+    try:
+        logger.info("Ingesting CAAC seasonal route-licence events...")
+        results["airline_caac_route_licence_events"] = fetch_caac_route_licence_events()
+    except Exception as exc:
+        logger.exception("CAAC route-licence ingestion failed")
+        results["airline_caac_route_licence_events"] = {"error": str(exc)}
+
+    try:
         logger.info("Ingesting ECB daily USD/CNY and USD/HKD reference rates...")
         results["airline_fx_rates"] = fetch_ecb_airline_fx_rates()
     except Exception as exc:
@@ -1089,6 +1410,13 @@ def run_stage_1_pipeline() -> dict[str, Any]:
     except Exception as exc:
         logger.exception("Airline fuel-surcharge ingestion failed")
         results["airline_fuel_surcharges"] = {"error": str(exc)}
+
+    try:
+        logger.info("Building airline fuel-surcharge recovery proxy...")
+        results["airline_fuel_surcharge_recovery"] = build_airline_fuel_surcharge_recovery()
+    except Exception as exc:
+        logger.exception("Airline fuel-surcharge recovery build failed")
+        results["airline_fuel_surcharge_recovery"] = {"error": str(exc)}
 
     try:
         logger.info("Ingesting Cathay Group official fleet profiles...")

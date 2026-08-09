@@ -1,8 +1,9 @@
 # Airline Pair Thesis Inputs
 
-Status: working thesis-input memo, 2026-08-07. This note is for a personal
-long/short research project. It is direction-neutral: it records evidence to
-test, not a completed trade recommendation.
+Status: working pre-event thesis-input memo, 2026-08-08. This note is for a
+personal long/short research project. It records the evidence stack and an
+explicit working view before the reports; it is not a completed trade
+recommendation.
 
 ## Evidence stack
 
@@ -70,6 +71,41 @@ This creates two possible thesis directions without selecting one in advance:
   proxy leaves more downside than Juneyao's 0.98x base if demand, yield or fuel
   assumptions disappoint.
 
+### Current pre-event working view
+
+We now take a provisional stance before the 1H2026 reports: **long Spring /
+short Juneyao**. This is an independent bottom-up company forecast, not a copy
+of the consensus stress bridge. The model goes from ASK/RPK and revenue-per-
+ASK mix to fuel/non-fuel cost per ASK, operating profit and net profit:
+
+| Company | FY2026 revenue growth | Net margin | Implied profit (USD mn) | Profit gap vs consensus |
+|---|---:|---:|---:|---:|
+| Spring Airlines | +17.0% | 9.6% | 344.3 | +9.2% |
+| Juneyao Airlines | +4.0% | 3.2% | 107.2 | -22.0% |
+
+The sector context is positive but not a free demand beta: APAC demand is
+forecast at RPK +7.3% versus ASK +7.1%, while the six-company mainland H1
+panel shows RPK +4.8% versus ASK +2.6% and fuel benchmarks were roughly 50%
+higher year on year. The thesis is that Spring's low-cost/high-load-factor margin advantage is more
+structural than the market's revenue-only comparison implies, while Juneyao's
+group recovery is too optimistic because 9 Air economics remain unresolved.
+This is falsified by a material Spring yield/margin miss, a sustained negative
+Spring RPK-minus-ASK gap, or Juneyao margin recovery toward consensus. The
+formal result is the validation event; we do not wait for it to form the view.
+
+The residual check is supportive but modest: Spring–Juneyao's five-factor
+beta-hedged residual alpha is approximately +2.8% annualised over 576
+observations, with roughly -21.7% residual maximum drawdown. It reduces the
+case for calling the pair only an airline-beta trade, but it does not prove
+future alpha.
+
+The resulting pre-event candidate card is
+`airline_pre_event_trade_candidate.csv`: it carries a valuation range of about
+-6.8% to +26.7%, uses a 0.25% NAV loss-budget diagnostic, and remains
+conditional because the P/B cross-check is negative and borrow/recall is not
+verified. This is the research expression to test before the reports, not a
+claim that execution mechanics have already been cleared.
+
 ### Catalysts
 
 - Spring 1H2026 formal report is scheduled for 2026-08-29.
@@ -135,8 +171,10 @@ remain unstable and the historical and latest operating signals disagree.
 pair. For each mainland leg, the current A-share detailed FY2026 snapshot is
 used as the base; bear/base/bull cases apply consensus revenue -5%/0%/+5% and
 implied net margin -2pp/0pp/+2pp. The scenarios are deliberately symmetric
-stress tests, not independent forecasts. After 1H2026 reports, replace these
-assumptions with actual revenue, yield and cost evidence.
+stress tests, not independent forecasts. The separate
+`airline_independent_forecast_view.csv` carries the actual pre-event stance;
+after 1H2026 reports, compare actual revenue, yield, cost and guidance against
+that stance and revise the assumptions.
 
 ## Cathay cross-market backup
 

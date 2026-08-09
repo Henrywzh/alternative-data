@@ -237,6 +237,61 @@ join uses only cumulative rows whose article release date is available by the
 model cutoff; it does not use a later H1 article to backfill an earlier model
 date.
 
+`airline_travel_demand_events.csv` is the official MOT/MCT holiday demand
+control layer. It contains 13 rows across five event articles, with national
+transport modes, domestic travelers, tourism spending, event duration,
+per-day normalized values, source-reported YoY and an explicit derived YoY
+method for the 2026 Spring Festival duration comparison. The layer is
+release-date-safe and context-only: holiday observations are not interpolated
+into monthly airline RPK or revenue.
+
+`airline_airport_traffic.csv` is the issuer airport monthly production layer.
+It contains 288 rows across Shanghai Pudong/Hongqiao, Shenzhen and Guangzhou
+Baiyun for 2026-01 through 2026-06, with aircraft movements, passenger and cargo
+throughput by route scope, month and cumulative values, YoY rates and official
+announcement dates. Airport throughput includes many carriers and is hub
+demand context only, not company RPK or revenue.
+
+`airline_cargo_airport_bridge.csv` compares hub airport cargo throughput with
+issuer monthly cargo tonnage and reported FY2025 cargo revenue for Spring,
+Juneyao, 9 Air and China Southern. It stores tonnage bridge gaps, coverage
+ratios and reported revenue-per-tonne anchors as calibration context; the hub
+mapping is directional and airport throughput includes many carriers.
+
+`airline_cargo_yield_bridge.csv` is the forward cargo-revenue bridge. It
+combines official H1-2025 cargo revenue with issuer tonnage to build a
+revenue-per-tonne anchor and applies it to H1-2026 tonnage. Spring and Juneyao
+use an FY2025 annualized anchor because H1-2025 cargo revenue is not
+disclosed; all rows carry the anchor period and type explicitly. It is an
+H1-2026 evidence layer, not a full-year cargo revenue forecast.
+
+`airline_forward_assumptions.csv` is the forward tax/FX assumption table. It
+stores FY2025 effective tax rates (including curated anchors with source pages
+where the annual report layout blocks the generic parser), flags loss or
+deferred-tax-reversal cases that require absolute tax carry, and carries the
+latest ECB USD/CNY reference as a labelled forward-FX assumption.
+
+`airline_h1_2026_validation_playbook.csv` is the H1-2026 report reconciliation
+table. It stores the pre-report model forecasts (H1 KPIs, cargo-revenue
+bridge, v3 scenarios, EPS, consensus) beside filing dates and a validation
+status; the actual columns are populated after the interim reports are
+published.
+The v3 CSV now also carries `v3_net_profit_consensus_guarded_*`,
+`net_income_leg` and `regime_flip_flag` columns so loss-year carriers'
+net-income estimates are explicitly guarded against residual carry-forward
+artifacts.
+
+`airline_cargo_bridge_backtest.csv` stores the cargo-bridge backtest: the
+FY2025 yield-anchor holdout prediction of 1H2025 cargo revenue versus actuals,
+plus the H1-2026 airport-signal versus company-tonnage direction check. It is
+calibration evidence, not a fitted forecast.
+
+`airline_fuel_surcharge_recovery.csv` is the dated fuel pass-through proxy. It
+compares each official surcharge change against the EIA Gulf Coast jet-fuel
+benchmark window around the effective date and stores the ratio. It is
+research context only; the regulated per-passenger surcharge is not realized
+fuel-cost recovery.
+
 `airline_caac_route_licence_events.csv` is the dated CAAC seasonal planned-
 supply event layer. The current 2026 summer/autumn PDF produces 53 rows at
 new-route, cargo-licence-renewal and cancellation grain, with carrier, route,
@@ -258,6 +313,10 @@ rows when safely parsed; v3 uses a reported FY2025 operating-profit anchor
 where available. Forward finance-cost/FX/tax/associate lines remain inside the
 residual, and EPS is still a basic-share-count proxy rather than a diluted PIT
 forecast.
+The v3 CSV also carries a separate `forward_waterfall_proxy` diagnostic for
+companies whose FY2025 formal lower waterfall reconciles; it scales finance
+cost with forecast revenue and carries other disclosed rows at FY2025 absolute
+values. This diagnostic is not the primary EPS forecast.
 
 The Korean semiconductor research stack is also research-only and is not wired
 to the production dashboard. `data/normalized/us_census_trade/` contains

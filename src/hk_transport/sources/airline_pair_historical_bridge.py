@@ -25,6 +25,7 @@ COMPANY_NAMES = {
     "Air China", "China Southern Airlines", "China Eastern Airlines", "Spring Airlines",
     "Hainan Airlines Holdings", "Juneyao Airlines",
 }
+CATHAY_COMPANY = "Cathay Pacific"
 
 PERIODS = {
     "fy2019": ("2019-12-31", "FY"),
@@ -179,7 +180,7 @@ def _pair_bucket(company_a: str, company_b: str) -> str:
 def _divergence_status(a: dict[str, object], b: dict[str, object], bucket: str) -> str:
     margin_gap = _gap(a.get("fy2025_net_margin_pct"), b.get("fy2025_net_margin_pct"))
     demand_gap = _gap(a.get("q1_2026_demand_capacity_gap_pp"), b.get("q1_2026_demand_capacity_gap_pp"))
-    if bucket == "cross_market_backup" and (a.get("historical_bridge_status") == "not_available_in_six_company_bridge" or b.get("historical_bridge_status") == "not_available_in_six_company_bridge"):
+    if bucket == "cross_market_backup" and (a.get("historical_bridge_status") != "available" or b.get("historical_bridge_status") != "available"):
         return "historical_bridge_incomplete"
     if margin_gap is None or demand_gap is None:
         return "insufficient_historical_bridge"
@@ -206,8 +207,19 @@ def build_airline_pair_historical_bridge(
         a = summaries[company_a] if company_a in summaries else {key: None for key in LEG_METRICS}
         b = summaries[company_b] if company_b in summaries else {key: None for key in LEG_METRICS}
         bucket = _pair_bucket(company_a, company_b)
-        a["historical_bridge_status"] = "available" if company_a in COMPANY_NAMES else "not_available_in_six_company_bridge"
-        b["historical_bridge_status"] = "available" if company_b in COMPANY_NAMES else "not_available_in_six_company_bridge"
+        def _bridge_status(company: str) -> str:
+            if company in COMPANY_NAMES:
+                return "available"
+            if company == CATHAY_COMPANY:
+                # Cathay now has official FY2025/1H2024/1H2025/1H2026 rows,
+                # but not the FY2019/FY2024/Q1 periods used by the mainland
+                # bridge. Keep the pair gate partial rather than implying a
+                # like-for-like historical panel.
+                return "partial_cross_region_period_history"
+            return "not_available_in_six_company_bridge"
+
+        a["historical_bridge_status"] = _bridge_status(company_a)
+        b["historical_bridge_status"] = _bridge_status(company_b)
         row: dict[str, object] = {
             "dataset_id": "airline_pair_historical_bridge",
             "pair_id": pair["pair_id"],
@@ -248,7 +260,7 @@ def build_airline_pair_historical_bridge(
         elif bucket == "backup_candidate":
             note = "Backup candidate: test whether the two large carriers are converging or diverging after the 2025 loss/recovery cycle; formal 1H2026 results are the key catalyst."
         elif bucket == "cross_market_backup":
-            note = "Cross-market backup: Cathay's current formal results and international exposure are not fully covered by the six-company mainland historical bridge; use latest primary-driver and risk layers for comparability."
+            note = "Cross-market backup: Cathay now contributes official FY2025/1H driver rows, but its international/group scope and missing FY2019/FY2024/Q1 periods keep the historical bridge explicitly partial; use primary-driver and risk layers for comparability."
         else:
             note = "Monitor pair: retain as a comparator until the core and backup thesis workstreams resolve."
         row["thesis_input_note"] = note

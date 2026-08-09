@@ -186,6 +186,7 @@ OPERATING_OVERRIDES: dict[str, tuple[tuple[str, float, str, int, str], ...]] = {
     "600115_2025_fy": (
         ("total_liabilities", 252_916.0, "RMB million", 30, "China Eastern management discussion: group total liabilities at 2025-12-31, reported as RMB2,529.16亿元 (RMB252.916bn)."),
         ("interest_bearing_debt", 181_928.0, "RMB million", 40, "China Eastern management discussion: group interest-bearing debt, reported as RMB1,819.28亿元 (RMB181.928bn)."),
+        ("operating_profit", -490.0, "RMB million", 23, "China Eastern FY2025 annual report management discussion: operating profit of RMB-4.90亿元 (RMB-490m), versus RMB-4,399m in 2024. The annual report does not contain the consolidated income statement, so this curated anchor supplies the disclosed operating-profit figure."),
     ),
     "601021_2025_fy": (
         ("rpk", 56_519.0999, "million passenger-km", 31, "Spring Airlines operating table: RPK, converted from ten-thousand passenger-km."),
@@ -313,6 +314,113 @@ def _find_page(pages: list[str], predicates: Iterable[str]) -> int | None:
         if all(_compact(predicate) in compact for predicate in required):
             return index
     return None
+
+
+def _find_income_statement_page(pages: list[str]) -> int | None:
+    """Find a consolidated income-statement page with current-period rows."""
+    for index, text in enumerate(pages, start=1):
+        compact = _compact(text)
+        if not any(title in compact for title in ("合并利润表", "合并损益表")):
+            continue
+        if "财务费用" in compact and any(
+            label in compact for label in ("利润总额", "亏损总额", "净利润", "净亏损")
+        ):
+            return index
+    # Several issuer PDFs split the two-page consolidated income statement at
+    # the page boundary: the first page contains revenue/finance cost and the
+    # continuation contains operating profit/tax/net income.  Identify the
+    # statement's first page so the caller can append the continuation.  The
+    # ``财务报表附注`` exclusion avoids matching explanatory footnotes that
+    # merely mention the consolidated income statement.
+    for index, text in enumerate(pages, start=1):
+        compact = _compact(text)
+        if "财务报表附注" in compact:
+            continue
+        if "合并利润表" in compact and ("财务费用" in compact or "营业收入" in compact):
+            return index
+    return None
+
+
+def _statement_value_from_line(line: str, labels: Iterable[str]) -> float | None:
+    """Read the first current-period value after a statement row label.
+
+    Cninfo rows often place an annotation such as ``四 (47)`` or ``注释 68``
+    between the label and the current-period number. A plain first-number
+    parser would mistake that annotation for the financial value. A leading
+    ``-`` is preserved as a missing current-period cell rather than allowing
+    the prior-period number to shift left.
+    """
+    for label in labels:
+        start = line.find(label)
+        if start < 0:
+            continue
+        tail = line[start + len(label):].strip()
+        # Rows such as ``投资收益（损失以...） 注释 68 3,744...`` put a
+        # textual unit/meaning parenthesis before the note number. Remove
+        # that explanatory phrase, but preserve a numeric negative cell such
+        # as ``(319)``.
+        # A few issuer labels end with ``/(损失)`` or ``/(亏损)``. Remove
+        # only that leading slash/punctuation; preserve Chinese note markers
+        # such as ``七（67）`` so the note-removal rule can recognize them.
+        tail = re.sub(r"^[\s/]+", "", tail)
+        tail = re.sub(r"^[（(][^0-9()（）]*[)）]\s*", "", tail)
+        note_stripped = re.sub(
+            r"^(?:(?:[一二三四五六七八九十]+\s*[\(（]?\d+[\)）]?)|(?:(?:附注|注释)\s*[\(（]?\d+[\)）]?))\s*",
+            "",
+            tail,
+        )
+        note_was_stripped = note_stripped != tail
+        tail = note_stripped
+        # Some consolidated statements use a bare Arabic note number rather
+        # than ``附注 42``.  It appears as a small integer followed by the
+        # current-period value, e.g. ``财务费用 42 4,853,956 6,766,999``.
+        # Only strip it when it is an unformatted integer and another numeric
+        # cell follows; a comma-formatted value such as ``4,853,956`` remains
+        # the financial value.
+        if not note_was_stripped:
+            tail = re.sub(
+                r"^\d{1,3}\s+(?=(?:[\(（]-?[\d,]+(?:\.\d+)?[\)）]|-?[\d,]+(?:\.\d+)?|--|—|–|-))",
+                "",
+                tail,
+            )
+        tokens = re.findall(
+            r"(?:[\(（]-?[\d,]+(?:\.\d+)?[\)）]|-?[\d,]+(?:\.\d+)?)|(?:--|—|–|-)",
+            tail,
+        )
+        if not tokens:
+            continue
+        token = tokens[0].strip().replace("（", "(").replace("）", ")")
+        if token in {"-", "--", "—", "–"}:
+            return None
+        return _parse_number(token)
+    return None
+
+
+def _statement_line_value(text: str, labels: Iterable[str]) -> float | None:
+    for line in _page_lines(text):
+        if any(label in _compact(line) for label in labels):
+            value = _statement_value_from_line(line, labels)
+            if value is not None:
+                return value
+    return None
+
+
+WATERFALL_SPECS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("operating_profit", ("营业利润", "营业亏损")),
+    ("finance_cost", ("财务费用",)),
+    ("interest_expense", ("利息费用",)),
+    ("investment_income", ("投资收益", "投资损失")),
+    ("other_income", ("其他收益",)),
+    ("fair_value_change_income", ("公允价值变动收益",)),
+    ("credit_impairment_loss", ("信用减值损失", "信用减值利得")),
+    ("asset_impairment_loss", ("资产减值损失",)),
+    ("asset_disposal_income", ("资产处置收益", "资产处置损失")),
+    ("non_operating_income", ("营业外收入",)),
+    ("non_operating_expense", ("营业外支出",)),
+    ("income_tax_expense", ("所得税费用",)),
+    ("net_income_total", ("净利润", "净亏损")),
+    ("minority_interest", ("少数股东净利润", "少数股东净亏损", "少数股东损益")),
+)
 
 
 def _find_operations_pages(pages: list[str]) -> list[int]:
@@ -865,6 +973,71 @@ def parse_official_report(
                 fx_rates=fx_rates, retrieved_at=retrieved,
             )
 
+    # Add a conservative below-revenue waterfall from the consolidated income
+    # statement where the report exposes one. This is separate from the
+    # existing residual bridge: each row retains the statement page and the
+    # current-period unit scale, while a missing row remains a disclosure gap.
+    waterfall_page = _find_income_statement_page(pages) or income_page
+    if waterfall_page:
+        waterfall_text = pages[waterfall_page - 1]
+        waterfall_page_label = waterfall_page
+        waterfall_page_note = ""
+        # If the selected page has the statement header but not the closing
+        # rows, append the next PDF page.  Some interim statements also split
+        # individual rows across the page boundary (label on page N, value on
+        # page N+1), so a sparse waterfall with fewer than five disclosed rows
+        # triggers the same merge.  Keep the page range in the output so the
+        # source location remains auditable.
+        compact_waterfall = _compact(waterfall_text)
+        has_closing_rows = any(
+            label in compact_waterfall for label in ("利润总额", "亏损总额", "净利润", "净亏损")
+        )
+        waterfall_rows_on_page = sum(
+            _statement_line_value(waterfall_text, labels) is not None
+            for _, labels in WATERFALL_SPECS
+        )
+        if (
+            (not has_closing_rows or waterfall_rows_on_page < 5)
+            and waterfall_page < len(pages)
+        ):
+            next_text = pages[waterfall_page]
+            if any(
+                label in _compact(next_text)
+                for label in ("营业利润", "营业亏损", "利润总额", "亏损总额", "净利润", "净亏损")
+            ):
+                waterfall_text = waterfall_text + "\n" + next_text
+                waterfall_page_note = f" Source rows span PDF pages {waterfall_page}-{waterfall_page + 1}."
+
+        # A generic management table may already have contributed finance_cost
+        # before the formal statement is found.  Prefer the formal statement
+        # rows and remove the provisional duplicate rather than silently
+        # retaining a less precise source.
+        waterfall_metric_names = {metric for metric, _ in WATERFALL_SPECS}
+        if _find_income_statement_page(pages) is not None:
+            rows = [row for row in rows if row.get("metric") not in waterfall_metric_names]
+        existing_metrics = {row.get("metric") for row in rows}
+        for metric, labels in WATERFALL_SPECS:
+            if metric in existing_metrics:
+                continue
+            raw = _statement_line_value(waterfall_text, labels)
+            if raw is None:
+                continue
+            _add_driver(
+                rows,
+                spec,
+                metric=metric,
+                value_native=raw * spec.financial_scale_to_rmb_million,
+                native_unit="RMB million",
+                source_page=waterfall_page_label,
+                source_note=(
+                    "Primary issuer consolidated income-statement / financial-analysis table; "
+                    "current-period waterfall row normalized to RMB million."
+                    + waterfall_page_note
+                ),
+                metric_scope="group_reported",
+                fx_rates=fx_rates,
+                retrieved_at=retrieved,
+            )
     if cost_page:
         text = pages[cost_page - 1]
         cost_specs = (
