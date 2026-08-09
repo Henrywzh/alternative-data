@@ -79,6 +79,7 @@ replacement for the operating manual or generated source-status JSON.
 
 ## Recent completed work
 
+- MTR Consensus Bridge (P0C skeleton) is live: `scripts/mtr_consensus_bridge.py` writes `mtr_consensus_bridge.csv` (our FY2026E revenue bridge vs Street) and `mtr_eps_sensitivity.csv`. Street EPS/revenue from yfinance 0066.HK (7 analysts; FY2026E EPS 2.52 avg, revenue 55.2bn). Our FY2026E transport revenue is derived from the farebox H1 nowcast (11,977) x FY25 H2/H1 seasonality (1.0201) = ~24.2bn; other segments are explicitly labelled ASSUMED. EPS sensitivity confirms research priority: one property package timing shift moves EPS ~+/-0.45 (17.7% of consensus) vs farebox +1% (+1.5%), HIBOR +100bp (-3.4%), Mainland +10% (+0.3%).
 - MTR Property Project Master (P0B skeleton) is live: `src/hk_transport/sources/mtr_property_project_master.py` and `data/normalized/hk_transport/mtr_property_project_master.csv` (19 project/package rows). Rows are official-disclosure-only: profit-recognition years from MTR annual results (2021: LOHAS Park P7-9; 2022: LP10, SOUTHLAND, La Marina; 2024: Villa Garda, SOUTHSIDE P1/2/4/5, Ho Man Tin P1; 2025: SOUTHSIDE P3/P5, LOHAS Park P12, Ho Man Tin P1/P2), tender years (THE SOUTHSIDE P5/P6 2021; Tung Chung East P1 2024; Tuen Mun A16 P1 2025), plus SHKP-verified LOHAS Park 4A/4B and YOHO WEST cross-references. Units/GFA/ASP/remaining profit stay unpopulated until verified - no fabricated economics. v2 adds an SRPE crosswalk (8/19 rows confirmed): THE SOUTHSIDE P1 晉環/SOUTHLAND (SRPE 7585, first price list 2021-04-19), P2 揚海/La Marina (7787, 2021-08-17), P4 海盈山/La Montagne (9345, 2023-06-27), Ho Man Tin P2 瑜一/IN ONE (8745, 2023-05-08), LOHAS Park P11 凱柏峰/Villa Garda (8545, 2022-06-20), LOHAS Park 4A/4B 晉海/晉海II (4745/4865, 2017), Tai Wai 柏傲莊 I (7225, 2020-10-06). Mappings require an official-name match or repo-verified SHKP data; ambiguous phases (THE SOUTHSIDE P3/P5/P6, Ho Man Tin P1, LOHAS Park P7-10/P12) stay unmapped with evidence_level=official_recognition_only.
 - MTR farebox revenue backtest is live: `scripts/mtr_farebox_revenue_backtest.py`
   calibrates per-passenger yields to MTR's disclosed FY2024 segment revenue
@@ -1347,3 +1348,13 @@ EPS driver diagnosis (the design basis for the whole-company nowcast):
   FY2020. Forecasting reported EPS directly would be dominated by
   valuation marks; underlying EPS is confirmed as the primary nowcast
   target, with reported EPS as an accounting bridge only.
+
+The hotel segment series (`shkp_hotel_segment_series`, FY2013-2025, 13
+years) is persisted alongside the bridge, extracted from the segment notes
+and verified against the source PDFs. It confirms hotel must be modelled
+separately: normal-year operating margin is 23-28%, COVID years swung to
+-10.7%/-20.1%/-14.0% (FY2020-22, revenue -46% turned a +1,433 result into
+-330), and FY2023-25 recovery margins (3.8%/12.4%/11.7%) remain below the
+pre-COVID norm. FY2011-2012 are absent (different segment-table layout in
+those annual reports). A revenue x normalised-margin treatment with
+bull/base/bear margin scenarios is the appropriate hotel module.
