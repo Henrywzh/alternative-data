@@ -48,6 +48,49 @@ PHASE_OP = {
 }
 
 
+
+# ---------------------------------------------------------------------------
+# Official H1/H2 recognition split (HK property development profit, post-tax,
+# attributable; verified against MTR interim reports + annual results)
+#   annual = h1 + h2 holds for every year (5,507 / 9,343 / 10,413 / 2,083 /
+#   10,265 / 11,084).
+# ---------------------------------------------------------------------------
+RECOGNITION_SPLIT = {
+    2020: {"h1": 5171, "h2": 336,  "h1_projects": "COVID year (small)", "source": "interim 2020/2021"},
+    2021: {"h1": 3118, "h2": 6225, "h1_projects": "SEA TO SKY (LOHAS Park P8)", "source": "interim 2021"},
+    2022: {"h1": 7747, "h2": 2666, "h1_projects": "LP10, SOUTHLAND (P1), La Marina (P2)", "source": "interim 2022"},
+    2023: {"h1": 712,  "h2": 1371, "h1_projects": "LP11 initial recognition + residuals", "source": "interim 2023"},
+    2024: {"h1": 1740, "h2": 8525, "h1_projects": "residual; LP11 bulk + SOUTHSIDE + Ho Man Tin P1 in H2", "source": "interim 2024 + annual"},
+    2025: {"h1": 5542, "h2": 5542, "h1_projects": "Ho Man Tin P1/P2, SOUTHSIDE P3/P5; LP12 in H2", "source": "interim 2025 + annual"},
+}
+
+# Per-package recognition half (from interim announcements; STRONG=explicit,
+# INFERRED=by subtraction/attribution)
+PHASE_RECOGNITION_HALF = {
+    "the-southside-p1": ("2022-H1", "strong", "interim 2022 names SOUTHLAND in 1H2022"),
+    "the-southside-p2": ("2022-H1", "strong", "interim 2022 names La Marina in 1H2022"),
+    "the-southside-p4": ("2024-H2", "inferred", "OP 2024-11; bulk 2024H2 (8,525)"),
+    "ho-man-tin-p2": ("2025-H1", "strong", "interim 2025 names Ho Man Tin P2 in 1H2025"),
+    "lohas-park-p11": ("2023-H1 + 2024-H2", "strong", "interim 2023 initial; OP 2024-12 bulk"),
+    "lohas-park-p12": ("2025-H2", "inferred", "OP 2025-10; H2 2025 per split"),
+}
+
+
+def write_recognition_split() -> pd.DataFrame:
+    rows = []
+    for year, info in RECOGNITION_SPLIT.items():
+        rows.append({
+            "fiscal_year": year,
+            "hk_property_dev_profit_post_tax_h1_hkdm": info["h1"],
+            "hk_property_dev_profit_post_tax_h2_hkdm": info["h2"],
+            "annual_total_hkdm": info["h1"] + info["h2"],
+            "h1_projects_official": info["h1_projects"],
+            "source": info["source"],
+        })
+    df = pd.DataFrame(rows)
+    df.to_csv(os.path.join(NORM_DIR, "mtr_property_recognition_h1h2.csv"), index=False)
+    return df
+
 def main() -> int:
     stats = SRPE_STATS.set_index("project_id")
     master = MASTER.set_index("project_id")
@@ -69,11 +112,23 @@ def main() -> int:
             "op_issuance_month": op_month,
             "op_domestic_units": op_units,
             "mtr_recognition_year": rec_year,
+            "mtr_recognition_half": PHASE_RECOGNITION_HALF.get(pid, (None, None, ""))[0],
+            "recognition_half_evidence": PHASE_RECOGNITION_HALF.get(pid, (None, None, ""))[1],
             "op_to_recognition_lag_months": lag_months,
             "evidence_level": evidence,
         })
     out = pd.DataFrame(rows).sort_values("op_issuance_month")
     out.to_csv(OUT_CSV, index=False)
+
+    split_df = write_recognition_split()
+    # attach recognition half to the timing rows
+    out["mtr_recognition_half"] = out["project_id"].map(
+        lambda pid: PHASE_RECOGNITION_HALF.get(pid, (None, None, ""))[0])
+    out["recognition_half_evidence"] = out["project_id"].map(
+        lambda pid: PHASE_RECOGNITION_HALF.get(pid, (None, None, ""))[1])
+    out.to_csv(OUT_CSV, index=False)
+    print("\nH1/H2 recognition split (official):")
+    print(split_df.to_string(index=False))
 
     print("MTR Property Timing History (OP -> recognition):")
     print(out.to_string(index=False))
