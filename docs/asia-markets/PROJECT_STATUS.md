@@ -90,7 +90,7 @@ replacement for the operating manual or generated source-status JSON.
   year) tracks reported HK transport operations revenue with ~4.8% MAPE;
   COVID-era years under-estimate by 7-9% (journey-mix drift, not captured by
   FAM-only yield shifts), and the 2008 step is the MTR-KCR merger coverage
-  change, not a fare event. This gives MTR a monthly revenue nowcast leg ahead of annual results. It integrates ImmD daily control-point statistics (HSR West Kowloon vs Lo Wu/LMC Spur Line) and a regularized Ridge L2 residual model (2019-2023 holdout MAPE 4.06%), achieving +0.43% error on FY2025 live forward OOS validation (HK.70bn forecast vs HK.60bn reported).
+  change, not a fare event. This gives MTR a monthly revenue nowcast leg ahead of annual results. It integrates ImmD daily control-point statistics (HSR West Kowloon vs Lo Wu/LMC Spur Line) and a regularized Ridge L2 residual model (2019-2023 holdout MAPE 4.06%), achieving +0.43% error on FY2025 live forward OOS validation (HK$23.70bn forecast vs HK$23.60bn reported). A 16-year half-yearly MTR earnings bridge (32 half-years, 2010-H1 to 2025-H2) is live in `src/hk_transport/sources/mtr_historical_earnings_bridge.py` and `data/normalized/hk_transport/mtr_historical_earnings_bridge.csv`.
 - China listed airline monthly operating data is wired into transport for six
   listed groups: Air China, China Southern, China Eastern, Spring Airlines,
   Hainan Airlines Holdings and Juneyao Airlines. The artifact includes
@@ -815,6 +815,40 @@ values each appear in three independent places in their annual reports):
 * Third-party (akshare OPERATE_INCOME) differs from the annual-report Group
   revenue by design (segment vs consolidated reporting scope); it is a
   known provider-convention difference, not a parser error.
+
+### Over-read decomposition and JV stake evidence (2026-08-09)
+
+The FY2024/25 revenue-scope ratio of ~140% was decomposed at phase level.
+Two conclusions:
+
+1. The over-read is a timing/scope difference, not a data error. The model
+   records contract flow (PASP signing date) while the issuer's
+   property-sales revenue is recognized at handover (typically 2-3 years
+   after signing for HK presales). FY2024/25 contains large recent launches
+   (Cullinan Sky Phase 1: 868 units / HKD 11.2bn signed 2024-10; Sierra Sea
+   Phases 1-2: ~1,531 units / HKD 8.5bn signed 2025-04/05) whose revenue
+   confirms only in FY2026/27+. Same-timing validation against disclosed
+   contracted sales reads 86.2% (FY2024/25) and 80.0% (2025H2), i.e. the
+   model under-reads in contract scope. The reconciliation panel now carries
+   `comparison_validity` (`same_timing_contract_scope` vs
+   `recognition_lag_not_applicable`) and an explicit lag caveat on revenue
+   rows; revenue-scope ratios are diagnostics only until a handover-lag
+   model is added.
+2. JV stakes are small contributors, not the over-read driver (all nine JV
+   phases total HKD 6.5bn gross in FY2024/25, so 50% vs 100% moves the model
+   by ~HKD 3.2bn). Verified evidence:
+   `SHKP_CURATED_JV_STAKE_OVERRIDES` promotes Cullinan West I-III (匯璽) from
+   unquantified JV to numeric 100% (MTR is land owner/platform provider;
+   SHKP holds the development rights), while The YOHO Hub I/II and YOHO WEST
+   remain at the verified 50/50 split and Wings at Sea stays a conservative
+   50% working assumption. The roster is now 68 numeric + 6 JV.
+
+The monthly backtest also gained a `universe_coverage_ratio` column
+(covered phases / full known SHKP universe, currently 230), alongside the
+pre-existing grid-internal `model_grid_coverage_ratio`. This exposes the
+early-year gap directly: 2013 grid coverage is 100% but universe coverage
+0.8%, 2025 is 29.8%, and the 2026 tail drops to 17.7% purely from register
+publication lag.
 
 The follow-on research-only sales model is now materialized by
 `run-shkp-indicative-sales-model`. It writes monthly, long-scenario, annual,
