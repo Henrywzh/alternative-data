@@ -15,6 +15,15 @@ official MTR railway-property packages with:
 ## Fields intentionally unpopulated (need new verified sources)
 
 ### 1. Units / GFA / sell-through (Magnitude Engine inputs)
+- DONE V1 (2026-08-09): `scripts/mtr_magnitude_engine.py` -> registered sales
+  value per phase (exact sums from 5,921 transactions, cancelled excluded),
+  price distribution, and an honest confirmation-group profit/sales reference.
+  Reliable anchor: G2022H1 7,747m recognised profit vs 晉環+揚海 31,578m
+  registered sales = UPPER bound 24.5% (~17% if LP10 ~15bn). G2024H2/G2025H1
+  ratios are flagged unreliable (missing SRPE data for most members).
+- STILL OPEN: total project units / GFA for sell-through; fill LP10/凱柏峰
+  II/III/朗賢峯/SOUTHSIDE P3/P5/P6 SRPE data to sharpen the take-rate reference.
+
 - DONE (2026-08-09): `scripts/mtr_srpe_transactions.py` downloads each phase's
   latest statutory register-of-transactions PDF and parses it with the shared
   `srpe_pdf.py` parser -> 5,921 registered transactions across 8 phases,
