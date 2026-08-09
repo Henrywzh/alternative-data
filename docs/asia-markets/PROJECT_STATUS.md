@@ -79,7 +79,7 @@ replacement for the operating manual or generated source-status JSON.
 
 ## Recent completed work
 
-- MTR Property Project Master (P0B skeleton) is live: `src/hk_transport/sources/mtr_property_project_master.py` and `data/normalized/hk_transport/mtr_property_project_master.csv` (19 project/package rows). Rows are official-disclosure-only: profit-recognition years from MTR annual results (2021: LOHAS Park P7-9; 2022: LP10, SOUTHLAND, La Marina; 2024: Villa Garda, SOUTHSIDE P1/2/4/5, Ho Man Tin P1; 2025: SOUTHSIDE P3/P5, LOHAS Park P12, Ho Man Tin P1/P2), tender years (THE SOUTHSIDE P5/P6 2021; Tung Chung East P1 2024; Tuen Mun A16 P1 2025), plus SHKP-verified LOHAS Park 4A/4B and YOHO WEST cross-references. Units/GFA/ASP/remaining profit stay unpopulated until verified - no fabricated economics.
+- MTR Property Project Master (P0B skeleton) is live: `src/hk_transport/sources/mtr_property_project_master.py` and `data/normalized/hk_transport/mtr_property_project_master.csv` (19 project/package rows). Rows are official-disclosure-only: profit-recognition years from MTR annual results (2021: LOHAS Park P7-9; 2022: LP10, SOUTHLAND, La Marina; 2024: Villa Garda, SOUTHSIDE P1/2/4/5, Ho Man Tin P1; 2025: SOUTHSIDE P3/P5, LOHAS Park P12, Ho Man Tin P1/P2), tender years (THE SOUTHSIDE P5/P6 2021; Tung Chung East P1 2024; Tuen Mun A16 P1 2025), plus SHKP-verified LOHAS Park 4A/4B and YOHO WEST cross-references. Units/GFA/ASP/remaining profit stay unpopulated until verified - no fabricated economics. v2 adds an SRPE crosswalk (8/19 rows confirmed): THE SOUTHSIDE P1 晉環/SOUTHLAND (SRPE 7585, first price list 2021-04-19), P2 揚海/La Marina (7787, 2021-08-17), P4 海盈山/La Montagne (9345, 2023-06-27), Ho Man Tin P2 瑜一/IN ONE (8745, 2023-05-08), LOHAS Park P11 凱柏峰/Villa Garda (8545, 2022-06-20), LOHAS Park 4A/4B 晉海/晉海II (4745/4865, 2017), Tai Wai 柏傲莊 I (7225, 2020-10-06). Mappings require an official-name match or repo-verified SHKP data; ambiguous phases (THE SOUTHSIDE P3/P5/P6, Ho Man Tin P1, LOHAS Park P7-10/P12) stay unmapped with evidence_level=official_recognition_only.
 - MTR farebox revenue backtest is live: `scripts/mtr_farebox_revenue_backtest.py`
   calibrates per-passenger yields to MTR's disclosed FY2024 segment revenue
   (domestic / cross-boundary / HSR & intercity / Airport Express / Light Rail
@@ -136,9 +136,14 @@ replacement for the operating manual or generated source-status JSON.
   normalization fallback. Fuel sensitivity remains pre-tax unless a positive
   operating-to-net conversion is supportable. The v3 layer now prefers a
   reported FY2025 below-operating residual bridge when all five official
-  anchors are present; the residual still combines finance cost, FX, tax,
-  associates and NCI. This is a transparent research bridge, not issuer
-  guidance or a trade approval.
+  anchors are present; where a formal consolidated income statement exposes
+  `营业利润`, v3 now uses that reported operating-profit anchor rather than
+  revenue-minus-operating-cost for the historical residual. The parser also
+  carries disclosed FY2025 finance cost, interest, investment, tax,
+  non-operating, NCI and net-income rows as an audit waterfall. Forward
+  finance cost, FX, tax, associates and NCI remain inside the residual, so
+  this is a transparent research bridge, not issuer guidance or a trade
+  approval.
 - The first v3 free-online source/model extension is now live. The MOFCOM
   monthly goods-trade endpoint produces six current 2026 monthly observations
   (total/export/import values and YoY rates) in
@@ -153,10 +158,17 @@ replacement for the operating manual or generated source-status JSON.
   9 Air remains incomplete because no standalone financial base exists. The companion
   `airline_earnings_model_v3_kpi_coverage.csv` explicitly marks ASK/RPK/load
   factor/aggregate CASK as modelled, yield/cargo/fuel hedge/fleet/net income
-  as partial or proxy, and cargo yield/finance waterfall as not modelled;
-  ancillary/other revenue is now a labelled residual proxy; EPS remains
-  an explicitly labelled basic-share-count proxy. This is
+  as partial or proxy, finance waterfall as historical-partial/forward-
+  unmodelled, and ancillary/other revenue as a labelled residual proxy; EPS
+  remains an explicitly labelled basic-share-count proxy. This is
   a research model extension, not a final long/short direction.
+- The official report driver layer now contains 419 normalized rows across
+  the 12 FY2025/1H2025 primary-issuer PDFs. The v3 output carries a
+  `fy2025_waterfall_status` and per-line FY2025 anchors; coverage is complete
+  for the formal waterfall in Air China, China Southern and Hainan, partial
+  for Spring/Juneyao, and absent for China Eastern FY2025 in the current
+  report layer. These are historical anchors only, not forward line-item
+  forecasts.
 - The CAAC sector layer is now live alongside the MOFCOM proxy. Official
   monthly PDFs are normalized from 2020-01 through 2026-06 into
   `airline_caac_sector_monthly.csv` with 5,928 monthly/YTD observations and
@@ -1305,3 +1317,33 @@ log-difference RVD bridge (office beta ~0.83 contemporaneous, retail
 3-year split limitation. The next step is the whole-company earnings
 nowcast that combines residential (SRPE model), commercial (this module),
 hotels and other businesses.
+
+### Whole-company earnings bridge and EPS driver diagnosis (2026-08-09)
+
+`run-shkp-earnings-bridge` materialises the 15-year (FY2011-FY2025) group
+earnings bridge (`shkp_historical_earnings_bridge`) from the official
+Group Financial Summary / Five-Year Financial Summary pages of the 2014/15,
+2019/20 and 2024/25 annual reports. Columns span revenue, operating profit
+pre/post FV, underlying profit, FV effect (disclosed from FY2021; derived as
+pre-minus-post-FV operating profit before that), reported profit,
+underlying/reported EPS and DPS, plus the FY2021-25 segment split (property
+sales / rental / other businesses revenue and profit). Overlap years
+(FY2015, FY2020) were checked across adjacent summaries and all values
+verified against the source PDFs.
+
+EPS driver diagnosis (the design basis for the whole-company nowcast):
+
+* Property-development profit is the ONLY material earnings driver.
+  FY2021-25 segment decomposition shows its share of segment profit
+  falling from 47.5% to ~25%, and the YoY underlying-profit changes are
+  almost entirely property-sales moves (-5.1bn, -4.5bn, -3.4bn, +0.4bn)
+  while rental (18.4-19.3bn, near-flat) and other businesses (4.0-5.5bn,
+  rising) contribute little variance. Residential profit = recognised
+  revenue x development margin is therefore the make-or-break module.
+* Rental profit is extremely sticky (as found in the commercial module);
+  a run-rate / normalised-margin treatment is appropriate.
+* Investment-property FV changes dominated reported profit in FY2011-2019
+  (36%-117% of underlying) but turned into a stable -11% to -15% drag from
+  FY2020. Forecasting reported EPS directly would be dominated by
+  valuation marks; underlying EPS is confirmed as the primary nowcast
+  target, with reported EPS as an accounting bridge only.

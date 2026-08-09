@@ -1,20 +1,20 @@
-project_id,station,package_label,project_name_official,developer,profit_recognition_year,tender_year,cross_ref_hk_real_estate,source
-lohas-park-p7-p9,LOHAS Park,"LOHAS Park Packages 7, 8, 9",,,2021,,,MTR FY2021 results (HK$9.3bn booked)
-lohas-park-p10,LOHAS Park,LOHAS Park Package 10 (LP10),LP10,,2022,,,MTR FY2022 results
-lohas-park-p11,LOHAS Park,LOHAS Park Package 11,Villa Garda,,2024,,,MTR FY2023/FY2024 results
-lohas-park-p12,LOHAS Park,LOHAS Park Package 12,,,2025,,,MTR FY2024 outlook / FY2025 results
-lohas-park-p4a,LOHAS Park,LOHAS Park Phase IVA (Wings at Sea / 晉海),Wings at Sea,SHKP-led with MTR as owner,,,shkp.py phase Wings at Sea (LOHAS Park Phase IVA),HK real-estate SHKP phase data (repo-verified)
-lohas-park-p4b,LOHAS Park,LOHAS Park Phase IVB (Wings at Sea II / 晉海II),Wings at Sea II,SHKP-led with MTR as owner,,,shkp.py phase Wings at Sea II (LOHAS Park Phase IVB),HK real-estate SHKP phase data (repo-verified)
-the-southside-p1,Wong Chuk Hang,THE SOUTHSIDE Package 1,SOUTHLAND,,"2022, 2024",,,MTR FY2022/FY2024 results
-the-southside-p2,Wong Chuk Hang,THE SOUTHSIDE Package 2,La Marina,,"2022, 2024",,,MTR FY2022/FY2024 results
-the-southside-p3,Wong Chuk Hang,THE SOUTHSIDE Package 3,,,2025,,,MTR FY2024 outlook / FY2025 results
-the-southside-p4,Wong Chuk Hang,THE SOUTHSIDE Package 4,La Montagne,,2024,,,MTR FY2024 results
-the-southside-p5,Wong Chuk Hang,THE SOUTHSIDE Package 5,,,"2024, 2025",2021,,MTR FY2021/FY2024/FY2025 results
-the-southside-p6,Wong Chuk Hang,THE SOUTHSIDE Package 6,,,,2021,,MTR FY2021 results (tendered out)
-ho-man-tin-p1,Ho Man Tin,Ho Man Tin Station Package 1,,,"2024, 2025",,,MTR FY2024/FY2025 results
-ho-man-tin-p2,Ho Man Tin,Ho Man Tin Station Package 2,IN ONE,,2025,,,MTR FY2023 outlook / FY2025 results
-tai-wai,Tai Wai,Tai Wai Station project (The Wai mall sharing-in-kind),The Wai (柏傲莊),,2022 (initial booking via IP fair value),,,MTR FY2022 results
-tung-chung-east-p1,Tung Chung East,Tung Chung East Station Package 1,,,,2024,,MTR FY2024 results (awarded Dec 2024)
-tuen-mun-a16-p1,Tuen Mun A16,Tuen Mun A16 Station Package 1,,,,2025,,MTR FY2025 results (awarded Nov 2025)
-hung-shui-kiu,Hung Shui Kiu,Hung Shui Kiu Station,,,,,,MTR FY2021 (detailed planning) / FY2024 (project agreement)
-yoho-west,Tin Wing Stop / Tin Shui Wai,YOHO WEST (Tin Wing Stop development),YOHO WEST / YOHO WEST PARKSIDE,SHKP-MTR JV,,,shkp.py YOHO WEST PARKSIDE / Tin Wing Stop Development,HK real-estate SHKP phase data (repo-verified)
+project_id,station,package_label,project_name_official,developer,profit_recognition_year,tender_year,srpe_development_id,srpe_phase_name,srpe_first_price_list_date,evidence_level,cross_ref_hk_real_estate,source
+lohas-park-p7-p9,LOHAS Park,"LOHAS Park Packages 7, 8, 9",,,2021,,,,,official_recognition_only,,MTR FY2021 results (HK$9.3bn booked)
+lohas-park-p10,LOHAS Park,LOHAS Park Package 10 (LP10),LP10,,2022,,,,,official_recognition_only,,MTR FY2022 results
+lohas-park-p11,LOHAS Park,LOHAS Park Package 11,Villa Garda,,2024,,8545,凱柏峰 I (Villa Garda),2022-06-20,official_name_match,,MTR FY2023/FY2024 results; SRPE index
+lohas-park-p12,LOHAS Park,LOHAS Park Package 12,,,2025,,,,,official_recognition_only,,MTR FY2024 outlook / FY2025 results
+lohas-park-p4a,LOHAS Park,LOHAS Park Phase IVA (Wings at Sea / 晉海),Wings at Sea,SHKP-led with MTR as owner,,,4745,晉海 (Wings at Sea),2017-09-08,repo_verified_shkp,shkp.py phase Wings at Sea (LOHAS Park Phase IVA),HK real-estate SHKP phase data (repo-verified); SRPE index
+lohas-park-p4b,LOHAS Park,LOHAS Park Phase IVB (Wings at Sea II / 晉海II),Wings at Sea II,SHKP-led with MTR as owner,,,4865,晉海II (Wings at Sea II),2017-10-14,repo_verified_shkp,shkp.py phase Wings at Sea II (LOHAS Park Phase IVB),HK real-estate SHKP phase data (repo-verified); SRPE index
+the-southside-p1,Wong Chuk Hang,THE SOUTHSIDE Package 1,SOUTHLAND,,"2022, 2024",,7585,晉環 (SOUTHLAND),2021-04-19,official_name_match,,MTR FY2022/FY2024 results; SRPE index
+the-southside-p2,Wong Chuk Hang,THE SOUTHSIDE Package 2,La Marina,,"2022, 2024",,7787,揚海 (La Marina),2021-08-17,official_name_match,,MTR FY2022/FY2024 results; SRPE index
+the-southside-p3,Wong Chuk Hang,THE SOUTHSIDE Package 3,,,2025,,,,,official_recognition_only,,MTR FY2024 outlook / FY2025 results
+the-southside-p4,Wong Chuk Hang,THE SOUTHSIDE Package 4,La Montagne,,2024,,9345,海盈山 (La Montagne),2023-06-27,official_name_match,,MTR FY2024 results; SRPE index
+the-southside-p5,Wong Chuk Hang,THE SOUTHSIDE Package 5,,,"2024, 2025",2021,,,,official_recognition_only,,MTR FY2021/FY2024/FY2025 results
+the-southside-p6,Wong Chuk Hang,THE SOUTHSIDE Package 6,,,,2021,,,,official_recognition_only,,MTR FY2021 results (tendered out)
+ho-man-tin-p1,Ho Man Tin,Ho Man Tin Station Package 1,,,"2024, 2025",,,,,official_recognition_only,,MTR FY2024/FY2025 results
+ho-man-tin-p2,Ho Man Tin,Ho Man Tin Station Package 2,IN ONE,,2025,,8745,瑜一 (IN ONE),2023-05-08,official_name_match,,MTR FY2023 outlook / FY2025 results; SRPE index
+tai-wai,Tai Wai,Tai Wai Station project (The Wai mall sharing-in-kind),The Wai (柏傲莊),,2022 (initial booking via IP fair value),,7225,柏傲莊 I (Pavilia Farm I),2020-10-06,public_knowledge_name_match,,MTR FY2022 results; SRPE index
+tung-chung-east-p1,Tung Chung East,Tung Chung East Station Package 1,,,,2024,,,,official_recognition_only,,MTR FY2024 results (awarded Dec 2024)
+tuen-mun-a16-p1,Tuen Mun A16,Tuen Mun A16 Station Package 1,,,,2025,,,,official_recognition_only,,MTR FY2025 results (awarded Nov 2025)
+hung-shui-kiu,Hung Shui Kiu,Hung Shui Kiu Station,,,,,,,,official_recognition_only,,MTR FY2021 (detailed planning) / FY2024 (project agreement)
+yoho-west,Tin Wing Stop / Tin Shui Wai,YOHO WEST (Tin Wing Stop development),YOHO WEST / YOHO WEST PARKSIDE,SHKP-MTR JV,,,,,,repo_verified_shkp,shkp.py YOHO WEST PARKSIDE / Tin Wing Stop Development,HK real-estate SHKP phase data (repo-verified)
