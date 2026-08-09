@@ -80,6 +80,7 @@ replacement for the operating manual or generated source-status JSON.
 ## Recent completed work
 
 - MTR SRPE transaction probe is live: `scripts/mtr_srpe_transactions.py` downloads the latest statutory register-of-transactions PDF for each of the 8 name-confirmed MTR phases and parses 5,921 transactions (shared `srpe_pdf.py` parser). Per-phase stats feed the property master (units_sold_registered / asp_median / first-last transaction date): 晉環 860 @ HK$18.2m median, 揚海 641 @ 19.1m, 海盈山 374 @ 14.2m, 瑜一 378 @ 16.4m, 凱柏峰I 669 @ 8.2m, 晉海 1,047 @ 7.4m, 晉海II 1,142 @ 8.4m, 柏傲莊I 810 @ 10.2m. First transaction dates sit 1-3 weeks after each phase's first price list, consistent with presale mechanics. `units_sold_registered` is registered transactions, NOT total project units.
+- MTR Consensus Monitor is live: `scripts/mtr_consensus_monitor.py` outputs `mtr_consensus_monitor.csv` - Our-vs-Street per KPI (transport revenue 24.2bn base vs consensus-implied 23.5bn; property 4.6/6.3/8.1bn; reported EPS 1.44/1.71/2.01 vs 2.52) plus an EPS back-out table. KEY INSIGHT: consensus 2.52 is consistent with our property base (63.3bn) if IP revaluation turns positive ~+30亿 (implied property 68.6bn); with IP reval negative -15亿 the consensus implies property at/above the FY25 record (113.6bn), which our SRPE/OP chain does not support. The EPS gap is therefore mostly an IP-revaluation assumption (rates/property market), not a property-profit disagreement. Also flagged: yfinance yearAgoEps 2.69 conflicts with official FY25 2.36; ratings (12) cover more analysts than EPS estimates (7).
 - MTR Property Expected Profit V1 + EPS bridge are live: `scripts/mtr_property_expected_profit.py` and `scripts/mtr_property_eps_bridge.py`. FY26 pool = official FY25-outlook names (new: LP13, THE SOUTHSIDE P6, Yau Tong VB; continued: Tai Wai, SOUTHSIDE P5, LP12) plus residual (凱柏峰 II/III, 朗賢峯). Expected profit = P(recognition) x eligible registered value x implied conversion ratio (15/20/25% bear/base/bull, anchored by G2022H1). Measured layer (SRPE) 1.06bn base; assumed-scenario layer 4.70bn base (values explicitly ASSUMED, +/-25% band); FY26 total 3.4/5.8/8.7bn vs FY25 11.1bn. EPS bridge: reported EPS 1.25/1.62/2.09 vs Street FY26 2.52 (-50%/-36%/-17%) - flags a large gap to test (our P/magnitude too conservative vs Street not marking down FY26 property). Targeted SRPE enrichment round complete: LP12 海瑅灣 I/II (999 deals, 87.4bn), SOUTHSIDE P5 滶晨 I/II (793 deals, 139.8bn - nearly 2.3x the assumed scenario!), 凱柏峰 II/III (1,292 deals, 93.1bn; three-phase total 1,961 deals ~ OP 1,880 units cross-check), 朗賢峯 (162 deals, 31.4bn), LP13 suspected (633 deals, 41.6bn). FY26 expected property profit updated to 4.9/6.7/8.6bn (bear/base/bull) and EPS 1.48/1.77/2.07 vs Street 2.52 (-41%/-30%/-18%). FY26 expected profit now uses PIT-aligned eligible values (registered sales as of FY25 year end): P5 滶晨 121.8bn (87% of its 139.8bn sold in first 7 months), 凱柏峰 II/III 90.9bn, LP13 39.8bn, 朗賢峯 31.4bn; LP12 海瑅灣 had zero FY25 deals (recognition via OP 2025-10 handover) so its FY26 residual draws on FY26 sales. Updated FY26: property 4.6/6.3/8.1bn, EPS 1.44/1.71/2.01 vs Street 2.52 (-43%/-32%/-20%). Full stack handoff in `docs/asia-markets/MTR_RESEARCH_STACK.md`. P5 is now the largest single EPS risk (0.180). EPS-risk ranking directs targeted enrichment: (0.090 EPS risk), Tai Wai (0.085), SOUTHSIDE P5 (0.077), 凱柏峰 II/III & 朗賢峯 (0.052), LP13 (0.048), P6 (0.040), Yau Tong (0.019).
 - MTR Property Magnitude Engine V1 is live: `scripts/mtr_magnitude_engine.py` writes `mtr_magnitude_engine.csv` with exact registered sales value per phase (cancelled deals excluded): 晉環 16,823m, 揚海 14,755m, 晉海II 9,582m, 柏傲莊I 8,808m, 晉海 8,703m, 瑜一 6,704m, 海盈山 5,980m, 凱柏峰I 4,897m, plus p25/median/mean/p75 price distribution. Confirmation-group profit/sales reference (UPPER bounds - missing members shrink the denominator): G2022H1 24.5% (7,747m vs 晉環+揚海 31,578m; ~17% if LP10 value ~15bn); G2024H2 78.4% and G2025H1 82.7% are unreliable (most members lack SRPE data) and are flagged NOT trustworthy as point estimates. G2022H1 anchors MTR recognised profit at roughly 17-24% of registered sales value (bundles project margin and MTR share; not a statutory take-rate).
 - MTR Property Timing Engine V0 is live: `scripts/mtr_timing_engine.py` writes `mtr_property_timing_history.csv` linking presale -> first transaction -> BD occupancy permit -> MTR recognition. Four STRONG-mapped cases (address + permit count + timing): 晉環 OP 2022-04 (PR4/2022/OP, 800u) -> 2022; 揚海 OP 2022-08 (PR6/2022/OP, 600u) -> 2022; 海盈山 OP 2024-11 (PR12/2024/OP, 800u) -> 2024; 瑜一 OP 2024-11 (PR11/2024/OP, 630u) -> 2025. Two SUSPECTED shared-lot cases: LOHAS Park P11 OP 2024-12 (1,880u) -> 2024; P12 OP 2025-10 (1,985u) -> 2025. H1/H2 recognition split is now official: interim results show 2022H1 7,747 (LP10/SOUTHLAND/La Marina) vs 2022H2 2,666; 2023H1 712 (LP11 initial) vs H2 1,371; 2024H1 1,740 vs H2 8,525 (LP11 bulk + SOUTHSIDE + Ho Man Tin P1); 2025H1 5,542 (Ho Man Tin P1/P2, SOUTHSIDE P3/P5) vs H2 5,542 (LP12). Annual = H1 + H2 reconciles for all six years. Per-package recognition half is attached to the timing history (晉環 2022-H1 strong, 瑜一 2025-H1 strong, 海盈山 2024-H2 inferred, LP11 2023-H1+2024-H2 strong). Empirical pattern: OP issuance and recognition fall in the same calendar year (median lag ~1 month). THE SOUTHSIDE mapped via 11 Heung Yip Road in the BD history.
@@ -210,11 +211,45 @@ replacement for the operating manual or generated source-status JSON.
   19.0% level growth. v3 carries the latest admissible event as sector
   context only; it does not convert holiday points into monthly company RPK.
 - The issuer airport monthly traffic layer is now live in
-  `airline_airport_traffic.csv` with 72 rows across Shanghai Pudong/Hongqiao,
-  Shenzhen and Guangzhou Baiyun for 2026-05 and 2026-06. It parses official
+  `airline_airport_traffic.csv` with 288 rows across Shanghai Pudong/Hongqiao,
+  Shenzhen and Guangzhou Baiyun for 2026-01 through 2026-06. It parses official
   CNINFO PDF bulletins with announcement dates, scope rows and month/cumulative
   units, and v3 carries the latest release-date-safe hub observation as sector
   context only.
+- The airport-cargo bridge validation layer is now live in
+  `airline_cargo_airport_bridge.csv` (4 companies). For H1-2026 it compares
+  hub airport cargo throughput with issuer cargo tonnage: Shanghai hubs grew
+  9.4% YoY while Spring cargo tonnage grew 22.6% (-13.2pp gap), Juneyao grew
+  5.5% (+3.8pp), and Guangzhou/Shenzhen hubs grew 0.7% against Southern's
+  0.3% (0.4pp). Spring's low revenue-per-tonne (RMB2.8/t) versus Southern
+  (RMB20.9/t) reflects their different cargo mixes. The mapping is directional
+  and the layer is calibration context, not a cargo revenue forecast.
+- The forward cargo-revenue bridge is now live in
+  `airline_cargo_yield_bridge.csv` (6 companies). It applies a reported
+  revenue-per-tonne anchor (H1-2025 official cargo revenue / H1-2025 tonnage;
+  FY2025 annualized for Spring/Juneyao) to H1-2026 issuer tonnage. Implied
+  H1-2026 cargo revenue grows ~22.6% at Spring, +5.5% at Juneyao, +8.3% at
+  Eastern, +1.8% at Hainan, +0.3% at Southern and ~flat at Air China. This is
+  a dated evidence layer that the external-proxy cargo leg can be tested
+  against when H1-2026 reports are published; it is not a full-year forecast.
+- Forward tax and FX assumptions are now live in
+  `airline_forward_assumptions.csv` (6 companies). Effective tax rates use
+  FY2025 reported tax/profit-before-tax with hand-verified curated anchors
+  for Spring (p25), Juneyao (p165) and Eastern (p12, deferred-tax reversal).
+  Air China and Eastern are flagged for absolute tax carry because their tax
+  lines reflect reversal effects, and the forward FX assumption is the latest
+  ECB USD/CNY reference carried forward rather than a forecast. Southern's
+  forward waterfall proxy now applies its 44.2% FY2025 effective rate to
+  forecast profit instead of carrying FY2025 absolute tax.
+- The H1-2026 validation playbook is now live in
+  `airline_h1_2026_validation_playbook.csv` (7 companies). It consolidates the
+  pre-report H1 KPI forecasts (ASK/RPK/passengers/load-factor/cargo-tonnes),
+  the cargo-yield revenue bridge, v3 bear/base/bull net profit, EPS and
+  consensus, plus each issuer's scheduled filing date, into one reconciliation
+  table that is filled with actuals after the interim reports. The first read
+  exposes a large v3-versus-consensus gap for the Big Three (Air China +3,215%,
+  Southern +2,040%, Eastern +866%) that the residual-bridge methodology must
+  explain before it can be used as a final earnings leg.
 - The fuel pass-through layer is upgraded from schedule-only to a dated
   surcharge-to-fuel recovery proxy in `airline_fuel_surcharge_recovery.csv`
   (7 observations). The 2026-07-05 mainland change cut the >800km surcharge
@@ -1583,6 +1618,45 @@ for the complete report. Headline items:
   EPS MEDIUM (below-segment residual the key risk).
 * Next phase is the INVESTMENT LAYER (FY26 upside sources, consensus
   revision catalysts, falsification data), not further model building.
+
+### Historical coverage backfill (2026-08-09, COMPLETE)
+
+The skeleton backtest's early-year under-coverage (FY2016-2022 kernel
+recognised/actual ratio 0.27-0.60) was traced to missing SHKP legacy
+project transaction registers, plus one latent bug:
+
+* CURATED STAKE UNIT BUG (fixed): `SHKP_CURATED_JV_STAKE_OVERRIDES` and
+  `SHKP_CURATED_PROMOTIONS` stored fractions (1.0) while the roster column
+  `indicative_ownership_pct` is percent (100.0). Cullinan West (匯璽)
+  phases were silently attributed at 1% instead of 100%, shrinking their
+  HKD 17bn+ of contract activity 100x in the model. Values corrected to
+  100.0; this also fixed the same latent error in the new promotions.
+* Backfilled SHKP legacy registers (routing-only, ownership verified):
+  - The Cullinan / 天璽 (Kowloon Station Dev, opened 2013-09): 250 events,
+    HKD 11.4bn, FY2014+ concentrated - the single largest missing phase.
+  - Shouson Peak (壽臣山, 2013-09): 29 events, HKD 6.6bn.
+  - Twelve Peaks (山頂, 2014-06): 11 events, HKD 5.4bn.
+* Curated exclusions added (verified non-SHKP): Mount Nicholson x2
+  (Wharf + Nan Fung), Mount Pavilia (New World) - registers downloaded in
+  the same backfill are excluded from the model.
+* Effect: kernel recognised/actual ratio mean 0.71 -> 0.83 (2019-2021 near
+  1.0); skeleton backtest MAE 20.1% -> 12.5%, FY2019/20 -4.0%, FY2023/24
+  -1.0%, FY2024/25 +0.9%. FY2026E EPS 8.51 (+7.6% vs consensus), FY2027E
+  8.77 (+1.4%).
+* The Wings (唐賢街9號, TKO Town Lot 72) additionally promoted to SHKP
+  100% - the earlier address-based exclusion wrongly suppressed this
+  phase (it IS SHKP's own development: annual handover tables list "The
+  Wings II/IIIA/IIIB" at 100% and SHKP history milestones record a 2011
+  launch / 2014 handover; it is not the CK Asset LOHAS "The Wings").
+  SRPE carries only its tail registers (15 events, HKD 0.5bn), so the
+  gain is small but the identity is now correct.
+
+Final kernel ratios (FY2016-2025): mean 0.85, median 0.93 (from 0.71 /
+0.68). FY2019-2024 at parity (0.93-1.07); FY2017-18 at 0.75-0.83; FY2022
+0.74; FY2016 0.36 (hard floor: SRPE went live 2013, pre-2013 launch
+registers are not on the platform). Skeleton MAE 20.1% -> 12.4%,
+FY2023/24 -1.0%, FY2024/25 +1.0%. Residual early-year error is a
+documented source limitation, not an implementation gap. 218 tests pass.
 
 ### Below-segment / Mainland decomposition (③ - 2026-08-09)
 
