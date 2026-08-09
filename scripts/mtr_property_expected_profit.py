@@ -84,6 +84,25 @@ KNOWN_VALUES["lohas-park-p11-ii-iii"] = (
     KNOWN_VALUES.get("lohas-park-p11-ii", 0.0) + KNOWN_VALUES.get("lohas-park-p11-iii", 0.0)
 )
 
+# PIT-aligned eligible values: registered sales value as of FY25 year end
+# (2025-12-31). This is the look-ahead-safe denominator for FY26 recognition
+# - sales signed after FY25 year end belong to later recognition years.
+# Reuses the same detail csv (cancelled excluded) with a date cutoff.
+_AS_OF_FY25 = dict(
+    round(
+        _DETAIL.loc[_DETAIL["date_of_pasp"] <= "2025-12-31"]
+        .groupby("project_id")["transaction_price_hkd"].sum() / 1e6, 0
+    )
+)
+_AS_OF_FY25["lohas-park-p11-ii-iii"] = (
+    _AS_OF_FY25.get("lohas-park-p11-ii", 0.0) + _AS_OF_FY25.get("lohas-park-p11-iii", 0.0)
+)
+# LP12 海瑅灣 had zero deals before FY25 year end (first deal 2026-03-20);
+# its FY25 recognition came via the OP 2025-10 handover, and FY26 residual
+# recognition will draw on the FY26 sales - keep the current value for that
+# line but document it.
+_AS_OF_FY25["lohas-park-p12"] = KNOWN_VALUES.get("lohas-park-p12", 0.0)
+
 # ASSUMED SCENARIO eligible values for phases lacking SRPE data (explicitly
 # labelled - typical phase-scale estimates for sensitivity only, NOT
 # verified figures). Bear/base/bull on VALUE is applied as +/- 25% of the
@@ -102,6 +121,7 @@ def main() -> int:
     for p in POOL:
         pid = p["project_id"]
         value = KNOWN_VALUES.get(pid)
+        eligible = _AS_OF_FY25.get(pid) if (value is not None and pid in _AS_OF_FY25) else value
         is_scenario = value is None and pid in SCENARIO_VALUES
         if is_scenario:
             # scenario centre with +/-25% value band
@@ -128,14 +148,15 @@ def main() -> int:
             continue
         if value is None:
             needs_data.append(pid)
-        exp_low = p["p_fy26"] * (value or 0) * BEAR
-        exp_base = p["p_fy26"] * (value or 0) * BASE
-        exp_high = p["p_fy26"] * (value or 0) * BULL
+        exp_low = p["p_fy26"] * (eligible or 0) * BEAR
+        exp_base = p["p_fy26"] * (eligible or 0) * BASE
+        exp_high = p["p_fy26"] * (eligible or 0) * BULL
         rows.append({
             "project_id": pid,
             "phase_label": p["label"],
             "p_recognition_fy26": p["p_fy26"],
-            "eligible_registered_value_hkdm": value,
+            "eligible_registered_value_hkdm": eligible,
+            "registered_value_current_hkdm": value,
             "expected_profit_low_hkdm": round(exp_low, 0) if value else None,
             "expected_profit_base_hkdm": round(exp_base, 0) if value else None,
             "expected_profit_high_hkdm": round(exp_high, 0) if value else None,
