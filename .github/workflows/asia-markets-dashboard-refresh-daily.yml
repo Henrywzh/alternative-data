@@ -79,6 +79,10 @@ jobs:
           sudo apt-get install --yes --no-install-recommends poppler-utils
           pdftotext -v
 
+      - name: Test artifact refresh guard
+        working-directory: apps/asia-markets-dashboard
+        run: npm run test:refresh-guard
+
       - name: Refresh HK Real Estate + HK Local Consumer artifacts
         # A single upstream publisher must not block the other sector
         # refreshes. The builder keeps the last committed artifact for the

@@ -14,6 +14,11 @@ replacement for the operating manual or generated source-status JSON.
 - Live sector roster: 10 sectors; see `apps/asia-markets-dashboard/sectors.json`.
 - English and Chinese hub/data-status pages are published.
 - Sector artifacts are generated as portable HTML from `.generated/*.json`.
+- Artifact refreshes now fail closed on destructive empty-data regressions:
+  `run-artifact-builders.mjs` restores the previous sector artifact/status when
+  a previously non-empty dataset becomes empty or disappears, and core HKMA
+  mortgage / Buildings Department history builders use committed-artifact
+  fallbacks marked stale when CI has no normalized cache.
 - `STREAMLIT_PARITY_PROTOCOL.md` is the shared Cloudflare-to-Streamlit
   decision guide. The non-blocking GitHub Action
   `.github/workflows/streamlit-parity-reminder.yml` compares structural

@@ -952,7 +952,12 @@ def build_artifact(
                     clean[key] = value
             srpe_signal_history_rows.append(clean)
 
-    df_hkma = raw_hkma if raw_hkma is not None else fetch_hkma_residential_mortgage_survey()
+    # HKMA is a core monthly history, not an optional snapshot.  Prefer the
+    # durable normalized cache, then fetch, then reconstruct the last
+    # committed artifact if the upstream request returns no usable rows.  A
+    # transient API outage must never make the mortgage charts disappear.
+    df_hkma = raw_hkma if raw_hkma is not None else _load_hkma_with_fallback()
+    df_hkma = _canonicalize_hkma_frame(df_hkma)
     df_cnsd = raw_cnsd if raw_cnsd is not None else fetch_cnsd_table("615-66001")
 
     hkma_rows = []
@@ -1003,6 +1008,30 @@ def build_artifact(
             })
         hkma_credit_quality_rows.sort(key=lambda r: (r["series"], r["date"]))
         hkma_ltv_rows.sort(key=lambda r: r["date"])
+
+    if not df_hkma.empty and "observation_date" in df_hkma.columns:
+        hkma_dates = pd.to_datetime(df_hkma["observation_date"], errors="coerce").dropna()
+        if not hkma_dates.empty:
+            hkma_latest = hkma_dates.max()
+            now_date = pd.Timestamp(now.replace(tzinfo=None)).normalize()
+            hkma_age = max(0, int((now_date - hkma_latest.normalize()).days))
+            fallback_reason = df_hkma.attrs.get("dashboard_fallback_reason")
+            health.append(
+                {
+                    "source": PUBLIC_SOURCES["hkma_mortgage"]["label"],
+                    "dataset": "HKMA residential mortgage survey",
+                    "type": "Measure",
+                    "status": "Stale" if fallback_reason else "Healthy",
+                    "latest_observation": hkma_latest.strftime("%Y-%m-%d"),
+                    "records": int(len(df_hkma)),
+                    "freshness": "Previous artifact snapshot" if fallback_reason else f"{hkma_age}d old",
+                    "notes": (
+                        f"Live fetch returned no usable rows; reused {fallback_reason}."
+                        if fallback_reason
+                        else "Official monthly residential mortgage survey; the source may revise the latest month."
+                    ),
+                }
+            )
 
     # Long-format {date, series, value} views of hkma_activity_rows for the
     # two charts below -- the table itself stays wide-format (one row per
@@ -1431,9 +1460,17 @@ def build_artifact(
         ("SRPE pilot", "Phase-level first-hand sales signals", srpe_developer_monthly_rows, "Sales of First-hand Residential Properties Electronic Platform (SRPE)"),
     ):
         record_count = len(rows_or_frame)
+        fallback_reason = (
+            df_bd_supply_history.attrs.get("dashboard_fallback_reason")
+            if label == "Buildings Department history"
+            else None
+        )
         if not record_count:
             coverage_status = "No data this run"
             coverage_notes = f"{source_label}; live fetch returned no usable rows this run."
+        elif fallback_reason:
+            coverage_status = "Stale"
+            coverage_notes = f"{source_label}; live cache/fetch was unavailable, so the {fallback_reason} was retained."
         elif label == "Agency transactions" and len(observed_agencies) < 2:
             coverage_status = "Partial"
             coverage_notes = (
@@ -1451,7 +1488,11 @@ def build_artifact(
                 "status": coverage_status,
                 "latest_observation": max((row["date"] for row in rows_or_frame), default="—") if label == "SRPE pilot" else "—",
                 "records": record_count,
-                "freshness": "Published snapshot" if label == "SRPE pilot" and record_count else ("Live at build time" if record_count else "Fetch returned no rows"),
+                "freshness": (
+                    "Published snapshot"
+                    if label == "SRPE pilot" and record_count
+                    else ("Previous artifact snapshot" if fallback_reason else ("Live at build time" if record_count else "Fetch returned no rows"))
+                ),
                 "notes": coverage_notes,
             }
         )
@@ -2492,7 +2533,7 @@ def build_artifact(
         "generated_at": generated_at,
         "snapshot_id": snapshot_id,
         "data_as_of": artifact["package_info"]["dataAsOf"],
-        "overall_status": "Healthy",
+        "overall_status": "Degraded" if any(row.get("status") == "Stale" for row in coverage) else "Healthy",
         "live_sources": len(health),
         "planned_sources": len(PLANNED_COVERAGE),
         "provisional_series": sum(int(row["is_provisional"]) for row in kpis.values()),
@@ -2540,6 +2581,140 @@ def _load_dataset_from_committed_artifact(dataset_key: str) -> pd.DataFrame:
     except (FileNotFoundError, json.JSONDecodeError, KeyError, TypeError):
         return pd.DataFrame()
     return pd.DataFrame(rows) if isinstance(rows, list) else pd.DataFrame()
+
+
+def _mark_artifact_fallback(frame: pd.DataFrame, reason: str) -> pd.DataFrame:
+    """Attach non-serialized provenance for a stale artifact fallback."""
+    result = frame.copy()
+    result.attrs["dashboard_fallback_reason"] = reason
+    return result
+
+
+def _canonicalize_hkma_frame(frame: pd.DataFrame) -> pd.DataFrame:
+    """Accept both historical HKMA cache column spellings."""
+    if frame.empty:
+        return frame
+    result = frame.copy()
+    for canonical, legacy in {
+        "hibor_pricing_pct_share": "hibor_pricing_pct",
+        "blr_pricing_pct_share": "blr_pricing_pct",
+        "fixed_pricing_pct_share": "fixed_pricing_pct",
+    }.items():
+        if canonical not in result.columns and legacy in result.columns:
+            result[canonical] = result[legacy]
+    return result
+
+
+def _load_hkma_from_committed_artifact() -> pd.DataFrame:
+    """Reconstruct the raw HKMA frame from the last valid dashboard artifact.
+
+    The normalized HKMA cache is intentionally disposable in CI.  The
+    committed artifact is therefore the second-level fallback when the clean
+    runner has no Parquet cache and the official API returns an empty response.
+    The conversion keeps the source's monthly grain and does not invent any
+    values; it only joins the already-published wide activity rows to the
+    already-published long-format rate/LTV/credit views.
+    """
+    activity = _load_dataset_from_committed_artifact("hkma_mortgage_activity")
+    if activity.empty:
+        return pd.DataFrame()
+
+    frame = activity.rename(columns={"date": "observation_date"}).copy()
+    frame["observation_date"] = pd.to_datetime(frame["observation_date"], errors="coerce").dt.strftime("%Y-%m-01")
+    frame = frame.dropna(subset=["observation_date"])
+
+    def merge_series(dataset_key: str, series_map: dict[str, str]) -> None:
+        nonlocal frame
+        rows = _load_dataset_from_committed_artifact(dataset_key)
+        if rows.empty or not {"date", "series", "value"}.issubset(rows.columns):
+            return
+        rows = rows.copy()
+        rows["observation_date"] = pd.to_datetime(rows["date"], errors="coerce").dt.strftime("%Y-%m-01")
+        rows["field"] = rows["series"].map(series_map)
+        rows = rows.dropna(subset=["observation_date", "field"])
+        if rows.empty:
+            return
+        pivot = rows.pivot_table(index="observation_date", columns="field", values="value", aggfunc="last").reset_index()
+        frame = frame.merge(pivot, on="observation_date", how="left")
+
+    merge_series(
+        "hkma_mortgage_rate_mix",
+        {
+            "HIBOR": "hibor_pricing_pct_share",
+            "BLR (Prime)": "blr_pricing_pct_share",
+            "Fixed": "fixed_pricing_pct_share",
+            "Other": "other_pricing_pct_share",
+        },
+    )
+    merge_series("hkma_ltv_history", {"Average LTV (%)": "average_ltv_ratio_pct"})
+    merge_series(
+        "hkma_credit_quality_history",
+        {
+            "Delinquency Ratio (%)": "delinquency_ratio_pct",
+            "Rescheduled Loan Ratio (%)": "rescheduled_loan_ratio_pct",
+        },
+    )
+    frame["source_agency"] = "Hong Kong Monetary Authority (HKMA)"
+    frame["period_start"] = frame["observation_date"]
+    frame["period_end"] = frame["observation_date"]
+    frame["publication_date"] = None
+    frame["is_provisional"] = False
+    return _mark_artifact_fallback(frame, "last committed artifact")
+
+
+def _load_hkma_with_fallback() -> pd.DataFrame:
+    """Load HKMA history without allowing an empty fetch to erase history."""
+    normalized = load_latest_normalized("hkma_residential_mortgage_survey")
+    if not normalized.empty:
+        return _canonicalize_hkma_frame(normalized)
+    fetched = _safe_fetch("HKMA residential mortgage survey", fetch_hkma_residential_mortgage_survey)
+    if not fetched.empty:
+        return _canonicalize_hkma_frame(fetched)
+    fallback = _load_hkma_from_committed_artifact()
+    if not fallback.empty:
+        print(
+            "  [hk_real_estate] HKMA fetch returned no rows; using the last committed mortgage artifact.",
+            file=sys.stderr,
+        )
+    return fallback
+
+
+def _load_bd_supply_history_from_committed_artifact() -> pd.DataFrame:
+    """Reconstruct BD history input from the last published chart datasets."""
+    unit_rows = _load_dataset_from_committed_artifact("bd_supply_pipeline_history_units")
+    count_rows = _load_dataset_from_committed_artifact("bd_supply_pipeline_history_counts")
+    if unit_rows.empty and count_rows.empty:
+        return pd.DataFrame()
+
+    merged: dict[tuple[str, str], dict[str, Any]] = {}
+    for rows, value_column in (
+        (unit_rows, "total_domestic_units"),
+        (count_rows, "total_projects_count"),
+    ):
+        if rows.empty or not {"date", "permit_stage", "value"}.issubset(rows.columns):
+            continue
+        for row in rows.to_dict("records"):
+            date = str(row.get("date") or "")[:7]
+            stage = row.get("permit_stage")
+            if not date or not stage or row.get("value") is None:
+                continue
+            key = (date, str(stage))
+            target = merged.setdefault(
+                key,
+                {
+                    "date": f"{date}-01",
+                    "observation_month": f"{date}-01",
+                    "permit_stage": stage,
+                    "revision_status": "as_published",
+                    "parser_confidence": "HIGH",
+                    "source_agency": "Hong Kong Buildings Department",
+                },
+            )
+            target[value_column] = float(row["value"])
+
+    if not merged:
+        return pd.DataFrame()
+    return _mark_artifact_fallback(pd.DataFrame(sorted(merged.values(), key=lambda row: (row["date"], row["permit_stage"]))), "last committed artifact")
 
 
 def _load_normalized_or_fetch(dataset_name: str, label: str, fetch_fn) -> pd.DataFrame:
@@ -2599,6 +2774,14 @@ def fetch_live_frames() -> dict[str, pd.DataFrame]:
         # through the committed artifact until the separate SRPE ingestion job
         # writes a newer normalized snapshot.
         srpe_signals = _load_dataset_from_committed_artifact("srpe_project_signal_history")
+    bd_supply_history = load_latest_normalized("bd_supply_pipeline_history")
+    if bd_supply_history.empty:
+        bd_supply_history = _load_bd_supply_history_from_committed_artifact()
+        if not bd_supply_history.empty:
+            print(
+                "  [hk_real_estate] BD history cache unavailable; using the last committed supply-history artifact.",
+                file=sys.stderr,
+            )
     return {
         "ccl": fetch_centaline_ccl(),
         "mhpi": mhpi,
@@ -2614,7 +2797,7 @@ def fetch_live_frames() -> dict[str, pd.DataFrame]:
         "midland_estates": estates,
         "unified_tx": unified_tx,
         "srpe_signals": srpe_signals,
-        "bd_supply_history": load_latest_normalized("bd_supply_pipeline_history"),
+        "bd_supply_history": bd_supply_history,
     }
 
 

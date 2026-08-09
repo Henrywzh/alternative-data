@@ -9,8 +9,11 @@
 // timeout so one stuck process can't block the whole run forever.
 
 import { spawn } from "node:child_process";
+import fs from "node:fs";
+import path from "node:path";
 
 import { appRoot as projectRoot, LIVE_SECTORS } from "./sectors.mjs";
+import { protectArtifactRefresh } from "./artifact-refresh-guard.mjs";
 
 const pythonBin = process.env.PYTHON_BIN || "python3";
 const tolerateErrors = process.argv.includes("--tolerate-errors");
@@ -23,6 +26,19 @@ const BUILDERS = LIVE_SECTORS.map((sector) => ({
   output: sector.artifact,
   statusOutput: sector.statusOutput,
 }));
+
+const previousStates = new Map(
+  BUILDERS.map((builder) => {
+    const artifactPath = path.join(projectRoot, builder.output);
+    const statusPath = path.join(projectRoot, builder.statusOutput);
+    return [builder.id, {
+      artifactPath,
+      statusPath,
+      previousArtifactBytes: fs.existsSync(artifactPath) ? fs.readFileSync(artifactPath) : null,
+      previousStatusBytes: fs.existsSync(statusPath) ? fs.readFileSync(statusPath) : null,
+    }];
+  }),
+);
 
 // Prefixes each complete line as it arrives; a trailing partial line is held
 // back and flushed (unprefixed content never lost) when the stream ends.
@@ -74,7 +90,7 @@ function runBuilder({ id, script, output, statusOutput }) {
       clearTimeout(timer);
       outStreamer.flush();
       errStreamer.flush();
-      resolvePromise({ script, code: timedOut ? 124 : code, timedOut });
+      resolvePromise({ id, script, code: timedOut ? 124 : code, timedOut });
     };
 
     child.on("close", finish);
@@ -90,6 +106,10 @@ const results = await Promise.all(BUILDERS.map(runBuilder));
 
 let hasFailure = false;
 for (const result of results) {
+  const previous = previousStates.get(result.id);
+  if (previous) {
+    protectArtifactRefresh(previous);
+  }
   if (result.code !== 0) {
     hasFailure = true;
     const reason = result.timedOut ? `timed out after ${BUILDER_TIMEOUT_MS}ms` : `exited with code ${result.code}`;

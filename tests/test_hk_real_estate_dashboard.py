@@ -110,7 +110,13 @@ def test_build_artifact_is_source_backed_and_deterministic():
     assert first["snapshot"]["status"] == "ready"
     assert first["snapshot"]["datasets"]["kpi_ccl"][0]["latest"] > 0
     assert first["snapshot"]["datasets"]["kpi_rvd_price"][0]["is_provisional"] is True
-    assert len(first["snapshot"]["datasets"]["source_health"]) == 5
+    assert len(first["snapshot"]["datasets"]["source_health"]) == 6
+    hkma_health = next(
+        row for row in first["snapshot"]["datasets"]["source_health"]
+        if row["source"] == dashboard_export.PUBLIC_SOURCES["hkma_mortgage"]["label"]
+    )
+    assert hkma_health["status"] == "Healthy"
+    assert hkma_health["records"] == 6
     # 6dd3693 wired up the two sources that used to carry "Planned" (28Hse,
     # Land Registry) into live data; SRPE is the one remaining non-live
     # source, and its status has always been "Catalog only", not "Planned".
@@ -331,6 +337,70 @@ def test_hkma_rate_mix_surfaces_other_pricing_bucket():
         "Fixed",
         "Other",
     }
+
+
+def test_core_histories_fallback_to_last_committed_artifact(monkeypatch):
+    monkeypatch.setattr(dashboard_export, "load_latest_normalized", lambda _dataset: pd.DataFrame())
+    monkeypatch.setattr(dashboard_export, "_safe_fetch", lambda *_args, **_kwargs: pd.DataFrame())
+
+    hkma = dashboard_export._load_hkma_with_fallback()
+    assert len(hkma) == 114
+    assert hkma["observation_date"].max() == "2026-05-01"
+    assert hkma.attrs["dashboard_fallback_reason"] == "last committed artifact"
+
+    bd_history = dashboard_export._load_bd_supply_history_from_committed_artifact()
+    assert not bd_history.empty
+    assert bd_history["observation_month"].max() == "2026-05-01"
+    assert bd_history.attrs["dashboard_fallback_reason"] == "last committed artifact"
+
+
+def test_build_marks_hkma_artifact_fallback_as_stale(monkeypatch):
+    monkeypatch.setattr(dashboard_export, "load_latest_normalized", lambda _dataset: pd.DataFrame())
+    monkeypatch.setattr(dashboard_export, "_safe_fetch", lambda *_args, **_kwargs: pd.DataFrame())
+    artifact, status = dashboard_export.build_artifact(
+        _frames(),
+        raw_cnsd=_cnsd_frame(),
+        raw_epi_eri=pd.DataFrame(),
+        raw_new_projects=pd.DataFrame(),
+        raw_landreg=(pd.DataFrame(), pd.DataFrame()),
+        raw_bd_monthly_stats=pd.DataFrame(),
+        raw_bd_supply=pd.DataFrame(),
+        raw_bd_supply_history=pd.DataFrame(),
+        raw_land_disposals=pd.DataFrame(),
+        now=NOW,
+    )
+    hkma_health = next(
+        row for row in artifact["snapshot"]["datasets"]["source_health"]
+        if row["source"] == dashboard_export.PUBLIC_SOURCES["hkma_mortgage"]["label"]
+    )
+    assert hkma_health["status"] == "Stale"
+    assert status["overall_status"] == "Degraded"
+    assert len(artifact["snapshot"]["datasets"]["hkma_mortgage_activity"]) == 114
+
+
+def test_published_real_estate_artifacts_keep_core_history_contracts():
+    artifact_dir = Path(__file__).resolve().parents[1] / "apps/asia-markets-dashboard/.generated"
+    required = {
+        "hkma_mortgage_rate_mix_chart": "hkma_mortgage_rate_mix",
+        "hkma_ltv_chart": "hkma_ltv_history",
+        "hkma_credit_quality_chart": "hkma_credit_quality_history",
+        "hkma_applications_chart": "hkma_applications_history",
+        "hkma_loan_amount_chart": "hkma_loan_amount_history",
+        "hkma_mortgage_activity_table": "hkma_mortgage_activity",
+        "bd_supply_history_units_chart": "bd_supply_pipeline_history_units",
+        "bd_supply_history_counts_chart": "bd_supply_pipeline_history_counts",
+    }
+    for path in (artifact_dir / "hk-real-estate-artifact.json", artifact_dir / "hk-real-estate-artifact-zh.json"):
+        artifact = json.loads(path.read_text(encoding="utf-8"))
+        manifest_items = {
+            item["id"]: item
+            for section in ("charts", "tables")
+            for item in artifact["manifest"][section]
+        }
+        datasets = artifact["snapshot"]["datasets"]
+        for item_id, dataset_id in required.items():
+            assert item_id in manifest_items, f"{path.name} missing {item_id}"
+            assert datasets.get(dataset_id), f"{path.name} has no rows for {dataset_id}"
 
 
 def test_landreg_asp_chart_uses_historical_series_when_available():
