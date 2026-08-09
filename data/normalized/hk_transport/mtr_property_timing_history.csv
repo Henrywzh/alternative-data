@@ -1,7 +1,7 @@
-project_id,phase_label,first_price_list_date,first_transaction_date,op_address,op_permit_number,op_issuance_month,op_domestic_units,mtr_recognition_year,op_to_recognition_lag_months,evidence_level
-the-southside-p1,晉環 (SOUTHLAND),2021-04-19,2021-05-01,11 Heung Yip Road,PR4/2022/OP,2022-04,800,2022,3.0,strong
-the-southside-p2,揚海 (La Marina),2021-08-17,2021-09-04,11 Heung Yip Road,PR6/2022/OP,2022-08,600,2022,-1.1,strong
-the-southside-p4,海盈山 (La Montagne),2023-06-27,2023-07-15,11 Heung Yip Road,PR12/2024/OP,2024-11,800,2024,-4.1,strong
-ho-man-tin-p2,瑜一 (IN ONE),2023-05-08,2023-05-21,1 Chung Hau Street,PR11/2024/OP,2024-11,630,2025,7.9,strong
-lohas-park-p11,凱柏峰 I (Villa Garda),2022-06-20,2022-06-30,1 Lohas Park Road,PR13/2024/OP,2024-12,1880,2024,-5.1,suspected
-lohas-park-p12,LOHAS Park Package 12,,,1 Lohas Park Road,PR7/2025/OP,2025-10,1985,2025,-3.1,suspected
+project_id,phase_label,first_price_list_date,first_transaction_date,op_address,op_permit_number,op_issuance_month,op_domestic_units,mtr_recognition_year,mtr_recognition_half,recognition_half_evidence,op_to_recognition_lag_months,evidence_level
+the-southside-p1,晉環 (SOUTHLAND),2021-04-19,2021-05-01,11 Heung Yip Road,PR4/2022/OP,2022-04,800,2022,2022-H1,strong,3.0,strong
+the-southside-p2,揚海 (La Marina),2021-08-17,2021-09-04,11 Heung Yip Road,PR6/2022/OP,2022-08,600,2022,2022-H1,strong,-1.1,strong
+the-southside-p4,海盈山 (La Montagne),2023-06-27,2023-07-15,11 Heung Yip Road,PR12/2024/OP,2024-11,800,2024,2024-H2,inferred,-4.1,strong
+ho-man-tin-p2,瑜一 (IN ONE),2023-05-08,2023-05-21,1 Chung Hau Street,PR11/2024/OP,2024-11,630,2025,2025-H1,strong,7.9,strong
+lohas-park-p11,凱柏峰 I (Villa Garda),2022-06-20,2022-06-30,1 Lohas Park Road,PR13/2024/OP,2024-12,1880,2024,2023-H1 + 2024-H2,strong,-5.1,suspected
+lohas-park-p12,LOHAS Park Package 12,,,1 Lohas Park Road,PR7/2025/OP,2025-10,1985,2025,2025-H2,inferred,-3.1,suspected
