@@ -25,6 +25,16 @@ official MTR railway-property packages with:
   sales brochures, or public project facts - all to be verified before use.
 
 ### 2. Occupancy Permit (OP) / handover timeline (Timing Engine inputs)
+- DONE (2026-08-09): Timing Engine V0 in `scripts/mtr_timing_engine.py` uses the
+  full 17,517-row `bd_project_lifecycle_history` parquet (257 months, 2005-2026)
+  to locate OPs for mapped phases: 11 Heung Yip Road = THE SOUTHSIDE (晉環
+  PR4/2022/OP 2022-04, 揚海 PR6/2022/OP 2022-08, 海盈山 PR12/2024/OP 2024-11),
+  1 Chung Hau Street = 瑜一 (PR11/2024/OP 2024-11), 1 Lohas Park Road = shared
+  lot for LOHAS Park phases (P11 PR13-15/2024/OP 2024-12, P12 PR7-9/2025/OP
+  2025-10, SUSPECTED attribution). Empirical: OP and recognition same year.
+- NEXT: split recognition into H1/H2 using MTR interim results (property
+  development profit in each interim announcement) to sharpen the lag.
+
 - `bd_project_lifecycle_events` only contains a SHKP-filtered subset; the
   only MTR-project hit is a bare "Tai Wai" OP row without permit number.
 - Options:
