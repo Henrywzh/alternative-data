@@ -122,6 +122,48 @@ CAN_2026_06_TRAFFIC_URL = (
     "https://static.cninfo.com.cn/finalpage/2026-07-15/1225423217.PDF"
 )
 
+# Beijing Capital International Airport (00694.HK) publishes a monthly
+# operating-data fast report on its investor-relations page with an explicit
+# release date.  These are the six H1-2026 monthly Chinese-language PDFs.
+BCIA_TRAFFIC_URLS = {
+    "2026-01": (
+        "http://www.bcia.com.cn/userfiles/files/article/images/2026/02/"
+        "2026_Jan_Traffic_Data_Chi.pdf"
+    ),
+    "2026-02": (
+        "http://www.bcia.com.cn/userfiles/files/article/images/2026/03/"
+        "Feb_Traffic_Data_Chi_2026.pdf"
+    ),
+    "2026-03": (
+        "http://www.bcia.com.cn/userfiles/files/article/images/2026/04/"
+        "Mar_Traffic_Data_Chi_2026.pdf"
+    ),
+    "2026-04": (
+        "http://www.bcia.com.cn/userfiles/files/article/images/2026/05/"
+        "April_Traffic_Data_Chi_2026.pdf"
+    ),
+    "2026-05": (
+        "http://www.bcia.com.cn/userfiles/files/article/images/2026/06/"
+        "May_Traffic_Data_C_2026.pdf"
+    ),
+    "2026-06": (
+        "http://www.bcia.com.cn/userfiles/files/article/images/2026/07/"
+        "202606_Traffic_Data_Chi.pdf"
+    ),
+}
+
+# Official release dates for each BCIA monthly fast report (first line of the
+# PDF: "实时发布 YYYY年M月D日").  Kept in configuration as dated vintages so a
+# future month is added as a new dated source rather than overwriting history.
+BCIA_TRAFFIC_RELEASE_DATES = {
+    "2026-01": "2026-02-10",
+    "2026-02": "2026-03-10",
+    "2026-03": "2026-04-09",
+    "2026-04": "2026-05-09",
+    "2026-05": "2026-06-09",
+    "2026-06": "2026-07-08",
+}
+
 # ECB daily reference rates are free and cover the reporting currencies needed
 # to translate USD fuel benchmarks into CNY and HKD.  The parser derives the
 # cross rates from the same-day EUR reference observations.

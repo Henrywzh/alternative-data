@@ -24,6 +24,8 @@ import pdfplumber
 import requests
 
 from ..config import (
+    BCIA_TRAFFIC_RELEASE_DATES,
+    BCIA_TRAFFIC_URLS,
     CAN_2026_05_TRAFFIC_URL,
     CAN_2026_06_TRAFFIC_URL,
     DEFAULT_HEADERS,
@@ -98,6 +100,21 @@ SCOPE_MAP = {
     "国内航线": "domestic",
     "地区航线": "regional",
     "国际航线": "international",
+}
+
+BCIA_METRIC_KEYS = {
+    "飞机起降架次": "aircraft_movements",
+    "旅客吞吐量": "passenger_throughput",
+    "货邮吞吐量": "cargo_throughput",
+}
+
+# BCIA reports raw unit wording on the metric header ((单位：架次)).  The
+# display layer uses the shared hub unit scheme; passenger/cargo values are
+# scaled from raw 人次/吨 to 10k so they line up with the other hubs.
+BCIA_UNIT_HEADER_MAP = {
+    "aircraft_movements": ("movements", 1.0),
+    "passenger_throughput": ("10k persons", 1 / 10_000.0),
+    "cargo_throughput": ("10k tonnes", 1 / 10_000.0),
 }
 
 SOURCE_SPECS: tuple[dict[str, Any], ...] = (
@@ -269,6 +286,19 @@ SOURCE_SPECS: tuple[dict[str, Any], ...] = (
         "source_url": CAN_2026_06_TRAFFIC_URL,
         "layout": "szx_can",
     },
+    *(  # Beijing Capital International Airport monthly fast reports.
+        {
+            "event_id": f"bcia_{month.replace('-', '')}",
+            "airport": "PEK",
+            "airport_2": None,
+            "parent_company": "Beijing Capital International Airport",
+            "observation_month": month,
+            "release_date": BCIA_TRAFFIC_RELEASE_DATES[month],
+            "source_url": BCIA_TRAFFIC_URLS[month],
+            "layout": "bcia",
+        }
+        for month in sorted(BCIA_TRAFFIC_URLS)
+    ),
 )
 
 
@@ -534,6 +564,105 @@ def parse_szx_can_layout(
     return pd.DataFrame(rows, columns=OUTPUT_COLUMNS)
 
 
+BCIA_METRIC_HEADER_RE = re.compile(
+    r"^[一二三四五六七八九十]、"
+    r"?(飞机起降架次|旅客吞吐量|货邮吞吐量)（单位：([^）]+)）\s+(.+)$"
+)
+BCIA_SCOPE_RE = re.compile(
+    r"^(国内航线|其中，港澳台地区|国际航线)\s+(.+)$"
+)
+BCIA_RELEASE_DATE_RE = re.compile(
+    r"实时发布\s*(\d{4})年(\d{1,2})月(\d{1,2})日"
+)
+
+
+def parse_bcia_layout(
+    payload: bytes,
+    *,
+    spec: dict[str, Any],
+    text: str | None = None,
+    raw_snapshot_path: str | None = None,
+    retrieved_at: str | None = None,
+) -> pd.DataFrame:
+    """Parse a Beijing Capital monthly operating-data fast report.
+
+    The BCIA PDF carries each metric's total plus domestic / HK-Macao-Taiwan /
+    international scope rows on the first page, and an explicit release date in
+    the opening line ("实时发布 YYYY年M月D日").  Values for movements are raw
+    counts, while passengers/cargo are scaled from raw 人次/吨 to the shared
+    10k hub unit scheme so the panel stays comparable with SHA/SZX/CAN.
+    """
+    if text is None:
+        with pdfplumber.open(io.BytesIO(payload)) as pdf:
+            text = "\n".join(page.extract_text() or "" for page in pdf.pages)
+    rows: list[dict[str, Any]] = []
+    current_metric: str | None = None
+    for raw_line in text.splitlines():
+        line = " ".join(raw_line.split())
+        if not line or "累计" in line or "重要说明" in line or "本月实际" in line:
+            continue
+        metric_header = BCIA_METRIC_HEADER_RE.match(line)
+        if metric_header:
+            current_metric = BCIA_METRIC_KEYS[metric_header.group(1)]
+            unit, unit_scale = BCIA_UNIT_HEADER_MAP[current_metric]
+            parts = metric_header.group(3).split()
+            if len(parts) == 2 and current_metric is not None:
+                value = _number(parts[0])
+                yoy = _number(parts[1])
+                if value is not None:
+                    rows.append(
+                        _row(
+                            spec,
+                            airport=spec["airport"],
+                            metric_key=current_metric,
+                            scope="total",
+                            value=round(value * unit_scale, 4),
+                            unit=unit,
+                            yoy=yoy,
+                            raw_snapshot_path=raw_snapshot_path,
+                            retrieved_at=retrieved_at,
+                        )
+                    )
+            continue
+        if current_metric is None:
+            continue
+        scope_match = BCIA_SCOPE_RE.match(line)
+        if not scope_match:
+            continue
+        scope = (
+            "domestic"
+            if "国内" in scope_match.group(1)
+            else "international"
+            if "国际" in scope_match.group(1)
+            else "hk_macao_taiwan"
+        )
+        parts = scope_match.group(2).split()
+        if len(parts) != 2:
+            continue
+        _, unit_scale = BCIA_UNIT_HEADER_MAP[current_metric]
+        unit, _ = BCIA_UNIT_HEADER_MAP[current_metric]
+        value = _number(parts[0])
+        yoy = _number(parts[1])
+        if value is None:
+            continue
+        rows.append(
+            _row(
+                spec,
+                airport=spec["airport"],
+                metric_key=current_metric,
+                scope=scope,
+                value=round(value * unit_scale, 4),
+                unit=unit,
+                yoy=yoy,
+                raw_snapshot_path=raw_snapshot_path,
+                retrieved_at=retrieved_at,
+            )
+        )
+    if not rows:
+        raise ValueError(f"BCIA airport PDF produced no rows: {spec['event_id']}")
+    return pd.DataFrame(rows, columns=OUTPUT_COLUMNS)
+
+
 def parse_airport_traffic_pdf(
     payload: bytes,
     *,
@@ -550,6 +679,13 @@ def parse_airport_traffic_pdf(
         )
     if spec["layout"] == "szx_can":
         return parse_szx_can_layout(
+            payload,
+            spec=spec,
+            raw_snapshot_path=raw_snapshot_path,
+            retrieved_at=retrieved_at,
+        )
+    if spec["layout"] == "bcia":
+        return parse_bcia_layout(
             payload,
             spec=spec,
             raw_snapshot_path=raw_snapshot_path,
@@ -614,5 +750,6 @@ __all__ = [
     "parse_airport_traffic_pdf",
     "parse_shanghai_dual_airport",
     "parse_szx_can_layout",
+    "parse_bcia_layout",
     "source_path",
 ]

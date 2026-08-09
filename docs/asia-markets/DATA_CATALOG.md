@@ -246,11 +246,15 @@ release-date-safe and context-only: holiday observations are not interpolated
 into monthly airline RPK or revenue.
 
 `airline_airport_traffic.csv` is the issuer airport monthly production layer.
-It contains 288 rows across Shanghai Pudong/Hongqiao, Shenzhen and Guangzhou
-Baiyun for 2026-01 through 2026-06, with aircraft movements, passenger and cargo
-throughput by route scope, month and cumulative values, YoY rates and official
-announcement dates. Airport throughput includes many carriers and is hub
-demand context only, not company RPK or revenue.
+It contains 360 rows across Shanghai Pudong/Hongqiao, Shenzhen, Guangzhou
+Baiyun and Beijing Capital for 2026-01 through 2026-06, with aircraft
+movements, passenger and cargo throughput by route scope, month and
+cumulative values, YoY rates and official announcement dates. Shanghai/
+Shenzhen/Guangzhou are parsed from CNINFO bulletins; Beijing Capital is parsed
+from the issuer's investor-relations monthly fast reports (movements/passengers/
+cargo by domestic / HK-Macao-Taiwan / international scope). Airport throughput
+includes many carriers and is hub demand context only, not company RPK or
+revenue.
 
 `airline_cargo_airport_bridge.csv` compares hub airport cargo throughput with
 issuer monthly cargo tonnage and reported FY2025 cargo revenue for Spring,

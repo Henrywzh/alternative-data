@@ -96,8 +96,10 @@ comparables, not automatically eligible pair legs.
   a substitute for company ASK/RPK or realized yield.
 - `data/normalized/hk_transport/airline_airport_traffic.csv` adds issuer
   monthly airport production statistics for Shanghai Pudong/Hongqiao,
-  Shenzhen and Guangzhou (2026-01 through 2026-06). It is a hub-demand context
-  layer for Spring/Juneyao/9 Air base coverage and is not company revenue.
+  Shenzhen, Guangzhou Baiyun and Beijing Capital (2026-01 through 2026-06).
+  Beijing Capital is parsed from the issuer's investor-relations monthly fast
+  reports with release-date safety. It is a hub-demand context layer for
+  Spring/Juneyao/9 Air base coverage and is not company revenue.
 - `data/normalized/hk_transport/airline_cargo_airport_bridge.csv` adds the
   airport-cargo calibration layer that compares hub cargo throughput with
   company cargo tonnage and reported revenue, supporting the v3 cargo bridge.
