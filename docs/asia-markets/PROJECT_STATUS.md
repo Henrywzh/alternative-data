@@ -250,6 +250,26 @@ replacement for the operating manual or generated source-status JSON.
   exposes a large v3-versus-consensus gap for the Big Three (Air China +3,215%,
   Southern +2,040%, Eastern +866%) that the residual-bridge methodology must
   explain before it can be used as a final earnings leg.
+- The v3 net-income leg now has a regime-flip guard. When FY2025 operating
+  profit is negative but the forward operating profit is positive (Air China,
+  China Eastern), the FY2025 absolute below-operating residual embeds
+  loss-year artifacts, so the net-income leg switches to the dated consensus
+  margin applied to forecast revenue. The raw residual bridge stays as a
+  diagnostic column (`v3_attributable_net_income_bridge_*`), and the active
+  leg is labelled in `net_income_leg`/`regime_flip_flag`. Air China's guarded
+  base profit is USD34.6m and Eastern's USD58.0m versus consensus USD40m and
+  USD64m; China Southern stays on the residual bridge because FY2025 was
+  profitable, but its v3-versus-consensus gap remains the key open question
+  for H1-2026.
+- The cargo-bridge backtest is now live in `airline_cargo_bridge_backtest.csv`.
+  The FY2025 revenue-per-tonne yield method applied to 1H2025 tonnage predicts
+  reported 1H2025 cargo revenue within 4.0% at Southern, 4.0% at Air China and
+  6.2% at Hainan -- a genuine holdout validation. The airport-signal leg
+  compares H1-2026 airport cargo YoY with company tonnage YoY on the same
+  calendar basis: Southern's hub signal (+0.7%) closely tracks company tonnage
+  (+0.3%), while Shanghai hub cargo (+9.4%) understates Spring's company
+  tonnage growth (+22.6%) because the hubs are dominated by international
+  freight that the LCCs do not carry.
 - The fuel pass-through layer is upgraded from schedule-only to a dated
   surcharge-to-fuel recovery proxy in `airline_fuel_surcharge_recovery.csv`
   (7 observations). The 2026-07-05 mainland change cut the >800km surcharge
