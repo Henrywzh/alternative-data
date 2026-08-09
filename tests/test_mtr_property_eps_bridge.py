@@ -41,6 +41,20 @@ def test_eps_bridge_csv_exists():
     assert df["reported_eps_est_hkd"].is_monotonic_increasing
 
 
+def test_pit_aligned_eligible_values():
+    """FY26 eligible uses sales registered as of FY25 year end (PIT-safe)."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "mtr_pep", "scripts/mtr_property_expected_profit.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    # P5 滶晨: 121.8bn as of FY25 year end vs 139.8bn current
+    assert mod._AS_OF_FY25["the-southside-p5"] == pytest.approx(12183.0, rel=0.01)
+    assert mod.KNOWN_VALUES["the-southside-p5"] == pytest.approx(13975.0, rel=0.01)
+    # LP12 海瑅灣: zero deals before FY25 year end (kept at current value with note)
+    assert mod._AS_OF_FY25["lohas-park-p12"] == pytest.approx(8735.0, rel=0.01)
+
+
 def test_eps_risk_ranking_priorities():
     """LP12/Tai Wai/P5 top the targeted-enrichment priority list."""
     df = pd.read_csv("data/normalized/hk_transport/mtr_property_eps_risk_ranking.csv")
