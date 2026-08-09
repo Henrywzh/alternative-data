@@ -119,15 +119,20 @@ def main() -> int:
     print("=" * 78)
     print(df.to_string(index=False))
     if cons_eps:
-        print(f"\nStreet consensus FY26 EPS (yfinance avg): {cons_eps:.2f}")
-        for _, r in df.iterrows():
-            delta = (r["reported_eps_est_hkd"] - cons_eps) / cons_eps * 100
-            print(f"  Our {r['scenario']:5s} reported EPS {r['reported_eps_est_hkd']:.2f} "
-                  f"vs consensus {cons_eps:.2f} -> {delta:+.1f}%")
+        print(f"\nStreet consensus FY26 EPS (yfinance 0y): {cons_eps:.2f} [field misread]")
+        print("Verified FY26E consensus (ET Net 2026-08-09): 2.69 / 2.76")
+        for anchor, label in [(2.69, "2.69"), (2.76, "2.76")]:
+            for _, r in df.iterrows():
+                if r["scenario"] == "base":
+                    delta = (r["reported_eps_est_hkd"] - anchor) / anchor * 100
+                    print(f"  Our base {r['reported_eps_est_hkd']:.2f} vs {label} -> {delta:+.1f}%")
+                if r["scenario"] == "bull":
+                    delta = (r["reported_eps_est_hkd"] - anchor) / anchor * 100
+                    print(f"  Our bull {r['reported_eps_est_hkd']:.2f} vs {label} -> {delta:+.1f}%")
         print("\nFY26 RECONCILIATION (2026-08-09):")
         print("  Underlying EPS (recurrent + property, no IP reval): base ~1.96")
         print("  Reported EPS with IP reval scenarios (+0.5/+2.5/+4.5bn): bear/base/bull")
-        print("  vs consensus 2.52 - the previous 20-43% gap was mostly an overly")
+        print("  vs consensus 2.69/2.76 (verified; yfinance 2.52 was a field misread) -")
         print("  conservative IP-revaluation assumption, not core operations.")
         print("  CONCLUSION: FY26 earnings appear broadly well-understood by consensus;")
         print("  research horizon should move to FY27 property-recognition timing.")
