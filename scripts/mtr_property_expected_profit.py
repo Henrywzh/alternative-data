@@ -70,24 +70,27 @@ POOL = [
          official="not named; inferred residual"),
 ]
 
-# Registered sales value (SRPE, cancelled excluded) - phases we HAVE data for
-KNOWN_VALUES = {
-    "tai-wai": 8808.0,
-    "ho-man-tin-p2": 6704.0,  # not in FY26 pool; shown for reference
-}
+# Registered sales value (SRPE, cancelled excluded) - phases we HAVE data for.
+# Loaded dynamically from mtr_srpe_transactions_by_phase.csv (grouped by
+# project_id so multi-phase packages like 海瑅灣 I/II and 滶晨 I/II sum).
+_DETAIL = pd.read_csv(os.path.join(NORM_DIR, "mtr_srpe_transactions_detail.csv"))
+_DETAIL = _DETAIL[_DETAIL["is_cancelled"].fillna(False) == False]  # noqa: E712
+KNOWN_VALUES = dict(
+    round(_DETAIL.groupby("project_id")["transaction_price_hkd"].sum() / 1e6, 0)
+)
+# 凱柏峰 II + III are separate SRPE phases; the FY26 pool treats them as one
+# residual line (OP 2024-12 shared with P11 I).
+KNOWN_VALUES["lohas-park-p11-ii-iii"] = (
+    KNOWN_VALUES.get("lohas-park-p11-ii", 0.0) + KNOWN_VALUES.get("lohas-park-p11-iii", 0.0)
+)
 
 # ASSUMED SCENARIO eligible values for phases lacking SRPE data (explicitly
 # labelled - typical phase-scale estimates for sensitivity only, NOT
 # verified figures). Bear/base/bull on VALUE is applied as +/- 25% of the
 # scenario centre.
 SCENARIO_VALUES = {
-    "the-southside-p5": 6000.0,   # 滶晨 two phases, ~400-600 units
-    "lohas-park-p12": 8000.0,     # OP 1,985 units, Lohas-scale pricing
-    "lohas-park-p13": 6000.0,     # SRPE 10486 (2025-01 price list) suspected
-    "the-southside-p6": 5000.0,   # presale consent in progress
-    "yau-tong-vb": 2000.0,        # small ventilation-building site
-    "lohas-park-p11-ii-iii": 8000.0,  # 凱柏峰 II + III residual
-    "ho-man-tin-p1": 8000.0,      # 朗賢峯 residual (990-unit phase)
+    "the-southside-p6": 5000.0,   # presale consent in progress (no SRPE yet)
+    "yau-tong-vb": 2000.0,        # small ventilation-building site (no SRPE yet)
 }
 
 

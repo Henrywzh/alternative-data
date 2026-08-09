@@ -34,10 +34,12 @@ FY25_RECURRENT_POST_TAX = 5653.0
 ASSUMED_RECURRENT_GROWTH = 1.03
 ASSUMED_IP_REVAL_FY26 = -1500.0
 
-# Property expected profit (from the V1 model)
-PROPERTY_LOW = 3436.0
-PROPERTY_BASE = 5757.0
-PROPERTY_HIGH = 8665.0
+# Property expected profit: read dynamically from the V1 model output
+_EXP = pd.read_csv(os.path.join(NORM_DIR, "mtr_property_expected_profit_fy26.csv"))
+_EXP = _EXP[_EXP["data_status"].notna()]  # drop trailing comment lines
+PROPERTY_LOW = float(_EXP["expected_profit_low_hkdm"].fillna(0).sum())
+PROPERTY_BASE = float(_EXP["expected_profit_base_hkdm"].fillna(0).sum())
+PROPERTY_HIGH = float(_EXP["expected_profit_high_hkdm"].fillna(0).sum())
 
 
 

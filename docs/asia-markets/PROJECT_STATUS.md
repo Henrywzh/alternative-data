@@ -80,7 +80,7 @@ replacement for the operating manual or generated source-status JSON.
 ## Recent completed work
 
 - MTR SRPE transaction probe is live: `scripts/mtr_srpe_transactions.py` downloads the latest statutory register-of-transactions PDF for each of the 8 name-confirmed MTR phases and parses 5,921 transactions (shared `srpe_pdf.py` parser). Per-phase stats feed the property master (units_sold_registered / asp_median / first-last transaction date): 晉環 860 @ HK$18.2m median, 揚海 641 @ 19.1m, 海盈山 374 @ 14.2m, 瑜一 378 @ 16.4m, 凱柏峰I 669 @ 8.2m, 晉海 1,047 @ 7.4m, 晉海II 1,142 @ 8.4m, 柏傲莊I 810 @ 10.2m. First transaction dates sit 1-3 weeks after each phase's first price list, consistent with presale mechanics. `units_sold_registered` is registered transactions, NOT total project units.
-- MTR Property Expected Profit V1 + EPS bridge are live: `scripts/mtr_property_expected_profit.py` and `scripts/mtr_property_eps_bridge.py`. FY26 pool = official FY25-outlook names (new: LP13, THE SOUTHSIDE P6, Yau Tong VB; continued: Tai Wai, SOUTHSIDE P5, LP12) plus residual (凱柏峰 II/III, 朗賢峯). Expected profit = P(recognition) x eligible registered value x implied conversion ratio (15/20/25% bear/base/bull, anchored by G2022H1). Measured layer (SRPE) 1.06bn base; assumed-scenario layer 4.70bn base (values explicitly ASSUMED, +/-25% band); FY26 total 3.4/5.8/8.7bn vs FY25 11.1bn. EPS bridge: reported EPS 1.25/1.62/2.09 vs Street FY26 2.52 (-50%/-36%/-17%) - flags a large gap to test (our P/magnitude too conservative vs Street not marking down FY26 property). EPS-risk ranking directs targeted enrichment: LP12 (0.090 EPS risk), Tai Wai (0.085), SOUTHSIDE P5 (0.077), 凱柏峰 II/III & 朗賢峯 (0.052), LP13 (0.048), P6 (0.040), Yau Tong (0.019).
+- MTR Property Expected Profit V1 + EPS bridge are live: `scripts/mtr_property_expected_profit.py` and `scripts/mtr_property_eps_bridge.py`. FY26 pool = official FY25-outlook names (new: LP13, THE SOUTHSIDE P6, Yau Tong VB; continued: Tai Wai, SOUTHSIDE P5, LP12) plus residual (凱柏峰 II/III, 朗賢峯). Expected profit = P(recognition) x eligible registered value x implied conversion ratio (15/20/25% bear/base/bull, anchored by G2022H1). Measured layer (SRPE) 1.06bn base; assumed-scenario layer 4.70bn base (values explicitly ASSUMED, +/-25% band); FY26 total 3.4/5.8/8.7bn vs FY25 11.1bn. EPS bridge: reported EPS 1.25/1.62/2.09 vs Street FY26 2.52 (-50%/-36%/-17%) - flags a large gap to test (our P/magnitude too conservative vs Street not marking down FY26 property). Targeted SRPE enrichment round complete: LP12 海瑅灣 I/II (999 deals, 87.4bn), SOUTHSIDE P5 滶晨 I/II (793 deals, 139.8bn - nearly 2.3x the assumed scenario!), 凱柏峰 II/III (1,292 deals, 93.1bn; three-phase total 1,961 deals ~ OP 1,880 units cross-check), 朗賢峯 (162 deals, 31.4bn), LP13 suspected (633 deals, 41.6bn). FY26 expected property profit updated to 4.9/6.7/8.6bn (bear/base/bull) and EPS 1.48/1.77/2.07 vs Street 2.52 (-41%/-30%/-18%). P5 is now the largest single EPS risk (0.180). EPS-risk ranking directs targeted enrichment: (0.090 EPS risk), Tai Wai (0.085), SOUTHSIDE P5 (0.077), 凱柏峰 II/III & 朗賢峯 (0.052), LP13 (0.048), P6 (0.040), Yau Tong (0.019).
 - MTR Property Magnitude Engine V1 is live: `scripts/mtr_magnitude_engine.py` writes `mtr_magnitude_engine.csv` with exact registered sales value per phase (cancelled deals excluded): 晉環 16,823m, 揚海 14,755m, 晉海II 9,582m, 柏傲莊I 8,808m, 晉海 8,703m, 瑜一 6,704m, 海盈山 5,980m, 凱柏峰I 4,897m, plus p25/median/mean/p75 price distribution. Confirmation-group profit/sales reference (UPPER bounds - missing members shrink the denominator): G2022H1 24.5% (7,747m vs 晉環+揚海 31,578m; ~17% if LP10 value ~15bn); G2024H2 78.4% and G2025H1 82.7% are unreliable (most members lack SRPE data) and are flagged NOT trustworthy as point estimates. G2022H1 anchors MTR recognised profit at roughly 17-24% of registered sales value (bundles project margin and MTR share; not a statutory take-rate).
 - MTR Property Timing Engine V0 is live: `scripts/mtr_timing_engine.py` writes `mtr_property_timing_history.csv` linking presale -> first transaction -> BD occupancy permit -> MTR recognition. Four STRONG-mapped cases (address + permit count + timing): 晉環 OP 2022-04 (PR4/2022/OP, 800u) -> 2022; 揚海 OP 2022-08 (PR6/2022/OP, 600u) -> 2022; 海盈山 OP 2024-11 (PR12/2024/OP, 800u) -> 2024; 瑜一 OP 2024-11 (PR11/2024/OP, 630u) -> 2025. Two SUSPECTED shared-lot cases: LOHAS Park P11 OP 2024-12 (1,880u) -> 2024; P12 OP 2025-10 (1,985u) -> 2025. H1/H2 recognition split is now official: interim results show 2022H1 7,747 (LP10/SOUTHLAND/La Marina) vs 2022H2 2,666; 2023H1 712 (LP11 initial) vs H2 1,371; 2024H1 1,740 vs H2 8,525 (LP11 bulk + SOUTHSIDE + Ho Man Tin P1); 2025H1 5,542 (Ho Man Tin P1/P2, SOUTHSIDE P3/P5) vs H2 5,542 (LP12). Annual = H1 + H2 reconciles for all six years. Per-package recognition half is attached to the timing history (晉環 2022-H1 strong, 瑜一 2025-H1 strong, 海盈山 2024-H2 inferred, LP11 2023-H1+2024-H2 strong). Empirical pattern: OP issuance and recognition fall in the same calendar year (median lag ~1 month). THE SOUTHSIDE mapped via 11 Heung Yip Road in the BD history.
 - MTR Consensus Bridge (P0C skeleton) is live: `scripts/mtr_consensus_bridge.py` writes `mtr_consensus_bridge.csv` (our FY2026E revenue bridge vs Street) and `mtr_eps_sensitivity.csv`. Street EPS/revenue from yfinance 0066.HK (7 analysts; FY2026E EPS 2.52 avg, revenue 55.2bn). Our FY2026E transport revenue is derived from the farebox H1 nowcast (11,977) x FY25 H2/H1 seasonality (1.0201) = ~24.2bn; other segments are explicitly labelled ASSUMED. EPS sensitivity confirms research priority: one property package timing shift moves EPS ~+/-0.45 (17.7% of consensus) vs farebox +1% (+1.5%), HIBOR +100bp (-3.4%), Mainland +10% (+0.3%).
@@ -149,6 +149,12 @@ replacement for the operating manual or generated source-status JSON.
   finance cost, FX, tax, associates and NCI remain inside the residual, so
   this is a transparent research bridge, not issuer guidance or a trade
   approval.
+- v3 now exposes a parallel `forward_waterfall_proxy` diagnostic. For Air
+  China and China Southern, the FY2025 formal lower waterfall reconciles and
+  the diagnostic scales finance cost with forecast revenue while carrying
+  other disclosed below-operating rows at FY2025 absolute values. It is not
+  yet the primary EPS forecast: FX, debt schedule, recurring/non-recurring
+  classification, tax regime and dilution still need independent assumptions.
 - The first v3 free-online source/model extension is now live. The MOFCOM
   monthly goods-trade endpoint produces six current 2026 monthly observations
   (total/export/import values and YoY rates) in
@@ -1506,6 +1512,63 @@ Residential Tier 1 is now FROZEN (recognition kernel v0.2 + margin
 buckets + variant layer). Next: Mainland / below-segment decomposition
 (③) for accounting completeness, with the explicit expectation that it
 improves the earnings bridge rather than creating a new material variant.
+
+### FY2026 nowcast and skeleton backtest (2026-08-09)
+
+The skeleton now covers TWO fiscal years (FY2026E + FY2027E, 18 scenario
+rows) with per-year recognised revenue and project-mix margin:
+
+* FY2026E: recognised 30.4bn (lag kernel vs official company guidance
+  30.1bn, within 1%), weighted margin 29.8%, underlying EPS 8.39 vs
+  consensus 7.91 = +6.1% - an upside variant, driven by the official
+  recognition guidance plus a margin mix slightly above consensus.
+* FY2027E: recognised 33.1bn, weighted margin 29.1%, underlying EPS 8.59
+  vs consensus 8.65 = -0.6% (unchanged).
+
+`run-shkp-skeleton-backtest` replays the frozen residential engine
+(lag kernel x margin bucket) plus a point-in-time 3-year non-residential
+run-rate on FY2017-FY2025 (`shkp_skeleton_historical_backtest`, 9 rows).
+Results: MAE 20.1% on underlying profit, systematically UNDER-estimating
+in FY2017-2022 (-15% to -31%) and converging to -2.4% (FY2024) and -0.2%
+(FY2025). Two structural error sources, reported separately per row:
+
+1. Non-residential run-rate lags Mainland development spikes (FY2025
+   non-residential actual 18.7bn is 26% above the 3-year mean 14.8bn) -
+   the Mainland mean-reversion variant from ③, now quantified in
+   backtest terms.
+2. The margin bucket (calibrated to the FY2026/27 mix) understates the
+   FY2017-2020 high-margin mix (actual 32.8-44.9% vs bucket 22.5-37.5%),
+   so historical backtests are conservative in early years by design.
+
+The convergence to ~0% in FY2024/25 means the CURRENT-year estimate
+(FY2026/27) is where the model has the most validation support; the early
+under-estimate is a mix/composition effect, not a broken engine.
+
+### SHKP Earnings Model v1.0 FROZEN (2026-08-09)
+
+Full-chain validation completed and the model frozen as v1.0. See
+[SHKP_EARNINGS_MODEL_V1_STATUS.md](asia-markets/SHKP_EARNINGS_MODEL_V1_STATUS.md)
+for the complete report. Headline items:
+
+* Engineering gate: 9/9 invariant checks pass (unit consistency,
+  accounting identities, PIT design, version consistency - skeleton
+  consumes the frozen project-mix margins, verified by reverse-derivation).
+* FY25A->FY26E->FY27E bridge: underlying EPS 7.54 -> 8.39 -> 8.59;
+  consensus 7.91/8.65 => FY26 +6.1% (positive variant), FY27 -0.6%
+  (neutral). The FY26 upside is entirely residential in the decomposition
+  (30.4bn x 29.8% vs consensus-implied ~25.2% margin or ~25.7bn volume),
+  with the Mainland/below-segment assumption as the stated caveat.
+* Backtest framed in three layers: component validation (kernel +1.0% vs
+  official guidance; commercial MAPE 1.62% vs 3.85% naive) = strong;
+  skeleton portability (MAE 20.1%, early years systematically low due to
+  margin-regime and Mainland composition) = stress test, not accuracy;
+  recent-regime fit (FY2024 -2.4%, FY2025 -0.2%) = expected, not clean
+  OOS proof.
+* Confidence table: recognition HIGH, development margin MEDIUM-HIGH, HK
+  commercial HIGH, hotel MEDIUM, Mainland/other MEDIUM/LOW, whole-company
+  EPS MEDIUM (below-segment residual the key risk).
+* Next phase is the INVESTMENT LAYER (FY26 upside sources, consensus
+  revision catalysts, falsification data), not further model building.
 
 ### Below-segment / Mainland decomposition (③ - 2026-08-09)
 
