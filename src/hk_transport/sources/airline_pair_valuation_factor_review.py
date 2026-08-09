@@ -45,7 +45,23 @@ def build_airline_pair_valuation_factor_review(
         market_scope_a = "HK_leg" if str(t.asset_a).endswith(".HK") else "CN_A_leg"
         market_scope_b = "HK_leg" if str(t.asset_b).endswith(".HK") else "CN_A_leg"
         scope_status = "mixed_market_legs_CNA_forward_consensus" if market_scope_a != market_scope_b else "same_market_leg"
-        ready = base_payoff is not None and stress_10 is not None and stress_10 > 0 and factor_flag != "material_factor_gap" and scope_status == "same_market_leg"
+        quant_screen_passed = base_payoff is not None and stress_10 is not None and stress_10 > 0 and factor_flag != "material_factor_gap" and scope_status == "same_market_leg"
+        # Passing the quant screen (survives a 10pp multiple-compression
+        # stress, no material factor gap, same-market legs) is necessary but
+        # not sufficient: required_next_evidence below lists corroborating
+        # work (route-level yield, 1H2026 actuals, HK/A consensus
+        # reconciliation, a real factor-residual test, a non-constant P/S
+        # target) that nothing in this pipeline has actually gathered yet.
+        # This is a research-only chain with no trading signal in v1, so
+        # readiness never auto-promotes on the quant screen alone.
+        required_evidence_complete = False
+        ready = quant_screen_passed and required_evidence_complete
+        if ready:
+            readiness_status = "provisional_trade_ready_for_review"
+        elif quant_screen_passed:
+            readiness_status = "not_trade_ready_pending_required_evidence"
+        else:
+            readiness_status = "not_trade_ready_valuation_factor_or_scope_gap"
         rows.append({
             "dataset_id": "airline_pair_valuation_factor_review", "pair_id": t.pair_id,
             "selection_bucket": t.selection_bucket, "long_leg": t.long_leg, "short_leg": t.short_leg,
@@ -56,7 +72,7 @@ def build_airline_pair_valuation_factor_review(
             "factor_volatility_gap_a_minus_b_pct": volatility_gap, "factor_risk_status": factor_flag,
             "market_scope_a": market_scope_a, "market_scope_b": market_scope_b,
             "consensus_market_scope_status": scope_status,
-            "trade_readiness_status": "provisional_trade_ready_for_review" if ready else "not_trade_ready_valuation_factor_or_scope_gap",
+            "trade_readiness_status": readiness_status,
             "required_next_evidence": "Validate route-level yield and 1H2026 actuals; reconcile HK/A consensus; test residual after beta/size/momentum controls; replace constant-P/S target with historical/peer-adjusted valuation.",
             "source_quality": "derived_valuation_factor_review",
             "source_paths": f"{WORKING_PATH};{TRADE_PATH}", "retrieved_at": retrieved,
