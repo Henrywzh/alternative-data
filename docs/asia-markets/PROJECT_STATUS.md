@@ -80,6 +80,7 @@ replacement for the operating manual or generated source-status JSON.
 ## Recent completed work
 
 - MTR SRPE transaction probe is live: `scripts/mtr_srpe_transactions.py` downloads the latest statutory register-of-transactions PDF for each of the 8 name-confirmed MTR phases and parses 5,921 transactions (shared `srpe_pdf.py` parser). Per-phase stats feed the property master (units_sold_registered / asp_median / first-last transaction date): 晉環 860 @ HK$18.2m median, 揚海 641 @ 19.1m, 海盈山 374 @ 14.2m, 瑜一 378 @ 16.4m, 凱柏峰I 669 @ 8.2m, 晉海 1,047 @ 7.4m, 晉海II 1,142 @ 8.4m, 柏傲莊I 810 @ 10.2m. First transaction dates sit 1-3 weeks after each phase's first price list, consistent with presale mechanics. `units_sold_registered` is registered transactions, NOT total project units.
+- MTR Property Timing Engine V0 is live: `scripts/mtr_timing_engine.py` writes `mtr_property_timing_history.csv` linking presale -> first transaction -> BD occupancy permit -> MTR recognition. Four STRONG-mapped cases (address + permit count + timing): 晉環 OP 2022-04 (PR4/2022/OP, 800u) -> 2022; 揚海 OP 2022-08 (PR6/2022/OP, 600u) -> 2022; 海盈山 OP 2024-11 (PR12/2024/OP, 800u) -> 2024; 瑜一 OP 2024-11 (PR11/2024/OP, 630u) -> 2025. Two SUSPECTED shared-lot cases: LOHAS Park P11 OP 2024-12 (1,880u) -> 2024; P12 OP 2025-10 (1,985u) -> 2025. Empirical pattern: OP issuance and recognition fall in the same calendar year (median lag ~1 month). THE SOUTHSIDE mapped via 11 Heung Yip Road in the BD history.
 - MTR Consensus Bridge (P0C skeleton) is live: `scripts/mtr_consensus_bridge.py` writes `mtr_consensus_bridge.csv` (our FY2026E revenue bridge vs Street) and `mtr_eps_sensitivity.csv`. Street EPS/revenue from yfinance 0066.HK (7 analysts; FY2026E EPS 2.52 avg, revenue 55.2bn). Our FY2026E transport revenue is derived from the farebox H1 nowcast (11,977) x FY25 H2/H1 seasonality (1.0201) = ~24.2bn; other segments are explicitly labelled ASSUMED. EPS sensitivity confirms research priority: one property package timing shift moves EPS ~+/-0.45 (17.7% of consensus) vs farebox +1% (+1.5%), HIBOR +100bp (-3.4%), Mainland +10% (+0.3%).
 - MTR Property Project Master (P0B skeleton) is live: `src/hk_transport/sources/mtr_property_project_master.py` and `data/normalized/hk_transport/mtr_property_project_master.csv` (19 project/package rows). Rows are official-disclosure-only: profit-recognition years from MTR annual results (2021: LOHAS Park P7-9; 2022: LP10, SOUTHLAND, La Marina; 2024: Villa Garda, SOUTHSIDE P1/2/4/5, Ho Man Tin P1; 2025: SOUTHSIDE P3/P5, LOHAS Park P12, Ho Man Tin P1/P2), tender years (THE SOUTHSIDE P5/P6 2021; Tung Chung East P1 2024; Tuen Mun A16 P1 2025), plus SHKP-verified LOHAS Park 4A/4B and YOHO WEST cross-references. Units/GFA/ASP/remaining profit stay unpopulated until verified - no fabricated economics. v2 adds an SRPE crosswalk (8/19 rows confirmed): THE SOUTHSIDE P1 晉環/SOUTHLAND (SRPE 7585, first price list 2021-04-19), P2 揚海/La Marina (7787, 2021-08-17), P4 海盈山/La Montagne (9345, 2023-06-27), Ho Man Tin P2 瑜一/IN ONE (8745, 2023-05-08), LOHAS Park P11 凱柏峰/Villa Garda (8545, 2022-06-20), LOHAS Park 4A/4B 晉海/晉海II (4745/4865, 2017), Tai Wai 柏傲莊 I (7225, 2020-10-06). Mappings require an official-name match or repo-verified SHKP data; ambiguous phases (THE SOUTHSIDE P3/P5/P6, Ho Man Tin P1, LOHAS Park P7-10/P12) stay unmapped with evidence_level=official_recognition_only.
 - MTR farebox revenue backtest is live: `scripts/mtr_farebox_revenue_backtest.py`
@@ -188,6 +189,16 @@ replacement for the operating manual or generated source-status JSON.
   applies article-release-date filtering; it is not treated as airline cargo
   revenue. For a 2026-06-30 cutoff, the July 2026 H1 article is correctly
   excluded in favor of the May 2026 Jan-Apr release.
+- The MOT/MCT holiday demand layer is now live in
+  `airline_travel_demand_events.csv` with 13 normalized rows across five
+  official event articles: the 2026 40-day Spring Festival transport window,
+  2026 Spring Festival/May/Dragon Boat tourism and 2025 May tourism. It keeps
+  article release dates, event duration, per-day normalization and the
+  distinction between source-reported and derived YoY. For the 2026 Spring
+  Festival tourism article, the nine-day versus eight-day prior holiday is
+  normalized to roughly 5.7% daily traveler growth rather than using the raw
+  19.0% level growth. v3 carries the latest admissible event as sector
+  context only; it does not convert holiday points into monthly company RPK.
 - The CAAC 2026 summer/autumn route-licence PDF is now parsed into
   `airline_caac_route_licence_events.csv` with 53 dated event rows: 36 new
   domestic route licences, 13 cargo-licence renewals and 4 cancellations.
@@ -1414,3 +1425,39 @@ Conclusion per the Tier-1 priority: project-mix development margin
 (②) is the next module - the market is paying for a margin recovery to
 ~30% that the aggregate latest-year margin does not support without
 project-level evidence.
+
+### Project-mix development margin model (Tier 1, step 2 - 2026-08-09)
+
+`run-shkp-project-margin-model` completes steps 2A-2D:
+
+* Step 2A - historical HK development-margin anchor
+  (`shkp_hk_development_margin_history`, FY2013-2025): the frozen margin
+  definition is HK attributable combined development profit / HK recognised
+  property-sales revenue (segment note, NOT the all-region five-year
+  summary). Distribution: median 39.0%, mean 35.1%, 25/75 pct 28.0%/41.8%,
+  FY2025 trough 12.2% (YOHO WEST/NOVO-led handover at compressed margins),
+  recent-3y mean 24.7%. Consensus-implied 29.6% sits at the 31st historical
+  percentile - below the historical median, above the recent trough.
+  Issuer recognition guidance collected from the annual reports: HK backlog
+  24.9bn -> 19.6bn recognised next FY (FY2024 report) and 35.6bn -> 30.1bn
+  (FY2025 report), i.e. an ~80-86% one-year recognition rate.
+* Step 2B/2C - feature-based margin buckets assigned to the FY2027
+  recognition schedule (60 phases): luxury ASP >= 15m/unit -> high bucket
+  (35-40%), 10-15m -> mid (27-32%), mass-market <= 10m -> low (20-25%)
+  with launch-vintage as the land-cost proxy. Revenue-weighted FY2027
+  margin = 29.1% (26.6-31.6% bracket). Key mix: Cullinan Sky 2 (ASP 22m,
+  11% weight, high), Sierra Sea/NOVO/Lime Spark mass-market (30% weight,
+  low), Cullinan Harbour (67m ASP, high).
+* Step 2D - consensus-required mix: the weighted 29.1% is only 0.5pp below
+  the consensus-implied 29.6% (HKD 162m profit, ~HKD 0.06 EPS). The FY2027
+  mix therefore largely explains the consensus margin; no extreme
+  assumption is needed.
+
+Whole-company skeleton updated to use the project-mix margin: base FY2027E
+underlying EPS is now 8.59 vs consensus 8.65 = -0.6% (was -8.0% with the
+aggregate 24% margin). The EPS path: 7.95 (aggregate margin) -> 8.01
+(+recognition lag) -> 8.59 (+project-mix margin). The model is now a
+variant-perception model: the remaining -0.6% is within bucket-range
+uncertainty, and the interesting output is the margin-by-project table
+itself (which projects the market's 29.6% implies vs which the model's
+mix supports).
