@@ -80,6 +80,7 @@ replacement for the operating manual or generated source-status JSON.
 ## Recent completed work
 
 - MTR SRPE transaction probe is live: `scripts/mtr_srpe_transactions.py` downloads the latest statutory register-of-transactions PDF for each of the 8 name-confirmed MTR phases and parses 5,921 transactions (shared `srpe_pdf.py` parser). Per-phase stats feed the property master (units_sold_registered / asp_median / first-last transaction date): 晉環 860 @ HK$18.2m median, 揚海 641 @ 19.1m, 海盈山 374 @ 14.2m, 瑜一 378 @ 16.4m, 凱柏峰I 669 @ 8.2m, 晉海 1,047 @ 7.4m, 晉海II 1,142 @ 8.4m, 柏傲莊I 810 @ 10.2m. First transaction dates sit 1-3 weeks after each phase's first price list, consistent with presale mechanics. `units_sold_registered` is registered transactions, NOT total project units.
+- MTR Property Magnitude Engine V1 is live: `scripts/mtr_magnitude_engine.py` writes `mtr_magnitude_engine.csv` with exact registered sales value per phase (cancelled deals excluded): 晉環 16,823m, 揚海 14,755m, 晉海II 9,582m, 柏傲莊I 8,808m, 晉海 8,703m, 瑜一 6,704m, 海盈山 5,980m, 凱柏峰I 4,897m, plus p25/median/mean/p75 price distribution. Confirmation-group profit/sales reference (UPPER bounds - missing members shrink the denominator): G2022H1 24.5% (7,747m vs 晉環+揚海 31,578m; ~17% if LP10 value ~15bn); G2024H2 78.4% and G2025H1 82.7% are unreliable (most members lack SRPE data) and are flagged NOT trustworthy as point estimates. G2022H1 anchors MTR recognised profit at roughly 17-24% of registered sales value (bundles project margin and MTR share; not a statutory take-rate).
 - MTR Property Timing Engine V0 is live: `scripts/mtr_timing_engine.py` writes `mtr_property_timing_history.csv` linking presale -> first transaction -> BD occupancy permit -> MTR recognition. Four STRONG-mapped cases (address + permit count + timing): 晉環 OP 2022-04 (PR4/2022/OP, 800u) -> 2022; 揚海 OP 2022-08 (PR6/2022/OP, 600u) -> 2022; 海盈山 OP 2024-11 (PR12/2024/OP, 800u) -> 2024; 瑜一 OP 2024-11 (PR11/2024/OP, 630u) -> 2025. Two SUSPECTED shared-lot cases: LOHAS Park P11 OP 2024-12 (1,880u) -> 2024; P12 OP 2025-10 (1,985u) -> 2025. H1/H2 recognition split is now official: interim results show 2022H1 7,747 (LP10/SOUTHLAND/La Marina) vs 2022H2 2,666; 2023H1 712 (LP11 initial) vs H2 1,371; 2024H1 1,740 vs H2 8,525 (LP11 bulk + SOUTHSIDE + Ho Man Tin P1); 2025H1 5,542 (Ho Man Tin P1/P2, SOUTHSIDE P3/P5) vs H2 5,542 (LP12). Annual = H1 + H2 reconciles for all six years. Per-package recognition half is attached to the timing history (晉環 2022-H1 strong, 瑜一 2025-H1 strong, 海盈山 2024-H2 inferred, LP11 2023-H1+2024-H2 strong). Empirical pattern: OP issuance and recognition fall in the same calendar year (median lag ~1 month). THE SOUTHSIDE mapped via 11 Heung Yip Road in the BD history.
 - MTR Consensus Bridge (P0C skeleton) is live: `scripts/mtr_consensus_bridge.py` writes `mtr_consensus_bridge.csv` (our FY2026E revenue bridge vs Street) and `mtr_eps_sensitivity.csv`. Street EPS/revenue from yfinance 0066.HK (7 analysts; FY2026E EPS 2.52 avg, revenue 55.2bn). Our FY2026E transport revenue is derived from the farebox H1 nowcast (11,977) x FY25 H2/H1 seasonality (1.0201) = ~24.2bn; other segments are explicitly labelled ASSUMED. EPS sensitivity confirms research priority: one property package timing shift moves EPS ~+/-0.45 (17.7% of consensus) vs farebox +1% (+1.5%), HIBOR +100bp (-3.4%), Mainland +10% (+0.3%).
 - MTR Property Project Master (P0B skeleton) is live: `src/hk_transport/sources/mtr_property_project_master.py` and `data/normalized/hk_transport/mtr_property_project_master.csv` (19 project/package rows). Rows are official-disclosure-only: profit-recognition years from MTR annual results (2021: LOHAS Park P7-9; 2022: LP10, SOUTHLAND, La Marina; 2024: Villa Garda, SOUTHSIDE P1/2/4/5, Ho Man Tin P1; 2025: SOUTHSIDE P3/P5, LOHAS Park P12, Ho Man Tin P1/P2), tender years (THE SOUTHSIDE P5/P6 2021; Tung Chung East P1 2024; Tuen Mun A16 P1 2025), plus SHKP-verified LOHAS Park 4A/4B and YOHO WEST cross-references. Units/GFA/ASP/remaining profit stay unpopulated until verified - no fabricated economics. v2 adds an SRPE crosswalk (8/19 rows confirmed): THE SOUTHSIDE P1 晉環/SOUTHLAND (SRPE 7585, first price list 2021-04-19), P2 揚海/La Marina (7787, 2021-08-17), P4 海盈山/La Montagne (9345, 2023-06-27), Ho Man Tin P2 瑜一/IN ONE (8745, 2023-05-08), LOHAS Park P11 凱柏峰/Villa Garda (8545, 2022-06-20), LOHAS Park 4A/4B 晉海/晉海II (4745/4865, 2017), Tai Wai 柏傲莊 I (7225, 2020-10-06). Mappings require an official-name match or repo-verified SHKP data; ambiguous phases (THE SOUTHSIDE P3/P5/P6, Ho Man Tin P1, LOHAS Park P7-10/P12) stay unmapped with evidence_level=official_recognition_only.
@@ -1461,3 +1462,44 @@ variant-perception model: the remaining -0.6% is within bucket-range
 uncertainty, and the interesting output is the margin-by-project table
 itself (which projects the market's 29.6% implies vs which the model's
 mix supports).
+
+### Margin variant analysis - consensus & sensitivity layer (2026-08-09)
+
+`run-shkp-margin-variant` (Project Margin v0.2) delivers the four
+user-directed layers. Aggregate EPS is now within 0.6% of consensus, so
+the valuable output is the conditional disagreement, not the level.
+
+Material groups (60 phases -> 9 groups, top-5 = 47.5% of FY27 recognised
+revenue):
+
+| Group | Weight | Margin | EPS / 1pp | Priority |
+|---|---:|---:|---:|---|
+| Sierra Sea | 27.7% | 22.5% | 0.032 | HIGH |
+| Other (42 phases) | 19.5% | 31.0% | 0.022 | HIGH |
+| NOVO LAND | 11.1% | 27.2% | 0.013 | med |
+| Cullinan Sky 2 (luxury) | 11.1% | 37.5% | 0.013 | med |
+| Cullinan Sky 1 | 8.1% | 29.5% | 0.009 | med |
+| Lime Spark | 7.0% | 22.5% | 0.008 | med |
+| Cullinan Harbour / Victoria Harbour / St Michel | 15.5% | 37.5% | <=0.008 | low |
+
+Sierra Sea alone carries 27.7% of FY27 revenue and +-0.16 EPS across its
+full bucket range - the single highest-value research target, 2.5x the
+next group. The catalyst map (`shkp_margin_catalyst_map`) ties each group
+to observable KPIs (batch ASP vs launch, incentives/rebates, sales
+velocity, secondary premium) and the EPS revision of a +-3pp margin move:
+Sierra Sea +-0.095 EPS, NOVO/Cullinan Sky 2 +-0.038.
+
+Consensus-required margin feasibility (`shkp_margin_consensus_required`):
+holding other groups at model assumptions, consensus 29.6% requires Sierra
+Sea 22.5%->23.8% (+1.3pp, feasible), NOVO +3.2pp (feasible), Cullinan Sky
+2 ->40.7% (at bucket top), while Lime Spark/Cullinan Harbour/Victoria
+Harbour/St Michel alone cannot explain it - so consensus is a broad
+dispersion of small per-project upgrades, not a single aggressive
+assumption. Conclusion: consensus FY27 development earnings are broadly
+reasonable; the bear/bull variants are conditional on Sierra Sea and
+mass-market price action, not on the aggregate level.
+
+Residential Tier 1 is now FROZEN (recognition kernel v0.2 + margin
+buckets + variant layer). Next: Mainland / below-segment decomposition
+(③) for accounting completeness, with the explicit expectation that it
+improves the earnings bridge rather than creating a new material variant.
