@@ -40,6 +40,13 @@ FY25_TRANSPORT_REV = 23595.0
 FY25_TOTAL_REV = 55465.0
 FY25_PROPERTY_POST_TAX = 11084.0
 
+# Verified external consensus readings (ET Net / MarketScreener, 2026-08-09):
+# yfinance 0y 2.52 was a YEAR_AGO_EPS field misread; FY26E is ~2.69-2.76.
+VERIFIED_FY26_EPS = 2.69       # ET Net consolidated (5 brokers 2.39-3.23)
+VERIFIED_FY26_EPS_ALT = 2.76   # 12-analyst aggregate
+VERIFIED_FY27_EPS = 1.65       # ET Net consolidated (JPM 1.87..CLSA 0.943)
+VERIFIED_FY27_EPS_MEAN = 1.52
+
 
 def load_our_estimates() -> dict:
     """Our FY26E ranges from the model chain (verified outputs)."""
@@ -221,6 +228,18 @@ def main() -> int:
         print(f"  record - which our SRPE/OP data chain does not support.")
         print(f"  Consensus FY26 EPS growth vs OFFICIAL FY25 ({FY25_ACTUAL_EPS}): "
               f"{growth_on_official:+.1f}%  [yfinance yearAgoEps is inconsistent]")
+        print(f"\n  VERIFIED consensus (ET Net 2026-08-09): FY26E {VERIFIED_FY26_EPS:.2f} / "
+              f"{VERIFIED_FY26_EPS_ALT:.2f}, FY27E {VERIFIED_FY27_EPS:.2f} "
+              f"(mean {VERIFIED_FY27_EPS_MEAN:.2f}) - yfinance 0y 2.52 was a YEAR_AGO_EPS misread")
+        for anchor, label in [(VERIFIED_FY26_EPS, "verified 2.69"), (VERIFIED_FY26_EPS_ALT, "verified 2.76")]:
+            print(f"  Our base reported EPS {ours['eps_base']:.2f} vs {label} -> "
+                  f"{(ours['eps_base']-anchor)/anchor*100:+.1f}%  "
+                  f"(bull {ours['eps_high']:.2f} -> {(ours['eps_high']-anchor)/anchor*100:+.1f}%)")
+        print(f"  REVISED CONCLUSION: with the correct FY26E anchor, our base sits "
+              f"{(ours['eps_base']-VERIFIED_FY26_EPS)/VERIFIED_FY26_EPS*100:+.1f}% below Street and "
+              f"bull covers consensus - the residual gap is property scale/IP reval magnitude, "
+              f"and Street's FY26 property+IP space (implied 84-109亿 at 2.69) still exceeds our "
+              f"63亿 base; FY27 is where dispersion (0.94-1.87) and our pool (62亿) diverge most.")
     if cons.get("rating_mix_0m"):
         mix = cons["rating_mix_0m"]
         print(f"\nAnalyst rating mix (current): {mix}")
