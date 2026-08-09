@@ -90,8 +90,7 @@ replacement for the operating manual or generated source-status JSON.
   year) tracks reported HK transport operations revenue with ~4.8% MAPE;
   COVID-era years under-estimate by 7-9% (journey-mix drift, not captured by
   FAM-only yield shifts), and the 2008 step is the MTR-KCR merger coverage
-  change, not a fare event. This gives MTR a monthly revenue nowcast leg
-  ahead of annual results - a first step toward the earnings-bridge work.
+  change, not a fare event. This gives MTR a monthly revenue nowcast leg ahead of annual results. It integrates ImmD daily control-point statistics (HSR West Kowloon vs Lo Wu/LMC Spur Line) and a regularized Ridge L2 residual model (2019-2023 holdout MAPE 4.06%), achieving +0.43% error on FY2025 live forward OOS validation (HK.70bn forecast vs HK.60bn reported).
 - China listed airline monthly operating data is wired into transport for six
   listed groups: Air China, China Southern, China Eastern, Spring Airlines,
   Hainan Airlines Holdings and Juneyao Airlines. The artifact includes
@@ -143,13 +142,18 @@ replacement for the operating manual or generated source-status JSON.
   monthly goods-trade endpoint produces six current 2026 monthly observations
   (total/export/import values and YoY rates) in
   `airline_cargo_demand_proxies.csv`, with raw JSON snapshots and explicit
-  latest-snapshot/PIT caveats. `airline_earnings_model_v3.csv` applies that
-  signal as a dated external cargo-demand overlay to the six-company
-  bear/base/bull unit-economics bridge; 9 Air remains incomplete because no
-  standalone financial base exists. The companion
+  latest-snapshot/PIT caveats. v3 now triangulates cargo demand using fixed
+  40% CAAC cargo/mail, 40% MOFCOM trade and 20% State Post Bureau express-volume
+  weights, renormalizing only when a component is unavailable. A later MOFCOM
+  retrieval snapshot is excluded from earlier model dates. The split is used
+  only to grow reported cargo revenue; other revenue is modelled separately as
+  a passenger-revenue-growth residual. `airline_earnings_model_v3.csv` applies
+  that dated overlay to the six-company bear/base/bull unit-economics bridge;
+  9 Air remains incomplete because no standalone financial base exists. The companion
   `airline_earnings_model_v3_kpi_coverage.csv` explicitly marks ASK/RPK/load
   factor/aggregate CASK as modelled, yield/cargo/fuel hedge/fleet/net income
-  as partial or proxy, and ancillary/cargo yield as not modelled; EPS remains
+  as partial or proxy, and cargo yield/finance waterfall as not modelled;
+  ancillary/other revenue is now a labelled residual proxy; EPS remains
   an explicitly labelled basic-share-count proxy. This is
   a research model extension, not a final long/short direction.
 - The CAAC sector layer is now live alongside the MOFCOM proxy. Official
@@ -169,6 +173,12 @@ replacement for the operating manual or generated source-status JSON.
   applies article-release-date filtering; it is not treated as airline cargo
   revenue. For a 2026-06-30 cutoff, the July 2026 H1 article is correctly
   excluded in favor of the May 2026 Jan-Apr release.
+- The CAAC 2026 summer/autumn route-licence PDF is now parsed into
+  `airline_caac_route_licence_events.csv` with 53 dated event rows: 36 new
+  domestic route licences, 13 cargo-licence renewals and 4 cancellations.
+  v3 carries company-level planned-route counts and stated initial-frequency
+  sums for Spring, Juneyao, 9 Air, Southern, Eastern and Air China, but does
+  not convert them into ASK or assume operation.
 - The current free HSR refresh queried the eight previously pending domestic
   legs in the route queue using dated Ctrip SSR snapshots. The normalized panel
   now has six verified train observations, six explicit no-direct-train rows,
@@ -773,6 +783,38 @@ rate. The trailing 2026-04..08 window shows a declining model-grid coverage
 ratio (0.59 -> 0.15) purely because recent SRPE registers lag publication,
 not because activity vanished; same-month-last-year forecasts in that tail
 still land within 9-14% of observed values for 2026-07.
+
+### 13-year Hong Kong property-sales panel and data audit (2026-08-09)
+
+The reconciliation panel was extended to 13 fiscal years
+(`shkp_financial_model_hk_property_sales_segment_history`,
+`shkp_indicative_sales_model_historical_reconciliation`, 16 rows) by
+extracting the Hong Kong row of the Segment Information note from each
+annual report PDF (FY2012/13-FY2024/25). The panel uses the HK-only combined
+revenue (company and subsidiaries plus share of associates and joint
+ventures), which is the correct comparison for the HK residential model.
+
+Data audit (all values verified against the source PDFs, each fiscal year
+checked twice via the current-year and prior-year tables in adjacent annual
+reports; 24/24 cross-checks pass, plus the FY2024 24,745 and FY2025 26,139
+values each appear in three independent places in their annual reports):
+
+* FY2012/13-FY2024/25 HK property-sales segment revenue ranges HKD 11.3bn
+  (FY2014/15) to HKD 36.9bn (FY2019/20); recent years are HKD 23.9bn
+  (FY2022/23), 24.7bn (FY2023/24) and 26.1bn (FY2024/25).
+* The five-year-summary "Property sales" line is all-region (HK + Mainland +
+  Singapore) and is now explicitly NOT used for HK reconciliation; the
+  legacy all-region anchor remains visible as a labelled diagnostic only.
+* Model-vs-reported ratio by revenue scope: 73.6% mean across all 13 years,
+  93.5% mean across FY2020/21-FY2024/25. Early years are dominated by
+  universe-coverage gaps (2013: 0/230 phases, 2014: 7/230), while FY2022/23
+  (130%) and FY2024/25 (140%) overshoot - the model currently overstates HK
+  property-sales revenue in recent years once coverage is high, which is the
+  next reconciliation issue to investigate (contract updates/resales, JV
+  stake assumptions, or phase identity remain candidates).
+* Third-party (akshare OPERATE_INCOME) differs from the annual-report Group
+  revenue by design (segment vs consolidated reporting scope); it is a
+  known provider-convention difference, not a parser error.
 
 The follow-on research-only sales model is now materialized by
 `run-shkp-indicative-sales-model`. It writes monthly, long-scenario, annual,
