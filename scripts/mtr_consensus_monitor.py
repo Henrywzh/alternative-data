@@ -96,6 +96,37 @@ def fetch_consensus() -> dict:
     return out
 
 
+
+
+def ip_reval_rate_sensitivity() -> pd.DataFrame:
+    """IP revaluation sensitivity to cap-rate moves.
+
+    Official anchors (FY2025 results):
+      * investment properties carrying value 2025-12-31: 93,188 HK$m
+        (2024-12-31: 96,322)
+      * FY2025 fair-value remeasurement loss: (3,538) HK$m pre-tax
+      => implied ~14bp cap-rate widening in 2025 (3,538 / 93,188 = 3.8% of
+         value at a ~3.8% cap rate -> ~14bp).
+    EPS impact uses ~82% after-tax pass-through and 6,214.18m shares.
+    """
+    ip_value = 93188.0
+    loss_2025 = 3538.0
+    cap_rate = 0.038  # approximate HK retail/office cap rate
+    rows = []
+    for label, bp in [("+10bp (收益率上行)", 0.0010), ("+25bp", 0.0025),
+                      ("-10bp (收益率下行)", -0.0010), ("-25bp", -0.0025),
+                      ("-15bp (consensus 隐含 ~+30亿)", -0.0015)]:
+        d_value = -ip_value * bp / cap_rate  # value moves opposite to yield
+        eps = d_value * 0.82 / SHARES_M
+        rows.append({
+            "cap_rate_move": label,
+            "ip_value_change_pre_tax_hkdm": round(d_value, 0),
+            "eps_impact_hkd": round(eps, 3),
+        })
+    df = pd.DataFrame(rows)
+    df.to_csv(os.path.join(NORM_DIR, "mtr_ip_reval_sensitivity.csv"), index=False)
+    return df
+
 def main() -> int:
     ours = load_our_estimates()
     cons = fetch_consensus()
@@ -131,6 +162,7 @@ def main() -> int:
     })
 
     monitor = pd.DataFrame(rows)
+    ip_sens_df = ip_reval_rate_sensitivity()
 
     # Implied consensus property profit back-out across IP-reval scenarios
     implied = []
@@ -168,6 +200,10 @@ def main() -> int:
             fh.write("\n# ---- rating mix ----\n")
             pd.DataFrame([cons["rating_mix_0m"]]).to_csv(fh, index=False)
 
+    print("\nIP revaluation rate sensitivity (investment properties 93.2bn):")
+    print(ip_sens_df.to_string(index=False))
+    print("  FY25 actual: remeasurement loss 3.54bn pre-tax (~14bp yield widening)")
+    print("  Consensus EPS 2.52 implies ~+30亿 post-tax reval gain (~-15bp yields)")
     print("MTR Consensus Monitor (FY2026E)")
     print("=" * 96)
     print(monitor.to_string(index=False))

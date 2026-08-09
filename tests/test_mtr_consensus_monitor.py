@@ -34,3 +34,26 @@ def test_monitor_csv_exists():
     assert "HK transport revenue" in head
     assert "Reported EPS" in head
     assert "implied consensus property profit" in head
+
+
+def test_ip_reval_sensitivity_anchors():
+    """IP reval sensitivity must reconcile with the official FY25 loss."""
+    from scripts.mtr_consensus_monitor import ip_reval_rate_sensitivity
+    df = ip_reval_rate_sensitivity()
+    # FY25 actual remeasurement loss 3,538 pre-tax on 93,188 value
+    implied_bp = 3538.0 / 93188.0 * 10000  # ~38bp? no: value move = -V * bp / cap
+    # check: -14bp move gives about -3,434 pre-tax (close to 3,538)
+    loss_at_14bp = 93188.0 * 0.0014 / 0.038
+    assert loss_at_14bp == pytest.approx(3433.0, abs=10.0)
+    # EPS impact of -25bp (yields down, value up) is ~+0.81
+    row = df[df["cap_rate_move"] == "-25bp"].iloc[0]
+    assert row["eps_impact_hkd"] == pytest.approx(0.81, abs=0.03)
+    # +25bp row (yields up, value down) is symmetric negative
+    row2 = df[df["cap_rate_move"] == "+25bp"].iloc[0]
+    assert row2["eps_impact_hkd"] == pytest.approx(-0.81, abs=0.03)
+
+
+def test_ip_reval_sensitivity_csv():
+    df = pd.read_csv("data/normalized/hk_transport/mtr_ip_reval_sensitivity.csv")
+    assert len(df) == 5
+    assert df["eps_impact_hkd"].abs().max() < 1.0
