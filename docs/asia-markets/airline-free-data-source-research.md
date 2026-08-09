@@ -342,7 +342,11 @@ imputation reason.
 2. State Post Bureau parcels are implemented in `airline_postal_demand_proxies.csv`; next add NBS/MCT/MOT demand controls, with explicit holiday-length normalization.
 3. Extend the existing HSR query queue with dated 12306 train frequency,
    centre-to-centre time and fare observations for the highest-ASK overlapping
-   routes.
+   routes.  The CAAC seasonal new-route licence layer is now promoted into the
+   candidate panel via `build_caac_hsr_candidates` (route separator normalized
+   to '=', stated initial weekly frequency captured), so Spring/Juneyao/9 Air
+   new domestic licences are queried for direct HSR competition alongside
+   issuer-bulletin routes.
 4. Add Open-Meteo/HKO weather observations and archived forecast vintages for
    the main bases and route endpoints.
 5. Extend primary report extraction into a forward net-income bridge: the

@@ -1365,16 +1365,25 @@ verified-observation and ASK-weighted coverage for all six mainland groups.
 Its `snapshot_as_of_date` uses the source/query cutoff rather than a future
 travel date attached to a train-fare observation. No route candidates for a
 company means the event-driven extraction is incomplete, not that HSR exposure
-is zero. The current refresh has six verified train snapshots, with remaining
-legs explicitly marked no-direct-train, no-G/D, international control or
-pending; it is still a partial route panel rather than a company-wide HSR
-exposure estimate.
+is zero. The CAAC seasonal new-route licence intake
+(`build_caac_hsr_candidates`) promotes newly approved domestic routes with
+stated initial frequency for the seven tracked issuer families into the
+candidate panel, so candidate count is now partly CAAC-licence-driven as well
+as issuer-bulletin-driven. The latest refresh has fifteen verified train
+snapshots (2026-08-12 travel date), five of which carry a modelled
+ASK-weighted HSR exposure for Spring and Juneyao, with remaining legs
+explicitly marked no-direct-train, no-G/D, international control or pending;
+it is still a partial route panel rather than a company-wide HSR exposure
+estimate.
 
 `airline_hsr_route_candidates.csv` is a staging layer seeded from official
-monthly airline operating bulletins. It contains domestic route candidates for
-HSR enrichment plus international non-HSR controls. Blank rail time, rail
-frequency, rail fare, access and substitution-score fields remain intentional
-for pending/no-direct observations; verified rows retain their dated Ctrip
+monthly airline operating bulletins, supplemented by CAAC seasonal new-route
+licences (`build_caac_hsr_candidates`). It contains domestic route candidates
+for HSR enrichment plus international non-HSR controls. Route separators are
+normalized to '=' so the leg splitter is consistent regardless of source
+(issuer bulletins vs CAAC licences). Blank rail time, rail frequency, rail
+fare, access and substitution-score fields remain intentional for
+pending/no-direct observations; verified rows retain their dated Ctrip
 snapshot fields. It is still not a complete historical rail route panel and
 must not be read as a company-wide HSR exposure dataset.
 
