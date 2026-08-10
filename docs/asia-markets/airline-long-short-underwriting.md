@@ -5,6 +5,35 @@ it integrates the seven research layers into one execution-oriented view on
 the Spring Airlines long / Juneyao Airlines short pair.  Research construct
 only - not an approved live order.
 
+## v3 NCI / operating-contribution fix (2026-08-10)
+
+China Southern's v3 model previously reported a 588% model-vs-consensus
+gap (model 720 USD mn vs consensus 105 USD mn).  Root cause was not the
+NCI proration itself (Southern's FY2025 minority-interest share is a
+genuine 68.1%: NCI 1,828m on net income 2,685m, reconciled to zero error)
+but the forward operating-contribution leg: v3 used
+`forecast revenue - forecast operating cost` (gross margin), while
+Southern's FY2025 gross margin of 18,476m collapses to only 3,967m of
+reported operating profit once period expenses (surtaxes, selling, G&A,
+R&D) are deducted.  The ~14.5bn expense wedge inflated the forward
+waterfall and, after the 68% NCI proration, still left an implausible
+attributable profit.
+
+Fix: when an issuer discloses a positive FY2025 reported operating profit,
+the forward operating contribution is now anchored to that reported
+operating profit scaled with forecast revenue
+(`forward_operating_contribution_method = reported_operating_profit_revenue_scaled`).
+Loss-year carriers (Eastern, Air China) keep the gross-margin proxy so the
+existing regime-flip consensus guard still triggers.  After the fix:
+
+| Carrier | Before (model vs consensus) | After |
+|---|---|---|
+| China Southern | +588% (gross-margin wedge) | -51% (conservative, comparable) |
+| Hainan Airlines | +110% | -12% |
+
+The change propagates to the H1-2026 validation playbook and the
+post-earnings tracker; all other carriers are unchanged.
+
 ## The thesis in one paragraph
 
 The market overestimates the earnings conversion from Juneyao's

@@ -1749,11 +1749,40 @@ def build_airline_earnings_model_v3(
             else None
         )
         v2_cost_native = _num(base.get("forecast_operating_cost_native_mn"))
-        v3_operating_profit_native = (
+        gross_profit_proxy_native = (
             v3_revenue_native - v2_cost_native
             if v3_revenue_native is not None and v2_cost_native is not None
             else None
         )
+        # Anchor the forward operating contribution to the FY2025 reported
+        # consolidated operating profit (revenue-scaled) whenever the issuer
+        # discloses one and it is positive.  The revenue-minus-cost proxy is
+        # gross margin and omits period expenses (surtaxes, selling, G&A,
+        # R&D) - for Southern FY2025 those amount to ~14.5bn RMB (gross
+        # margin 18.5bn vs reported operating profit 4.0bn), which inflated
+        # the forward waterfall and produced a 588% model-vs-consensus gap.
+        # Loss-year carriers keep the gross-margin proxy so the existing
+        # regime-flip consensus guard still triggers (it requires a positive
+        # forward operating proxy against a negative FY2025 reported op).
+        fy2025_reported_op = _num(eps_anchor.get("fy2025_reported_operating_profit_native_mn"))
+        fy2025_total_revenue = _num(eps_anchor.get("fy2025_total_revenue_native_mn"))
+        if (
+            fy2025_reported_op is not None
+            and fy2025_reported_op > 0
+            and v3_revenue_native is not None
+            and fy2025_total_revenue not in (None, 0)
+        ):
+            v3_operating_profit_native = (
+                fy2025_reported_op * v3_revenue_native / fy2025_total_revenue
+            )
+            forward_operating_contribution_method = "reported_operating_profit_revenue_scaled"
+        else:
+            v3_operating_profit_native = gross_profit_proxy_native
+            forward_operating_contribution_method = (
+                "revenue_minus_forecast_operating_cost_gross_proxy"
+                if gross_profit_proxy_native is not None
+                else "not_available"
+            )
         forward_waterfall = _forward_waterfall_proxy(
             waterfall_context,
             eps_anchor,
@@ -1927,6 +1956,7 @@ def build_airline_earnings_model_v3(
                 "v3_revenue_native_mn": v3_revenue_native,
                 "v3_operating_cost_native_mn": v2_cost_native,
                 "v3_operating_profit_native_mn": v3_operating_profit_native,
+                "forward_operating_contribution_method": forward_operating_contribution_method,
                 "v3_revenue_usd_mn": v3_revenue_usd,
                 "v3_operating_profit_usd_mn": v3_operating_profit_usd,
                 "v2_fuel_shock_pct": _num(base.get("fuel_shock_pct")),
@@ -2015,7 +2045,7 @@ def build_airline_earnings_model_v3(
                 ),
                 "point_in_time_status": "mixed_issuer_and_latest_trade_snapshot_not_full_pit",
                 "source_quality": "derived_v3_existing_issuer_bridge_plus_mofcom_caac_spb_open_data",
-                "source_note": "Passenger revenue and aggregate cost inherit the existing unit-economics bridge. Where FY2025 total/passenger/cargo anchors reconcile, v3 grows reported cargo revenue with the external MOFCOM trade proxy plus scenario shock and grows the other-revenue residual with forecast passenger-revenue growth; otherwise it falls back to the legacy non-passenger residual. CAAC, SPB, MOT/MCT holiday and airport-hub data are sector context only and do not override company ASK/RPK or cargo revenue; SPB, MOT/MCT and airport throughput are broad logistics/travel/hub proxies. HSR is route context only. Fuel overlay is retained as a pre-tax sensitivity; hedge and surcharge fields are disclosure/policy context, not realized pass-through. Net income/EPS use forecast operating contribution plus the FY2025 official attributable-profit minus operating-contribution residual when the five-anchor report bridge is complete; this residual combines finance cost, FX, tax, associates and NCI and is not a granular forward waterfall. For high-minority-interest carriers (e.g. China Southern, 68% NCI share) where the forward share-based NCI proration diverges materially from the raw absolute residual bridge, net income/EPS switch to the share-based NCI forward leg (net_income_leg='share_based_nci_forward') and the raw residual bridge is retained as a diagnostic column.",
+                "source_note": "Passenger revenue and aggregate cost inherit the existing unit-economics bridge. Where FY2025 total/passenger/cargo anchors reconcile, v3 grows reported cargo revenue with the external MOFCOM trade proxy plus scenario shock and grows the other-revenue residual with forecast passenger-revenue growth; otherwise it falls back to the legacy non-passenger residual. CAAC, SPB, MOT/MCT holiday and airport-hub data are sector context only and do not override company ASK/RPK or cargo revenue; SPB, MOT/MCT and airport throughput are broad logistics/travel/hub proxies. HSR is route context only. Fuel overlay is retained as a pre-tax sensitivity; hedge and surcharge fields are disclosure/policy context, not realized pass-through. Net income/EPS use forecast operating contribution plus the FY2025 official attributable-profit minus operating-contribution residual when the five-anchor report bridge is complete; this residual combines finance cost, FX, tax, associates and NCI and is not a granular forward waterfall. For high-minority-interest carriers (e.g. China Southern, 68% NCI share) where the forward share-based NCI proration diverges materially from the raw absolute residual bridge, net income/EPS switch to the share-based NCI forward leg (net_income_leg='share_based_nci_forward') and the raw residual bridge is retained as a diagnostic column. Forward operating contribution is anchored to the FY2025 reported consolidated operating profit (revenue-scaled) whenever the issuer discloses a positive one; the revenue-minus-cost proxy is gross margin and omits period expenses (surtaxes, selling, G&A, R&D), which inflated Southern's forward waterfall and produced a spurious 588% model-vs-consensus gap (now -51%, model conservative vs consensus).",
                 "retrieved_at": retrieved,
             }
         )

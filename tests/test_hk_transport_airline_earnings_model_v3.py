@@ -281,8 +281,13 @@ def test_v3_uses_reported_operating_profit_and_carries_waterfall_context(monkeyp
     assert row["fy2025_income_tax_expense_native_mn"] == pytest.approx(15.0)
     assert row["fy2025_net_income_total_native_mn"] == pytest.approx(140.0)
     assert row["forward_waterfall_status"] == "not_available_missing_reconciled_historical_waterfall"
-    # Attributable profit 100 - reported operating profit 180 = -80 residual.
-    assert row["v3_attributable_net_income_bridge_native_mn"] == pytest.approx(146.0)
+    # Forward operating contribution is anchored to the reported FY2025
+    # operating profit (180) scaled with forward revenue (1026/1000 =
+    # 184.68) instead of the gross margin proxy (1026-800=226); the
+    # attributable residual is 100 - 180 = -80.
+    assert row["v3_operating_profit_native_mn"] == pytest.approx(184.68)
+    assert row["forward_operating_contribution_method"] == "reported_operating_profit_revenue_scaled"
+    assert row["v3_attributable_net_income_bridge_native_mn"] == pytest.approx(104.68)
 
 
 def test_v3_labels_v2_aggregate_operating_profit_proxy_when_formal_row_is_missing(monkeypatch, tmp_path) -> None:
