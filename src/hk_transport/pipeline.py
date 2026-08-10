@@ -44,6 +44,7 @@ from .sources.airline_post_earnings_tracker import build_airline_post_earnings_t
 from .sources.airline_pre_event_locked_baseline import build_airline_pre_event_locked_baseline
 from .sources.airline_earnings_model_v4 import build_airline_earnings_model_v4
 from .sources.airline_earnings_model_v4_live import build_airline_earnings_model_v4_live
+from .sources.airline_cost_engine_v2 import build_airline_cost_engine_v2
 from .sources.airline_cargo_bridge_backtest import build_airline_cargo_bridge_backtest
 from .sources.airline_caac_sector_monthly import fetch_caac_sector_monthly_kpis
 from .sources.airline_caac_sector_proxy_validation import fetch_airline_caac_sector_proxy_validation
@@ -488,6 +489,18 @@ QUALITY_SPECS = {
             "retrieved_at",
         ],
         "max_age_days": 15,
+    },
+    "airline_cost_engine_v2": {
+        "kind": "measure",
+        "required": [
+            "company",
+            "target_year",
+            "operating_cost_actual_native_mn",
+            "cost_full_cask_native_mn",
+            "error_full_cask_pct",
+            "retrieved_at",
+        ],
+        "max_age_days": 30,
     },
     "airline_cargo_bridge_backtest": {
         "kind": "measure",
@@ -1823,6 +1836,15 @@ def run_stage_1_pipeline() -> dict[str, Any]:
     except Exception as exc:
         logger.exception("Airline v4 live forecast build failed")
         results["airline_earnings_model_v4_live_forecast"] = {"error": str(exc)}
+
+    try:
+        logger.info("Building airline cost engine v2...")
+        cost_v2 = build_airline_cost_engine_v2()
+        results["airline_cost_engine_v2"] = cost_v2["backtest"]
+        results["airline_cost_engine_v2_ablation"] = cost_v2["ablation"]
+    except Exception as exc:
+        logger.exception("Airline cost engine v2 build failed")
+        results["airline_cost_engine_v2"] = {"error": str(exc)}
 
     try:
         logger.info("Building cargo-bridge backtest...")
