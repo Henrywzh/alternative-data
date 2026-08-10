@@ -29,6 +29,7 @@ from .sources.airline_forward_assumptions import build_airline_forward_assumptio
 from .sources.airline_forward_net_income_bridge import build_airline_forward_net_income_bridge
 from .sources.airline_unit_economics import build_airline_unit_economics
 from .sources.airline_yield_pressure import build_airline_yield_pressure_index
+from .sources.airline_capacity_pipeline import build_airline_capacity_pipeline
 from .sources.airline_h1_2026_validation_playbook import build_airline_h1_2026_validation_playbook
 from .sources.airline_cargo_bridge_backtest import build_airline_cargo_bridge_backtest
 from .sources.airline_caac_sector_monthly import fetch_caac_sector_monthly_kpis
@@ -195,6 +196,10 @@ def main():
     subparsers.add_parser(
         "run-airline-yield-pressure",
         help="Build synthetic airline yield-pressure index",
+    )
+    subparsers.add_parser(
+        "run-airline-capacity-pipeline",
+        help="Build airline future capacity pipeline (fleet/route/utilisation)",
     )
     subparsers.add_parser(
         "run-airline-h1-2026-validation-playbook",
@@ -664,6 +669,9 @@ def main():
         elif args.command == "run-airline-yield-pressure":
             df = build_airline_yield_pressure_index()
             print(f"Built airline yield-pressure index: {len(df)} records\n", df.tail(8))
+        elif args.command == "run-airline-capacity-pipeline":
+            df = build_airline_capacity_pipeline()
+            print(f"Built airline capacity pipeline: {len(df)} records\n", df.tail(10))
         elif args.command == "run-airline-h1-2026-validation-playbook":
             df = build_airline_h1_2026_validation_playbook()
             print(f"Built airline H1-2026 validation playbook: {len(df)} records\n", df)

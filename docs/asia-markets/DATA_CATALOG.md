@@ -342,6 +342,17 @@ index is labelled `validation_limited_positive_2025_only_weak_history` and
 used only as a recent direction modifier, never as a yield forecast.
 See `docs/asia-markets/airline-yield-pressure.md`.
 
+`airline_capacity_pipeline.csv` is the forward capacity pipeline (27 dated
+events across six carriers + industry): fleet deliveries estimated from the
+on-order book anchored to each carrier's trailing-12m net fleet add (from
+the operating-events layer), CAAC 2026 summer/autumn route launches with
+planned start dates and weekly frequency, CAAC sector utilisation trend, and
+a trailing-12m ASK decomposition.  Key forward signal: Spring ASK +15.9%
+trailing with 4 new routes / 56 weekly and steady deliveries, Juneyao +0.8%
+with 2 routes and a flat fleet (low delivery-pace confidence).  It is an
+approximate forward capacity input, not a firm delivery schedule.
+See `docs/asia-markets/airline-capacity-pipeline.md`.
+
 `airline_cargo_airport_bridge.csv` compares hub airport cargo throughput with
 issuer monthly cargo tonnage and reported FY2025 cargo revenue for Spring,
 Juneyao, 9 Air and China Southern. It stores tonnage bridge gaps, coverage
