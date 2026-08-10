@@ -46,6 +46,7 @@ from .sources.airline_earnings_model_v4 import build_airline_earnings_model_v4
 from .sources.airline_earnings_model_v4_live import build_airline_earnings_model_v4_live
 from .sources.airline_cost_engine_v2 import build_airline_cost_engine_v2
 from .sources.airline_consensus_reverse_v2 import build_airline_consensus_reverse_v2
+from .sources.airline_valuation_v2 import build_airline_valuation_v2
 from .sources.airline_cargo_bridge_backtest import build_airline_cargo_bridge_backtest
 from .sources.airline_caac_sector_monthly import fetch_caac_sector_monthly_kpis
 from .sources.airline_caac_sector_proxy_validation import fetch_airline_caac_sector_proxy_validation
@@ -512,6 +513,19 @@ QUALITY_SPECS = {
             "h1_annualisation_valid",
             "annualisation_mismatch_flagged",
             "one_off_flagged",
+            "retrieved_at",
+        ],
+        "max_age_days": 15,
+    },
+    "airline_valuation_v2": {
+        "kind": "snapshot",
+        "required": [
+            "company",
+            "snapshot_date",
+            "pe_street",
+            "pe_own",
+            "pb_current",
+            "pb_1y_percentile",
             "retrieved_at",
         ],
         "max_age_days": 15,
@@ -1868,6 +1882,15 @@ def run_stage_1_pipeline() -> dict[str, Any]:
     except Exception as exc:
         logger.exception("Consensus reverse v2 build failed")
         results["airline_consensus_reverse_v2_sanity"] = {"error": str(exc)}
+
+    try:
+        logger.info("Building valuation v2 (Street vs Own)...")
+        val_v2 = build_airline_valuation_v2()
+        results["airline_valuation_v2"] = val_v2["valuation"]
+        results["airline_valuation_v2_pair"] = val_v2["pair"]
+    except Exception as exc:
+        logger.exception("Valuation v2 build failed")
+        results["airline_valuation_v2"] = {"error": str(exc)}
 
     try:
         logger.info("Building cargo-bridge backtest...")

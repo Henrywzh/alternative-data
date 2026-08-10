@@ -1,0 +1,5 @@
+metric,spring,juneyao,spring_minus_juneyao,note,retrieved_at
+pe_street,20.910721342374824,26.968732447117382,-6.058011104742558,Market price for Street expectations: Spring cheaper on consensus,2026-08-10T19:13:26.587305+00:00
+pe_own,12.482203438782808,17.062779642514652,-4.5805762037318445,Market price for OUR season-adjusted EPS,2026-08-10T19:13:26.587305+00:00
+re_rate_if_own_eps_materialises_pct,-40.30715997593028,-36.731250992337806,,Multiple compression/expansion if price holds and EPS moves to our number,2026-08-10T19:13:26.587305+00:00
+pb_1y_percentile,10.136986301369864,18.356164383561644,,P/B position within 1y range (low = cheap vs own history),2026-08-10T19:13:26.587305+00:00
