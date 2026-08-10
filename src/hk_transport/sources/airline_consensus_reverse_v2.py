@@ -260,7 +260,11 @@ def _surface_rows(
         cons_ni = _num(exp.get("fy2026_net_profit_avg_native_mn"))
         model_rask = _num(ue.get("rask_native"))
         model_cask = _num(ue.get("cask_native"))
-        ask = _num(v3b.get("fy2025_ask_mn_seat_km")) or _num(rv.get("model_ask_mn"))
+        # Denominator must be the FY2026 model ASK (consensus revenue is
+        # FY2026); using the FY2025 ASK mixes periods.  The v1 reverse
+        # layer already builds the FY2026 ASK (model_ask_mn) - reuse it.
+        ask = _num(rv.get("model_ask_mn")) or _num(v3b.get("fy2025_ask_mn_seat_km"))
+        ask_period = "fy2026_model" if _num(rv.get("model_ask_mn")) is not None else "fy2025_fallback"
         if cons_rev is None or cons_ni is None or ask in (None, 0):
             continue
         if model_rask is None or model_cask is None:
@@ -275,6 +279,8 @@ def _surface_rows(
                 "company": company,
                 "consensus_revenue_native_mn": cons_rev,
                 "consensus_ni_native_mn": cons_ni,
+                "ask_mn": ask,
+                "ask_period": ask_period,
                 "model_rask_native": model_rask,
                 "model_cask_native": model_cask,
                 "consensus_implied_rask_native": implied_rask,

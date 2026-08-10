@@ -26,10 +26,23 @@ FY2025 cost-table decomposition (5/6 carriers full, Juneyao partial).
 | Layer | Cost MAE | Bias | Regime-year MAE (2020-23) |
 |---|---|---|---|
 | flat_ask_cost (baseline) | 18.76% | +3.29% | 32.43% |
-| + fuel mechanical | 16.74% | +5.02% | 30.64% |
-| + non-fuel drivers | 17.35% | -15.50% | 24.43% |
-| + company shrink | 13.10% | -4.77% | 22.92% |
-| + full CASK | **11.64%** | -3.04% | **20.42%** |
+| + fuel mechanical (FIXED) | 15.41% | +3.06% | 28.37% |
+| + non-fuel drivers | 18.57% | -13.60% | 29.83% |
+| + company shrink | **13.43%** | -4.33% | **23.44%** |
+| + full CASK | 15.63% | -2.51% | 27.52% |
+
+Production layer: **company_shrink** (13.43%).  The 2026-08-10 logic
+re-review found and fixed a fuel-mechanical formula bug (the anchor fuel
+unit was scaled by price_t/price_p instead of a fixed intensity x price_t,
+which distorted implied intensity by up to +/-90% in 2020/2023) and a
+full-CASK cancellation bug (fuel_mech cancelled algebraically against the
+shrunk CASK).  After the fixes the honest ablation shows the driver-based
+non-fuel layer does NOT add value with a single-year anchor (18.6% vs
+13.4% shrink) - the driver units carry no real history, only the FY2025
+anchor, so they add bias.  company_shrink is the production spec.  Known
+limit: in the 2022 oil-spike year every layer is poor (shrink 38.9% vs
+fuel-mech 25.4%) - shrink pulls toward the low-oil FY2025 structure; a
+regime-aware fuel switch is a documented future improvement, not built.
 
 Full CASK cuts cost MAE by 38% vs baseline and regime-year MAE by 37%.
 Largest single contributor is company shrinkage toward the FY2025 anchor
