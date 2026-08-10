@@ -45,6 +45,7 @@ from .sources.airline_pre_event_locked_baseline import build_airline_pre_event_l
 from .sources.airline_earnings_model_v4 import build_airline_earnings_model_v4
 from .sources.airline_earnings_model_v4_live import build_airline_earnings_model_v4_live
 from .sources.airline_cost_engine_v2 import build_airline_cost_engine_v2
+from .sources.airline_consensus_reverse_v2 import build_airline_consensus_reverse_v2
 from .sources.airline_cargo_bridge_backtest import build_airline_cargo_bridge_backtest
 from .sources.airline_caac_sector_monthly import fetch_caac_sector_monthly_kpis
 from .sources.airline_caac_sector_proxy_validation import fetch_airline_caac_sector_proxy_validation
@@ -274,6 +275,10 @@ def main():
     subparsers.add_parser(
         "run-airline-cost-engine-v2",
         help="Build the v2 cost engine (driver-based CASK backtest + EBIT decomposition + hedge diagnostic)",
+    )
+    subparsers.add_parser(
+        "run-airline-consensus-reverse-v2",
+        help="Consensus reverse engineering: 4 sanity checks + implied RASK/CASK surface",
     )
     subparsers.add_parser(
         "run-airline-cargo-bridge-backtest",
@@ -787,6 +792,10 @@ def main():
         elif args.command == "run-airline-cost-engine-v2":
             out = build_airline_cost_engine_v2()
             print(f"Built cost engine v2: {len(out['backtest'])} backtest rows\nAblation:\n", out["ablation"].to_string(index=False))
+        elif args.command == "run-airline-consensus-reverse-v2":
+            out = build_airline_consensus_reverse_v2()
+            print("Sanity checks:\n", out["sanity"][["company","share_count_sane","h1_annualisation_valid","surprise_vs_consensus_x2_pct","surprise_vs_consensus_season_adj_pct","annualisation_mismatch_flagged","one_off_flagged"]].to_string(index=False))
+            print("\nImplied surface:\n", out["surface"][["company","implied_rask_gap_vs_model_pct","implied_cask_gap_vs_model_pct"]].to_string(index=False))
         elif args.command == "run-airline-cargo-bridge-backtest":
             df = build_airline_cargo_bridge_backtest()
             print(f"Built airline cargo-bridge backtest: {len(df)} records\n", df)

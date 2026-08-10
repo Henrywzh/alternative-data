@@ -282,6 +282,10 @@ def _live_rows(
             "eps_overlay_rmb": ni_out["overlay"]["eps_rmb"],
             "eps_v3_fy_rmb": eps_v3,
             "consensus_eps_fy2026_rmb": cons_eps,
+            "h1_annualisation_valid": bool(
+                ni_out["base"]["ni_native_mn"] is not None
+                and ni_out["base"]["ni_native_mn"] > 0
+            ),
             "retrieved_at": datetime.now(timezone.utc).isoformat(),
         }
         rows.append(row)

@@ -45,6 +45,7 @@ from .sources.airline_pre_event_locked_baseline import build_airline_pre_event_l
 from .sources.airline_earnings_model_v4 import build_airline_earnings_model_v4
 from .sources.airline_earnings_model_v4_live import build_airline_earnings_model_v4_live
 from .sources.airline_cost_engine_v2 import build_airline_cost_engine_v2
+from .sources.airline_consensus_reverse_v2 import build_airline_consensus_reverse_v2
 from .sources.airline_cargo_bridge_backtest import build_airline_cargo_bridge_backtest
 from .sources.airline_caac_sector_monthly import fetch_caac_sector_monthly_kpis
 from .sources.airline_caac_sector_proxy_validation import fetch_airline_caac_sector_proxy_validation
@@ -501,6 +502,19 @@ QUALITY_SPECS = {
             "retrieved_at",
         ],
         "max_age_days": 30,
+    },
+    "airline_consensus_reverse_v2_sanity": {
+        "kind": "measure",
+        "required": [
+            "company",
+            "consensus_eps_fy2026_rmb",
+            "share_count_sane",
+            "h1_annualisation_valid",
+            "annualisation_mismatch_flagged",
+            "one_off_flagged",
+            "retrieved_at",
+        ],
+        "max_age_days": 15,
     },
     "airline_cargo_bridge_backtest": {
         "kind": "measure",
@@ -1845,6 +1859,15 @@ def run_stage_1_pipeline() -> dict[str, Any]:
     except Exception as exc:
         logger.exception("Airline cost engine v2 build failed")
         results["airline_cost_engine_v2"] = {"error": str(exc)}
+
+    try:
+        logger.info("Building consensus reverse engineering v2...")
+        cr_v2 = build_airline_consensus_reverse_v2()
+        results["airline_consensus_reverse_v2_sanity"] = cr_v2["sanity"]
+        results["airline_consensus_reverse_v2_surface"] = cr_v2["surface"]
+    except Exception as exc:
+        logger.exception("Consensus reverse v2 build failed")
+        results["airline_consensus_reverse_v2_sanity"] = {"error": str(exc)}
 
     try:
         logger.info("Building cargo-bridge backtest...")
