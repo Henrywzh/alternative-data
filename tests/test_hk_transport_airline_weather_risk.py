@@ -135,3 +135,24 @@ def test_empty_archive_returns_empty_frame() -> None:
         "HKG", "Hong Kong International", None, None, "2026-08-10T00:00:00+00:00"
     )
     assert result.empty
+
+
+def test_forecast_future_rows_are_labeled_as_projection() -> None:
+    from datetime import datetime, timezone
+
+    today = datetime.now(timezone.utc).date().isoformat()
+    forecast = {
+        "daily": {
+            "time": [today, "2099-01-01"],
+            "precipitation_sum": [1.0, 2.0],
+            "wind_speed_10m_max": [10.0, 20.0],
+            "weather_code": [0, 61],
+        }
+    }
+    result = _forecast_to_daily(
+        "PEK", "Beijing Capital", forecast, "/raw", "2026-08-10T00:00:00+00:00"
+    )
+    assert result.iloc[0]["source_api"] == "openmeteo_forecast_past_days"
+    assert result.iloc[0]["point_in_time_status"] == "snapshot_observation"
+    assert result.iloc[1]["source_api"] == "openmeteo_forecast_future"
+    assert result.iloc[1]["point_in_time_status"] == "future_forecast_projection"

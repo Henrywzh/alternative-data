@@ -557,17 +557,36 @@ def _segment_closing_rows(
                 )
                 if matched_label is None:
                     continue
+                # A closing row has the label at the START of the line,
+                # immediately followed by the segment cells.  Table-header
+                # fragments (e.g. Southern's ``12月31日 于母公司 6月30日
+                # ... 减：所得税费用 税后归属于...``) carry the label in the
+                # middle; those must not be mistaken for a closing row.
+                # Require the label within the first 12 characters.
+                label_pos = compact.find(matched_label)
+                if label_pos < 0 or label_pos > 12:
+                    continue
                 numbers = _line_numbers(line)
                 if not numbers:
                     continue
                 total = numbers[-1]
                 has_total_marker = "合计" in compact or "共计" in compact
-                # Segment tables for income tax often carry only 2-3 numeric
-                # cells (segment columns, with "-" in the inter-segment
-                # column).  Require either a total marker or at least 3 cells
-                # so a lone per-segment value is not mistaken for the
-                # consolidated total, while still catching the tax row.
+                # ``len(numbers) < 3`` guard: segment tables for income tax
+                # often carry only 2-3 numeric cells (segment columns, with
+                # "-" in the inter-segment column), so a lone per-segment
+                # value is not mistaken for the consolidated total.
                 if len(numbers) < 3 and not has_total_marker:
+                    continue
+                # Column-count guard: single-period segment tables (e.g.
+                # China Eastern's ``航空分部 业务分部 的金额 分部间抵销 合计``)
+                # carry 5 columns with the current-period total LAST.  Two-
+                # period tables (e.g. China Southern's segment note) repeat
+                # the columns for the prior year, so the last number is the
+                # PRIOR-year total; those must be excluded rather than
+                # silently returning the wrong period.  A closing row has at
+                # most 6 numeric cells in either layout's current-period
+                # half.
+                if len(numbers) > 6:
                     continue
                 results[metric] = (total, index)
                 break
@@ -1172,7 +1191,7 @@ def parse_official_report(
     if _find_income_statement_page(pages) is None:
         missing_closing = {
             "income_tax_expense": ("所得税费用",),
-            "net_income_total": ("净(亏损)/利润", "净(损失)/利润", "净利润"),
+            "net_income_total": ("净(亏损)/利润", "净(损失)/利润"),
             "minority_interest": ("少数股东净(亏损)/利润", "少数股东损益", "少数股东净利润"),
         }
         existing_metrics = {row.get("metric") for row in rows}

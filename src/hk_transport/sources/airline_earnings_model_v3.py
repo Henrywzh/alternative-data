@@ -614,6 +614,8 @@ def _company_caac_route_licence_context(
 def _company_fleet_context(
     fleet_snapshot: pd.DataFrame,
     company: str,
+    *,
+    official_drivers: pd.DataFrame | None = None,
 ) -> dict[str, object]:
     """Summarize the latest Wikipedia fleet-composition snapshot per company.
 
@@ -633,6 +635,8 @@ def _company_fleet_context(
         "fleet_widebody_in_service": None,
         "fleet_aircraft_type_count": None,
         "fleet_scope": None,
+        "fleet_coverage_ratio": None,
+        "fleet_coverage_status": "no_official_fleet_total",
     }
     if fleet_snapshot.empty or not {
         "company",
@@ -662,15 +666,43 @@ def _company_fleet_context(
         r"A319|A320|A321|B737|C919|C909|ARJ21", case=False, regex=True
     )
     revision_ts = rows["revision_timestamp"].dropna()
+    in_service_total = (
+        float(in_service.sum(min_count=1)) if in_service.notna().any() else None
+    )
+    coverage_ratio = None
+    coverage_status = "no_official_fleet_total"
+    if official_drivers is not None and not official_drivers.empty:
+        official_company = (
+            "Hainan Airlines Holdings" if company == "Hainan Airlines Holdings" else company
+        )
+        official = official_drivers.loc[
+            official_drivers["company"].eq(official_company)
+            & official_drivers["report_type"].eq("annual")
+            & official_drivers["metric"].eq("fleet_total")
+        ]
+        if not official.empty:
+            official_total = pd.to_numeric(
+                official["value_native"], errors="coerce"
+            ).dropna()
+            if not official_total.empty and in_service_total is not None:
+                official_value = float(official_total.iloc[0])
+                if official_value > 0:
+                    coverage_ratio = in_service_total / official_value
+                    # Wikipedia composition pages can cover only an operating
+                    # carrier (Southern) or be incomplete (Air China/Hainan),
+                    # so the ratio is surfaced rather than hidden.
+                    coverage_status = (
+                        "complete_or_operating_carrier"
+                        if coverage_ratio >= 0.85
+                        else "partial_incomplete_coverage"
+                    )
     return {
         "fleet_context_status": "available_secondary_aggregator_context_only",
         "fleet_snapshot_date": rows["snapshot_date"].iloc[0],
         "fleet_snapshot_revision_timestamp": (
             revision_ts.iloc[0] if not revision_ts.empty else None
         ),
-        "fleet_in_service_total": float(in_service.sum(min_count=1))
-        if in_service.notna().any()
-        else None,
+        "fleet_in_service_total": in_service_total,
         "fleet_on_order_total": float(on_order.sum(min_count=1))
         if on_order.notna().any()
         else None,
@@ -686,6 +718,8 @@ def _company_fleet_context(
         else None,
         "fleet_aircraft_type_count": int(len(rows)),
         "fleet_scope": rows["fleet_scope"].iloc[0],
+        "fleet_coverage_ratio": coverage_ratio,
+        "fleet_coverage_status": coverage_status,
     }
 
 
@@ -1634,7 +1668,9 @@ def build_airline_earnings_model_v3(
             forward_assumptions,
             company,
         )
-        fleet_signal = _company_fleet_context(fleet_snapshot, company)
+        fleet_signal = _company_fleet_context(
+            fleet_snapshot, company, official_drivers=official_drivers
+        )
         historical_fx = _num(base.get("actual_fx_native_per_usd")) or 7.0
         v2_operating_profit_proxy_native = (
             _num(base.get("actual_operating_profit_usd_mn")) * historical_fx

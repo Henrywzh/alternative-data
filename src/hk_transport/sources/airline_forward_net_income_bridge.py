@@ -68,6 +68,7 @@ OUTPUT_COLUMNS = [
     "h1_2025_attributable_net_income_native_mn",
     "h1_2025_nci_share_pct",
     "h1_2025_revenue_source",
+    "h1_2025_anchor_source",
     "forecast_h1_2026_operating_profit_native_mn",
     "forecast_h1_2026_revenue_native_mn",
     "h1_2025_revenue_native_mn",
@@ -417,10 +418,14 @@ def build_airline_forward_net_income_bridge() -> pd.DataFrame:
                     "h1_2025_attributable_net_income_native_mn": h1_attr,
                     "h1_2025_nci_share_pct": nci_share,
                     "h1_2025_revenue_source": h1_revenue_source,
+                    "h1_2025_anchor_source": (
+                        "annual_waterfall_fallback"
+                        if use_annual_fallback
+                        else "interim_waterfall"
+                    ),
                     "forecast_h1_2026_operating_profit_native_mn": forecast_operating,
                     "forecast_h1_2026_revenue_native_mn": forecast_revenue,
                     "h1_2025_revenue_native_mn": h1_revenue,
-                    "h1_2025_revenue_source": h1_revenue_source,
                     "revenue_scale_factor": revenue_scale,
                     "forward_finance_cost_native_mn": forward_finance,
                     "forward_other_income_native_mn": other_income,

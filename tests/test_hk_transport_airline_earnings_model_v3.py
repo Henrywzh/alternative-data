@@ -511,6 +511,50 @@ def test_v3_carries_fuel_surcharge_recovery_context(monkeypatch, tmp_path) -> No
     assert row["cathay_surcharge_change_pct"] == pytest.approx(20.0)
 
 
+def test_v3_fleet_context_surfaces_coverage_ratio(monkeypatch, tmp_path) -> None:
+    monkeypatch.setattr(v3, "OUTPUT_PATH", tmp_path / "airline_earnings_model_v3.csv")
+    fleet = pd.DataFrame(
+        [
+            {
+                "company": "Test Airlines",
+                "aircraft_type": "Airbus A320neo",
+                "in_service": 10.0,
+                "on_order": 5.0,
+                "snapshot_date": "2026-08-10",
+                "revision_timestamp": "2026-08-09T00:18:37Z",
+                "fleet_scope": "group_operating_carriers",
+            }
+        ]
+    )
+    drivers = pd.DataFrame(
+        [
+            {
+                "company": "Test Airlines",
+                "report_type": "annual",
+                "metric": "fleet_total",
+                "value_native": 40.0,
+            }
+        ]
+    )
+    result = v3.build_airline_earnings_model_v3(
+        v2_bridge=_v2_bridge(),
+        cargo=_cargo(),
+        caac=pd.DataFrame(),
+        postal=pd.DataFrame(),
+        travel_demand_events=pd.DataFrame(),
+        airport_traffic=pd.DataFrame(),
+        fleet_snapshot=fleet,
+        official_drivers=drivers,
+        retrieved_at="2026-08-10T00:00:00+00:00",
+    )
+
+    row = result.iloc[0]
+    assert row["fleet_in_service_total"] == pytest.approx(10.0)
+    assert row["fleet_on_order_total"] == pytest.approx(5.0)
+    assert row["fleet_coverage_ratio"] == pytest.approx(0.25)
+    assert row["fleet_coverage_status"] == "partial_incomplete_coverage"
+
+
 def test_v3_carries_cargo_airport_bridge_calibration(monkeypatch, tmp_path) -> None:
     monkeypatch.setattr(v3, "OUTPUT_PATH", tmp_path / "airline_earnings_model_v3.csv")
     bridge = pd.DataFrame(

@@ -4,6 +4,7 @@ from src.hk_transport.sources.airline_nbs_demand import (
     _article_text,
     _parse_monthly_economy,
     _parse_pmi,
+    _title_reference_period,
 )
 
 
@@ -87,3 +88,11 @@ def test_pmi_parses_three_indexes() -> None:
         "non_manufacturing_pmi": 49.0,
         "services_business_activity_index": 49.3,
     }
+
+
+def test_title_reference_period_extraction() -> None:
+    assert _title_reference_period("2026年7月中国采购经理指数运行情况") == "2026-07"
+    assert _title_reference_period("2026年上半年社会消费品零售总额增长1.3%") == "2026-H1"
+    assert _title_reference_period("2026年1—2月份社会消费品零售总额增长2.8%") == "2026-01-02"
+    assert _title_reference_period("2025年12月份社会消费品零售总额增长0.9%") == "2025-12"
+    assert _title_reference_period("unrelated title") == ""
