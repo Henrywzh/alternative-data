@@ -353,6 +353,15 @@ with 2 routes and a flat fleet (low delivery-pace confidence).  It is an
 approximate forward capacity input, not a firm delivery schedule.
 See `docs/asia-markets/airline-capacity-pipeline.md`.
 
+`airline_consensus_reverse.csv` reverses the A-share FY2026 consensus net
+profit into implied operating assumptions per carrier: implied PBT (via
+effective tax rate), implied operating profit (via FY below-operating
+anchors), implied operating margin, and implied RASK/CASK under the model's
+FY2026 ASK.  Key FY2026 result: Street's Juneyao revenue implies RASK 0.419
+vs model 0.375 (+11.8% - the market prices aggressive pricing power from
+international recovery), while Spring is a margin disagreement (implied RASK
+0.350 vs 0.339, +3.2%).  See `docs/asia-markets/airline-consensus-reverse.md`.
+
 `airline_cargo_airport_bridge.csv` compares hub airport cargo throughput with
 issuer monthly cargo tonnage and reported FY2025 cargo revenue for Spring,
 Juneyao, 9 Air and China Southern. It stores tonnage bridge gaps, coverage

@@ -30,6 +30,7 @@ from .sources.airline_forward_net_income_bridge import build_airline_forward_net
 from .sources.airline_unit_economics import build_airline_unit_economics
 from .sources.airline_yield_pressure import build_airline_yield_pressure_index
 from .sources.airline_capacity_pipeline import build_airline_capacity_pipeline
+from .sources.airline_consensus_reverse import build_airline_consensus_reverse
 from .sources.airline_h1_2026_validation_playbook import build_airline_h1_2026_validation_playbook
 from .sources.airline_cargo_bridge_backtest import build_airline_cargo_bridge_backtest
 from .sources.airline_caac_sector_monthly import fetch_caac_sector_monthly_kpis
@@ -200,6 +201,10 @@ def main():
     subparsers.add_parser(
         "run-airline-capacity-pipeline",
         help="Build airline future capacity pipeline (fleet/route/utilisation)",
+    )
+    subparsers.add_parser(
+        "run-airline-consensus-reverse",
+        help="Reverse consensus EPS into implied RASK/CASK/margin assumptions",
     )
     subparsers.add_parser(
         "run-airline-h1-2026-validation-playbook",
@@ -672,6 +677,9 @@ def main():
         elif args.command == "run-airline-capacity-pipeline":
             df = build_airline_capacity_pipeline()
             print(f"Built airline capacity pipeline: {len(df)} records\n", df.tail(10))
+        elif args.command == "run-airline-consensus-reverse":
+            df = build_airline_consensus_reverse()
+            print(f"Built airline consensus reverse: {len(df)} records\n", df)
         elif args.command == "run-airline-h1-2026-validation-playbook":
             df = build_airline_h1_2026_validation_playbook()
             print(f"Built airline H1-2026 validation playbook: {len(df)} records\n", df)
