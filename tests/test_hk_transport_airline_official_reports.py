@@ -276,9 +276,13 @@ def test_official_interim_driver_snapshot_has_sane_values_and_verified_anchors()
     assert len(hainan_yield) == 1
     assert hainan_yield.item() == pytest.approx(28_953.261 / 64_480.17)
 
-    # When passenger revenue is not separately disclosed, a labelled RASK
-    # proxy can still be constructed from the issuer's yield and RPK/ASK.
-    for report_id in ("600115_2025_fy", "601021_2025_h1", "603885_2025_h1"):
+    # Spring and Juneyao interim reports disclose passenger revenue directly
+    # (revenue notes p176 / p144), so a RASK proxy is no longer needed; only
+    # Eastern FY2025 (no passenger-revenue line in the driver layer) uses the
+    # labelled yield-based RASK proxy.
+    assert value("601021.SH", "passenger_revenue") == pytest.approx(9_989.925618)
+    assert value("603885.SH", "passenger_revenue") == pytest.approx(10_512.157818)
+    for report_id in ("600115_2025_fy",):
         report = drivers.loc[drivers["report_id"].eq(report_id)].set_index("metric")["value_native"]
         assert "rask_from_reported_yield_derived" in report.index
         assert report["rask_from_reported_yield_derived"] == pytest.approx(
