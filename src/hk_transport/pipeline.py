@@ -27,6 +27,7 @@ from .sources.airline_cargo_airport_bridge import build_airline_cargo_airport_br
 from .sources.airline_cargo_yield_bridge import build_airline_cargo_yield_bridge
 from .sources.airline_forward_assumptions import build_airline_forward_assumptions
 from .sources.airline_forward_net_income_bridge import build_airline_forward_net_income_bridge
+from .sources.airline_unit_economics import build_airline_unit_economics
 from .sources.airline_h1_2026_validation_playbook import build_airline_h1_2026_validation_playbook
 from .sources.airline_cargo_bridge_backtest import build_airline_cargo_bridge_backtest
 from .sources.airline_caac_sector_monthly import fetch_caac_sector_monthly_kpis
@@ -232,6 +233,21 @@ QUALITY_SPECS = {
             "forward_attributable_net_income_native_mn",
             "forward_basic_eps_rmb_per_share",
             "bridge_status",
+            "retrieved_at",
+        ],
+        "max_age_days": 45,
+    },
+    "airline_unit_economics": {
+        "kind": "measure",
+        "required": [
+            "company",
+            "period",
+            "ask_mn",
+            "rask_native",
+            "cask_native",
+            "unit_profit_proxy",
+            "cask_ex_fuel_native",
+            "component_status",
             "retrieved_at",
         ],
         "max_age_days": 45,
@@ -1462,6 +1478,13 @@ def run_stage_1_pipeline() -> dict[str, Any]:
     except Exception as exc:
         logger.exception("Airline forward net-income bridge build failed")
         results["airline_forward_net_income_bridge"] = {"error": str(exc)}
+
+    try:
+        logger.info("Building airline unit-economics (RASK-CASK) bridge...")
+        results["airline_unit_economics"] = build_airline_unit_economics()
+    except Exception as exc:
+        logger.exception("Airline unit-economics bridge build failed")
+        results["airline_unit_economics"] = {"error": str(exc)}
 
     try:
         logger.info("Building H1-2026 validation playbook...")
