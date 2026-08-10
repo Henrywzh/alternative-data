@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-08-09T07:16:38.466153Z",
-  "snapshot_id": "2daebae06610864a",
-  "data_as_of": "2026-08-09",
+  "generated_at": "2026-08-10T03:45:40.008903Z",
+  "snapshot_id": "c3da161b15cefa06",
+  "data_as_of": "2026-08-10",
   "overall_status": "Degraded",
   "live_sources": 10,
   "planned_sources": 0,
@@ -51,7 +51,7 @@
       "dataset": "celestrak",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-08-09",
+      "latest_observation": "2026-08-10",
       "records": 2,
       "freshness": "Live",
       "notes": "Active satellite counts for Qianfan (G60) and Jilin-1 constellations."
@@ -61,7 +61,7 @@
       "dataset": "google_patents",
       "type": "Measure",
       "status": "Degraded",
-      "latest_observation": "2026-08-09",
+      "latest_observation": "2026-08-10",
       "records": 0,
       "freshness": "Unavailable",
       "notes": "Estimated patent filing counts for Chinese commercial space companies."
@@ -71,7 +71,7 @@
       "dataset": "szse_aerospace_ipo",
       "type": "Measure",
       "status": "Degraded",
-      "latest_observation": "2026-08-09",
+      "latest_observation": "2026-08-10",
       "records": 0,
       "freshness": "Unavailable",
       "notes": "Current IPO projects classified by SZSE under rail, ship, aviation, aerospace and other transport equipment manufacturing."
@@ -81,7 +81,7 @@
       "dataset": "faa_commercial_space",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-08-09",
+      "latest_observation": "2026-08-10",
       "records": 6,
       "freshness": "Live",
       "notes": "Cumulative licensed launches, reentries, spaceport licenses, experimental launches, safety approvals and active launch licenses."
@@ -91,7 +91,7 @@
       "dataset": "usaspending_contracts",
       "type": "Measure",
       "status": "Healthy",
-      "latest_observation": "2026-08-09",
+      "latest_observation": "2026-08-10",
       "records": 123,
       "freshness": "Live",
       "notes": "Recent federal awards discovered using commercial-space, commercial-satellite and launch-services keywords."
@@ -131,11 +131,11 @@
       "dataset": "wikimedia_pageviews",
       "type": "Measure",
       "status": "Degraded",
-      "latest_observation": "2026-08-08",
-      "records": 5578,
+      "latest_observation": "2026-08-09",
+      "records": 5692,
       "freshness": "Stale",
       "notes": "Daily English Wikipedia pageviews for a curated aerospace page basket, aggregated into monthly and complete Monday-Sunday weekly views; user, search-engine spider, automated and all-agent traffic remain separate."
     }
   ],
-  "attachment_filename": "hk-commercial-aerospace-dashboard-2026-08-09.html"
+  "attachment_filename": "hk-commercial-aerospace-dashboard-2026-08-10.html"
 }
