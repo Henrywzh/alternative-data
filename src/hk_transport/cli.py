@@ -41,6 +41,7 @@ from .sources.airline_pair_spread_model import build_airline_pair_spread_model
 from .sources.airline_h1_2026_validation_playbook import build_airline_h1_2026_validation_playbook
 from .sources.airline_catalyst_calendar import build_airline_catalyst_calendar
 from .sources.airline_post_earnings_tracker import build_airline_post_earnings_tracker
+from .sources.airline_pre_event_locked_baseline import build_airline_pre_event_locked_baseline
 from .sources.airline_cargo_bridge_backtest import build_airline_cargo_bridge_backtest
 from .sources.airline_caac_sector_monthly import fetch_caac_sector_monthly_kpis
 from .sources.airline_caac_sector_proxy_validation import fetch_airline_caac_sector_proxy_validation
@@ -254,6 +255,10 @@ def main():
     subparsers.add_parser(
         "run-airline-post-earnings-tracker",
         help="Build the post-earnings tracking ledger (actuals + market reaction + revisions)",
+    )
+    subparsers.add_parser(
+        "run-airline-pre-event-locked-baseline",
+        help="Freeze the pre-1H2026 report forecast baseline per carrier",
     )
     subparsers.add_parser(
         "run-airline-cargo-bridge-backtest",
@@ -755,6 +760,9 @@ def main():
         elif args.command == "run-airline-post-earnings-tracker":
             df = build_airline_post_earnings_tracker()
             print(f"Built airline post-earnings tracker: {len(df)} records\n", df)
+        elif args.command == "run-airline-pre-event-locked-baseline":
+            df = build_airline_pre_event_locked_baseline()
+            print(f"Built airline pre-event locked baseline: {len(df)} records\n", df)
         elif args.command == "run-airline-cargo-bridge-backtest":
             df = build_airline_cargo_bridge_backtest()
             print(f"Built airline cargo-bridge backtest: {len(df)} records\n", df)
