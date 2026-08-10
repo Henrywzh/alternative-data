@@ -41,6 +41,7 @@ from .sources.airline_pair_spread_model import build_airline_pair_spread_model
 from .sources.airline_catalyst_calendar import build_airline_catalyst_calendar
 from .sources.airline_h1_2026_validation_playbook import build_airline_h1_2026_validation_playbook
 from .sources.airline_post_earnings_tracker import build_airline_post_earnings_tracker
+from .sources.airline_pre_event_locked_baseline import build_airline_pre_event_locked_baseline
 from .sources.airline_cargo_bridge_backtest import build_airline_cargo_bridge_backtest
 from .sources.airline_caac_sector_monthly import fetch_caac_sector_monthly_kpis
 from .sources.airline_caac_sector_proxy_validation import fetch_airline_caac_sector_proxy_validation
@@ -444,6 +445,20 @@ QUALITY_SPECS = {
             "retrieved_at",
         ],
         "max_age_days": 30,
+    },
+    "airline_pre_event_locked_baseline": {
+        "kind": "snapshot",
+        "required": [
+            "company",
+            "filing_scheduled_date",
+            "h1_2026_flat_yield_revenue_native_mn",
+            "v3_base_fy2026_net_profit_usd_mn",
+            "consensus_fy2026_profit_usd_mn",
+            "snapshot_date",
+            "lock_status",
+            "retrieved_at",
+        ],
+        "max_age_days": 15,
     },
     "airline_cargo_bridge_backtest": {
         "kind": "measure",
@@ -1756,6 +1771,13 @@ def run_stage_1_pipeline() -> dict[str, Any]:
     except Exception as exc:
         logger.exception("Airline post-earnings tracker build failed")
         results["airline_post_earnings_tracker"] = {"error": str(exc)}
+
+    try:
+        logger.info("Building airline pre-event locked baseline...")
+        results["airline_pre_event_locked_baseline"] = build_airline_pre_event_locked_baseline()
+    except Exception as exc:
+        logger.exception("Airline pre-event locked baseline build failed")
+        results["airline_pre_event_locked_baseline"] = {"error": str(exc)}
 
     try:
         logger.info("Building cargo-bridge backtest...")
