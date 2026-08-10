@@ -31,6 +31,7 @@ from .sources.airline_unit_economics import build_airline_unit_economics
 from .sources.airline_yield_pressure import build_airline_yield_pressure_index
 from .sources.airline_capacity_pipeline import build_airline_capacity_pipeline
 from .sources.airline_consensus_reverse import build_airline_consensus_reverse
+from .sources.airline_earnings_sensitivity import build_airline_earnings_sensitivity
 from .sources.airline_h1_2026_validation_playbook import build_airline_h1_2026_validation_playbook
 from .sources.airline_cargo_bridge_backtest import build_airline_cargo_bridge_backtest
 from .sources.airline_caac_sector_monthly import fetch_caac_sector_monthly_kpis
@@ -205,6 +206,10 @@ def main():
     subparsers.add_parser(
         "run-airline-consensus-reverse",
         help="Reverse consensus EPS into implied RASK/CASK/margin assumptions",
+    )
+    subparsers.add_parser(
+        "run-airline-earnings-sensitivity",
+        help="Build 3D earnings sensitivity surface (yield x fuel x FX)",
     )
     subparsers.add_parser(
         "run-airline-h1-2026-validation-playbook",
@@ -680,6 +685,9 @@ def main():
         elif args.command == "run-airline-consensus-reverse":
             df = build_airline_consensus_reverse()
             print(f"Built airline consensus reverse: {len(df)} records\n", df)
+        elif args.command == "run-airline-earnings-sensitivity":
+            df = build_airline_earnings_sensitivity()
+            print(f"Built airline earnings sensitivity: {len(df)} records\n", df.tail(6))
         elif args.command == "run-airline-h1-2026-validation-playbook":
             df = build_airline_h1_2026_validation_playbook()
             print(f"Built airline H1-2026 validation playbook: {len(df)} records\n", df)
