@@ -43,6 +43,7 @@ from .sources.airline_h1_2026_validation_playbook import build_airline_h1_2026_v
 from .sources.airline_post_earnings_tracker import build_airline_post_earnings_tracker
 from .sources.airline_pre_event_locked_baseline import build_airline_pre_event_locked_baseline
 from .sources.airline_earnings_model_v4 import build_airline_earnings_model_v4
+from .sources.airline_earnings_model_v4_live import build_airline_earnings_model_v4_live
 from .sources.airline_cargo_bridge_backtest import build_airline_cargo_bridge_backtest
 from .sources.airline_caac_sector_monthly import fetch_caac_sector_monthly_kpis
 from .sources.airline_caac_sector_proxy_validation import fetch_airline_caac_sector_proxy_validation
@@ -473,6 +474,20 @@ QUALITY_SPECS = {
             "retrieved_at",
         ],
         "max_age_days": 30,
+    },
+    "airline_earnings_model_v4_live_forecast": {
+        "kind": "snapshot",
+        "required": [
+            "company",
+            "forecast_horizon",
+            "model_version",
+            "forecast_type",
+            "forecast_asof",
+            "revenue_overlay_native_mn",
+            "eps_overlay_rmb",
+            "retrieved_at",
+        ],
+        "max_age_days": 15,
     },
     "airline_cargo_bridge_backtest": {
         "kind": "measure",
@@ -1799,6 +1814,15 @@ def run_stage_1_pipeline() -> dict[str, Any]:
     except Exception as exc:
         logger.exception("Airline v4 earnings model build failed")
         results["airline_earnings_model_v4"] = {"error": str(exc)}
+
+    try:
+        logger.info("Building airline v4 live pre-event forecast...")
+        v4_live = build_airline_earnings_model_v4_live()
+        results["airline_earnings_model_v4_live_forecast"] = v4_live["live"]
+        results["airline_earnings_model_v4_surprise"] = v4_live["surprise"]
+    except Exception as exc:
+        logger.exception("Airline v4 live forecast build failed")
+        results["airline_earnings_model_v4_live_forecast"] = {"error": str(exc)}
 
     try:
         logger.info("Building cargo-bridge backtest...")
