@@ -72,8 +72,26 @@ def test_tax_method_labelled_per_regime(bridge: pd.DataFrame) -> None:
 
 
 def test_missing_companies_carried_as_labelled_gaps(bridge: pd.DataFrame) -> None:
-    # Air China interim metrics are not parsed in the official-report layer, so
-    # the interim-based bridge must degrade gracefully with a status label.
+    # Air China's interim income statement is embedded as CID-font image
+    # pages, so its bridge uses the annual-waterfall fallback with a clear
+    # status label rather than a silent gap.
     air_china = bridge[bridge["company"].eq("Air China")]
-    assert air_china["bridge_status"].str.startswith("not_available_").all()
-    assert air_china["forward_attributable_net_income_native_mn"].isna().all()
+    assert (
+        air_china["bridge_status"]
+        .eq("available_annual_waterfall_interim_pbt_calibrated")
+        .all()
+    )
+    assert air_china["forward_attributable_net_income_native_mn"].notna().all()
+    assert air_china["forward_basic_eps_rmb_per_share"].notna().all()
+    # The fallback scales annual below-operating lines to the interim revenue
+    # base, so finance cost must stay below the FY2025 annual level.
+    row = air_china[air_china["model_name"].eq("flat_ask")].iloc[0]
+    assert row["forward_finance_cost_native_mn"] < row["h1_2025_finance_cost_native_mn"]
+
+
+def test_all_six_companies_build_with_five_model_variants(bridge: pd.DataFrame) -> None:
+    companies = bridge["company"].unique()
+    assert len(companies) == 6
+    counts = bridge.groupby("company")["model_name"].count()
+    assert (counts == 5).all()
+    assert bridge["forward_attributable_net_income_native_mn"].notna().sum() == 30

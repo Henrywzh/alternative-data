@@ -186,13 +186,33 @@ def build_airline_forward_net_income_bridge() -> pd.DataFrame:
     for company, fgroup in forecasts.groupby("company"):
         company_drivers = interim[interim["company"].eq(company)]
         if company_drivers.empty:
-            rows.append(
-                _missing_row(company, fgroup, v3_anchor, retrieved, "missing_1h2025_interim_waterfall")
-            )
-            continue
+            company_drivers = pd.DataFrame()
         waterfall = company_drivers.set_index("metric")["value_native"].to_dict()
         missing = [m for m in required if m not in waterfall]
-        if missing:
+        # Annual-anchor fallback: when the interim waterfall is incomplete
+        # (typically because the formal interim income statement is embedded
+        # as image pages, e.g. Air China's CID-font financials), fall back to
+        # the FY2025 annual waterfall for the below-operating structure and
+        # calibrate the level with the interim profit-before-tax / attributable
+        # anchors when those are disclosed.
+        annual_waterfall: dict[str, float] = {}
+        annual_drivers = drivers[
+            drivers["company"].eq(company) & drivers["report_type"].eq("annual")
+        ]
+        if not annual_drivers.empty:
+            annual_waterfall = {
+                metric: value
+                for metric, value in annual_drivers.set_index("metric")[
+                    "value_native"
+                ].to_dict().items()
+                if value is not None and pd.notna(value)
+            }
+        use_annual_fallback = bool(missing) and all(
+            m in annual_waterfall
+            for m in ("operating_profit", "finance_cost", "income_tax_expense",
+                      "net_income_total")
+        )
+        if missing and not use_annual_fallback:
             rows.append(
                 _missing_row(
                     company,
@@ -203,34 +223,70 @@ def build_airline_forward_net_income_bridge() -> pd.DataFrame:
                 )
             )
             continue
+        fallback_source = "interim_waterfall"
+        if use_annual_fallback:
+            # Interim anchors (PBT / attributable) calibrate the annual
+            # structure to the current interim period where disclosed.  Keep
+            # the interim revenue anchor so revenue scaling is not inflated
+            # by a full-year annual revenue base.
+            interim_anchors = {
+                k: v for k, v in waterfall.items() if v is not None
+            }
+            waterfall = {**annual_waterfall, **interim_anchors}
+            fallback_source = "annual_waterfall_interim_pbt_calibrated"
         # Revenue anchor: official interim total revenue, else the walk-forward
         # prior-period (1H2025) revenue used for the H1-2026 forecast.
         h1_revenue = _num(waterfall.get("total_revenue"))
         h1_revenue_source = "official_interim_total_revenue"
+        if use_annual_fallback:
+            h1_revenue = _num(interim_anchors.get("total_revenue"))
+            h1_revenue_source = "official_interim_total_revenue"
+            if h1_revenue in (None, 0):
+                h1_revenue = _num(waterfall.get("total_revenue"))
+                h1_revenue_source = "annual_total_revenue_fallback"
         if h1_revenue in (None, 0):
             prior_revenues = fgroup["prior_revenue_native_mn"].dropna()
             h1_revenue = (
                 float(prior_revenues.iloc[0]) if len(prior_revenues) else None
             )
             h1_revenue_source = "walk_forward_prior_period_revenue"
-        h1_operating = _num(waterfall["operating_profit"])
-        h1_finance = _num(waterfall["finance_cost"])
+        h1_operating = _num(waterfall.get("operating_profit"))
+        h1_finance = _num(waterfall.get("finance_cost"))
         h1_pbt = _num(waterfall.get("profit_total"))
-        h1_tax = _num(waterfall["income_tax_expense"])
-        h1_net = _num(waterfall["net_income_total"])
+        h1_tax = _num(waterfall.get("income_tax_expense"))
+        h1_net = _num(waterfall.get("net_income_total"))
         h1_attr = _num(waterfall.get("attributable_net_income"))
         h1_nci = _num(waterfall.get("minority_interest"))
         if h1_nci is None and h1_net is not None and h1_attr is not None:
             h1_nci = h1_net - h1_attr
         effective_rate = None
-        if h1_pbt not in (None, 0):
-            effective_rate = 100.0 * h1_tax / h1_pbt
-        elif h1_attr is not None and h1_nci is not None and (h1_attr + h1_nci) not in (None, 0):
-            # Fallback effective rate from the net-income identity when profit
-            # before tax is not separately disclosed in the interim report.
-            derived_pbt = h1_attr + h1_nci + h1_tax
-            if derived_pbt not in (None, 0):
-                effective_rate = 100.0 * h1_tax / derived_pbt
+        if use_annual_fallback:
+            # Calibrate with the disclosed interim profit-before-tax when the
+            # interim tax line is not separately disclosed: derive the rate
+            # from the annual structure instead of a loss-year artifact.
+            annual_pbt = _num(annual_waterfall.get("profit_total"))
+            annual_tax = _num(annual_waterfall.get("income_tax_expense"))
+            interim_pbt = _num(interim_anchors.get("profit_total"))
+            if (
+                interim_pbt is not None
+                and annual_pbt not in (None, 0)
+                and annual_tax is not None
+            ):
+                effective_rate = 100.0 * annual_tax / annual_pbt
+        else:
+            if h1_pbt not in (None, 0) and h1_tax is not None:
+                effective_rate = 100.0 * h1_tax / h1_pbt
+            elif (
+                h1_attr is not None
+                and h1_nci is not None
+                and h1_tax is not None
+                and (h1_attr + h1_nci) not in (None, 0)
+            ):
+                # Fallback effective rate from the net-income identity when
+                # profit before tax is not separately disclosed.
+                derived_pbt = h1_attr + h1_nci + h1_tax
+                if derived_pbt not in (None, 0):
+                    effective_rate = 100.0 * h1_tax / derived_pbt
         nci_share = None
         if h1_net not in (None, 0) and h1_nci is not None:
             nci_share = 100.0 * h1_nci / h1_net
@@ -259,11 +315,40 @@ def build_airline_forward_net_income_bridge() -> pd.DataFrame:
                 continue
 
             revenue_scale = forecast_revenue / h1_revenue
-            forward_finance = h1_finance * revenue_scale
+            if use_annual_fallback:
+                # Annual fallback: the FY finance cost is a full-year number.
+                # Scale it to the interim revenue base first (annual finance x
+                # interim/annual revenue), then grow it with the forecast
+                # revenue factor so the H1-2026 finance leg stays at H1 scale.
+                annual_revenue = _num(annual_waterfall.get("total_revenue"))
+                if h1_revenue not in (None, 0) and annual_revenue not in (None, 0):
+                    h1_finance_scaled = h1_finance * h1_revenue / annual_revenue
+                else:
+                    h1_finance_scaled = h1_finance
+                forward_finance = h1_finance_scaled * revenue_scale
+            else:
+                forward_finance = h1_finance * revenue_scale
+            annual_revenue = _num(annual_waterfall.get("total_revenue"))
+            annual_scale = 1.0
+            if (
+                use_annual_fallback
+                and h1_revenue not in (None, 0)
+                and annual_revenue not in (None, 0)
+            ):
+                annual_scale = h1_revenue / annual_revenue
             other_income = _num(waterfall.get("other_income"))
             investment_income = _num(waterfall.get("investment_income"))
             non_operating_income = _num(waterfall.get("non_operating_income"))
             non_operating_expense = _num(waterfall.get("non_operating_expense"))
+            if use_annual_fallback:
+                if other_income is not None:
+                    other_income = other_income * annual_scale
+                if investment_income is not None:
+                    investment_income = investment_income * annual_scale
+                if non_operating_income is not None:
+                    non_operating_income = non_operating_income * annual_scale
+                if non_operating_expense is not None:
+                    non_operating_expense = non_operating_expense * annual_scale
             forward_pbt = (
                 forecast_operating
                 - forward_finance
@@ -287,6 +372,9 @@ def build_airline_forward_net_income_bridge() -> pd.DataFrame:
             else:
                 forward_tax = h1_tax
                 tax_method = "h1_2025_absolute_carry"
+                if use_annual_fallback:
+                    forward_tax = (h1_tax or 0.0) * annual_scale
+                    tax_method = "h1_2025_annual_absolute_carry_scaled_to_interim"
             forward_net = forward_pbt - forward_tax
 
             forward_nci = h1_nci
@@ -302,6 +390,9 @@ def build_airline_forward_net_income_bridge() -> pd.DataFrame:
             elif h1_nci in (None, 0):
                 forward_nci = 0.0
                 nci_method = "h1_2025_nci_zero_or_not_disclosed"
+            if use_annual_fallback and nci_method == "h1_2025_absolute_carry":
+                forward_nci = (h1_nci or 0.0) * annual_scale
+                nci_method = "h1_2025_annual_nci_carry_scaled_to_interim"
             forward_attr = forward_net - (forward_nci or 0.0)
 
             anchor = v3_anchor.loc[company] if company in v3_anchor.index else None
@@ -347,7 +438,11 @@ def build_airline_forward_net_income_bridge() -> pd.DataFrame:
                     "implied_basic_shares_mn": shares,
                     "forward_basic_eps_rmb_per_share": eps,
                     "forward_fx_usd_cny": fx,
-                    "bridge_status": "available_h1_2025_interim_waterfall",
+                    "bridge_status": (
+                        "available_h1_2025_interim_waterfall"
+                        if fallback_source == "interim_waterfall"
+                        else "available_annual_waterfall_interim_pbt_calibrated"
+                    ),
                     "source_note": (
                         "Forward H1-2026 net-income bridge anchored on the "
                         "1H2025 interim official waterfall; operating leg from "
@@ -355,6 +450,20 @@ def build_airline_forward_net_income_bridge() -> pd.DataFrame:
                         "scaled with forecast revenue; non-operating lines "
                         "carried at 1H2025 absolute; tax and NCI as labelled. "
                         "Research bridge, not issuer guidance or a trade approval."
+                        if fallback_source == "interim_waterfall"
+                        else (
+                            "Forward H1-2026 net-income bridge with "
+                            "annual-waterfall fallback: the formal interim "
+                            "income statement is an image/CID-font page in "
+                            "this issuer's report, so the below-operating "
+                            "structure (finance cost, tax, NCI) is taken from "
+                            "the FY2025 annual waterfall and the level is "
+                            "calibrated with the disclosed interim "
+                            "profit-before-tax / attributable anchors where "
+                            "available.  Operating leg from the walk-forward "
+                            "H1-2026 model variant.  Research bridge, not "
+                            "issuer guidance or a trade approval."
+                        )
                     ),
                     "retrieved_at": retrieved,
                 }

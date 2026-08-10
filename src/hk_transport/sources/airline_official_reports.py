@@ -378,11 +378,22 @@ def _statement_value_from_line(line: str, labels: Iterable[str]) -> float | None
         # cell follows; a comma-formatted value such as ``4,853,956`` remains
         # the financial value.
         if not note_was_stripped:
-            tail = re.sub(
-                r"^\d{1,3}\s+(?=(?:[\(（]-?[\d,]+(?:\.\d+)?[\)）]|-?[\d,]+(?:\.\d+)?|--|—|–|-))",
-                "",
-                tail,
-            )
+            # Bare-note rule: some consolidated statements place a small
+            # Arabic note number between the label and the current-period
+            # value (e.g. ``财务费用 42 4,853,956 6,766,999``).  Only treat
+            # the leading integer as a note when the value that follows is
+            # comma-formatted -- a three-column variance table such as
+            # ``投资收益 162 130 24.62`` (current / prior / change) would
+            # otherwise misread 162 as a note number and return the prior
+            # period (130) as the current-period value.
+            stripped = re.sub(r"^\d{1,3}\s+", "", tail)
+            if stripped != tail:
+                first_token = re.match(
+                    r"(?:[\(（]-?[\d,]+(?:\.\d+)?[\)）]|-?[\d,]+(?:\.\d+)?)",
+                    stripped,
+                )
+                if first_token and "," in first_token.group(0):
+                    tail = stripped
         tokens = re.findall(
             r"(?:[\(（]-?[\d,]+(?:\.\d+)?[\)）]|-?[\d,]+(?:\.\d+)?)|(?:--|—|–|-)",
             tail,
@@ -494,6 +505,73 @@ def _find_segment_page(pages: list[str]) -> int | None:
         ):
             return index
     return None
+
+
+def _segment_closing_rows(
+    pages: list[str],
+    wanted: dict[str, tuple[str, ...]],
+) -> list[tuple[str, float, int]]:
+    """Recover income-tax / net-income / NCI rows from a segment note.
+
+    Segment notes present a multi-column table with segment columns and a
+    final "合计" (consolidated total) column.  The parser scans every page for
+    a line whose label matches one of the wanted metrics and returns the LAST
+    numeric token on that line (the issuer's consolidated total), preferring
+    a line that contains a total marker such as "合计".  Parenthesised
+    negatives are handled by ``_parse_number``.
+    """
+    results: dict[str, tuple[float, int]] = {}
+    # Only scan pages that belong to the segment-information section
+    # ("六、 分部信息" / "分部信息"), so a management-discussion table that
+    # happens to contain "净利润" (e.g. China Eastern page 39) is not mistaken
+    # for the consolidated closing row.
+    segment_section_indices: list[int] = []
+    in_section = False
+    for index, text in enumerate(pages, start=1):
+        compact = _compact(text)
+        if not in_section and "分部信息" in compact:
+            in_section = True
+        if in_section:
+            segment_section_indices.append(index)
+        # The section ends at the next top-level note header or at the
+        # following page when the current page already carries the next
+        # section title after the segment tables.
+        if in_section and any(
+            header in compact
+            for header in ("七、", "八、", "九、", "十、", "关联方关系", "承诺及或有事项")
+        ) and "分部信息" not in compact:
+            # Keep this page (tables may spill onto it) but stop after it.
+            in_section = False
+    if not segment_section_indices:
+        return []
+    for index in segment_section_indices:
+        text = pages[index - 1]
+        for metric, labels in wanted.items():
+            if metric in results:
+                continue
+            for line in _page_lines(text):
+                compact = _compact(line)
+                matched_label = next(
+                    (label for label in labels if label in compact),
+                    None,
+                )
+                if matched_label is None:
+                    continue
+                numbers = _line_numbers(line)
+                if not numbers:
+                    continue
+                total = numbers[-1]
+                has_total_marker = "合计" in compact or "共计" in compact
+                # Segment tables for income tax often carry only 2-3 numeric
+                # cells (segment columns, with "-" in the inter-segment
+                # column).  Require either a total marker or at least 3 cells
+                # so a lone per-segment value is not mistaken for the
+                # consolidated total, while still catching the tax row.
+                if len(numbers) < 3 and not has_total_marker:
+                    continue
+                results[metric] = (total, index)
+                break
+    return [(metric, value, page) for metric, (value, page) in results.items()]
 
 
 def _page_lines(text: str) -> list[str]:
@@ -921,7 +999,9 @@ def parse_official_report(
     """Parse comparable financial and operating drivers from one issuer PDF."""
     retrieved = retrieved_at or datetime.now(timezone.utc).isoformat()
     pages = _report_pages(payload)
-    financial_page = _find_page(pages, ("主要会计数据", "归属于上市公司股东"))
+    financial_page = _find_page(pages, ("主要会计数据",)) or _find_page(
+        pages, ("归属于上市公司股东",)
+    )
     income_page = _find_page(pages, ("营业成本", "经营活动产生的现金流量净额"))
     if income_page is None:
         # Some annual reports split the income statement and cash-flow table
@@ -939,7 +1019,15 @@ def parse_official_report(
         main_specs = (
             ("total_revenue", ("营业收入",), "RMB million"),
             ("profit_total", ("利润总额",), "RMB million"),
-            ("attributable_net_income", ("归属于上市公司股东的净利润",), "RMB million"),
+            (
+                "attributable_net_income",
+                (
+                    "归属于上市公司股东的净利润",
+                    "归属于上市公司股东的（净亏损）",
+                    "归属于上市公司股东的（净利润）",
+                ),
+                "RMB million",
+            ),
             (
                 "adjusted_attributable_net_income",
                 ("归属于上市公司股东的扣除非经常性损益的净利润",),
@@ -961,6 +1049,36 @@ def parse_official_report(
                     source_note="Primary issuer annual/interim report main financial-data table.",
                     fx_rates=fx_rates, retrieved_at=retrieved,
                 )
+            elif financial_page < len(pages):
+                # Air China (and a few peers) split the main financial-data
+                # table across two pages: revenue/profit-total on the first,
+                # attributable net income / equity / assets / EPS on the next
+                # (the attributable label wraps as ``归属于上市公司股东的
+                # （净亏损）/净利润``).  Scan the following page for the row
+                # before giving up.  The neighbour page is only consulted when
+                # the primary page failed to produce the metric, so a label
+                # that legitimately appears elsewhere does not overwrite the
+                # primary result.
+                neighbour = financial_page + 1
+                if neighbour <= len(pages):
+                    neighbour_text = pages[neighbour - 1]
+                    neighbour_raw = _first_after(neighbour_text, labels)
+                    if neighbour_raw is not None:
+                        neighbour_value = (
+                            neighbour_raw * spec.financial_scale_to_rmb_million
+                            if unit == "RMB million"
+                            else neighbour_raw
+                        )
+                        _add_driver(
+                            rows, spec, metric=metric,
+                            value_native=neighbour_value,
+                            native_unit=unit, source_page=neighbour,
+                            source_note=(
+                                "Primary issuer annual/interim report main "
+                                "financial-data table (continuation page)."
+                            ),
+                            fx_rates=fx_rates, retrieved_at=retrieved,
+                        )
 
     if income_page:
         text = pages[income_page - 1]
@@ -1038,6 +1156,50 @@ def parse_official_report(
                 fx_rates=fx_rates,
                 retrieved_at=retrieved,
             )
+
+    # Some interim reports (e.g. China Eastern 1H2025) embed the consolidated
+    # income statement as image pages with no extractable text, so
+    # ``_find_income_statement_page`` returns None and the waterfall above
+    # falls back to the management variance table, which omits income tax,
+    # net income and minority interest.  The segment-information note then
+    # carries the missing closing rows as a five-column table whose final
+    # "合计" column is the consolidated total, e.g.
+    #   (亏损)/利润总额 (1,767) 39 197 - (1,531)
+    #   所得税费用 (40) (21) - - (61)
+    #   净(亏损)/利润 (1,807) 18 197 - (1,592)
+    # Recover those rows from the segment note, taking the last numeric
+    # column (the issuer's own consolidated total).
+    if _find_income_statement_page(pages) is None:
+        missing_closing = {
+            "income_tax_expense": ("所得税费用",),
+            "net_income_total": ("净(亏损)/利润", "净(损失)/利润", "净利润"),
+            "minority_interest": ("少数股东净(亏损)/利润", "少数股东损益", "少数股东净利润"),
+        }
+        existing_metrics = {row.get("metric") for row in rows}
+        missing = {
+            metric: labels
+            for metric, labels in missing_closing.items()
+            if metric not in existing_metrics
+        }
+        if missing:
+            segment_rows = _segment_closing_rows(pages, missing)
+            for metric, value, note_page in segment_rows:
+                _add_driver(
+                    rows,
+                    spec,
+                    metric=metric,
+                    value_native=value * spec.financial_scale_to_rmb_million,
+                    native_unit="RMB million",
+                    source_page=note_page,
+                    source_note=(
+                        "Primary issuer segment-information note; consolidated "
+                        "total column recovered because the formal income "
+                        "statement is an image page in this report."
+                    ),
+                    metric_scope="group_reported",
+                    fx_rates=fx_rates,
+                    retrieved_at=retrieved,
+                )
     if cost_page:
         text = pages[cost_page - 1]
         cost_specs = (

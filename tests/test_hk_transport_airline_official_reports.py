@@ -5,7 +5,10 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from src.hk_transport.sources.airline_official_reports import _statement_value_from_line
+from src.hk_transport.sources.airline_official_reports import (
+    _segment_closing_rows,
+    _statement_value_from_line,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -41,6 +44,60 @@ def test_waterfall_statement_parser_skips_note_numbers_and_preserves_negative_ce
         "公允价值变动收益 四 (50) 32 195",
         ("公允价值变动收益",),
     ) == pytest.approx(32.0)
+
+
+def test_statement_parser_keeps_variance_table_current_period() -> None:
+    # A three-column variance table (current / prior / change) must return the
+    # current-period value, not the prior period.  The bare-note-number rule
+    # previously misread the current-period figure as a note number.
+    assert _statement_value_from_line(
+        "投资收益 162 130 24.62",
+        ("投资收益",),
+    ) == pytest.approx(162.0)
+    assert _statement_value_from_line(
+        "财务费用 2,213 3,027 -26.89",
+        ("财务费用",),
+    ) == pytest.approx(2_213.0)
+
+
+def test_segment_closing_rows_recovers_tax_and_net_from_segment_note() -> None:
+    pages = [
+        "六、 分部信息\n"
+        "航空分部 其他业务分部 未分配的金额 分部间抵销 合计\n"
+        "(亏损)/利润总额 (1,767) 39 197 - (1,531)\n"
+        "所得税费用 (40) (21) - - (61)\n"
+        "净(亏损)/利润 (1,807) 18 197 - (1,592)\n",
+        "七、 关联方\nrelated-party note",
+    ]
+    wanted = {
+        "income_tax_expense": ("所得税费用",),
+        "net_income_total": ("净(亏损)/利润", "净利润"),
+    }
+    result = _segment_closing_rows(pages, wanted)
+    by_metric = {metric: value for metric, value, _ in result}
+    assert by_metric == {
+        "income_tax_expense": -61.0,
+        "net_income_total": -1592.0,
+    }
+
+
+def test_segment_closing_rows_ignores_management_discussion_table() -> None:
+    pages = [
+        "报告期净利润（百万） -252 2 -192 103 -28 -72\n"
+        "上一报告期净利润（百万） -542 -26 -336 -163 94 18",
+        "六、 分部信息\n"
+        "(亏损)/利润总额 (1,767) 39 197 - (1,531)\n"
+        "所得税费用 (40) (21) - - (61)\n"
+        "净(亏损)/利润 (1,807) 18 197 - (1,592)\n",
+    ]
+    wanted = {
+        "income_tax_expense": ("所得税费用",),
+        "net_income_total": ("净(亏损)/利润", "净利润"),
+    }
+    result = _segment_closing_rows(pages, wanted)
+    by_metric = {metric: value for metric, value, _ in result}
+    assert by_metric["net_income_total"] == -1592.0
+    assert by_metric["income_tax_expense"] == -61.0
 
 
 def test_curated_official_report_registry_is_primary_and_fully_parsed() -> None:
