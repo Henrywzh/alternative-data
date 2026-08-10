@@ -1,2 +1,2 @@
 dataset_id,station_name,telecode,pinyin,station_alias,source_url,source_quality,retrieved_at
-airline_hsr_station_codes,上海虹桥,AOH,shanghaihongqiao,abc,https://kyfw.12306.cn/otn/resources/js/framework/station_name.js,12306_live_station_dictionary,2026-08-09T23:56:15.583850+00:00
+airline_hsr_station_codes,上海虹桥,AOH,shanghaihongqiao,abc,https://kyfw.12306.cn/otn/resources/js/framework/station_name.js,12306_live_station_dictionary,2026-08-09T23:58:26.723484+00:00
