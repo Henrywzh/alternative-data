@@ -291,6 +291,19 @@ income, USD and basic EPS using the v3 implied share count. Spring and Juneyao
 are built for all five model variants; this replaces the static FY2026
 net-to-operating conversion ratios with a real interim waterfall. Rows are
 explicitly labelled research bridges, not issuer guidance or trade approvals.
+All six mainland groups build.  China Eastern's interim closing rows (income
+tax, net income) are recovered from the segment-information note because its
+formal interim income statement is an image page; Air China's interim
+financials are CID-font pages, so its bridge uses an annual-waterfall fallback
+(FY2025 below-operating structure scaled to the interim revenue base and
+calibrated with the disclosed interim profit-before-tax / attributable
+anchors; status `available_annual_waterfall_interim_pbt_calibrated`).
+Known model disagreement: the walk-forward H1-2026 operating leg keeps Air
+China / China Eastern / Hainan in the 1H2025 loss trajectory (Air China
+integrated H1 operating ~ -12.4bn RMB), while v3's consensus-margin-guard
+leg expects FY2026 recovery (Air China base +9.0bn operating).  The bridge
+retains the walk-forward leg and the source_note exposes the tension; it is
+part of the variant-perception material, not a hidden reconciliation.
 
 `airline_cargo_airport_bridge.csv` compares hub airport cargo throughput with
 issuer monthly cargo tonnage and reported FY2025 cargo revenue for Spring,
