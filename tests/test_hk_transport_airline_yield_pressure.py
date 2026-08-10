@@ -6,6 +6,7 @@ from src.hk_transport.sources.airline_yield_pressure import (
     PRIOR_WEIGHTS,
     _attach_validation,
     _zscore,
+    _zscore_pit,
 )
 
 
@@ -25,6 +26,23 @@ def test_zscore_normalises_and_handles_constant_series() -> None:
     assert abs(z.std(ddof=0) - 1.0) < 1e-9
     constant = pd.Series([3.0, 3.0, 3.0])
     assert (_zscore(constant) == 0.0).all()
+
+
+def test_zscore_pit_uses_only_past_history() -> None:
+    """The PIT z-score at each point must use only history up to that point:
+    the first observation is 0 (insufficient window), and later points are
+    standardised against the expanding window, not the full sample."""
+    s = pd.Series([1.0, 2.0, 3.0, 4.0, 100.0])
+    z = _zscore_pit(s)
+    # First point: not enough history -> 0.
+    assert z.iloc[0] == 0.0
+    # Point 2 (value 2.0): window [1,2], mean 1.5, std 0.5 -> (2-1.5)/0.5 = 1.
+    assert abs(z.iloc[1] - 1.0) < 1e-9
+    # The huge final value must NOT affect earlier z-scores (it would if the
+    # full-sample mean/std were used).
+    assert z.iloc[1] == 1.0
+    # Last point uses the full expanding window.
+    assert z.iloc[-1] > 1.0
 
 
 def test_build_index_covers_all_carriers_and_recent_months() -> None:

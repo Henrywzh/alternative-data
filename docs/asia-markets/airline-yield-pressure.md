@@ -30,29 +30,38 @@ cross-sectionally across the six carriers each year:
 
 | Year | Spearman rank corr | Direction-consistent / 6 |
 |---|---:|---:|
-| 2017 | -0.66 | 2 |
-| 2018 | -0.26 | 1 |
-| 2019 | +0.14 | 3 |
-| 2020 | -0.26 | 2 |
-| 2021 | -0.60 | 3 |
-| 2022 | +0.60 | 0 |
-| 2023 | +0.03 | 1 |
+| 2017 | +0.60 | 2 |
+| 2018 | -0.26 | 2 |
+| 2019 | +0.37 | 3 |
+| 2020 | -0.60 | 2 |
+| 2021 | -0.77 | 6 |
+| 2022 | +0.49 | 1 |
+| 2023 | -0.26 | 1 |
 | 2024 | -0.89 | 0 |
-| 2025 | +0.66 | 4 |
+| 2025 | +0.54 | 4 |
 
-All-year mean Spearman: **-0.14**; direction-consistent rate: **30%**.
+All-year mean Spearman: **-0.09**; direction-consistent rate: **39%**.
+
+NOTE (2026-08-10 PIT fix): the index was rebuilt with point-in-time
+z-scoring.  The previous version standardised each component over the FULL
+2017-2026 sample and used a centred 3-month window (leaking t+1), so every
+historical score contained future information.  Now each month's z-score
+uses only the expanding history up to that month, and smoothing is
+trailing (t-2..t).  The validation numbers above are the honest PIT
+results; the earlier reported "+0.66 in 2025 / all-year -0.14" reflected
+the look-ahead version and should not be quoted.
 
 **Conclusion: the simple demand-capacity index does NOT explain historical
-yield variation.**  It is positive only in 2025 (+0.66) and mixed/negative
-elsewhere.  The negative historical result is reported rather than hidden.
+yield variation.**  It is mixed/negative in most years.  The negative
+historical result is reported rather than hidden.
 
 Interpretation:
 
 * COVID years (2020-2022) broke the demand-capacity-to-pricing channel
   (policy-driven capacity, price floors, quarantine demand).
-* 2024's strong negative (-0.89) suggests the post-recovery supply
-  discipline regime changed the relationship (capacity control offsetting
-  demand softness).
+* 2024's strong negative suggests the post-recovery supply discipline
+  regime changed the relationship (capacity control offsetting demand
+  softness).
 * The 2025 positive correlation is encouraging but single-year and small-
   sample (n=6); it is not evidence of a stable predictive relationship.
 
