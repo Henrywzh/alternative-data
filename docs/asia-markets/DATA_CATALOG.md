@@ -380,6 +380,16 @@ consensus, +70% vs our model) - the market prices Juneyao's earnings
 conversion far more aggressively than our unit-economics view supports.
 Diagnostic only; see `docs/asia-markets/airline-valuation-snapshot.md`.
 
+`airline_trade_construction.csv` is the capstone Spring-long / Juneyao-short
+underwriting card integrating all six upgraded layers: unit economics (CASK
+advantage 14.7%), capacity pipeline (ASK growth spread 15.1pp), consensus
+reverse (Juneyao Street RASK +11.8% vs model), 3D sensitivity robustness
+(pair spread positive in 27/27 combinations, min 1.07), valuation (Juneyao
+price implies +93% EPS vs consensus) and factor/risk parameters (beta hedge
+0.63, 0.5% NAV -> 3.5% gross, catalyst 2026-08-29/31, surprise threshold
+15.6pp).  Research construct, execution-gated; see
+`docs/asia-markets/airline-long-short-underwriting.md`.
+
 `airline_cargo_airport_bridge.csv` compares hub airport cargo throughput with
 issuer monthly cargo tonnage and reported FY2025 cargo revenue for Spring,
 Juneyao, 9 Air and China Southern. It stores tonnage bridge gaps, coverage

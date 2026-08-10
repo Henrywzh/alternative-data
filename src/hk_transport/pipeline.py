@@ -33,6 +33,7 @@ from .sources.airline_capacity_pipeline import build_airline_capacity_pipeline
 from .sources.airline_consensus_reverse import build_airline_consensus_reverse
 from .sources.airline_earnings_sensitivity import build_airline_earnings_sensitivity
 from .sources.airline_valuation_snapshot import build_airline_valuation_snapshot
+from .sources.airline_trade_construction import build_airline_trade_construction
 from .sources.airline_h1_2026_validation_playbook import build_airline_h1_2026_validation_playbook
 from .sources.airline_cargo_bridge_backtest import build_airline_cargo_bridge_backtest
 from .sources.airline_caac_sector_monthly import fetch_caac_sector_monthly_kpis
@@ -324,6 +325,22 @@ QUALITY_SPECS = {
             "ps_ttm",
             "pb_mrq",
             "ev_ebitdar_status",
+            "retrieved_at",
+        ],
+        "max_age_days": 7,
+    },
+    "airline_trade_construction": {
+        "kind": "snapshot",
+        "required": [
+            "pair_id",
+            "direction",
+            "cask_advantage_pct",
+            "sensitivity_robust_combinations",
+            "sensitivity_total_combinations",
+            "beta_hedge_ratio",
+            "loss_budget_pct_nav",
+            "catalyst_window",
+            "trade_status",
             "retrieved_at",
         ],
         "max_age_days": 7,
@@ -1596,6 +1613,13 @@ def run_stage_1_pipeline() -> dict[str, Any]:
     except Exception as exc:
         logger.exception("Airline valuation snapshot build failed")
         results["airline_valuation_snapshot"] = {"error": str(exc)}
+
+    try:
+        logger.info("Building airline trade-construction card...")
+        results["airline_trade_construction"] = build_airline_trade_construction()
+    except Exception as exc:
+        logger.exception("Airline trade construction build failed")
+        results["airline_trade_construction"] = {"error": str(exc)}
 
     try:
         logger.info("Building H1-2026 validation playbook...")
