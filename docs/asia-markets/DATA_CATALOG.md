@@ -331,6 +331,17 @@ profit +0.039 vs Juneyao +0.030, with nearly identical fuel shares (33.6% vs
 decomposition with component-coverage labels, not a forward forecast.
 See `docs/asia-markets/airline-unit-economics.md`.
 
+`airline_yield_pressure_index.csv` is the synthetic yield-pressure index
+(677 monthly rows, six carriers, 2017-01 to 2026-06).  It combines
+demand-capacity gap (RPK-ASK YoY), load-factor change, international-mix
+change and industry passenger growth with economic-prior weights (0.5/0.25/
+0.15/-0.10), 3-month smoothed and z-scored per company.  `airline_yield_pressure_validation.csv`
+reports the cross-sectional validation against walk-forward realised-yield
+proxies: all-year Spearman mean -0.14, positive only in 2025 (+0.66), so the
+index is labelled `validation_limited_positive_2025_only_weak_history` and
+used only as a recent direction modifier, never as a yield forecast.
+See `docs/asia-markets/airline-yield-pressure.md`.
+
 `airline_cargo_airport_bridge.csv` compares hub airport cargo throughput with
 issuer monthly cargo tonnage and reported FY2025 cargo revenue for Spring,
 Juneyao, 9 Air and China Southern. It stores tonnage bridge gaps, coverage
