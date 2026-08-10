@@ -1,0 +1,7 @@
+company,h1_share_3y_avg,fy_multiplier,years,retrieved_at,seasonality_unreliable
+Air China,,,[],2026-08-10T19:08:55.070775+00:00,
+China Eastern Airlines,,,[],2026-08-10T19:08:55.070775+00:00,
+China Southern Airlines,,,[2025],2026-08-10T19:08:55.070775+00:00,single_profitable_year
+Hainan Airlines Holdings,,,[2025],2026-08-10T19:08:55.070775+00:00,single_profitable_year
+Juneyao Airlines,0.3749233961898522,2.6672115161722902,"[2023, 2024, 2025]",2026-08-10T19:08:55.070775+00:00,
+Spring Airlines,0.49142413295055604,2.0349020997318696,"[2023, 2024, 2025]",2026-08-10T19:08:55.070775+00:00,
