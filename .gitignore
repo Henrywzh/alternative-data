@@ -338,6 +338,12 @@ data/normalized/hk_local_consumer/*
 data/normalized/hk_transport/*
 !data/normalized/hk_transport/*.csv
 !data/normalized/hk_transport/*.parquet
+# Pre-event frozen snapshots: written once per forecast_asof and never
+# recomputed after the reports, so they are tracked like any other stage
+# output (the audit trail depends on them surviving in the repo).
+!data/normalized/hk_transport/snapshots/
+data/normalized/hk_transport/snapshots/*
+!data/normalized/hk_transport/snapshots/*.csv
 
 # Local dashboard-verification by-products. Canonical dashboard artifacts
 # (hk-*-artifact*.json) live in both these .generated directories and are

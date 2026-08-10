@@ -43,6 +43,7 @@ from .sources.airline_catalyst_calendar import build_airline_catalyst_calendar
 from .sources.airline_post_earnings_tracker import build_airline_post_earnings_tracker
 from .sources.airline_pre_event_locked_baseline import build_airline_pre_event_locked_baseline
 from .sources.airline_earnings_model_v4 import build_airline_earnings_model_v4
+from .sources.airline_earnings_model_v4_live import build_airline_earnings_model_v4_live
 from .sources.airline_cargo_bridge_backtest import build_airline_cargo_bridge_backtest
 from .sources.airline_caac_sector_monthly import fetch_caac_sector_monthly_kpis
 from .sources.airline_caac_sector_proxy_validation import fetch_airline_caac_sector_proxy_validation
@@ -264,6 +265,10 @@ def main():
     subparsers.add_parser(
         "run-airline-earnings-model-v4",
         help="Build the v4 decomposition revenue model (ASK x LF x Yield) with ablations",
+    )
+    subparsers.add_parser(
+        "run-airline-earnings-model-v4-live",
+        help="Build the v4 1H2026 pre-event forecast, surprise ranking, frozen snapshot and diagnostics",
     )
     subparsers.add_parser(
         "run-airline-cargo-bridge-backtest",
@@ -771,6 +776,9 @@ def main():
         elif args.command == "run-airline-earnings-model-v4":
             df = build_airline_earnings_model_v4()
             print(f"Built airline v4 earnings model: {len(df)} records\n", df.tail(8))
+        elif args.command == "run-airline-earnings-model-v4-live":
+            out = build_airline_earnings_model_v4_live()
+            print(f"Built v4 live forecast: {len(out['live'])} carriers; surprise ranking:\n", out["surprise"][["company","surprise_v4_vs_consensus_pct"]].to_string(index=False))
         elif args.command == "run-airline-cargo-bridge-backtest":
             df = build_airline_cargo_bridge_backtest()
             print(f"Built airline cargo-bridge backtest: {len(df)} records\n", df)
