@@ -39,6 +39,7 @@ from .sources.airline_cask_driver_model import build_airline_cask_driver_model
 from .sources.airline_forecast_decision_eval import build_airline_forecast_decision_eval
 from .sources.airline_pair_spread_model import build_airline_pair_spread_model
 from .sources.airline_h1_2026_validation_playbook import build_airline_h1_2026_validation_playbook
+from .sources.airline_catalyst_calendar import build_airline_catalyst_calendar
 from .sources.airline_cargo_bridge_backtest import build_airline_cargo_bridge_backtest
 from .sources.airline_caac_sector_monthly import fetch_caac_sector_monthly_kpis
 from .sources.airline_caac_sector_proxy_validation import fetch_airline_caac_sector_proxy_validation
@@ -244,6 +245,10 @@ def main():
     subparsers.add_parser(
         "run-airline-h1-2026-validation-playbook",
         help="Build the H1-2026 report validation reconciliation table",
+    )
+    subparsers.add_parser(
+        "run-airline-catalyst-calendar",
+        help="Build the forward airline catalyst & risk calendar",
     )
     subparsers.add_parser(
         "run-airline-cargo-bridge-backtest",
@@ -739,6 +744,9 @@ def main():
         elif args.command == "run-airline-h1-2026-validation-playbook":
             df = build_airline_h1_2026_validation_playbook()
             print(f"Built airline H1-2026 validation playbook: {len(df)} records\n", df)
+        elif args.command == "run-airline-catalyst-calendar":
+            df = build_airline_catalyst_calendar()
+            print(f"Built airline catalyst & risk calendar: {len(df)} records\n", df)
         elif args.command == "run-airline-cargo-bridge-backtest":
             df = build_airline_cargo_bridge_backtest()
             print(f"Built airline cargo-bridge backtest: {len(df)} records\n", df)
