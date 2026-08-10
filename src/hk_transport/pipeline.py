@@ -47,6 +47,7 @@ from .sources.airline_earnings_model_v4_live import build_airline_earnings_model
 from .sources.airline_cost_engine_v2 import build_airline_cost_engine_v2
 from .sources.airline_consensus_reverse_v2 import build_airline_consensus_reverse_v2
 from .sources.airline_valuation_v2 import build_airline_valuation_v2
+from .sources.airline_catalyst_underwriting import build_airline_catalyst_underwriting
 from .sources.airline_cargo_bridge_backtest import build_airline_cargo_bridge_backtest
 from .sources.airline_caac_sector_monthly import fetch_caac_sector_monthly_kpis
 from .sources.airline_caac_sector_proxy_validation import fetch_airline_caac_sector_proxy_validation
@@ -529,6 +530,20 @@ QUALITY_SPECS = {
             "retrieved_at",
         ],
         "max_age_days": 15,
+    },
+    "airline_catalyst_underwriting": {
+        "kind": "event",
+        "required": [
+            "event_id",
+            "event_category",
+            "event_name",
+            "event_window_start",
+            "affected_companies",
+            "expected_sign",
+            "invalidation_threshold",
+            "retrieved_at",
+        ],
+        "max_age_days": 45,
     },
     "airline_cargo_bridge_backtest": {
         "kind": "measure",
@@ -1891,6 +1906,15 @@ def run_stage_1_pipeline() -> dict[str, Any]:
     except Exception as exc:
         logger.exception("Valuation v2 build failed")
         results["airline_valuation_v2"] = {"error": str(exc)}
+
+    try:
+        logger.info("Building catalyst underwriting + thesis scoreboard...")
+        cat_uw = build_airline_catalyst_underwriting()
+        results["airline_catalyst_underwriting"] = cat_uw["catalyst"]
+        results["airline_thesis_scoreboard"] = cat_uw["scoreboard"]
+    except Exception as exc:
+        logger.exception("Catalyst underwriting build failed")
+        results["airline_catalyst_underwriting"] = {"error": str(exc)}
 
     try:
         logger.info("Building cargo-bridge backtest...")

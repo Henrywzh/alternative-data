@@ -47,6 +47,7 @@ from .sources.airline_earnings_model_v4_live import build_airline_earnings_model
 from .sources.airline_cost_engine_v2 import build_airline_cost_engine_v2
 from .sources.airline_consensus_reverse_v2 import build_airline_consensus_reverse_v2
 from .sources.airline_valuation_v2 import build_airline_valuation_v2
+from .sources.airline_catalyst_underwriting import build_airline_catalyst_underwriting
 from .sources.airline_cargo_bridge_backtest import build_airline_cargo_bridge_backtest
 from .sources.airline_caac_sector_monthly import fetch_caac_sector_monthly_kpis
 from .sources.airline_caac_sector_proxy_validation import fetch_airline_caac_sector_proxy_validation
@@ -284,6 +285,10 @@ def main():
     subparsers.add_parser(
         "run-airline-valuation-v2",
         help="Build valuation v2: Street vs Own P/E + P/B percentile + EV/EBITDAR",
+    )
+    subparsers.add_parser(
+        "run-airline-catalyst-underwriting",
+        help="Build catalyst tree (Event->KPI->EPS->Thesis) + thesis scoreboard",
     )
     subparsers.add_parser(
         "run-airline-cargo-bridge-backtest",
@@ -805,6 +810,10 @@ def main():
             out = build_airline_valuation_v2()
             print("Valuation v2 (Street vs Own):\n", out["valuation"][["company","pe_street","pe_own","pe_v3","re_rate_if_own_eps_materialises_pct","pb_current","pb_1y_percentile","ev_ebitdar"]].to_string(index=False))
             print("\nPair:\n", out["pair"].to_string(index=False))
+        elif args.command == "run-airline-catalyst-underwriting":
+            out = build_airline_catalyst_underwriting()
+            print("Catalyst tree:\n", out["catalyst"][["event_id","event_name","event_window_start","expected_sign","invalidation_threshold"]].to_string(index=False))
+            print("\nThesis scoreboard:\n", out["scoreboard"][["component","spring","juneyao","edge","status"]].to_string(index=False))
         elif args.command == "run-airline-cargo-bridge-backtest":
             df = build_airline_cargo_bridge_backtest()
             print(f"Built airline cargo-bridge backtest: {len(df)} records\n", df)
