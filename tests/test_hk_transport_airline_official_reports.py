@@ -100,6 +100,62 @@ def test_segment_closing_rows_ignores_management_discussion_table() -> None:
     assert by_metric["income_tax_expense"] == -61.0
 
 
+def test_segment_closing_rows_excludes_two_period_tables() -> None:
+    # China Southern's segment note repeats the columns for the prior year
+    # (10 numeric cells), so the last number is the PRIOR-year total.  The
+    # column-count guard must reject such rows instead of returning a
+    # wrong-period value.
+    pages = [
+        "六、 分部信息\n"
+        "航空营运业务分部 其他业务分部 分部间抵销 未分配项目 合计\n"
+        "所得税费用 1,160 569 172 71 2 2 94 42 1,428 684\n"
+        "净利润 / (亏损) (1,115) 53 292 305 28 16 (37) (899) (832) (525)\n",
+    ]
+    wanted = {
+        "income_tax_expense": ("所得税费用",),
+        "net_income_total": ("净(亏损)/利润", "净(损失)/利润", "净利润"),
+    }
+    result = _segment_closing_rows(pages, wanted)
+    assert result == []
+
+
+def test_segment_closing_rows_excludes_table_header_fragment() -> None:
+    # A header fragment carries the label in the middle of the line and
+    # date-like numbers; the label-position guard must reject it.
+    pages = [
+        "六、 分部信息\n"
+        "12月31日 于母公司 6月30日 发生额 减：所得税费用 税后归属于母公司 税后归属于少数股东\n"
+        "所得税费用 (40) (21) - - (61)\n"
+        "净(亏损)/利润 (1,807) 18 197 - (1,592)\n",
+    ]
+    wanted = {
+        "income_tax_expense": ("所得税费用",),
+        "net_income_total": ("净(亏损)/利润", "净(损失)/利润"),
+    }
+    result = _segment_closing_rows(pages, wanted)
+    by_metric = {metric: value for metric, value, _ in result}
+    assert by_metric == {
+        "income_tax_expense": -61.0,
+        "net_income_total": -1592.0,
+    }
+
+
+def test_segment_closing_rows_rejects_eps_table_net_profit_label() -> None:
+    # EPS-per-share tables contain "净利润/(亏损)" with small per-share
+    # values; the generic "净利润" label was removed from the wanted set so
+    # these must not be returned.
+    pages = [
+        "六、 分部信息\n"
+        "归属于母公司股东的净利润/(亏损) 2.44 (4.72) 0.05 (0.09)\n"
+        "净(亏损)/利润 (1,807) 18 197 - (1,592)\n",
+    ]
+    wanted = {
+        "net_income_total": ("净(亏损)/利润", "净(损失)/利润"),
+    }
+    result = _segment_closing_rows(pages, wanted)
+    assert result == [("net_income_total", -1592.0, 1)]
+
+
 def test_curated_official_report_registry_is_primary_and_fully_parsed() -> None:
     registry = pd.read_csv(TRANSPORT / "airline_official_report_registry.csv")
 

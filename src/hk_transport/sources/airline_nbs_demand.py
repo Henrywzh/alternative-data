@@ -166,12 +166,46 @@ def _discover_releases(max_pages: int = INDEX_MAX_PAGES) -> list[dict[str, str]]
                 "release_id": release_id,
                 "title": title,
                 "url": url_path,
+                "reference_period": _title_reference_period(title),
                 "date": (
                     f"{match.group(2)[:4]}-{match.group(2)[4:6]}-"
                     f"{match.group(2)[6:8]}"
                 ),
             }
     return sorted(releases.values(), key=lambda r: r["release_id"])
+
+
+def _title_reference_period(title: str) -> str:
+    """Extract the data reference period from an NBS release title.
+
+    PMI titles name the reference month ("2026年7月中国采购经理指数运行情况"
+    -> 2026-07); retail-sales titles name the covered period ("2026年上半年
+    社会消费品零售总额增长1.3%" -> 2026-H1, "2026年1—2月份..." -> 2026-01-02,
+    "2025年12月份..." -> 2025-12).  Unmatched titles fall back to empty.
+    """
+    year = re.search(r"(20\d{2})年", title)
+    if not year:
+        return ""
+    y = year.group(1)
+    month = re.search(r"(\d{1,2})月", title)
+    half = re.search(r"上半年|下半年", title)
+    jan_feb = re.search(r"1\s*—\s*2月份|1-2月份", title)
+    jan_mar = re.search(r"1\s*—\s*3月份|1-3月份", title)
+    jan_apr = re.search(r"1\s*—\s*4月份|1-4月份", title)
+    jan_may = re.search(r"1\s*—\s*5月份|1-5月份", title)
+    if jan_feb:
+        return f"{y}-01-02"
+    if jan_mar:
+        return f"{y}-01-03"
+    if jan_apr:
+        return f"{y}-01-04"
+    if jan_may:
+        return f"{y}-01-05"
+    if half:
+        return f"{y}-H1" if half.group(0) == "上半年" else f"{y}-H2"
+    if month:
+        return f"{y}-{int(month.group(1)):02d}"
+    return ""
 
 
 def _parse_release(

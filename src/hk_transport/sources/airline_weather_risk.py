@@ -202,7 +202,10 @@ def fetch_airline_weather_risk(
                 )
             )
 
-    daily = pd.concat(daily_frames, ignore_index=True)
+    non_empty_frames = [frame for frame in daily_frames if not frame.empty]
+    if not non_empty_frames:
+        raise ValueError("No Open-Meteo rows fetched for any hub")
+    daily = pd.concat(non_empty_frames, ignore_index=True)
     if daily.empty:
         raise ValueError("No Open-Meteo rows fetched for any hub")
     daily = daily.drop_duplicates(
@@ -270,6 +273,7 @@ def _forecast_to_daily(
         return pd.DataFrame(columns=DAILY_COLUMNS)
     daily = forecast["daily"]
     rows: list[dict[str, Any]] = []
+    today = datetime.now(timezone.utc).date().isoformat()
     for i, date in enumerate(daily.get("time", [])):
         weather_label = _weather_label(_safe(daily, "weather_code", i))
         precipitation = _safe(daily, "precipitation_sum", i)
@@ -292,8 +296,16 @@ def _forecast_to_daily(
                 "heavy_rain_day": heavy_rain,
                 "high_wind_day": high_wind,
                 "fog_day": fog,
-                "source_api": "openmeteo_forecast_past_days",
-                "point_in_time_status": "snapshot_observation",
+                "source_api": (
+                    "openmeteo_forecast_past_days"
+                    if date <= today
+                    else "openmeteo_forecast_future"
+                ),
+                "point_in_time_status": (
+                    "snapshot_observation"
+                    if date <= today
+                    else "future_forecast_projection"
+                ),
                 "source_quality": "openmeteo_forecast_model",
                 "raw_snapshot_path": raw_path,
                 "retrieved_at": retrieved,
