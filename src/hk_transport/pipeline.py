@@ -33,6 +33,7 @@ from .sources.airline_caac_sector_monthly import fetch_caac_sector_monthly_kpis
 from .sources.airline_caac_sector_proxy_validation import fetch_airline_caac_sector_proxy_validation
 from .sources.airline_caac_route_licence import fetch_caac_route_licence_events
 from .sources.airline_earnings_model_v3 import fetch_airline_earnings_model_v3
+from .sources.airline_fleet_wikipedia import fetch_airline_fleet_wikipedia
 from .sources.airline_fuel_surcharge_recovery import build_airline_fuel_surcharge_recovery
 from .sources.airline_weather_risk import fetch_airline_weather_risk
 from .sources.fuel_surcharge import fetch_fuel_surcharge_snapshots
@@ -159,6 +160,19 @@ QUALITY_SPECS = {
             "precipitation_sum_mm",
             "wind_speed_10m_max_kmh",
             "weather_code",
+            "point_in_time_status",
+            "source_quality",
+            "retrieved_at",
+        ],
+        "max_age_days": 45,
+    },
+    "airline_fleet_wikipedia_snapshot": {
+        "kind": "measure",
+        "required": [
+            "company",
+            "aircraft_type",
+            "snapshot_date",
+            "revision_id",
             "point_in_time_status",
             "source_quality",
             "retrieved_at",
@@ -1411,6 +1425,13 @@ def run_stage_1_pipeline() -> dict[str, Any]:
     except Exception as exc:
         logger.exception("Airline hub weather-risk ingestion failed")
         results["airline_weather_risk"] = {"error": str(exc)}
+
+    try:
+        logger.info("Ingesting Wikipedia airline fleet-table snapshots...")
+        results["airline_fleet_wikipedia_snapshot"] = fetch_airline_fleet_wikipedia()
+    except Exception as exc:
+        logger.exception("Wikipedia airline fleet snapshot ingestion failed")
+        results["airline_fleet_wikipedia_snapshot"] = {"error": str(exc)}
 
     try:
         logger.info("Building airport-cargo versus company-cargo bridge layer...")

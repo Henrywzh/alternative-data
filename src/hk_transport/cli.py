@@ -22,6 +22,7 @@ from .sources.airline_nbs_demand import fetch_airline_nbs_demand
 from .sources.airline_travel_demand_events import fetch_airline_travel_demand_events
 from .sources.airline_airport_traffic import fetch_airline_airport_traffic
 from .sources.airline_weather_risk import fetch_airline_weather_risk
+from .sources.airline_fleet_wikipedia import fetch_airline_fleet_wikipedia
 from .sources.airline_cargo_airport_bridge import build_airline_cargo_airport_bridge
 from .sources.airline_cargo_yield_bridge import build_airline_cargo_yield_bridge
 from .sources.airline_forward_assumptions import build_airline_forward_assumptions
@@ -164,6 +165,10 @@ def main():
     subparsers.add_parser(
         "run-airline-weather-risk",
         help="Run free Open-Meteo airline hub weather-risk ingestion",
+    )
+    subparsers.add_parser(
+        "run-airline-fleet-wikipedia",
+        help="Run free Wikipedia airline fleet-table snapshot ingestion",
     )
     subparsers.add_parser(
         "run-airline-cargo-airport-bridge",
@@ -628,6 +633,9 @@ def main():
                 f"{len(monthly)} monthly rows\n",
                 monthly.tail(12),
             )
+        elif args.command == "run-airline-fleet-wikipedia":
+            df = fetch_airline_fleet_wikipedia()
+            print(f"Fetched Wikipedia airline fleet snapshots: {len(df)} rows\n", df.tail(12))
         elif args.command == "run-airline-cargo-airport-bridge":
             df = build_airline_cargo_airport_bridge()
             print(f"Built airline cargo-airport bridge validation layer: {len(df)} records\n", df)

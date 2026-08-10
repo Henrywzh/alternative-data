@@ -184,6 +184,21 @@ BCIA_TRAFFIC_RELEASE_DATES = {
 OPENMETEO_ARCHIVE_URL = "https://archive-api.open-meteo.com/v1/archive"
 OPENMETEO_FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
 
+# Wikipedia airline fleet-table pages (free, stable HTML with a revision ID
+# usable as a PIT proxy).  The fleet table covers aircraft type, in-service /
+# on-order counts, seats and (where disclosed) notes; Cathay's Wikipedia
+# fleet table is an image, so Cathay stays on the official-report fleet
+# disclosures instead.
+WIKIPEDIA_AIRLINE_FLEET_PAGES = {
+    "Air China": "https://en.wikipedia.org/wiki/Air_China",
+    "China Southern Airlines": "https://en.wikipedia.org/wiki/China_Southern_Airlines",
+    "China Eastern Airlines": "https://en.wikipedia.org/wiki/China_Eastern_Airlines",
+    "Spring Airlines": "https://en.wikipedia.org/wiki/Spring_Airlines",
+    "Juneyao Airlines": "https://en.wikipedia.org/wiki/Juneyao_Airlines",
+    "Hainan Airlines": "https://en.wikipedia.org/wiki/Hainan_Airlines",
+}
+WIKIPEDIA_API_URL = "https://en.wikipedia.org/w/api.php"
+
 # Airline hub airports (and their coordinates) for the weather-risk layer.
 # Lat/lon are airport-reference points, not airline bases.  HKG uses the CAD
 # workbook hub; the mainland hubs align with the airport-traffic panel.

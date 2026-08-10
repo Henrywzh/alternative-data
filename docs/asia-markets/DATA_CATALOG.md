@@ -254,6 +254,20 @@ index levels.  Every row keeps the official release date, the Chinese metric
 label, the reference scope and the source URL; the layer is release-date-safe
 and context-only (aggregate macro demand regime, not airline RPK or revenue).
 
+`airline_fleet_wikipedia_snapshot.csv` is the Wikipedia airline fleet-table
+snapshot layer for the six mainland carriers.  It holds 45 dated rows with
+aircraft type, in-service and on-order counts and seat configuration; each
+row retains the Wikipedia revision ID and revision timestamp (via the
+MediaWiki API) as the PIT proxy.  Retired-fleet rows (identified by a
+4-digit year in the orders cell) are excluded.  It is a secondary-aggregator
+composition layer that never overrides an official fleet total: for example,
+Spring Wikipedia in-service 135 vs official FY2025 fleet 134 (different
+snapshot dates), and Southern Wikipedia 439 refers to the Southern operating
+carrier rather than the group consolidation (scope labelled).  The v3 model
+carries the summary as fleet context (in-service narrowbody/widebody split,
+on-order book, snapshot date) under `fleet_context_status`; Cathay is
+intentionally absent because its Wikipedia fleet table is an image.
+
 `airline_airport_traffic.csv` is the issuer airport monthly production layer.
 It contains 1,386 rows across Shanghai Pudong/Hongqiao, Shenzhen, Guangzhou
 Baiyun, Beijing Capital and Hong Kong International, with aircraft

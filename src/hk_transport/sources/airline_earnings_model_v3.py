@@ -53,6 +53,7 @@ FUEL_RECOVERY_PATH = NORMALIZED_DIR / "airline_fuel_surcharge_recovery.csv"
 CARGO_AIRPORT_BRIDGE_PATH = NORMALIZED_DIR / "airline_cargo_airport_bridge.csv"
 CARGO_YIELD_BRIDGE_PATH = NORMALIZED_DIR / "airline_cargo_yield_bridge.csv"
 FORWARD_ASSUMPTIONS_PATH = NORMALIZED_DIR / "airline_forward_assumptions.csv"
+FLEET_SNAPSHOT_PATH = NORMALIZED_DIR / "airline_fleet_wikipedia_snapshot.csv"
 OUTPUT_PATH = NORMALIZED_DIR / "airline_earnings_model_v3.csv"
 COVERAGE_OUTPUT_PATH = NORMALIZED_DIR / "airline_earnings_model_v3_kpi_coverage.csv"
 
@@ -607,6 +608,84 @@ def _company_caac_route_licence_context(
         "caac_route_licence_cancellation_count": int(len(cancellations)),
         "caac_route_licence_source_release_date": release.strftime("%Y-%m-%d") if pd.notna(release) else None,
         "caac_route_licence_schedule_season": rows["schedule_season"].iloc[0],
+    }
+
+
+def _company_fleet_context(
+    fleet_snapshot: pd.DataFrame,
+    company: str,
+) -> dict[str, object]:
+    """Summarize the latest Wikipedia fleet-composition snapshot per company.
+
+    The snapshot is a dated, secondary aggregator layer: it never overrides
+    an official fleet total and is carried as context only (fleet mix, in-
+    service narrowbody/widebody split, on-order book).  Hainan Airlines
+    Holdings is a group consolidation; the Wikipedia page covers the Hainan
+    Airlines operating carrier, so the summary is labelled with that scope.
+    """
+    default = {
+        "fleet_context_status": "missing_fleet_snapshot",
+        "fleet_snapshot_date": None,
+        "fleet_snapshot_revision_timestamp": None,
+        "fleet_in_service_total": None,
+        "fleet_on_order_total": None,
+        "fleet_narrowbody_in_service": None,
+        "fleet_widebody_in_service": None,
+        "fleet_aircraft_type_count": None,
+        "fleet_scope": None,
+    }
+    if fleet_snapshot.empty or not {
+        "company",
+        "aircraft_type",
+        "in_service",
+        "on_order",
+        "snapshot_date",
+        "fleet_scope",
+    }.issubset(fleet_snapshot.columns):
+        return default
+    fleet_company = company
+    if company == "Hainan Airlines Holdings":
+        fleet_company = "Hainan Airlines"
+    rows = fleet_snapshot.loc[fleet_snapshot["company"].eq(fleet_company)].copy()
+    if rows.empty:
+        return default
+    rows["snapshot_parsed"] = pd.to_datetime(rows["snapshot_date"], errors="coerce")
+    rows = rows.loc[rows["snapshot_parsed"].eq(rows["snapshot_parsed"].max())]
+    if rows.empty:
+        return default
+    in_service = pd.to_numeric(rows["in_service"], errors="coerce")
+    on_order = pd.to_numeric(rows["on_order"], errors="coerce")
+    widebody = rows["aircraft_type"].str.contains(
+        r"A330|A340|A350|A380|B747|B767|B777|B787", case=False, regex=True
+    )
+    narrowbody = rows["aircraft_type"].str.contains(
+        r"A319|A320|A321|B737|C919|C909|ARJ21", case=False, regex=True
+    )
+    revision_ts = rows["revision_timestamp"].dropna()
+    return {
+        "fleet_context_status": "available_secondary_aggregator_context_only",
+        "fleet_snapshot_date": rows["snapshot_date"].iloc[0],
+        "fleet_snapshot_revision_timestamp": (
+            revision_ts.iloc[0] if not revision_ts.empty else None
+        ),
+        "fleet_in_service_total": float(in_service.sum(min_count=1))
+        if in_service.notna().any()
+        else None,
+        "fleet_on_order_total": float(on_order.sum(min_count=1))
+        if on_order.notna().any()
+        else None,
+        "fleet_narrowbody_in_service": float(
+            in_service.where(narrowbody).sum(min_count=1)
+        )
+        if in_service.where(narrowbody).notna().any()
+        else None,
+        "fleet_widebody_in_service": float(
+            in_service.where(widebody).sum(min_count=1)
+        )
+        if in_service.where(widebody).notna().any()
+        else None,
+        "fleet_aircraft_type_count": int(len(rows)),
+        "fleet_scope": rows["fleet_scope"].iloc[0],
     }
 
 
@@ -1470,6 +1549,7 @@ def build_airline_earnings_model_v3(
     fuel_matrix: pd.DataFrame | None = None,
     fuel_recovery: pd.DataFrame | None = None,
     official_drivers: pd.DataFrame | None = None,
+    fleet_snapshot: pd.DataFrame | None = None,
     retrieved_at: str | None = None,
 ) -> pd.DataFrame:
     """Build v3 rows with separate cargo/other revenue and residual net income."""
@@ -1510,6 +1590,9 @@ def build_airline_earnings_model_v3(
     fuel_matrix = fuel_matrix if fuel_matrix is not None else _read(FUEL_MATRIX_PATH)
     fuel_recovery = fuel_recovery if fuel_recovery is not None else _read(FUEL_RECOVERY_PATH)
     official_drivers = official_drivers if official_drivers is not None else _read(OFFICIAL_DRIVERS_PATH)
+    fleet_snapshot = (
+        fleet_snapshot if fleet_snapshot is not None else _read(FLEET_SNAPSHOT_PATH)
+    )
     retrieved = retrieved_at or datetime.now(timezone.utc).isoformat()
     if v2_bridge.empty:
         raise ValueError("Cannot build airline v3 without the company forecast bridge")
@@ -1551,6 +1634,7 @@ def build_airline_earnings_model_v3(
             forward_assumptions,
             company,
         )
+        fleet_signal = _company_fleet_context(fleet_snapshot, company)
         historical_fx = _num(base.get("actual_fx_native_per_usd")) or 7.0
         v2_operating_profit_proxy_native = (
             _num(base.get("actual_operating_profit_usd_mn")) * historical_fx
@@ -1880,6 +1964,7 @@ def build_airline_earnings_model_v3(
                 **cargo_bridge_signal,
                 **cargo_yield_signal,
                 **forward_assumption_signal,
+                **fleet_signal,
                 **waterfall_context,
                 **forward_waterfall,
                 "model_status": "available_with_external_cargo_proxy" if v3_revenue_native is not None else "incomplete_missing_nonpassenger_base",
@@ -1924,8 +2009,8 @@ KPI_COVERAGE_ROWS = [
     ("Fuel hedge", "cost_driver", "partial", "issuer hedging disclosure coverage", "Disclosure/status exists, but hedge book cash-flow accounting is not fully integrated."),
     ("Fuel pass-through", "cost_driver", "partial", "official surcharge schedules plus dated surcharge-to-fuel recovery proxy", "Regulated per-passenger surcharges are not realized fuel-cost recovery; the recovery ratio is context only."),
     ("Non-fuel CASK", "cost_driver", "modelled", "aggregate operating-cost / ASK bridge", "Maintenance, labor, airport and distribution costs are not fully decomposed."),
-    ("Fleet count", "supply_driver", "partial", "issuer/Cathay fleet disclosures", "Historical fleet is available; forward delivery/retirement schedule is incomplete for every name."),
-    ("Aircraft utilization", "supply_driver", "partial", "issuer disclosed daily utilization where available", "Not independently forecast by fleet type/route."),
+    ("Fleet count", "supply_driver", "partial", "issuer/Cathay fleet disclosures plus Wikipedia fleet-composition snapshot (in-service/on-order by type)", "Composition and order book are dated secondary-aggregator context; a forward delivery/retirement schedule is still incomplete for every name and the snapshot never overrides an official fleet total."),
+    ("Aircraft utilization", "supply_driver", "partial", "issuer disclosed daily utilization where available plus CAAC sector utilization", "Not independently forecast by fleet type/route."),
     ("HSR substitution", "demand_risk", "proxy_monitor", "12306/Ctrip route observations", "Route-specific demand elasticity and revenue impact are not integrated."),
     ("Net income", "earnings", "proxy", "forecast operating contribution + FY2025 reported below-operating residual", "Residual combines finance cost, FX, tax, associates and NCI; it is more transparent than a net-to-operating ratio but is not a granular forecast."),
     ("EPS", "earnings", "proxy", "residual net-income proxy / FY2025 official basic-EPS implied share count", "This is not diluted EPS and does not model future issuance/buybacks; the below-operating residual is carried forward."),
