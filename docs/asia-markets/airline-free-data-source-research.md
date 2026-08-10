@@ -345,6 +345,13 @@ imputation reason.
    region-level only and the Sichuan airport group publishes no clean free
    monthly machine-readable feed.
 2. State Post Bureau parcels are implemented in `airline_postal_demand_proxies.csv`; next add NBS/MCT/MOT demand controls, with explicit holiday-length normalization.
+   Status 2026-08-10: MOT/MCT holiday events are in
+   `airline_travel_demand_events.csv` and the NBS monthly layer is now live in
+   `airline_nbs_demand.csv` (retail sales of consumer goods monthly/YTD +
+   manufacturing/non-manufacturing/services PMI, 2025-08 to 2026-07,
+   release-date-safe, growth/decline direction normalized).  NBS data-portal
+   JSON is WAF-blocked in this environment; the parser walks the public
+   press-release index instead.
 3. Extend the existing HSR query queue with dated 12306 train frequency,
    centre-to-centre time and fare observations for the highest-ASK overlapping
    routes.  The CAAC seasonal new-route licence layer is now promoted into the
