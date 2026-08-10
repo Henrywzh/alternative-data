@@ -338,7 +338,12 @@ imputation reason.
 ### P1: add to v3 before final pair selection
 
 1. Build airport-hub monthly/holiday traffic for Beijing, Shanghai, Guangzhou,
-   Shenzhen, Chengdu and Hong Kong.
+   Shenzhen, Chengdu and Hong Kong.  Status 2026-08-10: Beijing, Shanghai,
+   Guangzhou, Shenzhen and Hong Kong are live in `airline_airport_traffic.csv`
+   (HKG via the CAD monthly workbook, 1998-01 to latest, snapshot-dated).
+   Chengdu remains a documented gap: CAAC monthly airport tables are
+   region-level only and the Sichuan airport group publishes no clean free
+   monthly machine-readable feed.
 2. State Post Bureau parcels are implemented in `airline_postal_demand_proxies.csv`; next add NBS/MCT/MOT demand controls, with explicit holiday-length normalization.
 3. Extend the existing HSR query queue with dated 12306 train frequency,
    centre-to-centre time and fare observations for the highest-ASK overlapping
@@ -348,12 +353,22 @@ imputation reason.
    new domestic licences are queried for direct HSR competition alongside
    issuer-bulletin routes.
 4. Add Open-Meteo/HKO weather observations and archived forecast vintages for
-   the main bases and route endpoints.
+   the main bases and route endpoints.  Status 2026-08-10: implemented in
+   `airline_weather_risk.csv` / `airline_weather_risk_monthly.csv` for ten
+   hubs (2020-01 to latest; archive + forecast-past-days; heavy-rain /
+   high-wind / fog day flags and monthly disruption buckets).  HKO warning
+   history for Hong Kong is carried by the local-consumer weather layer.
 5. Extend primary report extraction into a forward net-income bridge: the
    historical operating-profit/finance/tax/NCI waterfall is now available in
    `airline_official_report_drivers.csv` where disclosed; the remaining work is
    to set defensible forward assumptions for finance cost, FX, associates, NCI,
-   recurring profit and diluted EPS.
+   recurring profit and diluted EPS.  Status 2026-08-10: implemented in
+   `airline_forward_net_income_bridge.csv` using the 1H2025 interim waterfall
+   (Spring/Juneyao annual statements are scanned images, so the interim anchor
+   is the correct PIT base for the 1H2026 bet), joined to walk-forward H1-2026
+   operating forecasts with labelled finance-cost scaling, tax-rate guard and
+   NCI identity derivation.  Air China/Eastern interim parsing remains a
+   separate parser gap (their rows degrade gracefully with status labels).
 
 ### P2: use only as supplementary evidence
 

@@ -164,6 +164,48 @@ BCIA_TRAFFIC_RELEASE_DATES = {
     "2026-06": "2026-07-08",
 }
 
+# Open-Meteo free archive/forecast endpoints (no API key).  The archive API
+# serves ERA5-based historical daily weather; the forecast API with
+# ``past_days`` covers the most recent days.  Used for airport-disruption and
+# utilization-risk flags at airline hub airports; weather is a risk/execution
+# variable, not a deterministic earnings forecast.
+OPENMETEO_ARCHIVE_URL = "https://archive-api.open-meteo.com/v1/archive"
+OPENMETEO_FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
+
+# Airline hub airports (and their coordinates) for the weather-risk layer.
+# Lat/lon are airport-reference points, not airline bases.  HKG uses the CAD
+# workbook hub; the mainland hubs align with the airport-traffic panel.
+AIRLINE_WEATHER_HUBS = {
+    "PEK": {"latitude": 40.0799, "longitude": 116.6031, "label": "Beijing Capital"},
+    "SHA-PVG": {"latitude": 31.1443, "longitude": 121.8083, "label": "Shanghai Pudong"},
+    "SHA-SHA": {"latitude": 31.1979, "longitude": 121.3363, "label": "Shanghai Hongqiao"},
+    "CAN": {"latitude": 23.3924, "longitude": 113.2988, "label": "Guangzhou Baiyun"},
+    "SZX": {"latitude": 22.6393, "longitude": 113.8108, "label": "Shenzhen Bao'an"},
+    "HKG": {"latitude": 22.3080, "longitude": 113.9185, "label": "Hong Kong International"},
+    "CTU": {"latitude": 30.5785, "longitude": 103.9471, "label": "Chengdu Shuangliu"},
+    "TFU": {"latitude": 30.3125, "longitude": 104.4417, "label": "Chengdu Tianfu"},
+    "CKG": {"latitude": 29.7192, "longitude": 106.6417, "label": "Chongqing Jiangbei"},
+    "HAK": {"latitude": 19.9347, "longitude": 110.4585, "label": "Haikou Meilan"},
+}
+
+# Weather-risk thresholds shared across the layer (WMO weather codes used by
+# Open-Meteo; precipitation/wind thresholds follow a broad aviation-
+# disruption definition and are documented in the source note).
+WEATHER_HEAVY_RAIN_MM = 25.0
+WEATHER_HIGH_WIND_KMH = 40.0
+WMO_CODE_LABELS = {
+    0: "clear", 1: "mainly_clear", 2: "partly_cloudy", 3: "overcast",
+    45: "fog", 48: "depositing_rime_fog", 51: "drizzle_light",
+    53: "drizzle_moderate", 55: "drizzle_dense", 56: "freezing_drizzle_light",
+    57: "freezing_drizzle_dense", 61: "rain_slight", 63: "rain_moderate",
+    65: "rain_heavy", 66: "freezing_rain_light", 67: "freezing_rain_heavy",
+    71: "snow_slight", 73: "snow_moderate", 75: "snow_heavy",
+    77: "snow_grains", 80: "rain_showers_slight", 81: "rain_showers_moderate",
+    82: "rain_showers_violent", 85: "snow_showers_slight",
+    86: "snow_showers_heavy", 95: "thunderstorm", 96: "thunderstorm_hail_slight",
+    99: "thunderstorm_hail_heavy",
+}
+
 # ECB daily reference rates are free and cover the reporting currencies needed
 # to translate USD fuel benchmarks into CNY and HKD.  The parser derives the
 # cross rates from the same-day EUR reference observations.

@@ -246,15 +246,42 @@ release-date-safe and context-only: holiday observations are not interpolated
 into monthly airline RPK or revenue.
 
 `airline_airport_traffic.csv` is the issuer airport monthly production layer.
-It contains 360 rows across Shanghai Pudong/Hongqiao, Shenzhen, Guangzhou
-Baiyun and Beijing Capital for 2026-01 through 2026-06, with aircraft
+It contains 1,386 rows across Shanghai Pudong/Hongqiao, Shenzhen, Guangzhou
+Baiyun, Beijing Capital and Hong Kong International, with aircraft
 movements, passenger and cargo throughput by route scope, month and
 cumulative values, YoY rates and official announcement dates. Shanghai/
 Shenzhen/Guangzhou are parsed from CNINFO bulletins; Beijing Capital is parsed
 from the issuer's investor-relations monthly fast reports (movements/passengers/
-cargo by domestic / HK-Macao-Taiwan / international scope). Airport throughput
-includes many carriers and is hub demand context only, not company RPK or
-revenue.
+cargo by domestic / HK-Macao-Taiwan / international scope); Hong Kong uses the
+Civil Aviation Department's monthly HKIA workbook (movements/passengers/freight
+1998-01 through the latest month, snapshot-dated because the workbook has no
+per-month announcement date). Airport throughput includes many carriers and is
+hub demand context only, not company RPK or revenue.
+
+`airline_weather_risk.csv` and `airline_weather_risk_monthly.csv` are the
+Open-Meteo airport weather-risk layer for ten airline hubs (PEK, SHA-PVG,
+SHA-SHA, CAN, SZX, HKG, CTU, TFU, CKG, HAK). The daily panel holds 24,160 rows
+from 2020-01-01 to the retrieval date (ERA5-based archive plus forecast-past-
+days rows) with max/min temperature, precipitation, max wind, WMO weather code
+and heavy-rain / high-wind / fog day flags; the monthly panel aggregates
+disruption-day counts and flags into low/moderate/high risk buckets. Weather
+is a risk/execution variable, not a deterministic earnings forecast, and rows
+are labelled snapshot observations because Open-Meteo has no issuer
+announcement date.
+
+`airline_forward_net_income_bridge.csv` is the forward H1-2026 net-income
+bridge anchored on the 1H2025 interim official waterfall (operating profit,
+finance cost, income tax, net income, minority interest, attributable net
+income). It joins the walk-forward H1-2026 operating forecast per model
+variant (flat-ASK, flat-RPK, yield-mix, fuel/non-fuel, integrated), scales
+finance cost with forecast revenue, applies the 1H2025 effective tax rate when
+it is economically plausible (0-60% band, loss-year deferred-tax artifacts
+fall back to absolute carry), derives minority interest from the net-income
+identity when not separately disclosed, and converts to attributable net
+income, USD and basic EPS using the v3 implied share count. Spring and Juneyao
+are built for all five model variants; this replaces the static FY2026
+net-to-operating conversion ratios with a real interim waterfall. Rows are
+explicitly labelled research bridges, not issuer guidance or trade approvals.
 
 `airline_cargo_airport_bridge.csv` compares hub airport cargo throughput with
 issuer monthly cargo tonnage and reported FY2025 cargo revenue for Spring,

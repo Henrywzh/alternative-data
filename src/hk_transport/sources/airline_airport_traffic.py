@@ -4,7 +4,10 @@ Shanghai International Airport (600009), Shenzhen Airport (000089) and
 Guangzhou Baiyun Airport (600004) publish free monthly production bulletins
 with aircraft movements, passenger throughput and cargo throughput by route
 scope.  The PDFs expose an official announcement date, which makes the rows
-point-in-time safe for airline demand context.
+point-in-time safe for airline demand context.  Beijing Capital (00694.HK)
+adds its monthly fast-report PDFs, and Hong Kong International Airport uses
+the Civil Aviation Department monthly workbook (no per-month announcement
+date, so its rows are dated snapshots).
 
 The layer is sector/hub demand context, not airline revenue: airport
 throughput includes many carriers.  It is intentionally kept separate from
@@ -26,6 +29,7 @@ import requests
 from ..config import (
     BCIA_TRAFFIC_RELEASE_DATES,
     BCIA_TRAFFIC_URLS,
+    CAD_HKIA_XLSX_URL,
     CAN_2026_05_TRAFFIC_URL,
     CAN_2026_06_TRAFFIC_URL,
     DEFAULT_HEADERS,
@@ -115,6 +119,19 @@ BCIA_UNIT_HEADER_MAP = {
     "aircraft_movements": ("movements", 1.0),
     "passenger_throughput": ("10k persons", 1 / 10_000.0),
     "cargo_throughput": ("10k tonnes", 1 / 10_000.0),
+}
+
+# Civil Aviation Department HKIA workbook (Stat Webpage.xlsx, sheet "Eng").
+# Column layout verified against a live fetch: 0 Year, 1 Month, 2 provisional/
+# revised flag, 3 Landing, 4 Take-off, 5 Total (aircraft), 6 YoY%, 7 Arrival,
+# 8 Departure, 9 Total (passenger), 10 YoY%, 11 Unloaded, 12 Loaded,
+# 13 Total (freight tonnes), 14 YoY%.  Monthly rows run 1998-01 to the latest
+# published month.  Values marked provisional (#) / revised (§) are retained
+# as-is with the flag recorded; there is no per-month announcement date.
+HKG_CAD_MONTH_MAP = {
+    "Jan": "01", "Feb": "02", "Mar": "03", "Apr": "04", "May": "05",
+    "Jun": "06", "Jul": "07", "Aug": "08", "Sep": "09", "Oct": "10",
+    "Nov": "11", "Dec": "12",
 }
 
 SOURCE_SPECS: tuple[dict[str, Any], ...] = (
@@ -299,6 +316,17 @@ SOURCE_SPECS: tuple[dict[str, Any], ...] = (
         }
         for month in sorted(BCIA_TRAFFIC_URLS)
     ),
+    {
+        "event_id": "hkg_cad_workbook",
+        "airport": "HKG",
+        "airport_2": None,
+        "parent_company": "Airport Authority Hong Kong (CAD workbook)",
+        "observation_month": None,
+        "release_date": None,
+        "source_url": CAD_HKIA_XLSX_URL,
+        "layout": "hkg_cad",
+        "file_ext": "xlsx",
+    },
 )
 
 
@@ -318,18 +346,23 @@ def _row(
     value: float,
     unit: str,
     yoy: float | None,
+    observation_month: str | None = None,
     ytd_value: float | None = None,
     ytd_unit: str | None = None,
     ytd_yoy: float | None = None,
     raw_snapshot_path: str | None = None,
     retrieved_at: str | None = None,
+    source_release_date_status: str | None = None,
+    point_in_time_status: str | None = None,
+    source_quality: str | None = None,
+    source_note: str | None = None,
 ) -> dict[str, Any]:
     return {
         "dataset_id": DATASET_ID,
         "source_organization": spec["parent_company"],
         "source_document_type": "monthly_production_statistics",
         "source_url": spec["source_url"],
-        "observation_month": spec["observation_month"],
+        "observation_month": observation_month or spec["observation_month"],
         "period_type": "monthly",
         "airport": airport,
         "airport_parent_company": spec["parent_company"],
@@ -342,10 +375,14 @@ def _row(
         "ytd_unit": ytd_unit,
         "ytd_yoy_pct": ytd_yoy,
         "source_release_date": spec["release_date"],
-        "source_release_date_status": "official_announcement_date",
-        "point_in_time_status": "release_date_safe_observation",
-        "source_quality": "issuer_primary_official_pdf",
-        "source_note": (
+        "source_release_date_status": (
+            source_release_date_status or "official_announcement_date"
+        ),
+        "point_in_time_status": (
+            point_in_time_status or "release_date_safe_observation"
+        ),
+        "source_quality": source_quality or "issuer_primary_official_pdf",
+        "source_note": source_note or (
             "Issuer monthly fast-report production statistics; airport throughput includes many carriers "
             "and is not company revenue.  Values are provisional until the official periodic report."
         ),
@@ -663,6 +700,105 @@ def parse_bcia_layout(
     return pd.DataFrame(rows, columns=OUTPUT_COLUMNS)
 
 
+def parse_hkg_cad_layout(
+    payload: bytes,
+    *,
+    spec: dict[str, Any],
+    raw_snapshot_path: str | None = None,
+    retrieved_at: str | None = None,
+) -> pd.DataFrame:
+    """Parse the CAD HKIA monthly airport-statistics workbook.
+
+    The workbook carries monthly aircraft movements, passenger volume and
+    freight tonnage from 1998-01 to the latest published month, with YoY
+    changes per row.  There is no per-month announcement date, so every row
+    is a dated snapshot: the CAD marks cells provisional (#) or revised (§)
+    inside the workbook and refreshes it periodically.  Movements are raw
+    counts; passengers/freight are scaled to the shared 10k hub unit scheme.
+    """
+    workbook = pd.read_excel(io.BytesIO(payload), sheet_name="Eng", header=None)
+    rows: list[dict[str, Any]] = []
+    current_year: int | None = None
+    for _, row in workbook.iterrows():
+        year_cell = row.iloc[0]
+        month_cell = row.iloc[1]
+        if pd.isna(month_cell):
+            continue
+        month_text = str(month_cell).strip()
+        if month_text not in HKG_CAD_MONTH_MAP:
+            continue
+        if pd.notna(year_cell):
+            year_text = str(year_cell).strip()
+            if not re.fullmatch(r"(19|20)\d{2}", year_text):
+                continue
+            current_year = int(year_text)
+        if current_year is None:
+            continue
+        month_key = f"{current_year:04d}-{HKG_CAD_MONTH_MAP[month_text]}"
+        movement_total = _number(row.iloc[5])
+        movement_yoy = _number(row.iloc[6])
+        passenger_total = _number(row.iloc[9])
+        passenger_yoy = _number(row.iloc[10])
+        freight_total = _number(row.iloc[13])
+        freight_yoy = _number(row.iloc[14])
+        flag_cell = row.iloc[2] if len(row) > 2 else None
+        flag = (
+            str(flag_cell).strip()
+            if pd.notna(flag_cell) and str(flag_cell).strip() not in ("nan", "")
+            else ""
+        )
+        note = (
+            "CAD HKIA civil international air transport workbook; "
+            "provisional/revised cells are retained as published "
+            f"(workbook flag: {flag or 'none'}). No per-month announcement "
+            "date exists; the workbook is a periodically refreshed snapshot."
+        )
+        for metric_key, value, yoy, unit in (
+            ("aircraft_movements", movement_total, movement_yoy, "movements"),
+            (
+                "passenger_throughput",
+                None if passenger_total is None else passenger_total / 10_000.0,
+                passenger_yoy,
+                "10k persons",
+            ),
+            (
+                "cargo_throughput",
+                None if freight_total is None else freight_total / 10_000.0,
+                freight_yoy,
+                "10k tonnes",
+            ),
+        ):
+            if value is None:
+                continue
+            rows.append(
+                _row(
+                    spec,
+                    airport=spec["airport"],
+                    metric_key=metric_key,
+                    scope="total",
+                    value=value,
+                    unit=unit,
+                    yoy=yoy,
+                    observation_month=month_key,
+                    raw_snapshot_path=raw_snapshot_path,
+                    retrieved_at=retrieved_at,
+                    source_release_date_status="not_disclosed_workbook_snapshot",
+                    point_in_time_status="snapshot_observation",
+                    source_quality="cad_official_monthly_workbook",
+                    source_note=note,
+                )
+            )
+    if not rows:
+        raise ValueError(f"HKG CAD workbook produced no rows: {spec['event_id']}")
+    frame = pd.DataFrame(rows, columns=OUTPUT_COLUMNS)
+    # The CAD workbook holds every month in one document; drop_duplicates on
+    # (observation_month, airport, metric, scope) later keeps the latest
+    # vintage, but within this parser we only keep the first row per month.
+    return frame.drop_duplicates(
+        subset=["observation_month", "airport", "metric", "scope"], keep="first"
+    ).reset_index(drop=True)
+
+
 def parse_airport_traffic_pdf(
     payload: bytes,
     *,
@@ -670,6 +806,13 @@ def parse_airport_traffic_pdf(
     raw_snapshot_path: str | None = None,
     retrieved_at: str | None = None,
 ) -> pd.DataFrame:
+    if spec["layout"] == "hkg_cad":
+        return parse_hkg_cad_layout(
+            payload,
+            spec=spec,
+            raw_snapshot_path=raw_snapshot_path,
+            retrieved_at=retrieved_at,
+        )
     if spec["layout"] == "shanghai_dual_airport":
         return parse_shanghai_dual_airport(
             payload,
@@ -705,10 +848,11 @@ def fetch_airline_airport_traffic() -> pd.DataFrame:
             timeout=max(DEFAULT_TIMEOUT, 30),
         )
         response.raise_for_status()
+        file_ext = spec.get("file_ext", "pdf")
         raw_path = save_raw_snapshot(
             f"airline_airport_traffic_{spec['event_id']}",
             response.content,
-            file_ext="pdf",
+            file_ext=file_ext,
             source_url=spec["source_url"],
         )
         frames.append(
@@ -730,7 +874,7 @@ def fetch_airline_airport_traffic() -> pd.DataFrame:
             columns=OUTPUT_COLUMNS,
         )
     result = result.drop_duplicates(
-        subset=["observation_month", "airport", "metric", "scope", "source_url"],
+        subset=["observation_month", "airport", "metric", "scope"],
         keep="last",
     ).reindex(columns=OUTPUT_COLUMNS)
     result.to_csv(OUTPUT_PATH, index=False)
@@ -747,6 +891,7 @@ __all__ = [
     "OUTPUT_PATH",
     "SOURCE_SPECS",
     "fetch_airline_airport_traffic",
+    "parse_hkg_cad_layout",
     "parse_airport_traffic_pdf",
     "parse_shanghai_dual_airport",
     "parse_szx_can_layout",

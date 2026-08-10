@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+import io
+
+import pandas as pd
 import pytest
 
 from src.hk_transport.sources.airline_airport_traffic import (
     SOURCE_SPECS,
     parse_bcia_layout,
+    parse_hkg_cad_layout,
     parse_shanghai_dual_airport,
     parse_szx_can_layout,
 )
@@ -188,3 +192,45 @@ def test_bcia_layout_parses_metrics_scopes_and_scales_units() -> None:
     hkmt = result[result["scope"].eq("hk_macao_taiwan")].set_index("metric")
     assert hkmt.loc["aircraft_movements", "value"] == pytest.approx(1_296.0)
     assert hkmt.loc["cargo_throughput", "value"] == pytest.approx(0.7853)
+
+
+def test_hkg_cad_layout_parses_full_monthly_history() -> None:
+    payload = io.BytesIO()
+    workbook = pd.DataFrame(
+        [
+            ["2019", "Jan", None, 18_263, 18_271, 36_534, 1.5,
+             3_174_686, 3_285_507, 6_460_193, 6.1,
+             133_183, 259_569, 392_752, -4.7],
+            [None, "Feb", None, 16_219, 16_217, 32_436, 0.3,
+             3_039_630, 2_827_076, 5_866_706, 1.1,
+             109_996, 159_407, 269_403, -2.0],
+            ["2019", "Mar", None, 18_371, 18_381, 36_752, 1.4,
+             3_170_973, 3_225_933, 6_396_906, 0.4,
+             147_360, 274_847, 422_207, -1.1],
+        ],
+        columns=[f"c{i}" for i in range(15)],
+    )
+    workbook.to_excel(payload, sheet_name="Eng", index=False)
+    spec = next(s for s in SOURCE_SPECS if s["layout"] == "hkg_cad")
+
+    result = parse_hkg_cad_layout(
+        payload.getvalue(),
+        spec=spec,
+        retrieved_at="2026-08-10T00:00:00+00:00",
+    )
+
+    assert len(result) == 9  # 3 months x 3 metrics
+    assert result["airport"].eq("HKG").all()
+    assert result["observation_month"].unique().tolist() == [
+        "2019-01", "2019-02", "2019-03",
+    ]
+    jan = result[result["observation_month"].eq("2019-01")].set_index("metric")
+    assert jan.loc["aircraft_movements", "value"] == pytest.approx(36_534.0)
+    assert jan.loc["aircraft_movements", "unit"] == "movements"
+    assert jan.loc["passenger_throughput", "value"] == pytest.approx(646.0193)
+    assert jan.loc["passenger_throughput", "unit"] == "10k persons"
+    assert jan.loc["cargo_throughput", "value"] == pytest.approx(39.2752)
+    assert jan.loc["cargo_throughput", "unit"] == "10k tonnes"
+    assert jan.loc["aircraft_movements", "yoy_pct"] == pytest.approx(1.5)
+    assert result["source_quality"].eq("cad_official_monthly_workbook").all()
+    assert result["point_in_time_status"].eq("snapshot_observation").all()
