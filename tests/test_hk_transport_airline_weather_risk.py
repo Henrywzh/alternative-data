@@ -130,6 +130,41 @@ def test_monthly_aggregate_marks_disruption_flags() -> None:
     assert row["days_observed"] == 5
 
 
+def test_monthly_aggregate_labels_partial_month_with_future() -> None:
+    daily = pd.DataFrame(
+        [
+            {
+                "airport": "PEK",
+                "airport_label": "Beijing Capital",
+                "observation_date": "2026-08-01",
+                "temperature_2m_max_c": 30.0,
+                "precipitation_sum_mm": 5.0,
+                "wind_speed_10m_max_kmh": 10.0,
+                "heavy_rain_day": False,
+                "high_wind_day": False,
+                "fog_day": False,
+                "source_api": "openmeteo_forecast_past_days",
+            },
+            {
+                "airport": "PEK",
+                "airport_label": "Beijing Capital",
+                "observation_date": "2026-08-11",
+                "temperature_2m_max_c": None,
+                "precipitation_sum_mm": 30.0,
+                "wind_speed_10m_max_kmh": 12.0,
+                "heavy_rain_day": True,
+                "high_wind_day": False,
+                "fog_day": False,
+                "source_api": "openmeteo_forecast_future",
+            },
+        ]
+    )
+    result = _build_monthly(daily, "2026-08-10T00:00:00+00:00")
+    row = result.iloc[0]
+    assert row["days_observed"] == 2
+    assert row["days_observed_status"] == "partial_month_future_forecast_included"
+
+
 def test_empty_archive_returns_empty_frame() -> None:
     result = _archive_to_daily(
         "HKG", "Hong Kong International", None, None, "2026-08-10T00:00:00+00:00"
