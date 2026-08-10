@@ -44,8 +44,8 @@ adjustment).
 * It recognises that historical yield is the prior; the model learns only
   the deviation, which is more stable than re-learning absolute revenue.
 * The 3-class bucket + shrinkage prevents the weakly-validated yield signal
-  (2025 cross-sectional +0.66, all-year -0.14) from making false precision
-  claims.
+  (2026-08-10 PIT-fixed validation: 2025 +0.54, all-year mean ~0.0, mixed
+  sign by year) from making false precision claims.
 * For the 1H2026 forecast, the recent yield-pressure signal is weak, so the
   model conservatively keeps flat-yield - the right behaviour when the
   signal does not support a directional call.

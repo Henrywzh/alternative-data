@@ -105,6 +105,26 @@ def _zscore(series: pd.Series) -> pd.Series:
     return (series - series.mean()) / std
 
 
+def _zscore_pit(series: pd.Series) -> pd.Series:
+    """Point-in-time z-score: standardise each point using ONLY the history
+    up to and including that point (expanding window), never the full-sample
+    mean/std.  The previous implementation z-scored the entire 2017-2026
+    column, which leaked future observations into every historical score
+    (and into the v4 residual-yield stage that consumes it)."""
+    out = series.copy()
+    for i in range(len(series)):
+        window = series.iloc[: i + 1].dropna()
+        if len(window) < 2:
+            out.iloc[i] = 0.0
+            continue
+        std = window.std(ddof=0)
+        if std in (0, np.nan) or pd.isna(std):
+            out.iloc[i] = 0.0
+            continue
+        out.iloc[i] = (series.iloc[i] - window.mean()) / std
+    return out
+
+
 def _load_monthly() -> pd.DataFrame:
     if not MONTHLY_RAW_PATH.exists():
         raise FileNotFoundError(MONTHLY_RAW_PATH)
@@ -211,17 +231,17 @@ def build_airline_yield_pressure_index() -> pd.DataFrame:
         )
         df = df.dropna(subset=["rpk_minus_ask_gap_pp", "load_factor_change_pp"])
 
-        # 3-month centred moving average reduces monthly noise before
-        # z-scoring, so the index tracks the pricing regime rather than a
-        # single noisy month.
-        smooth_gap = df["rpk_minus_ask_gap_pp"].rolling(3, center=True, min_periods=1).mean()
-        smooth_lf = df["load_factor_change_pp"].rolling(3, center=True, min_periods=1).mean()
-        smooth_mix = df["intl_mix_change_pp"].rolling(3, center=True, min_periods=1).mean()
-        smooth_ind = df["industry_ask_growth_pct"].rolling(3, center=True, min_periods=1).mean()
-        z_gap = _zscore(smooth_gap)
-        z_lf = _zscore(smooth_lf)
-        z_mix = _zscore(smooth_mix.fillna(0.0))
-        z_ind = _zscore(smooth_ind.fillna(0.0))
+        # 3-month TRAILING moving average (t-2..t) reduces monthly noise
+        # without leaking the next month (the old centred window used t+1).
+        smooth_gap = df["rpk_minus_ask_gap_pp"].rolling(3, min_periods=1).mean()
+        smooth_lf = df["load_factor_change_pp"].rolling(3, min_periods=1).mean()
+        smooth_mix = df["intl_mix_change_pp"].rolling(3, min_periods=1).mean()
+        smooth_ind = df["industry_ask_growth_pct"].rolling(3, min_periods=1).mean()
+        # PIT z-scores: expanding window per company history.
+        z_gap = _zscore_pit(smooth_gap)
+        z_lf = _zscore_pit(smooth_lf)
+        z_mix = _zscore_pit(smooth_mix.fillna(0.0))
+        z_ind = _zscore_pit(smooth_ind.fillna(0.0))
         score = (
             PRIOR_WEIGHTS["rpk_ask_gap"] * z_gap
             + PRIOR_WEIGHTS["lf_change"] * z_lf
