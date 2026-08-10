@@ -371,6 +371,15 @@ median 1.60) - Spring stays profitable even at yield -3/fuel +5/FX +3 (EPS
 excluding hedging/pass-through; see
 `docs/asia-markets/airline-earnings-sensitivity.md`.
 
+`airline_valuation_snapshot.csv` is the dated valuation + implied-expectations
+snapshot (six carriers): current PE/PS/PB, peer cross-sectional z-scores,
+EV/EBITDAR where components allow (labelled otherwise), and the earnings the
+current price implies via its FY26E P/E.  Key result: Spring's price implies
+FY26 EPS 3.08 (+42% vs consensus 2.17); Juneyao's implies 0.83 (+93% vs
+consensus, +70% vs our model) - the market prices Juneyao's earnings
+conversion far more aggressively than our unit-economics view supports.
+Diagnostic only; see `docs/asia-markets/airline-valuation-snapshot.md`.
+
 `airline_cargo_airport_bridge.csv` compares hub airport cargo throughput with
 issuer monthly cargo tonnage and reported FY2025 cargo revenue for Spring,
 Juneyao, 9 Air and China Southern. It stores tonnage bridge gaps, coverage
