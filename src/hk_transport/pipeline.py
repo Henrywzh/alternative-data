@@ -31,6 +31,7 @@ from .sources.airline_unit_economics import build_airline_unit_economics
 from .sources.airline_yield_pressure import build_airline_yield_pressure_index
 from .sources.airline_capacity_pipeline import build_airline_capacity_pipeline
 from .sources.airline_consensus_reverse import build_airline_consensus_reverse
+from .sources.airline_earnings_sensitivity import build_airline_earnings_sensitivity
 from .sources.airline_h1_2026_validation_playbook import build_airline_h1_2026_validation_playbook
 from .sources.airline_cargo_bridge_backtest import build_airline_cargo_bridge_backtest
 from .sources.airline_caac_sector_monthly import fetch_caac_sector_monthly_kpis
@@ -293,6 +294,21 @@ QUALITY_SPECS = {
             "model_rask_native",
             "rask_gap_pct",
             "reverse_method",
+            "retrieved_at",
+        ],
+        "max_age_days": 45,
+    },
+    "airline_earnings_sensitivity": {
+        "kind": "measure",
+        "required": [
+            "company",
+            "horizon",
+            "yield_shock_pct",
+            "fuel_shock_pct",
+            "fx_shock_pct",
+            "shocked_net_income_native_mn",
+            "shocked_eps_rmb",
+            "vs_consensus_status",
             "retrieved_at",
         ],
         "max_age_days": 45,
@@ -1551,6 +1567,13 @@ def run_stage_1_pipeline() -> dict[str, Any]:
     except Exception as exc:
         logger.exception("Airline consensus reverse build failed")
         results["airline_consensus_reverse"] = {"error": str(exc)}
+
+    try:
+        logger.info("Building airline earnings sensitivity surface...")
+        results["airline_earnings_sensitivity"] = build_airline_earnings_sensitivity()
+    except Exception as exc:
+        logger.exception("Airline earnings sensitivity build failed")
+        results["airline_earnings_sensitivity"] = {"error": str(exc)}
 
     try:
         logger.info("Building H1-2026 validation playbook...")

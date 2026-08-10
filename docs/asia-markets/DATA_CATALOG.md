@@ -362,6 +362,15 @@ vs model 0.375 (+11.8% - the market prices aggressive pricing power from
 international recovery), while Spring is a margin disagreement (implied RASK
 0.350 vs 0.339, +3.2%).  See `docs/asia-markets/airline-consensus-reverse.md`.
 
+`airline_earnings_sensitivity.csv` is the 3D earnings sensitivity surface
+(162 rows: six carriers x 27 cells) shocking H1-2026 net income across
+yield (-3/0/+3%), fuel (-5/0/+5%) and FX (-3/0/+3%).  Robustness result:
+the Spring-Juneyao EPS spread is positive in ALL 27 combinations (min 1.07,
+median 1.60) - Spring stays profitable even at yield -3/fuel +5/FX +3 (EPS
+0.88) while Juneyao turns negative at yield -3%.  Mechanical surface
+excluding hedging/pass-through; see
+`docs/asia-markets/airline-earnings-sensitivity.md`.
+
 `airline_cargo_airport_bridge.csv` compares hub airport cargo throughput with
 issuer monthly cargo tonnage and reported FY2025 cargo revenue for Spring,
 Juneyao, 9 Air and China Southern. It stores tonnage bridge gaps, coverage
