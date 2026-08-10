@@ -37,6 +37,7 @@ from .sources.airline_trade_construction import build_airline_trade_construction
 from .sources.airline_residual_yield_model import build_airline_residual_yield_model
 from .sources.airline_cask_driver_model import build_airline_cask_driver_model
 from .sources.airline_forecast_decision_eval import build_airline_forecast_decision_eval
+from .sources.airline_pair_spread_model import build_airline_pair_spread_model
 from .sources.airline_h1_2026_validation_playbook import build_airline_h1_2026_validation_playbook
 from .sources.airline_cargo_bridge_backtest import build_airline_cargo_bridge_backtest
 from .sources.airline_caac_sector_monthly import fetch_caac_sector_monthly_kpis
@@ -235,6 +236,10 @@ def main():
     subparsers.add_parser(
         "run-airline-forecast-decision-eval",
         help="Build consensus-relative eval + ensemble + beat probability",
+    )
+    subparsers.add_parser(
+        "run-airline-pair-spread",
+        help="Build Spring-Juneyao direct earnings-spread model",
     )
     subparsers.add_parser(
         "run-airline-h1-2026-validation-playbook",
@@ -728,6 +733,9 @@ def main():
         elif args.command == "run-airline-forecast-decision-eval":
             eval_df, ens, unc = build_airline_forecast_decision_eval()
             print(f"Built decision eval: {len(eval_df)} / ensemble {len(ens)} / uncertainty {len(unc)}\n", eval_df)
+        elif args.command == "run-airline-pair-spread":
+            df = build_airline_pair_spread_model()
+            print(f"Built pair-spread model: {len(df)} records\n", df.tail(4))
         elif args.command == "run-airline-h1-2026-validation-playbook":
             df = build_airline_h1_2026_validation_playbook()
             print(f"Built airline H1-2026 validation playbook: {len(df)} records\n", df)
