@@ -38,6 +38,7 @@ from .sources.airline_residual_yield_model import build_airline_residual_yield_m
 from .sources.airline_cask_driver_model import build_airline_cask_driver_model
 from .sources.airline_forecast_decision_eval import build_airline_forecast_decision_eval
 from .sources.airline_pair_spread_model import build_airline_pair_spread_model
+from .sources.airline_catalyst_calendar import build_airline_catalyst_calendar
 from .sources.airline_h1_2026_validation_playbook import build_airline_h1_2026_validation_playbook
 from .sources.airline_cargo_bridge_backtest import build_airline_cargo_bridge_backtest
 from .sources.airline_caac_sector_monthly import fetch_caac_sector_monthly_kpis
@@ -415,6 +416,21 @@ QUALITY_SPECS = {
             "retrieved_at",
         ],
         "max_age_days": 60,
+    },
+    "airline_catalyst_calendar": {
+        "kind": "event",
+        "required": [
+            "event_id",
+            "event_category",
+            "event_name",
+            "event_window_start",
+            "affected_companies",
+            "kpi_link",
+            "earnings_link",
+            "source",
+            "retrieved_at",
+        ],
+        "max_age_days": 45,
     },
     "airline_cargo_bridge_backtest": {
         "kind": "measure",
@@ -1713,6 +1729,13 @@ def run_stage_1_pipeline() -> dict[str, Any]:
     except Exception as exc:
         logger.exception("Airline H1-2026 validation playbook build failed")
         results["airline_h1_2026_validation_playbook"] = {"error": str(exc)}
+
+    try:
+        logger.info("Building airline catalyst & risk calendar...")
+        results["airline_catalyst_calendar"] = build_airline_catalyst_calendar()
+    except Exception as exc:
+        logger.exception("Airline catalyst calendar build failed")
+        results["airline_catalyst_calendar"] = {"error": str(exc)}
 
     try:
         logger.info("Building cargo-bridge backtest...")
