@@ -18,6 +18,7 @@ from .sources.mtr_patronage import fetch_mtr_patronage
 from .sources.energy_prices import fetch_eia_airline_energy_prices
 from .sources.airline_cargo_demand import fetch_airline_cargo_demand_proxies
 from .sources.airline_postal_demand import fetch_airline_postal_demand_proxies
+from .sources.airline_nbs_demand import fetch_airline_nbs_demand
 from .sources.airline_travel_demand_events import fetch_airline_travel_demand_events
 from .sources.airline_airport_traffic import fetch_airline_airport_traffic
 from .sources.airline_weather_risk import fetch_airline_weather_risk
@@ -151,6 +152,10 @@ def main():
     subparsers.add_parser(
         "run-airline-travel-demand-events",
         help="Run free MOT/MCT holiday travel-demand event ingestion",
+    )
+    subparsers.add_parser(
+        "run-airline-nbs-demand",
+        help="Run free NBS monthly demand-side control ingestion",
     )
     subparsers.add_parser(
         "run-airline-airport-traffic",
@@ -610,6 +615,9 @@ def main():
         elif args.command == "run-airline-travel-demand-events":
             df = fetch_airline_travel_demand_events()
             print(f"Fetched official MOT/MCT travel-demand events: {len(df)} records\n", df.tail(20))
+        elif args.command == "run-airline-nbs-demand":
+            df = fetch_airline_nbs_demand()
+            print(f"Fetched NBS monthly demand-side controls: {len(df)} records\n", df.tail(20))
         elif args.command == "run-airline-airport-traffic":
             df = fetch_airline_airport_traffic()
             print(f"Fetched issuer airport monthly production statistics: {len(df)} records\n", df.tail(20))

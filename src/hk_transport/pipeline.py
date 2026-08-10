@@ -20,6 +20,7 @@ from .sources.mtr_patronage import fetch_mtr_patronage
 from .sources.energy_prices import fetch_eia_airline_energy_prices
 from .sources.airline_cargo_demand import fetch_airline_cargo_demand_proxies
 from .sources.airline_postal_demand import fetch_airline_postal_demand_proxies
+from .sources.airline_nbs_demand import fetch_airline_nbs_demand
 from .sources.airline_travel_demand_events import fetch_airline_travel_demand_events
 from .sources.airline_airport_traffic import fetch_airline_airport_traffic
 from .sources.airline_cargo_airport_bridge import build_airline_cargo_airport_bridge
@@ -116,6 +117,22 @@ QUALITY_SPECS = {
             "retrieved_at",
         ],
         "max_age_days": 180,
+    },
+    "airline_nbs_demand": {
+        "kind": "measure",
+        "required": [
+            "release_id",
+            "release_family",
+            "metric",
+            "value",
+            "unit",
+            "scope",
+            "source_release_date",
+            "point_in_time_status",
+            "source_quality",
+            "retrieved_at",
+        ],
+        "max_age_days": 60,
     },
     "airline_airport_traffic": {
         "kind": "measure",
@@ -1372,6 +1389,13 @@ def run_stage_1_pipeline() -> dict[str, Any]:
     except Exception as exc:
         logger.exception("MOT/MCT holiday travel-demand ingestion failed")
         results["airline_travel_demand_events"] = {"error": str(exc)}
+
+    try:
+        logger.info("Ingesting NBS monthly demand-side controls...")
+        results["airline_nbs_demand"] = fetch_airline_nbs_demand()
+    except Exception as exc:
+        logger.exception("NBS demand-control ingestion failed")
+        results["airline_nbs_demand"] = {"error": str(exc)}
 
     try:
         logger.info("Ingesting issuer airport monthly production statistics...")

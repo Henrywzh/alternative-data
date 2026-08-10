@@ -81,6 +81,18 @@ MCT_2025_MAY_TOURISM_URL = (
     "https://www.mct.gov.cn/whzx/whyw/202505/t20250506_959793.htm"
 )
 
+# National Bureau of Statistics (NBS) monthly national-economy press releases
+# and their index pages.  The monthly 经济运行情况 release (around the 15th)
+# carries retail sales of consumer goods, services production index and other
+# demand-side controls; the PMI release (last day of the month) carries the
+# purchasing-managers index.  The index page walks backwards over archived
+# releases so the layer can rebuild a dated monthly panel.  NBS publishes in
+# Chinese; numbers are retained as written.
+NBS_PRESS_INDEX_URL = "https://www.stats.gov.cn/sj/zxfb/"
+NBS_PRESS_INDEX_PAGE_TEMPLATE = (
+    "https://www.stats.gov.cn/sj/zxfb/index_{page}.html"
+)
+
 # CAAC's public monthly transport-statistics index and the linked PDF reports.
 # The index is used to discover the current month/announcement/PDF URL rather
 # than hard-coding one attachment ID in the model layer.

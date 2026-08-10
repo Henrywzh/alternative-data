@@ -245,6 +245,15 @@ method for the 2026 Spring Festival duration comparison. The layer is
 release-date-safe and context-only: holiday observations are not interpolated
 into monthly airline RPK or revenue.
 
+`airline_nbs_demand.csv` is the NBS monthly demand-side control layer. It
+contains 47 rows across 21 dated press releases (2025-08 through 2026-07):
+monthly retail sales of consumer goods (single-month and Jan-Feb / Jan-Mar /
+Jan-Apr / Jan-May / H1 cumulative scopes, with growth/decline direction
+normalized to signed YoY), plus manufacturing/non-manufacturing/services PMI
+index levels.  Every row keeps the official release date, the Chinese metric
+label, the reference scope and the source URL; the layer is release-date-safe
+and context-only (aggregate macro demand regime, not airline RPK or revenue).
+
 `airline_airport_traffic.csv` is the issuer airport monthly production layer.
 It contains 1,386 rows across Shanghai Pudong/Hongqiao, Shenzhen, Guangzhou
 Baiyun, Beijing Capital and Hong Kong International, with aircraft
