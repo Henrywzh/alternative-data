@@ -75,7 +75,9 @@ def test_spread_diagnostic_written_and_honest(outputs: dict[str, pd.DataFrame]) 
     sp = outputs["spread"]
     assert len(sp) > 0
     # The diagnostic must report the true (low) accuracy, not a curated one.
-    assert sp.attrs.get("direction_accuracy", 1.0) < 0.5
+    assert sp.attrs.get("direction_accuracy_1st_order", 1.0) < 0.5
+    assert sp.attrs.get("direction_accuracy_2nd_order", 1.0) < 0.5
+    assert "direction_correct_1st_order" in sp.columns
 
 
 def test_persistence_output(outputs: dict[str, pd.DataFrame]) -> None:

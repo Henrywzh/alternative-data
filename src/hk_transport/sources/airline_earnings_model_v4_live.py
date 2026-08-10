@@ -366,19 +366,33 @@ def _spread_residual_diagnostic(v4: pd.DataFrame, backtest: pd.DataFrame) -> pd.
         spread_res = spr_res - jun_res
         next_spr_g = spring.loc[y + 1, "revenue_growth_pct"]
         next_jun_g = juneyao.loc[y + 1, "revenue_growth_pct"]
+        # First-order: does the residual predict the NEXT-year spread LEVEL
+        # (Spring growth minus Juneyao growth in t+1)?
+        next_spread_level = next_spr_g - next_jun_g
+        # Second-order: does it predict the CHANGE in the spread from t to
+        # t+1?  (Retained for comparison; the first-order test is the more
+        # natural read of "residual forecasts next period's spread".)
         spread_chg = (next_spr_g - next_jun_g) - (spring.loc[y, "revenue_growth_pct"] - juneyao.loc[y, "revenue_growth_pct"])
         out_rows.append(
             {
                 "target_year": y,
                 "spread_residual_spring_minus_juneyao_pct": spread_res,
+                "next_year_revenue_spread_level_pp": next_spread_level,
                 "next_year_revenue_spread_change_pp": spread_chg,
-                "direction_correct": bool(np.sign(spread_res) == np.sign(spread_chg)) if spread_chg != 0 else None,
+                "direction_correct_1st_order": (
+                    bool(np.sign(spread_res) == np.sign(next_spread_level)) if next_spread_level != 0 else None
+                ),
+                "direction_correct_2nd_order": (
+                    bool(np.sign(spread_res) == np.sign(spread_chg)) if spread_chg != 0 else None
+                ),
             }
         )
     out = pd.DataFrame(out_rows)
     if not out.empty:
-        valid = out.direction_correct.dropna()
-        out.attrs["direction_accuracy"] = float(valid.mean()) if len(valid) else None
+        valid1 = out.direction_correct_1st_order.dropna()
+        valid2 = out.direction_correct_2nd_order.dropna()
+        out.attrs["direction_accuracy_1st_order"] = float(valid1.mean()) if len(valid1) else None
+        out.attrs["direction_accuracy_2nd_order"] = float(valid2.mean()) if len(valid2) else None
     return out
 
 
