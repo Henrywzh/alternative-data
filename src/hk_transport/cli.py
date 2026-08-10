@@ -20,9 +20,11 @@ from .sources.airline_cargo_demand import fetch_airline_cargo_demand_proxies
 from .sources.airline_postal_demand import fetch_airline_postal_demand_proxies
 from .sources.airline_travel_demand_events import fetch_airline_travel_demand_events
 from .sources.airline_airport_traffic import fetch_airline_airport_traffic
+from .sources.airline_weather_risk import fetch_airline_weather_risk
 from .sources.airline_cargo_airport_bridge import build_airline_cargo_airport_bridge
 from .sources.airline_cargo_yield_bridge import build_airline_cargo_yield_bridge
 from .sources.airline_forward_assumptions import build_airline_forward_assumptions
+from .sources.airline_forward_net_income_bridge import build_airline_forward_net_income_bridge
 from .sources.airline_h1_2026_validation_playbook import build_airline_h1_2026_validation_playbook
 from .sources.airline_cargo_bridge_backtest import build_airline_cargo_bridge_backtest
 from .sources.airline_caac_sector_monthly import fetch_caac_sector_monthly_kpis
@@ -155,6 +157,10 @@ def main():
         help="Run free issuer airport monthly production-statistics ingestion",
     )
     subparsers.add_parser(
+        "run-airline-weather-risk",
+        help="Run free Open-Meteo airline hub weather-risk ingestion",
+    )
+    subparsers.add_parser(
         "run-airline-cargo-airport-bridge",
         help="Build airport-cargo versus company-cargo bridge validation layer",
     )
@@ -165,6 +171,10 @@ def main():
     subparsers.add_parser(
         "run-airline-forward-assumptions",
         help="Build forward tax-rate and FX assumption table",
+    )
+    subparsers.add_parser(
+        "run-airline-forward-net-income-bridge",
+        help="Build forward H1-2026 net-income bridge from the 1H2025 interim waterfall",
     )
     subparsers.add_parser(
         "run-airline-h1-2026-validation-playbook",
@@ -603,6 +613,13 @@ def main():
         elif args.command == "run-airline-airport-traffic":
             df = fetch_airline_airport_traffic()
             print(f"Fetched issuer airport monthly production statistics: {len(df)} records\n", df.tail(20))
+        elif args.command == "run-airline-weather-risk":
+            daily, monthly = fetch_airline_weather_risk()
+            print(
+                f"Fetched airline hub weather risk: {len(daily)} daily / "
+                f"{len(monthly)} monthly rows\n",
+                monthly.tail(12),
+            )
         elif args.command == "run-airline-cargo-airport-bridge":
             df = build_airline_cargo_airport_bridge()
             print(f"Built airline cargo-airport bridge validation layer: {len(df)} records\n", df)
@@ -612,6 +629,9 @@ def main():
         elif args.command == "run-airline-forward-assumptions":
             df = build_airline_forward_assumptions()
             print(f"Built airline forward tax/FX assumptions: {len(df)} records\n", df)
+        elif args.command == "run-airline-forward-net-income-bridge":
+            df = build_airline_forward_net_income_bridge()
+            print(f"Built airline forward H1-2026 net-income bridge: {len(df)} records\n", df)
         elif args.command == "run-airline-h1-2026-validation-playbook":
             df = build_airline_h1_2026_validation_playbook()
             print(f"Built airline H1-2026 validation playbook: {len(df)} records\n", df)
