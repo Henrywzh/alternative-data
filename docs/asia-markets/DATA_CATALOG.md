@@ -319,6 +319,18 @@ leg expects FY2026 recovery (Air China base +9.0bn operating).  The bridge
 retains the walk-forward leg and the source_note exposes the tension; it is
 part of the variant-perception material, not a hidden reconciliation.
 
+`airline_unit_economics.csv` is the FY2025 unit-economics decomposition
+(RASK - CASK per ASK) for the six mainland carriers.  It splits operating
+cost per ASK into fuel / staff / aircraft (lease + depreciation) / airport /
+maintenance / other, from the official driver layer where disclosed and from
+annual-report cost tables for Spring (full p27 composition) and Juneyao
+(p22 unit-cost disclosure plus p39 fuel share anchor).  Key output: Spring
+CASK 0.300 vs Juneyao 0.345 (non-fuel CASK 0.199 vs 0.235), Spring unit
+profit +0.039 vs Juneyao +0.030, with nearly identical fuel shares (33.6% vs
+33.1%) - the LCC advantage is operational, not fuel.  The layer is a static
+decomposition with component-coverage labels, not a forward forecast.
+See `docs/asia-markets/airline-unit-economics.md`.
+
 `airline_cargo_airport_bridge.csv` compares hub airport cargo throughput with
 issuer monthly cargo tonnage and reported FY2025 cargo revenue for Spring,
 Juneyao, 9 Air and China Southern. It stores tonnage bridge gaps, coverage
