@@ -37,6 +37,7 @@ from .sources.airline_trade_construction import build_airline_trade_construction
 from .sources.airline_residual_yield_model import build_airline_residual_yield_model
 from .sources.airline_cask_driver_model import build_airline_cask_driver_model
 from .sources.airline_forecast_decision_eval import build_airline_forecast_decision_eval
+from .sources.airline_pair_spread_model import build_airline_pair_spread_model
 from .sources.airline_h1_2026_validation_playbook import build_airline_h1_2026_validation_playbook
 from .sources.airline_cargo_bridge_backtest import build_airline_cargo_bridge_backtest
 from .sources.airline_caac_sector_monthly import fetch_caac_sector_monthly_kpis
@@ -386,6 +387,20 @@ QUALITY_SPECS = {
             "retrieved_at",
         ],
         "max_age_days": 30,
+    },
+    "airline_pair_spread_model": {
+        "kind": "measure",
+        "required": [
+            "pair_id",
+            "period",
+            "target_year",
+            "spread_actual_native_mn",
+            "spread_predicted_native_mn",
+            "spread_direction_correct",
+            "model_status",
+            "retrieved_at",
+        ],
+        "max_age_days": 60,
     },
     "airline_h1_2026_validation_playbook": {
         "kind": "snapshot",
@@ -1684,6 +1699,13 @@ def run_stage_1_pipeline() -> dict[str, Any]:
     except Exception as exc:
         logger.exception("Airline forecast decision eval build failed")
         results["airline_forecast_decision_eval"] = {"error": str(exc)}
+
+    try:
+        logger.info("Building airline pair-spread model...")
+        results["airline_pair_spread_model"] = build_airline_pair_spread_model()
+    except Exception as exc:
+        logger.exception("Airline pair-spread model build failed")
+        results["airline_pair_spread_model"] = {"error": str(exc)}
 
     try:
         logger.info("Building H1-2026 validation playbook...")
