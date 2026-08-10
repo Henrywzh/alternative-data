@@ -328,8 +328,12 @@ def _fleet_series(official: pd.DataFrame) -> pd.Series:
 
 def _ebit_decomposition(v4: pd.DataFrame, cost: pd.DataFrame) -> pd.DataFrame:
     """eps_EBIT = eps_Revenue - eps_Cost for every overlapping row."""
+    # The cost engine is FY-only, so the revenue error must come from the
+    # v4 FY rows only - matching on company+target_year alone would join the
+    # H1/H2 v4 rows against each FY cost row and triple-count every row.
+    v4_fy = v4[v4.period.eq("FY")][["company", "target_year", "error_recovery_overlay_pct"]]
     merged = cost.merge(
-        v4[["company", "target_year", "error_recovery_overlay_pct"]],
+        v4_fy,
         on=["company", "target_year"],
         how="inner",
     )
