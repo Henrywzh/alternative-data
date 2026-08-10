@@ -201,6 +201,8 @@ OPERATING_OVERRIDES: dict[str, tuple[tuple[str, float, str, int, str], ...]] = {
         ("daily_utilization", 9.74, "hours/day", 13, "Spring Airlines operating table: aircraft daily utilization."),
         ("cask", 0.303, "RMB/ASK", 21, "Spring Airlines operating discussion: reported unit cost."),
         ("fuel_cost", 2_980.0, "RMB million", 32, "Spring Airlines risk disclosure: fuel cost, RMB hundred-million converted to RMB million."),
+        ("passenger_revenue", 9_989.925618, "RMB million", 176, "Spring Airlines revenue note: aviation passenger revenue (9,989,925,618 RMB)."),
+        ("cargo_revenue", 68.850497, "RMB million", 176, "Spring Airlines revenue note: aviation cargo revenue (68,850,497 RMB)."),
         ("fleet_total", 133.0, "aircraft", 16, "Spring Airlines fleet disclosure: A320 fleet total."),
         ("cash_and_cash_equivalents", 7_323.963631, "RMB million", 68, "Spring Airlines consolidated cash-flow statement: period-end cash and cash equivalents."),
         ("total_liabilities", 28_706.670898, "RMB million", 63, "Spring Airlines consolidated balance sheet: total liabilities."),
@@ -236,6 +238,8 @@ OPERATING_OVERRIDES: dict[str, tuple[tuple[str, float, str, int, str], ...]] = {
         ("interest_bearing_debt", 35_606.0, "RMB million", 174, "Juneyao Airlines management discussion: group interest-bearing debt, reported as RMB356.06亿元 (RMB35.606bn)."),
     ),
     "603885_2025_h1": (
+        ("passenger_revenue", 10_512.157818, "RMB million", 144, "Juneyao Airlines revenue note: passenger revenue (10,512,157,818 RMB)."),
+        ("cargo_revenue", 414.60903547, "RMB million", 144, "Juneyao Airlines revenue note: cargo revenue (414,609,035.47 RMB)."),
         ("cash_and_cash_equivalents", 2_689.08841001, "RMB million", 60, "Juneyao Airlines consolidated cash-flow statement: period-end cash and cash equivalents."),
         ("total_liabilities", 40_861.90831457, "RMB million", 53, "Juneyao Airlines consolidated balance sheet: total liabilities."),
         ("interest_bearing_debt", 36_097.0, "RMB million", 162, "Juneyao Airlines management discussion: group interest-bearing debt, reported as RMB360.97亿元 (RMB36.097bn)."),
@@ -945,7 +949,9 @@ def _validate_driver_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
         "fuel_cost_share_pct_reported": (0.0, 100.0),
         "fuel_cost_implied_from_reported_share": (0.0, 100_000.0),
         "passenger_revenue": (100.0, 1_000_000.0),
-        "cargo_revenue": (100.0, 1_000_000.0),
+        # LCC cargo revenue can be genuinely tiny (Spring 1H2025 = 68.9m
+        # RMB), so the lower bound must not reject real small values.
+        "cargo_revenue": (0.0, 1_000_000.0),
         "rask_derived": (0.05, 2.0),
         "rask_from_reported_yield_derived": (0.05, 2.0),
         "passenger_yield_derived": (0.01, 5.0),

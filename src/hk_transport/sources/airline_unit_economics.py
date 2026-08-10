@@ -194,6 +194,44 @@ def _juneyao_fy2025_components() -> dict[str, float]:
     return values
 
 
+def _air_china_fy2025_components() -> dict[str, float]:
+    """Air China FY2025 cost table (annual report p18, verified manually).
+
+    Air China discloses the full cost composition in thousand RMB: fuel
+    50,041,444 (30.77%), landing 21,967,914 (13.51%), depreciation
+    29,649,818 (18.23%), maintenance 14,813,651 (9.11%), staff 30,402,218
+    (18.69%), catering 4,505,386 (2.77%), other main-business 9,612,292
+    (5.91%), other-business 1,654,557 (1.01%); operating cost 162,647,280.
+    """
+    operating_cost = 162_647.28  # RMB million
+    values = {
+        "fuel": 50_041.444,
+        "airport": 21_967.914,
+        "aircraft": 29_649.818,
+        "maintenance": 14_813.651,
+        "staff": 30_402.218,
+    }
+    return values
+
+
+def _hainan_fy2025_components() -> dict[str, float]:
+    """Hainan Airlines FY2025 cost table (annual report p16, verified).
+
+    Fuel 20,087,050 (31.78%), depreciation 9,496,994 (15.02%), landing
+    8,293,338 (13.12%), maintenance 6,886,778 (10.89%), staff 10,084,624
+    (15.95%), CAAC fund 607,471 (0.96%), other 4,349,990 (6.88%), other-
+    business 3,406,207 (5.39%); operating cost 63,212,452 thousand RMB.
+    """
+    values = {
+        "fuel": 20_087.050,
+        "aircraft": 9_496.994,
+        "airport": 8_293.338,
+        "maintenance": 6_886.778,
+        "staff": 10_084.624,
+    }
+    return values
+
+
 def _other_component(
     components: dict[str, float],
     operating_cost: float,
@@ -255,6 +293,12 @@ def build_airline_unit_economics() -> pd.DataFrame:
         elif company == "Juneyao Airlines":
             components = _juneyao_fy2025_components()
             component_source = "juneyao_fy2025_unit_cost_disclosure"
+        elif company == "Air China":
+            components = _air_china_fy2025_components()
+            component_source = "air_china_fy2025_cost_table_manual_anchor"
+        elif company == "Hainan Airlines Holdings":
+            components = _hainan_fy2025_components()
+            component_source = "hainan_fy2025_cost_table_manual_anchor"
         else:
             components, _ = _component_values(drivers, company, "FY2025")
             component_source = "official_driver_components"
