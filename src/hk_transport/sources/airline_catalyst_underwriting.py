@@ -33,6 +33,7 @@ DATASET_ID = "airline_catalyst_underwriting"
 CALENDAR_PATH = NORMALIZED_DIR / "airline_catalyst_calendar.csv"
 SENSITIVITY_PATH = NORMALIZED_DIR / "airline_earnings_sensitivity.csv"
 SURPRISE_PATH = NORMALIZED_DIR / "airline_earnings_model_v4_surprise.csv"
+SANITY_PATH = NORMALIZED_DIR / "airline_consensus_reverse_v2_sanity.csv"
 VALUATION_PATH = NORMALIZED_DIR / "airline_valuation_v2_pair.csv"
 CAPACITY_PATH = NORMALIZED_DIR / "airline_capacity_pipeline.csv"
 UNIT_ECONOMICS_PATH = NORMALIZED_DIR / "airline_unit_economics.csv"
@@ -64,10 +65,13 @@ def _build_catalyst_rows(
     calendar: pd.DataFrame,
     sensitivity: pd.DataFrame,
     surprise: pd.DataFrame,
+    sanity: pd.DataFrame,
 ) -> list[dict[str, Any]]:
     """Pair-focused catalyst tree: Event -> KPI -> EPS -> Thesis."""
-    sp_surprise = _num(_row(surprise, company="Spring Airlines").get("surprise_v4_vs_consensus_pct"))
-    jy_surprise = _num(_row(surprise, company="Juneyao Airlines").get("surprise_v4_vs_consensus_pct"))
+    # Seasonality-adjusted surprise (consensus-reverse-v2 sanity table), not
+    # the x2 convention - consistent with the thesis scoreboard.
+    sp_surprise = _num(_row(sanity, company="Spring Airlines").get("surprise_vs_consensus_season_adj_pct"))
+    jy_surprise = _num(_row(sanity, company="Juneyao Airlines").get("surprise_vs_consensus_season_adj_pct"))
     # Fuel sensitivity from the 3D surface (yield 0, fuel +5, FX 0 for the
     # fuel-only shock on the pair).
     def fuel_eps_shock(company: str) -> float | None:
@@ -377,6 +381,7 @@ def build_airline_catalyst_underwriting() -> dict[str, pd.DataFrame]:
     calendar = pd.read_csv(CALENDAR_PATH)
     sensitivity = pd.read_csv(SENSITIVITY_PATH)
     surprise = pd.read_csv(SURPRISE_PATH)
+    sanity = pd.read_csv(SANITY_PATH)
     valuation = pd.read_csv(VALUATION_PATH)
     capacity = pd.read_csv(CAPACITY_PATH)
     unit = pd.read_csv(UNIT_ECONOMICS_PATH)
@@ -384,7 +389,7 @@ def build_airline_catalyst_underwriting() -> dict[str, pd.DataFrame]:
     reverse_surface = pd.read_csv(REVERSE_SURFACE_PATH)
     sanity = pd.read_csv(SANITY_PATH)
 
-    catalyst = pd.DataFrame(_build_catalyst_rows(calendar, sensitivity, surprise))
+    catalyst = pd.DataFrame(_build_catalyst_rows(calendar, sensitivity, surprise, sanity))
     catalyst["retrieved_at"] = retrieved
     catalyst.to_csv(CATALYST_OUTPUT_PATH, index=False)
 

@@ -184,8 +184,19 @@ def _build_company_rows(
     energy: pd.DataFrame,
     anchor: dict[str, float],
     fleet_series: pd.Series,
+    anchor_year_fuel_price: float | None,
 ) -> list[dict[str, Any]]:
     """Walk-forward aggregate-cost backtest for one company."""
+    # Fixed fuel intensity from the FY2025 anchor: fuel CASK (per ASK, at
+    # the FY2025 price) divided by that price = fuel $ per ASK per $/gallon.
+    # The mechanical fuel cost is then ASK x intensity x price_t, which is
+    # the correct identity.  The previous implementation instead scaled the
+    # anchor fuel unit by price_t/price_p (prior-year price), which silently
+    # changed the implied intensity whenever the prior-year price differed
+    # from the FY2025 anchor price (up to +/-90% in 2020/2023).
+    fuel_intensity = None
+    if anchor.get("fuel") is not None and anchor_year_fuel_price not in (None, 0):
+        fuel_intensity = anchor["fuel"] / anchor_year_fuel_price
     sub = history.sort_values("target_year")
     rows: list[dict[str, Any]] = []
     for _, r in sub.iterrows():
@@ -207,50 +218,71 @@ def _build_company_rows(
 
         # ---- layer 2: fuel mechanical ----
         fuel_price_t = _year_fuel_price(energy, year)
-        fuel_price_p = _year_fuel_price(energy, year - 1)
-        if fuel_price_t and fuel_price_p and anchor.get("fuel"):
-            fuel_unit = anchor["fuel"]
-            # fuel unit cost scales with the fuel price ratio (intensity
-            # assumed constant from the FY2025 anchor; hedge/FX inside the
-            # residual).
-            fuel_mech = ask_t * fuel_unit * (fuel_price_t / fuel_price_p)
+        if fuel_price_t and fuel_intensity is not None:
+            fuel_mech = ask_t * fuel_intensity * fuel_price_t
         else:
             fuel_mech = ask_t * (anchor.get("fuel", 0.0))
-        nonfuel_flat = ask_t * max(0.0, cask_p - anchor.get("fuel", 0.0))
+        # Non-fuel carry: subtract the PRIOR-year fuel unit (at the
+        # prior-year price), not the FY2025 anchor fuel unit.
+        fuel_unit_p = None
+        if fuel_intensity is not None:
+            fuel_price_p = _year_fuel_price(energy, year - 1)
+            if fuel_price_p:
+                fuel_unit_p = fuel_intensity * fuel_price_p
+        nonfuel_unit_p = max(0.0, cask_p - (fuel_unit_p or 0.0))
+        nonfuel_flat = ask_t * nonfuel_unit_p
         cost_fuel_mech = fuel_mech + nonfuel_flat
+        cask_anchor = sum(anchor.values())
+        nonfuel_anchor = max(0.0, cask_anchor - anchor.get("fuel", 0.0))
+        fuel_unit_cur = fuel_mech / ask_t
 
-        # ---- layer 3: non-fuel drivers ----
-        # Each non-fuel component carries its FY2025 per-ASK unit cost grown
-        # by its labelled driver (ASK proxy for staff/airport/maintenance/
-        # other, fleet for depreciation).
-        nonfuel_components = [c for c in COMPONENTS if c != "fuel"]
-        driver_units: dict[str, float] = {}
-        for comp in nonfuel_components:
-            unit = anchor.get(comp, 0.0)
-            if COMPONENT_DRIVERS[comp] == "fleet":
-                fleet_p = _num(fleet_series.get(year - 1))
-                fleet_t = _num(fleet_series.get(year))
-                if fleet_p not in (None, 0) and fleet_t:
-                    driver_units[comp] = unit * (fleet_t / fleet_p)
-                else:
-                    driver_units[comp] = unit
-            else:
-                driver_units[comp] = unit  # per-ASK unit carried; ASK scales it
-        cost_nonfuel_drivers = ask_t * sum(driver_units.values())
+        # ---- layer 3: non-fuel drivers (semi-fixed specification) ----
+        # Staff/airport/maintenance have a large FIXED component, so a pure
+        # ASK-proportional carry over-reacts to capacity swings (the 40%
+        # MAE blow-up when tested).  Specification per the roadmap:
+        # nonfuel_t = fixed_base + variable_share x capacity growth, where
+        # the FY2025 anchor unit is the fixed base, the variable share is
+        # the anchor share of non-fuel cost, and depreciation follows fleet
+        # growth while the rest follows ASK growth (both dampened by 0.5 so
+        # unit costs mean-revert rather than swing with capacity).
+        ask_growth = ask_t / ask_p if ask_p not in (None, 0) else 1.0
+        fleet_p = _num(fleet_series.get(year - 1))
+        fleet_t = _num(fleet_series.get(year))
+        fleet_growth = (fleet_t / fleet_p) if (fleet_p not in (None, 0) and fleet_t) else 1.0
+        dep_share = anchor.get("depreciation", 0.0) / max(nonfuel_anchor, 1e-9)
+        other_share = 1.0 - dep_share
+        # Dampened capacity growth: variable share 0.5, fixed share 0.5.
+        blended_growth = 1.0 + 0.5 * (
+            dep_share * (fleet_growth - 1.0) + other_share * (ask_growth - 1.0)
+        )
+        nonfuel_driver_unit = nonfuel_anchor * blended_growth
+        cost_nonfuel_drivers = ask_t * nonfuel_driver_unit
         cost_drivers = fuel_mech + cost_nonfuel_drivers
 
         # ---- layer 4: company shrinkage toward FY2025 anchor ----
-        # Shrink the flat prior CASK toward the anchor CASK using the same
-        # anomaly lambda as v4 (based on cost intensity deviation).
-        cask_anchor = sum(anchor.values())
-        cask_prior = cask_p
-        dev = abs(cask_prior - cask_anchor) / max(cask_anchor, 1e-9)
+        # Shrink the NON-FUEL unit cost toward the anchor non-fuel unit
+        # (fuel is handled mechanically by layer 2 at the current price, so
+        # shrinking a fuel-inclusive CASK and then subtracting fuel would
+        # cancel - the layer-5 bug this replaces).
+        nonfuel_prior = max(0.0, cask_p - fuel_unit_cur)
+        cask_prior_for_dev = nonfuel_prior + fuel_unit_cur
+        dev = abs(cask_prior_for_dev - cask_anchor) / max(cask_anchor, 1e-9)
         lam = LAMBDA_MAX - (LAMBDA_MAX - LAMBDA_MIN) * min(dev / 0.5, 1.0)
-        cask_shrunk = lam * cask_prior + (1.0 - lam) * cask_anchor
+        nonfuel_shrunk = lam * nonfuel_prior + (1.0 - lam) * nonfuel_anchor
+        cask_shrunk = fuel_unit_cur + nonfuel_shrunk
         cost_shrink = ask_t * cask_shrunk
 
-        # ---- layer 5: full CASK (fuel mechanical + shrunk non-fuel) ----
-        cost_full = fuel_mech + ask_t * max(0.0, cask_shrunk - anchor.get("fuel", 0.0))
+        # ---- layer 5: full CASK (fuel mechanical + driver-updated non-fuel
+        # with company shrinkage) ----
+        # The production specification: fuel at the mechanical current-price
+        # cost; non-fuel shrinks between the PRIOR-year non-fuel unit and
+        # the DRIVER-UPDATED unit (anchor base grown by dampened capacity
+        # growth).  This keeps the informative prior (last year's actual
+        # non-fuel cost) while pulling toward the driver-based level when
+        # capacity moves - the layer-4 specification only pulled toward the
+        # static FY2025 anchor and ignored the capacity signal.
+        nonfuel_full = lam * nonfuel_prior + (1.0 - lam) * nonfuel_driver_unit
+        cost_full = ask_t * (fuel_unit_cur + nonfuel_full)
 
         rows.append(
             {
@@ -350,7 +382,8 @@ def build_airline_cost_engine_v2() -> dict[str, pd.DataFrame]:
         co = history[history.company.eq(company)]
         if co.empty:
             continue
-        all_rows.extend(_build_company_rows(company, co, energy, anchor, fleet))
+        fy25_price = _year_fuel_price(energy, 2025)
+        all_rows.extend(_build_company_rows(company, co, energy, anchor, fleet, fy25_price))
     df = pd.DataFrame(all_rows)
     df["retrieved_at"] = retrieved
     df = df.sort_values(["company", "target_year"]).reset_index(drop=True)
