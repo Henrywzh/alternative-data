@@ -34,6 +34,7 @@ from .sources.airline_consensus_reverse import build_airline_consensus_reverse
 from .sources.airline_earnings_sensitivity import build_airline_earnings_sensitivity
 from .sources.airline_valuation_snapshot import build_airline_valuation_snapshot
 from .sources.airline_trade_construction import build_airline_trade_construction
+from .sources.airline_residual_yield_model import build_airline_residual_yield_model
 from .sources.airline_h1_2026_validation_playbook import build_airline_h1_2026_validation_playbook
 from .sources.airline_cargo_bridge_backtest import build_airline_cargo_bridge_backtest
 from .sources.airline_caac_sector_monthly import fetch_caac_sector_monthly_kpis
@@ -344,6 +345,21 @@ QUALITY_SPECS = {
             "retrieved_at",
         ],
         "max_age_days": 7,
+    },
+    "airline_residual_yield_model": {
+        "kind": "measure",
+        "required": [
+            "company",
+            "period",
+            "target_year",
+            "row_status",
+            "flat_yield_revenue_native_mn",
+            "yield_pressure_bucket",
+            "yield_adjustment_pct",
+            "adjusted_revenue_native_mn",
+            "retrieved_at",
+        ],
+        "max_age_days": 60,
     },
     "airline_h1_2026_validation_playbook": {
         "kind": "snapshot",
@@ -1620,6 +1636,13 @@ def run_stage_1_pipeline() -> dict[str, Any]:
     except Exception as exc:
         logger.exception("Airline trade construction build failed")
         results["airline_trade_construction"] = {"error": str(exc)}
+
+    try:
+        logger.info("Building airline residual yield model...")
+        results["airline_residual_yield_model"] = build_airline_residual_yield_model()
+    except Exception as exc:
+        logger.exception("Airline residual yield model build failed")
+        results["airline_residual_yield_model"] = {"error": str(exc)}
 
     try:
         logger.info("Building H1-2026 validation playbook...")

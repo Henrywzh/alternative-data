@@ -34,6 +34,7 @@ from .sources.airline_consensus_reverse import build_airline_consensus_reverse
 from .sources.airline_earnings_sensitivity import build_airline_earnings_sensitivity
 from .sources.airline_valuation_snapshot import build_airline_valuation_snapshot
 from .sources.airline_trade_construction import build_airline_trade_construction
+from .sources.airline_residual_yield_model import build_airline_residual_yield_model
 from .sources.airline_h1_2026_validation_playbook import build_airline_h1_2026_validation_playbook
 from .sources.airline_cargo_bridge_backtest import build_airline_cargo_bridge_backtest
 from .sources.airline_caac_sector_monthly import fetch_caac_sector_monthly_kpis
@@ -220,6 +221,10 @@ def main():
     subparsers.add_parser(
         "run-airline-trade-construction",
         help="Build Spring long / Juneyao short trade-construction card",
+    )
+    subparsers.add_parser(
+        "run-airline-residual-yield",
+        help="Build residual yield model (flat-yield baseline + shrunk signal)",
     )
     subparsers.add_parser(
         "run-airline-h1-2026-validation-playbook",
@@ -704,6 +709,9 @@ def main():
         elif args.command == "run-airline-trade-construction":
             df = build_airline_trade_construction()
             print(f"Built airline trade construction card: {len(df)} records\n", df)
+        elif args.command == "run-airline-residual-yield":
+            df = build_airline_residual_yield_model()
+            print(f"Built airline residual yield model: {len(df)} records\n", df.tail(8))
         elif args.command == "run-airline-h1-2026-validation-playbook":
             df = build_airline_h1_2026_validation_playbook()
             print(f"Built airline H1-2026 validation playbook: {len(df)} records\n", df)
