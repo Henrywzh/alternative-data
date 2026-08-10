@@ -81,6 +81,7 @@ MONTHLY_COLUMNS = [
     "max_wind_kmh",
     "mean_max_temp_c",
     "disruption_flag",
+    "days_observed_status",
     "source_note",
     "retrieved_at",
 ]
@@ -202,9 +203,27 @@ def fetch_airline_weather_risk(
                 )
             )
 
-    non_empty_frames = [frame for frame in daily_frames if not frame.empty]
+    numeric_cols = [
+        "temperature_2m_max_c",
+        "temperature_2m_min_c",
+        "precipitation_sum_mm",
+        "wind_speed_10m_max_kmh",
+        "weather_code",
+    ]
+    non_empty_frames = [
+        frame
+        for frame in daily_frames
+        if not frame.empty
+        and not frame[numeric_cols].isna().all(axis=1).all()
+    ]
     if not non_empty_frames:
         raise ValueError("No Open-Meteo rows fetched for any hub")
+    # Concat with uniform object dtype for the numeric columns: archive and
+    # forecast frames carry different column dtypes (forecast temperature
+    # columns are all-None object), and pandas 2.x warns on mixed-dtype
+    # concat of all-NA entries.
+    for frame in non_empty_frames:
+        frame[numeric_cols] = frame[numeric_cols].astype(object)
     daily = pd.concat(non_empty_frames, ignore_index=True)
     if daily.empty:
         raise ValueError("No Open-Meteo rows fetched for any hub")
@@ -335,6 +354,11 @@ def _build_monthly(daily: pd.DataFrame, retrieved: str) -> pd.DataFrame:
         windy = int(group["high_wind_day"].sum())
         fog = int(group["fog_day"].sum())
         days = int(len(group))
+        future_days = int(
+            group["source_api"].eq("openmeteo_forecast_future").sum()
+            if "source_api" in group.columns
+            else 0
+        )
         max_precip = group["precipitation_sum_mm"].max()
         max_wind = group["wind_speed_10m_max_kmh"].max()
         disruption_flag = (
@@ -359,10 +383,21 @@ def _build_monthly(daily: pd.DataFrame, retrieved: str) -> pd.DataFrame:
                 "max_wind_kmh": max_wind,
                 "mean_max_temp_c": group["temperature_2m_max_c"].mean(),
                 "disruption_flag": disruption_flag,
+                "days_observed_status": (
+                    "complete_month"
+                    if future_days == 0 and days >= 28
+                    else "partial_month_future_forecast_included"
+                    if future_days > 0
+                    else "partial_month"
+                ),
                 "source_note": (
                     "Monthly aggregate of Open-Meteo daily weather for the "
                     "airline hub; thresholds are broad aviation-disruption "
                     "proxies (>=25mm rain, >=40km/h wind, fog codes).  "
+                    "Current-month rows may include up to 3 days of forecast "
+                    "projection and are labelled partial; disruption flags "
+                    "on partial months are not directly comparable with "
+                    "complete months.  "
                     "Weather is a risk/execution variable, not an earnings "
                     "forecast."
                 ),
