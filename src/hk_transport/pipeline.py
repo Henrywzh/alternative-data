@@ -29,6 +29,7 @@ from .sources.airline_forward_assumptions import build_airline_forward_assumptio
 from .sources.airline_forward_net_income_bridge import build_airline_forward_net_income_bridge
 from .sources.airline_unit_economics import build_airline_unit_economics
 from .sources.airline_yield_pressure import build_airline_yield_pressure_index
+from .sources.airline_capacity_pipeline import build_airline_capacity_pipeline
 from .sources.airline_h1_2026_validation_playbook import build_airline_h1_2026_validation_playbook
 from .sources.airline_cargo_bridge_backtest import build_airline_cargo_bridge_backtest
 from .sources.airline_caac_sector_monthly import fetch_caac_sector_monthly_kpis
@@ -262,6 +263,20 @@ QUALITY_SPECS = {
             "yield_pressure_score",
             "yield_pressure_label",
             "validation_status",
+            "retrieved_at",
+        ],
+        "max_age_days": 60,
+    },
+    "airline_capacity_pipeline": {
+        "kind": "event",
+        "required": [
+            "company",
+            "event_date",
+            "horizon",
+            "event_category",
+            "event_detail",
+            "capacity_impact_direction",
+            "confidence",
             "retrieved_at",
         ],
         "max_age_days": 60,
@@ -1506,6 +1521,13 @@ def run_stage_1_pipeline() -> dict[str, Any]:
     except Exception as exc:
         logger.exception("Airline yield-pressure index build failed")
         results["airline_yield_pressure_index"] = {"error": str(exc)}
+
+    try:
+        logger.info("Building airline future capacity pipeline...")
+        results["airline_capacity_pipeline"] = build_airline_capacity_pipeline()
+    except Exception as exc:
+        logger.exception("Airline capacity pipeline build failed")
+        results["airline_capacity_pipeline"] = {"error": str(exc)}
 
     try:
         logger.info("Building H1-2026 validation playbook...")
