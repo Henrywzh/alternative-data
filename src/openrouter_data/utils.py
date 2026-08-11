@@ -8,6 +8,7 @@ from typing import Any
 
 
 NEXT_F_PATTERN = re.compile(r'self\.__next_f\.push\(\[1,"((?:[^"\\]|\\.)*)"\]\)</script>', re.DOTALL)
+NEXT_F_CHUNK_PATTERN = re.compile(r"(?m)(?:^|\n)([0-9A-Za-z]+):")
 
 
 def iter_next_f_decoded_strings(html: str) -> Iterable[str]:
@@ -18,18 +19,34 @@ def iter_next_f_decoded_strings(html: str) -> Iterable[str]:
             continue
 
 
-def iter_next_f_objects(html: str) -> Iterable[Any]:
+def iter_next_f_chunks(html: str) -> Iterable[tuple[str, Any]]:
+    decoder = json.JSONDecoder()
     for decoded in iter_next_f_decoded_strings(html):
-        if ":" not in decoded:
-            continue
-        _, payload = decoded.split(":", 1)
-        payload = payload.strip()
-        if not payload.startswith("["):
-            continue
-        try:
-            yield json.loads(payload)
-        except json.JSONDecodeError:
-            continue
+        # Next.js currently emits several newline-delimited flight chunks in
+        # one script. Older responses contained a single ``label:payload``
+        # chunk, so iterate over lines while retaining compatibility with
+        # either shape.
+        cursor = 0
+        while cursor < len(decoded):
+            match = NEXT_F_CHUNK_PATTERN.search(decoded, cursor)
+            if match is None:
+                break
+            payload_start = match.end()
+            try:
+                payload, payload_end = decoder.raw_decode(decoded, payload_start)
+            except json.JSONDecodeError:
+                # Module/import instructions (for example ``1:I[...]``) are
+                # not JSON data. Continue scanning for the next chunk label.
+                cursor = payload_start
+                continue
+            if isinstance(payload, (list, dict)):
+                yield match.group(1), payload
+            cursor = payload_end
+
+
+def iter_next_f_objects(html: str) -> Iterable[Any]:
+    for _, payload in iter_next_f_chunks(html):
+        yield payload
 
 
 def walk_json(obj: Any) -> Iterable[Any]:

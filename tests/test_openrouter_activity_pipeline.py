@@ -345,6 +345,39 @@ def test_provider_activity_source_still_emits_total_tokens_only() -> None:
     assert record.request_count is None
 
 
+def test_provider_activity_source_parses_newline_delimited_next_f_chunks() -> None:
+    payload = [
+        "$",
+        "$L53",
+        None,
+        {
+            "data": [
+                {"x": "2026-08-07 00:00:00", "ys": {"openai/gpt-5.5": 12000}},
+                {"x": "2026-08-08 00:00:00", "ys": {"openai/gpt-5.5": 12100}},
+                {"x": "2026-08-09 00:00:00", "ys": {"openai/gpt-5.5": 12200}},
+                {"x": "2026-08-10 00:00:00", "ys": {"openai/gpt-5.5": 12300}},
+                {"x": "2026-08-11 00:00:00", "ys": {"openai/gpt-5.5": 12400}},
+            ],
+        },
+    ]
+    encoded = json.dumps(
+        "1:I[123,[\"chunk.js\"],\"ProviderPage\"]\n"
+        f"44:{json.dumps(payload, separators=(',', ':'))}"
+    )
+    html = f"<html><body><script>self.__next_f.push([1,{encoded}])</script></body></html>"
+    source = ProviderActivitySource()
+    context = RunContext(run_id="provider-rsc-test", scraped_at=pd.Timestamp("2026-08-11T04:00:00Z").to_pydatetime())
+
+    records = source.extract(
+        [Snapshot(name="provider_openai", source_url="fixture://openai", body=html)],
+        context,
+    )["provider_daily_activity"]
+
+    assert len(records) == 5
+    assert records[-1].usage_date == "2026-08-11"
+    assert records[-1].total_tokens == 12400.0
+
+
 def test_provider_activity_validation_accepts_healthy_provider_rows() -> None:
     records = [
         DatasetRecord(
