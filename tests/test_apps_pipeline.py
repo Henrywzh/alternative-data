@@ -9,7 +9,7 @@ import pytest
 from openrouter_data.exceptions import ExtractionError
 from openrouter_data.models import RunContext, Snapshot
 from openrouter_data.pipeline import AppsPipeline
-from openrouter_data.sources.apps import AppsSource
+from openrouter_data.sources.apps import AppsSource, MONITORED_APPS
 
 
 FIXTURE_PATH = Path(__file__).parent / "fixtures" / "apps_payloads.json"
@@ -130,6 +130,25 @@ def test_parse_fixture_snapshots_for_app_and_directory_datasets() -> None:
     assert extracted["apps_global_ranking_snapshots"][0].period == "day"
     assert extracted["apps_trending_snapshots"][0].growth_percent == 20.0
     assert extracted["apps_trending_snapshots"][0].tokens == 5651018332581.0
+
+
+def test_app_metadata_parser_accepts_newline_delimited_next_f_chunks() -> None:
+    payloads = _load_payloads()
+    metadata = ["$", "$L50", None, payloads["openclaw_metadata"]]
+    usage = ["$", "$L51", None, payloads["openclaw_usage"]]
+    encoded = json.dumps(
+        "1:I[123,[\"chunk.js\"],\"AppPage\"]\n"
+        f"50:{json.dumps(metadata, separators=(',', ':'))}\n"
+        f"51:{json.dumps(usage, separators=(',', ':'))}"
+    )
+    html = f"<html><body><script>self.__next_f.push([1,{encoded}])</script></body></html>"
+
+    source = AppsSource()
+    app = next(app for app in MONITORED_APPS if app.slug == "openclaw")
+    result = source._extract_app_metadata(html, app)
+
+    assert result["id"] == payloads["openclaw_metadata"]["id"]
+    assert result["origin_url"] == "https://openclaw.ai/"
 
 
 def test_missing_required_payload_raises_clear_error() -> None:

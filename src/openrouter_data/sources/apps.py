@@ -10,7 +10,7 @@ import requests
 from openrouter_data.exceptions import ExtractionError, ValidationError
 from openrouter_data.models import DatasetRecord, RunContext, Snapshot
 from openrouter_data.sources.base import SourceExtractor
-from openrouter_data.utils import iter_next_f_decoded_strings, iter_next_f_objects, walk_json
+from openrouter_data.utils import iter_next_f_chunks, iter_next_f_objects, walk_json
 
 
 @dataclass(frozen=True)
@@ -151,19 +151,7 @@ class AppsSource(SourceExtractor):
         )
 
     def _parse_flight_chunks(self, html: str) -> dict[str, Any]:
-        chunks: dict[str, Any] = {}
-        for decoded in iter_next_f_decoded_strings(html):
-            if ":" not in decoded:
-                continue
-            label, payload = decoded.split(":", 1)
-            payload = payload.strip()
-            if not payload.startswith("[") and not payload.startswith("{"):
-                continue
-            try:
-                chunks[label] = json.loads(payload)
-            except json.JSONDecodeError:
-                continue
-        return chunks
+        return {label: payload for label, payload in iter_next_f_chunks(html)}
 
     def _resolve_ranking_map(self, ranking_map: dict[str, Any], chunks: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
         resolved: dict[str, list[dict[str, Any]]] = {}
