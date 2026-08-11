@@ -970,6 +970,43 @@ def test_openrouter_loader_uses_compact_dataset_schema_and_arrow_strings(tmp_pat
     assert result.frame["model_permaslug"].dtype.storage == "pyarrow"
 
 
+def test_explicit_base_dir_uses_fresh_local_bytes_even_when_remote_enabled(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    root = tmp_path / "data" / "normalized" / "openrouter"
+    root.mkdir(parents=True)
+    local = pd.DataFrame(
+        [
+            {
+                "dataset_id": "provider_daily_activity",
+                "source_url": "fixture://fresh-provider-activity",
+                "source_run_id": "fresh-run",
+                "scraped_at": "2026-08-11T08:15:00Z",
+                "usage_date": "2026-08-10",
+                "model_permaslug": "openai/gpt-test",
+                "entity_id": "openai",
+                "entity_name": "OpenAI",
+                "category_slug": "all",
+                "total_tokens": 9_850_000_000_000,
+                "prompt_tokens": 0,
+                "completion_tokens": 0,
+                "reasoning_tokens": 0,
+                "request_count": None,
+            }
+        ]
+    )
+    local.to_parquet(root / "provider_daily_activity.parquet", index=False)
+
+    monkeypatch.setattr("dashboard.data.remote.remote_enabled", lambda: True)
+    monkeypatch.setattr(
+        "dashboard.data.remote.latest_data_sha",
+        lambda *_args, **_kwargs: pytest.fail("explicit base_dir must not resolve a remote SHA"),
+    )
+
+    result = load_dataset("provider_daily_activity", base_dir=tmp_path)
+
+    assert result.source_format == "parquet"
+    assert float(result.frame.iloc[0]["total_tokens"]) == 9_850_000_000_000
+
+
 def test_provider_daily_activity_natural_key_includes_provider_identity(tmp_path: Path) -> None:
     assert DATASET_REGISTRY["provider_daily_activity"]["natural_keys"] == [
         "usage_date",

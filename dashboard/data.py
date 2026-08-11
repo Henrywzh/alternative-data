@@ -2371,7 +2371,13 @@ def load_dataset(
     # a custom base_dir (tests, ad-hoc tooling), read those local files directly so
     # the data source stays predictable and isolated from the production repo.
     root = base_dir if base_dir is not None else repo_root()
-    if remote.remote_enabled() and root == repo_root():
+    # Explicit base directories are used by CLI pipelines and tests. They must
+    # read the files just written in that checkout; fetching the last committed
+    # GitHub bytes here can silently feed a mart build the previous day's
+    # partial snapshot. The dashboard passes an explicit immutable data_sha when
+    # it intentionally wants remote bytes, so preserve that path.
+    use_remote_bytes = remote.remote_enabled() and (base_dir is None or data_sha is not None)
+    if use_remote_bytes:
         sha = data_sha or remote.latest_data_sha(f"{remote.DATA_PATH_PREFIX}/{source}")
         if sha:
             candidates = (

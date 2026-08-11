@@ -42,10 +42,17 @@ jobs:
           python -m openrouter_data.cli --base-dir . provider-activity-daily-update
 
       - name: Rebuild daily provider economics
+        env:
+          # The provider update has just written fresh local parquet files.
+          # Prevent the dashboard loader from replacing them with the previous
+          # committed snapshot while building the marts.
+          DATA_SOURCE: local
         run: |
           python -m research_data.cli --base-dir . build-mart daily_provider_economics --refresh
 
       - name: Rebuild daily provider revenue estimates
+        env:
+          DATA_SOURCE: local
         run: |
           python -m research_data.cli --base-dir . build-mart daily_provider_revenue_estimates --refresh
 
